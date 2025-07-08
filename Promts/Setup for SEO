@@ -1,8 +1,0 @@
-1. Execute functional testing for vcst-qa environment. Use config.js
-2. For Admin site/Back office scenariors open a new tab and go to new BACK URL
-3. Follow steps from test suit SEO.BrokenLinks.xml
-4. Clear cache, clear local storage in browser
-5. Open console and keep it open
-6. After any action fetch errors in console print it out
-7. Create a report after each section (ID, Title, Result, Detailed error)
-8. If the bugs were found create a bug report with Test case ID

@@ -1,38 +1,103 @@
-import dotenv from 'dotenv';
+import { config } from 'dotenv';
 
-dotenv.config();
+// Load environment variables from .env file
+config({ path: '.env' });
 
-export const env = {
-    VCST_FRONT_URL: process.env.VCST_FRONT_URL,
-    VCST_BACK_URL: process.env.VCST_BACK_URL,
-    VIRTO_START_FRONT: process.env.VIRTO_START_FRONT,
-    VIRTO_START_BACK: process.env.VIRTO_START_BACK,
-    ADMIN: process.env.ADMIN,
-    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD, 
-    FRONT_ADMIN: process.env.FRONT_ADMIN,
-    FRONT_ADMIN_PASSWORD: process.env.FRONT_ADMIN_PASSWORD,
-    USER_EMAIL: process.env.USER_EMAIL,
-    USER_PASSWORD: process.env.USER_PASSWORD,
-    USER2_EMAIL: process.env.USER2_EMAIL,
-    USER2_PASSWORD: process.env.USER2_PASSWORD,
-    STORE_ID: process.env.STORE_ID,
+// Validate required environment variables
+const requiredVars = [
+    'VCST_FRONT_URL',
+    'VCST_BACK_URL',
+    'VIRTO_START_FRONT',
+    'VIRTO_START_BACK',
+    'ADMIN',
+    'ADMIN_PASSWORD',
+    'FRONT_ADMIN',
+    'FRONT_ADMIN_PASSWORD',
+    'USER_EMAIL',
+    'USER_PASSWORD',
+    'USER2_EMAIL',
+    'USER2_PASSWORD',
+    'STORE_ID',
+    'SKYFLOW_VISA',
+    'SKYFLOW_MASTERCARD',
+    'SKYFLOW_EXPIRY',
+    'SKYFLOW_CVV',
+    'CYBERSOURCE_CARD',
+    'CYBERSOURCE_EXPIRY',
+    'CYBERSOURCE_CVV',
+    'AUTHORIZNET_CARD',
+    'AUTHORIZNET_EXPIRY',
+    'AUTHORIZNET_CVV'
+    
+];
 
-    SKYFLOW_VISA: process.env.SKYFLOW_VISA,
-    SKYFLOW_MASTERCARD: process.env.SKYFLOW_MASTERCARD,
-    SKYFLOW_EXPIRY: process.env.SKYFLOW_EXPIRY,
-    SKYFLOW_CVV: process.env.SKYFLOW_CVV,
-    CVV: process.env.CVV,
-    EXPIRY: process.env.EXPIRY,    
-    CARD_HOLDER: process.env.CARD_HOLDER,
-    CARD_EXPIRY: process.env.CARD_EXPIRY,
-
-    CYBERSOURCE_CARD: process.env.CYBERSOURCE_CARD,    
-    CYBERSOURCE_EXPIRY: process.env.CYBERSOURCE_EXPIRY,  
-    CYBERSOURCE_CVV: process.env.CYBERSOURCE_CVV,
-
-    AUTHORIZNET_CARD: process.env.AUTHORIZNET_CARD,
-    AUTHORIZNET_EXPIRY: process.env.AUTHORIZNET_EXPIRY,
-    AUTHORIZNET_CVV: process.env.AUTHORIZNET_CVV
-  
+const missingVars = requiredVars.filter(varName => !process.env[varName]);
+if (missingVars.length > 0) {
+    console.error('Missing required environment variables:', missingVars.join(', '));
+    process.exit(1);
 }
+
+// Helper function to get environment variable with optional default
+const getEnvVar = (name, defaultValue = undefined) => {
+    const value = process.env[name];
+    if (value === undefined && defaultValue === undefined) {
+        console.warn(`Environment variable ${name} is not set`);
+    }
+    return value || defaultValue;
+};
+
+// Export configuration object
+export const env = {
+    // Application URLs
+    VCST_FRONT_URL: getEnvVar('VCST_FRONT_URL'),
+    VCST_BACK_URL: getEnvVar('VCST_BACK_URL'),
+    VIRTO_START_FRONT: getEnvVar('VIRTO_START_FRONT'),
+    VIRTO_START_BACK: getEnvVar('VIRTO_START_BACK'),
+    
+    // Admin credentials
+    ADMIN: getEnvVar('ADMIN'),
+    ADMIN_PASSWORD: getEnvVar('ADMIN_PASSWORD'),
+    FRONT_ADMIN: getEnvVar('FRONT_ADMIN'),
+    FRONT_ADMIN_PASSWORD: getEnvVar('FRONT_ADMIN_PASSWORD'),
+    
+    // User credentials
+    USER_EMAIL: getEnvVar('USER_EMAIL'),
+    USER_PASSWORD: getEnvVar('USER_PASSWORD'),
+    USER2_EMAIL: getEnvVar('USER2_EMAIL'),
+    USER2_PASSWORD: getEnvVar('USER2_PASSWORD'),
+    
+    // Store configuration
+    STORE_ID: getEnvVar('STORE_ID'),
+    
+    // Skyflow payment configuration
+    SKYFLOW_VISA: getEnvVar('SKYFLOW_VISA'),
+    SKYFLOW_MASTERCARD: getEnvVar('SKYFLOW_MASTERCARD'),
+    SKYFLOW_EXPIRY: getEnvVar('SKYFLOW_EXPIRY'),
+    SKYFLOW_CVV: getEnvVar('SKYFLOW_CVV'),
+    
+    // Generic payment configuration
+    CVV: getEnvVar('CVV'),
+    EXPIRY: getEnvVar('EXPIRY'),
+    CARD_HOLDER: getEnvVar('CARD_HOLDER'),
+    CARD_EXPIRY: getEnvVar('CARD_EXPIRY'),
+    
+    // CyberSource payment configuration
+    CYBERSOURCE_CARD: getEnvVar('CYBERSOURCE_CARD'),
+    CYBERSOURCE_EXPIRY: getEnvVar('CYBERSOURCE_EXPIRY'),
+    CYBERSOURCE_CVV: getEnvVar('CYBERSOURCE_CVV'),
+    
+    // Authorize.Net payment configuration
+    AUTHORIZNET_CARD: getEnvVar('AUTHORIZNET_CARD'),
+    AUTHORIZNET_EXPIRY: getEnvVar('AUTHORIZNET_EXPIRY'),
+    AUTHORIZNET_CVV: getEnvVar('AUTHORIZNET_CVV')
+};
+
+// Optional: Export individual getters for sensitive data
+export const getSecureVar = (name) => {
+    const value = process.env[name];
+    if (!value) {
+        throw new Error(`Secure environment variable ${name} is not set`);
+    }
+    return value;
+};
 

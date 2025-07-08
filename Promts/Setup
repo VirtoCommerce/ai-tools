@@ -1,10 +1,10 @@
 1. Execute smoke testing for VSCT-QA environment. 
 2. Clear cache, clear local storage in browser
-3. Upload variables from config.js
+3. Use get_variables_env.js
 4. Sign in as a FRONT_ADMIN via standart form
-5. Execute regression testing. Use file Frontend.TestSuit.xml
-6. For Admin site/Back office scenariors open a new tab or switches between tabs and go to new BACK URL
-7. Open console and keep it open (Webkit browser > Develop > Shown Web Inspector > Console > Errors)
+5. Execute smoke testing. Use file Frontend.TestSuit.xml
+6. For Admin site/Back office scenariors open a new tab or switches between tabs and go to BACK URL
+7. Open console and keep it open
 8. After any action fetch errors in console and print if any critical exist
 9. Create a report after each section (ID, Title, Result, Detailed error)
 10. If the bugs were found create a bug report with Test case ID
