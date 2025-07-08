@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suite>
+	<id>S5652</id>
+	<name>V3 SEO module</name>
+	<description>https://github.com/VirtoCommerce/vc-module-seo</description>
+	<sections>
+		<section>
+		<name>Broken links</name>
+		<description>https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0</description>
+						<cases>
+												<case>
+				<id>C406874</id>
+				<title>Detect broken link on SEO slug miss</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<steps_separated><step>
+<content>1. Navigate to a non-existent SEO URL
+2. Ensure seoSlug GraphQL query returns empty
+3. Go to Back office &gt; store &gt; Click on widget Broken links
+4. Find the page
+
+</content><expected>Broken Page event is logged with relevant permalink and metadata</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406875</id>
+				<title>Display &apos;Broken Page&apos; widget in dashboard</title>
+												<template>Test Case (Steps)</template>
+																<type>Other</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<steps_separated><step>
+<content>1. Open back office dashboard</content><expected>Widget &apos;Broken Pages&apos; is visible and clickable</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406876</id>
+				<title>Widget opens scoped Broken Page grid</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<steps_separated><step>
+<content>1. Click on widget</content><expected>Broken Page grid opens and shows rows for the current store</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406877</id>
+				<title>Active</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<preconds>Back office &gt; store &gt; Click on widget Broken links
+
+All broken pages</preconds>
+											<steps_separated><step>
+<content>1. Open page
+
+2. Set Active status and redirect URL
+
+3. Save</content><expected>The 404 page is returned
+
+The redirect URL is null
+
+The page is detected and hit count should increase
+</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406878</id>
+				<title>Resolved</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<preconds>Back office &gt; store &gt; Click on widget Broken links
+
+All broken pages</preconds>
+											<steps_separated><step>
+<content>1. Open page
+
+2. Set Resolved status and redirect URL
+
+3. Save</content><expected>The user should be redirected to another page
+
+The page is no longer detected and hit count should be the same</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406879</id>
+				<title>Accepted</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<preconds>Back office &gt; store &gt; Click on widget Broken links
+
+All broken pages</preconds>
+											<steps_separated><step>
+<content>Open page
+
+Set redirect URL
+
+Set Accepted status
+
+Save</content><expected>The hit count is no longer increase
+
+The 404 page is returned
+
+Redirect URL is null</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406880</id>
+				<title>Display correct columns in row</title>
+												<template>Test Case (Steps)</template>
+																<type>Other</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<steps_separated><step>
+<content>1. Observe any row in the grid</content><expected>Columns: Permalink, Language, Count, Created, Modified, Status</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406881</id>
+				<title>Sort rows by detection count</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<steps_separated><step>
+<content>1. Click column header &apos;Count&apos;</content><expected>Rows are sorted by detection count</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406882</id>
+				<title>Grid scoped per store</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<steps_separated><step>
+<content>1. Switch store context in admin</content><expected>Grid refreshes to show only broken links from selected store</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406883</id>
+				<title>Open row for redirect edit</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<steps_separated><step>
+<content>1. Click on any broken link entry</content><expected>Redirect field is editable</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406884</id>
+				<title>Save redirect URL and resolve status</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<steps_separated><step>
+<content>1. Add a valid redirect permalink
+2. Click Save</content><expected>Entry status changes to &apos;Resolved&apos;, modified timestamp updates</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406885</id>
+				<title>Display target description</title>
+												<template>Test Case (Steps)</template>
+																<type>Other</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<steps_separated><step>
+<content>1. Add redirect to product slug</content><expected>Description: &apos;Redirected to Product: Red Shoes&apos; is shown</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406886</id>
+				<title>Update redirect after resolution</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<steps_separated><step>
+<content>1. Edit resolved entry
+2. Change redirect URL</content><expected>New redirect saved, timestamp updated</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406887</id>
+				<title>Reject empty or invalid redirect</title>
+												<template>Test Case (Steps)</template>
+																<type>Other</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<steps_separated><step>
+<content>1. Try to save empty or invalid redirect</content><expected>Validation error shown, redirect not saved</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406888</id>
+				<title>Visit a broken page with known redirect</title>
+												<template>Test Case (Steps)</template>
+																<type>Other</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<steps_separated><step>
+<content>1. Open a URL previously marked &apos;Resolved&apos;</content><expected>User is automatically redirected</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406889</id>
+				<title>Visit broken link with no redirect</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<steps_separated><step>
+<content>1. Open a broken URL not yet resolved</content><expected>Standard 404 page is shown</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406890</id>
+				<title>Accept broken page without redirect</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<steps_separated><step>
+<content>1. Open a broken page row
+2. Click &apos;Accept&apos;</content><expected>Status changes to &apos;Accepted&apos;; removed from Active list</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406891</id>
+				<title>Audit record of accepted links</title>
+												<template>Test Case (Steps)</template>
+																<type>Other</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<steps_separated><step>
+<content>1. Switch filter to &apos;Accepted&apos;</content><expected>Entry appears and remains searchable</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406892</id>
+				<title>Backup broken page log</title>
+												<template>Test Case (Steps)</template>
+																<type>Other</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<steps_separated><step>
+<content>1. Use system or admin backup</content><expected>Broken page entries are included in backup</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406893</id>
+				<title>Restore previous broken link log</title>
+												<template>Test Case (Steps)</template>
+																<type>Other</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<steps_separated><step>
+<content>1. Perform data restore</content><expected>Broken page grid is repopulated</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406894</id>
+				<title>Verify integrity after restore</title>
+												<template>Test Case (Steps)</template>
+																<type>Regression</type>
+																<priority>Medium</priority>
+																				<estimate></estimate>
+																								<references></references>
+																				<custom>
+											<automation_type><id>1</id><value> None</value></automation_type>
+											<steps_separated><step>
+<content>1. Open previously backed-up resolved link</content><expected>Redirects and statuses are preserved</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+								</cases>
+							</section>
+	</sections>
+</suite>

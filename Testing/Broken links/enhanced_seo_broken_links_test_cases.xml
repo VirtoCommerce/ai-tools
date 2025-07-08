@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suite>
+	<id>S5653</id>
+	<name>Enhanced SEO Broken Links Testing</name>
+	<description>Enhanced test cases for VCST-3156 covering identified gaps in broken links functionality</description>
+	<sections>
+		<section>
+		<name>Multi-Store & Context Testing</name>
+		<description>Tests for multi-store isolation and cross-store validation</description>
+						<cases>
+												<case>
+				<id>C406901</id>
+				<title>Multi-Store Broken Link Isolation</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Critical</priority>
+																				<estimate>30m</estimate>
+																								<references>VCST-3156</references>
+																				<custom>
+											<automation_type><id>1</id><value>Manual</value></automation_type>
+											<preconds>Two stores configured: Store-A and Store-B</preconds>
+											<steps_separated><step>
+<content>1. Navigate to Store-A storefront and access non-existent URL: /store-a-broken-link
+2. Switch to admin and select Store-A context
+3. Verify broken link appears in Store-A broken links grid
+4. Navigate to Store-B storefront and access non-existent URL: /store-b-broken-link
+5. Switch to admin and select Store-B context
+6. Verify broken link appears in Store-B broken links grid
+7. Switch back to Store-A context
+8. Verify only Store-A broken links visible</content><expected>Each store shows only its own broken links, ensuring proper isolation</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406902</id>
+				<title>Cross-Store Redirect Validation</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>High</priority>
+																				<estimate>20m</estimate>
+																								<references>VCST-3156</references>
+																				<custom>
+											<automation_type><id>1</id><value>Manual</value></automation_type>
+											<preconds>Two stores with different product catalogs</preconds>
+											<steps_separated><step>
+<content>1. Open broken link in Store-A
+2. Attempt to set redirect to Store-B product URL
+3. Click Save
+4. Verify validation error prevents cross-store redirect
+5. Set redirect to valid Store-A product
+6. Verify save succeeds</content><expected>System prevents invalid cross-store redirects with appropriate validation</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+								</cases>
+							</section>
+
+		<section>
+		<name>Language & Localization Testing</name>
+		<description>Tests for multi-language support and localization</description>
+						<cases>
+												<case>
+				<id>C406903</id>
+				<title>Multi-Language Broken Link Detection</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>High</priority>
+																				<estimate>25m</estimate>
+																								<references>VCST-3156</references>
+																				<custom>
+											<automation_type><id>1</id><value>Manual</value></automation_type>
+											<preconds>Multi-language store with EN and FR languages</pronds>
+											<steps_separated><step>
+<content>1. Access non-existent URL with EN language: /en/broken-product
+2. Access non-existent URL with FR language: /fr/produit-cassé
+3. Go to admin broken links grid
+4. Verify both URLs appear with correct language indicators
+5. Verify Language column displays "en" and "fr" respectively
+6. Test language filter functionality</content><expected>Language-specific broken links tracked separately with proper language indicators</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406904</id>
+				<title>Language-Specific Redirect Behavior</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>High</priority>
+																				<estimate>30m</estimate>
+																								<references>VCST-3156</references>
+																				<custom>
+											<automation_type><id>1</id><value>Manual</value></automation_type>
+											<preconds>Multi-language store with language-specific products</pronds>
+											<steps_separated><step>
+<content>1. Create broken link with language "en"
+2. Set redirect to English product URL
+3. Save the redirect
+4. Test redirect from English storefront
+5. Verify redirect works to English product
+6. Test same URL from French storefront context
+7. Verify appropriate behavior for language mismatch</content><expected>Language-specific redirects function properly with correct language context</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+								</cases>
+							</section>
+
+		<section>
+		<name>Bulk Operations & Performance</name>
+		<description>Tests for bulk operations and performance under load</description>
+						<cases>
+												<case>
+				<id>C406905</id>
+				<title>Bulk Status Change Operations</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>High</priority>
+																				<estimate>25m</estimate>
+																								<references>VCST-3156</references>
+																				<custom>
+											<automation_type><id>1</id><value>Manual</value></automation_type>
+											<preconds>Multiple Active broken links exist</pronds>
+											<steps_separated><step>
+<content>1. Select 5 Active broken links using checkboxes
+2. Use bulk action menu to change status to "Accepted"
+3. Confirm bulk operation
+4. Verify all selected items show "Accepted" status
+5. Verify timestamp "Modified" updated for all items
+6. Check that bulk operation count is displayed correctly</content><expected>Bulk status changes work correctly with proper timestamp updates</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406906</id>
+				<title>Large Dataset Performance</title>
+												<template>Test Case (Steps)</template>
+																<type>Performance</type>
+																<priority>Medium</priority>
+																				<estimate>45m</estimate>
+																								<references>VCST-3156</references>
+																				<custom>
+											<automation_type><id>1</id><value>Manual</value></automation_type>
+											<preconds>Environment capable of generating large datasets</pronds>
+											<steps_separated><step>
+<content>1. Generate 1000+ broken links (via script or repeated manual creation)
+2. Navigate to broken links grid
+3. Measure and record grid load time (should be < 3 seconds)
+4. Test sorting by Count column - measure performance
+5. Test filtering by Status - measure performance
+6. Verify pagination works correctly with large dataset
+7. Test search functionality with large dataset</content><expected>System handles large datasets efficiently with acceptable performance metrics</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+								</cases>
+							</section>
+
+		<section>
+		<name>Advanced Validation & Error Handling</name>
+		<description>Tests for comprehensive validation and error scenarios</description>
+						<cases>
+												<case>
+				<id>C406907</id>
+				<title>Redirect Target Validation</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Critical</priority>
+																				<estimate>30m</estimate>
+																								<references>VCST-3156</references>
+																				<custom>
+											<automation_type><id>1</id><value>Manual</value></automation_type>
+											<preconds>Active broken link available for editing</pronds>
+											<steps_separated><step>
+<content>1. Open broken link for editing
+2. Enter redirect URL to non-existent product: /non-existent-product
+3. Set status to "Resolved"
+4. Attempt to save
+5. Verify validation error appears indicating target doesn't exist
+6. Enter redirect URL to valid, existing product
+7. Attempt to save
+8. Verify save succeeds with valid target</content><expected>System validates redirect targets exist and prevents invalid redirects</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406908</id>
+				<title>Circular Redirect Prevention</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>High</priority>
+																				<estimate>35m</estimate>
+																								<references>VCST-3156</references>
+																				<custom>
+											<automation_type><id>1</id><value>Manual</value></automation_type>
+											<preconds>Two broken links available for testing</pronds>
+											<steps_separated><step>
+<content>1. Create redirect from /page-a to /page-b
+2. Save and verify
+3. Create redirect from /page-b to /page-a
+4. Attempt to save second redirect
+5. Verify system detects circular reference
+6. Test redirect behavior from frontend
+7. Verify no infinite loops occur</content><expected>Circular redirects are detected and prevented, system remains stable</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406909</id>
+				<title>Database Connection Error Handling</title>
+												<template>Test Case (Steps)</template>
+																<type>Error Handling</type>
+																<priority>High</priority>
+																				<estimate>20m</estimate>
+																								<references>VCST-3156</references>
+																				<custom>
+											<automation_type><id>1</id><value>Manual</value></automation_type>
+											<preconds>Ability to simulate database connectivity issues</pronds>
+											<steps_separated><step>
+<content>1. Simulate database connection failure (disconnect DB)
+2. Attempt to load broken links grid
+3. Verify graceful error message displays
+4. Verify no application crash occurs
+5. Restore database connection
+6. Verify grid loads correctly after restoration
+7. Test that no data corruption occurred</content><expected>Graceful error handling for database issues with user-friendly messages</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+								</cases>
+							</section>
+
+		<section>
+		<name>Integration & End-to-End Testing</name>
+		<description>Tests for complete integration flows and GraphQL functionality</description>
+						<cases>
+												<case>
+				<id>C406910</id>
+				<title>GraphQL Integration Testing</title>
+												<template>Test Case (Steps)</template>
+																<type>Integration</type>
+																<priority>Critical</priority>
+																				<estimate>40m</estimate>
+																								<references>VCST-3156</references>
+																				<custom>
+											<automation_type><id>1</id><value>Manual</value></automation_type>
+											<preconds>Access to GraphQL endpoint and admin panel</preconds>
+											<steps_separated><step>
+<content>1. Execute seoSlug GraphQL query for non-existent URL via GraphQL client
+2. Verify query returns empty result
+3. Check admin broken links grid
+4. Verify broken link event is logged with correct metadata
+5. Execute same query again
+6. Verify hit count increments in admin grid
+7. Verify all GraphQL response fields are correct</content><expected>GraphQL integration correctly creates and updates broken link entries</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406911</id>
+				<title>Frontend-Backend Integration Flow</title>
+												<template>Test Case (Steps)</template>
+																<type>End-to-End</type>
+																<priority>Critical</priority>
+																				<estimate>45m</estimate>
+																								<references>VCST-3156</references>
+																				<custom>
+											<automation_type><id>1</id><value>Manual</value></automation_type>
+											<preconds>Frontend storefront and admin access</preconds>
+											<steps_separated><step>
+<content>1. Access non-existent URL from frontend: /test-broken-flow
+2. Verify 404 page displays to user
+3. Go to admin and verify broken link logged
+4. Set redirect to valid product page: /valid-product
+5. Save redirect with "Resolved" status
+6. Return to frontend and access original broken URL
+7. Verify redirect works to target product
+8. Verify hit count remains stable (no further increment)
+9. Verify user experience is seamless</content><expected>Complete broken link resolution workflow functions end-to-end</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+								</cases>
+							</section>
+
+		<section>
+		<name>Advanced Grid Operations</name>
+		<description>Tests for complex grid functionality and data management</description>
+						<cases>
+												<case>
+				<id>C406912</id>
+				<title>Advanced Filtering Combinations</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate>30m</estimate>
+																								<references>VCST-3156</references>
+																				<custom>
+											<automation_type><id>1</id><value>Manual</value></automation_type>
+											<preconds>Broken links with various statuses, dates, and languages</preconds>
+											<steps_separated><step>
+<content>1. Apply status filter: "Active"
+2. Verify only Active items show
+3. Add date range filter: Last 7 days
+4. Verify results match both criteria
+5. Add language filter: "en"
+6. Verify results match all three criteria
+7. Clear filters one by one and verify results update
+8. Test filter combinations with "Resolved" and "Accepted" statuses</content><expected>Multiple filters work together correctly and can be combined/removed</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+															<case>
+				<id>C406913</id>
+				<title>Export/Import Functionality</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate>25m</estimate>
+																								<references>VCST-3156</references>
+																				<custom>
+											<automation_type><id>1</id><value>Manual</value></automation_type>
+											<preconds>Broken links data available for export</preconds>
+											<steps_separated><step>
+<content>1. Select subset of broken links (5-10 items)
+2. Use export functionality to generate CSV/Excel
+3. Verify export contains all required fields: Permalink, Status, Count, etc.
+4. Verify export file format is correct and readable
+5. If import functionality available, test importing the exported data
+6. Verify data integrity after import process</content><expected>Export/import functionality works correctly preserving all data</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+								</cases>
+							</section>
+
+		<section>
+		<name>Security & Permissions</name>
+		<description>Tests for role-based access control and security</description>
+						<cases>
+												<case>
+				<id>C406914</id>
+				<title>Role-Based Access Control</title>
+												<template>Test Case (Steps)</template>
+																<type>Security</type>
+																<priority>High</priority>
+																				<estimate>35m</estimate>
+																								<references>VCST-3156</references>
+																				<custom>
+											<automation_type><id>1</id><value>Manual</value></automation_type>
+											<preconds>Different user roles configured: Admin, Editor, Viewer</preconds>
+											<steps_separated><step>
+<content>1. Login as Viewer role
+2. Navigate to broken links section
+3. Verify can view broken links but edit buttons disabled
+4. Attempt direct access to edit functionality
+5. Verify access denied appropriately
+6. Login as Editor role
+7. Verify can edit but not delete broken links
+8. Login as Admin role
+9. Verify full access to all functionality</content><expected>Proper role-based access control with appropriate restrictions per role</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+								</cases>
+							</section>
+
+		<section>
+		<name>Backup & Restore Testing</name>
+		<description>Tests for data persistence and backup/restore functionality</description>
+						<cases>
+												<case>
+				<id>C406915</id>
+				<title>Backup/Restore Broken Links Data</title>
+												<template>Test Case (Steps)</template>
+																<type>Data Integrity</type>
+																<priority>Medium</priority>
+																				<estimate>40m</estimate>
+																								<references>VCST-3156</references>
+																				<custom>
+											<automation_type><id>1</id><value>Manual</value></automation_type>
+											<preconds>System backup/restore functionality available</preconds>
+											<steps_separated><step>
+<content>1. Create 5 broken links with different statuses (Active, Resolved, Accepted)
+2. Set redirects for Resolved items
+3. Record all metadata: counts, timestamps, etc.
+4. Perform complete system backup
+5. Clear/delete broken links data from system
+6. Verify broken links grid is empty
+7. Restore system from backup
+8. Verify all broken links restored with correct data
+9. Verify redirects work correctly after restore</content><expected>Backup/restore completely preserves broken links data and functionality</expected></step>
+</steps_separated>
+									</custom>
+							</case>
+								</cases>
+							</section>
+	</sections>
+</suite> 

@@ -1,0 +1,24 @@
+{
+  "name": "vc-mcp-testing-module",
+  "version": "1.0.0",
+  "description": "",
+  "main": "config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VirtoCommerce/vc-mcp-testing-module.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/VirtoCommerce/vc-mcp-testing-module/issues"
+  },
+  "homepage": "https://github.com/VirtoCommerce/vc-mcp-testing-module#readme",
+  "dependencies": {
+    "dotenv": "^17.1.0"
+  }
+}

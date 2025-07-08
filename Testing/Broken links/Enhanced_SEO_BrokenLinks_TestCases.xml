@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suite>
+	<id>S5653</id>
+	<name>Enhanced SEO Broken Links Testing</name>
+	<description>Enhanced test cases for VCST-3156 covering identified gaps</description>
+	<sections>
+		<section>
+		<name>Multi-Store Testing</name>
+		<description>Tests for multi-store isolation</description>
+		<cases>
+			<case>
+				<id>C406901</id>
+				<title>Multi-Store Broken Link Isolation</title>
+				<template>Test Case (Steps)</template>
+				<type>Functional</type>
+				<priority>Critical</priority>
+				<estimate>30m</estimate>
+				<references>VCST-3156</references>
+				<custom>
+					<automation_type><id>1</id><value>Manual</value></automation_type>
+					<preconds>Two stores configured: Store-A and Store-B</preconds>
+					<steps_separated><step>
+<content>1. Navigate to Store-A storefront and access non-existent URL
+2. Switch to admin and select Store-A context  
+3. Verify broken link appears in Store-A grid only
+4. Create broken link in Store-B
+5. Verify stores show only their own broken links</content><expected>Each store shows only its own broken links</expected></step>
+</steps_separated>
+				</custom>
+			</case>
+			
+			<case>
+				<id>C406902</id>
+				<title>Cross-Store Redirect Validation</title>
+				<template>Test Case (Steps)</template>
+				<type>Functional</type>
+				<priority>High</priority>
+				<estimate>20m</estimate>
+				<references>VCST-3156</references>
+				<custom>
+					<automation_type><id>1</id><value>Manual</value></automation_type>
+					<steps_separated><step>
+<content>1. Open broken link in Store-A
+2. Attempt to set redirect to Store-B product
+3. Verify validation prevents cross-store redirects</content><expected>System prevents invalid cross-store redirects</expected></step>
+</steps_separated>
+				</custom>
+			</case>
+		</cases>
+		</section>
+		
+		<section>
+		<name>Advanced Validation</name>
+		<description>Tests for comprehensive validation scenarios</description>
+		<cases>
+			<case>
+				<id>C406907</id>
+				<title>Redirect Target Validation</title>
+				<template>Test Case (Steps)</template>
+				<type>Functional</type>
+				<priority>Critical</priority>
+				<estimate>30m</estimate>
+				<references>VCST-3156</references>
+				<custom>
+					<automation_type><id>1</id><value>Manual</value></automation_type>
+					<steps_separated><step>
+<content>1. Open broken link for editing
+2. Enter redirect to non-existent product
+3. Verify validation error appears
+4. Enter redirect to valid product
+5. Verify save succeeds</content><expected>System validates redirect targets exist</expected></step>
+</steps_separated>
+				</custom>
+			</case>
+			
+			<case>
+				<id>C406908</id>
+				<title>Circular Redirect Prevention</title>
+				<template>Test Case (Steps)</template>
+				<type>Functional</type>
+				<priority>High</priority>
+				<estimate>35m</estimate>
+				<references>VCST-3156</references>
+				<custom>
+					<automation_type><id>1</id><value>Manual</value></automation_type>
+					<steps_separated><step>
+<content>1. Create redirect from /page-a to /page-b
+2. Create redirect from /page-b to /page-a  
+3. Verify system prevents infinite loops</content><expected>Circular redirects are detected and prevented</expected></step>
+</steps_separated>
+				</custom>
+			</case>
+		</cases>
+		</section>
+		
+		<section>
+		<name>Integration Testing</name>
+		<description>Tests for end-to-end integration</description>
+		<cases>
+			<case>
+				<id>C406910</id>
+				<title>GraphQL Integration Testing</title>
+				<template>Test Case (Steps)</template>
+				<type>Integration</type>
+				<priority>Critical</priority>
+				<estimate>40m</estimate>
+				<references>VCST-3156</references>
+				<custom>
+					<automation_type><id>1</id><value>Manual</value></automation_type>
+					<steps_separated><step>
+<content>1. Execute seoSlug GraphQL query for non-existent URL
+2. Verify broken link event is logged
+3. Verify broken link appears in admin grid
+4. Verify hit count increments on repeat access</content><expected>GraphQL integration creates broken link entries correctly</expected></step>
+</steps_separated>
+				</custom>
+			</case>
+			
+			<case>
+				<id>C406911</id>
+				<title>Frontend-Backend Integration Flow</title>
+				<template>Test Case (Steps)</template>
+				<type>End-to-End</type>
+				<priority>Critical</priority>
+				<estimate>45m</estimate>
+				<references>VCST-3156</references>
+				<custom>
+					<automation_type><id>1</id><value>Manual</value></automation_type>
+					<steps_separated><step>
+<content>1. Access non-existent URL from frontend
+2. Verify broken link logged in backend
+3. Set redirect in admin
+4. Test redirect from frontend
+5. Verify complete workflow functions</content><expected>Complete broken link resolution workflow works end-to-end</expected></step>
+</steps_separated>
+				</custom>
+			</case>
+		</cases>
+		</section>
+	</sections>
+</suite> 

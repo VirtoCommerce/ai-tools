@@ -1,0 +1,449 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcases>
+  <testsuite name="Brands Page Functionality">
+    <testcase>
+      <id>TC_BRAND_001</id>
+      <title>Verify Brands Page Load and Structure</title>
+      <section>Brands Page</section>
+      <priority>High</priority>
+      <type>Functional</type>
+      <estimate>5m</estimate>
+      <references></references>
+      <preconditions>User is logged in and has access to VIRTO_START Demo Store</preconditions>
+      <steps>
+        <step>
+          <number>1</number>
+          <description>Navigate to https://virtostart-demo-store.govirto.com/brands</description>
+        </step>
+        <step>
+          <number>2</number>
+          <description>Wait for page to load completely</description>
+        </step>
+        <step>
+          <number>3</number>
+          <description>Verify page structure and elements</description>
+        </step>
+      </steps>
+      <expected_results>
+        <result>1. Brands page loads successfully without errors</result>
+        <result>2. Top brands section is displayed with featured brands (Apple, Mall of America, Nordstrom, ZurRose)</result>
+        <result>3. Alphabetical navigation A-Z is visible and properly organized</result>
+        <result>4. Search functionality is prominently displayed</result>
+        <result>5. Page title shows Demo - B2B-store - Brands</result>
+        <result>6. All UI elements are properly aligned and responsive</result>
+      </expected_results>
+    </testcase>
+
+    <testcase>
+      <id>TC_BRAND_002</id>
+      <title>Test Brand Search with Full Brand Name</title>
+      <section>Brands Page</section>
+      <priority>High</priority>
+      <type>Functional</type>
+      <estimate>3m</estimate>
+      <references></references>
+      <preconditions>User is on brands page</preconditions>
+      <steps>
+        <step>
+          <number>1</number>
+          <description>Locate the search textbox on brands page</description>
+        </step>
+        <step>
+          <number>2</number>
+          <description>Type Apple in the search box</description>
+        </step>
+        <step>
+          <number>3</number>
+          <description>Click the Search button</description>
+        </step>
+        <step>
+          <number>4</number>
+          <description>Observe the results and interface updates</description>
+        </step>
+      </steps>
+      <expected_results>
+        <result>1. Search executes successfully</result>
+        <result>2. Only Apple brand is displayed in results</result>
+        <result>3. Search button text updates to show Apple Search</result>
+        <result>4. Only section A is displayed, other sections are hidden</result>
+        <result>5. Alphabetical buttons are properly disabled/enabled based on results</result>
+        <result>6. Search term remains in the input field</result>
+      </expected_results>
+    </testcase>
+
+    <testcase>
+      <id>TC_BRAND_003</id>
+      <title>Test Brand Search with Partial Name Substring</title>
+      <section>Brands Page</section>
+      <priority>High</priority>
+      <type>Functional</type>
+      <estimate>3m</estimate>
+      <references></references>
+      <preconditions>User is on brands page</preconditions>
+      <steps>
+        <step>
+          <number>1</number>
+          <description>Clear any existing search terms</description>
+        </step>
+        <step>
+          <number>2</number>
+          <description>Type App in the search box</description>
+        </step>
+        <step>
+          <number>3</number>
+          <description>Click the Search button</description>
+        </step>
+        <step>
+          <number>4</number>
+          <description>Verify partial matching results</description>
+        </step>
+      </steps>
+      <expected_results>
+        <result>1. Search finds multiple brands containing App</result>
+        <result>2. Results show Apple prefix match and GRAINGER APPROVED substring match</result>
+        <result>3. Only sections A and G are displayed</result>
+        <result>4. Alphabetical buttons show only All A and G as active</result>
+        <result>5. Search is case-insensitive</result>
+        <result>6. Dynamic interface updates correctly</result>
+      </expected_results>
+    </testcase>
+
+    <testcase>
+      <id>TC_BRAND_004</id>
+      <title>Test Search Reset Functionality</title>
+      <section>Brands Page</section>
+      <priority>Medium</priority>
+      <type>Functional</type>
+      <estimate>2m</estimate>
+      <references></references>
+      <preconditions>User has performed a search on brands page</preconditions>
+      <steps>
+        <step>
+          <number>1</number>
+          <description>Ensure there is a search term in the search box</description>
+        </step>
+        <step>
+          <number>2</number>
+          <description>Clear the search box (remove all text)</description>
+        </step>
+        <step>
+          <number>3</number>
+          <description>Click the Search button</description>
+        </step>
+        <step>
+          <number>4</number>
+          <description>Verify reset behavior</description>
+        </step>
+      </steps>
+      <expected_results>
+        <result>1. Search box is cleared successfully</result>
+        <result>2. Full brand directory is restored</result>
+        <result>3. All alphabetical sections A-Z are displayed</result>
+        <result>4. All alphabetical filter buttons are restored to proper states</result>
+        <result>5. Complete brand listing is visible</result>
+        <result>6. URL parameters are properly managed</result>
+      </expected_results>
+    </testcase>
+
+    <testcase>
+      <id>TC_BRAND_005</id>
+      <title>Verify Alphabetical Navigation System</title>
+      <section>Brands Page</section>
+      <priority>Medium</priority>
+      <type>Functional</type>
+      <estimate>4m</estimate>
+      <references></references>
+      <preconditions>User is on brands page with full brand listing</preconditions>
+      <steps>
+        <step>
+          <number>1</number>
+          <description>Observe the alphabetical navigation buttons A-Z, 0-9, #</description>
+        </step>
+        <step>
+          <number>2</number>
+          <description>Identify which letters are active vs disabled</description>
+        </step>
+        <step>
+          <number>3</number>
+          <description>Note the visual indicators for each state</description>
+        </step>
+        <step>
+          <number>4</number>
+          <description>Verify the logic of enabled/disabled states</description>
+        </step>
+      </steps>
+      <expected_results>
+        <result>1. Letters with brands are clickable and properly styled</result>
+        <result>2. Letters without brands (Q, 0-9, #) are disabled and visually distinct</result>
+        <result>3. 'All' button is available for full listing</result>
+        <result>4. Visual distinction between active and inactive states is clear</result>
+        <result>5. Complete alphabet coverage A-Z is properly organized</result>
+        <result>6. Navigation is intuitive and user-friendly</result>
+      </expected_results>
+    </testcase>
+
+    <testcase>
+      <id>TC_BRAND_006</id>
+      <title>Test Individual Brand Page Navigation</title>
+      <section>Brand Page</section>
+      <priority>High</priority>
+      <type>Functional</type>
+      <estimate>3m</estimate>
+      <references></references>
+      <preconditions>User is on brands page</preconditions>
+      <steps>
+        <step>
+          <number>1</number>
+          <description>Locate Apple brand in the brand listing</description>
+        </step>
+        <step>
+          <number>2</number>
+          <description>Click on the Apple brand link</description>
+        </step>
+        <step>
+          <number>3</number>
+          <description>Wait for brand page to load</description>
+        </step>
+        <step>
+          <number>4</number>
+          <description>Verify brand page content and functionality</description>
+        </step>
+      </steps>
+      <expected_results>
+        <result>1. Navigation to Apple brand page is successful</result>
+        <result>2. URL updates correctly to /Brands/apple</result>
+        <result>3. Page title updates appropriately</result>
+        <result>4. Brand-specific product catalog is displayed</result>
+        <result>5. Only Apple products are shown</result>
+        <result>6. All catalog functionality is available sorting filtering grid/list view</result>
+        <result>7. Navigation breadcrumbs are properly maintained</result>
+      </expected_results>
+    </testcase>
+
+    <testcase>
+      <id>TC_BRAND_007</id>
+      <title>Verify Brand Page Catalog Functionality</title>
+      <section>Brand Page</section>
+      <priority>High</priority>
+      <type>Functional</type>
+      <estimate>5m</estimate>
+      <references></references>
+      <preconditions>User is on a specific brand page eg Apple</preconditions>
+      <steps>
+        <step>
+          <number>1</number>
+          <description>Verify sorting options are available</description>
+        </step>
+        <step>
+          <number>2</number>
+          <description>Test grid/list view toggle</description>
+        </step>
+        <step>
+          <number>3</number>
+          <description>Check filtering options</description>
+        </step>
+        <step>
+          <number>4</number>
+          <description>Verify product display</description>
+        </step>
+        <step>
+          <number>5</number>
+          <description>Test navigation within brand catalog</description>
+        </step>
+      </steps>
+      <expected_results>
+        <result>1. Sorting dropdown shows all options Featured Price Alphabetical Date</result>
+        <result>2. Grid and List view buttons work correctly</result>
+        <result>3. Filter options are available Purchased before Show in stock Available at branches</result>
+        <result>4. Products displayed are only from the selected brand</result>
+        <result>5. All catalog features function correctly within brand context</result>
+        <result>6. Navigation maintains brand context</result>
+      </expected_results>
+    </testcase>
+
+    <testcase>
+      <id>TC_BRAND_008</id>
+      <title>Test Brand Page URL and SEO Structure</title>
+      <section>Brand Page</section>
+      <priority>Medium</priority>
+      <type>Technical</type>
+      <estimate>2m</estimate>
+      <references></references>
+      <preconditions>User has access to multiple brand pages</preconditions>
+      <steps>
+        <step>
+          <number>1</number>
+          <description>Navigate to different brand pages (Apple, Microsoft, Samsung)</description>
+        </step>
+        <step>
+          <number>2</number>
+          <description>Verify URL structure for each brand</description>
+        </step>
+        <step>
+          <number>3</number>
+          <description>Check page titles and meta information</description>
+        </step>
+        <step>
+          <number>4</number>
+          <description>Test direct URL access</description>
+        </step>
+      </steps>
+      <expected_results>
+        <result>1. URLs follow SEO-friendly format '/Brands/brand-name'</result>
+        <result>2. Brand names in URLs are properly formatted (lowercase, hyphenated)</result>
+        <result>3. Page titles reflect the brand name and context</result>
+        <result>4. Direct URL access works correctly</result>
+        <result>5. URLs are shareable and bookmarkable</result>
+        <result>6. No broken links or 404 errors</result>
+      </expected_results>
+    </testcase>
+
+    <testcase>
+      <id>TC_BRAND_009</id>
+      <title>Verify Brand Directory Completeness</title>
+      <section>Brands Page</section>
+      <priority>Medium</priority>
+      <type>Functional</type>
+      <estimate>4m</estimate>
+      <references></references>
+      <preconditions>User is on brands page</preconditions>
+      <steps>
+        <step>
+          <number>1</number>
+          <description>Navigate through all alphabetical sections</description>
+        </step>
+        <step>
+          <number>2</number>
+          <description>Count approximate number of brands</description>
+        </step>
+        <step>
+          <number>3</number>
+          <description>Verify brand diversity and quality</description>
+        </step>
+        <step>
+          <number>4</number>
+          <description>Check for major brand presence</description>
+        </step>
+      </steps>
+      <expected_results>
+        <result>1. Brand directory contains 200+ brands</result>
+        <result>2. Brands span multiple categories (electronics, industrial, consumer goods, food &amp; beverage)</result>
+        <result>3. Major brands are present (Apple, Microsoft, Samsung, Nintendo, HP, Coca-Cola)</result>
+        <result>4. Geographic diversity is represented</result>
+        <result>5. Brand names are properly formatted and displayed</result>
+        <result>6. No duplicate or broken brand entries</result>
+      </expected_results>
+    </testcase>
+
+    <testcase>
+      <id>TC_BRAND_010</id>
+      <title>Test Brand Search Performance and Responsiveness</title>
+      <section>Brands Page</section>
+      <priority>Medium</priority>
+      <type>Performance</type>
+      <estimate>3m</estimate>
+      <references></references>
+      <preconditions>User is on brands page</preconditions>
+      <steps>
+        <step>
+          <number>1</number>
+          <description>Perform multiple searches with different terms</description>
+        </step>
+        <step>
+          <number>2</number>
+          <description>Measure response time for search results</description>
+        </step>
+        <step>
+          <number>3</number>
+          <description>Test rapid search term changes</description>
+        </step>
+        <step>
+          <number>4</number>
+          <description>Verify no lag or performance issues</description>
+        </step>
+      </steps>
+      <expected_results>
+        <result>1. Search results appear instantly without page reload</result>
+        <result>2. Real-time filtering works smoothly</result>
+        <result>3. No lag when typing or changing search terms</result>
+        <result>4. Interface remains responsive during search operations</result>
+        <result>5. No browser errors or console warnings</result>
+        <result>6. Search performs well with both short and long search terms</result>
+      </expected_results>
+    </testcase>
+
+    <testcase>
+      <id>TC_BRAND_011</id>
+      <title>Verify Brand Page Integration with Main Navigation</title>
+      <section>Brand Page</section>
+      <priority>Medium</priority>
+      <type>Functional</type>
+      <estimate>3m</estimate>
+      <references></references>
+      <preconditions>User is on a brand page</preconditions>
+      <steps>
+        <step>
+          <number>1</number>
+          <description>From a brand page, test main site navigation</description>
+        </step>
+        <step>
+          <number>2</number>
+          <description>Use top navigation menu items</description>
+        </step>
+        <step>
+          <number>3</number>
+          <description>Test breadcrumb navigation</description>
+        </step>
+        <step>
+          <number>4</number>
+          <description>Verify integration with site features</description>
+        </step>
+      </steps>
+      <expected_results>
+        <result>1. Main navigation remains fully functional on brand pages</result>
+        <result>2. Breadcrumb navigation shows proper hierarchy</result>
+        <result>3. Site features (cart, lists, search) work correctly</result>
+        <result>4. Brand context is maintained where appropriate</result>
+        <result>5. User can navigate back to main catalog seamlessly</result>
+        <result>6. No functionality is lost or broken on brand pages</result>
+      </expected_results>
+    </testcase>
+
+    <testcase>
+      <id>TC_BRAND_012</id>
+      <title>Test Brand Page Mobile Responsiveness</title>
+      <section>Brand Page</section>
+      <priority>Medium</priority>
+      <type>UI/UX</type>
+      <estimate>4m</estimate>
+      <references></references>
+      <preconditions>User has mobile device or browser developer tools</preconditions>
+      <steps>
+        <step>
+          <number>1</number>
+          <description>Access brand page on mobile device or simulate mobile view</description>
+        </step>
+        <step>
+          <number>2</number>
+          <description>Test search functionality on mobile</description>
+        </step>
+        <step>
+          <number>3</number>
+          <description>Verify alphabetical navigation on smaller screens</description>
+        </step>
+        <step>
+          <number>4</number>
+          <description>Check touch interactions</description>
+        </step>
+      </steps>
+      <expected_results>
+        <result>1. Brand page is fully responsive on mobile devices</result>
+        <result>2. Search functionality works correctly on touch devices</result>
+        <result>3. Alphabetical navigation adapts to mobile layout</result>
+        <result>4. Touch interactions are smooth and accurate</result>
+        <result>5. Text and buttons are appropriately sized for mobile</result>
+        <result>6. No horizontal scrolling or layout issues</result>
+      </expected_results>
+    </testcase>
+  </testsuite>
+</testcases> 

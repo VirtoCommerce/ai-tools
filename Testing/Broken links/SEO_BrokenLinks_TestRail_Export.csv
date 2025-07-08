@@ -1,0 +1,181 @@
+ID,Title,Type,Priority,Template,Section,Preconditions,Steps,Expected Result,Actual Result,Status,Automation Type,Environment
+C406875,Display 'Broken Page' widget in dashboard,Test Case,High,Test Case (Steps),Admin Interface Functionality,"1. Admin user logged into vcst-qa environment
+2. User has access to B2B-store
+3. Browser cache and local storage cleared
+4. Console is open for monitoring","1. Navigate to Admin panel (https://vcst-qa.govirto.com)
+2. Login with admin credentials (admin/Password3)
+3. Navigate to Stores section
+4. Click on B2B-store
+5. Verify 'Active broken links' widget is visible on store dashboard","1. 'Active broken links' widget should be visible on dashboard
+2. Widget should display current count of active broken links
+3. Widget should be clickable to access broken links grid
+4. No console errors should be present","✅ Widget displayed correctly showing '5' active broken links
+✅ Widget properly styled and positioned
+✅ Click functionality working
+✅ No console errors detected",PASSED,Manual,vcst-qa
+C406876,Widget opens scoped Broken Page grid,Test Case,High,Test Case (Steps),Admin Interface Functionality,"1. C406875 test case passed
+2. 'Active broken links' widget is visible
+3. Admin user has appropriate permissions","1. Click on 'Active broken links' widget
+2. Wait for grid to load
+3. Verify grid opens with broken links data
+4. Verify grid shows appropriate columns (Permalink, Status, Hit count)
+5. Check that grid is scoped to current store","1. Grid should open successfully
+2. Grid should display broken links data
+3. Columns should include: Permalink, Status, Hit count
+4. Data should be scoped to B2B-store only
+5. Grid should show total count of items","✅ Grid opened successfully showing 11 broken links
+✅ All required columns present and functional
+✅ Data properly scoped to B2B-store
+✅ Grid showing correct item count
+✅ No console errors",PASSED,Manual,vcst-qa
+C406877,Grid provides multi-select management,Test Case,High,Test Case (Steps),Admin Interface Functionality,"1. C406876 test case passed
+2. Broken links grid is open and populated
+3. Multiple broken link entries are visible","1. Click on checkbox for first broken link row
+2. Click on checkbox for second broken link row
+3. Verify multi-select functionality works
+4. Verify Delete button becomes enabled
+5. Check bulk operation controls are available","1. Individual checkboxes should be selectable
+2. Multiple rows can be selected simultaneously
+3. Delete button should become enabled when items selected
+4. Bulk operation controls should be accessible
+5. Selection state should be maintained","✅ First checkbox selected successfully
+✅ Second checkbox selected successfully
+✅ Delete button enabled for bulk operations
+✅ Multi-select functionality working correctly
+✅ Selection state maintained properly",PASSED,Manual,vcst-qa
+C406878,Column sorting functionality,Test Case,Medium,Test Case (Steps),Admin Interface Functionality,"1. C406876 test case passed
+2. Broken links grid is open with data
+3. Grid contains multiple rows for sorting test","1. Click on 'Status' column header
+2. Verify data is sorted by Status
+3. Check sort indicator is visible
+4. Click on 'Permalink' column header
+5. Verify sorting works for different columns","1. Clicking column headers should sort data
+2. Sort indicator should be visible (ascending/descending)
+3. Data should be reordered correctly
+4. Multiple columns should support sorting
+5. Sort state should be maintained","✅ Status column sorting working correctly
+✅ Data reordered alphabetically (Accepted → Active → Resolved)
+✅ Sort indicator visible and accurate
+✅ Multiple column sorting functional
+✅ Sort state maintained properly",PASSED,Manual,vcst-qa
+C406879,Search functionality,Test Case,Medium,Test Case (Steps),Admin Interface Functionality,"1. C406876 test case passed
+2. Broken links grid is open with data
+3. Search box is visible and accessible","1. Locate search keyword textbox
+2. Enter search term 'fake' in search box
+3. Press Enter or trigger search
+4. Verify results are filtered
+5. Check item count updates correctly","1. Search box should accept input
+2. Search should filter results based on keyword
+3. Only matching entries should be displayed
+4. Item count should update to reflect filtered results
+5. Search should be case-insensitive","✅ Search term 'fake' entered successfully
+✅ Results filtered from 11 to 2 items
+✅ Only matching entries displayed ('fake', 'fake1')
+✅ Item count updated dynamically
+✅ Search functionality working perfectly",PASSED,Manual,vcst-qa
+C406880,Status filtering/management functionality,Test Case,High,Test Case (Steps),Core Business Functionality,"1. C406876 test case passed
+2. Broken links grid is open
+3. At least one broken link entry is available for testing","1. Click on a broken link row to open details
+2. Locate Status dropdown field
+3. Click on Status dropdown
+4. Verify all status options are available (Active, Resolved, Accepted)
+5. Select 'Resolved' status
+6. Save changes","1. Broken link detail view should open
+2. Status dropdown should be accessible
+3. All three status options should be available
+4. Status change should be successful
+5. Changes should be saved and reflected in grid","✅ Broken link detail opened successfully
+✅ Status dropdown accessible and functional
+✅ All status options available (Active, Resolved, Accepted)
+✅ Status changed from 'Active' to 'Resolved'
+✅ Changes saved successfully",PASSED,Manual,vcst-qa
+C406881,Redirect URL creation and management,Test Case,Critical,Test Case (Steps),Core Business Functionality,"1. C406880 test case passed
+2. Broken link detail view is open
+3. Status is set to 'Resolved'","1. Locate 'Redirect URL' textbox
+2. Enter valid redirect URL: 'https://vcst-qa-storefront.govirto.com/en-us/catalog'
+3. Verify URL is accepted and formatted
+4. Click Save button
+5. Verify changes are saved successfully","1. Redirect URL field should accept input
+2. URL should be validated and formatted correctly
+3. Save operation should complete successfully
+4. URL should be stored in system
+5. Grid should reflect updated information","✅ Redirect URL entered successfully
+✅ URL automatically cleaned/optimized to '/catalog'
+✅ Save operation completed successfully
+✅ Changes reflected in system
+✅ Grid updated with new information",PASSED,Manual,vcst-qa
+C406882,Bulk operations management,Test Case,High,Test Case (Steps),Core Business Functionality,"1. C406877 test case passed
+2. Broken links grid is open
+3. Multi-select functionality is working","1. Select multiple broken link entries using checkboxes
+2. Verify Delete button is enabled
+3. Check that bulk operations toolbar is accessible
+4. Verify selection count is displayed
+5. Test bulk selection/deselection functionality","1. Multiple items should be selectable
+2. Delete button should become enabled
+3. Bulk operations should be accessible
+4. Selection count should be accurate
+5. Bulk operations should be functional","✅ Multiple items selected successfully
+✅ Delete button enabled and functional
+✅ Bulk operations toolbar accessible
+✅ Selection count accurate and displayed
+✅ Bulk management capabilities working",PASSED,Manual,vcst-qa
+C406890,Frontend 404 page detection,Test Case,Critical,Test Case (Steps),End-to-End Frontend Validation,"1. Frontend URL accessible (https://vcst-qa-storefront.govirto.com)
+2. Known broken link '/not-found' exists in system
+3. Browser console is open for monitoring","1. Navigate to frontend URL
+2. Access broken link: https://vcst-qa-storefront.govirto.com/not-found
+3. Verify 404 page is displayed
+4. Check page title and content
+5. Verify proper 404 page structure","1. 404 page should be displayed for broken links
+2. Page title should indicate '404 Page not found'
+3. Proper error message should be shown
+4. Navigation options should be provided
+5. Page should maintain site structure","✅ 404 page displayed correctly
+✅ Page title: 'QA & 404 Page not found'
+✅ Proper error message: 'Page not found'
+✅ Home page link provided for navigation
+✅ Site header/footer maintained",PASSED,Manual,vcst-qa
+C406891,Frontend redirect functionality,Test Case,Critical,Test Case (Steps),End-to-End Frontend Validation,"1. C406881 test case passed
+2. Broken link has been configured with redirect URL
+3. Frontend is accessible","1. Navigate to broken link with configured redirect (/fake)
+2. Verify automatic redirect occurs
+3. Check final destination URL
+4. Verify page loads correctly
+5. Confirm redirect is seamless","1. Broken link should automatically redirect
+2. User should reach configured destination page
+3. Redirect should be immediate and seamless
+4. Destination page should load fully
+5. No 404 error should be visible to user","✅ Automatic redirect from '/fake' to '/catalog'
+✅ Destination page loaded correctly
+✅ Redirect was immediate and seamless
+✅ Full catalog page functionality working
+✅ No 404 error visible to users",PASSED,Manual,vcst-qa
+C406892,Complete redirect workflow validation,Test Case,Critical,Test Case (Steps),End-to-End Frontend Validation,"1. C406880 and C406881 test cases passed
+2. Specific test broken link '/fake1' configured
+3. Redirect URL set to '/contacts'","1. Access broken link: https://vcst-qa-storefront.govirto.com/fake1
+2. Verify automatic redirect to /contacts
+3. Check final URL and page content
+4. Verify page title and functionality
+5. Confirm complete workflow is working","1. Broken link should redirect to /contacts page
+2. Final URL should be correct
+3. Contacts page should load with full functionality
+4. Page title should reflect correct destination
+5. Complete admin-to-frontend workflow validated","✅ Automatic redirect from '/fake1' to '/contacts'
+✅ Final URL: https://vcst-qa-storefront.govirto.com/contacts
+✅ Contacts page loaded with full functionality
+✅ Page title: 'QA & Contacts'
+✅ Complete workflow validated successfully",PASSED,Manual,vcst-qa
+C406893,Hit count tracking validation,Test Case,High,Test Case (Steps),End-to-End Frontend Validation,"1. Previous frontend tests completed
+2. Admin dashboard accessible
+3. Broken links grid contains hit count data","1. Access admin dashboard and navigate to broken links grid
+2. Note current hit count for 'not-found' broken link
+3. Navigate to frontend and access /not-found URL
+4. Return to admin dashboard
+5. Verify hit count has been updated","1. Initial hit count should be recorded
+2. Frontend visit should be tracked
+3. Hit count should increment after visit
+4. Admin dashboard should reflect updated count
+5. Tracking should be real-time and accurate","✅ Initial hit count recorded (7 hits)
+✅ Frontend visit to /not-found completed
+✅ Hit count tracking working accurately
+✅ Admin dashboard reflects current data
+✅ Real-time tracking system functional",PASSED,Manual,vcst-qa 

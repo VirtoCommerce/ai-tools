@@ -1,0 +1,110 @@
+ID,Title,Section,Priority,Type,Estimate,References,Preconditions,Steps,Expected Results
+TC_BRAND_001,Verify Brands Page Load and Structure,Brands Page,High,Functional,5m,,User is logged in and has access to VIRTO_START Demo Store,"1. Navigate to https://virtostart-demo-store.govirto.com/brands
+2. Wait for page to load completely
+3. Verify page structure and elements","1. Brands page loads successfully without errors
+2. Top brands section is displayed with featured brands (Apple, Mall of America, Nordstrom, ZurRose)
+3. Alphabetical navigation A-Z is visible and properly organized
+4. Search functionality is prominently displayed
+5. Page title shows 'Demo - B2B-store - Brands'
+6. All UI elements are properly aligned and responsive"
+TC_BRAND_002,Test Brand Search with Full Brand Name,Brands Page,High,Functional,3m,,User is on brands page,"1. Locate the search textbox on brands page
+2. Type 'Apple' in the search box
+3. Click the Search button
+4. Observe the results and interface updates","1. Search executes successfully
+2. Only 'Apple' brand is displayed in results
+3. Search button text updates to show 'Apple Search'
+4. Only section A is displayed, other sections are hidden
+5. Alphabetical buttons are properly disabled/enabled based on results
+6. Search term remains in the input field"
+TC_BRAND_003,Test Brand Search with Partial Name (Substring),Brands Page,High,Functional,3m,,User is on brands page,"1. Clear any existing search terms
+2. Type 'App' in the search box
+3. Click the Search button
+4. Verify partial matching results","1. Search finds multiple brands containing 'App'
+2. Results show 'Apple' (prefix match) and 'GRAINGER APPROVED' (substring match)
+3. Only sections A and G are displayed
+4. Alphabetical buttons show only 'All', 'A', and 'G' as active
+5. Search is case-insensitive
+6. Dynamic interface updates correctly"
+TC_BRAND_004,Test Search Reset Functionality,Brands Page,Medium,Functional,2m,,User has performed a search on brands page,"1. Ensure there is a search term in the search box
+2. Clear the search box (remove all text)
+3. Click the Search button
+4. Verify reset behavior","1. Search box is cleared successfully
+2. Full brand directory is restored
+3. All alphabetical sections A-Z are displayed
+4. All alphabetical filter buttons are restored to proper states
+5. Complete brand listing is visible
+6. URL parameters are properly managed"
+TC_BRAND_005,Verify Alphabetical Navigation System,Brands Page,Medium,Functional,4m,,User is on brands page with full brand listing,"1. Observe the alphabetical navigation buttons A-Z, 0-9, #
+2. Identify which letters are active vs disabled
+3. Note the visual indicators for each state
+4. Verify the logic of enabled/disabled states","1. Letters with brands are clickable and properly styled
+2. Letters without brands (Q, 0-9, #) are disabled and visually distinct
+3. 'All' button is available for full listing
+4. Visual distinction between active and inactive states is clear
+5. Complete alphabet coverage A-Z is properly organized
+6. Navigation is intuitive and user-friendly"
+TC_BRAND_006,Test Individual Brand Page Navigation,Brand Page,High,Functional,3m,,User is on brands page,"1. Locate 'Apple' brand in the brand listing
+2. Click on the Apple brand link
+3. Wait for brand page to load
+4. Verify brand page content and functionality","1. Navigation to Apple brand page is successful
+2. URL updates correctly to '/Brands/apple'
+3. Page title updates appropriately
+4. Brand-specific product catalog is displayed
+5. Only Apple products are shown
+6. All catalog functionality is available (sorting, filtering, grid/list view)
+7. Navigation breadcrumbs are properly maintained"
+TC_BRAND_007,Verify Brand Page Catalog Functionality,Brand Page,High,Functional,5m,,User is on a specific brand page (e.g., Apple),"1. Verify sorting options are available
+2. Test grid/list view toggle
+3. Check filtering options
+4. Verify product display
+5. Test navigation within brand catalog","1. Sorting dropdown shows all options (Featured, Price, Alphabetical, Date)
+2. Grid and List view buttons work correctly
+3. Filter options are available: 'Purchased before', 'Show in stock', 'Available at branches'
+4. Products displayed are only from the selected brand
+5. All catalog features function correctly within brand context
+6. Navigation maintains brand context"
+TC_BRAND_008,Test Brand Page URL and SEO Structure,Brand Page,Medium,Technical,2m,,User has access to multiple brand pages,"1. Navigate to different brand pages (Apple, Microsoft, Samsung)
+2. Verify URL structure for each brand
+3. Check page titles and meta information
+4. Test direct URL access","1. URLs follow SEO-friendly format '/Brands/brand-name'
+2. Brand names in URLs are properly formatted (lowercase, hyphenated)
+3. Page titles reflect the brand name and context
+4. Direct URL access works correctly
+5. URLs are shareable and bookmarkable
+6. No broken links or 404 errors"
+TC_BRAND_009,Verify Brand Directory Completeness,Brands Page,Medium,Functional,4m,,User is on brands page,"1. Navigate through all alphabetical sections
+2. Count approximate number of brands
+3. Verify brand diversity and quality
+4. Check for major brand presence","1. Brand directory contains 200+ brands
+2. Brands span multiple categories (electronics, industrial, consumer goods, food & beverage)
+3. Major brands are present (Apple, Microsoft, Samsung, Nintendo, HP, Coca-Cola)
+4. Geographic diversity is represented
+5. Brand names are properly formatted and displayed
+6. No duplicate or broken brand entries"
+TC_BRAND_010,Test Brand Search Performance and Responsiveness,Brands Page,Medium,Performance,3m,,User is on brands page,"1. Perform multiple searches with different terms
+2. Measure response time for search results
+3. Test rapid search term changes
+4. Verify no lag or performance issues","1. Search results appear instantly without page reload
+2. Real-time filtering works smoothly
+3. No lag when typing or changing search terms
+4. Interface remains responsive during search operations
+5. No browser errors or console warnings
+6. Search performs well with both short and long search terms"
+TC_BRAND_011,Verify Brand Page Integration with Main Navigation,Brand Page,Medium,Functional,3m,,User is on a brand page,"1. From a brand page, test main site navigation
+2. Use top navigation menu items
+3. Test breadcrumb navigation
+4. Verify integration with site features","1. Main navigation remains fully functional on brand pages
+2. Breadcrumb navigation shows proper hierarchy
+3. Site features (cart, lists, search) work correctly
+4. Brand context is maintained where appropriate
+5. User can navigate back to main catalog seamlessly
+6. No functionality is lost or broken on brand pages"
+TC_BRAND_012,Test Brand Page Mobile Responsiveness,Brand Page,Medium,UI/UX,4m,,User has mobile device or browser developer tools,"1. Access brand page on mobile device or simulate mobile view
+2. Test search functionality on mobile
+3. Verify alphabetical navigation on smaller screens
+4. Check touch interactions","1. Brand page is fully responsive on mobile devices
+2. Search functionality works correctly on touch devices
+3. Alphabetical navigation adapts to mobile layout
+4. Touch interactions are smooth and accurate
+5. Text and buttons are appropriately sized for mobile
+6. No horizontal scrolling or layout issues" 
