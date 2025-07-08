@@ -1,11 +1,11 @@
-1. Execute smoke testing for VSCT-QA environment. 
+1. Execute smoke testing for VCST environment. 
 2. Clear cache, clear local storage in browser
-3. Use get_variables_env.js
+3. Read get_variables_env.js
 4. Sign in as a FRONT_ADMIN via standart form
 5. Execute smoke testing. Use file Frontend.TestSuit.xml
-6. For Admin site/Back office scenariors open a new tab or switches between tabs and go to BACK URL
+6. For Admin site/Back office scenariors open a new tab or switches between tabs and go to BACK_URL
 7. Open console and keep it open
-8. After any action fetch errors in console and print if any critical exist
+8. After any action fetch errors (include JavaScript errors) in console and print it out
 9. Create a report after each section (ID, Title, Result, Detailed error)
 10. If the bugs were found create a bug report with Test case ID
 
