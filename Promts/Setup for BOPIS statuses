@@ -1,0 +1,10 @@
+1. Upload variables. Use file get_variables_env.js
+2. Go to VCST_FRONT_URL. 
+3. Sign in as a FRONT_ADMIN via standart form
+4. Execute test cases from BOPIS Order status. Use file Multi-step checkout.csv
+5. For Admin site/Back office scenariors open a second tab and go to BACK_URL
+6. Open Dev tools F12 > console and keep it open
+7. After any action fetch errors (include JavaScript errors) in console and print it out
+8. Make a logout after testing. Click on User name in the upper right corner in the top header, and click the icon Logout
+9. Create a report after each section (ID, Title, Result, Detailed error)
+10. If the bugs were found create a bug report with Test case ID

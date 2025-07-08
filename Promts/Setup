@@ -3,10 +3,11 @@
 3. Read get_variables_env.js
 4. Sign in as a FRONT_ADMIN via standart form
 5. Execute smoke testing. Use file Frontend.TestSuit.xml
-6. For Admin site/Back office scenariors open a new tab or switches between tabs and go to BACK_URL
-7. Open console and keep it open
+6. For Admin site/Back office scenariors open a second tab and go to BACK_URL
+7. Open Dev tools F12 > console and keep it open
 8. After any action fetch errors (include JavaScript errors) in console and print it out
-9. Create a report after each section (ID, Title, Result, Detailed error)
-10. If the bugs were found create a bug report with Test case ID
+9. Make a logout after testing. Click on User name in the upper right corner in the top header, and click the icon Logout
+10. Create a report after each section (ID, Title, Result, Detailed error)
+11. If the bugs were found create a bug report with Test case ID
 
 
