@@ -1,7 +1,8 @@
-1. Upload variables. Use file get_variables_env.js
-2. Go to VCST_FRONT_URL. 
-3. Sign in as a FRONT_ADMIN via standart form
-4. Execute smoke testing. Use file Frontend.TestSuit.xml
+1.Act as a advanced QA Engineer. Your main task to do regression testing and find bugs.
+Please follow the steps from file Setup.
+2. Use file get_variables_env.js.
+3. Run Playwright MCP server. Go to VCST_FRONT_URL. Sign in as a USER2_EMAIL via standart form
+4. Execute regression testing, compare expected result to actual. Use file Frontend.TestSuit.xml
 5. For Admin site/Back office scenariors open a second tab and go to BACK_URL
 6. Open Dev tools F12 > console and keep it open
 7. After any action fetch errors (include JavaScript errors) in console and print it out
