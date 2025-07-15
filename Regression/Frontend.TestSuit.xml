@@ -25103,6 +25103,280 @@ Only 4 products are displayed
 </steps_separated>
 									</custom>
 							</case>
+														<case>
+				<id>C395450</id>
+				<title>PDP &gt; Variations &gt; Filters &gt; Show in Stock checkbox functionality</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate>15m</estimate>
+																								<references>VCST-3626</references>
+																				<custom>
+											<preconds>1. Product with variations exists in the system (at least 2 variations)
+2. At least one variation has stock &gt; 0, one variation has stock = 0 (out of stock)
+3. Navigate to product details page with variations</preconds>
+											<steps_separated>
+												<step>
+													<content>1. Open product details page with variations
+2. Click "Filters" button
+3. Verify "Show in stock" checkbox status</content>
+													<expected>1. Product variations are displayed (both in-stock and out-of-stock)
+2. Filters dialog opens successfully
+3. "Show in stock" checkbox is checked by default</expected>
+												</step>
+												<step>
+													<content>1. Uncheck "Show in stock" checkbox
+2. Click "Apply" button
+3. Observe variations displayed</content>
+													<expected>1. All variations are displayed (including out-of-stock items)
+2. Out-of-stock variations show appropriate indicators</expected>
+												</step>
+												<step>
+													<content>1. Check "Show in stock" checkbox again
+2. Click "Apply" button
+3. Observe variations displayed</content>
+													<expected>1. Only in-stock variations are displayed
+2. Out-of-stock variations are hidden
+3. URL contains availability:InStock parameter</expected>
+												</step>
+											</steps_separated>
+									</custom>
+							</case>
+														<case>
+				<id>C395451</id>
+				<title>PDP &gt; Variations &gt; Filters &gt; Reset Filters functionality with Show in Stock</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>High</priority>
+																				<estimate>10m</estimate>
+																								<references>VCST-3626</references>
+																				<custom>
+											<preconds>1. Product with variations exists (at least 2 variations)
+2. "Show in stock" filter is enabled by default
+3. At least one other filter option is available (e.g., Type, Color, etc.)</preconds>
+											<steps_separated>
+												<step>
+													<content>1. Open product details page with variations
+2. Click "Filters" button
+3. Verify "Show in stock" is checked
+4. Select any additional filter (e.g., Type filter)
+5. Click "Apply" to apply both filters</content>
+													<expected>1. Filters dialog opens
+2. "Show in stock" checkbox is checked
+3. Additional filter is applied successfully
+4. Variations list is filtered by both criteria
+5. URL contains both filter parameters</expected>
+												</step>
+												<step>
+													<content>1. Click "Reset filters" button
+2. Check variations displayed
+3. Open filters dialog again
+4. Verify "Show in stock" checkbox status</content>
+													<expected>1. Additional filters are reset (filter badges removed)
+2. CRITICAL: "Show in stock" filter should remain applied (as per catalog behavior)
+3. Only in-stock variations should still be displayed
+4. "Show in stock" checkbox should remain checked
+5. URL should still contain availability:InStock parameter</expected>
+												</step>
+											</steps_separated>
+									</custom>
+							</case>
+														<case>
+				<id>C395452</id>
+				<title>PDP &gt; Variations &gt; Filters &gt; Multiple filter combinations</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate>20m</estimate>
+																								<references></references>
+																				<custom>
+											<preconds>1. Product with multiple variations and multiple filter options (Type, Color, Size, etc.)
+2. Variations have different properties and stock levels</preconds>
+											<steps_separated>
+												<step>
+													<content>1. Open product details page with variations
+2. Click "Filters" button
+3. Apply multiple filters (e.g., Type + Color + Show in stock)
+4. Click "Apply"</content>
+													<expected>1. All selected filters are applied correctly
+2. Variations list shows only items matching all criteria
+3. Filter badges display applied filters
+4. URL contains all filter parameters</expected>
+												</step>
+												<step>
+													<content>1. Remove one filter using filter badge "X" button
+2. Observe results
+3. Remove another filter
+4. Verify remaining filters still work</content>
+													<expected>1. Individual filter removal works correctly
+2. Variations list updates to show appropriate results
+3. Remaining filters continue to function
+4. URL parameters update accordingly</expected>
+												</step>
+												<step>
+													<content>1. Apply filters again
+2. Use "Reset filters" button
+3. Verify all filters are cleared except persistent ones</content>
+													<expected>1. User-applied filters are reset
+2. Persistent filters (like "Show in stock") remain active
+3. URL reflects the correct filter state</expected>
+												</step>
+											</steps_separated>
+									</custom>
+							</case>
+														<case>
+				<id>C395453</id>
+				<title>PDP &gt; Variations &gt; Filters &gt; View mode switching with filters</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate>15m</estimate>
+																								<references></references>
+																				<custom>
+											<preconds>1. Product with variations has both List and Table view options
+2. Variations have filterable properties</preconds>
+											<steps_separated>
+												<step>
+													<content>1. Open product details page with variations
+2. Apply filters (including "Show in stock")
+3. Switch from List view to Table view
+4. Verify filters are maintained</content>
+													<expected>1. View mode switches successfully
+2. Applied filters remain active in Table view
+3. Filtered results are displayed correctly
+4. Filter badges remain visible</expected>
+												</step>
+												<step>
+													<content>1. In Table view, modify filters
+2. Switch back to List view
+3. Verify filter changes are maintained</content>
+													<expected>1. Filter modifications work in Table view
+2. Filter changes persist when switching back to List view
+3. Results remain consistent across view modes</expected>
+												</step>
+											</steps_separated>
+									</custom>
+							</case>
+														<case>
+				<id>C395454</id>
+				<title>PDP &gt; Variations &gt; Filters &gt; Filter persistence across page actions</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate>15m</estimate>
+																								<references></references>
+																				<custom>
+											<preconds>1. Product with variations and filterable properties
+2. User is authenticated</preconds>
+											<steps_separated>
+												<step>
+													<content>1. Open product details page with variations
+2. Apply multiple filters including "Show in stock"
+3. Add a variation to cart
+4. Verify filters remain applied</content>
+													<expected>1. Filters are applied successfully
+2. Product addition to cart works
+3. Filter state is maintained after cart action
+4. Filtered variations list remains unchanged</expected>
+												</step>
+												<step>
+													<content>1. With filters applied, add product to wishlist
+2. Use compare functionality
+3. Verify filters persist through these actions</content>
+													<expected>1. Wishlist and compare actions work correctly
+2. Applied filters remain active
+3. Variations display is not affected by these actions</expected>
+												</step>
+												<step>
+													<content>1. Refresh the page
+2. Navigate away and return to the product page
+3. Verify filter state persistence</content>
+													<expected>1. Filter state should persist based on URL parameters
+2. Page refresh maintains applied filters
+3. Navigation back restores previous filter state if URL parameters are preserved</expected>
+												</step>
+											</steps_separated>
+									</custom>
+							</case>
+														<case>
+				<id>C395455</id>
+				<title>MOBILE &gt; PDP &gt; Variations &gt; Filters &gt; Show in Stock checkbox functionality</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>Medium</priority>
+																				<estimate>15m</estimate>
+																								<references>VCST-3626</references>
+																				<custom>
+											<preconds>1. Product with variations exists in the system (at least 2 variations)
+2. At least one variation has stock &gt; 0, one variation has stock = 0 (out of stock)
+3. Navigate to product details page with variations on mobile device</preconds>
+											<steps_separated>
+												<step>
+													<content>1. Open product details page with variations on mobile
+2. Tap "Filters" button
+3. Verify "Show in stock" checkbox status in mobile view</content>
+													<expected>1. Product variations are displayed in mobile layout
+2. Filters dialog opens successfully on mobile
+3. "Show in stock" checkbox is checked by default</expected>
+												</step>
+												<step>
+													<content>1. Uncheck "Show in stock" checkbox on mobile
+2. Tap "Apply" button
+3. Observe variations displayed in mobile view</content>
+													<expected>1. All variations are displayed in mobile layout
+2. Out-of-stock variations show appropriate mobile indicators</expected>
+												</step>
+												<step>
+													<content>1. Check "Show in stock" checkbox again on mobile
+2. Tap "Apply" button
+3. Observe variations displayed</content>
+													<expected>1. Only in-stock variations are displayed in mobile view
+2. Mobile layout properly handles filtered results
+3. URL contains availability:InStock parameter</expected>
+												</step>
+											</steps_separated>
+									</custom>
+							</case>
+														<case>
+				<id>C395456</id>
+				<title>MOBILE &gt; PDP &gt; Variations &gt; Filters &gt; Reset Filters functionality with Show in Stock</title>
+												<template>Test Case (Steps)</template>
+																<type>Functional</type>
+																<priority>High</priority>
+																				<estimate>10m</estimate>
+																								<references>VCST-3626</references>
+																				<custom>
+											<preconds>1. Product with variations exists (at least 2 variations)
+2. "Show in stock" filter is enabled by default
+3. At least one other filter option is available (e.g., Type, Color, etc.)
+4. Testing on mobile device</preconds>
+											<steps_separated>
+												<step>
+													<content>1. Open product details page with variations on mobile
+2. Tap "Filters" button
+3. Verify "Show in stock" is checked
+4. Select any additional filter (e.g., Type filter) on mobile
+5. Tap "Apply" to apply both filters</content>
+													<expected>1. Mobile filters dialog opens correctly
+2. "Show in stock" checkbox is checked in mobile view
+3. Additional filter is applied successfully on mobile
+4. Variations list is filtered by both criteria in mobile layout
+5. URL contains both filter parameters</expected>
+												</step>
+												<step>
+													<content>1. Tap "Reset filters" button on mobile
+2. Check variations displayed in mobile view
+3. Open filters dialog again on mobile
+4. Verify "Show in stock" checkbox status</content>
+													<expected>1. Additional filters are reset (filter badges removed in mobile)
+2. CRITICAL: "Show in stock" filter should remain applied on mobile
+3. Only in-stock variations should still be displayed in mobile layout
+4. "Show in stock" checkbox should remain checked in mobile view
+5. URL should still contain availability:InStock parameter</expected>
+												</step>
+											</steps_separated>
+									</custom>
+							</case>
 								</cases>
 							</section>
 			<section>
