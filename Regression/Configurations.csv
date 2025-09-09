@@ -1,0 +1,634 @@
+"ID","Title","Attachments","Expected Result","Priority","Section","Section Depth","Section Description","Section Hierarchy","Steps","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (References)","Steps (Step)","Type"
+"C395345","Create Configurable Product","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004467","","Medium","Configurable product > Product section","2","","Product details page > Configurable Products > Configurable product > Product section","","Step Description:
+1. Go to admin site > Catalog
+2. Create a physical product (ex. Bed with additional options)
+3.  Click on the Configuration widget
+4. Add new section (ex. Mattress)
+5. Add items
+6. Enable configuration and Save
+
+
+
+Expected Result:
+The product is created","","The product is created","","1. Go to admin site > Catalog
+2. Create a physical product (ex. Bed with additional options)
+3.  Click on the Configuration widget
+4. Add new section (ex. Mattress)
+5. Add items
+6. Enable configuration and Save
+
+
+","Other"
+"","","","","","","","","","","
+Step Description:
+1. Open Frontend
+2. Catalog > Find config product
+3. Check the Product Card
+Expected Result:
+The configurable product is created successfully and appears in the catalog
+The button Customized is shown
+
+---
+
+ ![](index.php?/attachments/get/1000004467) 
+","","The configurable product is created successfully and appears in the catalog
+The button Customized is shown
+
+---
+
+ ![](index.php?/attachments/get/1000004467) 
+","","1. Open Frontend
+2. Catalog > Find config product
+3. Check the Product Card",""
+"","","","","","","","","","","
+Step Description:
+Click the button Customize
+Expected Result:
+The Product details page is open successfully","","The Product details page is open successfully","","Click the button Customize",""
+"C395427","Check Config product card > Open PDP","","","Medium","Configurable product > Product section","2","","Product details page > Configurable Products > Configurable product > Product section","","","","","","","Other"
+"C395426","Search the configuration product > Open PDP","","","Medium","Configurable product > Product section","2","","Product details page > Configurable Products > Configurable product > Product section","","","","","","","Other"
+"C395346","Add Configuration Section","","The configuration section is added with products","Medium","Configurable product > Product section","2","","Product details page > Configurable Products > Configurable product > Product section","1. Open the configurable product(ex. Bike)
+2. Click on Associations widget
+3. Add a new group name configuration section with the specified attributes.
+
+- Name: """"Bike Components""""
+- Optional/Mandatory: Mandatory
+- Quantity: 2
+- Add items
+- Select products
+
+4. Save changes
+5. Check Config product in Frontend","","","","","","Other"
+"C395428","Configurable Product PDP > View","","","Medium","Configurable product > Product section","2","","Product details page > Configurable Products > Configurable product > Product section","","Step Description:
+1. **Navigate to the Configurable Product Page**  
+   - Open the product page (ex. Bed with Additional Options.)
+   - Click the Create Your Own Configuration button
+
+
+
+
+
+Expected Result:
+1. The configuration product page is opened successfully
+2. The Create Your Own Configuration is displayed and scrolling the page to first section
+
+","","1. The configuration product page is opened successfully
+2. The Create Your Own Configuration is displayed and scrolling the page to first section
+
+","","1. **Navigate to the Configurable Product Page**  
+   - Open the product page (ex. Bed with Additional Options.)
+   - Click the Create Your Own Configuration button
+
+
+
+
+","Other"
+"","","","","","","","","","","
+Step Description:
+2. **Verify Page Structure**  
+   - Confirm the title CONFIGURE THE PARAMETERS is displayed at the top of the configuration section.  
+   - Check that sections (e.g., BED LINEN SET, MATTRESS,SOFT PILLOWS, BLANKETS) are displayed as accordions.
+
+Expected Result:
+The CONFIGURE THE PARAMETERS title and sections are displayed correctly.","","The CONFIGURE THE PARAMETERS title and sections are displayed correctly.","","2. **Verify Page Structure**  
+   - Confirm the title CONFIGURE THE PARAMETERS is displayed at the top of the configuration section.  
+   - Check that sections (e.g., BED LINEN SET, MATTRESS,SOFT PILLOWS, BLANKETS) are displayed as accordions.
+",""
+"","","","","","","","","","","
+Step Description:
+3. **Verify Default Section State**  
+   - Ensure that the first section is expanded by default.  
+   - Confirm other sections are collapsed.
+Expected Result:
+Sections expand and collapse as expected.  ","","Sections expand and collapse as expected.  ","","3. **Verify Default Section State**  
+   - Ensure that the first section is expanded by default.  
+   - Confirm other sections are collapsed.",""
+"","","","","","","","","","","
+Step Description:
+4. **Verify Section Options**  
+   - In the section:  
+     - Verify that the following options are displayed with corresponding prices:  
+       - **Mattress cover Fitted sheet, light pink, 90x200 cm**: $20.00  
+       - **Bed with Additional Options Configurable bed**: $299.00  
+       - **None**: No cost.  
+     - Check that a radio button is displayed beside each option.  
+
+
+Expected Result:
+Radio buttons for all options are visible, selectable, and reflect the appropriate prices.  
+The total price updates dynamically based on selected options. 
+
+","","Radio buttons for all options are visible, selectable, and reflect the appropriate prices.  
+The total price updates dynamically based on selected options. 
+
+","","4. **Verify Section Options**  
+   - In the section:  
+     - Verify that the following options are displayed with corresponding prices:  
+       - **Mattress cover Fitted sheet, light pink, 90x200 cm**: $20.00  
+       - **Bed with Additional Options Configurable bed**: $299.00  
+       - **None**: No cost.  
+     - Check that a radio button is displayed beside each option.  
+
+",""
+"","","","","","","","","","","
+Step Description:
+5. **Select Options**  
+   - Select the Mattress cover Fitted sheet, light pink, 90x200 cm option.  
+   - Verify that the radio button is checked and the price updates to reflect the selection.  
+
+Expected Result:
+Radio buttons for all options are visible, selectable, and reflect the appropriate prices.  
+The total price updates dynamically based on selected options.  
+
+","","Radio buttons for all options are visible, selectable, and reflect the appropriate prices.  
+The total price updates dynamically based on selected options.  
+
+","","5. **Select Options**  
+   - Select the Mattress cover Fitted sheet, light pink, 90x200 cm option.  
+   - Verify that the radio button is checked and the price updates to reflect the selection.  
+",""
+"","","","","","","","","","","
+Step Description:
+6. **Verify Price Calculation**  
+   - Verify that the total price updates dynamically in the PRICE AND DELIVERY section based on selected options.
+
+Expected Result:
+The total price updates dynamically based on selected options.","","The total price updates dynamically based on selected options.","","6. **Verify Price Calculation**  
+   - Verify that the total price updates dynamically in the PRICE AND DELIVERY section based on selected options.
+",""
+"","","","","","","","","","","
+Step Description:
+7. **Collapse and Expand Sections**  
+   - Collapse the BED LINEN SET section and verify that it collapses properly.  
+   - Expand another section (e.g., MATTRESS) and confirm it displays the correct placeholder text (e.g., Nothing selected).
+
+
+
+Expected Result:
+Sections expand and collapse as expected.  
+","","Sections expand and collapse as expected.  
+","","7. **Collapse and Expand Sections**  
+   - Collapse the BED LINEN SET section and verify that it collapses properly.  
+   - Expand another section (e.g., MATTRESS) and confirm it displays the correct placeholder text (e.g., Nothing selected).
+
+
+",""
+"","","","","","","","","","","
+Step Description:
+8. **Verify """"None"""" Option**  
+   - Select the None option in the BED LINEN SET section.  
+   - Verify that the price adjusts to exclude the cost of any items in this section.
+
+Expected Result:
+Selecting None removes the cost of items in that section. ","","Selecting None removes the cost of items in that section. ","","8. **Verify ""None"" Option**  
+   - Select the None option in the BED LINEN SET section.  
+   - Verify that the price adjusts to exclude the cost of any items in this section.
+",""
+"","","","","","","","","","","
+Step Description:
+9. **Verify Stock and Add to Cart** [Draft. Skip] 
+   - Confirm the stock indicator (e.g., 12 in stock) updates dynamically based on selected options.  
+   - Click ADD TO CART and verify the selected configuration is included in the cart.
+
+
+Expected Result:
+The cart displays the selected configuration, options, and total price accurately.","","The cart displays the selected configuration, options, and total price accurately.","","9. **Verify Stock and Add to Cart** [Draft. Skip] 
+   - Confirm the stock indicator (e.g., 12 in stock) updates dynamically based on selected options.  
+   - Click ADD TO CART and verify the selected configuration is included in the cart.
+
+",""
+"C395347","Validate Mandatory and Optional Sections","","Mandatory sections have one pre-selected option. Optional sections have 'None' pre-selected by default.
+
+*In the mandatory section, one option is pre-selected by default.*
+*In the optional section, """"None"""" is pre-selected by default*","Medium","Configurable product > Product section","2","","Product details page > Configurable Products > Configurable product > Product section","1. Create mandatory and optional sections.
+*Section 1 (Mandatory): """"Pedals"""" and """"Seat.""""*
+*Section 2 (Optional): """"Basket"""" and """"None.""""*
+2. Save changes and view the product configuration page.","","","","","","Other"
+"C395348","Select several sections > Check Price Calculation","","The product price is the sum of the base product price and the selected options.
+options (e.g., $10 + $20 = $30).","Medium","Configurable product > Product section","2","","Product details page > Configurable Products > Configurable product > Product section","1. Add a configurable product to the cart with selected options.
+
+-Option 1: Pedals ($10)
+-Option 2: Seat ($20)
+2. Check the cart details for the product price.","","","","","","Other"
+"C395352","Set Quantity for configuration > Prices and totals recalculated","","","Medium","Configurable product > Product section","2","","Product details page > Configurable Products > Configurable product > Product section","","Step Description:
+1. Open config product in Front
+2. Select option
+3. Check qty and totals
+Expected Result:
+For each product configuration, verify the quantity is displayed correctly (e.g., """"2"""").
+-the subtotal for each configuration is calculated as (Price per item) x (Quantity).
+-the total cart subtotal matches the sum of all individual product subtotals.
+
+!!Totals are recalculated. Main Price + Option total price
+","","For each product configuration, verify the quantity is displayed correctly (e.g., ""2"").
+-the subtotal for each configuration is calculated as (Price per item) x (Quantity).
+-the total cart subtotal matches the sum of all individual product subtotals.
+
+!!Totals are recalculated. Main Price + Option total price
+","","1. Open config product in Front
+2. Select option
+3. Check qty and totals","Other"
+"C406207","Back office > Create Section with Default Toggle States","","","High","Configurable product > Text section","2","https://virtocommerce.atlassian.net/browse/VCST-3195
+Available from vc-frontend version 2.22.0","Product details page > Configurable Products > Configurable product > Text section","","Step Description:
+1. Navigate to product configuration
+2. Click 'Add Section'
+3. Observe the default toggle states
+Expected Result:
+'Allow Custom Text' is checked
+'Allow Predefined Options' is unchecked","","'Allow Custom Text' is checked
+'Allow Predefined Options' is unchecked","","1. Navigate to product configuration
+2. Click 'Add Section'
+3. Observe the default toggle states","Functional"
+"C406208","Back office > Enable Both Predefined and Custom Text","","","High","Configurable product > Text section","2","https://virtocommerce.atlassian.net/browse/VCST-3195
+Available from vc-frontend version 2.22.0","Product details page > Configurable Products > Configurable product > Text section","","Step Description:
+1. Enable both toggles for Predefined Options and Custom Text
+2. Save the section
+3. View on storefront
+Expected Result:
+Dropdown options + 'Other (Specify Below)' radio + text field are displayed","","Dropdown options + 'Other (Specify Below)' radio + text field are displayed","","1. Enable both toggles for Predefined Options and Custom Text
+2. Save the section
+3. View on storefront","Functional"
+"C406209","Back office > Only Predefined Options Allowed","","","Medium","Configurable product > Text section","2","https://virtocommerce.atlassian.net/browse/VCST-3195
+Available from vc-frontend version 2.22.0","Product details page > Configurable Products > Configurable product > Text section","","Step Description:
+1. Add section
+2. Enable only predefined options
+3. Save and view on storefront
+Expected Result:
+Only predefined dropdown/radio options are shown, no text input","","Only predefined dropdown/radio options are shown, no text input","","1. Add section
+2. Enable only predefined options
+3. Save and view on storefront","Functional"
+"C406210","Back office > Only Custom Text Allowed","","","Medium","Configurable product > Text section","2","https://virtocommerce.atlassian.net/browse/VCST-3195
+Available from vc-frontend version 2.22.0","Product details page > Configurable Products > Configurable product > Text section","","Step Description:
+1. Add section
+2. Enable only custom text
+3. Save and view on storefront
+Expected Result:
+Only a free text input is visible, no radio buttons","","Only a free text input is visible, no radio buttons","","1. Add section
+2. Enable only custom text
+3. Save and view on storefront","Functional"
+"C406214","Required = true, Predefined = true, Custom = true","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004986","User must select a predefined option or enter custom text
+
+
+ ![](index.php?/attachments/get/1000004986) 
+","Medium","Configurable product > Text section","2","https://virtocommerce.atlassian.net/browse/VCST-3195
+Available from vc-frontend version 2.22.0","Product details page > Configurable Products > Configurable product > Text section","Check configuration option","","","","","","Other"
+"C406215","Required = false, Predefined = true, Custom = true","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004988","User can leave it empty, select a predefined option, or enter custom text
+
+ ![](index.php?/attachments/get/1000004988) 
+","Medium","Configurable product > Text section","2","https://virtocommerce.atlassian.net/browse/VCST-3195
+Available from vc-frontend version 2.22.0","Product details page > Configurable Products > Configurable product > Text section","Check configuration option","","","","","","Other"
+"C406216","Required = false, Predefined = true, Custom = false","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004984","User can optionally select one of the predefined options
+
+
+ ![](index.php?/attachments/get/1000004984) 
+","Medium","Configurable product > Text section","2","https://virtocommerce.atlassian.net/browse/VCST-3195
+Available from vc-frontend version 2.22.0","Product details page > Configurable Products > Configurable product > Text section","Check configuration option","","","","","","Other"
+"C406217","Required = false, Predefined = false, Custom = true","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004978","Free text field is optional
+
+ ![](index.php?/attachments/get/1000004978) 
+","Medium","Configurable product > Text section","2","https://virtocommerce.atlassian.net/browse/VCST-3195
+Available from vc-frontend version 2.22.0","Product details page > Configurable Products > Configurable product > Text section","Check configuration option","","","","","","Other"
+"C406218","Required = true, Predefined = true, Custom = false with one option","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004989","If only one option exists, it should be auto-selected
+
+
+ ![](index.php?/attachments/get/1000004989) 
+","Medium","Configurable product > Text section","2","https://virtocommerce.atlassian.net/browse/VCST-3195
+Available from vc-frontend version 2.22.0","Product details page > Configurable Products > Configurable product > Text section","Check configuration option","","","","","","Other"
+"C406219","Required = true, Predefined = false, Custom = true","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004991","Text input is shown and required; no radio buttons
+
+
+ ![](index.php?/attachments/get/1000004991) 
+","Medium","Configurable product > Text section","2","https://virtocommerce.atlassian.net/browse/VCST-3195
+Available from vc-frontend version 2.22.0","Product details page > Configurable Products > Configurable product > Text section","Check configuration option","","","","","","Other"
+"C406221","Required = false, Predefined = false, Custom = false","","System should block saving or ignore section; no input possible","Medium","Configurable product > Text section","2","https://virtocommerce.atlassian.net/browse/VCST-3195
+Available from vc-frontend version 2.22.0","Product details page > Configurable Products > Configurable product > Text section","","","","","","","Other"
+"C406222","Required = true, Predefined = true (multiple), Custom = false","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004992","User must manually select one option
+
+ ![](index.php?/attachments/get/1000004992) 
+","Medium","Configurable product > Text section","2","https://virtocommerce.atlassian.net/browse/VCST-3195
+Available from vc-frontend version 2.22.0","Product details page > Configurable Products > Configurable product > Text section","Check configuration option","","","","","","Other"
+"C406211","Validate Required Field Behavior with Predefined Options Only","","","High","Configurable product > Text section","2","https://virtocommerce.atlassian.net/browse/VCST-3195
+Available from vc-frontend version 2.22.0","Product details page > Configurable Products > Configurable product > Text section","","Step Description:
+1. Attempt to add product to cart without selecting an option
+Expected Result:
+Validation message shown, product not added to cart","","Validation message shown, product not added to cart","","1. Attempt to add product to cart without selecting an option","Other"
+"C406212","Cart Displays Selected Option or Custom Text","","","High","Configurable product > Text section","2","https://virtocommerce.atlassian.net/browse/VCST-3195
+Available from vc-frontend version 2.22.0","Product details page > Configurable Products > Configurable product > Text section","","Step Description:
+1. Add product to cart with either selected option or entered custom text
+2. Open cart
+Expected Result:
+Cart item shows the selected predefined option or entered text","","Cart item shows the selected predefined option or entered text","","1. Add product to cart with either selected option or entered custom text
+2. Open cart","Functional"
+"C406213","Edit Configuration from Cart Preserves Previous Inputs","","","Medium","Configurable product > Text section","2","https://virtocommerce.atlassian.net/browse/VCST-3195
+Available from vc-frontend version 2.22.0","Product details page > Configurable Products > Configurable product > Text section","","Step Description:
+1. Open product from cart
+2. Edit configuration
+3. Observe previous inputs
+Expected Result:
+All previously selected/entered values are shown in edit view","","All previously selected/entered values are shown in edit view","","1. Open product from cart
+2. Edit configuration
+3. Observe previous inputs","Functional"
+"C398878","File section > Verify Configurable Product Display","","- The product displays all configurable options and is ready for selection.
+- Each option has a list of valid choices.","Medium","Configurable product > File section","2","","Product details page > Configurable Products > Configurable product > File section","1. Navigate to the configurable product page.
+2. Verify that the configuration options (e.g., size, color, material) are displayed.
+3. Verify that each configuration option has a set of valid choices.","","","","","","Other"
+"C398879","File section > Verify File Section Availability","","- The file upload section is visible and properly placed on the page.
+- Instructions are clear for the user to upload files.","Medium","Configurable product > File section","2","","Product details page > Configurable Products > Configurable product > File section","1. Navigate to the product page with a file upload section.
+2. Verify that the file upload section is visible on the page.
+3. Check the instructions for uploading files.","","","","","","Other"
+"C398880","File section > Verify File Upload Functionality","","- The file uploads successfully without any error.
+- The uploaded file appears in the 'Uploaded Files' section or similar.","Medium","Configurable product > File section","2","","Product details page > Configurable Products > Configurable product > File section","1. Navigate to the configurable product page.
+2. Select a valid file to upload (e.g., PDF, DOCX, or image file depending on requirements).
+3. Click the 'Upload' button to upload the file.","","","","","","Other"
+"C398881","File section > Verify Invalid File Upload","","- An error message is displayed stating that the file is invalid or exceeds the size limit.
+- The file is not uploaded.","Medium","Configurable product > File section","2","","Product details page > Configurable Products > Configurable product > File section","1. Navigate to the configurable product page.
+2. Attempt to upload an invalid file (e.g., .exe or a file type not supported).
+3. Attempt to upload a file that exceeds the size limit.","","","","","","Other"
+"C398882","File section > Verify File Type Restrictions","","- The site should not allow uploading of unsupported file types.
+- An error message should appear indicating the allowed file types (e.g., 'Only PDF, PNG, and JPG files are allowed').","Medium","Configurable product > File section","2","","Product details page > Configurable Products > Configurable product > File section","1. Navigate to the configurable product page.
+2. Try uploading a file of an unsupported type (e.g., .exe, .bat).
+3. Check the behavior.","","","","","","Other"
+"C398883","File section > Verify Multiple File Upload","","- All selected files are uploaded successfully.
+- Each file is listed in the uploaded section.","Medium","Configurable product > File section","2","","Product details page > Configurable Products > Configurable product > File section","1. Navigate to the configurable product page.
+2. Select multiple files for upload (e.g., 2 or more files).
+3. Click the 'Upload' button.","","","","","","Other"
+"C398884","File section > Verify File Preview","","- The file preview is visible (e.g., an image thumbnail or document preview) once the file is uploaded.
+- The file preview should match the uploaded file.","Medium","Configurable product > File section","2","","Product details page > Configurable Products > Configurable product > File section","1. Navigate to the configurable product page.
+2. Upload a file (e.g., PDF, image).
+3. Check if a preview of the uploaded file is visible.","","","","","","Other"
+"C398885","File section > Verify File Deletion Functionality","","- The uploaded file is removed from the file section.
+- The file is no longer listed as uploaded.","Medium","Configurable product > File section","2","","Product details page > Configurable Products > Configurable product > File section","1. Navigate to the configurable product page.
+2. Upload a file.
+3. Delete the uploaded file by clicking the 'Delete' or 'Remove' button next to the file.","","","","","","Other"
+"C398886","File section > Verify Configuration Price Update with File Upload","","- The price should update based on the uploaded file if the configuration affects the product price.","Medium","Configurable product > File section","2","","Product details page > Configurable Products > Configurable product > File section","1. Select a configuration for the product.
+2. Upload a file (e.g., logo for customization).
+3. Check if the price of the product updates according to the file uploaded.","","","","","","Other"
+"C398887","File section > Verify File Section for Different User Roles","","- Admin should have full access to the file upload and deletion features.
+- Customers should be able to upload files but may not have access to delete or edit files depending on their role.","Medium","Configurable product > File section","2","","Product details page > Configurable Products > Configurable product > File section","1. Log in as an admin and navigate to the configurable product page.
+2. Log in as a customer and navigate to the same page.","","","","","","Other"
+"C398888","File section > Verify Required File Uploads","","- A validation error should be shown, indicating that a file must be uploaded before proceeding.","Medium","Configurable product > File section","2","","Product details page > Configurable Products > Configurable product > File section","1. Navigate to the configurable product page.
+2. Attempt to add the product to the cart without uploading a file.
+3. Attempt to complete the checkout process.","","","","","","Other"
+"C398889","File section > Verify Large File Upload Handling","","- Large files within the limit should upload successfully.
+- An error should appear if the file exceeds the allowed size.","Medium","Configurable product > File section","2","","Product details page > Configurable Products > Configurable product > File section","1. Navigate to the configurable product page.
+2. Attempt to upload a file close to or at the maximum allowed size.
+3. Verify if the file uploads successfully.","","","","","","Other"
+"C398890","File section > Verify Network Interruption During File Upload","","- The site should handle network interruptions gracefully.
+- If supported, the file upload should resume upon reconnection or prompt the user to retry.","Medium","Configurable product > File section","2","","Product details page > Configurable Products > Configurable product > File section","1. Start uploading a file.
+2. Disconnect from the internet midway.
+3. Reconnect and check the file upload behavior.","","","","","","Other"
+"C395421","Add Product Without Options","","","Medium","Adding Configurable Product to Cart with Different options","2","","Product details page > Configurable Products > Adding Configurable Product to Cart with Different options","","Step Description:
+1. Navigate to the configurable product page.
+2. Check the None option is selected in all sections.
+3. Click the Add to Cart button.
+4. Navigate to the cart page.
+
+
+Expected Result:
+The product appears in the cart without any additional options and the price matches the base product price.","","The product appears in the cart without any additional options and the price matches the base product price.","","1. Navigate to the configurable product page.
+2. Check the None option is selected in all sections.
+3. Click the Add to Cart button.
+4. Navigate to the cart page.
+
+","Other"
+"C395422","Add Product with One Option Selected","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002060","","Medium","Adding Configurable Product to Cart with Different options","2","","Product details page > Configurable Products > Adding Configurable Product to Cart with Different options","","Step Description:
+1. Navigate to the configurable product page.
+2. Select only one product from first section
+3. Leave other sections as None
+4.Click the Add to Cart button
+5. Navigate to the cart page
+
+
+Expected Result:
+The product appears in the cart with the selected option, and the price reflects the base price plus the selected option's price.
+
+---
+
+ ![](index.php?/attachments/get/73036204-fd19-4bcb-bd8a-275c04bb19c8) 
+","","The product appears in the cart with the selected option, and the price reflects the base price plus the selected option's price.
+
+---
+
+ ![](index.php?/attachments/get/73036204-fd19-4bcb-bd8a-275c04bb19c8) 
+","","1. Navigate to the configurable product page.
+2. Select only one product from first section
+3. Leave other sections as None
+4.Click the Add to Cart button
+5. Navigate to the cart page
+
+","Other"
+"C395423","Add Product with Multiple Options Selected","","","Medium","Adding Configurable Product to Cart with Different options","2","","Product details page > Configurable Products > Adding Configurable Product to Cart with Different options","","Step Description:
+1. Navigate to the configurable product page.
+2. Select the products from all sections
+2. Click the Add to Cart button.
+3. Navigate to the cart page.
+
+Expected Result:
+The product appears in the cart with all selected options, and the price reflects the base price plus the total cost of the selected options.","","The product appears in the cart with all selected options, and the price reflects the base price plus the total cost of the selected options.","","1. Navigate to the configurable product page.
+2. Select the products from all sections
+2. Click the Add to Cart button.
+3. Navigate to the cart page.
+","Other"
+"C396947","Add configuration to cart > The """"Edit Configuration"""" page is accessible","","","High","Edit configuration from Cart","2","Feature available from vc-frontend version 2.11.0
+
+https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.11.0
+
+https://virtocommerce.atlassian.net/browse/VCST-2093","Product details page > Configurable Products > Edit configuration from Cart","","Step Description:
+1. Navigate to the Cart page.
+2. Locate a configurable product in the cart.
+3. Expand the configuration details section (e.g., """"Components List"""").
+Verify that all selected options (e.g., color, components, and quantity) are displayed accurately
+
+Expected Result:
+The cart displays the selected options for the configurable product under its configuration details","","The cart displays the selected options for the configurable product under its configuration details","","1. Navigate to the Cart page.
+2. Locate a configurable product in the cart.
+3. Expand the configuration details section (e.g., ""Components List"").
+Verify that all selected options (e.g., color, components, and quantity) are displayed accurately
+","Other"
+"","","","","","","","","","","
+Step Description:
+1. Click on the Edit Configuration button for a configurable product.
+2. Verify that the product details page is opened in the same tab.
+3. Verify that the product details page displays the current configuration without showing that the product is already in the cart
+Expected Result:
+- The product details page opens in the same tab and displays the current configuration for editing. The product is not flagged as """"already in cart.""""
+
+- The URL contains lineItemId: {baseUrl}/category_slug/product_slug?lineItemId={id}","","- The product details page opens in the same tab and displays the current configuration for editing. The product is not flagged as ""already in cart.""
+
+- The URL contains lineItemId: {baseUrl}/category_slug/product_slug?lineItemId={id}","","1. Click on the Edit Configuration button for a configurable product.
+2. Verify that the product details page is opened in the same tab.
+3. Verify that the product details page displays the current configuration without showing that the product is already in the cart",""
+"C396948","Changes made in the configuration are saved","","","High","Edit configuration from Cart","2","Feature available from vc-frontend version 2.11.0
+
+https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.11.0
+
+https://virtocommerce.atlassian.net/browse/VCST-2093","Product details page > Configurable Products > Edit configuration from Cart","","Step Description:
+1. Make changes to the products configuration (e.g., change color, components).
+2. Save the changes and return to the cart.
+3. Verify the updated configuration details are reflected in the cart.
+Expected Result:
+- The Price per item and Total price are updated based on the changes made
+
+- Changes made to the configuration are saved and displayed correctly in the cart. Prices are updated based on the new configuration. 
+","","- The Price per item and Total price are updated based on the changes made
+
+- Changes made to the configuration are saved and displayed correctly in the cart. Prices are updated based on the new configuration. 
+","","1. Make changes to the products configuration (e.g., change color, components).
+2. Save the changes and return to the cart.
+3. Verify the updated configuration details are reflected in the cart.","Other"
+"C396949","The Cancel button discards changes in """"Edit Configuration""""","","","Medium","Edit configuration from Cart","2","Feature available from vc-frontend version 2.11.0
+
+https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.11.0
+
+https://virtocommerce.atlassian.net/browse/VCST-2093","Product details page > Configurable Products > Edit configuration from Cart","","Step Description:
+1. Make changes to the product's configuration.
+2. Click the Cancel button.
+3. Verify that all changes are discarded, and the fields revert to their original values.
+Expected Result:
+Clicking the Cancel button discards all unsaved changes.","","Clicking the Cancel button discards all unsaved changes.","","1. Make changes to the product's configuration.
+2. Click the Cancel button.
+3. Verify that all changes are discarded, and the fields revert to their original values.","Other"
+"C396980","Notification toast > toast notification appears when the product configuration is changed.","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002574","","Medium","Save Changes Pop-up","3","Feature available from vc-frontend version 2.12.0
+
+https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.12.0
+
+https://virtocommerce.atlassian.net/browse/VCST-2451","Product details page > Configurable Products > Edit configuration from Cart > Save Changes Pop-up","","Step Description:
+1. Open the configurable product page.
+2. Modify any configuration
+3. Observe the UI after making changes.
+Expected Result:
+- An """"Blue""""-colored toast notification appears with the message:
+""""The product configuration has been changed. You can always save it later - by clicking Update cart' button.""""
+- The toast notification includes a *Save* button.
+
+---
+
+ ![](index.php?/attachments/get/8bc8a7de-bbcf-4534-9e53-76c81a95235b) 
+","","- An ""Blue""-colored toast notification appears with the message:
+""The product configuration has been changed. You can always save it later - by clicking Update cart' button.""
+- The toast notification includes a *Save* button.
+
+---
+
+ ![](index.php?/attachments/get/8bc8a7de-bbcf-4534-9e53-76c81a95235b) 
+","","1. Open the configurable product page.
+2. Modify any configuration
+3. Observe the UI after making changes.","Other"
+"C396981","Notification toast > Click """"Save"""" button","","","High","Save Changes Pop-up","3","Feature available from vc-frontend version 2.12.0
+
+https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.12.0
+
+https://virtocommerce.atlassian.net/browse/VCST-2451","Product details page > Configurable Products > Edit configuration from Cart > Save Changes Pop-up","","Step Description:
+1. Open the configurable product page.
+2. Modify any configuration
+3. When the toast notification appears, click the *Save* button in the toast.
+4. Refresh or re-open the configuration page.
+Expected Result:
+Changes are saved successfully.
+The toast notification disappears after clicking *Save*.
+On re-opening the configuration page, the updated configuration is displayed.","","Changes are saved successfully.
+The toast notification disappears after clicking *Save*.
+On re-opening the configuration page, the updated configuration is displayed.","","1. Open the configurable product page.
+2. Modify any configuration
+3. When the toast notification appears, click the *Save* button in the toast.
+4. Refresh or re-open the configuration page.","Other"
+"C396960","Save Changes pop-up appears on unsaved changes","","","High","Save Changes Pop-up","3","Feature available from vc-frontend version 2.12.0
+
+https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.12.0
+
+https://virtocommerce.atlassian.net/browse/VCST-2451","Product details page > Configurable Products > Edit configuration from Cart > Save Changes Pop-up","","Step Description:
+1. Open the configurable product configuration page.
+2. Modify any configuration
+3. Attempt to navigate away.
+Expected Result:
+A 'Save Changes' pop-up appears prompting the user to save or discard changes.","","A 'Save Changes' pop-up appears prompting the user to save or discard changes.","","1. Open the configurable product configuration page.
+2. Modify any configuration
+3. Attempt to navigate away.","Other"
+"C396961","Save Changes pop-up does not appear when no changes are made","","","Medium","Save Changes Pop-up","3","Feature available from vc-frontend version 2.12.0
+
+https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.12.0
+
+https://virtocommerce.atlassian.net/browse/VCST-2451","Product details page > Configurable Products > Edit configuration from Cart > Save Changes Pop-up","","Step Description:
+1. Open the configuration page
+2. Do not modify any settings.
+3. Attempt to navigate away.
+Expected Result:
+The 'Save Changes' pop-up does not appear.","","The 'Save Changes' pop-up does not appear.","","1. Open the configuration page
+2. Do not modify any settings.
+3. Attempt to navigate away.","Other"
+"C396962","Save changes when 'Yes' is selected","","","High","Save Changes Pop-up","3","Feature available from vc-frontend version 2.12.0
+
+https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.12.0
+
+https://virtocommerce.atlassian.net/browse/VCST-2451","Product details page > Configurable Products > Edit configuration from Cart > Save Changes Pop-up","","Step Description:
+1. Modify any configuration.
+2. Trigger the pop-up by leaving the page.
+3. In the pop-up, select Yes
+4. Re-open the configuration page.
+Expected Result:
+Changes are saved, and the updated configuration is displayed.","","Changes are saved, and the updated configuration is displayed.","","1. Modify any configuration.
+2. Trigger the pop-up by leaving the page.
+3. In the pop-up, select Yes
+4. Re-open the configuration page.","Other"
+"C396963","Discard changes when 'NO' is selected","","","High","Save Changes Pop-up","3","Feature available from vc-frontend version 2.12.0
+
+https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.12.0
+
+https://virtocommerce.atlassian.net/browse/VCST-2451","Product details page > Configurable Products > Edit configuration from Cart > Save Changes Pop-up","","Step Description:
+1. Modify any configuration.
+2. Trigger the pop-up by leaving the page.
+3. In the pop-up, select NO.
+4. Re-open the configuration page.
+Expected Result:
+Changes are discarded, and the original configuration is displayed.","","Changes are discarded, and the original configuration is displayed.","","1. Modify any configuration.
+2. Trigger the pop-up by leaving the page.
+3. In the pop-up, select NO.
+4. Re-open the configuration page.","Other"
+"C396964","Remain on the configuration page when 'Cancel' is selected","","","High","Save Changes Pop-up","3","Feature available from vc-frontend version 2.12.0
+
+https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.12.0
+
+https://virtocommerce.atlassian.net/browse/VCST-2451","Product details page > Configurable Products > Edit configuration from Cart > Save Changes Pop-up","","Step Description:
+1. Modify any configuration.
+2. Trigger the pop-up by leaving the page.
+3. In the pop-up, click on X button
+Expected Result:
+User remains on the configuration page, and changes remain unsaved.","","User remains on the configuration page, and changes remain unsaved.","","1. Modify any configuration.
+2. Trigger the pop-up by leaving the page.
+3. In the pop-up, click on X button","Other"
+"C395424","Verify Cart Contains Unique Product Configurations","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001411","","Medium","Create order with Config Product","2","","Product details page > Configurable Products > Create order with Config Product","","Step Description:
+1. Navigate to the cart page
+
+Expected Result:
+Verify that the cart contains all unique configurations as separate line items:
+Base product without options.
+Product with one option selected.
+Product with multiple options selected.
+Verify that the """"Components list"""" for each configuration is accurate and reflects the selected options.
+
+---
+
+ ![](index.php?/attachments/get/4ac7c66c-c030-44e3-8c7e-36b59aac37c6) 
+","","Verify that the cart contains all unique configurations as separate line items:
+Base product without options.
+Product with one option selected.
+Product with multiple options selected.
+Verify that the ""Components list"" for each configuration is accurate and reflects the selected options.
+
+---
+
+ ![](index.php?/attachments/get/4ac7c66c-c030-44e3-8c7e-36b59aac37c6) 
+","","1. Navigate to the cart page
+","Other"
+"C395353","Create Your Own Configuration > Buy","","1. Products with unique configurations are added as separate line items in the cart.
+2. The """"Components list"""" for each line item accurately reflects the selected options.
+3. The price for each configuration is calculated correctly based on the base product price and selected options.
+4. The quantity and subtotal for each configuration are accurate.
+5. The cart subtotal is the sum of all line items.
+
+Order with config product created","Medium","Create order with Config Product","2","","Product details page > Configurable Products > Create order with Config Product","1. Open the category page.
+2. Verify the 'Customize Product' button.
+3. Open configuration options.
+4. Add the configured product to the cart.
+5. Complete the checkout","","","","","","Other"
+"C395425","Verify Config product on Order details page","","","Medium","Create order with Config Product","2","","Product details page > Configurable Products > Create order with Config Product","","","","","","","Other"
