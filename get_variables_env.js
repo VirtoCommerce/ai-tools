@@ -6,8 +6,6 @@ console.log('VIRTO_START_FRONT:', env.VIRTO_START_FRONT);
 console.log('VIRTO_START_BACK:', env.VIRTO_START_BACK);
 console.log('ADMIN:', env.ADMIN);
 console.log('ADMIN_PASSWORD:', env.ADMIN_PASSWORD);
-console.log('FRONT_ADMIN:', env.FRONT_ADMIN);
-console.log('FRONT_ADMIN_PASSWORD:', env.FRONT_ADMIN_PASSWORD);
 console.log('USER2_EMAIL:', env.USER2_EMAIL);
 console.log('USER2_PASSWORD:', env.USER2_PASSWORD);
 console.log('USER_EMAIL:', env.USER_EMAIL);

@@ -6,7 +6,7 @@
 <files>
 <file name="Setup" description="Follow setup instructions from this file"/>
 <file name="get_variables_env.js" description="Environment variables configuration"/>
-<file name="Frontend.TestSuit.xml" description="Test suite containing all test cases to execute"/>
+<file name="Regression21.csv" description="Test suite containing all test cases to execute"/>
 </files>
 </setup>
 <execution_steps>
@@ -27,13 +27,15 @@
 <description>Press F12 to open Dev Tools > Console and keep it open throughout testing</description>
 </step>
 <step id="5">
-<action>Execute Test Suite</action>
-<description>Run regression testing following Frontend.TestSuit.xml test cases</description>
+<action>Make a full regression. Without stopping. Execute Test Suite</action>
+<description>Run regression testing following Regression21.csv test cases</description>
 <sections>
 <section>Registration (Desktop+Mobile)</section>
 <section>Login</section>
-<section>Single sign-in option (SSO)</section>
 <section>Sign in form (on the Main and Sign in pages)</section>
+<section>Catalog page</section>
+<section>Product details page</section>
+<section>Cart and Checkout</section>
 <section>Forgot password</section>
 <section>Anonymous user access to the store</section>
 <section>Multi Organization Support</section>
@@ -50,9 +52,6 @@
 <section>Back-In-Stock-List</section>
 <section>Company info</section>
 <section>Company members</section>
-<section>Catalog page</section>
-<section>Product details page</section>
-<section>Cart and Checkout</section>
 </sections>
 </step>
 <step id="6">
@@ -105,7 +104,7 @@
 <secondary>Browser Developer Tools (F12 Console)</secondary>
 </tools_required>
 <test_data_source>
-<file>Frontend.TestSuit.xml</file>
+<file>Regression21.csv</file>
 <suite_id>S5657</suite_id>
 <suite_name>MCP Server > Smoke testing</suite_name>
 <total_test_cases>Extract from XML and execute systematically</total_test_cases>

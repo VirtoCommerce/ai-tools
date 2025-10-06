@@ -4,7 +4,12 @@
   "description": "",
   "main": "config.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:chrome": "playwright test --project=chromium",
+    "test:report": "playwright show-report",
+    "env:check": "node get_variables_env.js"
   },
   "repository": {
     "type": "git",
@@ -20,5 +25,10 @@
   "homepage": "https://github.com/VirtoCommerce/vc-mcp-testing-module#readme",
   "dependencies": {
     "dotenv": "^17.1.0"
+  },
+  "devDependencies": {
+    "@playwright/mcp": "^0.0.37",
+    "@playwright/test": "^1.55.0",
+    "playwright": "^1.55.0"
   }
 }

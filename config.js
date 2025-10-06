@@ -10,9 +10,7 @@ const requiredVars = [
     'VIRTO_START_FRONT',
     'VIRTO_START_BACK',
     'ADMIN',
-    'ADMIN_PASSWORD',
-    'FRONT_ADMIN',
-    'FRONT_ADMIN_PASSWORD',
+    'ADMIN_PASSWORD',   
     'USER_EMAIL',
     'USER_PASSWORD',
     'USER2_EMAIL',
@@ -57,8 +55,6 @@ export const env = {
     // Admin credentials
     ADMIN: getEnvVar('ADMIN'),
     ADMIN_PASSWORD: getEnvVar('ADMIN_PASSWORD'),
-    FRONT_ADMIN: getEnvVar('FRONT_ADMIN'),
-    FRONT_ADMIN_PASSWORD: getEnvVar('FRONT_ADMIN_PASSWORD'),
     
     // User credentials
     USER_EMAIL: getEnvVar('USER_EMAIL'),
