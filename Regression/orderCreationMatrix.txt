@@ -1,0 +1,15 @@
+| #  | Payment Method           | Shipping Method     |      Card Number | CVV | Expiration Date |
+| -- | ------------------------ | ------------------- | ---------------: | --: | --------------: |
+| 1  | Bank card (AuthorizeNet) | Fixed rate (Ground) | 5424000000000015 | 900 |         02/29 |
+| 2  | Bank card (AuthorizeNet) | Fixed rate (Air)    | 5424000000000015 | 900 |         02/29 |
+| 3  | Bank card (AuthorizeNet) | Pickup              | 5424000000000015 | 900 |         02/29 |
+| 4  | Bank card (Skyflow)      | Fixed rate (Ground) | 5424000000000015 | 900 |         02/29 |
+| 5  | Bank card (Skyflow)      | Fixed rate (Air)    | 5424000000000015 | 900 |         02/29 |
+| 6  | Bank card (Skyflow)      | Pickup              | 5424000000000015 | 900 |         02/29 |
+| 7  | Bank card (CyberSource)  | Fixed rate (Ground) | 4622943127013705 | 838 |       09/2029 |
+| 8  | Bank card (CyberSource)  | Fixed rate (Air)    | 4622943127013705 | 838 |       09/2029 |
+| 9  | Bank card (CyberSource)  | Pickup              | 4622943127013705 | 838 |       09/2029 |
+| 10 | Manual (offline / cash)  | Fixed rate (Ground) |              N/A | N/A |           N/A |
+| 11 | Manual (offline / cash)  | Fixed rate (Air)    |              N/A | N/A |           N/A |
+| 12 | Manual (offline / cash)  | Pickup              |              N/A | N/A |           N/A |
+
