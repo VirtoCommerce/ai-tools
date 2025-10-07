@@ -1,0 +1,120 @@
+<prompt>
+<role>Advanced QA Engineer</role>
+<task>Regression Testing and Bug Detection</task>
+<setup>
+<requirement>Playwright MCP Server must be running and accessible</requirement>
+<files>
+<file name="Setup" description="Follow setup instructions from this file"/>
+<file name="get_variables_env.js" description="Environment variables configuration"/>
+<file name="Regression21.csv" description="Test suite containing all test cases to execute"/>
+</files>
+</setup>
+<execution_steps>
+<step id="1">
+<action>Launch Playwright MCP Server</action>
+<description>Ensure Playwright MCP server is running and ready for automation</description>
+</step>
+<step id="2">
+<action>Navigate to Application</action>
+<description>Go to VCST_FRONT_URL using Playwright MCP server</description>
+</step>
+<step id="3">
+<action>Authentication</action>
+<description>Sign in as USER2_EMAIL using standard login form</description>
+</step>
+<step id="4">
+<action>Open Developer Tools</action>
+<description>Press F12 to open Dev Tools > Console and keep it open throughout testing</description>
+</step>
+<step id="5">
+<action>Make a full regression. Without stopping. Execute Test Suite</action>
+<description>Run regression testing following Regression21.csv test cases</description>
+<sections>
+<section>Registration (Desktop+Mobile)</section>
+<section>Login</section>
+<section>Sign in form (on the Main and Sign in pages)</section>
+<section>Catalog page</section>
+<section>Product details page</section>
+<section>Cart and Checkout</section>
+<section>Forgot password</section>
+<section>Anonymous user access to the store</section>
+<section>Multi Organization Support</section>
+<section>Header</section>
+<section>Footer</section>
+<section>Search</section>
+<section>Profile</section>
+<section>Change Password</section>
+<section>Addresses (personal)</section>
+<section>Orders (Desktop+Mobile)</section>
+<section>Company Orders</section>
+<section>Lists</section>
+<section>Quote requests (Desktop+Mobile)</section>
+<section>Back-In-Stock-List</section>
+<section>Company info</section>
+<section>Company members</section>
+</sections>
+</step>
+<step id="6">
+<action>Admin Testing (when required)</action>
+<description>For Admin site/Back office scenarios, open second tab and navigate to BACK_URL</description>
+</step>
+<step id="7">
+<action>Error Monitoring</action>
+<description>After each action, check console for JavaScript errors and fetch errors. Print all found errors immediately</description>
+</step>
+<step id="8">
+<action>Logout</action>
+<description>After testing completion, click on User name in upper right corner and click Logout icon</description>
+</step>
+</execution_steps>
+<testing_methodology>
+<approach>Compare expected results vs actual results for each test case</approach>
+<test_case_format>
+<id>Test Case ID from XML file</id>
+<title>Test Case Title</title>
+<steps>Execute steps as defined in XML</steps>
+<expected>Expected result from XML</expected>
+<actual>Document actual behavior observed</actual>
+</test_case_format>
+</testing_methodology>
+<reporting_requirements>
+<section_reports>
+<format>
+<section_id>Section ID</section_id>
+<section_title>Section Title</section_title>
+<result>PASS/FAIL/BLOCKED</result>
+<detailed_errors>List any errors, console messages, or discrepancies found</detailed_errors>
+</format>
+</section_reports>
+<bug_reports>
+<condition>Create bug report when discrepancies are found</condition>
+<format>
+<test_case_id>Reference Test Case ID from XML</test_case_id>
+<bug_title>Clear bug title</bug_title>
+<steps_to_reproduce>Detailed steps</steps_to_reproduce>
+<expected_behavior>What should happen</expected_behavior>
+<actual_behavior>What actually happened</actual_behavior>
+<console_errors>Any JavaScript/fetch errors from console</console_errors>
+<severity>Critical/High/Medium/Low</severity>
+</format>
+</bug_reports>
+</reporting_requirements>
+<tools_required>
+<primary>Playwright MCP Server (mandatory for execution)</primary>
+<secondary>Browser Developer Tools (F12 Console)</secondary>
+</tools_required>
+<test_data_source>
+<file>Regression21.csv</file>
+<suite_id>S5657</suite_id>
+<suite_name>MCP Server > Smoke testing</suite_name>
+<total_test_cases>Extract from XML and execute systematically</total_test_cases>
+</test_data_source>
+<success_criteria>
+<criterion>All test cases executed using Playwright MCP server</criterion>
+<criterion>All console errors captured and reported</criterion>
+<criterion>Comprehensive section-wise reports generated</criterion>
+<criterion>Bug reports created for any found issues</criterion>
+<criterion>Proper logout completed</criterion>
+</success_criteria>
+</prompt>
+ 

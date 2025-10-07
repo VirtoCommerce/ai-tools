@@ -1,0 +1,23 @@
+import { env } from './config.js';
+
+console.log('VCST_FRONT_URL:', env.VCST_FRONT_URL);
+console.log('VCST_BACK_URL:', env.VCST_BACK_URL);
+console.log('VIRTO_START_FRONT:', env.VIRTO_START_FRONT);
+console.log('VIRTO_START_BACK:', env.VIRTO_START_BACK);
+console.log('ADMIN:', env.ADMIN);
+console.log('ADMIN_PASSWORD:', env.ADMIN_PASSWORD);
+console.log('USER2_EMAIL:', env.USER2_EMAIL);
+console.log('USER2_PASSWORD:', env.USER2_PASSWORD);
+console.log('USER_EMAIL:', env.USER_EMAIL);
+console.log('USER_PASSWORD:', env.USER_PASSWORD);
+console.log('STORE_ID:', env.STORE_ID);
+console.log('SKYFLOW_VISA:', env.SKYFLOW_VISA);
+console.log('SKYFLOW_MASTERCARD:', env.SKYFLOW_MASTERCARD);
+console.log('SKYFLOW_EXPIRY:', env.SKYFLOW_EXPIRY);
+console.log('SKYFLOW_CVV:', env.SKYFLOW_CVV);
+console.log('CYBERSOURCE_CARD:', env.CYBERSOURCE_CARD);
+console.log('CYBERSOURCE_EXPIRY:', env.CYBERSOURCE_EXPIRY);
+console.log('CYBERSOURCE_CVV:', env.CYBERSOURCE_CVV);
+console.log('AUTHORIZNET_CARD:', env.AUTHORIZNET_CARD);
+console.log('AUTHORIZNET_EXPIRY:', env.AUTHORIZNET_EXPIRY);
+console.log('AUTHORIZNET_CVV:', env.AUTHORIZNET_CVV);
