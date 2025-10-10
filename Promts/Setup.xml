@@ -20,7 +20,7 @@
 </step>
 <step id="3">
 <action>Authentication</action>
-<description>Sign in as USER2_EMAIL using standard login form</description>
+<description>Run command npm run env:check for upload variables from .env file and sign in as USER2_EMAIL using standard login form</description>
 </step>
 <step id="4">
 <action>Open Developer Tools</action>
@@ -33,25 +33,78 @@
 <section>Registration (Desktop+Mobile)</section>
 <section>Login</section>
 <section>Sign in form (on the Main and Sign in pages)</section>
-<section>Catalog page</section>
-<section>Product details page</section>
+<section>Catalog page. Check products list</section>
+<section>Catalog page. Check products grid</section>
+<section>Catalog page. Check filters</section>
+<section>Catalog page. Check PRICE RANGE</section>
+<section>Catalog page. Check FACETS AND CHIPS</section>
+<section>Catalog page. Check AVAILABLE AT BRANCHES</section>
+<section>Catalog page. Check AVAILABLE IN STOCK</section>
+<section>Catalog page. Check categories</section>
+<section>Catalog page. Check search</section>
+<section>Catalog page. Check sorting</section>
+<section>Catalog page. Check pagination</section>
+<section>Catalog page. Check breadcrumbs</section>
+<section>Product details page. Check product details</section>
+<section>Product details page. Check product images</section>
+<section>Product details page. Check product properties</section>
+<section>Product details page. Check product descriptions</section>
+<section>Product details page. Check product related products</section>
+<section>Product details page. Check product price</section>
+<section>Product details page. Check product stock</section>
+<section>Product details page. Check product add to cart</section>
+<section>Product details page. Check product add to wishlist</section>
+<section>Product details page. Check product add to compare</section>
+<section>Product details page. Check product add to list</section>
 <section>Cart and Checkout</section>
+<section>Cart and Checkout. Check cart</section>
+<section>Cart and Checkout. Update products QUANTITY in cart</section>
+<section>Cart and Checkout. Remove products from cart</section>
+<section>Cart and Checkout. create order. Use file orderCreationMatrix.csv to create order</section>
 <section>Forgot password</section>
 <section>Anonymous user access to the store</section>
 <section>Multi Organization Support</section>
 <section>Header</section>
 <section>Footer</section>
-<section>Search</section>
-<section>Profile</section>
+<section>Search within different categories</section>
+<section>Search by products</section>
+<section>Search history</section>
+<section>Search suggestions</section>
+<section>Search page and search results page</section>
+<section>Search page and search results page. Check filters</section>
+<section>Search page and search results page. Check sorting</section>
+<section>Search page and search results page. Check pagination</section>
+<section>Profile. Edit profile</section>
+<section>Profile. Edit profile. Change language and currency</section>
 <section>Change Password</section>
-<section>Addresses (personal)</section>
-<section>Orders (Desktop+Mobile)</section>
+<section>Orders (Desktop+Mobile). Check orders</section>
+<section>Orders (Desktop+Mobile). Check order details</section>
+<section>Orders (Desktop+Mobile). Check order history</section>
+<section>Orders (Desktop+Mobile). Check order status</section>
+<section>Orders (Desktop+Mobile). Check order sorting</section>
+<section>Orders (Desktop+Mobile). Check order filters</section>
+<section>Orders (Desktop+Mobile). Check order items</section>
+<section>Orders (Desktop+Mobile). Check order totals</section>
+<section>Orders (Desktop+Mobile). Check order shipping methods</section>
+<section>Orders (Desktop+Mobile). Check order payment methods</section>
+<section>Orders (Desktop+Mobile). Check order shipping addresses</section>
+<section>Orders (Desktop+Mobile). Check order billing addresses</section>
 <section>Company Orders</section>
-<section>Lists</section>
+<section>Lists. Create personal list</section>
+<section>Lists. Create Organizationlist</section>
+<section>Lists. Create Anyone(read-only) list</section>
+<section>Lists. Add product to list</section>
+<section>Lists. Remove product from list</section>
+<section>Lists. Delete list</section>
+<section>Lists. Check list</section>
 <section>Quote requests (Desktop+Mobile)</section>
 <section>Back-In-Stock-List</section>
 <section>Company info</section>
 <section>Company members</section>
+<section>Ship To. Create 12 addresses</section>
+<section>Ship To. Check show more button</section>
+<section>Ship To. Search addresses</section>
+<section>Ship To. Select addresses</section>
 </sections>
 </step>
 <step id="6">
@@ -70,10 +123,10 @@
 <testing_methodology>
 <approach>Compare expected results vs actual results for each test case</approach>
 <test_case_format>
-<id>Test Case ID from XML file</id>
+<id>Test Case ID from csv file</id>
 <title>Test Case Title</title>
-<steps>Execute steps as defined in XML</steps>
-<expected>Expected result from XML</expected>
+<steps>Execute steps as defined in csv file</steps>
+<expected>Expected result from csv file</expected>
 <actual>Document actual behavior observed</actual>
 </test_case_format>
 </testing_methodology>
@@ -89,7 +142,7 @@
 <bug_reports>
 <condition>Create bug report when discrepancies are found</condition>
 <format>
-<test_case_id>Reference Test Case ID from XML</test_case_id>
+<test_case_id>Reference Test Case ID from csv file</test_case_id>
 <bug_title>Clear bug title</bug_title>
 <steps_to_reproduce>Detailed steps</steps_to_reproduce>
 <expected_behavior>What should happen</expected_behavior>
@@ -107,7 +160,7 @@
 <file>Regression21.csv</file>
 <suite_id>S5657</suite_id>
 <suite_name>MCP Server > Smoke testing</suite_name>
-<total_test_cases>Extract from XML and execute systematically</total_test_cases>
+<total_test_cases>Extract from csv file and execute systematically</total_test_cases>
 </test_data_source>
 <success_criteria>
 <criterion>All test cases executed using Playwright MCP server</criterion>
