@@ -1,0 +1,13 @@
+Test Case ID,Test Area,Status,Expected,Actual,Notes
+TC-001,Quote line-items,NOT TESTED,target="_blank",-,No quotes available for testing
+TC-002,Orders,PASS,target="_blank",target="_blank",Order details open in new tab ✓
+TC-003,Orders line-items,PASS,target="_blank",target="_blank",Product links in order details have correct target ✓
+TC-004,Cart line-items,NOT TESTED,target="_blank",-,Cart is empty no line items to test
+TC-005,Cart gift section,NOT TESTED,target="_blank",-,No gift section present
+TC-006,Cart Saved for later,NOT TESTED,target="_blank",-,No saved for later items
+TC-007,Cart Recently browsed,PASS,target="_blank",target="_blank",All links have correct target ✓
+TC-008,Daily Deals (Home page),FAIL,target="_blank",no target,Links default to same tab ❌
+TC-009,Catalog List View,NOT TESTED,target="_blank",-,Not tested
+TC-010,Product Related Section,FAIL,target="_self",target="_blank",Links open in new tab instead of same tab ❌
+TC-011,Product Recommendations,FAIL,target="_self",target="_blank",Links open in new tab instead of same tab ❌
+TC-012,Lists line-items,PASS,target="_blank",target="_blank",All links have correct target ✓

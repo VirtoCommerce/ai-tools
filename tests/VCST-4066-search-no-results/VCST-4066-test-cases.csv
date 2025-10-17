@@ -1,0 +1,433 @@
+Section,Title,Priority,Type,Estimate,References,Steps,Expected Result,Preconditions
+"VCST-4066 - Search No Results","TC-001: Back in Stock - No Results Display and Reset",Critical,Functional,15m,VCST-4066,"1. Navigate to https://vcst-qa-storefront.govirto.com/account/back-in-stock
+2. Verify that the search input field is visible
+3. Verify that products are listed (if any exist)
+4. Enter a valid product name in the search field
+5. Observe the search results
+6. Clear the search field and enter ""xyznonexistentproduct123""
+7. Press Enter or wait for search to execute
+8. Observe the page content
+9. Verify the ""Reset search"" button is visible
+10. Verify the message text matches design specs
+11. Click the ""Reset search"" button
+12. Observe the page after reset
+13. Verify the search field is cleared","1. Back in Stock page loads successfully
+2. Search input field is displayed on the page
+3. Full list of back in stock items is displayed
+4. Search field accepts input
+5. Products matching the search term are displayed
+6. Search field accepts the invalid search term
+7. Search executes and processes the query
+8. ""No results found"" message is displayed
+9. ""Reset search"" button is prominently displayed
+10. Message text is clear and user-friendly
+11. Button responds to click action
+12. Full list of back in stock items is restored
+13. Search field is empty after reset","User is logged into VirtoStart Demo Store
+User has access to the Back in Stock page
+User has at least one item in the Back in Stock list"
+"VCST-4066 - Search No Results","TC-002: Quotes - No Results Display and Reset",Critical,Functional,15m,VCST-4066,"1. Navigate to https://vcst-qa-storefront.govirto.com/account/quotes
+2. Verify that the search input field is visible
+3. Verify that quotes are listed (if any exist)
+4. Enter a valid quote number or product name in the search field
+5. Observe the search results
+6. Clear the search field and enter ""QUOTE999999NOTEXIST""
+7. Press Enter or wait for search to execute
+8. Observe the page content
+9. Verify the ""Reset search"" button is visible
+10. Verify the message text matches design specs
+11. Verify page layout is consistent with other pages
+12. Click the ""Reset search"" button
+13. Observe the page after reset
+14. Verify the search field is cleared","1. Quotes page loads successfully
+2. Search input field is displayed on the page
+3. Full list of quotes is displayed
+4. Search field accepts input
+5. Quotes matching the search term are displayed
+6. Search field accepts the invalid search term
+7. Search executes and processes the query
+8. ""No results found"" message is displayed
+9. ""Reset search"" button is prominently displayed
+10. Message text is clear and user-friendly
+11. Layout matches the design pattern
+12. Button responds to click action
+13. Full list of quotes is restored
+14. Search field is empty after reset","User is logged into VirtoStart Demo Store
+User has access to the Quotes page
+User has at least one quote in the system"
+"VCST-4066 - Search No Results","TC-003: Orders - No Results Display and Reset",Critical,Functional,20m,VCST-4066,"1. Navigate to https://vcst-qa-storefront.govirto.com/account/orders
+2. Verify ""All orders"" tab is selected by default
+3. Verify that the search input field is visible
+4. Verify that orders are listed (if any exist)
+5. Enter a valid order number in the search field
+6. Observe the search results
+7. Clear the search field and enter ""ORDER999999XYZ""
+8. Press Enter or wait for search to execute
+9. Observe the page content
+10. Verify the ""Reset search"" button is visible
+11. Verify the message text matches design specs
+12. Click the ""Reset search"" button
+13. Observe the page after reset
+14. Verify the search field is cleared
+15. Click on the ""My orders"" tab
+16. Verify that the search input field is visible
+17. Verify that user's orders are listed
+18. Enter a valid order number in the search field
+19. Observe the search results
+20. Clear the search field and enter ""ORDER999999XYZ""
+21. Press Enter or wait for search to execute
+22. Observe the page content
+23. Verify the ""Reset search"" button is visible
+24. Click the ""Reset search"" button
+25. Observe the page after reset
+26. Verify the search field is cleared","1. Orders page loads successfully
+2. ""All orders"" tab is active
+3. Search input field is displayed
+4. Full list of all orders is displayed
+5. Search field accepts input
+6. Orders matching the search term are displayed
+7. Search field accepts the invalid search term
+8. Search executes and processes the query
+9. ""No results found"" message is displayed
+10. ""Reset search"" button is prominently displayed
+11. Message text is clear and user-friendly
+12. Button responds to click action
+13. Full list of all orders is restored
+14. Search field is empty after reset
+15. ""My orders"" tab becomes active
+16. Search input field is displayed for My orders
+17. Full list of user's orders is displayed
+18. Search field accepts input
+19. User's orders matching the search term are displayed
+20. Search field accepts the invalid search term
+21. Search executes and processes the query
+22. ""No results found"" message is displayed
+23. ""Reset search"" button is prominently displayed
+24. Button responds to click action
+25. Full list of user's orders is restored
+26. Search field is empty after reset","User is logged into VirtoStart Demo Store
+User has access to the Orders page
+User has at least one order in the system"
+"VCST-4066 - Search No Results","TC-004: Company Members - No Results Display and Reset",Critical,Functional,15m,VCST-4066,"1. Navigate to https://vcst-qa-storefront.govirto.com/company/members
+2. Verify that the search input field is visible
+3. Verify that company members are listed
+4. Count the number of members displayed
+5. Enter a valid member name in the search field
+6. Observe the search results
+7. Clear the search field and enter ""nonexistentmember999@test.com""
+8. Press Enter or wait for search to execute
+9. Observe the page content
+10. Verify the ""Reset search"" button is visible
+11. Verify the message text matches design specs
+12. Verify that no member cards/rows are displayed
+13. Click the ""Reset search"" button
+14. Observe the page after reset
+15. Verify the search field is cleared
+16. Count the members displayed after reset","1. Company Members page loads successfully
+2. Search input field is displayed on the page
+3. Full list of company members is displayed
+4. Note the total number of members for validation
+5. Search field accepts input
+6. Members matching the search term are displayed
+7. Search field accepts the invalid search term
+8. Search executes and processes the query
+9. ""No results found"" message is displayed
+10. ""Reset search"" button is prominently displayed
+11. Message text is clear and user-friendly
+12. Only the no results message and reset button are shown
+13. Button responds to click action
+14. Full list of company members is restored
+15. Search field is empty after reset
+16. Same number of members as initially displayed","User is logged into VirtoStart Demo Store
+User is part of a company with multiple members
+User has access to the Company Members page"
+"VCST-4066 - Search No Results","TC-005: Global Search - No Results Display and Reset",High,Functional,20m,"VCST-4066, VCST-3991","1. Navigate to https://vcst-qa-storefront.govirto.com
+2. Locate the global search input field
+3. Enter a valid search term
+4. Observe the search results
+5. Clear the search and enter ""xyzglobalnonexistent123""
+6. Press Enter or click search button
+7. Observe the page content
+8. Verify the ""Reset search"" button is visible
+9. Verify suggested actions or alternatives (if any)
+10. Verify the message matches design specs
+11. Click the ""Reset search"" button
+12. Observe the behavior after reset
+13. Verify the search field is cleared","1. Homepage loads successfully
+2. Global search field is visible in header/navigation
+3. Search field accepts input
+4. Products/content matching the search term are displayed
+5. Search field accepts the invalid search term
+6. Search executes and navigates to results page
+7. ""No results found"" message is displayed
+8. ""Reset search"" button is prominently displayed
+9. Helpful suggestions or navigation options are provided
+10. Message text is clear and user-friendly
+11. Button responds to click action
+12. Search is cleared and user can continue browsing
+13. Search field is empty after reset
+NOTE: This test is currently BLOCKED by VCST-3991 (On Hold)","User is on VirtoStart Demo Store
+Global search functionality is implemented (VCST-3991)
+NOTE: Currently BLOCKED - dependent on VCST-3991"
+"VCST-4066 - Search No Results","TC-006: UI/UX Consistency Validation",High,UI/UX,30m,VCST-4066,"1. Navigate to Back in Stock page and trigger no results
+2. Take screenshot of the no results page
+3. Navigate to Quotes page and trigger no results
+4. Take screenshot of the no results page
+5. Navigate to Orders page and trigger no results
+6. Take screenshot of the no results page
+7. Navigate to Company Members and trigger no results
+8. Take screenshot of the no results page
+9. Compare all screenshots side by side
+10. Validate message text consistency across all pages
+11. Validate button style consistency across all pages
+12. Validate layout and spacing consistency
+13. Open Figma design specification
+14. Compare message text with design
+15. Compare button style with design
+16. Compare spacing/layout with design
+17. Compare colors with design (use color picker)
+18. Verify all typography (font, size, weight)
+19. Test color contrast ratio (message text)
+20. Test color contrast ratio (button)
+21. Test with screen reader (NVDA/JAWS)
+22. Test keyboard-only navigation
+23. Test focus indicators
+24. Verify ARIA labels (if applicable)","1. No results page displays
+2. Screenshot captured for reference
+3. No results page displays
+4. Screenshot captured for reference
+5. No results page displays
+6. Screenshot captured for reference
+7. No results page displays
+8. Screenshot captured for reference
+9. Identify any visual inconsistencies
+10. Message text is consistent or appropriately contextual
+11. Button style, size, and color are identical
+12. Layout and spacing are consistent
+13. Design reference is accessible
+14. Text matches Figma specifications
+15. Button matches Figma specifications
+16. Layout matches Figma specifications
+17. Colors match Figma specifications
+18. Typography matches Figma specifications
+19. Meets WCAG AA standards (4.5:1)
+20. Meets WCAG AA standards (3:1)
+21. Message and button are announced properly
+22. All interactive elements are accessible
+23. Focus states are visible and clear
+24. Proper ARIA attributes are present","User is logged into VirtoStart Demo Store
+All local search pages are accessible
+Figma design reference is available"
+"VCST-4066 - Search No Results","TC-007: Cross-Browser Compatibility",Medium,Compatibility,45m,VCST-4066,"1. Test on Chrome (Windows) - Latest version
+2. Navigate to each page (Back in Stock, Quotes, Orders, Members)
+3. Trigger no results search on each page
+4. Verify message displays correctly
+5. Verify button displays correctly
+6. Verify functionality works (reset button)
+7. Open DevTools Console and check for errors
+8. Repeat steps 1-7 on Firefox (Windows) - Latest version
+9. Repeat steps 1-7 on Edge (Windows) - Latest version
+10. Repeat steps 1-7 on Safari (macOS) - Latest version
+11. Test on mobile Chrome (Android) - Latest version
+12. Navigate to each page and trigger no results
+13. Verify mobile layout is correct
+14. Verify button is tappable (44px minimum)
+15. Test on mobile Safari (iOS) - Latest version
+16. Navigate to each page and trigger no results
+17. Verify mobile layout is correct
+18. Verify button is tappable
+19. Document any browser-specific issues
+20. Verify consistent behavior across all browsers","1-19. Feature works consistently across all tested browsers
+- No visual rendering differences (or only minor acceptable differences)
+- No functional behavior differences
+- No JavaScript errors in any browser
+- Performance is acceptable in all browsers
+- Touch interactions work smoothly on mobile
+- Layout is responsive and functional
+- Text is readable without zooming
+- Buttons are easily tappable on mobile","Access to multiple browsers and operating systems
+User account for VirtoStart Demo Store"
+"VCST-4066 - Search No Results","TC-008: Responsive Design Validation",Medium,UI/UX,40m,VCST-4066,"1. Open browser DevTools (F12)
+2. Enable responsive design mode
+3. Test Desktop Large (1920x1080)
+4. Navigate to each page and trigger no results
+5. Verify message is fully visible and readable
+6. Verify button is appropriately sized
+7. Verify layout doesn't break
+8. Test Desktop Medium (1366x768)
+9. Navigate to each page and trigger no results
+10. Verify all elements visible without scrolling
+11. Test Tablet Landscape (1024x768)
+12. Navigate to each page and trigger no results
+13. Verify touch target sizes (44x44px minimum)
+14. Test Tablet Portrait (768x1024)
+15. Navigate to each page and trigger no results
+16. Verify vertical layout works correctly
+17. Test Mobile Large (414x896)
+18. Navigate to each page and trigger no results
+19. Verify text is readable without zoom (16px minimum)
+20. Verify button is tappable (44x44px minimum)
+21. Test Mobile Medium (375x667)
+22. Navigate to each page and trigger no results
+23. Verify all content visible within viewport
+24. Test Mobile Small (320x568)
+25. Navigate to each page and trigger no results
+26. Verify message fits and button is accessible
+27. Test orientation changes (portrait to landscape)
+28. Verify layout adapts smoothly
+29. Test touch interactions on mobile/tablet
+30. Verify no unintended zoom or scroll behavior","1-30. Layout adapts appropriately for each screen size
+- No horizontal scrolling required
+- All content is visible and readable
+- No elements overlap or get cut off
+- Proper spacing is maintained
+- Buttons meet minimum touch target size (44x44px) on touch devices
+- Adequate spacing between interactive elements
+- Touch interactions work smoothly
+- Layout adapts smoothly when rotating device
+- Content remains accessible in both orientations","Access to devices or browser DevTools for responsive testing
+User account for VirtoStart Demo Store"
+"VCST-4066 - Search No Results","TC-009: Search with Valid Results",Critical,Functional,20m,VCST-4066,"1. Navigate to Back in Stock page
+2. Note the products displayed in the list
+3. Select a product name from the list
+4. Enter the product name in search field
+5. Execute the search
+6. Observe the results
+7. Verify no results message is NOT shown
+8. Verify reset button is NOT shown
+9. Verify search field retains the search term
+10. Clear search field
+11. Verify full list is restored
+12. Navigate to Quotes page
+13. Select a quote number from the list
+14. Enter the identifier in search field
+15. Execute the search and verify matching results
+16. Verify no results message is NOT shown
+17. Navigate to Orders page
+18. Select an order number from the list
+19. Enter the order number in search field
+20. Execute the search and verify matching results
+21. Verify no results message is NOT shown
+22. Switch to ""My orders"" tab and repeat
+23. Navigate to Company Members page
+24. Select a member name from the list
+25. Enter the member name in search field
+26. Execute the search and verify matching results
+27. Verify no results message is NOT shown
+28. Test partial match searching (if supported)
+29. Test case sensitivity (uppercase, lowercase, mixed)
+30. Verify consistent behavior across all pages","1-30. When valid search results exist:
+- Matching items are displayed correctly
+- Search results are relevant and accurate
+- No ""no results found"" message appears
+- No ""Reset search"" button appears for valid searches
+- Normal search results view is maintained
+- Search executes quickly (< 2 seconds)
+- Search is case-insensitive (if designed that way)
+- Partial matches work (if supported by design)
+- Search field retains the search term
+- Clearing search restores full list
+- Smooth transition between full list and search results
+- No page refresh required
+- No errors or broken states
+- Consistent behavior across all pages","User is logged into VirtoStart Demo Store
+User has access to all local search pages
+Test data exists in the system (orders, quotes, back in stock items, members)"
+"VCST-4066 - Search No Results","TC-010: Edge Cases and Special Characters",Low,Functional,30m,VCST-4066,"1. Navigate to Back in Stock page
+2. Enter special characters: !@#$%^&*() in search field
+3. Execute search and observe behavior
+4. Verify no application error
+5. Click reset if no results shown
+6. Enter SQL injection attempt: ' OR '1'='1
+7. Execute search and verify input is sanitized
+8. Verify no security breach or unauthorized data access
+9. Enter XSS attempt: <script>alert('test')</script>
+10. Execute search and verify script does not execute
+11. Verify no alert appears (no XSS vulnerability)
+12. Enter HTML tags: <div>test</div>
+13. Execute search and verify tags are escaped/displayed as text
+14. Test empty string (press Enter without typing)
+15. Verify appropriate handling (full list remains or no action)
+16. Test whitespace only (spaces only)
+17. Verify spaces are trimmed or handled gracefully
+18. Test very long input (1000+ characters)
+19. Verify input is limited or handled without crash
+20. Test leading/trailing spaces: '  test  '
+21. Verify spaces are trimmed appropriately
+22. Test numeric values only: 123456789
+23. Verify numbers are accepted and handled
+24. Test mixed content: test123!@#abc
+25. Verify mixed input is processed correctly
+26. Test rapid input (type and delete quickly)
+27. Verify UI remains responsive
+28. Test copy/paste with special characters
+29. Verify paste is handled safely
+30. Verify no encoding issues","1-30. Edge cases are handled gracefully:
+- No SQL injection vulnerabilities
+- No XSS vulnerabilities
+- No HTML injection vulnerabilities
+- Input is properly sanitized/escaped
+- No unauthorized data access
+- Application handles all edge cases without crashing
+- No infinite loops or frozen states
+- Appropriate error messages if needed
+- Reset functionality works in all scenarios
+- Clear feedback for invalid input (if applicable)
+- UI remains functional
+- Search field doesn't break or overflow
+- Performance remains acceptable
+- No data corruption
+- No unintended data modification","User is logged into VirtoStart Demo Store
+User has access to all local search pages"
+"VCST-4066 - Search No Results","TC-011: Search with Filters - No Products Found",High,Functional,25m,"VCST-4066, VCDZ-741","1. Navigate to https://vcst-qa-storefront.govirto.com/en-GB/search
+2. Verify products are displayed
+3. Note the number of products displayed
+4. Apply a valid filter (e.g., select a brand)
+5. Verify filtered results are displayed
+6. Apply additional filters that result in no matches
+7. Observe the page content
+8. Verify the ""Reset search"" button is visible
+9. Verify filter selections are still visible
+10. Verify the message text matches design specs
+11. Click the ""Reset search"" button
+12. Observe the page after reset
+13. Verify full product catalog is restored
+14. Verify filter selections are cleared
+15. Test Scenario A: Apply price filter $0.01 - $0.10 (unrealistic range)
+16. Verify no results message appears
+17. Verify reset button is available
+18. Click reset button and verify filters cleared
+19. Test Scenario B: Apply multiple filters (Brand + Color + Price)
+20. Combine filters that yield no matches
+21. Verify no results message appears
+22. Click reset button and verify all filters cleared
+23. Test Scenario C: Enter search term (e.g., ""laptop"")
+24. Apply filters that eliminate all results
+25. Verify no results message appears
+26. Verify search term remains visible
+27. Click reset button
+28. Verify filters cleared and search results restored","1. Search page loads successfully
+2. Product grid shows available items
+3. Product count is visible
+4. Products are filtered successfully
+5. Only products matching filter are shown
+6. Filters are applied successfully
+7. ""No results found"" message is displayed
+8. ""Reset search"" button is prominently displayed
+9. Applied filters are shown in sidebar
+10. Message text is clear and user-friendly
+11. Button responds to click action
+12. All filters are cleared
+13. All products are displayed again
+14. No filters remain selected
+15-28. For all scenarios:
+- Filters can be applied without errors
+- No results page displays when filter combination yields no matches
+- Reset button clears all applied filters
+- Product catalog is restored after reset
+- Filter state is reset to default
+- No page refresh required (smooth transition)
+- Filter counts update correctly after reset","User is on VirtoStart Demo Store
+User has navigated to catalog/search page with products
+Multiple filters are available (price, category, brand, etc.)"
+
