@@ -1,0 +1,26 @@
+Title,Preconditions,Steps,Expected,Priority,Type
+"Product1(Main_1) × Location(Main_1 / —), Global OFF → Today","Product1 assigned to Main_1 FFC; Pickup Location L1 Active=true with Main FC=Main_1, no Transfer FCs; EnableGlobalTransfer=FALSE","1) Open PDP for Product1
+2) Open pickup list/modal and find Location L1
+3) Add Product1 to cart → open Cart → open PickPoints modal and find L1",PDP & Cart show L1 with availability label 'Today' (TodayDurationText). No 'Transfer' or 'Global' label.,High,Functional
+"Product1(Main_1) × Location(— / Transfer_1), Global OFF → Not available","Product1 assigned to Main_1 FFC; Pickup Location L2 Active=true with no Main FC, Transfer FCs={Transfer_1}; EnableGlobalTransfer=FALSE","1) Open PDP for Product1 → pickup list/modal → find L2
+2) Add to Cart → PickPoints modal → find L2",L2 is displayed as 'Not available' (or disabled/unselectable) for Product1; cannot select it for pickup.,High,Functional
+"Product1(Main_1) × Location(— / Transfer_1), Global ON → Global Transfer","Product1 assigned to Main_1 FFC; Pickup Location L2 Active=true with no Main FC, Transfer FCs={Transfer_1}; EnableGlobalTransfer=TRUE","1) Open PDP for Product1 → pickup list/modal → find L2
+2) Add to Cart → PickPoints modal → find L2",L2 shows 'Global Transfer (1 week)' (GlobalTransferDurationText) for Product1; selection allowed if design permits Global.,High,Functional
+"Product2(Transfer_1) × Location(— / Transfer_1), Global OFF → Transfer","Product2 assigned to Transfer_1 FFC; Pickup Location L3 Active=true with no Main FC, Transfer FCs={Transfer_1}; EnableGlobalTransfer=FALSE","1) Open PDP for Product2 → pickup list/modal → find L3
+2) Cart → PickPoints modal → find L3",L3 shows 'Transfer (2–3 days)' (TransferDurationText) for Product2; selection allowed.,High,Functional
+"Product2(Transfer_1) × Location(Main_1 / —), Global OFF → Not available","Product2 assigned to Transfer_1 FFC; Pickup Location L4 Active=true with Main FC=Main_1, no Transfer FCs; EnableGlobalTransfer=FALSE","1) PDP for Product2 → pickup list/modal → find L4
+2) Cart → PickPoints modal → find L4",L4 is 'Not available' (or disabled) for Product2; cannot select.,High,Functional
+"Product3(Main_2 + Transfer_2) × Location(Main_2 / —), Global OFF → Today","Product3 assigned to Main_2 FFC and Transfer_2 FFC; Pickup Location L5 Active=true with Main FC=Main_2, no Transfer FCs; EnableGlobalTransfer=FALSE","1) PDP for Product3 → pickup list/modal → find L5
+2) Cart → PickPoints modal → find L5",L5 shows 'Today'. No 'Transfer' or 'Global' label.,High,Functional
+"Product3(Main_2 + Transfer_2) × Location(— / Transfer_2), Global OFF → Transfer","Product3 assigned to Main_2 FFC and Transfer_2 FFC; Pickup Location L6 Active=true with no Main FC, Transfer FCs={Transfer_2}; EnableGlobalTransfer=FALSE","1) PDP for Product3 → pickup list/modal → find L6
+2) Cart → PickPoints modal → find L6",L6 shows 'Transfer (2–3 days)'. Selection allowed.,High,Functional
+"Product3(Main_2 + Transfer_2) × Location(Main_2 / Transfer_2), Global OFF → Today (precedence)",Product3 assigned to Main_2 FFC and Transfer_2 FFC; Pickup Location L7 Active=true with Main FC=Main_2 and Transfer FCs={Transfer_2}; EnableGlobalTransfer=FALSE,"1) PDP for Product3 → pickup list/modal → find L7
+2) Cart → PickPoints modal → find L7",L7 shows 'Today' (MFC path takes precedence over Transfer); no dual labels.,High,Functional
+"Product4(Main_1 + Main_2) × Location(Main_1 / —), Global OFF → Today","Product4 assigned to Main_1 FFC and Main_2 FFC; Pickup Location L8 Active=true with Main FC=Main_1, no Transfer FCs; EnableGlobalTransfer=FALSE","1) PDP for Product4 → pickup list/modal → find L8
+2) Cart → PickPoints modal → find L8",L8 shows 'Today' for Product4.,High,Functional
+"Product4(Main_1 + Main_2) × Location(Main_2 / —), Global OFF → Today","Product4 assigned to Main_1 FFC and Main_2 FFC; Pickup Location L9 Active=true with Main FC=Main_2, no Transfer FCs; EnableGlobalTransfer=FALSE","1) PDP for Product4 → pickup list/modal → find L9
+2) Cart → PickPoints modal → find L9",L9 shows 'Today' for Product4.,High,Functional
+"Product4(Main_1 + Main_2) × Location(Main_3 / —), Global OFF → Not available","Product4 assigned to Main_1 FFC and Main_2 FFC; Pickup Location L10 Active=true with Main FC=Main_3, no Transfer FCs; EnableGlobalTransfer=FALSE","1) PDP for Product4 → pickup list/modal → find L10
+2) Cart → PickPoints modal → find L10",L10 is 'Not available' for Product4 (unmatched MFC; no transfer path).,High,Functional
+"Product2(Transfer_1) × Location(— / —), Global ON → Global Transfer",Product2 assigned to Transfer_1 FFC; Pickup Location L11 Active=true with no Main FC and no Transfer FCs; EnableGlobalTransfer=TRUE,"1) PDP for Product2 → pickup list/modal → find L11
+2) Cart → PickPoints modal → find L11",L11 shows 'Global Transfer (1 week)' (GlobalTransferDurationText). Selection allowed if Global path is supported.,High,Functional

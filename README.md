@@ -88,3 +88,36 @@ The configuration supports multiple browsers:
 - WebKit (Safari)
 - Mobile Chrome (Pixel 5)
 - Mobile Safari (iPhone 12)
+
+## Manual Testing Documentation
+
+The `tests/manual/` directory contains comprehensive manual test documentation for Virto Commerce features:
+
+### 📋 Multilingual SEO-Friendly URLs Test Suite
+
+A complete manual test plan for validating multilingual SEO URLs with **45 detailed test cases** covering:
+
+- **Test Plan** (`multilingual-seo-urls-test-plan.md`): Complete test cases with preconditions, steps, and expected results
+- **Test Data** (`test-data.md`): Sample URLs, translations, and test data for Norwegian, German, and French
+- **Quick Reference** (`quick-reference-guide.md`): One-page guide for quick access during testing
+- **Execution Tracker** (`test-execution-tracker.md`): Progress tracking and issue logging template
+- **README** (`README.md`): Comprehensive guide on using the manual test documentation
+
+**Test Coverage:**
+- URL routing and structure validation
+- Language switching functionality
+- Local storage persistence
+- Error handling and 404 redirects
+- Link sharing and preservation
+- Sitemap validation
+- Static and dynamic page routing
+- SEO metadata (canonical, hreflang, Open Graph)
+- Cross-page navigation consistency
+- Browser compatibility (Chrome, Firefox, Safari, Edge, Mobile)
+
+**Quick Start:**
+```bash
+cd tests/manual
+# Review the README for complete instructions
+cat README.md
+```

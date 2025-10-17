@@ -1,0 +1,232 @@
+{
+  "testInfo": {
+    "url": "https://vcst-qa-storefront.govirto.com/catalog",
+    "date": "2025-10-14",
+    "pageTitle": "QA & Catalog",
+    "testDuration": "N/A"
+  },
+  "summary": {
+    "totalIssues": 38,
+    "criticalIssues": 11,
+    "moderateIssues": 27,
+    "warningIssues": 0,
+    "overallStatus": "Partial Compliance"
+  },
+  "wcagCompliance": {
+    "levelA": {
+      "status": "Partial",
+      "passedCriteria": [
+        "2.4.2 Page Titled",
+        "3.1.1 Language of Page"
+      ],
+      "failedCriteria": [
+        "1.1.1 Non-text Content (Partial)",
+        "1.3.1 Info and Relationships",
+        "4.1.2 Name, Role, Value (Partial)"
+      ]
+    },
+    "levelAA": {
+      "status": "Partial",
+      "passedCriteria": [
+        "1.4.3 Contrast (Minimum)",
+        "2.4.3 Focus Order"
+      ],
+      "failedCriteria": [
+        "1.3.5 Identify Input Purpose"
+      ]
+    }
+  },
+  "pageInfo": {
+    "title": "QA & Catalog",
+    "hasLanguageAttr": true,
+    "language": "en-US",
+    "hasSkipLinks": true,
+    "totalImages": 18,
+    "totalButtons": 95,
+    "totalInputs": 17,
+    "totalHeadings": 1,
+    "totalLinks": 74
+  },
+  "semanticStructure": {
+    "hasMain": true,
+    "hasHeader": true,
+    "hasNav": true,
+    "hasFooter": true,
+    "hasH1": true,
+    "h1Count": 1,
+    "listCount": 9,
+    "tableCount": 0
+  },
+  "keyboardAccessibility": {
+    "totalFocusableElements": 657,
+    "firstFocusableElement": "A (Skip to main content)",
+    "lastFocusableElement": "A (Link)",
+    "positivTabindexIssues": 0,
+    "status": "Good"
+  },
+  "ariaLandmarks": [
+    {
+      "element": "HEADER",
+      "role": "implicit",
+      "ariaLabel": "None"
+    },
+    {
+      "element": "NAV",
+      "role": "implicit",
+      "ariaLabel": "Main menu"
+    },
+    {
+      "element": "NAV",
+      "role": "implicit",
+      "ariaLabel": "Main navigation"
+    },
+    {
+      "element": "MAIN",
+      "role": "implicit",
+      "ariaLabel": "None"
+    },
+    {
+      "element": "NAV",
+      "role": "implicit",
+      "ariaLabel": "Breadcrumbs navigation"
+    },
+    {
+      "element": "ASIDE",
+      "role": "implicit",
+      "ariaLabel": "None"
+    },
+    {
+      "element": "FOOTER",
+      "role": "implicit",
+      "ariaLabel": "Footer"
+    },
+    {
+      "element": "NAV",
+      "role": "implicit",
+      "ariaLabel": "None"
+    },
+    {
+      "element": "ASIDE",
+      "role": "implicit",
+      "ariaLabel": "Environment indicator: QA"
+    }
+  ],
+  "colorContrast": {
+    "totalChecked": 19,
+    "failedAA": 0,
+    "failedAAA": 0,
+    "passRate": "100%",
+    "status": "Excellent"
+  },
+  "criticalIssues": [
+    {
+      "type": "Button Without Accessible Name",
+      "severity": "Critical",
+      "count": 8,
+      "wcag": "WCAG 2.1 Level A - 4.1.2 Name, Role, Value",
+      "description": "Buttons lack accessible names for screen readers",
+      "recommendation": "Add aria-label attributes to all icon-only buttons"
+    },
+    {
+      "type": "Form Input Without Label",
+      "severity": "Critical",
+      "count": 3,
+      "wcag": "WCAG 2.1 Level A - 1.3.1 Info and Relationships",
+      "description": "Form inputs missing accessible labels",
+      "recommendation": "Associate inputs with labels using for/id or aria-label"
+    },
+    {
+      "type": "Missing Autocomplete",
+      "severity": "Moderate",
+      "count": 8,
+      "wcag": "WCAG 2.1 Level AA - 1.3.5 Identify Input Purpose",
+      "description": "Form inputs missing autocomplete attributes",
+      "recommendation": "Add appropriate autocomplete attributes to form inputs"
+    }
+  ],
+  "moderateIssues": [
+    {
+      "type": "Invalid ARIA Role",
+      "severity": "Moderate",
+      "count": 27,
+      "wcag": "WCAG 2.1 Level A - 4.1.2 Name, Role, Value",
+      "description": "Elements using non-standard or incorrectly applied ARIA roles",
+      "details": {
+        "role_none_on_listitem": 20,
+        "role_option_on_button": 7,
+        "role_spinbutton_on_input": 10
+      },
+      "recommendation": "Review and correct ARIA role usage, prefer native HTML where possible"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "Critical",
+      "action": "Add accessible names to buttons",
+      "affectedElements": 8,
+      "estimatedEffort": "2-4 hours",
+      "impact": "High"
+    },
+    {
+      "priority": "Critical",
+      "action": "Fix form input labeling",
+      "affectedElements": 3,
+      "estimatedEffort": "1-2 hours",
+      "impact": "High"
+    },
+    {
+      "priority": "Moderate",
+      "action": "Add autocomplete attributes",
+      "affectedElements": 8,
+      "estimatedEffort": "1-2 hours",
+      "impact": "Medium"
+    },
+    {
+      "priority": "Moderate",
+      "action": "Review and correct ARIA roles",
+      "affectedElements": 27,
+      "estimatedEffort": "4-8 hours",
+      "impact": "Medium"
+    },
+    {
+      "priority": "Moderate",
+      "action": "Verify focus indicators visibility",
+      "affectedElements": "All focusable",
+      "estimatedEffort": "2-3 hours",
+      "impact": "Medium"
+    }
+  ],
+  "testingMethodology": {
+    "tools": [
+      "Playwright Browser Automation",
+      "Custom JavaScript Accessibility Checks",
+      "Manual Review"
+    ],
+    "standards": [
+      "WCAG 2.1 Level A",
+      "WCAG 2.1 Level AA",
+      "ARIA Authoring Practices Guide"
+    ],
+    "checksPerformed": [
+      "Alt text on images",
+      "Button accessible names",
+      "Form input labels",
+      "Heading hierarchy",
+      "Color contrast",
+      "Keyboard navigation",
+      "ARIA roles and attributes",
+      "Semantic HTML structure",
+      "Language attributes",
+      "Page titles",
+      "Skip links",
+      "Focus order",
+      "Autocomplete attributes"
+    ]
+  },
+  "artifacts": {
+    "screenshot": ".playwright-mcp/accessibility-test-catalog-page.png",
+    "report": "artifacts/a11y/accessibility-report-catalog-page.md"
+  }
+}
+
+
