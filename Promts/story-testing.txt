@@ -1,5 +1,5 @@
 Check the status of Attlassian MCP server
-Connect to Atlassian mcp server
+Connect to Atlassian MCP server
 Find ticket https://virtocommerce.atlassian.net/browse/VCST-4094
 Read the story description and related comments
 Change the status of task VCST-4094 from 'Ready for test' to 'Testing'
