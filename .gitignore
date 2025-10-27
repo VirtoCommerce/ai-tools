@@ -1,2 +1,6 @@
 node_modules
 .env
+.cursorrules
+mcp.json
+.playwright-mcp/
+
