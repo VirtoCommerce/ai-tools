@@ -29,6 +29,7 @@
   "devDependencies": {
     "@playwright/mcp": "^0.0.37",
     "@playwright/test": "^1.55.0",
-    "playwright": "^1.55.0"
+    "playwright": "^1.55.0",
+    "playwright-core": "^1.56.1"
   }
 }
