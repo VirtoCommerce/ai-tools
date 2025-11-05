@@ -24,12 +24,11 @@
   },
   "homepage": "https://github.com/VirtoCommerce/vc-mcp-testing-module#readme",
   "dependencies": {
+    "@playwright/mcp": "^0.0.45",
     "dotenv": "^17.1.0"
   },
   "devDependencies": {
-    "@playwright/mcp": "^0.0.37",
     "@playwright/test": "^1.55.0",
-    "playwright": "^1.55.0",
-    "playwright-core": "^1.56.1"
+    "playwright": "^1.55.0"
   }
 }
