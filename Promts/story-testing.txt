@@ -1,11 +1,41 @@
-Check the status of Attlassian MCP server
-Connect to Atlassian MCP server
-Find ticket https://virtocommerce.atlassian.net/browse/VCST-4199
-Read the story description and related comments
-Change the status of task VCST-4199 from 'Ready for test' to 'Testing'
-Create a test plan (add frontend version from the website footer) and test cases
-Create a new folder tests/VCST-4094-/
-Browser automation preference: use  both the Playwright MCP, Chrome DevTools MCP for testing
-Move through each step systematically and perform testing
-Navigate to base url
-Sign-in as USER2 (npm run env:check)
+# Story Testing Workflow
+
+## Prerequisites
+1. Check the status of Atlassian MCP server
+2. Connect to Atlassian MCP server
+3. Verify environment configuration npm run env:check
+
+## Story Analysis & Setup
+4. Find and retrieve the target JIRA ticket (e.g., https://virtocommerce.atlassian.net/browse/VCST-{id})
+5. Read the story description, acceptance criteria, and related comments
+6. Change the task status from 'Ready for test' to 'Testing'
+7. Extract key testing requirements and edge cases from the story
+
+## Test Planning & Documentation
+8. Create a comprehensive test plan including:
+   - Frontend version (from website footer)
+   - Test scenarios based on acceptance criteria
+   - Edge cases and negative test scenarios
+   - Expected vs actual results documentation
+9. Create organized folder structure: tests/VCST-{id}-{story-title}/
+10. Generate detailed test cases covering all user flows
+
+## Test Execution
+11. Browser automation setup: Use Chrome DevTools MCP / Playwright MCP for interactive testing and debugging
+12. Navigate to the target application URL (e.g. VCST_FRONT_URL)
+13. Authenticate as appropriate test user (e.g. USER2 or as specified)
+14. Execute each test case systematically:
+    - Follow acceptance criteria step-by-step
+    - Test positive and negative scenarios
+    - Verify UI/UX elements and functionality
+    - Document any bugs or deviations
+    - Take screenshots for evidence
+    - Fetch console and network logs
+
+## Test Completion & Reporting
+15. Compile comprehensive test results
+16. Update JIRA ticket with test outcomes
+17. Transition ticket status based on results:
+    - 'TESTED' if all tests pass
+    - 'REOPEN' if critical issues found
+18. Create final test report with evidence and recommendations
