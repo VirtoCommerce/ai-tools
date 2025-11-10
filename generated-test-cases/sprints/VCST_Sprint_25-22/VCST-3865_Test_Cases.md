@@ -16,47 +16,52 @@
 - Search functionality is enabled
 
 **Test Steps**:
-1. Click on the pickup location search bar
-2. Enter a valid store name "Central Mall"
-3. Press Enter or click search icon
-4. Observe results on both map and list view
+1. Go to Catalog page
+2. Click on the increase button on the Product card
+3. Navigate to cart page
+4. Scroll the page until Shipping details section
+5. Click on the Pickup tab
+6. Trigger the Pickup dialog modal
+7. Click on the pickup location search bar
+8. Enter a valid pickup name (e.g."Queens Crossing)
+9. Press Enter or click search icon
+10. Observe results on both map and list view
 
 **Expected Results**:
 - Search results update in real-time
 - Matching locations are displayed on map with pins
 - List view shows matching locations
-- Results show store name, address, and availability status
+- Results show pick up name, address, and availability status
 
-**Test Data**: Store name: "Central Mall"
+**Test Data**: pick up name: "Central Mall"
 **Priority**: High
 
 ---
 
-### Test Case 2: Search by Subway Station
-**Objective**: Verify search functionality using subway station names
+### Test Case 2: Search by Address
+**Objective**: Verify search functionality using Address
 
 **Preconditions**:
 - User is on pickup location selection page
-- Subway station data is available in system
+- Address data is available in system
 
 **Test Steps**:
 1. Click search bar
-2. Enter subway station name "Union Station"
-3. Select from autocomplete suggestions if available
-4. Review search results
+2. Enter Address ( 50527 Yost Ridges )
+3. Review search results
 
 **Expected Results**:
-- Pickup points near subway station are displayed
-- Results are sorted by distance from station
-- Map centers on selected subway station
-- Subway station icon is distinctly visible
+- Pickup points near Address are displayed
+- Appropriate results are returned
+- Map centers on selected Address
+- 
 
-**Test Data**: Station name: "Union Station"
+**Test Data**: Address: "50527 Yost Ridges"
 **Priority**: High
 
 ---
 
-### Test Case 3: Filter by Store Availability
+### Test Case 3: Filter by pick up Availability
 **Objective**: Verify filtering of pickup locations based on item availability
 
 **Preconditions**:
@@ -67,11 +72,11 @@
 1. Open pickup location selector
 2. Toggle "Available for Pickup" filter
 3. Review filtered results
-4. Check store details for availability information
+4. Check pick up details for availability information
 
 **Expected Results**:
-- Only stores with item availability are shown
-- Unavailable stores are hidden or grayed out
+- Only pick ups with item availability are shown
+- Unavailable pick ups are hidden or grayed out
 - Availability status is clearly indicated
 - Filter state persists during session
 
@@ -79,31 +84,7 @@
 
 ---
 
-### Test Case 4: Pagination of Search Results
-**Objective**: Verify proper functioning of pagination in search results
-
-**Preconditions**:
-- Search returns more than 10 results
-- Pagination is enabled
-
-**Test Steps**:
-1. Perform search that returns many results
-2. Scroll through first page
-3. Click next page button
-4. Navigate between pages
-5. Click last page button
-
-**Expected Results**:
-- Results are divided into pages (10 items per page)
-- Page controls are visible and functional
-- Current page is highlighted
-- Map updates with locations on current page
-
-**Priority**: Medium
-
----
-
-### Test Case 5: Combined Filters and Search
+### Test Case 4: Combined Filters and Search
 **Objective**: Verify functionality when multiple search criteria are applied
 
 **Preconditions**:
@@ -128,7 +109,7 @@
 
 ## Edge Cases and Negative Tests
 
-### Test Case 6: No Results Found
+### Test Case 5: No Results Found
 **Objective**: Verify system behavior when search yields no results
 
 **Preconditions**:
@@ -147,11 +128,11 @@
 
 **Priority**: Medium
 
-### Test Case 7: Special Characters in Search
+### Test Case 6: Special Characters in Search
 **Objective**: Verify search handling of special characters
 
 **Test Steps**:
-1. Enter search with special characters "Store & Mall #123"
+1. Enter search with special characters "pick up & Mall #123"
 2. Enter search with SQL injection characters "'; DROP TABLE"
 3. Enter emoji characters "🏪"
 
@@ -169,10 +150,10 @@
 - Test cases should be executed on multiple browsers
 - Mobile responsiveness should be verified for all scenarios
 - Performance testing should be considered for search response times
-- Integration with store inventory system should be verified
+- Integration with pick up inventory system should be verified
 - Accessibility testing should be performed on search interface
 
 Dependencies:
-- Store inventory API
+- pick up inventory API
 - Geolocation services
 - Map service integration

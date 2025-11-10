@@ -1,0 +1,13 @@
+Search Input,Expected Match?,Reason/Case Covered,Expected Record Name(s)
+MoMA,Yes,Partial name search,MoMA PS1-Main_2; Transfer_2
+PS1,Yes,Suffix/abbreviation,MoMA PS1-Main_2; Transfer_2
+Little Island,Yes,Partial name/new entry,Little Island - Transfer_2 FFC
+Pier 55,Yes,Address part/new entry,Little Island - Transfer_2 FFC
+pickup90@example.com,Yes,Contact email,Little Island - Transfer_2 FFC
+pickup79@example.com,Yes,Contact email,MoMA PS1-Main_2; Transfer_2
+United States,Yes,Country partial,Both
+10090,Yes,Zip for new entry,Little Island - Transfer_2 FFC
+10079,Yes,Zip for previous entry,MoMA PS1-Main_2; Transfer_2
+FFC,Yes,Suffix for new entry,Little Island - Transfer_2 FFC
+PS3,No,Negative case,None
+Tesco,No,Negative case,None
