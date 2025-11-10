@@ -46,7 +46,7 @@ Produce clear, reproducible defects with STR, scope, and impact.
     - Fetch console and network logs
 
 ## Test Completion & Reporting
-17. Compile comprehensive test results
+17. Compile key points, brief test results
 18. Update JIRA ticket with test outcomes
 19. Transition ticket status based on results:
     - 'TESTED' if all tests pass
