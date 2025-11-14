@@ -34,13 +34,13 @@ Produce clear, reproducible defects with STR, scope, and impact.
    - Design compliance verification (if Figma designs provided)
    - **Cross-browser testing matrix:**
      * Desktop browsers (last 2 versions): Chrome, Edge, Webkit, Firefox
-     * Mobile devices: iPhone (models 16, 17, 18), Android (last 3 models)
+     * Mobile devices: iPhone (models 16, 17, 18), Android (Galaxy S25)
    - **Mobile testing requirements:** Responsive design validation, touch interactions, viewport compatibility
 11. Create organized folder structure: tests/VCST-{id}-{story-title}/
 12. Generate detailed test cases covering all user flows for both desktop and mobile platforms
 
 ## Test Execution
-13. Browser automation setup: Use both Chrome DevTools MCP and Playwright MCP for interactive testing and debugging
+13. Browser automation setup: Use both Playwright MCP or Chrome DevTools MCP for interactive testing and debugging
 14. Navigate to the target application URL (e.g. VCST_FRONT_URL)
 15. Authenticate as appropriate test user (e.g. USER2 or as specified)
 16. Execute each test case systematically:
@@ -56,7 +56,7 @@ Produce clear, reproducible defects with STR, scope, and impact.
     - Document browser-specific issues or inconsistencies
     - Capture screenshots and console logs for each browser
 18. **Mobile testing execution:**
-    - Test on mobile devices: iPhone (models 16, 17, 18) and Android (last 3 models)
+    - Test on mobile devices: iPhone (models 16, 17, 18) and Android (Galaxy S25)
     - Verify responsive design and layout adaptation
     - Test touch interactions (tap, swipe, pinch, scroll)
     - Validate viewport compatibility and mobile-specific UI elements
