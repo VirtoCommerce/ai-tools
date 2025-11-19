@@ -25,7 +25,11 @@ const requiredVars = [
     'CYBERSOURCE_CVV',
     'AUTHORIZNET_CARD',
     'AUTHORIZNET_EXPIRY',
-    'AUTHORIZNET_CVV'
+    'AUTHORIZNET_CVV',
+    'DATATRANCE_MASTERCARD',
+    'DATATRANCE_EXPIRY',
+    'DATATRANCE_CVV',
+    'DATATRANCE_OTP'
     
 ];
 
@@ -69,13 +73,8 @@ export const env = {
     SKYFLOW_VISA: getEnvVar('SKYFLOW_VISA'),
     SKYFLOW_MASTERCARD: getEnvVar('SKYFLOW_MASTERCARD'),
     SKYFLOW_EXPIRY: getEnvVar('SKYFLOW_EXPIRY'),
-    SKYFLOW_CVV: getEnvVar('SKYFLOW_CVV'),
-    
-    // Generic payment configuration
-    CVV: getEnvVar('CVV'),
-    EXPIRY: getEnvVar('EXPIRY'),
-    CARD_HOLDER: getEnvVar('CARD_HOLDER'),
-    CARD_EXPIRY: getEnvVar('CARD_EXPIRY'),
+    SKYFLOW_CVV: getEnvVar('SKYFLOW_CVV'),   
+
     
     // CyberSource payment configuration
     CYBERSOURCE_CARD: getEnvVar('CYBERSOURCE_CARD'),
@@ -85,7 +84,13 @@ export const env = {
     // Authorize.Net payment configuration
     AUTHORIZNET_CARD: getEnvVar('AUTHORIZNET_CARD'),
     AUTHORIZNET_EXPIRY: getEnvVar('AUTHORIZNET_EXPIRY'),
-    AUTHORIZNET_CVV: getEnvVar('AUTHORIZNET_CVV')
+    AUTHORIZNET_CVV: getEnvVar('AUTHORIZNET_CVV'),
+
+    // Datatrance payment configuration
+    DATATRANCE_MASTERCARD: getEnvVar('DATATRANCE_MASTERCARD'),
+    DATATRANCE_EXPIRY: getEnvVar('DATATRANCE_EXPIRY'),
+    DATATRANCE_CVV: getEnvVar('DATATRANCE_CVV'),
+    DATATRANCE_OTP: getEnvVar('DATATRANCE_OTP')
 };
 
 // Optional: Export individual getters for sensitive data

@@ -1,0 +1,577 @@
+
+---
+
+## 1. `view_item_list` (function: `viewItemList`)
+
+### Parameters
+
+| Param         | Source                            | Type   | Notes                    |
+| ------------- | --------------------------------- | ------ | ------------------------ |
+| `items_skus`  | `toCSV(items.map(el => el.code))` | string | CSV of item codes        |
+| `items_count` | `items?.length ?? 0`              | number | Total items in list      |
+| `...params`   | from function arg                 | any    | generic tracking context |
+
+### Test ideas
+
+**Positive**
+
+1. List with N items → `items_count = N`, `items_skus` contains all codes, no extra.
+2. Empty list (`[]`) → `items_count = 0`, `items_skus = ""` (or undefined as per `toCSV` behavior).
+
+**Negative**
+
+1. `items = null` or `undefined` → event still sent, `items_count = 0` without runtime error.
+2. Some items missing `.code` → verify behavior (either `""` for that item or it’s excluded – define expected behavior with dev).
+
+**Edge**
+
+1. Very large list (e.g. 100+ items) → event still sent, `items_skus` not truncated or broken.
+2. Item codes with special characters (spaces, commas) → ensure CSV and decoding work.
+
+---
+
+## 2. `select_item` (function: `selectItem`)
+
+### Parameters
+
+| Param       | Source            | Type  | Notes                                                            |
+| ----------- | ----------------- | ----- | ---------------------------------------------------------------- |
+| `items`     | `[gtagItem]`      | array | Single GA item: from `lineItemToGtagItem` or `productToGtagItem` |
+| `...params` | from function arg | any   | generic context                                                  |
+
+### Test ideas
+
+**Positive**
+
+1. Item is a **line item** (has `productId`) → `lineItemToGtagItem` used.
+2. Item is a **product** (no `productId`) → `productToGtagItem` used.
+3. Items array has length `1`.
+
+**Negative**
+
+1. `item = null` / incorrect type → define expected behavior with dev (ideally event not sent or handled gracefully; now it could break).
+2. Missing mandatory GA fields in gtag item (e.g. `item_id`) – check mapping functions or add tests around them.
+
+**Edge**
+
+1. Item with very long name/ID.
+2. Very high price/quantity values → ensure not rounded/unexpectedly truncated.
+
+---
+
+## 3. `view_item` (function: `viewItem`)
+
+### Parameters
+
+| Param       | Source                       | Type               |
+| ----------- | ---------------------------- | ------------------ |
+| `currency`  | `currencyCode` (global)      | string             |
+| `value`     | `item.price?.actual?.amount` | number | undefined |
+| `items`     | `[productToGtagItem(item)]`  | array              |
+| `...params` | from function arg            | any                |
+
+### Test ideas
+
+**Positive**
+
+1. Product with valid price → `currency` set, `value` equals price, items[0].item_id is correct.
+2. Product without price → `value` is `undefined` or missing; event still sent.
+
+**Negative**
+
+1. `item = null` → verify if event is prevented or error logged.
+2. Price is negative or NaN (bad data) → ensure behavior is defined.
+
+**Edge**
+
+1. Very high price (large order) → value not overflowing or stringified.
+2. Multiple `view_item` calls due to re-renders → make sure UI doesn’t trigger duplicates (that’s more an integration test).
+
+---
+
+## 4. `add_to_wishlist` (function: `addItemToWishList`)
+
+### Parameters
+
+| Param       | Source                       |
+| ----------- | ---------------------------- |
+| `currency`  | `currencyCode`               |
+| `value`     | `item.price?.actual?.amount` |
+| `items`     | `[productToGtagItem(item)]`  |
+| `...params` | from function arg            |
+
+### Test ideas
+
+**Positive**
+
+1. Adding an item with valid price → check `value`, `currency`, item details.
+2. Wishlist from PDP and PLP flows both send same structure.
+
+**Negative**
+
+1. Add item without price → event still sent, `value` missing/undefined but no crash.
+2. Clicking wishlist icon multiple times → no duplicate identical events (depending on UX).
+
+**Edge**
+
+1. Item previously in wishlist → event only on **first** add, not on page reload (if that’s requirement).
+
+---
+
+## 5. `add_to_cart` – single item (function: `addItemToCart`)
+
+### Parameters
+
+| Param       | Source                                              |   |                       |
+| ----------- | --------------------------------------------------- | - | --------------------- |
+| `currency`  | `currencyCode`                                      |   |                       |
+| `value`     | `(item.price?.actual?.amount                        |   | 0) * (quantity ?? 1)` |
+| `items`     | `[inputItem]` where `inputItem.quantity = quantity` |   |                       |
+| `...params` | from function arg                                   |   |                       |
+
+### Test ideas
+
+**Positive**
+
+1. Quantity = 1, price P → `value = P`, item.quantity = 1.
+2. Quantity = 3, price P → `value = 3P`, item.quantity = 3.
+
+**Negative**
+
+1. `quantity = 0` → should event be sent or blocked? Currently `value = 0`; decide expected behavior.
+2. `quantity = null/undefined` → uses `1` by default → test this explicitly.
+3. Missing price → `value = 0`; ensure this is acceptable.
+
+**Edge**
+
+1. Very big quantity (e.g. 999) → `value` large but not broken.
+2. User quickly double-clicks “Add to cart” → two events; you might want to ensure deduplication on the UI side.
+
+---
+
+## 6. `add_to_cart` – multiple items (function: `addItemsToCart`)
+
+### Parameters
+
+| Param         | Source                                         |
+| ------------- | ---------------------------------------------- |
+| `currency`    | `currencyCode`                                 |
+| `value`       | `sumBy(items, item.price?.actual?.amount)`     |
+| `items`       | `items.filter(Boolean).map(productToGtagItem)` |
+| `items_count` | `inputItems.length`                            |
+| `...params`   | from function arg                              |
+
+### Test ideas
+
+**Positive**
+
+1. Multiple items with valid prices → `value` equals sum of prices, `items_count` equals number of non-null items.
+2. Some items are null → they are filtered out, `items_count` excludes them.
+
+**Negative**
+
+1. Items with missing prices → they contribute `undefined` to sum? (Check actual runtime). Ensure no `NaN` value.
+2. All items `null` or invalid → `items_count = 0`, `value` should be 0 or undefined, but event still gracefully sent or skipped.
+
+**Edge**
+
+1. Large number of items (cart import) → event still within payload limits.
+2. Mixed currencies not supported → verify only one currency used (global).
+
+---
+
+## 7. `update_cart_item` (function: `updateCartItem`)
+
+### Parameters
+
+| Param               | Source             |
+| ------------------- | ------------------ |
+| `item_id`           | `itemId`           |
+| `new_quantity`      | `newQuantity`      |
+| `previous_quantity` | `previousQuantity` |
+| `...params`         | from function arg  |
+
+### Test ideas
+
+**Positive**
+
+1. Quantity changes from 1 → 3 → check both quantities.
+2. Multiple updates tracked correctly (1→2, 2→0, etc.).
+
+**Negative**
+
+1. `newQuantity` equals `previousQuantity` → should event be sent? (Probably not useful, verify behavior).
+2. `itemId` missing/empty → event should ideally not be sent or flagged.
+
+**Edge**
+
+1. `newQuantity = 0` (remove by setting 0) → check business rule.
+2. Very big quantities / negative values (bad input) → no crash, ideally not tracked.
+
+---
+
+## 8. `remove_from_cart` (function: `removeItemsFromCart`)
+
+### Parameters
+
+| Param         | Source                                     |
+| ------------- | ------------------------------------------ |
+| `currency`    | `currencyCode`                             |
+| `value`       | `sumBy(items, item.extendedPrice?.amount)` |
+| `items`       | `items.map(lineItemToGtagItem)`            |
+| `items_count` | `items.length`                             |
+| `...params`   | from function arg                          |
+
+### Test ideas
+
+**Positive**
+
+1. Removing one line item → `items_count = 1`, `value = extendedPrice`.
+2. Removing multiple items → `value` equals sum of their extended prices.
+
+**Negative**
+
+1. Some items missing `extendedPrice` → check that `value` isn’t NaN.
+2. Empty items array → should event be skipped or sent with `items_count = 0`?
+
+**Edge**
+
+1. Removing entire cart vs. subset → confirm event semantics with PO.
+
+---
+
+## 9. `view_cart` (function: `viewCart`)
+
+### Parameters
+
+| Param         | Source                               |
+| ------------- | ------------------------------------ |
+| `currency`    | `currencyCode`                       |
+| `value`       | `cart.total.amount`                  |
+| `items`       | `cart.items.map(lineItemToGtagItem)` |
+| `items_count` | `cart.items.length`                  |
+| `...params`   | from function arg                    |
+
+### Test ideas
+
+**Positive**
+
+1. Cart with N items → `items_count = N`, `value` equals cart total.
+2. Empty cart → `items_count = 0`, `value = 0` (if that’s how totals work).
+
+**Negative**
+
+1. `cart` missing or `cart.items` undefined → should not crash.
+2. `cart.total` undefined → handle gracefully (no NaN).
+
+**Edge**
+
+1. User opens cart page multiple times → check duplicates frequency (OK but should match views).
+
+---
+
+## 10. `clear_cart` (function: `clearCart`)
+
+Same structure as `view_cart`.
+
+### Parameters
+
+| Param         | Source                               |
+| ------------- | ------------------------------------ |
+| `currency`    | `currencyCode`                       |
+| `value`       | `cart.total.amount`                  |
+| `items`       | `cart.items.map(lineItemToGtagItem)` |
+| `items_count` | `cart.items.length`                  |
+| `...params`   | from function arg                    |
+
+### Test ideas
+
+**Positive**
+
+1. Clear cart with N items → all listed in `items`, `items_count = N`.
+2. After clear action, `view_cart` shows empty cart and no `clear_cart` re-fires.
+
+**Negative/Edge**
+
+1. Clear already empty cart → event should be defined (send or skip).
+2. Cart with coupons → confirm if coupon should also be part of event (here not included).
+
+---
+
+## 11. `begin_checkout` (function: `beginCheckout`)
+
+### Parameters
+
+| Param         | Source                               |
+| ------------- | ------------------------------------ |
+| `currency`    | `cart.currency.code`                 |
+| `value`       | `cart.total.amount`                  |
+| `items`       | `cart.items.map(lineItemToGtagItem)` |
+| `items_count` | `cart.items.length`                  |
+| `coupon`      | `cart.coupons?.[0]?.code`            |
+| `...params`   | from function arg                    |
+
+### Test ideas
+
+**Positive**
+
+1. Checkout with items and coupon → all fields set.
+2. Checkout without coupon → `coupon` is undefined.
+
+**Negative**
+
+1. `cart.currency` missing → ensure `try/catch` logs error, app doesn’t crash.
+2. Empty cart → should `begin_checkout` be sent? (business decision, but test whichever is implemented).
+
+**Edge**
+
+1. Multiple coupons exist → only first is sent; confirm that’s expected.
+
+---
+
+## 12. `add_shipping_info` (function: `addShippingInfo`)
+
+### Parameters
+
+| Param           | Source                                |
+| --------------- | ------------------------------------- |
+| `shipping_tier` | `shipmentMethodOption`                |
+| `currency`      | `cart?.shippingPrice.currency.code`   |
+| `value`         | `cart?.shippingPrice.amount`          |
+| `coupon`        | `cart?.coupons?.[0]?.code`            |
+| `items`         | `cart?.items.map(lineItemToGtagItem)` |
+| `items_count`   | `cart?.items.length`                  |
+| `...params`     | from function arg                     |
+
+### Test ideas
+
+**Positive**
+
+1. Standard shipping selected → `shipping_tier` reflects option code, shipping price matches.
+2. Free shipping promo → `value = 0`, coupon set if applicable.
+
+**Negative**
+
+1. `shipmentMethodOption` null/undefined → event still sent but tier missing? Define expected behavior.
+2. Missing `shippingPrice` → `try/catch` path; error logged, app continues.
+
+**Edge**
+
+1. Change shipping method multiple times → add_shipping_info events are emitted per change. You might want to assert no unnecessary duplicates.
+
+---
+
+## 13. `add_payment_info` (function: `addPaymentInfo`)
+
+### Parameters
+
+| Param          | Source                                |
+| -------------- | ------------------------------------- |
+| `payment_type` | `paymentGatewayCode`                  |
+| `currency`     | `cart?.currency?.code`                |
+| `value`        | `cart?.total?.amount`                 |
+| `coupon`       | `cart?.coupons?.[0]?.code`            |
+| `items`        | `cart?.items.map(lineItemToGtagItem)` |
+| `items_count`  | `cart?.items.length`                  |
+| `...params`    | from function arg                     |
+
+### Test ideas
+
+**Positive**
+
+1. Choose credit card / PayPal → `payment_type` matches gateway code.
+2. Applied coupon present → `coupon` populated.
+
+**Negative**
+
+1. `paymentGatewayCode` missing → event either skipped or sent with missing payment_type (agree with devs).
+2. `cart` incomplete → ensure `try/catch` handles gracefully.
+
+**Edge**
+
+1. User changes payment method from A → B → both events present in sequence.
+
+---
+
+## 14. `purchase` (function: `purchase`)
+
+### Parameters
+
+| Param            | Source                                |
+| ---------------- | ------------------------------------- |
+| `currency`       | `order.currency?.code`                |
+| `transaction_id` | `transactionId`                       |
+| `value`          | `order.total.amount`                  |
+| `coupon`         | `order.coupons?.[0]`                  |
+| `shipping`       | `order.shippingTotal?.amount`         |
+| `tax`            | `order.taxTotal?.amount`              |
+| `items`          | `order.items.map(lineItemToGtagItem)` |
+| `items_count`    | `order?.items?.length`                |
+| `...params`      | from function arg                     |
+
+### Test ideas
+
+**Positive**
+
+1. Successful order → transaction_id set, totals correct, items_count correct.
+2. Order with coupon → coupon populated.
+
+**Negative**
+
+1. `transactionId` null/empty → still sending event? Should be prevented.
+2. Missing totals or items → ensure `try/catch` prevents crash.
+
+**Edge**
+
+1. Partial captures / multiple shipments – decide how many `purchase` events should be sent (spec topic).
+2. Retry of payment resulting in duplicate order page load → ensure no double `purchase`.
+
+---
+
+## 15. `place_order` (function: `placeOrder`)
+
+### Parameters
+
+| Param         | Source                       |
+| ------------- | ---------------------------- |
+| `currency`    | `order.currency?.code`       |
+| `value`       | `order.total?.amount`        |
+| `coupon`      | `order.coupons?.[0]`         |
+| `shipping`    | `order.shippingTotal.amount` |
+| `tax`         | `order.taxTotal.amount`      |
+| `items_count` | `order.items?.length`        |
+| `...params`   | from function arg            |
+
+### Test ideas
+
+**Positive**
+
+1. Event fires when user clicks final “Place order” before confirmation – check all values.
+2. There is a clear relationship between `place_order` and `purchase` (one per order).
+
+**Negative**
+
+1. Missing shipping / tax totals → thrown exception? (no `?.` here, so more fragile) – important test.
+
+**Edge**
+
+1. User reloads “order review” page and places order again → ensure your backend/FE logic avoids duplicate `place_order`.
+
+---
+
+## 16. `search` (function: `search`)
+
+### Parameters
+
+| Param           | Source                                   |
+| --------------- | ---------------------------------------- |
+| `search_term`   | `searchTerm`                             |
+| `items_count`   | `itemsCount`                             |
+| `visible_items` | `toCSV(visibleItems.map(el => el.code))` |
+
+### Test ideas
+
+**Positive**
+
+1. Search “laptop” with 20 total results, 12 visible → `search_term = "laptop"`, `items_count = 20`, `visible_items` includes visible SKUs.
+2. Empty result set → `items_count = 0`, `visible_items = ""`.
+
+**Negative**
+
+1. `searchTerm` empty or whitespace → check whether event is sent and how term is stored.
+
+**Edge**
+
+1. Search with special characters / long strings.
+2. `visibleItems` undefined → ensure no crash.
+
+---
+
+## 17. `view_search_results` (function: `viewSearchResults`)
+
+### Parameters
+
+| Param           | Source                                                   |
+| --------------- | -------------------------------------------------------- |
+| `search_term`   | `searchTerm`                                             |
+| `visible_items` | `toCSV(params?.visible_items?.map(el => el.code) ?? [])` |
+| `results_count` | `params?.results_count`                                  |
+| `results_page`  | `params?.results_page`                                   |
+| `...params`     | other fields from `params`                               |
+
+### Test ideas
+
+**Positive**
+
+1. Page 1, 100 results, 12 visible → values match.
+2. Pagination to page 2 → `results_page = 2`, new set of visible_items.
+
+**Negative**
+
+1. `params.visible_items` undefined → function uses `[]` and works fine.
+2. `results_count` missing → still sends event, just without that param.
+
+**Edge**
+
+1. Large `results_count` (pagination summary) → ensure number type is ok.
+
+---
+
+## 18. `login` (function: `login`)
+
+### Parameters
+
+| Param       | Source            |
+| ----------- | ----------------- |
+| `method`    | `method`          |
+| `...params` | from function arg |
+
+### Test ideas
+
+**Positive**
+
+1. Login via email/password → `method = "password"` (or whatever code is used).
+2. Login via social provider → `method = "google" / "facebook"` etc.
+
+**Negative**
+
+1. Method undefined/empty → event probably not useful; define expected behavior.
+2. Failed login (wrong password) → verify that this event is **not** sent if spec says only on success.
+
+**Edge**
+
+1. Automatic login via token → decide whether to fire `login`.
+
+---
+
+## 19. `sign_up` (function: `signUp`)
+
+### Parameters
+
+| Param       | Source            |
+| ----------- | ----------------- |
+| `method`    | `method`          |
+| `...params` | from function arg |
+
+### Test ideas
+
+**Positive**
+
+1. Registration with email/password → `method = "password"` or similar.
+2. Social sign-up → `method` reflects provider.
+
+**Negative**
+
+1. Sign-up form validation fails → no `sign_up` event.
+2. User already exists (backend error) → no event (unless spec says otherwise).
+
+**Edge**
+
+1. Deferred account creation (e.g. guest checkout → convert to account) → at which exact action `sign_up` is fired.
+
+---
+
+If you’d like, next step I can:
+
+* Transform this into a **spreadsheet-friendly table** (one row per *event + parameter + scenario type*), or
+* Write **Playwright/Cypress skeleton tests** for a couple of events (e.g. `add_to_cart`, `purchase`) that assert the GA requests or dataLayer.
