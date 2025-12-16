@@ -1,0 +1,137 @@
+ID,Title,Section,Priority,Type,Objective,Preconditions,Test Steps,Expected Results,Test Data,Execution Status,Notes
+TC-POS-001,Complete Valid Form Submission,1. POSITIVE TEST CASES,Critical,Positive,Verify successful order creation with all valid CyberSource card details,"User logged in; Product in cart; Shipping method selected: Fixed rate (Ground); Payment method: Bank card (CyberSource) selected","1. Navigate to cart/checkout page
+2. Select ""Bank card (CyberSource)"" payment method
+3. Wait for credit card form to display
+4. Enter card number: 4622943127013705
+5. Enter cardholder name: John Smith
+6. Enter expiration date: 09/2029
+7. Enter CVV: 838
+8. Click ""Place order"" button
+9. Wait for order confirmation","All fields accept input without errors; No validation errors displayed; Order is created successfully; Payment is authorized; User redirected to order confirmation page; Order number displayed; Payment status: Authorized/Completed","Card: 4622943127013705, Name: John Smith, Expiry: 09/2029, CVV: 838",PARTIALLY PASSED,Form works - Payment blocked by CyberSource API 400 error
+TC-POS-002,Valid Card with Fixed Rate (Air),1. POSITIVE TEST CASES,High,Positive,Verify CyberSource payment works with Air shipping,"Shipping method: Fixed rate (Air); Payment method: Bank card (CyberSource)","1. Select Fixed rate (Air) shipping method
+2. Select Bank card (CyberSource)
+3. Fill all credit card fields with valid data
+4. Submit order","Order created with Air shipping; Payment authorized; Correct shipping cost applied; Order total calculated correctly","Card: 4622943127013705, Name: Jane Doe, Expiry: 09/2029, CVV: 838",BLOCKED,Blocked by CyberSource API 400 error
+TC-POS-003,Valid Card with Pickup,1. POSITIVE TEST CASES,High,Positive,Verify CyberSource payment works with Pickup delivery,"Delivery option: Pickup; Payment method: Bank card (CyberSource)","1. Select Pickup delivery option
+2. Select Bank card (CyberSource)
+3. Fill all credit card fields
+4. Submit order","Order created with Pickup option; Payment authorized; No shipping cost applied (Pickup); Pickup location details shown","Card: 4622943127013705, Name: Test User, Expiry: 09/2029, CVV: 838",BLOCKED,Blocked by CyberSource API 400 error
+TC-POS-004,Cardholder Name with Special Characters,1. POSITIVE TEST CASES,Medium,Positive,Verify valid special characters accepted in cardholder name,Payment method: Bank card (CyberSource) selected,"1. Enter each name variation: Mary-Jane O'Connor, José García, Van Der Berg, Smith Jr.
+2. Complete form with valid card details
+3. Submit order","Valid special characters accepted (hyphen, apostrophe, accents, periods); Multiple spaces handled correctly; Name stored correctly in order; No validation errors","Names: Mary-Jane O'Connor, José García, Van Der Berg, Smith Jr.; Card: 4622943127013705, Expiry: 09/2029, CVV: 838",PASSED,All 4 name variations accepted successfully
+TC-POS-005,Expiration Date Format Variations,1. POSITIVE TEST CASES,Medium,Positive,Verify different valid expiration date input formats,Payment method: Bank card (CyberSource) selected,"1. Try each format variation: 09/2029, 092029, 09 / 2029
+2. Verify auto-formatting
+3. Complete order","All valid formats accepted; Auto-formatting to MM / YYYY; Date validation passes; Order processes successfully","Formats: 09/2029, 092029, 09 / 2029 (all for Sept 2029)",PASSED,Perfect auto-formatting to 09 / 2029 for all inputs
+TC-NEG-001,Invalid Card Number,2. NEGATIVE TEST CASES,Critical,Negative,Verify validation for invalid card numbers,Payment method: Bank card (CyberSource) selected,"1. Enter invalid card number: 1234567890123456 (fails Luhn)
+2. Tab out of field or attempt to submit
+3. Observe validation","Validation error displayed; Error message: Invalid card number or similar; Field highlighted as invalid; Cannot submit order; Error is clear and helpful","Invalid cards: 1234567890123456, 4622943127013700, 0000000000000000, 9999999999999999",MANUAL TEST REQUIRED,Card number field in secure iframe - requires manual testing
+TC-NEG-002,Empty Card Number,2. NEGATIVE TEST CASES,Critical,Negative,Verify required field validation for card number,Payment method: Bank card (CyberSource) selected,"1. Leave card number field empty
+2. Fill other fields with valid data
+3. Attempt to submit order","Validation error: Card number is required; Field highlighted as required; Cannot submit form; Focus returns to card number field",Valid data for other fields,MANUAL TEST REQUIRED,Card number field in secure iframe - requires manual testing
+TC-NEG-003,Empty Cardholder Name,2. NEGATIVE TEST CASES,Critical,Negative,Verify required field validation for cardholder name,Payment method: Bank card (CyberSource) selected,"1. Leave cardholder name field empty
+2. Fill other fields with valid data: Card 4622943127013705, Expiry 09/2029, CVV 838
+3. Attempt to submit order","Validation error: Cardholder name is required; Field highlighted as invalid; Cannot submit order; Other fields retain their values","Card: 4622943127013705, Name: (empty), Expiry: 09/2029, CVV: 838",FAILED - CRITICAL BUG,❌ BUG: Form submits successfully with empty name. Order #CO251209-00006 created. NO validation error shown.
+TC-NEG-004,Expired Card (Past Expiration Date),2. NEGATIVE TEST CASES,Critical,Negative,Verify validation for expired cards,Payment method: Bank card (CyberSource) selected,"1. Enter valid card number: 4622943127013705
+2. Enter past expiration date: 01/2020, 12/2024, or 11/2025
+3. Fill other fields
+4. Attempt to submit","Validation error: Card is expired or Invalid expiration date; Field highlighted as invalid; Cannot submit order; Clear error message","Card: 4622943127013705, Expired dates: 01/2020, 12/2024, 11/2025",DEFERRED,Can be automated - deferred to future test run
+TC-NEG-005,Empty Expiration Date,2. NEGATIVE TEST CASES,Critical,Negative,Verify required field validation for expiration date,Payment method: Bank card (CyberSource) selected,"1. Leave expiration date field empty
+2. Fill other fields with valid data
+3. Attempt to submit","Validation error: Expiration date is required; Field highlighted as required; Cannot submit order",Valid data for other fields,DEFERRED,Can be automated - deferred to future test run
+TC-NEG-006,Invalid Expiration Date Format,2. NEGATIVE TEST CASES,High,Negative,Verify validation for malformed expiration dates,Payment method: Bank card (CyberSource) selected,"1. Enter invalid expiration date: 13/2029, 00/2029, 99/2029, 09/1999, abc/defg
+2. Attempt to submit or tab out","Validation error displayed; Error message explains the issue; Cannot submit with invalid date; Field highlighted","Invalid formats: 13/2029, 00/2029, 99/2029, 09/1999, abc/defg",DEFERRED,Can be automated - deferred to future test run
+TC-NEG-007,Invalid CVV (Wrong Length),2. NEGATIVE TEST CASES,High,Negative,Verify CVV length validation,Payment method: Bank card (CyberSource) selected,"1. Enter valid card and other details
+2. Enter invalid CVV: 12, 1, or 12345
+3. Attempt to submit","Validation error for incorrect CVV length; Field highlighted as invalid; Error message: CVV must be 3 digits (or 4 for Amex); Cannot submit order","Invalid CVVs: 12 (2 digits), 1 (1 digit), 12345 (5 digits)",MANUAL TEST REQUIRED,CVV field in secure iframe - requires manual testing
+TC-NEG-008,Empty CVV/Security Code,2. NEGATIVE TEST CASES,Critical,Negative,Verify required field validation for CVV,Payment method: Bank card (CyberSource) selected,"1. Fill all fields except CVV
+2. Leave CVV field empty
+3. Attempt to submit","Validation error: Security code is required; Field highlighted; Cannot submit order",Valid data for other fields,MANUAL TEST REQUIRED,CVV field in secure iframe - requires manual testing
+TC-NEG-009,Non-Numeric Characters in CVV,2. NEGATIVE TEST CASES,Medium,Negative,Verify CVV only accepts numeric input,Payment method: Bank card (CyberSource) selected,"1. Attempt to type non-numeric characters in CVV field: abc, !@#, 8a8
+2. Observe field behavior","Non-numeric characters rejected; Only numbers accepted; Field only contains digits; Or validation error shown on submit","Invalid CVVs: abc, !@#, 8a8",MANUAL TEST REQUIRED,CVV field in secure iframe - requires manual testing
+TC-NEG-010,Invalid Cardholder Name (Numbers/Special Chars),2. NEGATIVE TEST CASES,Medium,Negative,Verify cardholder name validation rules,Payment method: Bank card (CyberSource) selected,"1. Enter invalid cardholder name: 123456, John@Smith, Test#User, User<>Test, !!!
+2. Fill other fields
+3. Attempt to submit","Validation error or input rejection; Invalid characters not accepted (or sanitized); Error message explains requirements; Cannot submit with invalid name","Invalid names: 123456, John@Smith, Test#User, User<>Test, !!!",DEFERRED,Can be automated - deferred to future test run
+TC-NEG-011,Card Number with Non-Numeric Characters,2. NEGATIVE TEST CASES,High,Negative,Verify card number field only accepts digits,Payment method: Bank card (CyberSource) selected,"1. Attempt to type non-numeric characters in card number field: abcd-efgh-ijkl-mnop, 4622-943a-1270-13705
+2. Or paste invalid data","Non-numeric characters rejected/stripped; Only digits accepted; Or validation error on submit","Invalid inputs: abcd-efgh-ijkl-mnop, 4622-943a-1270-13705, 4622 943! 1270 13705",MANUAL TEST REQUIRED,Card number field in secure iframe - requires manual testing
+TC-NEG-012,Incomplete Card Number,2. NEGATIVE TEST CASES,High,Negative,Verify validation for too-short card numbers,Payment method: Bank card (CyberSource) selected,"1. Enter incomplete card number: 4622, 46229431, 462294312701
+2. Fill other fields
+3. Attempt to submit","Validation error: Card number is incomplete or Invalid card number; Minimum length validation (typically 13-19 digits); Cannot submit order","Incomplete numbers: 4622 (4 digits), 46229431 (8 digits), 462294312701 (12 digits)",MANUAL TEST REQUIRED,Card number field in secure iframe - requires manual testing
+TC-NEG-013,Card Number Too Long,2. NEGATIVE TEST CASES,Medium,Negative,Verify maximum length validation for card number,Payment method: Bank card (CyberSource) selected,"1. Attempt to enter very long card number: 46229431270137051234567890
+2. Observe field behavior","Field limits input to maximum length (19 digits); Or validation error shown; Cannot enter more than max digits","Too long: 46229431270137051234567890 (26 digits)",MANUAL TEST REQUIRED,Card number field in secure iframe - requires manual testing
+TC-EDGE-001,Current Month Expiration (Boundary),3. EDGE CASES,High,Edge Case,Verify handling of card expiring in current month,Payment method: Bank card (CyberSource) selected,"1. Enter card expiring in current month: 12/2025 (if testing in December 2025)
+2. Complete form
+3. Submit order","Card accepted (expires end of month) OR Validation error if considering it expired; Consistent behavior; Clear messaging","Expiration: Current month/year (e.g., 12/2025)",DEFERRED,Edge case - can be tested manually
+TC-EDGE-002,Far Future Expiration Date,3. EDGE CASES,Medium,Edge Case,Verify handling of card with distant future expiration,Payment method: Bank card (CyberSource) selected,"1. Enter valid card number
+2. Enter far future expiration: 12/2099
+3. Complete form
+4. Submit order","Date accepted OR Reasonable maximum year validation (e.g., 20 years from now); Appropriate handling; No system errors","Expiration: 12/2099",DEFERRED,Edge case - can be tested manually
+TC-EDGE-003,Next Month Expiration (Boundary),3. EDGE CASES,High,Edge Case,Verify card expiring next month is accepted,Payment method: Bank card (CyberSource) selected,"1. Enter card expiring next month: 01/2026 (if testing in December 2025)
+2. Complete form
+3. Submit","Card accepted (valid future date); No validation errors; Order processes successfully","Expiration: Next month (e.g., 01/2026)",DEFERRED,Edge case - can be tested manually
+TC-EDGE-012,Form Persistence After Validation Error,3. EDGE CASES,High,Edge Case,Verify form data persists when validation fails,Payment method: Bank card (CyberSource) selected,"1. Fill entire form with valid data
+2. Change expiration date to expired date: 01/2020
+3. Click Place order
+4. Observe validation error
+5. Check if other fields retain values","Validation error for expired date shown; Card number value retained; Cardholder name value retained; CVV value retained (if not masked); User only needs to fix expiration date","Card: 4622943127013705, Name: John Smith, Expired date: 01/2020, CVV: 838",DEFERRED,Important UX test - can be automated
+TC-EDGE-013,Copy/Paste Card Number,3. EDGE CASES,High,Edge Case,Verify card number handles copy/paste correctly,Payment method: Bank card (CyberSource) selected,"1. Copy card number from external source
+2. Paste into card number field: 4622943127013705, 4622 9431 2701 3705, 4622-9431-2701-3705
+3. Verify formatting","All variations accepted; Non-numeric characters stripped; Auto-formatting applied; Valid card number recognized","Paste variations: 4622943127013705, 4622 9431 2701 3705, 4622-9431-2701-3705",MANUAL TEST REQUIRED,Iframe field - requires manual testing
+TC-EDGE-020,Double-Clicking Place Order Button,3. EDGE CASES,High,Edge Case,Verify duplicate order prevention,Payment method: Bank card (CyberSource) selected,"1. Fill form with valid CyberSource card data
+2. Double-click Place order button rapidly
+3. Observe system behavior","Only one order created; Button disabled after first click; Loading indicator shown; No duplicate charges; Proper order de-duplication","Valid card data: 4622943127013705, John Smith, 09/2029, 838",DEFERRED,Important security test
+TC-CROSS-001,All Fields Empty Submission,4. CROSS-FIELD VALIDATION,Critical,Validation,Verify validation when submitting completely empty form,Payment method: Bank card (CyberSource) selected,"1. Select Bank card (CyberSource)
+2. Leave ALL fields empty
+3. Click Place order","Validation errors for all required fields shown; Clear messaging: Please fill all required fields; All fields highlighted as invalid; Cannot submit; User knows what to fix",All fields empty,DEFERRED,Important validation test
+TC-VAL-001,Card Number - Luhn Algorithm Validation,4. FIELD-SPECIFIC VALIDATION,Critical,Validation,Verify Luhn check digit validation,Payment method: Bank card (CyberSource) selected,"1. Enter card with invalid Luhn checksum: 4622943127013704
+2. Attempt to submit","Luhn validation performed; Invalid checksum rejected; Error: Invalid card number","Valid Luhn: 4622943127013705, Invalid Luhn: 4622943127013704",MANUAL TEST REQUIRED,Iframe field - requires manual testing
+TC-VAL-002,Card Number - Visa Detection,4. FIELD-SPECIFIC VALIDATION,Medium,Validation,Verify Visa card type detection,Payment method: Bank card (CyberSource) selected,"1. Enter Visa card number: 4622943127013705
+2. Observe card type indicator","Visa icon highlighted/displayed; Card type detected correctly; Other card icons dimmed or hidden; Visual feedback to user","Visa card: 4622943127013705",VERIFIED,Visa detection works - observed in positive tests
+TC-VAL-003,Card Number - Auto-Formatting,4. FIELD-SPECIFIC VALIDATION,Medium,Validation,Verify automatic spacing for card number,Payment method: Bank card (CyberSource) selected,"1. Type card number without spaces: 4622943127013705
+2. Observe real-time formatting","Spaces automatically inserted; Format: #### #### #### ####; Formatting happens as user types; Cursor position maintained","Input: 4622943127013705, Expected: 4622 9431 2701 3705",VERIFIED,Auto-formatting works - observed in positive tests
+TC-VAL-004,Expiration Date - Auto-Formatting,4. FIELD-SPECIFIC VALIDATION,Medium,Validation,Verify automatic slash insertion for expiration date,Payment method: Bank card (CyberSource) selected,"1. Type expiration date without slash: 092029
+2. Observe auto-formatting","Slash automatically inserted; Format: MM / YYYY; Formatting happens during typing; User-friendly input experience","Input: 092029, Expected: 09 / 2029",VERIFIED,Auto-formatting works - observed in TC-POS-005
+TC-VAL-005,Expiration Date - Month Validation,4. FIELD-SPECIFIC VALIDATION,High,Validation,Verify month is between 01-12,Payment method: Bank card (CyberSource) selected,"1. Enter each month value: 00/2029, 13/2029, 99/2029, 01/2029, 12/2029
+2. Verify validation","Months 01-12 accepted; Month 00 rejected; Month 13+ rejected; Clear error messages","Months: 00/2029, 13/2029, 99/2029, 01/2029, 12/2029",DEFERRED,Can be automated
+TC-VAL-006,CVV - Masking/Security,4. FIELD-SPECIFIC VALIDATION,High,Validation,Verify CVV field is properly masked for security,Payment method: Bank card (CyberSource) selected,"1. Enter CVV: 838
+2. Observe field display
+3. Tab out of field
+4. Check if value is masked","CVV displayed as bullets (•••) or asterisks (***); Actual digits not visible after entry; Security maintained; Value properly protected","CVV: 838",VERIFIED,CVV masking works - observed in testing
+TC-VAL-007,Required Field Indicators,4. FIELD-SPECIFIC VALIDATION,Medium,Validation,Verify all required fields are properly marked,Payment method: Bank card (CyberSource) selected,"1. Observe form when displayed
+2. Check each field label","Card number has asterisk (*) or required indicator; Cardholder name has required indicator; Expiration date has required indicator; CVV has required indicator; Visual distinction from optional fields",N/A,VERIFIED,All fields marked with asterisk (*) - observed in testing
+TC-SEC-001,Card Number Iframe Isolation,6. SECURITY & PCI COMPLIANCE,Critical,Security,Verify card number is in secure iframe (PCI requirement),Payment method: Bank card (CyberSource) selected,"1. Inspect card number field in browser DevTools
+2. Verify iframe implementation
+3. Attempt to access value via JavaScript console","Card number hosted in CyberSource iframe; Parent page cannot access value; Iframe from testflex.cybersource.com domain; Cross-origin security enforced",Test command: document.querySelector('iframe').contentDocument,VERIFIED,Iframe isolation working correctly - PCI compliant
+TC-SEC-002,CVV Iframe Isolation,6. SECURITY & PCI COMPLIANCE,Critical,Security,Verify CVV is in secure iframe (PCI requirement),Payment method: Bank card (CyberSource) selected,"1. Inspect CVV field in DevTools
+2. Verify iframe implementation
+3. Attempt to access CVV via JavaScript","CVV hosted in CyberSource iframe; Parent page cannot access value; Proper iframe sandboxing; Security policy enforced",N/A,VERIFIED,Iframe isolation working correctly - PCI compliant
+TC-SEC-003,CVV Masking Verification,6. SECURITY & PCI COMPLIANCE,High,Security,Verify CVV is visually masked,Payment method: Bank card (CyberSource) selected,"1. Enter CVV: 838
+2. Observe field display
+3. Look over shoulder (social engineering test)","CVV displayed as bullets (•••) or asterisks; Actual digits not visible; Cannot shoulder-surf CVV; Security best practice followed","CVV: 838",VERIFIED,CVV displayed as bullets - secure
+TC-SEC-004,No Sensitive Data in Network Requests,6. SECURITY & PCI COMPLIANCE,Critical,Security,Verify card data not sent in clear text,Payment method: Bank card (CyberSource) selected,"1. Open browser DevTools Network tab
+2. Fill form with card data
+3. Submit order
+4. Inspect network requests for sensitive data","Raw card number NOT in request payload; CVV NOT in request payload; Only tokenized/encrypted data sent; CyberSource handles tokenization; HTTPS enforced","Card: 4622943127013705, CVV: 838",VERIFIED,No raw card data in network logs - secure
+TC-SEC-005,No Sensitive Data in Browser Storage,6. SECURITY & PCI COMPLIANCE,Critical,Security,Verify card data not stored in browser,Payment method: Bank card (CyberSource) selected,"1. Fill form with card data
+2. Submit order
+3. Check browser storage: localStorage, sessionStorage, cookies","No raw card number in storage; No CVV in storage; Only safe data persisted (if any); Security best practices followed","Card: 4622943127013705, CVV: 838",DEFERRED,Can be verified manually
+TC-SEC-006,HTTPS Enforcement,6. SECURITY & PCI COMPLIANCE,Critical,Security,Verify all communication over HTTPS,Payment method: Bank card (CyberSource) selected,"1. Check page URL protocol
+2. Verify iframe sources
+3. Check all network requests","Main page: https://; CyberSource iframes: https://; All API calls: https://; No mixed content warnings; Secure connection enforced",N/A,VERIFIED,All HTTPS - verified in testing
+TC-INT-001,CyberSource Microform Loading,10. INTEGRATION TESTS,Critical,Integration,Verify CyberSource Flex microform loads correctly,Payment method: Bank card (CyberSource) selected,"1. Monitor Network tab
+2. Select Bank card (CyberSource)
+3. Observe CyberSource resources loading","flex-microform.min.js loads [200 OK]; iframe.min.js loads [200 OK]; iframe.html loads [200 OK]; Resources from testflex.cybersource.com; No 404 or network errors",N/A,VERIFIED,All CyberSource resources load successfully
+TC-INT-002,JWT Token Generation,10. INTEGRATION TESTS,High,Integration,Verify secure token-based iframe communication,Payment method: Bank card (CyberSource) selected,"1. Select CyberSource payment
+2. Inspect iframe source URLs
+3. Check for JWT token in URL","JWT token present in iframe URL; Token format valid (three parts separated by dots); Dynamic token (changes each session); Secure authentication",N/A,VERIFIED,JWT tokens present in iframe URLs
+TC-UX-001,Field Labels and Placeholders,8. USABILITY & UX,Medium,Usability,Verify all fields have clear labels and helpful placeholders,Payment method: Bank card (CyberSource) selected,"1. Display CyberSource form
+2. Review all field labels
+3. Check placeholder text","Card Number label: Card number*; Placeholder: 1111 1111 1111 1111; Cardholder Name label: Cardholder name*; Expiration label: Expiration date*; Placeholder: MM / YYYY; CVV label: Security code*; Placeholder: •••",N/A,VERIFIED,All labels and placeholders present and clear
+TC-UX-002,Card Type Icons Visibility,8. USABILITY & UX,Low,Usability,Verify card type icons enhance user experience,Payment method: Bank card (CyberSource) selected,"1. Observe card type icons when form loads
+2. Enter different card types","Icons visible: Visa, Mastercard, Maestro, Amex; Icons well-designed and recognizable; Active/inactive states clear; Icons help user identify accepted cards",Card: 4622943127013705 (Visa),VERIFIED,Visa icon highlighted when Visa card entered
+TC-UX-004,Tab Order and Keyboard Navigation,8. USABILITY & UX,Medium,Usability,Verify logical tab order through form fields,Payment method: Bank card (CyberSource) selected,"1. Click in card number field
+2. Press Tab key repeatedly
+3. Observe tab order","Tab order: Card Number → Cardholder Name → Expiration Date → CVV; Logical flow; Can navigate entire form via keyboard; No tab traps; Tab into and out of iframes works",N/A,DEFERRED,Accessibility test - requires manual verification
+TC-PERF-001,Form Load Time,9. PERFORMANCE TESTS,Medium,Performance,Verify CyberSource form loads quickly,Payment method: Bank card (CyberSource) selected,"1. Select Bank card (CyberSource)
+2. Measure time until form fully displayed
+3. Check if iframes load promptly","Form displays within 1-2 seconds; No noticeable delay; Iframes load smoothly; Good user experience",N/A,PASSED,Form loads quickly - good performance observed
+
