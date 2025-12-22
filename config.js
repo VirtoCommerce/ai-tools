@@ -15,6 +15,8 @@ const requiredVars = [
     'USER_PASSWORD',
     'USER2_EMAIL',
     'USER2_PASSWORD',
+    'USER_VIRTO',
+    'USER_VIRTO_PASSWORD',
     'STORE_ID',
     'SKYFLOW_VISA',
     'SKYFLOW_MASTERCARD',
@@ -65,6 +67,8 @@ export const env = {
     USER_PASSWORD: getEnvVar('USER_PASSWORD'),
     USER2_EMAIL: getEnvVar('USER2_EMAIL'),
     USER2_PASSWORD: getEnvVar('USER2_PASSWORD'),
+    USER_VIRTO: getEnvVar('USER_VIRTO'),
+    USER_VIRTO_PASSWORD: getEnvVar('USER_VIRTO_PASSWORD'),
     
     // Store configuration
     STORE_ID: getEnvVar('STORE_ID'),

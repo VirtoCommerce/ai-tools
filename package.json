@@ -25,6 +25,7 @@
   "homepage": "https://github.com/VirtoCommerce/vc-mcp-testing-module#readme",
   "dependencies": {
     "@playwright/mcp": "^0.0.45",
+    "csv-parse": "^6.1.0",
     "dotenv": "^17.1.0"
   },
   "devDependencies": {

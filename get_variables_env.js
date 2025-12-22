@@ -10,6 +10,8 @@ console.log('USER2_EMAIL:', env.USER2_EMAIL);
 console.log('USER2_PASSWORD:', env.USER2_PASSWORD);
 console.log('USER_EMAIL:', env.USER_EMAIL);
 console.log('USER_PASSWORD:', env.USER_PASSWORD);
+console.log('USER_VIRTO:', env.USER_VIRTO);
+console.log('USER_VIRTO_PASSWORD:', env.USER_VIRTO_PASSWORD);
 console.log('STORE_ID:', env.STORE_ID);
 console.log('SKYFLOW_VISA:', env.SKYFLOW_VISA);
 console.log('SKYFLOW_MASTERCARD:', env.SKYFLOW_MASTERCARD);
