@@ -31,7 +31,10 @@ const requiredVars = [
     'DATATRANCE_MASTERCARD',
     'DATATRANCE_EXPIRY',
     'DATATRANCE_CVV',
-    'DATATRANCE_OTP'
+    'DATATRANCE_OTP',
+    'FIGMA_API_KEY',
+    'BROWSERSTACK_USERNAME',
+    'BROWSERSTACK_ACCESS_KEY'
     
 ];
 
@@ -94,7 +97,14 @@ export const env = {
     DATATRANCE_MASTERCARD: getEnvVar('DATATRANCE_MASTERCARD'),
     DATATRANCE_EXPIRY: getEnvVar('DATATRANCE_EXPIRY'),
     DATATRANCE_CVV: getEnvVar('DATATRANCE_CVV'),
-    DATATRANCE_OTP: getEnvVar('DATATRANCE_OTP')
+    DATATRANCE_OTP: getEnvVar('DATATRANCE_OTP'),
+
+    // Figma API key
+    FIGMA_API_KEY: getEnvVar('FIGMA_API_KEY'),
+
+    // Browserstack credentials
+    BROWSERSTACK_USERNAME: getEnvVar('BROWSERSTACK_USERNAME'),
+    BROWSERSTACK_ACCESS_KEY: getEnvVar('BROWSERSTACK_ACCESS_KEY')
 };
 
 // Optional: Export individual getters for sensitive data

@@ -1,35 +1,10 @@
 # Google Analytics Events Regression Test Report
 
 **Environment:** QA (https://vcst-qa-storefront.govirto.com)  
-**Test User:** USER2 (ricreyacrouyi-3425@yopmail.com)  
+**Test User:** USER2 (mutykovaelena@gmail.com)  
 **Test Date:** 2025-01-17  
 **GA Measurement ID:** G-S2KXT3KTJZ
 **Test Method:** Chrome DevTools MCP
-
----
-
-## Test Execution Summary
-
-| Event | Status | Notes |
-|-------|--------|-------|
-| login | ✅ PASSED | user_id set in GA config (f9c196b4-9267-41b6-b1ac-5a3622d2742b) |
-| view_item_list | ✅ PASSED | Tracked correctly on category pages |
-| select_item | ✅ PASSED | Tracked correctly when clicking product title from product list |
-| view_item | ✅ PASSED | Tracked correctly on product detail pages |
-| add_to_cart | ✅ PASSED | Tracked correctly when adding item to cart |
-| view_cart | ✅ PASSED | Tracked correctly on cart page |
-| update_cart_item | ✅ PASSED | Tracked correctly when quantity is changed in cart |
-| remove_from_cart | ✅ PASSED | Tracked correctly when item is removed from cart |
-| add_to_wishlist | ✅ PASSED | Tracked correctly when product is added to wishlist |
-| search | ⚠️ PARTIAL | search event not explicitly tracked, but view_search_results works correctly |
-| view_search_results | ✅ PASSED | Tracked correctly when navigating to search results page |
-| begin_checkout | ✅ PASSED | Tracked correctly on cart page |
-| add_shipping_info | ✅ PASSED | Event tracked correctly - Bug fixed! All values correct when switching methods |
-| add_payment_info | ✅ PASSED | Tracked correctly when payment method (Datatrans/CyberSource) is selected |
-| place_order | ✅ PASSED | Tracked correctly when "Place order" button is clicked |
-| purchase | ✅ PASSED | Tracked correctly when payment is successfully completed |
-
-**Summary:** 15 events verified working, 1 event partially working (search), 0 events require additional testing
 
 ---
 
