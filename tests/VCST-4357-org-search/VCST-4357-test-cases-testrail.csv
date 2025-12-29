@@ -1,0 +1,94 @@
+Title,Section,Priority,Preconditions,Steps,Expected Result,Type
+"TC-001: Search Bar Visibility - More Than 10 Organizations","VCST-4357 Multi-org Search","Critical","User is logged in as Sales Rep; User belongs to more than 10 organizations","1. Navigate to the organization selector/dropdown
+2. Click to expand the organization list
+3. Observe the dropdown content","Search bar is visible at the top of the organization list; Search bar has a native input field appearance; Search bar is positioned above the organization list items","Functional"
+"TC-002: Search Bar Visibility - 10 or Fewer Organizations","VCST-4357 Multi-org Search","Critical","User is logged in as Sales Rep; User belongs to exactly 10 or fewer organizations","1. Navigate to the organization selector/dropdown
+2. Click to expand the organization list
+3. Observe the dropdown content","Search bar is NOT visible; Organization list is displayed without a search field; All organizations are visible in the list","Functional"
+"TC-003: Search Bar Visibility - Exactly 10 Organizations (Boundary)","VCST-4357 Multi-org Search","High","User is logged in as Sales Rep; User belongs to exactly 10 organizations","1. Navigate to the organization selector/dropdown
+2. Click to expand the organization list
+3. Count the organizations in the list
+4. Observe if search bar is present","Search bar is NOT visible (threshold is >10, not ≥10); All 10 organizations are displayed in the list","Boundary"
+"TC-004: Search Bar Visibility - Exactly 11 Organizations (Boundary)","VCST-4357 Multi-org Search","High","User is logged in as Sales Rep; User belongs to exactly 11 organizations","1. Navigate to the organization selector/dropdown
+2. Click to expand the organization list
+3. Count the organizations in the list
+4. Observe if search bar is present","Search bar IS visible (threshold is >10); Search bar is positioned at the top of the list; All 11 organizations are initially displayed","Boundary"
+"TC-005: Basic Search Functionality - Full Name Match","VCST-4357 Multi-org Search","Critical","User has access to more than 10 organizations; Search bar is visible; Known organization name exists","1. Open the organization dropdown
+2. Enter the full organization name in the search field
+3. Observe the filtered results","List is filtered to show only matching organization(s); The matching organization is highlighted or visible; Non-matching organizations are hidden from the list","Functional"
+"TC-006: Search Functionality - Partial Name Match","VCST-4357 Multi-org Search","Critical","User has access to more than 10 organizations; Search bar is visible","1. Open the organization dropdown
+2. Enter a partial organization name (e.g., 'Acme')
+3. Observe the filtered results","List shows all organizations containing the partial keyword; Results include organizations where the keyword appears at beginning, middle, or end; Filtering is case-insensitive","Functional"
+"TC-007: Search Functionality - Case Insensitivity","VCST-4357 Multi-org Search","High","User has access to more than 10 organizations; Search bar is visible; Known organization name exists","1. Open the organization dropdown
+2. Search with lowercase: 'acme'
+3. Note the results
+4. Clear search
+5. Search with uppercase: 'ACME'
+6. Note the results
+7. Clear search
+8. Search with mixed case: 'AcMe'
+9. Note the results","All three searches return the same results; Search is case-insensitive for all variations","Functional"
+"TC-008: Search Functionality - No Results Found","VCST-4357 Multi-org Search","High","User has access to more than 10 organizations; Search bar is visible","1. Open the organization dropdown
+2. Enter a search term that doesn't match any organization (e.g., 'xyz123nonexistent')
+3. Observe the dropdown behavior","List shows empty state or 'No results found' message; UI handles empty state gracefully; User can clear search and see full list again","Negative"
+"TC-009: Search Functionality - Clear Search","VCST-4357 Multi-org Search","High","User has access to more than 10 organizations; Search has been performed and list is filtered","1. Open the organization dropdown
+2. Enter a search term to filter the list
+3. Verify list is filtered
+4. Clear the search field
+5. Observe the list","Full organization list is restored; All organizations are visible again; Search field is empty","Functional"
+"TC-010: Search Functionality - Special Characters","VCST-4357 Multi-org Search","Medium","User has access to more than 10 organizations; Search bar is visible","1. Open the organization dropdown
+2. Enter special characters: !@#$%^&*()
+3. Observe behavior
+4. Clear search
+5. Enter HTML/script tags: <script>alert('test')</script>
+6. Observe behavior","No JavaScript errors in console; Application handles special characters gracefully; No XSS vulnerability; Either shows 'no results' or filters appropriately","Security"
+"TC-011: Search Functionality - Leading/Trailing Spaces","VCST-4357 Multi-org Search","Medium","User has access to more than 10 organizations; Search bar is visible; Known organization name exists","1. Open the organization dropdown
+2. Enter search with leading spaces: '   Acme'
+3. Note the results
+4. Clear search
+5. Enter search with trailing spaces: 'Acme   '
+6. Note the results","Search works correctly with leading/trailing whitespace; Whitespace is trimmed and correct results are displayed","Functional"
+"TC-012: Search Functionality - Real-time Filtering","VCST-4357 Multi-org Search","High","User has access to more than 10 organizations; Search bar is visible","1. Open the organization dropdown
+2. Type a character slowly and observe list after each keystroke
+3. Continue typing and observe list updates","List filters dynamically as each character is typed; No need to press Enter or click a button; Filtering happens immediately (within ~100-300ms); No visible lag or delay in filtering","Functional"
+"TC-013: Search Functionality - Organization Selection After Search","VCST-4357 Multi-org Search","Critical","User has access to more than 10 organizations; Search bar is visible","1. Open the organization dropdown
+2. Enter a search term to filter the list
+3. Click on one of the filtered organizations
+4. Observe the selection","Organization is successfully selected; Dropdown closes after selection; Selected organization is now active/displayed; Search field is cleared or ready for next use","Functional"
+"TC-014: Search Functionality - Keyboard Navigation","VCST-4357 Multi-org Search","Medium","User has access to more than 10 organizations; Search bar is visible","1. Open the organization dropdown
+2. Enter a search term to filter the list
+3. Use Arrow Down key to navigate results
+4. Use Arrow Up key to navigate up
+5. Press Enter to select highlighted item","Arrow keys navigate through filtered results; Selected/highlighted item is visually indicated; Enter key selects the highlighted organization; Navigation wraps or stops at list boundaries","Functional"
+"TC-015: Search Input Placeholder and Styling","VCST-4357 Multi-org Search","Medium","User has access to more than 10 organizations","1. Open the organization dropdown
+2. Observe the search input field appearance
+3. Check for placeholder text
+4. Check for search icon (if applicable)","Search input has appropriate placeholder text; Search input styling matches the design system; Search icon is present (if per design); Focus state is visually indicated","UI/UX"
+"TC-016: Search Persistence Across Dropdown Toggle","VCST-4357 Multi-org Search","Low","User has access to more than 10 organizations; Search bar is visible","1. Open the organization dropdown
+2. Enter a search term to filter the list
+3. Close the dropdown (click outside)
+4. Reopen the dropdown
+5. Observe the search field state","Search field is cleared when dropdown reopens; Full organization list is displayed; User starts fresh with each dropdown open","Functional"
+"TC-017: Search with Unicode Characters","VCST-4357 Multi-org Search","Medium","User has access to organizations with unicode names; Search bar is visible","1. Open the organization dropdown
+2. Search using unicode characters matching an organization name
+3. Observe the results","Unicode search terms are handled correctly; Matching organizations with unicode names are found; No encoding errors or garbled text","Functional"
+"TC-018: Empty Search Field Behavior","VCST-4357 Multi-org Search","High","User has access to more than 10 organizations; Search bar is visible","1. Open the organization dropdown
+2. Observe list with empty search field
+3. Enter a character
+4. Delete the character (backspace)
+5. Observe the list","Empty search field displays all organizations; List immediately returns to full state when search is empty; No partial filter state remains","Functional"
+"TC-M01: Touch Keyboard Behavior (Mobile)","VCST-4357 Mobile","High","Mobile device with touchscreen; User has access to more than 10 organizations","1. Open the organization dropdown
+2. Tap on the search field
+3. Observe virtual keyboard appearance
+4. Type a search term
+5. Observe filtering behavior
+6. Select an organization from results","Virtual keyboard opens when search field is tapped; Search field remains visible above keyboard; Typing filters the list correctly; Organization can be selected by tapping; Keyboard dismisses after selection","Mobile"
+"TC-M02: Responsive Dropdown Layout (Mobile)","VCST-4357 Mobile","High","Mobile device or responsive viewport","1. Navigate to organization selector on mobile
+2. Open the dropdown
+3. Observe layout and positioning
+4. Verify scrollability if list is long","Dropdown is properly sized for mobile viewport; Search bar is accessible and usable; List is scrollable if needed; No horizontal overflow or cut-off content","Mobile"
+"TC-M03: Touch Scrolling in Filtered List (Mobile)","VCST-4357 Mobile","Medium","Mobile device with touchscreen; Filtered list still has multiple results","1. Open organization dropdown on mobile
+2. Enter a search term that returns multiple results
+3. Attempt to scroll the filtered list by touch
+4. Verify scroll behavior","List scrolls smoothly with touch gestures; Search field remains fixed at top; No accidental selections while scrolling","Mobile"
+
