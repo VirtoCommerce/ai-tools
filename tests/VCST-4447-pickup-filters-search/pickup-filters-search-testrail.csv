@@ -1,0 +1,81 @@
+ID,Title,Section,Priority,Type,Preconditions,Steps,Expected Result
+TC-001,Basic Country Search - Single Character,Country Filter Search,High,Functional,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Click on COUNTRY dropdown
+2. Enter ""A"" in search field
+3. Verify filtered results","Dropdown opens with search field. List filters to show countries containing ""A"" (Australia, Canada, Japan, Malaysia, South Africa). Only matching countries are displayed."
+TC-002,Country Search - Multiple Characters,Country Filter Search,High,Functional,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Click on COUNTRY dropdown
+2. Enter ""United"" in search field
+3. Verify exact matches appear first","Dropdown opens. List filters to show ""United Kingdom"" and ""United States of America"". Matching countries are displayed with count badges."
+TC-003,Country Search - Case Insensitivity,Country Filter Search,Medium,Functional,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Click on COUNTRY dropdown
+2. Enter ""DENMARK"" in uppercase
+3. Clear and enter ""denmark"" in lowercase
+4. Clear and enter ""DeNmArK"" in mixed case","Denmark is displayed in results for all case variations. Search is case-insensitive."
+TC-004,Country Search - No Results,Country Filter Search,Medium,Negative,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Click on COUNTRY dropdown
+2. Enter ""XYZ123"" (non-existent country)
+3. Verify the message styling","""No results"" message is displayed clearly and is user-friendly."
+TC-005,Country Search - Clear Search Text,Country Filter Search,High,Functional,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Click on COUNTRY dropdown
+2. Enter ""K"" in search field
+3. Clear the search field (backspace/delete)
+4. Verify all countries are visible","List filters to Denmark, United Kingdom. After clearing, full country list is restored. All available countries are displayed."
+TC-006,Country Search - Special Characters,Country Filter Search,Low,Edge Case,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Click on COUNTRY dropdown
+2. Enter special characters (!, @, #, $)
+3. Enter spaces only","No crash occurs. Shows ""No results"" or handles gracefully."
+TC-007,Basic State/Province Search,State/Province Filter Search,High,Functional,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Click on STATE / PROVINCE dropdown
+2. Enter ""New"" in search field
+3. Verify filtered results","Dropdown opens with search field and state list. List filters to show states containing ""New"" (New York, New Jersey, etc.). Only matching states are displayed with count badges."
+TC-008,State Search After Country Selection,State/Province Filter Search,High,Functional,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Select ""United States of America"" in Country filter
+2. Click on STATE / PROVINCE dropdown
+3. Enter ""Cal"" in search field
+4. Verify filtered list","Country filter is applied. Only US states are shown. California is displayed. Only US states matching ""Cal"" are shown."
+TC-009,Basic City Search,City Filter Search,High,Functional,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Click on CITY dropdown
+2. Enter ""New"" in search field
+3. Verify filtered results","Dropdown opens with search field and city list. List filters to show cities containing ""New"" (New York, Newark, etc.). Matching cities are displayed with count badges."
+TC-010,City Search - Partial Match,City Filter Search,Medium,Functional,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Click on CITY dropdown
+2. Enter ""York"" in search field
+3. Verify partial matching works","New York is displayed in results. Cities containing ""York"" anywhere in the name are shown."
+TC-011,Search Text Retention After Switching Filters (BUG),Cross-Filter Interactions,Critical,Regression,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Click on COUNTRY dropdown
+2. Enter ""K"" in search field
+3. Click on CITY dropdown
+4. Select ""New York""
+5. Click on COUNTRY dropdown again","Country dropdown should show ""United States of America"" (the only applicable country). BUG: Currently shows ""No results"" because ""K"" search text is retained."
+TC-012,Search Text Should Clear When Filter is Applied,Cross-Filter Interactions,High,Functional,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Click on COUNTRY dropdown
+2. Enter ""Can"" in search field
+3. Select ""Canada"" checkbox
+4. Click on COUNTRY dropdown again","Canada is displayed after search. Filter is applied. Search field should be empty, showing only selected/applicable countries."
+TC-013,Multiple Filter Combination with Search,Cross-Filter Interactions,High,Functional,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Select ""United States of America"" in Country
+2. Click on STATE / PROVINCE dropdown
+3. Enter ""New"" and select ""New York""
+4. Click on CITY dropdown
+5. Enter ""Brook"" in city search
+6. Verify all filters work together","All filters apply correctly. Brooklyn is displayed in results. Pickup points list shows only Brooklyn, NY, USA locations."
+TC-014,Filter Reset Should Clear All Search Text,Cross-Filter Interactions,High,Functional,"User is logged in, Cart has items, Pickup selected, Pick points modal open, Multiple filters applied","1. Apply multiple filters with search text in each
+2. Click ""Reset filters"" button
+3. Open each dropdown (Country, State, City)
+4. Verify full lists are displayed","All filters are cleared. Search fields are empty in all dropdowns. All options are available without filtering."
+TC-015,Search Text Persistence Within Same Session,Cross-Filter Interactions,Medium,Functional,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Click on COUNTRY dropdown
+2. Enter ""Aus"" in search field
+3. Close dropdown (click outside)
+4. Open COUNTRY dropdown again","Australia is displayed during search. Dropdown closes. Search field state should be defined (either cleared or retained with clear UX)."
+TC-016,Search Field Placeholder Text,Search Field UI/UX,Low,UI,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Click on COUNTRY dropdown
+2. Click on STATE / PROVINCE dropdown
+3. Click on CITY dropdown","""Search Country"" placeholder visible. ""Search State"" or similar placeholder visible. ""Search City"" placeholder visible."
+TC-017,Search Field Focus State,Search Field UI/UX,Low,UI,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Click on any filter dropdown
+2. Observe search field
+3. Start typing","Dropdown opens. Search field should be auto-focused for immediate typing. Characters appear without clicking on search field."
+TC-018,Search Results Count Display,Search Field UI/UX,Medium,UI,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Click on COUNTRY dropdown
+2. Enter search term
+3. Verify counts reflect available pickup points","Countries shown with count badges (e.g., ""Canada (2)""). Filtered results show accurate count badges. Numbers match actual pickup points."
+TC-019,Search Response Time,Performance,Medium,Performance,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Click on COUNTRY dropdown
+2. Type characters quickly
+3. Verify no UI freezing","Dropdown opens within 500ms. Search filters results in real-time without lag. Interface remains responsive."
+TC-020,Large Dataset Search,Performance,Medium,Performance,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Open CITY dropdown (largest dataset)
+2. Enter single character search
+3. Scroll through results","All cities load without significant delay. Filtering completes within 300ms. Smooth scrolling without lag."
+TC-021,Keyboard Navigation in Search,Accessibility,Medium,Accessibility,"User is logged in, Cart has items, Pickup selected, Pick points modal open","1. Tab to COUNTRY dropdown and press Enter
+2. Type search term
+3. Use Arrow keys to navigate results
+4. Press Enter to select
+5. Press Escape","Dropdown opens. Text is entered in search field. Focus moves through filtered options. Option is selected. Dropdown closes."
+TC-022,Screen Reader Compatibility,Accessibility,Low,Accessibility,"User is logged in, Cart has items, Pickup selected, Pick points modal open, Screen reader enabled","1. Navigate to filter dropdown with screen reader
+2. Enter search text
+3. Navigate filtered results
+4. Trigger ""No results"" scenario","Dropdown role and name are announced. Search field and current value are announced. Each option is announced with count. ""No results"" message is announced."

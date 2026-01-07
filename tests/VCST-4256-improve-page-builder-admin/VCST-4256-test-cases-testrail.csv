@@ -1,0 +1,126 @@
+Title,Section,Priority,Preconditions,Steps,Expected Result,Type
+"TC-001: Verify Draft menu item displays counter","Navigation Menu > Counters","High","User is logged in to Page Builder Admin (https://vcst-qa.govirto.com/apps/page-builder/?storeId=B2B-store#/page-builder)","1. Navigate to Page Builder Admin
+2. Login with valid credentials
+3. Observe the navigation menu on the left side
+4. Look at the Draft menu item","Draft menu item should display a counter in parentheses showing the number of draft pages (e.g., 'Draft (2)')","Functional"
+"TC-002: Verify Pending menu item displays counter","Navigation Menu > Counters","High","User is logged in to Page Builder Admin","1. Navigate to Page Builder Admin
+2. Observe the navigation menu
+3. Look at the Pending menu item","Pending menu item should display a counter showing scheduled/pending pages (e.g., 'Pending [1]')","Functional"
+"TC-003: Verify Active menu item displays counter","Navigation Menu > Counters","High","User is logged in to Page Builder Admin","1. Navigate to Page Builder Admin
+2. Observe the navigation menu
+3. Look at the Active menu item","Active menu item should display a counter showing published pages (e.g., 'Active [9]')","Functional"
+"TC-004: Verify Archived menu item displays counter","Navigation Menu > Counters","High","User is logged in to Page Builder Admin","1. Navigate to Page Builder Admin
+2. Observe the navigation menu
+3. Look at the Archived menu item","Archived menu item should display a counter showing archived pages (e.g., 'Archived (4)')","Functional"
+"TC-005: Verify All Pages menu item displays total counter","Navigation Menu > Counters","High","User is logged in to Page Builder Admin","1. Navigate to Page Builder Admin
+2. Observe the navigation menu
+3. Look at the All Pages menu item","All Pages menu item should display a counter showing total pages (e.g., 'All pages (16)')","Functional"
+"TC-006: Verify counters update when page status changes","Navigation Menu > Counters","Medium","User is logged in to Page Builder Admin with existing pages","1. Note current counter values in navigation menu
+2. Create a new draft page
+3. Observe the Draft counter
+4. Publish the page
+5. Observe Draft and Active counters","Counters should update in real-time when page status changes","Functional"
+"TC-007: Verify Draft filter shows only draft pages","Navigation Menu > Filtering","High","User is logged in with draft pages existing","1. Click on Draft menu item
+2. Observe the page list","Only pages with Draft status should be displayed in the list","Functional"
+"TC-008: Verify Pending filter shows only scheduled pages","Navigation Menu > Filtering","High","User is logged in with scheduled pages existing","1. Click on Pending menu item
+2. Observe the page list","Only pages with Pending/Scheduled status should be displayed","Functional"
+"TC-009: Verify Active filter shows only published pages","Navigation Menu > Filtering","High","User is logged in with published pages existing","1. Click on Active menu item
+2. Observe the page list","Only pages with Published status should be displayed","Functional"
+"TC-010: Verify Archived filter shows only archived pages","Navigation Menu > Filtering","High","User is logged in with archived pages existing","1. Click on Archived menu item
+2. Observe the page list","Only pages with Archived status should be displayed","Functional"
+"TC-011: Verify All Pages shows all pages","Navigation Menu > Filtering","High","User is logged in with pages in various statuses","1. Click on All Pages menu item
+2. Observe the page list","All pages regardless of status should be displayed","Functional"
+"TC-012: Verify fields are grouped into Basic and Advanced sections","Page Blade > Field Grouping","High","User is logged in to Page Builder Admin","1. Click Add button to create new page
+2. Observe the page blade structure","Fields should be organized into 'Basic information' and 'Advanced options' sections","Functional"
+"TC-013: Verify Basic information section contains Name field","Page Blade > Basic Information","High","User is on New Page blade","1. Open new page blade
+2. Look at Basic information section","Name field with asterisk (required) should be visible in Basic information section","Functional"
+"TC-014: Verify Basic information section contains Permalink field","Page Blade > Basic Information","High","User is on New Page blade","1. Open new page blade
+2. Look at Basic information section","Permalink field with asterisk (required) should be visible in Basic information section","Functional"
+"TC-015: Verify domain is displayed in read-only mode for permalink","Page Blade > Permalink","High","User is on New Page blade","1. Open new page blade
+2. Look at Permalink field","Domain URL (e.g., 'https://vcst-qa-storefront.govirto.com') should be displayed before the permalink input field in read-only mode","Functional"
+"TC-016: Verify Basic information section contains Language dropdown","Page Blade > Basic Information","High","User is on New Page blade","1. Open new page blade
+2. Look at Basic information section","Language dropdown with 'Click to select...' placeholder should be visible","Functional"
+"TC-017: Verify Scheduling section is collapsed by default","Page Blade > Scheduling","High","User is on New Page blade","1. Open new page blade
+2. Look at Advanced options section
+3. Observe Scheduling section","Scheduling section should be collapsed with description 'Set when this page should be visible'","Functional"
+"TC-018: Verify Scheduling section can be expanded","Page Blade > Scheduling","High","User is on New Page blade with Scheduling collapsed","1. Click on Scheduling section header
+2. Observe the section","Scheduling section should expand to show Start date and End date fields","Functional"
+"TC-019: Verify Start date datepicker in Scheduling section","Page Blade > Scheduling","Medium","User has expanded Scheduling section","1. Expand Scheduling section
+2. Look at Start date field
+3. Click on datepicker","Start date datepicker should be functional with label 'Page becomes visible'","Functional"
+"TC-020: Verify End date datepicker in Scheduling section","Page Blade > Scheduling","Medium","User has expanded Scheduling section","1. Expand Scheduling section
+2. Look at End date field
+3. Click on datepicker","End date datepicker should be functional with label 'Page becomes hidden'","Functional"
+"TC-021: Verify Personalization section is collapsed by default","Page Blade > Personalization","High","User is on New Page blade","1. Open new page blade
+2. Look at Advanced options section
+3. Observe Personalization & Access control section","Personalization section should be collapsed with description 'Limit page visibility to specific audiences'","Functional"
+"TC-022: Verify Personalization section can be expanded","Page Blade > Personalization","High","User is on New Page blade with Personalization collapsed","1. Click on Personalization & Access control section header
+2. Observe the section","Personalization section should expand to show Visibility, User groups, and Organization options","Functional"
+"TC-023: Verify Visibility toggle in Personalization section","Page Blade > Personalization","High","User has expanded Personalization section","1. Expand Personalization section
+2. Look at Visibility option","Visibility checkbox should be present with description 'If Visibility is off the page will be available only for registered users'","Functional"
+"TC-024: Verify User groups dropdown in Personalization section","Page Blade > Personalization","Medium","User has expanded Personalization section","1. Expand Personalization section
+2. Look at User groups field
+3. Click on dropdown","User groups dropdown should be functional with 'Click to select...' placeholder","Functional"
+"TC-025: Verify Organization dropdown in Personalization section","Page Blade > Personalization","Medium","User has expanded Personalization section","1. Expand Personalization section
+2. Look at Organization field
+3. Click on dropdown","Organization dropdown should be functional with 'Click to select...' placeholder","Functional"
+"TC-026: Verify Save button on page blade","Page Blade > Actions","High","User is on New Page blade","1. Open new page blade
+2. Look at action buttons","Save button should be visible and functional","Functional"
+"TC-027: Verify Archive button on page blade","Page Blade > Actions","Medium","User is on New Page blade","1. Open new page blade
+2. Look at action buttons","Archive button should be visible","Functional"
+"TC-028: Verify Open designer button on page blade","Page Blade > Actions","High","User is on New Page blade","1. Open new page blade
+2. Look at action buttons","Open designer button should be visible and functional","Functional"
+"TC-029: Verify Draft status badge in grid view","Grid View > Status Badges","High","User is viewing All Pages with draft pages","1. Navigate to All Pages
+2. Look at page rows with Draft status","Draft pages should display 'Draft' badge in Status column","Functional"
+"TC-030: Verify Published status badge in grid view","Grid View > Status Badges","High","User is viewing All Pages with published pages","1. Navigate to All Pages
+2. Look at page rows with Published status","Published pages should display 'Published' badge in Status column","Functional"
+"TC-031: Verify Archived status badge in grid view","Grid View > Status Badges","High","User is viewing All Pages with archived pages","1. Navigate to All Pages
+2. Look at page rows with Archived status","Archived pages should display 'Archived' badge in Status column","Functional"
+"TC-032: Verify Scheduled badge in grid view","Grid View > Scheduled Badge","High","User is viewing pages with scheduled dates","1. Navigate to All Pages or Pending
+2. Look at pages with scheduling enabled","Scheduled pages should display 'Scheduled' badge alongside status","Functional"
+"TC-033: Verify Personalized badge in grid view","Grid View > Personalization Badge","High","User is viewing pages with personalization settings","1. Navigate to All Pages
+2. Look at pages with personalization configured","Personalized pages should display 'Personalized' badge alongside status","Functional"
+"TC-034: Verify grid columns display correctly","Grid View > Columns","High","User is viewing page list","1. Navigate to All Pages
+2. Observe grid columns","Grid should display columns: Name, Language, Permalink, Modified, Modified by, Status","Functional"
+"TC-035: Verify page row is clickable","Grid View > Interaction","High","User is viewing page list","1. Navigate to All Pages
+2. Click on a page row","Page blade should open for the selected page","Functional"
+"TC-036: Verify checkbox selection on page rows","Grid View > Selection","Medium","User is viewing page list","1. Navigate to All Pages
+2. Click checkbox on a page row","Page should be selected and checkbox should be checked","Functional"
+"TC-037: Verify bulk selection checkbox","Grid View > Selection","Medium","User is viewing page list","1. Navigate to All Pages
+2. Click header checkbox","All visible pages should be selected","Functional"
+"TC-038: Verify Totals counter at bottom","Grid View > Totals","Medium","User is viewing page list","1. Navigate to All Pages
+2. Look at bottom of the page list","Totals counter should display the number of pages in current view","Functional"
+"TC-039: Verify Add button creates new page","Page Management > Create","High","User is on Page Builder main view","1. Click Add button
+2. Fill in required fields (Name, Permalink, Language)
+3. Click Save","New page should be created and appear in the list","Functional"
+"TC-040: Verify Archive button functionality","Page Management > Archive","High","User has selected a page","1. Select a page
+2. Click Archive button
+3. Confirm action","Page should be archived and moved to Archived section","Functional"
+"TC-041: Verify Refresh button updates page list","Page Management > Refresh","Medium","User is on Page Builder main view","1. Click Refresh button
+2. Observe page list","Page list should refresh with latest data","Functional"
+"TC-042: Verify Search functionality","Page Management > Search","Medium","User is on Page Builder main view","1. Enter search term in Search field
+2. Press Enter or wait for auto-search","Page list should filter to show matching pages","Functional"
+"TC-043: Verify login with valid credentials","Authentication","High","User is on Page Builder login page","1. Enter valid username (admin)
+2. Enter valid password (Password3)
+3. Click Log in button","User should be logged in and redirected to Page Builder main view","Functional"
+"TC-044: Verify login button disabled without credentials","Authentication","Medium","User is on Page Builder login page","1. Leave username empty
+2. Leave password empty
+3. Observe Log in button","Log in button should be disabled","Functional"
+"TC-045: Verify Azure AD login option","Authentication","Low","User is on Page Builder login page","1. Observe login options","Azure Active Directory login button should be visible","Functional"
+"TC-046: Verify Google login option","Authentication","Low","User is on Page Builder login page","1. Observe login options","Google sign-in button should be visible","Functional"
+"TC-047: Verify admin user profile display","User Interface > Profile","Low","User is logged in","1. Look at top right corner
+2. Observe user button","User button should display 'admin Administrator'","Functional"
+"TC-048: Verify logo display","User Interface > Branding","Low","User is logged in","1. Look at top left corner","Page Builder logo should be displayed","Functional"
+"TC-049: Cross-browser - Chrome compatibility","Cross-Browser > Chrome","High","Chrome browser latest version","1. Open Page Builder in Chrome
+2. Login and navigate through features
+3. Verify all functionality","All features should work correctly in Chrome","Compatibility"
+"TC-050: Cross-browser - Edge compatibility","Cross-Browser > Edge","High","Edge browser latest version","1. Open Page Builder in Edge
+2. Login and navigate through features
+3. Verify all functionality","All features should work correctly in Edge","Compatibility"
+"TC-051: Cross-browser - Firefox compatibility","Cross-Browser > Firefox","High","Firefox browser latest version","1. Open Page Builder in Firefox
+2. Login and navigate through features
+3. Verify all functionality","All features should work correctly in Firefox","Compatibility"
+"TC-052: Cross-browser - Safari compatibility","Cross-Browser > Safari","Medium","Safari browser latest version on macOS","1. Open Page Builder in Safari
+2. Login and navigate through features
+3. Verify all functionality","All features should work correctly in Safari","Compatibility"
+
