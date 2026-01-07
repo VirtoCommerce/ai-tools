@@ -123,4 +123,96 @@ Title,Section,Priority,Preconditions,Steps,Expected Result,Type
 "TC-052: Cross-browser - Safari compatibility","Cross-Browser > Safari","Medium","Safari browser latest version on macOS","1. Open Page Builder in Safari
 2. Login and navigate through features
 3. Verify all functionality","All features should work correctly in Safari","Compatibility"
+"TC-053: Verify Draft to Published status transition","Status Transitions","High","User is logged in with a draft page","1. Navigate to Draft filter
+2. Click on a draft page
+3. Click Publish button
+4. Navigate to Active filter","Page status should change from Draft to Published and appear in Active section","Functional"
+"TC-054: Verify Published to Archived status transition","Status Transitions","High","User is logged in with a published page","1. Navigate to Active filter
+2. Click on a published page
+3. Click Archive button
+4. Confirm archive action
+5. Navigate to Archived filter","Page status should change from Published to Archived and appear in Archived section","Functional"
+"TC-055: Verify Draft to Archived status transition","Status Transitions","High","User is logged in with a draft page","1. Navigate to Draft filter
+2. Click on a draft page
+3. Click Archive button
+4. Confirm archive action
+5. Navigate to Archived filter","Page status should change from Draft to Archived and appear in Archived section","Functional"
+"TC-056: Verify Publish button appears for Draft pages","Status Transitions","High","User is viewing a draft page blade","1. Click on a draft page from the list
+2. Observe the action buttons in page blade","Publish button should be visible for draft pages","Functional"
+"TC-057: Verify Publish button not visible for Archived pages","Status Transitions","Medium","User is viewing an archived page blade","1. Navigate to Archived filter
+2. Click on an archived page
+3. Observe the action buttons","Publish button should NOT be visible for archived pages","Functional"
+"TC-058: Verify Draft badge color styling","Badge Styling","Medium","User is viewing All Pages with draft pages","1. Navigate to All Pages
+2. Look at a page with Draft status
+3. Observe the badge color/styling","Draft badge should have distinct styling (different color from Published/Archived)","UI"
+"TC-059: Verify Published badge color styling","Badge Styling","Medium","User is viewing All Pages with published pages","1. Navigate to All Pages
+2. Look at a page with Published status
+3. Observe the badge color/styling","Published badge should have green or positive color styling","UI"
+"TC-060: Verify Archived badge color styling","Badge Styling","Medium","User is viewing All Pages with archived pages","1. Navigate to All Pages
+2. Look at a page with Archived status
+3. Observe the badge color/styling","Archived badge should have gray or muted color styling","UI"
+"TC-061: Verify Scheduled badge color styling","Badge Styling","Medium","User is viewing pages with scheduled dates","1. Navigate to All Pages or Pending
+2. Look at a scheduled page
+3. Observe the Scheduled badge color/styling","Scheduled badge should have distinct color to indicate scheduling","UI"
+"TC-062: Verify Personalized badge color styling","Badge Styling","Medium","User is viewing pages with personalization","1. Navigate to All Pages
+2. Look at a personalized page
+3. Observe the Personalized badge color/styling","Personalized badge should have distinct color to indicate personalization","UI"
+"TC-063: Verify Published + Scheduled badge combination","Badge Combinations","High","User has a published page with future schedule","1. Create or find a published page with scheduling
+2. Set a future end date
+3. Navigate to All Pages
+4. Look at the page row","Page should display both 'Published' and 'Scheduled' badges","Functional"
+"TC-064: Verify Published + Personalized badge combination","Badge Combinations","High","User has a published page with personalization","1. Create or find a published page
+2. Set personalization (visibility off or user groups)
+3. Navigate to All Pages
+4. Look at the page row","Page should display both 'Published' and 'Personalized' badges","Functional"
+"TC-065: Verify Published + Scheduled + Personalized triple badge","Badge Combinations","High","User has a published page with both scheduling and personalization","1. Create or find a published page
+2. Set scheduling (start/end dates)
+3. Set personalization settings
+4. Navigate to All Pages
+5. Look at the page row","Page should display 'Published', 'Scheduled', and 'Personalized' badges together","Functional"
+"TC-066: Verify Draft + Personalized badge combination","Badge Combinations","Medium","User has a draft page with personalization","1. Create a new draft page
+2. Set personalization settings
+3. Save (do not publish)
+4. Navigate to Draft filter
+5. Look at the page row","Page should display both 'Draft' and 'Personalized' badges","Functional"
+"TC-067: Verify Archived + Personalized badge combination","Badge Combinations","Medium","User has an archived page with personalization","1. Find or create a page with personalization
+2. Archive the page
+3. Navigate to Archived filter
+4. Look at the page row","Page should display both 'Archived' and 'Personalized' badges","Functional"
+"TC-068: Verify Draft status label in page blade header","Status Display > Page Blade","High","User is viewing a draft page","1. Click on a draft page from the list
+2. Observe the page blade header","Page blade should display 'Draft' status label in the header","Functional"
+"TC-069: Verify Published status label in page blade header","Status Display > Page Blade","High","User is viewing a published page","1. Click on a published page from the list
+2. Observe the page blade header","Page blade should display 'Published' status label in the header","Functional"
+"TC-070: Verify Archived status label in page blade header","Status Display > Page Blade","High","User is viewing an archived page","1. Click on an archived page from the list
+2. Observe the page blade header","Page blade should display 'Archived' status label in the header","Functional"
+"TC-071: Verify status changes after Publish action","Status Display > Page Blade","High","User has published a draft page","1. Open a draft page
+2. Click Publish button
+3. Observe page blade header","Status label should change from 'Draft' to 'Published' after publishing","Functional"
+"TC-072: Verify badge is visible in Draft filter view","Badge Visibility > Filters","Medium","User is viewing Draft filter","1. Navigate to Draft filter
+2. Look at page rows with badges","Draft pages should display 'Draft' badge and any additional badges (Personalized)","Functional"
+"TC-073: Verify badge is visible in Active filter view","Badge Visibility > Filters","Medium","User is viewing Active filter","1. Navigate to Active filter
+2. Look at page rows with badges","Active pages should display 'Published' badge and any additional badges (Scheduled, Personalized)","Functional"
+"TC-074: Verify badge is visible in Archived filter view","Badge Visibility > Filters","Medium","User is viewing Archived filter","1. Navigate to Archived filter
+2. Look at page rows with badges","Archived pages should display 'Archived' badge and any additional badges (Personalized)","Functional"
+"TC-075: Verify badge is visible in Pending filter view","Badge Visibility > Filters","Medium","User is viewing Pending filter","1. Navigate to Pending filter
+2. Look at page rows with badges","Pending/Scheduled pages should display 'Published', 'Scheduled' and any additional badges","Functional"
+"TC-076: Verify new unsaved page has no status badge","Badge Visibility > New Page","Medium","User is creating a new page","1. Click Add button
+2. Observe page blade before saving","New unsaved page should not display any status badge until saved","Functional"
+"TC-077: Verify badge updates after save","Badge Updates","Medium","User has just saved a new page","1. Create a new page with Name, Permalink, Language
+2. Click Save
+3. Navigate to All Pages
+4. Look at the new page row","New saved page should display 'Draft' badge in the list","Functional"
+"TC-078: Verify Scheduled badge appears after setting dates","Badge Updates","Medium","User is editing a published page","1. Open a published page
+2. Expand Scheduling section
+3. Set future start date
+4. Save the page
+5. Navigate to Pending filter","Page should now display 'Scheduled' badge and appear in Pending filter","Functional"
+"TC-079: Verify Personalized badge appears after setting visibility","Badge Updates","Medium","User is editing a page","1. Open a page
+2. Expand Personalization section
+3. Toggle Visibility off
+4. Save the page
+5. Navigate to All Pages","Page should now display 'Personalized' badge in the list","Functional"
+"TC-080: Verify multiple pages with same status in grid","Badge Display Consistency","Medium","User is viewing All Pages with multiple pages of same status","1. Navigate to All Pages
+2. Look at multiple pages with Draft status
+3. Look at multiple pages with Published status","All pages with same status should display consistent badge styling","Functional"
 

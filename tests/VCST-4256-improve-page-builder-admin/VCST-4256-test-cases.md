@@ -1,9 +1,9 @@
 # VCST-4256 Page Builder Admin - Test Cases
 
 ## Overview
-Comprehensive test cases for the Page Builder Admin UX improvements covering navigation menu counters, page blade functionality, and grid view badges.
+Comprehensive test cases for the Page Builder Admin UX improvements covering navigation menu counters, page blade functionality, status transitions, badge combinations, and grid view badges.
 
-**Total Test Cases: 52**
+**Total Test Cases: 80**
 
 ---
 
@@ -143,7 +143,84 @@ Comprehensive test cases for the Page Builder Admin UX improvements covering nav
 
 ---
 
-## Test Case Distribution
+## Section 13: Status Transitions (TC-053 to TC-057)
+
+| ID | Title | Priority |
+|----|-------|----------|
+| TC-053 | Verify Draft to Published status transition | High |
+| TC-054 | Verify Published to Archived status transition | High |
+| TC-055 | Verify Draft to Archived status transition | High |
+| TC-056 | Verify Publish button appears for Draft pages | High |
+| TC-057 | Verify Publish button not visible for Archived pages | Medium |
+
+---
+
+## Section 14: Badge Styling (TC-058 to TC-062)
+
+| ID | Title | Priority |
+|----|-------|----------|
+| TC-058 | Verify Draft badge color styling | Medium |
+| TC-059 | Verify Published badge color styling | Medium |
+| TC-060 | Verify Archived badge color styling | Medium |
+| TC-061 | Verify Scheduled badge color styling | Medium |
+| TC-062 | Verify Personalized badge color styling | Medium |
+
+---
+
+## Section 15: Badge Combinations (TC-063 to TC-067)
+
+| ID | Title | Priority |
+|----|-------|----------|
+| TC-063 | Verify Published + Scheduled badge combination | High |
+| TC-064 | Verify Published + Personalized badge combination | High |
+| TC-065 | Verify Published + Scheduled + Personalized triple badge | High |
+| TC-066 | Verify Draft + Personalized badge combination | Medium |
+| TC-067 | Verify Archived + Personalized badge combination | Medium |
+
+---
+
+## Section 16: Status Display in Page Blade (TC-068 to TC-071)
+
+| ID | Title | Priority |
+|----|-------|----------|
+| TC-068 | Verify Draft status label in page blade header | High |
+| TC-069 | Verify Published status label in page blade header | High |
+| TC-070 | Verify Archived status label in page blade header | High |
+| TC-071 | Verify status changes after Publish action | High |
+
+---
+
+## Section 17: Badge Visibility by Filter (TC-072 to TC-076)
+
+| ID | Title | Priority |
+|----|-------|----------|
+| TC-072 | Verify badge is visible in Draft filter view | Medium |
+| TC-073 | Verify badge is visible in Active filter view | Medium |
+| TC-074 | Verify badge is visible in Archived filter view | Medium |
+| TC-075 | Verify badge is visible in Pending filter view | Medium |
+| TC-076 | Verify new unsaved page has no status badge | Medium |
+
+---
+
+## Section 18: Badge Updates (TC-077 to TC-079)
+
+| ID | Title | Priority |
+|----|-------|----------|
+| TC-077 | Verify badge updates after save | Medium |
+| TC-078 | Verify Scheduled badge appears after setting dates | Medium |
+| TC-079 | Verify Personalized badge appears after setting visibility | Medium |
+
+---
+
+## Section 19: Badge Display Consistency (TC-080)
+
+| ID | Title | Priority |
+|----|-------|----------|
+| TC-080 | Verify multiple pages with same status in grid | Medium |
+
+---
+
+## Test Case Distribution Summary
 
 | Category | Count | High | Medium | Low |
 |----------|-------|------|--------|-----|
@@ -159,7 +236,49 @@ Comprehensive test cases for the Page Builder Admin UX improvements covering nav
 | Authentication | 4 | 1 | 1 | 2 |
 | User Interface | 2 | 0 | 0 | 2 |
 | Cross-Browser | 4 | 3 | 1 | 0 |
-| **Total** | **52** | **35** | **13** | **4** |
+| Status Transitions | 5 | 4 | 1 | 0 |
+| Badge Styling | 5 | 0 | 5 | 0 |
+| Badge Combinations | 5 | 3 | 2 | 0 |
+| Status Display in Page Blade | 4 | 4 | 0 | 0 |
+| Badge Visibility by Filter | 5 | 0 | 5 | 0 |
+| Badge Updates | 3 | 0 | 3 | 0 |
+| Badge Display Consistency | 1 | 0 | 1 | 0 |
+| **Total** | **80** | **46** | **30** | **4** |
+
+---
+
+## New Test Cases Added (28 total)
+
+### Status Transitions (5 TCs)
+- Covers status workflow: Draft → Published → Archived
+- Validates Publish button visibility based on current status
+
+### Badge Styling (5 TCs)
+- Verifies distinct color styling for each badge type
+- Ensures visual differentiation between statuses
+
+### Badge Combinations (5 TCs)
+- Tests all possible badge combinations:
+  - Published + Scheduled
+  - Published + Personalized
+  - Published + Scheduled + Personalized (triple)
+  - Draft + Personalized
+  - Archived + Personalized
+
+### Status Display in Page Blade (4 TCs)
+- Verifies status label in page blade header for each status
+- Validates status update after publish action
+
+### Badge Visibility by Filter (5 TCs)
+- Tests badge display across all navigation filters
+- Edge case: new unsaved page has no badge
+
+### Badge Updates (3 TCs)
+- Validates badge appears after saving
+- Tests dynamic badge updates after configuration changes
+
+### Badge Display Consistency (1 TC)
+- Ensures consistent styling across multiple pages with same status
 
 ---
 
@@ -181,5 +300,4 @@ Comprehensive test cases for the Page Builder Admin UX improvements covering nav
 
 ---
 
-*Generated: January 7, 2026*
-
+*Updated: January 7, 2026*
