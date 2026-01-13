@@ -1,0 +1,139 @@
+Title,Section,Priority,Preconditions,Steps,Expected Result,Type
+"TC-E2E-001: Published page accessible on frontend - same language","Language Filtering > Access","High","1. User is logged in on storefront
+2. Page exists with status Published and language matching user's storefront language
+3. Page has no organization restrictions","1. Set storefront language to match page language (e.g., pl-PL)
+2. Navigate to page permalink (e.g., /pl/qa1)","Page should load successfully with content rendered","Functional"
+"TC-E2E-002: Published page 404 on frontend - wrong language","Language Filtering > Access","High","1. User is logged in on storefront
+2. Page exists with status Published in language pl-PL
+3. Storefront is set to en-US","1. Set storefront language to en-US
+2. Navigate directly to /qa1 (without language prefix)","Page should return 404 error","Functional"
+"TC-E2E-003: Page URL requires language prefix","Language Filtering > URL Pattern","High","1. Page exists with permalink /qa1 and language pl-PL
+2. User is on storefront with Polish language","1. Navigate to /pl/qa1
+2. Observe URL structure","URL should include language prefix (e.g., /pl/qa1)","Functional"
+"TC-E2E-004: Search returns only current language pages","Language Filtering > Search","High","1. Pages exist in multiple languages (e.g., pl-PL and en-US)
+2. User is on Polish storefront (pl-PL)","1. Open search bar on storefront
+2. Type keyword that matches a page name
+3. Observe PAGES section in search results","Only pages with pl-PL language should appear in search results","Functional"
+"TC-E2E-005: Search does not show pages from other languages","Language Filtering > Search","High","1. Page 'Watermelon Page builder32432' exists in de-DE language
+2. User is on English storefront (en-US)","1. Search for 'Watermelon' in English storefront
+2. Observe PAGES section","Page should NOT appear in search results (wrong language)","Functional"
+"TC-E2E-006: Organization-restricted page accessible to authorized user","Organization Filtering > Access","High","1. Page exists with organizationId set to user's organization
+2. Page is Published
+3. User belongs to the same organization","1. Navigate to page permalink
+2. Observe page rendering","Page should load successfully for authorized organization user","Functional"
+"TC-E2E-007: Organization-restricted page 404 for unauthorized user","Organization Filtering > Access","High","1. Page 'Page33' exists with organizationId = 'Cypress-Company-Kft.'
+2. User belongs to 'Müller % Schmidt GmbH'
+3. Page is Published","1. Navigate to /page33
+2. Observe page rendering","Page should return 404 error (wrong organization)","Functional"
+"TC-E2E-008: Organization-restricted page not in search for unauthorized user","Organization Filtering > Search","High","1. Page exists with organization restriction (different from user's org)
+2. Page is Published
+3. Page has matching language","1. Search for restricted page name
+2. Observe PAGES section in search","Page should NOT appear in search results for unauthorized user","Functional"
+"TC-E2E-009: Public page (no org) accessible to all authenticated users","Organization Filtering > Access","High","1. Page exists with organizationId = null (no restriction)
+2. Page is Published
+3. User is authenticated","1. Navigate to page permalink
+2. Observe page rendering","Page should load successfully for any authenticated user","Functional"
+"TC-E2E-010: Public page appears in search for all users","Organization Filtering > Search","High","1. Page exists with no organization restriction
+2. Page is Published
+3. Language matches storefront","1. Search for public page name
+2. Observe PAGES section","Page should appear in search results for all users","Functional"
+"TC-E2E-011: Visibility ON - page accessible to all users","Visibility Settings > Public","High","1. Page exists with visibility = true
+2. Page is Published
+3. No organization/user group restrictions","1. Navigate to page permalink
+2. Test with authenticated user
+3. Test with anonymous user (if allowed)","Page should be accessible to all users when visibility is ON","Functional"
+"TC-E2E-012: Visibility OFF - page only for registered users","Visibility Settings > Private","High","1. Page exists with visibility = false
+2. Page is Published
+3. User is NOT logged in","1. Navigate to page permalink as anonymous user
+2. Observe page rendering","Page should return 404 or redirect to login when visibility is OFF","Functional"
+"TC-E2E-013: Visibility OFF - page accessible to registered users","Visibility Settings > Private","High","1. Page exists with visibility = false
+2. Page is Published
+3. User IS logged in","1. Login to storefront
+2. Navigate to page permalink","Page should load successfully for authenticated users when visibility is OFF","Functional"
+"TC-E2E-014: Published page appears in search","Status Filtering > Published","High","1. Page exists with status Published
+2. Language matches storefront
+3. No organization restrictions","1. Search for page name on storefront
+2. Observe PAGES section in search results","Published page should appear in search results","Functional"
+"TC-E2E-015: Draft page NOT accessible on frontend","Status Filtering > Draft","High","1. Page exists with status Draft
+2. Language matches storefront","1. Navigate directly to draft page permalink
+2. Observe page rendering","Draft page should return 404 error (not published)","Functional"
+"TC-E2E-016: Draft page NOT in search results","Status Filtering > Draft","High","1. Page exists with status Draft
+2. Language matches storefront","1. Search for draft page name
+2. Observe PAGES section","Draft page should NOT appear in search results","Functional"
+"TC-E2E-017: Archived page NOT accessible on frontend","Status Filtering > Archived","High","1. Page exists with status Archived
+2. Language matches storefront","1. Navigate directly to archived page permalink
+2. Observe page rendering","Archived page should return 404 error","Functional"
+"TC-E2E-018: Archived page NOT in search results","Status Filtering > Archived","High","1. Page exists with status Archived
+2. Language matches storefront","1. Search for archived page name
+2. Observe PAGES section","Archived page should NOT appear in search results","Functional"
+"TC-E2E-019: Newly published page becomes accessible","Status Transitions > Publish","High","1. Draft page exists with valid permalink
+2. Language is en-US","1. Publish page from Page Builder Admin
+2. Navigate to frontend
+3. Access page permalink","Newly published page should be accessible immediately","Functional"
+"TC-E2E-020: Unpublished page becomes inaccessible","Status Transitions > Unpublish","High","1. Published page exists and is accessible
+2. User is on frontend","1. Unpublish page from Page Builder Admin
+2. Refresh frontend
+3. Try to access page","Unpublished page should return 404","Functional"
+"TC-E2E-021: Archived page becomes inaccessible","Status Transitions > Archive","High","1. Published page exists and is accessible
+2. User is on frontend","1. Archive page from Page Builder Admin
+2. Refresh frontend
+3. Try to access page","Archived page should return 404","Functional"
+"TC-E2E-022: Search API includes pageDocuments query","API > Search","Medium","1. User is on storefront
+2. Search feature is used","1. Open browser DevTools Network tab
+2. Type in search bar
+3. Inspect GraphQL request","Request should include pageDocuments query with cultureName filter","API"
+"TC-E2E-023: Page context API includes language filter","API > Page Context","Medium","1. User navigates to page URL","1. Open browser DevTools Network tab
+2. Navigate to page URL
+3. Inspect GetPageContext GraphQL request","Request should include cultureName parameter matching storefront language","API"
+"TC-E2E-024: Combined filter - language + organization","Combined Filters","High","1. Page exists with language pl-PL AND organization restriction
+2. User is on Polish storefront but wrong organization","1. Navigate to page permalink
+2. Observe page rendering","Page should return 404 (organization mismatch)","Functional"
+"TC-E2E-025: Combined filter - language + visibility","Combined Filters","High","1. Page exists with language de-DE AND visibility OFF
+2. Anonymous user on German storefront","1. Navigate to page permalink as anonymous
+2. Observe page rendering","Page should return 404 (visibility requires login)","Functional"
+"TC-E2E-026: Page without permalink not accessible","Validation > Permalink","High","1. Page exists without permalink (empty string)
+2. Page is Published","1. Try to construct URL without permalink
+2. Observe behavior","Page should not be accessible - no valid URL","Functional"
+"TC-E2E-027: Multiple pages same language - all searchable","Search > Multiple Results","Medium","1. Multiple Published pages exist in same language
+2. No restrictions on pages","1. Search for common keyword
+2. Observe PAGES section","All matching pages should appear in search results","Functional"
+"TC-E2E-028: Search with special characters","Search > Edge Cases","Medium","1. Page exists with name containing special chars (e.g., 'qa & 1')
+2. Page is Published and accessible","1. Search for 'qa & 1'
+2. Observe PAGES section","Page should be found even with special characters in name","Functional"
+"TC-E2E-029: Partial search match for pages","Search > Partial Match","Medium","1. Page 'qa & 1' exists and is Published
+2. Storefront language matches","1. Search for 'qa'
+2. Observe PAGES section","Page should be found with partial keyword match","Functional"
+"TC-E2E-030: Case-insensitive search for pages","Search > Case Sensitivity","Medium","1. Page 'Watermelon' exists and is Published
+2. No restrictions apply","1. Search for 'WATERMELON' (uppercase)
+2. Observe PAGES section","Page should be found regardless of case","Functional"
+"TC-E2E-031: Scheduled page with future start date - not accessible","Scheduling > Future Start","High","1. Page exists with startDate in future
+2. Page is Published","1. Navigate to page permalink
+2. Observe page rendering","Page should return 404 (scheduling not yet active)","Functional"
+"TC-E2E-032: Scheduled page with past end date - not accessible","Scheduling > Past End","High","1. Page exists with endDate in past
+2. Page is Published","1. Navigate to page permalink
+2. Observe page rendering","Page should return 404 (scheduling expired)","Functional"
+"TC-E2E-033: Scheduled page within valid date range - accessible","Scheduling > Active Window","High","1. Page exists with startDate in past and endDate in future
+2. Page is Published","1. Navigate to page permalink
+2. Observe page rendering","Page should be accessible (within scheduled window)","Functional"
+"TC-E2E-034: User group restricted page - authorized group","User Groups > Authorized","High","1. Page exists with userGroups restriction
+2. User belongs to authorized group","1. Navigate to page permalink
+2. Observe page rendering","Page should be accessible for users in authorized group","Functional"
+"TC-E2E-035: User group restricted page - unauthorized group","User Groups > Unauthorized","High","1. Page exists with userGroups restriction
+2. User does NOT belong to authorized group","1. Navigate to page permalink
+2. Observe page rendering","Page should return 404 for users not in authorized group","Functional"
+"TC-E2E-036: Empty page renders shell only","Content > Empty Page","Medium","1. Page exists with no content from designer
+2. Page is Published and accessible","1. Navigate to page permalink
+2. Observe page rendering","Page should render header/footer but empty main content area","Functional"
+"TC-E2E-037: Page with content renders correctly","Content > With Content","High","1. Page exists with content from designer
+2. Page is Published and accessible","1. Navigate to page permalink
+2. Observe page content","Page should render full content from page designer","Functional"
+"TC-E2E-038: PAGES section appears in search dropdown","Search UI > Pages Section","Medium","1. At least one page matches search query
+2. User is on storefront","1. Type search query
+2. Observe search dropdown","PAGES section should be visible in search dropdown alongside products","UI"
+"TC-E2E-039: Click page in search navigates correctly","Search UI > Navigation","Medium","1. Page appears in search results
+2. Storefront language is correct","1. Search for page
+2. Click on page in PAGES section","User should navigate to page URL with correct language prefix","Functional"
+"TC-E2E-040: Page Builder Admin shows correct frontend URL","Admin > Preview URL","Medium","1. Page exists in Page Builder Admin
+2. Page has valid permalink","1. Open page in Page Builder Admin
+2. Observe domain displayed before permalink","Domain should show frontend URL (e.g., https://vcst-qa-storefront.govirto.com)","Functional"
+

@@ -1,0 +1,66 @@
+org_id,org_name,test_purpose,category
+ORG-BRACKET-1,[Test] Company One,Test bracket handling,Special Characters
+ORG-BRACKET-2,Company [Two],Test bracket in middle,Special Characters
+ORG-BRACKET-3,Company Three [Final],Test bracket at end,Special Characters
+ORG-PAREN-1,(Best) Company,Test parentheses handling,Special Characters
+ORG-PAREN-2,Company (Inc),Test parentheses at end,Special Characters
+ORG-QUOTE-1,"Quoted ""Name"" Inc",Test double quotes,Special Characters
+ORG-QUOTE-2,O'Brien & Sons,Test single quote and ampersand,Special Characters
+ORG-SPECIAL-1,Test #1 Company,Test hash with number,Special Characters
+ORG-SPECIAL-2,50% Discount Store,Test percent sign,Special Characters
+ORG-SPECIAL-3,C++ Development Corp,Test plus signs,Special Characters
+ORG-SPECIAL-4,Test:Colon:Company,Test colons,Special Characters
+ORG-SPECIAL-5,user@company.com LLC,Test at sign and dots,Special Characters
+ORG-SPECIAL-6,Test^Power^Corp,Test caret,Special Characters
+ORG-SPECIAL-7,Fuzzy~Match~Inc,Test tilde,Special Characters
+ORG-SPECIAL-8,Not!This!Company,Test exclamation,Special Characters
+ORG-SPECIAL-9,Test/Slash/Corp,Test forward slashes,Special Characters
+ORG-SPECIAL-10,Test\Backslash\Inc,Test backslashes,Special Characters
+ORG-UNICODE-1,Müller & Schmidt GmbH,German umlauts,Unicode
+ORG-UNICODE-2,Société Générale,French accents,Unicode
+ORG-UNICODE-3,Łódź Industries,Polish characters,Unicode
+ORG-UNICODE-4,Москва Компания,Russian Cyrillic,Unicode
+ORG-UNICODE-5,東京株式会社,Japanese Kanji,Unicode
+ORG-UNICODE-6,北京公司,Chinese Simplified,Unicode
+ORG-UNICODE-7,שלום חברה,Hebrew,Unicode
+ORG-UNICODE-8,شركة الرياض,Arabic,Unicode
+ORG-UNICODE-9,Ísland Fyrirtæki,Icelandic,Unicode
+ORG-UNICODE-10,Café & Crêpes,French food accents,Unicode
+ORG-CASE-1,UPPERCASE CORP,All uppercase,Case Sensitivity
+ORG-CASE-2,lowercase inc,All lowercase,Case Sensitivity
+ORG-CASE-3,MixedCase Company,Mixed case,Case Sensitivity
+ORG-CASE-4,camelCaseOrg,Camel case,Case Sensitivity
+ORG-CASE-5,PascalCaseOrg,Pascal case,Case Sensitivity
+ORG-NUM-1,123 Numbers First,Numbers at start,Numbers
+ORG-NUM-2,Company 456,Numbers at end,Numbers
+ORG-NUM-3,7th Heaven Inc,Ordinal number,Numbers
+ORG-NUM-4,24/7 Services,Numbers with slash,Numbers
+ORG-NUM-5,1st 2nd 3rd Place,Multiple ordinals,Numbers
+ORG-SPACE-1,Extra  Spaces  Inc,Double spaces,Whitespace
+ORG-SPACE-2, Leading Space Corp,Leading space,Whitespace
+ORG-SPACE-3,Trailing Space Inc ,Trailing space,Whitespace
+ORG-LONG-1,This Is A Very Long Organization Name That Exceeds Normal Expectations For Company Names And Should Test How The System Handles Extremely Long Input,Very long name,Boundary
+ORG-SHORT-1,A,Single character,Boundary
+ORG-SHORT-2,AB,Two characters,Boundary
+ORG-SIMILAR-1,Test Company,Base name for similarity,Similarity
+ORG-SIMILAR-2,Test Company Inc,Similar with suffix,Similarity
+ORG-SIMILAR-3,Test Company LLC,Similar with different suffix,Similarity
+ORG-SIMILAR-4,The Test Company,Similar with prefix,Similarity
+ORG-SIMILAR-5,TestCompany,Similar without space,Similarity
+ORG-SIMILAR-6,Tset Company,Typo - letters swapped,Similarity
+ORG-LUCENE-1,AND OR NOT Company,Reserved words,Lucene Syntax
+ORG-LUCENE-2,TO FROM BETWEEN Inc,Range keywords,Lucene Syntax
+ORG-LUCENE-3,field:value Corp,Field query syntax,Lucene Syntax
+ORG-LUCENE-4,Wildcard* Company,Asterisk in name,Lucene Syntax
+ORG-LUCENE-5,Question? Mark? Inc,Question marks,Lucene Syntax
+ORG-EMOJI-1,🚀 Startup Inc,Emoji at start,Emoji
+ORG-EMOJI-2,Happy 😊 Company,Emoji in middle,Emoji
+ORG-EMOJI-3,Success Corp 🎉,Emoji at end,Emoji
+ORG-MIXED-1,Mixed日本English,Mixed scripts,Mixed Content
+ORG-MIXED-2,Café123Corp,Letters numbers accents,Mixed Content
+ORG-MIXED-3,テスト Test тест,Three scripts,Mixed Content
+ORG-DUPE-1,Duplicate Name,Test duplicate handling,Duplicates
+ORG-DUPE-2,Duplicate Name,Same name different ID,Duplicates
+ORG-NULL-1,,Empty name (if allowed),Edge Case
+
+

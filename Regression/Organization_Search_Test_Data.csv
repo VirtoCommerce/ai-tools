@@ -1,0 +1,93 @@
+test_id,category,search_term,expected_behavior,priority,notes
+OS001,Special Characters,[e2e],Should filter to orgs containing literal [e2e],High,Known bug - returns all results
+OS002,Special Characters,]test[,Should handle reversed brackets,High,Edge case for bracket handling
+OS003,Special Characters,(parentheses),Should filter orgs with parentheses,Medium,Test parentheses handling
+OS004,Special Characters,Company & Sons,Should handle ampersand,Medium,Common business name pattern
+OS005,Special Characters,Test #123,Should handle hash/pound sign,Medium,Org names with numbers
+OS006,Special Characters,50% Off Store,Should handle percent sign,Medium,Percent is URL-sensitive
+OS007,Special Characters,C++ Corp,Should handle plus signs,High,Plus is query syntax
+OS008,Special Characters,Test*,Should handle asterisk (wildcard),High,Asterisk is wildcard in search
+OS009,Special Characters,Test?,Should handle question mark,Medium,Question mark is wildcard
+OS010,Special Characters,"Company ""Quoted""",Should handle double quotes,High,Quotes affect query parsing
+OS011,Special Characters,Company 'Quoted',Should handle single quotes,Medium,Single quotes in names
+OS012,Special Characters,Test/Slash,Should handle forward slash,Medium,Slash is path separator
+OS013,Special Characters,Test\Backslash,Should handle backslash,Medium,Escape character
+OS014,Special Characters,Test:Colon,Should handle colon,High,Colon is field separator in Lucene
+OS015,Special Characters,Test@Email,Should handle at sign,Medium,Email-like patterns
+OS016,Special Characters,Test^Caret,Should handle caret,High,Caret is boost operator in Lucene
+OS017,Special Characters,Test~Tilde,Should handle tilde,High,Tilde is fuzzy operator in Lucene
+OS018,Special Characters,Test!Exclaim,Should handle exclamation,Medium,NOT operator in some systems
+OS019,Special Characters,Test-Dash,Should handle dash/hyphen,Low,Common in names
+OS020,Special Characters,Test_Underscore,Should handle underscore,Low,Common in IDs
+OS021,Unicode,Müller GmbH,Should find German umlauts,Medium,International characters
+OS022,Unicode,Société Française,Should find French accents,Medium,Accented characters
+OS023,Unicode,日本会社,Should find Japanese characters,Medium,CJK characters
+OS024,Unicode,Компания,Should find Cyrillic characters,Medium,Russian text
+OS025,Unicode,شركة عربية,Should find Arabic characters,Medium,RTL text
+OS026,Unicode,Firma Øresund,Should find Nordic characters,Medium,Scandinavian characters
+OS027,Unicode,Café Express,Should find accented lowercase,Low,Common business names
+OS028,Case Sensitivity,ACME,Should find ACME Store (exact case),High,Uppercase search
+OS029,Case Sensitivity,acme,Should find ACME Store (lowercase),High,Case insensitive check
+OS030,Case Sensitivity,AcMe,Should find ACME Store (mixed case),Medium,Mixed case handling
+OS031,Case Sensitivity,aCME,Should find ACME Store (inverted),Low,Edge case for case handling
+OS032,Partial Match,AC,Should find ACME Store (prefix),High,2-letter prefix
+OS033,Partial Match,A,Should find orgs starting with A,Medium,Single letter search
+OS034,Partial Match,CME,Should find ACME Store (middle),High,Middle of word
+OS035,Partial Match,Store,Should find orgs ending with Store,High,Suffix/word search
+OS036,Partial Match,ME St,Should find ACME Store (cross-word),Medium,Partial across words
+OS037,Whitespace,ACME  Store,Should handle double spaces,Medium,Multiple spaces
+OS038,Whitespace, ACME,Should handle leading space,Medium,Trim handling
+OS039,Whitespace,ACME ,Should handle trailing space,Medium,Trim handling
+OS040,Whitespace,   ,Should handle only spaces,Medium,Empty after trim
+OS041,Empty/Null,(empty string),Should show all organizations,High,Default behavior
+OS042,Empty/Null,(only whitespace),Should show all organizations,Medium,Trimmed empty
+OS043,Long Input,ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890,Should handle long search term,Medium,Long input handling
+OS044,Long Input,(50 character string),Should handle moderate length,Low,Normal long name
+OS045,Long Input,(500 character string),Should handle very long input,Medium,Potential truncation
+OS046,Numbers,123,Should find orgs with numbers,Medium,Numeric search
+OS047,Numbers,Store 2,Should find numbered stores,High,Common pattern
+OS048,Numbers,2nd Floor Inc,Should find ordinal numbers,Low,Ordinal patterns
+OS049,No Results,XYZNONEXISTENT,Should show no results message,High,Empty result handling
+OS050,No Results,!@#$%^&*,Should handle no results gracefully,Medium,Special chars only
+OS051,SQL Injection,'; DROP TABLE organizations;--,Should be safely escaped,Critical,Security test
+OS052,SQL Injection,1 OR 1=1,Should not return all results,Critical,Boolean injection
+OS053,SQL Injection,UNION SELECT * FROM users,Should be safely escaped,Critical,Union injection
+OS054,XSS,<script>alert('xss')</script>,Should be safely escaped,Critical,Script injection
+OS055,XSS,<img onerror=alert('xss')>,Should be safely escaped,Critical,Event handler injection
+OS056,XSS,javascript:alert('xss'),Should be safely escaped,Critical,Protocol injection
+OS057,Lucene Syntax,name:ACME,Should not interpret as field query,High,Lucene field syntax
+OS058,Lucene Syntax,ACME AND Store,Should search literally,High,AND operator
+OS059,Lucene Syntax,ACME OR Store,Should search literally or match both,High,OR operator
+OS060,Lucene Syntax,NOT ACME,Should search literally,High,NOT operator
+OS061,Lucene Syntax,ACME TO BMW,Should search literally,High,Range syntax
+OS062,Lucene Syntax,+ACME -BMW,Should search literally,High,Required/excluded
+OS063,Lucene Syntax,ACME^2,Should search literally,High,Boost operator
+OS064,Lucene Syntax,ACM*,Should search literally or wildcard,High,Wildcard
+OS065,Lucene Syntax,ACM?,Should search literally or wildcard,High,Single char wildcard
+OS066,Lucene Syntax,ACME~,Should search literally or fuzzy,High,Fuzzy search
+OS067,Lucene Syntax,ACME~0.8,Should search literally or fuzzy,High,Fuzzy with distance
+OS068,Lucene Syntax,"ACME Store",Should search as phrase,High,Phrase query
+OS069,Regex Patterns,^ACME,Should search literally,Medium,Regex anchor
+OS070,Regex Patterns,ACME$,Should search literally,Medium,Regex anchor
+OS071,Regex Patterns,A.*E,Should search literally,Medium,Regex wildcard
+OS072,Regex Patterns,A.ME,Should search literally,Medium,Regex any char
+OS073,Regex Patterns,[A-Z]+,Should search literally,Medium,Regex character class
+OS074,Boundary,AA,Minimum 2-char search,Medium,Shortest valid search
+OS075,Boundary,A,Single character search,Medium,May have minimum length
+OS076,Performance,Store,Common word - many results,Medium,Performance with many matches
+OS077,Performance,(search 100 times rapidly),Rate limiting check,Low,Stress test
+OS078,Exact Match,ACME Store,Should find exact match first,High,Exact vs partial ranking
+OS079,Exact Match,Sunrise Bazaar,Should find current org too,Medium,Current org handling
+OS080,Word Boundary,AC ME,Space in search term,Medium,Word splitting
+OS081,Word Boundary,ACMEStore,No space in search,Medium,Concatenated words
+OS082,Sorting,A,Check alphabetical sorting,High,Results order
+OS083,Pagination,a,Check pagination with many results,Medium,Scroll/load more
+OS084,Debounce,fast typing test,Should debounce requests,Medium,UX optimization
+OS085,Escape Sequences,Test\nNewline,Should handle escape sequences,Medium,Newline in search
+OS086,Escape Sequences,Test\tTab,Should handle tab character,Medium,Tab in search
+OS087,Emoji,🏢 Corp,Should handle emoji,Low,Modern org names
+OS088,Emoji,Test 🚀,Should handle trailing emoji,Low,Emoji handling
+OS089,Mixed Script,ACME社,Mixed Latin and CJK,Low,Script mixing
+OS090,Mixed Script,Test123テスト,Latin/numbers/Japanese,Low,Multi-script
+
+

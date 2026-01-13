@@ -1,0 +1,91 @@
+Title,Section,Priority,Type,Preconditions,Steps,Expected Result
+"TC-001: Badge Disappears When Search Returns No Results (Bug Scenario)","Filter Badge Persistence","Critical","Regression","User is logged in; Cart contains physical product; Pickup delivery option available","1. Navigate to Cart page
+2. Select ""Pickup"" delivery option
+3. Click ""select a pickup address"" button
+4. Click COUNTRY dropdown
+5. Select ""Australia""
+6. Click COUNTRY dropdown again
+7. Select ""Canada""
+8. Enter ""TEST"" in the Search field
+9. Click Search button or press Enter
+10. Observe COUNTRY button","COUNTRY button still shows ""2"" badge; Australia and Canada chips remain visible with close buttons"
+"TC-002: Badge Persists With Valid Search Results","Filter Badge Persistence","High","Functional","User is logged in; Cart contains physical product; Pick points modal accessible","1. Open ""Pick points"" modal
+2. Select ""United States of America"" in COUNTRY filter
+3. Search for ""New York""
+4. Observe COUNTRY button
+5. Verify chips","Badge ""1"" remains visible; USA chip remains visible with close button; New York locations displayed"
+"TC-003: Badge Persists After Clearing Search (No Results → Results)","Filter Badge Persistence","High","Functional","User is logged in; Pick points modal accessible","1. Open ""Pick points"" modal
+2. Select ""Australia"" and ""Canada""
+3. Search for ""ZZZZZ"" (no results)
+4. Click ""RESET SEARCH"" or clear search field
+5. Observe COUNTRY button
+6. Verify pickup list","Badge ""2"" should be visible; Australia and Canada locations are displayed"
+"TC-004: Multiple Filter Badges With No Search Results","Filter Badge Persistence","High","Functional","User is logged in; Pick points modal accessible","1. Open ""Pick points"" modal
+2. Select ""Canada"" in COUNTRY filter
+3. Select ""Ontario"" in STATE/PROVINCE filter
+4. Select ""Toronto"" in CITY filter
+5. Search for ""NONEXISTENT""
+6. Observe all filter buttons
+7. Verify all chips","All badges remain: COUNTRY ""1"", STATE/PROVINCE ""1"", CITY ""1""; All chips visible"
+"TC-005: Single Country Filter With No Search Results","Filter Badge Persistence","Medium","Functional","User is logged in; Pick points modal accessible","1. Open ""Pick points"" modal
+2. Select only ""Japan"" in COUNTRY filter
+3. Search for ""XYZ123""
+4. Observe COUNTRY button
+5. Observe Japan chip","Badge ""1"" remains visible; Japan chip with close button remains visible"
+"TC-006: Badge Updates After Removing Filter During No-Results State","Filter Badge Persistence","Medium","Functional","User is logged in; Pick points modal accessible","1. Open ""Pick points"" modal
+2. Select ""Australia"" and ""Canada""
+3. Search for ""INVALID""
+4. Click close (×) on Australia chip
+5. Observe COUNTRY button
+6. Click close (×) on Canada chip
+7. Observe COUNTRY button","After step 4: Badge shows ""1""; After step 6: Badge disappears (no filters)"
+"TC-007: Reset Filters Button Clears Badge During No-Results State","Filter Badge Persistence","Medium","Functional","User is logged in; Pick points modal accessible","1. Open ""Pick points"" modal
+2. Select multiple countries
+3. Search for ""NOTFOUND""
+4. Click ""Reset filters"" button
+5. Observe COUNTRY button
+6. Observe chips area
+7. Clear search","No badge displayed; No chips displayed; All pickup locations displayed after clearing search"
+"TC-008: Verify term_facets Contains Data When Search Has Results","API Response Validation","High","API","DevTools available; Pick points modal accessible","1. Open DevTools Network tab
+2. Open ""Pick points"" modal
+3. Select ""Canada"" filter
+4. Search for ""Toronto""
+5. Inspect response term_facets","term_facets array contains facet data with terms and counts; totalCount > 0"
+"TC-009: Verify term_facets When Search Returns No Results","API Response Validation","Critical","API","DevTools available; Pick points modal accessible","1. Open DevTools Network tab
+2. Select ""Australia"" and ""Canada"" filters
+3. Search for ""ZZZZNOTEXIST""
+4. Inspect response
+5. Inspect term_facets","totalCount: 0, items: []; term_facets should contain selected country facets (after fix); Bug behavior: term_facets: [] (empty)"
+"TC-010: Verify GraphQL Request Contains Correct Filter Parameters","API Response Validation","Medium","API","DevTools available; Pick points modal accessible","1. Open DevTools Network tab
+2. Select ""Australia"" and ""Canada""
+3. Search for ""TEST""
+4. Inspect request body
+5. Verify keyword
+6. Verify facet","filter contains address_countryname:""Australia"",""Canada""; keyword: ""TEST""; facet includes address_countryname"
+"TC-011: Empty Search String Behavior","Edge Cases","Low","Edge Case","Pick points modal accessible with filters applied","1. Select country filters
+2. Click in search field, type nothing, click Search
+3. Observe results
+4. Observe badge","Treated as no search; All filtered locations displayed; Badge remains visible"
+"TC-012: Special Characters in Search With Filters Applied","Edge Cases","Low","Edge Case","Pick points modal accessible","1. Select ""United States of America""
+2. Search for ""@#$%^&*()""
+3. Observe badge
+4. Observe chip","Badge ""1"" remains visible; USA chip remains visible"
+"TC-013: Very Long Search String With Filters","Edge Cases","Low","Edge Case","Pick points modal accessible","1. Select multiple countries
+2. Enter 200+ character search string
+3. Observe badge","Badge remains visible regardless of search results"
+"TC-014: Rapid Filter Toggle During Search","Edge Cases","Medium","Edge Case","Pick points modal accessible","1. Select ""Australia""
+2. Search for ""NOTFOUND""
+3. Quickly add ""Canada"" filter
+4. Quickly remove ""Australia"" filter
+5. Quickly add ""Japan"" filter
+6. Verify all changes reflected","Badge count always matches selected filters; Updates correctly during rapid changes"
+"TC-015: Badge Styling Consistency","UI/UX Verification","Low","UI","Pick points modal accessible","1. Select 1 country
+2. Select 9 countries
+3. Select 10+ countries (if available)
+4. Search with no results","Badge shows correct count with consistent styling; Single and double digit numbers properly styled"
+"TC-016: Chip Display Consistency During No-Results","UI/UX Verification","Medium","UI","Pick points modal accessible","1. Select ""Australia"" and ""Canada""
+2. Search for ""ZZZZZ""
+3. Verify chip appearance
+4. Verify close (×) buttons
+5. Click close on one chip","Chips have same styling as before search; Close buttons functional; Chip removed and badge updates"
+
