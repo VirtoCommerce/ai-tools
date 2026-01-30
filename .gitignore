@@ -1,6 +1,10 @@
 node_modules
 .env
 .cursorrules
-mcp.json
+.mcp.json
 .playwright-mcp/
+.vscode/
+.claude/
+
+
 

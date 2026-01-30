@@ -1,0 +1,318 @@
+TC ID,Title,Priority,Feasibility,Effort,Test Steps,Expected Result
+TC-001,Basic Map Stability (Primary Bug Fix),P0 Critical,🟡 Medium,3-4h,"1. Navigate to cart page
+2. Add products to cart
+3. Scroll to shipping section
+4. Select 'Pickup' option
+5. Click 'Select pickup location'
+6. Capture initial map container dimensions
+7. Enter location name in search
+8. Assert map dimensions unchanged
+9. Assert map position unchanged
+10. Clear search field
+11. Assert map dimensions unchanged
+12. Repeat search/clear operations 3 times
+13. Assert consistent behavior","- Map modal opens successfully
+- Map dimensions remain constant during search operations
+- No visual jumping or layout shifts
+- Search field clears properly
+- Consistent behavior across iterations"
+TC-002,Desktop View - Location Selection Flow,P0 Critical,🟡 Medium,4-5h,"1. Set viewport to 1920x1080
+2. Navigate to cart with products
+3. Select 'Pickup' and click 'Select pickup location'
+4. Assert desktop layout (list left, map right)
+5. Click location in list
+6. Assert location highlights and map pans smoothly
+7. Assert info window opens
+8. Click different location
+9. Assert previous unhighlights, new highlights
+10. Click marker directly
+11. Click 'Select' in info window
+12. Assert PickupLocationCard opens with details
+13. Click 'Confirm'
+14. Assert modal closes and location in cart","- Desktop side-by-side layout renders
+- Clicking list items highlights markers
+- Map pans smoothly
+- Info windows open correctly
+- Only one location highlighted at a time
+- PickupLocationCard shows all info
+- Selection saves to cart"
+TC-003,Mobile View - List/Map Toggle,P0 Critical,🟢 Easy,2-3h,"1. Set viewport to 375x667
+2. Navigate to cart with products
+3. Open pickup location modal
+4. Assert list view default
+5. Assert toggle button visible
+6. Click 'Map' toggle
+7. Assert map view, list hidden
+8. Click 'List' toggle
+9. Assert list view, map hidden
+10. Switch to map, click marker
+11. Click 'Select' in info window
+12. Assert PickupLocationCard opens
+13. Confirm selection
+14. Assert modal closes, location set","- Mobile layout displays correctly
+- Toggle switches views instantly
+- Only one view visible at a time
+- No horizontal scrolling
+- Touch targets ≥44x44px
+- Selection flow works on mobile"
+TC-004,Search Functionality,P1 High,🟡 Medium,3-4h,"1. Open pickup location modal
+2. Enter partial location name 'Mall'
+3. Assert results filter to matches
+4. Assert map shows only matching markers
+5. Assert list synced with map
+6. Clear search
+7. Assert all locations restored
+8. Enter full address
+9. Assert map zooms to area
+10. Enter invalid address
+11. Assert error/empty state shown
+12. Clear invalid search
+13. Type rapidly
+14. Assert debouncing works
+15. Assert reasonable API call count","- Search filters accurately
+- Map and list synchronized
+- Clear button restores all
+- Address search zooms map
+- Invalid addresses handled gracefully
+- Rapid typing debounced
+- Reasonable API calls"
+TC-005,Filter Operations,P1 High,🟢 Easy,2-3h,"1. Open pickup location modal
+2. Verify filter section visible
+3. Apply availability filter
+4. Assert only available locations shown
+5. Apply distance filter
+6. Assert locations sorted by distance
+7. Combine filters
+8. Assert both apply
+9. Search while filters active
+10. Assert search respects filters
+11. Clear filters
+12. Assert all locations return","- Filters work correctly
+- Multiple filters combine properly
+- Search respects active filters
+- Clear restores all locations
+- Map/list stay synchronized"
+TC-006,Map Interaction & Info Windows,P1 High,🟠 Hard,5-6h,"1. Open pickup location modal
+2. Assert map loads, markers visible
+3. Zoom in/out
+4. Pan by dragging
+5. Click marker A
+6. Assert info window A opens
+7. Immediately click marker B
+8. Assert only info window B visible
+9. Rapidly click 5 markers
+10. Assert only one window always visible
+11. Click map background
+12. Assert info window closes
+13. Use keyboard to navigate list
+14. Assert map pans smoothly","- Map renders completely
+- Zoom/pan work smoothly
+- Info windows open correctly
+- Only one info window at a time
+- No race conditions
+- Keyboard navigation updates map
+- Smooth animations"
+TC-007,Pickup Location Card Component,P1 High,🟢 Easy,2-3h,"1. Open pickup location modal
+2. Select a location
+3. Assert PickupLocationCard opens
+4. Assert name, address, hours, availability, contact display
+5. Click 'Cancel'
+6. Assert returns to modal, state unchanged
+7. Select location again
+8. Click 'Confirm'
+9. Assert modal closes
+10. Assert location set in cart","- Card opens on selection
+- All information displays correctly
+- Cancel returns to modal
+- Confirm completes selection
+- State preserved on cancel
+- Location appears in cart"
+TC-008,Scroll Behavior & Modal Controls,P2 Medium,🟡 Medium,2-3h,"1. Open pickup location modal
+2. Scroll location list
+3. Assert list scrolls, map static
+4. Scroll to bottom/top
+5. Assert boundaries work
+6. Open location card
+7. Attempt to scroll background modal
+8. Assert background scroll disabled
+9. Close card
+10. Assert scroll re-enabled
+11. Open/close rapidly 5 times
+12. Assert no scroll issues","- List scrolls independently
+- Map does not scroll
+- Scroll boundaries work
+- Card disables background scroll
+- Scroll re-enabled after close
+- Rapid operations work"
+TC-009,Responsive Breakpoint Testing,P1 High,🟡 Medium,4-5h,"For each breakpoint (320, 375, 425, 768, 1024, 1440, 1920px):
+1. Set viewport width
+2. Open modal
+3. Assert appropriate layout
+4. Test search
+5. Test location selection
+6. Assert no horizontal scroll
+7. Assert no layout breaks
+8. Assert interactive elements work","- Layout matches design at each breakpoint
+- No broken layouts or overflow
+- All functionality works
+- Mobile toggle <768px
+- Desktop side-by-side ≥768px"
+TC-010,Localization Testing,P3 Low,🟡 Medium,6-8h,"For each language (de, en, es, fi, fr, it, ja, no, pl, pt, ru, sv, zh):
+1. Change language
+2. Open modal
+3. Assert all UI translated
+4. Assert text fits containers
+5. Test complete flow","- All UI translated
+- No translation keys visible
+- Text fits without truncation
+- Complete flow works
+- Special characters display correctly"
+TC-011,Performance Testing,P2 Medium,🟠 Hard,6-8h,"Test with varying location counts:
+1. Measure modal open time
+2. Measure search response
+3. Measure filter response
+4. Verify 60fps interactions
+5. Check memory usage
+6. Monitor network requests","- 1-5 locations: instant load
+- 10-50 locations: <1s load
+- 50-100 locations: <2s load
+- 100+ locations: clustering active
+- No memory leaks
+- Reasonable API calls"
+TC-012,Error Handling & Edge Cases,P3 Low,🟠 Hard,5-6h,"1. Test empty locations
+2. Block Google Maps API
+3. Deny geolocation
+4. Test invalid coordinates
+5. Disconnect network during search
+6. Test 200+ char names
+7. Test special characters/emojis","- Empty state handled gracefully
+- API failures show error
+- Geolocation denial doesn't block
+- Invalid data handled
+- Network errors shown
+- Long text truncated/wrapped
+- No crashes"
+TC-013,Browser Compatibility,P1 High,🟡 Medium,8-10h,"For Chrome, Firefox, Safari, Edge:
+1. Run TC-001 (Map Stability)
+2. Run TC-002 (Desktop Flow)
+3. Run TC-004 (Search)
+4. Run TC-006 (Map Interactions)
+5. Run TC-007 (Location Card)","- All functionality works in all browsers
+- No browser-specific bugs
+- Consistent appearance
+- Performance acceptable"
+TC-014,Accessibility Testing,P3 Low,🟡 Medium,3-4h,"1. Open modal with keyboard only
+2. Tab through all elements
+3. Assert focus indicators visible
+4. Assert logical tab order
+5. Test keyboard navigation
+6. Run axe-core scan
+7. Assert 0 critical violations
+8. Check color contrast","- Fully keyboard accessible
+- Focus indicators visible
+- Logical tab order
+- 0 critical violations
+- WCAG AA color contrast
+- Screen reader compatible"
+TC-015,Integration Testing,P1 High,🟢 Easy,3-4h,"1. Add products to cart
+2. Select pickup location
+3. Assert location in cart
+4. Change pickup location
+5. Assert cart updates
+6. Proceed to checkout
+7. Assert pickup info in checkout
+8. Complete order
+9. Assert confirmation shows pickup
+10. Switch to Delivery
+11. Switch back to Pickup
+12. Refresh page
+13. Assert location persists","- Complete flow works E2E
+- Data persists across pages
+- Location changes reflected
+- Can switch delivery methods
+- Session persistence works
+- Integration seamless"
+REG-001,Standard Delivery Flow,P1 High,🟢 Easy,2-3h,"1. Add products to cart
+2. Select 'Delivery' option
+3. Enter shipping address
+4. Assert address form works
+5. Assert address validation works
+6. Save address
+7. Assert address in cart
+8. Proceed to checkout
+9. Assert checkout works","- Delivery option available
+- Address form works as before
+- Validation unchanged
+- No regression in delivery flow"
+REG-002,Cart Operations,P1 High,🟢 Easy,1-2h,"1. Add item to cart
+2. Change quantity
+3. Remove item
+4. Add multiple items
+5. Apply coupon (if available)
+6. Assert calculations correct","- Add to cart works
+- Quantity updates work
+- Remove works
+- Multiple items handled
+- Calculations accurate
+- No regression"
+REG-003,Other Modals/Dialogs,P2 Medium,🟢 Easy,1-2h,"1. Open other modals (quick view, login, etc.)
+2. Assert they open correctly
+3. Assert they close correctly
+4. Assert scroll behavior correct","- All other modals work normally
+- VcModal changes don't break others
+- Scroll behavior correct
+- No regression"
+REG-004,Checkout Flow,P1 High,🟢 Easy,2-3h,"1. Add products to cart
+2. Proceed to checkout
+3. Enter shipping info
+4. Proceed to payment
+5. Enter payment (test mode)
+6. Complete order
+7. Assert order confirmation","- Checkout works normally
+- All steps complete
+- Order confirmation displays
+- No regression"
+REG-005,Payment Processing,P1 High,🟡 Medium,2-3h,"1. Proceed to checkout
+2. Select payment method
+3. Enter payment details (test mode)
+4. Submit payment
+5. Assert payment processes
+6. Assert order completes","- Payment methods available
+- Payment processes
+- Order finalizes
+- No regression"
+REG-006,Order History,P2 Medium,🟢 Easy,1-2h,"1. Log in to account
+2. Navigate to order history
+3. View pickup order details
+4. Assert pickup location displays
+5. View delivery order details
+6. Assert delivery address displays","- Order history displays
+- Pickup orders show location
+- Delivery orders show address
+- No regression"
+BUG-001,Pickup Map Width After Search (VCST-4518),P0 Critical,🟢 Easy,1-2h,"1. Add product to cart, navigate to cart
+2. Select 'Pickup' and click 'Select pickup address'
+3. Assert 'Pick points' modal opens with list and map
+4. Measure initial map width (~50% of modal)
+5. Enter 'Westent foxpost' and click Search
+6. Assert 'Pickup points not found' displays
+7. **CRITICAL:** Assert map maintains 40-50% width (not ~30%)
+8. Click 'Reset search'
+9. Assert map returns to ~50% width
+10. Enter 'South Schuylershire' and click Search
+11. Assert one location displays
+12. **CRITICAL:** Assert map maintains 40-50% width with results
+13. Click location in list
+14. Assert info card opens with readable layout
+15. **CRITICAL:** Assert map width stable throughout","**EXPECTED (AFTER FIX):**
+- Initial: Map ~50% width
+- After empty search: Map 40-50% width
+- After valid search: Map 40-50% width
+- Info card: Readable layout
+- Map never <40% width
+**BUG (BEFORE FIX - VCST-4518):**
+- After search: Map ~30% (too narrow)
+- Root: CSS layout issue
+- Evidence: Reports/BUG-Pickup-Map-*.png
+- Status: Jira VCST-4518, Comment 87266
+- Executed: 2026-01-29, FAILED"

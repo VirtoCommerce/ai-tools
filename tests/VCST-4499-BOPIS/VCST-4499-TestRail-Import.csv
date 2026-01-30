@@ -1,0 +1,573 @@
+Section,Title,Type,Priority,Estimate,References,Preconditions,Steps,Expected Result
+"VCST-4499 BOPIS Map Modal","TC-001: Basic Map Stability (Primary Bug Fix)","Functional","Critical","15m","VCST-4499, PR-2138","- PR #2138 deployed to test environment
+- Test URL: https://virtostart-demo-store.govirto.com/cart
+- Shopping cart contains at least 2 products
+- Multiple pickup locations configured","1. Add products to cart
+2. Navigate to cart page
+3. Scroll to shipping section
+4. Select ""Pickup"" option
+5. Click ""Select pickup location""
+6. Measure map container dimensions (note height/width)
+7. Enter location name in search field
+8. Verify map dimensions remain unchanged
+9. Verify map does not jump/shift position
+10. Clear search field using X button
+11. Verify map dimensions remain unchanged
+12. Verify map does not jump/shift position
+13. Enter address in search field
+14. Clear search field manually (backspace)
+15. Verify map dimensions remain unchanged
+16. Repeat steps 7-15 three times","- Cart page displays correctly with items
+- Pickup location selector opens on Pickup selection
+- Map modal opens with map displayed
+- Map container maintains consistent dimensions throughout all operations
+- No visual ""jumping"" or layout shifts occur
+- Smooth transitions between states
+- Search field accepts input and clears properly
+- Consistent behavior across multiple iterations"
+"VCST-4499 BOPIS Map Modal","TC-002: Desktop View - Location Selection Flow","Functional","Critical","12m","VCST-4499, PR-2138, VCST-4518","- Desktop browser (1920x1080 or similar)
+- PR #2138 deployed
+- Test URL accessible
+- Cart has products
+- Multiple pickup locations available","1. Open pickup location modal
+2. Verify desktop layout (map on right, list on left)
+3. Click on a location in the list
+4. Verify location highlights on map
+5. Verify map pans smoothly to selected location
+6. Verify info window opens on marker
+7. Click different location in list
+8. Verify previous highlight clears, new location highlights
+9. Verify map animates smoothly to new location
+10. Click marker on map directly
+11. Verify info window opens
+12. Click ""Select"" button in info window
+13. Verify PickupLocationCard dialog opens
+14. Verify card content (location details, availability, contact info)
+15. Click ""Confirm"" button
+16. Verify modal closes and pickup location is set in cart","- Modal opens with proper desktop layout
+- Location list visible on left, map on right
+- Clicking list items highlights markers and pans map smoothly
+- Info windows open correctly on markers
+- Only one location highlighted at a time
+- PickupLocationCard displays with all required information
+- Confirmation flow completes successfully
+- Selected location appears in cart page
+- All interactions smooth without lag
+- No race conditions in info window display"
+"VCST-4499 BOPIS Map Modal","TC-003: Mobile View - List/Map Toggle","Functional","Critical","10m","VCST-4499, PR-2138","- Mobile device or browser dev tools (375x667)
+- iOS Safari or Android Chrome
+- PR #2138 deployed
+- Cart has products","1. Open pickup location modal on mobile device
+2. Verify modal opens showing list view by default
+3. Verify List/Map toggle button visible at top
+4. Click ""Map"" toggle
+5. Verify view switches to map
+6. Verify map fills viewport correctly
+7. Verify list view is hidden
+8. Click ""List"" toggle
+9. Verify view switches back to list
+10. Verify list fills viewport correctly
+11. Verify map view is hidden
+12. Switch to Map view
+13. Click on a marker
+14. Verify info window opens on marker
+15. Click ""Select"" in info window
+16. Verify PickupLocationCard opens
+17. Verify card displays properly on small screen
+18. Confirm selection
+19. Verify modal closes and location is set","- Mobile layout displays correctly
+- Toggle button is visible and accessible
+- Views switch instantly without lag
+- Only one view visible at a time
+- Each view properly sized for mobile viewport
+- No horizontal scrolling
+- Touch targets appropriately sized (min 44x44px)
+- Info windows work on mobile
+- PickupLocationCard fits mobile screen
+- Selection flow completes successfully"
+"VCST-4499 BOPIS Map Modal","TC-004: Search Functionality","Functional","High","10m","VCST-4499, PR-2138","- Pickup location modal accessible
+- Multiple locations with different names
+- Valid and invalid address test data prepared","1. Open pickup location modal
+2. Enter partial location name (e.g., ""Mall"")
+3. Verify results filter to matching locations
+4. Verify map updates to show only matching markers
+5. Verify list updates to show only matching locations
+6. Clear search using X button
+7. Verify all locations return to display
+8. Enter full address
+9. Verify map zooms to address area
+10. Verify nearby locations highlighted
+11. Enter invalid/non-existent address
+12. Verify appropriate error or empty state shown
+13. Verify geolocation handling (no crash)
+14. Clear invalid search
+15. Verify returns to normal state
+16. Type rapidly in search field
+17. Verify search debounces appropriately
+18. Verify no excessive API calls","- Search field accepts input correctly
+- Results filter accurately based on search term
+- Map and list stay synchronized during search
+- Partial matches work correctly
+- Clear button restores all locations
+- Address search zooms map appropriately
+- Invalid addresses handled gracefully
+- No crashes or errors with invalid input
+- Rapid typing debounced properly
+- Reasonable number of map updates (no excessive API calls)
+- Search results immediate and accurate"
+"VCST-4499 BOPIS Map Modal","TC-005: Filter Operations","Functional","High","8m","VCST-4499, PR-2138","- Modal accessible
+- Locations with various availability statuses
+- Distance data available (if applicable)","1. Open pickup location modal
+2. Verify filter section visible and properly styled
+3. Apply availability filter (if available)
+4. Verify list filters to available locations only
+5. Verify unavailable locations greyed out or hidden on map
+6. Apply distance filter (if available)
+7. Verify locations sorted/filtered by distance
+8. Combine multiple filters
+9. Verify both filters apply correctly
+10. Search while filters active
+11. Verify search respects active filters
+12. Clear all filters
+13. Verify all locations return
+14. Verify map shows all locations again","- Filter UI displays correctly and is responsive
+- Availability filter works correctly
+- Map markers reflect filter state
+- Distance filter works correctly
+- Multiple filters combine properly
+- Search respects active filters
+- Clear filters restores all locations
+- Map and list remain synchronized throughout
+- Filter changes apply immediately"
+"VCST-4499 BOPIS Map Modal","TC-006: Map Interaction & Info Windows","Functional","High","12m","VCST-4499, PR-2138","- Google Maps API configured
+- Multiple locations with markers
+- Modal accessible","1. Open pickup location modal
+2. Verify map loads completely (no blank map)
+3. Verify markers visible on map
+4. Zoom in using controls
+5. Verify map zooms smoothly
+6. Zoom out using controls
+7. Verify map zooms smoothly
+8. Pan map by dragging
+9. Verify map pans smoothly
+10. Click marker A
+11. Verify info window A opens
+12. Quickly click marker B
+13. Verify info window B opens and A closes
+14. Verify only one info window visible (no race condition)
+15. Rapidly click multiple markers in succession
+16. Verify no crashes, single info window always visible
+17. Click map background
+18. Verify current info window closes
+19. Use keyboard to navigate list
+20. Verify map updates accordingly with smooth pan animation","- Map renders completely without blank areas
+- All markers visible at appropriate zoom level
+- Zoom controls work smoothly
+- Pan/drag works smoothly
+- Info windows open correctly on marker click
+- Only one info window visible at a time
+- No race conditions when rapidly clicking markers
+- Background click closes info window
+- Keyboard navigation updates map correctly
+- Smooth pan animations with idle callback
+- All map interactions responsive and smooth"
+"VCST-4499 BOPIS Map Modal","TC-007: Pickup Location Card Component","Functional","High","8m","VCST-4499, PR-2138, VCST-4518","- Modal accessible
+- Locations with complete information (name, address, hours, contact)","1. Open pickup location modal
+2. Select a location (click marker or list item)
+3. Verify PickupLocationCard dialog opens
+4. Verify card structure (title, details, availability, actions)
+5. Verify location name displays correctly
+6. Verify address displays correctly
+7. Verify hours of operation display
+8. Verify availability information with chip-based presentation
+9. Verify contact information (phone, email if available)
+10. Verify action buttons (Confirm and Cancel) present
+11. Click ""Cancel"" button
+12. Verify dialog closes and returns to map modal
+13. Verify map position and selection unchanged
+14. Select location again
+15. Verify card reopens
+16. Click ""Confirm"" button
+17. Verify card closes, modal closes, location set in cart","- PickupLocationCard opens on location selection
+- Card displays all relevant location information clearly
+- Title shows location name
+- Address formatted correctly
+- Hours of operation visible
+- Chip-based availability presentation matches design
+- Contact info displays if available
+- Confirm and Cancel buttons visible and accessible
+- Cancel returns to modal without changing state
+- Confirm completes selection and closes modal
+- Selected location shows in cart
+- State management proper on cancel/confirm
+- UI matches design specifications"
+"VCST-4499 BOPIS Map Modal","TC-008: Scroll Behavior & Modal Controls","Functional","Medium","8m","VCST-4499, PR-2138","- Modal accessible
+- Location list with enough items to require scrolling","1. Open pickup location modal
+2. Verify modal structure (header, content, footer visible)
+3. Scroll location list
+4. Verify list scrolls independently of map
+5. Verify map remains static (does not scroll)
+6. Scroll to bottom of list
+7. Verify scroll stops at end (no over-scroll issues)
+8. Scroll to top of list
+9. Verify scroll stops at top
+10. Open location card
+11. Verify card opens over modal
+12. Attempt to scroll background modal
+13. Verify background modal scroll disabled
+14. Close card
+15. Verify modal scroll re-enabled
+16. Open and close modal 5 times rapidly
+17. Verify no scroll-related issues","- Modal structure displays correctly
+- Location list scrolls independently
+- Map does not scroll with list
+- Scroll boundaries work correctly (top/bottom)
+- No unexpected over-scroll behavior
+- PickupLocationCard disables background scroll when open
+- Background scroll re-enabled after card closes
+- Rapid open/close does not cause scroll issues
+- Scroll containers work independently as designed
+- No scroll jumps or unexpected behavior"
+"VCST-4499 BOPIS Map Modal","TC-009: Responsive Breakpoint Testing","Functional","High","20m","VCST-4499, PR-2138","- Browser dev tools for responsive testing
+- Ability to test at multiple screen widths","1. Test at 320px width
+2. Verify List/Map toggle, single column layout
+3. Test search, location selection at 320px
+4. Verify no horizontal scroll, no layout breaks
+5. Test at 375px width
+6. Verify List/Map toggle, single column layout
+7. Test all functionality at 375px
+8. Test at 425px width
+9. Verify mobile layout appropriate
+10. Test at 768px width
+11. Verify layout (desktop or enhanced mobile)
+12. Test at 1024px width
+13. Verify desktop layout (list left, map right)
+14. Test at 1440px width
+15. Verify desktop layout proper
+16. Test at 1920px width
+17. Verify desktop layout, no stretching issues
+18. Test search functionality at each breakpoint
+19. Test location selection at each breakpoint
+20. Verify all interactive elements work at all sizes","For each breakpoint:
+- Layout matches design specification
+- No broken layouts or overlapping elements
+- No horizontal scrolling
+- All functionality works correctly
+- Interactive elements properly sized and accessible
+- Text readable and not truncated
+- Buttons/controls accessible
+- Smooth transitions between breakpoints
+- Mobile layouts use toggle (320-767px)
+- Desktop layouts show side-by-side (768px+)"
+"VCST-4499 BOPIS Map Modal","TC-010: Localization Testing","Functional","Medium","30m","VCST-4499, PR-2138","- Access to change language settings
+- Test environment with all languages configured
+- Sample locations in system","For each language (de, en, es, fi, fr, it, ja, no, pl, pt, ru, sv, zh):
+1. Change language setting
+2. Open pickup location modal
+3. Verify all UI elements translated
+4. Verify search placeholder translated
+5. Verify button labels translated
+6. Verify filter labels translated
+7. Verify location card content appropriate
+8. Verify text fits in containers (no overflow)
+9. Verify buttons and labels fit properly
+10. Test complete selection flow in that language
+11. Verify no truncated text anywhere
+12. Verify no broken layouts due to text length
+13. For RTL languages (if applicable), verify proper RTL display","For all 13 languages:
+- All UI elements properly translated
+- No missing translations (no translation keys visible)
+- Text fits within containers without truncation
+- Buttons and labels properly sized
+- No layout breaks due to long text
+- Complete flow works in each language
+- Error messages translated
+- RTL languages display correctly (if applicable)
+- Character sets display correctly (esp. Japanese, Chinese, Russian)
+- Special characters handled properly"
+"VCST-4499 BOPIS Map Modal","TC-011: Performance Testing","Functional","Medium","15m","VCST-4499, PR-2138","- Test environments with varying location counts
+- Browser dev tools for performance monitoring
+- Network throttling capability","Test with 1-5 locations:
+1. Measure modal open time (should be instant)
+2. Measure search response time
+3. Measure filter response time
+4. Verify 60fps smooth interactions
+
+Test with 10-50 locations:
+5. Measure modal open time (should be <1s)
+6. Test search performance
+7. Test filter performance
+8. Verify smooth map pan/zoom
+
+Test with 50-100 locations:
+9. Measure modal open time (should be <2s)
+10. Verify acceptable performance
+11. Check memory usage (dev tools)
+12. Monitor network requests
+
+Test with 100+ locations:
+13. Verify map clustering or pagination
+14. Check for memory leaks
+15. Verify reasonable API call count","Performance targets:
+- 1-5 locations: Instant load, immediate interactions
+- 10-50 locations: <1s load, smooth 60fps interactions
+- 50-100 locations: <2s load, acceptable smooth interaction
+- 100+ locations: Map clustering active or pagination
+- No memory leaks detected
+- Reasonable API call count (not excessive)
+- Smooth 60fps for pan/zoom at all counts
+- Search/filter response <500ms
+- Modal opens within acceptable timeframes"
+"VCST-4499 BOPIS Map Modal","TC-012: Error Handling & Edge Cases","Functional","Medium","15m","VCST-4499, PR-2138","- Ability to simulate various error conditions
+- Test data with edge cases
+- Network throttling tools","1. Open modal with zero locations configured
+2. Verify appropriate empty state message
+3. Block Google Maps API (simulate failure)
+4. Verify graceful fallback or error message
+5. Deny browser geolocation permission
+6. Verify app continues without geolocation
+7. Test location with invalid coordinates
+8. Verify error handled, no crash
+9. Disconnect network during search
+10. Verify appropriate error message shown
+11. Throttle network to slow 3G
+12. Verify loading states display
+13. Test location with 200+ character name
+14. Verify text truncated or wrapped appropriately
+15. Test location with special characters/emojis
+16. Verify displays correctly
+17. Simulate concurrent user selections (if possible)
+18. Verify no conflicts","- Empty state handled gracefully with clear message
+- Map API failure shows fallback or error (no blank crash)
+- Geolocation denial does not block functionality
+- Invalid coordinates handled without crash
+- Network errors show clear error messages
+- Slow connection shows loading indicators
+- Long names truncated/wrapped without breaking layout
+- Special characters and emojis display correctly
+- No crashes in any error scenario
+- User can recover from all error states
+- Error messages are clear and actionable
+- Graceful degradation in all scenarios"
+"VCST-4499 BOPIS Map Modal","TC-013: Browser Compatibility","Functional","High","25m","VCST-4499, PR-2138","- Access to Chrome, Firefox, Safari, Edge browsers
+- Latest browser versions
+- Mobile devices or emulators for Safari iOS and Chrome Android","For Chrome (Desktop & Android):
+1. Run TC-001 (Map Stability)
+2. Run TC-002 (Desktop Flow)
+3. Run TC-003 (Mobile Toggle)
+4. Run TC-004 (Search)
+5. Run TC-006 (Map Interactions)
+6. Run TC-007 (Location Card)
+7. Verify all features work correctly
+
+For Firefox (Desktop):
+8. Repeat steps 1, 2, 4, 6, 7
+
+For Safari (Desktop & iOS):
+9. Repeat steps 1, 2, 3, 4, 6, 7
+
+For Edge (Desktop):
+10. Repeat steps 1, 2, 4, 6, 7
+
+Compare appearance and behavior across all browsers","- All functionality works in Chrome (desktop & mobile)
+- All functionality works in Firefox
+- All functionality works in Safari (desktop & iOS)
+- All functionality works in Edge
+- No browser-specific bugs
+- Consistent appearance across browsers (minor differences acceptable)
+- Map loads and works in all browsers
+- Animations smooth in all browsers
+- No console errors in any browser
+- Touch events work on mobile browsers
+- Performance acceptable in all browsers"
+"VCST-4499 BOPIS Map Modal","TC-014: Accessibility Testing","Functional","Medium","20m","VCST-4499, PR-2138","- Screen reader software (NVDA, JAWS, or VoiceOver)
+- Keyboard only (no mouse)
+- axe DevTools browser extension","1. Open modal using keyboard only (Tab/Enter)
+2. Verify modal opens and focus moves to modal
+3. Tab through all interactive elements in modal
+4. Verify visible focus indicators on all elements
+5. Verify logical tab order (top to bottom, left to right)
+6. Verify can search using keyboard
+7. Verify can select location using keyboard
+8. Verify can confirm selection using keyboard
+9. Verify Escape key closes modal
+10. Start screen reader (NVDA/JAWS/VoiceOver)
+11. Verify modal announced when opened
+12. Verify location list items announced correctly
+13. Verify buttons and controls announced with roles
+14. Verify form fields have proper labels
+15. Run axe DevTools scan
+16. Verify no critical violations
+17. Check color contrast ratios
+18. Verify meets WCAG AA standards","- Modal fully keyboard accessible
+- Tab order logical and complete
+- Focus indicators visible on all interactive elements
+- Can complete full flow without mouse
+- Screen reader announces all content appropriately
+- ARIA labels present on custom controls
+- Form fields properly labeled
+- Error messages announced to screen readers
+- Modal role/title announced
+- axe DevTools: 0 critical violations
+- Color contrast meets WCAG AA (4.5:1 for text)
+- Can skip to main content
+- Focus trapped in modal when open
+- Focus returns appropriately when closed"
+"VCST-4499 BOPIS Map Modal","TC-015: Integration Testing","Functional","High","12m","VCST-4499, PR-2138","- Full cart and checkout flow enabled
+- Ability to complete orders
+- Session persistence enabled","1. Add products to cart
+2. Verify cart updated correctly
+3. Select pickup location using modal
+4. Verify location set in cart
+5. Verify cart displays selected location details
+6. Change pickup location to different one
+7. Verify cart updates with new location
+8. Proceed to checkout
+9. Verify checkout page loads
+10. Verify pickup location information in checkout
+11. Complete order (if possible in test env)
+12. Verify order confirmation includes pickup details
+13. Return to cart
+14. Switch from Pickup to Delivery
+15. Verify pickup location cleared
+16. Switch back to Pickup
+17. Verify can select location again
+18. Refresh page
+19. Verify pickup location persists (if session maintained)","- Products add to cart correctly
+- Pickup location selection integrates with cart
+- Selected location visible in cart with details
+- Changing location updates cart immediately
+- Checkout receives pickup location data
+- Pickup information persists through checkout
+- Order confirmation shows pickup details
+- Can switch between delivery methods
+- Pickup location clears when switching to delivery
+- Can re-select location after switching back
+- Data persists appropriately with session
+- No data loss between components
+- Complete flow cart → location → checkout → order works
+- Integration seamless throughout"
+"VCST-4499 Regression","REG-001: Standard Delivery Flow","Regression","High","8m","VCST-4499","- Test environment with PR #2138 deployed
+- Cart has products","1. Add products to cart
+2. Navigate to cart page
+3. Verify ""Delivery"" option available
+4. Select ""Delivery"" option
+5. Enter shipping address
+6. Verify address form works correctly
+7. Verify address validation works
+8. Save shipping address
+9. Verify address displays in cart
+10. Proceed to checkout
+11. Verify checkout works with delivery","- Delivery option available and selectable
+- Shipping address form works as before
+- Address validation unchanged
+- Address saves correctly
+- Delivery flow unaffected by pickup changes
+- Checkout works normally with delivery
+- No regression in standard delivery flow"
+"VCST-4499 Regression","REG-002: Cart Operations","Regression","High","5m","VCST-4499","- Test environment accessible
+- Product catalog available","1. Add item to cart
+2. Verify item appears in cart
+3. Change quantity of item
+4. Verify quantity updates
+5. Remove item from cart
+6. Verify item removed
+7. Add multiple items
+8. Verify all items appear
+9. Apply coupon code (if available)
+10. Verify cart total calculations correct","- Add to cart works normally
+- Quantity updates work
+- Remove from cart works
+- Multiple items handled correctly
+- Cart calculations accurate
+- No regression in basic cart operations"
+"VCST-4499 Regression","REG-003: Other Modals/Dialogs","Regression","Medium","5m","VCST-4499","- Access to other modal/dialog features","1. Open various other modals in application
+2. Verify they open correctly
+3. Verify they close correctly
+4. Verify scroll behavior correct
+5. Test quick view modal (if exists)
+6. Test login/signup modal (if exists)
+7. Verify modal changes don't affect others","- All other modals/dialogs work normally
+- VcModal and VcDialogContent changes don't break others
+- Scroll behavior correct in all modals
+- No regression in other dialog functionality"
+"VCST-4499 Regression","REG-004: Checkout Flow","Regression","High","10m","VCST-4499","- Cart has products
+- Able to proceed through checkout","1. Add products to cart
+2. Proceed to checkout
+3. Enter/confirm shipping information
+4. Proceed to payment
+5. Enter payment information (test mode)
+6. Complete order
+7. Verify order confirmation
+8. Verify order in order history","- Can access checkout
+- Shipping step works normally
+- Payment step works normally
+- Order completion works
+- Order confirmation displays
+- No regression in checkout flow
+- Delivery orders work correctly"
+"VCST-4499 Regression","REG-005: Payment Processing","Regression","High","8m","VCST-4499","- Checkout accessible
+- Test payment methods configured","1. Proceed to checkout with items
+2. Select payment method
+3. Enter payment details (test mode)
+4. Submit payment
+5. Verify payment processing
+6. Verify order completed
+7. Test multiple payment methods if available","- Payment methods available
+- Payment forms work correctly
+- Payment processing completes
+- Order finalizes successfully
+- No regression in payment functionality"
+"VCST-4499 Regression","REG-006: Order History","Regression","Medium","5m","VCST-4499","- User account with previous orders
+- Previous pickup orders exist (if possible)","1. Log in to account
+2. Navigate to order history
+3. Verify orders display
+4. View order details for pickup order
+5. Verify pickup location info displays
+6. View order details for delivery order
+7. Verify delivery address displays","- Order history accessible
+- Orders display correctly
+- Pickup orders show pickup location details
+- Delivery orders show delivery address
+- Order details load correctly
+- No regression in order history display"
+"VCST-4499 BOPIS Map Modal","BUG-001: Pickup Map Width After Search (VCST-4518)","Defect Verification","Critical","10m","VCST-4499, VCST-4518, PR-2138","- PR #2138 deployed to test environment
+- Test URL: https://vcst-qa-storefront.govirto.com
+- Cart contains at least one product
+- Multiple pickup locations configured","1. Add product to cart and navigate to cart page
+2. Select ""Pickup"" under SHIPPING DETAILS
+3. Click ""Select pickup address"" button
+4. Verify ""Pick points"" modal opens with list (left) and map (right)
+5. Measure initial map width - verify approximately 50% of modal width
+6. Enter search term ""Westent foxpost"" in search field
+7. Click Search button
+8. Verify ""Pickup points not found"" message displays
+9. **CRITICAL CHECK:** Verify map maintains at least 40-50% of modal width (not ~30% or less)
+10. Verify map remains usable and visible
+11. Click ""Reset search"" button
+12. Verify map returns to normal width (~50%)
+13. Enter search term ""South Schuylershire"" in search field
+14. Click Search button
+15. Verify one location result displays
+16. **CRITICAL CHECK:** Verify map maintains at least 40-50% of modal width with valid results
+17. Click on ""South Schuylershire"" location in list
+18. Verify ""Pick point info"" card opens
+19. **CRITICAL CHECK:** Verify info card has sufficient space and readable layout
+20. Verify map width remains stable throughout all operations","**EXPECTED (AFTER FIX):**
+- Initial state: Map occupies ~50% of modal width
+- After empty search: Map maintains at least 40-50% width
+- After valid search: Map maintains at least 40-50% width
+- After reset: Map returns to ~50% width
+- Info card: Opens with sufficient space, readable content
+- Map never becomes unusably narrow (<40% width)
+- List/empty state capped at reasonable width (max 350-400px)
+
+**BUG BEHAVIOR (BEFORE FIX - VCST-4518):**
+- Initial: ✅ Map OK (~50% width)
+- After ""Westent foxpost"": ❌ Map narrow (~30% width)
+- After reset: ✅ Map restored (~50% width)
+- After ""South Schuylershire"": ❌ Map narrow (~30% width)
+- Info card: ❌ Layout constrained, overlays narrow map
+- Root cause: CSS layout - list takes excessive width, map lacks min-width
+- Evidence: Reports/BUG-Pickup-Map-*.png (5 screenshots)
+- Jira: VCST-4518 Comment ID 87266"
