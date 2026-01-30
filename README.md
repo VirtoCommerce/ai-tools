@@ -1,54 +1,48 @@
 # vc-mcp-testing-module
 
-Repository for Playwright MCP + LLM tests prompts
+QA testing documentation and MCP-driven testing repository for the Virto Commerce B2B e-commerce platform.
 
 ## Overview
 
-This project provides a comprehensive testing framework that combines Playwright automation with Model Context Protocol (MCP) for LLM-powered test generation and execution. It's designed to work with Cursor, Kiro, and Claude code IDEs.
+This project uses **LLM-powered browser automation** through MCP (Model Context Protocol) servers for test execution. Tests are executed through natural language prompts, enabling AI-driven testing workflows.
+
+**Important:** This is NOT a traditional test automation codebase with `.spec.js` files. The primary workflow is LLM-driven test execution using prompt templates in `docs/prompts/`.
 
 ## Prerequisites
 
-- **IDE**: Cursor, Kiro, or Claude code IDE
-- **MCP Server**: Playwright MCP server must be installed and configured
+- **IDE**: Cursor, Windsurf, or VS Code with Claude Code extension
 - **Node.js**: Version 18 or higher
-- **Playwright**: Browser automation framework
+- **MCP Servers**: Playwright MCP, Chrome DevTools MCP (see configuration below)
 
-## MCP Configuration
+## Quick Start
 
-### 1. Install Playwright MCP Server
+```bash
+# Install dependencies
+npm install
 
-The project uses `@playwright/mcp` package for MCP integration. 
+# Verify environment variables
+npm run env:check
 
-**For Cursor IDE:**
-1. Go to Cursor Settings -> MCP -> Add new MCP Server
-2. Name it to your liking (e.g., "playwright mcp")
-3. Use command type with the command: `npx @playwright/mcp@latest`
-4. You can also verify config or add command arguments via clicking Edit
-
-**Example MCP Configuration:**
-```json
-{
-  "mcpServers": {
-    "playwright mcp msedge": {
-      "command": "npx",
-      "args": [
-        "@playwright/mcp@latest",
-        "--browser",
-        "chrome"
-      ]
-    }
-  }
-}
+# Run Playwright tests
+npm test
+npm run test:headed    # With visible browser
+npm run test:debug     # Debug mode
+npm run test:chrome    # Chrome only
+npm run test:report    # View HTML report
 ```
 
-### 2. Environment Configuration
+## Environment Configuration
 
-Create a `.env` file in the project root with the following required variables:
+Create a `.env` file in the project root. Run `npm run env:check` to validate all 28 required variables.
+
+### Required Environment Variables
 
 ```env
 # Application URLs
-FRONT_URL=https://your-frontend-url.com
-BACK_URL=https://your-backend-url.com
+VCST_FRONT_URL=https://vcst-qa-storefront.govirto.com/
+VCST_BACK_URL=https://your-backend-url.com
+VIRTO_START_FRONT=https://virtostart-demo-store.govirto.com/
+VIRTO_START_BACK=https://your-virtostart-backend-url.com
 
 # Admin Credentials
 ADMIN=your_admin_username
@@ -57,67 +51,166 @@ ADMIN_PASSWORD=your_admin_password
 # User Credentials
 USER_EMAIL=test_user@example.com
 USER_PASSWORD=test_password
+USER2_EMAIL=second_user@example.com
+USER2_PASSWORD=second_user_password
+USER_VIRTO_EMAIL=virtostart_user@example.com
+USER_VIRTO_PASSWORD=virtostart_password
+
+# Payment Processors (Skyflow, CyberSource, Authorize.Net, Datatrance)
+# Each requires: card number, expiry, CVV
+SKYFLOW_CARD=...
+CYBERSOURCE_CARD=...
+AUTHORIZENET_CARD=...
+DATATRANCE_CARD=...
+
+# External APIs
+FIGMA_API_KEY=your_figma_api_key
+BROWSERSTACK_USERNAME=your_browserstack_username
+BROWSERSTACK_ACCESS_KEY=your_browserstack_access_key
 ```
 
-### 3. Verify Environment Variables
-
-Use the provided script to check if all required environment variables are set:
-
-```bash
-npm run env:check
+Access environment variables via `config.js`:
+```javascript
+import { env } from './config.js'
 ```
 
-### 4. MCP Server Setup
+## MCP Server Configuration
 
-Follow the official Playwright MCP documentation for detailed setup instructions:
-- [Playwright MCP GitHub Repository](https://github.com/microsoft/playwright-mcp)
+### Playwright MCP (Browser Automation)
 
-## MCP Integration
+```json
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest", "--browser", "chrome"]
+    }
+  }
+}
+```
 
-The project is configured to work with MCP-enabled IDEs. The MCP server provides:
-- Browser automation capabilities
-- Test execution through natural language prompts
-- Screenshot and accessibility testing
-- Cross-browser testing support
+### Chrome DevTools MCP
 
-## Browser Support
+Used for console logs, network requests, and performance tracing (HAR export for regression testing).
 
-The configuration supports multiple browsers:
-- Chromium (Desktop Chrome)
+### Atlassian MCP
+
+JIRA integration for test case management and bug reporting.
+
+### Figma MCP
+
+Visual comparison testing against design specifications.
+
+## Claude Code Specialized Agents
+
+### Adding Custom Agents
+
+1. Open terminal and run `claude`
+2. Type `/agents`
+3. Select **Create new agent**
+4. Follow the prompts to configure your agent
+
+Agents are stored in `.claude/agents/` as markdown files with YAML frontmatter.
+
+**Usage example:**
+```
+"Use the qa-testing-expert to verify the checkout flow"
+"Use test-case-architect to write test cases for VCST-1234"
+```
+
+## LLM-Driven Testing Workflow
+
+1. Use prompt templates from `docs/prompts/` (e.g., `full-regression-qa-agent.md`)
+2. Execute via MCP browser tools with DevTools monitoring
+3. Capture evidence: screenshots, console logs, HAR files, network requests
+4. Generate bug reports in `reports/bugs/` following the established format
+
+## Repository Structure
+
+```
+vc-mcp-testing-module/
+├── .claude/                    # Claude Code agent configurations
+├── docs/
+│   ├── prompts/                # LLM prompt templates for QA automation
+│   └── guides/                 # Testing guides (e.g., Storybook testing)
+├── test-data/
+│   ├── regression/             # Regression test suites and data
+│   ├── organizations/          # Organization test data
+│   ├── search-queries/         # Search test data
+│   ├── inventory/              # Inventory test data
+│   └── uploads/                # Test files for upload testing
+├── tests/                      # Test cases organized by JIRA ticket
+│   └── VCST-XXXX-feature/
+│       ├── test-plan.md
+│       ├── test-cases.md
+│       ├── test-execution-report.md
+│       ├── testrail-import.csv
+│       └── screenshots/
+├── reports/
+│   ├── bugs/                   # Bug reports with screenshots
+│   └── regression/             # Regression test reports
+├── archive/                    # Historical sprint test cases
+├── test-results/               # Playwright test results
+├── config.js                   # Environment configuration
+└── sitemap.md                  # Site structure reference
+```
+
+## Test Documentation Pattern
+
+Each feature test follows this structure:
+
+```
+tests/VCST-XXXX-feature/
+├── test-plan.md              # Test strategy
+├── test-cases.md             # Detailed test specifications
+├── test-execution-report.md  # Results
+├── testrail-import.csv       # TestRail import format
+└── screenshots/
+    ├── desktop/              # Desktop screenshots
+    └── mobile/               # Mobile screenshots
+```
+
+## Bug Report Format
+
+Reports in `reports/bugs/` include:
+- Title with ticket reference (e.g., `BUG-CSS-Pickup-Map-Too-Narrow-VCST-QA.md`)
+- STR (Steps to Reproduce) with numbered steps
+- Expected vs Actual behavior
+- Evidence: screenshots, console logs, network requests
+- Severity/Priority assessment
+- Environment details
+
+## Testing Targets
+
+| Environment | URL |
+|-------------|-----|
+| **VCST QA** | https://vcst-qa-storefront.govirto.com/ |
+| **Virtostart** | https://virtostart-demo-store.govirto.com/
+
+## Key Testing Domains
+
+- **Cart & Checkout** - Cart operations, shipping, checkout flow, order completion
+- **Catalog Browsing** - Category navigation, product listings, filters, sorting
+- **Search** - Product search, suggestions, filters, special characters
+- **Payment Processing** - Skyflow, CyberSource, Authorize.Net, Datatrance
+- **BOPIS** - Buy Online Pickup In Store flows
+- **Organization Search** - Special character handling (ampersands, brackets)
+- **Multilingual** - 13 languages (EN, DE, FR, ES, NO, SV, PL, IT, PT, JA, ZH, FI, RU)
+
+## Browser Matrix
+
+**Desktop (last 2 versions):**
+- Chrome
+- Edge
+- WebKit
 - Firefox
-- WebKit (Safari)
-- Mobile Chrome (Pixel 5)
-- Mobile Safari (iPhone 12)
 
-## Manual Testing Documentation
+**Mobile:**
+- iPhone 16, 17, 18 (Safari)
+- Android last 3 models (Chrome)
 
-The `tests/manual/` directory contains comprehensive manual test documentation for Virto Commerce features:
+## Resources
 
-### 📋 Multilingual SEO-Friendly URLs Test Suite
-
-A complete manual test plan for validating multilingual SEO URLs with **45 detailed test cases** covering:
-
-- **Test Plan** (`multilingual-seo-urls-test-plan.md`): Complete test cases with preconditions, steps, and expected results
-- **Test Data** (`test-data.md`): Sample URLs, translations, and test data for Norwegian, German, and French
-- **Quick Reference** (`quick-reference-guide.md`): One-page guide for quick access during testing
-- **Execution Tracker** (`test-execution-tracker.md`): Progress tracking and issue logging template
-- **README** (`README.md`): Comprehensive guide on using the manual test documentation
-
-**Test Coverage:**
-- URL routing and structure validation
-- Language switching functionality
-- Local storage persistence
-- Error handling and 404 redirects
-- Link sharing and preservation
-- Sitemap validation
-- Static and dynamic page routing
-- SEO metadata (canonical, hreflang, Open Graph)
-- Cross-page navigation consistency
-- Browser compatibility (Chrome, Firefox, Safari, Edge, Mobile)
-
-**Quick Start:**
-```bash
-cd tests/manual
-# Review the README for complete instructions
-cat README.md
-```
+- [Playwright MCP GitHub](https://github.com/microsoft/playwright-mcp)
+- [Virto Commerce Documentation](https://docs.virtocommerce.org/)
+- [Storefront User Guide](https://docs.virtocommerce.org/storefront/user-guide/2.0/)
