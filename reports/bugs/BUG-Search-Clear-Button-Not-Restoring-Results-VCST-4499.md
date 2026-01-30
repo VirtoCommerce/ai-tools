@@ -1,6 +1,7 @@
 # BUG: Search Clear Button Does Not Restore Pickup Location Results
 
 **Bug ID:** BUG-BOPIS-SearchClear-001
+**Jira Ticket:** [VCST-4578](https://virtocommerce.atlassian.net/browse/VCST-4578)
 **Related Ticket:** VCST-4499
 **Date Reported:** 2026-01-30
 **Reporter:** Claude Code QA Automation
