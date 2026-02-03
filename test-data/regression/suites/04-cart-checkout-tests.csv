@@ -1,0 +1,180 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+CART-001,Add to Cart - From Product Page,Cart > Add,Functional,Critical,3m,"User logged in, product available","1. Navigate to product detail page
+2. Verify Add to Cart button visible
+3. Click Add to Cart
+4. Verify success notification","- Product added to cart
+- Cart count increments
+- Success message shown",VCST-4499,Automated
+CART-002,Add to Cart - From Category List,Cart > Add,Functional,High,3m,"User logged in, category page open","1. Navigate to category
+2. Hover over product card
+3. Click quick add button
+4. Verify cart updates","- Can add from listing
+- Cart updates immediately
+- No page navigation required",VCST-4499,Automated
+CART-003,Add to Cart - Multiple Quantities,Cart > Add,Functional,High,3m,"On product detail page","1. Set quantity to 5
+2. Click Add to Cart
+3. View cart
+4. Verify quantity is 5","- Quantity selector works
+- Correct quantity added
+- Subtotal reflects quantity",VCST-4499,Automated
+CART-004,Add to Cart - Product Variation,Cart > Add,Functional,High,5m,"Configurable product available","1. Navigate to configurable product
+2. Select size: Medium
+3. Select color: Blue
+4. Add to cart
+5. View cart","- Selected options displayed in cart
+- Correct variant SKU
+- Price matches selection",tests/B2C-Variations,Automated
+CART-005,View Cart - Display Items,Cart > View,Functional,Critical,3m,"Products in cart","1. Click cart icon
+2. Verify mini cart shows
+3. Click 'View Cart'
+4. Verify full cart page","- Mini cart displays items
+- Full cart shows all details
+- Images, names, prices correct",VCST-4499,Automated
+CART-006,Update Quantity - Increase,Cart > Update,Functional,High,3m,"Product in cart","1. Navigate to cart
+2. Find quantity input
+3. Click + or enter higher number
+4. Verify update","- Quantity increases
+- Line total updates
+- Cart total updates",VCST-4499,Automated
+CART-007,Update Quantity - Decrease,Cart > Update,Functional,High,3m,"Product in cart with qty > 1","1. Navigate to cart
+2. Click - on quantity
+3. Verify quantity decreases
+4. Verify totals update","- Quantity decreases
+- Cannot go below 1
+- Totals recalculate",VCST-4499,Automated
+CART-008,Update Quantity - Direct Input,Cart > Update,Functional,Medium,3m,"Product in cart","1. Click quantity field
+2. Clear and type '10'
+3. Press Enter or blur
+4. Verify update","- Direct input accepted
+- Quantity updates
+- Validates against stock",VCST-4499,Automated
+CART-009,Remove Item - Single Product,Cart > Remove,Functional,High,3m,"Product in cart","1. Navigate to cart
+2. Click remove/X button on item
+3. Confirm if prompted
+4. Verify item removed","- Item removed from cart
+- Cart count decrements
+- Totals update",VCST-4499,Automated
+CART-010,Remove Item - Last Item,Cart > Remove,Functional,Medium,3m,"Only one item in cart","1. Remove the only item
+2. Verify empty cart state
+3. Verify empty cart message","- Cart becomes empty
+- Empty state message shown
+- Continue shopping link",VCST-4499,Automated
+CART-011,Clear Cart - All Items,Cart > Clear,Functional,Medium,3m,"Multiple items in cart","1. Click 'Clear Cart' button
+2. Confirm action in dialog
+3. Verify all items removed","- Confirmation dialog appears
+- All items removed
+- Empty cart state shown",google-analytics,Automated
+CART-012,Save for Later - Move Item,Cart > Save Later,Functional,Medium,5m,"Product in cart","1. Navigate to cart
+2. Click 'Save for Later' on item
+3. Verify item moves to saved list
+4. Verify removed from cart","- Item moves to saved section
+- No longer in cart total
+- Can move back to cart",tests/VCST-3928-save4later-delay-fix,Automated
+CART-013,Save for Later - Move Back,Cart > Save Later,Functional,Medium,3m,"Item in saved for later list","1. View saved for later section
+2. Click 'Move to Cart'
+3. Verify item returns to cart","- Item added back to cart
+- Removed from saved list
+- Totals update",tests/VCST-3928-save4later-delay-fix,Automated
+CART-014,Apply Coupon - Valid Code,Cart > Coupons,Functional,Medium,3m,"Valid coupon exists in system","1. Navigate to cart
+2. Enter valid coupon code
+3. Click Apply
+4. Verify discount applied","- Coupon accepted
+- Discount shown
+- Total reduced",VCST-4499,Automated
+CART-015,Apply Coupon - Invalid Code,Cart > Coupons,Functional,Medium,2m,"N/A","1. Enter invalid coupon 'FAKECODE'
+2. Click Apply
+3. Verify error message","- Error: Invalid coupon
+- No discount applied
+- Clear error message",VCST-4499,Automated
+CART-016,Cart Calculations - Subtotal,Cart > Calculations,Functional,Critical,3m,"Multiple items in cart","1. View cart
+2. Calculate expected subtotal manually
+3. Compare to displayed subtotal","- Subtotal = sum of line totals
+- Accurate to cent
+- Updates on changes",VCST-4499,Automated
+CART-017,Cart Calculations - Tax,Cart > Calculations,Functional,High,3m,"Taxable items in cart, tax configured","1. View cart with items
+2. Verify tax line displayed
+3. Verify tax calculation","- Tax calculated correctly
+- Based on shipping address
+- Rate displayed",VCST-4499,Automated
+CART-018,Cart Calculations - Shipping,Cart > Calculations,Functional,High,3m,"Items in cart, shipping method selected","1. Select shipping method
+2. Verify shipping cost displays
+3. Verify added to total","- Shipping cost shown
+- Matches selected method
+- Included in total",VCST-4499,Automated
+CHK-001,Checkout - Delivery Option Selection,Checkout > Shipping,Functional,Critical,5m,"Products in cart","1. Navigate to cart
+2. Locate shipping options
+3. Select 'Delivery' option
+4. Verify shipping form appears","- Delivery option selectable
+- Address form displays
+- Shipping methods available",VCST-4499,Automated
+CHK-002,Checkout - Enter Shipping Address,Checkout > Shipping,Functional,High,5m,"Delivery selected, no saved addresses","1. Fill address form:
+   - Street, City, State, ZIP, Country
+2. Verify validation
+3. Save address","- All fields accept input
+- Validation works
+- Address saved",VCST-4499,Automated
+CHK-003,Checkout - Select Saved Address,Checkout > Shipping,Functional,High,3m,"User has saved addresses","1. Select Delivery option
+2. View saved addresses dropdown
+3. Select existing address
+4. Verify populated","- Saved addresses listed
+- Selection populates fields
+- Can edit if needed",VCST-4499,Automated
+CHK-004,Checkout - Address Validation,Checkout > Shipping,Functional,High,5m,"Address form open","1. Enter incomplete address
+2. Try to proceed
+3. Verify validation errors
+4. Fix errors and proceed","- Required fields enforced
+- Format validation works
+- Clear error messages",VCST-4499,Automated
+CHK-005,Checkout - Shipping Method Selection,Checkout > Shipping,Functional,High,3m,"Valid address entered","1. View shipping methods
+2. Select Ground shipping
+3. Verify cost displays
+4. Select Air shipping
+5. Verify cost updates","- Methods listed with costs
+- Selection updates total
+- Delivery estimates shown",VCST-4499,Automated
+CHK-006,Checkout - Payment Method Selection,Checkout > Payment,Functional,Critical,3m,"Shipping configured","1. View payment methods
+2. Select credit card option
+3. Verify payment form displays","- Payment methods listed
+- Selection shows form
+- Required fields indicated",VCST-4499,Automated
+CHK-007,Checkout - Order Review,Checkout > Review,Functional,High,3m,"All checkout steps complete","1. View order summary
+2. Verify line items
+3. Verify shipping address
+4. Verify payment method
+5. Verify totals","- All info correct
+- Can edit each section
+- Place Order button active",VCST-4499,Automated
+CHK-008,Checkout - Place Order,Checkout > Complete,Functional,Critical,5m,"All checkout info valid","1. Review order details
+2. Click 'Place Order'
+3. Wait for processing
+4. Verify confirmation","- Order submitted
+- Processing indicator shown
+- Confirmation page displays",VCST-4499,Automated
+CHK-009,Checkout - Order Confirmation Page,Checkout > Complete,Functional,High,3m,"Order just placed","1. View confirmation page
+2. Verify order number
+3. Verify order details
+4. Verify email mention","- Order number displayed
+- All items listed
+- Totals shown
+- Email confirmation sent",VCST-4499,Automated
+CHK-010,Order History - View Orders,Orders > History,Functional,High,3m,"User has previous orders","1. Navigate to account
+2. Click Order History
+3. Verify orders list","- Orders displayed
+- Most recent first
+- Status shown for each",VCST-4499,Automated
+CHK-011,Order History - View Details,Orders > Details,Functional,High,3m,"Orders exist in history","1. Click on an order
+2. View order detail page
+3. Verify all information","- Line items shown
+- Shipping info displayed
+- Payment info shown
+- Status timeline visible",VCST-4499,Automated
+CHK-012,Order - Pickup Details Display,Orders > Pickup,Functional,High,3m,"Pickup order in history","1. View pickup order details
+2. Verify pickup location
+3. Verify pickup instructions","- Pickup location name/address
+- Store hours shown
+- Pickup instructions clear",VCST-4499,Automated
+CHK-013,Order - Delivery Details Display,Orders > Delivery,Functional,High,3m,"Delivery order in history","1. View delivery order details
+2. Verify shipping address
+3. Verify tracking (if available)","- Shipping address correct
+- Carrier shown
+- Tracking link (when shipped)",VCST-4499,Automated

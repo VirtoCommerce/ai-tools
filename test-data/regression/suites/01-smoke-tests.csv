@@ -1,0 +1,96 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+SMK-001,User Registration - Personal Account,Smoke > Registration,Functional,Critical,5m,"Browser open, QA environment: https://vcst-qa-storefront.govirto.com","1. Navigate to registration page
+2. Select 'Personal' account type
+3. Fill required fields: First Name, Last Name, Email, Password
+4. Accept terms and conditions
+5. Click 'Create Account' button","- Registration form submits successfully
+- User receives confirmation message
+- User can sign in with new credentials
+- Account visible in admin panel",regression-qa-theme-26.csv,Automated
+SMK-002,User Registration - Organization Account,Smoke > Registration,Functional,Critical,5m,"Browser open, QA environment accessible","1. Navigate to registration page
+2. Select 'Organization' account type
+3. Fill required fields: Company Name, First Name, Last Name, Email, Password
+4. Accept terms and conditions
+5. Click 'Create Account' button","- Organization account created
+- Company appears in Organizations list
+- User assigned as organization admin",regression-qa-theme-26.csv,Automated
+SMK-003,Sign In - Personal User,Smoke > Authentication,Functional,Critical,3m,"Valid personal user account exists (USER_EMAIL from .env)","1. Navigate to sign-in page
+2. Enter email: USER_EMAIL
+3. Enter password: USER_PASSWORD
+4. Click 'Sign In' button","- User authenticated successfully
+- Redirected to homepage/dashboard
+- User name displayed in header
+- Cart and wishlist accessible",regression-qa-theme-26.csv,Automated
+SMK-004,Sign In - Organization User,Smoke > Authentication,Functional,Critical,3m,"Valid organization user account exists","1. Navigate to sign-in page
+2. Enter organization user credentials
+3. Click 'Sign In' button
+4. Verify organization context","- User logged in with organization context
+- Organization name visible
+- B2B features accessible",regression-qa-theme-26.csv,Automated
+SMK-005,Catalog Browsing - Category Navigation,Smoke > Catalog,Functional,Critical,5m,"User logged in","1. Navigate to main catalog
+2. Click on a category (e.g., 'Snacks')
+3. Verify product listing loads
+4. Click on subcategory
+5. Verify filtered results","- Category page loads with products
+- Breadcrumbs show correct path
+- Product count displayed
+- Facets/filters available",regression-qa-theme-26.csv,Automated
+SMK-006,Product Search - Basic Query,Smoke > Search,Functional,Critical,3m,"User logged in, products exist in catalog","1. Click on search bar
+2. Enter search term 'laptop'
+3. Press Enter or click search icon
+4. Verify results page","- Search results display
+- Results match search term
+- Result count shown
+- Filters available",regression-qa-theme-26.csv,Automated
+SMK-007,Add to Cart - Single Product,Smoke > Cart,Functional,Critical,3m,"User logged in, product available","1. Navigate to product detail page
+2. Set quantity to 1
+3. Click 'Add to Cart' button
+4. Verify cart notification","- Product added to cart
+- Cart icon shows updated count
+- Success notification displayed
+- Product visible in cart",regression-qa-theme-26.csv,Automated
+SMK-008,Cart Operations - View and Update,Smoke > Cart,Functional,Critical,5m,"Products already in cart","1. Navigate to cart page
+2. Verify all items display
+3. Change quantity of an item
+4. Verify totals recalculate
+5. Remove an item
+6. Verify item removed","- Cart displays all items correctly
+- Quantity updates reflected
+- Prices recalculate accurately
+- Remove works without errors",VCST-4499,Automated
+SMK-009,Checkout - Standard Delivery,Smoke > Checkout,Functional,Critical,8m,"Products in cart, shipping addresses configured","1. Navigate to cart
+2. Select 'Delivery' shipping option
+3. Select or enter shipping address
+4. Select shipping method (Ground)
+5. Select payment method
+6. Review order summary
+7. Click 'Place Order'","- Delivery option selectable
+- Address form works correctly
+- Shipping cost calculated
+- Order created successfully",VCST-4499,Automated
+SMK-010,Checkout - BOPIS Pickup,Smoke > Checkout,Functional,Critical,8m,"Products in cart, pickup locations configured","1. Navigate to cart
+2. Select 'Pickup' option
+3. Click 'Select pickup location'
+4. Choose location from map/list
+5. Confirm selection
+6. Complete checkout","- Pickup modal opens correctly
+- Location selectable
+- No shipping cost applied
+- Order created with pickup details",VCST-4499,Automated
+SMK-011,Payment Processing - Credit Card,Smoke > Payment,Functional,Critical,5m,"Checkout ready, test card available","1. Proceed to payment step
+2. Select 'Bank card' payment method
+3. Enter test card details
+4. Submit payment
+5. Verify authorization","- Payment form accepts input
+- Card validated
+- Payment authorized
+- Order status updated",VCST-3387,Manual
+SMK-012,Order Confirmation - Verify Details,Smoke > Orders,Functional,Critical,3m,"Order just completed","1. Verify confirmation page displays
+2. Check order number present
+3. Verify line items listed
+4. Check totals match
+5. Navigate to order history
+6. Find order in list","- Confirmation page shows all details
+- Order number generated
+- Items and totals correct
+- Order appears in history",VCST-4499,Automated

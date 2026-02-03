@@ -1,0 +1,165 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+PAY-CS-001,CyberSource - Valid Form Submission,CyberSource > Positive,Functional,Critical,5m,"- Checkout ready
+- CyberSource configured
+- Test card: 4622943127013705","1. Select 'Bank card (CyberSource)'
+2. Wait for form to load
+3. Enter card: 4622943127013705
+4. Enter name: John Smith
+5. Enter expiry: 09/2029
+6. Enter CVV: 838
+7. Click 'Place order'","- All fields accept input
+- No validation errors
+- Order attempts to process
+- (May fail due to API - form validated)",VCST-3387 TC-POS-001,Manual
+PAY-CS-002,CyberSource - Special Chars in Name,CyberSource > Positive,Functional,Medium,5m,"- CyberSource form ready","1. Enter name: Mary-Jane O'Connor
+2. Fill valid card details
+3. Submit
+4. Test: José García
+5. Test: Van Der Berg
+6. Test: Smith Jr.","- Hyphen accepted
+- Apostrophe accepted
+- Accented chars accepted
+- Period accepted",VCST-3387 TC-POS-004,Manual
+PAY-CS-003,CyberSource - Expiry Format Variations,CyberSource > Positive,Functional,Medium,3m,"- CyberSource form ready","1. Try format: 092029
+2. Verify auto-format to 09 / 2029
+3. Try: 09/2029
+4. Try: 09 / 2029","- All formats accepted
+- Auto-formatting works
+- MM / YYYY displayed",VCST-3387 TC-POS-005,Manual
+PAY-CS-004,CyberSource - Invalid Card Number,CyberSource > Negative,Negative,Critical,3m,"- CyberSource form ready","1. Enter invalid card: 1234567890123456
+2. Fill other fields
+3. Submit","- Validation error shown
+- Error: Invalid card number
+- Cannot submit",VCST-3387 TC-NEG-001,Manual
+PAY-CS-005,CyberSource - Empty Card Number,CyberSource > Negative,Negative,Critical,2m,"- CyberSource form ready","1. Leave card number empty
+2. Fill other fields
+3. Submit","- Error: Card number required
+- Field highlighted
+- Cannot submit",VCST-3387 TC-NEG-002,Manual
+PAY-CS-006,CyberSource - Empty Cardholder Name,CyberSource > Negative,Negative,Critical,2m,"- CyberSource form ready","1. Fill card, expiry, CVV
+2. Leave name empty
+3. Submit","- Validation error shown
+- Error: Name required
+- Cannot submit
+NOTE: Bug found - form submits without name",VCST-3387 TC-NEG-003,Manual
+PAY-CS-007,CyberSource - Expired Card,CyberSource > Negative,Negative,Critical,3m,"- CyberSource form ready","1. Enter valid card number
+2. Enter expired date: 01/2020
+3. Fill other fields
+4. Submit","- Error: Card expired
+- Cannot submit",VCST-3387 TC-NEG-004,Manual
+PAY-CS-008,CyberSource - Empty Expiry,CyberSource > Negative,Negative,Critical,2m,"- CyberSource form ready","1. Leave expiry empty
+2. Fill other fields
+3. Submit","- Error: Expiry required
+- Cannot submit",VCST-3387 TC-NEG-005,Manual
+PAY-CS-009,CyberSource - Invalid Expiry Format,CyberSource > Negative,Negative,High,3m,"- CyberSource form ready","1. Enter invalid expiry: 13/2029
+2. Try: 00/2029
+3. Try: 99/2029
+4. Submit","- Invalid months rejected
+- Clear error message",VCST-3387 TC-NEG-006,Manual
+PAY-CS-010,CyberSource - Invalid CVV Length,CyberSource > Negative,Negative,High,3m,"- CyberSource form ready","1. Enter CVV: 12 (too short)
+2. Try: 12345 (too long)
+3. Submit","- Error: CVV must be 3 digits
+- Length validation enforced",VCST-3387 TC-NEG-007,Manual
+PAY-CS-011,CyberSource - Empty CVV,CyberSource > Negative,Negative,Critical,2m,"- CyberSource form ready","1. Fill all except CVV
+2. Leave CVV empty
+3. Submit","- Error: CVV required
+- Cannot submit",VCST-3387 TC-NEG-008,Manual
+PAY-CS-012,CyberSource - Non-numeric CVV,CyberSource > Negative,Negative,Medium,2m,"- CyberSource form ready","1. Try typing 'abc' in CVV
+2. Try '8a8'
+3. Verify rejection","- Non-numeric rejected
+- Only digits accepted",VCST-3387 TC-NEG-009,Manual
+PAY-CS-013,CyberSource - Card Auto-Formatting,CyberSource > Validation,Validation,Medium,2m,"- CyberSource form ready","1. Type card without spaces
+2. Verify auto-spacing
+3. Format: #### #### #### ####","- Spaces inserted automatically
+- Cursor position maintained",VCST-3387 TC-VAL-003,Manual
+PAY-CS-014,CyberSource - Visa Detection,CyberSource > Validation,Validation,Medium,2m,"- CyberSource form ready","1. Enter Visa card: 4622943127013705
+2. Verify Visa icon highlights","- Card type detected
+- Visa icon shown
+- Other icons dimmed",VCST-3387 TC-VAL-002,Manual
+PAY-CS-015,CyberSource - CVV Masking,CyberSource > Validation,Validation,High,2m,"- CyberSource form ready","1. Enter CVV: 838
+2. Verify displayed as •••","- CVV masked
+- Security maintained",VCST-3387 TC-VAL-006,Manual
+PAY-SEC-001,Security - Card Number Iframe,Security > PCI,Security,Critical,5m,"- CyberSource form displayed
+- DevTools open","1. Open DevTools Elements
+2. Find card number field
+3. Verify in iframe
+4. Check domain: testflex.cybersource.com
+5. Try JS access: document.querySelector('iframe')","- Field in secure iframe
+- Cross-origin enforced
+- Cannot access value from parent",VCST-3387 TC-SEC-001,Manual
+PAY-SEC-002,Security - CVV Iframe,Security > PCI,Security,Critical,5m,"- CyberSource form displayed","1. Inspect CVV field
+2. Verify iframe implementation
+3. Attempt JavaScript access","- CVV in secure iframe
+- Proper sandboxing
+- Cannot access",VCST-3387 TC-SEC-002,Manual
+PAY-SEC-003,Security - No Card Data in Network,Security > PCI,Security,Critical,10m,"- DevTools Network open
+- CyberSource form ready","1. Fill form with test card
+2. Submit order
+3. Inspect ALL network requests
+4. Search for card number
+5. Search for CVV","- No raw card in requests
+- No CVV in requests
+- Only tokens/encrypted data
+- CyberSource handles tokenization",VCST-3387 TC-SEC-004,Manual
+PAY-SEC-004,Security - No Data in Storage,Security > PCI,Security,Critical,5m,"- CyberSource form filled","1. Fill card data
+2. Submit order
+3. Check localStorage
+4. Check sessionStorage
+5. Check cookies","- No card number in storage
+- No CVV stored
+- Security best practices",VCST-3387 TC-SEC-005,Manual
+PAY-SEC-005,Security - HTTPS Only,Security > PCI,Security,Critical,3m,"- Payment page loaded","1. Check page URL (https)
+2. Check iframe sources (https)
+3. Check API calls (https)
+4. Verify no mixed content","- All HTTPS
+- No mixed content warnings
+- Secure connection",VCST-3387 TC-SEC-006,Manual
+PAY-SEC-006,Security - JWT Token Auth,Security > PCI,Security,High,3m,"- CyberSource payment selected","1. Inspect iframe source URLs
+2. Look for JWT token
+3. Verify token format","- JWT present in iframe URL
+- Three-part format
+- Dynamic per session",VCST-3387 TC-INT-002,Manual
+PAY-AN-001,Authorize.Net - Payment Flow,Authorize.Net > Basic,Functional,High,8m,"- Authorize.Net configured
+- Test credentials in .env","1. Select Authorize.Net payment
+2. Enter test card from .env
+3. Enter expiry from .env
+4. Enter CVV from .env
+5. Enter cardholder name
+6. Submit payment","- Payment form works
+- Payment authorized
+- Order created",google-analytics,Manual
+PAY-DT-001,Datatrans - Payment Flow,Datatrans > Basic,Functional,High,8m,"- Datatrans configured
+- Test credentials available","1. Select Datatrans payment
+2. Follow Datatrans flow
+3. Complete payment
+4. Verify return to store","- Datatrans redirect works
+- Payment completed
+- Order confirmed",google-analytics,Manual
+PAY-SKY-001,Skyflow - Payment Flow,Skyflow > Basic,Functional,High,8m,"- Skyflow configured
+- Test VISA card in .env","1. Select Skyflow payment
+2. Enter VISA card details
+3. Submit payment
+4. Verify order","- Skyflow form works
+- Card tokenized
+- Payment processed",config.js,Manual
+PAY-UX-001,Payment Form - Field Labels,Payment > UX,Usability,Medium,3m,"- Payment form displayed","1. View all field labels
+2. Verify placeholders
+3. Check required indicators","- All fields labeled
+- Placeholders helpful
+- * for required fields",VCST-3387 TC-UX-001,Manual
+PAY-UX-002,Payment Form - Tab Order,Payment > UX,Usability,Medium,3m,"- Payment form displayed","1. Tab through all fields
+2. Verify logical order:
+   Card → Name → Expiry → CVV
+3. Tab into/out of iframes","- Logical tab order
+- No tab traps
+- Keyboard accessible",VCST-3387 TC-UX-004,Manual
+PAY-PERF-001,Payment Form - Load Time,Payment > Performance,Performance,Medium,3m,"- Checkout at payment step","1. Select credit card payment
+2. Measure time until form ready
+3. Verify iframes load","- Form loads within 2 seconds
+- Iframes initialize
+- User can interact quickly",VCST-3387 TC-PERF-001,Manual
+PAY-EDGE-001,Double-Click Submit Prevention,Payment > Edge,Edge Case,High,5m,"- Payment form filled","1. Fill valid payment form
+2. Double-click 'Place Order' rapidly
+3. Verify behavior","- Only one order created
+- Button disabled after click
+- No duplicate charges",VCST-3387 TC-EDGE-020,Manual

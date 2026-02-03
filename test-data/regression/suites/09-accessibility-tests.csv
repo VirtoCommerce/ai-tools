@@ -1,0 +1,151 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+A11Y-KB-001,Keyboard Navigation - BOPIS Modal,Keyboard > Navigation,Accessibility,High,10m,"- BOPIS modal accessible
+- Keyboard only (no mouse)","1. Tab to pickup option
+2. Press Enter to open modal
+3. Tab through all elements
+4. Verify focus visible on each
+5. Tab through search, list, map controls
+6. Select location with Enter
+7. Complete flow with keyboard only","- All elements reachable via Tab
+- Focus indicators visible
+- Logical tab order
+- Can complete entire flow",VCST-4499 TC-014,Manual
+A11Y-KB-002,Keyboard Navigation - Payment Form,Keyboard > Navigation,Accessibility,High,5m,"- Payment form displayed","1. Tab into card number field
+2. Tab through: name, expiry, CVV
+3. Tab to submit button
+4. Verify order","- Tab order: Card → Name → Expiry → CVV
+- Can enter data via keyboard
+- Focus moves correctly into/out of iframes",VCST-3387,Manual
+A11Y-KB-003,Focus Indicators - All Interactive,Keyboard > Focus,Accessibility,High,10m,"- Any page with interactive elements","1. Tab through page
+2. Verify focus ring on buttons
+3. Verify focus on inputs
+4. Verify focus on links
+5. Check custom components","- Visible focus on ALL interactive elements
+- High contrast focus ring
+- 3:1 contrast minimum",WCAG 2.4.7,Manual
+A11Y-KB-004,Escape Key - Modal Close,Keyboard > Shortcuts,Accessibility,Medium,3m,"- Modal open (BOPIS or other)","1. Open modal
+2. Press Escape key
+3. Verify modal closes
+4. Verify focus returns to trigger","- Escape closes modal
+- Focus returns appropriately
+- No focus trap",VCAG 2.1.2,Manual
+A11Y-KB-005,Focus Trap - Open Modal,Keyboard > Focus,Accessibility,High,5m,"- Modal open","1. Tab through modal content
+2. Continue tabbing past last element
+3. Verify focus stays in modal
+4. Shift+Tab from first element
+5. Verify focus stays in modal","- Focus trapped in open modal
+- Cannot tab outside
+- Tab cycles within modal",WCAG 2.4.3,Manual
+A11Y-SR-001,Screen Reader - Modal Announcement,Screen Reader > Modals,Accessibility,High,5m,"- Screen reader active (NVDA/VoiceOver)
+- BOPIS flow ready","1. Activate screen reader
+2. Open pickup modal
+3. Listen for announcement
+4. Verify modal role announced","- Modal announced on open
+- Title/purpose stated
+- Dialog role identified",VCST-4499,Manual
+A11Y-SR-002,Screen Reader - List Items,Screen Reader > Lists,Accessibility,High,5m,"- Screen reader active
+- Location list visible","1. Navigate to location list
+2. Hear list item announcements
+3. Verify count announced
+4. Navigate through items","- List items announced
+- Position in list (1 of 5)
+- Item details readable",VCST-4499,Manual
+A11Y-SR-003,Screen Reader - Form Fields,Screen Reader > Forms,Accessibility,High,5m,"- Screen reader active
+- Form open","1. Navigate to form
+2. Tab through fields
+3. Verify labels announced
+4. Verify required state announced","- Field labels read
+- Required status announced
+- Error messages announced",WCAG 1.3.1,Manual
+A11Y-SR-004,Screen Reader - Error Messages,Screen Reader > Errors,Accessibility,High,5m,"- Screen reader active
+- Form with validation","1. Submit form with errors
+2. Verify error announced
+3. Navigate to error field
+4. Hear specific error","- Errors announced immediately
+- Can navigate to errors
+- Clear error text",WCAG 3.3.1,Manual
+A11Y-SR-005,Screen Reader - Buttons,Screen Reader > Controls,Accessibility,Medium,3m,"- Screen reader active","1. Navigate to buttons
+2. Hear button text
+3. Verify role announced","- Button text announced
+- 'button' role stated
+- Action clear",WCAG 4.1.2,Manual
+A11Y-ARIA-001,ARIA Labels - Custom Controls,ARIA > Labels,Accessibility,High,5m,"- DevTools open
+- Custom components visible","1. Inspect custom controls
+2. Check for aria-label
+3. Check for aria-labelledby
+4. Verify meaningful labels","- ARIA labels present
+- Labels are descriptive
+- No generic 'button' labels",WCAG 4.1.2,Manual
+A11Y-ARIA-002,ARIA Roles - Modal Dialog,ARIA > Roles,Accessibility,High,3m,"- Modal open
+- DevTools open","1. Inspect modal container
+2. Check role='dialog'
+3. Check aria-modal='true'
+4. Check aria-labelledby","- Dialog role set
+- Modal attribute correct
+- Linked to title",WCAG 4.1.2,Manual
+A11Y-ARIA-003,ARIA Live Regions,ARIA > Live,Accessibility,Medium,5m,"- Dynamic content area","1. Trigger content update
+2. Check for aria-live
+3. Verify announcement","- Live regions announce updates
+- Appropriate politeness level
+- Not too verbose",WCAG 4.1.3,Manual
+A11Y-AXE-001,axe DevTools Scan - Critical,Automated > axe,Accessibility,Critical,10m,"- axe DevTools extension installed","1. Navigate to target page
+2. Open axe DevTools
+3. Run scan
+4. Check Critical issues
+5. Document findings","- Zero critical violations
+- All critical issues resolved
+- No barriers to access",WCAG 2.1 AA,Manual
+A11Y-AXE-002,axe DevTools Scan - Serious,Automated > axe,Accessibility,High,10m,"- axe DevTools ready","1. Run axe scan
+2. Check Serious issues
+3. Prioritize fixes","- Serious issues documented
+- Plan for remediation
+- Acceptable count",WCAG 2.1 AA,Manual
+A11Y-CC-001,Color Contrast - Text,Color Contrast > Text,Accessibility,High,10m,"- Contrast checker tool ready","1. Check body text contrast
+2. Check heading contrast
+3. Check link contrast
+4. Minimum 4.5:1 for normal text
+5. Minimum 3:1 for large text","- Normal text: 4.5:1 minimum
+- Large text (18px+): 3:1 minimum
+- All text readable",WCAG 1.4.3,Manual
+A11Y-CC-002,Color Contrast - UI Components,Color Contrast > UI,Accessibility,High,10m,"- Contrast checker ready","1. Check button contrast
+2. Check input borders
+3. Check focus indicators
+4. Minimum 3:1 for UI","- UI components: 3:1 minimum
+- Focus visible
+- Interactive states clear",WCAG 1.4.11,Manual
+A11Y-CC-003,Color Not Sole Indicator,Color Usage > Meaning,Accessibility,High,5m,"- Error states visible
+- Status indicators visible","1. Check error indicators
+2. Verify not color-only
+3. Check success/warning states
+4. Verify icon or text accompanies","- Errors have icon + color
+- Status not color-only
+- Accessible to colorblind",WCAG 1.4.1,Manual
+A11Y-IMG-001,Images - Alt Text,Images > Alt,Accessibility,High,10m,"- Page with images","1. Inspect product images
+2. Check alt attributes
+3. Verify meaningful descriptions
+4. Check decorative images (alt='')","- Product images have descriptive alt
+- Decorative images have empty alt
+- No missing alt attributes",WCAG 1.1.1,Manual
+A11Y-FORM-001,Form Labels - Input Association,Forms > Labels,Accessibility,High,5m,"- Form with inputs","1. Inspect input elements
+2. Check for associated labels
+3. Verify for='id' matching
+4. Test screen reader","- All inputs have labels
+- Labels properly associated
+- Screen reader announces",WCAG 1.3.1,Manual
+A11Y-FORM-002,Error Identification,Forms > Errors,Accessibility,High,5m,"- Form with validation","1. Submit with errors
+2. Check error identification
+3. Verify field association
+4. Check error suggestions","- Errors clearly identified
+- Linked to fields
+- Suggestions provided",WCAG 3.3.1,Manual
+A11Y-TOUCH-001,Touch Target Size,Mobile > Touch,Accessibility,High,5m,"- Mobile viewport","1. Check button sizes
+2. Verify minimum 44x44px
+3. Check spacing between targets","- Minimum 44x44px touch targets
+- Adequate spacing
+- Easy to tap accurately",WCAG 2.5.5,Manual
+A11Y-VCP-001,VcVariantPicker - States,Component > Picker,Accessibility,High,5m,"- Variant picker component","1. Check default state
+2. Check hover state
+3. Check focus state
+4. Check selected state","- All states distinguishable
+- Visual + programmatic indication
+- Screen reader announces",VCST-4373,Automated

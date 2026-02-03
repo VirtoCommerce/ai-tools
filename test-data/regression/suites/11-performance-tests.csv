@@ -1,0 +1,117 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+PERF-LOAD-001,Modal Open Time - Few Locations,Performance > Load,Performance,Medium,5m,"- 1-5 pickup locations configured
+- DevTools Performance tab","1. Open Performance tab
+2. Start recording
+3. Open pickup modal
+4. Stop recording
+5. Measure time to interactive","- Modal opens instantly (<500ms)
+- No visible delay
+- Smooth animation",VCST-4499 TC-011,Manual
+PERF-LOAD-002,Modal Open Time - Many Locations,Performance > Load,Performance,Medium,5m,"- 10-50 pickup locations","1. Start performance recording
+2. Open pickup modal
+3. Measure time to fully loaded","- Modal loads within 1 second
+- List populated
+- Map renders",VCST-4499 TC-011,Manual
+PERF-LOAD-003,Modal Open Time - High Volume,Performance > Load,Performance,Medium,5m,"- 50-100 pickup locations","1. Start performance recording
+2. Open pickup modal
+3. Measure time
+4. Check for pagination/clustering","- Modal loads within 2 seconds
+- Pagination or clustering used
+- Acceptable performance",VCST-4499 TC-011,Manual
+PERF-SEARCH-001,Search Response Time,Performance > Search,Performance,Medium,5m,"- Pickup modal open
+- Stopwatch ready","1. Type search query
+2. Measure time until results filter
+3. Repeat with different queries","- Results appear within 500ms
+- No lag while typing
+- Debouncing effective",VCST-4499 TC-011,Manual
+PERF-FILTER-001,Filter Response Time,Performance > Filter,Performance,Medium,5m,"- Pickup modal open
+- Multiple filters available","1. Apply filter
+2. Measure time for list update
+3. Measure time for map update","- Filter applied within 500ms
+- List and map sync quickly
+- No noticeable delay",VCST-4499 TC-011,Manual
+PERF-MAP-001,Map Interaction - Pan,Performance > Map,Performance,Medium,5m,"- Map visible in modal","1. Open DevTools Performance
+2. Pan map by dragging
+3. Monitor frame rate","- Smooth 60fps panning
+- No jank or stuttering
+- Responsive to drag",VCST-4499 TC-011,Manual
+PERF-MAP-002,Map Interaction - Zoom,Performance > Map,Performance,Medium,5m,"- Map visible","1. Record performance
+2. Zoom in/out multiple times
+3. Check frame rate","- Smooth 60fps zoom
+- Tiles load quickly
+- No blank areas",VCST-4499 TC-011,Manual
+PERF-MAP-003,Map Marker Clicks,Performance > Map,Performance,Medium,5m,"- Map with markers","1. Click marker rapidly
+2. Measure info window response
+3. Click different markers","- Info windows open immediately
+- No lag on clicks
+- Smooth transitions",VCST-4499 TC-011,Manual
+PERF-MEM-001,Memory Usage - Initial,Performance > Memory,Performance,Medium,5m,"- DevTools Memory tab","1. Take heap snapshot
+2. Note initial memory
+3. Open pickup modal
+4. Take another snapshot","- Reasonable memory footprint
+- No excessive allocation
+- Memory proportional to data",VCST-4499 TC-011,Manual
+PERF-MEM-002,Memory Leak Detection,Performance > Memory,Performance,High,15m,"- DevTools Memory tab","1. Take initial snapshot
+2. Open/close modal 10 times
+3. Take snapshot after each close
+4. Compare memory growth","- No significant memory growth
+- Proper cleanup on close
+- Garbage collection effective",VCST-4499 TC-011,Manual
+PERF-MEM-003,Memory Under Load,Performance > Memory,Performance,Medium,10m,"- Long session simulation","1. Perform many operations:
+   - Multiple searches
+   - Open/close modal
+   - Switch between locations
+2. Monitor memory over time","- Memory stable over time
+- No unbounded growth
+- Page remains responsive",VCST-4499 TC-011,Manual
+PERF-NET-001,Network Request Count,Performance > Network,Performance,Medium,10m,"- DevTools Network tab","1. Clear network log
+2. Open pickup modal
+3. Perform search
+4. Count API calls
+5. Type rapidly, count calls","- Reasonable number of requests
+- Debouncing prevents excess calls
+- No redundant requests",VCST-4499 TC-011,Manual
+PERF-NET-002,Network Payload Size,Performance > Network,Performance,Medium,5m,"- DevTools Network tab","1. Open modal
+2. Check response sizes
+3. Verify compression
+4. Check for unnecessary data","- Responses appropriately sized
+- GZIP compression used
+- No bloated payloads",VCST-4499 TC-011,Manual
+PERF-ANIM-001,CSS Animation Performance,Performance > Animation,Performance,Medium,5m,"- DevTools Performance","1. Record during modal open
+2. Check for layout thrashing
+3. Verify GPU acceleration","- Animations use transforms
+- No forced reflows
+- Smooth 60fps",VCST-4499 TC-011,Manual
+PERF-PAINT-001,Paint/Layout Metrics,Performance > Rendering,Performance,Medium,10m,"- DevTools Performance","1. Record page interactions
+2. Check paint events
+3. Check layout events
+4. Identify long tasks","- Minimal paint operations
+- No unnecessary layouts
+- No tasks >50ms",VCST-4499 TC-011,Manual
+PERF-PAGE-001,Page Load - Category,Performance > Pages,Performance,High,5m,"- Lighthouse or DevTools","1. Navigate to category page
+2. Measure LCP (Largest Contentful Paint)
+3. Measure FID (First Input Delay)
+4. Measure CLS (Cumulative Layout Shift)","- LCP < 2.5s (Good)
+- FID < 100ms (Good)
+- CLS < 0.1 (Good)",Core Web Vitals,Manual
+PERF-PAGE-002,Page Load - Product,Performance > Pages,Performance,High,5m,"- Performance measurement ready","1. Navigate to product page
+2. Measure Core Web Vitals
+3. Check image loading","- Product page loads quickly
+- Images lazy load
+- Interactive quickly",Core Web Vitals,Manual
+PERF-PAGE-003,Page Load - Cart,Performance > Pages,Performance,High,5m,"- Items in cart","1. Navigate to cart
+2. Measure load time
+3. Measure time to interactive","- Cart loads within 2s
+- All items render
+- Interactions work immediately",Core Web Vitals,Manual
+PERF-API-001,API Response Times,Performance > API,Performance,High,10m,"- DevTools Network tab","1. Monitor API calls during session
+2. Note response times
+3. Identify slow endpoints","- Most responses < 500ms
+- No timeouts
+- Acceptable performance",API Performance,Manual
+PERF-SCROLL-001,Scroll Performance - Long Lists,Performance > Scroll,Performance,Medium,5m,"- Long product list
+- DevTools Performance","1. Navigate to category with many products
+2. Scroll through list
+3. Monitor frame rate","- Smooth 60fps scrolling
+- No jank
+- Virtual scrolling if needed",VCST-4499 TC-011,Manual

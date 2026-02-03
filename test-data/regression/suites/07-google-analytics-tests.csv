@@ -1,0 +1,156 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+GA-001,Login Event - User Authentication,GA Events > Login,Analytics,Medium,5m,"- Valid user account
+- DevTools Console open","1. Navigate to sign-in page
+2. Enter valid credentials
+3. Sign in
+4. Check dataLayer in console","- gtm.load event triggered
+- user_id set in GA config
+- currency and language included",google-analytics,Automated
+GA-002,view_item_list - Category Page,GA Events > Catalog,Analytics,High,3m,"- User logged in
+- DevTools Console open","1. Navigate to category: /snacks
+2. Wait for page load
+3. Execute: dataLayer.filter(e => e[1] === 'view_item_list')","- Event: view_item_list
+- item_list_id present
+- item_list_name with category
+- items_skus (CSV of SKUs)
+- items_count matches visible",google-analytics,Automated
+GA-003,view_item - Product Detail Page,GA Events > Product,Analytics,High,3m,"- User logged in
+- DevTools open","1. Navigate to product page
+2. Wait for load
+3. Check dataLayer for view_item","- Event: view_item
+- currency: USD
+- value: product price
+- items[0] with item_id, item_name, price
+- item_category hierarchy",google-analytics,Automated
+GA-004,select_item - Product Click from List,GA Events > Catalog,Analytics,Medium,3m,"- User on category page","1. Navigate to category
+2. Click on product title
+3. Check dataLayer before navigation","- Event: select_item
+- item_list_id present
+- item_list_name present
+- items array with product details",google-analytics,Automated
+GA-005,add_to_cart - Add Product,GA Events > Cart,Analytics,Critical,3m,"- User on product page
+- DevTools open","1. Navigate to product page
+2. Click 'Add to Cart'
+3. Check dataLayer","- Event: add_to_cart
+- source_route: current page URL
+- currency: USD
+- value: product price
+- items array with product",google-analytics,Automated
+GA-006,view_cart - Cart Page Load,GA Events > Cart,Analytics,High,3m,"- Products in cart","1. Navigate to /cart
+2. Wait for load
+3. Check dataLayer","- Event: view_cart
+- currency: USD
+- value: cart total
+- items array with all cart items
+- items_count matches",google-analytics,Automated
+GA-007,update_cart_item - Quantity Change,GA Events > Cart,Analytics,Medium,3m,"- Product in cart","1. Navigate to cart
+2. Increase quantity of item
+3. Check dataLayer","- Event: update_cart_item
+- item_id: product SKU
+- new_quantity: updated value
+- previous_quantity: old value",google-analytics,Automated
+GA-008,remove_from_cart - Remove Item,GA Events > Cart,Analytics,Medium,3m,"- Product in cart","1. Navigate to cart
+2. Remove an item
+3. Check dataLayer","- Event: remove_from_cart
+- currency: USD
+- value: removed item value
+- items array with removed item",google-analytics,Automated
+GA-009,clear_cart - Clear All Items,GA Events > Cart,Analytics,Low,3m,"- Multiple items in cart","1. Navigate to cart
+2. Click 'Clear Cart'
+3. Confirm
+4. Check dataLayer","- Event: clear_cart
+- currency: USD
+- value: 0
+- items: empty array
+- items_count: 0",google-analytics,Automated
+GA-010,begin_checkout - Start Checkout,GA Events > Checkout,Analytics,Critical,3m,"- Products in cart
+- On cart page","1. Navigate to cart
+2. dataLayer captured on load
+3. Verify begin_checkout event","- Event: begin_checkout
+- currency: USD
+- value: cart total
+- items array with all items
+- items_count correct",google-analytics,Automated
+GA-011,add_shipping_info - Ground Shipping,GA Events > Checkout,Analytics,High,5m,"- In checkout
+- Shipping options available","1. Select 'Ground' shipping
+2. Check dataLayer","- Event: add_shipping_info
+- shipping_tier: Ground
+- currency: USD
+- value: 150 (shipping cost)
+- items array",google-analytics,Automated
+GA-012,add_shipping_info - Pickup (Zero Cost),GA Events > Checkout,Analytics,High,5m,"- In checkout
+- Pickup available","1. Select 'Pickup' option
+2. Check dataLayer","- Event: add_shipping_info
+- shipping_tier: Pickup
+- value: 0 (no shipping cost)
+BUG FIXED: Was showing 150",google-analytics,Automated
+GA-013,add_shipping_info - Switch Methods,GA Events > Checkout,Analytics,High,5m,"- In checkout","1. Select Ground (verify value: 150)
+2. Switch to Pickup (verify value: 0)
+3. Switch back to Ground (verify value: 150)","- Each change fires event
+- Values correct for each method
+- No stale values",google-analytics,Automated
+GA-014,add_payment_info - Payment Selected,GA Events > Checkout,Analytics,High,3m,"- In checkout
+- Shipping selected","1. Click payment dropdown
+2. Select 'Bank card (Datatrans)'
+3. Check dataLayer","- Event: add_payment_info
+- payment_type: DatatransPaymentMethod
+- currency: USD
+- value: order total
+- items array",google-analytics,Automated
+GA-015,place_order - Order Submission,GA Events > Checkout,Analytics,Critical,5m,"- All checkout info filled","1. Click 'Place Order'
+2. Check dataLayer before redirect","- Event: place_order
+- currency: USD
+- value: order total
+- items array (may include gifts)",google-analytics,Automated
+GA-016,purchase - Payment Complete,GA Events > Order,Analytics,Critical,8m,"- Order with 'Payment Required' status
+- Authorize.Net test card ready","1. Navigate to order
+2. Click 'Pay Now'
+3. Enter payment details
+4. Submit payment
+5. Check dataLayer","- Event: purchase
+- currency: USD
+- value: order total
+- shipping: shipping cost
+- tax: tax amount
+- items array",google-analytics,Manual
+GA-017,view_search_results - Search Results,GA Events > Search,Analytics,High,3m,"- User logged in","1. Search for 'laptop'
+2. Wait for results page
+3. Check dataLayer","- Event: view_search_results
+- search_term: laptop
+- results_count: total results
+- results_page: 1
+- visible_items: CSV of SKUs",google-analytics,Automated
+GA-018,add_to_wishlist - Add to List,GA Events > Wishlist,Analytics,Medium,5m,"- User on product page
+- Wishlist/list exists","1. Click 'Add to List' button
+2. Select a list
+3. Click 'Save'
+4. Check dataLayer","- Event: add_to_wishlist
+- currency: USD
+- value: product price
+- items array with product",google-analytics,Automated
+GA-019,GA Config - Currency Setting,GA Events > Config,Analytics,Medium,2m,"- User logged in","1. Check dataLayer for config event
+2. Verify currency parameter","- currency: USD
+- Matches store currency",google-analytics,Automated
+GA-020,GA Config - Language Setting,GA Events > Config,Analytics,Medium,2m,"- User logged in","1. Check dataLayer for config event
+2. Verify language parameter","- language: en-US (or current)
+- Matches user language",google-analytics,Automated
+GA-021,GA Config - User ID,GA Events > Config,Analytics,High,3m,"- User logged in","1. Check dataLayer
+2. Find user_id in config","- user_id present
+- UUID format
+- Matches logged in user",google-analytics,Automated
+GA-022,Event Items - Product Structure,GA Events > Data Quality,Analytics,Medium,5m,"- Any product event","1. Trigger view_item event
+2. Inspect items[0] structure","- item_id: SKU
+- item_name: product name
+- price: number
+- quantity: number
+- item_category hierarchy (up to 5 levels)
+- affiliation: vendor name",google-analytics,Automated
+GA-023,Event Timing - Page Load Events,GA Events > Timing,Analytics,Medium,3m,"- Performance tab open","1. Navigate to category
+2. Verify view_item_list fires on load","- Event fires after page load
+- Not too early (data available)
+- Not too late (user engaged)",google-analytics,Automated
+GA-024,Event Persistence - Multiple Actions,GA Events > Data Quality,Analytics,Medium,5m,"- Fresh session","1. Perform: search, view category, view product, add to cart
+2. Verify all events in dataLayer","- All events captured
+- Correct sequence
+- No duplicates
+- Data accurate",google-analytics,Automated

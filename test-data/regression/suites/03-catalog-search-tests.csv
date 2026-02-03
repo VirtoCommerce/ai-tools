@@ -1,0 +1,142 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+CAT-001,Category Navigation - Main Menu,Catalog > Navigation,Functional,High,3m,"User logged in, catalog populated","1. Hover over main menu
+2. Verify category dropdown appears
+3. Click on top-level category
+4. Verify category page loads","- Menu displays categories
+- Subcategories visible on hover
+- Category page loads correctly",regression-qa-theme-26.csv,Automated
+CAT-002,Category Page - Product Grid View,Catalog > Display,Functional,High,3m,"Category with products exists","1. Navigate to category
+2. Click Grid view icon
+3. Verify product cards display","- Products shown in grid layout
+- Image, name, price visible
+- Add to cart button present",regression-qa-theme-26.csv,Automated
+CAT-003,Category Page - Product List View,Catalog > Display,Functional,High,3m,"Category with products exists","1. Navigate to category
+2. Click List view icon
+3. Verify list layout","- Products shown in list format
+- More details visible per product
+- Actions accessible",regression-qa-theme-26.csv,Automated
+CAT-004,Category - Facet Filtering,Catalog > Filters,Functional,High,5m,"Category with faceted products","1. Navigate to category with facets
+2. Click on a facet value (e.g., Brand)
+3. Verify products filter
+4. Apply additional facet
+5. Verify combined filtering","- Facet panel visible
+- Clicking facet filters results
+- Multiple facets combine
+- Result count updates",regression-qa-theme-26.csv,Automated
+CAT-005,Category - Price Range Filter,Catalog > Filters,Functional,High,5m,"Products with varying prices","1. Navigate to category
+2. Locate price range filter
+3. Set min and max values
+4. Apply filter
+5. Verify filtered results","- Price slider/inputs work
+- Results filtered to range
+- Products outside range hidden",regression-qa-theme-26.csv,Automated
+CAT-006,Category - Clear Filters,Catalog > Filters,Functional,Medium,3m,"Filters applied to category","1. Apply multiple filters
+2. Click 'Clear all' or 'Reset'
+3. Verify filters removed","- All filters cleared
+- Full product list restored
+- Filter UI reset",regression-qa-theme-26.csv,Automated
+CAT-007,Category - Sorting Options,Catalog > Sorting,Functional,Medium,5m,"Category with multiple products","1. Navigate to category
+2. Open sort dropdown
+3. Select 'Price: Low to High'
+4. Verify order
+5. Select 'Price: High to Low'
+6. Verify reverse order","- Sort options available
+- Products reorder correctly
+- Sort persists on pagination",regression-qa-theme-26.csv,Automated
+CAT-008,Category - Pagination,Catalog > Pagination,Functional,Medium,5m,"Category with 20+ products","1. Navigate to category
+2. Scroll to pagination
+3. Click page 2
+4. Verify new products load
+5. Click Previous
+6. Verify return to page 1","- Pagination controls visible
+- Pages load correctly
+- Product count consistent",regression-qa-theme-26.csv,Automated
+CAT-009,Category - Products Per Page,Catalog > Pagination,Functional,Low,3m,"Category with many products","1. Navigate to category
+2. Change 'per page' dropdown
+3. Select different value (e.g., 24)
+4. Verify more products display","- Per page options available
+- Product count changes
+- URL/state updates",regression-qa-theme-26.csv,Automated
+CAT-010,Product Detail - Basic Info,Catalog > Product,Functional,High,3m,"Product exists in catalog","1. Navigate to product detail page
+2. Verify all info displays","- Product name correct
+- Price displayed
+- Description visible
+- Images load
+- SKU shown",regression-qa-theme-26.csv,Automated
+CAT-011,Product Detail - Image Gallery,Catalog > Product,Functional,Medium,3m,"Product with multiple images","1. View product page
+2. Click thumbnail images
+3. Verify main image changes
+4. Click zoom/enlarge","- Thumbnails clickable
+- Main image updates
+- Zoom functionality works",regression-qa-theme-26.csv,Automated
+CAT-012,Product Variations - B2C Style,Catalog > Variations,Functional,High,5m,"Product with variations (size/color)","1. Navigate to configurable product
+2. Select color option
+3. Select size option
+4. Verify price updates
+5. Add to cart","- Variation selectors display
+- Price reflects selections
+- Correct variant added to cart",tests/B2C-Variations,Automated
+CAT-013,Product - Related Products,Catalog > Product,Functional,Low,3m,"Product with related items","1. View product detail page
+2. Scroll to related products
+3. Verify recommendations display","- Related products section visible
+- Products are relevant
+- Can navigate to related",regression-qa-theme-26.csv,Automated
+SRCH-001,Search - Basic Query,Search > Basic,Functional,High,3m,"Catalog has searchable products","1. Click search bar
+2. Enter product name 'laptop'
+3. Press Enter
+4. Verify results","- Search executes
+- Results page displays
+- Matching products shown
+- Result count visible",regression-qa-theme-26.csv,Automated
+SRCH-002,Search - Suggestions Dropdown,Search > Suggestions,Functional,Medium,3m,"Search configured with suggestions","1. Click search bar
+2. Start typing 'lap'
+3. Wait for suggestions
+4. Verify dropdown appears","- Suggestions appear while typing
+- Products match partial query
+- Can click suggestion",regression-qa-theme-26.csv,Automated
+SRCH-003,Search - No Results,Search > Edge Cases,Functional,Medium,2m,"N/A","1. Enter nonsense query 'xyzabc123'
+2. Execute search
+3. Verify empty state","- No results message displayed
+- Suggests alternatives
+- No errors",regression-qa-theme-26.csv,Automated
+SRCH-004,Search - Special Characters,Search > Edge Cases,Functional,Medium,3m,"N/A","1. Search for queries with special chars:
+   - 'test & test'
+   - 'product (new)'
+   - 'item #123'
+2. Verify handling","- Special characters handled
+- No errors or crashes
+- Appropriate results",regression-qa-theme-26.csv,Automated
+SRCH-005,Search - Within Category,Search > Scoped,Functional,Medium,3m,"Inside a category page","1. Navigate to specific category
+2. Use search while in category
+3. Verify scoped results","- Search scoped to category
+- Results from current category only
+- Clear indication of scope",regression-qa-theme-26.csv,Automated
+SRCH-006,Search - Filters on Results,Search > Filters,Functional,High,5m,"Search returns multiple products","1. Execute search query
+2. Apply facet filter
+3. Apply price filter
+4. Verify combined results","- Filters available on search results
+- Filters combine correctly
+- Count updates",regression-qa-theme-26.csv,Automated
+SRCH-007,Search - Sorting Results,Search > Sorting,Functional,Medium,3m,"Search returns multiple products","1. Execute search
+2. Change sort order
+3. Verify products reorder","- Sort options on search results
+- Products sort correctly
+- Relevance option available",regression-qa-theme-26.csv,Automated
+SRCH-008,Search - History,Search > History,Functional,Low,3m,"Previous searches performed","1. Click search bar
+2. Verify recent searches show
+3. Click on history item
+4. Verify search executes","- Search history displayed
+- Can select from history
+- History clears on request",regression-qa-theme-26.csv,Automated
+SRCH-009,Organization Search - Find Org,Search > Organization,Functional,Medium,5m,"Multiple organizations exist","1. Navigate to organization search
+2. Enter organization name
+3. Verify results
+4. Click on organization","- Organization search available
+- Results match query
+- Can view org details",tests/VCST-4357-org-search,Automated
+SRCH-010,Organization Search - Filters,Search > Organization,Functional,Medium,5m,"Organizations with different attributes","1. Search organizations
+2. Apply industry filter
+3. Apply location filter
+4. Verify filtered results","- Org filters available
+- Filters work correctly
+- Combined filtering works",tests/VCST-4357-org-search,Automated

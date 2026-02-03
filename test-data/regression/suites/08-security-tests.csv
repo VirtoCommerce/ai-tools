@@ -1,0 +1,120 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+SEC-PCI-001,Card Number Iframe Isolation,PCI Compliance > Iframe,Security,Critical,5m,"- CyberSource payment form displayed
+- Browser DevTools open","1. Open DevTools Elements tab
+2. Navigate to card number input
+3. Identify parent iframe
+4. Check iframe src domain
+5. Verify testflex.cybersource.com
+6. Try: document.querySelector('iframe').contentDocument","- Card field hosted in iframe
+- Domain: testflex.cybersource.com
+- Cross-origin blocks access
+- DOMException on access attempt",VCST-3387 TC-SEC-001,Manual
+SEC-PCI-002,CVV Iframe Isolation,PCI Compliance > Iframe,Security,Critical,5m,"- CyberSource payment form displayed","1. Inspect CVV/security code field
+2. Verify iframe implementation
+3. Check sandbox attributes
+4. Attempt JavaScript access","- CVV in secure iframe
+- Proper sandboxing
+- Cannot access from parent page",VCST-3387 TC-SEC-002,Manual
+SEC-PCI-003,CVV Visual Masking,PCI Compliance > Display,Security,High,2m,"- CyberSource form ready","1. Enter CVV: 838
+2. Observe field display
+3. Check if digits visible
+4. Verify masking","- CVV displayed as •••
+- Actual digits never visible
+- Shoulder-surfing prevented",VCST-3387 TC-SEC-003,Manual
+SEC-PCI-004,No Card Data in Network Requests,PCI Compliance > Network,Security,Critical,10m,"- DevTools Network tab open
+- CyberSource form filled","1. Fill form with test card data
+2. Submit order
+3. Wait for all requests to complete
+4. Search all requests for '4622943127013705'
+5. Search all requests for '838'
+6. Check request payloads","- No raw card number in any request
+- No CVV in any request
+- Only tokenized data sent
+- CyberSource handles all card data",VCST-3387 TC-SEC-004,Manual
+SEC-PCI-005,No Card Data in Browser Storage,PCI Compliance > Storage,Security,Critical,5m,"- Payment form interaction complete","1. Open DevTools Application tab
+2. Check localStorage for card data
+3. Check sessionStorage
+4. Check cookies
+5. Search for partial card number","- No card numbers stored
+- No CVV stored anywhere
+- Only safe data persisted",VCST-3387 TC-SEC-005,Manual
+SEC-PCI-006,HTTPS Enforcement,PCI Compliance > Transport,Security,Critical,5m,"- Payment page loaded","1. Check browser URL bar (https)
+2. Inspect iframe sources
+3. Check Network tab for http requests
+4. Verify no mixed content warnings","- All connections HTTPS
+- Iframes use HTTPS
+- No mixed content
+- Secure padlock shown",VCST-3387 TC-SEC-006,Manual
+SEC-PCI-007,JWT Token Authentication,PCI Compliance > Auth,Security,High,3m,"- CyberSource payment selected","1. Inspect iframe src attributes
+2. Look for JWT parameter
+3. Verify token format (xxx.yyy.zzz)
+4. Note token uniqueness","- JWT present in iframe URL
+- Valid three-part structure
+- Token unique per session",VCST-3387 TC-INT-002,Manual
+SEC-AUTH-001,Session Token Security,Authentication > Tokens,Security,High,5m,"- User logged in
+- DevTools open","1. Check for access token storage
+2. Verify HttpOnly cookies where applicable
+3. Check token expiration
+4. Verify refresh mechanism","- Tokens stored securely
+- HttpOnly for sensitive cookies
+- Reasonable expiration
+- Refresh works",regression-qa-theme-26.csv,Manual
+SEC-AUTH-002,Logout Token Revocation,Authentication > Logout,Security,High,5m,"- User logged in","1. Note current access token
+2. Click logout
+3. Check /revoke endpoint called
+4. Attempt to use old token
+5. Verify rejection","- Logout revokes token
+- Old token rejected
+- Cannot reuse after logout",regression-qa-theme-26.csv,Manual
+SEC-AUTH-003,Account Lockout Protection,Authentication > Brute Force,Security,High,10m,"- Valid user account","1. Attempt login with wrong password
+2. Repeat 5 times
+3. Verify lockout message
+4. Attempt with correct password
+5. Verify still locked","- Account locks after 5 failures
+- Clear lockout message
+- Correct password also rejected
+- Lockout has timeout",regression-qa-theme-26.csv,Manual
+SEC-INPUT-001,XSS Prevention - Search,Input Validation > XSS,Security,High,5m,"- Search functionality available","1. Enter: <script>alert('XSS')</script>
+2. Execute search
+3. Verify no script execution
+4. Check results display","- Script not executed
+- Input escaped/sanitized
+- Safe display of results",security-manual,Manual
+SEC-INPUT-002,XSS Prevention - Forms,Input Validation > XSS,Security,High,5m,"- Registration or profile form","1. Enter XSS payload in name field
+2. Submit form
+3. View saved data
+4. Verify no execution","- Input sanitized
+- No script execution
+- Safe rendering",security-manual,Manual
+SEC-INPUT-003,SQL Injection Prevention,Input Validation > SQLi,Security,High,5m,"- Search functionality","1. Enter: ' OR '1'='1
+2. Execute search
+3. Verify normal handling
+4. Check for error messages","- Query handled safely
+- No SQL errors exposed
+- Normal results or empty",security-manual,Manual
+SEC-INPUT-004,Path Traversal Prevention,Input Validation > Path,Security,Medium,5m,"- File upload or URL parameters","1. Attempt ../../../etc/passwd in URLs
+2. Attempt in file names
+3. Verify rejection","- Path traversal blocked
+- Proper input validation
+- No sensitive file access",security-manual,Manual
+SEC-CSRF-001,CSRF Token Validation,CSRF Protection,Security,High,5m,"- Any form submission
+- DevTools open","1. Inspect form for CSRF token
+2. Verify token in requests
+3. Attempt to forge request without token","- CSRF tokens present
+- Server validates tokens
+- Forged requests rejected",security-manual,Manual
+SEC-CORS-001,CORS Configuration,API Security > CORS,Security,Medium,5m,"- DevTools Network tab","1. Make API request
+2. Check CORS headers
+3. Verify allowed origins","- Proper CORS headers
+- Origins restricted appropriately
+- Credentials handled correctly",security-manual,Manual
+SEC-SENSITIVE-001,No Credentials in Logs,Data Protection > Logging,Security,Critical,5m,"- Various operations performed","1. Check browser console
+2. Check Network responses
+3. Verify no passwords logged","- No passwords in console
+- No sensitive data in responses
+- Error messages sanitized",security-manual,Manual
+SEC-SENSITIVE-002,Error Message Safety,Data Protection > Errors,Security,Medium,5m,"- Cause various errors","1. Trigger authentication errors
+2. Trigger validation errors
+3. Check error messages","- No stack traces exposed
+- No internal paths shown
+- Generic safe messages",security-manual,Manual

@@ -1,0 +1,158 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+AUTH-001,Registration Form - Personal View,Registration > Personal,Functional,Medium,3m,"Browser open, registration page accessible","1. Navigate to registration page
+2. Select 'Personal' account type
+3. Verify all form fields display","- First Name field visible
+- Last Name field visible
+- Email field visible
+- Password fields visible
+- Terms checkbox present",regression-qa-theme-26.csv,Automated
+AUTH-002,Create Account - Personal User,Registration > Personal,Functional,Medium,5m,"Registration page open","1. Fill all required fields with valid data
+2. Use unique email address
+3. Set password meeting policy
+4. Accept terms
+5. Submit form","- Account created successfully
+- Confirmation displayed
+- Can login with credentials",regression-qa-theme-26.csv,Automated
+AUTH-003,Registration Form - Organization View,Registration > Organization,Functional,Medium,3m,"Registration page accessible","1. Navigate to registration page
+2. Select 'Organization' account type
+3. Verify organization fields appear","- Company Name field visible
+- All personal fields visible
+- Organization-specific options shown",regression-qa-theme-26.csv,Automated
+AUTH-004,Create Account - Organization,Registration > Organization,Functional,Medium,5m,"Registration page open","1. Select Organization type
+2. Fill company name and details
+3. Fill personal information
+4. Submit form","- Organization created
+- User assigned as admin
+- Organization visible in admin",regression-qa-theme-26.csv,Automated
+AUTH-005,Password Visibility Toggle,Registration > UI,Functional,Medium,2m,"Registration form open","1. Enter password in password field
+2. Click visibility toggle icon
+3. Verify password becomes visible
+4. Click toggle again
+5. Verify password masked","- Password toggles between masked/visible
+- Works for both password fields",regression-qa-theme-26.csv,Other
+AUTH-006,Validation - Personal Required Fields,Registration > Validation,Functional,Medium,5m,"Registration form open (Personal)","1. Leave all fields empty
+2. Click submit
+3. Verify validation errors
+4. Fill one field, submit
+5. Verify remaining errors","- Error shown for each empty required field
+- Clear error messages
+- Cannot submit until all filled",regression-qa-theme-26.csv,Automated
+AUTH-007,Validation - Personal Max Characters,Registration > Validation,Functional,Medium,5m,"Registration form open","1. Enter 256+ characters in First Name
+2. Enter 256+ characters in Last Name
+3. Enter very long email
+4. Submit form","- Max length enforced
+- Appropriate error messages
+- Form prevents overlong input",regression-qa-theme-26.csv,Functional
+AUTH-008,Validation - Organization Required Fields,Registration > Validation,Functional,Medium,5m,"Registration form open (Organization)","1. Select Organization type
+2. Leave all fields empty
+3. Submit form
+4. Verify all validation errors","- Company name required error
+- All personal field errors
+- Clear messaging",regression-qa-theme-26.csv,Automated
+AUTH-009,Validation - Unique Email,Registration > Validation,Functional,Medium,3m,"Existing user account in system","1. Open registration form
+2. Enter email of existing user
+3. Fill other fields
+4. Submit form","- Error: Email already registered
+- Suggests login or password reset",regression-qa-theme-26.csv,Automated
+AUTH-010,Validation - Email Format,Registration > Validation,Functional,Medium,3m,"Registration form open","1. Enter invalid email formats:
+   - 'notanemail'
+   - 'missing@domain'
+   - '@nodomain.com'
+2. Verify validation","- Invalid format rejected
+- Clear error message
+- Valid format accepted",regression-qa-theme-26.csv,Automated
+AUTH-011,Validation - Password Match,Registration > Validation,Functional,Medium,3m,"Registration form open","1. Enter password in first field
+2. Enter different password in confirm field
+3. Submit form","- Error: Passwords do not match
+- Cannot submit until matching",regression-qa-theme-26.csv,Automated
+AUTH-012,Validation - Password Policy,Registration > Validation,Functional,Medium,5m,"Registration form open","1. Enter weak password: '123'
+2. Verify rejection
+3. Enter password without uppercase
+4. Enter password without number
+5. Enter valid complex password","- Policy requirements enforced
+- Clear feedback on requirements
+- Strong password accepted",regression-qa-theme-26.csv,Automated
+AUTH-013,Email Verification - Without,Registration > Email,Functional,Medium,5m,"Email verification disabled in admin","1. Register new account
+2. Verify no verification email required
+3. Login immediately","- Account active immediately
+- No verification step
+- Can login right away",regression-qa-theme-26.csv,Other
+AUTH-014,Email Verification - Optional,Registration > Email,Functional,Medium,5m,"Optional email verification enabled","1. Register new account
+2. Verify option to verify or skip
+3. Test both paths","- Verification email sent
+- Can skip verification
+- Reminder shown if skipped",regression-qa-theme-26.csv,Other
+AUTH-015,Email Verification - Mandatory,Registration > Email,Functional,Medium,8m,"Mandatory email verification enabled","1. Register new account
+2. Attempt login before verification
+3. Verify email link
+4. Login after verification","- Cannot login before verification
+- Verification link works
+- Account active after verification",regression-qa-theme-26.csv,Automated
+AUTH-016,Login - Empty Email,Login > Validation,Functional,Medium,2m,"Login page open","1. Leave email field empty
+2. Enter password
+3. Click Sign In","- Error: Email is required
+- Cannot submit",regression-qa-theme-26.csv,Automated
+AUTH-017,Login - Invalid User,Login > Validation,Functional,Medium,2m,"Login page open","1. Enter non-existent email
+2. Enter any password
+3. Submit","- Error: Invalid credentials
+- No user information leaked",regression-qa-theme-26.csv,Automated
+AUTH-018,Login - Invalid Password,Login > Validation,Functional,Medium,2m,"Valid user exists","1. Enter valid email
+2. Enter wrong password
+3. Submit","- Error: Invalid credentials
+- Access failed count incremented",regression-qa-theme-26.csv,Automated
+AUTH-019,Login - Email Verification Required,Login > Validation,Functional,Medium,3m,"User registered but not verified","1. Enter unverified user credentials
+2. Submit login","- Error: Email verification required
+- Option to resend verification",regression-qa-theme-26.csv,Automated
+AUTH-020,Login - Temporary Lockout,Login > Security,Functional,Medium,10m,"Valid user account","1. Enter wrong password 5 times
+2. Attempt login with correct password
+3. Wait for lockout period
+4. Retry login","- Account temporarily locked after 5 failures
+- Clear lockout message
+- Can login after timeout",regression-qa-theme-26.csv,Other
+AUTH-021,Login - Admin Blocked User,Login > Security,Functional,Medium,5m,"User blocked by admin","1. Attempt login with blocked user
+2. Verify rejection","- Error: Account is locked
+- Contact admin message",regression-qa-theme-26.csv,Other
+AUTH-022,Login - Token Generation,Login > Token,Functional,Medium,3m,"Valid user, DevTools open","1. Login with valid credentials
+2. Check /connect/token response
+3. Verify token format","- JWT token generated
+- Token contains required claims
+- Refresh token present",regression-qa-theme-26.csv,Other
+AUTH-023,Login - Token Persistence,Login > Token,Functional,Medium,3m,"User logged in","1. Note current token
+2. Reload page
+3. Verify still logged in
+4. Check token refreshed","- Session persists across reload
+- Token automatically refreshed
+- No re-login required",regression-qa-theme-26.csv,Other
+AUTH-024,Logout - Token Revocation,Login > Token,Functional,Medium,3m,"User logged in, DevTools open","1. Click Logout
+2. Check /revoke/token call
+3. Attempt to use old token","- Logout completes
+- Token revoked
+- Old token rejected",regression-qa-theme-26.csv,Other
+AUTH-025,SSO - Entra ID Enabled,SSO > Azure,Functional,Medium,5m,"Entra ID configured in admin","1. Navigate to login page
+2. Verify 'Sign in with Microsoft' button
+3. Click SSO button
+4. Complete Microsoft auth
+5. Verify redirect back","- SSO button visible
+- Redirects to Microsoft
+- User created/linked
+- Logged in successfully",regression-qa-theme-26.csv,Other
+AUTH-026,SSO - Google Enabled,SSO > Google,Functional,Medium,5m,"Google SSO configured","1. Navigate to login page
+2. Verify 'Sign in with Google' button
+3. Click SSO button
+4. Complete Google auth
+5. Verify redirect back","- SSO button visible
+- Redirects to Google
+- User created/linked
+- Logged in successfully",regression-qa-theme-26.csv,Other
+AUTH-027,Login on Behalf - With Permission,Login > Admin,Functional,Medium,5m,"Admin user with 'login on behalf' permission","1. Login as admin
+2. Navigate to user management
+3. Select target user
+4. Click 'Login on behalf'
+5. Verify context switch","- Admin can impersonate user
+- User context active
+- Can return to admin",regression-qa-theme-26.csv,Other
+AUTH-028,Login on Behalf - Org Maintainer,Login > Admin,Functional,Medium,5m,"Organization maintainer account","1. Login as org maintainer
+2. Navigate to organization members
+3. Select employee
+4. Login on behalf","- Maintainer can impersonate employees
+- Limited to own organization",regression-qa-theme-26.csv,Other

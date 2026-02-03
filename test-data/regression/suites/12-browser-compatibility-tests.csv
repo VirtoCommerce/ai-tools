@@ -1,0 +1,129 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+BROWSER-CHROME-001,Chrome Desktop - Full Flow,Chrome > Desktop,Compatibility,Critical,20m,"- Chrome latest version
+- Desktop resolution","1. Run Smoke Tests (SMK-001 to SMK-012)
+2. Test BOPIS flow
+3. Test search functionality
+4. Test checkout
+5. Verify no console errors","- All features work
+- No visual bugs
+- No JavaScript errors
+- Consistent with design",VCST-4499 TC-013,Manual
+BROWSER-CHROME-002,Chrome Desktop - Map Features,Chrome > Desktop,Compatibility,High,10m,"- Chrome latest","1. Open pickup modal
+2. Test map pan/zoom
+3. Test marker clicks
+4. Test info windows","- Map loads correctly
+- All interactions work
+- Smooth performance",VCST-4499 TC-013,Manual
+BROWSER-CHROME-003,Chrome Android - Mobile Flow,Chrome > Mobile,Compatibility,Critical,20m,"- Chrome on Android
+- Physical device or emulator","1. Run mobile smoke tests
+2. Test List/Map toggle
+3. Test touch interactions
+4. Test checkout","- Mobile layout correct
+- Touch targets adequate
+- All features work",VCST-4499 TC-013,Manual
+BROWSER-CHROME-004,Chrome Android - Touch Events,Chrome > Mobile,Compatibility,High,10m,"- Chrome Android","1. Test tap on markers
+2. Test swipe/scroll
+3. Test pinch zoom on map
+4. Test form inputs","- Touch events work
+- Gestures recognized
+- Keyboard shows for inputs",VCST-4499 TC-013,Manual
+BROWSER-SAFARI-001,Safari Desktop - Full Flow,Safari > Desktop,Compatibility,Critical,20m,"- Safari latest on macOS","1. Run Smoke Tests
+2. Test BOPIS flow
+3. Test search
+4. Check for Safari-specific issues","- All features work
+- No WebKit-specific bugs
+- Consistent styling",VCST-4499 TC-013,Manual
+BROWSER-SAFARI-002,Safari Desktop - Map Features,Safari > Desktop,Compatibility,High,10m,"- Safari macOS","1. Test Google Maps integration
+2. Test all map interactions
+3. Verify no rendering issues","- Map works correctly
+- No Safari-specific map bugs",VCST-4499 TC-013,Manual
+BROWSER-SAFARI-003,Safari iOS - Mobile Flow,Safari > iOS,Compatibility,Critical,20m,"- Safari on iPhone 16/17/18
+- Physical device preferred","1. Run mobile smoke tests
+2. Test BOPIS modal
+3. Test checkout
+4. Test payment forms","- iOS layout correct
+- Touch works properly
+- Keyboard handling correct
+- No iOS-specific bugs",VCST-4499 TC-013,Manual
+BROWSER-SAFARI-004,Safari iOS - Touch and Gestures,Safari > iOS,Compatibility,High,10m,"- Safari iOS","1. Test tap accuracy
+2. Test scroll momentum
+3. Test pinch zoom
+4. Test form focus/blur","- iOS gestures work
+- Rubber-banding handled
+- No stuck states",VCST-4499 TC-013,Manual
+BROWSER-FIREFOX-001,Firefox Desktop - Full Flow,Firefox > Desktop,Compatibility,High,20m,"- Firefox latest version","1. Run Smoke Tests
+2. Test BOPIS flow
+3. Test search
+4. Check console for errors","- All features work
+- No Firefox-specific bugs
+- CSS renders correctly",VCST-4499 TC-013,Manual
+BROWSER-FIREFOX-002,Firefox Desktop - Form Handling,Firefox > Desktop,Compatibility,High,10m,"- Firefox latest","1. Test all forms
+2. Test autocomplete
+3. Test validation
+4. Test payment forms","- Forms work correctly
+- Validation consistent
+- Password managers work",VCST-4499 TC-013,Manual
+BROWSER-EDGE-001,Edge Desktop - Full Flow,Edge > Desktop,Compatibility,High,20m,"- Edge latest (Chromium)","1. Run Smoke Tests
+2. Test BOPIS flow
+3. Test checkout
+4. Verify consistent with Chrome","- All features work
+- Similar to Chrome behavior
+- No Edge-specific issues",VCST-4499 TC-013,Manual
+BROWSER-EDGE-002,Edge Desktop - PDF/Print,Edge > Desktop,Compatibility,Medium,5m,"- Edge latest","1. Test any print functionality
+2. Test PDF generation if applicable","- Print preview works
+- PDF generation correct",VCST-4499 TC-013,Manual
+BROWSER-CROSS-001,Cross-Browser - Visual Consistency,Cross-Browser > Visual,Compatibility,High,30m,"- Chrome, Firefox, Safari, Edge ready","1. Open same page in all browsers
+2. Compare visual appearance
+3. Check fonts, spacing, colors
+4. Document differences","- Consistent appearance
+- Minor acceptable differences
+- No major visual bugs",VCST-4499 TC-013,Manual
+BROWSER-CROSS-002,Cross-Browser - Animation,Cross-Browser > Animation,Compatibility,Medium,15m,"- All browsers ready","1. Test modal animations
+2. Test transitions
+3. Compare smoothness","- Animations work in all browsers
+- Similar timing/easing
+- No jerky behavior",VCST-4499 TC-013,Manual
+BROWSER-CROSS-003,Cross-Browser - Flexbox/Grid,Cross-Browser > Layout,Compatibility,High,15m,"- All browsers ready","1. Check layouts using flexbox
+2. Check grid layouts
+3. Verify responsive breakpoints","- Layouts consistent
+- No flexbox bugs
+- Grid works everywhere",VCST-4499 TC-013,Manual
+BROWSER-MOBILE-001,Mobile Matrix - iPhone Models,Mobile > iPhone,Compatibility,Critical,30m,"- iPhone 16, 17, 18 (or latest 3)
+- Physical devices or BrowserStack","1. Test each iPhone model
+2. Run mobile smoke tests
+3. Check notch/safe area handling
+4. Test gestures","- Works on all iPhone models
+- Safe areas respected
+- No model-specific bugs",VCST-4499 TC-013,Manual
+BROWSER-MOBILE-002,Mobile Matrix - Android Models,Mobile > Android,Compatibility,Critical,30m,"- Last 3 Android flagship models
+- Physical devices or BrowserStack","1. Test each Android model
+2. Run mobile smoke tests
+3. Check different screen sizes
+4. Test Chrome on Android","- Works on all Android models
+- Various screen sizes supported
+- No Android-specific bugs",VCST-4499 TC-013,Manual
+BROWSER-MOBILE-003,Viewport Handling - All Devices,Mobile > Viewport,Compatibility,High,15m,"- Multiple devices/viewports","1. Test 320px width
+2. Test 375px width
+3. Test 414px width
+4. Test tablet sizes
+5. Test desktop sizes","- Responsive at all sizes
+- No horizontal scroll
+- Content adapts properly",VCST-4499 TC-013,Manual
+BROWSER-RES-001,Resolution Matrix - Desktop,Resolution > Desktop,Compatibility,Medium,15m,"- Multiple resolutions available","1. Test 1366x768 (common laptop)
+2. Test 1920x1080 (Full HD)
+3. Test 2560x1440 (QHD)
+4. Test 3840x2160 (4K)","- Works at all resolutions
+- High DPI handled
+- No blurry images",VCST-4499 TC-013,Manual
+BROWSER-OS-001,Windows 10/11 - Chrome/Edge,OS > Windows,Compatibility,High,15m,"- Windows 10 or 11
+- Chrome and Edge installed","1. Test in Chrome on Windows
+2. Test in Edge on Windows
+3. Compare behavior","- Works on Windows
+- No OS-specific issues
+- Font rendering acceptable",VCST-4499 TC-013,Manual
+BROWSER-OS-002,macOS - Chrome/Safari,OS > macOS,Compatibility,High,15m,"- macOS latest
+- Chrome and Safari","1. Test in Safari on macOS
+2. Test in Chrome on macOS
+3. Compare behavior","- Works on macOS
+- Retina display handled
+- Trackpad gestures work",VCST-4499 TC-013,Manual

@@ -1,0 +1,119 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+L10N-DE-001,German (de) - UI Translation,Localization > German,Localization,Medium,10m,"- German language available","1. Change language to German
+2. Navigate through main pages
+3. Verify all UI elements translated
+4. Check buttons, labels, messages","- All UI text in German
+- No English fallbacks visible
+- Grammar correct",VCST-4499 TC-010,Manual
+L10N-DE-002,German (de) - BOPIS Modal,Localization > German,Localization,Medium,5m,"- German language set
+- BOPIS available","1. Open pickup modal
+2. Check search placeholder
+3. Check button labels
+4. Check filter labels
+5. Check location card content","- Search placeholder translated
+- All buttons in German
+- No truncation issues",VCST-4499 TC-010,Manual
+L10N-EN-001,English (en) - Baseline,Localization > English,Localization,High,5m,"- English language set","1. Verify English is default
+2. Check all UI elements
+3. Verify no missing translations","- English complete
+- No translation keys visible
+- All text readable",VCST-4499 TC-010,Manual
+L10N-ES-001,Spanish (es) - UI Translation,Localization > Spanish,Localization,Medium,10m,"- Spanish language available","1. Change to Spanish
+2. Navigate main flows
+3. Verify translations
+4. Check form labels","- All UI in Spanish
+- Button text fits
+- No overflow",VCST-4499 TC-010,Manual
+L10N-FR-001,French (fr) - UI Translation,Localization > French,Localization,Medium,10m,"- French language available","1. Change to French
+2. Navigate main flows
+3. Verify translations
+4. Check for longer text handling","- All UI in French
+- Longer words fit containers
+- No truncation",VCST-4499 TC-010,Manual
+L10N-IT-001,Italian (it) - UI Translation,Localization > Italian,Localization,Medium,10m,"- Italian language available","1. Change to Italian
+2. Navigate main flows
+3. Verify translations","- All UI in Italian
+- Text fits properly",VCST-4499 TC-010,Manual
+L10N-PT-001,Portuguese (pt) - UI Translation,Localization > Portuguese,Localization,Medium,10m,"- Portuguese language available","1. Change to Portuguese
+2. Navigate main flows
+3. Verify translations","- All UI in Portuguese
+- Text fits properly",VCST-4499 TC-010,Manual
+L10N-NO-001,Norwegian (no) - UI Translation,Localization > Norwegian,Localization,Medium,10m,"- Norwegian language available","1. Change to Norwegian
+2. Navigate main flows
+3. Verify translations","- All UI in Norwegian
+- Scandinavian chars display",VCST-4499 TC-010,Manual
+L10N-SV-001,Swedish (sv) - UI Translation,Localization > Swedish,Localization,Medium,10m,"- Swedish language available","1. Change to Swedish
+2. Navigate main flows
+3. Verify translations","- All UI in Swedish
+- Special chars (å, ä, ö) display",VCST-4499 TC-010,Manual
+L10N-FI-001,Finnish (fi) - UI Translation,Localization > Finnish,Localization,Medium,10m,"- Finnish language available","1. Change to Finnish
+2. Navigate main flows
+3. Verify translations
+4. Check for very long words","- All UI in Finnish
+- Long compound words fit",VCST-4499 TC-010,Manual
+L10N-PL-001,Polish (pl) - UI Translation,Localization > Polish,Localization,Medium,10m,"- Polish language available","1. Change to Polish
+2. Navigate main flows
+3. Verify translations
+4. Check Polish chars (ą, ę, ł, etc.)","- All UI in Polish
+- Polish diacritics display correctly",VCST-4499 TC-010,Manual
+L10N-RU-001,Russian (ru) - Cyrillic Display,Localization > Russian,Localization,Medium,10m,"- Russian language available","1. Change to Russian
+2. Navigate main flows
+3. Verify Cyrillic renders correctly
+4. Check button sizing","- All UI in Russian
+- Cyrillic displays correctly
+- No font issues
+- Buttons sized for Cyrillic",VCST-4499 TC-010,Manual
+L10N-JA-001,Japanese (ja) - Character Display,Localization > Japanese,Localization,Medium,15m,"- Japanese language available","1. Change to Japanese
+2. Navigate main flows
+3. Verify Japanese characters
+4. Check kanji, hiragana, katakana
+5. Check text wrapping","- Japanese text displays
+- All character sets work
+- Text wraps correctly
+- No font issues",VCST-4499 TC-010,Manual
+L10N-ZH-001,Chinese (zh) - Character Display,Localization > Chinese,Localization,Medium,15m,"- Chinese language available","1. Change to Chinese
+2. Navigate main flows
+3. Verify Chinese characters
+4. Check simplified/traditional","- Chinese characters display
+- Proper font rendering
+- Text fits containers",VCST-4499 TC-010,Manual
+L10N-FLOW-001,Complete Flow - German,Localization > Flows,Localization,High,15m,"- German language set","1. Change to German
+2. Search for product
+3. Add to cart
+4. Start checkout
+5. Select pickup
+6. Complete as far as possible","- Entire flow works in German
+- All steps translated
+- No errors or missing text",VCST-4499 TC-010,Manual
+L10N-FLOW-002,Complete Flow - Japanese,Localization > Flows,Localization,High,15m,"- Japanese language set","1. Change to Japanese
+2. Search for product
+3. Add to cart
+4. Complete checkout flow","- Entire flow works in Japanese
+- No character encoding issues
+- Layout intact",VCST-4499 TC-010,Manual
+L10N-ERR-001,Error Messages - Translated,Localization > Errors,Localization,Medium,10m,"- Non-English language set","1. Set language (e.g., German)
+2. Trigger validation error
+3. Trigger form error
+4. Verify error messages translated","- Error messages in selected language
+- No English errors shown
+- Clear messaging",VCST-4499 TC-010,Manual
+L10N-DATE-001,Date Formatting - Locale,Localization > Formats,Localization,Medium,5m,"- Different language set","1. View dates in German (DD.MM.YYYY)
+2. View dates in US English (MM/DD/YYYY)
+3. Verify locale-appropriate formatting","- Dates match locale convention
+- No hardcoded formats",VCST-4499 TC-010,Manual
+L10N-NUM-001,Number Formatting - Locale,Localization > Formats,Localization,Medium,5m,"- Different language set","1. View prices in German (1.234,56)
+2. View prices in English (1,234.56)
+3. Verify decimal/thousand separators","- Number format matches locale
+- Currency displays correctly",VCST-4499 TC-010,Manual
+L10N-TRUNC-001,Text Truncation Check,Localization > Layout,Localization,High,15m,"- Various languages","1. Switch through all 13 languages
+2. Check button labels for truncation
+3. Check navigation items
+4. Check form labels","- No truncated text
+- All labels readable
+- Ellipsis only where appropriate",VCST-4499 TC-010,Manual
+L10N-LAYOUT-001,Layout Integrity - Long Text,Localization > Layout,Localization,High,15m,"- Languages with long words","1. Test Finnish (long compounds)
+2. Test German (long words)
+3. Test Russian
+4. Verify no broken layouts","- Layouts remain intact
+- Text wraps appropriately
+- No overflow issues",VCST-4499 TC-010,Manual

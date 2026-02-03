@@ -1,0 +1,156 @@
+Section,Title,Type,Priority,Preconditions,Steps,Expected Result,References
+"1. Smoke Tests","SMK-001: User Registration (Personal)","Functional","Critical","Browser open, QA environment accessible","1. Navigate to registration page
+2. Select Personal account type
+3. Fill all required fields
+4. Submit registration","Account created successfully, user redirected to confirmation","regression-qa-theme-26.csv"
+"1. Smoke Tests","SMK-002: User Registration (Organization)","Functional","Critical","Browser open, QA environment accessible","1. Navigate to registration page
+2. Select Organization account type
+3. Fill all required fields including company details
+4. Submit registration","Organization account created successfully","regression-qa-theme-26.csv"
+"1. Smoke Tests","SMK-003: Sign In (Personal)","Functional","Critical","Valid personal user account exists","1. Navigate to sign-in page
+2. Enter valid credentials
+3. Click Sign In","User logged in, redirected to dashboard","regression-qa-theme-26.csv"
+"1. Smoke Tests","SMK-004: Sign In (Organization)","Functional","Critical","Valid organization user account exists","1. Navigate to sign-in page
+2. Enter valid organization user credentials
+3. Click Sign In","User logged in with organization context","regression-qa-theme-26.csv"
+"1. Smoke Tests","SMK-005: Catalog Browsing","Functional","Critical","User logged in","1. Navigate to catalog
+2. Click on category
+3. Verify products display","Category page loads with products","regression-qa-theme-26.csv"
+"1. Smoke Tests","SMK-006: Product Search","Functional","Critical","User logged in, products exist","1. Enter search term in search bar
+2. Press Enter or click search","Search results display matching products","regression-qa-theme-26.csv"
+"1. Smoke Tests","SMK-007: Add to Cart","Functional","Critical","User logged in, product exists","1. Navigate to product page
+2. Click Add to Cart
+3. Verify cart updated","Product added to cart, cart count incremented","regression-qa-theme-26.csv"
+"1. Smoke Tests","SMK-008: Cart Operations","Functional","Critical","Products in cart","1. Navigate to cart
+2. Verify items display
+3. Update quantity
+4. Verify total updates","Cart displays correctly, calculations accurate","VCST-4499"
+"1. Smoke Tests","SMK-009: Checkout - Delivery","Functional","Critical","Products in cart","1. Select Delivery option
+2. Enter shipping address
+3. Select payment method
+4. Complete order","Order created with delivery option","VCST-4499"
+"1. Smoke Tests","SMK-010: Checkout - Pickup (BOPIS)","Functional","Critical","Products in cart, pickup locations configured","1. Select Pickup option
+2. Select pickup location from map
+3. Confirm selection
+4. Complete checkout","Order created with pickup location","VCST-4499"
+"1. Smoke Tests","SMK-011: Payment Processing","Functional","Critical","Checkout ready, test payment configured","1. Select Bank card payment
+2. Enter test card details
+3. Submit payment","Payment authorized, order confirmed","VCST-4499"
+"1. Smoke Tests","SMK-012: Order Confirmation","Functional","Critical","Order submitted","1. Verify confirmation page displays
+2. Verify order number shown
+3. Verify order in history","Order confirmation with all details","VCST-4499"
+"2. BOPIS Tests","BOPIS-001: Map Stability","Functional","Critical","Cart has products, pickup locations configured","1. Open pickup location modal
+2. Enter search term
+3. Clear search
+4. Repeat 3 times","Map maintains consistent dimensions, no jumping","VCST-4499, VCST-4518"
+"2. BOPIS Tests","BOPIS-002: Desktop Location Selection","Functional","Critical","Desktop browser 1920x1080","1. Open pickup modal
+2. Click location in list
+3. Verify map pans to location
+4. Click Select in info window
+5. Confirm selection","Location selected, appears in cart","VCST-4499"
+"2. BOPIS Tests","BOPIS-003: Mobile List/Map Toggle","Functional","Critical","Mobile device 375x667","1. Open pickup modal
+2. Verify List view default
+3. Click Map toggle
+4. Verify map displays
+5. Click List toggle
+6. Complete selection","Toggle works, both views function correctly","VCST-4499"
+"2. BOPIS Tests","BOPIS-004: Search Functionality","Functional","High","Pickup modal open","1. Enter partial location name
+2. Verify results filter
+3. Clear search
+4. Enter invalid address
+5. Verify error handling","Search filters correctly, graceful error handling","VCST-4499"
+"2. BOPIS Tests","BOPIS-005: Map Interactions","Functional","High","Pickup modal open, markers visible","1. Click marker A
+2. Verify info window opens
+3. Click marker B quickly
+4. Verify only one info window visible","No race conditions, single info window","VCST-4499"
+"2. BOPIS Tests","BOPIS-006: Pickup Location Card","Functional","High","Location selected","1. Select location
+2. Verify card displays
+3. Verify all info present
+4. Click Cancel, verify return
+5. Reselect, click Confirm","Card shows all details, actions work","VCST-4499"
+"2. BOPIS Tests","BOPIS-007: Pickup Filters (City/State)","Functional","High","Multiple pickup locations exist","1. Open pickup modal
+2. Apply city filter
+3. Verify results
+4. Apply state filter
+5. Verify combined results","Filters work correctly individually and combined","VCST-3865, VCST-4447"
+"3. Payment Tests","PAY-001: CyberSource Valid Submission","Functional","Critical","Checkout ready, CyberSource configured","1. Select Bank card (CyberSource)
+2. Enter valid card: 4622943127013705
+3. Enter name, expiry 09/2029, CVV 838
+4. Submit order","Payment authorized, order created","VCST-3387"
+"3. Payment Tests","PAY-002: Empty Cardholder Name","Negative","Critical","CyberSource payment selected","1. Fill card number, expiry, CVV
+2. Leave cardholder name empty
+3. Submit order","Validation error shown, cannot submit","VCST-3387"
+"3. Payment Tests","PAY-003: Invalid Card Number","Negative","Critical","CyberSource payment selected","1. Enter invalid card: 1234567890123456
+2. Fill other fields
+3. Submit","Validation error for invalid card","VCST-3387"
+"3. Payment Tests","PAY-004: Expired Card","Negative","Critical","CyberSource payment selected","1. Enter valid card
+2. Enter expired date: 01/2020
+3. Submit","Validation error for expired card","VCST-3387"
+"3. Payment Tests","PAY-005: CVV Wrong Length","Negative","High","CyberSource payment selected","1. Enter valid card
+2. Enter CVV with wrong length (12 or 12345)
+3. Submit","Validation error for CVV length","VCST-3387"
+"4. Security Tests","SEC-001: Card Number Iframe Isolation","Security","Critical","CyberSource form displayed","1. Open DevTools
+2. Inspect card number field
+3. Verify iframe from testflex.cybersource.com
+4. Try accessing via JavaScript","Field in secure iframe, cannot access value","VCST-3387"
+"4. Security Tests","SEC-002: CVV Iframe Isolation","Security","Critical","CyberSource form displayed","1. Inspect CVV field
+2. Verify iframe implementation
+3. Attempt JavaScript access","CVV in secure iframe, inaccessible","VCST-3387"
+"4. Security Tests","SEC-003: No Sensitive Data in Requests","Security","Critical","Complete payment flow","1. Open Network tab
+2. Fill form with card data
+3. Submit order
+4. Inspect all requests","No raw card/CVV in requests, only tokens","VCST-3387"
+"4. Security Tests","SEC-004: HTTPS Enforcement","Security","Critical","Payment page loaded","1. Check page URL
+2. Check iframe sources
+3. Check all API calls","All connections use HTTPS","VCST-3387"
+"5. GA Events","GA-001: view_item_list Event","Analytics","High","User logged in","1. Navigate to category page
+2. Check dataLayer","Event contains item_list_id, items_skus, items_count","google-analytics"
+"5. GA Events","GA-002: view_item Event","Analytics","High","User logged in","1. Navigate to product detail page
+2. Check dataLayer","Event contains currency, value, items array","google-analytics"
+"5. GA Events","GA-003: add_to_cart Event","Analytics","Critical","User logged in, on product page","1. Click Add to Cart
+2. Check dataLayer","Event contains source_route, currency, value, items","google-analytics"
+"5. GA Events","GA-004: view_cart Event","Analytics","High","Products in cart","1. Navigate to cart page
+2. Check dataLayer","Event contains currency, value, items, items_count","google-analytics"
+"5. GA Events","GA-005: begin_checkout Event","Analytics","Critical","Products in cart","1. Start checkout flow
+2. Check dataLayer","Event triggered with all cart items","google-analytics"
+"5. GA Events","GA-006: add_shipping_info Event","Analytics","High","In checkout","1. Select shipping method
+2. Check dataLayer","Event contains shipping_tier, value matches cost","google-analytics"
+"5. GA Events","GA-007: add_payment_info Event","Analytics","High","Shipping selected","1. Select payment method
+2. Check dataLayer","Event contains payment_type, value","google-analytics"
+"5. GA Events","GA-008: purchase Event","Analytics","Critical","Order completed","1. Complete payment
+2. Check dataLayer","Event contains transaction_id, value, items","google-analytics"
+"6. Accessibility","A11Y-001: Keyboard Navigation","Accessibility","High","BOPIS modal open","1. Tab through all elements
+2. Verify focus visible
+3. Verify logical order
+4. Complete flow without mouse","Full keyboard accessibility","VCST-4499"
+"6. Accessibility","A11Y-002: Screen Reader","Accessibility","High","Screen reader active","1. Navigate to pickup modal
+2. Verify announcements
+3. Verify ARIA labels","All content announced correctly","VCST-4499"
+"6. Accessibility","A11Y-003: Color Contrast","Accessibility","High","Any UI element","1. Run axe DevTools
+2. Check contrast ratios","Meets WCAG AA 4.5:1 minimum","VCST-4373"
+"7. Responsive","RESP-001: Mobile 320px","Responsive","High","Browser at 320px width","1. Open pickup modal
+2. Verify single column
+3. Test all functionality","No horizontal scroll, all features work","VCST-4499"
+"7. Responsive","RESP-002: Tablet 768px","Responsive","High","Browser at 768px width","1. Open pickup modal
+2. Verify layout transition
+3. Test functionality","Appropriate layout for breakpoint","VCST-4499"
+"7. Responsive","RESP-003: Desktop 1920px","Responsive","High","Browser at 1920px width","1. Open pickup modal
+2. Verify side-by-side layout
+3. Test functionality","Desktop layout with list left, map right","VCST-4499"
+"8. Localization","L10N-001: German (de)","Localization","Medium","German language set","1. Change language to German
+2. Open pickup modal
+3. Verify all translations
+4. Complete flow","All UI elements translated, no truncation","VCST-4499"
+"8. Localization","L10N-002: Japanese (ja)","Localization","Medium","Japanese language set","1. Change language to Japanese
+2. Verify character display
+3. Verify text fits containers","Japanese characters display correctly","VCST-4499"
+"8. Localization","L10N-003: Russian (ru)","Localization","Medium","Russian language set","1. Change language to Russian
+2. Verify Cyrillic display
+3. Verify button sizing","Russian text displays without issues","VCST-4499"
+"9. Performance","PERF-001: Modal Load Time","Performance","Medium","Few locations (1-5)","1. Measure modal open time
+2. Open pickup modal
+3. Record time to interactive","Modal opens instantly (<500ms)","VCST-4499"
+"9. Performance","PERF-002: Search Response","Performance","Medium","Modal open","1. Type search query
+2. Measure filter response time","Results filter within 500ms","VCST-4499"
+"9. Performance","PERF-003: Map Interaction FPS","Performance","Medium","Map visible","1. Pan and zoom map
+2. Monitor frame rate","Maintains 60fps during interactions","VCST-4499"
