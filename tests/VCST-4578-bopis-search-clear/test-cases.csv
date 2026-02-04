@@ -1,0 +1,75 @@
+Section,Test Case ID,Title,Priority,Type,Automation,Pre-conditions,Steps,Expected Result,References
+BOPIS Search Clear,TC-01,Clear Search Restores All Locations (Primary Bug Fix),High,Functional,None,"User is signed in; Products are in cart; Pickup locations are configured on QA","1. Navigate to https://vcst-qa-storefront.govirto.com/
+2. Sign in with test user credentials
+3. Add product to cart
+4. Navigate to Cart page
+5. Select ""Pickup"" delivery option
+6. Click ""Select pickup location"" button
+7. Verify pickup location modal opens with full list
+8. Count initial locations displayed
+9. Enter search term in search field (e.g. ""Mall"")
+10. Verify filtered results appear (fewer locations)
+11. Click X (clear) button in search field
+12. Verify search field is cleared (empty)
+13. Verify full location list is restored
+14. Verify count matches initial count from step 8
+15. Verify map shows all location markers","Search field is empty; All pickup locations are visible in list; Map shows all location markers; Location count matches original count",VCST-4578
+BOPIS Search Clear,TC-02,Clear Button Visibility and State,Medium,Functional,None,"User is signed in; Cart has pickup option","1. Open pickup location modal
+2. Verify X (clear) button is NOT visible when field is empty
+3. Type one character in search field
+4. Verify X (clear) button appears
+5. Click X button
+6. Verify X button disappears after clearing","X button only visible when search field has text; X button disappears after clearing",VCST-4578
+BOPIS Search Clear,TC-03,Clear Search with Zero Results,High,Functional,None,"User is signed in; Cart has pickup option","1. Open pickup location modal
+2. Enter search term that returns zero results (e.g. ""ZZZZZ"")
+3. Verify ""Reset search"" message appears
+4. Click X (clear) button
+5. Verify all locations restored","All locations restored; ""Reset search"" message disappears; Map shows all markers",VCST-4578
+BOPIS Search Clear,TC-04,Multiple Search/Clear Cycles,Medium,Functional,None,"User is signed in; Cart has pickup option","1. Open pickup location modal
+2. Perform search (e.g. ""Mall"")
+3. Click X to clear
+4. Verify locations restored
+5. Perform different search (e.g. ""Center"")
+6. Click X to clear
+7. Verify locations restored
+8. Repeat 2 more cycles (total 4 cycles)","Each clear operation restores full list; No degradation over multiple cycles; No console errors",VCST-4578
+BOPIS Search Clear,TC-05,X Button vs Reset Search Button Consistency,Medium,Functional,None,"User is signed in; Cart has pickup option","1. Open pickup location modal
+2. Enter search term with zero results
+3. Verify ""Reset search"" button appears
+4. Click ""Reset search""
+5. Verify all locations restored
+6. Enter same search term again
+7. Click X (clear) button
+8. Verify behavior matches ""Reset search"" button","X button and ""Reset search"" button produce identical results; Both restore full location list with map markers",VCST-4578
+BOPIS Search Clear,TC-06,Mobile Viewport (375x667),High,Functional,None,"User is signed in; Cart has pickup option; Viewport set to 375x667","1. Set viewport to 375x667 (iPhone SE)
+2. Navigate to cart and open pickup modal
+3. Enter search term
+4. Click X (clear) button
+5. Verify locations restored in mobile view
+6. Verify map markers restored
+7. Verify UI elements properly sized","Clear button works on mobile; Location list scrollable and fully visible; Map markers restored",VCST-4578
+BOPIS Search Clear,TC-07,WebKit Browser Compatibility,Medium,Functional,None,"User is signed in; Cart has pickup option; WebKit browser available","1. Open in WebKit browser
+2. Navigate to cart and open pickup modal
+3. Enter search term in search field
+4. Click X (clear) button
+5. Verify search field cleared
+6. Verify locations restored
+7. Check console for errors","Same behavior as Chrome; No WebKit-specific bugs; All locations restored",VCST-4578
+BOPIS Search Clear,TC-08,Firefox Browser Compatibility,Medium,Functional,None,"User is signed in; Cart has pickup option; Firefox browser available","1. Open in Firefox browser
+2. Navigate to cart and open pickup modal
+3. Enter search term in search field
+4. Click X (clear) button
+5. Verify search field cleared
+6. Verify locations restored
+7. Check console for errors","Same behavior as Chrome; No Firefox-specific bugs; All locations restored",VCST-4578
+BOPIS Search Clear,TC-09,Regression - Search Functionality,Low,Regression,None,"User is signed in; Cart has pickup option","1. Open pickup location modal
+2. Test search with valid terms (multiple terms)
+3. Verify filtering works correctly
+4. Test search with partial matches
+5. Verify map updates with filtered results","Search filtering works as before; No regression in search functionality; Results match search criteria",VCST-4578
+BOPIS Search Clear,TC-10,Regression - Location Selection After Clear,Low,Regression,None,"User is signed in; Cart has pickup option","1. Open pickup location modal
+2. Search for location
+3. Clear search with X button
+4. Select a pickup location from restored list
+5. Verify location is set in cart
+6. Continue with checkout","Location selection works after clearing search; Location appears in cart; No errors in checkout flow",VCST-4578
