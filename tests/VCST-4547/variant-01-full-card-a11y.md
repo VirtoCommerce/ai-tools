@@ -1,0 +1,529 @@
+- generic [ref=e3]:
+  - navigation "Global" [ref=e7]:
+    - generic [ref=e11]:
+      - generic [ref=e12]:
+        - link "Skip to canvas" [ref=e13] [cursor=pointer]:
+          - /url: "#storybook-preview-wrapper"
+        - link "Storybook" [ref=e15] [cursor=pointer]:
+          - /url: ./
+          - img "Storybook" [ref=e16]
+        - button "Shortcuts" [ref=e22] [cursor=pointer]:
+          - img [ref=e23]
+      - generic [ref=e26]: Search for components
+      - combobox "Search for components" [ref=e28]:
+        - generic:
+          - img
+        - searchbox "Search for components" [ref=e29]: ProductCard
+      - generic [ref=e30]:
+        - generic [ref=e103]:
+          - img
+          - generic [ref=e104]:
+            - button "Components" [expanded] [ref=e105] [cursor=pointer]:
+              - img [ref=e107]
+              - text: Components
+            - button "Collapse" [ref=e109] [cursor=pointer]:
+              - img [ref=e110]
+          - button "Atoms" [expanded] [ref=e113] [cursor=pointer]:
+            - generic [ref=e114]:
+              - img [ref=e116]
+              - img [ref=e118]
+            - text: Atoms
+          - button "VcBadge" [expanded] [ref=e121] [cursor=pointer]:
+            - generic [ref=e122]:
+              - img [ref=e124]
+              - img [ref=e126]
+            - text: VcBadge
+          - link "Docs" [ref=e129] [cursor=pointer]:
+            - /url: /?path=/docs/components-atoms-vcbadge--docs
+            - img [ref=e131]
+            - text: Docs
+          - link "Basic" [ref=e134] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcbadge--basic
+            - img [ref=e136]
+            - text: Basic
+          - link "Solid Light" [ref=e139] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcbadge--solid-light
+            - img [ref=e141]
+            - text: Solid Light
+          - link "Outline" [ref=e144] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcbadge--outline
+            - img [ref=e146]
+            - text: Outline
+          - link "Outline Dark" [ref=e149] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcbadge--outline-dark
+            - img [ref=e151]
+            - text: Outline Dark
+          - link "Rounded" [ref=e154] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcbadge--rounded
+            - img [ref=e156]
+            - text: Rounded
+          - link "Truncate" [ref=e159] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcbadge--truncate
+            - img [ref=e161]
+            - text: Truncate
+          - link "Nowrap" [ref=e164] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcbadge--nowrap
+            - img [ref=e166]
+            - text: Nowrap
+          - link "Max Width" [ref=e169] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcbadge--max-width
+            - img [ref=e171]
+            - text: Max Width
+          - link "With Icon" [ref=e174] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcbadge--with-icon
+            - img [ref=e176]
+            - text: With Icon
+          - link "With Icons" [ref=e179] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcbadge--with-icons
+            - img [ref=e181]
+            - text: With Icons
+          - link "Only Icon" [ref=e184] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcbadge--only-icon
+            - img [ref=e186]
+            - text: Only Icon
+          - link "Dot" [ref=e189] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcbadge--dot
+            - img [ref=e191]
+            - text: Dot
+          - link "All Sizes" [ref=e194] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcbadge--all-sizes
+            - img [ref=e196]
+            - text: All Sizes
+          - link "All Colors" [ref=e199] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcbadge--all-colors
+            - img [ref=e201]
+            - text: All Colors
+          - link "All States" [ref=e204] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcbadge--all-states
+            - img [ref=e206]
+            - text: All States
+          - button "VcCarouselPagination" [ref=e209] [cursor=pointer]:
+            - generic [ref=e210]:
+              - img [ref=e212]
+              - img [ref=e214]
+            - text: VcCarouselPagination
+          - button "VcCheckboxGroup" [ref=e217] [cursor=pointer]:
+            - generic [ref=e218]:
+              - img [ref=e220]
+              - img [ref=e222]
+            - text: VcCheckboxGroup
+          - button "VcCheckbox" [ref=e225] [cursor=pointer]:
+            - generic [ref=e226]:
+              - img [ref=e228]
+              - img [ref=e230]
+            - text: VcCheckbox
+          - button "VcDialog" [ref=e233] [cursor=pointer]:
+            - generic [ref=e234]:
+              - img [ref=e236]
+              - img [ref=e238]
+            - text: VcDialog
+          - button "VcIcon" [ref=e241] [cursor=pointer]:
+            - generic [ref=e242]:
+              - img [ref=e244]
+              - img [ref=e246]
+            - text: VcIcon
+          - button "VcInputDetails" [ref=e249] [cursor=pointer]:
+            - generic [ref=e250]:
+              - img [ref=e252]
+              - img [ref=e254]
+            - text: VcInputDetails
+          - button "VcLabel" [ref=e257] [cursor=pointer]:
+            - generic [ref=e258]:
+              - img [ref=e260]
+              - img [ref=e262]
+            - text: VcLabel
+          - button "VcMarkdownRender" [ref=e265] [cursor=pointer]:
+            - generic [ref=e266]:
+              - img [ref=e268]
+              - img [ref=e270]
+            - text: VcMarkdownRender
+          - button "VcPriceDisplay" [ref=e273] [cursor=pointer]:
+            - generic [ref=e274]:
+              - img [ref=e276]
+              - img [ref=e278]
+            - text: VcPriceDisplay
+          - button "VcProductActions" [ref=e281] [cursor=pointer]:
+            - generic [ref=e282]:
+              - img [ref=e284]
+              - img [ref=e286]
+            - text: VcProductActions
+          - button "VcProductTitle" [ref=e289] [cursor=pointer]:
+            - generic [ref=e290]:
+              - img [ref=e292]
+              - img [ref=e294]
+            - text: VcProductTitle
+          - button "VcProperty" [ref=e297] [cursor=pointer]:
+            - generic [ref=e298]:
+              - img [ref=e300]
+              - img [ref=e302]
+            - text: VcProperty
+          - button "VcRadioButton" [ref=e305] [cursor=pointer]:
+            - generic [ref=e306]:
+              - img [ref=e308]
+              - img [ref=e310]
+            - text: VcRadioButton
+          - button "VcScrollbar" [ref=e313] [cursor=pointer]:
+            - generic [ref=e314]:
+              - img [ref=e316]
+              - img [ref=e318]
+            - text: VcScrollbar
+          - button "VcSwitch" [ref=e321] [cursor=pointer]:
+            - generic [ref=e322]:
+              - img [ref=e324]
+              - img [ref=e326]
+            - text: VcSwitch
+          - button "VcTypography" [ref=e329] [cursor=pointer]:
+            - generic [ref=e330]:
+              - img [ref=e332]
+              - img [ref=e334]
+            - text: VcTypography
+          - button "VcVariantPickerGroup" [ref=e337] [cursor=pointer]:
+            - generic [ref=e338]:
+              - img [ref=e340]
+              - img [ref=e342]
+            - text: VcVariantPickerGroup
+          - button "Molecules" [ref=e345] [cursor=pointer]:
+            - generic [ref=e346]:
+              - img [ref=e348]
+              - img [ref=e350]
+            - text: Molecules
+          - button "Organisms" [expanded] [ref=e353] [cursor=pointer]:
+            - generic [ref=e354]:
+              - img [ref=e356]
+              - img [ref=e358]
+            - text: Organisms
+          - button "VcProductButton" [ref=e361] [cursor=pointer]:
+            - generic [ref=e362]:
+              - img [ref=e364]
+              - img [ref=e366]
+            - text: VcProductButton
+          - button "VcAddToCart" [ref=e369] [cursor=pointer]:
+            - generic [ref=e370]:
+              - img [ref=e372]
+              - img [ref=e374]
+            - text: VcAddToCart
+          - button "VcPagination" [ref=e377] [cursor=pointer]:
+            - generic [ref=e378]:
+              - img [ref=e380]
+              - img [ref=e382]
+            - text: VcPagination
+          - button "VcProductCard" [expanded] [ref=e385] [cursor=pointer]:
+            - generic [ref=e386]:
+              - img [ref=e388]
+              - img [ref=e390]
+            - text: VcProductCard
+          - link "Docs" [ref=e393] [cursor=pointer]:
+            - /url: /?path=/docs/components-organisms-vcproductcard--docs
+            - img [ref=e395]
+            - text: Docs
+          - link "Basic" [ref=e399] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--basic
+            - img [ref=e401]
+            - text: Basic
+          - link "Image" [ref=e404] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--image
+            - img [ref=e406]
+            - text: Image
+          - link "Image Vendor" [ref=e409] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--image-vendor
+            - img [ref=e411]
+            - text: Image Vendor
+          - link "Image Vendor Properties" [ref=e414] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--image-vendor-properties
+            - img [ref=e416]
+            - text: Image Vendor Properties
+          - link "Image Price Card" [ref=e419] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--image-price-card
+            - img [ref=e421]
+            - text: Image Price Card
+          - link "Image Price List" [ref=e424] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--image-price-list
+            - img [ref=e426]
+            - text: Image Price List
+          - link "Image Vendor Price Card" [ref=e429] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--image-vendor-price-card
+            - img [ref=e431]
+            - text: Image Vendor Price Card
+          - link "Image Vendor Price List" [ref=e434] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--image-vendor-price-list
+            - img [ref=e436]
+            - text: Image Vendor Price List
+          - generic [ref=e438]:
+            - link "Full Card" [active] [ref=e439] [cursor=pointer]:
+              - /url: /?path=/story/components-organisms-vcproductcard--full-card
+              - img [ref=e441]
+              - text: Full Card
+            - link "Skip to canvas" [ref=e564] [cursor=pointer]:
+              - /url: "#storybook-preview-wrapper"
+          - link "Full List" [ref=e444] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--full-list
+            - img [ref=e446]
+            - text: Full List
+          - link "Full Card Recommended Way" [ref=e449] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--full-card-recommended-way
+            - img [ref=e451]
+            - text: Full Card Recommended Way
+          - link "Full List Recommended Way" [ref=e454] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--full-list-recommended-way
+            - img [ref=e456]
+            - text: Full List Recommended Way
+          - link "Line Item" [ref=e459] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--line-item
+            - img [ref=e461]
+            - text: Line Item
+          - link "Full List Quantity Stepper" [ref=e464] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--full-list-quantity-stepper
+            - img [ref=e466]
+            - text: Full List Quantity Stepper
+          - link "Full Grid Quantity Stepper" [ref=e469] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--full-grid-quantity-stepper
+            - img [ref=e471]
+            - text: Full Grid Quantity Stepper
+          - link "Line Item Quantity Stepper" [ref=e474] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--line-item-quantity-stepper
+            - img [ref=e476]
+            - text: Line Item Quantity Stepper
+          - link "List Title Only" [ref=e479] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--list-title-only
+            - img [ref=e481]
+            - text: List Title Only
+          - link "List Image Title" [ref=e484] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--list-image-title
+            - img [ref=e486]
+            - text: List Image Title
+          - link "List Title Vendor" [ref=e489] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--list-title-vendor
+            - img [ref=e491]
+            - text: List Title Vendor
+          - link "List Title Price" [ref=e494] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--list-title-price
+            - img [ref=e496]
+            - text: List Title Price
+          - link "List Title Add To Cart" [ref=e499] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--list-title-add-to-cart
+            - img [ref=e501]
+            - text: List Title Add To Cart
+          - link "List Title Product Button" [ref=e504] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--list-title-product-button
+            - img [ref=e506]
+            - text: List Title Product Button
+          - link "List Title Vendor Price" [ref=e509] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--list-title-vendor-price
+            - img [ref=e511]
+            - text: List Title Vendor Price
+          - link "List Title Price Add To Cart" [ref=e514] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--list-title-price-add-to-cart
+            - img [ref=e516]
+            - text: List Title Price Add To Cart
+          - link "List Title Vendor Add To Cart" [ref=e519] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--list-title-vendor-add-to-cart
+            - img [ref=e521]
+            - text: List Title Vendor Add To Cart
+          - link "List Title Vendor Price Add To Cart" [ref=e524] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--list-title-vendor-price-add-to-cart
+            - img [ref=e526]
+            - text: List Title Vendor Price Add To Cart
+          - link "List Title Price Product Button" [ref=e529] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--list-title-price-product-button
+            - img [ref=e531]
+            - text: List Title Price Product Button
+          - link "List Title Vendor Price Product Button" [ref=e534] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcproductcard--list-title-vendor-price-product-button
+            - img [ref=e536]
+            - text: List Title Vendor Price Product Button
+          - button "VcProductImage" [ref=e539] [cursor=pointer]:
+            - generic [ref=e540]:
+              - img [ref=e542]
+              - img [ref=e544]
+            - text: VcProductImage
+          - button "VcQuantityStepper" [ref=e547] [cursor=pointer]:
+            - generic [ref=e548]:
+              - img [ref=e550]
+              - img [ref=e552]
+            - text: VcQuantityStepper
+          - button "VcTable" [ref=e555] [cursor=pointer]:
+            - generic [ref=e556]:
+              - img [ref=e558]
+              - img [ref=e560]
+            - text: VcTable
+        - text: /
+  - main [ref=e53]:
+    - region "Toolbar" [ref=e54]:
+      - generic [ref=e55]: Toolbar
+      - generic [ref=e56]:
+        - generic [ref=e81]:
+          - button "Remount component" [ref=e565] [cursor=pointer]:
+            - img [ref=e566]
+          - button "Zoom in" [ref=e568] [cursor=pointer]:
+            - img [ref=e569]
+          - button "Zoom out" [ref=e572] [cursor=pointer]:
+            - img [ref=e573]
+          - button "Reset zoom" [ref=e576] [cursor=pointer]:
+            - img [ref=e577]
+          - button "Apply a grid to the preview" [ref=e82] [cursor=pointer]:
+            - img [ref=e83]
+          - button "Change the background of the preview" [ref=e86] [cursor=pointer]:
+            - img [ref=e87]
+          - button "Enable measure" [ref=e580] [cursor=pointer]:
+            - img [ref=e581]
+          - button "Apply outlines to the preview" [ref=e90] [cursor=pointer]:
+            - img [ref=e91]
+          - button "Change the size of the preview" [ref=e585] [cursor=pointer]:
+            - img [ref=e586]
+          - button "Vision simulator" [ref=e591] [cursor=pointer]:
+            - img [ref=e592]
+          - generic:
+            - img
+          - button "Default" [ref=e95] [cursor=pointer]:
+            - img [ref=e96]
+            - text: Default
+        - generic [ref=e98]:
+          - button "Go full screen" [ref=e99] [cursor=pointer]:
+            - img [ref=e100]
+          - link "Open canvas in new tab" [ref=e596] [cursor=pointer]:
+            - /url: iframe.html?globals=&args=&id=components-organisms-vcproductcard--full-card
+            - img [ref=e597]
+          - button "Copy canvas link" [ref=e600] [cursor=pointer]:
+            - img [ref=e601]
+    - generic [ref=e61]:
+      - link "Skip to sidebar" [ref=e102] [cursor=pointer]:
+        - /url: "#components-organisms-vcproductcard--full-card"
+      - iframe [ref=e62]:
+        - generic [ref=f3e5291]:
+          - generic [ref=f3e5292]:
+            - img "Product image" [ref=f3e5295]
+            - generic [ref=f3e5296]:
+              - button "Add to wishlist" [ref=f3e5297] [cursor=pointer]:
+                - img [ref=f3e5300]
+              - button "Add to compare" [ref=f3e5302] [cursor=pointer]:
+                - img [ref=f3e5305]
+          - generic [ref=f3e5307]:
+            - link "Product title Product title" [ref=f3e5309] [cursor=pointer]:
+              - /url: /iframe.html#
+            - generic [ref=f3e5310]: Product Vendor
+            - generic [ref=f3e5311]:
+              - generic [ref=f3e5312]:
+                - generic [ref=f3e5313]: Label
+                - generic [ref=f3e5315]: Value
+              - generic [ref=f3e5316]:
+                - generic [ref=f3e5317]: Label
+                - generic [ref=f3e5319]: Value
+              - generic [ref=f3e5320]:
+                - generic [ref=f3e5321]: Label
+                - generic [ref=f3e5323]: Value
+            - generic [ref=f3e5324]:
+              - generic [ref=f3e5325]: $1,300,000.00
+              - generic [ref=f3e5326]: $1,520,000.00
+            - generic [ref=f3e5327]:
+              - generic [ref=f3e5329]:
+                - spinbutton "Product quantity" [ref=f3e5330]
+                - button "Add to cart" [disabled] [ref=f3e5332]:
+                  - generic [ref=f3e5334]: Add to cart
+              - generic [ref=f3e5335]:
+                - generic [ref=f3e5337]:
+                  - img [ref=f3e5339]
+                  - text: "1230"
+                - generic [ref=f3e5342]:
+                  - img [ref=f3e5344]
+                  - text: "23"
+  - generic [ref=e606]:
+    - generic [ref=e608]:
+      - tablist [ref=e610]:
+        - tab "Controls 6" [ref=e611] [cursor=pointer]:
+          - generic [ref=e612]:
+            - generic [ref=e613]: Controls
+            - generic [ref=e614]: "6"
+        - tab "Actions" [ref=e615] [cursor=pointer]:
+          - generic [ref=e617]: Actions
+        - tab "Interactions" [ref=e618] [cursor=pointer]:
+          - generic [ref=e620]: Interactions
+        - tab "Accessibility" [ref=e621] [cursor=pointer]:
+          - generic [ref=e623]: Accessibility
+      - generic [ref=e626]:
+        - button "Change addon orientation [alt D]" [ref=e627] [cursor=pointer]:
+          - img [ref=e628]
+        - button "Hide addons [alt A]" [ref=e631] [cursor=pointer]:
+          - img [ref=e632]
+    - generic [ref=e639]:
+      - button "Reset controls" [ref=e641] [cursor=pointer]:
+        - img [ref=e642]
+      - table [ref=e644]:
+        - rowgroup [ref=e645]:
+          - row "Name Description Default Control" [ref=e646]:
+            - columnheader "Name" [ref=e647]
+            - columnheader "Description" [ref=e648]
+            - columnheader "Default" [ref=e649]
+            - columnheader "Control" [ref=e650]
+        - rowgroup [ref=e651]:
+          - row "Hide props items props Hide props items" [ref=e652]:
+            - cell "Hide props items props" [ref=e653]:
+              - button "Hide props items" [ref=e654]
+              - generic [ref=e655]:
+                - img [ref=e656]
+                - text: props
+            - cell "Hide props items" [ref=e658]:
+              - button "Hide props items" [ref=e659]
+          - row "viewMode grid list item \"grid\" grid list item" [ref=e660]:
+            - cell "viewMode" [ref=e661]
+            - cell "grid list item" [ref=e662]:
+              - generic [ref=e664]:
+                - generic [ref=e665]: grid
+                - generic [ref=e666]: list
+                - generic [ref=e667]: item
+            - cell "\"grid\"" [ref=e668]:
+              - generic [ref=e670]: "\"grid\""
+            - cell "grid list item" [ref=e671]:
+              - generic [ref=e672]:
+                - generic [ref=e673]:
+                  - radio "grid" [checked] [ref=e674]
+                  - generic [ref=e675]: grid
+                - generic [ref=e676]:
+                  - radio "list" [ref=e677]
+                  - generic [ref=e678]: list
+                - generic [ref=e679]:
+                  - radio "item" [ref=e680]
+                  - generic [ref=e681]: item
+          - row "background boolean true Set boolean" [ref=e682]:
+            - cell "background" [ref=e683]
+            - cell "boolean" [ref=e684]:
+              - generic [ref=e687]: boolean
+            - cell "true" [ref=e688]:
+              - generic [ref=e690]: "true"
+            - cell "Set boolean" [ref=e691]:
+              - button "Set boolean" [ref=e692] [cursor=pointer]
+          - row "border boolean - Set boolean" [ref=e693]:
+            - cell "border" [ref=e694]
+            - cell "boolean" [ref=e695]:
+              - generic [ref=e698]: boolean
+            - cell "-" [ref=e699]
+            - cell "Set boolean" [ref=e700]:
+              - button "Set boolean" [ref=e701] [cursor=pointer]
+          - row "Hide slots items slots Hide slots items" [ref=e702]:
+            - cell "Hide slots items slots" [ref=e703]:
+              - button "Hide slots items" [ref=e704]
+              - generic [ref=e705]:
+                - img [ref=e706]
+                - text: slots
+            - cell "Hide slots items" [ref=e708]:
+              - button "Hide slots items" [ref=e709]
+          - row "media other - Set object" [ref=e710]:
+            - cell "media" [ref=e711]
+            - cell "other" [ref=e712]:
+              - generic [ref=e715]: other
+            - cell "-" [ref=e716]
+            - cell "Set object" [ref=e717]:
+              - button "Set object" [ref=e718] [cursor=pointer]
+          - row "default other - Set object" [ref=e719]:
+            - cell "default" [ref=e720]
+            - cell "other" [ref=e721]:
+              - generic [ref=e724]: other
+            - cell "-" [ref=e725]
+            - cell "Set object" [ref=e726]:
+              - button "Set object" [ref=e727] [cursor=pointer]
+          - row "expanded-content other - Set object" [ref=e728]:
+            - cell "expanded-content" [ref=e729]
+            - cell "other" [ref=e730]:
+              - generic [ref=e733]: other
+            - cell "-" [ref=e734]
+            - cell "Set object" [ref=e735]:
+              - button "Set object" [ref=e736] [cursor=pointer]

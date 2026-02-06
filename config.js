@@ -34,7 +34,8 @@ const requiredVars = [
     'DATATRANCE_OTP',
     'FIGMA_API_KEY',
     'BROWSERSTACK_USERNAME',
-    'BROWSERSTACK_ACCESS_KEY'
+    'BROWSERSTACK_ACCESS_KEY' 
+    
     
 ];
 
@@ -104,7 +105,13 @@ export const env = {
 
     // Browserstack credentials
     BROWSERSTACK_USERNAME: getEnvVar('BROWSERSTACK_USERNAME'),
-    BROWSERSTACK_ACCESS_KEY: getEnvVar('BROWSERSTACK_ACCESS_KEY')
+    BROWSERSTACK_ACCESS_KEY: getEnvVar('BROWSERSTACK_ACCESS_KEY'),
+
+    // Builder.io integration (optional)
+    BUILDER_IO_URL: getEnvVar('BUILDER_IO_URL', 'https://builder.io/content'),
+    BUILDER_IO_EMAIL: getEnvVar('BUILDER_IO_EMAIL'),
+    BUILDER_IO_PASSWORD: getEnvVar('BUILDER_IO_PASSWORD'),
+    BUILDER_IO_SPACE: getEnvVar('BUILDER_IO_SPACE', 'VCST QA')
 };
 
 // Optional: Export individual getters for sensitive data
