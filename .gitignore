@@ -6,4 +6,5 @@ node_modules
 .serena/
 settings.json
 test-results/
+.claude/
 
