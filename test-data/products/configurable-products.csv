@@ -1,0 +1,51 @@
+product_id,sku_base,product_name,category,base_price,currency,has_variants,variant_type,variant_options,stock_strategy,test_purpose,notes
+VAR-001,TSHIRT,Classic T-Shirt,Clothing > Tops,29.99,USD,Yes,Size + Color,"Size: S|M|L|XL|XXL, Color: Black|White|Navy|Gray|Red",Per variant,Size and color variants,Most common variant configuration
+VAR-002,JEANS,Denim Jeans,Clothing > Pants,79.99,USD,Yes,Size + Inseam,"Size: 28|30|32|34|36|38, Inseam: 30|32|34",Per variant,Size with inseam,Complex size variants
+VAR-003,SHOES,Running Shoes,Clothing > Footwear,99.99,USD,Yes,Size + Width,"Size: 7|8|9|10|11|12|13, Width: Narrow|Medium|Wide",Per variant,Shoe sizing,Multiple dimensions
+VAR-004,DRESS,Summer Dress,Clothing > Dresses,89.99,USD,Yes,Size + Color,"Size: XS|S|M|L|XL, Color: Floral|Solid Blue|Red|Black",Per variant,Women's sizing,Fashion variants
+VAR-005,POLO,Polo Shirt,Clothing > Tops,49.99,USD,Yes,Size + Color,"Size: S|M|L|XL|XXL|XXXL, Color: White|Navy|Green|Yellow",Per variant,Extended sizes,Large size range
+VAR-006,HOODIE,Pullover Hoodie,Clothing > Outerwear,69.99,USD,Yes,Size + Color,"Size: S|M|L|XL|XXL, Color: Black|Gray|Navy|Burgundy",Per variant,Hoodie variants,Popular item
+VAR-007,JACKET,Leather Jacket,Clothing > Outerwear,299.99,USD,Yes,Size,"Size: S|M|L|XL|XXL",Per variant,Size only variant,High-value clothing
+VAR-008,SHORTS,Athletic Shorts,Clothing > Activewear,39.99,USD,Yes,Size + Color,"Size: S|M|L|XL|XXL, Color: Black|Navy|Gray|Royal Blue",Per variant,Activewear,Sports clothing
+VAR-009,LEGGINGS,Yoga Leggings,Clothing > Activewear,49.99,USD,Yes,Size + Color,"Size: XS|S|M|L|XL, Color: Black|Navy|Purple|Teal",Per variant,Women's activewear,Fitness clothing
+VAR-010,SWIMSUIT,Women's Swimsuit,Clothing > Swimwear,59.99,USD,Yes,Size + Style,"Size: XS|S|M|L|XL, Style: One-Piece|Bikini|Tankini",Per variant,Swimwear variants,Seasonal item
+VAR-011,WATCH,Smart Watch,Electronics > Wearables,299.99,USD,Yes,Band Color + Case Size,"Band: Black|White|Blue|Red|Green, Case: 40mm|44mm",Per variant,Tech product variants,Multiple dimensions
+VAR-012,PHONE,Smartphone,Electronics > Phones,799.99,USD,Yes,Storage + Color,"Storage: 128GB|256GB|512GB, Color: Black|White|Blue|Green|Red",Per variant,Phone configuration,High-value electronics
+VAR-013,LAPTOP,Ultrabook Laptop,Electronics > Computers,1199.99,USD,Yes,RAM + Storage,"RAM: 8GB|16GB|32GB, Storage: 256GB|512GB|1TB",Per variant,Laptop specs,Complex configuration
+VAR-014,TABLET,Tablet,Electronics > Tablets,499.99,USD,Yes,Storage + Connectivity,"Storage: 64GB|128GB|256GB, Connectivity: Wi-Fi|Wi-Fi+Cellular",Per variant,Tablet options,Connectivity variants
+VAR-015,HEADPHONES,Wireless Headphones,Electronics > Audio,249.99,USD,Yes,Color,"Color: Black|White|Silver|Rose Gold|Blue",Per variant,Color only,Simple variant
+VAR-016,CASE,Phone Case,Electronics > Accessories,29.99,USD,Yes,Phone Model + Color,"Model: iPhone 14|iPhone 14 Pro|iPhone 15|iPhone 15 Pro|Samsung S23, Color: Clear|Black|Blue|Red|Pink",Per variant,Accessory compatibility,Device-specific
+VAR-017,CHARGER,Fast Charger,Electronics > Accessories,39.99,USD,Yes,Wattage + Cable,"Wattage: 20W|30W|65W|100W, Cable: USB-C|Lightning|Both",Per variant,Charger variants,Tech specifications
+VAR-018,SPEAKER,Bluetooth Speaker,Electronics > Audio,129.99,USD,Yes,Color,"Color: Black|White|Red|Blue|Green|Camo",Per variant,Speaker colors,Audio product
+VAR-019,BACKPACK,Travel Backpack,Accessories > Bags,89.99,USD,Yes,Size + Color,"Size: 30L|40L|50L, Color: Black|Gray|Navy|Olive Green",Per variant,Backpack variants,Travel gear
+VAR-020,SUITCASE,Rolling Suitcase,Accessories > Luggage,179.99,USD,Yes,Size + Color,"Size: Carry-On|Medium|Large, Color: Black|Navy|Red|Silver",Per variant,Luggage sizing,Travel essential
+VAR-021,TENT,Camping Tent,Sports > Camping,299.99,USD,Yes,Capacity,"Capacity: 2-Person|4-Person|6-Person|8-Person",Per variant,Tent size,Outdoor gear
+VAR-022,SLEEPBAG,Sleeping Bag,Sports > Camping,79.99,USD,Yes,Temperature + Color,"Temperature: 20F|32F|50F, Color: Blue|Green|Red|Black",Per variant,Sleeping bag specs,Temp rating important
+VAR-023,BIKE,Mountain Bike,Sports > Cycling,899.99,USD,Yes,Frame Size + Color,"Frame: Small|Medium|Large|XLarge, Color: Black|Red|Blue|Green",Per variant,Bike configuration,High-value sports
+VAR-024,HELMET,Bike Helmet,Sports > Cycling,59.99,USD,Yes,Size + Color,"Size: Small|Medium|Large|XLarge, Color: Black|White|Red|Blue|Yellow",Per variant,Safety gear,Size critical
+VAR-025,GLOVES,Cycling Gloves,Sports > Cycling,34.99,USD,Yes,Size,"Size: XS|S|M|L|XL|XXL",Per variant,Glove sizing,Simple size variant
+VAR-026,KETTLEBELL,Kettlebell,Sports > Fitness,29.99,USD,Yes,Weight,"Weight: 10lb|15lb|20lb|25lb|30lb|35lb|40lb|45lb|50lb",Per variant,Weight variants,Price varies by weight
+VAR-027,DUMBBELL,Adjustable Dumbbell,Sports > Fitness,149.99,USD,Yes,Weight Range,"Range: 5-25lb|5-50lb|10-90lb",Per variant,Dumbbell sets,Different weight ranges
+VAR-028,YOGAMAT,Yoga Mat,Sports > Fitness,49.99,USD,Yes,Thickness + Color,"Thickness: 4mm|6mm|8mm, Color: Purple|Blue|Pink|Black|Green",Per variant,Mat specifications,Thickness affects price
+VAR-029,RESISTBAND,Resistance Bands Set,Sports > Fitness,29.99,USD,Yes,Resistance Level,"Level: Light|Medium|Heavy|Extra Heavy|Complete Set",Per variant,Resistance variants,Fitness equipment
+VAR-030,FOAMROLLER,Foam Roller,Sports > Fitness,34.99,USD,Yes,Size + Density,"Size: 12-inch|18-inch|24-inch|36-inch, Density: Soft|Medium|Firm",Per variant,Foam roller options,Recovery tool
+VAR-031,TOWEL,Beach Towel,Home > Bath,24.99,USD,Yes,Size + Color,"Size: Standard|Oversized, Color: Blue|Green|Pink|Yellow|Striped",Per variant,Towel variants,Simple variants
+VAR-032,RUG,Area Rug,Home > Decor,149.99,USD,Yes,Size + Pattern,"Size: 5x7|8x10|9x12, Pattern: Geometric|Floral|Abstract|Solid",Per variant,Rug sizing,Size affects price significantly
+VAR-033,CURTAINS,Window Curtains,Home > Decor,49.99,USD,Yes,Length + Color,"Length: 63-inch|84-inch|95-inch|108-inch, Color: White|Beige|Gray|Navy|Black",Per variant,Curtain options,Length important
+VAR-034,PILLOW,Bed Pillow,Home > Bedroom,39.99,USD,Yes,Fill + Firmness,"Fill: Down|Down Alternative|Memory Foam, Firmness: Soft|Medium|Firm",Per variant,Pillow preferences,Sleep product
+VAR-035,SHEETS,Bed Sheet Set,Home > Bedroom,59.99,USD,Yes,Size + Color,"Size: Twin|Full|Queen|King|Cal King, Color: White|Gray|Navy|Sage|Blush",Per variant,Sheet sizing,Bedding essential
+VAR-036,COMFORTER,Down Comforter,Home > Bedroom,129.99,USD,Yes,Size + Warmth,"Size: Twin|Full|Queen|King, Warmth: Lightweight|All-Season|Extra Warm",Per variant,Comforter options,Seasonal consideration
+VAR-037,BLANKET,Weighted Blanket,Home > Bedroom,89.99,USD,Yes,Weight + Size,"Weight: 10lb|15lb|20lb|25lb, Size: Twin|Queen|King",Per variant,Weighted blanket,Weight and size critical
+VAR-038,LAMP,Table Lamp,Home > Lighting,59.99,USD,Yes,Style + Finish,"Style: Modern|Traditional|Industrial, Finish: Black|White|Brass|Chrome",Per variant,Lamp variants,Decor item
+VAR-039,CHAIR,Dining Chair,Home > Furniture,129.99,USD,Yes,Material + Color,"Material: Wood|Upholstered|Metal, Color: Natural|Black|White|Gray",Per variant,Chair options,Furniture variant
+VAR-040,TABLE,Coffee Table,Home > Furniture,299.99,USD,Yes,Size + Material,"Size: Small|Medium|Large, Material: Wood|Glass|Marble|Metal",Per variant,Table variants,Furniture sizing
+VAR-041,SHELF,Wall Shelf,Home > Furniture,49.99,USD,Yes,Length + Color,"Length: 24-inch|36-inch|48-inch, Color: White|Black|Natural Wood|Walnut",Per variant,Shelf options,Wall mounting
+VAR-042,MIRROR,Wall Mirror,Home > Decor,79.99,USD,Yes,Size + Frame,"Size: 24x36|30x40|36x48, Frame: Black|Gold|Silver|White|No Frame",Per variant,Mirror sizing,Fragile item
+VAR-043,VASE,Decorative Vase,Home > Decor,34.99,USD,Yes,Size + Color,"Size: Small|Medium|Large, Color: White|Black|Blue|Green|Gold",Per variant,Vase options,Home accent
+VAR-044,CANDLE,Scented Candle,Home > Decor,24.99,USD,Yes,Scent + Size,"Scent: Vanilla|Lavender|Citrus|Pine|Rose, Size: Small 8oz|Large 16oz",Per variant,Candle variants,Fragrance product
+VAR-045,DIFFUSER,Essential Oil Diffuser,Home > Wellness,49.99,USD,Yes,Capacity + Color,"Capacity: 100ml|300ml|500ml, Color: White|Wood Grain|Black|Gray",Per variant,Diffuser options,Wellness product
+VAR-046,VITAMINS,Multivitamin,Health > Supplements,29.99,USD,Yes,Count + Type,"Count: 30|60|90|180, Type: Men's|Women's|Senior|Kids",Per variant,Supplement variants,Health product
+VAR-047,PROTEIN,Protein Powder,Health > Fitness,49.99,USD,Yes,Flavor + Size,"Flavor: Vanilla|Chocolate|Strawberry|Unflavored, Size: 1lb|2lb|5lb",Per variant,Protein options,Fitness nutrition
+VAR-048,COFFEE,Coffee Beans,Food > Beverages,19.99,USD,Yes,Roast + Size,"Roast: Light|Medium|Dark|Espresso, Size: 12oz|1lb|2lb|5lb",Per variant,Coffee variants,Consumable
+VAR-049,TEA,Loose Leaf Tea,Food > Beverages,14.99,USD,Yes,Type + Size,"Type: Black|Green|Herbal|Oolong|White, Size: 4oz|8oz|16oz",Per variant,Tea options,Beverage variety
+VAR-050,DOGFOOD,Premium Dog Food,Pet > Food,49.99,USD,Yes,Protein + Size,"Protein: Chicken|Beef|Fish|Lamb, Size: 5lb|15lb|30lb|50lb",Per variant,Pet food variants,Weight affects price

@@ -1,7 +1,7 @@
 import { env } from './config.js';
 
-console.log('VCST_FRONT_URL:', env.VCST_FRONT_URL);
-console.log('VCST_BACK_URL:', env.VCST_BACK_URL);
+console.log('FRONT_URL:', env.FRONT_URL);
+console.log('BACK_URL:', env.BACK_URL);
 console.log('VIRTO_START_FRONT:', env.VIRTO_START_FRONT);
 console.log('VIRTO_START_BACK:', env.VIRTO_START_BACK);
 console.log('ADMIN:', env.ADMIN);

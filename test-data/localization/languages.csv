@@ -1,0 +1,22 @@
+language_code,language_name,native_name,supported,text_direction,date_format,number_format,currency_symbol,test_priority,translation_coverage,notes
+en,English,English,Yes,LTR,MM/DD/YYYY,"1,234.56",$,Critical,100%,Default language - baseline for all tests
+de,German,Deutsch,Yes,LTR,DD.MM.YYYY,"1.234,56",€,High,100%,German language with umlauts (ä ö ü ß)
+fr,French,Français,Yes,LTR,DD/MM/YYYY,"1 234,56",€,High,100%,French with accents (é è ê ë à â ù û ç)
+es,Spanish,Español,Yes,LTR,DD/MM/YYYY,"1.234,56",€,High,100%,Spanish with accents (á é í ó ú ñ ¿ ¡)
+no,Norwegian,Norsk,Yes,LTR,DD.MM.YYYY,"1 234,56",kr,High,100%,Norwegian with æ ø å
+sv,Swedish,Svenska,Yes,LTR,YYYY-MM-DD,"1 234,56",kr,High,100%,Swedish with å ä ö
+pl,Polish,Polski,Yes,LTR,DD.MM.YYYY,"1 234,56",zł,Medium,100%,Polish with ą ć ę ł ń ó ś ź ż
+it,Italian,Italiano,Yes,LTR,DD/MM/YYYY,"1.234,56",€,Medium,100%,Italian with à è é ì ò ù
+pt,Portuguese,Português,Yes,LTR,DD/MM/YYYY,"1.234,56",€,Medium,100%,Portuguese with ã õ á é í ó ú â ê ô ç
+ja,Japanese,日本語,Yes,LTR,YYYY/MM/DD,"1,234.56",¥,High,95%,Japanese Kanji Hiragana Katakana - complex script
+zh,Chinese Simplified,简体中文,Yes,LTR,YYYY/MM/DD,"1,234.56",¥,High,95%,Simplified Chinese characters - logographic
+fi,Finnish,Suomi,Yes,LTR,DD.MM.YYYY,"1 234,56",€,Medium,100%,Finnish with ä ö å
+ru,Russian,Русский,Yes,LTR,DD.MM.YYYY,"1 234,56",₽,Medium,90%,Russian Cyrillic alphabet
+ar,Arabic,العربية,No,RTL,DD/MM/YYYY,"1,234.56",﷼,Low,0%,Arabic RTL (Right-to-Left) - not yet supported
+he,Hebrew,עברית,No,RTL,DD/MM/YYYY,"1,234.56",₪,Low,0%,Hebrew RTL (Right-to-Left) - not yet supported
+ko,Korean,한국어,No,LTR,YYYY.MM.DD,"1,234.56",₩,Low,0%,Korean Hangul - future support planned
+th,Thai,ไทย,No,LTR,DD/MM/YYYY,"1,234.56",฿,Low,0%,Thai script - future support planned
+vi,Vietnamese,Tiếng Việt,No,LTR,DD/MM/YYYY,"1.234,56",₫,Low,0%,Vietnamese with tones - future support
+tr,Turkish,Türkçe,No,LTR,DD.MM.YYYY,"1.234,56",₺,Low,0%,Turkish with ı ğ ü ş ö ç - future support
+nl,Dutch,Nederlands,No,LTR,DD-MM-YYYY,"1.234,56",€,Low,0%,Dutch - future support planned
+da,Danish,Dansk,No,LTR,DD-MM-YYYY,"1.234,56",kr,Low,0%,Danish with æ ø å - future support

@@ -1,0 +1,101 @@
+product_id,sku,product_name,category,price,currency,in_stock,stock_qty,description,test_purpose,notes
+PROD-001,WH-001,Wireless Headphones,Electronics > Audio,99.99,USD,Yes,50,Bluetooth wireless headphones with noise cancellation,Standard product for checkout,Most commonly used test product
+PROD-002,LT-001,Gaming Laptop,Electronics > Computers,1299.99,USD,Yes,10,15-inch gaming laptop with RTX graphics,High-value item testing,Tests expensive products
+PROD-003,SH-001,Running Shoes,Clothing > Footwear,79.99,USD,Yes,100,Athletic running shoes size 10,Clothing category,Has size variants
+PROD-004,CF-001,Coffee Maker,Home > Kitchen,49.99,USD,Yes,25,12-cup programmable coffee maker,Standard home goods,Mid-range price
+PROD-005,PH-001,Smartphone Case,Electronics > Accessories,19.99,USD,Yes,200,Protective case for iPhone 14,Low-cost accessory,Quick add to cart
+PROD-006,BK-001,Fiction Novel,Books > Fiction,14.99,USD,Yes,500,Bestselling fiction novel,Digital/physical hybrid,Low price point
+PROD-007,CH-001,Office Chair,Furniture > Office,299.99,USD,Yes,8,Ergonomic office chair with lumbar support,Furniture category,Large item shipping
+PROD-008,WB-001,Smart Watch,Electronics > Wearables,249.99,USD,Yes,30,Fitness tracker smart watch,Popular category,Has color variants
+PROD-009,JK-001,Winter Jacket,Clothing > Outerwear,129.99,USD,Yes,40,Insulated winter jacket,Seasonal item,Has size and color variants
+PROD-010,TB-001,Tablet 10-inch,Electronics > Tablets,399.99,USD,Yes,15,10-inch Android tablet,Tablet category,Mid-high price
+PROD-011,HD-001,USB-C Hard Drive 1TB,Electronics > Storage,89.99,USD,Yes,60,Portable 1TB external hard drive,Storage category,Tech accessory
+PROD-012,KY-001,Mechanical Keyboard,Electronics > Peripherals,149.99,USD,Yes,35,RGB mechanical gaming keyboard,Gaming peripherals,Popular item
+PROD-013,MS-001,Wireless Mouse,Electronics > Peripherals,29.99,USD,Yes,150,Ergonomic wireless mouse,Low-cost peripheral,Bundle candidate
+PROD-014,SP-001,Bluetooth Speaker,Electronics > Audio,59.99,USD,Yes,80,Portable waterproof speaker,Audio category,Mid-range
+PROD-015,BG-001,Backpack,Accessories > Bags,69.99,USD,Yes,45,Travel backpack 40L,Bags category,Practical item
+PROD-016,TH-001,USB-C Charger,Electronics > Accessories,24.99,USD,Yes,300,Fast charging USB-C adapter,High stock item,Frequently purchased
+PROD-017,SN-001,Sunglasses,Accessories > Eyewear,89.99,USD,Yes,70,Polarized UV protection sunglasses,Accessories,Has style variants
+PROD-018,DK-001,Standing Desk,Furniture > Office,499.99,USD,Yes,5,Electric height-adjustable desk,High-value furniture,Large item
+PROD-019,MK-001,Makeup Kit,Beauty > Cosmetics,79.99,USD,Yes,55,Professional makeup brush set,Beauty category,Gender-specific
+PROD-020,SK-001,Skincare Set,Beauty > Skincare,59.99,USD,Yes,40,Anti-aging skincare collection,Beauty bundle,Multi-item set
+PROD-021,PF-001,Perfume 50ml,Beauty > Fragrance,89.99,USD,Yes,30,Designer fragrance 50ml,Luxury item,Restricted shipping
+PROD-022,AF-001,Air Fryer,Home > Kitchen,119.99,USD,Yes,20,5-quart digital air fryer,Kitchen appliance,Popular item
+PROD-023,RV-001,Robot Vacuum,Home > Appliances,299.99,USD,Yes,12,Smart robot vacuum cleaner,Smart home,High-tech appliance
+PROD-024,EB-001,Electric Toothbrush,Personal Care > Dental,69.99,USD,Yes,65,Sonic electric toothbrush,Personal care,Replacement heads available
+PROD-025,HD-002,Hair Dryer,Personal Care > Hair,49.99,USD,Yes,50,Ionic hair dryer 1875W,Hair care,Standard item
+PROD-026,YM-001,Yoga Mat,Sports > Fitness,29.99,USD,Yes,90,Non-slip yoga mat with strap,Fitness,Low price
+PROD-027,DB-001,Dumbbell Set 20lb,Sports > Fitness,79.99,USD,Yes,25,Adjustable dumbbell set,Heavy item,High shipping cost
+PROD-028,TT-001,Tent 4-Person,Sports > Camping,199.99,USD,Yes,15,Waterproof camping tent,Outdoor gear,Seasonal
+PROD-029,BB-001,Basketball,Sports > Team Sports,24.99,USD,Yes,100,Official size basketball,Sports equipment,Simple product
+PROD-030,GL-001,Gaming Console,Electronics > Gaming,499.99,USD,Yes,8,Next-gen gaming console,High-value electronics,Limited stock
+PROD-031,TV-001,Smart TV 55-inch,Electronics > TVs,799.99,USD,Yes,6,4K Smart TV 55-inch,High-value large item,Freight shipping
+PROD-032,CM-001,Digital Camera,Electronics > Cameras,649.99,USD,Yes,10,Mirrorless digital camera 24MP,Photography,High-value
+PROD-033,PR-001,Printer All-in-One,Electronics > Office,179.99,USD,Yes,18,Wireless all-in-one printer,Office equipment,Requires ink cartridges
+PROD-034,RT-001,Wi-Fi Router,Electronics > Networking,89.99,USD,Yes,40,Dual-band Wi-Fi 6 router,Networking,Tech item
+PROD-035,PB-001,Power Bank 20000mAh,Electronics > Accessories,39.99,USD,Yes,120,Portable power bank,Mobile accessory,High stock
+PROD-036,EC-001,Espresso Machine,Home > Kitchen,299.99,USD,Yes,12,Semi-automatic espresso machine,Premium kitchen,Coffee enthusiasts
+PROD-037,BL-001,Blender 1000W,Home > Kitchen,79.99,USD,Yes,30,High-speed blender,Kitchen small appliance,Popular
+PROD-038,MW-001,Microwave Oven,Home > Kitchen,149.99,USD,Yes,15,1100W countertop microwave,Kitchen major appliance,Standard
+PROD-039,VC-001,Vacuum Cleaner,Home > Appliances,179.99,USD,Yes,20,Bagless upright vacuum,Cleaning appliance,Standard home
+PROD-040,FN-001,Floor Fan,Home > Appliances,49.99,USD,Yes,35,Oscillating floor fan 16-inch,Seasonal appliance,Summer item
+PROD-041,HT-001,Space Heater,Home > Appliances,69.99,USD,Yes,25,Ceramic space heater,Seasonal appliance,Winter item
+PROD-042,LM-001,Desk Lamp LED,Home > Lighting,34.99,USD,Yes,80,Adjustable LED desk lamp,Lighting,Office/home
+PROD-043,PL-001,Pendant Light,Home > Lighting,89.99,USD,Yes,22,Modern pendant light fixture,Home improvement,Installation required
+PROD-044,DR-001,Area Rug 5x7,Home > Decor,129.99,USD,Yes,18,Modern geometric area rug,Home decor,Large item
+PROD-045,CU-001,Throw Pillows Set,Home > Decor,39.99,USD,Yes,60,Decorative throw pillows 4-pack,Home accessories,Bundle
+PROD-046,CN-001,Canvas Wall Art,Home > Decor,79.99,USD,Yes,30,Abstract canvas wall art 24x36,Home decor,Fragile
+PROD-047,PL-002,Indoor Plant Pot,Home > Garden,19.99,USD,Yes,100,Ceramic plant pot with saucer,Garden,Low cost
+PROD-048,GT-001,Garden Tool Set,Home > Garden,59.99,USD,Yes,28,5-piece garden tool set,Gardening,Tool set
+PROD-049,HS-001,Garden Hose 50ft,Home > Garden,34.99,USD,Yes,40,Flexible garden hose,Outdoor,Standard
+PROD-050,SD-001,Bird Feeder,Home > Garden,24.99,USD,Yes,50,Hanging bird feeder,Outdoor decor,Seasonal
+PROD-051,SG-001,Grill BBQ,Home > Outdoor,399.99,USD,Yes,8,Gas grill 4-burner,Outdoor cooking,High-value large
+PROD-052,PF-002,Patio Furniture Set,Home > Outdoor,899.99,USD,Yes,4,4-piece patio furniture set,Outdoor furniture,Very high value
+PROD-053,UM-001,Patio Umbrella,Home > Outdoor,129.99,USD,Yes,12,9-ft patio umbrella with base,Outdoor shade,Large item
+PROD-054,TL-001,Tool Set 100-piece,Tools > Hand Tools,149.99,USD,Yes,15,100-piece mechanics tool set,DIY tools,Heavy item
+PROD-055,DR-002,Cordless Drill,Tools > Power Tools,89.99,USD,Yes,20,18V cordless drill kit,Power tools,Battery included
+PROD-056,SW-001,Circular Saw,Tools > Power Tools,119.99,USD,Yes,10,7.25-inch circular saw,Power tools,Professional grade
+PROD-057,LD-001,Ladder 6ft,Tools > Ladders,79.99,USD,Yes,18,Folding step ladder,Safety equipment,Large/bulky
+PROD-058,PB-002,Toolbox,Tools > Storage,39.99,USD,Yes,45,Plastic tool organizer box,Tool storage,Standard
+PROD-059,TP-001,Tape Measure 25ft,Tools > Measuring,12.99,USD,Yes,150,Retractable tape measure,Small tool,Low cost
+PROD-060,LV-001,Laser Level,Tools > Measuring,59.99,USD,Yes,25,Self-leveling laser level,Professional tool,Tech tool
+PROD-061,PT-001,Paint Roller Set,Home Improvement > Painting,19.99,USD,Yes,70,Paint roller and tray set,DIY painting,Low cost
+PROD-062,BR-001,Paint Brush Set,Home Improvement > Painting,24.99,USD,Yes,60,Professional paint brush set,DIY painting,Multi-piece
+PROD-063,ST-001,Step Stool,Home > Storage,29.99,USD,Yes,50,2-step folding stool,Utility,Standard
+PROD-064,SB-001,Storage Bins 6-pack,Home > Storage,34.99,USD,Yes,40,Plastic storage containers,Organization,Bundle
+PROD-065,CB-001,Closet Organizer,Home > Storage,79.99,USD,Yes,20,5-shelf hanging organizer,Closet storage,Space-saving
+PROD-066,DW-001,Dish Rack,Home > Kitchen,24.99,USD,Yes,65,Stainless steel dish drying rack,Kitchen utility,Standard
+PROD-067,CT-001,Cutting Board Set,Home > Kitchen,29.99,USD,Yes,55,Bamboo cutting board set 3-piece,Kitchen tools,Eco-friendly
+PROD-068,KN-001,Kitchen Knife Set,Home > Kitchen,89.99,USD,Yes,30,8-piece chef knife set with block,Kitchen essentials,Sharp/fragile
+PROD-069,PS-001,Pots and Pans Set,Home > Kitchen,149.99,USD,Yes,18,Non-stick cookware set 10-piece,Cookware,Bundle
+PROD-070,BC-001,Baking Sheet Set,Home > Kitchen,34.99,USD,Yes,40,Non-stick baking sheet 3-pack,Baking,Standard
+PROD-071,MB-001,Mixing Bowls Set,Home > Kitchen,24.99,USD,Yes,50,Stainless steel mixing bowls 5-piece,Kitchen prep,Bundle
+PROD-072,SM-001,Silicone Mats 2-pack,Home > Kitchen,19.99,USD,Yes,80,Reusable silicone baking mats,Baking accessory,Eco-friendly
+PROD-073,TW-001,Kitchen Towels 6-pack,Home > Kitchen,14.99,USD,Yes,100,Cotton kitchen dish towels,Kitchen linens,Low cost
+PROD-074,AP-001,Apron,Home > Kitchen,19.99,USD,Yes,60,Adjustable chef apron,Kitchen apparel,Gift item
+PROD-075,OG-001,Oven Gloves,Home > Kitchen,12.99,USD,Yes,90,Heat-resistant oven mitts,Safety,Low cost
+PROD-076,TS-001,Towel Set,Home > Bath,39.99,USD,Yes,35,Bath towel set 6-piece,Bath linens,Bundle
+PROD-077,SC-001,Shower Curtain,Home > Bath,24.99,USD,Yes,50,Waterproof shower curtain,Bath accessory,Standard
+PROD-078,BM-001,Bath Mat,Home > Bath,19.99,USD,Yes,70,Memory foam bath mat,Bath safety,Comfort item
+PROD-079,TB-002,Toothbrush Holder,Home > Bath,14.99,USD,Yes,80,Stainless steel holder,Bath organization,Small item
+PROD-080,SD-002,Soap Dispenser,Home > Bath,12.99,USD,Yes,90,Automatic soap dispenser,Bath accessory,Battery-powered
+PROD-081,BS-001,Bedding Set Queen,Home > Bedroom,89.99,USD,Yes,25,Queen size bedding set 7-piece,Bedroom linens,Bundle
+PROD-082,PL-003,Pillow 2-pack,Home > Bedroom,39.99,USD,Yes,40,Memory foam pillows,Sleep comfort,Bundle
+PROD-083,BL-002,Blanket Fleece,Home > Bedroom,34.99,USD,Yes,50,Soft fleece throw blanket,Bedroom comfort,Seasonal
+PROD-084,CM-002,Comforter Queen,Home > Bedroom,69.99,USD,Yes,30,Down alternative comforter,Bedroom essential,Standard
+PROD-085,MT-001,Mattress Topper Queen,Home > Bedroom,119.99,USD,Yes,15,3-inch memory foam topper,Sleep upgrade,Large/bulky
+PROD-086,AL-001,Alarm Clock,Home > Bedroom,19.99,USD,Yes,100,Digital alarm clock,Bedroom utility,Low cost
+PROD-087,NL-001,Night Light,Home > Bedroom,12.99,USD,Yes,120,LED motion sensor night light,Safety/convenience,Battery-powered
+PROD-088,HS-002,Hangers 50-pack,Home > Bedroom,19.99,USD,Yes,60,Velvet hangers,Closet organization,Bundle
+PROD-089,SM-002,Full Length Mirror,Home > Bedroom,79.99,USD,Yes,18,Standing full length mirror,Bedroom furniture,Fragile
+PROD-090,JW-001,Jewelry Box,Accessories > Storage,49.99,USD,Yes,35,Wooden jewelry organizer,Personal storage,Gift item
+PROD-091,WT-001,Wrist Watch Analog,Accessories > Watches,129.99,USD,Yes,25,Stainless steel watch,Fashion accessory,Mid-high value
+PROD-092,WT-002,Wrist Watch Digital,Accessories > Watches,79.99,USD,Yes,30,Sports digital watch,Sports accessory,Water-resistant
+PROD-093,WL-001,Wallet Leather,Accessories > Wallets,49.99,USD,Yes,50,Genuine leather wallet,Personal accessory,Gift item
+PROD-094,BL-003,Belt Leather,Accessories > Belts,39.99,USD,Yes,40,Leather dress belt,Fashion accessory,Standard
+PROD-095,HT-002,Winter Hat,Accessories > Hats,19.99,USD,Yes,80,Knit beanie winter hat,Seasonal accessory,Low cost
+PROD-096,SC-002,Scarf,Accessories > Scarves,29.99,USD,Yes,60,Wool blend scarf,Seasonal accessory,Fashion
+PROD-097,GL-002,Gloves Winter,Accessories > Gloves,24.99,USD,Yes,70,Insulated winter gloves,Seasonal accessory,Warmth
+PROD-098,TI-001,Tie Silk,Accessories > Ties,34.99,USD,Yes,45,100% silk necktie,Formal accessory,Professional
+PROD-099,SK-002,Socks 6-pack,Clothing > Socks,19.99,USD,Yes,100,Cotton crew socks,Basic clothing,Bundle
+PROD-100,UW-001,Underwear 3-pack,Clothing > Underwear,24.99,USD,Yes,80,Cotton boxer briefs,Basic clothing,Bundle

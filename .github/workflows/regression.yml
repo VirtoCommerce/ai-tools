@@ -1,0 +1,103 @@
+name: Regression Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite_selection:
+        description: 'Suites: smoke, full, critical, sprint, or comma-separated IDs (01,02,...)'
+        required: true
+        default: 'smoke'
+        type: string
+      environment:
+        description: 'Test environment'
+        required: true
+        default: 'qa'
+        type: choice
+        options:
+          - dev
+          - qa
+          - staging
+      max_budget:
+        description: 'Max budget in USD'
+        required: true
+        default: '10.0'
+        type: string
+      max_turns:
+        description: 'Max turns per suite'
+        required: true
+        default: '100'
+        type: string
+      model:
+        description: 'Claude model'
+        required: true
+        default: 'claude-sonnet-4-5-20250929'
+        type: choice
+        options:
+          - claude-sonnet-4-5-20250929
+          - claude-opus-4-6
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 480
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t vc-regression -f ci/Dockerfile .
+
+      - name: Run regression tests
+        run: |
+          docker run --rm \
+            --shm-size=2gb \
+            -e ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }} \
+            -e SUITE_SELECTION=${{ inputs.suite_selection }} \
+            -e TEST_ENVIRONMENT=${{ inputs.environment }} \
+            -e MAX_BUDGET_USD=${{ inputs.max_budget }} \
+            -e MAX_TURNS=${{ inputs.max_turns }} \
+            -e MODEL=${{ inputs.model }} \
+            -e VCST_FRONT_URL=${{ secrets.VCST_FRONT_URL }} \
+            -e VCST_BACK_URL=${{ secrets.VCST_BACK_URL }} \
+            -e VIRTO_START_FRONT=${{ secrets.VIRTO_START_FRONT }} \
+            -e VIRTO_START_BACK=${{ secrets.VIRTO_START_BACK }} \
+            -e ADMIN=${{ secrets.ADMIN }} \
+            -e ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }} \
+            -e USER_EMAIL=${{ secrets.USER_EMAIL }} \
+            -e USER_PASSWORD=${{ secrets.USER_PASSWORD }} \
+            -e USER2_EMAIL=${{ secrets.USER2_EMAIL }} \
+            -e USER2_PASSWORD=${{ secrets.USER2_PASSWORD }} \
+            -e USER_VIRTO=${{ secrets.USER_VIRTO }} \
+            -e USER_VIRTO_PASSWORD=${{ secrets.USER_VIRTO_PASSWORD }} \
+            -e STORE_ID=${{ secrets.STORE_ID }} \
+            -e SKYFLOW_VISA=${{ secrets.SKYFLOW_VISA }} \
+            -e SKYFLOW_MASTERCARD=${{ secrets.SKYFLOW_MASTERCARD }} \
+            -e SKYFLOW_EXPIRY=${{ secrets.SKYFLOW_EXPIRY }} \
+            -e SKYFLOW_CVV=${{ secrets.SKYFLOW_CVV }} \
+            -e CYBERSOURCE_CARD=${{ secrets.CYBERSOURCE_CARD }} \
+            -e CYBERSOURCE_EXPIRY=${{ secrets.CYBERSOURCE_EXPIRY }} \
+            -e CYBERSOURCE_CVV=${{ secrets.CYBERSOURCE_CVV }} \
+            -e AUTHORIZNET_CARD=${{ secrets.AUTHORIZNET_CARD }} \
+            -e AUTHORIZNET_EXPIRY=${{ secrets.AUTHORIZNET_EXPIRY }} \
+            -e AUTHORIZNET_CVV=${{ secrets.AUTHORIZNET_CVV }} \
+            -e DATATRANCE_MASTERCARD=${{ secrets.DATATRANCE_MASTERCARD }} \
+            -e DATATRANCE_EXPIRY=${{ secrets.DATATRANCE_EXPIRY }} \
+            -e DATATRANCE_CVV=${{ secrets.DATATRANCE_CVV }} \
+            -e DATATRANCE_OTP=${{ secrets.DATATRANCE_OTP }} \
+            -v ${{ github.workspace }}/test-results:/app/test-results \
+            -v ${{ github.workspace }}/reports:/app/reports \
+            vc-regression
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-${{ inputs.suite_selection }}-${{ github.run_number }}
+          path: |
+            test-results/
+            reports/regression/
+          retention-days: 30

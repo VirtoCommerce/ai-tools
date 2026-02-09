@@ -1,0 +1,51 @@
+location_id,location_name,address,city,state,zip_code,country,phone,latitude,longitude,store_hours,inventory_linked,test_purpose,notes
+BOPIS-LOC-001,Downtown Store,123 Main Street,Los Angeles,CA,90012,United States,+1-555-1001,34.0522,-118.2437,Mon-Sat 9am-8pm Sun 10am-6pm,Yes,Primary urban location,City center high traffic
+BOPIS-LOC-002,Westside Mall,456 Shopping Center Dr,Los Angeles,CA,90025,United States,+1-555-1002,34.0407,-118.4357,Mon-Sat 10am-9pm Sun 11am-7pm,Yes,Mall location,Inside shopping mall
+BOPIS-LOC-003,Beach Store,789 Ocean Avenue,Santa Monica,CA,90401,United States,+1-555-1003,34.0195,-118.4912,Daily 9am-9pm,Yes,Coastal location,Beach proximity
+BOPIS-LOC-004,Valley Store,321 Ventura Blvd,Sherman Oaks,CA,91403,United States,+1-555-1004,34.1508,-118.4370,Mon-Fri 8am-8pm Sat-Sun 9am-7pm,Yes,Suburban location,Valley area
+BOPIS-LOC-005,Airport Store,555 Aviation Blvd,Manhattan Beach,CA,90266,United States,+1-555-1005,33.8936,-118.3981,Daily 7am-10pm,Yes,Airport proximity,Extended hours
+BOPIS-LOC-006,Pasadena Store,888 Colorado Blvd,Pasadena,CA,91101,United States,+1-555-1006,34.1478,-118.1445,Mon-Sat 9am-8pm Sun 10am-6pm,Yes,Historic district,Tourist area
+BOPIS-LOC-007,Long Beach Store,999 Pine Avenue,Long Beach,CA,90802,United States,+1-555-1007,33.7701,-118.1937,Daily 9am-9pm,Yes,Port city location,Coastal urban
+BOPIS-LOC-008,Glendale Galleria,111 Galleria Way,Glendale,CA,91210,United States,+1-555-1008,34.1431,-118.2555,Mon-Sat 10am-9pm Sun 11am-7pm,Yes,Major mall,Large shopping center
+BOPIS-LOC-009,Beverly Hills Store,222 Rodeo Drive,Beverly Hills,CA,90210,United States,+1-555-1009,34.0696,-118.4004,Mon-Sat 10am-7pm Sun 12pm-6pm,Yes,Luxury district,High-end location
+BOPIS-LOC-010,Burbank Store,333 Media Way,Burbank,CA,91505,United States,+1-555-1010,34.1808,-118.3090,Mon-Fri 9am-8pm Sat-Sun 10am-6pm,Yes,Entertainment district,Media hub area
+BOPIS-LOC-011,Torrance Store,444 Rolling Hills Rd,Torrance,CA,90501,United States,+1-555-1011,33.8358,-118.3406,Daily 9am-9pm,Yes,South Bay location,Residential area
+BOPIS-LOC-012,Irvine Spectrum,555 Spectrum Center,Irvine,CA,92618,United States,+1-555-1012,33.6508,-117.7410,Mon-Sat 10am-9pm Sun 11am-8pm,Yes,Orange County mall,Large outdoor center
+BOPIS-LOC-013,Costa Mesa Store,666 Harbor Blvd,Costa Mesa,CA,92626,United States,+1-555-1013,33.6783,-117.9187,Daily 9am-9pm,Yes,Orange County location,Retail corridor
+BOPIS-LOC-014,Newport Beach Store,777 Coast Hwy,Newport Beach,CA,92663,United States,+1-555-1014,33.6189,-117.9289,Mon-Sat 9am-8pm Sun 10am-6pm,Yes,Coastal premium,Upscale beach area
+BOPIS-LOC-015,Anaheim Store,888 Disneyland Dr,Anaheim,CA,92802,United States,+1-555-1015,33.8153,-117.9145,Daily 8am-10pm,Yes,Theme park area,Tourist destination
+BOPIS-LOC-016,San Diego Downtown,100 Broadway,San Diego,CA,92101,United States,+1-619-555-1016,32.7157,-117.1611,Mon-Sat 9am-8pm Sun 10am-6pm,Yes,San Diego urban,Downtown location
+BOPIS-LOC-017,La Jolla Store,200 Prospect St,La Jolla,CA,92037,United States,+1-858-555-1017,32.8473,-117.2742,Daily 9am-8pm,Yes,Upscale coastal,Premium beach area
+BOPIS-LOC-018,San Francisco Union Square,300 Market Street,San Francisco,CA,94102,United States,+1-415-555-1018,37.7749,-122.4194,Daily 9am-9pm,Yes,SF urban center,High-density retail
+BOPIS-LOC-019,Oakland Store,400 Broadway,Oakland,CA,94607,United States,+1-510-555-1019,37.8044,-122.2712,Mon-Sat 9am-8pm Sun 10am-6pm,Yes,East Bay location,Urban Oakland
+BOPIS-LOC-020,San Jose Store,500 Santana Row,San Jose,CA,95128,United States,+1-408-555-1020,37.3229,-121.9467,Mon-Sat 10am-9pm Sun 11am-7pm,Yes,Silicon Valley,Tech hub retail
+BOPIS-LOC-021,Nearby Location,600 Close Street,Los Angeles,CA,90013,United States,+1-555-1021,34.0521,-118.2438,Daily 9am-9pm,Yes,Distance testing near,0.1 miles from LOC-001
+BOPIS-LOC-022,Medium Distance,700 Mid Range Rd,Glendale,CA,91204,United States,+1-555-1022,34.1425,-118.2551,Mon-Sat 9am-8pm Sun 10am-6pm,Yes,Distance testing mid,~10 miles from LOC-001
+BOPIS-LOC-023,Far Location,800 Distant Ave,San Bernardino,CA,92401,United States,+1-909-555-1023,34.1083,-117.2898,Daily 9am-9pm,Yes,Distance testing far,~60 miles from LOC-001
+BOPIS-LOC-024,Out of Stock Location,900 Empty Warehouse,Los Angeles,CA,90014,United States,+1-555-1024,34.0430,-118.2470,Mon-Fri 9am-5pm,Yes,Inventory testing,All products out of stock
+BOPIS-LOC-025,Limited Stock Location,1000 Low Inventory St,Los Angeles,CA,90015,United States,+1-555-1025,34.0407,-118.2588,Mon-Sat 9am-7pm,Yes,Inventory testing,Most products low stock
+BOPIS-LOC-026,24/7 Location,1100 Always Open Blvd,Los Angeles,CA,90016,United States,+1-555-1026,34.0335,-118.3718,Open 24/7,Yes,Hours testing,Always available
+BOPIS-LOC-027,Closed Sunday Location,1200 No Sunday St,Los Angeles,CA,90017,United States,+1-555-1027,34.0522,-118.2615,Mon-Sat 9am-8pm Closed Sunday,Yes,Hours testing,Sunday closed
+BOPIS-LOC-028,Short Hours Location,1300 Quick Close Ave,Los Angeles,CA,90018,United States,+1-555-1028,34.0296,-118.3087,Mon-Fri 10am-4pm,Yes,Hours testing,Limited availability
+BOPIS-LOC-029,Weekend Only Location,1400 Weekend Way,Los Angeles,CA,90019,United States,+1-555-1029,34.0522,-118.3263,Closed Mon-Fri Open Sat-Sun 9am-6pm,Yes,Hours testing,Weekend exclusive
+BOPIS-LOC-030,Special Characters Store,1500 O'Brien & Sons St,Los Angeles,CA,90020,United States,+1-555-1030,34.0696,-118.3090,Daily 9am-9pm,Yes,Name edge case,Apostrophe and ampersand
+BOPIS-LOC-031,Unicode Store Müller,1600 German Straße,Los Angeles,CA,90021,United States,+1-555-1031,34.0407,-118.2468,Daily 9am-9pm,Yes,Unicode testing,German characters
+BOPIS-LOC-032,Very Long Name Location That Exceeds Normal,1700 Long Name Testing Blvd,Los Angeles,CA,90022,United States,+1-555-1032,34.0242,-118.1550,Mon-Sat 9am-8pm,Yes,Name boundary test,Extremely long name
+BOPIS-LOC-033,NYC Fifth Avenue,100 Fifth Avenue,New York,NY,10011,United States,+1-212-555-1033,40.7128,-74.0060,Daily 9am-9pm,Yes,New York location,East coast major
+BOPIS-LOC-034,Chicago Magnificent Mile,200 Michigan Avenue,Chicago,IL,60611,United States,+1-312-555-1034,41.8781,-87.6298,Mon-Sat 10am-9pm Sun 11am-7pm,Yes,Chicago location,Midwest major
+BOPIS-LOC-035,Miami South Beach,300 Ocean Drive,Miami,FL,33139,United States,+1-305-555-1035,25.7617,-80.1918,Daily 10am-10pm,Yes,Miami location,Southeast major
+BOPIS-LOC-036,Seattle Downtown,400 Pike Street,Seattle,WA,98101,United States,+1-206-555-1036,47.6062,-122.3321,Daily 9am-9pm,Yes,Seattle location,Pacific NW major
+BOPIS-LOC-037,Boston Newbury Street,500 Newbury Street,Boston,MA,02116,United States,+1-617-555-1037,42.3601,-71.0589,Mon-Sat 10am-8pm Sun 11am-6pm,Yes,Boston location,New England major
+BOPIS-LOC-038,Austin Domain,600 Domain Drive,Austin,TX,78758,United States,+1-512-555-1038,30.2672,-97.7431,Daily 10am-9pm,Yes,Austin location,Texas tech hub
+BOPIS-LOC-039,Denver Cherry Creek,700 Milwaukee Street,Denver,CO,80206,United States,+1-303-555-1039,39.7392,-104.9903,Mon-Sat 10am-8pm Sun 11am-6pm,Yes,Denver location,Mountain region
+BOPIS-LOC-040,Portland Pearl District,800 NW Lovejoy Street,Portland,OR,97209,United States,+1-503-555-1040,45.5231,-122.6765,Daily 9am-8pm,Yes,Portland location,Pacific NW alternative
+BOPIS-LOC-041,Map Center Location,1000 Center Point Dr,Los Angeles,CA,90010,United States,+1-555-1041,34.0631,-118.3057,Daily 9am-9pm,Yes,Map testing,Geographic center point
+BOPIS-LOC-042,North Boundary Location,2000 Northern Border Rd,Los Angeles,CA,91042,United States,+1-818-555-1042,34.1808,-118.2090,Mon-Sat 9am-8pm,Yes,Map boundary,Northernmost LA
+BOPIS-LOC-043,South Boundary Location,2100 Southern Edge Ave,Long Beach,CA,90810,United States,+1-562-555-1043,33.8014,-118.1640,Mon-Sat 9am-8pm,Yes,Map boundary,Southernmost area
+BOPIS-LOC-044,East Boundary Location,2200 Eastern Limit St,Pomona,CA,91766,United States,+1-909-555-1044,34.0551,-117.7499,Daily 9am-9pm,Yes,Map boundary,Easternmost area
+BOPIS-LOC-045,West Boundary Location,2300 Western Coast Hwy,Malibu,CA,90265,United States,+1-310-555-1045,34.0259,-118.7798,Mon-Sat 10am-7pm,Yes,Map boundary,Westernmost coastal
+BOPIS-LOC-046,Duplicate Name Store 1,100 Main Street,Los Angeles,CA,90001,United States,+1-555-1046,34.0522,-118.2437,Daily 9am-9pm,Yes,Duplicate testing,Same name different location
+BOPIS-LOC-047,Duplicate Name Store 1,200 Oak Avenue,Los Angeles,CA,90002,United States,+1-555-1047,33.9806,-118.2468,Daily 9am-9pm,Yes,Duplicate testing,Exact duplicate name
+BOPIS-LOC-048,Similar Name Store A,300 Elm Street,Los Angeles,CA,90003,United States,+1-555-1048,33.9731,-118.2723,Daily 9am-9pm,Yes,Similar name testing,Name similarity A
+BOPIS-LOC-049,Similar Name Store B,400 Pine Avenue,Los Angeles,CA,90004,United States,+1-555-1049,34.0766,-118.3082,Daily 9am-9pm,Yes,Similar name testing,Name similarity B
+BOPIS-LOC-050,Filter Test - Small Store,500 Small Location Ln,Los Angeles,CA,90005,United States,+1-555-1050,34.0631,-118.3090,Daily 9am-6pm,Yes,Filter testing,Small store size filter

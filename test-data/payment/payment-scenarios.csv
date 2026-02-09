@@ -1,0 +1,61 @@
+scenario_id,scenario_name,processor,card_type,test_type,priority,expected_result,test_purpose,prerequisites,notes
+PAY-SCEN-001,Happy Path - Skyflow Visa,Skyflow,Visa,Positive,Critical,Payment successful,Standard successful payment flow,Cart with items,Most common payment scenario
+PAY-SCEN-002,Happy Path - Skyflow Mastercard,Skyflow,Mastercard,Positive,Critical,Payment successful,Mastercard payment processing,Cart with items,Second most common card type
+PAY-SCEN-003,Happy Path - CyberSource,CyberSource,Visa,Positive,Critical,Payment successful,CyberSource integration,CyberSource configured,Alternate payment processor
+PAY-SCEN-004,Happy Path - Authorize.Net,Authorize.Net,Visa,Positive,Critical,Payment successful,Authorize.Net integration,Authorize.Net configured,Third payment processor option
+PAY-SCEN-005,Happy Path - Datatrance with OTP,Datatrance,Mastercard,Positive,High,Payment successful with OTP,3D Secure authentication,Datatrance configured,Requires OTP: 112233
+PAY-SCEN-006,Declined Card,Skyflow,Visa,Negative,High,Payment declined error,Card declined handling,Test decline card,Error message should be user-friendly
+PAY-SCEN-007,Insufficient Funds,Generic,Visa,Negative,High,Insufficient funds error,Low balance handling,Special test card,Test specific error message
+PAY-SCEN-008,Invalid Card Number,CyberSource,Visa,Negative,High,Invalid card error,Luhn validation,Invalid test card,Client-side validation should catch
+PAY-SCEN-009,Incorrect CVV,Skyflow,Visa,Negative,High,CVV mismatch error,CVV validation,Wrong CVV test card,Security validation
+PAY-SCEN-010,Expired Card,Generic,Visa,Negative,High,Expired card error,Expiration validation,Expired date card,Past date validation
+PAY-SCEN-011,Lost Card,Generic,Visa,Negative,Medium,Lost card error,Lost card handling,Lost card test card,Should block transaction
+PAY-SCEN-012,Stolen Card,Generic,Visa,Negative,Medium,Stolen card error,Stolen card handling,Stolen card test card,Should block transaction
+PAY-SCEN-013,Processing Error,Skyflow,Visa,Negative,Medium,Generic error message,Generic error handling,Error test card,Graceful error handling
+PAY-SCEN-014,Network Timeout,All,Visa,Negative,Medium,Timeout error,Network timeout handling,Simulate network delay,Retry mechanism should work
+PAY-SCEN-015,Special Characters in Name,Skyflow,Visa,Edge Case,High,Payment successful,Name field validation,Name with hyphen/apostrophe,Mary-Jane O'Connor
+PAY-SCEN-016,Unicode in Cardholder Name,Skyflow,Visa,Edge Case,High,Payment successful,Unicode character support,Unicode name,José García Müller
+PAY-SCEN-017,Very Long Name,Skyflow,Visa,Edge Case,Medium,Payment successful or graceful truncation,Long name handling,100+ char name,Christopher Alexander Montgomery-Williamson III
+PAY-SCEN-018,Multiple Payment Methods,All,Visa,Edge Case,Medium,Can switch between processors,Processor switching,Multiple processors configured,Switch Skyflow to CyberSource mid-checkout
+PAY-SCEN-019,Retry After Decline,Skyflow,Visa,Edge Case,Medium,Second attempt succeeds,Retry mechanism,First card declined,Use valid card after decline
+PAY-SCEN-020,Amex with 4-digit CVV,Skyflow,Amex,Edge Case,High,Payment successful,Amex CVV validation,Amex card,4-digit CVV vs 3-digit
+PAY-SCEN-021,CVV with Leading Zeros,Skyflow,Visa,Edge Case,Low,Payment successful,CVV leading zero handling,CVV: 001,Ensure leading zeros preserved
+PAY-SCEN-022,Expiry Format Variations,CyberSource,Visa,Edge Case,Medium,All formats accepted,Expiry date parsing,Various formats,Test: 092029 09/2029 09 / 2029
+PAY-SCEN-023,Same Day Expiration,Generic,Visa,Boundary,Medium,Card still valid or expired,Same day expiration logic,Card expiring today,Edge case for expiration validation
+PAY-SCEN-024,Card Expiring Soon,Generic,Visa,Boundary,Low,Payment successful with warning (optional),Expiry warning,Card expiring <30 days,User experience consideration
+PAY-SCEN-025,Card Expiring Far Future,Generic,Visa,Boundary,Low,Payment successful,Future date validation,Expiry 10+ years out,Should accept distant future dates
+PAY-SCEN-026,Multiple Rapid Submissions,Skyflow,Visa,Security,High,Prevent duplicate charges,Double-submit prevention,Fast double-click,Should disable button after first click
+PAY-SCEN-027,Back Button After Payment,Skyflow,Visa,Security,High,Cannot re-submit,Browser back button handling,Completed payment,Back button should not allow resubmission
+PAY-SCEN-028,Session Timeout During Payment,Skyflow,Visa,Security,Medium,Session timeout error,Session management,Long idle time,Graceful timeout handling
+PAY-SCEN-029,Large Order Value,Skyflow,Visa,Boundary,Medium,Payment successful,$10000+ order,Cart with expensive items,Test high-value transaction limits
+PAY-SCEN-030,Small Order Value,Skyflow,Visa,Boundary,Low,Payment successful,$0.01 order,Cart with minimal item,Test minimum transaction amount
+PAY-SCEN-031,International Card - UK,Skyflow,Visa,Localization,Medium,Payment successful,International card support,UK billing address,Address validation for international
+PAY-SCEN-032,International Card - Germany,CyberSource,Visa,Localization,Medium,Payment successful,EU card processing,DE billing address,SEPA compliance
+PAY-SCEN-033,International Card - Japan,Authorize.Net,Visa,Localization,Medium,Payment successful,APAC card processing,JP billing address,JCB card support (if available)
+PAY-SCEN-034,Billing Address != Shipping,Skyflow,Visa,Integration,High,Payment successful,Address mismatch handling,Different bill/ship addresses,Common real-world scenario
+PAY-SCEN-035,Billing Address = Shipping,Skyflow,Visa,Integration,High,Payment successful,Same as shipping checkbox,Same bill/ship addresses,Most common scenario
+PAY-SCEN-036,PCI Compliance - No Plain Text,All,Visa,Security,Critical,Card data never in plain text,PCI DSS compliance,Browser DevTools monitoring,Card number should be tokenized
+PAY-SCEN-037,Iframe Isolation,Skyflow,Visa,Security,Critical,Card fields in iframe,Iframe security,Inspect element,Payment fields should be in secure iframe
+PAY-SCEN-038,HTTPS Required,All,Visa,Security,Critical,Payment only on HTTPS,SSL/TLS enforcement,HTTP vs HTTPS,HTTP should redirect or block payment
+PAY-SCEN-039,Saved Payment Methods,Skyflow,Visa,Feature,Medium,Can select saved card,Tokenized card storage,User with saved cards,Display last 4 digits only
+PAY-SCEN-040,Delete Saved Payment Method,Skyflow,Visa,Feature,Medium,Card removed from saved list,Payment method management,Saved card exists,User can delete stored card
+PAY-SCEN-041,Set Default Payment Method,Skyflow,Visa,Feature,Low,Card marked as default,Default payment selection,Multiple saved cards,Pre-select default on checkout
+PAY-SCEN-042,Guest Checkout Payment,Skyflow,Visa,Integration,High,Payment successful,Guest user payment,Not logged in,Guest can complete payment
+PAY-SCEN-043,Mobile - Portrait,Skyflow,Visa,Mobile,High,Payment form renders correctly,Mobile responsive design,iPhone Safari portrait,Touch-friendly input fields
+PAY-SCEN-044,Mobile - Landscape,Skyflow,Visa,Mobile,Medium,Payment form renders correctly,Mobile landscape layout,iPhone Safari landscape,Layout adapts to landscape
+PAY-SCEN-045,Mobile - Auto-fill,Skyflow,Visa,Mobile,Medium,Auto-fill works correctly,Mobile browser auto-fill,Saved card in browser,iOS/Android auto-fill integration
+PAY-SCEN-046,Tablet - iPad,Skyflow,Visa,Tablet,Medium,Payment form renders correctly,Tablet responsive design,iPad Safari,Touch targets adequate size
+PAY-SCEN-047,Cross-Browser - Chrome,Skyflow,Visa,Compatibility,High,Payment successful,Chrome compatibility,Chrome latest,Primary browser
+PAY-SCEN-048,Cross-Browser - Safari,Skyflow,Visa,Compatibility,High,Payment successful,Safari compatibility,Safari latest,Critical for Mac/iOS users
+PAY-SCEN-049,Cross-Browser - Firefox,CyberSource,Visa,Compatibility,Medium,Payment successful,Firefox compatibility,Firefox latest,~5% market share
+PAY-SCEN-050,Cross-Browser - Edge,Authorize.Net,Visa,Compatibility,Medium,Payment successful,Edge compatibility,Edge latest,Enterprise browser
+PAY-SCEN-051,Analytics - Payment Started,Skyflow,Visa,Analytics,Medium,GA4 event: begin_checkout,Google Analytics tracking,GA4 configured,Event fires when payment form loads
+PAY-SCEN-052,Analytics - Payment Completed,Skyflow,Visa,Analytics,High,GA4 event: purchase,Purchase event tracking,GA4 configured,Event fires on successful payment
+PAY-SCEN-053,Analytics - Payment Failed,Skyflow,Visa,Analytics,Medium,GA4 event: payment_error,Error tracking,GA4 configured,Track declined/failed payments
+PAY-SCEN-054,Performance - Form Load Time,Skyflow,Visa,Performance,Medium,Loads in <2 seconds,Payment form performance,Network monitoring,Acceptable load time
+PAY-SCEN-055,Performance - Payment Processing,Skyflow,Visa,Performance,High,Processes in <5 seconds,Payment processing speed,Timer monitoring,User expects quick response
+PAY-SCEN-056,Accessibility - Keyboard Navigation,Skyflow,Visa,Accessibility,High,Can complete via keyboard only,WCAG 2.1 AA compliance,Keyboard only,Tab through all fields
+PAY-SCEN-057,Accessibility - Screen Reader,Skyflow,Visa,Accessibility,High,Screen reader announces fields,Assistive technology support,NVDA/JAWS,All fields properly labeled
+PAY-SCEN-058,Accessibility - Focus Indicators,CyberSource,Visa,Accessibility,High,Visible focus on all fields,Focus visibility,Keyboard navigation,High contrast focus rings
+PAY-SCEN-059,Accessibility - Error Announcements,Skyflow,Visa,Accessibility,High,Screen reader announces errors,Accessible error handling,Invalid card number,ARIA live regions for errors
+PAY-SCEN-060,Order Total Mismatch,Skyflow,Visa,Security,Critical,Payment blocked or warning,Cart tampering detection,Modified cart total,Backend should validate totals

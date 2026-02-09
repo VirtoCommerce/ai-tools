@@ -5,8 +5,8 @@ config({ path: '.env' });
 
 // Validate required environment variables
 const requiredVars = [
-    'VCST_FRONT_URL',
-    'VCST_BACK_URL',
+    'FRONT_URL',
+    'BACK_URL',
     'VIRTO_START_FRONT',
     'VIRTO_START_BACK',
     'ADMIN',
@@ -57,8 +57,8 @@ const getEnvVar = (name, defaultValue = undefined) => {
 // Export configuration object
 export const env = {
     // Application URLs
-    VCST_FRONT_URL: getEnvVar('VCST_FRONT_URL'),
-    VCST_BACK_URL: getEnvVar('VCST_BACK_URL'),
+    FRONT_URL: getEnvVar('FRONT_URL'),
+    BACK_URL: getEnvVar('BACK_URL'),
     VIRTO_START_FRONT: getEnvVar('VIRTO_START_FRONT'),
     VIRTO_START_BACK: getEnvVar('VIRTO_START_BACK'),
     

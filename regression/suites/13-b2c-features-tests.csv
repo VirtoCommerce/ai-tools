@@ -1,0 +1,649 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+B2C-VAR-001,Product Variations - Size Selection,B2C Features > Variations,Functional,Critical,4m,"Product with size variations (S/M/L/XL)","1. Navigate to product with size variations (e.g., T-Shirt)
+2. Verify size selector displays
+3. Verify all sizes listed (S, M, L, XL)
+4. Click size 'M'
+5. Verify size selected (highlighted)
+6. Verify Add to Cart enabled
+7. Click Add to Cart
+8. View cart
+9. Verify selected size shown in cart","- Size selector displays (dropdown or buttons)
+- All available sizes listed
+- Clicking size selects it (visual feedback)
+- Only one size selectable at a time
+- Add to Cart enabled after selection
+- Cart displays: Product Name - Size: M
+- Correct SKU for selected size variant
+- Price correct for size (if size affects price)",VCST-4547,Automated
+B2C-VAR-002,Product Variations - Color Selection,B2C Features > Variations,Functional,Critical,4m,"Product with color variations","1. Navigate to product with colors (e.g., Blue, Red, Black, White)
+2. Verify color selector displays
+3. Click color 'Blue'
+4. Verify color selected
+5. Verify product image updates to blue variant
+6. Click Add to Cart
+7. View cart","- Color selector displays (swatches or dropdown)
+- Color swatches show actual colors
+- Clicking selects color (border/checkmark)
+- Main product image updates to show selected color
+- Cart shows: Product Name - Color: Blue
+- Correct color variant SKU",VCST-4547,Automated
+B2C-VAR-003,Product Variations - Multi-Attribute (Size + Color),B2C Features > Variations,Functional,Critical,6m,"Product with size and color variations","1. Navigate to configurable product
+2. Verify both size and color selectors display
+3. Select Size: M
+4. Verify color options update (only colors available in M)
+5. Select Color: Blue
+6. Verify price updates (if variant pricing)
+7. Verify stock status shows
+8. Click Add to Cart
+9. View cart","- Both selectors visible
+- Selecting first attribute filters second (only valid combinations)
+- Variant-specific pricing displays
+- Stock status per variant: In Stock / Low Stock / Out of Stock
+- Add to Cart disabled until all required attributes selected
+- Cart shows: Product - Size: M, Color: Blue
+- Correct variant SKU and price",VCST-4547,Automated
+B2C-VAR-004,Product Variations - Out of Stock Variant,B2C Features > Variations,Negative,High,4m,"Product with some variants out of stock","1. Navigate to configurable product
+2. Select size that is out of stock
+3. Verify out of stock message
+4. Verify Add to Cart disabled
+5. Select different size (in stock)
+6. Verify Add to Cart enabled","- Out of stock variants visible but disabled/grayed
+- Clicking out of stock variant shows message: 'This variant is out of stock'
+- Add to Cart button disabled or shows 'Out of Stock'
+- Selecting in-stock variant enables Add to Cart
+- Stock status badge visible per variant",VCST-4547,Manual
+B2C-VAR-005,Product Variations - Price Updates by Variant,B2C Features > Variations,Functional,High,4m,"Product with variant-specific pricing (e.g., size affects price)","1. Navigate to product with size-based pricing
+2. Note default price (e.g., $29.99 for size S)
+3. Select size L
+4. Verify price updates (e.g., $34.99 for size L)
+5. Select size XL
+6. Verify price updates again (e.g., $39.99)
+7. Add to cart
+8. Verify cart price matches variant price","- Default price displays for default/first variant
+- Selecting different variant updates price immediately
+- Price change animates or highlights briefly
+- Old price may show strikethrough if on sale
+- Cart line price matches selected variant price
+- Checkout total uses correct variant pricing",VCST-4547,Manual
+B2C-VAR-006,Product Variations - Mobile Variant Selection,B2C Features > Variations,Functional,Critical,5m,"Mobile device (375x667), product with variations","1. Open product page on mobile
+2. Scroll to variant selectors
+3. Tap size selector
+4. Verify selector opens (native picker or custom)
+5. Select size from picker
+6. Verify selection updates
+7. Repeat for color
+8. Add to cart from mobile","- Variant selectors optimized for touch
+- Selectors large enough (44x44px minimum)
+- Native pickers used on mobile (better UX)
+- Selected values clearly visible
+- Add to Cart button accessible
+- No horizontal scrolling required",VCST-4547,Manual
+B2C-VAR-007,Product Variations - Image Gallery per Variant,B2C Features > Variations,Functional,Medium,5m,"Product with variant-specific images","1. Navigate to product with color variants
+2. View image gallery (default variant)
+3. Select different color (e.g., Red)
+4. Verify image gallery updates to red variant images
+5. Verify all thumbnails update
+6. Select another color (Blue)
+7. Verify gallery updates again","- Each color variant has its own image set
+- Main image updates immediately on variant selection
+- Thumbnail gallery updates to show variant images
+- Image transition smooth (fade or slide)
+- Gallery position resets to first image
+- Zoom/lightbox shows correct variant images",VCST-4547,Manual
+B2C-VAR-008,Product Variations - Default Variant Selection,B2C Features > Variations,Functional,Medium,3m,"Product with multiple variants","1. Navigate to product page
+2. Verify default variant pre-selected
+3. Verify Add to Cart enabled (if default variant in stock)
+4. Add to cart without changing selection
+5. Verify correct default variant added","- Default variant pre-selected on page load
+- Usually first available variant or most popular
+- Selection visible (not blank state)
+- Can add to cart immediately without interaction
+- Default variant follows business rules (e.g., smallest size, most popular color)",VCST-4547,Manual
+B2C-VAR-009,Product Variations - Add Multiple Variants to Cart,B2C Features > Variations,Functional,High,6m,"Product with variations","1. Navigate to product
+2. Select Size: S, Color: Blue
+3. Add to cart
+4. Stay on product page
+5. Select Size: M, Color: Red
+6. Add to cart again
+7. View cart
+8. Verify both variants in cart as separate line items","- Can add multiple variants without leaving product page
+- Each variant added as separate cart line item
+- Cart shows:
+  Line 1: Product - Size: S, Color: Blue
+  Line 2: Product - Size: M, Color: Red
+- Each line has its own quantity
+- Subtotal sums all variants correctly",VCST-4547,Automated
+B2C-VAR-010,Product Variations - Variant URL Parameters,B2C Features > Variations,Functional,Medium,4m,"Product with variations","1. Navigate to product
+2. Select Size: L, Color: Black
+3. Check URL
+4. Verify URL includes variant params (e.g., ?size=L&color=Black)
+5. Copy URL
+6. Open URL in new tab
+7. Verify correct variant pre-selected","- URL updates with variant parameters
+- Parameters human-readable (not IDs)
+- Direct link to variant opens with that variant selected
+- Sharing variant URL preserves selection
+- SEO-friendly URLs
+- Back button works correctly with variant changes",VCST-4547,Manual
+B2C-LIST-001,Create Wishlist/List,B2C Features > Lists,Functional,Critical,4m,"User logged in, no lists created","1. Navigate to Lists or Wishlist page
+2. Click 'Create New List' button
+3. Enter list name: 'Summer Essentials'
+4. Optionally set privacy: Private or Shared
+5. Click 'Create'
+6. Verify list created
+7. Verify list appears in My Lists","- 'Create New List' button visible
+- Form displays: Name (required), Description (optional), Privacy (Private/Shared)
+- List creates successfully
+- Success message: 'List created'
+- List appears in My Lists section
+- Default list is 'Wishlist' if first list
+- Can create multiple lists",VCST-3928,Manual
+B2C-LIST-002,Add Product to List from Product Page,B2C Features > Lists,Functional,Critical,4m,"User logged in, list exists","1. Navigate to product detail page
+2. Locate 'Add to List' or heart icon
+3. Click Add to List
+4. Verify list selector modal/dropdown opens
+5. Select list: 'Summer Essentials'
+6. Click 'Add'
+7. Verify success notification","- 'Add to List' button/icon visible
+- Clicking opens list selector
+- All user's lists displayed
+- Option to create new list inline
+- Success message: 'Added to Summer Essentials'
+- Heart icon fills/changes color
+- Product added to selected list",VCST-3928,Automated
+B2C-LIST-003,Add Product to List from Category Page,B2C Features > Lists,Functional,High,3m,"User on category page, list exists","1. Navigate to category
+2. Hover over product card
+3. Click heart/Add to List icon on card
+4. Select list
+5. Verify added","- Add to List icon visible on product card (hover or always)
+- Quick add without leaving category page
+- List selector appears
+- Product added successfully
+- Can continue browsing
+- Icon indicates product already in list",VCST-3928,Automated
+B2C-LIST-004,View List Contents,B2C Features > Lists,Functional,Critical,3m,"User logged in, list has products","1. Navigate to My Lists
+2. Click on list 'Summer Essentials'
+3. Verify list page opens
+4. Verify products display","- List page shows all products in list
+- Products display: Image, Name, Price, In Stock status
+- Grid or list view options
+- Each product has:
+  - View Product link
+  - Add to Cart button
+  - Remove from List button
+- List metadata: Name, Item count, Created date",VCST-3928,Automated
+B2C-LIST-005,Add to Cart from List,B2C Features > Lists,Functional,High,4m,"User viewing list with products","1. Open list
+2. Locate product in list
+3. Click 'Add to Cart' on product
+4. Verify success notification
+5. Click 'Add All to Cart' button (if available)
+6. Verify all list items added to cart","- Each product has Add to Cart button
+- Can add individual products
+- 'Add All to Cart' button adds entire list
+- Success notification per product or bulk
+- Cart count updates
+- Products remain in list (not removed)
+- Out of stock items skipped or show warning",VCST-3928,Automated
+B2C-LIST-006,Remove Product from List,B2C Features > Lists,Functional,High,3m,"Product in list","1. Open list
+2. Locate product
+3. Click Remove or X icon
+4. Verify confirmation prompt (optional)
+5. Confirm removal
+6. Verify product removed from list","- Remove button/icon visible per product
+- Confirmation prompt: 'Remove from Summer Essentials?'
+- Product removed from list immediately
+- Success message: 'Removed from list'
+- List count decrements
+- Product no longer shows in list
+- Can re-add product later",VCST-3928,Automated
+B2C-LIST-007,Rename/Edit List,B2C Features > Lists,Functional,Medium,3m,"List exists","1. Navigate to My Lists
+2. Click Edit/Settings on list
+3. Change name: 'Summer Essentials' to 'Summer 2026'
+4. Change description or privacy
+5. Click Save
+6. Verify list updated","- Edit option available (pencil icon or menu)
+- Can edit: Name, Description, Privacy
+- Changes save successfully
+- List name updates everywhere
+- No impact on products in list",VCST-3928,Manual
+B2C-LIST-008,Delete List,B2C Features > Lists,Functional,Medium,3m,"List exists with products","1. Navigate to list
+2. Click Delete or menu > Delete
+3. Verify confirmation: 'Delete Summer 2026? (X items will be removed)'
+4. Confirm deletion
+5. Verify list removed
+6. Verify products not deleted (still in catalog)","- Delete option available
+- Confirmation prompt warns about item count
+- Deletion removes list only (not products)
+- Success message: 'List deleted'
+- List removed from My Lists
+- Cannot recover deleted list
+- Products remain in catalog",VCST-3928,Manual
+B2C-LIST-009,Share List (Public Link),B2C Features > Lists,Functional,High,5m,"List exists, sharing enabled","1. Open list
+2. Click Share button
+3. Verify share options: Public Link, Email
+4. Click 'Get Public Link'
+5. Copy link
+6. Open link in incognito/different browser
+7. Verify list accessible without login","- Share button visible
+- Share modal displays options
+- Public link generated
+- Link is shareable URL
+- Opening link shows list (read-only)
+- Cannot edit shared list without permission
+- Share modal shows list as 'Shared'",VCST-3928,Manual
+B2C-LIST-010,Share List via Email,B2C Features > Lists,Functional,Medium,5m,"List exists","1. Open list
+2. Click Share
+3. Select Email option
+4. Enter recipient email: friend@example.com
+5. Add optional message
+6. Click Send
+7. Check recipient email
+8. Verify invitation email received","- Email share option available
+- Form: Recipient email, optional message
+- Email sent successfully
+- Recipient receives invitation email
+- Email contains: List name, sender name, item count, view link
+- Clicking link opens list
+- Recipient can view and add to their cart (if logged in)",VCST-3928,Manual
+B2C-LIST-011,Mark List as Private/Shared,B2C Features > Lists,Functional,Medium,3m,"List exists","1. Edit list settings
+2. Toggle privacy: Private → Shared
+3. Save
+4. Verify list marked as Shared
+5. Toggle back to Private
+6. Verify shared links disabled","- Privacy toggle in settings
+- Private: Only visible to owner
+- Shared: Accessible via link
+- Changing to Private disables existing share links
+- Badge shows Private/Shared status",VCST-3928,Manual
+B2C-LIST-012,Product Already in List Indicator,B2C Features > Lists,Functional,Medium,3m,"Product already added to list","1. Add product to list
+2. Navigate back to product page
+3. Verify heart icon filled or indicator shows
+4. Hover over heart icon
+5. Verify tooltip: 'In Summer Essentials'
+6. Click heart icon
+7. Verify options: Remove or Add to different list","- Heart icon filled/highlighted if in any list
+- Tooltip shows which list(s)
+- Clicking filled heart shows options:
+  - Remove from list
+  - Add to another list
+- Prevents duplicate adds to same list
+- Clear visual feedback",VCST-3928,Manual
+B2C-LIST-013,Move Product Between Lists,B2C Features > Lists,Functional,Medium,4m,"Product in list A, list B exists","1. Open list A
+2. Click menu on product
+3. Select 'Move to...'
+4. Select list B
+5. Verify product moved","- Move option in product menu
+- List selector shows all lists
+- Product removed from list A
+- Product added to list B
+- No duplicate in original list
+- Success message shown",VCST-3928,Manual
+B2C-LIST-014,List - Out of Stock Product Handling,B2C Features > Lists,Functional,High,4m,"List contains out of stock product","1. Add product to list while in stock
+2. Admin marks product out of stock
+3. Open list
+4. Verify out of stock badge on product
+5. Attempt to Add to Cart
+6. Verify error or disabled state","- Out of stock products remain in list
+- Badge shows 'Out of Stock'
+- Add to Cart disabled or shows message
+- Option to remove or keep in list
+- Notification if back in stock (optional)",VCST-3928,Manual
+B2C-LIST-015,List Analytics - GA4 add_to_wishlist Event,B2C Features > Lists,Analytics,Medium,4m,"GA4 configured, list exists","1. Navigate to product page
+2. Click Add to List
+3. Select list
+4. Open DevTools > Network
+5. Verify GA4 event 'add_to_wishlist' fired
+6. Inspect event parameters","- add_to_wishlist event fires on add
+- Event parameters:
+  - currency (USD)
+  - value (product price)
+  - items array (item_id, item_name, price)
+- Event visible in GA DebugView
+- Tracking captures list name (optional)",VCST-3928,Manual
+B2C-SHIP-001,Ship To - View Saved Addresses,B2C Features > Ship To,Functional,Critical,3m,"User logged in, saved addresses exist","1. Navigate to Account > Addresses or click Ship To selector in header
+2. Verify address list displays
+3. Verify each address shows: Name, Street, City, State, ZIP, Phone
+4. Verify default address marked","- Address list displays all saved addresses
+- Each address shows full details
+- Default address has badge: 'Default'
+- Addresses formatted consistently
+- Edit/Delete options per address",VCST-4575,Automated
+B2C-SHIP-002,Ship To - Add New Address,B2C Features > Ship To,Functional,Critical,5m,"User logged in","1. Navigate to Addresses
+2. Click 'Add New Address'
+3. Fill form:
+   - First Name: Jane
+   - Last Name: Doe
+   - Address: 456 New St
+   - City: Springfield
+   - State: IL
+   - ZIP: 62701
+   - Phone: 555-987-6543
+4. Check 'Set as default' (optional)
+5. Click Save
+6. Verify address saved","- Add address button visible
+- Form displays all required fields
+- State dropdown populated based on country
+- ZIP and phone validated
+- 'Set as default' checkbox option
+- Address saves successfully
+- Success message: 'Address added'
+- New address appears in list
+- If set as default, badge shows",VCST-4575,Automated
+B2C-SHIP-003,Ship To - Edit Address,B2C Features > Ship To,Functional,High,4m,"Saved address exists","1. Navigate to Addresses
+2. Click Edit on address
+3. Modify street: '456 New St Apt 2B'
+4. Modify phone
+5. Click Save
+6. Verify address updated","- Edit button/link available
+- Form pre-filled with current address
+- Can modify any field
+- Validation applied
+- Updates save successfully
+- Address displays updated info
+- Orders using this address unaffected (historical)",VCST-4575,Automated
+B2C-SHIP-004,Ship To - Delete Address,B2C Features > Ship To,Functional,High,3m,"Non-default address exists","1. Navigate to Addresses
+2. Click Delete on address
+3. Verify confirmation prompt
+4. Confirm deletion
+5. Verify address removed","- Delete option available (except default)
+- Confirmation: 'Delete this address?'
+- Address removed from list
+- Cannot delete default address (must set another as default first)
+- Historical orders preserve address",VCST-4575,Automated
+B2C-SHIP-005,Ship To - Set Default Address,B2C Features > Ship To,Functional,High,3m,"Multiple addresses exist","1. Navigate to Addresses
+2. Click 'Set as Default' on non-default address
+3. Verify default badge moves to new address
+4. Verify only one default exists","- Set as Default option available
+- Only one default allowed
+- Previous default loses badge
+- New default gains badge
+- Default used in checkout automatically
+- Default shown first in address list",VCST-4575,Automated
+B2C-SHIP-006,Ship To - Select Address in Checkout,B2C Features > Ship To,Functional,Critical,4m,"Multiple saved addresses, in checkout","1. Proceed to checkout
+2. Verify default address pre-selected
+3. Click 'Change' or address selector
+4. Verify address list displays
+5. Select different address
+6. Verify selection updates checkout","- Default address pre-selected
+- Can change address via selector
+- All saved addresses listed
+- Selecting updates shipping address
+- Order summary shows selected address
+- Shipping costs may update based on address",VCST-4575,Automated
+B2C-SHIP-007,Ship To - Header Selector/Dropdown,B2C Features > Ship To,Functional,High,4m,"User logged in, multiple addresses","1. Locate Ship To selector in header (if present)
+2. Click Ship To selector
+3. Verify dropdown shows addresses
+4. Select different address
+5. Verify selection updates
+6. Verify context switches (pricing may update for region)","- Ship To selector visible in header (near account menu)
+- Shows current default address (truncated)
+- Clicking opens dropdown with all addresses
+- Can select from dropdown
+- Selection updates immediately
+- Context switches (pricing, availability, shipping)
+- Useful for B2B multi-location scenarios",VCST-4575,Manual
+B2C-SHIP-008,Ship To - Add Address During Checkout,B2C Features > Ship To,Functional,High,5m,"User in checkout","1. Navigate to checkout
+2. Click 'Add New Address' in shipping section
+3. Fill address form
+4. Check 'Save for future' (optional)
+5. Click Use This Address
+6. Verify address used in checkout
+7. Complete order
+8. Check Addresses page
+9. Verify address saved (if checkbox selected)","- Can add address inline during checkout
+- Form same as address management
+- Option to save for future orders
+- Address used immediately
+- If saved, appears in address list
+- If not saved, used for order only (guest-like)
+- Smooth checkout flow",VCST-4575,Automated
+B2C-SHIP-009,Ship To - Address Validation,B2C Features > Ship To,Functional,High,5m,"User adding/editing address","1. Navigate to Add Address
+2. Enter invalid ZIP: '999'
+3. Attempt to save
+4. Verify validation error: 'Invalid ZIP code'
+5. Enter valid ZIP: 90210
+6. Enter invalid phone: '123'
+7. Verify error: 'Phone must be 10 digits'
+8. Fix phone: 555-123-4567
+9. Save successfully","- ZIP code validated (5 or 9 digits for US)
+- Phone number validated (10 digits, optional format)
+- Address line 1 required
+- City, State, ZIP required
+- Error messages clear and specific
+- Cannot save invalid address
+- Real-time validation feedback (optional)
+- Formatting help (e.g., ZIP: 12345 or 12345-6789)",VCST-4575,Manual
+B2C-SHIP-010,Ship To - Mobile Address Management,B2C Features > Ship To,Functional,High,5m,"Mobile device (375x667), logged in","1. Navigate to Addresses on mobile
+2. Verify address list mobile-optimized
+3. Tap Add New Address
+4. Fill form on mobile
+5. Use native pickers for State
+6. Save address
+7. Verify responsive design","- Address list stacks vertically on mobile
+- Cards or list items tap-friendly
+- Add button accessible
+- Form fields full-width
+- Native select for State (better UX)
+- Phone keyboard type for phone field
+- Keyboard doesn't obscure fields
+- No horizontal scrolling",VCST-4575,Manual
+B2C-SHIP-011,Ship To - International Address Support,B2C Features > Ship To,Functional,Medium,6m,"International shipping enabled","1. Add New Address
+2. Select Country: Canada
+3. Verify Province/State updates to Canadian provinces
+4. Fill address:
+   - Street: 123 Maple Ave
+   - City: Toronto
+   - Province: Ontario
+   - Postal Code: M5A 1A1 (Canadian format)
+   - Country: Canada
+5. Save
+6. Verify address accepted","- Country selector displays all enabled countries
+- State/Province field updates based on country
+- ZIP/Postal Code validation per country
+  - US: 12345 or 12345-6789
+  - Canada: A1A 1A1
+  - UK: SW1A 1AA
+- Phone format accepts international (+ prefix)
+- Address format respects country conventions",VCST-4575,Manual
+B2C-SHIP-012,Ship To - Address Nickname,B2C Features > Ship To,Functional,Low,3m,"User adding address","1. Add New Address
+2. Locate Nickname/Label field (optional)
+3. Enter nickname: 'Home' or 'Office'
+4. Fill address
+5. Save
+6. Verify nickname displays in address list","- Optional nickname field
+- Nickname displayed in list: 'Home - 123 Main St'
+- Helps distinguish similar addresses
+- Nickname editable
+- Nickname shown in checkout selector",VCST-4575,Manual
+B2C-CONFIG-001,Product Configuration - Configurable Options,B2C Features > Configurations,Functional,Critical,6m,"Product with configurations (e.g., custom PC, engraved item)","1. Navigate to configurable product
+2. Verify configuration options display
+3. Select option 1: Processor: Intel i7
+4. Verify price updates (+$100)
+5. Select option 2: RAM: 16GB
+6. Verify price updates (+$50)
+7. Select option 3: Storage: 512GB SSD
+8. Verify price updates (+$75)
+9. Verify total configuration price
+10. Add to cart
+11. View cart","- Configuration UI displays (dropdowns, radio buttons, or visual selector)
+- Each option listed: Name, choices, price impact
+- Selecting option updates running total
+- Price breakdown shown:
+  Base: $500
+  + Processor upgrade: $100
+  + RAM upgrade: $50
+  + Storage upgrade: $75
+  Total: $725
+- Add to Cart enabled after required options selected
+- Cart shows configured product with all selections",VCST-4547,Manual
+B2C-CONFIG-002,Product Configuration - Required Options,B2C Features > Configurations,Functional,High,4m,"Product with required configuration options","1. Navigate to configurable product
+2. Verify required options marked (asterisk or 'Required')
+3. Attempt to add to cart without selecting
+4. Verify error: 'Please select all required options'
+5. Select required options
+6. Verify Add to Cart enabled
+7. Add to cart","- Required options marked clearly
+- Add to Cart disabled until all required selected
+- Error message if attempt to add without selection
+- Optional vs required distinction clear
+- Cannot proceed without required choices",VCST-4547,Manual
+B2C-CONFIG-003,Product Configuration - Optional Add-Ons,B2C Features > Configurations,Functional,Medium,5m,"Product with optional add-ons (warranty, gift wrap)","1. Navigate to product
+2. Scroll to optional add-ons
+3. Verify add-ons listed: Extended Warranty (+$50), Gift Wrap (+$5)
+4. Check Extended Warranty checkbox
+5. Verify price updates
+6. Uncheck warranty
+7. Verify price reverts
+8. Check Gift Wrap
+9. Add to cart
+10. View cart","- Optional add-ons shown separately from required config
+- Checkbox or toggle per add-on
+- Add-on name, description, price shown
+- Selecting updates total price
+- Unselecting reverts price
+- Cart shows selected add-ons as sub-items or separate lines
+- Add-ons can be unchecked in cart (if supported)",VCST-4547,Manual
+B2C-CONFIG-004,Product Configuration - Text Input (Engraving),B2C Features > Configurations,Functional,High,5m,"Product with text customization (engraving, monogram)","1. Navigate to engravable product (e.g., jewelry)
+2. Locate text input: 'Engraving (up to 20 characters)'
+3. Enter text: 'Happy Birthday'
+4. Verify character count: 14/20
+5. Verify preview updates (if available)
+6. Enter more text exceeding limit
+7. Verify validation: 'Max 20 characters'
+8. Reduce to valid length
+9. Add to cart
+10. View cart","- Text input field for customization
+- Character limit specified and enforced
+- Real-time character count shown
+- Cannot exceed limit (blocked or validation error)
+- Preview shows engraved text (optional)
+- Cart displays: Product + Engraving: 'Happy Birthday'
+- Engraved text editable in cart (or not, depends on policy)
+- Price includes engraving fee",VCST-4547,Manual
+B2C-CONFIG-005,Product Configuration - Image Upload,B2C Features > Configurations,Functional,Medium,6m,"Product allowing image upload (custom print)","1. Navigate to product requiring image upload
+2. Verify upload area: 'Upload your photo'
+3. Click upload or drag image
+4. Select image file (JPG, PNG)
+5. Verify image uploads
+6. Verify thumbnail preview
+7. Verify file size validation (max 5MB)
+8. Attempt to upload invalid file (.txt)
+9. Verify error: 'Only JPG/PNG allowed'
+10. Upload valid image
+11. Add to cart","- Image upload field visible
+- Accepts drag-and-drop or click to browse
+- File type validation (JPG, PNG, GIF)
+- File size limit enforced (e.g., 5MB)
+- Thumbnail preview after upload
+- Can replace image before adding to cart
+- Cart shows configured product with uploaded image reference
+- Image stored securely for order fulfillment",VCST-4547,Manual
+B2C-CONFIG-006,Product Configuration - Dependent Options,B2C Features > Configurations,Functional,High,5m,"Product with dependent configuration options","1. Navigate to configurable product
+2. Select Color: Blue
+3. Verify Size options update (only sizes available in Blue)
+4. Select Size: M
+5. Verify Material options (only materials for Blue/M combo)
+6. Complete configuration
+7. Add to cart","- Option B depends on Option A selection
+- Selecting Option A filters/enables Option B choices
+- Only valid combinations shown
+- Cannot select invalid combination
+- Clear indication when options are filtered (e.g., 'Size XL not available in Blue')
+- Configuration logic prevents impossible combinations",VCST-4547,Manual
+B2C-CONFIG-007,Product Configuration - Bundle/Kit Builder,B2C Features > Configurations,Functional,Medium,8m,"Bundle product (build your own gift basket)","1. Navigate to bundle product
+2. Verify bundle builder displays
+3. Step 1: Select base (Small/Medium/Large basket)
+4. Step 2: Choose items (min 3, max 10 from catalog)
+5. Select 5 items from list
+6. Verify running total updates per item
+7. Step 3: Add card message (optional)
+8. Review bundle summary
+9. Add to cart
+10. View cart","- Multi-step bundle builder
+- Each step shows: Instructions, available choices, running total
+- Minimum/maximum item rules enforced
+- Cannot proceed without meeting min/max
+- Selecting items updates total immediately
+- Bundle summary shows all selected components
+- Cart displays bundle as single product with components listed
+- Price is sum of base + selected items",VCST-4547,Manual
+B2C-CONFIG-008,Product Configuration - Price Calculation Accuracy,B2C Features > Configurations,Functional,Critical,5m,"Configurable product with multiple price modifiers","1. Navigate to product
+2. Note base price: $100
+3. Select option with +$50 modifier
+4. Verify total: $150
+5. Select option with +$25 modifier
+6. Verify total: $175
+7. Select option with -$10 discount
+8. Verify total: $165
+9. Add to cart
+10. Verify cart price matches: $165
+11. Proceed to checkout
+12. Verify order total uses $165","- Base price displayed clearly
+- Each option shows price modifier: +$50, +$25, -$10
+- Running total updates with each selection
+- Total calculation accurate (no rounding errors)
+- Cart price matches configured price
+- Checkout uses correct price
+- Order confirmation shows itemized configuration pricing
+- No price discrepancies across pages",VCST-4547,Automated
+B2C-CONFIG-009,Product Configuration - Save Configuration for Later,B2C Features > Configurations,Functional,Low,5m,"Logged in user, configurable product","1. Navigate to product
+2. Configure product (select options)
+3. Click 'Save Configuration' (if feature exists)
+4. Enter name: 'My Custom PC'
+5. Save
+6. Navigate away
+7. Return to product
+8. Click 'Load Configuration'
+9. Select 'My Custom PC'
+10. Verify options pre-selected","- Save configuration feature available (optional)
+- Can name saved config
+- Config saved to user account
+- Can load saved config later
+- All options restored correctly
+- Useful for complex configurations (custom PC, car)
+- Can share saved config via link (advanced)",VCST-4547,Manual
+B2C-CONFIG-010,Product Configuration - Reset Configuration,B2C Features > Configurations,Functional,Medium,3m,"Product configured with multiple options","1. Configure product (select 5+ options)
+2. Locate 'Reset' or 'Clear All' button
+3. Click Reset
+4. Verify confirmation prompt (optional)
+5. Confirm
+6. Verify all options reset to default
+7. Verify price returns to base price","- Reset button visible
+- Confirmation prompt (optional): 'Clear all selections?'
+- All options reset to default/unselected state
+- Price reverts to base price
+- User can start configuration over
+- No unsaved changes warning (config not persistent until cart)",VCST-4547,Manual
+B2C-CONFIG-011,Product Configuration - Mobile Configuration UI,B2C Features > Configurations,Functional,High,6m,"Mobile device, configurable product","1. Open product on mobile
+2. Scroll to configuration section
+3. Interact with option selectors
+4. Verify mobile-optimized UI
+5. Select multiple options
+6. Verify price updates visible
+7. Add to cart from mobile","- Configuration UI responsive
+- Dropdowns use native pickers on mobile
+- Visual selectors (color swatches) large enough to tap
+- Price updates visible (sticky footer or always visible)
+- Multi-step config uses wizard/stepper (optional)
+- No horizontal scrolling
+- Add to Cart button accessible
+- Configuration summary collapsible on mobile",VCST-4547,Manual
+B2C-CONFIG-012,Product Configuration - Accessibility,B2C Features > Configurations,Accessibility,High,8m,"Configurable product, keyboard/screen reader","1. Navigate to product using keyboard only
+2. Tab through configuration options
+3. Verify focus indicators visible
+4. Select options using keyboard (Enter/Space)
+5. Enable screen reader
+6. Verify options announced
+7. Verify price updates announced
+8. Complete configuration and add to cart","- All configuration options keyboard accessible
+- Tab order logical
+- Focus indicators visible
+- Can select options via keyboard (Enter, Space, Arrow keys)
+- Screen reader announces:
+  - Option labels
+  - Current selection
+  - Price changes
+  - Required vs optional
+- ARIA labels present
+- Error messages announced
+- WCAG 2.1 AA compliant",VCST-4547,Manual
