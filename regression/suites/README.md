@@ -10,6 +10,7 @@
 
 | # | File | Test Cases | Priority | Est. Time |
 |---|------|------------|----------|-----------|
+| **00** | **[00-full-regression-release.csv](00-full-regression-release.csv)** | **108** | **P0/P1 Critical** | **13.5 hrs** |
 | 01 | [01-smoke-tests.csv](01-smoke-tests.csv) | 12 | P0 Critical | 30 min |
 | 02 | [02-authentication-tests.csv](02-authentication-tests.csv) | 28 | P1 High | 1.5 hrs |
 | 03 | [03-catalog-search-tests.csv](03-catalog-search-tests.csv) | 23 | P1 High | 1.5 hrs |
@@ -22,8 +23,9 @@
 | 10 | [10-localization-tests.csv](10-localization-tests.csv) | 21 | P2 Medium | 4 hrs |
 | 11 | [11-performance-tests.csv](11-performance-tests.csv) | 20 | P2 Medium | 2 hrs |
 | 12 | [12-browser-compatibility-tests.csv](12-browser-compatibility-tests.csv) | 22 | P1 High | 4 hrs |
+| 13 | [13-b2c-features-tests.csv](13-b2c-features-tests.csv) | 64 | P1 Critical | 5 hrs |
 
-**Total Test Cases:** 283
+**Total Test Cases:** 455 (347 modular + 108 full regression)
 
 ---
 
@@ -53,13 +55,14 @@ ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,Refe
 
 ## Execution Recommendations
 
-### Daily Development (P0 Only)
+### Daily Smoke Test (P0 Only)
 ```
 01-smoke-tests.csv
 ```
 **Time:** ~30 minutes
+**Purpose:** Quick validation after deployment
 
-### Sprint Release (P0 + P1)
+### Sprint Release Validation
 ```
 01-smoke-tests.csv
 04-cart-checkout-tests.csv (critical sections)
@@ -67,20 +70,32 @@ ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,Refe
 08-security-tests.csv (payment security)
 ```
 **Time:** ~3-4 hours
+**Purpose:** Validate sprint deliverables
 
-### Major Release (Full Regression)
+### Major Release (Full Regression) - **RECOMMENDED**
 ```
-All 12 suites
+00-full-regression-release.csv (NEW - comprehensive E2E suite)
+```
+**Time:** ~13.5 hours (single tester) or ~4-5 hours (3-4 testers parallelized)
+**Purpose:** Complete end-to-end validation before production release
+**When:** Before any production release, quarterly, before major sales events
+
+### Major Release (Modular Approach) - Alternative
+```
+All 12 modular suites (01-12)
 ```
 **Time:** ~24+ hours (can be parallelized)
+**Purpose:** Granular coverage with specialized focus areas
+**When:** Deep-dive testing, specialized area validation
 
-### Quarterly (Specialized)
+### Quarterly Specialized Testing
 ```
 09-accessibility-tests.csv (WCAG audit)
 10-localization-tests.csv (all 13 languages)
 12-browser-compatibility-tests.csv (full matrix)
 ```
 **Time:** ~11 hours
+**Purpose:** Compliance and compatibility audits
 
 ---
 
@@ -101,6 +116,18 @@ All 12 suites
 ---
 
 ## Suite Descriptions
+
+### 00 - Full Regression Release Suite (NEW)
+**Comprehensive end-to-end regression suite for major releases.** Consolidates critical test cases from all functional areas into a single master suite. Covers all 10 Critical Revenue Flows with 108 test cases organized by priority. Designed for pre-production release validation with clear entry/exit criteria and execution strategies.
+
+**See:** [00-FULL-REGRESSION-README.md](00-FULL-REGRESSION-README.md) for detailed documentation.
+
+**Key Features:**
+- 108 test cases covering entire platform end-to-end
+- 38 Critical (P0) + 50 High (P1) + 20 Medium (P2)
+- Covers Authentication, Catalog, Cart, Checkout, Payment, Orders, BOPIS, Multi-Org, B2B, Security, Performance, Accessibility, Analytics
+- Parallelizable execution plan (3-4 testers, 1-2 days)
+- TestRail-compatible CSV format
 
 ### 01 - Smoke Tests
 Quick validation of critical user flows. Must pass before any deployment.
@@ -137,6 +164,9 @@ Load times, memory usage, API response times, and Core Web Vitals.
 
 ### 12 - Browser Compatibility Tests
 Cross-browser testing - Chrome, Safari, Firefox, Edge on desktop and mobile.
+
+### 13 - B2C Features Tests
+B2C-specific features - Product Variations (size, color), Wishlists/Lists (create, share, manage), Ship To address management, and Product Configurations (custom options, bundles, text input).
 
 ---
 

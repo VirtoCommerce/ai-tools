@@ -1,0 +1,51 @@
+user_id,email,password,first_name,last_name,account_type,phone,status,test_purpose,notes
+USER-001,qa-user-01@virtocommerce.com,Test123!,John,Doe,Personal,+1-555-0101,Active,Standard checkout flow,Primary test user for smoke tests
+USER-002,qa-user-02@virtocommerce.com,Test123!,Jane,Smith,Personal,+1-555-0102,Active,Cart operations,Secondary test user
+USER-003,qa-user-03@virtocommerce.com,Test123!,Robert,Johnson,Personal,+1-555-0103,Active,Wishlist testing,User with existing wishlist
+USER-004,qa-user-04@virtocommerce.com,Test123!,Maria,Garcia,Personal,+1-555-0104,Active,BOPIS testing,User with saved pickup locations
+USER-005,qa-user-05@virtocommerce.com,Test123!,Michael,Brown,Personal,+1-555-0105,Active,Multi-address testing,User with 5+ saved addresses
+USER-006,qa-user-06@virtocommerce.com,Test123!,Lisa,Wilson,Personal,+1-555-0106,Active,Payment testing,User for payment method testing
+USER-007,qa-user-07@virtocommerce.com,Test123!,David,Martinez,Personal,+1-555-0107,Active,Order history,User with extensive order history
+USER-008,qa-user-08@virtocommerce.com,Test123!,Jennifer,Anderson,Personal,+1-555-0108,Active,Returns/refunds,User with return history
+USER-009,qa-user-09@virtocommerce.com,Test123!,William,Taylor,Personal,+1-555-0109,Active,Guest checkout,User for guest conversion testing
+USER-010,qa-user-10@virtocommerce.com,Test123!,Sarah,Thomas,Personal,+1-555-0110,Active,Mobile testing,Mobile-specific test user
+USER-011,qa-special-01@virtocommerce.com,Test123!,Mary-Jane,O'Connor,Personal,+1-555-0111,Active,Special chars in name,Name with hyphen and apostrophe
+USER-012,qa-unicode-01@virtocommerce.com,Test123!,José,García,Personal,+1-555-0112,Active,Unicode characters,Spanish accented name
+USER-013,qa-unicode-02@virtocommerce.com,Test123!,Hans,Müller,Personal,+1-555-0113,Active,Unicode characters,German umlaut name
+USER-014,qa-unicode-03@virtocommerce.com,Test123!,Björn,Andersson,Personal,+1-555-0114,Active,Unicode characters,Swedish character name
+USER-015,qa-unicode-04@virtocommerce.com,Test123!,François,Dubois,Personal,+1-555-0115,Active,Unicode characters,French accented name
+USER-016,qa-long-name@virtocommerce.com,Test123!,Christopher Alexander,Montgomery-Williamson III,Personal,+1-555-0116,Active,Long name testing,Very long hyphenated name
+USER-017,qa-short-name@virtocommerce.com,Test123!,Li,Wu,Personal,+1-555-0117,Active,Short name testing,Short 2-letter names
+USER-018,qa-inactive@virtocommerce.com,Test123!,Inactive,User,Personal,+1-555-0118,Inactive,Inactive account,For testing inactive user login
+USER-019,qa-locked@virtocommerce.com,Test123!,Locked,Account,Personal,+1-555-0119,Locked,Locked account,Account locked due to failed login attempts
+USER-020,qa-pending@virtocommerce.com,Test123!,Pending,Verification,Personal,+1-555-0120,Pending,Pending verification,Email verification pending
+USER-021,qa-no-orders@virtocommerce.com,Test123!,Emma,Johnson,Personal,+1-555-0121,Active,New user testing,User with no order history
+USER-022,qa-vip@virtocommerce.com,Test123!,Victor,Important,Personal,+1-555-0122,Active,VIP user testing,User with loyalty rewards
+USER-023,qa-promo@virtocommerce.com,Test123!,Promo,Tester,Personal,+1-555-0123,Active,Promo code testing,User for discount code testing
+USER-024,qa-intl-01@virtocommerce.com,Test123!,Olivia,Baker,Personal,+44-20-7946-0124,Active,International user,UK-based user
+USER-025,qa-intl-02@virtocommerce.com,Test123!,Lucas,Schmidt,Personal,+49-30-1234-0125,Active,International user,Germany-based user
+USER-026,qa-intl-03@virtocommerce.com,Test123!,Yuki,Tanaka,Personal,+81-3-1234-0126,Active,International user,Japan-based user
+USER-027,qa-intl-04@virtocommerce.com,Test123!,André,Lefebvre,Personal,+33-1-4270-0127,Active,International user,France-based user
+USER-028,qa-intl-05@virtocommerce.com,Test123!,Sofia,Rossi,Personal,+39-06-1234-0128,Active,International user,Italy-based user
+USER-029,qa-empty-cart@virtocommerce.com,Test123!,Empty,Cart,Personal,+1-555-0129,Active,Empty cart testing,User with no cart items
+USER-030,qa-full-cart@virtocommerce.com,Test123!,Full,Cart,Personal,+1-555-0130,Active,Full cart testing,User with 20+ cart items
+USER-031,qa-mobile-01@virtocommerce.com,Test123!,Mobile,iOS,Personal,+1-555-0131,Active,iOS testing,iOS Safari testing
+USER-032,qa-mobile-02@virtocommerce.com,Test123!,Mobile,Android,Personal,+1-555-0132,Active,Android testing,Chrome Android testing
+USER-033,qa-tablet@virtocommerce.com,Test123!,Tablet,User,Personal,+1-555-0133,Active,Tablet testing,iPad testing
+USER-034,qa-guest-convert@virtocommerce.com,Test123!,Guest,Converter,Personal,+1-555-0134,Active,Guest conversion,Converting guest to registered
+USER-035,qa-social-google@virtocommerce.com,Test123!,Google,Login,Personal,+1-555-0135,Active,Social login,Google OAuth testing
+USER-036,qa-social-facebook@virtocommerce.com,Test123!,Facebook,Login,Personal,+1-555-0136,Active,Social login,Facebook OAuth testing
+USER-037,qa-2fa@virtocommerce.com,Test123!,TwoFactor,Auth,Personal,+1-555-0137,Active,2FA testing,Two-factor authentication enabled
+USER-038,qa-pwd-reset@virtocommerce.com,Test123!,Password,Reset,Personal,+1-555-0138,Active,Password reset,For password reset flow testing
+USER-039,qa-email-change@virtocommerce.com,Test123!,Email,Changer,Personal,+1-555-0139,Active,Email change,For email update testing
+USER-040,qa-subscription@virtocommerce.com,Test123!,Newsletter,Subscriber,Personal,+1-555-0140,Active,Subscription testing,Newsletter subscription user
+USER-041,qa-review-01@virtocommerce.com,Test123!,Product,Reviewer,Personal,+1-555-0141,Active,Product reviews,User with review history
+USER-042,qa-qa-01@virtocommerce.com,Test123!,Question,Asker,Personal,+1-555-0142,Active,Product Q&A,User asking product questions
+USER-043,qa-compare@virtocommerce.com,Test123!,Product,Comparer,Personal,+1-555-0143,Active,Product comparison,User comparing products
+USER-044,qa-recently-viewed@virtocommerce.com,Test123!,Recent,Viewer,Personal,+1-555-0144,Active,Recently viewed,User with viewed history
+USER-045,qa-save-later@virtocommerce.com,Test123!,Save,Later,Personal,+1-555-0145,Active,Save for later,User with saved items
+USER-046,qa-gift-01@virtocommerce.com,Test123!,Gift,Sender,Personal,+1-555-0146,Active,Gift orders,User sending gifts
+USER-047,qa-gift-02@virtocommerce.com,Test123!,Gift,Recipient,Personal,+1-555-0147,Active,Gift orders,User receiving gifts
+USER-048,qa-refund@virtocommerce.com,Test123!,Refund,Requester,Personal,+1-555-0148,Active,Refund testing,User requesting refunds
+USER-049,qa-cancel@virtocommerce.com,Test123!,Order,Canceller,Personal,+1-555-0149,Active,Order cancellation,User cancelling orders
+USER-050,qa-bulk-import@virtocommerce.com,Test123!,Bulk,Importer,Personal,+1-555-0150,Active,Bulk operations,Testing bulk user import

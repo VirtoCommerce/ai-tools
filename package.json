@@ -9,7 +9,8 @@
     "test:debug": "playwright test --debug",
     "test:chrome": "playwright test --project=chromium",
     "test:report": "playwright show-report",
-    "env:check": "node get_variables_env.js"
+    "env:check": "node get_variables_env.js",
+    "ci:regression": "npx tsx ci/run-regression.ts"
   },
   "repository": {
     "type": "git",
@@ -29,7 +30,10 @@
     "dotenv": "^17.1.0"
   },
   "devDependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.0",
     "@playwright/test": "^1.55.0",
-    "playwright": "^1.55.0"
+    "@types/node": "^22.19.10",
+    "playwright": "^1.55.0",
+    "tsx": "^4.0.0"
   }
 }

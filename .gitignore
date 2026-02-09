@@ -8,4 +8,6 @@ node_modules
 CLAUDE.md
 .serena/
 config/
+settings.json
+test-results/
 

@@ -1,0 +1,101 @@
+address_id,first_name,last_name,company,address_line1,address_line2,city,state,zip_code,country,phone,address_type,test_purpose,notes
+US-ADDR-001,John,Smith,,123 Main Street,,Los Angeles,CA,90001,United States,+1-555-0101,Residential,Standard CA address,Most common format
+US-ADDR-002,Jane,Doe,,456 Oak Avenue,Apt 4B,New York,NY,10001,United States,+1-555-0102,Residential,NYC with apartment,Urban address
+US-ADDR-003,Robert,Johnson,Acme Corp,789 Business Blvd,Suite 200,Chicago,IL,60601,United States,+1-555-0103,Business,Chicago business address,Company delivery
+US-ADDR-004,Maria,Garcia,,321 Palm Drive,,Miami,FL,33101,United States,+1-555-0104,Residential,Florida address,No sales tax FL
+US-ADDR-005,Michael,Brown,,555 Tech Way,Building C,Seattle,WA,98101,United States,+1-555-0105,Residential,Seattle with building,Tech hub
+US-ADDR-006,Lisa,Wilson,,888 Texas Road,,Houston,TX,77001,United States,+1-555-0106,Residential,Texas address,Large state
+US-ADDR-007,David,Martinez,,999 Arizona Ave,Unit 15,Phoenix,AZ,85001,United States,+1-555-0107,Residential,Phoenix with unit,Southwest
+US-ADDR-008,Jennifer,Anderson,,111 Pennsylvania Ave,,Philadelphia,PA,19101,United States,+1-555-0108,Residential,Philadelphia address,Northeast
+US-ADDR-009,William,Taylor,,222 Massachusetts St,,Boston,MA,02101,United States,+1-555-0109,Residential,Boston address,New England
+US-ADDR-010,Sarah,Thomas,,333 Colorado Dr,,Denver,CO,80201,United States,+1-555-0110,Residential,Denver address,Mountain time
+US-ADDR-011,Christopher,Lee,Tech Startup Inc,444 Silicon Valley Blvd,Floor 5,San Francisco,CA,94101,United States,+1-555-0111,Business,SF business,Tech company
+US-ADDR-012,Amanda,White,,555 Beach Road,,San Diego,CA,92101,United States,+1-555-0112,Residential,San Diego coastal,Southern CA
+US-ADDR-013,Daniel,Harris,,666 Music Row,,Nashville,TN,37201,United States,+1-555-0113,Residential,Nashville address,Tennessee
+US-ADDR-014,Emily,Martin,,777 Peachtree St,,Atlanta,GA,30301,United States,+1-555-0114,Residential,Atlanta address,Southeast
+US-ADDR-015,Matthew,Thompson,,888 Lake Shore Dr,Apt 3210,Detroit,MI,48201,United States,+1-555-0115,Residential,Detroit with apt,Midwest
+US-ADDR-016,Ashley,Jackson,,999 Bourbon Street,,New Orleans,LA,70112,United States,+1-555-0116,Residential,New Orleans address,Louisiana
+US-ADDR-017,Joshua,Walker,,101 Strip Boulevard,Penthouse,Las Vegas,NV,89101,United States,+1-555-0117,Residential,Las Vegas penthouse,High-rise
+US-ADDR-018,Jessica,Hall,,202 Pearl Street,,Portland,OR,97201,United States,+1-555-0118,Residential,Portland address,Pacific NW
+US-ADDR-019,Andrew,Allen,,303 Space Center Dr,,Orlando,FL,32801,United States,+1-555-0119,Residential,Orlando address,Central FL
+US-ADDR-020,Stephanie,Young,,404 Liberty Ave,,Pittsburgh,PA,15219,United States,+1-555-0120,Residential,Pittsburgh address,Pennsylvania
+US-ADDR-021,Ryan,King,,505 Capitol Hill,Apt 101,Washington,DC,20001,United States,+1-555-0121,Residential,DC with apartment,Nation's capital
+US-ADDR-022,Nicole,Wright,,606 Monument Circle,,Indianapolis,IN,46201,United States,+1-555-0122,Residential,Indianapolis address,Indiana
+US-ADDR-023,Brandon,Lopez,,707 Gateway Arch Plaza,,St Louis,MO,63101,United States,+1-555-0123,Residential,St Louis address,Missouri
+US-ADDR-024,Melissa,Hill,,808 Bourbon Trail,,Louisville,KY,40201,United States,+1-555-0124,Residential,Louisville address,Kentucky
+US-ADDR-025,Kevin,Scott,,909 River Walk,,San Antonio,TX,78201,United States,+1-555-0125,Residential,San Antonio address,South Texas
+US-ADDR-026,Laura,Green,,1010 Elm Street,Unit 5C,Charlotte,NC,28201,United States,+1-555-0126,Residential,Charlotte with unit,North Carolina
+US-ADDR-027,Justin,Adams,,1111 Broadway,,Kansas City,MO,64101,United States,+1-555-0127,Residential,Kansas City address,Missouri
+US-ADDR-028,Rachel,Baker,,1212 Main Boulevard,,Oklahoma City,OK,73101,United States,+1-555-0128,Residential,Oklahoma City,Oklahoma
+US-ADDR-029,Eric,Nelson,,1313 Mountain View Dr,,Salt Lake City,UT,84101,United States,+1-555-0129,Residential,Salt Lake City,Utah
+US-ADDR-030,Michelle,Carter,,1414 Pearl Harbor Ave,,Honolulu,HI,96801,United States,+1-808-555-0130,Residential,Hawaii address,Island state
+US-ADDR-031,Steven,Mitchell,,1515 Denali Way,,Anchorage,AK,99501,United States,+1-907-555-0131,Residential,Alaska address,Northernmost state
+US-ADDR-032,Angela,Perez,,1616 State Street,,Madison,WI,53701,United States,+1-555-0132,Residential,Wisconsin address,Midwest
+US-ADDR-033,Timothy,Roberts,,1717 Summit Avenue,,Minneapolis,MN,55401,United States,+1-555-0133,Residential,Minneapolis address,Minnesota
+US-ADDR-034,Kimberly,Turner,,1818 Cornhusker Hwy,,Omaha,NE,68101,United States,+1-555-0134,Residential,Nebraska address,Great Plains
+US-ADDR-035,Kenneth,Phillips,,1919 Main Street,,Des Moines,IA,50301,United States,+1-555-0135,Residential,Iowa address,Midwest
+US-ADDR-036,Donna,Campbell,,2020 Market Street,,Wilmington,DE,19801,United States,+1-555-0136,Residential,Delaware address,Small state
+US-ADDR-037,Ronald,Parker,,2121 Ocean Drive,,Virginia Beach,VA,23451,United States,+1-555-0137,Residential,Virginia Beach,Coastal VA
+US-ADDR-038,Carol,Evans,,2222 Tobacco Road,,Durham,NC,27701,United States,+1-555-0138,Residential,Durham address,Research Triangle
+US-ADDR-039,George,Edwards,,2323 Magnolia Lane,,Charleston,SC,29401,United States,+1-555-0139,Residential,Charleston historic,South Carolina
+US-ADDR-040,Dorothy,Collins,,2424 Broadway Street,,Little Rock,AR,72201,United States,+1-555-0140,Residential,Arkansas address,Arkansas
+US-ADDR-041,Jeffrey,Stewart,,2525 Mississippi Blvd,,Jackson,MS,39201,United States,+1-555-0141,Residential,Mississippi address,Deep South
+US-ADDR-042,Sharon,Sanchez,,2626 Beale Street,,Memphis,TN,38103,United States,+1-555-0142,Residential,Memphis address,Tennessee
+US-ADDR-043,Cynthia,Morris,,2727 French Quarter,,Baton Rouge,LA,70801,United States,+1-555-0143,Residential,Louisiana capital,Louisiana
+US-ADDR-044,Gary,Rogers,,2828 Desert Road,,Albuquerque,NM,87101,United States,+1-555-0144,Residential,New Mexico address,Southwest
+US-ADDR-045,Kathleen,Reed,,2929 Frontier Avenue,,Cheyenne,WY,82001,United States,+1-555-0145,Residential,Wyoming address,Least populated
+US-ADDR-046,Larry,Cook,,3030 Silver State Blvd,,Reno,NV,89501,United States,+1-555-0146,Residential,Reno address,Northern Nevada
+US-ADDR-047,Deborah,Morgan,,3131 Silicon Slopes Dr,,Provo,UT,84601,United States,+1-555-0147,Residential,Utah tech corridor,Utah County
+US-ADDR-048,Frank,Bell,,3232 Snake River Way,,Boise,ID,83701,United States,+1-555-0148,Residential,Idaho address,Idaho
+US-ADDR-049,Helen,Murphy,,3333 Clark Fork Ave,,Billings,MT,59101,United States,+1-555-0149,Residential,Montana address,Big Sky Country
+US-ADDR-050,Jose,Bailey,,3434 Black Hills Pkwy,,Rapid City,SD,57701,United States,+1-555-0150,Residential,South Dakota address,Mount Rushmore state
+US-ADDR-051,Mary-Jane,O'Connor,,100 Special Character St,Apt #5-B,New York,NY,10001,United States,+1-555-0151,Residential,Special chars in name,Hyphen and apostrophe
+US-ADDR-052,José,García,,200 Unicode Avenue,,Los Angeles,CA,90001,United States,+1-555-0152,Residential,Spanish accents,Unicode testing
+US-ADDR-053,Hans,Müller,,300 German Street,,Chicago,IL,60601,United States,+1-555-0153,Residential,German umlaut,International name
+US-ADDR-054,François,Dubois,,400 French Boulevard,,Miami,FL,33101,United States,+1-555-0154,Residential,French accents,Accented characters
+US-ADDR-055,Björn,Andersson,,500 Scandinavian Way,,Seattle,WA,98101,United States,+1-555-0155,Residential,Swedish character,Nordic name
+US-ADDR-056,Christopher Alexander,Montgomery-Williamson III,,1000 Very Long Name Street,Apartment 12345,San Francisco,CA,94101,United States,+1-555-0156,Residential,Very long name,Boundary testing
+US-ADDR-057,Li,Wu,,50 Short Name Rd,,Boston,MA,02101,United States,+1-555-0157,Residential,Very short name,Minimal name length
+US-ADDR-058,John,Smith,Company (Inc),123 Parentheses St,Suite #100,Denver,CO,80201,United States,+1-555-0158,Business,Special chars in company,Company name edge case
+US-ADDR-059,Jane,Doe,,999 Long Address Line That Exceeds Normal Length Expectations And Tests Field Limits,,New York,NY,10001,United States,+1-555-0159,Residential,Very long address line,Address length boundary
+US-ADDR-060,Robert,Johnson,O'Brien & Sons LLC,500 Apostrophe & Ampersand Ave,Floor 3,Chicago,IL,60601,United States,+1-555-0160,Business,Special chars in company,Ampersand and apostrophe
+US-ADDR-061,Military,Base,US Air Force,1234 Base Exchange,Building 789,APO,AE,09012,United States,+1-555-0161,Military,APO address Europe,Military overseas
+US-ADDR-062,Military,Personnel,US Navy,5678 Fleet Post Office,Unit 456,FPO,AP,96543,United States,+1-555-0162,Military,FPO address Pacific,Military Pacific
+US-ADDR-063,PO,Box,PO Box 1234,,Smalltown,IA,50001,United States,+1-555-0163,PO Box,PO Box only,No street address
+US-ADDR-064,Rural,Route,RR 2 Box 345,,Farmville,KS,66002,United States,+1-555-0164,Rural,Rural route address,Non-standard format
+US-ADDR-065,Highway,Contract,HC 73 Box 12,,Remote,MT,59001,United States,+1-555-0165,Rural,Highway contract route,Rural delivery
+US-ADDR-066,General,Delivery,General Delivery,,Nome,AK,99762,United States,+1-907-555-0166,General Delivery,General delivery,No physical address
+US-ADDR-067,Nine,Digit,123 ZIP+4 Street,,Portland,OR,97201-1234,United States,+1-555-0167,Residential,ZIP+4 format,Extended ZIP code
+US-ADDR-068,Valid,Territory,456 Caribbean Ave,,San Juan,PR,00901,United States,+1-787-555-0168,Residential,Puerto Rico address,US territory
+US-ADDR-069,Virgin,Islands,789 Island Road,,Charlotte Amalie,VI,00801,United States,+1-340-555-0169,Residential,US Virgin Islands,US territory
+US-ADDR-070,Guam,Territory,321 Pacific Boulevard,,Hagåtña,GU,96910,United States,+1-671-555-0170,Residential,Guam address,US territory Pacific
+US-ADDR-071,American,Samoa,654 South Pacific Way,,Pago Pago,AS,96799,United States,+1-684-555-0171,Residential,American Samoa,US territory
+US-ADDR-072,Northern,Mariana,987 Saipan Street,,Saipan,MP,96950,United States,+1-670-555-0172,Residential,Northern Mariana Islands,US territory
+US-ADDR-073,Minimum,Address,1 St,,A,CA,90001,United States,+1-555-0173,Residential,Minimal address,Boundary test minimal
+US-ADDR-074,Test,Case,2 Ave,#1,B,NY,10001,United States,+1-555-0174,Residential,Short city name,Single letter city
+US-ADDR-075,Corner,Store,Corner of 5th & Main,,Smithville,TX,78957,United States,+1-555-0175,Business,Intersection address,Non-numeric address
+US-ADDR-076,Apartment,Tower,The Plaza Building,Tower A Floor 25 Unit 2501,New York,NY,10001,United States,+1-555-0176,Residential,Complex address line 2,Multi-level building
+US-ADDR-077,Same,Name,123 Oak Street,,Springfield,IL,62701,United States,+1-555-0177,Residential,Springfield IL,Common city name test
+US-ADDR-078,Same,Name,456 Elm Avenue,,Springfield,MA,01101,United States,+1-555-0178,Residential,Springfield MA,Duplicate city different state
+US-ADDR-079,Same,Name,789 Maple Road,,Springfield,MO,65801,United States,+1-555-0179,Residential,Springfield MO,Another Springfield
+US-ADDR-080,Same,Name,321 Pine Lane,,Springfield,OR,97477,United States,+1-555-0180,Residential,Springfield OR,Yet another Springfield
+US-ADDR-081,Zero,Leading,001 Numeric Street,,Portland,OR,97201,United States,+1-555-0181,Residential,Leading zero in number,Address number edge case
+US-ADDR-082,Fraction,Address,123 1/2 Main Street,,San Francisco,CA,94101,United States,+1-555-0182,Residential,Fractional address,Historical addressing
+US-ADDR-083,Directional,Address,456 N Main Street,,Chicago,IL,60601,United States,+1-555-0183,Residential,North directional,Directional prefix
+US-ADDR-084,Directional,Address,789 Main Street SW,,Washington,DC,20001,United States,+1-555-0184,Residential,Southwest directional,Directional suffix
+US-ADDR-085,Street,Type,123 Main Boulevard,,Los Angeles,CA,90001,United States,+1-555-0185,Residential,Boulevard street type,Full street type
+US-ADDR-086,Street,Type,456 Oak Blvd,,New York,NY,10001,United States,+1-555-0186,Residential,Abbreviated Blvd,Abbreviated street type
+US-ADDR-087,Street,Type,789 Elm Court,,Boston,MA,02101,United States,+1-555-0187,Residential,Court street type,Ct type
+US-ADDR-088,Street,Type,321 Pine Circle,,Seattle,WA,98101,United States,+1-555-0188,Residential,Circle street type,Cir type
+US-ADDR-089,Street,Type,654 Maple Terrace,,Miami,FL,33101,United States,+1-555-0189,Residential,Terrace street type,Ter type
+US-ADDR-090,Unit,Type,100 Main St,Unit 5,Denver,CO,80201,United States,+1-555-0190,Residential,Unit format,Standard unit
+US-ADDR-091,Unit,Type,200 Oak Ave,Apartment 10,Chicago,IL,60601,United States,+1-555-0191,Residential,Apartment format,Full apartment word
+US-ADDR-092,Unit,Type,300 Elm Blvd,Apt 15,New York,NY,10001,United States,+1-555-0192,Residential,Apt format,Abbreviated apartment
+US-ADDR-093,Unit,Type,400 Pine St,Suite 200,San Francisco,CA,94101,United States,+1-555-0193,Business,Suite format,Business suite
+US-ADDR-094,Unit,Type,500 Maple Dr,Ste 300,Los Angeles,CA,90001,United States,+1-555-0194,Business,Ste format,Abbreviated suite
+US-ADDR-095,Unit,Type,600 Birch Way,Building C,Seattle,WA,98101,United States,+1-555-0195,Business,Building format,Building designation
+US-ADDR-096,Unit,Type,700 Cedar Ln,Floor 5,Boston,MA,02101,United States,+1-555-0196,Residential,Floor format,Floor number
+US-ADDR-097,Unit,Type,800 Spruce Rd,#25,Miami,FL,33101,United States,+1-555-0197,Residential,# format,Hashtag unit
+US-ADDR-098,PO,Box,PO Box 9999,,Anchorage,AK,99501,United States,+1-907-555-0198,PO Box,Large PO box number,High PO box number
+US-ADDR-099,State,Test,100 State St,,Montgomery,AL,36101,United States,+1-555-0199,Residential,Alabama address,State coverage
+US-ADDR-100,State,Test,200 State Ave,,Phoenix,AZ,85001,United States,+1-555-0200,Residential,Arizona address,State coverage
