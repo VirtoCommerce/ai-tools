@@ -1,0 +1,1614 @@
+ID,Title,Attachments,Estimate,Expected Result,Preconditions,Priority,References,Section,Section Depth,Section Description,Section Hierarchy,Steps,Steps,Steps (Additional Info),Steps (Expected Result),Steps (References),Steps (Step),is_converted
+C412702,Environment Configuration Setup,,,"<p>Configuration is saved successfully<br />Services restart without errors<br />Full-text search feature is enabled</p>
+","<p>Admin access to environment configuration files</p>
+",High,VCST-3865,Environment Setup,1,,BOPIS (Pickup locations) > Environment Setup,"<ol>
+<li>Navigate to environment configuration file: environment.yml</li>
+<li>Add configuration parameter: Search__PickupLocationFullTextSearchEnabled: true</li>
+<li>Save the configuration file</li>
+<li>Restart the application/services</li>
+</ol>
+",,,,,,1
+C412703,Activate BOPIS Module,,,"BOPIS module shows as Active
+Configuration is saved successfully
+BOPIS option appears in checkout flow","Admin privileges
+BOPIS module installed",High,VCST-3865,Environment Setup,1,,BOPIS (Pickup locations) > Environment Setup,"1. Log in to admin panel with administrator credentials
+2. Navigate to Store Settings
+3. Locate BOPIS (Buy Online Pick Up In Store) module
+4. Enable/Activate the BOPIS module
+5. Configure required BOPIS settings
+6. Save configuration",,,,,,0
+C412704,Build Pickup Locations Index,,,"Index build completes successfully
+Success message is displayed
+Index status shows as Active
+Document count matches number of pickup locations","Admin access
+Pickup locations exist in system
+Search engine configured",High,VCST-3865,Environment Setup,1,,BOPIS (Pickup locations) > Environment Setup,"1. Access admin panel
+2. Navigate to Search → Index Management
+3. Locate Pickup Locations index
+4. Click Build Index or Rebuild Index
+5. Wait for indexing process to complete
+6. Verify index build status",,,,,,0
+C412705,Create Test Pickup Locations,,,"All 20+ locations are created successfully
+Each location has complete required data
+Geographic coordinates are accurate
+Custom properties are configured
+Stock availability is set for test products",Admin access to location management,High,VCST-3865,Environment Setup,1,,BOPIS (Pickup locations) > Environment Setup,"1. Navigate to Pickup Locations management
+2. Create 20+ pickup locations with complete data:
+   - Name, address, city, region, ZIP, country
+   - Geographic coordinates (latitude/longitude)
+   - Contact information
+   - Operating hours
+   - Subway station custom property
+   - Stock availability for test products
+3. Save each location
+4. Verify all locations are created",,,,,,0
+C412706,Verify Pickup Store Index Creation,,,"Pickup Locations index exists and shows Active status
+Document count matches number of created pickup locations
+Index includes: name, city, zip, country, region, custom properties (subway station)","Search__PickupLocationFullTextSearchEnabled: true is set
+Index has been built successfully
+Pickup stores exist in system",High,VCST-3865,Index Management,1,,BOPIS (Pickup locations) > Index Management,"1. Navigate to admin panel
+2. Go to Search → Index Management
+3. Locate Pickup Locations index
+4. Verify index status and document count
+5. Check that all required fields are included in index document",,,,,,0
+C412728,Index Rebuild Verification,,,"Index rebuilds successfully
+New location appears in search results
+Document count increases by 1
+All existing locations remain searchable",Admin access to index management,High,VCST-3865,Index Management,1,,BOPIS (Pickup locations) > Index Management,"1. Note current index state and document count
+2. Add new pickup location with all required data
+3. Rebuild pickup locations index
+4. Wait for completion
+5. Search for newly added location",,,,,,0
+C415553,TC-001: Basic Map Stability,,900s,,"<ul><li>Test URL: <a href=""https://virtostart-demo-store.govirto.com/cart"">https://virtostart-demo-store.govirto.com/cart</a></li><li>Shopping cart contains at least 2 products</li><li>Multiple pickup locations configured</li></ul>",Critical,"VCST-4499, PR-2138",VCST-4499 BOPIS Map Modal,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > VCST-4499 BOPIS Map Modal,,"Step Description:
+<ol><li>Add products to cart</li><li>Navigate to cart page</li><li>Scroll to shipping section</li><li>Select """"Pickup"""" option</li><li>Click """"Select pickup location""""</li><li>Measure map container dimensions (note height/width)</li><li>Enter location name in search field</li><li>Verify map dimensions remain unchanged</li><li>Verify map does not jump/shift position</li><li>Clear search field using X button</li><li>Verify map dimensions remain unchanged</li><li>Verify map does not jump/shift position</li><li>Enter address in search field</li><li>Clear search field manually (backspace)</li><li>Verify map dimensions remain unchanged</li><li>Repeat steps 7-15 three times</li></ol>
+Expected Result:
+<ul><li>Cart page displays correctly with items</li><li>Pickup location selector opens on Pickup selection</li><li>Map modal opens with map displayed</li><li>Map container maintains consistent dimensions throughout all operations</li><li>No visual """"jumping"""" or layout shifts occur</li><li>Smooth transitions between states</li><li>Search field accepts input and clears properly</li><li>Consistent behavior across multiple iterations</li></ul>",,"<ul><li>Cart page displays correctly with items</li><li>Pickup location selector opens on Pickup selection</li><li>Map modal opens with map displayed</li><li>Map container maintains consistent dimensions throughout all operations</li><li>No visual ""jumping"" or layout shifts occur</li><li>Smooth transitions between states</li><li>Search field accepts input and clears properly</li><li>Consistent behavior across multiple iterations</li></ul>",,"<ol><li>Add products to cart</li><li>Navigate to cart page</li><li>Scroll to shipping section</li><li>Select ""Pickup"" option</li><li>Click ""Select pickup location""</li><li>Measure map container dimensions (note height/width)</li><li>Enter location name in search field</li><li>Verify map dimensions remain unchanged</li><li>Verify map does not jump/shift position</li><li>Clear search field using X button</li><li>Verify map dimensions remain unchanged</li><li>Verify map does not jump/shift position</li><li>Enter address in search field</li><li>Clear search field manually (backspace)</li><li>Verify map dimensions remain unchanged</li><li>Repeat steps 7-15 three times</li></ol>",1
+C415554,TC-002: Desktop View - Location Selection Flow,,720s,,"<ul>
+<li>Desktop browser (1920x1080 or similar)</li>
+<li>PR #2138 deployed</li>
+<li>Test URL accessible</li>
+<li>Cart has products</li>
+<li>Multiple pickup locations available</li>
+</ul>
+",Critical,"VCST-4499, PR-2138, VCST-4518",VCST-4499 BOPIS Map Modal,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > VCST-4499 BOPIS Map Modal,,"Step Description:
+<ol>
+<li>Open pickup location modal</li>
+<li>Verify desktop layout (map on right, list on left)</li>
+<li>Click on a location in the list</li>
+<li>Verify location highlights on map</li>
+<li>Verify map pans smoothly to selected location</li>
+<li>Verify info window opens on marker</li>
+<li>Click different location in list</li>
+<li>Verify previous highlight clears, new location highlights</li>
+<li>Verify map animates smoothly to new location</li>
+<li>Click marker on map directly</li>
+<li>Verify info window opens</li>
+<li>Click &quot;Select&quot; button in info window</li>
+<li>Verify PickupLocationCard dialog opens</li>
+<li>Verify card content (location details, availability, contact info)</li>
+<li>Click &quot;Confirm&quot; button</li>
+<li>Verify modal closes and pickup location is set in cart</li>
+</ol>
+Expected Result:
+<ul>
+<li>Modal opens with proper desktop layout</li>
+<li>Location list visible on left, map on right</li>
+<li>Clicking list items highlights markers and pans map smoothly</li>
+<li>Info windows open correctly on markers</li>
+<li>Only one location highlighted at a time</li>
+<li>PickupLocationCard displays with all required information</li>
+<li>Confirmation flow completes successfully</li>
+<li>Selected location appears in cart page</li>
+<li>All interactions smooth without lag</li>
+<li>No race conditions in info window display</li>
+</ul>",,"<ul>
+<li>Modal opens with proper desktop layout</li>
+<li>Location list visible on left, map on right</li>
+<li>Clicking list items highlights markers and pans map smoothly</li>
+<li>Info windows open correctly on markers</li>
+<li>Only one location highlighted at a time</li>
+<li>PickupLocationCard displays with all required information</li>
+<li>Confirmation flow completes successfully</li>
+<li>Selected location appears in cart page</li>
+<li>All interactions smooth without lag</li>
+<li>No race conditions in info window display</li>
+</ul>",,"<ol>
+<li>Open pickup location modal</li>
+<li>Verify desktop layout (map on right, list on left)</li>
+<li>Click on a location in the list</li>
+<li>Verify location highlights on map</li>
+<li>Verify map pans smoothly to selected location</li>
+<li>Verify info window opens on marker</li>
+<li>Click different location in list</li>
+<li>Verify previous highlight clears, new location highlights</li>
+<li>Verify map animates smoothly to new location</li>
+<li>Click marker on map directly</li>
+<li>Verify info window opens</li>
+<li>Click &quot;Select&quot; button in info window</li>
+<li>Verify PickupLocationCard dialog opens</li>
+<li>Verify card content (location details, availability, contact info)</li>
+<li>Click &quot;Confirm&quot; button</li>
+<li>Verify modal closes and pickup location is set in cart</li>
+</ol>",1
+C415555,TC-003: Mobile View - List/Map Toggle,,600s,,"- Mobile device or browser dev tools (375x667)
+- iOS Safari or Android Chrome
+- PR #2138 deployed
+- Cart has products",Critical,"VCST-4499, PR-2138",VCST-4499 BOPIS Map Modal,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > VCST-4499 BOPIS Map Modal,,"Step Description:
+1. Open pickup location modal on mobile device
+2. Verify modal opens showing list view by default
+3. Verify List/Map toggle button visible at top
+4. Click &quot;Map&quot; toggle
+5. Verify view switches to map
+6. Verify map fills viewport correctly
+7. Verify list view is hidden
+8. Click &quot;List&quot; toggle
+9. Verify view switches back to list
+10. Verify list fills viewport correctly
+11. Verify map view is hidden
+12. Switch to Map view
+13. Click on a marker
+14. Verify info window opens on marker
+15. Click &quot;Select&quot; in info window
+16. Verify PickupLocationCard opens
+17. Verify card displays properly on small screen
+18. Confirm selection
+19. Verify modal closes and location is set
+Expected Result:
+- Mobile layout displays correctly
+- Toggle button is visible and accessible
+- Views switch instantly without lag
+- Only one view visible at a time
+- Each view properly sized for mobile viewport
+- No horizontal scrolling
+- Touch targets appropriately sized (min 44x44px)
+- Info windows work on mobile
+- PickupLocationCard fits mobile screen
+- Selection flow completes successfully",,"- Mobile layout displays correctly
+- Toggle button is visible and accessible
+- Views switch instantly without lag
+- Only one view visible at a time
+- Each view properly sized for mobile viewport
+- No horizontal scrolling
+- Touch targets appropriately sized (min 44x44px)
+- Info windows work on mobile
+- PickupLocationCard fits mobile screen
+- Selection flow completes successfully",,"1. Open pickup location modal on mobile device
+2. Verify modal opens showing list view by default
+3. Verify List/Map toggle button visible at top
+4. Click &quot;Map&quot; toggle
+5. Verify view switches to map
+6. Verify map fills viewport correctly
+7. Verify list view is hidden
+8. Click &quot;List&quot; toggle
+9. Verify view switches back to list
+10. Verify list fills viewport correctly
+11. Verify map view is hidden
+12. Switch to Map view
+13. Click on a marker
+14. Verify info window opens on marker
+15. Click &quot;Select&quot; in info window
+16. Verify PickupLocationCard opens
+17. Verify card displays properly on small screen
+18. Confirm selection
+19. Verify modal closes and location is set",0
+C415556,TC-004: Search Functionality,,600s,,"- Pickup location modal accessible
+- Multiple locations with different names
+- Valid and invalid address test data prepared",High,"VCST-4499, PR-2138",VCST-4499 BOPIS Map Modal,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > VCST-4499 BOPIS Map Modal,,"Step Description:
+1. Open pickup location modal
+2. Enter partial location name (e.g., &quot;Mall&quot;)
+3. Verify results filter to matching locations
+4. Verify map updates to show only matching markers
+5. Verify list updates to show only matching locations
+6. Clear search using X button
+7. Verify all locations return to display
+8. Enter full address
+9. Verify map zooms to address area
+10. Verify nearby locations highlighted
+11. Enter invalid/non-existent address
+12. Verify appropriate error or empty state shown
+13. Verify geolocation handling (no crash)
+14. Clear invalid search
+15. Verify returns to normal state
+16. Type rapidly in search field
+17. Verify search debounces appropriately
+18. Verify no excessive API calls
+Expected Result:
+- Search field accepts input correctly
+- Results filter accurately based on search term
+- Map and list stay synchronized during search
+- Partial matches work correctly
+- Clear button restores all locations
+- Address search zooms map appropriately
+- Invalid addresses handled gracefully
+- No crashes or errors with invalid input
+- Rapid typing debounced properly
+- Reasonable number of map updates (no excessive API calls)
+- Search results immediate and accurate",,"- Search field accepts input correctly
+- Results filter accurately based on search term
+- Map and list stay synchronized during search
+- Partial matches work correctly
+- Clear button restores all locations
+- Address search zooms map appropriately
+- Invalid addresses handled gracefully
+- No crashes or errors with invalid input
+- Rapid typing debounced properly
+- Reasonable number of map updates (no excessive API calls)
+- Search results immediate and accurate",,"1. Open pickup location modal
+2. Enter partial location name (e.g., &quot;Mall&quot;)
+3. Verify results filter to matching locations
+4. Verify map updates to show only matching markers
+5. Verify list updates to show only matching locations
+6. Clear search using X button
+7. Verify all locations return to display
+8. Enter full address
+9. Verify map zooms to address area
+10. Verify nearby locations highlighted
+11. Enter invalid/non-existent address
+12. Verify appropriate error or empty state shown
+13. Verify geolocation handling (no crash)
+14. Clear invalid search
+15. Verify returns to normal state
+16. Type rapidly in search field
+17. Verify search debounces appropriately
+18. Verify no excessive API calls",0
+C415557,TC-005: Filter Operations,,480s,,"- Modal accessible
+- Locations with various availability statuses
+- Distance data available (if applicable)",High,"VCST-4499, PR-2138",VCST-4499 BOPIS Map Modal,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > VCST-4499 BOPIS Map Modal,,"Step Description:
+1. Open pickup location modal
+2. Verify filter section visible and properly styled
+3. Apply availability filter (if available)
+4. Verify list filters to available locations only
+5. Verify unavailable locations greyed out or hidden on map
+6. Apply distance filter (if available)
+7. Verify locations sorted/filtered by distance
+8. Combine multiple filters
+9. Verify both filters apply correctly
+10. Search while filters active
+11. Verify search respects active filters
+12. Clear all filters
+13. Verify all locations return
+14. Verify map shows all locations again
+Expected Result:
+- Filter UI displays correctly and is responsive
+- Availability filter works correctly
+- Map markers reflect filter state
+- Distance filter works correctly
+- Multiple filters combine properly
+- Search respects active filters
+- Clear filters restores all locations
+- Map and list remain synchronized throughout
+- Filter changes apply immediately",,"- Filter UI displays correctly and is responsive
+- Availability filter works correctly
+- Map markers reflect filter state
+- Distance filter works correctly
+- Multiple filters combine properly
+- Search respects active filters
+- Clear filters restores all locations
+- Map and list remain synchronized throughout
+- Filter changes apply immediately",,"1. Open pickup location modal
+2. Verify filter section visible and properly styled
+3. Apply availability filter (if available)
+4. Verify list filters to available locations only
+5. Verify unavailable locations greyed out or hidden on map
+6. Apply distance filter (if available)
+7. Verify locations sorted/filtered by distance
+8. Combine multiple filters
+9. Verify both filters apply correctly
+10. Search while filters active
+11. Verify search respects active filters
+12. Clear all filters
+13. Verify all locations return
+14. Verify map shows all locations again",0
+C415558,TC-006: Map Interaction & Info Windows,,720s,,"- Google Maps API configured
+- Multiple locations with markers
+- Modal accessible",High,"VCST-4499, PR-2138",VCST-4499 BOPIS Map Modal,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > VCST-4499 BOPIS Map Modal,,"Step Description:
+1. Open pickup location modal
+2. Verify map loads completely (no blank map)
+3. Verify markers visible on map
+4. Zoom in using controls
+5. Verify map zooms smoothly
+6. Zoom out using controls
+7. Verify map zooms smoothly
+8. Pan map by dragging
+9. Verify map pans smoothly
+10. Click marker A
+11. Verify info window A opens
+12. Quickly click marker B
+13. Verify info window B opens and A closes
+14. Verify only one info window visible (no race condition)
+15. Rapidly click multiple markers in succession
+16. Verify no crashes, single info window always visible
+17. Click map background
+18. Verify current info window closes
+19. Use keyboard to navigate list
+20. Verify map updates accordingly with smooth pan animation
+Expected Result:
+- Map renders completely without blank areas
+- All markers visible at appropriate zoom level
+- Zoom controls work smoothly
+- Pan/drag works smoothly
+- Info windows open correctly on marker click
+- Only one info window visible at a time
+- No race conditions when rapidly clicking markers
+- Background click closes info window
+- Keyboard navigation updates map correctly
+- Smooth pan animations with idle callback
+- All map interactions responsive and smooth",,"- Map renders completely without blank areas
+- All markers visible at appropriate zoom level
+- Zoom controls work smoothly
+- Pan/drag works smoothly
+- Info windows open correctly on marker click
+- Only one info window visible at a time
+- No race conditions when rapidly clicking markers
+- Background click closes info window
+- Keyboard navigation updates map correctly
+- Smooth pan animations with idle callback
+- All map interactions responsive and smooth",,"1. Open pickup location modal
+2. Verify map loads completely (no blank map)
+3. Verify markers visible on map
+4. Zoom in using controls
+5. Verify map zooms smoothly
+6. Zoom out using controls
+7. Verify map zooms smoothly
+8. Pan map by dragging
+9. Verify map pans smoothly
+10. Click marker A
+11. Verify info window A opens
+12. Quickly click marker B
+13. Verify info window B opens and A closes
+14. Verify only one info window visible (no race condition)
+15. Rapidly click multiple markers in succession
+16. Verify no crashes, single info window always visible
+17. Click map background
+18. Verify current info window closes
+19. Use keyboard to navigate list
+20. Verify map updates accordingly with smooth pan animation",0
+C415559,TC-007: Pickup Location Card Component,,480s,,"<ul>
+<li>Modal accessible</li>
+<li>Locations with complete information (name, address, hours, contact)</li>
+</ul>
+",High,"VCST-4499, PR-2138, VCST-4518",VCST-4499 BOPIS Map Modal,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > VCST-4499 BOPIS Map Modal,,"Step Description:
+<ol>
+<li>Open pickup location modal</li>
+<li>Select a location (click marker or list item)</li>
+<li>Verify PickupLocationCard dialog opens</li>
+<li>Verify card structure (title, details, availability, actions)</li>
+<li>Verify location name displays correctly</li>
+<li>Verify address displays correctly</li>
+<li>Verify hours of operation display</li>
+<li>Verify availability information with chip-based presentation</li>
+<li>Verify contact information (phone, email if available)</li>
+<li>Verify action buttons (Confirm and Cancel) present</li>
+<li>Click &quot;Cancel&quot; button</li>
+<li>Verify dialog closes and returns to map modal</li>
+<li>Verify map position and selection unchanged</li>
+<li>Select location again</li>
+<li>Verify card reopens</li>
+<li>Click &quot;Confirm&quot; button</li>
+<li>Verify card closes, modal closes, location set in cart</li>
+</ol>
+Expected Result:
+<ul>
+<li>PickupLocationCard opens on location selection</li>
+<li>Card displays all relevant location information clearly</li>
+<li>Title shows location name</li>
+<li>Address formatted correctly</li>
+<li>Hours of operation visible</li>
+<li>Chip-based availability presentation matches design</li>
+<li>Contact info displays if available</li>
+<li>Confirm and Cancel buttons visible and accessible</li>
+<li>Cancel returns to modal without changing state</li>
+<li>Confirm completes selection and closes modal</li>
+<li>Selected location shows in cart</li>
+<li>State management proper on cancel/confirm</li>
+<li>UI matches design specifications</li>
+</ul>",,"<ul>
+<li>PickupLocationCard opens on location selection</li>
+<li>Card displays all relevant location information clearly</li>
+<li>Title shows location name</li>
+<li>Address formatted correctly</li>
+<li>Hours of operation visible</li>
+<li>Chip-based availability presentation matches design</li>
+<li>Contact info displays if available</li>
+<li>Confirm and Cancel buttons visible and accessible</li>
+<li>Cancel returns to modal without changing state</li>
+<li>Confirm completes selection and closes modal</li>
+<li>Selected location shows in cart</li>
+<li>State management proper on cancel/confirm</li>
+<li>UI matches design specifications</li>
+</ul>",,"<ol>
+<li>Open pickup location modal</li>
+<li>Select a location (click marker or list item)</li>
+<li>Verify PickupLocationCard dialog opens</li>
+<li>Verify card structure (title, details, availability, actions)</li>
+<li>Verify location name displays correctly</li>
+<li>Verify address displays correctly</li>
+<li>Verify hours of operation display</li>
+<li>Verify availability information with chip-based presentation</li>
+<li>Verify contact information (phone, email if available)</li>
+<li>Verify action buttons (Confirm and Cancel) present</li>
+<li>Click &quot;Cancel&quot; button</li>
+<li>Verify dialog closes and returns to map modal</li>
+<li>Verify map position and selection unchanged</li>
+<li>Select location again</li>
+<li>Verify card reopens</li>
+<li>Click &quot;Confirm&quot; button</li>
+<li>Verify card closes, modal closes, location set in cart</li>
+</ol>",1
+C415560,TC-008: Scroll Behavior & Modal Controls,,480s,,"- Modal accessible
+- Location list with enough items to require scrolling",Medium,"VCST-4499, PR-2138",VCST-4499 BOPIS Map Modal,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > VCST-4499 BOPIS Map Modal,,"Step Description:
+1. Open pickup location modal
+2. Verify modal structure (header, content, footer visible)
+3. Scroll location list
+4. Verify list scrolls independently of map
+5. Verify map remains static (does not scroll)
+6. Scroll to bottom of list
+7. Verify scroll stops at end (no over-scroll issues)
+8. Scroll to top of list
+9. Verify scroll stops at top
+10. Open location card
+11. Verify card opens over modal
+12. Attempt to scroll background modal
+13. Verify background modal scroll disabled
+14. Close card
+15. Verify modal scroll re-enabled
+16. Open and close modal 5 times rapidly
+17. Verify no scroll-related issues
+Expected Result:
+- Modal structure displays correctly
+- Location list scrolls independently
+- Map does not scroll with list
+- Scroll boundaries work correctly (top/bottom)
+- No unexpected over-scroll behavior
+- PickupLocationCard disables background scroll when open
+- Background scroll re-enabled after card closes
+- Rapid open/close does not cause scroll issues
+- Scroll containers work independently as designed
+- No scroll jumps or unexpected behavior",,"- Modal structure displays correctly
+- Location list scrolls independently
+- Map does not scroll with list
+- Scroll boundaries work correctly (top/bottom)
+- No unexpected over-scroll behavior
+- PickupLocationCard disables background scroll when open
+- Background scroll re-enabled after card closes
+- Rapid open/close does not cause scroll issues
+- Scroll containers work independently as designed
+- No scroll jumps or unexpected behavior",,"1. Open pickup location modal
+2. Verify modal structure (header, content, footer visible)
+3. Scroll location list
+4. Verify list scrolls independently of map
+5. Verify map remains static (does not scroll)
+6. Scroll to bottom of list
+7. Verify scroll stops at end (no over-scroll issues)
+8. Scroll to top of list
+9. Verify scroll stops at top
+10. Open location card
+11. Verify card opens over modal
+12. Attempt to scroll background modal
+13. Verify background modal scroll disabled
+14. Close card
+15. Verify modal scroll re-enabled
+16. Open and close modal 5 times rapidly
+17. Verify no scroll-related issues",0
+C415561,TC-009: Responsive Breakpoint Testing,,1200s,,"- Browser dev tools for responsive testing
+- Ability to test at multiple screen widths",High,"VCST-4499, PR-2138",VCST-4499 BOPIS Map Modal,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > VCST-4499 BOPIS Map Modal,,"Step Description:
+1. Test at 320px width
+2. Verify List/Map toggle, single column layout
+3. Test search, location selection at 320px
+4. Verify no horizontal scroll, no layout breaks
+5. Test at 375px width
+6. Verify List/Map toggle, single column layout
+7. Test all functionality at 375px
+8. Test at 425px width
+9. Verify mobile layout appropriate
+10. Test at 768px width
+11. Verify layout (desktop or enhanced mobile)
+12. Test at 1024px width
+13. Verify desktop layout (list left, map right)
+14. Test at 1440px width
+15. Verify desktop layout proper
+16. Test at 1920px width
+17. Verify desktop layout, no stretching issues
+18. Test search functionality at each breakpoint
+19. Test location selection at each breakpoint
+20. Verify all interactive elements work at all sizes
+Expected Result:
+For each breakpoint:
+- Layout matches design specification
+- No broken layouts or overlapping elements
+- No horizontal scrolling
+- All functionality works correctly
+- Interactive elements properly sized and accessible
+- Text readable and not truncated
+- Buttons/controls accessible
+- Smooth transitions between breakpoints
+- Mobile layouts use toggle (320-767px)
+- Desktop layouts show side-by-side (768px+)",,"For each breakpoint:
+- Layout matches design specification
+- No broken layouts or overlapping elements
+- No horizontal scrolling
+- All functionality works correctly
+- Interactive elements properly sized and accessible
+- Text readable and not truncated
+- Buttons/controls accessible
+- Smooth transitions between breakpoints
+- Mobile layouts use toggle (320-767px)
+- Desktop layouts show side-by-side (768px+)",,"1. Test at 320px width
+2. Verify List/Map toggle, single column layout
+3. Test search, location selection at 320px
+4. Verify no horizontal scroll, no layout breaks
+5. Test at 375px width
+6. Verify List/Map toggle, single column layout
+7. Test all functionality at 375px
+8. Test at 425px width
+9. Verify mobile layout appropriate
+10. Test at 768px width
+11. Verify layout (desktop or enhanced mobile)
+12. Test at 1024px width
+13. Verify desktop layout (list left, map right)
+14. Test at 1440px width
+15. Verify desktop layout proper
+16. Test at 1920px width
+17. Verify desktop layout, no stretching issues
+18. Test search functionality at each breakpoint
+19. Test location selection at each breakpoint
+20. Verify all interactive elements work at all sizes",0
+C415562,TC-010: Localization Testing,,1800s,,"- Access to change language settings
+- Test environment with all languages configured
+- Sample locations in system",Medium,"VCST-4499, PR-2138",VCST-4499 BOPIS Map Modal,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > VCST-4499 BOPIS Map Modal,,"Step Description:
+For each language (de, en, es, fi, fr, it, ja, no, pl, pt, ru, sv, zh):
+1. Change language setting
+2. Open pickup location modal
+3. Verify all UI elements translated
+4. Verify search placeholder translated
+5. Verify button labels translated
+6. Verify filter labels translated
+7. Verify location card content appropriate
+8. Verify text fits in containers (no overflow)
+9. Verify buttons and labels fit properly
+10. Test complete selection flow in that language
+11. Verify no truncated text anywhere
+12. Verify no broken layouts due to text length
+13. For RTL languages (if applicable), verify proper RTL display
+Expected Result:
+For all 13 languages:
+- All UI elements properly translated
+- No missing translations (no translation keys visible)
+- Text fits within containers without truncation
+- Buttons and labels properly sized
+- No layout breaks due to long text
+- Complete flow works in each language
+- Error messages translated
+- RTL languages display correctly (if applicable)
+- Character sets display correctly (esp. Japanese, Chinese, Russian)
+- Special characters handled properly",,"For all 13 languages:
+- All UI elements properly translated
+- No missing translations (no translation keys visible)
+- Text fits within containers without truncation
+- Buttons and labels properly sized
+- No layout breaks due to long text
+- Complete flow works in each language
+- Error messages translated
+- RTL languages display correctly (if applicable)
+- Character sets display correctly (esp. Japanese, Chinese, Russian)
+- Special characters handled properly",,"For each language (de, en, es, fi, fr, it, ja, no, pl, pt, ru, sv, zh):
+1. Change language setting
+2. Open pickup location modal
+3. Verify all UI elements translated
+4. Verify search placeholder translated
+5. Verify button labels translated
+6. Verify filter labels translated
+7. Verify location card content appropriate
+8. Verify text fits in containers (no overflow)
+9. Verify buttons and labels fit properly
+10. Test complete selection flow in that language
+11. Verify no truncated text anywhere
+12. Verify no broken layouts due to text length
+13. For RTL languages (if applicable), verify proper RTL display",0
+C415563,TC-011: Performance Testing,,900s,,"- Test environments with varying location counts
+- Browser dev tools for performance monitoring
+- Network throttling capability",Medium,"VCST-4499, PR-2138",VCST-4499 BOPIS Map Modal,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > VCST-4499 BOPIS Map Modal,,"Step Description:
+Test with 1-5 locations:
+1. Measure modal open time (should be instant)
+2. Measure search response time
+3. Measure filter response time
+4. Verify 60fps smooth interactions
+
+Test with 10-50 locations:
+5. Measure modal open time (should be &lt;1s)
+6. Test search performance
+7. Test filter performance
+8. Verify smooth map pan/zoom
+
+Test with 50-100 locations:
+9. Measure modal open time (should be &lt;2s)
+10. Verify acceptable performance
+11. Check memory usage (dev tools)
+12. Monitor network requests
+
+Test with 100+ locations:
+13. Verify map clustering or pagination
+14. Check for memory leaks
+15. Verify reasonable API call count
+Expected Result:
+Performance targets:
+- 1-5 locations: Instant load, immediate interactions
+- 10-50 locations: &lt;1s load, smooth 60fps interactions
+- 50-100 locations: &lt;2s load, acceptable smooth interaction
+- 100+ locations: Map clustering active or pagination
+- No memory leaks detected
+- Reasonable API call count (not excessive)
+- Smooth 60fps for pan/zoom at all counts
+- Search/filter response &lt;500ms
+- Modal opens within acceptable timeframes",,"Performance targets:
+- 1-5 locations: Instant load, immediate interactions
+- 10-50 locations: &lt;1s load, smooth 60fps interactions
+- 50-100 locations: &lt;2s load, acceptable smooth interaction
+- 100+ locations: Map clustering active or pagination
+- No memory leaks detected
+- Reasonable API call count (not excessive)
+- Smooth 60fps for pan/zoom at all counts
+- Search/filter response &lt;500ms
+- Modal opens within acceptable timeframes",,"Test with 1-5 locations:
+1. Measure modal open time (should be instant)
+2. Measure search response time
+3. Measure filter response time
+4. Verify 60fps smooth interactions
+
+Test with 10-50 locations:
+5. Measure modal open time (should be &lt;1s)
+6. Test search performance
+7. Test filter performance
+8. Verify smooth map pan/zoom
+
+Test with 50-100 locations:
+9. Measure modal open time (should be &lt;2s)
+10. Verify acceptable performance
+11. Check memory usage (dev tools)
+12. Monitor network requests
+
+Test with 100+ locations:
+13. Verify map clustering or pagination
+14. Check for memory leaks
+15. Verify reasonable API call count",0
+C415564,TC-012: Error Handling & Edge Cases,,900s,,"- Ability to simulate various error conditions
+- Test data with edge cases
+- Network throttling tools",Medium,"VCST-4499, PR-2138",VCST-4499 BOPIS Map Modal,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > VCST-4499 BOPIS Map Modal,,"Step Description:
+1. Open modal with zero locations configured
+2. Verify appropriate empty state message
+3. Block Google Maps API (simulate failure)
+4. Verify graceful fallback or error message
+5. Deny browser geolocation permission
+6. Verify app continues without geolocation
+7. Test location with invalid coordinates
+8. Verify error handled, no crash
+9. Disconnect network during search
+10. Verify appropriate error message shown
+11. Throttle network to slow 3G
+12. Verify loading states display
+13. Test location with 200+ character name
+14. Verify text truncated or wrapped appropriately
+15. Test location with special characters/emojis
+16. Verify displays correctly
+17. Simulate concurrent user selections (if possible)
+18. Verify no conflicts
+Expected Result:
+- Empty state handled gracefully with clear message
+- Map API failure shows fallback or error (no blank crash)
+- Geolocation denial does not block functionality
+- Invalid coordinates handled without crash
+- Network errors show clear error messages
+- Slow connection shows loading indicators
+- Long names truncated/wrapped without breaking layout
+- Special characters and emojis display correctly
+- No crashes in any error scenario
+- User can recover from all error states
+- Error messages are clear and actionable
+- Graceful degradation in all scenarios",,"- Empty state handled gracefully with clear message
+- Map API failure shows fallback or error (no blank crash)
+- Geolocation denial does not block functionality
+- Invalid coordinates handled without crash
+- Network errors show clear error messages
+- Slow connection shows loading indicators
+- Long names truncated/wrapped without breaking layout
+- Special characters and emojis display correctly
+- No crashes in any error scenario
+- User can recover from all error states
+- Error messages are clear and actionable
+- Graceful degradation in all scenarios",,"1. Open modal with zero locations configured
+2. Verify appropriate empty state message
+3. Block Google Maps API (simulate failure)
+4. Verify graceful fallback or error message
+5. Deny browser geolocation permission
+6. Verify app continues without geolocation
+7. Test location with invalid coordinates
+8. Verify error handled, no crash
+9. Disconnect network during search
+10. Verify appropriate error message shown
+11. Throttle network to slow 3G
+12. Verify loading states display
+13. Test location with 200+ character name
+14. Verify text truncated or wrapped appropriately
+15. Test location with special characters/emojis
+16. Verify displays correctly
+17. Simulate concurrent user selections (if possible)
+18. Verify no conflicts",0
+C415565,TC-013: Browser Compatibility,,1500s,,"- Access to Chrome, Firefox, Safari, Edge browsers
+- Latest browser versions
+- Mobile devices or emulators for Safari iOS and Chrome Android",High,"VCST-4499, PR-2138",VCST-4499 BOPIS Map Modal,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > VCST-4499 BOPIS Map Modal,,"Step Description:
+For Chrome (Desktop &amp; Android):
+1. Run TC-001 (Map Stability)
+2. Run TC-002 (Desktop Flow)
+3. Run TC-003 (Mobile Toggle)
+4. Run TC-004 (Search)
+5. Run TC-006 (Map Interactions)
+6. Run TC-007 (Location Card)
+7. Verify all features work correctly
+
+For Firefox (Desktop):
+8. Repeat steps 1, 2, 4, 6, 7
+
+For Safari (Desktop &amp; iOS):
+9. Repeat steps 1, 2, 3, 4, 6, 7
+
+For Edge (Desktop):
+10. Repeat steps 1, 2, 4, 6, 7
+
+Compare appearance and behavior across all browsers
+Expected Result:
+- All functionality works in Chrome (desktop &amp; mobile)
+- All functionality works in Firefox
+- All functionality works in Safari (desktop &amp; iOS)
+- All functionality works in Edge
+- No browser-specific bugs
+- Consistent appearance across browsers (minor differences acceptable)
+- Map loads and works in all browsers
+- Animations smooth in all browsers
+- No console errors in any browser
+- Touch events work on mobile browsers
+- Performance acceptable in all browsers",,"- All functionality works in Chrome (desktop &amp; mobile)
+- All functionality works in Firefox
+- All functionality works in Safari (desktop &amp; iOS)
+- All functionality works in Edge
+- No browser-specific bugs
+- Consistent appearance across browsers (minor differences acceptable)
+- Map loads and works in all browsers
+- Animations smooth in all browsers
+- No console errors in any browser
+- Touch events work on mobile browsers
+- Performance acceptable in all browsers",,"For Chrome (Desktop &amp; Android):
+1. Run TC-001 (Map Stability)
+2. Run TC-002 (Desktop Flow)
+3. Run TC-003 (Mobile Toggle)
+4. Run TC-004 (Search)
+5. Run TC-006 (Map Interactions)
+6. Run TC-007 (Location Card)
+7. Verify all features work correctly
+
+For Firefox (Desktop):
+8. Repeat steps 1, 2, 4, 6, 7
+
+For Safari (Desktop &amp; iOS):
+9. Repeat steps 1, 2, 3, 4, 6, 7
+
+For Edge (Desktop):
+10. Repeat steps 1, 2, 4, 6, 7
+
+Compare appearance and behavior across all browsers",0
+C415566,TC-014: Accessibility Testing,,1200s,,"- Screen reader software (NVDA, JAWS, or VoiceOver)
+- Keyboard only (no mouse)
+- axe DevTools browser extension",Medium,"VCST-4499, PR-2138",VCST-4499 BOPIS Map Modal,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > VCST-4499 BOPIS Map Modal,,"Step Description:
+1. Open modal using keyboard only (Tab/Enter)
+2. Verify modal opens and focus moves to modal
+3. Tab through all interactive elements in modal
+4. Verify visible focus indicators on all elements
+5. Verify logical tab order (top to bottom, left to right)
+6. Verify can search using keyboard
+7. Verify can select location using keyboard
+8. Verify can confirm selection using keyboard
+9. Verify Escape key closes modal
+10. Start screen reader (NVDA/JAWS/VoiceOver)
+11. Verify modal announced when opened
+12. Verify location list items announced correctly
+13. Verify buttons and controls announced with roles
+14. Verify form fields have proper labels
+15. Run axe DevTools scan
+16. Verify no critical violations
+17. Check color contrast ratios
+18. Verify meets WCAG AA standards
+Expected Result:
+- Modal fully keyboard accessible
+- Tab order logical and complete
+- Focus indicators visible on all interactive elements
+- Can complete full flow without mouse
+- Screen reader announces all content appropriately
+- ARIA labels present on custom controls
+- Form fields properly labeled
+- Error messages announced to screen readers
+- Modal role/title announced
+- axe DevTools: 0 critical violations
+- Color contrast meets WCAG AA (4.5:1 for text)
+- Can skip to main content
+- Focus trapped in modal when open
+- Focus returns appropriately when closed",,"- Modal fully keyboard accessible
+- Tab order logical and complete
+- Focus indicators visible on all interactive elements
+- Can complete full flow without mouse
+- Screen reader announces all content appropriately
+- ARIA labels present on custom controls
+- Form fields properly labeled
+- Error messages announced to screen readers
+- Modal role/title announced
+- axe DevTools: 0 critical violations
+- Color contrast meets WCAG AA (4.5:1 for text)
+- Can skip to main content
+- Focus trapped in modal when open
+- Focus returns appropriately when closed",,"1. Open modal using keyboard only (Tab/Enter)
+2. Verify modal opens and focus moves to modal
+3. Tab through all interactive elements in modal
+4. Verify visible focus indicators on all elements
+5. Verify logical tab order (top to bottom, left to right)
+6. Verify can search using keyboard
+7. Verify can select location using keyboard
+8. Verify can confirm selection using keyboard
+9. Verify Escape key closes modal
+10. Start screen reader (NVDA/JAWS/VoiceOver)
+11. Verify modal announced when opened
+12. Verify location list items announced correctly
+13. Verify buttons and controls announced with roles
+14. Verify form fields have proper labels
+15. Run axe DevTools scan
+16. Verify no critical violations
+17. Check color contrast ratios
+18. Verify meets WCAG AA standards",0
+C415567,TC-015: Integration Testing,,720s,,"- Full cart and checkout flow enabled
+- Ability to complete orders
+- Session persistence enabled",High,"VCST-4499, PR-2138",VCST-4499 BOPIS Map Modal,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > VCST-4499 BOPIS Map Modal,,"Step Description:
+1. Add products to cart
+2. Verify cart updated correctly
+3. Select pickup location using modal
+4. Verify location set in cart
+5. Verify cart displays selected location details
+6. Change pickup location to different one
+7. Verify cart updates with new location
+8. Proceed to checkout
+9. Verify checkout page loads
+10. Verify pickup location information in checkout
+11. Complete order (if possible in test env)
+12. Verify order confirmation includes pickup details
+13. Return to cart
+14. Switch from Pickup to Delivery
+15. Verify pickup location cleared
+16. Switch back to Pickup
+17. Verify can select location again
+18. Refresh page
+19. Verify pickup location persists (if session maintained)
+Expected Result:
+- Products add to cart correctly
+- Pickup location selection integrates with cart
+- Selected location visible in cart with details
+- Changing location updates cart immediately
+- Checkout receives pickup location data
+- Pickup information persists through checkout
+- Order confirmation shows pickup details
+- Can switch between delivery methods
+- Pickup location clears when switching to delivery
+- Can re-select location after switching back
+- Data persists appropriately with session
+- No data loss between components
+- Complete flow cart → location → checkout → order works
+- Integration seamless throughout",,"- Products add to cart correctly
+- Pickup location selection integrates with cart
+- Selected location visible in cart with details
+- Changing location updates cart immediately
+- Checkout receives pickup location data
+- Pickup information persists through checkout
+- Order confirmation shows pickup details
+- Can switch between delivery methods
+- Pickup location clears when switching to delivery
+- Can re-select location after switching back
+- Data persists appropriately with session
+- No data loss between components
+- Complete flow cart → location → checkout → order works
+- Integration seamless throughout",,"1. Add products to cart
+2. Verify cart updated correctly
+3. Select pickup location using modal
+4. Verify location set in cart
+5. Verify cart displays selected location details
+6. Change pickup location to different one
+7. Verify cart updates with new location
+8. Proceed to checkout
+9. Verify checkout page loads
+10. Verify pickup location information in checkout
+11. Complete order (if possible in test env)
+12. Verify order confirmation includes pickup details
+13. Return to cart
+14. Switch from Pickup to Delivery
+15. Verify pickup location cleared
+16. Switch back to Pickup
+17. Verify can select location again
+18. Refresh page
+19. Verify pickup location persists (if session maintained)",0
+C415574,BUG-001: Pickup Map Width After Search (VCST-4518),,600s,,"<ul>
+<li>PR #2138 deployed to test environment</li>
+<li>Test URL: <a href=""https://vcst-qa-storefront.govirto.com"">https://vcst-qa-storefront.govirto.com</a></li>
+<li>Cart contains at least one product</li>
+<li>Multiple pickup locations configured</li>
+</ul>
+",Critical,"VCST-4499, VCST-4518, PR-2138",VCST-4499 BOPIS Map Modal,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > VCST-4499 BOPIS Map Modal,,"Step Description:
+<ol><li>Add product to cart and navigate to cart page</li><li>Select """"Pickup"""" under SHIPPING DETAILS</li><li>Click """"Select pickup address"""" button</li><li>Verify """"Pick points"""" modal opens with list (left) and map (right)</li><li>Measure initial map width - verify approximately 50% of modal width</li><li>Enter search term """"Westent foxpost"""" in search field</li><li>Click Search button</li><li>Verify """"Pickup points not found"""" message displays</li><li><strong>CRITICAL CHECK:</strong> Verify map maintains at least 40-50% of modal width (not ~30% or less)</li><li>Verify map remains usable and visible</li><li>Click """"Reset search"""" button</li><li>Verify map returns to normal width (~50%)</li><li>Enter search term """"South Schuylershire"""" in search field</li><li>Click Search button</li><li>Verify one location result displays</li><li><strong>CRITICAL CHECK:</strong> Verify map maintains at least 40-50% of modal width with valid results</li><li>Click on """"South Schuylershire"""" location in list</li><li>Verify """"Pick point info"""" card opens</li><li><strong>CRITICAL CHECK:</strong> Verify info card has sufficient space and readable layout</li><li>Verify map width remains stable throughout all operations</li></ol>
+Expected Result:
+<p><strong>EXPECTED (AFTER FIX):</strong></p><ul><li>Initial state: Map occupies ~50% of modal width</li><li>After empty search: Map maintains at least 40-50% width</li><li>After valid search: Map maintains at least 40-50% width</li><li>After reset: Map returns to ~50% width</li><li>Info card: Opens with sufficient space, readable content</li><li>Map never becomes unusably narrow (<40% width)</li><li>List/empty state capped at reasonable width (max 350-400px)</li></ul>",,"<p><strong>EXPECTED (AFTER FIX):</strong></p><ul><li>Initial state: Map occupies ~50% of modal width</li><li>After empty search: Map maintains at least 40-50% width</li><li>After valid search: Map maintains at least 40-50% width</li><li>After reset: Map returns to ~50% width</li><li>Info card: Opens with sufficient space, readable content</li><li>Map never becomes unusably narrow (<40% width)</li><li>List/empty state capped at reasonable width (max 350-400px)</li></ul>",,"<ol><li>Add product to cart and navigate to cart page</li><li>Select ""Pickup"" under SHIPPING DETAILS</li><li>Click ""Select pickup address"" button</li><li>Verify ""Pick points"" modal opens with list (left) and map (right)</li><li>Measure initial map width - verify approximately 50% of modal width</li><li>Enter search term ""Westent foxpost"" in search field</li><li>Click Search button</li><li>Verify ""Pickup points not found"" message displays</li><li><strong>CRITICAL CHECK:</strong> Verify map maintains at least 40-50% of modal width (not ~30% or less)</li><li>Verify map remains usable and visible</li><li>Click ""Reset search"" button</li><li>Verify map returns to normal width (~50%)</li><li>Enter search term ""South Schuylershire"" in search field</li><li>Click Search button</li><li>Verify one location result displays</li><li><strong>CRITICAL CHECK:</strong> Verify map maintains at least 40-50% of modal width with valid results</li><li>Click on ""South Schuylershire"" location in list</li><li>Verify ""Pick point info"" card opens</li><li><strong>CRITICAL CHECK:</strong> Verify info card has sufficient space and readable layout</li><li>Verify map width remains stable throughout all operations</li></ol>",1
+C412711,Facet Filter - Country,,,"<p>Only stores from selected country are displayed<br />Map updates to show filtered locations<br />Filter state is visually indicated<br />Store count updates accordingly</p>
+","<p>Stores exist in multiple countries (e.g., USA, Canada)<br />Facet filters are configured</p>
+",High,VCST-3865,Pickup Points - Basic Filters,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Basic Filters,"<ol>
+<li>Open pickup points map</li>
+<li>Locate country facet filter</li>
+<li>Select specific country (e.g., USA)</li>
+</ol>
+",,,,,,1
+C413486,Filter by Country - Single Item (Denmark),,1800s,"Only 1 location from Denmark displays
+System handles single-item filter correctly",,Medium,,Pickup Points - Basic Filters,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Basic Filters,"1. Click COUNTRY filter
+2. Select 'Denmark'
+3. Observe result count",,,,,,0
+C412712,Facet Filter - State/Province,,,"Only stores from selected region appear
+Map zooms to the region
+List updates accordingly","Stores exist in multiple regions (e.g., NY, CA, TX)",High,VCST-3865,Pickup Points - Basic Filters,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Basic Filters,"1. Access pickup point selection
+2. Apply region facet filter
+3. Select specific region (e.g., NY)",,,,,,0
+C412713,Facet Filter - City,,,"Stores from selected cities are displayed
+Map shows all selected city locations",Multiple stores in different cities,High,VCST-3865,Pickup Points - Basic Filters,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Basic Filters,"1. Navigate to pickup points map
+2. Apply city facet filter
+3. Select one (e.g., New York, Los Angeles)",,,,,,0
+C413487,Filter by Country - No Results,,1800s,"'Pickup points not found' message displays
+'RESET SEARCH' button appears
+System gracefully handles empty results",,Medium,,Pickup Points - Basic Filters,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Basic Filters,"1. Select Country: Canada
+2. Verify pickup point list",,,,,,0
+C413489,State Filter Disabled,,1800s,"Filter disabled
+System prevents invalid filter combinations",,Medium,,Pickup Points - Basic Filters,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Basic Filters,"1. Select any country except USA or Canada (China, Denmark)
+2. Click STATE/PROVINCE filter
+3. Observe behavior",,,,,,0
+C412707,Keyword Search - Pickup location name,,,"<p>Search returns stores matching the entered name<br />Results are displayed on map with markers<br />Relevant stores appear in list view</p>
+","<p>Environment setup completed<br />Multiple pickup stores exist with different names<br />BOPIS module is active</p>
+",High,VCST-3865,Pickup Points - Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Search,"<ol>
+<li>Navigate to checkout page</li>
+<li>Select Pick up</li>
+<li>Enter name (full or partial) in search bar (e.g., Downtown)</li>
+<li>Submit search</li>
+</ol>
+",,,,,,1
+C412708,Keyword Search - City,,,"All stores in specified city are displayed
+Map centers on searched city
+List shows stores from that city","Pickup stores exist in multiple cities
+Index is built",High,VCST-3865,Pickup Points - Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Search,"1. Navigate to pickup point selection map
+2. Enter city name in search bar (e.g., New York)
+3. Submit search",,,,,,0
+C412709,Keyword Search - ZIP Code,,,"Stores matching ZIP code are displayed
+Map markers appear at correct locations
+List view shows filtered results","Stores exist with different ZIP codes
+Full-text search is enabled",High,VCST-3865,Pickup Points - Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Search,"1. Access pickup points map
+2. Enter ZIP code in search bar (e.g., 10001)
+3. Submit search",,,,,,0
+C412710,Keyword Search - email or contact number,,,"Pickup locations are displayed
+Results are accurate and relevant","Some stores have subway station custom property configured
+Index includes custom properties",High,VCST-3865,Pickup Points - Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Search,"1. Navigate to pickup point selection
+2. Enter email or contact number in search bar
+3. Submit search",,,,,,0
+C413491,Search by Complete Name,,3600s,"Only Empire State Building location found
+Map updates to show location
+Search is case-insensitive",,High,,Pickup Points - Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Search,"1. Type 'Empire State Building' in search
+2. Click Search button
+3. Verify results",,,,,,0
+C413492,Search by Partial Name,,3600s,"Empire State Building and related results display
+Partial matching works correctly",,High,,Pickup Points - Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Search,"1. Type 'Empire' in search
+2. Click Search button
+3. Verify results",,,,,,0
+C413493,Search by Address,,3600s,"All locations on 34th Street display
+Address searching functional",,High,,Pickup Points - Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Search,"1. Type '34th St' in search
+2. Click Search button
+3. Verify results",,,,,,0
+C413494,Search with Special Characters (Apostrophe),,1800s,"'St. Patrick's Cathedral' found correctly
+Apostrophes handled properly",,Medium,,Pickup Points - Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Search,"1. Type 'St. Patrick's' in search
+2. Click Search button
+3. Verify results",,,,,,0
+C413495,Search with Special Characters (Ampersand),,1800s,"Location with ampersand found
+Special characters processed correctly",,Medium,,Pickup Points - Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Search,"1. Type '5th Ave & 50th' in search
+2. Click Search button
+3. Verify results",,,,,,0
+C413496,Search with Empty/Whitespace,,1800s,"All pickup points restored
+Whitespace trimmed automatically",,Medium,,Pickup Points - Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Search,"1. Type '     ' (only spaces) in search
+2. Click Search button
+3. Verify results",,,,,,0
+C413497,Search with Non-existent Term,,1800s,"'Pickup points not found' message displays
+'RESET SEARCH' button available",,Medium,,Pickup Points - Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Search,"1. Type 'NonexistentLocation' in search
+2. Click Search button
+3. Verify results",,,,,,0
+C413498,Country + State + Search (3 Levels),,7200s,"<p>Only Empire State Building displays<br />All three filter levels applied correctly<br />Results most specific to query</p>
+",,High,,Pickup Points - Multi-Filter Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Multi-Filter Search,"<ol>
+<li>Select Country: USA</li>
+<li>Select State: New York</li>
+<li>Type 'Empire' in search</li>
+<li>Click Search</li>
+</ol>
+",,,,,,1
+C413499,Country + State + City + Search (4 Levels),,7200s,"Results filtered by all 4 levels
+Only matching locations in selected city show",,High,,Pickup Points - Multi-Filter Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Multi-Filter Search,"1. Select USA + NY + New York City
+2. Type 'Building' in search
+3. Click Search",,,,,,0
+C413500,No Results at Multiple Levels,,3600s,"'Pickup points not found' at most specific level
+All filters still visible and removable",,Medium,,Pickup Points - Multi-Filter Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Multi-Filter Search,"1. Select USA + NY + NYC
+2. Search 'NonExistent'
+3. Verify results",,,,,,0
+C413501,Breadcrumb Filter Removal,,3600s,"State filter removed
+Search continues to work
+Results intelligently update to remaining filters",,Medium,,Pickup Points - Multi-Filter Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Multi-Filter Search,"1. Apply USA + NY + NYC + Search
+2. Click X on State filter
+3. Verify results update",,,,,,0
+C413502,Reset All Filters,,3600s,"All filters cleared
+All chips removed
+Full pickup points list restored",,High,,Pickup Points - Multi-Filter Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Multi-Filter Search,"1. Apply multiple filters and search
+2. Click 'Reset filters'
+3. Verify full state restored",,,,,,0
+C413503,Apply Filters After Search,,3600s,"Only USA locations with 'Building' show
+Filter + search combine correctly",,Medium,,Pickup Points - Multi-Filter Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Multi-Filter Search,"1. Type 'Building' in search
+2. Select USA country filter
+3. Click Search",,,,,,0
+C413504,Multiple Countries Selection - BUG,,7200s,"<p>Both Canada and USA chips show + results from both</p>
+",,Critical,,Pickup Points - Multiple Choice,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Multiple Choice,"<ol>
+<li>Open COUNTRY dropdown</li>
+<li>Select multiple countries (e.g Canada and USA)</li>
+</ol>
+",,,,,,1
+C413505,Multiple States Selection - BLOCKED,,7200s,"Multiple state chips appear. All relevant results returned
+
+
+",,Critical,,Pickup Points - Multiple Choice,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Multiple Choice,"1. Select USA country
+2. Open STATE/PROVINCE dropdown
+3. Try to select multiple states
+4. Verify multiple chips",,,,,,0
+C413506,Multiple Cities Selection - BLOCKED,,7200s,"Multiple city chips appear. All relevant results are returned
+
+
+",,Critical,,Pickup Points - Multiple Choice,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Multiple Choice,"1. Open CITY dropdown
+2. Try to select multiple cities",,,,,,0
+C413507,Deselect One of Multiple Choices,,7200s,,,Critical,,Pickup Points - Multiple Choice,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Multiple Choice,"1. Select multiple countries
+3. Click one checkbox again
+4. Verify deselection",,,,,,0
+C412722,Clear Filters,,,"All filters are removed
+Search resets to default view
+Map displays all available locations
+Clear button is easily accessible
+Search bar is cleared",Active filters applied,Medium,VCST-3865,Filter Management,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Filter Management,"1. Apply multiple filters (keyword + multiple facets)
+2. Locate Clear all filters or individual clear options
+3. Clear all filters",,,,,,0
+C415242,Basic Country Search - Single Character,,,,"<p>User is logged in, Cart has items, Pickup selected, Pick points modal open</p>
+",High,,Country Filter Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Country Filter Search,,"Step Description:
+<ol>
+<li>Click on COUNTRY dropdown</li>
+<li>Enter &quot;A&quot; in search field</li>
+<li>Verify filtered results</li>
+</ol>
+Expected Result:
+<p>Dropdown opens with search field. List filters to show countries containing """"A"""" (Australia, Canada, Japan, Malaysia, South Africa). Only matching countries are displayed.</p>",,"<p>Dropdown opens with search field. List filters to show countries containing ""A"" (Australia, Canada, Japan, Malaysia, South Africa). Only matching countries are displayed.</p>",,"<ol>
+<li>Click on COUNTRY dropdown</li>
+<li>Enter &quot;A&quot; in search field</li>
+<li>Verify filtered results</li>
+</ol>",1
+C415243,Country Search - Multiple Characters,,,,"<p>User is logged in, Cart has items, Pickup selected, Pick points modal open</p>
+",High,,Country Filter Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Country Filter Search,,"Step Description:
+<ol>
+<li>Click on COUNTRY dropdown</li>
+<li>Enter &quot;United&quot; in search field</li>
+<li>Verify exact matches appear first</li>
+</ol>
+Expected Result:
+<p>Dropdown opens. List filters to show """"United Kingdom"""" and """"United States of America"""". Matching countries are displayed with count badges.</p>",,"<p>Dropdown opens. List filters to show ""United Kingdom"" and ""United States of America"". Matching countries are displayed with count badges.</p>",,"<ol>
+<li>Click on COUNTRY dropdown</li>
+<li>Enter &quot;United&quot; in search field</li>
+<li>Verify exact matches appear first</li>
+</ol>",1
+C415244,Country Search - Case Insensitivity,,,,"<p>User is logged in, Cart has items, Pickup selected, Pick points modal open</p>
+",Medium,,Country Filter Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Country Filter Search,,"Step Description:
+<ol>
+<li>Click on COUNTRY dropdown</li>
+<li>Enter &quot;DENMARK&quot; in uppercase</li>
+<li>Clear and enter &quot;denmark&quot; in lowercase</li>
+<li>Clear and enter &quot;DeNmArK&quot; in mixed case</li>
+</ol>
+Expected Result:
+<p>Denmark is displayed in results for all case variations. Search is case-insensitive.</p>",,<p>Denmark is displayed in results for all case variations. Search is case-insensitive.</p>,,"<ol>
+<li>Click on COUNTRY dropdown</li>
+<li>Enter &quot;DENMARK&quot; in uppercase</li>
+<li>Clear and enter &quot;denmark&quot; in lowercase</li>
+<li>Clear and enter &quot;DeNmArK&quot; in mixed case</li>
+</ol>",1
+C415245,Country Search - No Results,,,,"<p>User is logged in, Cart has items, Pickup selected, Pick points modal open</p>
+",Medium,,Country Filter Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Country Filter Search,,"Step Description:
+<ol>
+<li>Click on COUNTRY dropdown</li>
+<li>Enter &quot;XYZ123&quot; (non-existent country)</li>
+<li>Verify the message styling</li>
+</ol>
+Expected Result:
+<p>""""No results"""" message is displayed clearly and is user-friendly.</p>",,"<p>""No results"" message is displayed clearly and is user-friendly.</p>",,"<ol>
+<li>Click on COUNTRY dropdown</li>
+<li>Enter &quot;XYZ123&quot; (non-existent country)</li>
+<li>Verify the message styling</li>
+</ol>",1
+C415246,Country Search - Clear Search Text,,,,"<p>User is logged in, Cart has items, Pickup selected, Pick points modal open</p>
+",High,,Country Filter Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Country Filter Search,,"Step Description:
+<ol>
+<li>Click on COUNTRY dropdown</li>
+<li>Enter &quot;K&quot; in search field</li>
+<li>Clear the search field (backspace/delete)</li>
+<li>Verify all countries are visible</li>
+</ol>
+Expected Result:
+<p>List filters to Denmark, United Kingdom. After clearing, full country list is restored. All available countries are displayed.</p>",,"<p>List filters to Denmark, United Kingdom. After clearing, full country list is restored. All available countries are displayed.</p>",,"<ol>
+<li>Click on COUNTRY dropdown</li>
+<li>Enter &quot;K&quot; in search field</li>
+<li>Clear the search field (backspace/delete)</li>
+<li>Verify all countries are visible</li>
+</ol>",1
+C415247,Country Search - Special Characters,,,,"<p>User is logged in, Cart has items, Pickup selected, Pick points modal open</p>
+",Low,,Country Filter Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Country Filter Search,,"Step Description:
+<ol>
+<li>Click on COUNTRY dropdown</li>
+<li>Enter special characters (!, @, #, $)</li>
+<li>Enter spaces only</li>
+</ol>
+Expected Result:
+<p>No crash occurs. Shows """"No results"""" or handles gracefully.</p>",,"<p>No crash occurs. Shows ""No results"" or handles gracefully.</p>",,"<ol>
+<li>Click on COUNTRY dropdown</li>
+<li>Enter special characters (!, @, #, $)</li>
+<li>Enter spaces only</li>
+</ol>",1
+C415248,Basic State/Province Search,,,,"<p>User is logged in, Cart has items, Pickup selected, Pick points modal open</p>
+",High,,State/Province Filter Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > State/Province Filter Search,,"Step Description:
+<ol>
+<li>Click on STATE / PROVINCE dropdown</li>
+<li>Enter &quot;New&quot; in search field</li>
+<li>Verify filtered results</li>
+</ol>
+Expected Result:
+<p>Dropdown opens with search field and state list. List filters to show states containing """"New"""" (New York, New Jersey, etc.). Only matching states are displayed with count badges.</p>",,"<p>Dropdown opens with search field and state list. List filters to show states containing ""New"" (New York, New Jersey, etc.). Only matching states are displayed with count badges.</p>",,"<ol>
+<li>Click on STATE / PROVINCE dropdown</li>
+<li>Enter &quot;New&quot; in search field</li>
+<li>Verify filtered results</li>
+</ol>",1
+C415249,State Search After Country Selection,,,,"<p>User is logged in, Cart has items, Pickup selected, Pick points modal open</p>
+",High,,State/Province Filter Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > State/Province Filter Search,,"Step Description:
+<ol>
+<li>Select &quot;United States of America&quot; in Country filter</li>
+<li>Click on STATE / PROVINCE dropdown</li>
+<li>Enter &quot;Cal&quot; in search field</li>
+<li>Verify filtered list</li>
+</ol>
+Expected Result:
+<p>Country filter is applied. Only US states are shown. California is displayed. Only US states matching """"Cal"""" are shown.</p>",,"<p>Country filter is applied. Only US states are shown. California is displayed. Only US states matching ""Cal"" are shown.</p>",,"<ol>
+<li>Select &quot;United States of America&quot; in Country filter</li>
+<li>Click on STATE / PROVINCE dropdown</li>
+<li>Enter &quot;Cal&quot; in search field</li>
+<li>Verify filtered list</li>
+</ol>",1
+C415250,Basic City Search,,,,"<p>User is logged in, Cart has items, Pickup selected, Pick points modal open</p>
+",High,,City Filter Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > City Filter Search,,"Step Description:
+<ol>
+<li>Click on CITY dropdown</li>
+<li>Enter &quot;New&quot; in search field</li>
+<li>Verify filtered results</li>
+</ol>
+Expected Result:
+<p>Dropdown opens with search field and city list. List filters to show cities containing """"New"""" (New York, Newark, etc.). Matching cities are displayed with count badges.</p>",,"<p>Dropdown opens with search field and city list. List filters to show cities containing ""New"" (New York, Newark, etc.). Matching cities are displayed with count badges.</p>",,"<ol>
+<li>Click on CITY dropdown</li>
+<li>Enter &quot;New&quot; in search field</li>
+<li>Verify filtered results</li>
+</ol>",1
+C415251,City Search - Partial Match,,,,"User is logged in, Cart has items, Pickup selected, Pick points modal open",Medium,,City Filter Search,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > City Filter Search,,"Step Description:
+1. Click on CITY dropdown
+2. Enter &quot;York&quot; in search field
+3. Verify partial matching works
+Expected Result:
+New York is displayed in results. Cities containing &quot;York&quot; anywhere in the name are shown.",,New York is displayed in results. Cities containing &quot;York&quot; anywhere in the name are shown.,,"1. Click on CITY dropdown
+2. Enter &quot;York&quot; in search field
+3. Verify partial matching works",0
+C415252,Search Text Retention After Switching Filters (BUG),,,,"<p>User is logged in, Cart has items, Pickup selected, Pick points modal open</p>
+",Critical,,Cross-Filter Interactions,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Cross-Filter Interactions,,"Step Description:
+<ol>
+<li>Click on COUNTRY dropdown</li>
+<li>Enter &quot;K&quot; in search field</li>
+<li>Click on CITY dropdown</li>
+<li>Select &quot;New York&quot;</li>
+<li>Click on COUNTRY dropdown again</li>
+</ol>
+Expected Result:
+<p>Country dropdown should show """"United States of America"""" (the only applicable country). BUG: Currently shows """"No results"""" because """"K"""" search text is retained.</p>",,"<p>Country dropdown should show ""United States of America"" (the only applicable country). BUG: Currently shows ""No results"" because ""K"" search text is retained.</p>",,"<ol>
+<li>Click on COUNTRY dropdown</li>
+<li>Enter &quot;K&quot; in search field</li>
+<li>Click on CITY dropdown</li>
+<li>Select &quot;New York&quot;</li>
+<li>Click on COUNTRY dropdown again</li>
+</ol>",1
+C415253,Search Text Should Clear When Filter is Applied,,,,"User is logged in, Cart has items, Pickup selected, Pick points modal open",High,,Cross-Filter Interactions,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Cross-Filter Interactions,,"Step Description:
+1. Click on COUNTRY dropdown
+2. Enter &quot;Can&quot; in search field
+3. Select &quot;Canada&quot; checkbox
+4. Click on COUNTRY dropdown again
+Expected Result:
+Canada is displayed after search. Filter is applied. Search field should be empty, showing only selected/applicable countries.",,"Canada is displayed after search. Filter is applied. Search field should be empty, showing only selected/applicable countries.",,"1. Click on COUNTRY dropdown
+2. Enter &quot;Can&quot; in search field
+3. Select &quot;Canada&quot; checkbox
+4. Click on COUNTRY dropdown again",0
+C415254,Multiple Filter Combination with Search,,,,"User is logged in, Cart has items, Pickup selected, Pick points modal open",High,,Cross-Filter Interactions,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Cross-Filter Interactions,,"Step Description:
+1. Select &quot;United States of America&quot; in Country
+2. Click on STATE / PROVINCE dropdown
+3. Enter &quot;New&quot; and select &quot;New York&quot;
+4. Click on CITY dropdown
+5. Enter &quot;Brook&quot; in city search
+6. Verify all filters work together
+Expected Result:
+All filters apply correctly. Brooklyn is displayed in results. Pickup points list shows only Brooklyn, NY, USA locations.",,"All filters apply correctly. Brooklyn is displayed in results. Pickup points list shows only Brooklyn, NY, USA locations.",,"1. Select &quot;United States of America&quot; in Country
+2. Click on STATE / PROVINCE dropdown
+3. Enter &quot;New&quot; and select &quot;New York&quot;
+4. Click on CITY dropdown
+5. Enter &quot;Brook&quot; in city search
+6. Verify all filters work together",0
+C415255,Filter Reset Should Clear All Search Text,,,,"User is logged in, Cart has items, Pickup selected, Pick points modal open, Multiple filters applied",High,,Cross-Filter Interactions,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Cross-Filter Interactions,,"Step Description:
+1. Apply multiple filters with search text in each
+2. Click &quot;Reset filters&quot; button
+3. Open each dropdown (Country, State, City)
+4. Verify full lists are displayed
+Expected Result:
+All filters are cleared. Search fields are empty in all dropdowns. All options are available without filtering.",,All filters are cleared. Search fields are empty in all dropdowns. All options are available without filtering.,,"1. Apply multiple filters with search text in each
+2. Click &quot;Reset filters&quot; button
+3. Open each dropdown (Country, State, City)
+4. Verify full lists are displayed",0
+C415256,Search Text Persistence Within Same Session,,,,"User is logged in, Cart has items, Pickup selected, Pick points modal open",Medium,,Cross-Filter Interactions,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Cross-Filter Interactions,,"Step Description:
+1. Click on COUNTRY dropdown
+2. Enter &quot;Aus&quot; in search field
+3. Close dropdown (click outside)
+4. Open COUNTRY dropdown again
+Expected Result:
+Australia is displayed during search. Dropdown closes. Search field state should be defined (either cleared or retained with clear UX).",,Australia is displayed during search. Dropdown closes. Search field state should be defined (either cleared or retained with clear UX).,,"1. Click on COUNTRY dropdown
+2. Enter &quot;Aus&quot; in search field
+3. Close dropdown (click outside)
+4. Open COUNTRY dropdown again",0
+C415257,Search Field Placeholder Text,,,,"<p>User is logged in, Cart has items, Pickup selected, Pick points modal open</p>
+",Low,,Search Field UI/UX,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Search Field UI/UX,,"Step Description:
+<ol>
+<li>Click on COUNTRY dropdown</li>
+<li>Click on STATE / PROVINCE dropdown</li>
+<li>Click on CITY dropdown</li>
+</ol>
+Expected Result:
+<p>""""Search Country"""" placeholder visible. """"Search State"""" or similar placeholder visible. """"Search City"""" placeholder visible.</p>",,"<p>""Search Country"" placeholder visible. ""Search State"" or similar placeholder visible. ""Search City"" placeholder visible.</p>",,"<ol>
+<li>Click on COUNTRY dropdown</li>
+<li>Click on STATE / PROVINCE dropdown</li>
+<li>Click on CITY dropdown</li>
+</ol>",1
+C415258,Search Field Focus State,,,,"User is logged in, Cart has items, Pickup selected, Pick points modal open",Low,,Search Field UI/UX,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Search Field UI/UX,,"Step Description:
+1. Click on any filter dropdown
+2. Observe search field
+3. Start typing
+Expected Result:
+Dropdown opens. Search field should be auto-focused for immediate typing. Characters appear without clicking on search field.",,Dropdown opens. Search field should be auto-focused for immediate typing. Characters appear without clicking on search field.,,"1. Click on any filter dropdown
+2. Observe search field
+3. Start typing",0
+C415259,Search Results Count Display,,,,"User is logged in, Cart has items, Pickup selected, Pick points modal open",Medium,,Search Field UI/UX,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Search Field UI/UX,,"Step Description:
+1. Click on COUNTRY dropdown
+2. Enter search term
+3. Verify counts reflect available pickup points
+Expected Result:
+Countries shown with count badges (e.g., &quot;Canada (2)&quot;). Filtered results show accurate count badges. Numbers match actual pickup points.",,"Countries shown with count badges (e.g., &quot;Canada (2)&quot;). Filtered results show accurate count badges. Numbers match actual pickup points.",,"1. Click on COUNTRY dropdown
+2. Enter search term
+3. Verify counts reflect available pickup points",0
+C413508,Empty Search Button Click,,1800s,"All pickup points displayed
+No error messages
+Default state maintained",,Low,,Pickup Points - Edge Cases,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Edge Cases,"1. Leave search field empty
+2. Click Search button
+3. Verify results",,,,,,0
+C413509,Very Long Search String (256+ chars),,1800s,"System handles gracefully
+No crashes or UI breaks
+'Pickup points not found' displays
+Input accepted without error",,Medium,,Pickup Points - Edge Cases,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Edge Cases,"1. Enter 220+ character string
+2. Click Search button
+3. Verify system behavior",,,,,,0
+C413510,Search Case Insensitivity,,1800s,"Both searches return same results
+Case-insensitive search working",,Medium,,Pickup Points - Edge Cases,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Edge Cases,"1. Search 'empire state' (lowercase)
+2. Then search 'EMPIRE STATE' (uppercase)
+3. Compare results",,,,,,0
+C412720,Empty Search Results,,,"No results found message is displayed
+Map shows no markers or displays default view
+Helpful suggestions appear
+User can clear search and try again",System has limited store data,Medium,VCST-3865,Pickup Points - Edge Cases,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Edge Cases,"1. Navigate to pickup points map
+2. Enter keyword that matches no stores (e.g., NonexistentStore123)
+3. Submit search",,,,,,0
+C412727,Special Characters in Search,,,"Special characters are handled correctly
+Search finds matching stores
+No errors or broken functionality
+Unicode characters display properly",Some stores have special characters in names/addresses,Low,VCST-3865,Pickup Points - Edge Cases,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Edge Cases,"1. Enter search terms with special characters (é, ñ, ü, apostrophes, etc.)
+2. Submit search",,,,,,0
+C413511,Filter Count Indicators,,3600s,"Count indicators show on buttons (e.g., '1', '2')
+Accurate count reflects selections
+Updates dynamically",,Medium,,Pickup Points - UI/UX,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - UI/UX,"1. Apply Country filter
+2. Observe COUNTRY button
+3. Apply State filter
+4. Observe STATE/PROVINCE button",,,,,,0
+C413512,Filter Chips Display,,3600s,"Chips clearly display filter selections
+Each chip has independent X to remove
+Chips properly formatted with styling",,Medium,,Pickup Points - UI/UX,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - UI/UX,"1. Select filters
+2. Observe chips above results
+3. Each chip has X button",,,,,,0
+C413513,Map Sync with Selection,,3600s,"Map zooms to selected region
+Markers show all locations
+Current selection highlighted
+Smooth map transitions",,Medium,,Pickup Points - UI/UX,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - UI/UX,"1. Select different locations
+2. Observe map updates
+3. Map markers highlight selected",,,,,,0
+C413514,Availability Labels - Today,,3600s,"Multiple locations show 'Today' availability
+Green indicator icon displays
+Indicates immediate pickup available",,Medium,,Pickup Points - Availability,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Availability,"1. View pickup points list
+2. Identify 'Today' labels
+3. Count locations",,,,,,0
+C413515,Availability Labels - Via Transfer,,3600s,"Multiple locations show 'Via transfer' label
+Blue indicator icon displays
+Indicates delayed pickup (2-3 days)",,Medium,,Pickup Points - Availability,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Availability,"1. View pickup points list
+2. Identify 'Via transfer' labels
+3. Count locations",,,,,,0
+C413516,Select Single Pickup Point,,3600s,"Radio button selected (filled)
+Location highlighted
+Map zooms to location
+SAVE button enabled (from disabled state)",,High,,Pickup Points - Selection,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Selection,"1. Click radio button for location
+2. Verify selection state
+3. Observe map update
+4. Check SAVE button",,,,,,0
+C413517,Change Selection,,3600s,"Previous selection deselected
+New location selected
+Map updates to new location
+Only one location selected at time",,High,,Pickup Points - Selection,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Selection,"1. Select first location
+2. Click different location
+3. Verify change",,,,,,0
+C413518,CANCEL Button,,3600s,"Modal closes without saving
+Previous pickup point maintained
+Changes discarded",,Medium,,Pickup Points - Selection,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Selection,"1. Make selection
+2. Click CANCEL button
+3. Verify state restoration",,,,,,0
+C413519,SAVE Button,,3600s,"Modal closes
+New pickup point saved
+Cart/checkout updated with selection",,High,,Pickup Points - Selection,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pickup Points - Selection,"1. Select new pickup point
+2. Click SAVE button
+3. Verify persistence",,,,,,0
+C412717,Pagination - List View,,,"Pagination controls are visible and functional
+Results load correctly on each page (typically 10-15 per page)
+Current page is clearly indicated
+Total results count is displayed",More stores exist than fit on one page (20+ stores created),High,VCST-3865,Pagination,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pagination,"1. Perform search that returns many results
+2. Verify pagination controls appear
+3. Navigate to page 2
+4. Navigate back to page 1
+5. Jump to last page",,,,,,0
+C412718,Pagination with Map Interaction,,,"Map displays markers appropriately
+Page navigation doesn't break map functionality
+User can interact with both map and pagination
+Map performance remains smooth",Search returns paginated results,High,VCST-3865,Pagination,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Pagination,"1. Perform search with multiple pages of results
+2. View page 1 results on map
+3. Navigate to page 2
+4. Observe map updates",,,,,,0
+C412719,Map Marker Interaction,,,"<p>Clicking marker shows store details (name, address, hours, availability)<br />Info popup is properly formatted according to Figma design<br />Multiple markers can be clicked<br />Selected marker is visually distinguished<br />Popup can be closed</p>
+","<p>Multiple pickup stores displayed on map<br />Geographic coordinates are set correctly</p>
+",High,VCST-3865,Map Functionality,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Map Functionality,"<ol>
+<li>Navigate to pickup points map</li>
+<li>Click on map marker</li>
+<li>Verify store information popup appears</li>
+<li>Click on different markers</li>
+</ol>
+",,,,,,1
+C412729,Geographic Coordinate Validation,,,"All markers appear at correct positions on map
+Coordinates accurately represent store locations
+No markers appear in oceans or incorrect countries
+Map controls work properly (zoom, pan)",Pickup locations with coordinates configured,High,VCST-3865,Map Validation,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Map Validation,"1. Navigate to pickup points map
+2. Verify markers appear at correct geographic locations
+3. Compare map positions with actual store addresses
+4. Zoom in/out on map",,,,,,0
+C412723,Mobile Responsiveness,,,"All features work on mobile
+UI is properly responsive and matches Figma design
+Touch interactions work smoothly
+Map is usable on small screens
+Filters are accessible (may be in drawer/modal)","Access from mobile device or responsive view
+BOPIS checkout flow is accessible",High,VCST-3865,Responsive Design,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > Responsive Design,"1. Open pickup points map on mobile device (or browser dev tools mobile view)
+2. Test search functionality
+3. Apply facet filters
+4. Navigate pagination
+5. Interact with map markers",,,,,,0
+C412725,E2E - Complete Checkout Flow,,,"Entire flow is seamless without errors
+Selected store is correctly saved and displayed
+Order confirmation shows correct pickup location details
+Customer receives confirmation email with store details
+Order can be viewed in admin with pickup location","Product in cart with available pickup locations
+BOPIS module is fully configured
+User is logged in or proceeding as guest",High,VCST-3865,End-to-End,2,,BOPIS (Pickup locations) > Pickup locations. Search and Facet Filtering > End-to-End,"1. Add product to cart
+2. Proceed to checkout
+3. Select Pick up in store delivery option
+4. Use search to find specific store (by city or subway station)
+5. Apply availability filter to show only stores with stock
+6. Select store from map or list
+7. Proceed through remaining checkout steps
+8. Complete order",,,,,,0
+C412641,"Product1(Main_1) × Location(— / Transfer_1), Global ON → Global Transfer",,,,"<p>Product1 assigned to Main_1 FFC; Pickup Location L2 Active=true with no Main FC, Transfer FCs={Transfer_1}; EnableGlobalTransfer=TRUE</p>
+",High,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+<p>1) Open PDP for Product1 → pickup list/modal → find L2<br />2) Add to Cart → PickPoints modal → find L2</p>
+Expected Result:
+<p>L2 shows 'Global Transfer (1 week)' (GlobalTransferDurationText) for Product1; selection allowed if design permits Global.</p>",,<p>L2 shows 'Global Transfer (1 week)' (GlobalTransferDurationText) for Product1; selection allowed if design permits Global.</p>,,<p>1) Open PDP for Product1 → pickup list/modal → find L2<br />2) Add to Cart → PickPoints modal → find L2</p>,1
+C412639,"Product1(Main_1) × Location(Main_1 / —), Global OFF → Today",,,,"<p>Product1 assigned to Main_1 FFC </p>
+
+<p>Pickup Location L1 Active=true with Main FC=Main_1, no Transfer FCs</p>
+
+<p>EnableGlobalTransfer=FALSE</p>
+",High,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+<p>1) Open PDP for Product1<br />2) Open pickup list and find Location L1<br />3) Add Product1 to cart → open Cart → open PickPoints modal and find L1</p>
+Expected Result:
+<p>PDP & Cart show L1 with availability label 'Today' . No 'Transfer' or 'Global' label.</p>",,<p>PDP & Cart show L1 with availability label 'Today' . No 'Transfer' or 'Global' label.</p>,,<p>1) Open PDP for Product1<br />2) Open pickup list and find Location L1<br />3) Add Product1 to cart → open Cart → open PickPoints modal and find L1</p>,1
+C412640,"Product1(Main_1) × Location(— / Transfer_1), Global OFF → Not available",,,,"Product1 assigned to Main_1 FFC
+
+Pickup Location L2 Active=true with no Main FC, Transfer FCs={Transfer_1}
+
+EnableGlobalTransfer=FALSE",High,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+1) Open PDP for Product1 → pickup list/modal → find L2
+2) Add to Cart → PickPoints modal → find L2
+Expected Result:
+L2 is displayed as 'Not available' (or disabled/unselectable) for Product1; cannot select it for pickup.",,L2 is displayed as 'Not available' (or disabled/unselectable) for Product1; cannot select it for pickup.,,"1) Open PDP for Product1 → pickup list/modal → find L2
+2) Add to Cart → PickPoints modal → find L2",0
+C412650,"Product2(Transfer_1) × Location(— / —), Global ON → Global Transfer",,,,"<p>Product2 assigned to Transfer_1 FFC; Pickup Location L11 Active=true with no Main FC and no Transfer FCs; EnableGlobalTransfer=TRUE</p>
+",High,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+<p>1) PDP for Product2 → pickup list/modal → find L11<br />2) Cart → PickPoints modal → find L11</p>
+Expected Result:
+<p>L11 shows 'Global Transfer' . Selection allowed if Global path is supported.</p>",,<p>L11 shows 'Global Transfer' . Selection allowed if Global path is supported.</p>,,<p>1) PDP for Product2 → pickup list/modal → find L11<br />2) Cart → PickPoints modal → find L11</p>,1
+C412642,"Product2(Transfer_1) × Location(— / Transfer_1), Global OFF → Transfer",,,,"Product2 assigned to Transfer_1 FFC; Pickup Location L3 Active=true with no Main FC, Transfer FCs={Transfer_1}; EnableGlobalTransfer=FALSE",High,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+1) Open PDP for Product2 → pickup list/modal → find L3
+2) Cart → PickPoints modal → find L3
+Expected Result:
+L3 shows 'Transfer (2–3 days)' (TransferDurationText) for Product2; selection allowed.",,L3 shows 'Transfer (2–3 days)' (TransferDurationText) for Product2; selection allowed.,,"1) Open PDP for Product2 → pickup list/modal → find L3
+2) Cart → PickPoints modal → find L3",0
+C412643,"Product2(Transfer_1) × Location(Main_1 / —), Global OFF → Not available",,,,"Product2 assigned to Transfer_1 FFC; Pickup Location L4 Active=true with Main FC=Main_1, no Transfer FCs; EnableGlobalTransfer=FALSE",High,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+1) PDP for Product2 → pickup list/modal → find L4
+2) Cart → PickPoints modal → find L4
+Expected Result:
+L4 is 'Not available' (or disabled) for Product2; cannot select.",,L4 is 'Not available' (or disabled) for Product2; cannot select.,,"1) PDP for Product2 → pickup list/modal → find L4
+2) Cart → PickPoints modal → find L4",0
+C412644,"Product3(Main_2 + Transfer_2) × Location(Main_2 / —), Global OFF → Today",,,,"<p>Product3 assigned to Main_2 FFC and Transfer_2 FFC; Pickup Location L5 Active=true with Main FC=Main_2, no Transfer FCs; EnableGlobalTransfer=FALSE</p>
+",High,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+<p>1) PDP for Product3 → pickup list/modal → find L5<br />2) Cart → PickPoints modal → find L5</p>
+Expected Result:
+<p>L5 shows 'Today'. No 'Transfer' or 'Global' label.</p>",,<p>L5 shows 'Today'. No 'Transfer' or 'Global' label.</p>,,<p>1) PDP for Product3 → pickup list/modal → find L5<br />2) Cart → PickPoints modal → find L5</p>,1
+C412645,"Product3(Main_2 + Transfer_2) × Location(— / Transfer_2), Global OFF → Transfer",,,,"<p>Product3 assigned to Main_2 FFC and Transfer_2 FFC; Pickup Location L6 Active=true with no Main FC, Transfer FCs={Transfer_2}; EnableGlobalTransfer=FALSE</p>
+",High,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+<p>1) PDP for Product3 → pickup list/modal → find L6<br />2) Cart → PickPoints modal → find L6</p>
+Expected Result:
+<p>L6 shows 'Transfer (2–3 days)'. Selection allowed.</p>",,<p>L6 shows 'Transfer (2–3 days)'. Selection allowed.</p>,,<p>1) PDP for Product3 → pickup list/modal → find L6<br />2) Cart → PickPoints modal → find L6</p>,1
+C412646,"Product3(Main_2 + Transfer_2) × Location(Main_2 / Transfer_2), Global OFF → Today (precedence)",,,,Product3 assigned to Main_2 FFC and Transfer_2 FFC; Pickup Location L7 Active=true with Main FC=Main_2 and Transfer FCs={Transfer_2}; EnableGlobalTransfer=FALSE,High,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+1) PDP for Product3 → pickup list/modal → find L7
+2) Cart → PickPoints modal → find L7
+Expected Result:
+L7 shows 'Today' (MFC path takes precedence over Transfer); no dual labels.",,L7 shows 'Today' (MFC path takes precedence over Transfer); no dual labels.,,"1) PDP for Product3 → pickup list/modal → find L7
+2) Cart → PickPoints modal → find L7",0
+C412647,"Product4(Main_1 + Main_2) × Location(Main_1 / —), Global OFF → Today",,,,"Product4 assigned to Main_1 FFC and Main_2 FFC; Pickup Location L8 Active=true with Main FC=Main_1, no Transfer FCs; EnableGlobalTransfer=FALSE",High,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+1) PDP for Product4 → pickup list/modal → find L8
+2) Cart → PickPoints modal → find L8
+Expected Result:
+L8 shows 'Today' for Product4.",,L8 shows 'Today' for Product4.,,"1) PDP for Product4 → pickup list/modal → find L8
+2) Cart → PickPoints modal → find L8",0
+C412648,"Product4(Main_1 + Main_2) × Location(Main_2 / —), Global OFF → Today",,,,"Product4 assigned to Main_1 FFC and Main_2 FFC; Pickup Location L9 Active=true with Main FC=Main_2, no Transfer FCs; EnableGlobalTransfer=FALSE",High,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+1) PDP for Product4 → pickup list/modal → find L9
+2) Cart → PickPoints modal → find L9
+Expected Result:
+L9 shows 'Today' for Product4.",,L9 shows 'Today' for Product4.,,"1) PDP for Product4 → pickup list/modal → find L9
+2) Cart → PickPoints modal → find L9",0
+C412649,"Product4(Main_1 + Main_2) × Location(Main_3 / —), Global OFF → Not available",,,,"Product4 assigned to Main_1 FFC and Main_2 FFC; Pickup Location L10 Active=true with Main FC=Main_3, no Transfer FCs; EnableGlobalTransfer=FALSE",High,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+1) PDP for Product4 → pickup list/modal → find L10
+2) Cart → PickPoints modal → find L10
+Expected Result:
+L10 is 'Not available' for Product4 (unmatched MFC; no transfer path).",,L10 is 'Not available' for Product4 (unmatched MFC; no transfer path).,,"1) PDP for Product4 → pickup list/modal → find L10
+2) Cart → PickPoints modal → find L10",0
+C412569,[PDP] Today when TrackInventory=FALSE,,,,P1: TrackInventory=FALSE; Settings S1 or S2; ≥1 PickPoint exists,High,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+Open PDP for P1; View 'Shipment options' block
+Expected Result:
+All PickPoints display 'Today'; no Transfer/Global labels",,All PickPoints display 'Today'; no Transfer/Global labels,,Open PDP for P1; View 'Shipment options' block,0
+C412580,[PDP] Global Transfer disabled → no Global label,,,,P5: No local stock; EnableGlobalTransfer=FALSE,High,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+Open PDP for P5
+Expected Result:
+Pickup area shows 'Not available for pickup' (or hidden); no '1 week' label",,Pickup area shows 'Not available for pickup' (or hidden); no '1 week' label,,Open PDP for P5,0
+C412581,[PDP] Empty result list,,,,API 200 with items=[] and total=0,High,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+Open PDP
+Expected Result:
+Show 'No pickup points available' message; no pagination controls",,Show 'No pickup points available' message; no pagination controls,,Open PDP,0
+C412573,[PDP] Localization of duration texts,,,,"Settings S2 with localized Today/Transfer/Global texts; Locale=non-EN (e.g., de-DE)",Medium,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+Open PDP; switch store to de-DE if needed
+Expected Result:
+Labels appear in localized language; no English fallback used",,Labels appear in localized language; no English fallback used,,Open PDP; switch store to de-DE if needed,0
+C412576,[PDP] Shipment options --> List size,,,,35 PickPoints; pageSize=5,Medium,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+Open PDP; 
+Take a look on section 'Shipment options'
+Expected Result:
+Shipment options shows 5 items",,Shipment options shows 5 items,,"Open PDP; 
+Take a look on section 'Shipment options'",0
+C412585,[PDP] TrackInventory=FALSE but MFC stock = 0,,,,P1: TrackInventory=FALSE; MFC stock reported 0,Medium,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+Open PDP
+Expected Result:
+'Today' still displayed (rule uses TrackInventory OR MFC availability)",,'Today' still displayed (rule uses TrackInventory OR MFC availability),,Open PDP,0
+C412587,[PDP] Long localized strings do not break layout,,,,GlobalTransferDurationText set to long sentence; mobile viewport,Low,,Product page,2,,BOPIS (Pickup locations) > Pickup Info > Product page,,"Step Description:
+Open PDP on mobile
+Expected Result:
+Text wraps/ellipsizes; no overflow",,Text wraps/ellipsizes; no overflow,,Open PDP on mobile,0
+C412590,[Cart] Open PickPoints modal and list renders with labels,,,,"<p>Any product with pickup enabled in cart</p>
+",High,,Cart,2,,BOPIS (Pickup locations) > Pickup Info > Cart,,"Step Description:
+<p>Open Cart; click 'Pick points' or 'Change' to open modal</p>
+Expected Result:
+<p>List shows PickPoints with availability labels; map panel renders</p>",,<p>List shows PickPoints with availability labels; map panel renders</p>,,<p>Open Cart; click 'Pick points' or 'Change' to open modal</p>,1
+C412591,[Cart] Select PickPoint from list,,,,Cart has product; list visible,High,,Cart,2,,BOPIS (Pickup locations) > Pickup Info > Cart,,"Step Description:
+Select a PickPoint from list; click 'Select'; Save cart
+Expected Result:
+Selection applied and persisted after refresh",,Selection applied and persisted after refresh,,Select a PickPoint from list; click 'Select'; Save cart,0
+C412593,[Cart] Today for TrackInventory=FALSE product,,,,P1 in cart,High,,Cart,2,,BOPIS (Pickup locations) > Pickup Info > Cart,,"Step Description:
+Open modal
+Expected Result:
+All PickPoints show 'Today'",,All PickPoints show 'Today',,Open modal,0
+C412594,[Cart] Today for product with MFC stock,,,,"<p>P2 in cart</p>
+",High,,Cart,2,,BOPIS (Pickup locations) > Pickup Info > Cart,,"Step Description:
+<p>Open modal</p>
+Expected Result:
+<p>'Today' displayed</p>",,<p>'Today' displayed</p>,,<p>Open modal</p>,1
+C412595,[Cart] Transfer for Transfer-only product,,,,"<p>P3 in cart; EnableGlobalTransfer=FALSE</p>
+",High,,Cart,2,,BOPIS (Pickup locations) > Pickup Info > Cart,,"Step Description:
+<p>Open modal</p>
+Expected Result:
+<p>'Via transfer' displayed</p>",,<p>'Via transfer' displayed</p>,,<p>Open modal</p>,1
+C412596,[Cart] Global Transfer when enabled and no local stock,,,,"<p>P4 in cart; EnableGlobalTransfer=TRUE</p>
+",High,,Cart,2,,BOPIS (Pickup locations) > Pickup Info > Cart,,"Step Description:
+<p>Open modal</p>
+Expected Result:
+<p>'Via transfer' displayed</p>",,<p>'Via transfer' displayed</p>,,<p>Open modal</p>,1
+C412597,[Cart] Mixed cart: all items available at selected PickPoint,,,,"<p>P2 + P3 in cart; chosen PickPoint supports both</p>
+",High,,Cart,2,,BOPIS (Pickup locations) > Pickup Info > Cart,,"Step Description:
+<p>Open modal; select supported PickPoint; Save</p>
+Expected Result:
+<p>Per-line labels correct; cart can be saved</p>",,<p>Per-line labels correct; cart can be saved</p>,,<p>Open modal; select supported PickPoint; Save</p>,1
+C412598,[Cart] Mixed cart: some items unavailable at selected PickPoint,,,,"<p>P2 + P5 in cart; chosen PickPoint supports P2 only</p>
+",High,,Cart,2,,BOPIS (Pickup locations) > Pickup Info > Cart,,"Step Description:
+<p>Open modal; select PickPoint; attempt Save</p>
+Expected Result:
+<p>Clear per-line warnings; Save blocked or alternative suggested</p>",,<p>Clear per-line warnings; Save blocked or alternative suggested</p>,,<p>Open modal; select PickPoint; attempt Save</p>,1
+C412604,[Cart] Global Transfer disabled; no local stock → pickup blocked,,,,"<p>P5 only; EnableGlobalTransfer=FALSE</p>
+",High,,Cart,2,,BOPIS (Pickup locations) > Pickup Info > Cart,,"Step Description:
+<p>Open modal</p>
+Expected Result:
+<p>Pickup not selectable; show 'There are no available pickup points for these products. Select another shipping method' message</p>",,<p>Pickup not selectable; show 'There are no available pickup points for these products. Select another shipping method' message</p>,,<p>Open modal</p>,1
+C412625,[Cart] Select one item with Main FFC ---> Check map,,,,,Medium,,Cart,2,,BOPIS (Pickup locations) > Pickup Info > Cart,,,,,,,1
+C412626,[Cart] Unselect all items ---> Check map,,,,,Medium,,Cart,2,,BOPIS (Pickup locations) > Pickup Info > Cart,,,,,,,1
+C412592,[Cart] Map pin selection syncs with list,,,,"<p>Map shows pins</p>
+",Medium,,Cart,2,,BOPIS (Pickup locations) > Pickup Info > Cart,,"Step Description:
+<p>Click a map pin; in details popup click 'Select'</p>
+Expected Result:
+<p>Corresponding list item selected; state synced; persisted</p>",,<p>Corresponding list item selected; state synced; persisted</p>,,<p>Click a map pin; in details popup click 'Select'</p>,1
+C412600,[Cart] Change locale updates labels,,,,S2 with localized texts,Medium,,Cart,2,,BOPIS (Pickup locations) > Pickup Info > Cart,,"Step Description:
+Switch locale in UI; reopen modal
+Expected Result:
+Labels show in new locale; no stale English",,Labels show in new locale; no stale English,,Switch locale in UI; reopen modal,0
+C412601,[Cart] Remember PDP selection in Cart,,,,PickPoint selected on PDP earlier,Medium,,Cart,2,,BOPIS (Pickup locations) > Pickup Info > Cart,,"Step Description:
+Open Cart
+Expected Result:
+Same PickPoint preselected if valid; otherwise prompt to reselect",,Same PickPoint preselected if valid; otherwise prompt to reselect,,Open Cart,0
+C412602,[Cart] Quantity changes revalidate availability,,,,Cart has item with limited local capacity,Medium,,Cart,2,,BOPIS (Pickup locations) > Pickup Info > Cart,,"Step Description:
+Increase quantity; reopen modal
+Expected Result:
+Labels/eligibility update accordingly; blocking if not sufficient",,Labels/eligibility update accordingly; blocking if not sufficient,,Increase quantity; reopen modal,0
+C412606,[Cart] Stale/invalid previously saved PickPoint ID,,,,Previously selected ID no longer returned by API,Medium,,Cart,2,,BOPIS (Pickup locations) > Pickup Info > Cart,,"Step Description:
+Open cart
+Expected Result:
+Selection cleared and user prompted to reselect",,Selection cleared and user prompted to reselect,,Open cart,0
+C412608,[Cart] Long names/addresses do not break layout,,,,PickPoint with very long name/address; mobile viewport,Low,,Cart,2,,BOPIS (Pickup locations) > Pickup Info > Cart,,"Step Description:
+Open modal
+Expected Result:
+Truncation/wrap works; no layout overflow",,Truncation/wrap works; no layout overflow,,Open modal,0
+C412603,[Cart] Remove an item after selection,,,,Cart has multiple items and a selected PickPoint,Low,,Cart,2,,BOPIS (Pickup locations) > Pickup Info > Cart,,"Step Description:
+Remove one item; review selection status
+Expected Result:
+Selection remains valid for remaining items or prompts to reselect",,Selection remains valid for remaining items or prompts to reselect,,Remove one item; review selection status,0

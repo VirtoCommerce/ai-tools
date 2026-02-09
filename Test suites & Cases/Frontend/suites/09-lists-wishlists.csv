@@ -1,0 +1,4629 @@
+ID,Title,Attachments,Estimate,Expected Result,Preconditions,Priority,References,Section,Section Depth,Section Description,Section Hierarchy,Steps,Steps,Steps (Additional Info),Steps (Expected Result),Steps (References),Steps (Step),is_converted
+C389216,Icon is grey > Add product anonymously,,,,"1. Go to the store anonymously 
+2. Product_1 exists in the store.
+
+",Medium,,Add/remove product to the List from category page,1,,Lists > Add/remove product to the List from category page,,"Step Description:
+1. Open any Category
+2. Click on the Add to list icon
+
+
+Expected Result:
+1. The button is inactive. 
+2. For anonymous users this functionality is unavailable.
+
+",,"1. The button is inactive. 
+2. For anonymous users this functionality is unavailable.
+
+",,"1. Open any Category
+2. Click on the Add to list icon
+
+",0
+C389217,Colored icon > Add product to existing wish list,,,,"1. User_1 created
+2. User_1 logged in to the store
+3. User_1 has no any list
+4. Product_1 exist in the store
+
+
+
+
+",Medium,,Add/remove product to the List from category page,1,,Lists > Add/remove product to the List from category page,,"Step Description:
+Go to the category page
+Select one product with a grey icon
+
+Expected Result:
+1. The product is not in any wish-lists",,1. The product is not in any wish-lists,,"Go to the category page
+Select one product with a grey icon
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Go back to category page, 
+Add this product to one/two of the wish lists by clicking the icon
+Expected Result:
+The icon (after adding) shall be re-colored from grey to color",,The icon (after adding) shall be re-colored from grey to color,,"Go back to category page, 
+Add this product to one/two of the wish lists by clicking the icon",
+C389218,Colored icon  > Add product to the wish list from Grid view,,,,"1. User_1 created
+2. User_1 logged in to the store
+3. User_1 has List_1-List_2
+4. Product_1 exist in the store
+
+
+
+
+",Medium,,Add/remove product to the List from category page,1,,Lists > Add/remove product to the List from category page,,"Step Description:
+1. Go to a category page > Grid view
+2. Click the icon
+3. On pop-up select List_1
+
+
+Expected Result:
+1. Pop-up Item added Product_1 to the list_1
+2. List_1  moved to the 1st block.
+3. Check-box for the List_1 selected",,"1. Pop-up Item added Product_1 to the list_1
+2. List_1  moved to the 1st block.
+3. Check-box for the List_1 selected",,"1. Go to a category page > Grid view
+2. Click the icon
+3. On pop-up select List_1
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click button Save
+Expected Result:
+1. Popup has closed
+2. Notification info that the lists was successfully update",,"1. Popup has closed
+2. Notification info that the lists was successfully update",,1. Click button Save,
+,,,,,,,,,,,,,"
+Step Description:
+Switch to the List view
+Check the state of the star
+
+
+Expected Result:
+The Star is also orange in the List view
+The product is on the wish list",,"The Star is also orange in the List view
+The product is on the wish list",,"Switch to the List view
+Check the state of the star
+
+",
+C389219,Colored icon > Add product to the wish list from List view,,,,"1. User_1 created
+2. User_1 logged in to the store
+3. User_1 has List_1-List_2
+4. Product_1 exist in the store
+
+
+
+
+",Medium,,Add/remove product to the List from category page,1,,Lists > Add/remove product to the List from category page,,"Step Description:
+1. Go to a category page > List view
+2. Click on the icon Add to the list
+
+
+Expected Result:
+1. Pop-up Item added Product_1 to the list_1
+2. List_1  moved to the 1st block.
+3. Check-box for the List_1 selected",,"1. Pop-up Item added Product_1 to the list_1
+2. List_1  moved to the 1st block.
+3. Check-box for the List_1 selected",,"1. Go to a category page > List view
+2. Click on the icon Add to the list
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click button Save
+Expected Result:
+1. Popup has closed
+2. The heart icon became color
+3. Notification info that the lists were successfully updated",,"1. Popup has closed
+2. The heart icon became color
+3. Notification info that the lists were successfully updated",,1. Click button Save,
+,,,,,,,,,,,,,"
+Step Description:
+Switch to Grid view
+Check the state of the heart icon
+Expected Result:
+The star is also color in the Grid view
+The product is in wish list",,"The star is also color in the Grid view
+The product is in wish list",,"Switch to Grid view
+Check the state of the heart icon",
+C389220,Icon is grey > Remove the product from the wish list in the Grid view,,,,"1. User_1 created
+2. User_1 logged in to the store
+3. User_1 has List_1-List_2
+4. Product_1 exist in the store
+5. Product_1 added to the List_1
+
+
+
+
+",Medium,,Add/remove product to the List from category page,1,,Lists > Add/remove product to the List from category page,,"Step Description:
+1. Go to category page > Grid view
+2. Click the colored Heart
+3. On the popup uncheck List_1 from the 1st block
+
+
+Expected Result:
+1. List_1  moved to the 2nd block.
+2. Check-box for the List_1 is unselected
+3. The icon is grey",,"1. List_1  moved to the 2nd block.
+2. Check-box for the List_1 is unselected
+3. The icon is grey",,"1. Go to category page > Grid view
+2. Click the colored Heart
+3. On the popup uncheck List_1 from the 1st block
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Switch to List view
+Check the state of the icon
+Expected Result:
+The star is also grey in the List view
+The product was removed from wish list",,"The star is also grey in the List view
+The product was removed from wish list",,"Switch to List view
+Check the state of the icon",
+C389221,Icon is grey > Remove the product from the wish list in the List view,,,,"1. User_1 created
+2. User_1 logged in to the store
+3. User_1 has List_1-List_2
+4. Product_1 exist in the store
+5. Product_1 added to the List_1
+
+
+
+
+",Medium,,Add/remove product to the List from category page,1,,Lists > Add/remove product to the List from category page,,"Step Description:
+1. Go to category page > List view
+2. Click on the colored  heart icon
+3. Click the button Add to the list
+4. On the popup uncheck List_1 from the 1st block
+
+
+Expected Result:
+1. List_1  moved to the 2nd block.
+2. Check-box for the List_1 is unselected
+3. The icon is grey",,"1. List_1  moved to the 2nd block.
+2. Check-box for the List_1 is unselected
+3. The icon is grey",,"1. Go to category page > List view
+2. Click on the colored  heart icon
+3. Click the button Add to the list
+4. On the popup uncheck List_1 from the 1st block
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Switch to the Grid view
+Check the state of the icon
+Expected Result:
+The icon is also grey in the Grid view
+The product was removed from the wish list",,"The icon is also grey in the Grid view
+The product was removed from the wish list",,"Switch to the Grid view
+Check the state of the icon",
+C389222,Add/Remove product to wish list from category page > Open page in different Tabs,,,,"User_1 logged in to the store
+User_1 has List_1-List_2
+
+Open the category page in 5 Tabs
+
+
+",Medium,,Add/remove product to the List from category page,1,,Lists > Add/remove product to the List from category page,,"Step Description:
+Open Grid view
+Click on the Star icon on the Product1 card
+Select List1 > Save
+Expected Result:
+The product1 added to List1
+The star became orange",,"The product1 added to List1
+The star became orange",,"Open Grid view
+Click on the Star icon on the Product1 card
+Select List1 > Save",0
+,,,,,,,,,,,,,"
+Step Description:
+Switch to the List view
+Check the state of the star
+Expected Result:
+The Star is also orange in the List view
+The product is on the wish list",,"The Star is also orange in the List view
+The product is on the wish list",,"Switch to the List view
+Check the state of the star",
+,,,,,,,,,,,,,"
+Step Description:
+Check the star in other Tabs in both the grid and list view
+Expected Result:
+The Star is also orange in all Tabs
+The product is on the wish list",,"The Star is also orange in all Tabs
+The product is on the wish list",,Check the star in other Tabs in both the grid and list view,
+,,,,,,,,,,,,,"
+Step Description:
+Repeat all steps again for removing the product from the wish list 
+Expected Result:
+The Star is grey in all Tabs
+The product is removed from the wish list in all tabs
+",,"The Star is grey in all Tabs
+The product is removed from the wish list in all tabs
+",,Repeat all steps again for removing the product from the wish list ,
+C389223,Add product several lists,,,,"1. User_1 created
+2. User_1 logged in to the store
+3. User_1 has List_1-List_3
+4. Product_1 exist in the store
+5. Product_1 is already added to the List_1
+
+
+
+",Medium,,Add/remove product to the List from category page,1,,Lists > Add/remove product to the List from category page,,"Step Description:
+1. Click the button Add to list  on Product_1
+2. On pop-up select List_2
+
+
+Expected Result:
+1. Pop-up Item added Product_1 to the list_2.
+2. List to moved to the 1st block.",,"1. Pop-up Item added Product_1 to the list_2.
+2. List to moved to the 1st block.",,"1. Click the button Add to list  on Product_1
+2. On pop-up select List_2
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click button Save
+Expected Result:
+1. Popup has closed
+2. Notification info that the lists was successfully update",,"1. Popup has closed
+2. Notification info that the lists was successfully update",,1. Click button Save,
+C389224,Add Out of Stock product,,,,"User_1 created
+User_1 logged in to the store
+User_1 has List_1
+Product_1 is ***Out of Stock***",Medium,,Add/remove product to the List from category page,1,,Lists > Add/remove product to the List from category page,,"Step Description:
+Open Product_1 (Out of Stock)
+Click the button Add to list
+Choose List_1 &gt; Save
+
+
+Expected Result:
+The product is added to List_1
+The green pop-up has appeared",,"The product is added to List_1
+The green pop-up has appeared",,"Open Product_1 (Out of Stock)
+Click the button Add to list
+Choose List_1 &gt; Save
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to List &gt; Check Product_1
+Expected Result:
+The Product_1 (out of Stock) is displayed in the list_1
+The button """"Add to cart"""" is disabled ",,"The Product_1 (out of Stock) is displayed in the list_1
+The button ""Add to cart"" is disabled ",,Go to List &gt; Check Product_1,
+C389188,Lists > Add product > anonymously,,,,"1. Go to the store anonymously 
+2. Product_1 exists in the store.
+
+",Medium,,Add/remove product to the List from product page,1,,Lists > Add/remove product to the List from product page,,"Step Description:
+1. Open any Category
+2. Open Product_1
+3. Try to click button Add to list 
+Expected Result:
+1. The button Add to list is inactive. 
+2. For anonymous users this functionality is unavailable.
+
+",,"1. The button Add to list is inactive. 
+2. For anonymous users this functionality is unavailable.
+
+",,"1. Open any Category
+2. Open Product_1
+3. Try to click button Add to list ",0
+C389189,Lists > Add new list,,,,"1. User_1 created
+2. User_1 logged in to the store
+3. User_1 has no any list
+4. Product_1 exist in the store
+
+
+
+
+",Medium,,Add/remove product to the List from product page,1,,Lists > Add/remove product to the List from product page,,"Step Description:
+1. Open Product_1
+2. Click the button Add to list
+Expected Result:
+1. A pop-up to select list appears ",,1. A pop-up to select list appears ,,"1. Open Product_1
+2. Click the button Add to list",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the pop-up
+Expected Result:
+1. Next elements are presented:
+1st block presented:
+- list with checkbox where item has been added already 
+
+2nd block presented: 
+- the rest of the lists 
+- button Add new list
+
+Popup shown also:
+- Icon close 
+- Buttons: Cancel, Save
+
+",,"1. Next elements are presented:
+1st block presented:
+- list with checkbox where item has been added already 
+
+2nd block presented: 
+- the rest of the lists 
+- button Add new list
+
+Popup shown also:
+- Icon close 
+- Buttons: Cancel, Save
+
+",,1. Check the pop-up,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click the button Add to list  on Product_1
+2. On pop-up click Add new list button
+
+
+Expected Result:
+1. New list appears  in the 2nd  block
+2. List checkbox  selected by default
+3. List title by default set as New list+date of the creation",,"1. New list appears  in the 2nd  block
+2. List checkbox  selected by default
+3. List title by default set as New list+date of the creation",,"1. Click the button Add to list  on Product_1
+2. On pop-up click Add new list button
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click icon Remove
+Expected Result:
+1. List has been removed",,1. List has been removed,,1. Click icon Remove,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click Add new list button again
+2. Change title for the new list as List_1
+3. Click button Save
+4. Open popup again
+Expected Result:
+1. List_1 presented in the 1st block.",,1. List_1 presented in the 1st block.,,"1. Click Add new list button again
+2. Change title for the new list as List_1
+3. Click button Save
+4. Open popup again",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click button Save
+Expected Result:
+1. Popup has closed
+2. Notification info that the lists was successfully update",,"1. Popup has closed
+2. Notification info that the lists was successfully update",,1. Click button Save,
+C389190,Lists > Add new list > validation,,,,"1. User_1 created
+2. User_1 logged in to the store
+3. User_1 has no any list
+4. Product_1 exist in the store
+
+
+
+
+",Medium,,Add/remove product to the List from product page,1,,Lists > Add/remove product to the List from product page,,"Step Description:
+1. Click the button Add to list  on Product_1
+2. On pop-up click Add new list button
+3. Remove title by default
+
+
+Expected Result:
+1. Notification that field is required presented",,1. Notification that field is required presented,,"1. Click the button Add to list  on Product_1
+2. On pop-up click Add new list button
+3. Remove title by default
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter title more that 25 chars
+Expected Result:
+1. Saved only 25 symbols. Impossible to enter more than 25 chars",,1. Saved only 25 symbols. Impossible to enter more than 25 chars,,1. Enter title more that 25 chars,
+C389191,Lists > Add product to the list,,,,"1. User_1 created
+2. User_1 logged in to the store
+3. User_1 has List_1-List_2
+4. Product_1 exist in the store
+
+
+
+
+",Medium,,Add/remove product to the List from product page,1,,Lists > Add/remove product to the List from product page,,"Step Description:
+1. Open Product_1
+2. Click the button Add to list
+3. Click the Close icon
+Expected Result:
+1. Popup has closed.",,1. Popup has closed.,,"1. Open Product_1
+2. Click the button Add to list
+3. Click the Close icon",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click the button Add to list again
+2. On pop-up select List_1
+3. Click the button Cancel
+
+Expected Result:
+1. Popup closed
+
+",,"1. Popup closed
+
+",,"1. Click the button Add to list again
+2. On pop-up select List_1
+3. Click the button Cancel
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click the button Add to list again
+2. On pop-up select List_1
+
+
+Expected Result:
+1. Pop-up Item added Product_1 to the list_1
+2. List_1  moved to the 1st block.
+3. Check-box for the List_1 selected",,"1. Pop-up Item added Product_1 to the list_1
+2. List_1  moved to the 1st block.
+3. Check-box for the List_1 selected",,"1. Click the button Add to list again
+2. On pop-up select List_1
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click button Save
+Expected Result:
+1. Popup has closed
+2. Notification info that the lists was successfully update",,"1. Popup has closed
+2. Notification info that the lists was successfully update",,1. Click button Save,
+C389192,Lists > Remove product from the list,,,,"1. User_1 created
+2. User_1 logged in to the store
+3. User_1 has List_1-List_2
+4. Product_1 exist in the store
+5. Product_1 added to the List_1
+
+
+
+
+",Medium,,Add/remove product to the List from product page,1,,Lists > Add/remove product to the List from product page,,"Step Description:
+1. Open Product_1
+2. Click the button Add to list
+3. On popup uncheck List_1 from the 1st block
+
+
+Expected Result:
+1. List_1  moved to the 2nd block.
+3. Check-box for the List_1 is unselect",,"1. List_1  moved to the 2nd block.
+3. Check-box for the List_1 is unselect",,"1. Open Product_1
+2. Click the button Add to list
+3. On popup uncheck List_1 from the 1st block
+
+",0
+C389193,Lists > Add product several lists from PDP,,,,"1. User_1 created
+2. User_1 logged in to the store
+3. User_1 has List_1-List_3
+4. Product_1 exist in the store
+5. Product_1 is already added to the List_1
+
+
+
+",Medium,,Add/remove product to the List from product page,1,,Lists > Add/remove product to the List from product page,,"Step Description:
+1. Click the button Add to list  on Product_1
+2. On pop-up select List_2
+
+
+Expected Result:
+1. Pop-up Item added Product_1 to the list_2.
+2. List to moved to the 1st block.",,"1. Pop-up Item added Product_1 to the list_2.
+2. List to moved to the 1st block.",,"1. Click the button Add to list  on Product_1
+2. On pop-up select List_2
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click button Save
+Expected Result:
+1. Popup has closed
+2. Notification info that the lists was successfully update",,"1. Popup has closed
+2. Notification info that the lists was successfully update",,1. Click button Save,
+C389194,Lists > Add product to the same list,,,,"1. User_1 created
+2. User_1 logged in to the store
+3. User_1 has a List_1
+4. Product_1 exists in the store
+
+
+
+
+",Medium,,Add/remove product to the List from product page,1,,Lists > Add/remove product to the List from product page,,"Step Description:
+1. Open product_1
+2. Add product_1 to the List_1
+ 
+Expected Result:
+1. Product added to the List_1",,1. Product added to the List_1,,"1. Open product_1
+2. Add product_1 to the List_1
+ ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Try to add Product_1 to the List_1 again
+Expected Result:
+1. Pop-up to select list shown next information:
+-- The item already in the list in the List_1
+-- The button Save is inactive
+
+
+",,"1. Pop-up to select list shown next information:
+-- The item already in the list in the List_1
+-- The button Save is inactive
+
+
+",,1. Try to add Product_1 to the List_1 again,
+C389195,Lists > Add Out of Stock product,,,,"User_1 created
+User_1 logged in to the store
+User_1 has List_1
+Product_1 is ***Out of Stock***",Medium,,Add/remove product to the List from product page,1,,Lists > Add/remove product to the List from product page,,"Step Description:
+Open Product_1 (Out of Stock)
+Click the button Add to list
+Choose List_1 &gt; Save
+
+
+Expected Result:
+The product is added to List_1
+The green pop-up has appeared",,"The product is added to List_1
+The green pop-up has appeared",,"Open Product_1 (Out of Stock)
+Click the button Add to list
+Choose List_1 &gt; Save
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to List &gt; Check Product_1
+Expected Result:
+The Product_1 (out of Stock) is displayed in the list_1
+The button """"Add to cart"""" is disabled ",,"The Product_1 (out of Stock) is displayed in the list_1
+The button ""Add to cart"" is disabled ",,Go to List &gt; Check Product_1,
+C389196,Remove product from wish list (product page) > Check star on category page,,,,,Medium,,Add/remove product to the List from product page,1,,Lists > Add/remove product to the List from product page,,"Step Description:
+Go to the product details page (for the product, that is not in the lists)
+
+Add this product to one/two of the wish lists from the product details page
+
+
+Go to the category page
+
+Expected Result:
+The star (after adding) shall be re-colored from grey to orange for this product",,The star (after adding) shall be re-colored from grey to orange for this product,,"Go to the product details page (for the product, that is not in the lists)
+
+Add this product to one/two of the wish lists from the product details page
+
+
+Go to the category page
+",0
+C389197,Add/ Remove product to wish list from PDP >  Check the Star in the category page in different Tabs,,,,"User_1 logged in to the store
+User_1 has List_1-List_2
+
+Open the category page in 5 Tabs
+
+
+",Medium,,Add/remove product to the List from product page,1,,Lists > Add/remove product to the List from product page,,"Step Description:
+Open PDP for any Product (ex. Product1)
+Add to wish list1
+Expected Result:
+The product1 was added to List1",,The product1 was added to List1,,"Open PDP for any Product (ex. Product1)
+Add to wish list1",0
+,,,,,,,,,,,,,"
+Step Description:
+Check the star in other Tabs in both the grid and list view
+Expected Result:
+The Star is also orange in all Tabs
+The product is on the wish list",,"The Star is also orange in all Tabs
+The product is on the wish list",,Check the star in other Tabs in both the grid and list view,
+,,,,,,,,,,,,,"
+Step Description:
+Repeat all steps again for removing the product from the wish list 
+Expected Result:
+The Star is grey in all Tabs
+The product is removed from the wish list in all tabs
+",,"The Star is grey in all Tabs
+The product is removed from the wish list in all tabs
+",,Repeat all steps again for removing the product from the wish list ,
+C389309,Lists tab > Lists > general view,,,,"1. User_1 created
+2. User_1 logged to the store
+3. User_1 has List_1- List_10; 
+4. List_1 has one product
+
+
+",Medium,,Personal lists,1,,Lists > Personal lists,,"Step Description:
+1. Open My account page &gt; Lists tab
+2. Check the page 
+Expected Result:
+1. Lists page presented:
+
+- Title of the list
+- Button Сreate List
+- User_1 lists by line view presented with next elements: 
+* List title (Clickable)
+* Product count: N in the list
+* Icon List settings
+* Icon Remove 
+",,"1. Lists page presented:
+
+- Title of the list
+- Button Сreate List
+- User_1 lists by line view presented with next elements: 
+* List title (Clickable)
+* Product count: N in the list
+* Icon List settings
+* Icon Remove 
+",,"1. Open My account page &gt; Lists tab
+2. Check the page ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the list of the lists
+Expected Result:
+1. 10 lists presented on the page
+2. No pagination presented
+
+",,"1. 10 lists presented on the page
+2. No pagination presented
+
+",,1. Check the list of the lists,
+,,,,,,,,,,,,,"
+Step Description:
+1. Check thу counter for the List 1 
+Expected Result:
+1. Quantity shown as:1",,1. Quantity shown as:1,,1. Check thу counter for the List 1 ,
+C389310,Lists tab >  Lists > empty list,,,,"1. User_1 created
+2. User_1 logged to the store ",Medium,,Personal lists,1,,Lists > Personal lists,,"Step Description:
+1. Open My account page - Your List tab
+2. Create new list  
+3. Open new list
+Expected Result:
+1. Your List page presented the next elements:
+
+-- Title &lt;list name&gt;
+-- List settings button
+-- Text 'Your list is currently empty'
+-- Continue browsing button ",,"1. Your List page presented the next elements:
+
+-- Title &lt;list name&gt;
+-- List settings button
+-- Text 'Your list is currently empty'
+-- Continue browsing button ",,"1. Open My account page - Your List tab
+2. Create new list  
+3. Open new list",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on """"Continue browsing""""
+Expected Result:
+The Catalog page is opened",,The Catalog page is opened,,"Click on ""Continue browsing""",
+C389311,Lists tab >  Lists > products counter,,,,"1. User_1 created
+2. User_1 logged to the store
+3. Add several Products to the List_1 (eg 5 items)",Medium,,Personal lists,1,,Lists > Personal lists,,"Step Description:
+1. Open My account page &gt; Lists 
+2. Check the List_1 product quantity
+Expected Result:
+1. Product quantity count: 5",,1. Product quantity count: 5,,"1. Open My account page &gt; Lists 
+2. Check the List_1 product quantity",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Remove all products from the list
+2. Check the List_1 product quantity
+
+Expected Result:
+1. Product quantity count: 0
+2. Button Add to cart is inactive",,"1. Product quantity count: 0
+2. Button Add to cart is inactive",,"1. Remove all products from the list
+2. Check the List_1 product quantity
+",
+C389312,Lists tab >  Lists > create new list,,,,"1. User_1 created
+2. User_1 logged in to the store
+
+",Medium,,Personal lists,1,,Lists > Personal lists,,"Step Description:
+1. Open My account page &gt;  Lists tab 
+2. Click on button Create list
+Expected Result:
+1. Popup to create new list opens",,1. Popup to create new list opens,,"1. Open My account page &gt;  Lists tab 
+2. Click on button Create list",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the pop-up
+Expected Result:
+1. Next elements are presented:
+
+- Popup Title 
+- Field for the name 
+- Description
+- Icon close 
+- Buttons: Cancel, Create List
+
+",,"1. Next elements are presented:
+
+- Popup Title 
+- Field for the name 
+- Description
+- Icon close 
+- Buttons: Cancel, Create List
+
+",,1. Check the pop-up,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click the Close icon
+Expected Result:
+1. Popup has closed.",,1. Popup has closed.,,1. Click the Close icon,
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Popup again
+2. Click the button Cancel
+Expected Result:
+1. Popup has closed.",,1. Popup has closed.,,"1. Open Popup again
+2. Click the button Cancel",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Popup again
+2. Enter name for the new List (eg List_1)
+3. Click the button Create List
+Expected Result:
+1. List_1 created
+2. List_1 appears in the list of the Lists",,"1. List_1 created
+2. List_1 appears in the list of the Lists",,"1. Open Popup again
+2. Enter name for the new List (eg List_1)
+3. Click the button Create List",
+C389313,Lists tab >  Lists > create new list > limit,,,,"1. User_1 created
+2. User_1 logged in to the store
+
+",Medium,,Personal lists,1,,Lists > Personal lists,,"Step Description:
+1. Create 10 lists
+2. Try to click button to create 11th list.
+
+Expected Result:
+1. Button is disable",,1. Button is disable,,"1. Create 10 lists
+2. Try to click button to create 11th list.
+",0
+C389314,Lists tab >  Lists > create new list > Validation,,,,"1. User_1 created
+2. User_1 logged in to the store
+
+",Medium,,Personal lists,1,,Lists > Personal lists,,"Step Description:
+1. Open My account page >  Your list tab 
+2. Click on button **Create list**
+3. Fill in the List Name with more than 25 chars
+
+
+Expected Result:
+1. Error message shows that field can't be more than 25 chars  ",,1. Error message shows that field can't be more than 25 chars  ,,"1. Open My account page >  Your list tab 
+2. Click on button **Create list**
+3. Fill in the List Name with more than 25 chars
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Try to click button Create List
+Expected Result:
+1. Button is inactive",,1. Button is inactive,,1. Try to click button Create List,
+,,,,,,,,,,,,,"
+Step Description:
+1. Remove any input from the field List name - leave it empty
+2. Try to click button Create List
+
+
+Expected Result:
+1. Button is inactive
+2. Error message shows that field is required",,"1. Button is inactive
+2. Error message shows that field is required",,"1. Remove any input from the field List name - leave it empty
+2. Try to click button Create List
+
+",
+C389315,Lists tab >  Lists > delete list,,,,"1. User_1 created
+2. User_1 logged to the store
+3. User_1 has List_1 and List_2
+4. List_1 contains Product_1
+
+
+",Medium,,Personal lists,1,,Lists > Personal lists,,"Step Description:
+1. Open My account page &gt; Lists tab
+2. Click icon remove in the line for the List_1
+
+
+Expected Result:
+1. Pop-up Delete warning presented",,1. Pop-up Delete warning presented,,"1. Open My account page &gt; Lists tab
+2. Click icon remove in the line for the List_1
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check popup
+Expected Result:
+1. Next elements are presented:
+
+- Title Delete warning
+- Confirmation message about removing List_1
+- Icon close 
+- Buttons: Delete, Cancel
+
+",,"1. Next elements are presented:
+
+- Title Delete warning
+- Confirmation message about removing List_1
+- Icon close 
+- Buttons: Delete, Cancel
+
+",,1. Check popup,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click the Close icon
+Expected Result:
+1. Popup has closed.",,1. Popup has closed.,,1. Click the Close icon,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click icon remove again
+2. Click the button Cancel on popup
+Expected Result:
+1. Popup closed
+",,"1. Popup closed
+",,"1. Click icon remove again
+2. Click the button Cancel on popup",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click icon remove again
+2. Click the button Delete on popup
+Expected Result:
+1. List_1 removed 
+2. Only List_2 presented in the list",,"1. List_1 removed 
+2. Only List_2 presented in the list",,"1. Click icon remove again
+2. Click the button Delete on popup",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Product_1
+2. Try to add Product_1 to the List_1
+Expected Result:
+1. No List_1 presented in the list",,1. No List_1 presented in the list,,"1. Open Product_1
+2. Try to add Product_1 to the List_1",
+C389316,Lists tab >  Lists > settings,,,,"1. User_1 created
+2. User_1 logged to the store
+3. User_1 has List_1 and List_2
+
+
+
+",Medium,,Personal lists,1,,Lists > Personal lists,,"Step Description:
+1. Open My account page &gt;  Your list tab 
+2. Click Icon Settings for the List_1
+Expected Result:
+1. The drop-down menu is shown
+
+- Edit
+- Delete
+
+
+
+
+
+
+
+",,"1. The drop-down menu is shown
+
+- Edit
+- Delete
+
+
+
+
+
+
+
+",,"1. Open My account page &gt;  Your list tab 
+2. Click Icon Settings for the List_1",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the Edit
+2. Check the pop-up
+Expected Result:
+1. The next elements are presented:
+
+-- Title List settings
+-- Icon Close
+-- Name of the character input field
+-- Description field
+-- Character input field
+-- Buttons: Cancel, Save
+
+",,"1. The next elements are presented:
+
+-- Title List settings
+-- Icon Close
+-- Name of the character input field
+-- Description field
+-- Character input field
+-- Buttons: Cancel, Save
+
+",,"1. Click on the Edit
+2. Check the pop-up",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click the Close icon
+Expected Result:
+1. Popup has closed.",,1. Popup has closed.,,1. Click the Close icon,
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Popup again
+2. Click the button Cancel
+Expected Result:
+1. Popup has closed.",,1. Popup has closed.,,"1. Open Popup again
+2. Click the button Cancel",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Popup again
+2. Enter a new name for the List_1 (eg List_2)
+3. Enter a new description
+4. Click the button Save
+Expected Result:
+1. The title and description for the list have been updated
+
+",,"1. The title and description for the list have been updated
+
+",,"1. Open Popup again
+2. Enter a new name for the List_1 (eg List_2)
+3. Enter a new description
+4. Click the button Save",
+C389317,MOBILE > Lists > settings,,,,"1. User_1 created
+2. User_1 logged to the store
+3. User_1 has List_1 and List_2
+
+
+
+",Medium,,Personal lists,1,,Lists > Personal lists,,"Step Description:
+1. Open My account page &gt;  Your list tab 
+2. Slider List_1 to the left for the action
+Expected Result:
+1. Actions """"Settings"""" opens",,"1. Actions ""Settings"" opens",,"1. Open My account page &gt;  Your list tab 
+2. Slider List_1 to the left for the action",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open My account page &gt;  Your list tab 
+2. Slider List_1 to the right for the action
+Expected Result:
+1. Actions """"Delete"""" opens
+
+",,"1. Actions ""Delete"" opens
+
+",,"1. Open My account page &gt;  Your list tab 
+2. Slider List_1 to the right for the action",
+C389321,Lists tab > List with Products > empty page,,,,"1. User_1 created
+2. User_1 logged to the store
+
+
+",Medium,,List with products,1,,Lists > List with products,,"Step Description:
+1. Open My account page &gt; Your List tab
+2. Check the page 
+Expected Result:
+1. Your Lists page presented next elements:
+
+- Title Your lists
+- Notification that user do not have any lists
+- Button Continue shopping
+",,"1. Your Lists page presented next elements:
+
+- Title Your lists
+- Notification that user do not have any lists
+- Button Continue shopping
+",,"1. Open My account page &gt; Your List tab
+2. Check the page ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click button Continue shopping
+Expected Result:
+1.  Main Catalog   opens",,1.  Main Catalog   opens,,1. Click button Continue shopping,
+C389322,Lists tab > List with Products > general view,,,,"1. Product_1-Product_15 have assigned Sale price and List price 
+2. User_1 created
+2. User_1 logged in to the store
+3. User_1 has List_1 
+4. List_1 includes Product_1-Product_15 
+
+
+
+
+",Medium,,List with products,1,,Lists > List with products,,"Step Description:
+1. Open My account page &gt; Your Lists
+2. Click on the title List_1
+
+
+Expected Result:
+1. List of the products presented",,1. List of the products presented,,"1. Open My account page &gt; Your Lists
+2. Click on the title List_1
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the page
+Expected Result:
+Page presented next elements:
+1. List's name
+2. Buttons List settings, Add all products to cart
+3. Products lines with next elements: 
+- Product image 
+- Product title 
+- Sale price/List price
+- Input field with button Add to cart
+- In stock count
+- Button add to cart
+- Button Remove 
+3. Pagination",,"Page presented next elements:
+1. List's name
+2. Buttons List settings, Add all products to cart
+3. Products lines with next elements: 
+- Product image 
+- Product title 
+- Sale price/List price
+- Input field with button Add to cart
+- In stock count
+- Button add to cart
+- Button Remove 
+3. Pagination",,1. Check the page,
+,,,,,,,,,,,,,"
+Step Description:
+1. Check pagination
+Expected Result:
+1. Only 6 products presented in the 1st list",,1. Only 6 products presented in the 1st list,,1. Check pagination,
+C389323,Lists tab > List with Products > settings,,,,"1. User_1 created
+2. User_1 logged in to the store
+3. User_1 has List_1 and List_2
+
+",Medium,,List with products,1,,Lists > List with products,,"Step Description:
+1. Open My account page &gt;  Your list tab 
+2. Click Icon Settings for the List_1
+Expected Result:
+1. Popup List settings opens",,1. Popup List settings opens,,"1. Open My account page &gt;  Your list tab 
+2. Click Icon Settings for the List_1",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the pop-up
+Expected Result:
+1. Next elements are presented:
+
+- Title 
+- Field with name of the list
+- Icon close 
+- Buttons: Cancel, Save
+
+",,"1. Next elements are presented:
+
+- Title 
+- Field with name of the list
+- Icon close 
+- Buttons: Cancel, Save
+
+",,1. Check the pop-up,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click the Close icon
+Expected Result:
+1. Popup has closed.",,1. Popup has closed.,,1. Click the Close icon,
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Popup again
+2. Click the button Cancel
+Expected Result:
+1. Popup has closed.",,1. Popup has closed.,,"1. Open Popup again
+2. Click the button Cancel",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Popup again
+2. Enter new name for the List_1 (eg List_3)
+3. Click the button Save
+Expected Result:
+1. Title for the List_1 has been changed
+
+",,"1. Title for the List_1 has been changed
+
+",,"1. Open Popup again
+2. Enter new name for the List_1 (eg List_3)
+3. Click the button Save",
+C389324,Lists tab > List with Products > add 1 product to the cart > Successfully added,,,,"1. User_1 created
+2. User_1 logged to the store
+3. Add Product_1 to the List_1
+4. List_1 has product_1-product_3
+",Medium,,List with products,1,,Lists > List with products,,"Step Description:
+1. Open My account page &gt; Lists tab &gt; List_1
+2. Click the button Add to cart for the Product_1 (eg 1 amount)
+Expected Result:
+1. The product was added to cart
+2. The pop-up has appeared:
+
+The title is shown as """"Adding products to cart result"""".
+
+Section Successfully added with count (uncollapsed by default)
+
+SKU
+Product's title (link)
+Quantity
+Scrolling
+Buttons:
+
+View cart
+Print
+Ok
+
+
+
+ ![](index.php?/attachments/get/17f2ee9f-6e1f-4d0c-a7ea-0dba30a84fcf) 
+
+
+3.Notification below the input field that the product is already in the cart presented
+
+",,"1. The product was added to cart
+2. The pop-up has appeared:
+
+The title is shown as ""Adding products to cart result"".
+
+Section Successfully added with count (uncollapsed by default)
+
+SKU
+Product's title (link)
+Quantity
+Scrolling
+Buttons:
+
+View cart
+Print
+Ok
+
+
+
+ ![](index.php?/attachments/get/17f2ee9f-6e1f-4d0c-a7ea-0dba30a84fcf) 
+
+
+3.Notification below the input field that the product is already in the cart presented
+
+",,"1. Open My account page &gt; Lists tab &gt; List_1
+2. Click the button Add to cart for the Product_1 (eg 1 amount)",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Change the quantity of product_1 (for example, 3); 
+2. Click Update Cart
+
+Expected Result:
+1. Pop-up that 1 product added to cart opens
+2. The count of line items is the same as you updated.
+3. Notification below the input field that product """"3 in cart"""" presented
+4. The title is shown as """"Adding products to cart result""""
+",,"1. Pop-up that 1 product added to cart opens
+2. The count of line items is the same as you updated.
+3. Notification below the input field that product ""3 in cart"" presented
+4. The title is shown as ""Adding products to cart result""
+",,"1. Change the quantity of product_1 (for example, 3); 
+2. Click Update Cart
+",
+C389325,Lists tab > List with Products > add 1 product to the cart > not added,,,,"User_1 created
+User_1 logged to the store
+Add Product_1 to the List_1
+List_1 has product_1-product_3
+",Medium,,List with products,1,,Lists > List with products,,"Step Description:
+Open My account page &gt; Lists tab &gt; List_1
+Change qty of line-item &gt; Set value more than in stock
+Click the button Add to cart for the Product_1
+Expected Result:
+The product wa not added to cart
+
+The pop-up has appeared: 
+
+title: Adding products to cart result
+
+Section Not added
+
+ ![](index.php?/attachments/get/f6901bd2-83bd-4841-8909-05bda434a3e8) 
+",,"The product wa not added to cart
+
+The pop-up has appeared: 
+
+title: Adding products to cart result
+
+Section Not added
+
+ ![](index.php?/attachments/get/f6901bd2-83bd-4841-8909-05bda434a3e8) 
+",,"Open My account page &gt; Lists tab &gt; List_1
+Change qty of line-item &gt; Set value more than in stock
+Click the button Add to cart for the Product_1",0
+C389326,Lists tab > List with Products > Add all to cart,,,,"1. User_1 created
+2. User_1 logged to the store
+3. Add several Products to the List_1
+4. List_1 has product_1-product_3",Medium,,List with products,1,,Lists > List with products,,"Step Description:
+1. Open My account page &gt; Lists &gt; List_1
+2. Click the button Add all to the cart
+Expected Result:
+All products contained in the List are sent to the shopping cart.",,All products contained in the List are sent to the shopping cart.,,"1. Open My account page &gt; Lists &gt; List_1
+2. Click the button Add all to the cart",0
+C389327,Lists tab > List with Products > remove product,,,,"1. User_1 created
+2. User_1 logged to the store
+3. User_1 has List_1 with Product_1 aтв Product_2
+
+
+",Medium,,List with products,1,,Lists > List with products,,"Step Description:
+1. Open My account page &gt; Lists tab &gt;List_1
+2. Click icon remove in the line for the Product_1
+
+
+Expected Result:
+1. Pop-up Delete warning presented",,1. Pop-up Delete warning presented,,"1. Open My account page &gt; Lists tab &gt;List_1
+2. Click icon remove in the line for the Product_1
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check popup
+Expected Result:
+1. Next elements are presented:
+
+- Title: Delete warning
+- Confirmation message about removing List_1
+- Icon close 
+- Buttons: Delete, Cancel
+
+",,"1. Next elements are presented:
+
+- Title: Delete warning
+- Confirmation message about removing List_1
+- Icon close 
+- Buttons: Delete, Cancel
+
+",,1. Check popup,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click the Close icon
+Expected Result:
+1. Popup has closed.",,1. Popup has closed.,,1. Click the Close icon,
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Popup Delete warning again
+2. Click the button Cancel
+Expected Result:
+1. Popup closed
+",,"1. Popup closed
+",,"1. Open Popup Delete warning again
+2. Click the button Cancel",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Popup Delete warning again
+2. Click the button Delete
+Expected Result:
+1. Product_1 removed 
+2. Only Product_2 presented in the list_1",,"1. Product_1 removed 
+2. Only Product_2 presented in the list_1",,"1. Open Popup Delete warning again
+2. Click the button Delete",
+C389328,Lists tab > List with Products > Pagination > Add pages,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000002596, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000629",,,,Medium,,List with products,1,,Lists > List with products,,"Step Description:
+Add 6 products to wish list1
+Open Lists &gt; View the wish list1
+Expected Result:
+The wish list page is displayed without pagination",,The wish list page is displayed without pagination,,"Add 6 products to wish list1
+Open Lists &gt; View the wish list1",0
+,,,,,,,,,,,,,"
+Step Description:
+Add One product
+Expected Result:
+1. The 2nd page has been added
+2. Previous and Next buttons are displayed
+
+**Buttons:**
+
+Previous - active (disabled if the cursor is on the first page)
+Next - (active) disabled if the cursor is on the last page
+
+Pagination view:
+
+1 2
+
+---------------------------------------------------------------
+
+ ![](index.php?/attachments/get/21c224b1-fe7a-4f3d-8dba-468c85be259b) 
+",,"1. The 2nd page has been added
+2. Previous and Next buttons are displayed
+
+**Buttons:**
+
+Previous - active (disabled if the cursor is on the first page)
+Next - (active) disabled if the cursor is on the last page
+
+Pagination view:
+
+1 2
+
+---------------------------------------------------------------
+
+ ![](index.php?/attachments/get/21c224b1-fe7a-4f3d-8dba-468c85be259b) 
+",,Add One product,
+,,,,,,,,,,,,,"
+Step Description:
+Add about 54 products to the wish list1
+Check the number of pages
+Expected Result:
+1. There are 9 pages with 6 products on each page
+
+**Buttons:**
+
+Previous - active/disabled if the cursor on the first page
+Next - active/disabled if the cursor on the last page
+
+The 1st page is selected and active
+
+**Pagination view:**
+
+1 2 3 4 5 6 7 8 9",,"1. There are 9 pages with 6 products on each page
+
+**Buttons:**
+
+Previous - active/disabled if the cursor on the first page
+Next - active/disabled if the cursor on the last page
+
+The 1st page is selected and active
+
+**Pagination view:**
+
+1 2 3 4 5 6 7 8 9",,"Add about 54 products to the wish list1
+Check the number of pages",
+,,,,,,,,,,,,,"
+Step Description:
+Add one product
+Check the number of pages
+View the pagination
+Expected Result:
+**Buttons:**
+
+Previous - active/disabled if the cursor on the first page active
+Next - active/disabled if the cursor on the last page active
+
+The 9th page is selected and active
+
+There are 10 pages with 6 products on each
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...10
+
+-------------------------------------------------------------
+
+ ![](index.php?/attachments/get/8d5395e8-7873-487d-95a5-6fd38087bb57) 
+",,"**Buttons:**
+
+Previous - active/disabled if the cursor on the first page active
+Next - active/disabled if the cursor on the last page active
+
+The 9th page is selected and active
+
+There are 10 pages with 6 products on each
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...10
+
+-------------------------------------------------------------
+
+ ![](index.php?/attachments/get/8d5395e8-7873-487d-95a5-6fd38087bb57) 
+",,"Add one product
+Check the number of pages
+View the pagination",
+C389329,Lists tab > List with Products > Pagination > Next button,,,,The wish list1 contains 55 products,Medium,,List with products,1,,Lists > List with products,,"Step Description:
+Open Wish list1
+Check the pagination
+Expected Result:
+1. The 1st page is selected and active
+
+**Buttons:**
+
+Previous - disabled if the cursor on the first page active
+Next - active
+
+
+There are 10 pages with 6 products on each
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...10
+",,"1. The 1st page is selected and active
+
+**Buttons:**
+
+Previous - disabled if the cursor on the first page active
+Next - active
+
+
+There are 10 pages with 6 products on each
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...10
+",,"Open Wish list1
+Check the pagination",0
+,,,,,,,,,,,,,"
+Step Description:
+Click Next button
+Expected Result:
+1. System opens 2nd page &gt; 2nd page is selected, pages in the list are changed
+2. The page is scrolling up
+
+**Buttons:**
+
+Previous - active
+Next - active",,"1. System opens 2nd page &gt; 2nd page is selected, pages in the list are changed
+2. The page is scrolling up
+
+**Buttons:**
+
+Previous - active
+Next - active",,Click Next button,
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Next button till the 6-page
+Expected Result:
+1. System opens 6th page &gt; 6th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+
+**Pagination view:**
+
+1...4 5 6 7 8 9 10
+
+-------------------------------------------------------------
+
+
+ ![](index.php?/attachments/get/2701c5ed-e6f5-4938-848d-65d1dfec5f77)
+",,"1. System opens 6th page &gt; 6th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+
+**Pagination view:**
+
+1...4 5 6 7 8 9 10
+
+-------------------------------------------------------------
+
+
+ ![](index.php?/attachments/get/2701c5ed-e6f5-4938-848d-65d1dfec5f77)
+",,Proceed to push the Next button till the 6-page,
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Next button till the last page
+Expected Result:
+1. System opens 10th page &gt; 10th page is selected, pages in the list are changed
+2. The page is scrolling up
+
+**Buttons:**
+
+Previous - active
+Next - disable if the cursor on the last page
+
+**Pagination view:**
+
+1...4 5 6 7 8 9 10",,"1. System opens 10th page &gt; 10th page is selected, pages in the list are changed
+2. The page is scrolling up
+
+**Buttons:**
+
+Previous - active
+Next - disable if the cursor on the last page
+
+**Pagination view:**
+
+1...4 5 6 7 8 9 10",,Proceed to push the Next button till the last page,
+C389330,Lists tab > List with Products > Pagination > Previous button,https://virtowayqa.testrail.io/index.php?/attachments/get/1000004277,,,The wish list1 contains 55 products,Medium,,List with products,1,,Lists > List with products,,"Step Description:
+Select the last 10th page
+Click on the Previous button
+Expected Result:
+1. System opens 9th page &gt; 9th page is selected, pages in the list are changed
+2. The page is scrolling up
+
+**Buttons:**
+
+Previous - active
+Next - active
+
+**Pagination view:**
+
+1...4 5 6 7 8 9 10",,"1. System opens 9th page &gt; 9th page is selected, pages in the list are changed
+2. The page is scrolling up
+
+**Buttons:**
+
+Previous - active
+Next - active
+
+**Pagination view:**
+
+1...4 5 6 7 8 9 10",,"Select the last 10th page
+Click on the Previous button",0
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Previous button till the 5-page
+Expected Result:
+1. System opens 5th page &gt; 5th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...10
+
+---------------------------------------------------------
+
+
+ ![](index.php?/attachments/get/f511edd2-ca00-4d39-8099-645e83ea2d85) 
+",,"1. System opens 5th page &gt; 5th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...10
+
+---------------------------------------------------------
+
+
+ ![](index.php?/attachments/get/f511edd2-ca00-4d39-8099-645e83ea2d85) 
+",,Proceed to push the Previous button till the 5-page,
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Previous button till the 1st page
+Expected Result:
+1. The 1st page is selected and active
+
+**Buttons:**
+
+Previous - disabled if the cursor on the first page
+Next - active
+
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...10",,"1. The 1st page is selected and active
+
+**Buttons:**
+
+Previous - disabled if the cursor on the first page
+Next - active
+
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...10",,Proceed to push the Previous button till the 1st page,
+C389331,Lists tab > List with Products > Pagination > Delete pages,,,,The wish list1 contains 55 products,Medium,,List with products,1,,Lists > List with products,,"Step Description:
+Open the last page
+Delete all products
+Check the number of pages
+Check Next button
+Expected Result:
+1. The last page is deleted
+2. System opens 9th page &gt; 9th page is selected, pages in the list are changed
+
+**Buttons:**
+
+Previous - active
+Next - disabled
+
+There are 9 pages with 6 products on each
+
+**Pagination view:**
+
+1 2 3 4 5 6 7 8 9",,"1. The last page is deleted
+2. System opens 9th page &gt; 9th page is selected, pages in the list are changed
+
+**Buttons:**
+
+Previous - active
+Next - disabled
+
+There are 9 pages with 6 products on each
+
+**Pagination view:**
+
+1 2 3 4 5 6 7 8 9",,"Open the last page
+Delete all products
+Check the number of pages
+Check Next button",0
+C389332,Lists details >  Pagination > Check switching between lists,,,,"Add 20 products to wish lists (list1, list2)
+
+Add 3 products to list3",Medium,,List with products,1,,Lists > List with products,,"Step Description:
+Go to lists &gt; open list1
+
+Go to the last page
+
+Switch between all lists
+
+Pay attention to the number of active pages
+
+Have a look at list3
+Expected Result:
+Each list opens from 1st page after each switching",,Each list opens from 1st page after each switching,,"Go to lists &gt; open list1
+
+Go to the last page
+
+Switch between all lists
+
+Pay attention to the number of active pages
+
+Have a look at list3",0
+C389237,Save changes > View > Desktop,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000001271, https://virtowayqa.testrail.io/index.php?/attachments/get/1000001766",,,"Create List1
+Add Products to List1",Medium,,Update List,2,,Lists > List with products > Update List,,"Step Description:
+Open List1 details
+Verify the page
+Expected Result:
+The button """"Save changes"""" is disabled by default
+
+
+ ![](index.php?/attachments/get/449d7095-7c2d-4b63-97ea-9cd6c66e4a63) 
+
+
+
+",,"The button ""Save changes"" is disabled by default
+
+
+ ![](index.php?/attachments/get/449d7095-7c2d-4b63-97ea-9cd6c66e4a63) 
+
+
+
+",,"Open List1 details
+Verify the page",0
+,,,,,,,,,,,,,"
+Step Description:
+Change qty of Product
+Expected Result:
+The """"Save changes"""" is activated
+
+ ![](index.php?/attachments/get/60d46c5e-7bca-4982-adbc-8dcc1a0c5b63) 
+
+",,"The ""Save changes"" is activated
+
+ ![](index.php?/attachments/get/60d46c5e-7bca-4982-adbc-8dcc1a0c5b63) 
+
+",,Change qty of Product,
+C389238,Save changes > View > Mobile,,,,"Sign in as a regular user
+Create List1
+Add Products to List1",Medium,,Update List,2,,Lists > List with products > Update List,,"Step Description:
+Open Menu &gt; Account &gt; Lists
+Tap on List1
+Verify the page
+Expected Result:
+The button """"Save changes"""" is disabled by default
+
+ ![](index.php?/attachments/get/ea4b8b69-fa53-4a54-bcd3-f35f38563a2e) 
+",,"The button ""Save changes"" is disabled by default
+
+ ![](index.php?/attachments/get/ea4b8b69-fa53-4a54-bcd3-f35f38563a2e) 
+",,"Open Menu &gt; Account &gt; Lists
+Tap on List1
+Verify the page",0
+,,,,,,,,,,,,,"
+Step Description:
+Change qty for Product
+Expected Result:
+The """"Save changes"""" is activated
+
+
+ ![](index.php?/attachments/get/ade52e17-0636-432e-a8ab-69a87fd9567e) 
+",,"The ""Save changes"" is activated
+
+
+ ![](index.php?/attachments/get/ade52e17-0636-432e-a8ab-69a87fd9567e) 
+",,Change qty for Product,
+C389239,Save changes > Update qty > NO,,,,"Create List1
+Add Products to List1",Medium,,Update List,2,,Lists > List with products > Update List,,"Step Description:
+Change qty for several products
+
+
+Expected Result:
+The """"Save changes"""" is activated",,"The ""Save changes"" is activated",,"Change qty for several products
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Refresh the Page
+Expected Result:
+1. The """"Save changes"""" is disabled
+2. The quantity is not saved
+",,"1. The ""Save changes"" is disabled
+2. The quantity is not saved
+",,Refresh the Page,
+,,,,,,,,,,,,,"
+Step Description:
+Change qty for several products
+Click on Save changes
+Expected Result:
+The Pop-up has appeared
+
+Text: Would you like to save changes in the list?
+
+",,"The Pop-up has appeared
+
+Text: Would you like to save changes in the list?
+
+",,"Change qty for several products
+Click on Save changes",
+,,,,,,,,,,,,,"
+Step Description:
+Click No
+Expected Result:
+Pop-up closed
+The """"Save changes"""" is disabled
+All qty changes are canceled",,"Pop-up closed
+The ""Save changes"" is disabled
+All qty changes are canceled",,Click No,
+C389240,Save changes > Update qty > Yes,,,,"Create List1
+Add Products to List1",Medium,,Update List,2,,Lists > List with products > Update List,,"Step Description:
+Change qty for several products
+Click on Save changes
+Expected Result:
+The Pop-up has appeared
+
+Text: Would you like to save changes in the list?
+
+  
+
+
+
+
+  
+
+
+
+
+",,"The Pop-up has appeared
+
+Text: Would you like to save changes in the list?
+
+  
+
+
+
+
+  
+
+
+
+
+",,"Change qty for several products
+Click on Save changes",0
+,,,,,,,,,,,,,"
+Step Description:
+Click Yes
+Expected Result:
+Pop-up closed
+The """"Save changes"""" is disabled
+All qty changes are Saved",,"Pop-up closed
+The ""Save changes"" is disabled
+All qty changes are Saved",,Click Yes,
+,,,,,,,,,,,,,"
+Step Description:
+Re-open List1
+Verify the qty
+Expected Result:
+New qty is shown",,New qty is shown,,"Re-open List1
+Verify the qty",
+C389241,Save changes > Update  line item to max available QTY,,,,"Create List1
+Add Products to List1",Medium,,Update List,2,,Lists > List with products > Update List,,"Step Description:
+Set qty more than available in Stock
+Save changes
+Expected Result:
+All qty changes is saved",,All qty changes is saved,,"Set qty more than available in Stock
+Save changes",0
+,,,,,,,,,,,,,"
+Step Description:
+Re-open the List
+Verify the qty
+Expected Result:
+New qty is shown",,New qty is shown,,"Re-open the List
+Verify the qty",
+C389242,Save changes > Update line item to less than MIN qty,,,,"Create List1
+Add Products to List1
+Product has Min qty = 5",Medium,,Update List,2,,Lists > List with products > Update List,,"Step Description:
+Change product qty, set less than min qty
+
+Save changes
+Expected Result:
+1. The Save Changes button is active
+
+2. Any value can be saved
+
+3. The """"Add to Cart"""" button should be disabled",,"1. The Save Changes button is active
+
+2. Any value can be saved
+
+3. The ""Add to Cart"" button should be disabled",,"Change product qty, set less than min qty
+
+Save changes",0
+,,,,,,,,,,,,,"
+Step Description:
+Re-open the List
+Verify the qty
+Expected Result:
+New qty is shown",,New qty is shown,,"Re-open the List
+Verify the qty",
+C389243,Save changes > Update line item to greater than MAX qty,,,,"Create List1
+Add Products to List1
+Product has Max qty = 15",Medium,,Update List,2,,Lists > List with products > Update List,,"Step Description:
+Change product qty, enter greater than max qty
+
+Save changes
+Expected Result:
+1. The Save Changes button is active
+
+2. Any value can be saved
+
+3. The """"Add to Cart"""" button should be disabled if the validation works.",,"1. The Save Changes button is active
+
+2. Any value can be saved
+
+3. The ""Add to Cart"" button should be disabled if the validation works.",,"Change product qty, enter greater than max qty
+
+Save changes",0
+,,,,,,,,,,,,,"
+Step Description:
+Re-open the List
+Verify the qty
+Expected Result:
+New qty is shown",,New qty is shown,,"Re-open the List
+Verify the qty",
+C389244,Save changes > Set value under/above MIN-MAX qty > Reset changes,,,,"Create List1
+Add Products to List1
+Product has Min qty = 5 and Max qty = 15",Medium,,Update List,2,,Lists > List with products > Update List,,"Step Description:
+Change product qty, enter greater than max qty
+
+
+Expected Result:
+1. The Add to cart is disabled
+2. An error message is displayed",,"1. The Add to cart is disabled
+2. An error message is displayed",,"Change product qty, enter greater than max qty
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Save changes &gt; NO
+Expected Result:
+1. Pop-up closed
+2. The """"Save changes"""" is disabled
+3. Old valid qty returned
+
+- The Add to Cart is activated
+- An error message is no longer displayed
+",,"1. Pop-up closed
+2. The ""Save changes"" is disabled
+3. Old valid qty returned
+
+- The Add to Cart is activated
+- An error message is no longer displayed
+",,Save changes &gt; NO,
+,,,,,,,,,,,,,"
+Step Description:
+Change product qty, set less than min qty
+
+
+Expected Result:
+1. The Add to cart is disabled
+2. An error message is displayed",,"1. The Add to cart is disabled
+2. An error message is displayed",,"Change product qty, set less than min qty
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Save changes &gt; NO
+Expected Result:
+1. Pop-up closed
+2. The """"Save changes"""" is disabled
+3. Old valid qty returned
+
+- The Add to Cart is activated
+- An error message is no longer displayed",,"1. Pop-up closed
+2. The ""Save changes"" is disabled
+3. Old valid qty returned
+
+- The Add to Cart is activated
+- An error message is no longer displayed",,Save changes &gt; NO,
+C389245,Save changes > Unavailable products + Mixed Products,,,,"Create List1
+Add Products to List1
+
+Product1 = Can't be purchased = false
+Product2 = Visible = false
+Product3 = inStock = 0
+
+
+
+",Medium,,Update List,2,,Lists > List with products > Update List,,"Step Description:
+Open List1
+Try to change qty for products
+
+
+Expected Result:
+Unavailable products are blocked for changes
+
+ ![](index.php?/attachments/get/a0cbb259-9be9-4b4a-8bd7-63e777f0518f) 
+",,"Unavailable products are blocked for changes
+
+ ![](index.php?/attachments/get/a0cbb259-9be9-4b4a-8bd7-63e777f0518f) 
+",,"Open List1
+Try to change qty for products
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to Catalog
+Add available Physical and Digital products to the Wish list
+
+Open List1 &gt; Try to change qty for products
+Expected Result:
+Only for available products possible to change and save qty",,Only for available products possible to change and save qty,,"Go to Catalog
+Add available Physical and Digital products to the Wish list
+
+Open List1 &gt; Try to change qty for products",
+C389246,Save changes > Yes > Leave the wish list,,,,,Medium,,Update List,2,,Lists > List with products > Update List,,"Step Description:
+Add product to wish list1
+
+Open wish list1 &gt; change qty (Don’t Save) &gt;
+
+Click on another wish list2
+
+
+Expected Result:
+The system asks about saving changes
+
+  
+
+",,"The system asks about saving changes
+
+  
+
+",,"Add product to wish list1
+
+Open wish list1 &gt; change qty (Don’t Save) &gt;
+
+Click on another wish list2
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Agree to save
+
+Expected Result:
+The system save and opens wish list2",,The system save and opens wish list2,,"Agree to save
+",
+,,,,,,,,,,,,,"
+Step Description:
+Open again Wish list1
+
+Expected Result:
+last changes saved",,last changes saved,,"Open again Wish list1
+",
+C389247,Save changes > NO > Leave the wish list,,,,,Medium,,Update List,2,,Lists > List with products > Update List,,"Step Description:
+Add product to wish list1
+
+Open wish list1 &gt; change qty (Don’t Save)
+
+Click on another wish list2
+
+
+Expected Result:
+The system asks about saving changes
+
+
+ ![](index.php?/attachments/get/b1d33880-3283-4b3c-abe2-f61421cc5cf7) 
+
+
+
+
+  
+
+",,"The system asks about saving changes
+
+
+ ![](index.php?/attachments/get/b1d33880-3283-4b3c-abe2-f61421cc5cf7) 
+
+
+
+
+  
+
+",,"Add product to wish list1
+
+Open wish list1 &gt; change qty (Don’t Save)
+
+Click on another wish list2
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Click NO
+
+Expected Result:
+The system does not save the changes and opens wish list2",,The system does not save the changes and opens wish list2,,"Click NO
+",
+,,,,,,,,,,,,,"
+Step Description:
+Open again Wish list1
+
+Expected Result:
+The old quantity is shown",,The old quantity is shown,,"Open again Wish list1
+",
+C389225,Add all to cart > Successfully added > All products are available,,,,"User_1 added 8 products to wish list_1
+Open Account >  Lists tab
+Open List_1",Medium,,Add all products to cart,2,,Lists > List with products > Add all products to cart,,"Step Description:
+Click button Add all to cart
+Check the Popup
+Expected Result:
+The title is shown as """"Adding products to cart result"""".
+
+Section Successfully added with count (uncollapsed by default)
+
+- SKU
+- Product's title (link)
+- Quantity
+- Scrolling
+
+Buttons:
+
+- View cart
+- Print
+- Ok 
+",,"The title is shown as ""Adding products to cart result"".
+
+Section Successfully added with count (uncollapsed by default)
+
+- SKU
+- Product's title (link)
+- Quantity
+- Scrolling
+
+Buttons:
+
+- View cart
+- Print
+- Ok 
+",,"Click button Add all to cart
+Check the Popup",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the section Successfully added
+Click one more time
+Expected Result:
+The section is collapsed. The list of products is hidden
+The section is uncollapsed. The list of products shown
+
+The Successfully added count = count of line-items in the cart
+Wish list remains the same
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+",,"The section is collapsed. The list of products is hidden
+The section is uncollapsed. The list of products shown
+
+The Successfully added count = count of line-items in the cart
+Wish list remains the same
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+",,"Click on the section Successfully added
+Click one more time",
+,,,,,,,,,,,,,"
+Step Description:
+Click View cart
+Go to the cart and check the products
+Expected Result:
+All products were added to the cart successfully. ",,All products were added to the cart successfully. ,,"Click View cart
+Go to the cart and check the products",
+C389226,Add all to cart > Successfully added > Change qty > Check qty in pop-up,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001694,,,"User_1 added 8 products to wish list_1
+Open Account >  Lists tab
+Open List_1",Medium,,Add all products to cart,2,,Lists > List with products > Add all products to cart,,"Step Description:
+Change product quantity
+Click on Add all to cart
+Expected Result:
+The pop-up has appeared
+The product_1 is shown in the Successfully added section
+The product qty in pop-up is the same as in the list
+Wish list remains the same
+
+
+ ![](index.php?/attachments/get/5bde38e4-8a1d-4b91-a2e6-f75fcb76f068) 
+",,"The pop-up has appeared
+The product_1 is shown in the Successfully added section
+The product qty in pop-up is the same as in the list
+Wish list remains the same
+
+
+ ![](index.php?/attachments/get/5bde38e4-8a1d-4b91-a2e6-f75fcb76f068) 
+",,"Change product quantity
+Click on Add all to cart",0
+,,,,,,,,,,,,,"
+Step Description:
+Click View cart
+Go to the cart and check the products
+Expected Result:
+All products were added to the cart in the same qty.
+
+
+",,"All products were added to the cart in the same qty.
+
+
+",,"Click View cart
+Go to the cart and check the products",
+C389227,Add all to cart > Successfully added > Changed price,,,"1. The product_1 is displayed in the Successfully added section
+2. The prodcut_ 1 is added to the cart with new price
+3. Wish list remains the same
+
+
+
+
+
+","User_1 added 8 products to wish list_1
+Open Account >  Lists tab
+Open List_1
+
+Change the price for product_1
+
+",Medium,,Add all products to cart,2,,Lists > List with products > Add all products to cart,Click on Add all to cart > View cart,,,,,,0
+C389228,Add all to cart > Not added > out of stock,,,,"User_1 added 8 products to wish list_1
+Several products are out of stock
+Open Account >  Lists tab
+Open List_1",Medium,,Add all products to cart,2,,Lists > List with products > Add all products to cart,,"Step Description:
+Click button Add all to cart
+Check the Popup
+Expected Result:
+The product_1 is shown in the section Not added
+ 
+
+ 
+",,"The product_1 is shown in the section Not added
+ 
+
+ 
+",,"Click button Add all to cart
+Check the Popup",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the section Not added added
+Click one more time
+Expected Result:
+The section is collapsed. The list of products is hidden
+The section is uncollapsed. The list of products shown",,"The section is collapsed. The list of products is hidden
+The section is uncollapsed. The list of products shown",,"Click on the section Not added added
+Click one more time",
+,,,,,,,,,,,,,"
+Step Description:
+Click View cart
+Go to the cart and check the products
+Expected Result:
+Product_1 was not added to the cart.",,Product_1 was not added to the cart.,,"Click View cart
+Go to the cart and check the products",
+C389229,Add all to cart > Not added > Can't be purchased,,,,"User_1 added 8 products to wish list_1
+Open Account >  Lists tab
+Open List_1
+
+Product_1 Can't be purchased = false
+
+",Medium,,Add all products to cart,2,,Lists > List with products > Add all products to cart,,"Step Description:
+Click button Add all to cart
+Check the Popup
+Expected Result:
+The product_1 is shown in the section Not added
+
+  
+
+
+
+",,"The product_1 is shown in the section Not added
+
+  
+
+
+
+",,"Click button Add all to cart
+Check the Popup",0
+,,,,,,,,,,,,,"
+Step Description:
+Click View cart
+Go to the cart and check the products
+Expected Result:
+Product_1 was not added to the cart.",,Product_1 was not added to the cart.,,"Click View cart
+Go to the cart and check the products",
+C389230,Add all to cart > Not added > Visible = false,,,,"User_1 added 8 products to wish list_1
+Open Account >  Lists tab
+Open List_1
+
+Product_1 Visile = false
+
+",Medium,,Add all products to cart,2,,Lists > List with products > Add all products to cart,,"Step Description:
+Click button Add all to cart
+Check the Popup
+Expected Result:
+The product_1 is shown in the section Not added
+
+
+  
+",,"The product_1 is shown in the section Not added
+
+
+  
+",,"Click button Add all to cart
+Check the Popup",0
+,,,,,,,,,,,,,"
+Step Description:
+Click View cart
+Go to the cart and check the products
+Expected Result:
+Product_1 was not added to the cart.",,Product_1 was not added to the cart.,,"Click View cart
+Go to the cart and check the products",
+C389231,Add all to cart > Not added > Limit quantity,,,,"User_1 added 8 products to wish list_1
+Open Account >  Lists tab
+Open List_1
+
+Product_1 MinQty is more than in List / MaxQty is less than in List
+
+
+
+",Medium,,Add all products to cart,2,,Lists > List with products > Add all products to cart,,"Step Description:
+Click the button Add all to cart
+Check the Popup
+Expected Result:
+The product_1 is shown in the Section Not added
+
+
+",,"The product_1 is shown in the Section Not added
+
+
+",,"Click the button Add all to cart
+Check the Popup",0
+,,,,,,,,,,,,,"
+Step Description:
+Click View cart
+Go to the cart and check the products
+Expected Result:
+Product_1 was not added to the cart.",,Product_1 was not added to the cart.,,"Click View cart
+Go to the cart and check the products",
+C389232,Add all to cart > Not added > Unavailable qty,,,,"User_1 added 8 products to wish list_1
+Open Account >  Lists tab
+Open List_1",Medium,,Add all products to cart,2,,Lists > List with products > Add all products to cart,,"Step Description:
+Set unavailable qty (more than inStock) for the product
+Click on Add all to cart
+Expected Result:
+The pop-up has appeared
+The product_1 is shown in the Not added section",,"The pop-up has appeared
+The product_1 is shown in the Not added section",,"Set unavailable qty (more than inStock) for the product
+Click on Add all to cart",0
+,,,,,,,,,,,,,"
+Step Description:
+Click View cart
+Go to the cart and check the products
+Expected Result:
+Product_1 was not added to the cart.",,Product_1 was not added to the cart.,,"Click View cart
+Go to the cart and check the products",
+C389233,Add all to cart > Not added > Deleted product,,,,"User_1 added 8 products to wish list_1
+Open Account >  Lists tab
+Open List_1
+
+Product_1 was deleted from catalog
+
+",Medium,,Add all products to cart,2,,Lists > List with products > Add all products to cart,,"Step Description:
+Click button Add all to cart
+Check the Popup
+Expected Result:
+The product_1 is shown in the section Not added",,The product_1 is shown in the section Not added,,"Click button Add all to cart
+Check the Popup",0
+,,,,,,,,,,,,,"
+Step Description:
+Click View cart
+Go to the cart and check the products
+Expected Result:
+Product_1 was not added to the cart.",,Product_1 was not added to the cart.,,"Click View cart
+Go to the cart and check the products",
+C389234,Add all to cart > Quantity reduced,,,,,Medium,,Add all products to cart,2,,Lists > List with products > Add all products to cart,,,,,,,0
+C389235,Add all to cart > All sections,,,,"User_1 added 8 products to wish list_1
+Open Account >  Lists tab
+Open List_1
+
+
+2 available + 1 out of stock + 1 visible = false + 1 can't be purchased = false + 1 minQty
+
+
+",Medium,,Add all products to cart,2,,Lists > List with products > Add all products to cart,,"Step Description:
+Click button Add all to cart
+Check the Popup
+Expected Result:
+There are sections successfully added and Not added in the pop-up. All sections collapsed
+
+  
+",,"There are sections successfully added and Not added in the pop-up. All sections collapsed
+
+  
+",,"Click button Add all to cart
+Check the Popup",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the section Successfully added
+Expected Result:
+The section is uncollapsed. The section Successfully added contains 2 products.
+
+  
+
+
+",,"The section is uncollapsed. The section Successfully added contains 2 products.
+
+  
+
+
+",,Click on the section Successfully added,
+,,,,,,,,,,,,,"
+Step Description:
+Click on the section Not added
+Expected Result:
+The section Successfully added was closed. Not added is opened.
+All 4 unavailable products are shown",,"The section Successfully added was closed. Not added is opened.
+All 4 unavailable products are shown",,Click on the section Not added,
+,,,,,,,,,,,,,"
+Step Description:
+Click View cart
+Go to the cart and check the products
+Expected Result:
+Only 2 products were added to the cart",,Only 2 products were added to the cart,,"Click View cart
+Go to the cart and check the products",
+C389236,Add all to cart > Mobile,,,,,Medium,,Add all products to cart,2,,Lists > List with products > Add all products to cart,,,,,,,0
+C389248,Print > All sections > Multiple line-items,,,,"Add available and out-of-stock products to the wish list1
+
+",Medium,,"Print from lists after """"Add all to cart""""",3,,"Lists > List with products > Add all products to cart > Print from lists after """"Add all to cart""""",,"Step Description:
+Go to Lists &gt; list1
+Click on Add all to cart
+Expected Result:
+The title is shown as """"Adding products to cart result"""".
+
+Section Successfully added with count
+Section Not added with count
+
+**Table for each section**
+
+SKU
+Product's title (link)
+Quantity
+Scrolling
+
+**Buttons:**
+
+- View cart
+- Print
+- Ok
+
+ ![](index.php?/attachments/get/39473764-10b6-41da-8517-00ebf2bd1af2) 
+",,"The title is shown as ""Adding products to cart result"".
+
+Section Successfully added with count
+Section Not added with count
+
+**Table for each section**
+
+SKU
+Product's title (link)
+Quantity
+Scrolling
+
+**Buttons:**
+
+- View cart
+- Print
+- Ok
+
+ ![](index.php?/attachments/get/39473764-10b6-41da-8517-00ebf2bd1af2) 
+",,"Go to Lists &gt; list1
+Click on Add all to cart",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on Print
+Expected Result:
+The PDF is opened in a separate window
+
+- New tab: full report for print is opened
+
+- The print dialog box in the browser
+
+",,"The PDF is opened in a separate window
+
+- New tab: full report for print is opened
+
+- The print dialog box in the browser
+
+",,Click on Print,
+,,,,,,,,,,,,,"
+Step Description:
+Verify the document
+Expected Result:
+1. The title should be the same as the name of the wish list
+2. There are two uncollapsed sections Successfully added with mark icon and Not added with cross icon
+3. The number of line items should match the pop-up Adding products to cart result
+
+**Table for each section**
+
+- Product name
+- SKU
+- Quantity
+
+",,"1. The title should be the same as the name of the wish list
+2. There are two uncollapsed sections Successfully added with mark icon and Not added with cross icon
+3. The number of line items should match the pop-up Adding products to cart result
+
+**Table for each section**
+
+- Product name
+- SKU
+- Quantity
+
+",,Verify the document,
+,,,,,,,,,,,,,"
+Step Description:
+Save the PDF document with all default settings
+Open Document and verify 
+Expected Result:
+The pdf file is opened successfully. The text is aligned in accordance with the selected layout",,The pdf file is opened successfully. The text is aligned in accordance with the selected layout,,"Save the PDF document with all default settings
+Open Document and verify ",
+C389249,Print > Successfully added,,,,"Add available products to the wish list1
+
+",Medium,,"Print from lists after """"Add all to cart""""",3,,"Lists > List with products > Add all products to cart > Print from lists after """"Add all to cart""""",,"Step Description:
+Click on Add all to cart
+Click on Print
+
+Expected Result:
+The preview document is opened in a separate window",,The preview document is opened in a separate window,,"Click on Add all to cart
+Click on Print
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Verify the document
+Expected Result:
+1. The title should be the same as the name of the wish list
+2. There is one uncollapsed section **Successfully added** with mark icon
+3. The number of line items should match the pop-up Adding products to cart result
+
+
+**Table**
+
+Product name
+SKU
+Quantity",,"1. The title should be the same as the name of the wish list
+2. There is one uncollapsed section **Successfully added** with mark icon
+3. The number of line items should match the pop-up Adding products to cart result
+
+
+**Table**
+
+Product name
+SKU
+Quantity",,Verify the document,
+C389250,Print > Not added,,,,"Add unavailable and out-of-stock products to the wish list1
+
+",Medium,,"Print from lists after """"Add all to cart""""",3,,"Lists > List with products > Add all products to cart > Print from lists after """"Add all to cart""""",,"Step Description:
+Click on Add all to cart
+Click on Print
+
+Expected Result:
+The preview document is opened in a separate window",,The preview document is opened in a separate window,,"Click on Add all to cart
+Click on Print
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Verify the document
+Expected Result:
+1. The title should be the same as the name of the wish list
+2. There is one uncollapsed section **Not added** with cross icon
+3. The number of line items should match the pop-up Adding products to cart result
+
+
+**Table**
+
+Product name
+SKU
+Quantity",,"1. The title should be the same as the name of the wish list
+2. There is one uncollapsed section **Not added** with cross icon
+3. The number of line items should match the pop-up Adding products to cart result
+
+
+**Table**
+
+Product name
+SKU
+Quantity",,Verify the document,
+C389251,Print > 1 line-item,,,,,Medium,,"Print from lists after """"Add all to cart""""",3,,"Lists > List with products > Add all products to cart > Print from lists after """"Add all to cart""""",,,,,,,0
+C389252,No limits > User enter value greater than available stock,,,,"Product1 has no min-max limits, only stock qty = 20
+Add Product1 to the wish list
+
+The user opened a wish list
+
+",Medium,,Validation informer,2,,Lists > List with products > Validation informer,,"Step Description:
+Change qty for Product1
+Enter value more than available in stock (ex. 21)
+Expected Result:
+1. The validation error displays under the input field
+
+**Max order 20 item(s)**
+
+2. The Add to Cart button is disabled",,"1. The validation error displays under the input field
+
+**Max order 20 item(s)**
+
+2. The Add to Cart button is disabled",,"Change qty for Product1
+Enter value more than available in stock (ex. 21)",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter value less than available in stock (ex. 10)
+Expected Result:
+1. There is no error message under the input field
+2. The Add to Cart button is activated
+
+",,"1. There is no error message under the input field
+2. The Add to Cart button is activated
+
+",,Enter value less than available in stock (ex. 10),
+,,,,,,,,,,,,,"
+Step Description:
+1. Set qty 10 &gt; Add to cart
+2. Set qty 21
+Expected Result:
+1. The button changed to Update cart
+The warning message is displayed under the input
+
+**Max order 20 item(s)**
+
+2. The Update cart is disabled",,"1. The button changed to Update cart
+The warning message is displayed under the input
+
+**Max order 20 item(s)**
+
+2. The Update cart is disabled",,"1. Set qty 10 &gt; Add to cart
+2. Set qty 21",
+C389253,Product has only Max qty > Track inventory = off,,,,"Product1 has only max qty = 80; stock = 100
+Track inventory = off
+
+Add Product1 to the wish list
+
+The user opened a wish list",Medium,,Validation informer,2,,Lists > List with products > Validation informer,,"Step Description:
+Change qty for Product1
+Enter value more than max (ex. 81)
+Expected Result:
+1. The validation error displays under the input field
+**Max order 80 item(s)**
+2. The Add to Cart button is disabled
+
+----------------------------------------------
+
+
+
+  
+",,"1. The validation error displays under the input field
+**Max order 80 item(s)**
+2. The Add to Cart button is disabled
+
+----------------------------------------------
+
+
+
+  
+",,"Change qty for Product1
+Enter value more than max (ex. 81)",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter a value equal to max qty = 80
+Expected Result:
+1. There is no error message under the input field
+2. The Add to Cart button is activated",,"1. There is no error message under the input field
+2. The Add to Cart button is activated",,Enter a value equal to max qty = 80,
+C389254,Max qty greater than available stock,,,,"Product1 has only max qty = 40
+
+Stock = 39",Medium,,Validation informer,2,,Lists > List with products > Validation informer,,"Step Description:
+1. Change qty for Product1
+Enter value max (ex.40)
+Expected Result:
+1. The validation error displays under the input field
+
+**Max order 39 item(s)**
+
+2. The Add to Cart button is disabled
+",,"1. The validation error displays under the input field
+
+**Max order 39 item(s)**
+
+2. The Add to Cart button is disabled
+",,"1. Change qty for Product1
+Enter value max (ex.40)",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter a value equal to stock = 39
+Expected Result:
+1. There is no error message under the input field
+2. The Add to Cart button is activated",,"1. There is no error message under the input field
+2. The Add to Cart button is activated",,1. Enter a value equal to stock = 39,
+,,,,,,,,,,,,,"
+Step Description:
+1. Set qty 39 &gt; Add to cart
+2. Set qty 40
+Expected Result:
+1. The button changed to Update cart
+
+The warning message is displayed under the input
+
+**Max order 39 item(s)**
+
+2. The Update cart is disabled",,"1. The button changed to Update cart
+
+The warning message is displayed under the input
+
+**Max order 39 item(s)**
+
+2. The Update cart is disabled",,"1. Set qty 39 &gt; Add to cart
+2. Set qty 40",
+C389255,Max qty less than available stock,,,,"Product1 has only max qty = 12
+
+Stock = 39",Medium,,Validation informer,2,,Lists > List with products > Validation informer,,"Step Description:
+1. Change qty for Product1
+
+Enter value max (ex.12)
+Expected Result:
+1. The Add to cart is active
+2. There are no errors",,"1. The Add to cart is active
+2. There are no errors",,"1. Change qty for Product1
+
+Enter value max (ex.12)",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter a value equal to stock= 39
+Expected Result:
+1. The Add to Cart button is disabled
+
+The warning message is shown under the input:
+
+**Max order 12 item(s)**
+",,"1. The Add to Cart button is disabled
+
+The warning message is shown under the input:
+
+**Max order 12 item(s)**
+",,1. Enter a value equal to stock= 39,
+,,,,,,,,,,,,,"
+Step Description:
+1. Set qty 12 &gt; Add to cart
+2. Set qty 13
+Expected Result:
+1. The button changed to Update cart
+
+2. The warning message is displayed under the input
+
+**Max order 12 item(s)**
+
+3. The Update cart is disabled",,"1. The button changed to Update cart
+
+2. The warning message is displayed under the input
+
+**Max order 12 item(s)**
+
+3. The Update cart is disabled",,"1. Set qty 12 &gt; Add to cart
+2. Set qty 13",
+C389256,Only Min and Stock greater than Min qty,,,,"Product1 has only min qty = 2
+
+stock = 18
+
+Track inventory = on 
+",Medium,,Validation informer,2,,Lists > List with products > Validation informer,,"Step Description:
+Change qty for Product1
+Enter value less than min (ex. 1)
+Expected Result:
+1. The validation error displays under the input field
+
+
+**Order from 2 to 18 item(s)**
+
+
+2. The Add to Cart button is disabled
+
+--------------------------------------------
+
+
+  
+",,"1. The validation error displays under the input field
+
+
+**Order from 2 to 18 item(s)**
+
+
+2. The Add to Cart button is disabled
+
+--------------------------------------------
+
+
+  
+",,"Change qty for Product1
+Enter value less than min (ex. 1)",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter a value equal to min or more than min qty = 4
+Expected Result:
+1. There is no error message under the input field
+2. The Add to Cart button is activated",,"1. There is no error message under the input field
+2. The Add to Cart button is activated",,Enter a value equal to min or more than min qty = 4,
+,,,,,,,,,,,,,"
+Step Description:
+Enter a value more than the stock = 19
+Expected Result:
+1. 1. The validation error displays under the input field
+
+
+**Order from 2 to 18 item(s)**
+
+
+2. The Add to Cart button is disabled
+
+--------------------------------------------",,"1. 1. The validation error displays under the input field
+
+
+**Order from 2 to 18 item(s)**
+
+
+2. The Add to Cart button is disabled
+
+--------------------------------------------",,Enter a value more than the stock = 19,
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter a value equal to stock or less stock qty = 17
+Add to cart
+2. Change qty to 20
+
+
+Expected Result:
+1. The button changed to Update cart
+
+The warning message is displayed under the input
+
+**Order from 2 to 18 item(s)**
+
+2. The Update cart is disabled",,"1. The button changed to Update cart
+
+The warning message is displayed under the input
+
+**Order from 2 to 18 item(s)**
+
+2. The Update cart is disabled",,"1. Enter a value equal to stock or less stock qty = 17
+Add to cart
+2. Change qty to 20
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Change qty less min = 1
+Expected Result:
+1. The button changed to Update cart
+
+The warning message is displayed under the input
+
+**Order from 2 to 18 item(s)**
+
+2. The Update cart is disabled",,"1. The button changed to Update cart
+
+The warning message is displayed under the input
+
+**Order from 2 to 18 item(s)**
+
+2. The Update cart is disabled",,Change qty less min = 1,
+C389257,Product has only Min qty + available stock is less than min qty,,,,"Product1 has only min qty = 8
+
+stock = 6
+
+Track inventory = on",Medium,,Validation informer,2,,Lists > List with products > Validation informer,,"Step Description:
+1. Find Product1 in catalog
+2. Take a look at the product card
+Expected Result:
+1. The Add to the card is disabled
+
+The warning message is shown under the input field
+
+
+**Min order 8 item(s) is not available in stock**
+
+---
+
+  
+
+",,"1. The Add to the card is disabled
+
+The warning message is shown under the input field
+
+
+**Min order 8 item(s) is not available in stock**
+
+---
+
+  
+
+",,"1. Find Product1 in catalog
+2. Take a look at the product card",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Try to change qty less, equal or greater than stock or min qty
+Expected Result:
+Nothing changed. The Add to Cart stays disabled",,Nothing changed. The Add to Cart stays disabled,,"1. Try to change qty less, equal or greater than stock or min qty",
+C389258,Product has min-max qty + available stock is more than max,,,,"Product1 has only min qty = 4 and max qty = 55
+
+
+Track inventory = on
+ 
+",Medium,,Validation informer,2,,Lists > List with products > Validation informer,,"Step Description:
+Change qty for Product1
+Enter value less than min (ex. 3)
+Expected Result:
+1. The validation error displays under the input field
+**Order from 4 to 55 item(s)**
+2. The Add to Cart button is disabled
+
+----------------------------------------------
+
+
+ 
+",,"1. The validation error displays under the input field
+**Order from 4 to 55 item(s)**
+2. The Add to Cart button is disabled
+
+----------------------------------------------
+
+
+ 
+",,"Change qty for Product1
+Enter value less than min (ex. 3)",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter a value equal to or more than min qty = 4
+Expected Result:
+1. There is no error message under the input field
+2. The Add to Cart button is activated",,"1. There is no error message under the input field
+2. The Add to Cart button is activated",,Enter a value equal to or more than min qty = 4,
+,,,,,,,,,,,,,"
+Step Description:
+Change qty for Product1
+Enter a value greater than max (ex. 56)
+Expected Result:
+1. The validation error displays under the input field
+**Order from 4 to 55 item(s)**
+2. The Add to Cart button is disabled",,"1. The validation error displays under the input field
+**Order from 4 to 55 item(s)**
+2. The Add to Cart button is disabled",,"Change qty for Product1
+Enter a value greater than max (ex. 56)",
+,,,,,,,,,,,,,"
+Step Description:
+1. Add to cart product
+2. Change qty less-greater than min-max qty
+3. Check """"Update Cart"""" behavior
+Expected Result:
+1. The """"Update Cart"""" stays disabled if the value is beyond the boundaries of min-max qty
+
+2. The warning message displays:
+
+**Order from 4 to 55 item(s)**
+",,"1. The ""Update Cart"" stays disabled if the value is beyond the boundaries of min-max qty
+
+2. The warning message displays:
+
+**Order from 4 to 55 item(s)**
+",,"1. Add to cart product
+2. Change qty less-greater than min-max qty
+3. Check ""Update Cart"" behavior",
+C389259,Product has min-max qty + available stock is less than max,,,,"Product1 has min = 5; stock = 15; max = 25
+
+Track inventory = on",Medium,,Validation informer,2,,Lists > List with products > Validation informer,,"Step Description:
+1. Find Product1 in the catalog
+2. Enter a value less min = 4
+Expected Result:
+1. The Add to Cart button is disabled
+2. The validation error displays under the input field
+
+
+**Order from 5 to 15 item(s)**
+",,"1. The Add to Cart button is disabled
+2. The validation error displays under the input field
+
+
+**Order from 5 to 15 item(s)**
+",,"1. Find Product1 in the catalog
+2. Enter a value less min = 4",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter a value more than stock = 16
+Expected Result:
+1. The Add to Cart button is disabled
+2. The validation error displays under the input field
+
+
+**Order from 5 to 15 item(s)**",,"1. The Add to Cart button is disabled
+2. The validation error displays under the input field
+
+
+**Order from 5 to 15 item(s)**",,1. Enter a value more than stock = 16,
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter a value max=25
+Expected Result:
+1. The Add to Cart button is disabled
+2. The validation error displays under the input field
+
+
+**Order from 5 to 15 item(s)**",,"1. The Add to Cart button is disabled
+2. The validation error displays under the input field
+
+
+**Order from 5 to 15 item(s)**",,1. Enter a value max=25,
+,,,,,,,,,,,,,"
+Step Description:
+1. Add to cart product
+2. Change qty less-greater than min-max qty
+3. Check the """"Update Cart"""" behavior
+Expected Result:
+1. The """"Update Cart"""" stays disabled if the value is beyond the boundaries of min-max qty
+
+2. The warning message displays:
+
+**Order from 5 to 15 item(s)**",,"1. The ""Update Cart"" stays disabled if the value is beyond the boundaries of min-max qty
+
+2. The warning message displays:
+
+**Order from 5 to 15 item(s)**",,"1. Add to cart product
+2. Change qty less-greater than min-max qty
+3. Check the ""Update Cart"" behavior",
+C389260,Product has min-max qty + available stock is less than min,,,,"Product1 has stock = 2; min = 5; max = 35
+
+Track inventory = on",Medium,,Validation informer,2,,Lists > List with products > Validation informer,,"Step Description:
+1. Find Product1 in catalog
+2. Take a look at the product card
+Expected Result:
+1. The Add to the card is disabled
+
+The warning message is shown under the input field
+
+**Min order 5 item(s) is not available in stock**
+
+---
+
+  
+",,"1. The Add to the card is disabled
+
+The warning message is shown under the input field
+
+**Min order 5 item(s) is not available in stock**
+
+---
+
+  
+",,"1. Find Product1 in catalog
+2. Take a look at the product card",0
+,,,,,,,,,,,,,"
+Step Description:
+Try to change qty less, equal or greater than stock or min qty
+Expected Result:
+Nothing changed. The Add to Cart stays disabled",,Nothing changed. The Add to Cart stays disabled,,"Try to change qty less, equal or greater than stock or min qty",
+C389261,Available Stock = MIN,,,,"Product1 has stock = 2; min = 2; max = 35
+
+Track inventory = on",Medium,,Validation informer,2,,Lists > List with products > Validation informer,,"Step Description:
+1. Enter less than stock/min
+Expected Result:
+1. The Add to the card is disabled
+
+The warning message is shown under the input field
+
+**Min order 2 item(s)**
+
+---
+
+  
+",,"1. The Add to the card is disabled
+
+The warning message is shown under the input field
+
+**Min order 2 item(s)**
+
+---
+
+  
+",,1. Enter less than stock/min,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter greater than stock/min
+Expected Result:
+1. The Add to the card is disabled
+
+The warning message is shown under the input field
+
+**Min order 2 item(s)**
+
+---",,"1. The Add to the card is disabled
+
+The warning message is shown under the input field
+
+**Min order 2 item(s)**
+
+---",,1. Enter greater than stock/min,
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter a value equal to stock/min
+Expected Result:
+1. There is no error message under the input field
+2. The Add to Cart button is activated",,"1. There is no error message under the input field
+2. The Add to Cart button is activated",,1. Enter a value equal to stock/min,
+,,,,,,,,,,,,,"
+Step Description:
+1. Add to cart product
+2. Change qty less-greater than min-max qty
+3. Check the """"Update Cart"""" behavior
+Expected Result:
+1. The """"Update Cart"""" stays disabled if the value is beyond the boundaries of stock/min qty
+
+2. The warning message displays:
+
+**Min order 2 item(s)**
+
+
+",,"1. The ""Update Cart"" stays disabled if the value is beyond the boundaries of stock/min qty
+
+2. The warning message displays:
+
+**Min order 2 item(s)**
+
+
+",,"1. Add to cart product
+2. Change qty less-greater than min-max qty
+3. Check the ""Update Cart"" behavior",
+C389288,Catalog > create list and add product to private list,,,,"Sign in as a company owner
+There are no lists yet
+
+
+ ",Medium,,Sharing options,1,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**",Lists > Sharing options,,"Step Description:
+Go to Catalog &gt; select the product
+Click on the star &gt; Add to the list
+
+
+Expected Result:
+The pop-up is shown",,The pop-up is shown,,"Go to Catalog &gt; select the product
+Click on the star &gt; Add to the list
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the """"Add new list""""
+Create a new list &gt; Save
+Expected Result:
+The new list was added",,The new list was added,,"Click on the ""Add new list""
+Create a new list &gt; Save",
+,,,,,,,,,,,,,"
+Step Description:
+Click on the star again
+Check the list type
+Expected Result:
+The list marked as Private by default",,The list marked as Private by default,,"Click on the star again
+Check the list type",
+C389289,Catalog > add product to Shared list,,,,"Sign in as a company owner
+Create several Private and Shared lists",Medium,,Sharing options,1,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**",Lists > Sharing options,,"Step Description:
+Go to Catalog > select the product
+Click on the star
+
+
+Expected Result:
+The pop-up is shown
+
+
+  
+  ",,"The pop-up is shown
+
+
+  
+  ",,"Go to Catalog > select the product
+Click on the star
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Select Shared list
+Save
+Expected Result:
+The product was added to Shared list",,The product was added to Shared list,,"Select Shared list
+Save",
+C389290,Change list type > Check pop-up in catalog,,,,"Sign in as a company owner
+List1 is a private 
+
+",Medium,,Sharing options,1,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**",Lists > Sharing options,,"Step Description:
+Go to Catalog > select the product
+Click on the star > select the List1 (Private list)
+Save
+Expected Result:
+The Product was added to the Private list",,The Product was added to the Private list,,"Go to Catalog > select the product
+Click on the star > select the List1 (Private list)
+Save",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to Lists > Select List1 > Settings > Share
+
+
+Expected Result:
+The List1 began a Shared",,The List1 began a Shared,,"Go to Lists > Select List1 > Settings > Share
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Catalog > Product card > Click on the star again
+Check the list type
+
+
+Expected Result:
+The List1 marked as Shared",,The List1 marked as Shared,,"Catalog > Product card > Click on the star again
+Check the list type
+
+",
+C389262,Create a private list,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000001957, https://virtowayqa.testrail.io/index.php?/attachments/get/1000003829, https://virtowayqa.testrail.io/index.php?/attachments/get/1000007374",,,,Medium,,Sharing options: Private,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**",Lists > Sharing options > Sharing options: Private,,"Step Description:
+Click on the Create list
+
+
+Expected Result:
+The pop-up New List appears
+
+The fields:
+
+- List name (required)
+- Description (optional)
+
+Sharing options
+
+- Private list (selected by default)
+
+**Buttons:**
+
+Cancel and Create list (disabled by default) 
+
+
+  
+
+
+
+",,"The pop-up New List appears
+
+The fields:
+
+- List name (required)
+- Description (optional)
+
+Sharing options
+
+- Private list (selected by default)
+
+**Buttons:**
+
+Cancel and Create list (disabled by default) 
+
+
+  
+
+
+
+",,"Click on the Create list
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Fill name
+Expected Result:
+The button Create list is active",,The button Create list is active,,Fill name,
+,,,,,,,,,,,,,"
+Step Description:
+Click the button Create list 
+Expected Result:
+1. The pop-up is closed
+2. The new list is created and displayed in the wish list
+3. The list is marked as Private
+4. The description and Saved: dd.mm.yyyy are displayed
+
+
+-------------------------------------------------------
+
+ ![](index.php?/attachments/get/1000001957) 
+
+",,"1. The pop-up is closed
+2. The new list is created and displayed in the wish list
+3. The list is marked as Private
+4. The description and Saved: dd.mm.yyyy are displayed
+
+
+-------------------------------------------------------
+
+ ![](index.php?/attachments/get/1000001957) 
+
+",,Click the button Create list ,
+,,,,,,,,,,,,,"
+Step Description:
+Check the scope of the list 
+Click on the cogwheel (List Settings) > Edit
+
+
+Expected Result:
+The pop-up List Settings is shown
+The switcher Make shared is OFF
+
+",,"The pop-up List Settings is shown
+The switcher Make shared is OFF
+
+",,"Check the scope of the list 
+Click on the cogwheel (List Settings) > Edit
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Open wish list details
+Click List Settings
+
+
+Expected Result:
+The pop-up List Settings is shown
+The Private option is selected
+
+---
+
+ ![](index.php?/attachments/get/1000007374) ",,"The pop-up List Settings is shown
+The Private option is selected
+
+---
+
+ ![](index.php?/attachments/get/1000007374) ",,"Open wish list details
+Click List Settings
+
+",
+C389263,Create private list+description,,,,,Medium,,Sharing options: Private,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**",Lists > Sharing options > Sharing options: Private,,"Step Description:
+Create list
+Fill name and description
+Create list
+Expected Result:
+The list is created and shown in the list
+
+",,"The list is created and shown in the list
+
+",,"Create list
+Fill name and description
+Create list",0
+,,,,,,,,,,,,,"
+Step Description:
+Check the scope and description of the list
+Click on the cogwheel (List Settings)
+Expected Result:
+The pop-up List Settings is shown
+The Private is selected
+The description is filled out",,"The pop-up List Settings is shown
+The Private is selected
+The description is filled out",,"Check the scope and description of the list
+Click on the cogwheel (List Settings)",
+,,,,,,,,,,,,,"
+Step Description:
+Open wish list details
+Click List Settings
+Expected Result:
+The pop-up List Settings is shown
+The Private is selected
+The description is filled out
+",,"The pop-up List Settings is shown
+The Private is selected
+The description is filled out
+",,"Open wish list details
+Click List Settings",
+C389264,Create private list > Description > limits,https://virtowayqa.testrail.io/index.php?/attachments/get/1000004405,,,,Medium,,Sharing options: Private,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**",Lists > Sharing options > Sharing options: Private,,"Step Description:
+Click on Create list
+Start typing text in the description field
+
+Expected Result:
+1. The symbols counter displays in the right corner of the comment field (0/250)
+
+2. Symbols counter starts to increase in real-time and shows the quantity of entered symbols (Ex. 20/250)
+
+
+  
+
+
+
+
+
+
+",,"1. The symbols counter displays in the right corner of the comment field (0/250)
+
+2. Symbols counter starts to increase in real-time and shows the quantity of entered symbols (Ex. 20/250)
+
+
+  
+
+
+
+
+
+
+",,"Click on Create list
+Start typing text in the description field
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Try to add long text from the keyboard of more than 250 characters
+Expected Result:
+1. The counter shows symbols count 250/250
+2. The text is cut off",,"1. The counter shows symbols count 250/250
+2. The text is cut off",,Try to add long text from the keyboard of more than 250 characters,
+,,,,,,,,,,,,,"
+Step Description:
+Try to remove the text
+Expected Result:
+Symbols counter decrease and show 0/250",,Symbols counter decrease and show 0/250,,Try to remove the text,
+,,,,,,,,,,,,,"
+Step Description:
+Paste long text from the buffer (Ctrl+V) to the description field on 251 characters.
+Expected Result:
+The text is cut off. The counter shows symbols count 250/250",,The text is cut off. The counter shows symbols count 250/250,,Paste long text from the buffer (Ctrl+V) to the description field on 251 characters.,
+C389265,Settings > Drop-down menu,,,,The private list was created [C373200],Medium,,Sharing options: Private,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**",Lists > Sharing options > Sharing options: Private,,"Step Description:
+Click on the icon settings
+
+
+Expected Result:
+The drop-down menu is shown
+
+- Edit
+- Delete
+
+-----------------------------------------
+
+  
+",,"The drop-down menu is shown
+
+- Edit
+- Delete
+
+-----------------------------------------
+
+  
+",,"Click on the icon settings
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Switch to the Mobile version (Dev tools > Devices)
+
+Tap on the icon settings
+
+Check the drop-down menu
+
+Expected Result:
+The drop-down menu is shown
+
+- Edit
+- Delete",,"The drop-down menu is shown
+
+- Edit
+- Delete",,"Switch to the Mobile version (Dev tools > Devices)
+
+Tap on the icon settings
+
+Check the drop-down menu
+",
+C389266,Drop-down menu > Edit name of private list,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000002262, https://virtowayqa.testrail.io/index.php?/attachments/get/1000007375",,,,Medium,,Sharing options: Private,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**",Lists > Sharing options > Sharing options: Private,,"Step Description:
+Choose the private list
+Click on the list of settings from the wish list page
+
+
+
+Expected Result:
+The drop-down is shown
+
+- Edit
+- Delete 
+
+-------------------------------------------------
+
+ ![](index.php?/attachments/get/1000007375) 
+
+
+
+ 
+",,"The drop-down is shown
+
+- Edit
+- Delete 
+
+-------------------------------------------------
+
+ ![](index.php?/attachments/get/1000007375) 
+
+
+
+ 
+",,"Choose the private list
+Click on the list of settings from the wish list page
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Edit
+Expected Result:
+The pop-up List settings is opened",,The pop-up List settings is opened,,Click on the Edit,
+,,,,,,,,,,,,,"
+Step Description:
+Update name
+Save
+
+
+Expected Result:
+1. The save button is active after changes
+2. All changes are saved and the new name of the wish list is displayed
+3. The Saved data was updated",,"1. The save button is active after changes
+2. All changes are saved and the new name of the wish list is displayed
+3. The Saved data was updated",,"Update name
+Save
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Open the wish list details
+Click on List settings
+Expected Result:
+The new name is displayed",,The new name is displayed,,"Open the wish list details
+Click on List settings",
+,,,,,,,,,,,,,"
+Step Description:
+Update name
+Save
+Expected Result:
+1. The save button is active after changes
+2. All changes are saved and the new name of the wish list is displayed
+3. The Saved data was updated",,"1. The save button is active after changes
+2. All changes are saved and the new name of the wish list is displayed
+3. The Saved data was updated",,"Update name
+Save",
+C389267,Drop-down menu > Edit description of private list,,,,,Medium,,Sharing options: Private,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**",Lists > Sharing options > Sharing options: Private,,"Step Description:
+Click on the settings icon &gt; Edit
+
+Change the description of the list from the wish lists page
+Expected Result:
+The save button is active after changes
+All changes are saved",,"The save button is active after changes
+All changes are saved",,"Click on the settings icon &gt; Edit
+
+Change the description of the list from the wish lists page",0
+,,,,,,,,,,,,,"
+Step Description:
+Change the description of the list from wish list details page
+Expected Result:
+1. The save button is active after changes
+2. All changes are saved
+3. The Saved data was updated
+",,"1. The save button is active after changes
+2. All changes are saved
+3. The Saved data was updated
+",,Change the description of the list from wish list details page,
+C389268,Drop-down menu > Delete,,,,,Medium,,Sharing options: Private,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**",Lists > Sharing options > Sharing options: Private,,"Step Description:
+Click on the settings icon &gt; Delete
+Confirm
+Expected Result:
+The Confirm Delete pop-up is shown
+The list was deleted from the lists",,"The Confirm Delete pop-up is shown
+The list was deleted from the lists",,"Click on the settings icon &gt; Delete
+Confirm",0
+C389283,Private list > Check label,,,,,Medium,,Private list details,3,,Lists > Sharing options > Sharing options: Private > Private list details,,,,,,,0
+C389284,Private list > Edit name + description,,,,,Medium,,Private list details,3,,Lists > Sharing options > Sharing options: Private > Private list details,,,,,,,0
+C389285,Private list > Edit > unselect Private list checkbox,,,, The private list was created and contained some products,Medium,,Private list details,3,,Lists > Sharing options > Sharing options: Private > Private list details,,"Step Description:
+
+Open List &gt; List settings
+
+Unselect the Private checkbox &gt; Save
+
+Pay attention to the Save Changes button
+
+
+Expected Result:
+The """"Save changes"""" button is still inactive
+
+",,"The ""Save changes"" button is still inactive
+
+",,"
+Open List &gt; List settings
+
+Unselect the Private checkbox &gt; Save
+
+Pay attention to the Save Changes button
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Check the type of the list
+Expected Result:
+The type is Shared",,The type is Shared,,Check the type of the list,
+C389286,Private list > Share,,,,,Medium,,Private list details,3,,Lists > Sharing options > Sharing options: Private > Private list details,,,,,,,0
+C389287,Private list > Delete,,,,,Medium,,Private list details,3,,Lists > Sharing options > Sharing options: Private > Private list details,,,,,,,0
+C389269,Change scope from Private to Organization > Check label by current user,,,,The private lists were created [C373200] and [C373201],Medium,,Sharing options: Organization,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+
+",Lists > Sharing options > Sharing options: Organization,,"Step Description:
+Choose the list1
+Click on the settings icon > Edit
+Select Organization
+Expected Result:
+The Link field is shown
+
+
+",,"The Link field is shown
+
+
+",,"Choose the list1
+Click on the settings icon > Edit
+Select Organization",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on settings > Edit
+Check the scope
+Expected Result:
+The list has scope Organization",,The list has scope Organization,,"Click on settings > Edit
+Check the scope",
+,,,,,,,,,,,,,"
+Step Description:
+Choose the list2
+Click on the settings icon > Edit
+
+Expected Result:
+The pop-up List Settings is shown
+The checkbox Private list is selected",,"The pop-up List Settings is shown
+The checkbox Private list is selected",,"Choose the list2
+Click on the settings icon > Edit
+",
+,,,,,,,,,,,,,"
+Step Description:
+Unselect the checkbox Private list
+
+
+Expected Result:
+The checkbox is unselected
+The Save button is activated
+
+---------------------------------- 
+
+ 
+",,"The checkbox is unselected
+The Save button is activated
+
+---------------------------------- 
+
+ 
+",,"Unselect the checkbox Private list
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Click the Save
+Expected Result:
+The pop-up is closed
+The list became Shared
+
+----------------------------------------
+
+
+  
+
+",,"The pop-up is closed
+The list became Shared
+
+----------------------------------------
+
+
+  
+
+",,Click the Save,
+,,,,,,,,,,,,,"
+Step Description:
+Click on settings > Check drop-down
+Expected Result:
+- Edit
+- Make Private
+- Delete",,"- Edit
+- Make Private
+- Delete",,Click on settings > Check drop-down,
+C389270,"Change scope from Private to Organization > Check the label """"Shared"""" (company member)",,,,"User1 and User2 are members of the Organization1
+
+User1 has changed the list1 scope from Private to Organization [C373204]
+
+",Medium,,Sharing options: Organization,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+
+",Lists > Sharing options > Sharing options: Organization,,"Step Description:
+Sign in as a User2
+Go to Lists
+Expected Result:
+The list1 is displayed with the label """"Shared""""
+
+-----------------------------------------------
+
+ ![](index.php?/attachments/get/fbe84316-6a30-41cb-a08e-104bcfedf6f0) 
+
+
+
+
+
+
+
+
+",,"The list1 is displayed with the label ""Shared""
+
+-----------------------------------------------
+
+ ![](index.php?/attachments/get/fbe84316-6a30-41cb-a08e-104bcfedf6f0) 
+
+
+
+
+
+
+
+
+",,"Sign in as a User2
+Go to Lists",0
+C389271,"Change scope from Private to Organization> Check the label """"Shared"""" in List details (company member)",,,"The list1 is displayed with the label """"Shared""""","User1 and User2 are members of the Organization1
+
+User1 has changed the list1 scope from Private to Organization [C373204]",Medium,,Sharing options: Organization,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+
+",Lists > Sharing options > Sharing options: Organization,"Sign in as a User2
+Go to Lists > Click on list1",,,,,,0
+C389272,"User1 create sharedList1 > Other user see sharedList1 with label """"Shared""""",,,,"User1 and User2 are members of the Organization1
+
+
+
+
+
+",Medium,,Sharing options: Organization,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+
+",Lists > Sharing options > Sharing options: Organization,,"Step Description:
+Sign in as User1
+Open Lists &gt; Create List
+Enter the name sharedList1
+Enter description
+
+Unselect the checkbox Private list
+
+
+Expected Result:
+The Create list has become active",,The Create list has become active,,"Sign in as User1
+Open Lists &gt; Create List
+Enter the name sharedList1
+Enter description
+
+Unselect the checkbox Private list
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Create List button
+Expected Result:
+1. The sharedList1 is created
+2. The label """"Shared"""" is displayed
+3. The description and Saved: dd.mm.yyyy are displayed
+
+
+------------------------------------------------
+
+  
+",,"1. The sharedList1 is created
+2. The label ""Shared"" is displayed
+3. The description and Saved: dd.mm.yyyy are displayed
+
+
+------------------------------------------------
+
+  
+",,Click on the Create List button,
+,,,,,,,,,,,,,"
+Step Description:
+Sign in as User2
+Open Lists 
+Expected Result:
+The sharedList1 is displayed with the label """"Shared""""
+The description and Saved: dd.mm.yyyy are displayed
+",,"The sharedList1 is displayed with the label ""Shared""
+The description and Saved: dd.mm.yyyy are displayed
+",,"Sign in as User2
+Open Lists ",
+C389273,Create shared list > Description > limits,,,,,Medium,,Sharing options: Organization,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+
+",Lists > Sharing options > Sharing options: Organization,,"Step Description:
+Click on Create list
+Start typing text in the description field
+
+Expected Result:
+1. The symbols counter displays in the right corner of the description field (0/250)
+
+2. Symbols counter starts to increase in real-time and shows the quantity of entered symbols (Ex. 20/250)
+
+
+ ![](index.php?/attachments/get/aa0a9916-3260-44e5-8e3a-ff6df37fef25) 
+
+
+
+
+
+
+",,"1. The symbols counter displays in the right corner of the description field (0/250)
+
+2. Symbols counter starts to increase in real-time and shows the quantity of entered symbols (Ex. 20/250)
+
+
+ ![](index.php?/attachments/get/aa0a9916-3260-44e5-8e3a-ff6df37fef25) 
+
+
+
+
+
+
+",,"Click on Create list
+Start typing text in the description field
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Try to add long text from the keyboard of more than 250 characters
+Expected Result:
+1. The counter shows symbols count 250/250
+2. The text is cut off",,"1. The counter shows symbols count 250/250
+2. The text is cut off",,Try to add long text from the keyboard of more than 250 characters,
+,,,,,,,,,,,,,"
+Step Description:
+Try to remove the text
+Expected Result:
+Symbols counter decrease and show 0/250",,Symbols counter decrease and show 0/250,,Try to remove the text,
+,,,,,,,,,,,,,"
+Step Description:
+Paste long text from the buffer (Ctrl+V) to the description field on 251 characters.
+Expected Result:
+The text is cut off. The counter shows symbols count 250/250",,The text is cut off. The counter shows symbols count 250/250,,Paste long text from the buffer (Ctrl+V) to the description field on 251 characters.,
+C389274,User2 add products to sharedList1 > Others see products in list,,,,"User1 and User2 are members of the Organization1
+
+sharedList1 is empty
+
+",Medium,,Sharing options: Organization,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+
+",Lists > Sharing options > Sharing options: Organization,,"Step Description:
+Sign in as User2
+Go to catalog &gt; choose products
+Click on Star &gt; Choose the sharedList1
+
+Go to sharedList1
+Expected Result:
+The products were added to sharedList1",,The products were added to sharedList1,,"Sign in as User2
+Go to catalog &gt; choose products
+Click on Star &gt; Choose the sharedList1
+
+Go to sharedList1",0
+,,,,,,,,,,,,,"
+Step Description:
+User1 open sharedList1
+Expected Result:
+sharedList1 is opened
+The products are shown",,"sharedList1 is opened
+The products are shown",,User1 open sharedList1,
+C389275,User2 change list name and description of sharedList1 > Others see updated name and descriptions,,,,"User1 and User2 are members of the Organization1
+
+User2 opened Lists
+
+
+
+",Medium,,Sharing options: Organization,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+
+",Lists > Sharing options > Sharing options: Organization,,"Step Description:
+Choose sharedList1 
+Settings &gt; Edit
+Change name to updatedSharedList1
+Change description
+Save
+
+
+
+Expected Result:
+The save button has become active
+The new name is displayed",,"The save button has become active
+The new name is displayed",,"Choose sharedList1 
+Settings &gt; Edit
+Change name to updatedSharedList1
+Change description
+Save
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Open Lists as a User1
+
+
+Expected Result:
+The User1 sees updatedSharedList1
+The description and Saved: dd.mm.yyyy are displayed
+",,"The User1 sees updatedSharedList1
+The description and Saved: dd.mm.yyyy are displayed
+",,"Open Lists as a User1
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Click on Settings &gt; Edit
+Check description
+Expected Result:
+The description is displayed",,The description is displayed,,"Click on Settings &gt; Edit
+Check description",
+C389276,User1 change qty of line-items in sharedList1 > Other users see changes,,,,"User1 and User2 are members of the Organization1
+updatedSharedList1 contains several products
+
+
+
+",Medium,,Sharing options: Organization,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+
+",Lists > Sharing options > Sharing options: Organization,,"Step Description:
+Open updatedSharedList1 as User1
+Set new values for line-items
+
+SAVE CHANGES &gt; Yes
+Expected Result:
+All changes are saved",,All changes are saved,,"Open updatedSharedList1 as User1
+Set new values for line-items
+
+SAVE CHANGES &gt; Yes",0
+,,,,,,,,,,,,,"
+Step Description:
+Open updatedSharedList1 as User2
+Expected Result:
+User2 sees new values for line-items",,User2 sees new values for line-items,,Open updatedSharedList1 as User2,
+C389277,"User2 change name of sharedList1 > User1 change line-item qty > Check the qty,  name of wish list in title and in left menu",,,,,Medium,,Sharing options: Organization,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+
+",Lists > Sharing options > Sharing options: Organization,,,,,,,0
+C389278,User1 delete product from sharedList1 > Other users no longer see this product in wish list,,,,"User1 and User2 are members of the Organization1
+updatedSharedList1 contains several products",Medium,,Sharing options: Organization,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+
+",Lists > Sharing options > Sharing options: Organization,,"Step Description:
+Open Lists as User1
+Choose updatedSharedList1
+Delete product1
+
+
+Expected Result:
+The product1 is deleted",,The product1 is deleted,,"Open Lists as User1
+Choose updatedSharedList1
+Delete product1
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Open updatedSharedList1 as User2
+Expected Result:
+The User2 no longer sees product1 in the list",,The User2 no longer sees product1 in the list,,Open updatedSharedList1 as User2,
+C389279,User2 delete sharedList1 > Other Users no longer see this list,,,,"User1 and User2 are members of the Organization1
+updatedSharedList1 contains several products",Medium,,Sharing options: Organization,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+
+",Lists > Sharing options > Sharing options: Organization,,"Step Description:
+User1 opens Lists
+
+
+
+Expected Result:
+The updatedSharedList1 is shown",,The updatedSharedList1 is shown,,"User1 opens Lists
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Open Lists as User2 in another browser
+Choose updatedSharedList1
+Click settings &gt; Delete
+Expected Result:
+The updatedSharedList1 is deleted and no longer displayed in the list",,The updatedSharedList1 is deleted and no longer displayed in the list,,"Open Lists as User2 in another browser
+Choose updatedSharedList1
+Click settings &gt; Delete",
+,,,,,,,,,,,,,"
+Step Description:
+Switch to User1
+
+Try several options:
+
+- Refresh the page 
+
+
+Expected Result:
+User1 no longer sees the updatedSharedList1",,User1 no longer sees the updatedSharedList1,,"Switch to User1
+
+Try several options:
+
+- Refresh the page 
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+- Do not refresh the page
+
+
+Open updatedSharedList1
+Expected Result:
+The 404 page is opened",,The 404 page is opened,,"- Do not refresh the page
+
+
+Open updatedSharedList1",
+C389280,Change scope from Shared to Private > Other users no longer have access to this list,,,,"User1 and User2 are members of the Organization1
+updatedSharedList1 contains several products",Medium,,Sharing options: Organization,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+
+",Lists > Sharing options > Sharing options: Organization,,"Step Description:
+User1 opened Lists 
+updatedSharedList1 displays as a Shared 
+User2 changed the list type from Shared to Private
+Expected Result:
+updatedSharedList1 has the label Private",,updatedSharedList1 has the label Private,,"User1 opened Lists 
+updatedSharedList1 displays as a Shared 
+User2 changed the list type from Shared to Private",0
+,,,,,,,,,,,,,"
+Step Description:
+User1 tries to open the updatedSharedList1
+Expected Result:
+The Access denied page with 403 error is opened
+
+
+",,"The Access denied page with 403 error is opened
+
+
+",,User1 tries to open the updatedSharedList1,
+C389281,Invite new members > Check shared lists as a new member,,,,,Medium,,Sharing options: Organization,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+
+",Lists > Sharing options > Sharing options: Organization,,,,,,,0
+C389282,Company owner deletes User1 from organization > User1 does not have access to the shared lists,,,,,Medium,,Sharing options: Organization,2,"**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+
+",Lists > Sharing options > Sharing options: Organization,,,,,,,0
+C389307,Create a Private list > Switch organization,,,,"Go to admin site
+Contacts > Open the contact1
+Assign multiple organizations to contact1",Medium,,Multi-organization support > Lists,3,,Lists > Sharing options > Sharing options: Organization > Multi-organization support > Lists,,"Step Description:
+Create a private list &gt; privateList1
+Click on User name in the right corner
+Select another Organization from the list
+Expected Result:
+The User sign in to Organization2
+All information of Organization2 is updated",,"The User sign in to Organization2
+All information of Organization2 is updated",,"Create a private list &gt; privateList1
+Click on User name in the right corner
+Select another Organization from the list",0
+,,,,,,,,,,,,,"
+Step Description:
+Open Lists
+Check privateList1
+Expected Result:
+The privateList1 is shown",,The privateList1 is shown,,"Open Lists
+Check privateList1",
+C389308,Create a Shared list > Switch organization,,,,"Go to admin site
+Contacts > Open the contact1
+Assign multiple organizations to contact1",Medium,,Multi-organization support > Lists,3,,Lists > Sharing options > Sharing options: Organization > Multi-organization support > Lists,,"Step Description:
+Sign in to Organization1
+Create a shared list &gt; sharedList1
+Click on User name in the right corner
+Select another Organization2 from the list
+Expected Result:
+The User sign in to Organization2
+All information of Organization2 is updated",,"The User sign in to Organization2
+All information of Organization2 is updated",,"Sign in to Organization1
+Create a shared list &gt; sharedList1
+Click on User name in the right corner
+Select another Organization2 from the list",0
+,,,,,,,,,,,,,"
+Step Description:
+Open Lists
+Check sharedList1
+Expected Result:
+The sharedList1 **is not displayed** in Organization2",,The sharedList1 **is not displayed** in Organization2,,"Open Lists
+Check sharedList1",
+,,,,,,,,,,,,,"
+Step Description:
+Switch to Organization1
+Check sharedList1
+Expected Result:
+The sharedList1 is displayed only in Organization1",,The sharedList1 is displayed only in Organization1,,"Switch to Organization1
+Check sharedList1",
+C411548,Anyone (read-only) : Select Anyone --> shows link + Copy,https://virtowayqa.testrail.io/index.php?/attachments/get/1000007372,,,Owner; List settings popup open,High,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Select Anyone (readonly) from drop-down
+Expected Result:
+Popup shows a generated secure link and a Copy button
+
+---
+ ![](index.php?/attachments/get/1000007372) 
+",,"Popup shows a generated secure link and a Copy button
+
+---
+ ![](index.php?/attachments/get/1000007372) 
+",,1) Select Anyone (readonly) from drop-down,0
+,,,,,,,,,,,,,"
+Step Description:
+Click on copy button
+Save
+Expected Result:
+The list was saved with scope """"AnyoneAnonymous""""",,"The list was saved with scope ""AnyoneAnonymous""",,"Click on copy button
+Save",
+C411549,Anyone (read-only) : Copy button copies URL to clipboard,,,,Owner; Link visible in popup,High,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Click 'Copy' 2) Paste into text field
+Expected Result:
+Clipboard contains the exact sharing URL",,Clipboard contains the exact sharing URL,,1) Click 'Copy' 2) Paste into text field,0
+C411572,UX: Toast is pop-up after click on Copy button,,,,Owner; Link visible,Low,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Click Copy
+Expected Result:
+Toast confirmation 'Link copied'",,Toast confirmation 'Link copied',,1) Click Copy,0
+C411550,Anyone (read-only): Link persists after closing/reopening popup,,,,Owner; Link generated,Medium,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Close popup 2) Reopen List popup
+Expected Result:
+Existing 'Anyone' state and link are shown",,Existing 'Anyone' state and link are shown,,1) Close popup 2) Reopen List popup,0
+C411551,Anyone (read-only): Link unique per list,,,,Owner with multiple lists,Medium,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Create List A with scope Anyone
+2) Create List B with scope Anyone
+Expected Result:
+Different secure URLs for each list",,Different secure URLs for each list,,"1) Create List A with scope Anyone
+2) Create List B with scope Anyone",0
+C411552,Anyone (read-only): Link format validation,,,,Owner; Link generated,High,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Inspect URL structure
+Expected Result:
+The url contains domain-url/shared-list/sharingKey (unique for each list)",,The url contains domain-url/shared-list/sharingKey (unique for each list),,1) Inspect URL structure,0
+C411553,Anyone (read-only): change scope --> sharing key remain the same,,,,Owner; List has scope Anyone; Link generated,Medium,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Select 'Private'
+2) Save
+3) Edit list, select Anyone
+Expected Result:
+Link and sharing key remain the same
+",,"Link and sharing key remain the same
+",,"1) Select 'Private'
+2) Save
+3) Edit list, select Anyone",0
+C411554,Anyone (read-only): Anonymous user opens link (catalog anonymous enabled),,,,Shared link; Catalog anonymous access ENABLED,High,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Open link in private window (logged out)
+Expected Result:
+List content is readable; no errors; read-only UI
+",,"List content is readable; no errors; read-only UI
+",,1) Open link in private window (logged out),0
+C411555,Anyone (readonly): Anonymous user blocked if catalog anonymous disabled,,,,Shared link; Catalog anonymous access DISABLED,High,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Open link logged out
+Expected Result:
+Access denied or login prompt; no catalog leakage",,Access denied or login prompt; no catalog leakage,,1) Open link logged out,0
+C411556,Anyone (read-only): Registered user opens link → full site features but list read-only,,,,Shared link; User logged in (not owner),High,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Open link 2) Try to interact
+Expected Result:
+Site features available globally, but shared list is read-only",,"Site features available globally, but shared list is read-only",,1) Open link 2) Try to interact,0
+C411557,Anyone (read-only): Registered user does not see shared list in My Lists,,,,Shared link visited at least once; User has no assignment to any organization,Medium,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Open shared list by direct link
+2) Go to account/lists tab
+Expected Result:
+User does not see shared list in Lists history
+
+",,"User does not see shared list in Lists history
+
+",,"1) Open shared list by direct link
+2) Go to account/lists tab",0
+C411558,Anyone (read-only) : Read-only list view,https://virtowayqa.testrail.io/index.php?/attachments/get/1000007373,,,Shared link; Any user,High,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Open shared list link directly
+2) Inspect list header and line items
+Expected Result:
+The  shared list view:
+
+Title
+
+Line-items
+
+- Image
+- Title
+-  Properties
+-  Price per item
+
+
+Order summary
+
+- Subtotal
+
+---
+
+ ![](index.php?/attachments/get/1000007373) 
+",,"The  shared list view:
+
+Title
+
+Line-items
+
+- Image
+- Title
+-  Properties
+-  Price per item
+
+
+Order summary
+
+- Subtotal
+
+---
+
+ ![](index.php?/attachments/get/1000007373) 
+",,"1) Open shared list link directly
+2) Inspect list header and line items",0
+C411561,Anyone (read-only): Read-only list pagination/scroll works,,,,Shared link with >1 page of items,Medium,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Scroll or paginate
+Expected Result:
+All items load; performance acceptable; still read-only",,All items load; performance acceptable; still read-only,,1) Scroll or paginate,0
+C411562,Anyone (read-only): Price/availability rendering respects catalog settings,,,,Shared link; Catalog has mixed availability,Medium,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Open link 2) Review items
+Expected Result:
+Prices, reflect current catalog; no purchase from list",,"Prices, reflect current catalog; no purchase from list",,1) Open link 2) Review items,0
+C411563,Anyone (read-only): Multi-org isolation respected,,,,Shared link created in Org A; User belongs to Org B,High,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Open link as Org B user
+Expected Result:
+Link shows content read-only but does not expose cross-org admin actions; no privilege escalation",,Link shows content read-only but does not expose cross-org admin actions; no privilege escalation,,1) Open link as Org B user,0
+C411564,Anyone (read-only): share key is invalid,,,,,High,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Open  shared list URL
+2) Enter invalid share key
+3) reload the page
+Expected Result:
+404 error page shown",,404 error page shown,,"1) Open  shared list URL
+2) Enter invalid share key
+3) reload the page",0
+C411566,Delete shared list: 404 error page shown,,,,Owner rotated/disabled previous link,High,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Open old link
+Expected Result:
+Old link returns 'link expired' or 404; no data",,Old link returns 'link expired' or 404; no data,,1) Open old link,0
+C411567,Private: Make Private removes link access immediately,,,,Owner; Shared link active,High,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Open list settings 
+2) Edit → Private 3) Save 4) Open link in another tab
+Expected Result:
+Link access is terminated instantly; read-only consumers lose access",,Link access is terminated instantly; read-only consumers lose access,,"1) Open list settings 
+2) Edit → Private 3) Save 4) Open link in another tab",0
+C411568,Private: Make Private updates UI state,https://virtowayqa.testrail.io/index.php?/attachments/get/1000007374,,,Owner; Link active,High,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Open List settings popup after make 'Private'
+Expected Result:
+The field 'Link' is hidden; no link shown
+
+---
+
+ ![](index.php?/attachments/get/1000007374) 
+",,"The field 'Link' is hidden; no link shown
+
+---
+
+ ![](index.php?/attachments/get/1000007374) 
+",,1) Open List settings popup after make 'Private',0
+C411576,Organization scope with link: User does not have access,,,,"Owner; Shared link active
+User1 is not belong to current organization",High,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Open list settings 
+2) Edit →  Change scope from Anyone to Organization
+3) Save
+4) Open link as a User1
+Expected Result:
+User1 sees 404 error page
+Link access is terminated instantly;",,"User1 sees 404 error page
+Link access is terminated instantly;",,"1) Open list settings 
+2) Edit →  Change scope from Anyone to Organization
+3) Save
+4) Open link as a User1",0
+C411577,Organization scope with link: User has access,,,,"Owner; Shared link active
+User1 is belong to current organization",High,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Open list settings 
+2) Edit →  Change scope from Anyone to Organization
+3) Save
+4) Open link as a User1
+Expected Result:
+User1 sees list with read-only view
+
+",,"User1 sees list with read-only view
+
+",,"1) Open list settings 
+2) Edit →  Change scope from Anyone to Organization
+3) Save
+4) Open link as a User1",0
+C411570,Permissions: Non-owner cannot see Share option,,,,User is not list owner; Has read access,High,,Sharing options: Anyone (read-only),2,"https://virtocommerce.atlassian.net/browse/VCST-3772
+
+**From version vc-frontend 2.32.0 switcher Make shared was replaced to drop-down with menu options: Private, Organization, Anyone (read-only)**
+**Share is removed from action menu**
+",Lists > Sharing options > Sharing options: Anyone (read-only),,"Step Description:
+1) Open list 2) Check header/context menu
+Expected Result:
+No 'Share' or 'Make Private' options",,No 'Share' or 'Make Private' options,,1) Open list 2) Check header/context menu,0
+C409930,Buy now from non-empty Shopping List (Happy Path),,,New cart created; all 3 items copied with correct qty/options; Cart page shows; order placed; Thank You page with order number.,Logged-in user; wishlist has 3 in-stock items with valid options.,High,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Open Shopping List.
+2) Click 'Buy now'.
+3) Observe GraphQL mutation createCartFromWishlist.
+4) Navigate to /cart/{{cartId}}
+5) Complete checkout with valid address and payment.
+6) Place order.",,,,,,0
+C409931,Empty Shopping List disables Buy now,,,Buy now button hidden or disabled with hint; no API call fired.,Logged-in user; empty wishlist.,High,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Open Shopping List.
+2) Inspect header.",,,,,,0
+C409934,Quote request section is hidden,,,No 'Quote' references;  'Proceed to Checkout' only.,,Medium,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Open Shopping List.
+2) Click Buy now
+3) Observe the Quote request section and Add cart items to quote button",,,,,,0
+C409935,Mutation creates new cart and copies ALL items,,,"New cartId returned; all items copied with correct SKUs, options, and quantities.",Wishlist with N (>=5) purchasable items of various types.,High,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Click 'Buy now'.
+2) Inspect GraphQL response payload for cartId and lines.",,,,,,0
+C409936,Preserve configurable options and customizations,,,"Each line preserves selected variant attributes, custom options, and bundle composition.",Wishlist with configurable/bundle items and custom options.,High,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Trigger checkout from wishlist.
+2) Open cart review screen.",,,,,,0
+C409937,Reprice on copy - current catalog pricing,,,Cart reflects current prices/taxes/discount eligibility; optional notice about price change.,Prices changed since items were added to wishlist.,High,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Buy now.
+2) Compare line totals to current price list.",,,,,,0
+C409938,Stock validation: OOS item on wishlist,,,Cart created; the error message is shown under OOS item; user should fix the problem before continuing.,Wishlist contains at least one out-of-stock item.,High,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Buy now.
+2) Observe cart creation and messages.",,,,,,0
+C409939,Quantity rules (min/max/step) enforced on copy,,,Offending line auto-adjusted to valid qty or error presented; cannot proceed until resolved.,Wishlist item breaks min/max or quantity step rule.,High,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Buy now.
+2) Inspect cart line quantities and validation messages.",,,,,,0
+C409940,Invisible or disabled product skipped with message,,,Item skipped; message shown; remaining items copied; cart usable.,Wishlist contains item no longer visible in catalog.,Medium,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Buy now.
+2) Inspect response and cart lines.",,,,,,0
+C409941,Digital + Physical mix adjusts shipping requirement,,,Shipping required only for physical items; digital items do not block shipping step.,Wishlist has digital (no shipping) and physical items.,Medium,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Buy now.
+2) Inspect checkout steps.",,,,,,0
+C409942,Promotions applied correctly after copy,,,Promotions applied per rules; no conflicts; totals correct.,Wishlist items eligible for promotions/coupons.,Medium,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Buy now.
+2) Validate applied discounts.
+3) Optionally enter coupon code.",,,,,,0
+C409943,Duplicate SKU lines merge quantities when options identical,,,Lines merged; quantity summed; pricing/totals correct.,Wishlist contains same SKU with identical options across two entries.,Low,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Buy now.
+2) Inspect cart lines.",,,,,,0
+C409944,Server/network failure on createCartFromWishlist,,,Graceful error toast/modal; no navigation; retry available; no orphan cart left.,Simulate API 5xx or network drop.,High,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,1) Click 'Buy now'.,,,,,,0
+C409945,Redirect to checkout with cartId parameter,,,Navigates to /cart/{{cartId}},Successful cart creation; cartId available.,High,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Click 'Buy now'.
+2) Inspect URL and title.",,,,,,0
+C409947,Multi-Step checkout renders and validates step-wise,,,Step validation blocks progress until fields valid; progress indicator accurate.,Feature flag: Multi-Step ON.,Medium,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Open checkout.
+2) Try to continue without required fields.
+3) Fill and proceed.",,,,,,0
+C409948,Single-Step checkout inline validation,,,Inline errors displayed next to fields; focus scroll to first error; success after correction.,Feature flag: Single-Step ON.,Medium,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Open checkout.
+2) Submit with missing required fields.
+3) Fix and submit.",,,,,,0
+C409949,Required field validation messages are user-friendly,,,"Human-readable, localized error messages; no technical jargon; ARIA live region updates.",Checkout open.,High,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Leave mandatory fields empty or invalid.
+2) Attempt submit.",,,,,,0
+C409950,Address validation including postal code/region mismatch,,,Specific address error; cannot proceed; suggestions if enabled.,Checkout open; address form supports validation.,Medium,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Enter invalid postal code for selected region.
+2) Submit.",,,,,,0
+C409953,Shipping method refresh on address change,,,Methods/rates recalc; invalid previous selection cleared safely.,Checkout with physical items.,Medium,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Change shipping address (country/ZIP).
+2) Observe shipping options.",,,,,,0
+C409954,Tax recalculation on jurisdiction change,,,Tax and grand total update according to rules.,Checkout open.,Medium,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Change address to different tax region.
+2) Observe totals.",,,,,,0
+C409955,Place order success shows Thank You page,,,Order created; Thank You page with summary; confirmation email triggered.,Checkout valid; payment approved.,High,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Submit order.
+2) Capture order number.",,,,,,0
+C409956,OOS after cart creation redirects to cart to fix,,,Blocking error; redirected to cart with line-level issue; can remove/adjust then continue.,Item stock turns 0 before submit.,High,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Try placing order.
+2) Observe behavior.",,,,,,0
+C409957,Price change before submit requires confirmation,,,Totals reprice; user informed; policy-driven redirect to cart or review step to confirm.,Price increases after cart creation.,Medium,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,1) Attempt to place order.,,,,,,0
+C409958,Payment gateway timeout safe retry,,,No duplicate order/charge; clear error; redirect to cart or payment step with retry.,Simulate payment gateway timeout on submit.,High,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Place order.
+2) Inject timeout.",,,,,,0
+C409960,Wishlist remains intact after copy,,,Wishlist entries remain (unless config says remove; then verify removal).,Wishlist contains multiple items; copy behavior configured as 'copy' not 'move'.,Low,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Buy now.
+2) Return to wishlist.",,,,,,0
+C409961,Debounce double-click to prevent duplicate carts,,,Only one cart created; UI prevents duplicate requests; idempotency enforced server-side.,Non-empty wishlist.,High,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,1) Double-click 'Buy now' rapidly.,,,,,,0
+C409962,Browser back/refresh resilience,,,Consistent behavior (reuse or create new per spec); no orphan carts; no crashes.,Cart created; on checkout page.,Medium,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Press browser Back to wishlist.
+2) Click 'Buy now' again.
+3) Refresh during load.",,,,,,0
+C409963,Accessibility: keyboard and screen reader for validation,,,Keyboard operable; focus sent to first error; ARIA live regions announce messages.,Checkout page open.,Low,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Tab through fields; submit with errors.
+2) Use screen reader to verify announcements.",,,,,,0
+C409964,Localization of labels and errors,,,Buttons/titles/messages localized; no mixed-language strings; RTL survives layout (if applicable).,Site locale set to non-English (if supported).,Low,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Open Shopping List and checkout.
+2) Trigger validation errors.",,,,,,0
+C409965,Performance: Large wishlist (250 items) end-to-end,,,No timeouts; p95 latency within SLA; totals computed correctly; UI stays responsive.,Wishlist with ~250 eligible items.,Medium,,Checkout from shopping list,1,"https://virtocommerce.atlassian.net/browse/VCST-3548
+Available from vc-frontend 2.29.0",Lists > Checkout from shopping list,"1) Click 'Buy now'.
+2) Measure time for mutation and render.
+3) Complete checkout.",,,,,,0
+C397203,Store settings > Back in stock notifications = OFF,,,,,Medium,,Back-In-Stock-List,0,"https://virtocommerce.atlassian.net/browse/VCST-1802
+https://virtocommerce.atlassian.net/browse/VCST-2557
+
+The feature available from vc-frontend version 2.15.0",Back-In-Stock-List,,,,,,,0
+C397204,Store settings > Back in stock notifications = ON,,,,,Medium,,Back-In-Stock-List,0,"https://virtocommerce.atlassian.net/browse/VCST-1802
+https://virtocommerce.atlassian.net/browse/VCST-2557
+
+The feature available from vc-frontend version 2.15.0",Back-In-Stock-List,,,,,,,0
+C397199,Catalog > Subscribe to Back In Stock Notification,https://virtowayqa.testrail.io/index.php?/attachments/get/1000004567,,,"User is logged into the storefront. 
+Product1 is out of stock.
+Store settings > Back in stock notifications = Enabled",High,,Back-In-Stock-List,0,"https://virtocommerce.atlassian.net/browse/VCST-1802
+https://virtocommerce.atlassian.net/browse/VCST-2557
+
+The feature available from vc-frontend version 2.15.0",Back-In-Stock-List,,"Step Description:
+1. Navigate to Catalog page
+2. Uncheck Show in Stock filter
+3. Verify Product1 card from Grid / List view
+
+
+Expected Result:
+The Product1 is shown with button *Notify me when in stock*",,The Product1 is shown with button *Notify me when in stock*,,"1. Navigate to Catalog page
+2. Uncheck Show in Stock filter
+3. Verify Product1 card from Grid / List view
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click *Notify me when in stock*
+2. Verify confirmation message
+
+
+Expected Result:
+The button is changed: *You'll be notified*
+Confirmation message appears.
+
+---
+
+ ![](index.php?/attachments/get/1000004567) 
+",,"The button is changed: *You'll be notified*
+Confirmation message appears.
+
+---
+
+ ![](index.php?/attachments/get/1000004567) 
+",,"1. Click *Notify me when in stock*
+2. Verify confirmation message
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on button *Back-In-Stock-List* from notification
+2. Check *Back-in-Stock List*
+
+
+Expected Result:
+Product1 in *Back-in-Stock List*",,Product1 in *Back-in-Stock List*,,"1. Click on button *Back-In-Stock-List* from notification
+2. Check *Back-in-Stock List*
+
+",
+C397209,Product page > Subscribe to Back In Stock Notification,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000004567, https://virtowayqa.testrail.io/index.php?/attachments/get/1000004569",,,"User is logged into the storefront. 
+Product1 is out of stock.
+Store settings > Back in stock notifications = Enabled",High,,Back-In-Stock-List,0,"https://virtocommerce.atlassian.net/browse/VCST-1802
+https://virtocommerce.atlassian.net/browse/VCST-2557
+
+The feature available from vc-frontend version 2.15.0",Back-In-Stock-List,,"Step Description:
+1. Navigate to Product1 page
+
+
+
+Expected Result:
+The button *Notify me when in stock* is displayed in Price and Delivery block",,The button *Notify me when in stock* is displayed in Price and Delivery block,,"1. Navigate to Product1 page
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click *Notify me when in stock*
+2. Verify confirmation message
+
+
+Expected Result:
+The button is changed: *You'll be notified*
+Confirmation message appears.
+
+---
+
+ ![](index.php?/attachments/get/1000004569) 
+
+ ---
+
+![](index.php?/attachments/get/1000004567) 
+",,"The button is changed: *You'll be notified*
+Confirmation message appears.
+
+---
+
+ ![](index.php?/attachments/get/1000004569) 
+
+ ---
+
+![](index.php?/attachments/get/1000004567) 
+",,"1. Click *Notify me when in stock*
+2. Verify confirmation message
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on button *Back-In-Stock-List* from notification
+2. Check *Back-in-Stock List*
+
+
+Expected Result:
+Product1 in *Back-in-Stock List*",,Product1 in *Back-in-Stock List*,,"1. Click on button *Back-In-Stock-List* from notification
+2. Check *Back-in-Stock List*
+
+",
+C397200,Receive Notification When Product is Back In Stock,https://virtowayqa.testrail.io/index.php?/attachments/get/1000004570,,,"User subscribed to an out-of-stock product. 
+Admin restocks the product.",High,,Back-In-Stock-List,0,"https://virtocommerce.atlassian.net/browse/VCST-1802
+https://virtocommerce.atlassian.net/browse/VCST-2557
+
+The feature available from vc-frontend version 2.15.0",Back-In-Stock-List,,"Step Description:
+1. Check email for notification.
+2. Click link. 
+3. Verify redirection to Back-In-stock page
+4. Confirm product availability.
+Expected Result:
+User gets notification. 
+Clicking link opens Back-In-stock page.
+Product available.
+
+---
+
+ ![](index.php?/attachments/get/1000004570)
+",,"User gets notification. 
+Clicking link opens Back-In-stock page.
+Product available.
+
+---
+
+ ![](index.php?/attachments/get/1000004570)
+",,"1. Check email for notification.
+2. Click link. 
+3. Verify redirection to Back-In-stock page
+4. Confirm product availability.",0
+C397201,Unsubscribe from Back In Stock Notifications,,,,User is subscribed to an out-of-stock product.,Medium,,Back-In-Stock-List,0,"https://virtocommerce.atlassian.net/browse/VCST-1802
+https://virtocommerce.atlassian.net/browse/VCST-2557
+
+The feature available from vc-frontend version 2.15.0",Back-In-Stock-List,,"Step Description:
+1. Go to *Back-in-Stock List*
+2. Locate product. 
+3. Click *You will be notified*
+4. Verify that button changed to *Notify me when in stock*
+5. Confirm no further notifications.
+Expected Result:
+No more notifications",,No more notifications,,"1. Go to *Back-in-Stock List*
+2. Locate product. 
+3. Click *You will be notified*
+4. Verify that button changed to *Notify me when in stock*
+5. Confirm no further notifications.",0
+C397202,Back In Stock Subscription for Anonymous Users,,,,,Low,,Back-In-Stock-List,0,"https://virtocommerce.atlassian.net/browse/VCST-1802
+https://virtocommerce.atlassian.net/browse/VCST-2557
+
+The feature available from vc-frontend version 2.15.0",Back-In-Stock-List,,,,,,,0
+C397208,Back-In-Stock-List > View,https://virtowayqa.testrail.io/index.php?/attachments/get/1000004568,,,"User is logged into the storefront.
+Store settings > Back in stock notifications = Enabled",Medium,,Back-In-Stock-List,0,"https://virtocommerce.atlassian.net/browse/VCST-1802
+https://virtocommerce.atlassian.net/browse/VCST-2557
+
+The feature available from vc-frontend version 2.15.0",Back-In-Stock-List,,"Step Description:
+Go to Account
+Click on Back-In-Stock-List
+
+
+Expected Result:
+Check empty list view
+The button *Continue browsing* is displayed",,"Check empty list view
+The button *Continue browsing* is displayed",,"Go to Account
+Click on Back-In-Stock-List
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the button *Continue browsing* 
+2. Add Product1 to back in stock list
+3. Go to Account
+4. Click on Back-In-Stock-List
+5. Check the view
+Expected Result:
+
+
+ ![](index.php?/attachments/get/1000004568)",,"
+
+ ![](index.php?/attachments/get/1000004568)",,"1. Click on the button *Continue browsing* 
+2. Add Product1 to back in stock list
+3. Go to Account
+4. Click on Back-In-Stock-List
+5. Check the view",
+C397205,Back-In-Stock-List > Search,,,,,Medium,,Back-In-Stock-List,0,"https://virtocommerce.atlassian.net/browse/VCST-1802
+https://virtocommerce.atlassian.net/browse/VCST-2557
+
+The feature available from vc-frontend version 2.15.0",Back-In-Stock-List,,,,,,,0
+C397206,Back-In-Stock-List > Pagination,,,,,Medium,,Back-In-Stock-List,0,"https://virtocommerce.atlassian.net/browse/VCST-1802
+https://virtocommerce.atlassian.net/browse/VCST-2557
+
+The feature available from vc-frontend version 2.15.0",Back-In-Stock-List,,,,,,,0
+C397207,Back-In-Stock-List > Filters,,,,,Medium,,Back-In-Stock-List,0,"https://virtocommerce.atlassian.net/browse/VCST-1802
+https://virtocommerce.atlassian.net/browse/VCST-2557
+
+The feature available from vc-frontend version 2.15.0",Back-In-Stock-List,,,,,,,0

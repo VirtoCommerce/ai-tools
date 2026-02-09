@@ -1,0 +1,2275 @@
+ID,Title,Attachments,Estimate,Expected Result,Preconditions,Priority,References,Section,Section Depth,Section Description,Section Hierarchy,Steps,Steps,Steps (Additional Info),Steps (Expected Result),Steps (References),Steps (Step),is_converted
+C389107,Orders > Empty orders page,,,,"User_1 created
+User_1 belongs to the Organization_1
+User_1 haven't orders
+Go to the store 
+Open My account page >  Orders tab",Medium,,Orders (Desktop+Mobile),0,,Orders (Desktop+Mobile),,"Step Description:
+1. Check the page
+Expected Result:
+The next elements are presented:
+-- Title 'ORDERS'
+-- Search field contains cross icon (X) + Search icon
+-- Filters button
+-- Text 'There are no orders yet'
+-- Button Continue browsing",,"The next elements are presented:
+-- Title 'ORDERS'
+-- Search field contains cross icon (X) + Search icon
+-- Filters button
+-- Text 'There are no orders yet'
+-- Button Continue browsing",,1. Check the page,0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Filter
+Expected Result:
+The menu is opened
+Only the created date is displayed
+
+- Start date (date picker)
+- End Date (date picker)
+- Reset and Apply (disabled)
+
+---
+
+ ![](index.php?/attachments/get/701fac2d-35fb-44f2-85bc-c05a9fdec6f0) 
+
+",,"The menu is opened
+Only the created date is displayed
+
+- Start date (date picker)
+- End Date (date picker)
+- Reset and Apply (disabled)
+
+---
+
+ ![](index.php?/attachments/get/701fac2d-35fb-44f2-85bc-c05a9fdec6f0) 
+
+",,Click on the Filter,
+,,,,,,,,,,,,,"
+Step Description:
+Click on """"Continue browsing""""
+Expected Result:
+The Catalog page is opened",,The Catalog page is opened,,"Click on ""Continue browsing""",
+C389108,Orders > general view,,,,"1. User_1 created
+2. User_1 logged to the store
+3. User_1 created 11 orders
+
+",Medium,,Orders (Desktop+Mobile),0,,Orders (Desktop+Mobile),,"Step Description:
+1. Open My account page &gt;  Orders tab
+2. Check the page
+Expected Result:
+1. Next elements are presented: 
+1. Title """"Orders""""
+2. Search bar with search button
+3. Button """"Filters""""
+4. Order list with next columns presented:
+- Order number
+- Purchased order
+- Invoice
+- Date ( in the local format)
+- Status
+- Total
+5. Pagination",,"1. Next elements are presented: 
+1. Title ""Orders""
+2. Search bar with search button
+3. Button ""Filters""
+4. Order list with next columns presented:
+- Order number
+- Purchased order
+- Invoice
+- Date ( in the local format)
+- Status
+- Total
+5. Pagination",,"1. Open My account page &gt;  Orders tab
+2. Check the page",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the list of the orders
+Expected Result:
+1. 10 orders presented on the 1st page, 1 - on 2nd page.",,"1. 10 orders presented on the 1st page, 1 - on 2nd page.",,1. Check the list of the orders,
+C389109,Orders > List of statuses > One order status,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000001501, https://virtowayqa.testrail.io/index.php?/attachments/get/1000004522",,,"User1 has one order with any status (localized)
+
+
+
+",Medium,,Orders (Desktop+Mobile),0,,Orders (Desktop+Mobile),,"Step Description:
+1. Open the Account &gt;  Orders
+2. Check the list of Order statuses in the left menu
+Expected Result:
+1. The list contains only one order status in the left menu
+2. The count is displayed for order status
+3. Only one order is returned
+
+---
+
+
+ ![](index.php?/attachments/get/520a2b81-0d8d-402b-805b-f29e872c245c) 
+
+
+",,"1. The list contains only one order status in the left menu
+2. The count is displayed for order status
+3. Only one order is returned
+
+---
+
+
+ ![](index.php?/attachments/get/520a2b81-0d8d-402b-805b-f29e872c245c) 
+
+
+",,"1. Open the Account &gt;  Orders
+2. Check the list of Order statuses in the left menu",0
+,,,,,,,,,,,,,"
+Step Description:
+Select status
+Expected Result:
+1. The current status is selected.
+2. The appropriate orders with the status are returned
+3. The chip with order status is displayed
+
+---
+
+
+ ![](index.php?/attachments/get/ffab4492-2205-4aae-88ca-617d1b712f35) 
+
+
+",,"1. The current status is selected.
+2. The appropriate orders with the status are returned
+3. The chip with order status is displayed
+
+---
+
+
+ ![](index.php?/attachments/get/ffab4492-2205-4aae-88ca-617d1b712f35) 
+
+
+",,Select status,
+,,,,,,,,,,,,,"
+Step Description:
+1. Create one order with another status (ex. Payment required)
+2. Open """"Orders history""""
+3. Check the new status in the left menu
+4. Select new status
+Expected Result:
+1. The new status is displayed in the list
+2. The current Status selected and the appropriate order returned",,"1. The new status is displayed in the list
+2. The current Status selected and the appropriate order returned",,"1. Create one order with another status (ex. Payment required)
+2. Open ""Orders history""
+3. Check the new status in the left menu
+4. Select new status",
+C389110,Orders > List of statuses > Multiple statuses,,,,"User1 has several orders with different statuses (localized)
+
+- New
+- Processing
+- Pending
+- Payment required
+- Completed
+- Cancelled
+
+
+",Medium,,Orders (Desktop+Mobile),0,,Orders (Desktop+Mobile),,"Step Description:
+1. Open the Account -  Orders
+2. Check the list of Order statuses in the left menu
+Expected Result:
+1. The list of order statuses is shown in the left menu
+2. The count is displayed for each order status
+3. All orders are returned",,"1. The list of order statuses is shown in the left menu
+2. The count is displayed for each order status
+3. All orders are returned",,"1. Open the Account -  Orders
+2. Check the list of Order statuses in the left menu",0
+,,,,,,,,,,,,,"
+Step Description:
+Check the switch between statuses
+
+
+Expected Result:
+1. The current status is selected.
+2. The appropriate orders with the status are returned
+3. The chip with order status is displayed
+
+",,"1. The current status is selected.
+2. The appropriate orders with the status are returned
+3. The chip with order status is displayed
+
+",,"Check the switch between statuses
+
+",
+C389111,Orders > List of statuses > Order status changed,,,,"User1 has several orders with different statuses
+
+- New (1)
+- Processing (2)
+- Payment required (3)
+- Completed (2)
+
+
+
+
+",Medium,,Orders (Desktop+Mobile),0,,Orders (Desktop+Mobile),,"Step Description:
+1. Go to admin - Orders - Change status New -- Processing for Order1
+2. Go to store - Orders
+3. Check the list of statuses
+Expected Result:
+The list of statuses is changed
+The count also changed
+
+- Processing (3)
+- Payment required (3)
+- Completed (2)
+
+",,"The list of statuses is changed
+The count also changed
+
+- Processing (3)
+- Payment required (3)
+- Completed (2)
+
+",,"1. Go to admin - Orders - Change status New -- Processing for Order1
+2. Go to store - Orders
+3. Check the list of statuses",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check for changes in other statuses (ex. Payment required -- Processing)
+2. Pay attention to the count
+Expected Result:
+The list of statuses is changed
+The count also changed
+
+- Processing (4)
+- Payment required (2)
+- Completed (2)
+",,"The list of statuses is changed
+The count also changed
+
+- Processing (4)
+- Payment required (2)
+- Completed (2)
+",,"1. Check for changes in other statuses (ex. Payment required -- Processing)
+2. Pay attention to the count",
+C389112,Orders > List of statuses > Localization,https://virtowayqa.testrail.io/index.php?/attachments/get/1000002654,,,"Go to admin > Settings > Orders > General > Customer order statuses
+Open status > Set localization for each language
+---
+
+
+  ![](index.php?/attachments/get/927f6760-949e-4931-a2ad-e2d74f33ed24)  
+
+---
+
+User1 has several orders with different statuses (localized)
+
+- New
+- Processing
+- Pending
+- Payment required
+- Completed
+- Cancelled",Medium,,Orders (Desktop+Mobile),0,,Orders (Desktop+Mobile),,"Step Description:
+1. Change Language (ex. Deutsch)
+2. Open Orders
+3. Check status localization in the left menu and in chips
+Expected Result:
+Statuses are displayed according to localization",,Statuses are displayed according to localization,,"1. Change Language (ex. Deutsch)
+2. Open Orders
+3. Check status localization in the left menu and in chips",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open order
+2. Check status localization in chips
+Expected Result:
+Statuses are displayed according to localization",,Statuses are displayed according to localization,,"1. Open order
+2. Check status localization in chips",
+C389113,Orders > Date format,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000001201, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000159, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000857, https://virtowayqa.testrail.io/index.php?/attachments/get/1000003056",,,"User_1 created
+User_1 logged into the store
+User_1 created 11 orders",Medium,,Orders (Desktop+Mobile),0,,Orders (Desktop+Mobile),,"Step Description:
+Set localization = EN
+Set filter up the Start date and End date
+Check data format in chips, table, and filter 
+Expected Result:
+The date format is consistent everywhere
+
+ ![](index.php?/attachments/get/09b0efe9-5f91-40e6-873a-803eb19b10d6) 
+
+
+
+
+  
+
+
+",,"The date format is consistent everywhere
+
+ ![](index.php?/attachments/get/09b0efe9-5f91-40e6-873a-803eb19b10d6) 
+
+
+
+
+  
+
+
+",,"Set localization = EN
+Set filter up the Start date and End date
+Check data format in chips, table, and filter ",0
+,,,,,,,,,,,,,"
+Step Description:
+Open Order details
+Check Created date
+
+
+
+
+Expected Result:
+The date format is the same as in the table
+
+
+ ![](index.php?/attachments/get/2befc4ed-7bf1-4f8f-abaa-28ca83715245) 
+
+
+",,"The date format is the same as in the table
+
+
+ ![](index.php?/attachments/get/2befc4ed-7bf1-4f8f-abaa-28ca83715245) 
+
+
+",,"Open Order details
+Check Created date
+
+
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Set localization = DE
+Set filter up the Start date and End date
+Check data format in chips, table, and filter 
+Expected Result:
+The date format is consistent everywhere
+
+ ![](index.php?/attachments/get/41df0b52-02d5-435d-97f1-9ab1d3a6228f) 
+",,"The date format is consistent everywhere
+
+ ![](index.php?/attachments/get/41df0b52-02d5-435d-97f1-9ab1d3a6228f) 
+",,"Set localization = DE
+Set filter up the Start date and End date
+Check data format in chips, table, and filter ",
+,,,,,,,,,,,,,"
+Step Description:
+Open Order details
+Check Created date
+Expected Result:
+The date format is the same as in the table
+
+ ![](index.php?/attachments/get/a8eda096-b6bf-4307-91d1-91d854f98265) 
+",,"The date format is the same as in the table
+
+ ![](index.php?/attachments/get/a8eda096-b6bf-4307-91d1-91d854f98265) 
+",,"Open Order details
+Check Created date",
+,,,,,,,,,,,,,"
+Step Description:
+Set localization = FR
+Set filter up the Start date and End date
+Check data format in chips, table, and filter 
+Expected Result:
+The date format is consistent everywhere",,The date format is consistent everywhere,,"Set localization = FR
+Set filter up the Start date and End date
+Check data format in chips, table, and filter ",
+,,,,,,,,,,,,,"
+Step Description:
+Open Order details
+Check Created date
+Expected Result:
+The date format is the same as in the table
+
+
+",,"The date format is the same as in the table
+
+
+",,"Open Order details
+Check Created date",
+C389114,Orders > Search through the order list,,,,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. Go to the store
+4. User_1 created several orders
+4. Open My account page >  Orders tab
+",Medium,,Orders (Desktop+Mobile),0,,Orders (Desktop+Mobile),,"Step Description:
+1. Try to search by fields from the index (Backend > Orders > Index widget). For example by shipping address
+Expected Result:
+1. Matching search Orders presented in the list",,1. Matching search Orders presented in the list,,1. Try to search by fields from the index (Backend > Orders > Index widget). For example by shipping address,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Try to search by fields from the index (Backend > Orders > Index widget). For example by Invoice
+Expected Result:
+1. Matching search Orders presented in the list",,1. Matching search Orders presented in the list,,1. Try to search by fields from the index (Backend > Orders > Index widget). For example by Invoice,
+,,,,,,,,,,,,,"
+Step Description:
+1. Try to search by fields from the index (Backend > Orders > Index widget). For example by Order number
+Expected Result:
+1. Matching search Orders presented in the list",,1. Matching search Orders presented in the list,,1. Try to search by fields from the index (Backend > Orders > Index widget). For example by Order number,
+C389115,Orders > Sorting list,,,,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. Go to the store
+4. User_1 created several orders
+4. Open My account page >  Orders tab
+",Medium,,Orders (Desktop+Mobile),0,,Orders (Desktop+Mobile),,"Step Description:
+1. Try to sort by Order number
+Expected Result:
+1. The list sorted ascending or descending by Order number",,1. The list sorted ascending or descending by Order number,,1. Try to sort by Order number,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Try to sort by Date
+Expected Result:
+1. The list sorted ascending or descending by Date",,1. The list sorted ascending or descending by Date,,1. Try to sort by Date,
+,,,,,,,,,,,,,"
+Step Description:
+1. Try to sort by Status 
+Expected Result:
+1. The list sorted ascending or descending by Status ",,1. The list sorted ascending or descending by Status ,,1. Try to sort by Status ,
+,,,,,,,,,,,,,"
+Step Description:
+1. Try to sort by Total 
+Expected Result:
+1. The list sorted ascending or descending by Total ",,1. The list sorted ascending or descending by Total ,,1. Try to sort by Total ,
+C389116,Orders > Reset search,,,,"User_1 created
+User_1 belongs to the Organization_1
+User_1 have orders
+Go to the store
+Open My account page >  Orders tab",Medium,,Orders (Desktop+Mobile),0,,Orders (Desktop+Mobile),,"Step Description:
+1. Enter in the search field not relevant query
+2. Click on the search icon 
+Expected Result:
+1. Shows no orders page with reset search button",,1. Shows no orders page with reset search button,,"1. Enter in the search field not relevant query
+2. Click on the search icon ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the Reset search button
+Expected Result:
+1. Search field cleaned
+2. User orders are displayed ",,"1. Search field cleaned
+2. User orders are displayed ",,1. Click on the Reset search button,
+,,,,,,,,,,,,,"
+Step Description:
+1. Set any filters & Click apply
+2. Enter in the search field not relevant query
+3. Click on the search button 
+Expected Result:
+1. Shows no orders page with reset search button",,1. Shows no orders page with reset search button,,"1. Set any filters & Click apply
+2. Enter in the search field not relevant query
+3. Click on the search button ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the Reset search button
+Expected Result:
+1. Search field cleaned
+2. Filters reset
+3. User orders are displayed",,"1. Search field cleaned
+2. Filters reset
+3. User orders are displayed",,1. Click on the Reset search button,
+C389117,Orders > Pagination > Add pages,,,,"Sign in as a company owner
+Create 10 orders",Medium,,Orders (Desktop+Mobile),0,,Orders (Desktop+Mobile),,"Step Description:
+Open Orders tab
+View the page
+Expected Result:
+The Orders list is displayed without pagination",,The Orders list is displayed without pagination,,"Open Orders tab
+View the page",0
+,,,,,,,,,,,,,"
+Step Description:
+Create one order
+Expected Result:
+1. The 2nd page has been added
+2. Previous and Next buttons are displayed
+
+**Buttons:**
+
+Previous - active (disabled if the cursor is on the first page)
+Next - (active) disabled if the cursor is on the last page
+
+**Pagination view:**
+
+1 2",,"1. The 2nd page has been added
+2. Previous and Next buttons are displayed
+
+**Buttons:**
+
+Previous - active (disabled if the cursor is on the first page)
+Next - (active) disabled if the cursor is on the last page
+
+**Pagination view:**
+
+1 2",,Create one order,
+,,,,,,,,,,,,,"
+Step Description:
+Generate 90 orders via Postman
+Check the number of pages
+Expected Result:
+1. There are 9 pages for 10 Orders on each page
+
+**Buttons:**
+
+Previous - active/disabled if the cursor on the first page
+Next - active/disabled if the cursor on the last page
+
+The 1st page is selected and active
+
+**Pagination view:**
+
+1 2 3 4 5 6 7 8 9",,"1. There are 9 pages for 10 Orders on each page
+
+**Buttons:**
+
+Previous - active/disabled if the cursor on the first page
+Next - active/disabled if the cursor on the last page
+
+The 1st page is selected and active
+
+**Pagination view:**
+
+1 2 3 4 5 6 7 8 9",,"Generate 90 orders via Postman
+Check the number of pages",
+C389118,Orders > Pagination > Next button,,,,"Generate 120 Orders via Postman
+Sign in as a company owner",Medium,,Orders (Desktop+Mobile),0,,Orders (Desktop+Mobile),,"Step Description:
+Open Account &gt; Orders tab
+Check Pagination
+Expected Result:
+**Buttons:**
+
+Previous - disabled if the cursor on the first page active
+Next - active
+
+The 1st page is selected and active
+
+There are 12 pages with 10 Orders on each
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...12",,"**Buttons:**
+
+Previous - disabled if the cursor on the first page active
+Next - active
+
+The 1st page is selected and active
+
+There are 12 pages with 10 Orders on each
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...12",,"Open Account &gt; Orders tab
+Check Pagination",0
+,,,,,,,,,,,,,"
+Step Description:
+Click Next button
+Expected Result:
+1. System opens 2nd page &gt; 2nd page is selected, pages in the list are changed
+2. The page is scrolling up
+
+**Buttons:**
+
+Previous - active
+Next - active",,"1. System opens 2nd page &gt; 2nd page is selected, pages in the list are changed
+2. The page is scrolling up
+
+**Buttons:**
+
+Previous - active
+Next - active",,Click Next button,
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Next button till the 6-page
+Expected Result:
+1. System opens 6th page &gt; 6th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+
+Three dots after 1st and before the last page were added
+
+**Pagination view:**
+
+1...4 5 6 7 8...12",,"1. System opens 6th page &gt; 6th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+
+Three dots after 1st and before the last page were added
+
+**Pagination view:**
+
+1...4 5 6 7 8...12",,Proceed to push the Next button till the 6-page,
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Next button till the 8-page
+Expected Result:
+1. System opens 8th page &gt; 8th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+
+Three dots are displayed after the 1st page and all of the last seven pages.
+
+**Pagination view:**
+
+1...6 7 8 9 10 11 12",,"1. System opens 8th page &gt; 8th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+
+Three dots are displayed after the 1st page and all of the last seven pages.
+
+**Pagination view:**
+
+1...6 7 8 9 10 11 12",,Proceed to push the Next button till the 8-page,
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Next button till the last page
+Expected Result:
+1. System opens 12th page &gt; 12th page is selected, pages in the list are changed
+2. The page is scrolling up
+
+Three dots are displayed after the 1st page and all of the last seven pages.
+
+**Buttons:**
+
+Previous - active/disabled if the cursor on the first page
+Next - active/disabled if the cursor on the last page
+
+**Pagination view:**
+
+1...6 7 8 9 10 11 12",,"1. System opens 12th page &gt; 12th page is selected, pages in the list are changed
+2. The page is scrolling up
+
+Three dots are displayed after the 1st page and all of the last seven pages.
+
+**Buttons:**
+
+Previous - active/disabled if the cursor on the first page
+Next - active/disabled if the cursor on the last page
+
+**Pagination view:**
+
+1...6 7 8 9 10 11 12",,Proceed to push the Next button till the last page,
+C389119,Orders > Pagination > Previous button,,,,"Generate 120 Orders via Postman
+Sign in as a company owner",Medium,,Orders (Desktop+Mobile),0,,Orders (Desktop+Mobile),,"Step Description:
+Select the last 12th page
+Click on the Previous button
+Expected Result:
+1. System opens 11th page &gt; 11th page is selected, pages in the list are changed
+2. The page is scrolling up
+
+Three dots are displayed after the 1st page and all of the last seven pages.
+
+**Buttons:**
+
+Previous - active/disabled if the cursor on the first page
+Next - active/disabled if the cursor on the last page
+
+**Pagination view:**
+
+1...6 7 8 9 10 11 12",,"1. System opens 11th page &gt; 11th page is selected, pages in the list are changed
+2. The page is scrolling up
+
+Three dots are displayed after the 1st page and all of the last seven pages.
+
+**Buttons:**
+
+Previous - active/disabled if the cursor on the first page
+Next - active/disabled if the cursor on the last page
+
+**Pagination view:**
+
+1...6 7 8 9 10 11 12",,"Select the last 12th page
+Click on the Previous button",0
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Previous button till the 7-page
+Expected Result:
+1. System opens 7th page &gt; 7th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+4. Three dots after 1st and before the last page were added 
+
+**Pagination view:**
+
+1...4 5 6 7 8...12",,"1. System opens 7th page &gt; 7th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+4. Three dots after 1st and before the last page were added 
+
+**Pagination view:**
+
+1...4 5 6 7 8...12",,Proceed to push the Previous button till the 7-page,
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Previous button till the 1st page
+Expected Result:
+**Buttons:**
+
+- Previous - disabled if the cursor on the first page active
+- Next - active
+
+- The 1st page is selected and active
+- There are 12 pages with 10 addresses on each 
+
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...12",,"**Buttons:**
+
+- Previous - disabled if the cursor on the first page active
+- Next - active
+
+- The 1st page is selected and active
+- There are 12 pages with 10 addresses on each 
+
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...12",,Proceed to push the Previous button till the 1st page,
+C389120,Orders > Pagination > Delete pages,,,,"Generate 120 Orders via Postman
+Sign in as a User1",Medium,,Orders (Desktop+Mobile),0,,Orders (Desktop+Mobile),,"Step Description:
+Go to admin &gt; Orders
+Delete 10 orders which belong User1
+
+Go to Storefront &gt; Orders
+Open the last page
+Check the number of pages
+Check Next button
+Expected Result:
+1. The last page is deleted
+2. System opens 11th page &gt; 11th page is selected, pages in the list are changed
+
+**Buttons:**
+
+Previous - active
+Next - disabled
+
+There are 11 pages with 10 addresses on each
+
+**Pagination view:**
+
+1...5 6 7 8 9 10 11",,"1. The last page is deleted
+2. System opens 11th page &gt; 11th page is selected, pages in the list are changed
+
+**Buttons:**
+
+Previous - active
+Next - disabled
+
+There are 11 pages with 10 addresses on each
+
+**Pagination view:**
+
+1...5 6 7 8 9 10 11",,"Go to admin &gt; Orders
+Delete 10 orders which belong User1
+
+Go to Storefront &gt; Orders
+Open the last page
+Check the number of pages
+Check Next button",0
+C389121,MOBILE > Orders > General view,,,,"User_1 created
+User_1 logged to the store
+User_1 created 11 orders",Medium,,Orders (Desktop+Mobile),0,,Orders (Desktop+Mobile),,"Step Description:
+1. Open Account &gt;  Orders tab 
+2. Check the page
+Expected Result:
+1. The next elements are presented:
+-- Default header for mobile
+-- 'Orders' title
+-- Filters button
+-- Search field + Search button
+-- Orders list contain the next information about items:
+
+== Order number
+== Status
+== Date
+== Total
+
+-- Pagination (only if Orders &gt; 10) ",,"1. The next elements are presented:
+-- Default header for mobile
+-- 'Orders' title
+-- Filters button
+-- Search field + Search button
+-- Orders list contain the next information about items:
+
+== Order number
+== Status
+== Date
+== Total
+
+-- Pagination (only if Orders &gt; 10) ",,"1. Open Account &gt;  Orders tab 
+2. Check the page",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the list of the orders
+Expected Result:
+1. 10 orders presented on the 1st page, 1 order on 2nd page.",,"1. 10 orders presented on the 1st page, 1 order on 2nd page.",,1. Check the list of the orders,
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll page up and down
+2. Pay attention to the header 
+Expected Result:
+??? Header is static ???",,??? Header is static ???,,"1. Scroll page up and down
+2. Pay attention to the header ",
+C389122,MOBILE > Orders > Filters > General view,,,,"1. User_1 created
+2. User_1 logged to the store
+3. User_1 created several orders",Medium,,Orders (Desktop+Mobile),0,,Orders (Desktop+Mobile),,"Step Description:
+1. Open My account page &gt;  Orders tab
+2. Tap on the button """"Filters""""
+Expected Result:
+1. Appears side filters menu contain the next elements:
+-- 'Filters' title + Close button (X)
+-- 'Status' block with Arrow (up) button contain the next checkboxes:
+== 'New'
+== 'Processing'
+== 'Pending'
+== 'Cancelled'
+== 'Completed'
+
+-- 'Created date' block contain the next fields:
+== 'Start date' contain the date format (mm/dd/yyy) and calendar icon
+== 'End date' contain the date format (mm/dd/yyy) and calendar icon 
+
+-- 'Reset' button (inactive)
+-- 'Apply' button (inactive) ",,"1. Appears side filters menu contain the next elements:
+-- 'Filters' title + Close button (X)
+-- 'Status' block with Arrow (up) button contain the next checkboxes:
+== 'New'
+== 'Processing'
+== 'Pending'
+== 'Cancelled'
+== 'Completed'
+
+-- 'Created date' block contain the next fields:
+== 'Start date' contain the date format (mm/dd/yyy) and calendar icon
+== 'End date' contain the date format (mm/dd/yyy) and calendar icon 
+
+-- 'Reset' button (inactive)
+-- 'Apply' button (inactive) ",,"1. Open My account page &gt;  Orders tab
+2. Tap on the button ""Filters""",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Tap on the Close button (X)
+Expected Result:
+1. Filters side menu closes without any changes",,1. Filters side menu closes without any changes,,1. Tap on the Close button (X),
+,,,,,,,,,,,,,"
+Step Description:
+1. Open side filters menu
+2. Tap on the Arrow button of the 'Status' block 
+Expected Result:
+1. The 'Status' block collapse to the 'Status' title
+2. Arrow button change state to down",,"1. The 'Status' block collapse to the 'Status' title
+2. Arrow button change state to down",,"1. Open side filters menu
+2. Tap on the Arrow button of the 'Status' block ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Tap on the Arrow button of the 'Status' block one more time
+Expected Result:
+1. The 'Status' block expands
+2. Arrow button change state to up",,"1. The 'Status' block expands
+2. Arrow button change state to up",,1. Tap on the Arrow button of the 'Status' block one more time,
+,,,,,,,,,,,,,"
+Step Description:
+ 2. Tap on the free space outside of side filters menu 
+Expected Result:
+1. Filters side menu closes without any changes",,1. Filters side menu closes without any changes,, 2. Tap on the free space outside of side filters menu ,
+C389123,MOBILE > Orders > List of statuses,,,,,Medium,,Orders (Desktop+Mobile),0,,Orders (Desktop+Mobile),,,,,,,0
+C389124,Orders > filters > general view,,,,"1. User_1 created
+2. User_1 logged to the store
+3. User_1 created several orders
+
+
+",Medium,,Filter,1,,Orders (Desktop+Mobile) > Filter,,"Step Description:
+1. Open My account page &gt;  Orders tab
+2. Click the button """"Filters""""
+Expected Result:
+1. The drop-n-down Filters menu opens
+
+",,"1. The drop-n-down Filters menu opens
+
+",,"1. Open My account page &gt;  Orders tab
+2. Click the button ""Filters""",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the Filters menu
+Expected Result:
+1. 2 filters block are presented:
+- Status filter block with check-boxes
+- Created date Custom data block with Start date, End date 
+3. Buttons: Reset, Apply 
+4. Close Icon",,"1. 2 filters block are presented:
+- Status filter block with check-boxes
+- Created date Custom data block with Start date, End date 
+3. Buttons: Reset, Apply 
+4. Close Icon",,1. Check the Filters menu,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click the Close icon 
+Expected Result:
+1. Drop-down filter menu closed.",,1. Drop-down filter menu closed.,,1. Click the Close icon ,
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Filters menu 
+2. Select any filters
+3. Click button Reset
+Expected Result:
+1. Drop-down filter menu closed
+2. No filters have been applied",,"1. Drop-down filter menu closed
+2. No filters have been applied",,"1. Open Filters menu 
+2. Select any filters
+3. Click button Reset",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Filters menu 
+2. Select any filters
+3. Click button Apply
+4. Сheck the Enabled Filters block above the Orders list
+
+Expected Result:
+1. Next elements are presented:
+- The applied Filter block
+- The Reset filter block",,"1. Next elements are presented:
+- The applied Filter block
+- The Reset filter block",,"1. Open Filters menu 
+2. Select any filters
+3. Click button Apply
+4. Сheck the Enabled Filters block above the Orders list
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the Filter block
+Expected Result:
+1. Next elements presented: 
+
+- title of the Filter; 
+- Close icon",,"1. Next elements presented: 
+
+- title of the Filter; 
+- Close icon",,1. Check the Filter block,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click Icon close for any filter block
+Expected Result:
+1. Filter block removed",,1. Filter block removed,,1. Click Icon close for any filter block,
+C389125,Orders > filters > Status filter,,,,"1. User_1 created
+2. User_1 logged in to the store
+3. User_1 created several orders
+4. Go to Admin environment > Order > select Order > Status > Set different statuses  for the orders.
+5. Open My account page >  Orders tab 
+
+
+
+",Medium,,Filter,1,,Orders (Desktop+Mobile) > Filter,,"Step Description:
+1. Open Filters menu 
+2. Select any Status filter (eg New, Processing, Pending, Cancelled, Completed, Payment required)
+3. Click the button Apply
+4. Check the page
+Expected Result:
+1. The applied filter is represented above the list
+2. Only orders with the Status """"New"""" are displayed in the Orders list",,"1. The applied filter is represented above the list
+2. Only orders with the Status ""New"" are displayed in the Orders list",,"1. Open Filters menu 
+2. Select any Status filter (eg New, Processing, Pending, Cancelled, Completed, Payment required)
+3. Click the button Apply
+4. Check the page",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open filters menu
+2. Pay attention to filled check box and 'Apply' button
+
+
+Expected Result:
+1. Checkbox of the chosen filter are filled
+1. The 'Apply' button is inactive
+ ",,"1. Checkbox of the chosen filter are filled
+1. The 'Apply' button is inactive
+ ",,"1. Open filters menu
+2. Pay attention to filled check box and 'Apply' button
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open filters menu 
+2. Select few more Status Filters
+3. Click on the 'Apply' button 
+Expected Result:
+1. Possible select several filters
+2. The 'Apply' button activates after adding new filter 
+3. The applied filters is represented above the list
+3. Only those Orders are shown that match the selected filters.",,"1. Possible select several filters
+2. The 'Apply' button activates after adding new filter 
+3. The applied filters is represented above the list
+3. Only those Orders are shown that match the selected filters.",,"1. Open filters menu 
+2. Select few more Status Filters
+3. Click on the 'Apply' button ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open filters menu 
+2. Select Payment required status
+3. Click on the 'Apply' button 
+Expected Result:
+1. Possible select Payment required status
+2. The 'Apply' button activates after adding a new filter 
+3. The applied filters are represented above the list
+3. Only those Orders are shown that match the selected filters.",,"1. Possible select Payment required status
+2. The 'Apply' button activates after adding a new filter 
+3. The applied filters are represented above the list
+3. Only those Orders are shown that match the selected filters.",,"1. Open filters menu 
+2. Select Payment required status
+3. Click on the 'Apply' button ",
+C389126,Orders > filters > Created customer date filter,,,,"1. User_1 created
+2. User_1 logged in to the store
+3. User_1 created several orders
+4. Open My account page >  Orders tab
+
+
+",Medium,,Filter,1,,Orders (Desktop+Mobile) > Filter,,"Step Description:
+1. Open Filters menu
+2. Set up Start date 
+3. Click  button Apply
+Expected Result:
+1. The applied Date filter is represented above the list
+2. Only orders from Start date filter are displayed in the Orders list",,"1. The applied Date filter is represented above the list
+2. Only orders from Start date filter are displayed in the Orders list",,"1. Open Filters menu
+2. Set up Start date 
+3. Click  button Apply",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Filters menu
+2. Set up Start date 
+3. Click  button Apply
+Expected Result:
+1. The applied Date filter is represented above the list
+2. Only orders before the End date filter are displayed in the Orders list
+",,"1. The applied Date filter is represented above the list
+2. Only orders before the End date filter are displayed in the Orders list
+",,"1. Open Filters menu
+2. Set up Start date 
+3. Click  button Apply",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Filters menu
+2. Set up Start date and End Date 
+3. Click  button Apply
+Expected Result:
+1. The applied Date filters is represented above the list
+2. Only orders from Start date and before End date filter are displayed in the Orders list",,"1. The applied Date filters is represented above the list
+2. Only orders from Start date and before End date filter are displayed in the Orders list",,"1. Open Filters menu
+2. Set up Start date and End Date 
+3. Click  button Apply",
+C389127,Orders > filters > Predefined date filters,https://virtowayqa.testrail.io/index.php?/attachments/get/1000003887,,,"User1 has Orders with different Created date  (today, yesterday, last week, last month, last year)",Medium,,Filter,1,,Orders (Desktop+Mobile) > Filter,,"Step Description:
+Go to Orders Tab
+Click on Filters &gt; Click on Custom date
+Expected Result:
+The drop-down menu is displayed:
+
+- Last day
+- Last week
+- Last month
+- Last Year
+
+---
+
+ 
+",,"The drop-down menu is displayed:
+
+- Last day
+- Last week
+- Last month
+- Last Year
+
+---
+
+ 
+",,"Go to Orders Tab
+Click on Filters &gt; Click on Custom date",0
+,,,,,,,,,,,,,"
+Step Description:
+Select Last day
+Apply
+Check Start date, End date in chips and Date in Orders
+Expected Result:
+The appropriate orders are shown
+The count by status is correct
+The date in chips is correct
+
+---
+
+ ![](index.php?/attachments/get/dd33fa62-da7c-41a3-956b-3e7c20d1b984)
+",,"The appropriate orders are shown
+The count by status is correct
+The date in chips is correct
+
+---
+
+ ![](index.php?/attachments/get/dd33fa62-da7c-41a3-956b-3e7c20d1b984)
+",,"Select Last day
+Apply
+Check Start date, End date in chips and Date in Orders",
+,,,,,,,,,,,,,"
+Step Description:
+Select Last week
+Apply
+Check Start date, End date in chips and Date in Orders
+
+Expected Result:
+The appropriate orders are shown
+The count by status is correct
+The date in chips is correct
+",,"The appropriate orders are shown
+The count by status is correct
+The date in chips is correct
+",,"Select Last week
+Apply
+Check Start date, End date in chips and Date in Orders
+",
+,,,,,,,,,,,,,"
+Step Description:
+Select Last month
+Apply
+Check Start date, End date in chips and Date in Orders
+
+Expected Result:
+The appropriate orders are shown
+The count by status is correct
+The date in chips is correct
+",,"The appropriate orders are shown
+The count by status is correct
+The date in chips is correct
+",,"Select Last month
+Apply
+Check Start date, End date in chips and Date in Orders
+",
+,,,,,,,,,,,,,"
+Step Description:
+Select Last year
+Apply
+Check Start date, End date in chips and Date in Orders
+
+Expected Result:
+The appropriate orders are shown
+The count by status is correct
+The date in chips is correct
+",,"The appropriate orders are shown
+The count by status is correct
+The date in chips is correct
+",,"Select Last year
+Apply
+Check Start date, End date in chips and Date in Orders
+",
+C389128,Orders > filters > mix filters,,,,"1. User_1 created
+2. User_1 logged in to the store
+3. User_1 created several orders
+4. Go to Admin environment > Order > select Order > Status > Set different statuses  for the orders.
+5. Open My account page >  Orders tab 
+",Medium,,Filter,1,,Orders (Desktop+Mobile) > Filter,,"Step Description:
+1. Open Filters menu
+2. Set up Custom date
+3. Select and Status filter (eg New)
+4. Click  button Apply
+Expected Result:
+1. The applied filters is represented above the list
+2. Only orders from Start date and Status New filter are displayed in the Orders list
+
+",,"1. The applied filters is represented above the list
+2. Only orders from Start date and Status New filter are displayed in the Orders list
+
+",,"1. Open Filters menu
+2. Set up Custom date
+3. Select and Status filter (eg New)
+4. Click  button Apply",0
+C389129,Orders > filters > mix filters > Status + Predefined date,,,,"1. User_1 created
+2. User_1 logged in to the store
+3. User_1 created several orders
+4. Go to Admin environment > Order > select Order > Status > Set different statuses  for the orders.
+5. Open My account page >  Orders tab 
+",Medium,,Filter,1,,Orders (Desktop+Mobile) > Filter,,"Step Description:
+1. Open Filters menu
+2. Set up Last day date
+3. Select and Status filter (eg New)
+4. Click  button Apply
+Expected Result:
+1. The applied filters are represented above the list
+2. Only orders from Last day and Status New filter are displayed in the Orders list
+
+",,"1. The applied filters are represented above the list
+2. Only orders from Last day and Status New filter are displayed in the Orders list
+
+",,"1. Open Filters menu
+2. Set up Last day date
+3. Select and Status filter (eg New)
+4. Click  button Apply",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Filters menu
+2. Set up Last week date
+3. Select and Status filter (eg Payment required)
+4. Click  button Apply
+Expected Result:
+1. The applied filters are represented above the list
+2. Only orders Last week and Status Payment required filter are displayed in the Orders list
+",,"1. The applied filters are represented above the list
+2. Only orders Last week and Status Payment required filter are displayed in the Orders list
+",,"1. Open Filters menu
+2. Set up Last week date
+3. Select and Status filter (eg Payment required)
+4. Click  button Apply",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Filters menu
+2. Set up Last month date
+3. Select and Status filter (eg Processing)
+4. Click  button Apply
+Expected Result:
+1. The applied filters are represented above the list
+2. Only orders Last month and Status Processing filter are displayed in the Orders list",,"1. The applied filters are represented above the list
+2. Only orders Last month and Status Processing filter are displayed in the Orders list",,"1. Open Filters menu
+2. Set up Last month date
+3. Select and Status filter (eg Processing)
+4. Click  button Apply",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Filters menu
+2. Set up Last year date
+3. Select and Status filter (eg Completed)
+4. Click  button Apply
+Expected Result:
+1. The applied filters are represented above the list
+2. Only orders Last year and Status Completed filter are displayed in the Orders list",,"1. The applied filters are represented above the list
+2. Only orders Last year and Status Completed filter are displayed in the Orders list",,"1. Open Filters menu
+2. Set up Last year date
+3. Select and Status filter (eg Completed)
+4. Click  button Apply",
+C389130,Orders > filters > Reset filters,,,,"1. User_1 created
+2. User_1 logged to the store
+3. User_1 created several orders
+4. Open My account page >  Orders tab",Medium,,Filter,1,,Orders (Desktop+Mobile) > Filter,,"Step Description:
+1. Open Filter menu
+2. Select several filters (e.g. Filter_1-Filter_3)
+3. Click the button Apply
+
+
+Expected Result:
+1. The applied filter is represented above the Orders list
+3. Orders was filtered according to the selected filters",,"1. The applied filter is represented above the Orders list
+3. Orders was filtered according to the selected filters",,"1. Open Filter menu
+2. Select several filters (e.g. Filter_1-Filter_3)
+3. Click the button Apply
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Сlick Close icon on Filter_1 block
+
+
+Expected Result:
+1. Filter_2, Filter_3 blocks are presented above the  Orders list
+2. Orders  was filtered according to the Filter_2 and Filter_3
+
+",,"1. Filter_2, Filter_3 blocks are presented above the  Orders list
+2. Orders  was filtered according to the Filter_2 and Filter_3
+
+",,"1. Сlick Close icon on Filter_1 block
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Сlick Button """"Reset filters""""
+Expected Result:
+1. All applied filters removed
+2. No filters represented above the Orders List
+
+",,"1. All applied filters removed
+2. No filters represented above the Orders List
+
+",,"1. Сlick Button ""Reset filters""",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open the filters block
+2. Select several filters (e.g. Filter_1-Filter_3)
+3. Click the button Apply
+4. Open the filters block again
+5. Add more filters (e.g. Filter_4 + Filter_5)
+6. Click on the 'Reset' button of the filters block 
+Expected Result:
+1. Filters block closes
+2. Presents the list of all exists orders (All filters are reset)",,"1. Filters block closes
+2. Presents the list of all exists orders (All filters are reset)",,"1. Open the filters block
+2. Select several filters (e.g. Filter_1-Filter_3)
+3. Click the button Apply
+4. Open the filters block again
+5. Add more filters (e.g. Filter_4 + Filter_5)
+6. Click on the 'Reset' button of the filters block ",
+C389131,Orders > Close chips > filters are reset,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000000777, https://virtowayqa.testrail.io/index.php?/attachments/get/1000003133",,,,Medium,,Filter,1,,Orders (Desktop+Mobile) > Filter,,"Step Description:
+1. Click on Filter
+2. Set start date/End Date
+3. Select status
+4. Apply
+5. Remove chip Start Date
+6. Check data in pop-up
+
+Expected Result:
+The Start date is reset in pop-up
+
+---
+ ![](index.php?/attachments/get/ae55cca3-3167-4fb6-b9fa-d84429e8b9cf) 
+
+
+",,"The Start date is reset in pop-up
+
+---
+ ![](index.php?/attachments/get/ae55cca3-3167-4fb6-b9fa-d84429e8b9cf) 
+
+
+",,"1. Click on Filter
+2. Set start date/End Date
+3. Select status
+4. Apply
+5. Remove chip Start Date
+6. Check data in pop-up
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Remove chip End Date
+2. Check data in pop-up
+3. Select another status
+Expected Result:
+The End date is reset in pop-up
+
+---
+ ![](index.php?/attachments/get/2975c777-37b3-4423-8f6e-b91e4a644263) 
+",,"The End date is reset in pop-up
+
+---
+ ![](index.php?/attachments/get/2975c777-37b3-4423-8f6e-b91e4a644263) 
+",,"1. Remove chip End Date
+2. Check data in pop-up
+3. Select another status",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on Filter
+2. Set custom date &gt; Last week (last day, last month, last year)
+3. Select status
+4. Apply
+5. Remove chip Start Date
+
+
+Expected Result:
+The Start date is reset in pop-up
+
+",,"The Start date is reset in pop-up
+
+",,"1. Click on Filter
+2. Set custom date &gt; Last week (last day, last month, last year)
+3. Select status
+4. Apply
+5. Remove chip Start Date
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Remove chip End Date
+2. Check data in pop-up
+3. Select another status
+Expected Result:
+The End date is reset in pop-up
+
+
+",,"The End date is reset in pop-up
+
+
+",,"1. Remove chip End Date
+2. Check data in pop-up
+3. Select another status",
+C389178,Order details page > open page,,,1. User redirected to Order's details page,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. Go to the store
+4. User_1 created several orders
+5. Open My account page >  Orders tab
+",Medium,,Order details page,1,,Orders (Desktop+Mobile) > Order details page,1. Click on Order number line in the  list,,,,,,0
+C389179,Order details page > general  view,,,,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. Go to the store
+4. User_1 created several orders
+5. Open My account page >  Orders tab
+6. Open any order",Medium,,Order details page,1,,Orders (Desktop+Mobile) > Order details page,,"Step Description:
+1. Check the Order details page
+Expected Result:
+- Breadcrumbs (only on desktops)
+- Order number
+ 
+**Blocks:**
+
+
+- Purchased products grouping by Vendors
+- Accepted gifts with the amount
+- Order comment
+
+
+***ORDER DATA***
+
+* Created: Date format like in the Orders list (depends on localization)
+* Status
+
+*Order Summary*
+
+- Button Pay now
+
+
+- Billing address
+- Shipping address
+- Shipping method
+- Payment method
+- Button View invoice  NOT IMPLEMENTED YET",,"- Breadcrumbs (only on desktops)
+- Order number
+ 
+**Blocks:**
+
+
+- Purchased products grouping by Vendors
+- Accepted gifts with the amount
+- Order comment
+
+
+***ORDER DATA***
+
+* Created: Date format like in the Orders list (depends on localization)
+* Status
+
+*Order Summary*
+
+- Button Pay now
+
+
+- Billing address
+- Shipping address
+- Shipping method
+- Payment method
+- Button View invoice  NOT IMPLEMENTED YET",,1. Check the Order details page,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check Purchased products block
+Expected Result:
+1. Block includes the following information: 
+- Product lines 
+- Quantity
+- Total",,"1. Block includes the following information: 
+- Product lines 
+- Quantity
+- Total",,1. Check Purchased products block,
+,,,,,,,,,,,,,"
+Step Description:
+1. Check Order summary block
+Expected Result:
+1. Next elements are presented:
+
+
+- Purchased order title 
+- Purchased order field and submit button 
+- Promotion order title
+- Promotion order field and submit button
+- Subtotal
+- Discount (expandable)
+- Tax
+- Shipping cost
+- Total
+
+
+",,"1. Next elements are presented:
+
+
+- Purchased order title 
+- Purchased order field and submit button 
+- Promotion order title
+- Promotion order field and submit button
+- Subtotal
+- Discount (expandable)
+- Tax
+- Shipping cost
+- Total
+
+
+",,1. Check Order summary block,
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the next block:
+
+
+- Billing address 
+- Shipping method 
+- Payment address
+- Payment method 
+
+
+Expected Result:
+1. This block contains next information:
+- Shipping address: First and Last name, Line2, Line1, City, Region, Country, ZIP, phone, email
+- Shipping method: 
+- Billing address:
+- Payment method: First and Last name, Line2, Line1, City, Region, Country, ZIP, phone, email
+
+First and Last name, Line2, Line1, City, Region, Country, ZIP, phone, email
+
+",,"1. This block contains next information:
+- Shipping address: First and Last name, Line2, Line1, City, Region, Country, ZIP, phone, email
+- Shipping method: 
+- Billing address:
+- Payment method: First and Last name, Line2, Line1, City, Region, Country, ZIP, phone, email
+
+First and Last name, Line2, Line1, City, Region, Country, ZIP, phone, email
+
+",,"1. Check the next block:
+
+
+- Billing address 
+- Shipping method 
+- Payment address
+- Payment method 
+
+",
+C389180,"Order status =New > """"Pay now"""" is  shown",,,,"User_1 created
+User_1 belongs to the Organization_1
+Go to the store
+User_1 created several orders
+Create an Order with Accetped gifts and specified the comment.
+
+Open My Account page >  Orders tab
+",Medium,ST-3759,Order details page,1,,Orders (Desktop+Mobile) > Order details page,,"Step Description:
+Open an Order with a gift and comment
+Expected Result:
+The order details page is opened",,The order details page is opened,,Open an Order with a gift and comment,0
+,,,,,,,,,,,,,"
+Step Description:
+Check the Order data section
+Expected Result:
+The status is New",,The status is New,,Check the Order data section,
+,,,,,,,,,,,,,"
+Step Description:
+Check the Pay Now button
+Expected Result:
+The button Pay Now is shown under the Order summary block",,The button Pay Now is shown under the Order summary block,,Check the Pay Now button,
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Pay now button
+Expected Result:
+The Payment page is opened",,The Payment page is opened,,Click on the Pay now button,
+C389181,"Order status = Completed > """"Reorder All"""" is shown",,,,"User_1 created several orders
+Create an Order with Accetped gifts and specified the comment.
+
+Go admin > Orders > Set status = Completed
+
+Open My Account page >  Orders tab",Medium,ST-3759,Order details page,1,,Orders (Desktop+Mobile) > Order details page,,"Step Description:
+Open an Order1 with the status Completed
+Check the Order data section
+
+Expected Result:
+The status is Completed",,The status is Completed,,"Open an Order1 with the status Completed
+Check the Order data section
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Check the Reorder All button
+Expected Result:
+The Reorder All button is shown
+
+
+",,"The Reorder All button is shown
+
+
+",,Check the Reorder All button,
+C389182,Order status is not New or Completed,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000002797, https://virtowayqa.testrail.io/index.php?/attachments/get/1000004469",,,"User_1 belongs to the Organization_1
+Go to the store
+User_1 created several orders
+
+
+Go to admin > Orders > Set status Processing or Pending for Order
+Open My Account page >  Orders tab
+",Medium,,Order details page,1,,Orders (Desktop+Mobile) > Order details page,,"Step Description:
+Open an Order1 with the status Processing
+Expected Result:
+The order details page is opened",,The order details page is opened,,Open an Order1 with the status Processing,0
+,,,,,,,,,,,,,"
+Step Description:
+Check the Order data section
+Expected Result:
+The status is Processing",,The status is Processing,,Check the Order data section,
+,,,,,,,,,,,,,"
+Step Description:
+Check the Pay Now button
+Expected Result:
+The button Pay Now **is hidden**
+
+ ![](index.php?/attachments/get/f7bcd1da-0ff6-4ff4-9f78-532c7ec669b5) 
+
+",,"The button Pay Now **is hidden**
+
+ ![](index.php?/attachments/get/f7bcd1da-0ff6-4ff4-9f78-532c7ec669b5) 
+
+",,Check the Pay Now button,
+,,,,,,,,,,,,,"
+Step Description:
+Go to admin &gt; Set status = pending for Order
+Go to storefront &gt; Orders
+Open Order
+Expected Result:
+The status is Pending
+The button Pay now **is hidden**
+
+ ![](index.php?/attachments/get/9a085604-9833-4696-9e3b-f5f1c0597e98) 
+",,"The status is Pending
+The button Pay now **is hidden**
+
+ ![](index.php?/attachments/get/9a085604-9833-4696-9e3b-f5f1c0597e98) 
+",,"Go to admin &gt; Set status = pending for Order
+Go to storefront &gt; Orders
+Open Order",
+C389183,Order details  > Print order,https://virtowayqa.testrail.io/index.php?/attachments/get/1000002705,,"Print icon displays 
+system opens the print page in a new tab
+
+ ![](index.php?/attachments/get/95621242-c8e6-4633-a85d-26202366f899)
+
+
+",,Medium,,Order details page,1,,Orders (Desktop+Mobile) > Order details page,"Create Order 
+Open the Order details page 
+Click on Print icon
+
+",,,,,,0
+C389184,Order details page > Get invoice  NOT IMPLEMENTED YET,,,1. PDF file with order invoice opened,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. Go to the store
+4. User_1 created several orders
+5. Open My account page >  Orders tab
+6. Open any order",Medium,,Order details page,1,,Orders (Desktop+Mobile) > Order details page,1. Click on button **Get invoice**,,,,,,0
+C389185,MOBILE > Order details page  > back,,,1. User redirected to Orders list page,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. Go to the store
+4. User_1 created several orders
+5. Open My account page >  Orders tab
+",Medium,,Order details page,1,,Orders (Desktop+Mobile) > Order details page,"1. Open any order
+2. Click on button Back",,,,,,0
+C389138,Order with one Vendor group,,,,,Medium,,Grouping items by vendor,2,,Orders (Desktop+Mobile) > Order details page > Grouping items by vendor,,,,,,,0
+C389139,Order with multiple Vendor groups,,,,,Medium,,Grouping items by vendor,2,,Orders (Desktop+Mobile) > Order details page > Grouping items by vendor,,,,,,,0
+C389140,Order with deleted product > Check Vendor group,,,,,Medium,,Grouping items by vendor,2,,Orders (Desktop+Mobile) > Order details page > Grouping items by vendor,,,,,,,0
+C389099,Reorder all > Successfully added > All products are available,,,,"User_1 has created order_1 with 8 products
+
+Go to admin site > Set status = Completed for Order1
+
+Open Account >  Orders tab
+Open order_1",Medium,,Reorder all,1,,Orders (Desktop+Mobile) > Reorder all,,"Step Description:
+Click button Reorder all
+Check the Popup
+Expected Result:
+The title is shown as """"Adding products to cart result"""".
+
+Section Successfully added with count (uncollapsed by default)
+
+- SKU
+- Product's title (link)
+- Quantity
+- Scrolling
+
+Button Ok
+
+
+  
+",,"The title is shown as ""Adding products to cart result"".
+
+Section Successfully added with count (uncollapsed by default)
+
+- SKU
+- Product's title (link)
+- Quantity
+- Scrolling
+
+Button Ok
+
+
+  
+",,"Click button Reorder all
+Check the Popup",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the section Successfully added
+Click one more time
+Expected Result:
+The section is collapsed. The list of products is hidden
+The section is uncollapsed. The list of products shown",,"The section is collapsed. The list of products is hidden
+The section is uncollapsed. The list of products shown",,"Click on the section Successfully added
+Click one more time",
+,,,,,,,,,,,,,"
+Step Description:
+Click Ok
+Go to the cart and check the products
+Expected Result:
+All products were added to the cart successfully. ",,All products were added to the cart successfully. ,,"Click Ok
+Go to the cart and check the products",
+C389100,Reorder all > Not added > out of stock,,,,"User_1 has created order_1 with several products (product_1 is out of stock)
+Open Account >  Orders tab
+Open order_1",Medium,,Reorder all,1,,Orders (Desktop+Mobile) > Reorder all,,"Step Description:
+Click button Reorder all
+Check the Popup
+Expected Result:
+The product_1 is shown in the section Not added
+ 
+
+ 
+",,"The product_1 is shown in the section Not added
+ 
+
+ 
+",,"Click button Reorder all
+Check the Popup",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the section Not added added
+Click one more time
+Expected Result:
+The section is collapsed. The list of products is hidden
+The section is uncollapsed. The list of products shown",,"The section is collapsed. The list of products is hidden
+The section is uncollapsed. The list of products shown",,"Click on the section Not added added
+Click one more time",
+,,,,,,,,,,,,,"
+Step Description:
+Click Ok
+Go to the cart and check the products
+Expected Result:
+Product_1 was not added to the cart.",,Product_1 was not added to the cart.,,"Click Ok
+Go to the cart and check the products",
+C389101,Reorder all > Not added > Can't be purchased,,,,"User_1 has created order_1 with several products (product_1 Can't be purchased = false)
+Open Account >  Orders tab
+Open order_1",Medium,,Reorder all,1,,Orders (Desktop+Mobile) > Reorder all,,"Step Description:
+Click button Reorder all
+Check the Popup
+Expected Result:
+The product_1 is shown in the section Not added
+
+  
+
+
+
+",,"The product_1 is shown in the section Not added
+
+  
+
+
+
+",,"Click button Reorder all
+Check the Popup",0
+,,,,,,,,,,,,,"
+Step Description:
+Click Ok
+Go to the cart and check the products
+Expected Result:
+Product_1 was not added to the cart.",,Product_1 was not added to the cart.,,"Click Ok
+Go to the cart and check the products",
+C389102,Reorder all > Not added > Visible = false,,,,"User_1 has created order_1 with several products (product_1 Visile = false)
+Open Account >  Orders tab
+Open order_1",Medium,,Reorder all,1,,Orders (Desktop+Mobile) > Reorder all,,"Step Description:
+Click button Reorder all
+Check the Popup
+Expected Result:
+The product_1 is shown in the section Not added
+
+
+  
+",,"The product_1 is shown in the section Not added
+
+
+  
+",,"Click button Reorder all
+Check the Popup",0
+,,,,,,,,,,,,,"
+Step Description:
+Click Ok
+Go to the cart and check the products
+Expected Result:
+Product_1 was not added to the cart.",,Product_1 was not added to the cart.,,"Click Ok
+Go to the cart and check the products",
+C389103,Reorder all > Not added > Limit quantity,,,,"User_1 has created order_1 (product_1 MinQty is more than in Order / MaxQty is less than in order )
+Open Account >  Orders tab
+Open order_1
+
+",Medium,,Reorder all,1,,Orders (Desktop+Mobile) > Reorder all,,"Step Description:
+Click button Reorder all
+Check the Popup
+Expected Result:
+The product_1 is shown in the Section Not added
+
+
+",,"The product_1 is shown in the Section Not added
+
+
+",,"Click button Reorder all
+Check the Popup",0
+,,,,,,,,,,,,,"
+Step Description:
+Click Ok
+Go to the cart and check the products
+Expected Result:
+Product_1 was not added to the cart.",,Product_1 was not added to the cart.,,"Click Ok
+Go to the cart and check the products",
+C389104,Reorder all > Not added > Deleted product,,,,"User_1 has created order_1 (product_1 was deleted from catalog)
+Open Account >  Orders tab
+Open order_1",Medium,,Reorder all,1,,Orders (Desktop+Mobile) > Reorder all,,"Step Description:
+Click button Reorder all
+Check the Popup
+Expected Result:
+The product_1 is shown in the section Not added",,The product_1 is shown in the section Not added,,"Click button Reorder all
+Check the Popup",0
+,,,,,,,,,,,,,"
+Step Description:
+Click Ok
+Go to the cart and check the products
+Expected Result:
+Product_1 was not added to the cart.",,Product_1 was not added to the cart.,,"Click Ok
+Go to the cart and check the products",
+C389105,Reorder all > Quantity reduced,,,,,Medium,,Reorder all,1,,Orders (Desktop+Mobile) > Reorder all,,,,,,,0
+C389106,Reorder all > All sections,,,,"User_1 has created order_1 with 6 products (2 available + 1 out of stock + 1 visible = false + 1 can't be purchased = false + 1 minQty)
+Open Account >  Orders tab
+Open order_1",Medium,,Reorder all,1,,Orders (Desktop+Mobile) > Reorder all,,"Step Description:
+Click button Reorder all
+Check the Popup
+Expected Result:
+There are sections successfully added and Not added in the pop-up. All sections collapsed
+
+  
+",,"There are sections successfully added and Not added in the pop-up. All sections collapsed
+
+  
+",,"Click button Reorder all
+Check the Popup",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the section Successfully added
+Expected Result:
+The section is uncollapsed. The section Successfully added contains 2 products.
+
+  
+
+
+",,"The section is uncollapsed. The section Successfully added contains 2 products.
+
+  
+
+
+",,Click on the section Successfully added,
+,,,,,,,,,,,,,"
+Step Description:
+Click on the section Not added
+Expected Result:
+The section Successfully added was closed. Not added is opened.
+All 4 unavailable products are shown",,"The section Successfully added was closed. Not added is opened.
+All 4 unavailable products are shown",,Click on the section Not added,
+,,,,,,,,,,,,,"
+Step Description:
+Click Ok
+Go to the cart and check the products
+Expected Result:
+Only 2 products were added to the cart",,Only 2 products were added to the cart,,"Click Ok
+Go to the cart and check the products",
+C389157,Print > All sections > Multiple line-items,,,,"The order1 contains available and out-of-stock products
+The order has Completed status
+
+
+",Medium,,Print from the Order,2,,Orders (Desktop+Mobile) > Reorder all > Print from the Order,,"Step Description:
+Go to Orders &gt; Order1
+Click on Reorder all
+Expected Result:
+The title is shown as """"Adding products to cart result"""".
+
+Section Successfully added with count
+Section Not added with count
+
+**Table for each section**
+
+SKU
+Product's title (link)
+Quantity
+Scrolling
+
+**Buttons:**
+
+- View cart
+- Print
+- Ok
+
+ ![](index.php?/attachments/get/d1d93605-9851-43c4-9ea5-b710ddaffdb3) 
+",,"The title is shown as ""Adding products to cart result"".
+
+Section Successfully added with count
+Section Not added with count
+
+**Table for each section**
+
+SKU
+Product's title (link)
+Quantity
+Scrolling
+
+**Buttons:**
+
+- View cart
+- Print
+- Ok
+
+ ![](index.php?/attachments/get/d1d93605-9851-43c4-9ea5-b710ddaffdb3) 
+",,"Go to Orders &gt; Order1
+Click on Reorder all",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on Print
+Expected Result:
+The PDF is opened in a separate window
+
+- New tab: full report for print is opened
+
+- The print dialog box in the browser
+
+",,"The PDF is opened in a separate window
+
+- New tab: full report for print is opened
+
+- The print dialog box in the browser
+
+",,Click on Print,
+,,,,,,,,,,,,,"
+Step Description:
+Verify the document
+Expected Result:
+1. The title should be the same as the order number
+2. There are two uncollapsed sections Successfully added with mark icon and Not added with cross icon
+3. The number of line items should match the pop-up Adding products to cart result
+
+**Table for each section**
+
+- Product name
+- SKU
+- Quantity
+
+",,"1. The title should be the same as the order number
+2. There are two uncollapsed sections Successfully added with mark icon and Not added with cross icon
+3. The number of line items should match the pop-up Adding products to cart result
+
+**Table for each section**
+
+- Product name
+- SKU
+- Quantity
+
+",,Verify the document,
+,,,,,,,,,,,,,"
+Step Description:
+Save the PDF document with all default settings
+Open Document and verify 
+Expected Result:
+The pdf file is opened successfully. The text is aligned in accordance with the selected layout",,The pdf file is opened successfully. The text is aligned in accordance with the selected layout,,"Save the PDF document with all default settings
+Open Document and verify ",
+C389158,Print > Successfully added,,,,"The order1 contains available products
+The order has a Completed status
+
+
+",Medium,,Print from the Order,2,,Orders (Desktop+Mobile) > Reorder all > Print from the Order,,"Step Description:
+Click on Reorder all
+Click on Print
+
+Expected Result:
+The preview document is opened in a separate window",,The preview document is opened in a separate window,,"Click on Reorder all
+Click on Print
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Verify the document
+Expected Result:
+1. The title should be the same as the order number
+2. There is one uncollapsed section **Successfully added** with mark icon
+3. The number of line items should match the pop-up Adding products to cart result
+
+
+**Table**
+
+Product name
+SKU
+Quantity",,"1. The title should be the same as the order number
+2. There is one uncollapsed section **Successfully added** with mark icon
+3. The number of line items should match the pop-up Adding products to cart result
+
+
+**Table**
+
+Product name
+SKU
+Quantity",,Verify the document,
+C389159,Print > Not added,,,,"The order1 contains unavailable and out-of-stock products
+The order has a Completed status
+
+
+",Medium,,Print from the Order,2,,Orders (Desktop+Mobile) > Reorder all > Print from the Order,,"Step Description:
+Click on Reorder all
+Click on Print
+
+Expected Result:
+The preview document is opened in a separate window",,The preview document is opened in a separate window,,"Click on Reorder all
+Click on Print
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Verify the document
+Expected Result:
+1. The title should be the same as the order number
+2. There is one uncollapsed section **Not added** with cross icon
+3. The number of line items should match the pop-up Adding products to cart result
+
+
+**Table**
+
+Product name
+SKU
+Quantity",,"1. The title should be the same as the order number
+2. There is one uncollapsed section **Not added** with cross icon
+3. The number of line items should match the pop-up Adding products to cart result
+
+
+**Table**
+
+Product name
+SKU
+Quantity",,Verify the document,
+C389160,Print > 1 line-item,,,,,Medium,,Print from the Order,2,,Orders (Desktop+Mobile) > Reorder all > Print from the Order,,,,,,,0
+C389141,Reorder all > Popup general view,,,,"1. User_1 created
+3. Go to the store
+4. User_1 has created order_1 with 8 products 
+5. Open My account page >  Orders tab
+6. Open order_1",Medium,,Reorder all (deprecated),1,,Orders (Desktop+Mobile) > Reorder all (deprecated),,"Step Description:
+1. Click button Reorder all
+2. Check the Popup 
+Expected Result:
+1. Title is shown.
+2. Filter products by: Reduced quantity, Out of stock, Items without changes
+3. List of the products presented:
+- Picture
+- Product's title
+- Amount field
+- Total price
+4. Pagination
+5. Buttons Cancel, Confirm",,"1. Title is shown.
+2. Filter products by: Reduced quantity, Out of stock, Items without changes
+3. List of the products presented:
+- Picture
+- Product's title
+- Amount field
+- Total price
+4. Pagination
+5. Buttons Cancel, Confirm",,"1. Click button Reorder all
+2. Check the Popup ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the product list
+Expected Result:
+1. 4 products presented on the 1st page",,1. 4 products presented on the 1st page,,1. Check the product list,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click  page 2
+Expected Result:
+1. 2 products presented",,1. 2 products presented,,1. Click  page 2,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click button Cancel
+Expected Result:
+1. PopUp  closed",,1. PopUp  closed,,1. Click button Cancel,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click Button Reorder all again
+2. Click button Confirm on Popup
+
+
+Expected Result:
+1. Checkout page opens
+2. All 8 products presented",,"1. Checkout page opens
+2. All 8 products presented",,"1. Click Button Reorder all again
+2. Click button Confirm on Popup
+
+",
+C389142,Reorder all > reorder products > update amount,,,,"1. User_1 created
+2. Go to the store
+3. User_1 has created order_1 with several products 
+4. Go to Admin Environment > Catalog > Products - set all as available ",Medium,,Reorder all (deprecated),1,,Orders (Desktop+Mobile) > Reorder all (deprecated),,"Step Description:
+1. Open My account page >  Orders tab
+2. Open order_1
+3. Click button Reorder all
+4. Update amount for any product
+5. Check the price
+Expected Result:
+1. Price updated
+",,"1. Price updated
+",,"1. Open My account page >  Orders tab
+2. Open order_1
+3. Click button Reorder all
+4. Update amount for any product
+5. Check the price",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click button Confirm
+Expected Result:
+1. Check out page opens",,1. Check out page opens,,1. Click button Confirm,
+C389143,Reorder all > reorder products > success,,,,"1. User_1 created
+2. Go to the store
+3. User_1 has created order_1 with several products 
+4. Go to Admin Environment > Catalog > Products - set all as available ",Medium,,Reorder all (deprecated),1,,Orders (Desktop+Mobile) > Reorder all (deprecated),,"Step Description:
+1. Open My account page >  Orders tab
+2. Open order_1
+3. Click button Reorder all
+4. Check the Popup 
+Expected Result:
+1. Title Reorder confirmation
+2. Product_1 added to reorder
+
+",,"1. Title Reorder confirmation
+2. Product_1 added to reorder
+
+",,"1. Open My account page >  Orders tab
+2. Open order_1
+3. Click button Reorder all
+4. Check the Popup ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click button Confirm
+Expected Result:
+1. Check out page opens",,1. Check out page opens,,1. Click button Confirm,
+C389144,Reorder all > reorder products > limit quantity,,,,"1. User_1 created
+2. Go to the store
+3. User_1 has created order_1 with Product_1 (for example 10),  Product_2 any quantity
+4. Go to Admin Environment > Catalog > Product_1 - set less available amount than in order for example, 4
+
+",Medium,,Reorder all (deprecated),1,,Orders (Desktop+Mobile) > Reorder all (deprecated),,"Step Description:
+1. Open My account page >  Orders tab
+2. Open order_1
+3. Click button Reorder all
+4. Check the Popup 
+Expected Result:
+1. Title Reorder confirmation
+2. Product_1 has notification about reduced amount from 10 to 4
+3. Product_1 field shown quantity as 4
+4. Product_2 presented
+
+",,"1. Title Reorder confirmation
+2. Product_1 has notification about reduced amount from 10 to 4
+3. Product_1 field shown quantity as 4
+4. Product_2 presented
+
+",,"1. Open My account page >  Orders tab
+2. Open order_1
+3. Click button Reorder all
+4. Check the Popup ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click checkbox __Reduced quantity__
+
+Expected Result:
+1. Only product_1 presented",,1. Only product_1 presented,,"1. Click checkbox __Reduced quantity__
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click checkbox __Items without changes__
+Expected Result:
+1. Only product_2 presented",,1. Only product_2 presented,,1. Click checkbox __Items without changes__,
+C389145,Reorder all > reorder products > price N/A or 0,,,,"1. User_1 created
+2. Go to the store
+3. User_1 has created order_1 with Product_1
+4. Go to Admin Environment > Catalog > Product_1 > widget __Price__ > set up the price as 0 or remove  price
+",Medium,,Reorder all (deprecated),1,,Orders (Desktop+Mobile) > Reorder all (deprecated),,"Step Description:
+1. Open Order_1
+2. Click button Reorder all
+3. Pay attention to the Product_1
+Expected Result:
+1. There is a notification, that product is not longer available for purchase.",,"1. There is a notification, that product is not longer available for purchase.",,"1. Open Order_1
+2. Click button Reorder all
+3. Pay attention to the Product_1",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click checkbox __Can't be purchased__
+Expected Result:
+1. Only Product_1 presented",,1. Only Product_1 presented,,1. Click checkbox __Can't be purchased__,
+C389146,Reorder all > reorder products > can't be purchased,,,,"1. User_1 created
+2. Go to the store
+3. User_1 has created order_1 with Product_1, Product_2 in any quantity
+4. Go to Admin Environment > Catalog > Product_1 - set toggle as Can't purchased; Product_2 - delete product.
+
+",Medium,,Reorder all (deprecated),1,,Orders (Desktop+Mobile) > Reorder all (deprecated),,"Step Description:
+1. Open Order_1
+2. Click button Reorder all
+3. Pay attention to the Product_1
+Expected Result:
+1. There is a notification, that product_1 is not longer available for purchase.",,"1. There is a notification, that product_1 is not longer available for purchase.",,"1. Open Order_1
+2. Click button Reorder all
+3. Pay attention to the Product_1",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click checkbox __Can't be purchased__
+Expected Result:
+1. Only Product_1 presented",,1. Only Product_1 presented,,1. Click checkbox __Can't be purchased__,
+C389147,Reorder all > reorder products > visible,,,,"1. User_1 created
+2. Go to the store
+3. User_1 has created order_1 with Product_1, Product_2 with any quantity
+4. Go to Admin Environment > Catalog > Product_1 > Toggle __Visible__ > switch off
+
+",Medium,,Reorder all (deprecated),1,,Orders (Desktop+Mobile) > Reorder all (deprecated),,"Step Description:
+1. Open Order_1
+2. Click button Reorder all
+3. Pay attention to the Product_1 
+Expected Result:
+1. There is a notification, that product is not longer available for purchase.",,"1. There is a notification, that product is not longer available for purchase.",,"1. Open Order_1
+2. Click button Reorder all
+3. Pay attention to the Product_1 ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click checkbox __Can't be purchased__
+Expected Result:
+1. Only Product_1 presented",,1. Only Product_1 presented,,1. Click checkbox __Can't be purchased__,
+C389148,Reorder all > reorder products > out of stock > FFC 0,,,,"1. User_1 created
+2. Go to the store
+3. User_1 has created order_1 with Product_1, Product_2 in any quantity
+4. Go to Admin Environment > Catalog > Product_1 > widget Fulfillment center > Set 0 for all available FFC
+",Medium,,Reorder all (deprecated),1,,Orders (Desktop+Mobile) > Reorder all (deprecated),,"Step Description:
+1. Open My account page >  Orders tab
+2. Open order_1
+3. Click button Reorder all
+4. Check the Popup 
+Expected Result:
+1. Title Reorder confirmation
+2. Product_1 has notification that product is out of stock
+3. Product_1 field shown quantity as 0
+4. Product_2 presented
+
+
+
+",,"1. Title Reorder confirmation
+2. Product_1 has notification that product is out of stock
+3. Product_1 field shown quantity as 0
+4. Product_2 presented
+
+
+
+",,"1. Open My account page >  Orders tab
+2. Open order_1
+3. Click button Reorder all
+4. Check the Popup ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click checkbox __Out of stock__
+Expected Result:
+1. Only product_1 presented",,1. Only product_1 presented,,1. Click checkbox __Out of stock__,
+C398701,Verify 'Agency' and 'Personal' Tabs Are Visible for Company Owner,,,Both tabs should be visible only for company owners.,User is logged in as a company owner.,High,,Permissions,2,,Orders (Desktop+Mobile) > Company Orders > Permissions,"1. Navigate to the Orders page.
+2. Check if both 'Agency' and 'Personal' tabs are displayed.",,,,,,0
+C398702,Verify 'All orders' and 'My orders' Tabs Are Not Visible for Regular Users,,,Regular users should not see 'All orders' and 'My orders' tabs.,User is logged in as a regular organization user (not an owner).,High,,Permissions,2,,Orders (Desktop+Mobile) > Company Orders > Permissions,"1. Navigate to the Orders page.
+2. Check if 'All orders' and 'My orders' tabs are displayed.",,,,,,0
+C398703,Verify Order Access Based on User Role,,,"Company owners should see all orders, while regular users should see only their own.",Orders exist for multiple users with different roles.,High,,Permissions,2,,Orders (Desktop+Mobile) > Company Orders > Permissions,"1. Log in as a company owner.
+2. Verify that both personal and agency orders are accessible.
+3. Log in as a regular user.
+4. Verify that only personal orders are visible.",,,,,,0
+C398692,Verify 'Buyer Name' Column is Displayed,,,The 'Buyer Name' column should be visible and display correct names.,User is logged in and navigates to the Order History page.,High,,Order History,2,,Orders (Desktop+Mobile) > Company Orders > Order History,"1. Go to the Orders page.
+2. Look at the order list table.
+3. Check for the presence of the 'Buyer Name' column.",,,,,,0
+C398693,Verify 'All Orders' Tab Displays Orders,,,Orders should be visible under 'Agency' and include historical users.,User has multiple orders placed by different organization users.,High,,Order History,2,,Orders (Desktop+Mobile) > Company Orders > Order History,"1. Go to the Orders page.
+2. Select the 'Agency' tab.
+3. Verify all organization users' orders are listed.",,,,,,0
+C398694,Verify Filters Panel Opens,,,"Filters panel should appear with options for Create Date, Buyer name, Order Status, etc.",User is on the Orders page.,Medium,,Filters,2,,Orders (Desktop+Mobile) > Company Orders > Filters,"1. Click on the 'Filters' button.
+2. Verify the filter panel appears.",,,,,,0
+C398695,Verify Orders are Filtered by Date,,,Only orders within the selected date range should be displayed.,Orders exist with different creation dates.,High,,Filters,2,,Orders (Desktop+Mobile) > Company Orders > Filters,"1. Open Filters panel.
+2. Select a Start Date and End Date.
+3. Click Apply and check the results.",,,,,,0
+C398696,Verify Search Field is Present,,,Search field should be visible and allow input.,User is logged in and on the Orders page.,Medium,,Search,2,,Orders (Desktop+Mobile) > Company Orders > Search,1. Look for the search input field at the top of the Orders page.,,,,,,0
+C398697,Verify Searching by Order Number,,,Only the order with the matching number should be displayed.,Orders exist in the system.,High,,Search,2,,Orders (Desktop+Mobile) > Company Orders > Search,"1. Enter an existing order number in the search field.
+2. Press Enter or click the search button.",,,,,,0
+C398698,Verify Searching by Buyer Name,,,Only orders matching the buyer name should be displayed.,Orders exist for different buyers.,High,,Search,2,,Orders (Desktop+Mobile) > Company Orders > Search,"1. Click on filter > Buyer name > Select multiple members
+2. Press Apply button.",,,,,,0
+C398699,Verify Pagination Appears,,,Pagination should be available when more than 10 orders exist.,More than 10 orders exist in the system.,Medium,,Pagination,2,,Orders (Desktop+Mobile) > Company Orders > Pagination,"1. Navigate to the Orders page.
+2. Check if pagination controls are visible.",,,,,,0
+C398700,Verify Navigation Between Pages,,,Orders list should update correctly when moving between pages.,Pagination is present (more than 10 orders).,High,,Pagination,2,,Orders (Desktop+Mobile) > Company Orders > Pagination,"1. Click on Next Page.
+2. Verify the next set of orders is displayed.
+3. Click on Previous Page and verify the previous orders return.",,,,,,0

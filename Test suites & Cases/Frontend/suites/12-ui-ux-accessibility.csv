@@ -1,0 +1,2843 @@
+ID,Title,Attachments,Estimate,Expected Result,Preconditions,Priority,References,Section,Section Depth,Section Description,Section Hierarchy,Steps,Steps,Steps (Additional Info),Steps (Expected Result),Steps (References),Steps (Step),is_converted
+C388985,Language selector > general view + default,,,,"1. Go to the  Admin environment > Store >  Language > set languages available for the store ( e.g. English, German)
+
+
+",Medium,,Header,0,,Header,,"Step Description:
+1. Go to the store
+2. Check the Language selector on the Header
+Expected Result:
+1. Next element are presented:
+- Title
+- Language icon
+- Code of the language
+- Drop-n-down menu
+
+",,"1. Next element are presented:
+- Title
+- Language icon
+- Code of the language
+- Drop-n-down menu
+
+",,"1. Go to the store
+2. Check the Language selector on the Header",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the set language
+Expected Result:
+1. English language set by default
+",,"1. English language set by default
+",,1. Check the set language,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on drop-down menu
+2. Check the menu
+Expected Result:
+1. Languages selected in the store settings are available: English, French, German ",,"1. Languages selected in the store settings are available: English, French, German ",,"1. Click on drop-down menu
+2. Check the menu",
+C388986,Language selector > language URL,,,,"1. Go to the  Admin environment > Store >  Language > set languages available for the store ( e.g. English, German)
+
+
+",Medium,,Header,0,,Header,,"Step Description:
+1. Go to the store
+2. English language is selected by default
+3. Pay attention to the URL
+Expected Result:
+1. There is not prefix with language code added to the URL
+",,"1. There is not prefix with language code added to the URL
+",,"1. Go to the store
+2. English language is selected by default
+3. Pay attention to the URL",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on Language drop-down menu
+2. Select French language
+3. Pay attention to the URL
+Expected Result:
+1. Prefix with language code is added to the URL
+
+",,"1. Prefix with language code is added to the URL
+
+",,"1. Click on Language drop-down menu
+2. Select French language
+3. Pay attention to the URL",
+,,,,,,,,,,,,,"
+Step Description:
+1. Close the store
+2. Open store again
+3. Pay attention to the URL
+
+Expected Result:
+1. Prefix with French language is added to the URL
+2. Selected language on the step 2. is saved in Local Storage
+
+",,"1. Prefix with French language is added to the URL
+2. Selected language on the step 2. is saved in Local Storage
+
+",,"1. Close the store
+2. Open store again
+3. Pay attention to the URL
+",
+C388987,Language selector > change language,,,,"1. Go to the  Admin environment > Store >  Language > set languages available for the store ( e.g. English, German)
+
+",Medium,,Header,0,,Header,,"Step Description:
+1. Go to the store
+2. English language is selected by default
+3. Change language to a German
+4. Go through the store
+5. Pay attention on the localizations
+Expected Result:
+1. Languages has been change through the store
+",,"1. Languages has been change through the store
+",,"1. Go to the store
+2. English language is selected by default
+3. Change language to a German
+4. Go through the store
+5. Pay attention on the localizations",0
+C388988,Currency selector > general view + default,,,,"1. Go to the  Admin environment > Store >  Currency > set currency available for the store ( for example USD, EUR, THB)
+2. Go to the store",Medium,,Header,0,,Header,,"Step Description:
+1. Check the Currency selector on the Header
+Expected Result:
+1. Next element are presented:
+- Title
+- Currency icon
+- Currency 
+- Drop-n-down menu
+
+",,"1. Next element are presented:
+- Title
+- Currency icon
+- Currency 
+- Drop-n-down menu
+
+",,1. Check the Currency selector on the Header,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the set Currency 
+Expected Result:
+1. USD currency set by default
+",,"1. USD currency set by default
+",,1. Check the set Currency ,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on drop-down menu
+2. Check the menu
+Expected Result:
+1. Currency selected in the store settings are available: USD, EUR, THB",,"1. Currency selected in the store settings are available: USD, EUR, THB",,"1. Click on drop-down menu
+2. Check the menu",
+C388989,Currency selector > change currency,,,,"1. Go to the  Admin environment > Store >  Currency > set currency available for the store ( for example USD, EUR, THB)
+2. Go to the store",Medium,,Header,0,,Header,,"Step Description:
+1. Go to any Catalog
+2. Click on Currency drop-down menu
+3. Select EUR 
+Expected Result:
+1. Catalog is reload
+2. All prices in the Catalog have changed according to the new currency.
+3. All currency icons have changed according to the new currency.",,"1. Catalog is reload
+2. All prices in the Catalog have changed according to the new currency.
+3. All currency icons have changed according to the new currency.",,"1. Go to any Catalog
+2. Click on Currency drop-down menu
+3. Select EUR ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check next pages through the store:
+- Product pages
+- Cart page with products
+- Search page
+- Compare page
+- Reorder all pop up
+Expected Result:
+1. All prices in the Catalog have changed according to the new currency.
+2. All currency icons have changed according to the new currency.",,"1. All prices in the Catalog have changed according to the new currency.
+2. All currency icons have changed according to the new currency.",,"1. Check next pages through the store:
+- Product pages
+- Cart page with products
+- Search page
+- Compare page
+- Reorder all pop up",
+,,,,,,,,,,,,,"
+Step Description:
+1. Close the store
+2. Open store again
+3. Pay attention to the Currency in the header 
+Expected Result:
+1. Selected Currency set as EUR
+2. Selected language on the step 1. is saved in Local Storage",,"1. Selected Currency set as EUR
+2. Selected language on the step 1. is saved in Local Storage",,"1. Close the store
+2. Open store again
+3. Pay attention to the Currency in the header ",
+C389020,Header > general view for anonymous user,,,,"1. Go to the store.
+
+
+",Medium,,Header > For anonymous,1,,Header > Header > For anonymous,,"Step Description:
+1. Check the header 
+
+
+Expected Result:
+1. Language selector
+2. Currency selector
+3. Next links are presented:
+- Call us: Number_link
+- Contacts
+- Sigh in
+- Sign up now
+
+",,"1. Language selector
+2. Currency selector
+3. Next links are presented:
+- Call us: Number_link
+- Contacts
+- Sigh in
+- Sign up now
+
+",,"1. Check the header 
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click link Sign in
+Expected Result:
+1. Sign in page opens",,1. Sign in page opens,,1. Click link Sign in,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click Sign up now
+Expected Result:
+1. Registration page opens",,1. Registration page opens,,1. Click Sign up now,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on Number_link
+Expected Result:
+1. The default browser popup presented",,1. The default browser popup presented,,1. Click on Number_link,
+C389031,Header > general view for logged in user,,,,"1. User_1 created
+2. User_1 logged in to the store.
+
+
+
+",Medium,,Header > logged in user,1,,Header > Header > logged in user,,"Step Description:
+1. Check the header.
+Expected Result:
+1. Language selector
+2. Currency selector
+3. Next hyperlinks are presented: 
+- Call us: Number_link
+- Dashboard 
+- Contacts
+- Lists
+- Name User_1 with drop-down menu 
+
+",,"1. Language selector
+2. Currency selector
+3. Next hyperlinks are presented: 
+- Call us: Number_link
+- Dashboard 
+- Contacts
+- Lists
+- Name User_1 with drop-down menu 
+
+",,1. Check the header.,0
+C389032,Header > Account drop-down menu,,,,"1. User_1 created
+2. User_1 logged in store
+",Medium,,Header > logged in user,1,,Header > Header > logged in user,,"Step Description:
+1. Click on the  drop-down menu in the right corner of header.
+Expected Result:
+1. Menu presents next elements:
+- User_1 name
+- log out icon
+- Add account link - not implemented yet!",,"1. Menu presents next elements:
+- User_1 name
+- log out icon
+- Add account link - not implemented yet!",,1. Click on the  drop-down menu in the right corner of header.,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on User_1 name
+Expected Result:
+1. Dashboard page opens",,1. Dashboard page opens,,1. Click on User_1 name,
+C389033,Header > Account menu drop-down >  log out,,,,"1. Go to the store.
+2. User_1 logged in store
+",Medium,,Header > logged in user,1,,Header > Header > logged in user,,"Step Description:
+1. Click log out icon in the Account drop-down menu in the right corner of header.
+Expected Result:
+1. User_1 Log out from the store
+2. Home page with Log in form opens",,"1. User_1 Log out from the store
+2. Home page with Log in form opens",,1. Click log out icon in the Account drop-down menu in the right corner of header.,0
+C389034,Header > links > Dashboard,,,"1. You are redirected to the **Dashboard** section on My account page
+
+
+
+
+","1. Go to the store.
+2. User_1 logged in store",Medium,,Header > logged in user,1,,Header > Header > logged in user,1. Click the **Dashboard** hyperlink in the right corner of header.  ,,,,,,0
+C389035,Header > links > Contacts,https://virtowayqa.testrail.io/index.php?/attachments/get/1000003055,,,"1. Go to the store.
+2. User_1 logged in store
+
+
+
+ ",Medium,,Header > logged in user,1,,Header > Header > logged in user,,"Step Description:
+Go to the admin site
+Content &gt; B2B-store &gt; Pages
+Check the Contact page
+Expected Result:
+The Contact page is present in the list",,The Contact page is present in the list,,"Go to the admin site
+Content &gt; B2B-store &gt; Pages
+Check the Contact page",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to store
+
+2. Click the **Contacts** hyperlink in the right corner of the header.
+Expected Result:
+1. The 'Contacts' page is opened.
+
+
+ ![](index.php?/attachments/get/a75d93fb-bb13-4d5f-98df-c3e2a5b562f9) 
+
+
+
+
+
+
+",,"1. The 'Contacts' page is opened.
+
+
+ ![](index.php?/attachments/get/a75d93fb-bb13-4d5f-98df-c3e2a5b562f9) 
+
+
+
+
+
+
+",,"1. Go to store
+
+2. Click the **Contacts** hyperlink in the right corner of the header.",
+C389004,MOBILE > sticky header Anonymous > general view,,,,"1. Go to the store anonymously
+2. Сheck ALL store pages (except Category page, Product page, Cart page)",Medium,,Mobile sticky header,1,,Header > Mobile sticky header,,"Step Description:
+1. Check the Header of Main page of the store
+
+
+Expected Result:
+1. Next elements are presented:
+- Hamburger menu
+- Logo
+- Phone icon
+- Search icon
+- Cart icon   ",,"1. Next elements are presented:
+- Hamburger menu
+- Logo
+- Phone icon
+- Search icon
+- Cart icon   ",,"1. Check the Header of Main page of the store
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll page up and down
+2. Pay attention to the Header
+Expected Result:
+1. Header is static sticky on top of the page",,1. Header is static sticky on top of the page,,"1. Scroll page up and down
+2. Pay attention to the Header",
+,,,,,,,,,,,,,"
+Step Description:
+1. Check sticky Header on all pages of store (except Category page, Product page, Cart page)  while scrolling the page
+Expected Result:
+1. Header is static sticky on top of the all pages",,1. Header is static sticky on top of the all pages,,"1. Check sticky Header on all pages of store (except Category page, Product page, Cart page)  while scrolling the page",
+C389005,MOBILE > sticky header Logged in > general view,,,,"1. User_1 created
+2. User_1 logged in to the store
+2. Check all pages of the store include Account page
+",Medium,,Mobile sticky header,1,,Header > Mobile sticky header,,"Step Description:
+1. Check the Header of Main page  
+Expected Result:
+1. Next elements are presented:
+- Logo
+- Search icon
+- Hamburger menu
+
+
+",,"1. Next elements are presented:
+- Logo
+- Search icon
+- Hamburger menu
+
+
+",,1. Check the Header of Main page  ,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll page up and down
+2. Pay attention to the Header
+Expected Result:
+1. Header is static sticky on top of the page",,1. Header is static sticky on top of the page,,"1. Scroll page up and down
+2. Pay attention to the Header",
+,,,,,,,,,,,,,"
+Step Description:
+1. Check sticky Header on all pages of store (except Category page, Product page, Cart page, Account - Orders page, Account - Orders - Order page) while scrolling the page
+Expected Result:
+1. Header is static sticky on top of the all pages",,1. Header is static sticky on top of the all pages,,"1. Check sticky Header on all pages of store (except Category page, Product page, Cart page, Account - Orders page, Account - Orders - Order page) while scrolling the page",
+C389006,MOBILE > sticky block > Category > general view,,,,"1. Go to the store
+
+
+",Medium,,Mobile sticky header,1,,Header > Mobile sticky header,,"Step Description:
+1. Open any Category
+2. Scroll the page down 
+3. Pay attention to the header 
+
+
+Expected Result:
+1. Header is hide
+2. In top of the page presented Filters block containing the next elements:
+- Filters button
+- Sorting drop-down menu   ",,"1. Header is hide
+2. In top of the page presented Filters block containing the next elements:
+- Filters button
+- Sorting drop-down menu   ",,"1. Open any Category
+2. Scroll the page down 
+3. Pay attention to the header 
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll the Category page up
+2. Pay attention to the header 
+
+Expected Result:
+1. Header is shown
+2. Filters block is hide
+",,"1. Header is shown
+2. Filters block is hide
+",,"1. Scroll the Category page up
+2. Pay attention to the header 
+",
+C389007,MOBILE > sticky block > Product page > general view,,,,1. Go to the store   ,Medium,,Mobile sticky header,1,,Header > Mobile sticky header,,"Step Description:
+1. Open any Category - any Product
+2. Pay attention to the top of the page  
+Expected Result:
+1. In top of the page presented Product header containing the next elements:
+- 'Back' button
+- Phone icon
+- Search icon
+- Cart icon   ",,"1. In top of the page presented Product header containing the next elements:
+- 'Back' button
+- Phone icon
+- Search icon
+- Cart icon   ",,"1. Open any Category - any Product
+2. Pay attention to the top of the page  ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll the page down
+2. Pay attention to the top of the page 
+Expected Result:
+1. Product header is static sticky on top of the page
+",,"1. Product header is static sticky on top of the page
+",,"1. Scroll the page down
+2. Pay attention to the top of the page ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll the page up
+2. Pay attention to the top of the page  
+
+Expected Result:
+1. Product header is static sticky on top of the page
+",,"1. Product header is static sticky on top of the page
+",,"1. Scroll the page up
+2. Pay attention to the top of the page  
+",
+C389008,MOBILE > sticky block > Cart > general view,,,,"1. Go to the store
+
+
+",Medium,,Mobile sticky header,1,,Header > Mobile sticky header,,"Step Description:
+1. Open Cart (Empty)
+2. Check the header  
+
+
+
+
+Expected Result:
+1. Presented Header with next elements:
+- Hamburger menu 
+- Logo
+- Search icon
+- Cart icon",,"1. Presented Header with next elements:
+- Hamburger menu 
+- Logo
+- Search icon
+- Cart icon",,"1. Open Cart (Empty)
+2. Check the header  
+
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll the page down  
+2. Pay attention to the header
+Expected Result:
+1. Header is static sticky on top of the page",,1. Header is static sticky on top of the page,,"1. Scroll the page down  
+2. Pay attention to the header",
+,,,,,,,,,,,,,"
+Step Description:
+1. Add any products to the Cart
+2. Scroll down
+3. Pay attention to the top of the page   
+4. Check Checkout header in top of the page
+Expected Result:
+1. Default header is hide
+2. In top of the page presented Checkout header containing the next elements:
+- Title Checkout
+- Total  
+- Button 'Place order'",,"1. Default header is hide
+2. In top of the page presented Checkout header containing the next elements:
+- Title Checkout
+- Total  
+- Button 'Place order'",,"1. Add any products to the Cart
+2. Scroll down
+3. Pay attention to the top of the page   
+4. Check Checkout header in top of the page",
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll the Cart page up
+2. Pay attention to the top of the page  
+
+Expected Result:
+1. Checkout header is hide
+2. Default header is shown  ",,"1. Checkout header is hide
+2. Default header is shown  ",,"1. Scroll the Cart page up
+2. Pay attention to the top of the page  
+",
+C389009,MOBILE > sticky block > Order complete,,,,1. Go to the Store,Medium,,Mobile sticky header,1,,Header > Mobile sticky header,,"Step Description:
+1. Add any product to the cart
+2. Go to the cart page
+3. Fill in all required information for pacing order
+4. Place order
+5. Check the 'Order complete' header 
+Expected Result:
+1. The header on the 'Order complete' page contain the next elements:
+- 'Back' button
+- Phone icon
+- Search icon
+- Cart icon ",,"1. The header on the 'Order complete' page contain the next elements:
+- 'Back' button
+- Phone icon
+- Search icon
+- Cart icon ",,"1. Add any product to the cart
+2. Go to the cart page
+3. Fill in all required information for pacing order
+4. Place order
+5. Check the 'Order complete' header ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll the page down 
+2. Pay attention to the header
+Expected Result:
+1. Header is static sticky on top of the page",,1. Header is static sticky on top of the page,,"1. Scroll the page down 
+2. Pay attention to the header",
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll the page up
+2. Pay attention to the header
+Expected Result:
+1. Header is static sticky on top of the page",,1. Header is static sticky on top of the page,,"1. Scroll the page up
+2. Pay attention to the header",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the 'Back' button 
+Expected Result:
+1. Opens the empty Cart page",,1. Opens the empty Cart page,,1. Click on the 'Back' button ,
+C389010,MOBILE > sticky block > Account > Orders > general view,,,,"1. Go to the store Logged
+2. Place N orders ",Medium,,Mobile sticky header,1,,Header > Mobile sticky header,,"Step Description:
+1. Open Account - Orders
+Expected Result:
+1. Presented default Header with next elements:
+- Hamburger menu 
+- Logo
+- Phone icon
+- Search icon
+- Cart icon ",,"1. Presented default Header with next elements:
+- Hamburger menu 
+- Logo
+- Phone icon
+- Search icon
+- Cart icon ",,1. Open Account - Orders,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll the page down  
+2. Pay attention to the top of the page 
+3. Check Orders block in top of the page 
+Expected Result:
+1. Header is hide
+2. In top of the page presented Orders block containing the next elements:
+- Filters button
+- Input search field
+- Search icon",,"1. Header is hide
+2. In top of the page presented Orders block containing the next elements:
+- Filters button
+- Input search field
+- Search icon",,"1. Scroll the page down  
+2. Pay attention to the top of the page 
+3. Check Orders block in top of the page ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll the Orders page up 
+2. Pay attention to the top of the page  
+Expected Result:
+1. Orders block is hide 
+2. Header is shown  ",,"1. Orders block is hide 
+2. Header is shown  ",,"1. Scroll the Orders page up 
+2. Pay attention to the top of the page  ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open any order
+2. Pay attention to the top of the page 
+Expected Result:
+1. In top of the page presented Order # block containing the next elements:
+- Back button
+- Phone icon
+- Search icon
+- Hamburger menu",,"1. In top of the page presented Order # block containing the next elements:
+- Back button
+- Phone icon
+- Search icon
+- Hamburger menu",,"1. Open any order
+2. Pay attention to the top of the page ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll Order # page down
+2. Pay attention to the top of the page 
+Expected Result:
+ 1. Order # block is static sticky on top of the Order # page",, 1. Order # block is static sticky on top of the Order # page,,"1. Scroll Order # page down
+2. Pay attention to the top of the page ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll Order # page up
+2. Pay attention to the top of the page 
+Expected Result:
+ 1. Order # block is static sticky on top of the Order # page",, 1. Order # block is static sticky on top of the Order # page,,"1. Scroll Order # page up
+2. Pay attention to the top of the page ",
+C389011,MOBILE > sticky block > Search > general view,,,,"1. Go to the store
+
+
+",Medium,,Mobile sticky header,1,,Header > Mobile sticky header,,"Step Description:
+1. Open any page
+2. Tap on the Search icon in the Header
+Expected Result:
+1. Under Header or other top block presented Search bar containing the next elements:
+- Entry field
+- Search button
+- Close icon (X) ",,"1. Under Header or other top block presented Search bar containing the next elements:
+- Entry field
+- Search button
+- Close icon (X) ",,"1. Open any page
+2. Tap on the Search icon in the Header",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll the page down 
+3. Pay attention to the Search bar  
+Expected Result:
+1. Search bar is static sticky under Header or other top block of the page
+
+
+",,"1. Search bar is static sticky under Header or other top block of the page
+
+
+",,"1. Scroll the page down 
+3. Pay attention to the Search bar  ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll the page up
+2. Pay attention to the Search bar 
+Expected Result:
+1. Search bar is static sticky under Header or other top block of the page
+
+",,"1. Search bar is static sticky under Header or other top block of the page
+
+",,"1. Scroll the page up
+2. Pay attention to the Search bar ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Tap on the Search icon in the Search bar
+2. Scroll the page down and up 
+3. Pay attention to the Search bar  
+Expected Result:
+1. Opens search results page with products
+2. Search bar is static sticky under Header",,"1. Opens search results page with products
+2. Search bar is static sticky under Header",,"1. Tap on the Search icon in the Search bar
+2. Scroll the page down and up 
+3. Pay attention to the Search bar  ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open the Search bar on the Category page
+2. Open Filters side menu
+3. Scroll page down
+4. Pay attention to the search bar on background
+Expected Result:
+1. Opens filters side menu
+2. Search bar be still open on the background",,"1. Opens filters side menu
+2. Search bar be still open on the background",,"1. Open the Search bar on the Category page
+2. Open Filters side menu
+3. Scroll page down
+4. Pay attention to the search bar on background",
+,,,,,,,,,,,,,"
+Step Description:
+1. Set any filters in the side filters menu
+2. Pay attention on the Search bar
+Expected Result:
+1. The filtered products page opens
+2. Search bar closed",,"1. The filtered products page opens
+2. Search bar closed",,"1. Set any filters in the side filters menu
+2. Pay attention on the Search bar",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open the Search bar on the Account - Orders page
+2. Open Filters side menu
+3. Set any filters
+4. Tap on the 'Apply' button
+
+
+Expected Result:
+1. The filtered orders page opens
+2. Search bar closed",,"1. The filtered orders page opens
+2. Search bar closed",,"1. Open the Search bar on the Account - Orders page
+2. Open Filters side menu
+3. Set any filters
+4. Tap on the 'Apply' button
+
+",
+C398787,Customer User - Address List Consistency,,,"The shipping dropdown is displayed.
+Both address lists are exactly the same.",,High,,Shipping address selection,1,,Header > Shipping address selection,"1. Log in to the storefront as kutasina.elena+user1@gmail.com / Password1!
+2. Verify the shipping address dropdown is visible on top of the homepage.
+3. Log in to the back end > go to Users > Search for the email.
+4. Click 'Show contact' > Addresses.
+5. Compare the list of addresses between the storefront and back end.",,,,,,0
+C398788,Organization User - Address List Consistency,,,"Shipping address list is displayed.
+The front end and back end address lists match.",,High,,Shipping address selection,1,,Header > Shipping address selection,"1. Log in to the storefront as kutasina.elena+user4@gmail.com / Password1!
+2. Unfold the shipping address selector at the top of the homepage.
+3. Go to back end > Contacts > B2B test organization > Addresses.
+4. Compare the lists.",,,,,,0
+C398789,Shipping Address Selection Persists in Cart,,,"Address from step 2 appears in cart shipping.
+After selecting a new address (step 5), it should appear preselected at shipping.",,Medium,,Shipping address selection,1,,Header > Shipping address selection,"1. Log in to the storefront as kutasina.elena+user1@gmail.com / Password1!
+2. Select a shipping address from the header dropdown.
+3. Go to the cart > shipping.
+4. Verify the selected address appears as default.
+5. Go back to homepage, select another address.
+6. Navigate again to checkout > shipping.",,,,,,0
+C398790,Cart Address Change Doesn’t Affect Header,,,Header address remains the same as in the precondition.,,Medium,,Shipping address selection,1,,Header > Shipping address selection,"Precondition: Complete previous test with same address in header and cart [C398789]
+1. Go to checkout > shipping.
+2. Change the shipping address.
+3. Return to homepage.",,,,,,0
+C398791,Backend Persistence of Address for Registered User,,,selectedAddressId matches the ID of the address chosen in step 2.,,Medium,,Shipping address selection,1,,Header > Shipping address selection,"1. Log in as kutasina.elena+user1@gmail.com / Password1!.
+2. Select a shipping address from header dropdown.
+3. In the back end, search for user > click 'Show contact'.
+4. In dev tools, check network requests:
+- GET /api/members/{memberId}
+- Check selectedAddressId and the list of addresses.",,,,,,0
+C398792,Anonymous User - Address Stored in Local Storage,,,"New address appears in header.
+New address is present in local storage.",,Low,,Shipping address selection,1,,Header > Shipping address selection,"1. Open the storefront homepage in Incognito/Anonymous mode.
+2. Open the address selector > click Add New > fill the form > click Create.
+3. Open dev tools > check local storage.",,,,,,0
+C406760,Update data in profile > Selected address is not reset,,,,,High,,Shipping address selection,1,,Header > Shipping address selection,,"Step Description:
+1. Click on Ship To 
+
+2. Select address in top header
+
+3. Go to profile
+
+4. Update currency/language
+
+5. Take a look on the selected address in top header 
+Expected Result:
+The Ship To address remain selected",,The Ship To address remain selected,,"1. Click on Ship To 
+
+2. Select address in top header
+
+3. Go to profile
+
+4. Update currency/language
+
+5. Take a look on the selected address in top header ",0
+C389021,Menu > general view,,,"1. The next elements are presented:
+- Logo
+- Organization name (only for registered Organization users)
+- 'Catalog' dropdown button  
+- 'Products search' field
+- Search button
+- 'Bulk order' tab
+- 'Compare' tab
+- 'Lists' tab
+- 'Orders' tab
+- 'Cart' tab","1. Go to the store.
+",Medium,,Desktop,0,,Desktop,"1. Check the top Menu 
+",,,,,,0
+C389022,Menu > Home page > anonymously,,,1. Opens the home page with login form,,Medium,,Desktop,0,,Desktop,"1. Go to the store. 
+2. Open any page (for example Catalog General Catalogue)
+3. Click on **Virto Commerce** image in the upper-left corner. 
+",,,,,,0
+C389023,Menu > Home page > logged user,,,1. Dashboard page opens,,Medium,,Desktop,0,,Desktop,"1. Go to the store. 
+2. Open any page (for example Catalog General Catalogue)
+3. Click on **Virto Commerce** image in the upper-left corner. 
+",,,,,,0
+C389024,Menu > Catalog dropdown,,,,"1. Go to the store.
+",Medium,,Desktop,0,,Desktop,,"Step Description:
+1. Go to the top menu
+2. Click on the 'Catalog' dropdown
+Expected Result:
+1. Opens the dropdown links list with categories",,1. Opens the dropdown links list with categories,,"1. Go to the top menu
+2. Click on the 'Catalog' dropdown",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the links list of available categories
+Expected Result:
+1. The next categories are presented (categories may vary):
+- Carriage bolts
+- Flange bolts
+- Inject printers
+- Laser Printers
+- Gifts",,"1. The next categories are presented (categories may vary):
+- Carriage bolts
+- Flange bolts
+- Inject printers
+- Laser Printers
+- Gifts",,1. Check the links list of available categories,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the any category of the categories links list
+Expected Result:
+1. Accordance category page opens",,1. Accordance category page opens,,1. Click on the any category of the categories links list,
+C389025,Menu > Title of the organization (only for logged users as Organization),,,1. Title Organization_1 is presented,"1. Go to the store.
+2. User_1 created
+3. User_1 belongs to Organization_1",Medium,,Desktop,0,,Desktop,"1. Log in to the store as User_1
+2. Check the Menu section near the logo",,,,,,0
+C389026,Menu > Bulk order,,,,1. Go to the store.,Medium,,Desktop,0,,Desktop,,"Step Description:
+1.Click to the Bulk order link in the top Menu 
+Expected Result:
+1. Bulk order page opens",,1. Bulk order page opens,,1.Click to the Bulk order link in the top Menu ,0
+C389027,Menu > Compare,,,,"1. Go to the store.
+2. Add several  product to Compare",Medium,,Desktop,0,,Desktop,,"Step Description:
+1. Click on the 'Compare' link of top Menu 
+Expected Result:
+1. Compare page opens",,1. Compare page opens,,1. Click on the 'Compare' link of top Menu ,0
+C389028,Menu > Lists,,,,1. Go to the store,Medium,,Desktop,0,,Desktop,,"Step Description:
+1. Login to the store
+2. Click on the link 'Lists' of top Menu
+Expected Result:
+1. The 'Lists' page opens",,1. The 'Lists' page opens,,"1. Login to the store
+2. Click on the link 'Lists' of top Menu",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Log out from the store
+2. Click on the link 'Lists' of top Menu
+Expected Result:
+1. The login page opens",,1. The login page opens,,"1. Log out from the store
+2. Click on the link 'Lists' of top Menu",
+C389029,Menu > Notifications,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001230,,,"User is anonim
+There are no notifications",Medium,,Desktop,0,,Desktop,,"Step Description:
+Click on the bell in the menu
+Expected Result:
+The empty pop-up is opened
+
+text:
+
+No new notifications at the moment.
+Stay tuned for updates and important messages.
+
+---
+
+
+ ![](index.php?/attachments/get/435f9c56-aec1-483f-a561-c525407eb287) 
+
+
+
+",,"The empty pop-up is opened
+
+text:
+
+No new notifications at the moment.
+Stay tuned for updates and important messages.
+
+---
+
+
+ ![](index.php?/attachments/get/435f9c56-aec1-483f-a561-c525407eb287) 
+
+
+
+",,Click on the bell in the menu,0
+C389030,Menu > Cart,,,,"1. Go to the store.
+
+",Medium,,Desktop,0,,Desktop,,"Step Description:
+1. Click on the Cart link from the top Menu 
+Expected Result:
+1. Cart page opens",,1. Cart page opens,,1. Click on the Cart link from the top Menu ,0
+C389012,MOBILE > Anonymous > Menu > general view,,,,"1. Go to the store.
+
+",Medium,,Mobile,0,,Mobile,,"Step Description:
+1. Click on the Hamburger menu
+2. Check the menu items 
+Expected Result:
+1. Next links are presented:
+- Dashboard
+- Catalog &gt; Available_Categories
+- Compare products
+- Bulk order pad
+- Cart
+- Contact Us  
+
+- Sign in
+- Sign up now
+
+- Settings &gt;  Currency
+
+",,"1. Next links are presented:
+- Dashboard
+- Catalog &gt; Available_Categories
+- Compare products
+- Bulk order pad
+- Cart
+- Contact Us  
+
+- Sign in
+- Sign up now
+
+- Settings &gt;  Currency
+
+",,"1. Click on the Hamburger menu
+2. Check the menu items ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click 'Sign in' link
+Expected Result:
+1. Sign in page opens",,1. Sign in page opens,,1. Click 'Sign in' link,
+,,,,,,,,,,,,,"
+Step Description:
+1. Open menu again
+2. Click 'Sign up now' now link
+Expected Result:
+1. Registration page opens",,1. Registration page opens,,"1. Open menu again
+2. Click 'Sign up now' now link",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on Catalog link
+2. Check the available categories links list
+Expected Result:
+1. Next elements are presented:
+- Icon Back 
+- title Catalog
+
+List of available categories (categories may vary):
+- Carriage bolts
+- Flange Bolts
+- Inkjet Printers
+- Laser  Printers
+- Gifts",,"1. Next elements are presented:
+- Icon Back 
+- title Catalog
+
+List of available categories (categories may vary):
+- Carriage bolts
+- Flange Bolts
+- Inkjet Printers
+- Laser  Printers
+- Gifts",,"1. Click on Catalog link
+2. Check the available categories links list",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open any Category
+
+
+Expected Result:
+1. The accordance category page opens",,1. The accordance category page opens,,"1. Open any Category
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the Hamburger menu
+ 
+Expected Result:
+1. Opens menu like on a 1 step",,1. Opens menu like on a 1 step,,"1. Click on the Hamburger menu
+ ",
+C389013,MOBILE > Logged in > Menu > general view,,,,"1. Go to the store.
+2. User_1 logged in store
+
+
+",Medium,,Mobile,0,,Mobile,,"Step Description:
+1. Click on the Hamburger menu
+2. Check the list of items 
+Expected Result:
+1. The next links are presented:
+- Dashboard
+- Catalog &gt; Available_Categories
+- Compare products
+- Bulk order pad
+- Cart
+- Contact Us  
+
+- Account &gt;
+- Settings &gt; Currency  ",,"1. The next links are presented:
+- Dashboard
+- Catalog &gt; Available_Categories
+- Compare products
+- Bulk order pad
+- Cart
+- Contact Us  
+
+- Account &gt;
+- Settings &gt; Currency  ",,"1. Click on the Hamburger menu
+2. Check the list of items ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the Catalog link
+2. Check the available categories links list
+Expected Result:
+1. The next elements are presented:  
+- Icon Back 
+- title Catalog
+
+List of available categories (categories may vary):  
+- Carriage bolts 
+- Flange Bolts 
+- Inkjet Printers 
+- Laser  Printers 
+- Gifts",,"1. The next elements are presented:  
+- Icon Back 
+- title Catalog
+
+List of available categories (categories may vary):  
+- Carriage bolts 
+- Flange Bolts 
+- Inkjet Printers 
+- Laser  Printers 
+- Gifts",,"1. Click on the Catalog link
+2. Check the available categories links list",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Catalog
+2. Click on the 'Back' button
+Expected Result:
+1. Opens menu like on a step 1",,1. Opens menu like on a step 1,,"1. Open Catalog
+2. Click on the 'Back' button",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the 'Account' link
+2. Check the list of links 
+Expected Result:
+1. Opens Account menu contain the next elements:
+- 'Back' button 
+- 'ACCOUNT' title
+
+List of links:
+- Dashboard
+- Profile
+- Addresses
+- Orders
+- Your lists
+- Checkout defaults
+
+- User icon + User names + Log out link ",,"1. Opens Account menu contain the next elements:
+- 'Back' button 
+- 'ACCOUNT' title
+
+List of links:
+- Dashboard
+- Profile
+- Addresses
+- Orders
+- Your lists
+- Checkout defaults
+
+- User icon + User names + Log out link ",,"1. Click on the 'Account' link
+2. Check the list of links ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the any link of Account menu (exept Dashboard)
+
+
+Expected Result:
+1. The accordance page opens",,1. The accordance page opens,,"1. Click on the any link of Account menu (exept Dashboard)
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the Hamburger button
+2. Check the opens menu 
+Expected Result:
+1. Opens menu like on a 4 step",,1. Opens menu like on a 4 step,,"1. Click on the Hamburger button
+2. Check the opens menu ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the back button
+Expected Result:
+1. Opens menu like on a 1 step",,1. Opens menu like on a 1 step,,1. Click on the back button,
+C389014,Mobile > Menu > Catalog > View all products,,,,"***Note:***
+
+Need to check feature with different catalog menu implementations:
+
+- Link lists
+- Displaying catalog directly from admin site ",Medium,,Mobile,0,,Mobile,,"Step Description:
+Open Hamburger menu
+Tap on Catalog
+Expected Result:
+The catalog menu opened. The catalog menu corresponds with the catalog in the desktop version
+
+The next elements are presented:
+
+- List of categories
+
+
+
+**Buttons/Links**
+
+- Back
+- View all products in the category
+
+
+
+ ![](index.php?/attachments/get/309f2ee8-01e3-4ffa-bb17-6d750e036f1e) 
+
+
+
+
+
+
+
+
+",,"The catalog menu opened. The catalog menu corresponds with the catalog in the desktop version
+
+The next elements are presented:
+
+- List of categories
+
+
+
+**Buttons/Links**
+
+- Back
+- View all products in the category
+
+
+
+ ![](index.php?/attachments/get/309f2ee8-01e3-4ffa-bb17-6d750e036f1e) 
+
+
+
+
+
+
+
+
+",,"Open Hamburger menu
+Tap on Catalog",0
+,,,,,,,,,,,,,"
+Step Description:
+Tap on *View all products in the category*
+Expected Result:
+All catalog products are shown
+
+
+",,"All catalog products are shown
+
+
+",,Tap on *View all products in the category*,
+,,,,,,,,,,,,,"
+Step Description:
+Return to menu
+
+
+Expected Result:
+The catalog menu is opened",,The catalog menu is opened,,"Return to menu
+
+",
+C389015,Mobile > Menu > Catalog > level 2,,,,"***Note:***
+
+Need to check feature with different catalog menu implementations:
+
+- Link lists
+- Displaying catalog directly from admin site
+
+
+Category1 contains 2 levels of subcategories
+
+
+
+
+
+
+
+
+
+
+
+
+",Medium,,Mobile,0,,Mobile,,"Step Description:
+Open Hamburger menu
+Tap on Catalog &gt; Tap on category1 &gt; subcategory1 &gt; subcategory2
+Expected Result:
+The subcategory2 is opened
+
+The next elements are presented:
+
+- Subcategory1 title
+
+- List with subcategories
+
+
+**Buttons/Links**
+
+- Back
+- View all products in the category
+
+
+
+
+
+
+
+",,"The subcategory2 is opened
+
+The next elements are presented:
+
+- Subcategory1 title
+
+- List with subcategories
+
+
+**Buttons/Links**
+
+- Back
+- View all products in the category
+
+
+
+
+
+
+
+",,"Open Hamburger menu
+Tap on Catalog &gt; Tap on category1 &gt; subcategory1 &gt; subcategory2",0
+,,,,,,,,,,,,,"
+Step Description:
+Tap on the Back button
+Expected Result:
+The subcategory1 is opened",,The subcategory1 is opened,,Tap on the Back button,
+,,,,,,,,,,,,,"
+Step Description:
+Tap on *View all products in the category*
+Expected Result:
+All category’s products are shown
+
+
+",,"All category’s products are shown
+
+
+",,Tap on *View all products in the category*,
+,,,,,,,,,,,,,"
+Step Description:
+Return to menu
+
+
+Expected Result:
+The catalog is opened",,The catalog is opened,,"Return to menu
+
+",
+C389016,Mobile > Menu > Catalog > Category with empty subcategories,,,,"Category 1 is active
+Category 1 contains 3 subcategories:
+
+- subcategory1 and 2 are empty
+
+- subcategory3 with product
+
+",Medium,,Mobile,0,,Mobile,,"Step Description:
+Go to catalog &gt; Open Category1
+Expected Result:
+Only subcategory3 is displayed",,Only subcategory3 is displayed,,Go to catalog &gt; Open Category1,0
+,,,,,,,,,,,,,"
+Step Description:
+Assigned product to subcategory1
+re-index category
+
+Go to storefront &gt; Catalog &gt; Category1
+Check subcategories
+Expected Result:
+The subcategory3 and 1 are displayed",,The subcategory3 and 1 are displayed,,"Assigned product to subcategory1
+re-index category
+
+Go to storefront &gt; Catalog &gt; Category1
+Check subcategories",
+C389017,Mobile > Menu > Catalog > Category without products,,,,"Category1 is active
+
+Catagery1 has no products",Medium,,Mobile,0,,Mobile,,"Step Description:
+Go to the Catalog page
+Pay attention to Category1 in the menu
+Expected Result:
+The category1 is not displayed in the menu",,The category1 is not displayed in the menu,,"Go to the Catalog page
+Pay attention to Category1 in the menu",0
+C389018,Mobile > Catalog >  Hide empty category > Visible = disabled,,,,"**Note:**
+
+Need to check feature with different catalog menu implementations:
+
+- Link lists
+- Displaying catalog directly from admin site ",Medium,ST-4152,Mobile,0,,Mobile,,"Step Description:
+Go to the Admin site
+Go to Catalog &gt; Open Category1
+Set Visible = disabled
+Save &gt; re-index category
+
+
+
+
+
+
+Expected Result:
+The category is displayed as inactive
+
+-----------------------------------------
+
+
+ ![](index.php?/attachments/get/ecdcad97-2a1e-41fe-a572-2fb9f39b0a06) 
+
+
+",,"The category is displayed as inactive
+
+-----------------------------------------
+
+
+ ![](index.php?/attachments/get/ecdcad97-2a1e-41fe-a572-2fb9f39b0a06) 
+
+
+",,"Go to the Admin site
+Go to Catalog &gt; Open Category1
+Set Visible = disabled
+Save &gt; re-index category
+
+
+
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to storefront
+Hamburger menu &gt; Catalog
+Pay attention on category1
+
+
+
+Expected Result:
+The inactive category1 is not displayed in the  menu
+
+
+ ![](index.php?/attachments/get/256cc982-05da-4bca-be32-95b35d803427) 
+
+
+
+
+  
+",,"The inactive category1 is not displayed in the  menu
+
+
+ ![](index.php?/attachments/get/256cc982-05da-4bca-be32-95b35d803427) 
+
+
+
+
+  
+",,"Go to storefront
+Hamburger menu &gt; Catalog
+Pay attention on category1
+
+
+",
+C389019,Mobile > Catalog > Hide empty category > Visible = enabled,https://virtowayqa.testrail.io/index.php?/attachments/get/1000000024,,,"Go to the Admin site
+Go to Catalog > Open Category1
+Set Visible = enabled
+Save > re-index category",Medium,,Mobile,0,,Mobile,,"Step Description:
+Go to storefront
+Hamburger menu &gt; Catalog
+Pay attention on category1
+Expected Result:
+The inactive category1 is displayed in the menu
+
+-----------------------------------------------
+
+
+ ![](index.php?/attachments/get/0326ab07-b00d-48f2-afb3-c8f0a2228f84) 
+
+
+
+",,"The inactive category1 is displayed in the menu
+
+-----------------------------------------------
+
+
+ ![](index.php?/attachments/get/0326ab07-b00d-48f2-afb3-c8f0a2228f84) 
+
+
+
+",,"Go to storefront
+Hamburger menu &gt; Catalog
+Pay attention on category1",0
+C388967,BackToTop button,,,,"1. Go to the store.
+
+
+
+",Medium,,Footer,0,,Footer,,"Step Description:
+1. Open any Catalog page
+2. Scroll down the page
+Expected Result:
+1. Arrow icon BackToTop appears after page scroll down
+2. icon do not cover any elements on the page",,"1. Arrow icon BackToTop appears after page scroll down
+2. icon do not cover any elements on the page",,"1. Open any Catalog page
+2. Scroll down the page",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on icon BackToTop
+Expected Result:
+1. Page is scrolled to the top",,1. Page is scrolled to the top,,1. Click on icon BackToTop,
+,,,,,,,,,,,,,"
+Step Description:
+1. Stay on top of the page
+Expected Result:
+1. BackToTop button disappears if page on the top",,1. BackToTop button disappears if page on the top,,1. Stay on top of the page,
+,,,,,,,,,,,,,"
+Step Description:
+1. Check steps 1-3 for the Search page
+Expected Result:
+1. same results as for the 1-3 steps",,1. same results as for the 1-3 steps,,1. Check steps 1-3 for the Search page,
+C388968,Subscribe now (stub),,,"1. Subscribe now block is resented.
+2. Field for email.
+3. Button Subscribe.  ","1. Go to the store.
+",Medium,,Footer,0,,Footer,1. Check the Subscribe form on top the footer.,,,,,,0
+C388969,Footer links,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000004278, https://virtowayqa.testrail.io/index.php?/attachments/get/1000003503, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002555",,,"
+",Medium,,Footer,0,,Footer,,"Step Description:
+Go to admin &gt; Content &gt; B2B-store
+Open Link list
+Add
+
+
+Expected Result:
+The blade with a new list is opened",,The blade with a new list is opened,,"Go to admin &gt; Content &gt; B2B-store
+Open Link list
+Add
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Set name **footer-links**
+Set language
+Add root links
+Save
+Expected Result:
+The root links were saved
+
+ ![](index.php?/attachments/get/f148ce01-682d-4ffa-81a6-4b733e598bba) 
+",,"The root links were saved
+
+ ![](index.php?/attachments/get/f148ce01-682d-4ffa-81a6-4b733e598bba) 
+",,"Set name **footer-links**
+Set language
+Add root links
+Save",
+,,,,,,,,,,,,,"
+Step Description:
+Add child links for each root links
+Set name of root link
+Set language
+Add child links
+Save
+
+
+
+Expected Result:
+The child links were saved
+
+ ![](index.php?/attachments/get/8b3911a0-69a7-4e63-90c2-13a9d4c4be79) 
+",,"The child links were saved
+
+ ![](index.php?/attachments/get/8b3911a0-69a7-4e63-90c2-13a9d4c4be79) 
+",,"Add child links for each root links
+Set name of root link
+Set language
+Add child links
+Save
+
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Go to store
+Check the footer links
+Expected Result:
+All links are displayed
+
+ ![](index.php?/attachments/get/c54025fe-45fb-47e3-89e7-b2f477306e4a) 
+",,"All links are displayed
+
+ ![](index.php?/attachments/get/c54025fe-45fb-47e3-89e7-b2f477306e4a) 
+",,"Go to store
+Check the footer links",
+,,,,,,,,,,,,,"
+Step Description:
+Click on any link
+Expected Result:
+The link is clickable
+
+",,"The link is clickable
+
+",,Click on any link,
+C388970,Footer > links > Contact us,https://virtowayqa.testrail.io/index.php?/attachments/get/1000003055,,,"1. Go to the store.
+2. User_1 logged in store
+
+
+
+ ",Medium,,Footer,0,,Footer,,"Step Description:
+Go to the admin site
+Content &gt; B2B-store &gt; Pages
+Check the Contact page
+Expected Result:
+The Contact page is present in the list",,The Contact page is present in the list,,"Go to the admin site
+Content &gt; B2B-store &gt; Pages
+Check the Contact page",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to store &gt; Footer
+
+2. Click the **Contacts us**
+Expected Result:
+1. The 'Contacts' page is opened.
+
+
+ ![](index.php?/attachments/get/a75d93fb-bb13-4d5f-98df-c3e2a5b562f9) 
+
+
+
+
+
+
+",,"1. The 'Contacts' page is opened.
+
+
+ ![](index.php?/attachments/get/a75d93fb-bb13-4d5f-98df-c3e2a5b562f9) 
+
+
+
+
+
+
+",,"1. Go to store &gt; Footer
+
+2. Click the **Contacts us**",
+C388971,Demo landing page,,,"1. Next elements are presented (elements may vary as its a sample of the page):
+- Breadcrumbs
+- Information block with buttons
+- Information block
+- Feature information block
+- Booking block with buttons
+- Catalog preview with several clickable products
+- Subscribe block
+
+","1. Go to the store.
+",Medium,,Footer,0,,Footer,"1. Go to the footer
+2. Click link Demo Landing page
+3. Check the page",,,,,,0
+C388972,MOBILE  > Subscribe now (stub),,,"1. Subscribe now block is resented.
+2. Field for email.
+3. Button Subscribe.  ","1. Go to the store.
+",Medium,,Footer,0,,Footer,1. Check the Subscribe form on top the footer.,,,,,,0
+C388973,MOBILE > Footer links,,,1. Bottom footer text: © 2021 VirtoCommerce. All Rights Reserved. ASP.NET e-commerce platform by Virto,"1. Go to the store.
+",Medium,,Footer,0,,Footer,1. Check the footer.,,,,,,0
+C389161,Dashboard tab > general  view,,,,"1. User_1 created
+
+
+",Medium,,Dashboard,0,,Dashboard,,"Step Description:
+1. Log in to the store
+Expected Result:
+1. Dashboard/Home page opens",,1. Dashboard/Home page opens,,1. Log in to the store,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the Dashboard page
+Expected Result:
+1. Middle  part present next blocks:
+- Last orders
+- Monthly spend report 
+- Orders status 
+
+",,"1. Middle  part present next blocks:
+- Last orders
+- Monthly spend report 
+- Orders status 
+
+",,1. Check the Dashboard page,
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to Catalog
+2. Click Logo
+Expected Result:
+1. Dashboard page opens",,1. Dashboard page opens,,"1. Go to Catalog
+2. Click Logo",
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to Catalog
+2. Click link Home on the Menu
+Expected Result:
+1. Dashboard page opens",,1. Dashboard page opens,,"1. Go to Catalog
+2. Click link Home on the Menu",
+C389398,Notifications pop-up > Anonymous user > Notifications is hidden,,,,,Medium,,Notifications > Bell and pop-up,0,,Notifications > Bell and pop-up,,"Step Description:
+Open B2B-store as Anonymous
+Check the notifications in menu
+Expected Result:
+The Notifications menu is hidden for anonymous user",,The Notifications menu is hidden for anonymous user,,"Open B2B-store as Anonymous
+Check the notifications in menu",0
+,,,,,,,,,,,,,"
+Step Description:
+Sign-in as a regular User
+Expected Result:
+The bell icon is shown in the menu",,The bell icon is shown in the menu,,Sign-in as a regular User,
+,,,,,,,,,,,,,"
+Step Description:
+Sign out
+Check the bell
+Expected Result:
+The bell is hidden in menu",,The bell is hidden in menu,,"Sign out
+Check the bell",
+C389399,Notifications pop-up > Empty pop-up,https://virtowayqa.testrail.io/index.php?/attachments/get/1000000054,,"The empty Notification pop-up is opened
+
+- Switcher Show unread Only (disabled by default)
+
+- Text: No new notifications at the moment.
+Stay tuned for updates and important messages.
+
+- View all notifications button
+
+
+
+
+---
+
+  ![](index.php?/attachments/get/024c337b-1f31-4bcf-97a0-d97afdb3507a)  
+
+","Sign-in as a User1
+There are no any messages in Notifications for User1
+
+",Medium,,Notifications > Bell and pop-up,0,,Notifications > Bell and pop-up,Click on the bell icon in the menu,,,,,,0
+C389400,Notifications pop-up > One message > Mark read,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000002807, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000343, https://virtowayqa.testrail.io/index.php?/attachments/get/1000001546, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002822",,,"Create One push message for User1
+
+Admin site > Apps > Push Messages
+
+---
+
+ ![](index.php?/attachments/get/9d5a2144-ad6e-4f71-9513-a5240bedbc5b) 
+
+
+
+",Medium,,Notifications > Bell and pop-up,0,,Notifications > Bell and pop-up,,"Step Description:
+Go to storefront B2B-store
+Sign-in as a User1
+Check the bell in the menu in the header
+Expected Result:
+1. The badge with count 1 is shown near the bell
+2. The bell has animation """"shaking"""" after loading the page
+
+
+
+
+
+",,"1. The badge with count 1 is shown near the bell
+2. The bell has animation ""shaking"" after loading the page
+
+
+
+
+
+",,"Go to storefront B2B-store
+Sign-in as a User1
+Check the bell in the menu in the header",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the bell
+Expected Result:
+A notifications pop-up opens
+Switch Show unread only = off
+New message is marked with a dot
+The number of unread messages is 1 and the same as in the menu.
+
+---
+
+
+  ![](index.php?/attachments/get/12e03593-ff1f-4ee4-8cfc-dc0c9e8cea44) ",,"A notifications pop-up opens
+Switch Show unread only = off
+New message is marked with a dot
+The number of unread messages is 1 and the same as in the menu.
+
+---
+
+
+  ![](index.php?/attachments/get/12e03593-ff1f-4ee4-8cfc-dc0c9e8cea44) ",,Click on the bell,
+,,,,,,,,,,,,,"
+Step Description:
+Click on the text
+Expected Result:
+The message is marked as read. The dot removed
+The badge with count removed from pop-up and from menu
+
+---
+
+ 
+
+ ![](index.php?/attachments/get/54b85ed1-3abf-4669-8d6a-f23ce4a87b94) ",,"The message is marked as read. The dot removed
+The badge with count removed from pop-up and from menu
+
+---
+
+ 
+
+ ![](index.php?/attachments/get/54b85ed1-3abf-4669-8d6a-f23ce4a87b94) ",,Click on the text,
+C389401,Notifications pop-up > One message > Mark unread,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001075,,,"Create One push message for User1 
+
+Admin site > Apps > Push Messages
+
+
+---
+
+ ![](index.php?/attachments/get/3c5c1b8c-4919-4e56-addb-a7bde71d602b) 
+  
+
+
+
+",Medium,,Notifications > Bell and pop-up,0,,Notifications > Bell and pop-up,,"Step Description:
+Go to storefront &gt; B2B-store
+Click on the bell in menu
+Switch Show unread only = Off
+Click on the text message
+
+  
+
+Expected Result:
+1. The message is marked as unread by dot 
+2. The badge with count 1 is appeared in pop-up and in the menu
+
+",,"1. The message is marked as unread by dot 
+2. The badge with count 1 is appeared in pop-up and in the menu
+
+",,"Go to storefront &gt; B2B-store
+Click on the bell in menu
+Switch Show unread only = Off
+Click on the text message
+
+  
+",0
+C389402,Notifications pop-up > One message > Click on Link,,,,"Create One push message with Link for User1
+
+Admin site > Apps > Push Messages",Medium,,Notifications > Bell and pop-up,0,,Notifications > Bell and pop-up,,"Step Description:
+Go to storefront &gt; B2B-store
+Click on the bell in menu
+Click the link in the text
+
+
+Expected Result:
+The message is shown with Link
+
+  
+
+
+",,"The message is shown with Link
+
+  
+
+
+",,"Go to storefront &gt; B2B-store
+Click on the bell in menu
+Click the link in the text
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Click the link
+Expected Result:
+The Link is clickable and redirect to the another page",,The Link is clickable and redirect to the another page,,Click the link,
+C389403,Notifications > Multiple messages > Mark all as read,,,,"1. Sign-in as a User1
+2. Clear all messages
+3. Admin site > Apps > Push Messages
+4. Create 5 push messages with different content types (text, text+image, text with links, formatted text)
+
+
+
+
+
+",Medium,,Notifications > Bell and pop-up,0,,Notifications > Bell and pop-up,,"Step Description:
+Click on the bell in menu
+Switch Show unread only = Off
+Check the count of new messages
+
+
+
+
+Expected Result:
+1. The count of unread messages is 5
+2. All messages marked as unread by dots
+
+
+
+
+ 
+
+
+
+",,"1. The count of unread messages is 5
+2. All messages marked as unread by dots
+
+
+
+
+ 
+
+
+
+",,"Click on the bell in menu
+Switch Show unread only = Off
+Check the count of new messages
+
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the three dots &gt; Mark as all read
+Expected Result:
+1. All messages became read. The dots removed
+2. The badge with count removed from pop-up and from menu
+
+
+
+
+
+",,"1. All messages became read. The dots removed
+2. The badge with count removed from pop-up and from menu
+
+
+
+
+
+",,Click on the three dots &gt; Mark as all read,
+C389404,Notifications > Multiple messages > Mark all as unread,,,,"1. Sign-in as a User1
+2. The notifications contain 5 push messages with different content types (text, text+image, text with links, formatted text)
+3. **All messages read**",Medium,,Notifications > Bell and pop-up,0,,Notifications > Bell and pop-up,,"Step Description:
+Click on the bell in menu
+
+Expected Result:
+1. The pop-up with notifications is opened
+2. All messages marked as read
+3. There is no count in the pop-up and in the menu",,"1. The pop-up with notifications is opened
+2. All messages marked as read
+3. There is no count in the pop-up and in the menu",,"Click on the bell in menu
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Switch Show unread = Off
+Click on the three dots &gt; Mark all as unread
+Expected Result:
+1. All messages became unread and marked by dots
+2. The badge with count 5 appeared in pop-up and in menu",,"1. All messages became unread and marked by dots
+2. The badge with count 5 appeared in pop-up and in menu",,"Switch Show unread = Off
+Click on the three dots &gt; Mark all as unread",
+C389405,Notifications pop-up >  Count is decreased > Clicking the messages one by one,,,,"1. Sign-in as a User1
+2. The notifications contain 5 unread messages",Medium,,Notifications > Bell and pop-up,0,,Notifications > Bell and pop-up,,"Step Description:
+Click the bell
+Click on the first message
+Expected Result:
+1. The message becomes read. 
+2. The number of unread messages has decreased by one.",,"1. The message becomes read. 
+2. The number of unread messages has decreased by one.",,"Click the bell
+Click on the first message",0
+,,,,,,,,,,,,,"
+Step Description:
+Continue clicking on the message until everything is read.
+Pay attention to the number of remaining unread messages.
+Expected Result:
+1. All messages read
+2. The badges are removed",,"1. All messages read
+2. The badges are removed",,"Continue clicking on the message until everything is read.
+Pay attention to the number of remaining unread messages.",
+C389406,Notifications pop-up >  Count is increased > Clicking the messages one by one,,,,"1. Sign-in as a User1
+2. The notifications contain 5 read messages
+ 
+",Medium,,Notifications > Bell and pop-up,0,,Notifications > Bell and pop-up,,"Step Description:
+Click the bell
+Click on the first message
+Expected Result:
+1. The message becomes unread. 
+2. The badges appeared with one number
+3. The number of unread messages has increased by one.
+
+",,"1. The message becomes unread. 
+2. The badges appeared with one number
+3. The number of unread messages has increased by one.
+
+",,"Click the bell
+Click on the first message",0
+,,,,,,,,,,,,,"
+Step Description:
+Continue clicking on the message until everything is unread.
+Pay attention to the number of remaining unread messages.
+Expected Result:
+1. All messages unread
+2. The number of unread messages is 5",,"1. All messages unread
+2. The number of unread messages is 5",,"Continue clicking on the message until everything is unread.
+Pay attention to the number of remaining unread messages.",
+C389407,Notifications pop-up > Show unread only = ON,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000002755, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002916, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002182",,,"Create push message for User1
+Sign in as a User1",Medium,,Notifications > Bell and pop-up,0,,Notifications > Bell and pop-up,,"Step Description:
+Check the bell
+Expected Result:
+The count is 1 on the badge near the bell",,The count is 1 on the badge near the bell,,Check the bell,0
+,,,,,,,,,,,,,"
+Step Description:
+Click the bell
+
+
+Expected Result:
+The pop-up is opened
+Toggle Show unread only = ON
+The new message is shown and marked as unread 
+
+---
+
+ ![](index.php?/attachments/get/97c687ae-a2b2-4eaa-93ce-29f0ead3800e) 
+
+
+
+",,"The pop-up is opened
+Toggle Show unread only = ON
+The new message is shown and marked as unread 
+
+---
+
+ ![](index.php?/attachments/get/97c687ae-a2b2-4eaa-93ce-29f0ead3800e) 
+
+
+
+",,"Click the bell
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Click on the message
+Expected Result:
+The message has been disappeared
+---
+
+  ![](index.php?/attachments/get/a1f26a68-b394-45a0-9359-7a21cbddf4bd) 
+
+",,"The message has been disappeared
+---
+
+  ![](index.php?/attachments/get/a1f26a68-b394-45a0-9359-7a21cbddf4bd) 
+
+",,Click on the message,
+,,,,,,,,,,,,,"
+Step Description:
+Send one more messages to User1
+Click on bell &gt; Mark all as read
+Expected Result:
+The message has been disappeared 
+
+ ",,"The message has been disappeared 
+
+ ",,"Send one more messages to User1
+Click on bell &gt; Mark all as read",
+,,,,,,,,,,,,,"
+Step Description:
+Click on Make all as unread
+Expected Result:
+All messages have been appeared and marked as unread
+
+---
+
+ ![](index.php?/attachments/get/7a007280-f421-4550-a7ac-49c85e5528d8) 
+
+
+
+
+  
+",,"All messages have been appeared and marked as unread
+
+---
+
+ ![](index.php?/attachments/get/7a007280-f421-4550-a7ac-49c85e5528d8) 
+
+
+
+
+  
+",,Click on Make all as unread,
+C389408,Notifications pop-up > Show unread only = Off,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000000421, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002261",,,"Create 2 push messages for User1
+Sign in as a User1",Medium,,Notifications > Bell and pop-up,0,,Notifications > Bell and pop-up,,"Step Description:
+Click the bell
+Expected Result:
+The pop-up is opened
+The Show unread only = Off
+The 2 new messages are shown and marked as unread",,"The pop-up is opened
+The Show unread only = Off
+The 2 new messages are shown and marked as unread",,Click the bell,0
+,,,,,,,,,,,,,"
+Step Description:
+Make one message as read
+
+
+Expected Result:
+1. All messages read and unread are shown
+
+---
+
+ ![](index.php?/attachments/get/16803929-b66a-455b-8717-2ad35167b4b9) 
+
+  
+  ",,"1. All messages read and unread are shown
+
+---
+
+ ![](index.php?/attachments/get/16803929-b66a-455b-8717-2ad35167b4b9) 
+
+  
+  ",,"Make one message as read
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Switch Show unread only = ON
+Expected Result:
+Only unread messages are shown
+
+---
+
+ ![](index.php?/attachments/get/7d1c931b-f9b1-4e72-aa43-3bd216bae9c2) 
+
+
+
+",,"Only unread messages are shown
+
+---
+
+ ![](index.php?/attachments/get/7d1c931b-f9b1-4e72-aa43-3bd216bae9c2) 
+
+
+
+",,Switch Show unread only = ON,
+C389409,Notifications pop-up > Multiple messages > Clear all,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000001645, https://virtowayqa.testrail.io/index.php?/attachments/get/1000001616",,,"1.Sign-in as a User1
+2. The notifications contain several push messages with different content types (text, text+image, text with links, formatted text)
+
+
+",Medium,,Notifications > Bell and pop-up,0,,Notifications > Bell and pop-up,,"Step Description:
+Click on the bell &gt; Mark all as unread
+Try to clear all unread messages
+Expected Result:
+1. All messages were removed
+2. An empty pop-up is shown
+3. The badge with count is removed from the bell in menu
+
+---
+
+ ![](index.php?/attachments/get/5943d19f-f5fd-4d83-9ccb-47368bdf0c7c) 
+
+
+
+",,"1. All messages were removed
+2. An empty pop-up is shown
+3. The badge with count is removed from the bell in menu
+
+---
+
+ ![](index.php?/attachments/get/5943d19f-f5fd-4d83-9ccb-47368bdf0c7c) 
+
+
+
+",,"Click on the bell &gt; Mark all as unread
+Try to clear all unread messages",0
+,,,,,,,,,,,,,"
+Step Description:
+Send more messages in App
+Click on the bell &gt; Mark all as read
+Try to clear all read messages
+Expected Result:
+1. All messages were removed
+2. An empty pop-up is shown
+3. The badge with count is removed from the bell in menu
+
+---
+
+ ![](index.php?/attachments/get/5ae9a1e6-63b3-4a94-91f4-4b218557cbc3) 
+
+
+
+",,"1. All messages were removed
+2. An empty pop-up is shown
+3. The badge with count is removed from the bell in menu
+
+---
+
+ ![](index.php?/attachments/get/5ae9a1e6-63b3-4a94-91f4-4b218557cbc3) 
+
+
+
+",,"Send more messages in App
+Click on the bell &gt; Mark all as read
+Try to clear all read messages",
+C389410,Notifications pop-up > Feature flag in settings,,,,"Store settings > ""push_messages_enabled"": true",Low,,Notifications > Bell and pop-up,0,,Notifications > Bell and pop-up,,"Step Description:
+Go to admin site > Content
+B2B-store > Theme > default
+Open config > settings_data.json
+Set """"push_messages_enabled"""": false
+Save
+Expected Result:
+The new setting is saved",,The new setting is saved,,"Go to admin site > Content
+B2B-store > Theme > default
+Open config > settings_data.json
+Set ""push_messages_enabled"": false
+Save",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to storefront
+Refresh the page (ctrl+F5)
+Open DevTools > Network
+Check settings.json
+Expected Result:
+The """"push_messages_enabled"""": false",,"The ""push_messages_enabled"": false",,"Go to storefront
+Refresh the page (ctrl+F5)
+Open DevTools > Network
+Check settings.json",
+,,,,,,,,,,,,,"
+Step Description:
+Sign-in as a User1
+Check notifications
+Expected Result:
+There is no notifications functionality in the theme",,There is no notifications functionality in the theme,,"Sign-in as a User1
+Check notifications",
+,,,,,,,,,,,,,"
+Step Description:
+Go to admin site > Content
+B2B-store > Theme > default
+Open config > settings_data.json
+Set """"push_messages_enabled"""": true
+Save
+
+
+Expected Result:
+The new setting is saved
+
+",,"The new setting is saved
+
+",,"Go to admin site > Content
+B2B-store > Theme > default
+Open config > settings_data.json
+Set ""push_messages_enabled"": true
+Save
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Return to storefront
+Refresh the page (ctrl+F5)
+Open DevTools > Network
+Check settings.json
+Expected Result:
+1. The """"push_messages_enabled"""": true
+2. The notifications are shown
+",,"1. The ""push_messages_enabled"": true
+2. The notifications are shown
+",,"Return to storefront
+Refresh the page (ctrl+F5)
+Open DevTools > Network
+Check settings.json",
+C389411,Send a message within the company > The message was sent to all employees,,,,Send push messages within the company,Medium,,Notifications > Bell and pop-up,0,,Notifications > Bell and pop-up,,"Step Description:
+Sign-in as a company member1
+Check the messages
+Expected Result:
+All messages are shown and unread",,All messages are shown and unread,,"Sign-in as a company member1
+Check the messages",0
+,,,,,,,,,,,,,"
+Step Description:
+Mark all as read
+Expected Result:
+All messages became read",,All messages became read,,Mark all as read,
+,,,,,,,,,,,,,"
+Step Description:
+Sign in as a company member2
+Check the messages
+
+Expected Result:
+All messages are shown and unread
+The text is the same as for member1",,"All messages are shown and unread
+The text is the same as for member1",,"Sign in as a company member2
+Check the messages
+",
+,,,,,,,,,,,,,"
+Step Description:
+Clear all messages by member2
+Expected Result:
+1. All messages were removed
+2. An empty pop-up is shown
+3. The badge with number is removed from the bell in menu",,"1. All messages were removed
+2. An empty pop-up is shown
+3. The badge with number is removed from the bell in menu",,Clear all messages by member2,
+,,,,,,,,,,,,,"
+Step Description:
+Switch to member1
+Check the messages
+Expected Result:
+All messages remain the same and was not deleted
+
+",,"All messages remain the same and was not deleted
+
+",,"Switch to member1
+Check the messages",
+C389412,Login on behalf admin > All messages remain unread,,,,,Low,,Notifications > Bell and pop-up,0,,Notifications > Bell and pop-up,,,,,,,0
+C389413,Notifications > Empty page,https://virtowayqa.testrail.io/index.php?/attachments/get/1000000041,,,User1 does not have any notifications,Medium,,Notifications archive/history,0,,Notifications archive/history,,"Step Description:
+Go to account &gt; Notifications
+Expected Result:
+The empty page is shown
+
+- Switcher Show unread Only (disabled by default)
+
+- Actions menu
+
+- Text: You do not have any new notifications at this time
+---
+
+ ![](index.php?/attachments/get/04a33c2b-9c7d-49e8-a869-774bf2cac9d6) 
+",,"The empty page is shown
+
+- Switcher Show unread Only (disabled by default)
+
+- Actions menu
+
+- Text: You do not have any new notifications at this time
+---
+
+ ![](index.php?/attachments/get/04a33c2b-9c7d-49e8-a869-774bf2cac9d6) 
+",,Go to account &gt; Notifications,0
+C389414,Notifications > View all notifications,,,,"Sign-in as a User1
+
+The notifications contains 10 push messages",Medium,,Notifications archive/history,0,,Notifications archive/history,,"Step Description:
+Click on the Bell
+
+
+
+Expected Result:
+A User sees only the top 10 notifications in Alarm Bell Popup
+
+
+",,"A User sees only the top 10 notifications in Alarm Bell Popup
+
+
+",,"Click on the Bell
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on View all notifications
+Expected Result:
+The user is redirected to /account/notifications page
+
+The notifications page displays all MY notifications on page with:
+
+pagination: page size 10
+
+- Filter: show unread only
+
+- Actions:
+
+Make all as read
+
+Make all as unread
+
+- All User's notifications
+
+",,"The user is redirected to /account/notifications page
+
+The notifications page displays all MY notifications on page with:
+
+pagination: page size 10
+
+- Filter: show unread only
+
+- Actions:
+
+Make all as read
+
+Make all as unread
+
+- All User's notifications
+
+",,Click on View all notifications,
+C389415,Account > Notifications,,,,"Sign-in as a User1
+
+The notifications contains 10 push messages",Medium,,Notifications archive/history,0,,Notifications archive/history,,"Step Description:
+Go to Account/Notifications
+
+
+Expected Result:
+A User sees the Notifications section in the left panel",,A User sees the Notifications section in the left panel,,"Go to Account/Notifications
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Clicks Notifications links to open account/notifications page
+Expected Result:
+The user is redirected to /account/notifications page
+
+The notifications page displays all MY notifications on page with:
+
+pagination: page size 10
+
+Filter: show unread only
+
+Actions:
+
+Make all as read
+
+Make all as unread",,"The user is redirected to /account/notifications page
+
+The notifications page displays all MY notifications on page with:
+
+pagination: page size 10
+
+Filter: show unread only
+
+Actions:
+
+Make all as read
+
+Make all as unread",,Clicks Notifications links to open account/notifications page,
+C389416,Notifications > Multiple messages > Mark all as read,https://virtowayqa.testrail.io/index.php?/attachments/get/1000003027,,,"1. Sign-in as a User1
+2. Clear all messages
+3. Admin site > Apps > Push Messages
+4. Create 10 push messages with different content types
+5. **Switcher Show unread only = off**
+
+
+
+
+
+",Medium,,Notifications archive/history,0,,Notifications archive/history,,"Step Description:
+Click on the bell in menu &gt; View all notifications
+
+
+
+
+
+
+Expected Result:
+The page account/notifications is opened
+All messages read/unread are shown 
+  
+
+
+ 
+
+
+
+",,"The page account/notifications is opened
+All messages read/unread are shown 
+  
+
+
+ 
+
+
+
+",,"Click on the bell in menu &gt; View all notifications
+
+
+
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the three dots &gt; Mark all as read
+Expected Result:
+1. All messages read
+2. The badge with count removed from bell and from page
+
+
+---
+
+ ![](index.php?/attachments/get/a84ead2b-f533-4641-9632-65f717b3dc8f)    
+
+
+
+",,"1. All messages read
+2. The badge with count removed from bell and from page
+
+
+---
+
+ ![](index.php?/attachments/get/a84ead2b-f533-4641-9632-65f717b3dc8f)    
+
+
+
+",,Click on the three dots &gt; Mark all as read,
+C389417,Notifications > Multiple messages > Mark all as unread,https://virtowayqa.testrail.io/index.php?/attachments/get/1000000458,,,"1. Sign-in as a User1
+2. The notifications contain 10 push messages with different content types
+3. **All messages read**
+4. **Switcher Show unread only = off**",Medium,,Notifications archive/history,0,,Notifications archive/history,,"Step Description:
+Open account/notifications
+Expected Result:
+1. All messages are shown",,1. All messages are shown,,Open account/notifications,0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the three dots &gt; Mark all as unread
+Expected Result:
+1. All messages marked as unread (including archived ones)
+2. The badge with count have been appeared in bell and in page
+
+---
+
+ ![](index.php?/attachments/get/1836262a-33bb-4d78-b434-c5bc1b48736d) 
+
+
+
+",,"1. All messages marked as unread (including archived ones)
+2. The badge with count have been appeared in bell and in page
+
+---
+
+ ![](index.php?/attachments/get/1836262a-33bb-4d78-b434-c5bc1b48736d) 
+
+
+
+",,Click on the three dots &gt; Mark all as unread,
+C389418,Notifications > Multiple messages > Click on Link,,,,"Create One push message with Link for User1
+
+Admin site > Apps > Push Messages",Medium,,Notifications archive/history,0,,Notifications archive/history,,"Step Description:
+Go to storefront &gt; B2B-store
+Open account/notifications
+
+
+
+Expected Result:
+The message is shown with Link
+
+  
+
+
+",,"The message is shown with Link
+
+  
+
+
+",,"Go to storefront &gt; B2B-store
+Open account/notifications
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Click the link
+Expected Result:
+The Link is clickable and redirect to the another page",,The Link is clickable and redirect to the another page,,Click the link,
+C389419,Notifications >  Count is decreased > Clicking the messages one by one,,,,"1. Sign-in as a User1
+2. The notifications contain 5 unread messages
+ 
+",Medium,,Notifications archive/history,0,,Notifications archive/history,,"Step Description:
+Open account/notifications
+Set Show unread only = Off
+Click on the first message
+Expected Result:
+1. The message becomes read. 
+2. The number of unread messages has decreased by one.",,"1. The message becomes read. 
+2. The number of unread messages has decreased by one.",,"Open account/notifications
+Set Show unread only = Off
+Click on the first message",0
+,,,,,,,,,,,,,"
+Step Description:
+Continue clicking on the message until everything is read.
+Pay attention to the number of remaining unread messages.
+Expected Result:
+1. All messages read
+2. The badges are removed",,"1. All messages read
+2. The badges are removed",,"Continue clicking on the message until everything is read.
+Pay attention to the number of remaining unread messages.",
+C389420,Notifications >  Count is increased > Clicking the messages one by one,,,,"1. Sign-in as a User1
+2. The notifications contain 5 read messages
+ 
+",Medium,,Notifications archive/history,0,,Notifications archive/history,,"Step Description:
+Open account/notifications
+Set Show unread only = Off
+Click on the first message
+Expected Result:
+1. The message becomes unread. 
+2. The badges appeared with one number
+3. The number of unread messages has increased by one.
+
+",,"1. The message becomes unread. 
+2. The badges appeared with one number
+3. The number of unread messages has increased by one.
+
+",,"Open account/notifications
+Set Show unread only = Off
+Click on the first message",0
+,,,,,,,,,,,,,"
+Step Description:
+Continue clicking on the message until everything is unread.
+Pay attention to the number of remaining unread messages.
+Expected Result:
+1. All messages unread
+2. The number of unread messages is 5",,"1. All messages unread
+2. The number of unread messages is 5",,"Continue clicking on the message until everything is unread.
+Pay attention to the number of remaining unread messages.",
+C389421,Notifications > Show unread only = ON,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000004068, https://virtowayqa.testrail.io/index.php?/attachments/get/1000001540",,,"Create push message for User1
+Sign in as a User1
+ 
+",Medium,,Notifications archive/history,0,,Notifications archive/history,,"Step Description:
+Go to account/notifications
+Expected Result:
+The pop-up is opened
+The Show unread only = ON
+The new message is shown and marked as unread",,"The pop-up is opened
+The Show unread only = ON
+The new message is shown and marked as unread",,Go to account/notifications,0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the message
+Click the bell &gt; Check the pop-up
+Expected Result:
+The message has been disappeared
+
+--- 
+
+ ![](index.php?/attachments/get/54164bff-c4a8-4675-93a1-a71ab539a853) 
+
+ 
+
+",,"The message has been disappeared
+
+--- 
+
+ ![](index.php?/attachments/get/54164bff-c4a8-4675-93a1-a71ab539a853) 
+
+ 
+
+",,"Click on the message
+Click the bell &gt; Check the pop-up",
+,,,,,,,,,,,,,"
+Step Description:
+Click on Mark all as unread
+Click the bell &gt; Check the pop-up
+
+Expected Result:
+All messages have been appeared and marked as unread
+
+---  
+
+ ![](index.php?/attachments/get/e0b767d2-3a64-4222-ba84-4a860f892083) 
+
+",,"All messages have been appeared and marked as unread
+
+---  
+
+ ![](index.php?/attachments/get/e0b767d2-3a64-4222-ba84-4a860f892083) 
+
+",,"Click on Mark all as unread
+Click the bell &gt; Check the pop-up
+",
+C389422,Notifications > Show unread only = Off,https://virtowayqa.testrail.io/index.php?/attachments/get/1000004016,,,"Create 2 push messages for User1
+Sign in as a User1",Medium,,Notifications archive/history,0,,Notifications archive/history,,"Step Description:
+Go to account/notifications
+Expected Result:
+The pop-up is opened
+The Show unread only = Off
+The 2 messages are shown and marked as unread",,"The pop-up is opened
+The Show unread only = Off
+The 2 messages are shown and marked as unread",,Go to account/notifications,0
+,,,,,,,,,,,,,"
+Step Description:
+Make one message as read
+
+Expected Result:
+1. All messages read/unread are shown ",,1. All messages read/unread are shown ,,"Make one message as read
+",
+,,,,,,,,,,,,,"
+Step Description:
+Switch Show unread only = ON
+Expected Result:
+Only unread messages are shown
+
+---
+
+  ![](index.php?/attachments/get/e3c1478b-8210-47be-ab68-336aaca824e4)  
+
+
+
+",,"Only unread messages are shown
+
+---
+
+  ![](index.php?/attachments/get/e3c1478b-8210-47be-ab68-336aaca824e4)  
+
+
+
+",,Switch Show unread only = ON,
+C389423,Clear all in pop-up > Check messages in notifications page,,,,"1. Sign-in as a User1
+
+The notifications contains several push messages with different content types",Medium,,Notifications archive/history,0,,Notifications archive/history,,"Step Description:
+Go account/notifications
+Click the bell &gt; Clear all
+Expected Result:
+1. 'Clear all' button hides messages from pop-up only
+2. The messages are shown in Notifications history
+
+",,"1. 'Clear all' button hides messages from pop-up only
+2. The messages are shown in Notifications history
+
+",,"Go account/notifications
+Click the bell &gt; Clear all",0
+C389424,Notifications > Pagination,,,,,Medium,,Notifications archive/history,0,,Notifications archive/history,,,,,,,0
+C389435,Set up the firebase settings in environment.yml,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001596,,The settings are set up successfully,"Open environment.yml
+Set settings from firebase
+
+name: string
+platform:
+config:
+  PushMessages__UseFirebaseCloudMessaging: true
+  PushMessages__FcmSenderOptions__Type: string
+  PushMessages__FcmSenderOptions__ProjectId: string
+  PushMessages__FcmSenderOptions__PrivateKeyId: string
+  PushMessages__FcmSenderOptions__ClientEmail: string
+  PushMessages__FcmSenderOptions__ClientId: string
+  PushMessages__FcmSenderOptions__AuthUri: string
+  PushMessages__FcmSenderOptions__TokenUri: string
+  PushMessages__FcmSenderOptions__AuthProviderX509CertUrl: string
+  PushMessages__FcmSenderOptions__ClientX509CertUrl: string
+  PushMessages__FcmSenderOptions__UniverseDomain: string
+  PushMessages__FcmReceiverOptions__ApiKey: string
+  PushMessages__FcmReceiverOptions__AuthDomain: string
+  PushMessages__FcmReceiverOptions__ProjectId: string
+  PushMessages__FcmReceiverOptions__StorageBucket: string
+  PushMessages__FcmReceiverOptions__MessagingSenderId: string
+  PushMessages__FcmReceiverOptions__AppId: string
+  PushMessages__FcmReceiverOptions__VapidKey: string
+secretConfig:
+  PushMessages__FcmSenderOptions__PrivateKey: firebase-private-key-new",Medium,,Browser notifications,0,,Browser notifications,"1. Open https://console.firebase.google.com/
+Click Add project
+Enter project name
+Click Create project
+When the project is created, click Continue
+
+2. Sender settings
+Click Project settings
+Click Service accounts
+Click Generate new private key
+In the popup window click Generate key
+Open the downloaded JSON file and copy all fields to the corresponding fields in the
+appSettings.json
+Copy private key value and put the resulting value in the Key Vault (Azure portal)
+
+3. Receiver settings
+On the Project Overview page click Add Web app
+Enter application name
+Click Register app
+In the Add Firebase SDK section you will find settings that should be placed in the
+PushMessages.FcmReceiverOptions section in the appSettings.json
+Click Continue to console
+Click Project settings
+Click Cloud Messaging
+In the Web Push certificates section click Generate key pair
+
+3. Save settings in environment.yml and push the pull request
+4. Open the Frontend application > Console
+
+
+
+
+
+
+
+
+",,,,,,0
+C389436,Notification permission request > alert appears for the first time,,,,,Medium,,Browser notifications,0,,Browser notifications,,,,,,,0
+C389437,Handle Permission Denied,,,,,Medium,,Browser notifications,0,,Browser notifications,,,,,,,0
+C389438,Successful Subscription to Push Notifications,,,,,Medium,,Browser notifications,0,,Browser notifications,,,,,,,0
+C389439,Allow the notification > Relogging > Check the alert,,,,,Medium,,Browser notifications,0,,Browser notifications,,,,,,,0
+C389440,Deny the notification > Relogging > Check the notifications,,,,,Medium,,Browser notifications,0,,Browser notifications,,,,,,,0
+C389469,Error pages > 403,,,,"1. How to request error?
+
+ex. https://vcst-qa-storefront.govirto.com/403",Medium,,Error pages,0,,Error pages,,"Step Description:
+1. Check the page
+Expected Result:
+1. Header same as on usual pages for Anonymous or Logged in User.
+2. Footer same as on usual pages.
+3. Error message: 
+- 403 Access denied. 
+- You don’t have permission to access the requested page.
+4. Button Home page",,"1. Header same as on usual pages for Anonymous or Logged in User.
+2. Footer same as on usual pages.
+3. Error message: 
+- 403 Access denied. 
+- You don’t have permission to access the requested page.
+4. Button Home page",,1. Check the page,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click the Button Home page
+Expected Result:
+1. New page opens: HAS TO BE CHECK
+- for anonymous - Main page
+- for Logged i User- Dashboard page",,"1. New page opens: HAS TO BE CHECK
+- for anonymous - Main page
+- for Logged i User- Dashboard page",,1. Click the Button Home page,
+C389470,Error pages > 404,,,,"1. How to request error?
+
+Just set url
+
+{domain}/404
+
+ex. https://vcst-qa-storefront.govirto.com/404",Medium,,Error pages,0,,Error pages,,"Step Description:
+1. Check the page
+Expected Result:
+1. Header same as on usual pages for Anonymous or Logged in User.
+2. Footer same as on usual pages.
+3. Error message: 
+- 404 Page Not Found
+- The page you requested does not exist. 
+- Click here to continue shopping.
+- We suggest you back to Home.
+4. Button Home page",,"1. Header same as on usual pages for Anonymous or Logged in User.
+2. Footer same as on usual pages.
+3. Error message: 
+- 404 Page Not Found
+- The page you requested does not exist. 
+- Click here to continue shopping.
+- We suggest you back to Home.
+4. Button Home page",,1. Check the page,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click the Button Home page
+Expected Result:
+1. New page opens: HAS TO BE CHECK
+- for anonymous - Main page
+- for Logged i User- Dashboard page",,"1. New page opens: HAS TO BE CHECK
+- for anonymous - Main page
+- for Logged i User- Dashboard page",,1. Click the Button Home page,
+C389471,Error pages > 500,,,,"1. How to request error?
+
+Just set url
+
+{domain}/500
+
+ex. https://vcst-qa-storefront.govirto.com/500",Medium,,Error pages,0,,Error pages,,"Step Description:
+1. Check the page
+Expected Result:
+1. Shows error page without interactive elements except Home page button
+2. Error page contain the next elements:
+-- Error message '500 Internal server error'
+-- Text 'We suggest you back to the Home page'
+-- 'Home page' button",,"1. Shows error page without interactive elements except Home page button
+2. Error page contain the next elements:
+-- Error message '500 Internal server error'
+-- Text 'We suggest you back to the Home page'
+-- 'Home page' button",,1. Check the page,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the 'Home page' button
+Expected Result:
+1. Opens home page
+-- Main page with sign in form (for anonymous user)
+-- Dashboard account page (for Logged in User)",,"1. Opens home page
+-- Main page with sign in form (for anonymous user)
+-- Dashboard account page (for Logged in User)",,1. Click on the 'Home page' button,
+C389472,Error notification after backend down,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001879,,"The page is shown with 500 errors and then a notification alert is displayed with the text:
+""""Apologies for the inconvenience. Our server is currently experiencing technical issues. Please try again later.""""
+
+ ![](index.php?/attachments/get/678527cf-ba7d-45bf-8fa4-0c6710762697) 
+
+
+
+
+",,Medium,,Error pages,0,,Error pages,"User sign-in to the site
+Open catalog > Add product to cart
+Stop platform or cancel the request
+Try to go to another page",,,,,,0
+C389459,MOBILE > Error pages > 403,,,,"1. Open Mercury store.
+2. How to request error???
+
+
+",Medium,,MOBILE > error pages,1,,Error pages > MOBILE > error pages,,"Step Description:
+1. Check the page
+Expected Result:
+1.Header element: 
+- Logo
+- Hamburger menu
+2.Footer ?????
+3.Error message: 
+- 403 Access denied. 
+- You don’t have permission to access the requested page.
+4.Button Home page",,"1.Header element: 
+- Logo
+- Hamburger menu
+2.Footer ?????
+3.Error message: 
+- 403 Access denied. 
+- You don’t have permission to access the requested page.
+4.Button Home page",,1. Check the page,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click the Button Home page
+Expected Result:
+1. New page opens: HAS TO BE CHECK
+- for anonymous - Main page
+- for Logged i User- Dashboard page",,"1. New page opens: HAS TO BE CHECK
+- for anonymous - Main page
+- for Logged i User- Dashboard page",,1. Click the Button Home page,
+C389460,MOBILE > Error pages > 404,,,,"1. Open Mercury store.
+2. How to request error???
+
+
+",Medium,,MOBILE > error pages,1,,Error pages > MOBILE > error pages,,"Step Description:
+1. Check the page
+Expected Result:
+1.Header element: 
+- Logo
+- Hamburger menu
+2.Footer ?????
+3.Error message: 
+- 404 Page Not Found
+- The page you requested does not exist. 
+- Click here to continue shopping.
+- We suggest you back to Home.
+4.Button Home page",,"1.Header element: 
+- Logo
+- Hamburger menu
+2.Footer ?????
+3.Error message: 
+- 404 Page Not Found
+- The page you requested does not exist. 
+- Click here to continue shopping.
+- We suggest you back to Home.
+4.Button Home page",,1. Check the page,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click the Button Home page
+Expected Result:
+1. New page opens: HAS TO BE CHECK
+- for anonymous - Main page
+- for Logged i User- Dashboard page",,"1. New page opens: HAS TO BE CHECK
+- for anonymous - Main page
+- for Logged i User- Dashboard page",,1. Click the Button Home page,
+C389461,MOBILE > Error pages > 500,,,,"1. Go to the store
+2. Add in the URL path '/error/500'   
+
+
+",Medium,,MOBILE > error pages,1,,Error pages > MOBILE > error pages,,"Step Description:
+1. Check the page
+Expected Result:
+1. Shows error page without interactive elements except Home page button
+2. Error page contain the next elements:
+-- Error message '500 Internal server error'
+-- Text 'We suggest you back to the Home page'
+-- 'Home page' button",,"1. Shows error page without interactive elements except Home page button
+2. Error page contain the next elements:
+-- Error message '500 Internal server error'
+-- Text 'We suggest you back to the Home page'
+-- 'Home page' button",,1. Check the page,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Tap on the 'Home page' button
+Expected Result:
+1. Opens home page
+-- Main page with sign in form (for anonymous user)
+-- Dashboard account page (for Logged in User)",,"1. Opens home page
+-- Main page with sign in form (for anonymous user)
+-- Dashboard account page (for Logged in User)",,1. Tap on the 'Home page' button,

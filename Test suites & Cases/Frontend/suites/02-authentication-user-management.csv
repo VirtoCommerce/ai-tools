@@ -1,0 +1,4759 @@
+ID,Title,Attachments,Estimate,Expected Result,Preconditions,Priority,References,Section,Section Depth,Section Description,Section Hierarchy,Steps,Steps,Steps (Additional Info),Steps (Expected Result),Steps (References),Steps (Step),is_converted
+C389061,Registration form > PERSONAL> general view,,,,"<ol>
+<li>Go to the store anonymously.</li>
+</ol>
+",Medium,,Registration  (Desktop+Mobile),0,,Registration  (Desktop+Mobile),,"Step Description:
+<ol>
+<li>Click the link  from the header Registration</li>
+</ol>
+Expected Result:
+<ol>
+<li>User redirect to the registration page </li>
+<li>Registration form opens</li>
+</ol>",,"<ol>
+<li>User redirect to the registration page </li>
+<li>Registration form opens</li>
+</ol>",,"<ol>
+<li>Click the link  from the header Registration</li>
+</ol>",1
+,,,,,,,,,,,,,"
+Step Description:
+<ol>
+<li>Open home page.</li>
+<li>On sigh in form click button Register</li>
+</ol>
+Expected Result:
+<ol>
+<li>User redirect to the registration page </li>
+<li>Registration form opens</li>
+</ol>",,"<ol>
+<li>User redirect to the registration page </li>
+<li>Registration form opens</li>
+</ol>",,"<ol>
+<li>Open home page.</li>
+<li>On sigh in form click button Register</li>
+</ol>",
+,,,,,,,,,,,,,"
+Step Description:
+<ol>
+<li>Open the Sign-in page from the header.</li>
+<li>On sigh in form click button Register</li>
+</ol>
+Expected Result:
+<ol>
+<li>User redirect to the registration page </li>
+<li>Registration form opens</li>
+</ol>",,"<ol>
+<li>User redirect to the registration page </li>
+<li>Registration form opens</li>
+</ol>",,"<ol>
+<li>Open the Sign-in page from the header.</li>
+<li>On sigh in form click button Register</li>
+</ol>",
+,,,,,,,,,,,,,"
+Step Description:
+<ol>
+<li>Check the register form page.</li>
+</ol>
+Expected Result:
+<ol>
+<li>Next elements are presented:</li>
+</ol>
+
+<ul>
+<li>Header is the same as on usual pages for Anonymous User.</li>
+<li>Footer is the same as on usual pages.</li>
+<li>Registration form</li>
+</ul>",,"<ol>
+<li>Next elements are presented:</li>
+</ol>
+
+<ul>
+<li>Header is the same as on usual pages for Anonymous User.</li>
+<li>Footer is the same as on usual pages.</li>
+<li>Registration form</li>
+</ul>",,"<ol>
+<li>Check the register form page.</li>
+</ol>",
+,,,,,,,,,,,,,"
+Step Description:
+<ol>
+<li>Check the Registration form</li>
+</ol>
+Expected Result:
+<ol>
+<li>The title Registration</li>
+<li>Switcher between  Personal and Organization( selected by default) accounts </li>
+<li>Registration form contains next fields:</li>
+</ol>
+
+<ul>
+<li>First name (required) </li>
+<li>Last name (required)  </li>
+<li>Email (required) </li>
+<li>Password (required) with eye icon</li>
+<li>Confirm password (required) with eye icon</li>
+</ul>
+
+<ol>
+<li>Button Register </li>
+<li>Tips for creating a strong password </li>
+</ol>",,"<ol>
+<li>The title Registration</li>
+<li>Switcher between  Personal and Organization( selected by default) accounts </li>
+<li>Registration form contains next fields:</li>
+</ol>
+
+<ul>
+<li>First name (required) </li>
+<li>Last name (required)  </li>
+<li>Email (required) </li>
+<li>Password (required) with eye icon</li>
+<li>Confirm password (required) with eye icon</li>
+</ul>
+
+<ol>
+<li>Button Register </li>
+<li>Tips for creating a strong password </li>
+</ol>",,"<ol>
+<li>Check the Registration form</li>
+</ol>",
+C389062,Create account > PERSONAL user,,,,"1. Go to the store
+2. Open registration page
+2. Set a flag for account creation for **Personal User** 
+
+
+",Medium,,Registration  (Desktop+Mobile),0,,Registration  (Desktop+Mobile),,"Step Description:
+1. Enter necessary information:
+- First name
+- Last name
+- Email  
+- Password
+- Confirm password
+2. Click the button Sign up (enabled by default)
+
+
+Expected Result:
+1. The page with the text """"Registration successfully completed""""
+2. """"Home page"""" button",,"1. The page with the text ""Registration successfully completed""
+2. ""Home page"" button",,"1. Enter necessary information:
+- First name
+- Last name
+- Email  
+- Password
+- Confirm password
+2. Click the button Sign up (enabled by default)
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the button Home page 
+Expected Result:
+1. Home page opens.",,1. Home page opens.,,1. Click on the button Home page ,
+,,,,,,,,,,,,,"
+Step Description:
+1.  Check the mail
+Expected Result:
+1. Mail that Registration was success received",,1. Mail that Registration was success received,,1.  Check the mail,
+,,,,,,,,,,,,,"
+Step Description:
+1. Try to log in as User_1 using email
+Expected Result:
+1.  User_1 logged in store",,1.  User_1 logged in store,,1. Try to log in as User_1 using email,
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to Admin Environment &gt; Contacts
+2. Check the Contact_1
+Expected Result:
+1. Contact_1 created",,1. Contact_1 created,,"1. Go to Admin Environment &gt; Contacts
+2. Check the Contact_1",
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to Admin Environment &gt; Security &gt; Users
+2. Check the User_1
+3. Check account type
+Expected Result:
+1. User_1 created
+2. Account type is **Customer**",,"1. User_1 created
+2. Account type is **Customer**",,"1. Go to Admin Environment &gt; Security &gt; Users
+2. Check the User_1
+3. Check account type",
+C389063,Registration form > ORGANIZATION> general view,,,,"1. Go to the store anonymously.
+
+
+",Medium,,Registration  (Desktop+Mobile),0,,Registration  (Desktop+Mobile),,"Step Description:
+1. Click the link  from the header Registration
+Expected Result:
+1. User redirect to the registration page 
+2. Registration form opens",,"1. User redirect to the registration page 
+2. Registration form opens",,1. Click the link  from the header Registration,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open home page
+2. On sigh in form click button Register
+Expected Result:
+1. User redirect to the registration page 
+2. Registration form opens",,"1. User redirect to the registration page 
+2. Registration form opens",,"1. Open home page
+2. On sigh in form click button Register",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open the Sign-in page from the header.
+2. On sigh in form click button Register
+Expected Result:
+1. User redirect to the registration page 
+2. Registration form opens",,"1. User redirect to the registration page 
+2. Registration form opens",,"1. Open the Sign-in page from the header.
+2. On sigh in form click button Register",
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the register form page.
+Expected Result:
+1. Next elements are presented:
+- Header is the same as on usual pages for Anonymous User.
+- Footer is the same as on usual pages.
+- Registration form
+
+
+
+",,"1. Next elements are presented:
+- Header is the same as on usual pages for Anonymous User.
+- Footer is the same as on usual pages.
+- Registration form
+
+
+
+",,1. Check the register form page.,
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the Registration form
+Expected Result:
+1. The title Registration
+2. Switcher between  Personal and Organization (selected by default) accounts
+3. Registration form contains next fields:
+- First name (required) 
+- Last name (required)  
+- Email (required) 
+- Organization Name (required)   
+- Password (required) with eye icon
+- Confirm password (required) with eye icon
+4. Button Register 
+5. Tips for creating a strong password
+
+
+",,"1. The title Registration
+2. Switcher between  Personal and Organization (selected by default) accounts
+3. Registration form contains next fields:
+- First name (required) 
+- Last name (required)  
+- Email (required) 
+- Organization Name (required)   
+- Password (required) with eye icon
+- Confirm password (required) with eye icon
+4. Button Register 
+5. Tips for creating a strong password
+
+
+",,1. Check the Registration form,
+C389064,Create account > ORGANIZATION,https://virtowayqa.testrail.io/index.php?/attachments/get/1000003474,,,"1. Mail_1 existed
+2. Go to the store
+
+
+
+
+",Medium,,Registration  (Desktop+Mobile),0,,Registration  (Desktop+Mobile),,"Step Description:
+1. Open the registration form
+2. Select the """"Organization"""" switch
+3. Enter necessary information:
+- First name ( eg Contact_1)
+- Last name
+- Email_1
+- Organization Name (eg Organization_1)
+- Password
+- Confirm password (Passwords must match)
+2. Click the button Sign up (enabled by default)
+
+
+Expected Result:
+1. The page with the text: """"Registration successfully completed""""
+2. Button Home page",,"1. The page with the text: ""Registration successfully completed""
+2. Button Home page",,"1. Open the registration form
+2. Select the ""Organization"" switch
+3. Enter necessary information:
+- First name ( eg Contact_1)
+- Last name
+- Email_1
+- Organization Name (eg Organization_1)
+- Password
+- Confirm password (Passwords must match)
+2. Click the button Sign up (enabled by default)
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the button Home page 
+Expected Result:
+1. Home page opens.",,1. Home page opens.,,1. Click on the button Home page ,
+,,,,,,,,,,,,,"
+Step Description:
+1.  Check the mail_1
+Expected Result:
+1. Arrived mail with text """"To complete your create account process please click this link: &lt;link&gt;"""" ",,"1. Arrived mail with text ""To complete your create account process please click this link: &lt;link&gt;"" ",,1.  Check the mail_1,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on link from mail_1
+Expected Result:
+1. Verification page opens
+
+ ![](index.php?/attachments/get/c3556514-1494-46b7-bd58-08c21f3dff17) 
+
+",,"1. Verification page opens
+
+ ![](index.php?/attachments/get/c3556514-1494-46b7-bd58-08c21f3dff17) 
+
+",,1. Click on link from mail_1,
+,,,,,,,,,,,,,"
+Step Description:
+1. Try to log in by using email
+Expected Result:
+1.  User logged in store",,1.  User logged in store,,1. Try to log in by using email,
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to Admin Environment &gt; Contacts
+2. Check the Contact_1
+Expected Result:
+1. Organization_1 created
+2. Contact_1 belonging Organization_1 created",,"1. Organization_1 created
+2. Contact_1 belonging Organization_1 created",,"1. Go to Admin Environment &gt; Contacts
+2. Check the Contact_1",
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to Admin Environment &gt; Security &gt; Users
+2. Check the User_1
+3. Check account type
+Expected Result:
+1. User_1 created
+2. Account type is **Customer**",,"1. User_1 created
+2. Account type is **Customer**",,"1. Go to Admin Environment &gt; Security &gt; Users
+2. Check the User_1
+3. Check account type",
+C389065,Registration form > Password visibility,,,,"1. Go to the store Anonymously
+ ",Medium,,Registration  (Desktop+Mobile),0,,Registration  (Desktop+Mobile),,"Step Description:
+1. Open Personal registration form
+2. Fill __Password__ + __Confirm password__ fields
+3. Pay attention on the filling passwords symbols and Eye icons states
+Expected Result:
+1. Password symbols invisible
+2. Eye icons is not crossed out ",,"1. Password symbols invisible
+2. Eye icons is not crossed out ",,"1. Open Personal registration form
+2. Fill __Password__ + __Confirm password__ fields
+3. Pay attention on the filling passwords symbols and Eye icons states",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the each Eye icon
+2. Pay attention to the Password symbols and Eye icon state   
+Expected Result:
+1. Password symbols are visible
+2. Eye icons is crossed out ",,"1. Password symbols are visible
+2. Eye icons is crossed out ",,"1. Click on the each Eye icon
+2. Pay attention to the Password symbols and Eye icon state   ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the each Eye icon one more time
+2. Pay attention to the Password symbols and Eye icon state   
+Expected Result:
+1. Password symbols invisible
+2. Eye icons is not crossed out ",,"1. Password symbols invisible
+2. Eye icons is not crossed out ",,"1. Click on the each Eye icon one more time
+2. Pay attention to the Password symbols and Eye icon state   ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Insert hide symbols in the password field by CTRL + A or other way
+2. Copy that by CTRL + C or other way
+3. Paste it in the any field
+Expected Result:
+1. Invisible password symbols not copied",,1. Invisible password symbols not copied,,"1. Insert hide symbols in the password field by CTRL + A or other way
+2. Copy that by CTRL + C or other way
+3. Paste it in the any field",
+,,,,,,,,,,,,,"
+Step Description:
+1. Make password symbols visible (Click on the Eye icon)
+2. Insert this symbols by CTRL + A or other way
+3. Paste it in the any field
+Expected Result:
+1. Visible password symbols copied successful",,1. Visible password symbols copied successful,,"1. Make password symbols visible (Click on the Eye icon)
+2. Insert this symbols by CTRL + A or other way
+3. Paste it in the any field",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Organization registration form 
+2. Repeat steps 1-5 
+Expected Result:
+1. Expected results similar",,1. Expected results similar,,"1. Open Organization registration form 
+2. Repeat steps 1-5 ",
+C389046,Validation > PERSONAL > required fields,,,,"<ol>
+<li>Go to the store anonymously </li>
+<li>Open Registration form</li>
+<li>Select the ""Personal"" switch</li>
+</ol>
+",Medium,,Validation,1,,Registration  (Desktop+Mobile) > Validation,,"Step Description:
+<ol>
+<li>Enter the necessary information, except <strong>First name</strong></li>
+<li>Click away from the First name field.</li>
+</ol>
+Expected Result:
+<ol>
+<li>Shows error message about required field First name.    </li>
+</ol>",,"<ol>
+<li>Shows error message about required field First name.    </li>
+</ol>",,"<ol>
+<li>Enter the necessary information, except <strong>First name</strong></li>
+<li>Click away from the First name field.</li>
+</ol>",1
+,,,,,,,,,,,,,"
+Step Description:
+<ol>
+<li>Enter necessary information, except <strong>Last name</strong></li>
+<li>Click away from the Last name field.</li>
+</ol>
+Expected Result:
+<ol>
+<li>Error message shows about required field Last name.      </li>
+</ol>",,"<ol>
+<li>Error message shows about required field Last name.      </li>
+</ol>",,"<ol>
+<li>Enter necessary information, except <strong>Last name</strong></li>
+<li>Click away from the Last name field.</li>
+</ol>",
+,,,,,,,,,,,,,"
+Step Description:
+<ol>
+<li>Enter necessary information, except <strong>Email</strong></li>
+<li>Click away from the Email field.</li>
+</ol>
+Expected Result:
+<ol>
+<li>Error message shows about required field Email.        </li>
+</ol>",,"<ol>
+<li>Error message shows about required field Email.        </li>
+</ol>",,"<ol>
+<li>Enter necessary information, except <strong>Email</strong></li>
+<li>Click away from the Email field.</li>
+</ol>",
+,,,,,,,,,,,,,"
+Step Description:
+<ol>
+<li>Enter the necessary information, except <strong>Password</strong></li>
+<li>Click away from the Password field.</li>
+</ol>
+Expected Result:
+<ol>
+<li>Error message shows about required field Password.   </li>
+</ol>",,"<ol>
+<li>Error message shows about required field Password.   </li>
+</ol>",,"<ol>
+<li>Enter the necessary information, except <strong>Password</strong></li>
+<li>Click away from the Password field.</li>
+</ol>",
+C389047,Validation > PERSONAL > max chars,,,,"1. Go to the store anonymously
+2. Open Registration form  
+3. Select the ""Personal"" switch",Medium,,Validation,1,,Registration  (Desktop+Mobile) > Validation,,"Step Description:
+1. Fill in the field __First name__ with more than 64 chars
+
+
+
+Expected Result:
+1. Error message shows that field can't be more than 64 chars",,1. Error message shows that field can't be more than 64 chars,,"1. Fill in the field __First name__ with more than 64 chars
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill in the field  __Last name__ with more than 64 chars
+
+Expected Result:
+1. Error message shows that field can't be more than 64 chars  ",,1. Error message shows that field can't be more than 64 chars  ,,"1. Fill in the field  __Last name__ with more than 64 chars
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill in the field  __Email__ with more than 64 chars
+
+Expected Result:
+1. Error message shows that field can't be more than 64 chars     ",,1. Error message shows that field can't be more than 64 chars     ,,"1. Fill in the field  __Email__ with more than 64 chars
+",
+C389048,Validation > ORGANIZATION > required fields,,,,"1. Go to the store anonymously 
+2. Open Registration form  
+3. Select the ""Organization"" switch",Medium,,Validation,1,,Registration  (Desktop+Mobile) > Validation,,"Step Description:
+1. Enter the necessary information, except __First name__
+2. Click away from the __First name__ field.
+
+
+Expected Result:
+1. Error message shows about required First name  field.    ",,1. Error message shows about required First name  field.    ,,"1. Enter the necessary information, except __First name__
+2. Click away from the __First name__ field.
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter necessary information, except __Last name__
+2. Click away from the Last name field.
+ 
+Expected Result:
+1. Error message shows about required Last name  field.      ",,1. Error message shows about required Last name  field.      ,,"1. Enter necessary information, except __Last name__
+2. Click away from the Last name field.
+ ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter necessary information, except __Email__
+2. Click away from the Email field.
+ 
+Expected Result:
+1. Error message shows about required field Email.        ",,1. Error message shows about required field Email.        ,,"1. Enter necessary information, except __Email__
+2. Click away from the Email field.
+ ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter the necessary information, except __Organization name__
+2. Click away from the Organization name field.
+Expected Result:
+1. Error message shows about required Organization name field ",,1. Error message shows about required Organization name field ,,"1. Enter the necessary information, except __Organization name__
+2. Click away from the Organization name field.",
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter the necessary information, except __Password__
+2. Click away from the Password field.
+Expected Result:
+1. Error message shows about required Password  field.   ",,1. Error message shows about required Password  field.   ,,"1. Enter the necessary information, except __Password__
+2. Click away from the Password field.",
+C389049,Validation > ORGANIZATION > max chars,,,,"1. Go to the store anonymously 
+2. Open Registration form
+3. Select the ""Organization"" switch",Medium,,Validation,1,,Registration  (Desktop+Mobile) > Validation,,"Step Description:
+1. Fill in the field  __First name__ with more than 64 chars
+
+
+
+Expected Result:
+1. Error message shows that field can't be more than 64 chars",,1. Error message shows that field can't be more than 64 chars,,"1. Fill in the field  __First name__ with more than 64 chars
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill in the field  __Last name__ with more than 64 chars
+
+Expected Result:
+1. Error message shows that field can't be more than 64 chars  ",,1. Error message shows that field can't be more than 64 chars  ,,"1. Fill in the field  __Last name__ with more than 64 chars
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill in the field  __ Email__ with more than 64 chars
+
+Expected Result:
+1. Error message shows that field can't be more than 64 chars     ",,1. Error message shows that field can't be more than 64 chars     ,,"1. Fill in the field  __ Email__ with more than 64 chars
+",
+,,,,,,,,,,,,,"
+Step Description:
+Fill in the field  __Organization name__ with more than 64 chars
+Expected Result:
+1. Error message shows that field can't be more than 64 chars",,1. Error message shows that field can't be more than 64 chars,,Fill in the field  __Organization name__ with more than 64 chars,
+C389050,Validation > unique email and username,,,,"1. Go to the store anonymously
+2. Open Registration form
+
+",Medium,,Validation,1,,Registration  (Desktop+Mobile) > Validation,,"Step Description:
+1. Enter necessary Personal information:
+- Email address: exists in the system
+
+
+Expected Result:
+1. Shows error message about not unique email. Appears after filling the field.
+
+",,"1. Shows error message about not unique email. Appears after filling the field.
+
+",,"1. Enter necessary Personal information:
+- Email address: exists in the system
+
+",0
+C389051,Validation > email,,,,"1. Go to the store anonymously
+2. Open Registration form
+",Medium,,Validation,1,,Registration  (Desktop+Mobile) > Validation,,"Step Description:
+1. Enter necessary information:
+
+-- First name
+-- Last name
+-- Email address: enter wrong data (for example without """"@"""")
+-- Username
+-- Password 
+2. Click button Next step  
+ 
+Expected Result:
+1. Error message shows about incorrect email.",,1. Error message shows about incorrect email.,,"1. Enter necessary information:
+
+-- First name
+-- Last name
+-- Email address: enter wrong data (for example without ""@"")
+-- Username
+-- Password 
+2. Click button Next step  
+ ",0
+C389052,Validation > password  match,,,,"1. Go to the store anonymously
+2. Open Registration form",Medium,,Validation,1,,Registration  (Desktop+Mobile) > Validation,,"Step Description:
+1. Enter necessary information:
+
+- First name
+- Last name
+- Email address 
+- Username
+- Password: fill in 2 different passwords
+2. Click button Next step  
+ 
+Expected Result:
+1. Error message shows about passwords not match each other.",,1. Error message shows about passwords not match each other.,,"1. Enter necessary information:
+
+- First name
+- Last name
+- Email address 
+- Username
+- Password: fill in 2 different passwords
+2. Click button Next step  
+ ",0
+C389053,Validation > password policy,,,,"1. Go to the store anonymously
+2. Open Registration form  
+3. The rules of the policy may depend. Check the list or the rules before.  ",Medium,,Validation,1,,Registration  (Desktop+Mobile) > Validation,,"Step Description:
+1. Enter necessary Personal information:
+- First name
+- Last name
+- Email address 
+- Username
+- Password (for example, Qwert1!) 
+
+2. Click button Next step  
+ 
+Expected Result:
+1. Error message shows about Password must be at least 8 characters.",,1. Error message shows about Password must be at least 8 characters.,,"1. Enter necessary Personal information:
+- First name
+- Last name
+- Email address 
+- Username
+- Password (for example, Qwert1!) 
+
+2. Click button Next step  
+ ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter necessary Personal information:
+
+- First name
+- Last name
+- Email address
+- Username
+- Password (for example, qwerty1!)
+2. Click button Next step
+Expected Result:
+1. Error message shows about Passwords must have at least one uppercase ('A'-'Z')",,1. Error message shows about Passwords must have at least one uppercase ('A'-'Z'),,"1. Enter necessary Personal information:
+
+- First name
+- Last name
+- Email address
+- Username
+- Password (for example, qwerty1!)
+2. Click button Next step",
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter necessary Personal information:
+
+- First name
+- Last name
+- Email address
+- Username
+- Password (for example, QWERTY1!)
+2. Click button Next step
+Expected Result:
+1. Error message shows about Passwords must have at least one lowercase ('a'-'z')",,1. Error message shows about Passwords must have at least one lowercase ('a'-'z'),,"1. Enter necessary Personal information:
+
+- First name
+- Last name
+- Email address
+- Username
+- Password (for example, QWERTY1!)
+2. Click button Next step",
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter necessary Personal information:
+
+- First name
+- Last name
+- Email address
+- Username
+- Password (for example, Qwertyu!)
+2. Click button Next step
+Expected Result:
+1. Error message shows about Passwords must have at least one digit ('0'-'9')",,1. Error message shows about Passwords must have at least one digit ('0'-'9'),,"1. Enter necessary Personal information:
+
+- First name
+- Last name
+- Email address
+- Username
+- Password (for example, Qwertyu!)
+2. Click button Next step",
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter necessary Personal information:
+
+- First name
+- Last name
+- Email address
+- Username
+- Password (for example, Qwerty12)
+2. Click button Next step
+Expected Result:
+1. Error message shows about Passwords must have at least one non-alphanumeric character",,1. Error message shows about Passwords must have at least one non-alphanumeric character,,"1. Enter necessary Personal information:
+
+- First name
+- Last name
+- Email address
+- Username
+- Password (for example, Qwerty12)
+2. Click button Next step",
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter necessary Personal information:
+
+- First name
+- Last name
+- Email address
+- Username
+- Password (for example, 11111!!!)
+2. Click button Next step
+Expected Result:
+1. Error message shows about:
+- Passwords must have at least one lowercase ('a'-'z') 
+- Passwords must have at least one uppercase ('A'-'Z') 
+- Passwords must have at least 3 unique characters ",,"1. Error message shows about:
+- Passwords must have at least one lowercase ('a'-'z') 
+- Passwords must have at least one uppercase ('A'-'Z') 
+- Passwords must have at least 3 unique characters ",,"1. Enter necessary Personal information:
+
+- First name
+- Last name
+- Email address
+- Username
+- Password (for example, 11111!!!)
+2. Click button Next step",
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter necessary Personal information:
+
+- First name
+- Last name
+- Email address
+- Username
+- Password (for example, 1)
+2. Click button Next step
+Expected Result:
+1. Error message shows about:
+- Password must be at least 8 characters 
+- Passwords must have at least one non-alphanumeric character 
+- Passwords must have at least one lowercase ('a'-'z')
+- Passwords must have at least one uppercase ('A'-'Z')
+- Passwords must have at least 3 unique characters",,"1. Error message shows about:
+- Password must be at least 8 characters 
+- Passwords must have at least one non-alphanumeric character 
+- Passwords must have at least one lowercase ('a'-'z')
+- Passwords must have at least one uppercase ('A'-'Z')
+- Passwords must have at least 3 unique characters",,"1. Enter necessary Personal information:
+
+- First name
+- Last name
+- Email address
+- Username
+- Password (for example, 1)
+2. Click button Next step",
+C389054,Validation > error messages > localization,,,,"1. Go to the store
+
+
+",Medium,,Validation,1,,Registration  (Desktop+Mobile) > Validation,,"Step Description:
+1. Choose localization EN or DE
+2. Open registration form
+3. Fill in the First name 
+4. Clean First name 
+5. Click away from the First name field
+6. Pay attention on the error message
+Expected Result:
+1. Error message is notified user in the language which was selected
+
+",,"1. Error message is notified user in the language which was selected
+
+",,"1. Choose localization EN or DE
+2. Open registration form
+3. Fill in the First name 
+4. Clean First name 
+5. Click away from the First name field
+6. Pay attention on the error message",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill the Username field (Username exist in the system)
+2. Pay attention on the error message
+
+Expected Result:
+1. Error message is notified user in the language which was selected",,1. Error message is notified user in the language which was selected,,"1. Fill the Username field (Username exist in the system)
+2. Pay attention on the error message
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter First name with more than 64 chars
+2. Fill in the other necessary information
+3. Pay attention on the error message
+
+Expected Result:
+1. Error message is notified user in the language which was selected",,1. Error message is notified user in the language which was selected,,"1. Enter First name with more than 64 chars
+2. Fill in the other necessary information
+3. Pay attention on the error message
+",
+C389055,Registration without Email Verification,https://virtowayqa.testrail.io/index.php?/attachments/get/1000002471,,,"<p>Store > B2B-store > Settings</p>
+
+<p>Email address verification enabled = false </p>
+
+<p>Email address verification required = false</p>
+
+<p><span class=""markdown-img-container""><img src='index.php?/attachments/get/883e3ad6-cb26-45d2-9f54-f56be2785c05' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-883e3ad6-cb26-45d2-9f54-f56be2785c05' data-attachment-id='883e3ad6-cb26-45d2-9f54-f56be2785c05' data-entity-id='389055' /></span> </p>
+",Medium,PT-12829,Email verification,1,,Registration  (Desktop+Mobile) > Email verification,,"Step Description:
+<p>Go to the Sign-up page<br />Fill in all required fields<br />Click on the Sign-up button</p>
+Expected Result:
+<p>The /successful-registration page opened<br />The title: Registration completed</p>
+
+<p>Text: Thank you for showing your interest in registering with us. We kindly ask you to check your mailbox to verify the email address you’ve entered.</p>
+
+<p>The home page button is displayed</p>",,"<p>The /successful-registration page opened<br />The title: Registration completed</p>
+
+<p>Text: Thank you for showing your interest in registering with us. We kindly ask you to check your mailbox to verify the email address you’ve entered.</p>
+
+<p>The home page button is displayed</p>",,<p>Go to the Sign-up page<br />Fill in all required fields<br />Click on the Sign-up button</p>,1
+,,,,,,,,,,,,,"
+Step Description:
+<p>Click on the Home page</p>
+Expected Result:
+<p>The home page is opened</p>",,<p>The home page is opened</p>,,<p>Click on the Home page</p>,
+,,,,,,,,,,,,,"
+Step Description:
+<p>Go to sign in page<br />Enter your Email and password<br />Sign in</p>
+Expected Result:
+<p>User successfully registered</p>",,<p>User successfully registered</p>,,<p>Go to sign in page<br />Enter your Email and password<br />Sign in</p>,
+,,,,,,,,,,,,,"
+Step Description:
+<p>Check the email confirmation in the email</p>
+Expected Result:
+<p>There is no letter for confirmation</p>",,<p>There is no letter for confirmation</p>,,<p>Check the email confirmation in the email</p>,
+,,,,,,,,,,,,,"
+Step Description:
+<p>Check Registered letter</p>
+Expected Result:
+<p>The letter with the subject Registered is received</p>",,<p>The letter with the subject Registered is received</p>,,<p>Check Registered letter</p>,
+C389056,Registration with Optional Email Verification,,,,"Store > B2B-store > Settings
+
+Email address verification enabled = True
+
+Email address verification required = false",Medium,,Email verification,1,,Registration  (Desktop+Mobile) > Email verification,,"Step Description:
+Go to the Sign-up page
+Fill in all required fields
+Click on the Sign-up button
+Expected Result:
+The /successful-registration page opened
+The title: Registration completed
+
+The home page button is displayed",,"The /successful-registration page opened
+The title: Registration completed
+
+The home page button is displayed",,"Go to the Sign-up page
+Fill in all required fields
+Click on the Sign-up button",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Home page
+Expected Result:
+The home page is opened",,The home page is opened,,Click on the Home page,
+,,,,,,,,,,,,,"
+Step Description:
+Go to sign in page
+Enter your Email and password
+Sign in
+Expected Result:
+User successfully registered",,User successfully registered,,"Go to sign in page
+Enter your Email and password
+Sign in",
+,,,,,,,,,,,,,"
+Step Description:
+Check Registered letter
+Expected Result:
+The letter with the subject Registered is received",,The letter with the subject Registered is received,,Check Registered letter,
+,,,,,,,,,,,,,"
+Step Description:
+Check the email confirmation in the email
+Expected Result:
+The letter for the email confirmation is received",,The letter for the email confirmation is received,,Check the email confirmation in the email,
+,,,,,,,,,,,,,"
+Step Description:
+Click on the link
+Expected Result:
+The successful email confirmation page is opened with sign in button",,The successful email confirmation page is opened with sign in button,,Click on the link,
+C389057,Registration with Mandatory Email Verification,https://virtowayqa.testrail.io/index.php?/attachments/get/1000002219,,,"Store > B2B-store > Settings
+
+Email address verification enabled = True
+
+Email address verification required = True
+
+
+
+",Medium,,Email verification,1,,Registration  (Desktop+Mobile) > Email verification,,"Step Description:
+Go to the Sign-up page
+Fill in all required fields
+Click on the Sign-up button
+Expected Result:
+The /successful-registration page opened
+The title: Registration completed
+
+The home page button is displayed",,"The /successful-registration page opened
+The title: Registration completed
+
+The home page button is displayed",,"Go to the Sign-up page
+Fill in all required fields
+Click on the Sign-up button",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Home page
+Expected Result:
+The home page is opened",,The home page is opened,,Click on the Home page,
+,,,,,,,,,,,,,"
+Step Description:
+Go to sign in page
+Enter your Email and password
+Sign in
+Expected Result:
+The user cannot enter the site until he confirms the mail
+
+The error message:
+
+Email verification required. Please verify your email address
+
+
+
+",,"The user cannot enter the site until he confirms the mail
+
+The error message:
+
+Email verification required. Please verify your email address
+
+
+
+",,"Go to sign in page
+Enter your Email and password
+Sign in",
+,,,,,,,,,,,,,"
+Step Description:
+Check the email confirmation in the email
+Expected Result:
+The letter for the email confirmation is received",,The letter for the email confirmation is received,,Check the email confirmation in the email,
+,,,,,,,,,,,,,"
+Step Description:
+Click on the link
+Expected Result:
+The successful email confirmation page is opened with sign in button",,The successful email confirmation page is opened with sign in button,,Click on the link,
+,,,,,,,,,,,,,"
+Step Description:
+Go to sign in page
+Enter your Email and password
+Sign in
+Expected Result:
+User successfully registered",,User successfully registered,,"Go to sign in page
+Enter your Email and password
+Sign in",
+,,,,,,,,,,,,,"
+Step Description:
+Check Registered letter
+Expected Result:
+The letter with the subject Registered is received",,The letter with the subject Registered is received,,Check Registered letter,
+,,,,,,,,,,,,,"
+Step Description:
+Go to the admin site
+Security &gt; Find User1
+Check the flag
+
+
+Expected Result:
+The email is verified
+
+
+ ![](index.php?/attachments/get/7cd2dac8-e95a-4c22-b716-018d0e9c7760) 
+",,"The email is verified
+
+
+ ![](index.php?/attachments/get/7cd2dac8-e95a-4c22-b716-018d0e9c7760) 
+",,"Go to the admin site
+Security &gt; Find User1
+Check the flag
+
+",
+C389058,User is anonymous > Token is invalid or expired > Resend link,,,,"Email address verification enabled = true (Admin > Store > Settings)
+
+Email address verification required = false
+
+
+
+The user signed up
+
+Email_1 contains a confirmation letter with the link
+
+
+
+",Medium,,Email verification,1,,Registration  (Desktop+Mobile) > Email verification,,"Step Description:
+Open Email_1 with an invalid token
+
+Expected Result:
+The user sees the page """"Email confirmation"""" and the button **Resend link**
+
+ In order to continue, you still need to finalize verification process. Please use the button below to request a new link 
+
+
+
+
+  
+
+
+
+
+
+
+
+
+",,"The user sees the page ""Email confirmation"" and the button **Resend link**
+
+ In order to continue, you still need to finalize verification process. Please use the button below to request a new link 
+
+
+
+
+  
+
+
+
+
+
+
+
+
+",,"Open Email_1 with an invalid token
+",0
+,,,,,,,,,,,,,"
+Step Description:
+The user clicks on the “Resend link“ button
+
+
+
+
+Expected Result:
+The user stays on the same page but with differences:
+
+Text: We sent you the confirmation link to your inbox.
+
+Button Homepage",,"The user stays on the same page but with differences:
+
+Text: We sent you the confirmation link to your inbox.
+
+Button Homepage",,"The user clicks on the “Resend link“ button
+
+
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Click on Home page 
+Expected Result:
+The Home page is opened",,The Home page is opened,,Click on Home page ,
+,,,,,,,,,,,,,"
+Step Description:
+Check the Email
+
+
+Expected Result:
+The Email Confirmation with a valid/fresh link is displayed in the inbox",,The Email Confirmation with a valid/fresh link is displayed in the inbox,,"Check the Email
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Click the link
+Expected Result:
+The successful email confirmation page is opened with sign in button
+
+ ![](index.php?/attachments/get/adbf5244-7060-4089-8699-51e84eb2d4ac) 
+
+",,"The successful email confirmation page is opened with sign in button
+
+ ![](index.php?/attachments/get/adbf5244-7060-4089-8699-51e84eb2d4ac) 
+
+",,Click the link,
+C389059,User is registered > Token is invalid or expired > Resend link,https://virtowayqa.testrail.io/index.php?/attachments/get/1000002151,,,"Email address verification enabled = true (Admin > Store > Settings)
+
+Email address verification required = true
+
+
+The user signed up
+
+Email_1 contains a confirmation letter with the link
+
+
+
+",Medium,,Email verification,1,,Registration  (Desktop+Mobile) > Email verification,,"Step Description:
+Sign in as a new user
+Expected Result:
+The user on the /account/dashboard page",,The user on the /account/dashboard page,,Sign in as a new user,0
+,,,,,,,,,,,,,"
+Step Description:
+Go to Email_1 &gt; Email confirmation
+Click on the link with the invalid token
+
+
+
+Expected Result:
+The user sees the page """"Email confirmation"""" and the button **Resend link**
+
+ In order to continue you still need to finalize verification process. Please use the button below to request a new link. 
+
+  
+
+
+
+
+
+",,"The user sees the page ""Email confirmation"" and the button **Resend link**
+
+ In order to continue you still need to finalize verification process. Please use the button below to request a new link. 
+
+  
+
+
+
+
+
+",,"Go to Email_1 &gt; Email confirmation
+Click on the link with the invalid token
+
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+The user clicks on the “Resend link“ button
+
+
+
+
+Expected Result:
+The user stays on the same page but with differences:
+
+Text: “We sent you a email confirmation link to your email.“
+
+Button “Homepage“",,"The user stays on the same page but with differences:
+
+Text: “We sent you a email confirmation link to your email.“
+
+Button “Homepage“",,"The user clicks on the “Resend link“ button
+
+
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Go to Email_1 &gt; Find a new letter """"Email confirmation""""
+Click on the link with the valid/fresh token
+Expected Result:
+The successful Email Confirmation page is opened and the button Sign in is displayed
+
+
+ ![](index.php?/attachments/get/77d3ed1d-2910-441a-8399-57d9a0415053) 
+
+
+",,"The successful Email Confirmation page is opened and the button Sign in is displayed
+
+
+ ![](index.php?/attachments/get/77d3ed1d-2910-441a-8399-57d9a0415053) 
+
+
+",,"Go to Email_1 &gt; Find a new letter ""Email confirmation""
+Click on the link with the valid/fresh token",
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Sign in
+Expected Result:
+The user on the /account/dashboard page",,The user on the /account/dashboard page,,Click on the Sign in,
+C389060,Resend link from back office,https://virtowayqa.testrail.io/index.php?/attachments/get/1000004438,,,"User1 sign up
+
+Store > B2B-store > Settings
+
+Email address verification enabled = True
+
+Email address verification required = True
+
+",Medium,,Email verification,1,,Registration  (Desktop+Mobile) > Email verification,,"Step Description:
+Go to the admin site
+Security &gt; Find User1
+Click on Resend the link
+Expected Result:
+The link was sent
+
+
+ ![](index.php?/attachments/get/f897cdd1-a8e6-4e7a-a465-2f71dfb9f884) 
+",,"The link was sent
+
+
+ ![](index.php?/attachments/get/f897cdd1-a8e6-4e7a-a465-2f71dfb9f884) 
+",,"Go to the admin site
+Security &gt; Find User1
+Click on Resend the link",0
+,,,,,,,,,,,,,"
+Step Description:
+Check the email confirmation in the mail
+Expected Result:
+The letter for the email confirmation is received",,The letter for the email confirmation is received,,Check the email confirmation in the mail,
+,,,,,,,,,,,,,"
+Step Description:
+Click on the link
+Expected Result:
+The successful email confirmation page is opened with sign in button",,The successful email confirmation page is opened with sign in button,,Click on the link,
+,,,,,,,,,,,,,"
+Step Description:
+Go to sign in page
+Enter your Email and password
+Sign in
+Expected Result:
+User successfully registered",,User successfully registered,,"Go to sign in page
+Enter your Email and password
+Sign in",
+C388924,Code > username_or_emailIs_required > Email = null,,,,,Medium,,Login,0,,Login,,"Step Description:
+Go to sign-in page
+Leave the email field empty
+Fill in password
+Log in
+Expected Result:
+**The error message is:**
+
+The login attempt failed. Please check your credentials.
+",,"**The error message is:**
+
+The login attempt failed. Please check your credentials.
+",,"Go to sign-in page
+Leave the email field empty
+Fill in password
+Log in",0
+C388925,Code > login_failed > User = null,,,"**The error description is:**
+
+The login attempt failed. Please check your credentials.
+
+
+
+**Storefront message is:**
+
+The login attempt failed. Please check your credentials.
+
+
+
+
+",User1 does not exist in the system,Medium,,Login,0,,Login,"Go to sign-in page
+Enter any email
+Enter password
+Check the query login > Preview (Devtools > Network)",,,,,,0
+C388926,Code > user_not_found > user.contact = null,,,,"Security > Create a user (without a contact)
+
+ ",Medium,,Login,0,,Login,,"Step Description:
+Go to sign-in page
+Enter email and password
+Sign-in
+Check the query login &gt; Preview (Devtools &gt; Network)
+
+Expected Result:
+**The error description is:**
+
+User not found. Please ensure you've entered the correct information.
+
+**Storefront message is:**
+
+User not found. Please ensure you've entered the correct information.",,"**The error description is:**
+
+User not found. Please ensure you've entered the correct information.
+
+**Storefront message is:**
+
+User not found. Please ensure you've entered the correct information.",,"Go to sign-in page
+Enter email and password
+Sign-in
+Check the query login &gt; Preview (Devtools &gt; Network)
+",0
+C388927,Code > login_failed > Invalid credentials,,,, ,Medium,,Login,0,,Login,,"Step Description:
+Go to sign-in page
+Enter invalid email
+Enter password
+Check the query login > Preview (Devtools > Network)
+Expected Result:
+**The error description is:**
+
+Login attempt failed. Please check your credentials.
+
+**Storefront message is:**
+
+Login attempt failed. Please check your credentials",,"**The error description is:**
+
+Login attempt failed. Please check your credentials.
+
+**Storefront message is:**
+
+Login attempt failed. Please check your credentials",,"Go to sign-in page
+Enter invalid email
+Enter password
+Check the query login > Preview (Devtools > Network)",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to sign-in page
+Enter valid email
+Enter invalid password
+Check the query login > Preview (Devtools > Network)
+Expected Result:
+**The error description is:**
+
+Login attempt failed. Please check your credentials.
+
+**Storefront message is:**
+
+Login attempt failed. Please check your credentials",,"**The error description is:**
+
+Login attempt failed. Please check your credentials.
+
+**Storefront message is:**
+
+Login attempt failed. Please check your credentials",,"Go to sign-in page
+Enter valid email
+Enter invalid password
+Check the query login > Preview (Devtools > Network)",
+C388928,Code > email_verification_is_required,,,,"Store > Settings > Email verification is required
+
+
+Go to the sign-up page > Register a new user
+The user is locked until the email will be confirmed
+
+ ",Medium,,Login,0,,Login,,"Step Description:
+Open a sign-in page
+Enter an email and password for a new user
+Expected Result:
+**The error description is:**
+
+Email verification required. Please verify your email address.
+
+**Storefront message is:**
+
+
+
+",,"**The error description is:**
+
+Email verification required. Please verify your email address.
+
+**Storefront message is:**
+
+
+
+",,"Open a sign-in page
+Enter an email and password for a new user",0
+C388929,Code > user_is_temporary_locked_out > entered the wrong password 5 times in a row,,,,,Medium,,Login,0,,Login,,"Step Description:
+Go to the Sign-in page
+Enter the wrong password 5 times in a row 
+Sign in
+Check the query login &gt; Preview (Devtools &gt; Network)
+Expected Result:
+**The error description is:**
+
+Your account has been temporarily locked. Please try again after some time.
+
+**Storefront message is:**
+
+You have been blocked. You can not reach any information or create the order. For more details please contact your site administrator",,"**The error description is:**
+
+Your account has been temporarily locked. Please try again after some time.
+
+**Storefront message is:**
+
+You have been blocked. You can not reach any information or create the order. For more details please contact your site administrator",,"Go to the Sign-in page
+Enter the wrong password 5 times in a row 
+Sign in
+Check the query login &gt; Preview (Devtools &gt; Network)",0
+C388930,Code > user_is_locked_out > blocked by admin,,,,The admin is locked the User1,Medium,,Login,0,,Login,,"Step Description:
+Go to the Sign-in page
+Enter email and password
+Sign in
+Check the query login &gt; Preview (Devtools &gt; Network)
+
+Expected Result:
+**The error description is:**
+	
+Your account has been locked. Please contact support for assistance.
+
+**Storefront message is:**
+
+You have been blocked. You can not reach any information or create the order. For more details please contact your site administrator
+
+
+",,"**The error description is:**
+	
+Your account has been locked. Please contact support for assistance.
+
+**Storefront message is:**
+
+You have been blocked. You can not reach any information or create the order. For more details please contact your site administrator
+
+
+",,"Go to the Sign-in page
+Enter email and password
+Sign in
+Check the query login &gt; Preview (Devtools &gt; Network)
+",0
+C388931,Code > user_cannot_login_in_store,,,,Create contact and account in store1,Medium,,Login,0,,Login,,"Step Description:
+Go to B2B-store &gt; Sign-in page
+Enter the email and password for the user from store1
+Sign in
+Check the query login &gt; Preview (Devtools &gt; Network)
+ 
+
+
+Expected Result:
+**The error description is:**
+
+Access denied. You cannot sign in to the current store
+
+**Storefront message is:**
+
+Access denied. You cannot sign in to the current store
+
+
+",,"**The error description is:**
+
+Access denied. You cannot sign in to the current store
+
+**Storefront message is:**
+
+Access denied. You cannot sign in to the current store
+
+
+",,"Go to B2B-store &gt; Sign-in page
+Enter the email and password for the user from store1
+Sign in
+Check the query login &gt; Preview (Devtools &gt; Network)
+ 
+
+",0
+C388932,Code > password_expired > admin change the password,,,,"The admin changes the password at the back office or the password expired
+
+(Deprecated)
+
+",Medium,,Login,0,,Login,,"Step Description:
+Go to sign-in page
+Enter email and the password, which the admin set up
+Sign in
+Check the query login &gt; Preview (Devtools &gt; Network)
+
+Expected Result:
+**The error description is:**
+
+Your password has been expired and must be changed.
+
+
+
+",,"**The error description is:**
+
+Your password has been expired and must be changed.
+
+
+
+",,"Go to sign-in page
+Enter email and the password, which the admin set up
+Sign in
+Check the query login &gt; Preview (Devtools &gt; Network)
+",0
+C388933,Login > Access Failed Count,,,,,Medium,,Login,0,,Login,,"Step Description:
+Go to storefront &gt; Sign-in page
+
+Enter invalid password 3 times
+
+Enter valid password &gt; Log in
+
+Log out
+
+Enter invalid password 5 times
+Expected Result:
+The user is able to enter the invalid password 5 times in a row after logging
+The attempt counter is reset after logging in
+
+",,"The user is able to enter the invalid password 5 times in a row after logging
+The attempt counter is reset after logging in
+
+",,"Go to storefront &gt; Sign-in page
+
+Enter invalid password 3 times
+
+Enter valid password &gt; Log in
+
+Log out
+
+Enter invalid password 5 times",0
+C388934,Login > Account without contact,,,The error code should be returned,User1 exists in the system without contact,Medium,,Login,0,,Login,"Go to sign-in page
+
+Enter login and invalid password 5 times in a row",,,,,,0
+C388940,Login > check /connect/token,,,,"
+",Medium,,Login by token,1,,Login > Login by token,,"Step Description:
+<p>Open dev tools > Network<br />Sign in as a <strong>company owner</strong> (Account type = Manager)<br />Check token request in Network </p>
+Expected Result:
+<p>The user is logged successfully<br />The status code is 200 for token request</p>",,<p>The user is logged successfully<br />The status code is 200 for token request</p>,,<p>Open dev tools > Network<br />Sign in as a <strong>company owner</strong> (Account type = Manager)<br />Check token request in Network </p>,1
+,,,,,,,,,,,,,"
+Step Description:
+<p>Open dev tools > Network<br />Sign in as a <strong>company member</strong> (Account type = Customer)<br />Check token request in Network </p>
+Expected Result:
+<p>The user is logged successfully<br />The status code is 200 for token request</p>",,<p>The user is logged successfully<br />The status code is 200 for token request</p>,,<p>Open dev tools > Network<br />Sign in as a <strong>company member</strong> (Account type = Customer)<br />Check token request in Network </p>,
+,,,,,,,,,,,,,"
+Step Description:
+<p>Open dev tools > Network<br />Sign in under a <strong>personal account</strong><br />Check token request in Network</p>
+Expected Result:
+<p>The user is logged successfully<br />The status code is 200 for token request</p>",,<p>The user is logged successfully<br />The status code is 200 for token request</p>,,<p>Open dev tools > Network<br />Sign in under a <strong>personal account</strong><br />Check token request in Network</p>,
+C388941,Login > Reload the page > check the token,,,,"Set setting in environments.yml for testing
+
+Authorization__AccessTokenLifeTime: 0:00:30",Medium,,Login by token,1,,Login > Login by token,,"Step Description:
+Log in
+
+Close the tab
+
+Open within 30 seconds
+
+
+Expected Result:
+The refresh token is passed to all queries(getStore, getMe, getShortCart)
+The user is not logged out
+",,"The refresh token is passed to all queries(getStore, getMe, getShortCart)
+The user is not logged out
+",,"Log in
+
+Close the tab
+
+Open within 30 seconds
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Log in &gt; Open order details
+Stay 30 seconds on the page
+Refresh the page
+Expected Result:
+The refresh token is passed to all queries(getStore, getMe, getShortCart)
+The user is not logged out",,"The refresh token is passed to all queries(getStore, getMe, getShortCart)
+The user is not logged out",,"Log in &gt; Open order details
+Stay 30 seconds on the page
+Refresh the page",
+C388942,Login as a User1 >  log out > Login as a User2,,,,"Set setting in environments.yml for testing
+
+Authorization__AccessTokenLifeTime: 0:00:30",Medium,,Login by token,1,,Login > Login by token,,"Step Description:
+Login as a User1
+Open Orders &gt; Order details
+Open devTools &gt; Application &gt; Remove auth in local storage
+Expected Result:
+The User is logged out The sign-in page is opened The Return URL is shown",,The User is logged out The sign-in page is opened The Return URL is shown,,"Login as a User1
+Open Orders &gt; Order details
+Open devTools &gt; Application &gt; Remove auth in local storage",0
+,,,,,,,,,,,,,"
+Step Description:
+Sign in as a User2
+Expected Result:
+The 403 page is opened",,The 403 page is opened,,Sign in as a User2,
+C388943,Account type is Manager > Log out > check revoke/token,,,,,Medium,,Login by token,1,,Login > Login by token,,,,,,,0
+C388944,Account type is Customer> Log out > check revoke/token,,,,,Medium,,Login by token,1,,Login > Login by token,,"Step Description:
+Open dev tools &gt; Network
+Sign in as a company member (Account type = Customer)
+
+
+Expected Result:
+The user is logged successfully
+The status code is 200 for token request",,"The user is logged successfully
+The status code is 200 for token request",,"Open dev tools &gt; Network
+Sign in as a company member (Account type = Customer)
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Open dev tools &gt; Network
+Sign out
+Check revoke/token
+Expected Result:
+The user is logged out successfully
+The status code is 200 for revoke/token request",,"The user is logged out successfully
+The status code is 200 for revoke/token request",,"Open dev tools &gt; Network
+Sign out
+Check revoke/token",
+C388945,Account type is empty field > Log out > check revoke/token,,,,,Medium,,Login by token,1,,Login > Login by token,,"Step Description:
+Open dev tools &gt; Network
+Sign in as a personal user (Account type = null)
+Expected Result:
+The user is logged successfully
+The status code is 200 for token request",,"The user is logged successfully
+The status code is 200 for token request",,"Open dev tools &gt; Network
+Sign in as a personal user (Account type = null)",0
+,,,,,,,,,,,,,"
+Step Description:
+Open dev tools &gt; Network
+Sign out
+Check revoke/token
+Expected Result:
+The user is logged out successfully
+The status code is 200 for revoke/token request",,"The user is logged out successfully
+The status code is 200 for revoke/token request",,"Open dev tools &gt; Network
+Sign out
+Check revoke/token",
+C388935,Login on behalf > User without permission,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001258,,,"Go to Back office (admin site)
+User1 doesn't have permission platform:security:loginOnBehalf",Medium,,Login on behalf,1,,Login > Login on behalf,,"Step Description:
+Go to Security &gt; Find User2
+Click login on behalf
+Expected Result:
+Back Office will open {domain-url}/sign-in?returnUrl=%2Faccount%2Fimpersonate%{userId}",,Back Office will open {domain-url}/sign-in?returnUrl=%2Faccount%2Fimpersonate%{userId},,"Go to Security &gt; Find User2
+Click login on behalf",0
+,,,,,,,,,,,,,"
+Step Description:
+Sign in as a User1
+Expected Result:
+User1 can log in only by his own account
+User1 sees 403 error page Access denied (/connect/token with grant-type: impersonate returned 403 forbidden)
+
+---
+
+ ![](index.php?/attachments/get/448a6e29-3d74-4e96-ac57-a1bf6d2c4838) 
+
+
+
+",,"User1 can log in only by his own account
+User1 sees 403 error page Access denied (/connect/token with grant-type: impersonate returned 403 forbidden)
+
+---
+
+ ![](index.php?/attachments/get/448a6e29-3d74-4e96-ac57-a1bf6d2c4838) 
+
+
+
+",,Sign in as a User1,
+C388936,Login on behalf > User with permission,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000001586, https://virtowayqa.testrail.io/index.php?/attachments/get/1000003208",,,"Go to Back office (admin site)
+Add permission platform:security:loginOnBehalf for Manager",Medium,,Login on behalf,1,,Login > Login on behalf,,"Step Description:
+Go to Security &gt; Find User1
+
+Click login on behalf
+
+Expected Result:
+Back Office will open {domain-url}/sign-in?returnUrl=%2Faccount%2Fimpersonate%{userId}
+
+",,"Back Office will open {domain-url}/sign-in?returnUrl=%2Faccount%2Fimpersonate%{userId}
+
+",,"Go to Security &gt; Find User1
+
+Click login on behalf
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Sign in with Manager account if required to complete login on behalf
+Expected Result:
+Manager log in on behalf of User1 account
+
+---
+
+ ![](index.php?/attachments/get/b498aaad-b48e-44ec-af6e-b0e3d8eb6913) 
+
+
+B2B Theme displays login on behalf information in the header
+
+---
+
+ ![](index.php?/attachments/get/57659b7d-e28e-4187-997e-00c00773db20) 
+
+
+
+",,"Manager log in on behalf of User1 account
+
+---
+
+ ![](index.php?/attachments/get/b498aaad-b48e-44ec-af6e-b0e3d8eb6913) 
+
+
+B2B Theme displays login on behalf information in the header
+
+---
+
+ ![](index.php?/attachments/get/57659b7d-e28e-4187-997e-00c00773db20) 
+
+
+
+",,Sign in with Manager account if required to complete login on behalf,
+C388937,Login on behalf > Organization maintainer logging as a employee,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000003397, https://virtowayqa.testrail.io/index.php?/attachments/get/1000004366",,,"Go to Back office (admin site)
+Add permission platform:security:loginOnBehalf for Manager",Medium,,Login on behalf,1,,Login > Login on behalf,,"Step Description:
+Login to the storefront as a Manager
+Expected Result:
+The manager logged into the store",,The manager logged into the store,,Login to the storefront as a Manager,0
+,,,,,,,,,,,,,"
+Step Description:
+Go to Back office
+Security &gt; Find User1
+Click on Login on behalf
+Expected Result:
+Manager log in on behalf of User1 account
+
+---
+
+ ![](index.php?/attachments/get/f28a95cb-28fd-4beb-8288-1d47e21b36c8) 
+
+
+B2B Theme displays login on behalf information in the header
+
+---
+
+ ![](index.php?/attachments/get/be66c090-3886-4ef0-bb1a-c44ce09b4be9) 
+",,"Manager log in on behalf of User1 account
+
+---
+
+ ![](index.php?/attachments/get/f28a95cb-28fd-4beb-8288-1d47e21b36c8) 
+
+
+B2B Theme displays login on behalf information in the header
+
+---
+
+ ![](index.php?/attachments/get/be66c090-3886-4ef0-bb1a-c44ce09b4be9) 
+",,"Go to Back office
+Security &gt; Find User1
+Click on Login on behalf",
+C388938,Login on behalf > Invalid userId in impersonate link,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001676,,,"Go to Back office (admin site)
+Add permission platform:security:loginOnBehalf for Manager",Medium,,Login on behalf,1,,Login > Login on behalf,,"Step Description:
+Go to Security &gt; Find User1
+Click login on behalf
+Expected Result:
+Back Office will open {domain-url}/sign-in?returnUrl=%2Faccount%2Fimpersonate%{userId}",,Back Office will open {domain-url}/sign-in?returnUrl=%2Faccount%2Fimpersonate%{userId},,"Go to Security &gt; Find User1
+Click login on behalf",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter invalid the userId in url
+Log in as a Manager
+
+
+Expected Result:
+The Manager sees the error
+
+---
+
+ ![](index.php?/attachments/get/5a3700cb-0f02-4b98-89a6-0a1e1e60e89e) 
+",,"The Manager sees the error
+
+---
+
+ ![](index.php?/attachments/get/5a3700cb-0f02-4b98-89a6-0a1e1e60e89e) 
+",,"Enter invalid the userId in url
+Log in as a Manager
+
+",
+C388939,Login on behalf > Try to log in as User2 from Organization2,,,,,Medium,,Login on behalf,1,,Login > Login on behalf,,,,,,,0
+C390210,Only Password,https://virtowayqa.testrail.io/index.php?/attachments/get/1000002191,,,"Admin > Store
+Authentication
+
+Set Store authentication types
+
+Password = ON
+
+Azure Active Directory = OFF
+
+Google sign-in = OFF",Medium,,Single sign-in option (SSO),0,"**Documentation**: https://docs.virtocommerce.org/platform/developer-guide/Fundamentals/Security/extensions/adding-azure-as-sso-provider/
+
+Set new routes in environment.yml
+
+    - path: /externalsignin
+      route: platform
+    - path: /signin-oidc
+      route: platform
+    - path: /signin-google
+      route: platform
+
+Settings:
+
+Admin > Store
+Authentication
+
+Feature available from vc frontend version 2.3.0
+
+https://github.com/VirtoCommerce/vc-theme-b2b-vue/releases/tag/2.3.0",Single sign-in option (SSO),,"Step Description:
+Open Frontend Application
+Go to sign-in page
+Expected Result:
+Only Sign in form is displayed
+
+---
+
+ ![](index.php?/attachments/get/797854c2-3a79-491d-87db-3d2b6a1407fd) 
+",,"Only Sign in form is displayed
+
+---
+
+ ![](index.php?/attachments/get/797854c2-3a79-491d-87db-3d2b6a1407fd) 
+",,"Open Frontend Application
+Go to sign-in page",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter user's credentials
+Click on the Sign in button
+Expected Result:
+The User is signed in successfully",,The User is signed in successfully,,"Enter user's credentials
+Click on the Sign in button",
+C390211,Only Entra ID (Azure AD),https://virtowayqa.testrail.io/index.php?/attachments/get/1000002585,,,"Admin > Store
+Authentication
+
+Set Store authentication types
+
+Password = OFF
+
+Azure Active Directory = ON
+
+Google sign-in = OFF",Medium,,Single sign-in option (SSO),0,"**Documentation**: https://docs.virtocommerce.org/platform/developer-guide/Fundamentals/Security/extensions/adding-azure-as-sso-provider/
+
+Set new routes in environment.yml
+
+    - path: /externalsignin
+      route: platform
+    - path: /signin-oidc
+      route: platform
+    - path: /signin-google
+      route: platform
+
+Settings:
+
+Admin > Store
+Authentication
+
+Feature available from vc frontend version 2.3.0
+
+https://github.com/VirtoCommerce/vc-theme-b2b-vue/releases/tag/2.3.0",Single sign-in option (SSO),,"Step Description:
+Open Frontend Application
+Go to sign-in page
+Expected Result:
+Only Sign in with Entra ID button is displayed
+
+---
+
+ ![](index.php?/attachments/get/8d23fde6-1fd3-49b2-bbc6-212b86cb85c2) 
+",,"Only Sign in with Entra ID button is displayed
+
+---
+
+ ![](index.php?/attachments/get/8d23fde6-1fd3-49b2-bbc6-212b86cb85c2) 
+",,"Open Frontend Application
+Go to sign-in page",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Sign in with Entra ID button
+Expected Result:
+The User is signed in successfully",,The User is signed in successfully,,Click on the Sign in with Entra ID button,
+C390270,Only Google sign-in,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001989,,,"Admin > Store
+Authentication
+
+Set Store authentication types
+
+Password = OFF
+
+Azure Active Directory = OFF
+
+Google sign-in = ON",Medium,,Single sign-in option (SSO),0,"**Documentation**: https://docs.virtocommerce.org/platform/developer-guide/Fundamentals/Security/extensions/adding-azure-as-sso-provider/
+
+Set new routes in environment.yml
+
+    - path: /externalsignin
+      route: platform
+    - path: /signin-oidc
+      route: platform
+    - path: /signin-google
+      route: platform
+
+Settings:
+
+Admin > Store
+Authentication
+
+Feature available from vc frontend version 2.3.0
+
+https://github.com/VirtoCommerce/vc-theme-b2b-vue/releases/tag/2.3.0",Single sign-in option (SSO),,"Step Description:
+Open Frontend Application
+Go to sign-in page
+Expected Result:
+Only Sign in with Google button is displayed
+
+---
+
+ ![](index.php?/attachments/get/6b14e0a5-8abb-4140-96e1-2ab857bf5701) 
+",,"Only Sign in with Google button is displayed
+
+---
+
+ ![](index.php?/attachments/get/6b14e0a5-8abb-4140-96e1-2ab857bf5701) 
+",,"Open Frontend Application
+Go to sign-in page",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Sign in with Google button
+Expected Result:
+The User is signed in successfully",,The User is signed in successfully,,Click on the Sign in with Google button,
+C390271,Entra ID and Google sign-in are enabled,https://virtowayqa.testrail.io/index.php?/attachments/get/1000002033,,,"Admin > Store
+Authentication
+
+Set Store authentication types
+
+Password = OFF
+
+Azure Active Directory = ON
+
+Google sign-in = ON",Medium,,Single sign-in option (SSO),0,"**Documentation**: https://docs.virtocommerce.org/platform/developer-guide/Fundamentals/Security/extensions/adding-azure-as-sso-provider/
+
+Set new routes in environment.yml
+
+    - path: /externalsignin
+      route: platform
+    - path: /signin-oidc
+      route: platform
+    - path: /signin-google
+      route: platform
+
+Settings:
+
+Admin > Store
+Authentication
+
+Feature available from vc frontend version 2.3.0
+
+https://github.com/VirtoCommerce/vc-theme-b2b-vue/releases/tag/2.3.0",Single sign-in option (SSO),,"Step Description:
+Open Frontend Application
+Go to sign-in page
+Expected Result:
+Only Sign in with Entra ID and Sign in with Google are displayed
+
+---
+
+ ![](index.php?/attachments/get/6ff539b4-348b-4108-b2fb-39d11ef514bc) 
+",,"Only Sign in with Entra ID and Sign in with Google are displayed
+
+---
+
+ ![](index.php?/attachments/get/6ff539b4-348b-4108-b2fb-39d11ef514bc) 
+",,"Open Frontend Application
+Go to sign-in page",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Sign in with Entra ID button
+Expected Result:
+The User is signed in successfully",,The User is signed in successfully,,Click on the Sign in with Entra ID button,
+,,,,,,,,,,,,,"
+Step Description:
+Sign-out
+Open sign-in page
+Expected Result:
+A user sees the sign-in page with two buttons:
+
+Sign in with Entra ID
+
+Sign in with Google",,"A user sees the sign-in page with two buttons:
+
+Sign in with Entra ID
+
+Sign in with Google",,"Sign-out
+Open sign-in page",
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Sign in with Google button
+Expected Result:
+The User is signed in successfully",,The User is signed in successfully,,Click on the Sign in with Google button,
+,,,,,,,,,,,,,"
+Step Description:
+Sign-out
+Open sign-in page
+Expected Result:
+A user sees the sign-in page with two buttons:
+
+Sign in with Entra ID
+
+Sign in with Google",,"A user sees the sign-in page with two buttons:
+
+Sign in with Entra ID
+
+Sign in with Google",,"Sign-out
+Open sign-in page",
+C390273,Sign in form and Entra ID,https://virtowayqa.testrail.io/index.php?/attachments/get/1000000855,,,"Admin > Store
+Authentication
+
+Set Store authentication types
+
+Password = ON
+
+Azure Active Directory = ON
+
+Google sign-in = OFF",Medium,,Single sign-in option (SSO),0,"**Documentation**: https://docs.virtocommerce.org/platform/developer-guide/Fundamentals/Security/extensions/adding-azure-as-sso-provider/
+
+Set new routes in environment.yml
+
+    - path: /externalsignin
+      route: platform
+    - path: /signin-oidc
+      route: platform
+    - path: /signin-google
+      route: platform
+
+Settings:
+
+Admin > Store
+Authentication
+
+Feature available from vc frontend version 2.3.0
+
+https://github.com/VirtoCommerce/vc-theme-b2b-vue/releases/tag/2.3.0",Single sign-in option (SSO),,"Step Description:
+Open Frontend Application
+Go to sign-in page
+Expected Result:
+Only sign in form and Sign in with Entra ID are displayed
+
+---
+
+ ![](index.php?/attachments/get/2d72862e-5120-4b51-bc66-7f0003ddaf51) 
+",,"Only sign in form and Sign in with Entra ID are displayed
+
+---
+
+ ![](index.php?/attachments/get/2d72862e-5120-4b51-bc66-7f0003ddaf51) 
+",,"Open Frontend Application
+Go to sign-in page",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Sign in with Entra ID button
+Expected Result:
+The User is signed in successfully",,The User is signed in successfully,,Click on the Sign in with Entra ID button,
+,,,,,,,,,,,,,"
+Step Description:
+Sign-out
+Open sign-in page
+Expected Result:
+A user sees the sign-in form and Sign in with Entra ID button",,A user sees the sign-in form and Sign in with Entra ID button,,"Sign-out
+Open sign-in page",
+,,,,,,,,,,,,,"
+Step Description:
+Enter user's credentials
+Click on the Sign in button
+Expected Result:
+The User is signed in successfully",,The User is signed in successfully,,"Enter user's credentials
+Click on the Sign in button",
+C390272,Sign in form and Google sign-in,https://virtowayqa.testrail.io/index.php?/attachments/get/1000004039,,,"Admin > Store
+Authentication
+
+Set Store authentication types
+
+Password = ON
+
+Azure Active Directory = OFF
+
+Google sign-in = ON",Medium,,Single sign-in option (SSO),0,"**Documentation**: https://docs.virtocommerce.org/platform/developer-guide/Fundamentals/Security/extensions/adding-azure-as-sso-provider/
+
+Set new routes in environment.yml
+
+    - path: /externalsignin
+      route: platform
+    - path: /signin-oidc
+      route: platform
+    - path: /signin-google
+      route: platform
+
+Settings:
+
+Admin > Store
+Authentication
+
+Feature available from vc frontend version 2.3.0
+
+https://github.com/VirtoCommerce/vc-theme-b2b-vue/releases/tag/2.3.0",Single sign-in option (SSO),,"Step Description:
+Open Frontend Application
+Go to sign-in page
+Expected Result:
+Only the Sign in form and Sign in with Google are displayed 
+
+---
+
+ ![](index.php?/attachments/get/e04b450e-fbea-48a5-a2c0-ab27508187b0)
+",,"Only the Sign in form and Sign in with Google are displayed 
+
+---
+
+ ![](index.php?/attachments/get/e04b450e-fbea-48a5-a2c0-ab27508187b0)
+",,"Open Frontend Application
+Go to sign-in page",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Sign in with Google button
+Expected Result:
+The User is signed in successfully",,The User is signed in successfully,,Click on the Sign in with Google button,
+,,,,,,,,,,,,,"
+Step Description:
+Sign-out
+Open sign-in page
+Expected Result:
+A user sees the sign-in form and Sign in with Google button",,A user sees the sign-in form and Sign in with Google button,,"Sign-out
+Open sign-in page",
+,,,,,,,,,,,,,"
+Step Description:
+Enter user's credentials
+Click on the Sign in button
+Expected Result:
+The User is signed in successfully",,The User is signed in successfully,,"Enter user's credentials
+Click on the Sign in button",
+,,,,,,,,,,,,,"
+Step Description:
+Sign-out
+Open sign-in page
+Expected Result:
+A user sees the sign-in form and Sign in with Google button",,A user sees the sign-in form and Sign in with Google button,,"Sign-out
+Open sign-in page",
+C390209,All options  are enabled in settings,https://virtowayqa.testrail.io/index.php?/attachments/get/1000002416,,,"Admin > Store
+Authentication
+
+Set Store authentication types
+
+Password = ON
+
+Azure Active Directory = ON
+
+Google sign-in = ON",Medium,,Single sign-in option (SSO),0,"**Documentation**: https://docs.virtocommerce.org/platform/developer-guide/Fundamentals/Security/extensions/adding-azure-as-sso-provider/
+
+Set new routes in environment.yml
+
+    - path: /externalsignin
+      route: platform
+    - path: /signin-oidc
+      route: platform
+    - path: /signin-google
+      route: platform
+
+Settings:
+
+Admin > Store
+Authentication
+
+Feature available from vc frontend version 2.3.0
+
+https://github.com/VirtoCommerce/vc-theme-b2b-vue/releases/tag/2.3.0",Single sign-in option (SSO),,"Step Description:
+Open Frontend Application
+Go to sign-in page
+
+
+Expected Result:
+Sign-in form and all SSO options are displayed
+
+---
+
+  ![](index.php?/attachments/get/85e853f3-02f0-4eaa-9f51-003a9d853998)  
+",,"Sign-in form and all SSO options are displayed
+
+---
+
+  ![](index.php?/attachments/get/85e853f3-02f0-4eaa-9f51-003a9d853998)  
+",,"Open Frontend Application
+Go to sign-in page
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter user's credentials
+Click on the Sign in button
+Expected Result:
+The User is signed in successfully",,The User is signed in successfully,,"Enter user's credentials
+Click on the Sign in button",
+,,,,,,,,,,,,,"
+Step Description:
+Sign out
+Open sign-in page
+Click on the Sign in with Entra ID button
+
+Expected Result:
+The User is signed in successfully",,The User is signed in successfully,,"Sign out
+Open sign-in page
+Click on the Sign in with Entra ID button
+",
+,,,,,,,,,,,,,"
+Step Description:
+Sign out
+Open sign-in page
+Click on the Sign in with Google button
+
+
+
+Expected Result:
+The User is signed in successfully",,The User is signed in successfully,,"Sign out
+Open sign-in page
+Click on the Sign in with Google button
+
+
+",
+C390212,None of them (empty) - Password sign in form as default,,,,"Admin > Store
+Authentication
+
+Set Store authentication types
+
+Password = OFF
+
+Azure Active Directory = OFF
+
+Google sign-in = OFF",Medium,,Single sign-in option (SSO),0,"**Documentation**: https://docs.virtocommerce.org/platform/developer-guide/Fundamentals/Security/extensions/adding-azure-as-sso-provider/
+
+Set new routes in environment.yml
+
+    - path: /externalsignin
+      route: platform
+    - path: /signin-oidc
+      route: platform
+    - path: /signin-google
+      route: platform
+
+Settings:
+
+Admin > Store
+Authentication
+
+Feature available from vc frontend version 2.3.0
+
+https://github.com/VirtoCommerce/vc-theme-b2b-vue/releases/tag/2.3.0",Single sign-in option (SSO),,"Step Description:
+Open Frontend Application
+Go to sign-in page
+Expected Result:
+Sign in form is displayed by default",,Sign in form is displayed by default,,"Open Frontend Application
+Go to sign-in page",0
+C390226,Sign up > Sign in with Entra ID,,,,The user does not exist in system,Medium,,Azure Active Directory > Main logic,1,,Single sign-in option (SSO) > Azure Active Directory > Main logic,,"Step Description:
+Go to sign up page
+Create a Company account (create with email from Microsoft)
+[C389064]
+Expected Result:
+The company account was created",,The company account was created,,"Go to sign up page
+Create a Company account (create with email from Microsoft)
+[C389064]",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open sign-in page
+2. Click on Sign in with Entra ID
+Expected Result:
+1. Successful login under company account.
+2. The username is displayed in the upper right corner.
+3. Company name, corporate section are displayed",,"1. Successful login under company account.
+2. The username is displayed in the upper right corner.
+3. Company name, corporate section are displayed",,"1. Open sign-in page
+2. Click on Sign in with Entra ID",
+C390213,Sign in with Entra ID > User is not created in system,,,,"Admin > Store
+Authentication
+
+Set Store authentication types
+
+Password = ON
+
+Azure Active Directory = ON",High,,Azure Active Directory > Main logic,1,,Single sign-in option (SSO) > Azure Active Directory > Main logic,,"Step Description:
+1. Open sign in page
+2. Click on Sign in with Entra ID
+
+Expected Result:
+Successful login. The username is displayed in the upper right corner.",,Successful login. The username is displayed in the upper right corner.,,"1. Open sign in page
+2. Click on Sign in with Entra ID
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to admin site
+Contacts
+Find the contact
+Expected Result:
+Contact and Account created with correct user type """"Customer""""
+
+  
+",,"Contact and Account created with correct user type ""Customer""
+
+  
+",,"Go to admin site
+Contacts
+Find the contact",
+C390280,Sign in with Entra ID > Sign up with the same email,,,,,Medium,,Azure Active Directory > Main logic,1,,Single sign-in option (SSO) > Azure Active Directory > Main logic,,,,,,,0
+C390225,Sign in with Entra ID > User is created in system,,,,"Admin > Store
+Authentication
+
+Set Store authentication types
+
+Password = ON
+
+Azure Active Directory = ON",High,,Azure Active Directory > Main logic,1,,Single sign-in option (SSO) > Azure Active Directory > Main logic,,"Step Description:
+1. Open sign in page
+2. Click on Sign in with Entra ID
+
+Expected Result:
+Successful login. The username is displayed in the upper right corner.",,Successful login. The username is displayed in the upper right corner.,,"1. Open sign in page
+2. Click on Sign in with Entra ID
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to admin site
+Contacts
+Find the contact
+Expected Result:
+Contact and Account with correct user type """"Customer""""
+
+  
+",,"Contact and Account with correct user type ""Customer""
+
+  
+",,"Go to admin site
+Contacts
+Find the contact",
+C390217,Login with expired password > Success ( without change password form),,,,"The User is created in the System
+The password is expired",Medium,,Azure Active Directory > Main logic,1,,Single sign-in option (SSO) > Azure Active Directory > Main logic,,"Step Description:
+1. Open sign in page
+2. Click on Sign in with Entra ID
+Expected Result:
+Successful login
+The system redirects to home page
+The username is displayed in the upper right corner.",,"Successful login
+The system redirects to home page
+The username is displayed in the upper right corner.",,"1. Open sign in page
+2. Click on Sign in with Entra ID",0
+C390218,Login with reminded password > Success ( without reminder in header),,,,"The User is created in the System
+The password is about expires in X days",Medium,,Azure Active Directory > Main logic,1,,Single sign-in option (SSO) > Azure Active Directory > Main logic,,"Step Description:
+1. Open sign in page
+2. Click on Sign in with Entra ID
+Expected Result:
+Successful login
+The system redirects to home page
+The username is displayed in the upper right corner.",,"Successful login
+The system redirects to home page
+The username is displayed in the upper right corner.",,"1. Open sign in page
+2. Click on Sign in with Entra ID",0
+C390274,Sign up > Sign in with Google,,,,"The user does not exist in system
+User has a google account",Medium,,Google SSO > Main logic,1,"Documentation: https://docs.virtocommerce.org/platform/developer-guide/Fundamentals/Security/extensions/adding-google-as-sso-provider/
+
+https://virtocommerce.atlassian.net/browse/VCST-1623
+
+Feature available from frontend version 2.4.0
+
+https://github.com/VirtoCommerce/vc-theme-b2b-vue/releases/tag/2.4.0",Single sign-in option (SSO) > Google SSO > Main logic,,"Step Description:
+Go to sign up page
+Create a Company account (create with google email)
+[C389064]
+Expected Result:
+The company account was created",,The company account was created,,"Go to sign up page
+Create a Company account (create with google email)
+[C389064]",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open sign-in page
+2. Click on Sign in with Google
+Expected Result:
+1. Successful login under company account.
+2. The username is displayed in the upper right corner.
+3. Company name, corporate section are displayed",,"1. Successful login under company account.
+2. The username is displayed in the upper right corner.
+3. Company name, corporate section are displayed",,"1. Open sign-in page
+2. Click on Sign in with Google",
+C390275,Sign in with Google > User is not created in system,,,,"Admin > Store
+Authentication
+
+Set Store authentication types
+
+Password = ON
+
+Azure Active Directory = ON
+
+Google sign-in = ON
+
+User has a google account",High,,Google SSO > Main logic,1,"Documentation: https://docs.virtocommerce.org/platform/developer-guide/Fundamentals/Security/extensions/adding-google-as-sso-provider/
+
+https://virtocommerce.atlassian.net/browse/VCST-1623
+
+Feature available from frontend version 2.4.0
+
+https://github.com/VirtoCommerce/vc-theme-b2b-vue/releases/tag/2.4.0",Single sign-in option (SSO) > Google SSO > Main logic,,"Step Description:
+1. Open sign in page
+2. Click on Sign in with Google
+3. Select or enter Google account credentials.
+4. Grant necessary permissions.
+
+
+
+Expected Result:
+1. The application prompts the user to create a new account or automatically creates one.
+2. User is signed in and redirected to the Home page.",,"1. The application prompts the user to create a new account or automatically creates one.
+2. User is signed in and redirected to the Home page.",,"1. Open sign in page
+2. Click on Sign in with Google
+3. Select or enter Google account credentials.
+4. Grant necessary permissions.
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to admin site
+Contacts
+Find the contact
+Expected Result:
+Contact and Account created with correct user type """"Customer""""
+
+  
+",,"Contact and Account created with correct user type ""Customer""
+
+  
+",,"Go to admin site
+Contacts
+Find the contact",
+C390281,Incognito mode > Sign in with Google,,,,"Admin > Store
+Authentication
+
+Set Store authentication types
+
+Password = ON
+
+Azure Active Directory = ON
+
+Google sign-in = ON
+
+
+User has a google account",High,,Google SSO > Main logic,1,"Documentation: https://docs.virtocommerce.org/platform/developer-guide/Fundamentals/Security/extensions/adding-google-as-sso-provider/
+
+https://virtocommerce.atlassian.net/browse/VCST-1623
+
+Feature available from frontend version 2.4.0
+
+https://github.com/VirtoCommerce/vc-theme-b2b-vue/releases/tag/2.4.0",Single sign-in option (SSO) > Google SSO > Main logic,,"Step Description:
+1. Open sign in page
+2. Click on Sign in with Google
+
+Expected Result:
+The Google sign-in page is opened",,The Google sign-in page is opened,,"1. Open sign in page
+2. Click on Sign in with Google
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter email
+Click Next
+Enter password for google account
+Click Continue
+Expected Result:
+The user redirects to home page of VC Frontend.
+Successful login. The username is displayed in the upper right corner.",,"The user redirects to home page of VC Frontend.
+Successful login. The username is displayed in the upper right corner.",,"Enter email
+Click Next
+Enter password for google account
+Click Continue",
+,,,,,,,,,,,,,"
+Step Description:
+Go to admin site
+Contacts
+Find the contact
+Expected Result:
+Contact and Account created with correct user type """"Customer""""
+
+  
+",,"Contact and Account created with correct user type ""Customer""
+
+  
+",,"Go to admin site
+Contacts
+Find the contact",
+C390279,Sign in with Google > Sign up with the same google email,,,,,Medium,,Google SSO > Main logic,1,"Documentation: https://docs.virtocommerce.org/platform/developer-guide/Fundamentals/Security/extensions/adding-google-as-sso-provider/
+
+https://virtocommerce.atlassian.net/browse/VCST-1623
+
+Feature available from frontend version 2.4.0
+
+https://github.com/VirtoCommerce/vc-theme-b2b-vue/releases/tag/2.4.0",Single sign-in option (SSO) > Google SSO > Main logic,,,,,,,0
+C390276,Sign in with Google > User is created in system,,,,"Admin > Store
+Authentication
+
+Set Store authentication types
+
+Password = ON
+
+Azure Active Directory = ON
+
+Google sign-in = ON
+
+User has a google account",High,,Google SSO > Main logic,1,"Documentation: https://docs.virtocommerce.org/platform/developer-guide/Fundamentals/Security/extensions/adding-google-as-sso-provider/
+
+https://virtocommerce.atlassian.net/browse/VCST-1623
+
+Feature available from frontend version 2.4.0
+
+https://github.com/VirtoCommerce/vc-theme-b2b-vue/releases/tag/2.4.0",Single sign-in option (SSO) > Google SSO > Main logic,,"Step Description:
+1. Open sign in page
+2. Click on Sign in with Google
+
+Expected Result:
+Successful login. The username is displayed in the upper right corner.",,Successful login. The username is displayed in the upper right corner.,,"1. Open sign in page
+2. Click on Sign in with Google
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to admin site
+Contacts
+Find the contact
+Expected Result:
+Contact and Account with correct user type """"Customer""""
+
+  
+",,"Contact and Account with correct user type ""Customer""
+
+  
+",,"Go to admin site
+Contacts
+Find the contact",
+C390277,Login with expired password > Success ( without change password form),,,,"The User is created in the System
+The password is expired",Medium,,Google SSO > Main logic,1,"Documentation: https://docs.virtocommerce.org/platform/developer-guide/Fundamentals/Security/extensions/adding-google-as-sso-provider/
+
+https://virtocommerce.atlassian.net/browse/VCST-1623
+
+Feature available from frontend version 2.4.0
+
+https://github.com/VirtoCommerce/vc-theme-b2b-vue/releases/tag/2.4.0",Single sign-in option (SSO) > Google SSO > Main logic,,"Step Description:
+1. Open sign in page
+2. Click on Sign in with Google
+Expected Result:
+Successful login
+The system redirects to home page
+The username is displayed in the upper right corner.",,"Successful login
+The system redirects to home page
+The username is displayed in the upper right corner.",,"1. Open sign in page
+2. Click on Sign in with Google",0
+C390278,Login with reminded password > Success ( without reminder in header),,,,"The User is created in the System
+The password is about expires in X days",Medium,,Google SSO > Main logic,1,"Documentation: https://docs.virtocommerce.org/platform/developer-guide/Fundamentals/Security/extensions/adding-google-as-sso-provider/
+
+https://virtocommerce.atlassian.net/browse/VCST-1623
+
+Feature available from frontend version 2.4.0
+
+https://github.com/VirtoCommerce/vc-theme-b2b-vue/releases/tag/2.4.0",Single sign-in option (SSO) > Google SSO > Main logic,,"Step Description:
+1. Open sign in page
+2. Click on Sign in with Google
+Expected Result:
+Successful login
+The system redirects to home page
+The username is displayed in the upper right corner.",,"Successful login
+The system redirects to home page
+The username is displayed in the upper right corner.",,"1. Open sign in page
+2. Click on Sign in with Google",0
+C390284,Create a new GA > GA has only First name,,,,,Medium,,Google SSO > Main logic,1,"Documentation: https://docs.virtocommerce.org/platform/developer-guide/Fundamentals/Security/extensions/adding-google-as-sso-provider/
+
+https://virtocommerce.atlassian.net/browse/VCST-1623
+
+Feature available from frontend version 2.4.0
+
+https://github.com/VirtoCommerce/vc-theme-b2b-vue/releases/tag/2.4.0",Single sign-in option (SSO) > Google SSO > Main logic,,,,,,,0
+C389066,Main page > sign in form  > general view,,,,"1. Go to the store anonymously.
+",Medium,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile),0,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile),,"Step Description:
+1. Check the  Sign-in form
+
+Expected Result:
+1. The form presented with the next elements:
+- Email field
+- Password field with eye icon
+- Link Forgot your password
+- Checkbox Remember me
+- Buttons: Login, Sign up",,"1. The form presented with the next elements:
+- Email field
+- Password field with eye icon
+- Link Forgot your password
+- Checkbox Remember me
+- Buttons: Login, Sign up",,"1. Check the  Sign-in form
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click the Sign up button
+Expected Result:
+1. Registration form opens",,1. Registration form opens,,1. Click the Sign up button,
+,,,,,,,,,,,,,"
+Step Description:
+1. Go back to Sign-in form
+2. Click Forgot password link
+Expected Result:
+1. Reset your password form opens",,1. Reset your password form opens,,"1. Go back to Sign-in form
+2. Click Forgot password link",
+C389067,Sign in page > sign in form> general view,,,,"1. Go to the store anonymously.
+",Medium,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile),0,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile),,"Step Description:
+1. Click Sign In on the header.
+
+Expected Result:
+1. You are redirected to the Sign In page.",,1. You are redirected to the Sign In page.,,"1. Click Sign In on the header.
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the page
+Expected Result:
+1. Next elements are presented:
+- Header is the same as on usual pages for Anonymous User.
+- Footer is the same as on usual pages.
+- Sign in form
+
+",,"1. Next elements are presented:
+- Header is the same as on usual pages for Anonymous User.
+- Footer is the same as on usual pages.
+- Sign in form
+
+",,1. Check the page,
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the sigh in form
+Expected Result:
+1. The form presented with the next elements:
+- Email  field
+- Password field with eye icon
+- Link Forgot your password
+- Checkbox Remember me
+- Buttons: Login, Registration",,"1. The form presented with the next elements:
+- Email  field
+- Password field with eye icon
+- Link Forgot your password
+- Checkbox Remember me
+- Buttons: Login, Registration",,1. Check the sigh in form,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click the Registration button
+Expected Result:
+1. Registration form opens",,1. Registration form opens,,1. Click the Registration button,
+,,,,,,,,,,,,,"
+Step Description:
+1. Go back to Sign-in form
+2. Click Forgot password link
+Expected Result:
+1. Reset your password form opens",,1. Reset your password form opens,,"1. Go back to Sign-in form
+2. Click Forgot password link",
+C389068,Sign in page > Password visibility,,,,"1. Go to the store Anonymously
+ ",Medium,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile),0,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile),,"Step Description:
+1. Open Sign in form (from home page or header link)
+2. Fill __Password__ field
+3. Pay attention on the filling password symbols and Eye icon state
+Expected Result:
+1. Password symbols invisible
+2. Eye icon is not crossed out ",,"1. Password symbols invisible
+2. Eye icon is not crossed out ",,"1. Open Sign in form (from home page or header link)
+2. Fill __Password__ field
+3. Pay attention on the filling password symbols and Eye icon state",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the Eye icon
+2. Pay attention to the Password symbols and Eye icon state   
+Expected Result:
+1. Password symbols are visible
+2. Eye icon is crossed out ",,"1. Password symbols are visible
+2. Eye icon is crossed out ",,"1. Click on the Eye icon
+2. Pay attention to the Password symbols and Eye icon state   ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the Eye icon one more time
+2. Pay attention to the Password symbols and Eye icon state   
+Expected Result:
+1. Password symbols invisible
+2. Eye icon is not crossed out ",,"1. Password symbols invisible
+2. Eye icon is not crossed out ",,"1. Click on the Eye icon one more time
+2. Pay attention to the Password symbols and Eye icon state   ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Insert hide symbols in the password field by CTRL + A or other way
+2. Copy that by CTRL + C or other way
+3. Paste it in the Username field
+Expected Result:
+1. Invisible password symbols not copied",,1. Invisible password symbols not copied,,"1. Insert hide symbols in the password field by CTRL + A or other way
+2. Copy that by CTRL + C or other way
+3. Paste it in the Username field",
+,,,,,,,,,,,,,"
+Step Description:
+1. Make password symbols visible (Click on the Eye icon)
+2. Insert this symbols by CTRL + A or other way
+3. Paste it in the Username field
+Expected Result:
+1. Visible password symbols copied successful",,1. Visible password symbols copied successful,,"1. Make password symbols visible (Click on the Eye icon)
+2. Insert this symbols by CTRL + A or other way
+3. Paste it in the Username field",
+C389069,Sign in > as PERSONAL,,,,"1. User_1 created
+2. Go to the store
+
+",Medium,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile),0,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile),,"Step Description:
+1. Enter the Email and password for the User_1
+2. Click button Sign in.
+
+Expected Result:
+1. User_1 logged in to the store. The catalog page is opened",,1. User_1 logged in to the store. The catalog page is opened,,"1. Enter the Email and password for the User_1
+2. Click button Sign in.
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the header
+Expected Result:
+1. User_1 name presented",,1. User_1 name presented,,1. Check the header,
+C389070,Sign in > as ORGANIZATION,,,,"1. User_1 created
+2. User_1  belongs to the Organization_1
+3. Go to the store.
+
+",Medium,ST-4947,Sign in form (on the Main and Sign in pages) (Desktop+Mobile),0,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile),,"Step Description:
+1. Enter the Email  and password for the User_1 
+3. Click button Sign in.
+
+Expected Result:
+1. User_1 logged in to the store. The catalog page is opened.",,1. User_1 logged in to the store. The catalog page is opened.,,"1. Enter the Email  and password for the User_1 
+3. Click button Sign in.
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the header
+Expected Result:
+1. User_1 name presented",,1. User_1 name presented,,1. Check the header,
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the place near the logo
+Expected Result:
+1. Organization_1 name presented",,1. Organization_1 name presented,,1. Check the place near the logo,
+C389071,Log  out from the store,,,,"1. Go to the store.
+2. User_1 logged in store
+2. Add a few products to the cart
+
+",Medium,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile),0,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile),,"Step Description:
+1. Go to the header
+2. Open drop-down menu
+3. Click icon Exit near the User_1
+Expected Result:
+1.  User_1 log out from the store",,1.  User_1 log out from the store,,"1. Go to the header
+2. Open drop-down menu
+3. Click icon Exit near the User_1",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the header
+Expected Result:
+1. User_1 name is not presented
+2. Only Sign in and Sign up now links are  presented",,"1. User_1 name is not presented
+2. Only Sign in and Sign up now links are  presented",,1. Check the header,
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the cart count in the menu 
+Expected Result:
+1.  Cart doesn't save the count of the added products",,1.  Cart doesn't save the count of the added products,,1. Check the cart count in the menu ,
+C389072,Sign in page > Open the login page in different Tabs,,,,,Medium,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile),0,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile),,"Step Description:
+Open the site in five tabs as anonymous 
+Login in the first tab
+Check all tabs
+
+Expected Result:
+The user logged as a user from 1st tab in all tabs",,The user logged as a user from 1st tab in all tabs,,"Open the site in five tabs as anonymous 
+Login in the first tab
+Check all tabs
+",0
+C389079,Main page > sign in form > validation > invalid credentials,,,,"1. User_1 created
+2. Go to the store
+",Medium,,Validation >  Sign in from  (Desktop+Mobile),1,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile) > Validation >  Sign in from  (Desktop+Mobile),,"Step Description:
+1. Enter the incorrect Email for User_1 
+2. Click the button Sign in.
+Expected Result:
+1. Error message is shown: The email or password you provided are invalid",,1. Error message is shown: The email or password you provided are invalid,,"1. Enter the incorrect Email for User_1 
+2. Click the button Sign in.",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter the incorrect Password for User_1 
+2. Click the button Sign in.
+Expected Result:
+1. Error message is shown: The email or password you provided are invalid",,1. Error message is shown: The email or password you provided are invalid,,"1. Enter the incorrect Password for User_1 
+2. Click the button Sign in.",
+C389080,Main page > sign in form > validation > empty  fields,,,,"1. User_1 created
+2. Go to the store. ",Medium,,Validation >  Sign in from  (Desktop+Mobile),1,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile) > Validation >  Sign in from  (Desktop+Mobile),,"Step Description:
+1. Fill the sign in form: Leave field Email empty
+2. Click the button Sign in.
+Expected Result:
+1. Error message is shown: The Email /password are required",,1. Error message is shown: The Email /password are required,,"1. Fill the sign in form: Leave field Email empty
+2. Click the button Sign in.",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill the sign in form: Leave field Password empty
+2. Click the button Sign in.
+Expected Result:
+1. Error message is shown: The username/password are required",,1. Error message is shown: The username/password are required,,"1. Fill the sign in form: Leave field Password empty
+2. Click the button Sign in.",
+C389081,Main page > sigh in form > Enter 5 times wrong password >  account is locked,,,,User_1 exists in the system,Medium,,Validation >  Sign in from  (Desktop+Mobile),1,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile) > Validation >  Sign in from  (Desktop+Mobile),,"Step Description:
+1. Enter a valid Email
+2. Try to log in with the wrong password 5 times
+3. Check that the validation message shows the correct text
+Expected Result:
+The user sees an error message:
+
+“You have been blocked. You can not reach any information or create the order. For more details please contact the site administrator  ”.",,"The user sees an error message:
+
+“You have been blocked. You can not reach any information or create the order. For more details please contact the site administrator  ”.",,"1. Enter a valid Email
+2. Try to log in with the wrong password 5 times
+3. Check that the validation message shows the correct text",0
+,,,,,,,,,,,,,"
+Step Description:
+Try to log in with a valid email and password
+Expected Result:
+The user has been locked.
+An error message is displayed:
+“You have been blocked. You can not reach any information or create the order. For more details please contact the site administrator”.
+
+",,"The user has been locked.
+An error message is displayed:
+“You have been blocked. You can not reach any information or create the order. For more details please contact the site administrator”.
+
+",,Try to log in with a valid email and password,
+C389082,Forgot password,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001139,,,"1. User_1 created
+2. Go to the store
+3. Open sign-in form  (Main page or Sign-in page)",Medium,,Forgot password,1,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile) > Forgot password,,"Step Description:
+1. Click Forgot password link under Sign-in form
+
+
+
+Expected Result:
+1.  New page with reset password fields opens",,1.  New page with reset password fields opens,,"1. Click Forgot password link under Sign-in form
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the page
+
+Expected Result:
+1. Next elements are presented:
+- Title __Reset your password__
+- Notification: We will send you an email with reset password instructions
+- Input e-Mail field (required) (e.g  Mail_1 - existed)
+- Button Submit
+
+
+  
+
+
+",,"1. Next elements are presented:
+- Title __Reset your password__
+- Notification: We will send you an email with reset password instructions
+- Input e-Mail field (required) (e.g  Mail_1 - existed)
+- Button Submit
+
+
+  
+
+
+",,"1. Check the page
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter mail of the User_1
+2. Click the button Submit
+Expected Result:
+3. Page opens with next presented element:
+- Title __Reset your password__
+- Notification: We sent you a reset password link to your inbox.
+- Button Home page",,"3. Page opens with next presented element:
+- Title __Reset your password__
+- Notification: We sent you a reset password link to your inbox.
+- Button Home page",,"1. Enter mail of the User_1
+2. Click the button Submit",
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to the Mail_1
+2. Check the mail 
+Expected Result:
+1. Mail  with reset password link presented",,1. Mail  with reset password link presented,,"1. Go to the Mail_1
+2. Check the mail ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open the link
+2. Check the page
+Expected Result:
+1. Next elements are presented:
+
+
+- Title __Reset your password__
+- Notification: Enter a new password
+- Password field(required) with eye icon
+- Confirm Password(required) with eye icon
+- Button Reset password
+- Tips for creating a strong password
+
+",,"1. Next elements are presented:
+
+
+- Title __Reset your password__
+- Notification: Enter a new password
+- Password field(required) with eye icon
+- Confirm Password(required) with eye icon
+- Button Reset password
+- Tips for creating a strong password
+
+",,"1. Open the link
+2. Check the page",
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to Admin Environment&gt; Open Notifications &gt; Notifications activity feed
+2. Open the last notification with a link
+3. Open the link
+4. Check the page
+Expected Result:
+1. Next elements are presented:
+
+
+- Title __Reset your password__
+- Notification: Enter a new password
+- Password field(required) with eye icon
+- Confirm Password(required) with eye icon
+- Button Reset password
+- Tips for creating a strong password
+
+ ![](index.php?/attachments/get/3d201956-3f18-484b-aa1c-8a94242e956d) 
+
+
+",,"1. Next elements are presented:
+
+
+- Title __Reset your password__
+- Notification: Enter a new password
+- Password field(required) with eye icon
+- Confirm Password(required) with eye icon
+- Button Reset password
+- Tips for creating a strong password
+
+ ![](index.php?/attachments/get/3d201956-3f18-484b-aa1c-8a94242e956d) 
+
+
+",,"1. Go to Admin Environment&gt; Open Notifications &gt; Notifications activity feed
+2. Open the last notification with a link
+3. Open the link
+4. Check the page",
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter the password  twice
+2. Click button Reset password
+3. Check the page
+Expected Result:
+1.  Next elements are presented
+- Title __Reset your password__
+- Notification: Your password has been reset successfully
+
+- Button Log in",,"1.  Next elements are presented
+- Title __Reset your password__
+- Notification: Your password has been reset successfully
+
+- Button Log in",,"1. Enter the password  twice
+2. Click button Reset password
+3. Check the page",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click button Log in 
+
+
+Expected Result:
+1. Sign in form opens",,1. Sign in form opens,,"1. Click button Log in 
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Try to login using a new password.
+Expected Result:
+1. User_1 log in to the store
+2. Dashboard page open",,"1. User_1 log in to the store
+2. Dashboard page open",,1. Try to login using a new password.,
+C389083,Reset password > Password visibility,,,,"1. User_1 created
+2. User_1 reached the RESET YOUR PASSWORD form",Medium,,Forgot password,1,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile) > Forgot password,,"Step Description:
+1. Fill __Password__ + __Confirm password__ fields
+2. Pay attention on the filling passwords symbols and Eye icons states
+Expected Result:
+1. Passwords symbols invisible
+2. Eye icons is not crossed out ",,"1. Passwords symbols invisible
+2. Eye icons is not crossed out ",,"1. Fill __Password__ + __Confirm password__ fields
+2. Pay attention on the filling passwords symbols and Eye icons states",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the each Eye icons
+2. Pay attention to the Passwords symbols and Eye icons states
+Expected Result:
+1. Passwords symbols are visible
+2. Eye icons is crossed out ",,"1. Passwords symbols are visible
+2. Eye icons is crossed out ",,"1. Click on the each Eye icons
+2. Pay attention to the Passwords symbols and Eye icons states",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the each Eye icons one more time
+2. Pay attention to the Passwords symbols and Eye icons states
+Expected Result:
+1. Passwords symbols invisible
+2. Eye icons is not crossed out ",,"1. Passwords symbols invisible
+2. Eye icons is not crossed out ",,"1. Click on the each Eye icons one more time
+2. Pay attention to the Passwords symbols and Eye icons states",
+,,,,,,,,,,,,,"
+Step Description:
+1. Insert hide symbols in the password field by CTRL + A or other way
+2. Copy that by CTRL + C or other way
+3. Paste it in the any field
+Expected Result:
+1. Invisible password symbols not copied",,1. Invisible password symbols not copied,,"1. Insert hide symbols in the password field by CTRL + A or other way
+2. Copy that by CTRL + C or other way
+3. Paste it in the any field",
+,,,,,,,,,,,,,"
+Step Description:
+1. Make password symbols visible (Click on the Eye icon)
+2. Insert this symbols by CTRL + A or other way
+3. Paste it in the any field
+Expected Result:
+1. Visible password symbols copied successful",,1. Visible password symbols copied successful,,"1. Make password symbols visible (Click on the Eye icon)
+2. Insert this symbols by CTRL + A or other way
+3. Paste it in the any field",
+C389084,Forgot password > error token or id,,,,"1. There is a registered user_1
+2. Go to the story anonymously 
+3. Open sign-in form  (Main page or Sign-in page)
+4. Click Forgot password link under Sign-in form
+5. Enter mail of the User_1
+6. Click the button Submit
+7. Go to Admin Environment > Open Notifications > Notifications activity feed
+8. Open the last notification with a link
+
+",Medium,,Forgot password,1,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile) > Forgot password,,"Step Description:
+1. Change the __Token__ from this link
+2. Open the link
+3. Check the page
+Expected Result:
+1. Next elements are presented:
+- Title __Reset account password__
+- Notification: token is invalid.
+- Button Home page",,"1. Next elements are presented:
+- Title __Reset account password__
+- Notification: token is invalid.
+- Button Home page",,"1. Change the __Token__ from this link
+2. Open the link
+3. Check the page",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Change the __Id__ from this link
+2. Open the link
+3. Check the page
+Expected Result:
+1. Next elements are presented:
+- Title __Reset account password__
+- Notification: User not found.
+- Button Home page",,"1. Next elements are presented:
+- Title __Reset account password__
+- Notification: User not found.
+- Button Home page",,"1. Change the __Id__ from this link
+2. Open the link
+3. Check the page",
+C389085,Forgot password > invalid email,,,"1. There is no error message presented for a security reasons.
+
+
+","1. There is a registered user_1
+2. Go to the story 
+
+",Medium,,Forgot password,1,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile) > Forgot password,"1. Open sign-in form  (Main page or Sign-in page)
+2. Click Forgot password link under the Sign-in form
+3. Enter __any email__ that is not associated with any user_1.
+4. Click **Submit**.",,,,,,0
+C389075,Validation > required field,,,,"1. Go to the store
+2. Open Forgot password form ",Medium,,Forgot password > validation,2,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile) > Forgot password > Forgot password > validation,,"Step Description:
+1. Leave __Email__ field empty
+2. Click button Submit
+ 
+Expected Result:
+1. Error message shows about required field Email.        ",,1. Error message shows about required field Email.        ,,"1. Leave __Email__ field empty
+2. Click button Submit
+ ",0
+C389076,Validation > email,,,,"1. Go to the store
+2. Open Forgot password form
+",Medium,,Forgot password > validation,2,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile) > Forgot password > Forgot password > validation,,"Step Description:
+1. Enter __Email__ with wrong data (for example without """"@"""")
+2. Click button Submit
+ 
+Expected Result:
+1. Error message shows about incorrect email.",,1. Error message shows about incorrect email.,,"1. Enter __Email__ with wrong data (for example without ""@"")
+2. Click button Submit
+ ",0
+C389077,Validation > password  match,,,,"1. Go to the store
+2. Open Forgot password form",Medium,,Forgot password > validation,2,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile) > Forgot password > Forgot password > validation,,"Step Description:
+1. Enter 2  different __Passwords__
+2. Click Reset password 
+ 
+Expected Result:
+1. Error message shows about passwords not match each other.",,1. Error message shows about passwords not match each other.,,"1. Enter 2  different __Passwords__
+2. Click Reset password 
+ ",0
+C389078,Validation > password policy,,,,"1. Go to the store
+2. Open Forgot password form
+3. The rules of the policy may depend. Check the list or the rules before.",Medium,,Forgot password > validation,2,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile) > Forgot password > Forgot password > validation,,"Step Description:
+1. Enter a Password which not follow the policy.
+2. Click button Reset password  
+ 
+Expected Result:
+1. Error message shows about the Password must follow the Policy rules",,1. Error message shows about the Password must follow the Policy rules,,"1. Enter a Password which not follow the policy.
+2. Click button Reset password  
+ ",0
+C389073,Allow anonymous users to visit the store  > Switch On,,,,"Admin set ""Allow anonymous user for store"" to false",Medium,,Anonymous user access to the store,1,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile) > Anonymous user access to the store,,"Step Description:
+Go to admin site &gt; Store &gt; Settings
+***Switch On*** """"Allow anonymous users to visit the store""""
+Save
+Expected Result:
+The toggle is turned on",,The toggle is turned on,,"Go to admin site &gt; Store &gt; Settings
+***Switch On*** ""Allow anonymous users to visit the store""
+Save",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to Storefront
+Click on Catalog &gt; Choose any category
+Expected Result:
+Anonymous user can open catalog",,Anonymous user can open catalog,,"Go to Storefront
+Click on Catalog &gt; Choose any category",
+C389074,Allow anonymous users to visit the store  > Switch Off,,,,"Admin set ""Allow anonymous user for the store"" to true",Medium,,Anonymous user access to the store,1,,Sign in form (on the Main and Sign in pages) (Desktop+Mobile) > Anonymous user access to the store,,"Step Description:
+Go to admin site &gt; Store &gt; Settings
+***Switch Off*** """"Allow anonymous users to visit the store""""
+Save
+Expected Result:
+The toggle is turned off",,The toggle is turned off,,"Go to admin site &gt; Store &gt; Settings
+***Switch Off*** ""Allow anonymous users to visit the store""
+Save",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to Storefront
+Click on Catalog &gt; Choose any category
+Expected Result:
+Anonymous user can not open catalog. You are redirected to the login page.",,Anonymous user can not open catalog. You are redirected to the login page.,,"Go to Storefront
+Click on Catalog &gt; Choose any category",
+C389090,Admin changed password > Redirect user to change password page,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000001265, https://virtowayqa.testrail.io/index.php?/attachments/get/1000001297",,, ,Medium,,Change password,0,,Change password,,"Step Description:
+Log in to the store as User_1
+Open catalog page
+Expected Result:
+User_1 log in with his current password",,User_1 log in with his current password,,"Log in to the store as User_1
+Open catalog page",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to admin site &gt; Security
+Find user_1 &gt; Change Password
+Set new password &gt; **enable flag**
+""""Make this user change their password when they sign in next time"""" 
+
+
+ ![](index.php?/attachments/get/44e0f8ff-6d1b-4fe0-8619-b180d594d30c) 
+
+Expected Result:
+The admin changed the password for user_1",,The admin changed the password for user_1,,"Go to admin site &gt; Security
+Find user_1 &gt; Change Password
+Set new password &gt; **enable flag**
+""Make this user change their password when they sign in next time"" 
+
+
+ ![](index.php?/attachments/get/44e0f8ff-6d1b-4fe0-8619-b180d594d30c) 
+",
+,,,,,,,,,,,,,"
+Step Description:
+Return to storefront
+Try to add the product to the cart
+Expected Result:
+The user_1 redirects to the change password page
+
+
+ ![](index.php?/attachments/get/4701e1de-7036-4237-9ca7-2517a353e05b) 
+",,"The user_1 redirects to the change password page
+
+
+ ![](index.php?/attachments/get/4701e1de-7036-4237-9ca7-2517a353e05b) 
+",,"Return to storefront
+Try to add the product to the cart",
+,,,,,,,,,,,,,"
+Step Description:
+Enter the current password (set up by admin)
+Set a new secure password and click on the Change button.
+
+Expected Result:
+The password changed
+The user returns to the page they were on before the redirect",,"The password changed
+The user returns to the page they were on before the redirect",,"Enter the current password (set up by admin)
+Set a new secure password and click on the Change button.
+",
+,,,,,,,,,,,,,"
+Step Description:
+Log out
+Try to sign in with a new password
+Expected Result:
+User_1 log in with the new password successfully",,User_1 log in with the new password successfully,,"Log out
+Try to sign in with a new password",
+C389091,Admin changed password > Redirect user to change password page > Invalid current password,,,,"Log in to the store as User_1
+Open Account
+
+Admin set up a new password for User_1",Medium,,Change password,0,,Change password,,"Step Description:
+Try to open any page from the account
+Expected Result:
+The user_1 redirects to the change password page",,The user_1 redirects to the change password page,,Try to open any page from the account,0
+,,,,,,,,,,,,,"
+Step Description:
+Enter the Invalid current password
+Set a new secure password and click on the Change button.
+Expected Result:
+The User_1 sees an error alert """"You entered the wrong current password, please try again or call support"""" 
+
+
+
+
+
+
+
+
+ 
+
+
+",,"The User_1 sees an error alert ""You entered the wrong current password, please try again or call support"" 
+
+
+
+
+
+
+
+
+ 
+
+
+",,"Enter the Invalid current password
+Set a new secure password and click on the Change button.",
+C389092,Admin changed password > User login the first time > Successfully change,,,,"Admin set up a new password for User_1
+
+",Medium,,Change password,0,,Change password,,"Step Description:
+Open sign in page in 5 separate tabs
+
+Enter email and new password (set up by admin)
+Click on the Login button
+Expected Result:
+The user_1 was redirected to the change password page in all Tabs
+
+
+
+ 
+
+
+
+",,"The user_1 was redirected to the change password page in all Tabs
+
+
+
+ 
+
+
+
+",,"Open sign in page in 5 separate tabs
+
+Enter email and new password (set up by admin)
+Click on the Login button",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter the current password (set up by admin)
+Set a new secure password and click on the Change button.
+Expected Result:
+The password changed
+User sees text: Your password has been successfully changed
+The user_1 is logged in all tabs
+The /catalog opened
+
+
+
+
+ ![](index.php?/attachments/get/86ba61c0-6a66-4fd5-add5-05eaeece2792) 
+
+
+",,"The password changed
+User sees text: Your password has been successfully changed
+The user_1 is logged in all tabs
+The /catalog opened
+
+
+
+
+ ![](index.php?/attachments/get/86ba61c0-6a66-4fd5-add5-05eaeece2792) 
+
+
+",,"Enter the current password (set up by admin)
+Set a new secure password and click on the Change button.",
+,,,,,,,,,,,,,"
+Step Description:
+Try to Sign in with a new password one more time
+Expected Result:
+User_1 log in with the new password successfully",,User_1 log in with the new password successfully,,Try to Sign in with a new password one more time,
+C389093,Admin changed password > User login with an expired password > Forgot password,,,,Admin set up a new password for User_1,Medium,,Change password,0,,Change password,,"Step Description:
+Open sign-in page
+Enter email and old password (expired password)
+Click on Log in
+Expected Result:
+The user_1 sees an error alert: Your password is expired. Set new password (link)",,The user_1 sees an error alert: Your password is expired. Set new password (link),,"Open sign-in page
+Enter email and old password (expired password)
+Click on Log in",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on forgot password
+Enter your email and submit the form
+Click the link from the letter
+
+
+Expected Result:
+The user is redirected to the Reset Password page",,The user is redirected to the Reset Password page,,"Click on forgot password
+Enter your email and submit the form
+Click the link from the letter
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Fill in the form and Reset the password
+Try to sign in with a new password
+Expected Result:
+User_1 log in with the new password successfully",,User_1 log in with the new password successfully,,"Fill in the form and Reset the password
+Try to sign in with a new password",
+C389094,Admin changed password > PasswordExpired=false > Password change do not occur,,,,,Medium,,Change password,0,,Change password,,"Step Description:
+Go to admin site &gt; Security
+Find user_1 &gt; Change Password
+Set new password &gt; **disabled flag**
+""""Make this user change their password when they sign in next time""""
+Expected Result:
+The admin changed the password for user_1",,The admin changed the password for user_1,,"Go to admin site &gt; Security
+Find user_1 &gt; Change Password
+Set new password &gt; **disabled flag**
+""Make this user change their password when they sign in next time""",0
+,,,,,,,,,,,,,"
+Step Description:
+Sign in as User_1
+Enter email and new password (set up by admin)
+Expected Result:
+User_1 log in successfully
+Redirection does not occur to change the password page",,"User_1 log in successfully
+Redirection does not occur to change the password page",,"Sign in as User_1
+Enter email and new password (set up by admin)",
+C389095,Log in with old password > Change password,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001053,,,"Check settings in environment.yml
+
+IdentityOptions__User__MaxPasswordAge: 100
+IdentityOptions__User__RemindPasswordExpiryInDay: 7    ",Medium,,Notification about password expiration,1,,Change password > Notification about password expiration,,"Step Description:
+The user signs in with the old password
+
+Expected Result:
+The notification banner about the Password expiration date shown
+
+ ![](index.php?/attachments/get/1000001053) 
+
+",,"The notification banner about the Password expiration date shown
+
+ ![](index.php?/attachments/get/1000001053) 
+
+",,"The user signs in with the old password
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Open Profile > Change password
+Log out
+
+Sign in with the new password
+
+Expected Result:
+The notification banner about the Password expiration date is no longer displayed",,The notification banner about the Password expiration date is no longer displayed,,"Open Profile > Change password
+Log out
+
+Sign in with the new password
+",
+C389096,Password already expired > Log in,https://virtowayqa.testrail.io/index.php?/attachments/get/1000000006,,, ,Medium,,Notification about password expiration,1,,Change password > Notification about password expiration,,"Step Description:
+Sign in with a user who has an password expired
+
+
+Expected Result:
+The user sees an error: Your password is expired and Set new password (link)
+
+ ![](index.php?/attachments/get/03085e2a-e5d1-4114-b47a-9419bfc99824) 
+",,"The user sees an error: Your password is expired and Set new password (link)
+
+ ![](index.php?/attachments/get/03085e2a-e5d1-4114-b47a-9419bfc99824) 
+",,"Sign in with a user who has an password expired
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Set new password
+
+
+Expected Result:
+The change password page is opened",,The change password page is opened,,"Click on the Set new password
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Set new password
+Click on the Change button
+
+
+Expected Result:
+The password has been changed successfully
+The user is logged",,"The password has been changed successfully
+The user is logged",,"Set new password
+Click on the Change button
+
+",
+C389132,Profile tab >  general view,https://virtowayqa.testrail.io/index.php?/attachments/get/1000000014,,,"1. User_1 created
+2. User_1 logged to the store
+
+
+!Note: Currency and language were added from theme version 1.60
+
+
+",Medium,,Profile,0,,Profile,,"Step Description:
+1. Open My account - Profile tab
+2. Check the Profile page 
+Expected Result:
+Next elements are presented:
+
+
+- Title 'PROFILE'
+- First name field (required)
+- Last name field (required)
+- Email field (read-only)
+- Default language (drop-down)
+- Default currency (drop-down)
+
+
+- Update button 
+
+---------------------------------------------
+
+ ![](index.php?/attachments/get/030e705d-b03d-402b-8f59-e7111d3400aa) 
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+
+",,"Next elements are presented:
+
+
+- Title 'PROFILE'
+- First name field (required)
+- Last name field (required)
+- Email field (read-only)
+- Default language (drop-down)
+- Default currency (drop-down)
+
+
+- Update button 
+
+---------------------------------------------
+
+ ![](index.php?/attachments/get/030e705d-b03d-402b-8f59-e7111d3400aa) 
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+
+",,"1. Open My account - Profile tab
+2. Check the Profile page ",0
+C389133,Profile tab > update Names,,,,"1. User_1 created
+2. User_1 logged to the store
+
+
+",Medium,,Profile,0,,Profile,,"Step Description:
+1. Open Account page - Profile tab
+2. Enter **new** First name in the field
+3. Enter **new** Last name in the field
+4. Press button update
+
+
+Expected Result:
+1. Shows PopUp with text Profile successfully updated
+2. PopUp contain Ok button",,"1. Shows PopUp with text Profile successfully updated
+2. PopUp contain Ok button",,"1. Open Account page - Profile tab
+2. Enter **new** First name in the field
+3. Enter **new** Last name in the field
+4. Press button update
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click Ok button of PopUp
+Expected Result:
+1.  PopUp closes
+2. User redirects on the Dashboard tab of My account page",,"1.  PopUp closes
+2. User redirects on the Dashboard tab of My account page",,1. Click Ok button of PopUp,
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to Amin environment - Contacts - User_1
+2. Check the changes
+Expected Result:
+1. Corresponding fields changed
+2. Changes saved",,"1. Corresponding fields changed
+2. Changes saved",,"1. Go to Amin environment - Contacts - User_1
+2. Check the changes",
+,,,,,,,,,,,,,"
+Step Description:
+1. Pay attention on the user names in the header Account block
+Expected Result:
+1. Displays **new** usernames",,1. Displays **new** usernames,,1. Pay attention on the user names in the header Account block,
+C389134,Profile tab > update currency,,,,"Contact_1 has no default language and default currency
+User_1 logged to the store",Medium,,Profile,0,,Profile,,"Step Description:
+Go to Dashboard > Account > profile
+Check the Currency field
+Expected Result:
+The default language and currency are displayed from store",,The default language and currency are displayed from store,,"Go to Dashboard > Account > profile
+Check the Currency field",0
+,,,,,,,,,,,,,"
+Step Description:
+Select the default currency
+Expected Result:
+A dropdown opens with all currencies ​​from the store settings",,A dropdown opens with all currencies ​​from the store settings,,Select the default currency,
+,,,,,,,,,,,,,"
+Step Description:
+Select a currency other than the default one
+Save
+Expected Result:
+The currency is saved",,The currency is saved,,"Select a currency other than the default one
+Save",
+,,,,,,,,,,,,,"
+Step Description:
+Check currency in the header
+Expected Result:
+The currency is displayed in accordance with the profile settings.",,The currency is displayed in accordance with the profile settings.,,Check currency in the header,
+,,,,,,,,,,,,,"
+Step Description:
+Go to catalog > Check the prices with currency
+
+
+Expected Result:
+The currency is displayed to accordance with the profile settings",,The currency is displayed to accordance with the profile settings,,"Go to catalog > Check the prices with currency
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Add items to cart
+Check prices with currency
+Complete checkout
+Check order
+Expected Result:
+The currency is displayed in accordance with the profile settings",,The currency is displayed in accordance with the profile settings,,"Add items to cart
+Check prices with currency
+Complete checkout
+Check order",
+C397777,Profile tab > Change currency > Check products in cart,,,,,High,,Profile,0,,Profile,,"Step Description:
+Add products to cart
+
+Switch the currency in Profile
+
+Check the cart
+Expected Result:
+All products remain in the cart after changing the currency.",,All products remain in the cart after changing the currency.,,"Add products to cart
+
+Switch the currency in Profile
+
+Check the cart",0
+C389135,Profile tab > update language,,,,"Contact_1 has no default language and default currency
+User_1 logged to the store",Medium,,Profile,0,,Profile,,"Step Description:
+Go to Dashboard &gt; Account &gt; profile
+Check the Language field
+Expected Result:
+The default language and currency are displayed from store",,The default language and currency are displayed from store,,"Go to Dashboard &gt; Account &gt; profile
+Check the Language field",0
+,,,,,,,,,,,,,"
+Step Description:
+Select the default language
+Expected Result:
+A dropdown opens with all languages ​​from the store settings",,A dropdown opens with all languages ​​from the store settings,,Select the default language,
+,,,,,,,,,,,,,"
+Step Description:
+Select a language other than the default one
+Save
+Expected Result:
+The Language is saved",,The Language is saved,,"Select a language other than the default one
+Save",
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the language in the header
+2. Check URL laguageCode/account/profile
+3. Check the localization in all site
+Expected Result:
+The language localization is changed, in accordance to the profile settings",,"The language localization is changed, in accordance to the profile settings",,"1. Check the language in the header
+2. Check URL laguageCode/account/profile
+3. Check the localization in all site",
+C397776,Profile tab > Change language > Check products in cart,,,,,High,,Profile,0,,Profile,,"Step Description:
+Add products to cart
+
+Switch the languages in Profile
+
+Check the cart
+Expected Result:
+All products remain in the cart after changing the language.",,All products remain in the cart after changing the language.,,"Add products to cart
+
+Switch the languages in Profile
+
+Check the cart",0
+C389136,Profile tab > Update both currency and language > Relogin,,,,"Contact_1 has no default language and default currency
+User_1 logged to the store
+
+",Medium,,Profile,0,,Profile,,"Step Description:
+Go to Dashboard &gt; Account &gt; profile
+Select the default currency and language
+
+
+Expected Result:
+The currency and language are saved",,The currency and language are saved,,"Go to Dashboard &gt; Account &gt; profile
+Select the default currency and language
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Check the language and currency in the header
+Expected Result:
+The currency and language are displayed in accordance with the profile settings",,The currency and language are displayed in accordance with the profile settings,,Check the language and currency in the header,
+,,,,,,,,,,,,,"
+Step Description:
+Check the language and currency in catalog, in cart
+Expected Result:
+The currency and language are displayed in accordance with the profile settings",,The currency and language are displayed in accordance with the profile settings,,"Check the language and currency in catalog, in cart",
+,,,,,,,,,,,,,"
+Step Description:
+Log out
+Check the language and currency in the header
+Expected Result:
+The store language and currency are default from store settings",,The store language and currency are default from store settings,,"Log out
+Check the language and currency in the header",
+,,,,,,,,,,,,,"
+Step Description:
+Log in under User_1
+Expected Result:
+The store language and currency are default from **Profile** settings",,The store language and currency are default from **Profile** settings,,Log in under User_1,
+C389137,Profile tab > Update both currency and language > Log in as a User_2,,,,"Contact_1 has profile default language and default currency
+Contact_2 has no profile language and currency
+
+User_1 logged to the store
+
+",Medium,,Profile,0,,Profile,,"Step Description:
+Go to Dashboard &gt; Account &gt; profile
+Select the default currency and language
+
+
+Expected Result:
+The currency and language are saved",,The currency and language are saved,,"Go to Dashboard &gt; Account &gt; profile
+Select the default currency and language
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Check the language and currency in the header
+Expected Result:
+The currency and language are displayed in accordance with the profile settings",,The currency and language are displayed in accordance with the profile settings,,Check the language and currency in the header,
+,,,,,,,,,,,,,"
+Step Description:
+Check the language and currency in catalog, in cart
+Expected Result:
+The currency and language are displayed in accordance with the profile settings",,The currency and language are displayed in accordance with the profile settings,,"Check the language and currency in catalog, in cart",
+,,,,,,,,,,,,,"
+Step Description:
+Log out
+Check the language and currency in the header
+Expected Result:
+The store language and currency are default from store settings",,The store language and currency are default from store settings,,"Log out
+Check the language and currency in the header",
+,,,,,,,,,,,,,"
+Step Description:
+Log in under User_2
+Expected Result:
+The store language and currency are default from **Store** settings",,The store language and currency are default from **Store** settings,,Log in under User_2,
+C390268,Sign in with Entra ID > Set default language/currency > Sign in again,,,,"Admin > Store
+Authentication
+
+Set Store authentication types
+
+Password = ON
+
+Azure Active Directory = ON",Medium,,Profile,0,,Profile,,"Step Description:
+Sign in with Entra ID
+
+Go to Profile &gt; Set new language and currency
+
+Update
+
+Sign out
+
+Sign in with Entra ID
+
+Expected Result:
+The store language and currency are default from Profile settings",,The store language and currency are default from Profile settings,,"Sign in with Entra ID
+
+Go to Profile &gt; Set new language and currency
+
+Update
+
+Sign out
+
+Sign in with Entra ID
+",0
+C390269,Sign in with Google > Set default language/currency > Sign in again,,,,"Admin > Store
+Authentication
+
+Set Store authentication types
+
+Password = ON
+
+Azure Active Directory = ON
+
+Google sign-in = ON",Medium,,Profile,0,,Profile,,"Step Description:
+Sign in with Google
+
+Go to Profile &gt; Set new language and currency
+
+Update
+
+Sign out
+
+Sign in with Google
+
+Expected Result:
+The store language and currency are default from Profile settings",,The store language and currency are default from Profile settings,,"Sign in with Google
+
+Go to Profile &gt; Set new language and currency
+
+Update
+
+Sign out
+
+Sign in with Google
+",0
+C389097,Names > required fields,,,,"1. User_1 created
+2. User_1 logged to the store
+
+",Medium,,Validation,1,,Profile > Validation,,"Step Description:
+1. Open Account page - Profile tab
+2. Pay attention to the **First Name** and **Last Name** fields
+3. Pay attention to Update button 
+Expected Result:
+1. Fields **First Name** and **Last Name** is clean
+2. Update button is inactive ",,"1. Fields **First Name** and **Last Name** is clean
+2. Update button is inactive ",,"1. Open Account page - Profile tab
+2. Pay attention to the **First Name** and **Last Name** fields
+3. Pay attention to Update button ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill **First Name** and **Last name** fields
+2. Pay attention to Update button  
+Expected Result:
+1. Update button is active",,1. Update button is active,,"1. Fill **First Name** and **Last name** fields
+2. Pay attention to Update button  ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Clean any of name fields
+2. Check error message
+3. Pay attention to the Update button 
+Expected Result:
+1. Shows validation error message 'This field is required'
+2. Update button is inactive ",,"1. Shows validation error message 'This field is required'
+2. Update button is inactive ",,"1. Clean any of name fields
+2. Check error message
+3. Pay attention to the Update button ",
+C389098,Names > max chars,,,,"1. User_1 created
+2. User_1 logged to the store
+3. Open profile tab
+
+",Medium,,Validation,1,,Profile > Validation,,"Step Description:
+1. Fill the field __First name__ with more than 64 chars
+
+
+
+Expected Result:
+1. Shows validation error message 'This field must be at most 64 characters'",,1. Shows validation error message 'This field must be at most 64 characters',,"1. Fill the field __First name__ with more than 64 chars
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill the field  __Last name__ with more than 64 chars
+
+Expected Result:
+1. Shows validation error message 'This field must be at most 64 characters'  ",,1. Shows validation error message 'This field must be at most 64 characters'  ,,"1. Fill the field  __Last name__ with more than 64 chars
+",
+C389149,Change Password > View (Desktop + Mobile),,,, ,Medium,,Change Password,0,,Change Password,,"Step Description:
+Open Account &gt; Change Password
+Expected Result:
+The page /account/change-password is opened
+
+Title: CHANGE PASSWORD
+
+**Required fields:**
+
+- Current password*
+- New password*
+- Confirm new password*
+- Change button (disabled by default)
+
+
+Tips:
+
+Tips for creating a strong password:
+- Lowercase symbols are required
+- Uppercase symbols are required
+- Minimum 8 characters
+- At least one unique character
+
+-------------------------------------------------------
+
+ ![](index.php?/attachments/get/ac81a838-0856-4373-a765-c89d96230453) 
+
+",,"The page /account/change-password is opened
+
+Title: CHANGE PASSWORD
+
+**Required fields:**
+
+- Current password*
+- New password*
+- Confirm new password*
+- Change button (disabled by default)
+
+
+Tips:
+
+Tips for creating a strong password:
+- Lowercase symbols are required
+- Uppercase symbols are required
+- Minimum 8 characters
+- At least one unique character
+
+-------------------------------------------------------
+
+ ![](index.php?/attachments/get/ac81a838-0856-4373-a765-c89d96230453) 
+
+",,Open Account &gt; Change Password,0
+,,,,,,,,,,,,,"
+Step Description:
+Open Mobile Version (F12 &gt; Devices)
+Open Hamburger menu &gt; Account
+Check Change Password in the menu
+Expected Result:
+The Change Password is presented in the menu
+
+
+
+![](index.php?/attachments/get/d2215b18-af5c-4174-a000-5ef545826b12) ",,"The Change Password is presented in the menu
+
+
+
+![](index.php?/attachments/get/d2215b18-af5c-4174-a000-5ef545826b12) ",,"Open Mobile Version (F12 &gt; Devices)
+Open Hamburger menu &gt; Account
+Check Change Password in the menu",
+,,,,,,,,,,,,,"
+Step Description:
+Tap on the Change Password
+Expected Result:
+The page is opened
+
+
+ ![](index.php?/attachments/get/e00e4481-fc4c-4639-8e3e-affec2b030bd) ",,"The page is opened
+
+
+ ![](index.php?/attachments/get/e00e4481-fc4c-4639-8e3e-affec2b030bd) ",,Tap on the Change Password,
+C389150,Change Password > Update Password,,,,"1. User_1 created
+2. User_1 logged to the store",Medium,,Change Password,0,,Change Password,,"Step Description:
+1. Open Account page - Change Password 
+2. Enter old password in the Old Password field
+4. Enter new password in the (New Password + Confirm password) fields
+5. Press button Change
+Expected Result:
+1. Shows PopUp with text 'Profile successfully updated'
+2. PopUp contain 'Ok' button",,"1. Shows PopUp with text 'Profile successfully updated'
+2. PopUp contain 'Ok' button",,"1. Open Account page - Change Password 
+2. Enter old password in the Old Password field
+4. Enter new password in the (New Password + Confirm password) fields
+5. Press button Change",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click Ok button of PopUp
+Expected Result:
+1. PopUp closes
+2. User redirects on the Dashboard tab of My account page",,"1. PopUp closes
+2. User redirects on the Dashboard tab of My account page",,1. Click Ok button of PopUp,
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to Amin environment - Security - Users - User_1
+2. Check the logging changes
+Expected Result:
+1. Log of changes have a string 'Password changed' with a relevant time",,1. Log of changes have a string 'Password changed' with a relevant time,,"1. Go to Amin environment - Security - Users - User_1
+2. Check the logging changes",
+,,,,,,,,,,,,,"
+Step Description:
+1. Log out from the store
+2. Try to Log in with old password 
+Expected Result:
+1. Not logging in
+2. Shows validation error",,"1. Not logging in
+2. Shows validation error",,"1. Log out from the store
+2. Try to Log in with old password ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Log in with new password
+Expected Result:
+1. Log in success
+",,"1. Log in success
+",,1. Log in with new password,
+C389151,Change Password > Password visibility,,,,"1. User_1 exist in the store
+2. Go to Account - Change Password ",Medium,,Change Password,0,,Change Password,,"Step Description:
+1. Fill __Old Password__ + __New Password__ + __Confirm password__ fields
+3. Pay attention on the filling passwords symbols and Eye icons states
+Expected Result:
+1. Password symbols invisible
+2. Eye icons is not crossed out ",,"1. Password symbols invisible
+2. Eye icons is not crossed out ",,"1. Fill __Old Password__ + __New Password__ + __Confirm password__ fields
+3. Pay attention on the filling passwords symbols and Eye icons states",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the each Eye icon
+2. Pay attention to the Password symbols and Eye icon state   
+Expected Result:
+1. Password symbols are visible
+2. Eye icons is crossed out ",,"1. Password symbols are visible
+2. Eye icons is crossed out ",,"1. Click on the each Eye icon
+2. Pay attention to the Password symbols and Eye icon state   ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the each Eye icon one more time
+2. Pay attention to the Password symbols and Eye icon state   
+Expected Result:
+1. Password symbols invisible
+2. Eye icons is not crossed out ",,"1. Password symbols invisible
+2. Eye icons is not crossed out ",,"1. Click on the each Eye icon one more time
+2. Pay attention to the Password symbols and Eye icon state   ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Insert hide symbols in the password field by CTRL + A or other way
+2. Copy that by CTRL + C or other way
+3. Paste it in the any field
+Expected Result:
+1. Invisible password symbols not copied",,1. Invisible password symbols not copied,,"1. Insert hide symbols in the password field by CTRL + A or other way
+2. Copy that by CTRL + C or other way
+3. Paste it in the any field",
+,,,,,,,,,,,,,"
+Step Description:
+1. Make password symbols visible (Click on the Eye icon)
+2. Insert this symbols by CTRL + A or other way
+3. Paste it in the any field
+Expected Result:
+1. Visible password symbols copied successful",,1. Visible password symbols copied successful,,"1. Make password symbols visible (Click on the Eye icon)
+2. Insert this symbols by CTRL + A or other way
+3. Paste it in the any field",
+C389152,Change Password > required fields,,,,"1. User logged in store
+2. User is on account page
+3. User opened **Change password** tab
+",Medium,,Change Password,0,,Change Password,,"Step Description:
+1. Leave **Old password** field empty 
+2. Press button **Change password**
+Expected Result:
+1. Error that **Old password** field is necessary shown",,1. Error that **Old password** field is necessary shown,,"1. Leave **Old password** field empty 
+2. Press button **Change password**",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter **Old password** 
+2. Leave **New password** field empty 
+3. Press button **Change password**
+Expected Result:
+1. Error that **New password** field is necessary shown",,1. Error that **New password** field is necessary shown,,"1. Enter **Old password** 
+2. Leave **New password** field empty 
+3. Press button **Change password**",
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter **Old password** 
+2. Enter  **New password** 
+3. Leave **Confirm password** empty
+4. Press button **Change password**
+Expected Result:
+1. Error that **Confirm password** field is necessary shown",,1. Error that **Confirm password** field is necessary shown,,"1. Enter **Old password** 
+2. Enter  **New password** 
+3. Leave **Confirm password** empty
+4. Press button **Change password**",
+C389153,Change Password > password policy,,,,1. The rules of the policy may depend. Check the list or the rules before.  ,Medium,,Change Password,0,,Change Password,,"Step Description:
+1. Enter necessary Personal information:
+- First name
+- Last name
+- Old password
+- New Password (for example, Qwert1!)
+- Confirm New Password (Qwert1!)
+2. Click Update button  
+Expected Result:
+1. Shows error message 'Password must be at least 8 characters.'",,1. Shows error message 'Password must be at least 8 characters.',,"1. Enter necessary Personal information:
+- First name
+- Last name
+- Old password
+- New Password (for example, Qwert1!)
+- Confirm New Password (Qwert1!)
+2. Click Update button  ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter necessary Personal information:
+- First name
+- Last name
+- Old password
+- New Password (for example, qwerty1!)
+- Confirm New Password (qwerty1!)
+2. Click Update button
+
+Expected Result:
+1. Shows error message 'Passwords must have at least one uppercase ('A'-'Z').'",,1. Shows error message 'Passwords must have at least one uppercase ('A'-'Z').',,"1. Enter necessary Personal information:
+- First name
+- Last name
+- Old password
+- New Password (for example, qwerty1!)
+- Confirm New Password (qwerty1!)
+2. Click Update button
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter necessary Personal information:
+- First name
+- Last name
+- Old password
+- New Password (for example, QWERTY1!)
+- Confirm New Password (QWERTY1!)
+2. Click Update button 
+Expected Result:
+1. Shows error message 'Passwords must have at least one lowercase ('a'-'z').'",,1. Shows error message 'Passwords must have at least one lowercase ('a'-'z').',,"1. Enter necessary Personal information:
+- First name
+- Last name
+- Old password
+- New Password (for example, QWERTY1!)
+- Confirm New Password (QWERTY1!)
+2. Click Update button ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter necessary Personal information:
+- First name
+- Last name
+- Old password
+- New Password (for example, Qwertyu!)
+- Confirm New Password (Qwertyu!)
+2. Click Update button  
+Expected Result:
+1. Shows error message 'Passwords must have at least one digit ('0'-'9').'",,1. Shows error message 'Passwords must have at least one digit ('0'-'9').',,"1. Enter necessary Personal information:
+- First name
+- Last name
+- Old password
+- New Password (for example, Qwertyu!)
+- Confirm New Password (Qwertyu!)
+2. Click Update button  ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter necessary Personal information:
+- First name
+- Last name
+- Old password
+- New Password (for example, Qwerty12)
+- Confirm New Password (Qwerty12)
+2. Click Update button   
+Expected Result:
+1. Shows error message 'Passwords must have at least one non-alphanumeric character.'",,1. Shows error message 'Passwords must have at least one non-alphanumeric character.',,"1. Enter necessary Personal information:
+- First name
+- Last name
+- Old password
+- New Password (for example, Qwerty12)
+- Confirm New Password (Qwerty12)
+2. Click Update button   ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter necessary Personal information:
+- First name
+- Last name
+- Old password
+- New Password (for example, 11111!!!)
+- Confirm New Password (11111!!!)
+2. Click Update button  
+Expected Result:
+1. Shows pull of Error messages:
+- Passwords must have at least one lowercase ('a'-'z') 
+- Passwords must have at least one uppercase ('A'-'Z') 
+- Passwords must have at least 3 unique characters ",,"1. Shows pull of Error messages:
+- Passwords must have at least one lowercase ('a'-'z') 
+- Passwords must have at least one uppercase ('A'-'Z') 
+- Passwords must have at least 3 unique characters ",,"1. Enter necessary Personal information:
+- First name
+- Last name
+- Old password
+- New Password (for example, 11111!!!)
+- Confirm New Password (11111!!!)
+2. Click Update button  ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter necessary Personal information:
+- First name
+- Last name
+- Old password
+- New Password (for example, 1)
+- Confirm New Password (1)
+2. Click Update button   
+Expected Result:
+1. Shows pull of Error messages:
+- Password must be at least 8 characters 
+- Passwords must have at least one non-alphanumeric character 
+- Passwords must have at least one lowercase ('a'-'z')
+- Passwords must have at least one uppercase ('A'-'Z')
+- Passwords must have at least 3 unique characters",,"1. Shows pull of Error messages:
+- Password must be at least 8 characters 
+- Passwords must have at least one non-alphanumeric character 
+- Passwords must have at least one lowercase ('a'-'z')
+- Passwords must have at least one uppercase ('A'-'Z')
+- Passwords must have at least 3 unique characters",,"1. Enter necessary Personal information:
+- First name
+- Last name
+- Old password
+- New Password (for example, 1)
+- Confirm New Password (1)
+2. Click Update button   ",
+C389154,Change Password > Invalid previous password,,,,"1. Go to the store logged 
+2. Open Account - Change Password
+",Medium,,Change Password,0,,Change Password,,"Step Description:
+1. Enter invalid Old password in the Old password field
+2. Fill New Password and Confirm New Password fields
+3. Click on the Change button
+
+Expected Result:
+1. Shows validation error message 'Incorrect old password'
+2. Change button deactivated ",,"1. Shows validation error message 'Incorrect old password'
+2. Change button deactivated ",,"1. Enter invalid Old password in the Old password field
+2. Fill New Password and Confirm New Password fields
+3. Click on the Change button
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter valid Old password in the Old password field
+2. Click on the Change button
+Expected Result:
+1. Shows Successful update popUp",,1. Shows Successful update popUp,,"1. Enter valid Old password in the Old password field
+2. Click on the Change button",
+C389155,Change Password > New password == Old password,,,,"1. Go to the store logged
+2. Open Account - Change Password
+ 
+",Medium,,Change Password,0,,Change Password,,"Step Description:
+1. Enter valid old password in the Old Password field
+2. Enter old password in the New Password field
+Expected Result:
+1. Shows validation error message 'Old password and new password should be different'",,1. Shows validation error message 'Old password and new password should be different',,"1. Enter valid old password in the Old Password field
+2. Enter old password in the New Password field",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter **New** password != Old password in the New Password and Confirm New Password fields
+2. Click on the Change button 
+Expected Result:
+1. Error validation message is hide
+2. Shows Successful update popUp ",,"1. Error validation message is hide
+2. Shows Successful update popUp ",,"1. Enter **New** password != Old password in the New Password and Confirm New Password fields
+2. Click on the Change button ",
+C389156,Change Password > Invalid confirm password,,,,"1. Go to the store logged
+2. Open Account - Change Password
+
+",Medium,,Change Password,0,,Change Password,,"Step Description:
+1. Enter invalid old password in the Old password field
+2. Enter valid new password in the New Password field
+3. Enter password != new password in the Confirm New Password field
+
+Expected Result:
+1. Shows validation error message 'Passwords do not match'
+2. Change button deactivated ",,"1. Shows validation error message 'Passwords do not match'
+2. Change button deactivated ",,"1. Enter invalid old password in the Old password field
+2. Enter valid new password in the New Password field
+3. Enter password != new password in the Confirm New Password field
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter password == new password in the Confirm New Password field
+Expected Result:
+1. Validation error message hide
+2. Change button activate",,"1. Validation error message hide
+2. Change button activate",,1. Enter password == new password in the Confirm New Password field,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the Change button
+Expected Result:
+1. Shows Successful update popUp",,1. Shows Successful update popUp,,1. Click on the Change button,
+C389162,Address tab > general view,,,,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. User_1 has 10 addresses
+3. Go to the store
+
+
+
+
+",Medium,,Addresses (personal),0,,Addresses (personal),,"Step Description:
+1. Open My account page >  Addresses tab
+2. Check the page
+Expected Result:
+1. Next elements are presented:
+- Addresses block with next columns:
+-- Recipient's name (possible to sort)
+-- Address (possible to sort)
+-- Phone (possible to sort)
+-- Email (possible to sort)
+-- Actions: buttons Edit and Delete
+- Button Add new address
+- Paging",,"1. Next elements are presented:
+- Addresses block with next columns:
+-- Recipient's name (possible to sort)
+-- Address (possible to sort)
+-- Phone (possible to sort)
+-- Email (possible to sort)
+-- Actions: buttons Edit and Delete
+- Button Add new address
+- Paging",,"1. Open My account page >  Addresses tab
+2. Check the page",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the list of the addresses
+Expected Result:
+1. 6 addresses presented on the 1st page, 4 - on 2nd page.",,"1. 6 addresses presented on the 1st page, 4 - on 2nd page.",,1. Check the list of the addresses,
+C389163,Address tab > default address WILL BE CHANGED,,,,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. User_1 has 10 addresses
+3. Go to the store
+4. Open My account page >  Addresses tab
+",Medium,,Addresses (personal),0,,Addresses (personal),,"Step Description:
+1. Opened Addresses tab
+2. Delete 1st address (set up as default)
+Expected Result:
+1. 2nd address set up as default",,1. 2nd address set up as default,,"1. Opened Addresses tab
+2. Delete 1st address (set up as default)",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Make as default 3rd address
+Expected Result:
+1. 3nd address set up as default",,1. 3nd address set up as default,,1. Make as default 3rd address,
+C389164,Address tab > Empty addresses page,,,,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. User_1 __has no addresses__
+4. Go to the store
+
+",Medium,,Addresses (personal),0,,Addresses (personal),,"Step Description:
+1. Open My account page &gt;  Addresses tab
+2. Check the page
+Expected Result:
+1. Next elements are presented:
+-- Title 'ADDRESSES'
+-- Text 'There are no addresses yet'
+-- Button '+Add new address'
+",,"1. Next elements are presented:
+-- Title 'ADDRESSES'
+-- Text 'There are no addresses yet'
+-- Button '+Add new address'
+",,"1. Open My account page &gt;  Addresses tab
+2. Check the page",0
+C389165,Address tab > Add new address,,,,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. User_1 has several addresses
+3. Go to the store
+4. Open My account page >  Addresses tab
+",Medium,,Addresses (personal),0,,Addresses (personal),,"Step Description:
+1. Click button Add new address
+
+
+
+Expected Result:
+2. Еhe Popup form to Add a new address opens.",,2. Еhe Popup form to Add a new address opens.,,"1. Click button Add new address
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the form 
+Expected Result:
+1. Form presented with next fields:
+- First name (required)
+- Last name (required)
+- Work email  (required) 
+- Phone
+- Country (required)
+- Zip/Postal code (required)
+- Region (required if exist)
+- City
+- Address (required)
+- App, suite, etc.
+- Buttons: Cancel, Create",,"1. Form presented with next fields:
+- First name (required)
+- Last name (required)
+- Work email  (required) 
+- Phone
+- Country (required)
+- Zip/Postal code (required)
+- Region (required if exist)
+- City
+- Address (required)
+- App, suite, etc.
+- Buttons: Cancel, Create",,1. Check the form ,
+,,,,,,,,,,,,,"
+Step Description:
+1.  Click button Cancel
+Expected Result:
+1.  Addresses list opens
+",,"1.  Addresses list opens
+",,1.  Click button Cancel,
+,,,,,,,,,,,,,"
+Step Description:
+1.  Fill in the required  fields
+2.  Click button Create
+Expected Result:
+1. Address created
+2. Addresses list opens
+3. New address appears in the end of the list",,"1. Address created
+2. Addresses list opens
+3. New address appears in the end of the list",,"1.  Fill in the required  fields
+2.  Click button Create",
+,,,,,,,,,,,,,"
+Step Description:
+1. Go  to BackEnd &gt; Contact &gt; User_1 blade
+2. Check the addresses widget
+
+Expected Result:
+1. New address appears  in the list",,1. New address appears  in the list,,"1. Go  to BackEnd &gt; Contact &gt; User_1 blade
+2. Check the addresses widget
+",
+C389166,Address tab > Update address,,,,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. User_1 has several addresses
+4. Addresses list contains the Address_1
+4. Go to the store
+5. Open My account page >  Addresses tab
+
+
+
+",Medium,,Addresses (personal),0,,Addresses (personal),,"Step Description:
+1. Click icon Edit in the Action column for the Address_1
+2. Enter new value for the Address_1 in the address field (for example new First and Last name)
+3. Click button Save
+4. Go to BackEnd > Contact > User_1 blade
+
+Expected Result:
+1. Address_1 shown in the user contact information with updated information",,1. Address_1 shown in the user contact information with updated information,,"1. Click icon Edit in the Action column for the Address_1
+2. Enter new value for the Address_1 in the address field (for example new First and Last name)
+3. Click button Save
+4. Go to BackEnd > Contact > User_1 blade
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click icon Edit in the Action column for the Address_1
+2. Click button Cancel
+Expected Result:
+1. Addresses list opens
+2. The Address has not been updated",,"1. Addresses list opens
+2. The Address has not been updated",,"1. Click icon Edit in the Action column for the Address_1
+2. Click button Cancel",
+C389167,Address tab > Cancel adding address,,,,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. Go to the store
+4. Open My account page > Addresses tab
+",Medium,,Addresses (personal),0,,Addresses (personal),,"Step Description:
+1. Click button Add new address
+2. Enter all necessary fields
+3. Click button Cancel
+
+Expected Result:
+1. The address has not been created to User_1 contact information",,1. The address has not been created to User_1 contact information,,"1. Click button Add new address
+2. Enter all necessary fields
+3. Click button Cancel
+",0
+C389168,Address tab > delete,,,,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. User_1 has several addresses
+4. Go to the store
+5. Open My account page > Addresses tab
+",Medium,,Addresses (personal),0,,Addresses (personal),,"Step Description:
+1. Click Icon Delete on the column Actions for the 1rst address
+Expected Result:
+1. Address has been deleted",,1. Address has been deleted,,1. Click Icon Delete on the column Actions for the 1rst address,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Delete all addresses include address set up as default
+2. Check the page
+Expected Result:
+1. Next elements are presented:
+- Button Add new address
+- Empty addresses block with ONLY titles of the columns:
+-- Recipient's name (possible to sort)
+-- Address (possible to sort)
+-- Phone (possible to sort)
+-- Email (possible to sort)
+-- Default
+-- Actions
+- Text inside the address block:
+-- There are no addresses yet
+-- Button Add new address
+",,"1. Next elements are presented:
+- Button Add new address
+- Empty addresses block with ONLY titles of the columns:
+-- Recipient's name (possible to sort)
+-- Address (possible to sort)
+-- Phone (possible to sort)
+-- Email (possible to sort)
+-- Default
+-- Actions
+- Text inside the address block:
+-- There are no addresses yet
+-- Button Add new address
+",,"1. Delete all addresses include address set up as default
+2. Check the page",
+C389169,Address tab > Sorting,,,,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. User_1 has several addresses
+4. Go to the store
+5. Open My account page > Addresses tab
+",Medium,,Addresses (personal),0,,Addresses (personal),,"Step Description:
+1. Try to sort by Recipient's name
+Expected Result:
+1. The list sorted ascending or descending by Recipient's name",,1. The list sorted ascending or descending by Recipient's name,,1. Try to sort by Recipient's name,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Try to sort by Address
+Expected Result:
+1. The list sorted ascending or descending by Address",,1. The list sorted ascending or descending by Address,,1. Try to sort by Address,
+,,,,,,,,,,,,,"
+Step Description:
+1. Try to sort by Phone
+Expected Result:
+1. The list sorted ascending or descending by Phone",,1. The list sorted ascending or descending by Phone,,1. Try to sort by Phone,
+,,,,,,,,,,,,,"
+Step Description:
+1. Try to sort by Mail
+Expected Result:
+1. The list sorted ascending or descending by Mail",,1. The list sorted ascending or descending by Mail,,1. Try to sort by Mail,
+C389170,Address tab > Validation > max chars,,,,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. User_1 has several addresses
+4. Go to the store
+5. Open My account page > Addresses tab
+
+",Medium,,Addresses (personal),0,,Addresses (personal),,"Step Description:
+1. Open Add new address form
+2. Fill in the field  __First name__ with more than 65 chars
+
+
+
+Expected Result:
+1. Error message shows that field can't be more than 64 chars",,1. Error message shows that field can't be more than 64 chars,,"1. Open Add new address form
+2. Fill in the field  __First name__ with more than 65 chars
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill in the field  __Last name__ with more than 65 chars
+
+Expected Result:
+1. Error message shows that field can't be more than 64 chars  ",,1. Error message shows that field can't be more than 64 chars  ,,"1. Fill in the field  __Last name__ with more than 65 chars
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill in the field  __Email__ with more than 64 chars
+
+Expected Result:
+1. Error message shows that field can't be more than 64 chars     ",,1. Error message shows that field can't be more than 64 chars     ,,"1. Fill in the field  __Email__ with more than 64 chars
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill in the field  __Phone__ with more than 64 chars
+Expected Result:
+1. Error message shows that field can't be more than 64 chars",,1. Error message shows that field can't be more than 64 chars,,1. Fill in the field  __Phone__ with more than 64 chars,
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill in the field  __Zip/Postal code__ with more than 33 chars
+Expected Result:
+1. Error message shows that field can't be more than 32 chars",,1. Error message shows that field can't be more than 32 chars,,1. Fill in the field  __Zip/Postal code__ with more than 33 chars,
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill in the field  __Country__ with more than 129 chars
+
+
+Expected Result:
+1. Error message shows that field can't be more than 128 chars",,1. Error message shows that field can't be more than 128 chars,,"1. Fill in the field  __Country__ with more than 129 chars
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill in the field  __Region__ with more than 129 chars
+
+Expected Result:
+1. Error message shows that field can't be more than 128 chars",,1. Error message shows that field can't be more than 128 chars,,"1. Fill in the field  __Region__ with more than 129 chars
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill in the field  __City__ with more than 129 chars
+Expected Result:
+1. Error message shows that field can't be more than 128 chars",,1. Error message shows that field can't be more than 128 chars,,1. Fill in the field  __City__ with more than 129 chars,
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill in the field  __Address__ with more than 129 chars
+Expected Result:
+1. Error message shows that field can't be more than 128 chars",,1. Error message shows that field can't be more than 128 chars,,1. Fill in the field  __Address__ with more than 129 chars,
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill in the field  __Apt, Suite__ with more than 129 chars
+Expected Result:
+1. Error message shows that field can't be more than 128 chars",,1. Error message shows that field can't be more than 128 chars,,"1. Fill in the field  __Apt, Suite__ with more than 129 chars",
+C389171,Addresses > Personal addresses is hidden for company member,,,,,Medium,,Addresses (personal),0,,Addresses (personal),,"Step Description:
+Login with the company user
+
+Open Dashboard page
+
+Check Account block
+Expected Result:
+there is no Addresses tab",,there is no Addresses tab,,"Login with the company user
+
+Open Dashboard page
+
+Check Account block",0
+,,,,,,,,,,,,,"
+Step Description:
+Check Corporate block
+Expected Result:
+there are Company info and Company members tabs",,there are Company info and Company members tabs,,Check Corporate block,
+,,,,,,,,,,,,,"
+Step Description:
+Click on Company info
+Expected Result:
+there are Company name and Company addresses",,there are Company name and Company addresses,,Click on Company info,
+C389172,Addresses > Personal addresses is hidden for company member > Direct link,,,,,Medium,,Addresses (personal),0,,Addresses (personal),,"Step Description:
+Login with the company user
+
+
+Go to link 
+
+{domain-name}/account/addresses
+
+Expected Result:
+The addresses page does not open. Redirection to dashboard",,The addresses page does not open. Redirection to dashboard,,"Login with the company user
+
+
+Go to link 
+
+{domain-name}/account/addresses
+",0
+C389173,MOBILE > addresses >  general  view,,,,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. User_1 has several addresses
+4. Go to the store
+5. Open My account page > Addresses tab
+6. User has 10 addresses
+
+
+",Medium,,Addresses (personal),0,,Addresses (personal),,"Step Description:
+1. Opened Addresses tab
+2. Check the page
+Expected Result:
+1. Next elements are presented:
+- Button Add new address
+- Addresses block:
+-- Company name 
+-- Address 
+-- Phone 
+-- Email 
+- Paging",,"1. Next elements are presented:
+- Button Add new address
+- Addresses block:
+-- Company name 
+-- Address 
+-- Phone 
+-- Email 
+- Paging",,"1. Opened Addresses tab
+2. Check the page",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the Addresses
+Expected Result:
+1. First address set up as default
+2. Top right corner colored and check mark",,"1. First address set up as default
+2. Top right corner colored and check mark",,1. Check the Addresses,
+,,,,,,,,,,,,,"
+Step Description:
+1. Swipe to the left on the 1st address (set up  as default)
+Expected Result:
+1. Swipe Actions block opens with information - Default",,1. Swipe Actions block opens with information - Default,,1. Swipe to the left on the 1st address (set up  as default),
+,,,,,,,,,,,,,"
+Step Description:
+1. Swipe to the right on the 1st address (set up  as default)
+Expected Result:
+1. Swipe Actions block opens with button: Delete",,1. Swipe Actions block opens with button: Delete,,1. Swipe to the right on the 1st address (set up  as default),
+,,,,,,,,,,,,,"
+Step Description:
+1. Swipe to the left on the 2nd address (not set up as default)
+Expected Result:
+1. Swipe Actions block opens with buttons: Edit, Make default",,"1. Swipe Actions block opens with buttons: Edit, Make default",,1. Swipe to the left on the 2nd address (not set up as default),
+,,,,,,,,,,,,,"
+Step Description:
+1. Swipe to the right on the 2nd address (not set up as default)
+Expected Result:
+1. Swipe Actions block opens with buttons: Delete",,1. Swipe Actions block opens with buttons: Delete,,1. Swipe to the right on the 2nd address (not set up as default),
+C389174,MOBILE > add new address,,,,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. User_1 has several addresses
+4. Go to the store
+5. Open My account page > Addresses tab
+6. User has several addresses
+",Medium,,Addresses (personal),0,,Addresses (personal),,"Step Description:
+1. Click button Add new address
+2. Check the form to add a new address.
+
+
+Expected Result:
+1. Form presented with next fields:
+- First name (required)
+- Last name (required)
+- Work email 
+- Phone
+- Country (required)
+- Zip/Postal code (required)
+- Region (required if exist)
+- City
+- Address (required)
+- App, suite, etc.
+- Buttons: Delete, Create
+2. Button __Back__ on Menu appears instead of logo",,"1. Form presented with next fields:
+- First name (required)
+- Last name (required)
+- Work email 
+- Phone
+- Country (required)
+- Zip/Postal code (required)
+- Region (required if exist)
+- City
+- Address (required)
+- App, suite, etc.
+- Buttons: Delete, Create
+2. Button __Back__ on Menu appears instead of logo",,"1. Click button Add new address
+2. Check the form to add a new address.
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1.  Fill in the required fields
+2.  Click button Create
+Expected Result:
+1. Address created
+2. Addresses list opens
+3. New address appears in the end of the list",,"1. Address created
+2. Addresses list opens
+3. New address appears in the end of the list",,"1.  Fill in the required fields
+2.  Click button Create",
+,,,,,,,,,,,,,"
+Step Description:
+1. Go  to BackEnd > Contact > User_1 blade
+2. Check the addresses widget
+
+Expected Result:
+1. New address appears  in the ist",,1. New address appears  in the ist,,"1. Go  to BackEnd > Contact > User_1 blade
+2. Check the addresses widget
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill in the required  fields
+2. Click button Cancel
+Expected Result:
+1. Addresses list opens
+2. The Address has not been created",,"1. Addresses list opens
+2. The Address has not been created",,"1. Fill in the required  fields
+2. Click button Cancel",
+C389175,MOBILE > update address,,,,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. User_1 has several addresses
+4. Addresses list contains Address_1
+5. Go to the store
+6. Open My account page > Addresses tab
+
+
+",Medium,,Addresses (personal),0,,Addresses (personal),,"Step Description:
+1. Swipe action  right
+2. Click  button __Edite__ 
+2. Enter new value for the Address_1 in the address field (for example new First and Last name)
+3. Click button Save
+4. Go to BackEnd > Contact > User_1 blade
+
+Expected Result:
+1. Address_1 shown in the user contact information with updated information",,1. Address_1 shown in the user contact information with updated information,,"1. Swipe action  right
+2. Click  button __Edite__ 
+2. Enter new value for the Address_1 in the address field (for example new First and Last name)
+3. Click button Save
+4. Go to BackEnd > Contact > User_1 blade
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click icon Edit in the Action column for the Address_1
+2. Click button Cancel
+Expected Result:
+1. Addresses list opens
+2. The address_1 has not been edited",,"1. Addresses list opens
+2. The address_1 has not been edited",,"1. Click icon Edit in the Action column for the Address_1
+2. Click button Cancel",
+C389176,MOBILE > no addresses,,,,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. User_1 has no addresses
+4. Go to the store
+5. Open My account page > Addresses tab
+",Medium,,Addresses (personal),0,,Addresses (personal),,"Step Description:
+1. Check the page
+Expected Result:
+1. Next elements are presented: 
+-- Title 'ADDRESSES'
+-- Icon in center of the page
+-- Text 'There are no addresses yet'
+-- Button '+Add new address' ",,"1. Next elements are presented: 
+-- Title 'ADDRESSES'
+-- Icon in center of the page
+-- Text 'There are no addresses yet'
+-- Button '+Add new address' ",,1. Check the page,0
+C389177,MOBILE > delete address,,,,"1. User_1 created
+2. User_1 belongs to the Organization_1
+3. User_1 has Addresses_1
+4. Go to the store
+5. Open My account page >  Addresses tab
+
+
+",Medium,,Addresses (personal),0,,Addresses (personal),,"Step Description:
+1. Swipe action left for the Address_1
+2. Click button Delete
+Expected Result:
+1. Address has been deleted",,1. Address has been deleted,,"1. Swipe action left for the Address_1
+2. Click button Delete",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Delete all addresses
+2. Check the page
+Expected Result:
+1. Next elements are presented:
+- Button Add new address
+- Empty addresses block with ONLY titles of the columns:
+-- Recipient's name (possible to sort)
+-- Address (possible to sort)
+-- Phone (possible to sort)
+-- Email (possible to sort)
+-- Actions
+- Text inside the address block:
+-- There are no addresses yet
+-- Button Add new address
+",,"1. Next elements are presented:
+- Button Add new address
+- Empty addresses block with ONLY titles of the columns:
+-- Recipient's name (possible to sort)
+-- Address (possible to sort)
+-- Phone (possible to sort)
+-- Email (possible to sort)
+-- Actions
+- Text inside the address block:
+-- There are no addresses yet
+-- Button Add new address
+",,"1. Delete all addresses
+2. Check the page",

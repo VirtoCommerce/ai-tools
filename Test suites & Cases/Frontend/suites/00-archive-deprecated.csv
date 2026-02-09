@@ -1,0 +1,42 @@
+ID,Title,Attachments,Estimate,Expected Result,Preconditions,Priority,References,Section,Section Depth,Section Description,Section Hierarchy,Steps,Steps,Steps (Additional Info),Steps (Expected Result),Steps (References),Steps (Step),is_converted
+C389186,Checkout defaults > general view,,,"1. Next elements are presented:
+-- Preferred Delivery Method with radio buttons: 
+- Shipping 
+- Pickup 
+-- Preferred Payment Method selector with values:
+- Please select preferred Payment Method - default
+- Invoice
+- Test payment method
+- Credit Card
+-- Preferred Shipping Method selector with values:
+- Please select preferred Shipping Method - default
+- FixedRateGround
+- FixedRateAir
+
+
+","1. User_1 created
+2. User_1 belongs to the Organization_1
+3. Go to the store
+4. Open My account page >  Checkout defaults tab
+",Medium,,Checkout defaults [deprecated],0,"Removed from account
+https://virtocommerce.atlassian.net/browse/VCST-3701
+vc-frontend 2.30.0",Checkout defaults [deprecated],"1. Check the page
+
+",,,,,,0
+C389187,Checkout defaults > set up,,,"1. Shipping gmethod set as Shipment_1
+2. Payment method set for Payment_1
+
+","1. User_1 created
+2. User_1 belongs to the Organization_1
+3. Go to the store
+4. Open My account page >  Checkout defaults tab
+
+",Medium,,Checkout defaults [deprecated],0,"Removed from account
+https://virtocommerce.atlassian.net/browse/VCST-3701
+vc-frontend 2.30.0",Checkout defaults [deprecated],"1. Set methods:
+- preferred payment method as Payment_1
+- preferred shipping method as Shipment_1
+3. Click button Update __Pay attention: before applying the new checkout default the Cart should be empty or the procedure of checkout should be finished first. After applying Checkout default the Cart should fill in from the beginning__
+4. Add several products to the cart
+5. Open checkout page
+6. Check the Shipping and Payment method",,,,,,0

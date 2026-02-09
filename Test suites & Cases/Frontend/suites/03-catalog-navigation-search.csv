@@ -1,0 +1,3625 @@
+ID,Title,Attachments,Estimate,Expected Result,Preconditions,Priority,References,Section,Section Depth,Section Description,Section Hierarchy,Steps,Steps,Steps (Additional Info),Steps (Expected Result),Steps (References),Steps (Step),is_converted
+C406225,Catalog Menu Loads,,,Menu is visible in header,,High,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,Ensure catalog menu appears on page load,,,,,,0
+C406226,All Categories are Displayed,,,All categories render,All categories are visible,High,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,Check if all visible categories are shown,,,,,,0
+C406227,Nested Categories Open on Hover,,,Nested categories open,,High,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,Validate multilevel hover behavior,,,,,,0
+C406228,Category Navigation Works,,,User reaches category page,,High,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,Clicking category navigates correctly,,,,,,0
+C406230,Category Highlight on Hover,,,Visual feedback appears,,Medium,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,UI highlights on hover,,,,,,0
+C407402,Highlight the current scope,,,,,High,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,,"Step Description:
+Click on menu """"All products""""
+Select first parent category
+Expected Result:
+The category page is opened",,The category page is opened,,"Click on menu ""All products""
+Select first parent category",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on menu """"All products""""
+
+
+Expected Result:
+The current category scope is highlighted",,The current category scope is highlighted,,"Click on menu ""All products""
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Hover over the category with vc-icon subcategories__arrow
+Wait for the second menu to open
+Select the subcategory from second menu
+Expected Result:
+The subcategory page is opened",,The subcategory page is opened,,"Hover over the category with vc-icon subcategories__arrow
+Wait for the second menu to open
+Select the subcategory from second menu",
+,,,,,,,,,,,,,"
+Step Description:
+Click on menu """"All products""""
+Hover over the category with vc-icon subcategories__arrow
+Wait for the second menu to open
+Select the subcategory from second menu
+
+Expected Result:
+The current subcategory scope is highlighted",,The current subcategory scope is highlighted,,"Click on menu ""All products""
+Hover over the category with vc-icon subcategories__arrow
+Wait for the second menu to open
+Select the subcategory from second menu
+",
+,,,,,,,,,,,,,"
+Step Description:
+Check all categories from main menu
+Repeat steps from 1-4
+Expected Result:
+The current category scope is always highlighted",,The current category scope is always highlighted,,"Check all categories from main menu
+Repeat steps from 1-4",
+C406231,Menu Responsive to Screen Size,,,No UI breaks or overlaps,,Medium,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,"Resize screen, test responsiveness",,,,,,0
+C406232,No 404 Links,,,No broken links (200 OK),,Medium,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,Click each link and check response,,,,,,0
+C406233,Menu Performance,,,Acceptable speed,,Medium,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,Menu opens within 1s,,,,,,0
+C406234,Keyboard Navigation Support,,,Keyboard controls work,,Medium,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,Navigate menu with Tab/Enter,,,,,,0
+C406235,Category Page Not Found,,,User gets a 404 or error message,,Medium,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,Click on a broken category link,,,,,,0
+C406236,Hover Too Fast Between Menus,,,Submenus still open reliably,,Medium,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,Quickly hover over categories,,,,,,0
+C406229,Search Field Works,,,Matching products appear,,Medium,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,Search keyword returns results,,,,,,0
+C406237,Dynamic Search drop-down and horizontal menu,,,A dynamic drop-down list appears. It overlaps the horizontal menu.,,Medium,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,Enter search query,,,,,,0
+C406240,Catalog Menu Fails to Load,,,User sees error fallback or empty state,,Medium,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,Simulate broken API/menu data,,,,,,0
+C406242,Deeply Nested Categories,,,Menu adjusts position; all levels are accessible,,High,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,Navigate 3+ levels deep in categories,,,,,,0
+C406243,Long Category Names,,,Text wraps or is truncated neatly,,Medium,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,Category name > 30 characters,,,,,,0
+C406244,Large Number of Categories,,,Menu performance remains acceptable,,Medium,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,Test with 50+ top-level categories,,,,,,0
+C406245,High Zoom Level,,,Menu remains accessible & usable,,Medium,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,Zoom in 200% on browser,,,,,,0
+C406246,Slow Network,,,"Menu loads gracefully, uses spinner",,Medium,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,Simulate 3G or poor network,,,,,,0
+C406247,Multiple Tabs Open,,,Catalog behaves consistently across tabs,,Medium,,Mega menu,1,"https://virtocommerce.atlassian.net/browse/VCST-3106
+Available from vc-frontend 2.23.0",Catalog menu > Mega menu,Open same catalog in multiple tabs,,,,,,0
+C406249,Visibility of all main categories,,,All top-level categories are visible in the horizontal menu,User is logged in or browsing as guest,Medium,,Horizontal linked list menu,2,,Catalog menu > Mega menu > Horizontal linked list menu,1. Load catalog page,,,,,,0
+C406250,Navigation to category page,,,User is navigated to /jewelry-and-gems page,Catalog menu is visible,High,,Horizontal linked list menu,2,,Catalog menu > Mega menu > Horizontal linked list menu,1. Click on 'Jewelry and gems' category,,,,,,0
+C406251,Highlight/selection of active category,,,'Printers' category is highlighted as active,Catalog is visible,Low,,Horizontal linked list menu,2,,Catalog menu > Mega menu > Horizontal linked list menu,1. Click 'Printers' category,,,,,,0
+C406252,Ensure products shown match the category,,,Only soft drinks are listed on product results,Products exist in the selected category,High,,Horizontal linked list menu,2,,Catalog menu > Mega menu > Horizontal linked list menu,1. Click 'Soft drinks' category,,,,,,0
+C406254,Category name check,,,"Categories are hidden, several remain on the page",Categories with long names exist,Low,,Horizontal linked list menu,2,,Catalog menu > Mega menu > Horizontal linked list menu,1. Check display on narrow screens,,,,,,0
+C406255,Behavior when category page has no products,,,Message like 'No products found' is shown,Empty category exists,Low,,Horizontal linked list menu,2,,Catalog menu > Mega menu > Horizontal linked list menu,1. Click category with no products,,,,,,0
+C406256,Broken link handling,,,Page shows 404 or graceful error,Inspect element and modify category URL,Medium,,Horizontal linked list menu,2,,Catalog menu > Mega menu > Horizontal linked list menu,1. Click modified link,,,,,,0
+C406257,Category list overflow handling,,,"Categories are hidden, several remain on the page, categories remain usable",Window width is reduced,High,,Horizontal linked list menu,2,,Catalog menu > Mega menu > Horizontal linked list menu,1. Shrink window size,,,,,,0
+C406258,Consistency of categories across pages,,,Menu remains consistent across views,Navigate across catalog and product pages,Low,,Horizontal linked list menu,2,,Catalog menu > Mega menu > Horizontal linked list menu,1. Compare category menu across different pages,,,,,,0
+C388956,Create main link list > Check drop-down,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001153,,, ,Medium,,Catalog drop-down (linked list categories),1,,Catalog menu > Catalog drop-down (linked list categories),,"Step Description:
+Go to admin &gt; Content
+Open active store &gt; Link list
+Add new list
+Create
+
+
+Expected Result:
+A new link list was created
+
+
+ ![](index.php?/attachments/get/3edd75c3-1e90-4808-a251-d5046f6b0f84) 
+
+
+",,"A new link list was created
+
+
+ ![](index.php?/attachments/get/3edd75c3-1e90-4808-a251-d5046f6b0f84) 
+
+
+",,"Go to admin &gt; Content
+Open active store &gt; Link list
+Add new list
+Create
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Open https://github.com/VirtoCommerce/vc-theme-b2b-vue/blob/demo/config/settings_data.json
+
+Set up a new name for setting """"catalog_menu_link_list_name"""": """"name-link-list1""""
+
+Create PR
+Expected Result:
+The """"catalog_menu_link_list_name"""": """"name-link-list1"""" parameter was added to the settings_data.json file.",,"The ""catalog_menu_link_list_name"": ""name-link-list1"" parameter was added to the settings_data.json file.",,"Open https://github.com/VirtoCommerce/vc-theme-b2b-vue/blob/demo/config/settings_data.json
+
+Set up a new name for setting ""catalog_menu_link_list_name"": ""name-link-list1""
+
+Create PR",
+,,,,,,,,,,,,,"
+Step Description:
+Go to storefront
+Click on the drop-down menu
+Expected Result:
+The catalog drop-down menu is displayed in accordance with the new link list",,The catalog drop-down menu is displayed in accordance with the new link list,,"Go to storefront
+Click on the drop-down menu",
+,,,,,,,,,,,,,"
+Step Description:
+Click on the category
+
+
+Expected Result:
+The redirection to the category.
+
+URL is the same as in the link list",,"The redirection to the category.
+
+URL is the same as in the link list",,"Click on the category
+
+",
+C388957,Add subcategories for parent category > Check drop-down,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000002527, https://virtowayqa.testrail.io/index.php?/attachments/get/1000004447",,,"The ""catalog_menu_link_list_name"": ""catalog-menu"" parameter was added to the settings_data.json file.
+
+The link list was created [C359839]
+
+",Medium,,Catalog drop-down (linked list categories),1,,Catalog menu > Catalog drop-down (linked list categories),,"Step Description:
+Create a link list for parent category1
+Add subcategories
+Create
+Expected Result:
+Subcategories were added to parent category1
+
+ ![](index.php?/attachments/get/f72ef125-5792-49b7-9d17-e83336ff2ca4) 
+",,"Subcategories were added to parent category1
+
+ ![](index.php?/attachments/get/f72ef125-5792-49b7-9d17-e83336ff2ca4) 
+",,"Create a link list for parent category1
+Add subcategories
+Create",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to storefront
+Click on the drop-down menu
+Expected Result:
+The catalog drop-down menu is displayed in accordance with the new link list
+
+
+ ![](index.php?/attachments/get/8f399c7b-a5a4-4348-b516-489a7681cf13) 
+
+
+",,"The catalog drop-down menu is displayed in accordance with the new link list
+
+
+ ![](index.php?/attachments/get/8f399c7b-a5a4-4348-b516-489a7681cf13) 
+
+
+",,"Go to storefront
+Click on the drop-down menu",
+,,,,,,,,,,,,,"
+Step Description:
+Click on the category
+Expected Result:
+The redirection to the category.
+
+URL is the same as in the link list",,"The redirection to the category.
+
+URL is the same as in the link list",,Click on the category,
+C388958,Update category > Check drop-down,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000002405, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000197, https://virtowayqa.testrail.io/index.php?/attachments/get/1000003900",,,"The ""catalog_menu_link_list_name"": ""catalog-menu"" parameter was added to the settings_data.json file.
+
+The link list was created [C359839]",Medium,,Catalog drop-down (linked list categories),1,,Catalog menu > Catalog drop-down (linked list categories),,"Step Description:
+Open link list with catalog-menu
+Rename the parent category
+Save
+Expected Result:
+The parent category was updated
+
+
+ ![](index.php?/attachments/get/84be1e65-24f4-4f04-b266-23a9d0b04783) 
+",,"The parent category was updated
+
+
+ ![](index.php?/attachments/get/84be1e65-24f4-4f04-b266-23a9d0b04783) 
+",,"Open link list with catalog-menu
+Rename the parent category
+Save",0
+,,,,,,,,,,,,,"
+Step Description:
+Open link list for parent category1
+Rename the subcategory
+Save
+Expected Result:
+The subcategory was updated
+
+ ![](index.php?/attachments/get/dbab87dc-fe6f-4d94-9f55-8b68838b10a6) 
+
+  
+
+",,"The subcategory was updated
+
+ ![](index.php?/attachments/get/dbab87dc-fe6f-4d94-9f55-8b68838b10a6) 
+
+  
+
+",,"Open link list for parent category1
+Rename the subcategory
+Save",
+,,,,,,,,,,,,,"
+Step Description:
+Go to storefront
+Click on the drop-down menu
+Expected Result:
+The catalog drop-down menu is displayed in accordance with the new link list
+Subcategory was updated
+
+
+ ![](index.php?/attachments/get/06bbc055-aeed-4e7b-a163-9ff5a48a66eb) 
+
+
+  
+
+",,"The catalog drop-down menu is displayed in accordance with the new link list
+Subcategory was updated
+
+
+ ![](index.php?/attachments/get/06bbc055-aeed-4e7b-a163-9ff5a48a66eb) 
+
+
+  
+
+",,"Go to storefront
+Click on the drop-down menu",
+C388959,Change order for main link list > Check drop-down,,,,"The ""catalog_menu_link_list_name"": ""catalog-menu"" parameter was added to the settings_data.json file.
+
+The link list was created [C359839]",Medium,,Catalog drop-down (linked list categories),1,,Catalog menu > Catalog drop-down (linked list categories),,"Step Description:
+Open link list with catalog-menu
+Change the order for the categories via drag and drop
+Save
+Expected Result:
+The new order was saved",,The new order was saved,,"Open link list with catalog-menu
+Change the order for the categories via drag and drop
+Save",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to storefront &gt; Check the drop-down
+Expected Result:
+The categories are situated in accordance with the order in the link list",,The categories are situated in accordance with the order in the link list,,Go to storefront &gt; Check the drop-down,
+C388960,Change order for  link list with subcategories > Check drop-down,,,,"The ""catalog_menu_link_list_name"": ""catalog-menu"" parameter was added to the settings_data.json file.
+
+The link list was created [C359839]",Medium,,Catalog drop-down (linked list categories),1,,Catalog menu > Catalog drop-down (linked list categories),,"Step Description:
+Open link list for parent category1
+Change the order for the categories via drag and drop
+Save
+Expected Result:
+The new order was saved
+
+ ![](index.php?/attachments/get/90834605-457b-4b5a-9fdc-16fce8d25df7) 
+
+
+
+",,"The new order was saved
+
+ ![](index.php?/attachments/get/90834605-457b-4b5a-9fdc-16fce8d25df7) 
+
+
+
+",,"Open link list for parent category1
+Change the order for the categories via drag and drop
+Save",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to storefront &gt; Check the drop-down
+Expected Result:
+The categories are situated in accordance with the order in the link list
+
+ ![](index.php?/attachments/get/0b0106dd-f681-4881-b359-66559fb802e0) 
+
+",,"The categories are situated in accordance with the order in the link list
+
+ ![](index.php?/attachments/get/0b0106dd-f681-4881-b359-66559fb802e0) 
+
+",,Go to storefront &gt; Check the drop-down,
+C388961,Delete subcategory > Check drop-down,,,,"The ""catalog_menu_link_list_name"": ""catalog-menu"" parameter was added to the settings_data.json file.
+
+The link list was created [C359839]",Medium,,Catalog drop-down (linked list categories),1,,Catalog menu > Catalog drop-down (linked list categories),,"Step Description:
+Open link list for parent category1
+Delete subcategory1
+Save
+Expected Result:
+The subcategory1 was deleted",,The subcategory1 was deleted,,"Open link list for parent category1
+Delete subcategory1
+Save",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to storefront &gt; Check the drop-down
+Expected Result:
+The subcategory1 is no longer displayed in parent category1",,The subcategory1 is no longer displayed in parent category1,,Go to storefront &gt; Check the drop-down,
+C388962,Delete parent category from main link list > Check drop-down,,,,"The ""catalog_menu_link_list_name"": ""catalog-menu"" parameter was added to the settings_data.json file.
+
+The link list was created [C359839]",Medium,,Catalog drop-down (linked list categories),1,,Catalog menu > Catalog drop-down (linked list categories),,"Step Description:
+Open link list with catalog-menu
+Delete parent category1
+Save
+Expected Result:
+The category1 was deleted",,The category1 was deleted,,"Open link list with catalog-menu
+Delete parent category1
+Save",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to storefront &gt; Check the drop-down
+Expected Result:
+The category1 with subcategories is no longer displayed in the menu",,The category1 with subcategories is no longer displayed in the menu,,Go to storefront &gt; Check the drop-down,
+C388963,Switch the cultureName for store > Check drop-down,,,,"Create link lists with several languages 
+
+link-list1 = en-US
+
+link-list2 = de-DE
+
+
+
+
+
+",Medium,,Catalog drop-down (linked list categories),1,,Catalog menu > Catalog drop-down (linked list categories),,"Step Description:
+Go to storefront &gt; Switch the cultureName for the store = de-DE
+Click on the catalog menu
+Expected Result:
+The catalog drop-down menu is displayed in accordance with the link-list2",,The catalog drop-down menu is displayed in accordance with the link-list2,,"Go to storefront &gt; Switch the cultureName for the store = de-DE
+Click on the catalog menu",0
+,,,,,,,,,,,,,"
+Step Description:
+Switch the cultureName = en-US
+Expected Result:
+The catalog drop-down menu is displayed in accordance with the link-list1",,The catalog drop-down menu is displayed in accordance with the link-list1,,Switch the cultureName = en-US,
+C388964,Change setting > Check drop-down,,,,Create link-list1 = en-US,Medium,,Catalog drop-down (linked list categories),1,,Catalog menu > Catalog drop-down (linked list categories),,"Step Description:
+Open https://github.com/VirtoCommerce/vc-theme-b2b-vue/blob/demo/config/settings_data.json
+
+Set up a new name for setting """"catalog_menu_link_list_name"""": """"link-list1""""
+
+Create PR
+Expected Result:
+The """"catalog_menu_link_list_name"""": """"link-list1"""" parameter was added to the settings_data.json file.",,"The ""catalog_menu_link_list_name"": ""link-list1"" parameter was added to the settings_data.json file.",,"Open https://github.com/VirtoCommerce/vc-theme-b2b-vue/blob/demo/config/settings_data.json
+
+Set up a new name for setting ""catalog_menu_link_list_name"": ""link-list1""
+
+Create PR",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to storefront
+Click on the drop-down menu
+Expected Result:
+The catalog drop-down menu is displayed in accordance with the link-list1",,The catalog drop-down menu is displayed in accordance with the link-list1,,"Go to storefront
+Click on the drop-down menu",
+C388965,Set up non-exist name in setting > Check the drop-down,,,,,Medium,,Catalog drop-down (linked list categories),1,,Catalog menu > Catalog drop-down (linked list categories),,"Step Description:
+Open https://github.com/VirtoCommerce/vc-theme-b2b-vue/blob/demo/config/settings_data.json
+
+Set up a new name for setting """"catalog_menu_link_list_name"""": """"non-exist-name""""
+
+Create PR
+Expected Result:
+The """"catalog_menu_link_list_name"""": """"non-exist-name"""" parameter was added to the settings_data.json file.",,"The ""catalog_menu_link_list_name"": ""non-exist-name"" parameter was added to the settings_data.json file.",,"Open https://github.com/VirtoCommerce/vc-theme-b2b-vue/blob/demo/config/settings_data.json
+
+Set up a new name for setting ""catalog_menu_link_list_name"": ""non-exist-name""
+
+Create PR",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to storefront
+Click on the Catalog
+
+
+
+Expected Result:
+The catalog drop-down becomes a button. After clicking is redirected to the catalog
+
+ ![](index.php?/attachments/get/3f225521-9ba6-4ffb-bf4a-3744a60b9ab7) 
+",,"The catalog drop-down becomes a button. After clicking is redirected to the catalog
+
+ ![](index.php?/attachments/get/3f225521-9ba6-4ffb-bf4a-3744a60b9ab7) 
+",,"Go to storefront
+Click on the Catalog
+
+
+",
+C388966,Leave setting empty > Check the the drop-down,,,, ,Medium,,Catalog drop-down (linked list categories),1,,Catalog menu > Catalog drop-down (linked list categories),,"Step Description:
+Open https://github.com/VirtoCommerce/vc-theme-b2b-vue/blob/demo/config/settings_data.json
+
+Remove setting or set null (""""catalog_menu_link_list_name"""": null or """"catalog_menu_link_list_name"""": """"""""),
+
+Create PR
+Expected Result:
+The """"catalog_menu_link_list_name"""": """""""" parameter was added to the settings_data.json file.",,"The ""catalog_menu_link_list_name"": """" parameter was added to the settings_data.json file.",,"Open https://github.com/VirtoCommerce/vc-theme-b2b-vue/blob/demo/config/settings_data.json
+
+Remove setting or set null (""catalog_menu_link_list_name"": null or ""catalog_menu_link_list_name"": """"),
+
+Create PR",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to storefront
+Click on the drop-down menu
+Expected Result:
+The catalog drop-down menu is displayed all categories from the catalog (old logic)",,The catalog drop-down menu is displayed all categories from the catalog (old logic),,"Go to storefront
+Click on the drop-down menu",
+C389038,Catalog drop-down > general view,,,,"Catalog_1 contains several categories with more than
+5 subcategories
+
+User on the sign in page",Medium,,Catalog drop-down (main navigation),2,,Catalog menu > Catalog drop-down (linked list categories) > Catalog drop-down (main navigation),,"Step Description:
+Click on the “Catalog” button
+Expected Result:
+Popup is opened on the full width of the site",,Popup is opened on the full width of the site,,Click on the “Catalog” button,0
+,,,,,,,,,,,,,"
+Step Description:
+Click on Catalog or click outside
+Expected Result:
+The popup is collapsed",,The popup is collapsed,,Click on Catalog or click outside,
+,,,,,,,,,,,,,"
+Step Description:
+Click on Catalog
+Click on the “Show more“ link
+Expected Result:
+The selected column is uncollapsed, and all subcategories are shown",,"The selected column is uncollapsed, and all subcategories are shown",,"Click on Catalog
+Click on the “Show more“ link",
+,,,,,,,,,,,,,"
+Step Description:
+Click on """"Hide"""" link
+Expected Result:
+The selected column is collapsed",,The selected column is collapsed,,"Click on ""Hide"" link",
+,,,,,,,,,,,,,"
+Step Description:
+Click on any Item in the popup 
+Expected Result:
+The user is redirected to the selected subcategory section in the catalog ",,The user is redirected to the selected subcategory section in the catalog ,,Click on any Item in the popup ,
+C389039,Catalog drop-down > 1 category with less than 5 subcategories,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001610,,"![](index.php?/attachments/get/591247c3-d62a-4c32-a30b-229c94d093d2) 
+
+The popup contains 1 column
+Popup is opened on the full width of the site
+Subcategories are displayed under Main Category
+The “Show more” link is displayed if there are more subcategories than limited (Limit=5 by default)
+
+ ","Catalog_1 contains only 1 category with less than 5 subcategories
+Go to admin > Catalog_1 > Category_1 > Manage > Set Visible = false for hidden some categories
+",Medium,,Catalog drop-down (main navigation),2,,Catalog menu > Catalog drop-down (linked list categories) > Catalog drop-down (main navigation),Click on the “Catalog” button,,,,,,0
+C389040,Catalog drop-down > 2 categories with multiple subcategories,,,"The popup contains 2 columns
+Popup is opened on the full width of the site
+Subcategories are displayed under Main Category
+The “Show more” link is displayed if there are more subcategories than limited (Limit=5 by default)
+","Catalog_1 contains only 2 categories with more than 5 subcategories
+Go to admin > Catalog_1 > Category_1 > Manage > Set Visible = false for hidden some categories
+",Medium,,Catalog drop-down (main navigation),2,,Catalog menu > Catalog drop-down (linked list categories) > Catalog drop-down (main navigation),Click on the “Catalog” button,,,,,,0
+C389041,Catalog drop-down > 4 categories with 5 subcategories,,,,"Create 4 categories with 5 subcategories in each
+
+Go to admin > Catalog_1 > Category_1 > Manage > Set Visible = false for hidden some categories ",Medium,,Catalog drop-down (main navigation),2,,Catalog menu > Catalog drop-down (linked list categories) > Catalog drop-down (main navigation),,"Step Description:
+Click on the “Catalog” button
+Expected Result:
+The popup contains 4 columns
+Popup is opened on the full width of the site
+Subcategories are displayed under Main Category
+The “Show more” link is displayed if there are more subcategories than limited (Limit=5 by default)
+",,"The popup contains 4 columns
+Popup is opened on the full width of the site
+Subcategories are displayed under Main Category
+The “Show more” link is displayed if there are more subcategories than limited (Limit=5 by default)
+",,Click on the “Catalog” button,0
+,,,,,,,,,,,,,"
+Step Description:
+Close the popup by clicking outside and clicking the """"Catalog"""" button
+Expected Result:
+The pop-up is closed",,The pop-up is closed,,"Close the popup by clicking outside and clicking the ""Catalog"" button",
+C389042,Catalog drop-down > 10 categories with different number of subcategories,,,"The popup contains 5 columns and 2 rows
+Popup is opened on the full width of the site
+All Categories are displayed in the pop-up
+Subcategories are displayed under Main Category
+The “Show more” link is displayed if there are more subcategories than limited (Limit=5 by default)
+",Catalog_1 contains 10 categories and a different number of subcategories in each,Medium,,Catalog drop-down (main navigation),2,,Catalog menu > Catalog drop-down (linked list categories) > Catalog drop-down (main navigation),"Click on the “Catalog” button
+Check the pop-up",,,,,,0
+C389043,Catalog drop-down > Category without subcategories,,,,,Medium,,Catalog drop-down (main navigation),2,,Catalog menu > Catalog drop-down (linked list categories) > Catalog drop-down (main navigation),,,,,,,0
+C389044,Catalog drop-down > Category without products,,,,"Open admin
+Content > B2B-store > Theme > Find file settings_data.json 
+
+
+Remove setting or set null (""catalog_menu_link_list_name"": null or ""catalog_menu_link_list_name"": """"),
+
+
+
+
+Category1 is active
+
+Catagery1 has no products
+
+Category2 is empty
+
+
+",Medium,,Catalog drop-down (main navigation),2,,Catalog menu > Catalog drop-down (linked list categories) > Catalog drop-down (main navigation),,"Step Description:
+Click on Catalog drop-down menu
+Find category1
+
+
+
+Expected Result:
+The category1 is not displayed in the menu",,The category1 is not displayed in the menu,,"Click on Catalog drop-down menu
+Find category1
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to admin
+Assign product1 to category1
+
+Verify catalog drop-down menu
+Find category1
+
+Expected Result:
+The category1 is displayed in the menu",,The category1 is displayed in the menu,,"Go to admin
+Assign product1 to category1
+
+Verify catalog drop-down menu
+Find category1
+",
+,,,,,,,,,,,,,"
+Step Description:
+Click on category1
+Expected Result:
+The category1 page is opened. Product1 is displayed
+
+",,"The category1 page is opened. Product1 is displayed
+
+",,Click on category1,
+,,,,,,,,,,,,,"
+Step Description:
+Go to the catalog page
+Check the category2 in the category selector
+Expected Result:
+The category2 is not displayed in the menu",,The category2 is not displayed in the menu,,"Go to the catalog page
+Check the category2 in the category selector",
+C389045,Catalog drop-down > Category / subcategory is hidden in admin side,,,,"Catalog_1 contains 10 categories and a different number of subcategories in each
+
+Go to admin > Catalog_1 > Category_1 > Manage > Set Visible = false",Medium,,Catalog drop-down (main navigation),2,,Catalog menu > Catalog drop-down (linked list categories) > Catalog drop-down (main navigation),,"Step Description:
+Go to Storefront &gt; Sign in page
+Click on Catalog
+Check hidden category
+Expected Result:
+Popup is uncollapsed. The hidden Category_1 does not display",,Popup is uncollapsed. The hidden Category_1 does not display,,"Go to Storefront &gt; Sign in page
+Click on Catalog
+Check hidden category",0
+C407738,View All Results Link,,,,"<p>None</p>
+",Medium,,Search drop-down,1,,Search > Search drop-down,,"Step Description:
+<ol><li>Type """"jewelry"""" in search box</li><li>Click """"View all 14 results"""" button</li></ol>
+Expected Result:
+<p>Redirects to full search results page<br>Shows all matching products (14 for jewelry)<br>URL contains proper query parameter<br>Results page has filtering/sorting options</p>",,<p>Redirects to full search results page<br>Shows all matching products (14 for jewelry)<br>URL contains proper query parameter<br>Results page has filtering/sorting options</p>,,"<ol><li>Type ""jewelry"" in search box</li><li>Click ""View all 14 results"" button</li></ol>",1
+C407741,Empty Search Handling,,,,"<p>None</p>
+",Medium,,Search drop-down,1,,Search > Search drop-down,,"Step Description:
+<ol><li>Click search box without typing</li><li>Try to search with empty input</li></ol>
+Expected Result:
+<p>Appropriate handling (no search executed or default behavior)<br>No errors displayed<br>Search history shown if available</p>",,<p>Appropriate handling (no search executed or default behavior)<br>No errors displayed<br>Search history shown if available</p>,,<ol><li>Click search box without typing</li><li>Try to search with empty input</li></ol>,1
+C407745,Performance with Large Datasets,,,,"<p>None</p>
+",Medium,,Search drop-down,1,,Search > Search drop-down,,"Step Description:
+<ol>
+<li>Search for common terms (e.g., """"the"""", """"and"""")</li>
+<li>Measure response time for suggestions</li>
+</ol>
+Expected Result:
+<p>Suggestions appear within 500ms<br />No browser freezing<br />Smooth scrolling in results</p>",,<p>Suggestions appear within 500ms<br />No browser freezing<br />Smooth scrolling in results</p>,,"<ol>
+<li>Search for common terms (e.g., ""the"", ""and"")</li>
+<li>Measure response time for suggestions</li>
+</ol>",1
+C407746,Dropdown Visual Design,,,,"<p>None</p>
+",Medium,,Search drop-down,1,,Search > Search drop-down,,"Step Description:
+<ol>
+<li>Open search suggestions dropdown</li>
+<li>Review visual elements</li>
+</ol>
+Expected Result:
+<p>Clear section headers (""""Suggestions & history"""", """"Products"""", """"Pages"""")<br />Proper spacing and alignment<br />Icons display correctly<br />Consistent font and colors</p>",,"<p>Clear section headers (""Suggestions & history"", ""Products"", ""Pages"")<br />Proper spacing and alignment<br />Icons display correctly<br />Consistent font and colors</p>",,"<ol>
+<li>Open search suggestions dropdown</li>
+<li>Review visual elements</li>
+</ol>",1
+C407747,Mobile Responsiveness,,,,"<p>None</p>
+",High,,Search drop-down,1,,Search > Search drop-down,,"Step Description:
+<ol>
+<li>Test on mobile viewport</li>
+<li>Check dropdown behavior and touch interactions</li>
+</ol>
+Expected Result:
+<p>Dropdown fits screen properly<br />Touch targets are appropriate size<br />Scrolling works smoothly</p>",,<p>Dropdown fits screen properly<br />Touch targets are appropriate size<br />Scrolling works smoothly</p>,,"<ol>
+<li>Test on mobile viewport</li>
+<li>Check dropdown behavior and touch interactions</li>
+</ol>",1
+C407748,Keyboard Navigation,,,,None,Medium,,Search drop-down,1,,Search > Search drop-down,,"Step Description:
+1. Open suggestions dropdown
+2. Use arrow keys to navigate
+3. Press Enter to select
+Expected Result:
+Arrow keys move between suggestions
+Visual highlight indicates selection
+Enter key executes selection",,"Arrow keys move between suggestions
+Visual highlight indicates selection
+Enter key executes selection",,"1. Open suggestions dropdown
+2. Use arrow keys to navigate
+3. Press Enter to select",0
+C407749,Screen Reader Compatibility,,,,None,Medium,,Search drop-down,1,,Search > Search drop-down,,"Step Description:
+1. Use screen reader to navigate search functionality
+2. Check for proper ARIA labels and descriptions
+Expected Result:
+Search suggestions are announced
+Clear navigation instructions
+Proper labeling of sections",,"Search suggestions are announced
+Clear navigation instructions
+Proper labeling of sections",,"1. Use screen reader to navigate search functionality
+2. Check for proper ARIA labels and descriptions",0
+C407750,Cross-Browser Functionality,,,,None,High,,Search drop-down,1,,Search > Search drop-down,,"Step Description:
+1. Test in Chrome, Firefox, Safari, Edge
+2. Verify all functionality works consistently
+Expected Result:
+Consistent behavior across browsers
+No browser-specific issues
+Similar performance characteristics",,"Consistent behavior across browsers
+No browser-specific issues
+Similar performance characteristics",,"1. Test in Chrome, Firefox, Safari, Edge
+2. Verify all functionality works consistently",0
+C407734,Basic Product Suggestions Display,,,,"<p>User is on homepage<br />Search box is empty</p>
+",High,,Products,2,,Search > Search drop-down > Products,,"Step Description:
+<ol><li>Click on search box</li><li>Type """"jewelry""""</li></ol>
+Expected Result:
+<p>Dropdown appears with """"Products"""" section<br>6 relevant jewelry products are displayed<br>Each product shows: image, name, price<br>""""View all X results"""" button appears showing total count</p>",,"<p>Dropdown appears with ""Products"" section<br>6 relevant jewelry products are displayed<br>Each product shows: image, name, price<br>""View all X results"" button appears showing total count</p>",,"<ol><li>Click on search box</li><li>Type ""jewelry""</li></ol>",1
+C407735,Product Suggestions Content Accuracy,,,,"<p>None</p>
+",High,,Products,2,,Search > Search drop-down > Products,,"Step Description:
+<ol>
+<li>Type """"jewelry"""" in search box</li>
+<li>Review displayed products</li>
+</ol>
+Expected Result:
+<p>All suggested products contain """"jewelry"""" in name/description<br />Products are diverse (different brands, types)<br />Prices are displayed correctly<br />Product images load properly</p>",,"<p>All suggested products contain ""jewelry"" in name/description<br />Products are diverse (different brands, types)<br />Prices are displayed correctly<br />Product images load properly</p>",,"<ol>
+<li>Type ""jewelry"" in search box</li>
+<li>Review displayed products</li>
+</ol>",1
+C407736,Product Suggestions for Different Categories,,,,"<p>None</p>
+",Medium,,Products,2,,Search > Search drop-down > Products,,"Step Description:
+<ol>
+<li>Test search term """"pri"""" (for PRITOM products)</li>
+<li>Review suggestions</li>
+</ol>
+Expected Result:
+<p>Relevant PRITOM tablets and devices appear<br />Products match search term context<br />Mixed product types (tablets, hair dryers, etc.)</p>",,"<p>Relevant PRITOM tablets and devices appear<br />Products match search term context<br />Mixed product types (tablets, hair dryers, etc.)</p>",,"<ol>
+<li>Test search term ""pri"" (for PRITOM products)</li>
+<li>Review suggestions</li>
+</ol>",1
+C407739,Product Suggestion Click Navigation,,,,"<p>None</p>
+",High,,Products,2,,Search > Search drop-down > Products,,"Step Description:
+<ol><li>Type search term to show product suggestions</li><li>Click on a specific product suggestion</li></ol>
+Expected Result:
+<p>Navigates to product detail page<br>Correct product information displayed<br>URL matches product identifier</p>",,<p>Navigates to product detail page<br>Correct product information displayed<br>URL matches product identifier</p>,,<ol><li>Type search term to show product suggestions</li><li>Click on a specific product suggestion</li></ol>,1
+C407740,Real-time Suggestions Update,,,,"<p>None</p>
+",Medium,,Products,2,,Search > Search drop-down > Products,,"Step Description:
+<ol>
+<li>Type """"j"""" in search box</li>
+<li>Add """"e"""" → """"je""""</li>
+<li>Add """"w"""" → """"jew""""</li>
+<li>Complete → """"jewelry""""</li>
+</ol>
+Expected Result:
+<p>Suggestions update with each character<br />Results become more specific<br />No delays or performance issues</p>",,<p>Suggestions update with each character<br />Results become more specific<br />No delays or performance issues</p>,,"<ol>
+<li>Type ""j"" in search box</li>
+<li>Add ""e"" → ""je""</li>
+<li>Add ""w"" → ""jew""</li>
+<li>Complete → ""jewelry""</li>
+</ol>",1
+C407729,Basic Search History Storage,,,,"<p>User is on homepage<br />Search box is accessible</p>
+",High,,Hints,2,,Search > Search drop-down > Hints,,"Step Description:
+<ol><li>Click on search box</li><li>Type """"jewelry"""" in search box</li><li>Press Enter to perform search</li><li>Navigate back to homepage</li><li>Click on search box again</li></ol>
+Expected Result:
+<p>Search history dropdown appears<br>""""jewelry"""" appears in """"Suggestions & history"""" section<br>Search history item has proper icon and formatting</p>",,"<p>Search history dropdown appears<br>""jewelry"" appears in ""Suggestions & history"" section<br>Search history item has proper icon and formatting</p>",,"<ol><li>Click on search box</li><li>Type ""jewelry"" in search box</li><li>Press Enter to perform search</li><li>Navigate back to homepage</li><li>Click on search box again</li></ol>",1
+C407730,Multiple Search History Items,,,,"<p>Previous search ""jewelry"" exists in history</p>
+",High,,Hints,2,,Search > Search drop-down > Hints,,"Step Description:
+<ol><li>From homepage, click search box</li><li>Clear existing text and type """"pri 1""""</li><li>Press Enter to perform search</li><li>Navigate back to homepage</li><li>Click on search box</li></ol>
+Expected Result:
+<p>Both """"jewelry"""" and """"pri 1"""" appear in search history<br>Most recent search (""""pri 1"""") appears first<br>Both items are clickable with proper icons</p>",,"<p>Both ""jewelry"" and ""pri 1"" appear in search history<br>Most recent search (""pri 1"") appears first<br>Both items are clickable with proper icons</p>",,"<ol><li>From homepage, click search box</li><li>Clear existing text and type ""pri 1""</li><li>Press Enter to perform search</li><li>Navigate back to homepage</li><li>Click on search box</li></ol>",1
+C407731,Search History Item Click Functionality,,,,"<p>Search history contains ""pri 1"" and ""jewelry""</p>
+",High,,Hints,2,,Search > Search drop-down > Hints,,"Step Description:
+<ol><li>Click on search box to open dropdown</li><li>Click on """"pri 1"""" from search history</li></ol>
+Expected Result:
+<p>Search is automatically executed<br>User is redirected to search results page<br>URL contains query parameter """"?q=pri+1""""<br>Search results show products containing """"pri""""<br>Results count is displayed (e.g., """"74 results"""")</p>",,"<p>Search is automatically executed<br>User is redirected to search results page<br>URL contains query parameter ""?q=pri+1""<br>Search results show products containing ""pri""<br>Results count is displayed (e.g., ""74 results"")</p>",,"<ol><li>Click on search box to open dropdown</li><li>Click on ""pri 1"" from search history</li></ol>",1
+C407732,Search History Persistence,,,,None,Medium,,Hints,2,,Search > Search drop-down > Hints,,"Step Description:
+1. Perform search for """"test term""""
+2. Navigate to different pages (categories, product pages)
+3. Return to homepage
+4. Click on search box
+Expected Result:
+Search history is maintained
+""""test term"""" appears in search history",,"Search history is maintained
+""test term"" appears in search history",,"1. Perform search for ""test term""
+2. Navigate to different pages (categories, product pages)
+3. Return to homepage
+4. Click on search box",0
+C407733,Search History Limit,,,,None,Low,,Hints,2,,Search > Search drop-down > Hints,,"Step Description:
+1. Perform multiple different searches (watches, phone, test term, jewelry, pri 1)
+2. Check search history dropdown
+Expected Result:
+Only recent searches are shown (4 items displayed)
+System maintains reasonable limit and shows most recent searches first",,"Only recent searches are shown (4 items displayed)
+System maintains reasonable limit and shows most recent searches first",,"1. Perform multiple different searches (watches, phone, test term, jewelry, pri 1)
+2. Check search history dropdown",0
+C407751,User-Specific Search History Isolation,,,,"<p>Two different user accounts exist<br />Both users can access the search functionality</p>
+",High,,Hints,2,,Search > Search drop-down > Hints,,"Step Description:
+<ol>
+<li>Login as User A</li>
+<li>Perform searches: """"laptop"""", """"mouse""""</li>
+<li>Logout from User A</li>
+<li>Login as User B</li>
+<li>Perform searches: """"phone"""", """"tablet""""</li>
+<li>Check search history dropdown for User B</li>
+<li>Logout and login back as User A</li>
+<li>Check search history dropdown for User A</li>
+</ol>
+Expected Result:
+<p>User A sees only their searches: """"laptop"""", """"mouse""""<br />User B sees only their searches: """"phone"""", """"tablet""""<br />No cross-contamination of search history between users</p>",,"<p>User A sees only their searches: ""laptop"", ""mouse""<br />User B sees only their searches: ""phone"", ""tablet""<br />No cross-contamination of search history between users</p>",,"<ol>
+<li>Login as User A</li>
+<li>Perform searches: ""laptop"", ""mouse""</li>
+<li>Logout from User A</li>
+<li>Login as User B</li>
+<li>Perform searches: ""phone"", ""tablet""</li>
+<li>Check search history dropdown for User B</li>
+<li>Logout and login back as User A</li>
+<li>Check search history dropdown for User A</li>
+</ol>",1
+C407752,Guest vs Registered User Search History,,,,"<p>None</p>
+",High,,Hints,2,,Search > Search drop-down > Hints,,"Step Description:
+<ol><li>As guest user, perform searches: """"headphones"""", """"keyboard""""</li><li>Register/Login as new user</li><li>Perform searches: """"monitor"""", """"webcam""""</li><li>Logout and browse as guest again</li></ol>
+Expected Result:
+<p>Guest search history is separate from registered user<br>Registered user starts with clean search history<br>Guest retains their previous search history (if stored locally)<br>Clear separation between user types</p>",,<p>Guest search history is separate from registered user<br>Registered user starts with clean search history<br>Guest retains their previous search history (if stored locally)<br>Clear separation between user types</p>,,"<ol><li>As guest user, perform searches: ""headphones"", ""keyboard""</li><li>Register/Login as new user</li><li>Perform searches: ""monitor"", ""webcam""</li><li>Logout and browse as guest again</li></ol>",1
+C407753,Search History Clearing on User Switch,,,,"<p>User A is logged in with existing search history</p>
+",Medium,,Hints,2,,Search > Search drop-down > Hints,,"Step Description:
+<ol>
+<li>Login as User A with existing search history</li>
+<li>Note current search history items</li>
+<li>Logout from User A</li>
+<li>Login as different User B</li>
+<li>Check search dropdown immediately</li>
+</ol>
+Expected Result:
+<p>User B's dropdown shows either:</p>
+
+<ul>
+<li>Empty search history (if new user), OR</li>
+<li>User B's own previous search history</li>
+<li>No traces of User A's search history remain</li>
+</ul>",,"<p>User B's dropdown shows either:</p>
+
+<ul>
+<li>Empty search history (if new user), OR</li>
+<li>User B's own previous search history</li>
+<li>No traces of User A's search history remain</li>
+</ul>",,"<ol>
+<li>Login as User A with existing search history</li>
+<li>Note current search history items</li>
+<li>Logout from User A</li>
+<li>Login as different User B</li>
+<li>Check search dropdown immediately</li>
+</ol>",1
+C407754,Search History Persistence for Registered Users,,,,"<p>Registered user account exists</p>
+",High,,Hints,2,,Search > Search drop-down > Hints,,"Step Description:
+<ol>
+<li>Login as registered user</li>
+<li>Perform searches: """"wireless mouse"""", """"mechanical keyboard""""</li>
+<li>Logout completely</li>
+<li>Close browser/clear session</li>
+<li>Reopen browser and login as same user</li>
+<li>Check search history dropdown</li>
+</ol>
+Expected Result:
+<p>Search history persists across sessions for registered users<br />""""wireless mouse"""" and """"mechanical keyboard"""" still appear<br />Search history is properly restored after re-login</p>",,"<p>Search history persists across sessions for registered users<br />""wireless mouse"" and ""mechanical keyboard"" still appear<br />Search history is properly restored after re-login</p>",,"<ol>
+<li>Login as registered user</li>
+<li>Perform searches: ""wireless mouse"", ""mechanical keyboard""</li>
+<li>Logout completely</li>
+<li>Close browser/clear session</li>
+<li>Reopen browser and login as same user</li>
+<li>Check search history dropdown</li>
+</ol>",1
+C407755,Multiple Users Same Device Search History,,,,Multiple user accounts on same device/browser,High,,Hints,2,,Search > Search drop-down > Hints,,"Step Description:
+1. Login as User A, search for """"gaming laptop""""
+2. Logout User A
+3. Login as User B on same browser, search for """"office chair""""
+4. Logout User B  
+5. Login as User C on same browser, search for """"smartphone""""
+6. Switch back to User A and check search history
+Expected Result:
+Each user maintains independent search history:
+- User A: """"gaming laptop""""
+- User B: """"office chair""""  
+- User C: """"smartphone""""
+No mixing or contamination between users",,"Each user maintains independent search history:
+- User A: ""gaming laptop""
+- User B: ""office chair""  
+- User C: ""smartphone""
+No mixing or contamination between users",,"1. Login as User A, search for ""gaming laptop""
+2. Logout User A
+3. Login as User B on same browser, search for ""office chair""
+4. Logout User B  
+5. Login as User C on same browser, search for ""smartphone""
+6. Switch back to User A and check search history",0
+C407756,Anonymous User Search History Limits,,,,"<p>User browsing without account</p>
+",Medium,,Hints,2,,Search > Search drop-down > Hints,,"Step Description:
+<ol>
+<li>As anonymous/guest user, perform 10+ different searches</li>
+<li>Check search history behavior</li>
+<li>Clear browser data</li>
+<li>Repeat searches as same anonymous user</li>
+</ol>
+Expected Result:
+<p>Anonymous users have limited search history (session-based)<br />Search history clears when browser data cleared<br />Consistent behavior for non-authenticated users</p>",,<p>Anonymous users have limited search history (session-based)<br />Search history clears when browser data cleared<br />Consistent behavior for non-authenticated users</p>,,"<ol>
+<li>As anonymous/guest user, perform 10+ different searches</li>
+<li>Check search history behavior</li>
+<li>Clear browser data</li>
+<li>Repeat searches as same anonymous user</li>
+</ol>",1
+C407757,Search History Privacy in Shared Environments,,,,Shared computer/public terminal scenario,High,,Hints,2,,Search > Search drop-down > Hints,,"Step Description:
+1. User A performs sensitive searches (e.g., """"luxury watches"""")
+2. User A logs out properly
+3. User B logs in on same device
+4. User B checks search functionality
+5. Verify no data leakage
+Expected Result:
+User B cannot see User A's search history
+No sensitive search data persists between user sessions
+Complete isolation maintained in shared environments",,"User B cannot see User A's search history
+No sensitive search data persists between user sessions
+Complete isolation maintained in shared environments",,"1. User A performs sensitive searches (e.g., ""luxury watches"")
+2. User A logs out properly
+3. User B logs in on same device
+4. User B checks search functionality
+5. Verify no data leakage",0
+C407758,Search History Data Consistency Across Devices,,,,Same user account accessible from multiple devices,Medium,,Hints,2,,Search > Search drop-down > Hints,,"Step Description:
+1. Login as User A on Device 1 (desktop)
+2. Perform searches: """"bluetooth headphones"""", """"laptop bag""""
+3. Login as same User A on Device 2 (mobile)
+4. Check search history on Device 2
+5. Perform new search """"power bank"""" on Device 2
+6. Return to Device 1 and check search history
+Expected Result:
+Search history syncs across devices for same user account
+Device 1 shows: """"bluetooth headphones"""", """"laptop bag"""", """"power bank""""
+Device 2 shows same search history
+Consistent experience across user's devices",,"Search history syncs across devices for same user account
+Device 1 shows: ""bluetooth headphones"", ""laptop bag"", ""power bank""
+Device 2 shows same search history
+Consistent experience across user's devices",,"1. Login as User A on Device 1 (desktop)
+2. Perform searches: ""bluetooth headphones"", ""laptop bag""
+3. Login as same User A on Device 2 (mobile)
+4. Check search history on Device 2
+5. Perform new search ""power bank"" on Device 2
+6. Return to Device 1 and check search history",0
+C407759,Search History User Account Deletion Impact,,,,User account with existing search history,Low,,Hints,2,,Search > Search drop-down > Hints,,"Step Description:
+1. Login as test user with search history
+2. Note existing search items
+3. Delete/deactivate user account
+4. Attempt to recreate account with same credentials
+5. Check search history status
+Expected Result:
+Deleted user's search history is properly removed
+New account starts with clean search history
+No data remnants from previous account",,"Deleted user's search history is properly removed
+New account starts with clean search history
+No data remnants from previous account",,"1. Login as test user with search history
+2. Note existing search items
+3. Delete/deactivate user account
+4. Attempt to recreate account with same credentials
+5. Check search history status",0
+C407760,Search History Concurrent User Sessions,,,,Multiple users can login simultaneously,Medium,,Hints,2,,Search > Search drop-down > Hints,,"Step Description:
+1. Open two browser windows/incognito sessions
+2. Login as User A in Window 1, search """"tablet""""
+3. Login as User B in Window 2, search """"laptop""""
+4. Switch between windows and verify search histories
+5. Add more searches in each session
+Expected Result:
+Each concurrent session maintains independent search history
+Window 1 (User A): shows """"tablet"""" and subsequent searches
+Window 2 (User B): shows """"laptop"""" and subsequent searches
+No interference between concurrent sessions",,"Each concurrent session maintains independent search history
+Window 1 (User A): shows ""tablet"" and subsequent searches
+Window 2 (User B): shows ""laptop"" and subsequent searches
+No interference between concurrent sessions",,"1. Open two browser windows/incognito sessions
+2. Login as User A in Window 1, search ""tablet""
+3. Login as User B in Window 2, search ""laptop""
+4. Switch between windows and verify search histories
+5. Add more searches in each session",0
+C407742,Special Characters in Search,,,,"<p>None</p>
+",Medium,,Hints,2,,Search > Search drop-down > Hints,,"Step Description:
+<ol>
+<li>Search for terms with: quotes, apostrophes, numbers</li>
+<li>Examples: """"women's jewelry"""", """"pri 1"""", """"10k gold""""</li>
+</ol>
+Expected Result:
+<p>Special characters handled correctly<br />Search history stores full term<br />Suggestions work properly</p>",,<p>Special characters handled correctly<br />Search history stores full term<br />Suggestions work properly</p>,,"<ol>
+<li>Search for terms with: quotes, apostrophes, numbers</li>
+<li>Examples: ""women's jewelry"", ""pri 1"", ""10k gold""</li>
+</ol>",1
+C407743,Long Search Terms,,,,None,Low,,Hints,2,,Search > Search drop-down > Hints,,"Step Description:
+1. Enter search term >100 characters
+2. Check dropdown display and functionality
+Expected Result:
+Long terms truncated appropriately in display
+Full functionality maintained
+No UI breaking",,"Long terms truncated appropriately in display
+Full functionality maintained
+No UI breaking",,"1. Enter search term >100 characters
+2. Check dropdown display and functionality",0
+C407744,No Results Scenario,,,,"<p>None</p>
+",Medium,,Hints,2,,Search > Search drop-down > Hints,,"Step Description:
+<ol><li>Search for nonsensical term """"xyzabc123""""</li><li>Check suggestions and results</li></ol>
+Expected Result:
+<p>Appropriate """"no results"""" message<br>Alternative suggestions provided<br>Search history still functions</p>",,"<p>Appropriate ""no results"" message<br>Alternative suggestions provided<br>Search history still functions</p>",,"<ol><li>Search for nonsensical term ""xyzabc123""</li><li>Check suggestions and results</li></ol>",1
+C415500,Search Suggestion Highlighting with Numeric Search Term,,,"<p>Search field is visible and accessible. Search suggestions dropdown appears. Search results page loads. Search suggestions dropdown appears. BUG: Suggestion items are NOT highlighted. No highlighting is applied to matching suggestion items. Expected: Suggestion items matching the search term """"1750"""" should be visually highlighted. Highlighting should be consistent with highlighting behavior for text-only search terms. Visual indicators (background color, text emphasis, border) should clearly show which suggestions match the search term.</p>
+","<p>User is on the application, Search functionality is accessible, Search dropdown/suggestions feature is enabled</p>
+",High,,Hints,2,,Search > Search drop-down > Hints,"<ol>
+<li>Navigate to the search input field</li>
+<li>Enter """"1750"""" in the search field</li>
+<li>Navigate to the search results page (if applicable)</li>
+<li>Enter """"1750"""" again in the search field on the search page</li>
+<li>Observe the suggestion items in the dropdown</li>
+<li>Verify visual highlighting (background color, text color, border, etc.)</li>
+</ol>
+",,,,,,1
+C415501,Search Suggestion Highlighting with Symbol-Containing Search Term,,,"<p>Search field is visible and accessible. Search suggestions dropdown appears. BUG: Suggestion items are NOT highlighted. No highlighting is applied to matching suggestion items. Expected: Suggestion items matching the search term should be visually highlighted. Symbols in search terms should not prevent highlighting from working. Highlighting should work consistently regardless of special characters.</p>
+","<p>User is on the application, Search functionality is accessible, Search dropdown/suggestions feature is enabled</p>
+",High,,Hints,2,,Search > Search drop-down > Hints,"<ol>
+<li>Navigate to the search input field</li>
+<li>Enter a search term containing symbols (e.g., """"C++"""", """"C#"""", """"item-123"""", """"test@example"""")</li>
+<li>Observe the suggestion items in the dropdown</li>
+<li>Verify visual highlighting</li>
+</ol>
+",,,,,,1
+C415502,Search Suggestion Highlighting with Mixed Alphanumeric Search Term,,,Search suggestions dropdown appears. BUG: Suggestion items may NOT be highlighted correctly. Highlighting behavior is inconsistent. Expected: Suggestion items should be highlighted correctly even with mixed alphanumeric terms. Highlighting should work for both the text and numeric portions of the search term.,"User is on the application, Search functionality is accessible",Medium,,Hints,2,,Search > Search drop-down > Hints,"1. Enter a search term with letters and digits (e.g., """"product123"""", """"item2024"""")
+2. Observe the suggestion items
+3. Compare with text-only search term highlighting",,,,,,0
+C415503,Comparison Test - Text-Only Search Term (Baseline),,,"<p>Search suggestions dropdown appears. Suggestion items ARE highlighted correctly. Highlighting is clearly visible and consistent. Expected: Suggestion items matching text-only search terms are properly highlighted. Visual indicators clearly show matching suggestions. This serves as the baseline for comparison with buggy behavior.</p>
+","<p>User is on the application, Search functionality is accessible</p>
+",Medium,,Hints,2,,Search > Search drop-down > Hints,"<ol>
+<li>Enter a text-only search term (e.g., """"product"""", """"laptop"""")</li>
+<li>Observe the suggestion items</li>
+<li>Verify visual highlighting (background, text color, etc.)</li>
+</ol>
+",,,,,,1
+C415504,Search Suggestion Highlighting - Multiple Suggestions,,,Multiple suggestions appear in dropdown. BUG: None of the suggestions are highlighted. No highlighting is applied to any suggestions. Expected: All matching suggestion items should be highlighted. Highlighting should be consistent across all matching suggestions.,"User is on the application, Search functionality is accessible, Multiple suggestions exist for the search term",Low,,Hints,2,,Search > Search drop-down > Hints,"1. Enter a search term with digits/symbols that yields multiple suggestions
+2. Observe all suggestion items
+3. Verify if any suggestions are highlighted",,,,,,0
+C415505,Verify Fix After Implementation,,,"Search suggestions dropdown appears. Search suggestions dropdown appears. FIXED: Suggestion items ARE highlighted. Highlighting is clearly visible and consistent. Highlighting works for all search term types. Highlighting behavior is consistent across all term types. Expected: All suggestion items are properly highlighted regardless of search term content. Highlighting works consistently for digits, symbols, and mixed content. Visual indicators are clear and consistent.","Bug fix has been implemented, User is on the application, Search functionality is accessible",High,,Hints,2,,Search > Search drop-down > Hints,"1. Enter """"1750"""" in the search field
+2. Navigate to search page and enter """"1750"""" again
+3. Observe the suggestion items
+4. Verify visual highlighting
+5. Test with symbol-containing terms
+6. Compare with text-only terms",,,,,,0
+C407737,Page Suggestions,,,,"<p>None</p>
+",Medium,,Pages,2,,Search > Search drop-down > Pages,,"Step Description:
+<ol>
+<li>Type search term that might match page content</li>
+<li>Check for """"Pages"""" section in dropdown</li>
+</ol>
+Expected Result:
+<p>Pages section appears when relevant<br />Shows page titles and links<br />Examples: """"Home"""", """"test demo landing""""</p>",,"<p>Pages section appears when relevant<br />Shows page titles and links<br />Examples: ""Home"", ""test demo landing""</p>",,"<ol>
+<li>Type search term that might match page content</li>
+<li>Check for ""Pages"" section in dropdown</li>
+</ol>",1
+C406911,Search page > Filter by category + search query,https://virtowayqa.testrail.io/index.php?/attachments/get/1000005202,,,,High,,Global search,1,,Search > Global search,,"Step Description:
+<p>Enter search query in search field (case) and hit the enter</p>
+
+<p>Set Filter by any category ( ex. Accessories)</p>
+
+<p>Enter search query (case for phone)</p>
+
+<p>Enter new search query (120)</p>
+
+<p>Check the behavior of URL and chips</p>
+Expected Result:
+<p>The filter by category is work correctly. The new search query is not reset the filter.<br />The URL is update with new search query</p>
+
+<p>/search?q=120&facets=%22__outline_named%22:%22fc596540864a41bf8ab78734ee7353a3/b82ccab5-b6df-4bf9-8062-4555ec03baa8___Accessories%22</p>
+
+<p><span class=""""markdown-img-container""""><img src='index.php?/attachments/get/1000005202' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-1000005202' data-attachment-id='1000005202' data-entity-id='406911' /></span> </p>",,"<p>The filter by category is work correctly. The new search query is not reset the filter.<br />The URL is update with new search query</p>
+
+<p>/search?q=120&facets=%22__outline_named%22:%22fc596540864a41bf8ab78734ee7353a3/b82ccab5-b6df-4bf9-8062-4555ec03baa8___Accessories%22</p>
+
+<p><span class=""markdown-img-container""><img src='index.php?/attachments/get/1000005202' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-1000005202' data-attachment-id='1000005202' data-entity-id='406911' /></span> </p>",,"<p>Enter search query in search field (case) and hit the enter</p>
+
+<p>Set Filter by any category ( ex. Accessories)</p>
+
+<p>Enter search query (case for phone)</p>
+
+<p>Enter new search query (120)</p>
+
+<p>Check the behavior of URL and chips</p>",1
+,,,,,,,,,,,,,"
+Step Description:
+<p>Add new query string to already exist one (120 HZ) </p>
+Expected Result:
+<p>The filter by category is work correctly. <br />The new search query is not reset the filter.<br />The URL is update with new search query</p>
+
+<p>search?q=120+Hz&facets=""""__outline_named"""":""""fc596540864a41bf8ab78734ee7353a3/b82ccab5-b6df-4bf9-8062-4555ec03baa8___Accessories""""</p>",,"<p>The filter by category is work correctly. <br />The new search query is not reset the filter.<br />The URL is update with new search query</p>
+
+<p>search?q=120+Hz&facets=""__outline_named"":""fc596540864a41bf8ab78734ee7353a3/b82ccab5-b6df-4bf9-8062-4555ec03baa8___Accessories""</p>",,<p>Add new query string to already exist one (120 HZ) </p>,
+C406827,Placeholder text on category page,,,,,Medium,,Search in Category by Keyword,1,"https://virtocommerce.atlassian.net/browse/VCST-3355
+Available from vc-frontend version 2.25.0
+
+For a category page from builder io, you need to set the category ID, then the chip will be displayed
+",Search > Search in Category by Keyword,,"Step Description:
+<ol>
+<li>Navigate to a category page</li>
+<li>Observe the search field</li>
+</ol>
+Expected Result:
+<p>Placeholder shows: <span class=""""monospace"""">Search within {category name}</span> or chip <span class=""""monospace"""">{Category}</span> is displayed</p>",,"<p>Placeholder shows: <span class=""monospace"">Search within {category name}</span> or chip <span class=""monospace"">{Category}</span> is displayed</p>",,"<ol>
+<li>Navigate to a category page</li>
+<li>Observe the search field</li>
+</ol>",1
+C406828,Keyword entry filters products in category,,,,,High,,Search in Category by Keyword,1,"https://virtocommerce.atlassian.net/browse/VCST-3355
+Available from vc-frontend version 2.25.0
+
+For a category page from builder io, you need to set the category ID, then the chip will be displayed
+",Search > Search in Category by Keyword,,"Step Description:
+<ol>
+<li>Open “Craft” category</li>
+<li>Type <span class=""""monospace"""">Paper</span> in search bar</li>
+<li>Observe product suggestions</li>
+</ol>
+Expected Result:
+<p>Search popup shows results for “Paper” within “Craft” category only</p>",,<p>Search popup shows results for “Paper” within “Craft” category only</p>,,"<ol>
+<li>Open “Craft” category</li>
+<li>Type <span class=""monospace"">Paper</span> in search bar</li>
+<li>Observe product suggestions</li>
+</ol>",1
+C406829,Pressing Enter triggers category search,https://virtowayqa.testrail.io/index.php?/attachments/get/1000005185,,,,High,,Search in Category by Keyword,1,"https://virtocommerce.atlassian.net/browse/VCST-3355
+Available from vc-frontend version 2.25.0
+
+For a category page from builder io, you need to set the category ID, then the chip will be displayed
+",Search > Search in Category by Keyword,,"Step Description:
+<ol>
+<li>Go to subcategory (example: /accessories/aliexpress/office-chairs)</li>
+<li>Type keyword """"rotate"""" in category search</li>
+<li>Press Enter</li>
+</ol>
+Expected Result:
+<p>Navigated to URL """"/office-chairs?q=rotate"""" and results scoped to “office-chairs”</p>
+
+<hr />
+
+<p><span class=""""markdown-img-container""""><img src='index.php?/attachments/get/1000005185' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-1000005185' data-attachment-id='1000005185' data-entity-id='406829' /></span> </p>",,"<p>Navigated to URL ""/office-chairs?q=rotate"" and results scoped to “office-chairs”</p>
+
+<hr />
+
+<p><span class=""markdown-img-container""><img src='index.php?/attachments/get/1000005185' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-1000005185' data-attachment-id='1000005185' data-entity-id='406829' /></span> </p>",,"<ol>
+<li>Go to subcategory (example: /accessories/aliexpress/office-chairs)</li>
+<li>Type keyword ""rotate"" in category search</li>
+<li>Press Enter</li>
+</ol>",1
+C406830,Category chip presence after search,https://virtowayqa.testrail.io/index.php?/attachments/get/1000005186,,,,Medium,,Search in Category by Keyword,1,"https://virtocommerce.atlassian.net/browse/VCST-3355
+Available from vc-frontend version 2.25.0
+
+For a category page from builder io, you need to set the category ID, then the chip will be displayed
+",Search > Search in Category by Keyword,,"Step Description:
+<ol>
+<li>Type and search for """"Paper"""" in “accessories” category</li>
+</ol>
+Expected Result:
+<p>The chip looks like """"accessories""""<br />The chip can be removed</p>
+
+<hr />
+
+<p><span class=""""markdown-img-container""""><img src='index.php?/attachments/get/1000005186' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-1000005186' data-attachment-id='1000005186' data-entity-id='406830' /></span> </p>",,"<p>The chip looks like ""accessories""<br />The chip can be removed</p>
+
+<hr />
+
+<p><span class=""markdown-img-container""><img src='index.php?/attachments/get/1000005186' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-1000005186' data-attachment-id='1000005186' data-entity-id='406830' /></span> </p>",,"<ol>
+<li>Type and search for ""Paper"" in “accessories” category</li>
+</ol>",1
+C406831,Result page structure after search,,,,,Medium,,Search in Category by Keyword,1,"https://virtocommerce.atlassian.net/browse/VCST-3355
+Available from vc-frontend version 2.25.0
+
+For a category page from builder io, you need to set the category ID, then the chip will be displayed
+",Search > Search in Category by Keyword,,"Step Description:
+1. Go to category """"printers""""
+2. Perform category search for “epson”
+3. Press enter
+Expected Result:
+Title: """"Printers"""" is shown. 
+The appropriate products are returned
+The Category url with keyword: /printers?q=epson
+Category title with Search for {Keyword} in {CaregoryName} 
+
+",,"Title: ""Printers"" is shown. 
+The appropriate products are returned
+The Category url with keyword: /printers?q=epson
+Category title with Search for {Keyword} in {CaregoryName} 
+
+",,"1. Go to category ""printers""
+2. Perform category search for “epson”
+3. Press enter",0
+C406832,Removal of category chip resets to global search,,,,,High,,Search in Category by Keyword,1,"https://virtocommerce.atlassian.net/browse/VCST-3355
+Available from vc-frontend version 2.25.0
+
+For a category page from builder io, you need to set the category ID, then the chip will be displayed
+",Search > Search in Category by Keyword,,"Step Description:
+1. Perform category search
+2. Click remove chip
+Expected Result:
+Search resets to global. Results show products across all catalog",,Search resets to global. Results show products across all catalog,,"1. Perform category search
+2. Click remove chip",0
+C406833,Category chip is clickable,,,,,Medium,,Search in Category by Keyword,1,"https://virtocommerce.atlassian.net/browse/VCST-3355
+Available from vc-frontend version 2.25.0
+
+For a category page from builder io, you need to set the category ID, then the chip will be displayed
+",Search > Search in Category by Keyword,,"Step Description:
+1. On category search results, click category chip
+Expected Result:
+User remains scoped to category, or chip is removed if function is toggled",,"User remains scoped to category, or chip is removed if function is toggled",,"1. On category search results, click category chip",0
+C406839,Switching categories clears chip context,,,,,Medium,,Search in Category by Keyword,1,"https://virtocommerce.atlassian.net/browse/VCST-3355
+Available from vc-frontend version 2.25.0
+
+For a category page from builder io, you need to set the category ID, then the chip will be displayed
+",Search > Search in Category by Keyword,,"Step Description:
+Start a search in “Printers” then navigate to “Soft drinks”
+Expected Result:
+Chip updates to new category",,Chip updates to new category,,Start a search in “Printers” then navigate to “Soft drinks”,0
+C406834,Non-matching keyword in category returns empty state,,,,,Medium,,Search in Category by Keyword,1,"https://virtocommerce.atlassian.net/browse/VCST-3355
+Available from vc-frontend version 2.25.0
+
+For a category page from builder io, you need to set the category ID, then the chip will be displayed
+",Search > Search in Category by Keyword,,"Step Description:
+1. Search `NonExistingKeyword` inside “Craft” category
+Expected Result:
+“There are no products in this category” message appears",,“There are no products in this category” message appears,,1. Search `NonExistingKeyword` inside “Craft” category,0
+C406835,Check behavior when category URL is malformed,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000005187, https://virtowayqa.testrail.io/index.php?/attachments/get/1000005188",,,,Medium,,Search in Category by Keyword,1,"https://virtocommerce.atlassian.net/browse/VCST-3355
+Available from vc-frontend version 2.25.0
+
+For a category page from builder io, you need to set the category ID, then the chip will be displayed
+",Search > Search in Category by Keyword,,"Step Description:
+Navigate to """"/juice?q= """" directly
+Expected Result:
+Page loads with “Juice” category but no keyword results
+
+---
+
+ ![](index.php?/attachments/get/1000005188) 
+",,"Page loads with “Juice” category but no keyword results
+
+---
+
+ ![](index.php?/attachments/get/1000005188) 
+",,"Navigate to ""/juice?q= "" directly",0
+C406836,Search with special characters,https://virtowayqa.testrail.io/index.php?/attachments/get/1000005189,,,,Medium,,Search in Category by Keyword,1,"https://virtocommerce.atlassian.net/browse/VCST-3355
+Available from vc-frontend version 2.25.0
+
+For a category page from builder io, you need to set the category ID, then the chip will be displayed
+",Search > Search in Category by Keyword,,"Step Description:
+Search """"Pap)0er"""" in a category
+Expected Result:
+“There are no products in this category”
+
+---
+
+ ![](index.php?/attachments/get/1000005189) 
+",,"“There are no products in this category”
+
+---
+
+ ![](index.php?/attachments/get/1000005189) 
+",,"Search ""Pap)0er"" in a category",0
+C406837,Category search with long keywords,,,,,Low,,Search in Category by Keyword,1,"https://virtocommerce.atlassian.net/browse/VCST-3355
+Available from vc-frontend version 2.25.0
+
+For a category page from builder io, you need to set the category ID, then the chip will be displayed
+",Search > Search in Category by Keyword,,"Step Description:
+Enter a 100-character string in category search
+Expected Result:
+Search executes properly",,Search executes properly,,Enter a 100-character string in category search,0
+C406838,Search behavior on refresh,,,,,Medium,,Search in Category by Keyword,1,"https://virtocommerce.atlassian.net/browse/VCST-3355
+Available from vc-frontend version 2.25.0
+
+For a category page from builder io, you need to set the category ID, then the chip will be displayed
+",Search > Search in Category by Keyword,,"Step Description:
+Perform search in category, then refresh page
+Expected Result:
+Same results and chips persist after reload",,Same results and chips persist after reload,,"Perform search in category, then refresh page",0
+C406840,Keyboard navigation works with chip,,,,,Medium,,Search in Category by Keyword,1,"https://virtocommerce.atlassian.net/browse/VCST-3355
+Available from vc-frontend version 2.25.0
+
+For a category page from builder io, you need to set the category ID, then the chip will be displayed
+",Search > Search in Category by Keyword,,"Step Description:
+Tab into chip and press Delete or Enter
+Expected Result:
+Chip is removed or navigates correctly",,Chip is removed or navigates correctly,,Tab into chip and press Delete or Enter,0
+C406841,Focus and cursor position in search field,,,,,Medium,,Search in Category by Keyword,1,"https://virtocommerce.atlassian.net/browse/VCST-3355
+Available from vc-frontend version 2.25.0
+
+For a category page from builder io, you need to set the category ID, then the chip will be displayed
+",Search > Search in Category by Keyword,,"Step Description:
+Click inside search input
+Expected Result:
+Cursor is placed correctly and chip does not interfere",,Cursor is placed correctly and chip does not interfere,,Click inside search input,0
+C412745,Search Reset from Category Page,,,"<ul>
+<li>User is returned to the original category page</li>
+<li>Category filter chip remains applied</li>
+<li>Original category products are displayed</li>
+</ul>
+","<p>User is logged in; User is on a specific category page; Category filter chip is applied</p>
+",High,,Search > No results page,1,VCST-3991,Search > Search > No results page,"<ol>
+<li>Enter a search term that will yield no results</li>
+<li>Verify 'No results found' message is displayed</li>
+<li>Click 'Reset search' button</li>
+</ol>
+",,,,,,1
+C412746,Search Reset from Main Catalog,,,"- User is returned to the main catalog page
+- All products are visible
+- No filters are applied",User is on the main catalog page; No filters are applied,High,,Search > No results page,1,VCST-3991,Search > Search > No results page,"1. Perform a search with no results
+2. Click 'Reset search' button",,,,,,0
+C412747,Search Reset from Homepage,,,"- User is returned to homepage
+- Homepage content is displayed correctly",User is on the homepage,High,,Search > No results page,1,VCST-3991,Search > Search > No results page,"1. Perform search with no results
+2. Click 'Reset search' button",,,,,,0
+C412748,No Results Page UI Elements,,,"- All UI elements are present
+- Elements are properly styled
+- Layout matches design specifications",Search functionality is accessible,High,,Search > No results page,1,VCST-3991,Search > Search > No results page,"1. Perform search with no results
+2. Verify presence of:
+   - 'No results found' text
+   - Reset search button
+   - Correct styling and layout",,,,,,0
+C412749,Multiple Consecutive Searches,,,"- Each reset returns to the correct previous page
+- Search functionality remains operational",User is on any page with search functionality,Medium,,Search > No results page,1,VCST-3991,Search > Search > No results page,"1. Perform first search with no results
+2. Click reset
+3. Perform second search with no results
+4. Click reset again",,,,,,0
+C412750,Browser Navigation,,,"- Browser navigation works as expected
+- Search state is maintained correctly",Search functionality is accessible,Medium,,Search > No results page,1,VCST-3991,Search > Search > No results page,"1. Perform search with no results
+2. Click reset search
+3. Click browser back button
+4. Click browser forward button",,,,,,0
+C412751,Network Error During Reset,,,"- Appropriate error message is displayed
+- User can retry reset action",Search with no results is displayed,Medium,,Search > No results page,1,VCST-3991,Search > Search > No results page,"1. Simulate network error
+2. Click reset search button",,,,,,0
+C412752,Special Characters Search,,,"- No results page displays correctly
+- Reset functions properly",Search functionality is accessible,Low,,Search > No results page,1,VCST-3991,Search > Search > No results page,"1. Search using special characters (e.g., '@#$%')
+2. Click reset search button",,,,,,0
+C398757,Verify that the Barcode Scanner button is accessible and activates on mobile,,,,User has a mobile device with a working camera. Virto Commerce Frontend is open on a mobile browser. User has a valid barcode to scan.,High,,Barcode scanner,1,https://virtocommerce.atlassian.net/browse/VCST-2622,Search > Barcode scanner,,"Step Description:
+1. Open Virto Commerce Frontend on a mobile device.
+2. Locate and click the 'Barcode Scanner' button.
+3. Observe the camera permission prompt.
+4. Select 'Allow' to grant camera access.
+Expected Result:
+The Barcode Scanner interface activates, and the camera view is displayed on the screen, ready to scan a barcode.",,"The Barcode Scanner interface activates, and the camera view is displayed on the screen, ready to scan a barcode.",,"1. Open Virto Commerce Frontend on a mobile device.
+2. Locate and click the 'Barcode Scanner' button.
+3. Observe the camera permission prompt.
+4. Select 'Allow' to grant camera access.",0
+C398758,Verify that the Barcode Scanner button is accessible and activates on desktop,,,,User has a desktop with a working webcam. Virto Commerce Frontend is open on a desktop browser. User has a valid barcode to scan.,Medium,,Barcode scanner,1,https://virtocommerce.atlassian.net/browse/VCST-2622,Search > Barcode scanner,,"Step Description:
+1. Open Virto Commerce Frontend on a desktop browser.
+2. Locate and click the 'Barcode Scanner' button.
+3. Observe the camera permission prompt.
+4. Select 'Allow' to grant camera access.
+Expected Result:
+The Barcode Scanner interface activates, and the webcam view is displayed on the screen, ready to scan a barcode.",,"The Barcode Scanner interface activates, and the webcam view is displayed on the screen, ready to scan a barcode.",,"1. Open Virto Commerce Frontend on a desktop browser.
+2. Locate and click the 'Barcode Scanner' button.
+3. Observe the camera permission prompt.
+4. Select 'Allow' to grant camera access.",0
+C398759,Verify that the Barcode Scanner button is accessible and activates on tablet,,,,User has a tablet with a working camera. Virto Commerce Frontend is open on a tablet browser. User has a valid barcode to scan.,High,,Barcode scanner,1,https://virtocommerce.atlassian.net/browse/VCST-2622,Search > Barcode scanner,,"Step Description:
+1. Open Virto Commerce Frontend on a tablet.
+2. Locate and click the 'Barcode Scanner' button.
+3. Observe the camera permission prompt.
+4. Select 'Allow' to grant camera access.
+Expected Result:
+The Barcode Scanner interface activates, and the camera view is displayed on the screen, ready to scan a barcode.",,"The Barcode Scanner interface activates, and the camera view is displayed on the screen, ready to scan a barcode.",,"1. Open Virto Commerce Frontend on a tablet.
+2. Locate and click the 'Barcode Scanner' button.
+3. Observe the camera permission prompt.
+4. Select 'Allow' to grant camera access.",0
+C398760,Verify that scanning a barcode redirects to a search page,,,,Virto Commerce Frontend is open on a mobile device with Barcode Scanner activated. Camera permissions are granted. A barcode corresponding to a single product in the catalog is available.,High,,Barcode scanner,1,https://virtocommerce.atlassian.net/browse/VCST-2622,Search > Barcode scanner,,"Step Description:
+1. Point the camera at the barcode and scan it.
+2. Wait for the system to process the barcode.
+Expected Result:
+The frontend redirects to search page associated with the scanned barcode.",,The frontend redirects to search page associated with the scanned barcode.,,"1. Point the camera at the barcode and scan it.
+2. Wait for the system to process the barcode.",0
+C398761,Verify that scanning a barcode with multiple matches redirects to a search results page,,,,Virto Commerce Frontend is open on a mobile device with Barcode Scanner activated. Camera permissions are granted. A barcode corresponding to multiple products in the catalog is available.,High,,Barcode scanner,1,https://virtocommerce.atlassian.net/browse/VCST-2622,Search > Barcode scanner,,"Step Description:
+1. Point the camera at the barcode and scan it.
+2. Wait for the system to process the barcode.
+Expected Result:
+The frontend redirects to a search results page listing all products associated with the scanned barcode. The list displays relevant product details (e.g., name, thumbnail, price).",,"The frontend redirects to a search results page listing all products associated with the scanned barcode. The list displays relevant product details (e.g., name, thumbnail, price).",,"1. Point the camera at the barcode and scan it.
+2. Wait for the system to process the barcode.",0
+C398762,Verify that scanning an invalid or unrecognized barcode displays 'No Results Found',,,,Virto Commerce Frontend is open on a mobile device with Barcode Scanner activated. Camera permissions are granted. An invalid or unrecognized barcode (not in the catalog) is available.,High,,Barcode scanner,1,https://virtocommerce.atlassian.net/browse/VCST-2622,Search > Barcode scanner,,"Step Description:
+1. Point the camera at the invalid barcode and scan it.
+2. Wait for the system to process the barcode.
+Expected Result:
+The frontend redirects to a 'No Results Found' page with an appropriate message (e.g., 'No products found').",,"The frontend redirects to a 'No Results Found' page with an appropriate message (e.g., 'No products found').",,"1. Point the camera at the invalid barcode and scan it.
+2. Wait for the system to process the barcode.",0
+C398763,Verify that denying camera permission prevents Barcode Scanner activation,,,,Virto Commerce Frontend is open on a mobile device. User has not yet granted camera permissions.,Medium,,Barcode scanner,1,https://virtocommerce.atlassian.net/browse/VCST-2622,Search > Barcode scanner,,"Step Description:
+1. Locate and click the 'Barcode Scanner' button.
+2. Observe the camera permission prompt.
+3. Select 'Deny' to refuse camera access.
+Expected Result:
+The Barcode Scanner does not activate, and an error message or prompt is displayed (e.g., 'Camera access is required to use the Barcode Scanner').",,"The Barcode Scanner does not activate, and an error message or prompt is displayed (e.g., 'Camera access is required to use the Barcode Scanner').",,"1. Locate and click the 'Barcode Scanner' button.
+2. Observe the camera permission prompt.
+3. Select 'Deny' to refuse camera access.",0
+C398764,"Verify that the Barcode Scanner button is visible on Desktop, Tablet, and Mobile",,,,"Virto Commerce Frontend is accessible on Desktop, Tablet, and Mobile devices.",Medium,,Barcode scanner,1,https://virtocommerce.atlassian.net/browse/VCST-2622,Search > Barcode scanner,,"Step Description:
+1. Open Virto Commerce Frontend on a Desktop browser.
+2. Verify the 'Barcode Scanner' button is visible.
+3. Open Virto Commerce Frontend on a Tablet browser.
+4. Verify the 'Barcode Scanner' button is visible.
+5. Open Virto Commerce Frontend on a Mobile browser.
+6. Verify the 'Barcode Scanner' button is visible.
+Expected Result:
+The 'Barcode Scanner' button is visible and accessible on all specified devices.",,The 'Barcode Scanner' button is visible and accessible on all specified devices.,,"1. Open Virto Commerce Frontend on a Desktop browser.
+2. Verify the 'Barcode Scanner' button is visible.
+3. Open Virto Commerce Frontend on a Tablet browser.
+4. Verify the 'Barcode Scanner' button is visible.
+5. Open Virto Commerce Frontend on a Mobile browser.
+6. Verify the 'Barcode Scanner' button is visible.",0
+C398765,Verify Barcode Scanner functionality under poor lighting conditions,,,,"Virto Commerce Frontend is open on a mobile device with Barcode Scanner activated. Camera permissions are granted. A valid barcode is available, and the environment has poor lighting (e.g., dim room).",Medium,,Barcode scanner,1,https://virtocommerce.atlassian.net/browse/VCST-2622,Search > Barcode scanner,,"Step Description:
+1. Point the camera at the barcode in poor lighting conditions and attempt to scan it.
+2. Wait for the system to process the barcode.
+Expected Result:
+The Barcode Scanner successfully detects the barcode and redirects to the appropriate page (single product or search results), or provides feedback (e.g., 'Adjust lighting for better results') if it fails.",,"The Barcode Scanner successfully detects the barcode and redirects to the appropriate page (single product or search results), or provides feedback (e.g., 'Adjust lighting for better results') if it fails.",,"1. Point the camera at the barcode in poor lighting conditions and attempt to scan it.
+2. Wait for the system to process the barcode.",0
+C398766,Verify Barcode Scanner behavior with a damaged or partially obscured barcode,,,,Virto Commerce Frontend is open on a mobile device with Barcode Scanner activated. Camera permissions are granted. A damaged or partially obscured barcode is available.,Medium,,Barcode scanner,1,https://virtocommerce.atlassian.net/browse/VCST-2622,Search > Barcode scanner,,"Step Description:
+1. Point the camera at the damaged barcode and attempt to scan it.
+2. Wait for the system to process the barcode.
+Expected Result:
+The Barcode Scanner either successfully detects the barcode and redirects to the appropriate page or displays a 'No Results Found' page with an appropriate message (e.g., 'Unable to scan barcode').",,"The Barcode Scanner either successfully detects the barcode and redirects to the appropriate page or displays a 'No Results Found' page with an appropriate message (e.g., 'Unable to scan barcode').",,"1. Point the camera at the damaged barcode and attempt to scan it.
+2. Wait for the system to process the barcode.",0
+C390071,Catalog  page > general view,,,,"1. Catalog_1 include Category_1
+2. Go to the store
+3. Open any Catalog_1
+
+",Medium,,Catalog page,0,,Catalog page,,"Step Description:
+1. Check the page
+Expected Result:
+1. Next elements are presented:
+Top section: 
+- Breadcrumbs
+- Category_1 name title
+- Amount of items presented on the page
+- Buttons View:  Grid; List
+- Sort by drop-down menu
+Filters section:
+- search
+- checkbox Show in stock
+- checkbox Available at branches
+- filters
+Main section:
+- Relegated products to the Category_1 
+Bottom section:
+- pagination
+- buttons View:  Grid; List
+
+
+",,"1. Next elements are presented:
+Top section: 
+- Breadcrumbs
+- Category_1 name title
+- Amount of items presented on the page
+- Buttons View:  Grid; List
+- Sort by drop-down menu
+Filters section:
+- search
+- checkbox Show in stock
+- checkbox Available at branches
+- filters
+Main section:
+- Relegated products to the Category_1 
+Bottom section:
+- pagination
+- buttons View:  Grid; List
+
+
+",,1. Check the page,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the breadcrumbs
+Expected Result:
+1. The breadcrumbs way should be as: Home/Catalog_1/Category_1",,1. The breadcrumbs way should be as: Home/Catalog_1/Category_1,,1. Check the breadcrumbs,
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll the page
+Expected Result:
+1. Infinity scrolling are shown",,1. Infinity scrolling are shown,,1. Scroll the page,
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll till end of the products
+Expected Result:
+1. Notification that you have reached the end of the list shown",,1. Notification that you have reached the end of the list shown,,1. Scroll till end of the products,
+C390072,Catalog > Empty category page,,,,"1. Go to Admin environment - Catalog
+2. Create new empty category (eg. Empty category)
+3. Check the SEO URL of created category (eg. empty-category)
+4. Go to Content tab - B2B Store
+5. Add link list for output Empty category in the Categories section of Store
+6. Go to the store ",Medium,,Catalog page,0,,Catalog page,,"Step Description:
+1. Open the Empty category from menu (or add to URL path /c/empty-category)
+2. Check the empty category page  
+Expected Result:
+1. Opens the Empty category page
+2. Next elements of the empty category are presented:
+-- Filter blocks
+-- Title of the category name
+-- Text '0 results'
+-- Grid/list view buttons
+-- 'Sort by' dropdown
+-- Text 'There are no products in this category' ",,"1. Opens the Empty category page
+2. Next elements of the empty category are presented:
+-- Filter blocks
+-- Title of the category name
+-- Text '0 results'
+-- Grid/list view buttons
+-- 'Sort by' dropdown
+-- Text 'There are no products in this category' ",,"1. Open the Empty category from menu (or add to URL path /c/empty-category)
+2. Check the empty category page  ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Switch view mode Grid - List
+Expected Result:
+1. Nothing changes on the empty category page",,1. Nothing changes on the empty category page,,1. Switch view mode Grid - List,
+C390073,Catalog > Empty category > Filters,,,,"1. Empty category was created in the store
+2. Open the Empty category ",Medium,,Catalog page,0,,Catalog page,,"Step Description:
+1. Enter any query in the field of 'Filter results' block
+2. Click 'Go' button
+Expected Result:
+1. Shows empty category page with next elements:
+-- Text 'There are no results found'
+-- 'Reset search' button ",,"1. Shows empty category page with next elements:
+-- Text 'There are no results found'
+-- 'Reset search' button ",,"1. Enter any query in the field of 'Filter results' block
+2. Click 'Go' button",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the 'Reset search' button
+Expected Result:
+1. The field of the 'Filtration results' block has been cleared
+2. Shows empty category page with text 'There are no products in this category'",,"1. The field of the 'Filtration results' block has been cleared
+2. Shows empty category page with text 'There are no products in this category'",,1. Click on the 'Reset search' button,
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill the checkbox of the 'In stock' filter block
+Expected Result:
+1. Filters chips appears under the view mode buttons
+2. Text output 'There are no results found'
+3. 'Reset search' button under text",,"1. Filters chips appears under the view mode buttons
+2. Text output 'There are no results found'
+3. 'Reset search' button under text",,1. Fill the checkbox of the 'In stock' filter block,
+,,,,,,,,,,,,,"
+Step Description:
+1. Reset filters by chips in the filters block
+Expected Result:
+1. Filters block with chips clear
+2. Text output 'There are no products in this category'
+3. 'Reset search' button disappear",,"1. Filters block with chips clear
+2. Text output 'There are no products in this category'
+3. 'Reset search' button disappear",,1. Reset filters by chips in the filters block,
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill the checkbox of the 'In stock' filter block
+2. Click on the 'Reset search' button 
+Expected Result:
+1. Filters block with chips clear
+2. Text output 'There are no products in this category'
+3. 'Reset search' button disappear",,"1. Filters block with chips clear
+2. Text output 'There are no products in this category'
+3. 'Reset search' button disappear",,"1. Fill the checkbox of the 'In stock' filter block
+2. Click on the 'Reset search' button ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to the any not empty category
+2. Enter not relevant query in the field of 'Filter results' block
+2. Click on the 'Go' button
+Expected Result:
+1. Shows empty category page with next elements:
+-- Text 'There are no results found'
+-- 'Reset search' button",,"1. Shows empty category page with next elements:
+-- Text 'There are no results found'
+-- 'Reset search' button",,"1. Go to the any not empty category
+2. Enter not relevant query in the field of 'Filter results' block
+2. Click on the 'Go' button",
+,,,,,,,,,,,,,"
+Step Description:
+1. Fill the checkbox of the 'In stock' filter block
+Expected Result:
+1. Nothing changes on the empty category page",,1. Nothing changes on the empty category page,,1. Fill the checkbox of the 'In stock' filter block,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the 'Reset search button'
+2. Check the page 
+Expected Result:
+1. Filters are reset
+2. Shows the category page with products belong this category",,"1. Filters are reset
+2. Shows the category page with products belong this category",,"1. Click on the 'Reset search button'
+2. Check the page ",
+C390074,Product listing,,,"1. Products assigned to Category_1 shown
+
+","1. Catalog_1 contains a relevant product (for example Catalog Printers, product printers)
+2. Go to the store
+
+
+
+
+",Medium,,Catalog page,0,,Catalog page,"1. Open any Catalog_1
+2. Check list of products",,,,,,0
+C390075,MOBILE > Catalog page > breadcrumbs,,,,1. Go to the store,Medium,,Catalog page,0,,Catalog page,,"Step Description:
+1. Open Category_1
+3. Check the breadcrumbs
+Expected Result:
+1. The breadcrumbs way should be as:
+Home/Catalog_1",,"1. The breadcrumbs way should be as:
+Home/Catalog_1",,"1. Open Category_1
+3. Check the breadcrumbs",0
+C390076,MOBILE > Catalog page > general view,,,,1. Go to the store,Medium,,Catalog page,0,,Catalog page,,"Step Description:
+1. Open any Category
+3. Check the page.
+Expected Result:
+1. Next elements are presented:
+Top section: 
+- breadcrumbs to a Category_1
+- title of the Category_1
+- amount of items presented on the page
+- Sorting drop-down menu
+- button Filters
+- products from the Catalog_1
+
+",,"1. Next elements are presented:
+Top section: 
+- breadcrumbs to a Category_1
+- title of the Category_1
+- amount of items presented on the page
+- Sorting drop-down menu
+- button Filters
+- products from the Catalog_1
+
+",,"1. Open any Category
+3. Check the page.",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll the page
+Expected Result:
+1. Infinity scrolling are shown",,1. Infinity scrolling are shown,,1. Scroll the page,
+,,,,,,,,,,,,,"
+Step Description:
+1. Scroll till end of the products
+Expected Result:
+1. Notification that you have reached the end of the list shown",,1. Notification that you have reached the end of the list shown,,1. Scroll till end of the products,
+C389490,Catalog > Category URL prefix and breadcrumber,,,,"1. Catalog_1 exists in the store (eg bolts)
+2. Category_1 exist in the Catalog_1 (eg flange-bolts)",High,,SEO,1,,Catalog page > SEO,,"Step Description:
+1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'Short' URL view mode
+2. Go to the store
+3. Open the main Catalog_1
+4. Check the URL prefix and breadcrumbs
+
+Expected Result:
+1. URL prefix  have next format: storename.com/flange-bolts
+Breadcrumbers",,"1. URL prefix  have next format: storename.com/flange-bolts
+Breadcrumbers",,"1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'Short' URL view mode
+2. Go to the store
+3. Open the main Catalog_1
+4. Check the URL prefix and breadcrumbs
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'Long' URL view mode
+2. Go to the store
+3. Open main Category_1
+4. Check the URL 
+
+Expected Result:
+1. URL have next format: 
+
+storename.com/bolts/flange-bolts",,"1. URL have next format: 
+
+storename.com/bolts/flange-bolts",,"1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'Long' URL view mode
+2. Go to the store
+3. Open main Category_1
+4. Check the URL 
+",
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the URL of the Category_1 in the search results dropdown
+Expected Result:
+1. URL have a format for example: https://st-storefront.qa.govirto.com/category/3db665f7c95e46c3890c4a208d8af73d",,1. URL have a format for example: https://st-storefront.qa.govirto.com/category/3db665f7c95e46c3890c4a208d8af73d,,1. Check the URL of the Category_1 in the search results dropdown,
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'None' URL view mode
+2. Go to the store
+3. Search the Category_1 by search block
+Expected Result:
+1. Name of the Category_1 displays in the dropdown search results",,1. Name of the Category_1 displays in the dropdown search results,,"1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'None' URL view mode
+2. Go to the store
+3. Search the Category_1 by search block",
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the URL of the Category_1 in the search results dropdown
+Expected Result:
+1. URL have a format for example: https://st-storefront.qa.govirto.com/category/3db665f7c95e46c3890c4a208d8af73d",,1. URL have a format for example: https://st-storefront.qa.govirto.com/category/3db665f7c95e46c3890c4a208d8af73d,,1. Check the URL of the Category_1 in the search results dropdown,
+C389592,Product details page > Breadcrumbs,,,"1. Next breadcrumbs are presented: Home/Catalog/Category/Product name
+
+","1. Go to Admin Environment > Store > B2B store > Settings > Seo > set as Long
+
+",High,,SEO,1,,Catalog page > SEO,"1. Go to the store
+2. Open Catalog
+3. Open any item 
+4. Check breadcrumbs. ",,,,,,0
+C389593,Product details page > URL prefix,,,,"1. Category_1 exists in the store
+2. Product_1 exists in the store in the Category_1
+",High,,SEO,1,,Catalog page > SEO,,"Step Description:
+1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'Short' URL view mode
+2. Go to the store - Category_1
+3. Check the URL of the Product_1 
+Expected Result:
+1. URL have a format for example:
+https://st-storefront.qa.govirto.com/1-steel-hex-flange-bolt-grade-5-zinc-plated-finish-516-18-diathread-size-50-pk-fastener-length-1 ",,"1. URL have a format for example:
+https://st-storefront.qa.govirto.com/1-steel-hex-flange-bolt-grade-5-zinc-plated-finish-516-18-diathread-size-50-pk-fastener-length-1 ",,"1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'Short' URL view mode
+2. Go to the store - Category_1
+3. Check the URL of the Product_1 ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'Long' URL view mode
+2. Go to the store - Category_1
+3. Check the URL of the Product_1 
+Expected Result:
+1. URL have a format for example:
+https://st-storefront.qa.govirto.com/bolts/flange-bolts/1-steel-hex-flange-bolt-grade-5-zinc-plated-finish-516-18-diathread-size-50-pk-fastener-length-1 ",,"1. URL have a format for example:
+https://st-storefront.qa.govirto.com/bolts/flange-bolts/1-steel-hex-flange-bolt-grade-5-zinc-plated-finish-516-18-diathread-size-50-pk-fastener-length-1 ",,"1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'Long' URL view mode
+2. Go to the store - Category_1
+3. Check the URL of the Product_1 ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'Collapsed' URL view mode
+2. Go to the store - Category_1
+3. Check the URL of the Product_1
+Expected Result:
+1. URL have a format for example:
+https://st-storefront.qa.govirto.com/bolts/1-steel-hex-flange-bolt-grade-5-zinc-plated-finish-516-18-diathread-size-50-pk-fastener-length-1 ",,"1. URL have a format for example:
+https://st-storefront.qa.govirto.com/bolts/1-steel-hex-flange-bolt-grade-5-zinc-plated-finish-516-18-diathread-size-50-pk-fastener-length-1 ",,"1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'Collapsed' URL view mode
+2. Go to the store - Category_1
+3. Check the URL of the Product_1",
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'None' URL view mode
+2. Go to the store - Category_1
+3. Check the URL of the Product_1
+Expected Result:
+1. URL have a format for example:
+https://st-storefront.qa.govirto.com/product/cd2f18d2dba742dd832f45c82508f16e ",,"1. URL have a format for example:
+https://st-storefront.qa.govirto.com/product/cd2f18d2dba742dd832f45c82508f16e ",,"1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'None' URL view mode
+2. Go to the store - Category_1
+3. Check the URL of the Product_1",
+C389594,Product details page > Breadcrumbs URL prefix,,,,"1. Category_1 exists in the store
+2. Product_1 exists in the store in the Category_1",High,,SEO,1,,Catalog page > SEO,,"Step Description:
+1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'Short' URL view mode
+2. Go to the store - Category_1 - Product_1 page
+3. Check the Bread Crumbs line
+Expected Result:
+1. Breadcrumbs line have a format for example: Home/Flange Bolts/1"""" Steel Hex Flange Bolt, Grade 5, Zinc Plated Finish, 5/16""""-18 Dia/Thread Size, 50 PK",,"1. Breadcrumbs line have a format for example: Home/Flange Bolts/1"" Steel Hex Flange Bolt, Grade 5, Zinc Plated Finish, 5/16""-18 Dia/Thread Size, 50 PK",,"1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'Short' URL view mode
+2. Go to the store - Category_1 - Product_1 page
+3. Check the Bread Crumbs line",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the URL of Bread Crumbs line
+Expected Result:
+1. URL have a format for example: https://st-storefront.qa.govirto.com/flange-bolts",,1. URL have a format for example: https://st-storefront.qa.govirto.com/flange-bolts,,1. Check the URL of Bread Crumbs line,
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'Long' URL view mode
+2. Go to the store - Category_1 - Product_1 page
+3. Check the Bread Crumbs line
+Expected Result:
+1. Breadcrumbs line have a format for example: Home/Bolts/Flange Bolts/1"""" Steel Hex Flange Bolt, Grade 5, Zinc Plated Finish, 5/16""""-18 Dia/Thread Size, 50 PK",,"1. Breadcrumbs line have a format for example: Home/Bolts/Flange Bolts/1"" Steel Hex Flange Bolt, Grade 5, Zinc Plated Finish, 5/16""-18 Dia/Thread Size, 50 PK",,"1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'Long' URL view mode
+2. Go to the store - Category_1 - Product_1 page
+3. Check the Bread Crumbs line",
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the URL of Bread Crumbs line
+Expected Result:
+1. URL have a format for example: https://st-storefront.qa.govirto.com/bolts/flange-bolts",,1. URL have a format for example: https://st-storefront.qa.govirto.com/bolts/flange-bolts,,1. Check the URL of Bread Crumbs line,
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'Collapsed' URL view mode
+2. Go to the store - Category_1 - Product_1 page
+3. Check the Bread Crumbs line
+Expected Result:
+1. Breadcrumbs line have a format for example: Home/Bolts/1"""" Steel Hex Flange Bolt, Grade 5, Zinc Plated Finish, 5/16""""-18 Dia/Thread Size, 50 PK",,"1. Breadcrumbs line have a format for example: Home/Bolts/1"" Steel Hex Flange Bolt, Grade 5, Zinc Plated Finish, 5/16""-18 Dia/Thread Size, 50 PK",,"1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'Collapsed' URL view mode
+2. Go to the store - Category_1 - Product_1 page
+3. Check the Bread Crumbs line",
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the URL of Bread Crumbs line
+Expected Result:
+1. URL have a format for example: https://st-storefront.qa.govirto.com/category/3db665f7c95e46c3890c4a208d8af73d",,1. URL have a format for example: https://st-storefront.qa.govirto.com/category/3db665f7c95e46c3890c4a208d8af73d,,1. Check the URL of Bread Crumbs line,
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'None' URL view mode
+2. Go to the store - Category_1 - Product_1 page
+3. Check the Bread Crumbs line
+Expected Result:
+1. Breadcrumbs line have a format for example: Home",,1. Breadcrumbs line have a format for example: Home,,"1. Go to the Admin environment - Stores - B2B store - Settings - SEO Links - set 'None' URL view mode
+2. Go to the store - Category_1 - Product_1 page
+3. Check the Bread Crumbs line",
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the URL of Bread Crumbs line
+Expected Result:
+1. URL have a format for example: https://st-storefront.qa.govirto.com/category/3db665f7c95e46c3890c4a208d8af73d",,1. URL have a format for example: https://st-storefront.qa.govirto.com/category/3db665f7c95e46c3890c4a208d8af73d,,1. Check the URL of Bread Crumbs line,
+C410345,Linked category should not be returned in collapsed mode,,,,The virtual catalog (ex. B2B-mixed) has several linked parent categories with subcategories,Medium,,SEO,1,,Catalog page > SEO,,"Step Description:
+1. Go to store > SEO link > Collapsed
+2. Go to frontend > Catalog
+3. Check linked categories in mega menu
+
+
+
+
+Expected Result:
+The linked categories are not returned at all if collapsed mode is ON.",,The linked categories are not returned at all if collapsed mode is ON.,,"1. Go to store > SEO link > Collapsed
+2. Go to frontend > Catalog
+3. Check linked categories in mega menu
+
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Check linked subcategories
+Expected Result:
+The linked categories are not returned at all if collapsed mode is ON.",,The linked categories are not returned at all if collapsed mode is ON.,,Check linked subcategories,
+,,,,,,,,,,,,,"
+Step Description:
+Check facet filter Categories
+
+
+Expected Result:
+The linked categories are not returned at all if collapsed mode is ON.",,The linked categories are not returned at all if collapsed mode is ON.,,"Check facet filter Categories
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Try to open direct link on linked category
+Expected Result:
+The 404 page is returned",,The 404 page is returned,,Try to open direct link on linked category,
+C410339,Valid SEO slug should open category page,,,,User is not logged in.,High,,Routing,2,,Catalog page > SEO > Routing,,"Step Description:
+1. Open {domain}/tv-multimedia
+Expected Result:
+Category page 'TV & Multimedia' is displayed.",,Category page 'TV & Multimedia' is displayed.,,1. Open {domain}/tv-multimedia,0
+C410340,Valid category ID should open category page,,,,User is not logged in.,High,,Routing,2,,Catalog page > SEO > Routing,,"Step Description:
+1. Open {domain}/category/254fd34a-9532-4165-a5e7-85f2b32e8690
+Expected Result:
+Category page 'TV & Multimedia' is displayed.",,Category page 'TV & Multimedia' is displayed.,,1. Open {domain}/category/254fd34a-9532-4165-a5e7-85f2b32e8690,0
+C410341,Invalid path prefix with valid slug should return 404,,,,User is not logged in.,Critical,,Routing,2,,Catalog page > SEO > Routing,,"Step Description:
+1. Open {domain}/foo-bar-rywifhiue8q/tv-multimedia
+Expected Result:
+A 404 Not Found page is displayed.",,A 404 Not Found page is displayed.,,1. Open {domain}/foo-bar-rywifhiue8q/tv-multimedia,0
+C410342,Invalid 'category/slug' URL should return 404,,,,User is not logged in.,Critical,,Routing,2,,Catalog page > SEO > Routing,,"Step Description:
+1. Open {domain}/category/tv-multimedia
+Expected Result:
+A 404 Not Found page is displayed.",,A 404 Not Found page is displayed.,,1. Open {domain}/category/tv-multimedia,0
+C410343,Edge Case – Completely random slug should return 404,,,,User is not logged in.,Medium,,Routing,2,,Catalog page > SEO > Routing,,"Step Description:
+1. Open {domain}/asdfghjkl123456
+Expected Result:
+A 404 Not Found page is displayed.",,A 404 Not Found page is displayed.,,1. Open {domain}/asdfghjkl123456,0
+C410344,Edge Case – Empty category path should return 404,,,,User is not logged in.,Medium,,Routing,2,,Catalog page > SEO > Routing,,"Step Description:
+1. Open {domain}/category/
+Expected Result:
+A 404 Not Found page is displayed.",,A 404 Not Found page is displayed.,,1. Open {domain}/category/,0
+C389546,Catalog page > list view,,,,"1. Go to the store
+2. Open any Catalog
+
+",Medium,,View,1,,Catalog page > View,,"Step Description:
+1. Click button List view
+Expected Result:
+1. The displaying of the products has changed into a List view mode",,1. The displaying of the products has changed into a List view mode,,1. Click button List view,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to any other Category
+2. Check the saving List view mode
+
+Expected Result:
+1. List view mode saved
+-- Displaying catalog products
+-- List view mode button state ",,"1. List view mode saved
+-- Displaying catalog products
+-- List view mode button state ",,"1. Go to any other Category
+2. Check the saving List view mode
+",
+C389547,Catalog page > grid view,,,,"1. Go to the store
+2. Open any Catalog
+
+",Medium,,View,1,,Catalog page > View,,"Step Description:
+1. Click button Grid view
+Expected Result:
+1. The displaying of the products has changed into a Grid view mode",,1. The displaying of the products has changed into a Grid view mode,,1. Click button Grid view,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to any other Category
+2. Check the saving Grid view mode
+
+Expected Result:
+1. Grid view mode saved
+-- Displaying catalog products
+-- Grid view mode button state ",,"1. Grid view mode saved
+-- Displaying catalog products
+-- Grid view mode button state ",,"1. Go to any other Category
+2. Check the saving Grid view mode
+",
+C389548,MOBILE > Catalog page > grid view,,,,"1. Go to the store
+2. Go to Category_1 page 
+
+
+",Medium,,View,1,,Catalog page > View,,"Step Description:
+1. Check the amount of the items presented on the page
+Expected Result:
+1. Products are presented in 2 columns as __grid__ view
+2. *For Tablet devices products presents in 4 columns in grid view (for both orientations) ",,"1. Products are presented in 2 columns as __grid__ view
+2. *For Tablet devices products presents in 4 columns in grid view (for both orientations) ",,1. Check the amount of the items presented on the page,0
+C398722,Tab Navigation - Moving Focus Forward,,,,"The webpage contains multiple interactive elements (buttons, links, input fields, checkboxes, dropdowns, modals, etc.).",Medium,,Keyboard Navigation,1,https://www.browserstack.com/docs/accessibility/references/accessibility-checklist,Catalog page > Keyboard Navigation,,"Step Description:
+1. Load the webpage.
+2. Press the `Tab` key repeatedly.
+3. Observe the focus movement.
+Expected Result:
+The focus moves sequentially to the next interactive element in a logical and predictable order.
+The focus indicator is visible.
+No elements are skipped.",,"The focus moves sequentially to the next interactive element in a logical and predictable order.
+The focus indicator is visible.
+No elements are skipped.",,"1. Load the webpage.
+2. Press the `Tab` key repeatedly.
+3. Observe the focus movement.",0
+C398723,Shift + Tab Navigation - Moving Focus Backward,,,,,Medium,,Keyboard Navigation,1,https://www.browserstack.com/docs/accessibility/references/accessibility-checklist,Catalog page > Keyboard Navigation,,"Step Description:
+1. Load the webpage.
+2. Navigate to the last interactive element using `Tab`.
+3. Press `Shift + Tab` repeatedly.
+4. Observe the focus movement.
+Expected Result:
+The focus moves sequentially to the previous interactive element.
+The focus indicator is visible.
+No elements are skipped.",,"The focus moves sequentially to the previous interactive element.
+The focus indicator is visible.
+No elements are skipped.",,"1. Load the webpage.
+2. Navigate to the last interactive element using `Tab`.
+3. Press `Shift + Tab` repeatedly.
+4. Observe the focus movement.",0
+C398724,Enter Key - Activating Buttons and Links,,,,,Medium,,Keyboard Navigation,1,https://www.browserstack.com/docs/accessibility/references/accessibility-checklist,Catalog page > Keyboard Navigation,,"Step Description:
+1. Load the webpage.
+2. Use `Tab` to navigate to a button.
+3. Press `Enter` and observe the action.
+4. Use `Tab` to navigate to a link.
+5. Press `Enter` and observe the navigation.
+Expected Result:
+The button performs its intended action (e.g., form submission, modal opening, etc.).
+The link navigates to the intended destination.",,"The button performs its intended action (e.g., form submission, modal opening, etc.).
+The link navigates to the intended destination.",,"1. Load the webpage.
+2. Use `Tab` to navigate to a button.
+3. Press `Enter` and observe the action.
+4. Use `Tab` to navigate to a link.
+5. Press `Enter` and observe the navigation.",0
+C398725,Spacebar - Selecting Checkboxes and Radio Buttons,,,,,Medium,,Keyboard Navigation,1,https://www.browserstack.com/docs/accessibility/references/accessibility-checklist,Catalog page > Keyboard Navigation,,"Step Description:
+1. Load the webpage.
+2. Use `Tab` to navigate to an unchecked checkbox.
+3. Press `Space` and observe the selection.
+4. Use `Tab` to navigate to a radio button.
+5. Press `Space` and observe the selection.
+Expected Result:
+The checkbox toggles between checked and unchecked states.
+The radio button is selected and deselects other radio buttons in the same group.",,"The checkbox toggles between checked and unchecked states.
+The radio button is selected and deselects other radio buttons in the same group.",,"1. Load the webpage.
+2. Use `Tab` to navigate to an unchecked checkbox.
+3. Press `Space` and observe the selection.
+4. Use `Tab` to navigate to a radio button.
+5. Press `Space` and observe the selection.",0
+C398726,Escape Key - Closing Dropdowns and Modals,,,,,Medium,,Keyboard Navigation,1,https://www.browserstack.com/docs/accessibility/references/accessibility-checklist,Catalog page > Keyboard Navigation,,"Step Description:
+1. Load the webpage.
+2. Open a dropdown menu using the keyboard or mouse.
+3. Press `Esc` and observe the behavior.
+4. Open a modal window.
+5. Press `Esc` and observe the behavior.
+Expected Result:
+The dropdown menu should close.
+The modal should close without affecting other page elements.",,"The dropdown menu should close.
+The modal should close without affecting other page elements.",,"1. Load the webpage.
+2. Open a dropdown menu using the keyboard or mouse.
+3. Press `Esc` and observe the behavior.
+4. Open a modal window.
+5. Press `Esc` and observe the behavior.",0
+C398727,Visual Focus Indicator,,,,,Medium,,Keyboard Navigation,1,https://www.browserstack.com/docs/accessibility/references/accessibility-checklist,Catalog page > Keyboard Navigation,,"Step Description:
+1. Load the webpage.
+2. Use `Tab` to navigate through all interactive elements.
+Expected Result:
+A clear focus outline is visible.
+The focus is not lost at any point.
+Custom styling does not remove the focus indicator.",,"A clear focus outline is visible.
+The focus is not lost at any point.
+Custom styling does not remove the focus indicator.",,"1. Load the webpage.
+2. Use `Tab` to navigate through all interactive elements.",0
+C389489,Catalog > Select category,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000002417, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000492",,,User on Catalog page,Medium,,Category selector,0,,Category selector,,"Step Description:
+Select a category from the menu
+
+
+
+ ![](index.php?/attachments/get/85f64637-d0bc-4ad3-bfe9-3dfdb515ef23) 
+
+Expected Result:
+1. On hover, the category is highlighted in grey color
+2. The final selected(current) leaf should be bold
+3. Breadcrumbs should reflect the category
+4. Back arrow appears with the parent Category
+
+----------------------------------------------------
+
+
+
+
+ ![](index.php?/attachments/get/19cd599e-4fe7-4e8a-b972-43eebc3dc4eb) 
+
+
+",,"1. On hover, the category is highlighted in grey color
+2. The final selected(current) leaf should be bold
+3. Breadcrumbs should reflect the category
+4. Back arrow appears with the parent Category
+
+----------------------------------------------------
+
+
+
+
+ ![](index.php?/attachments/get/19cd599e-4fe7-4e8a-b972-43eebc3dc4eb) 
+
+
+",,"Select a category from the menu
+
+
+
+ ![](index.php?/attachments/get/85f64637-d0bc-4ad3-bfe9-3dfdb515ef23) 
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Select subcaregory1
+Expected Result:
+1. The subcategory1 with products is shown
+2. The final selected(current) leaf should be bold
+3. Breadcrumbs should reflect the category: Home/Catalog/Bolts/Carriage Bolts
+4. Back arrow appears with the parent Category",,"1. The subcategory1 with products is shown
+2. The final selected(current) leaf should be bold
+3. Breadcrumbs should reflect the category: Home/Catalog/Bolts/Carriage Bolts
+4. Back arrow appears with the parent Category",,Select subcaregory1,
+C389491,Category > Hide empty category > Visible = false,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001979,,, ,Medium,ST-4152,Category selector,0,,Category selector,,"Step Description:
+Go to the Admin site
+Go to Catalog &gt; Open Category1
+Set Visible = false
+Save &gt; re-index category
+Expected Result:
+The category is displayed as inactive",,The category is displayed as inactive,,"Go to the Admin site
+Go to Catalog &gt; Open Category1
+Set Visible = false
+Save &gt; re-index category",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to Storefront &gt; Catalog
+Pay attention on category1
+
+
+
+Expected Result:
+The inactive category1 is not displayed in the  menu
+
+  
+",,"The inactive category1 is not displayed in the  menu
+
+  
+",,"Go to Storefront &gt; Catalog
+Pay attention on category1
+
+
+",
+C389492,Category > Hide empty category > There is no products in category,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000001922, https://virtowayqa.testrail.io/index.php?/attachments/get/1000003509",,,"Category1 is active
+
+Catagery1 has no products",Medium,,Category selector,0,,Category selector,,"Step Description:
+Go to the Catalog page
+Pay attention to Category1 in the menu
+Expected Result:
+The category1 is not displayed in the category selector
+
+ ![](index.php?/attachments/get/6b640ab0-ceaa-4c07-baab-f3ea03005f9f) 
+",,"The category1 is not displayed in the category selector
+
+ ![](index.php?/attachments/get/6b640ab0-ceaa-4c07-baab-f3ea03005f9f) 
+",,"Go to the Catalog page
+Pay attention to Category1 in the menu",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to admin &gt; Catalog
+Open Category1 &gt; Assign a product
+Add price and inventory
+Save
+
+Open storefront &gt; Catalog
+Pay attention to Category1 in the menu
+
+
+Expected Result:
+The category1 is displayed in the category selector
+
+
+ ![](index.php?/attachments/get/c6f5cb1d-dfb1-4130-8a2b-9f125d0c5650) 
+",,"The category1 is displayed in the category selector
+
+
+ ![](index.php?/attachments/get/c6f5cb1d-dfb1-4130-8a2b-9f125d0c5650) 
+",,"Go to admin &gt; Catalog
+Open Category1 &gt; Assign a product
+Add price and inventory
+Save
+
+Open storefront &gt; Catalog
+Pay attention to Category1 in the menu
+
+",
+C389493,Category > Hide empty category > Products with 0 price or N/A,https://virtowayqa.testrail.io/index.php?/attachments/get/1000002823,,,"Category1 is active
+Category1 has a product with 0 price and product without price
+",Medium,,Category selector,0,,Category selector,,"Step Description:
+Go to the Catalog page
+Pay attention to Category1 in the menu
+Expected Result:
+The category1 and Product are not displayed",,The category1 and Product are not displayed,,"Go to the Catalog page
+Pay attention to Category1 in the menu",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to admin &gt; Catalog
+Open Category1 &gt; Add price, ex. 1.00 USD
+Save
+
+Open storefront &gt; Catalog
+Pay attention to Category1 in the menu
+
+Open Category1
+
+
+Expected Result:
+The category1 and Product are displayed
+
+ ![](index.php?/attachments/get/9bfe22c4-223c-4fa2-ba34-c493adb1fcca) 
+
+
+
+",,"The category1 and Product are displayed
+
+ ![](index.php?/attachments/get/9bfe22c4-223c-4fa2-ba34-c493adb1fcca) 
+
+
+
+",,"Go to admin &gt; Catalog
+Open Category1 &gt; Add price, ex. 1.00 USD
+Save
+
+Open storefront &gt; Catalog
+Pay attention to Category1 in the menu
+
+Open Category1
+
+",
+C389494,Category > Hide empty category > Product has price_usd = 1.00 and price_eur = 0,,,,"currencyCode = USD in store
+
+Category1 is active
+Category1 has a product
+
+Product has price_usd = 1.00 and price_eur = 0
+",Medium,,Category selector,0,,Category selector,,"Step Description:
+Go to the Catalog page
+Pay attention to Category1 in the menu
+Expected Result:
+The category1 and Product are displayed",,The category1 and Product are displayed,,"Go to the Catalog page
+Pay attention to Category1 in the menu",0
+,,,,,,,,,,,,,"
+Step Description:
+Switch currencyCode = EUR
+Pay attention to Category1 in the menu
+
+Expected Result:
+The category1 and Product are not displayed",,The category1 and Product are not displayed,,"Switch currencyCode = EUR
+Pay attention to Category1 in the menu
+",
+C389462,Sorting > Featured,,,"1. Product_1 and Product_2 sorted according they featured in admin environment catalog
+2. Product_1 comes  1st, and Product_2 - 2nd in the list.","1. Go to the store
+2. User logged in store
+3. Product_1 and Product_2 are shown in the store
+4. Product_1 and Product_2 category related to the Category_1
+5. Product_1 set up Priority 1
+6. Product_2 set up Priority 2
+",Medium,,Sorting  (Desktop and Mobile),0,,Sorting  (Desktop and Mobile),"1. Open catalog_1 page
+2. Select *Featured* in sort drop-down list",,,,,,0
+C389463,Sorting > Alphabetically - A - Z,,,1. Products sorted according alphabetical sequence,"1. Go to the store
+2. User logged in store
+3. Catalog_1 include several products
+
+",Medium,,Sorting  (Desktop and Mobile),0,,Sorting  (Desktop and Mobile),"1. Open catalog_1 
+2. Select *Alphabetically - A-Z* in sort drop-down list",,,,,,0
+C389464,Sorting > Alphabetically - Z - A,,,1. Products sorted according to set alphabetical sequence,"1. Go to the store
+2. User logged in store
+3. Catalog_1 include several products
+",Medium,,Sorting  (Desktop and Mobile),0,,Sorting  (Desktop and Mobile),"1. Open catalog_1 
+2. Select *Alphabetically - Z-A* in sort drop-down list",,,,,,0
+C389465,Sorting > Price low to high,,,"1. Product_2 shown first
+2. Product_1 shown second","1. User logged in store
+2. Product_1 and Product_2 shown in store
+3. Product_1 and Product_2 category is Category_1
+4. Product_1 price is Price_1
+5. Product_2 price is Price_2 
+6. Price_1 > Price_2",Medium,,Sorting  (Desktop and Mobile),0,,Sorting  (Desktop and Mobile),"1. Open catalog page
+2. Select *Price low to high* in sort drop-down list",,,,,,0
+C389466,Sorting > Price high to low,,,"1. Product_1 shown first
+2. Product_2 shown second","1. User logged in store
+2. Product_1 and Product_2 shown in store
+3. Product_1 and Product_2 category is Category_1
+4. Product_1 price is Price_1
+5. Product_2 price is Price_2 
+6. Price_1 > Price_2",Medium,,Sorting  (Desktop and Mobile),0,,Sorting  (Desktop and Mobile),"1. Open catalog page
+2. Select *Price high to low* in sort drop-down list",,,,,,0
+C389467,"Sorting > Date, new to old",,,"1. Product_1 shown first
+2. Product_2 shown second","1. User logged in store
+2. Product_1 and Product_2 shown in store
+3. Product_1 and Product_2 category is Category_1
+4. Product_1 price is CreateDate_1
+5. Product_2 price is CreateDate_2
+6. CreateDate_1 > CreateDate_2 (e.g 2005 and 1995 year)",Medium,,Sorting  (Desktop and Mobile),0,,Sorting  (Desktop and Mobile),"1. Open catalog page
+2. Select *Date, new to old* in sort drop-down list",,,,,,0
+C389468,"Sorting > Date, old to new",,,"1. Product_2 shown first
+2. Product_1 shown second","1. User logged in store
+2. Product_1 and Product_2 shown in store
+3. Product_1 and Product_2 category is Category_1
+4. Product_1 price is CreateDate_1
+5. Product_2 price is CreateDate_2
+6. CreateDate_1 > CreateDate_2 (e.g 2005 and 1995 year)",Medium,,Sorting  (Desktop and Mobile),0,,Sorting  (Desktop and Mobile),"1. Open catalog page
+2. Select *Date, old to new* in sort drop-down list",,,,,,0
+C389529,Filters > general view,,,,"<ol>
+<li>Set filters for the product's Category_1 (Go to Admin Environment > Catalog > Properties widget )</li>
+<li>Set filters for the store (Go to Admin Environment > Store > Aggregation properties widget)</li>
+<li>Go to the store</li>
+<li>Open Category_1 </li>
+</ol>
+",Medium,,Filters (Desktop and Mobile),0,,Filters (Desktop and Mobile),,"Step Description:
+<ol>
+<li>Check the filters section</li>
+</ol>
+Expected Result:
+<ol>
+<li>Next block of the filters are presented:</li>
+</ol>
+
+<ul>
+<li>Рierarchical menu</li>
+<li>Filter results  by</li>
+<li>Show in stock checkbox </li>
+<li>Available at branches checkbox</li>
+<li>The other filter (may vary according to the settings from the preconditions) </li>
+</ul>
+
+<ol>
+<li>All  filters collapse by default</li>
+</ol>",,"<ol>
+<li>Next block of the filters are presented:</li>
+</ol>
+
+<ul>
+<li>Рierarchical menu</li>
+<li>Filter results  by</li>
+<li>Show in stock checkbox </li>
+<li>Available at branches checkbox</li>
+<li>The other filter (may vary according to the settings from the preconditions) </li>
+</ul>
+
+<ol>
+<li>All  filters collapse by default</li>
+</ol>",,"<ol>
+<li>Check the filters section</li>
+</ol>",1
+,,,,,,,,,,,,,"
+Step Description:
+<ol>
+<li>Select any filter (eg brand)</li>
+<li>Check the Enabled Filter block above the products</li>
+</ol>
+Expected Result:
+<ol>
+<li>Next elements are presented:</li>
+</ol>
+
+<ul>
+<li>The applied Filter block</li>
+<li>The Reset filter block</li>
+</ul>",,"<ol>
+<li>Next elements are presented:</li>
+</ol>
+
+<ul>
+<li>The applied Filter block</li>
+<li>The Reset filter block</li>
+</ul>",,"<ol>
+<li>Select any filter (eg brand)</li>
+<li>Check the Enabled Filter block above the products</li>
+</ol>",
+,,,,,,,,,,,,,"
+Step Description:
+<ol>
+<li>Check the Selected filter's check-box on the left panel</li>
+</ol>
+Expected Result:
+<ol>
+<li>Check-box set up is on.</li>
+</ol>",,"<ol>
+<li>Check-box set up is on.</li>
+</ol>",,"<ol>
+<li>Check the Selected filter's check-box on the left panel</li>
+</ol>",
+,,,,,,,,,,,,,"
+Step Description:
+<ol>
+<li>Check the Filter block</li>
+</ol>
+Expected Result:
+<ol>
+<li>Next elements presented: </li>
+</ol>
+
+<ul>
+<li>title of the Filter; </li>
+<li>Close icon</li>
+</ul>",,"<ol>
+<li>Next elements presented: </li>
+</ol>
+
+<ul>
+<li>title of the Filter; </li>
+<li>Close icon</li>
+</ul>",,"<ol>
+<li>Check the Filter block</li>
+</ol>",
+,,,,,,,,,,,,,"
+Step Description:
+<ol>
+<li>Click Icon close for any filter block</li>
+</ol>
+Expected Result:
+<ol>
+<li>Filter block removed</li>
+</ol>",,"<ol>
+<li>Filter block removed</li>
+</ol>",,"<ol>
+<li>Click Icon close for any filter block</li>
+</ol>",
+C389530,Filter > Categories,,,,Set __outline_named in aggregation properties in the store ,Medium,,Filters (Desktop and Mobile),0,,Filters (Desktop and Mobile),,"Step Description:
+Go to the Catalog page &gt; Filters
+Click on Categories 
+Expected Result:
+The list with categories is uncollapsed
+
+ ![](index.php?/attachments/get/88a3b082-8ef3-4415-a471-1896307952b5) 
+",,"The list with categories is uncollapsed
+
+ ![](index.php?/attachments/get/88a3b082-8ef3-4415-a471-1896307952b5) 
+",,"Go to the Catalog page &gt; Filters
+Click on Categories ",0
+,,,,,,,,,,,,,"
+Step Description:
+Select any category
+Expected Result:
+1. The checkbox is selected. 
+2. The category with products is shown. 
+3. The count in the result is matched with the count in the categories filter
+4. Chips with category name and reset are displayed
+
+
+ ![](index.php?/attachments/get/609144d4-0df1-4461-ac51-9dd1bdf90f5d) 
+",,"1. The checkbox is selected. 
+2. The category with products is shown. 
+3. The count in the result is matched with the count in the categories filter
+4. Chips with category name and reset are displayed
+
+
+ ![](index.php?/attachments/get/609144d4-0df1-4461-ac51-9dd1bdf90f5d) 
+",,Select any category,
+,,,,,,,,,,,,,"
+Step Description:
+Click on Reset chip
+Expected Result:
+1. The checkbox is unselected
+2. Chips are disappeared
+3. All products in the Catalog are loaded",,"1. The checkbox is unselected
+2. Chips are disappeared
+3. All products in the Catalog are loaded",,Click on Reset chip,
+C389531,Filter > Search [Search bar was hidden],,,"1. Only those items that match the search query are displayed
+
+
+","1. Set filters for the product's Category_1 (Go to Admin Environment > Catalog > Properties widget )
+2. Set filters for the store (Go to Admin Environment > Store > Aggregation properties widget)
+3. Go to the store
+4. Open Category_1 
+",Medium,ST-4322,Filters (Desktop and Mobile),0,,Filters (Desktop and Mobile),"1. Enter any search word in the Search field (relevant to the product, for example, name or some properties) 
+2. Click the button Go. 
+",,,,,,0
+C389532,Filter > Show in stock filter,,,,"1. Category_1 contains 10 products
+2. Product_1 - Product_5 available in stock
+3. Product_6 - Product_10 is out of stock
+4. Go to the store 
+
+",Medium,,Filters (Desktop and Mobile),0,,Filters (Desktop and Mobile),,"Step Description:
+1. Open Category_1
+2. Check Show in stock checkbox on the top of the category page
+
+
+Expected Result:
+1. Show in stock filter is selected by default
+2. Product_1-Product_10 presented in the Catalog_1",,"1. Show in stock filter is selected by default
+2. Product_1-Product_10 presented in the Catalog_1",,"1. Open Category_1
+2. Check Show in stock checkbox on the top of the category page
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Select checkbox Show in stock
+Expected Result:
+1. Product_1-Product_5 are presented 
+
+",,"1. Product_1-Product_5 are presented 
+
+",,1. Select checkbox Show in stock,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click Icon close on the Filter block
+Expected Result:
+1. Product_1-Product_10 presented in the Category_1
+2. Checkbox Show in stock is unselected",,"1. Product_1-Product_10 presented in the Category_1
+2. Checkbox Show in stock is unselected",,1. Click Icon close on the Filter block,
+C389533,Filter > Show in Stock > Digital products,,,,"product1 with Visible=true, can be purchased=true, Track inventory=false",Medium,,Filters (Desktop and Mobile),0,,Filters (Desktop and Mobile),,"Step Description:
+1. Open storefront &gt; 
+
+2. open a category with this product
+
+3. Show in stock=true
+Expected Result:
+Product1 is showed",,Product1 is showed,,"1. Open storefront &gt; 
+
+2. open a category with this product
+
+3. Show in stock=true",0
+C389534,Filter > Show in Stock >  Physical product (out of stock),,,,"product2 with Visible=true, can be purchased=true, Track inventory=true, FFC=0",Medium,,Filters (Desktop and Mobile),0,,Filters (Desktop and Mobile),,"Step Description:
+1. Open storefront &gt; 
+
+2. open category with this product
+
+3. Show in stock=true
+Expected Result:
+Product2 is hidden",,Product2 is hidden,,"1. Open storefront &gt; 
+
+2. open category with this product
+
+3. Show in stock=true",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on Show in stock=false 
+Expected Result:
+Product2 is showed",,Product2 is showed,,Click on Show in stock=false ,
+C389535,Filter > Show in Stock >  Physical product (track inventory = false),,,,"product2 with Visible=true, can be purchased=true, Track inventory=false, FFC=1",Medium,,Filters (Desktop and Mobile),0,,Filters (Desktop and Mobile),,"Step Description:
+1. Open storefront &gt; 
+
+2. open category with this product
+
+3. Show in stock=true
+Expected Result:
+Product2 is shown
+The button Add to cart is active
+The bubble inStock displays",,"Product2 is shown
+The button Add to cart is active
+The bubble inStock displays",,"1. Open storefront &gt; 
+
+2. open category with this product
+
+3. Show in stock=true",0
+C389536,Filter > Brand,,,,"1. Set filters for the product's Category_1 (Go to Admin Environment > Catalog > Properties widget )
+2. Set filters for the store (Go to Admin Environment > Store > Aggregation properties widget)
+2. Product_1 and Product_2 shown in the store
+4. Product_1 brand is Brand_1
+5. Product_2 brand is Brand_2
+6. Product_3 brand is Brand_3
+7. Go to the store
+8. Open Category_1
+
+",Medium,,Filters (Desktop and Mobile),0,,Filters (Desktop and Mobile),,"Step Description:
+1. Select Brand_1 in the Brands filter
+Expected Result:
+1. Product_1 is shown 
+2. Product_2 and Product_3 are not shown 
+3. The applied filter block is represented above the Products
+4. Filter block is uncollapsed",,"1. Product_1 is shown 
+2. Product_2 and Product_3 are not shown 
+3. The applied filter block is represented above the Products
+4. Filter block is uncollapsed",,1. Select Brand_1 in the Brands filter,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Select Brand_1 and Brand_2 in the Brands filter
+Expected Result:
+1. Product_1 and Product_2 are shown 
+2. Product_3 is not shown 
+3. The applied filters blocks is represented above the Products",,"1. Product_1 and Product_2 are shown 
+2. Product_3 is not shown 
+3. The applied filters blocks is represented above the Products",,1. Select Brand_1 and Brand_2 in the Brands filter,
+,,,,,,,,,,,,,"
+Step Description:
+1. Close Category page
+2. Open this Category page again
+3. Check the selected filters
+Expected Result:
+1. Selected filters are expanded, other are collapsed",,"1. Selected filters are expanded, other are collapsed",,"1. Close Category page
+2. Open this Category page again
+3. Check the selected filters",
+C389537,Filter > Price,,,,"1. Set filters for the product's Category_1 (Go to Admin Environment > Catalog > Properties widget )
+2. Set filters for the store (Go to Admin Environment > Store > Aggregation properties widget) 9 for example: 0-10,10-20, over 100
+3. Check boundary conditions on Admin Environment > Store > B2B > Dynamic properties > FilteredBrowsing 
+4. Product_1 price is 9
+5. Product_2 price is 10
+6. Product_3 price is 11
+7. Product_4 price is 19
+8. Product_5 price is 20
+9. Product_6 price is 100
+10. Product_7 price is 105
+11. Product_1-Product_7 shown in the store
+12. Product_1-Product_7 shown in the Category_1
+13. Go to the store
+
+
+",Medium,,Filters (Desktop and Mobile),0,,Filters (Desktop and Mobile),,"Step Description:
+1. Open on Category_1
+2. Click on price filter *Under 10*
+
+Expected Result:
+1. Product_1 with price 9 is shown
+2. The applied filter block is represented above the Products",,"1. Product_1 with price 9 is shown
+2. The applied filter block is represented above the Products",,"1. Open on Category_1
+2. Click on price filter *Under 10*
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on price filter *10-20*
+Expected Result:
+1. Product_2  with price 10 is shown
+2. Product_3  with price 11 is shown
+3. Product_4  with price 19 is shown
+4. The applied filter block is represented above the Products
+",,"1. Product_2  with price 10 is shown
+2. Product_3  with price 11 is shown
+3. Product_4  with price 19 is shown
+4. The applied filter block is represented above the Products
+",,1. Click on price filter *10-20*,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on price filter *20-30*
+Expected Result:
+1. Product_5 with price 20 is shown
+2. The applied filter block is represented above the Products",,"1. Product_5 with price 20 is shown
+2. The applied filter block is represented above the Products",,1. Click on price filter *20-30*,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on price filter *over 100*
+Expected Result:
+1. Product_6 with price 100 is shown
+2. Product_7 with price 105 is shown
+3. The applied filter block is represented above the Products
+",,"1. Product_6 with price 100 is shown
+2. Product_7 with price 105 is shown
+3. The applied filter block is represented above the Products
+",,1. Click on price filter *over 100*,
+C389538,Filter > Other filter,,,"1. Only those products are shown that match the selected filters.
+2. The applied filter block is represented above the Products","1. Set filters for the product's Category_1 (Go to Admin Environment > Catalog > Properties widget )
+2. Set filters for the store (Go to Admin Environment > Store > Aggregation properties widget)
+3. Go to the store
+4. Open Category_1 ",Medium,,Filters (Desktop and Mobile),0,,Filters (Desktop and Mobile),"1. Filter the product by not the Main filters ( for example color, operation system etc.)",,,,,,0
+C389539,Filters > Reset filters,,,,"1. Go to the store
+2. Open Category_1 
+",Medium,,Filters (Desktop and Mobile),0,,Filters (Desktop and Mobile),,"Step Description:
+1. Select several filters (e.g. Filter_1-Filter_3)
+
+
+Expected Result:
+1. Products was filtered according to the selected filters
+
+",,"1. Products was filtered according to the selected filters
+
+",,"1. Select several filters (e.g. Filter_1-Filter_3)
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Сlick Close icon on Filter_1 block
+Expected Result:
+1. Filter_2, Filter_3 blocks are presented above the Products 
+2. Selected Filter_1 check-box setup is off.
+3. Products was filtered according to the Filter_2 and Filter_3
+
+
+",,"1. Filter_2, Filter_3 blocks are presented above the Products 
+2. Selected Filter_1 check-box setup is off.
+3. Products was filtered according to the Filter_2 and Filter_3
+
+
+",,1. Сlick Close icon on Filter_1 block,
+,,,,,,,,,,,,,"
+Step Description:
+1. Сlick Reset filters block
+Expected Result:
+1. All applied filters removed
+2. No filters represented above the Products
+3. All selected Filter's check-box setup is off.
+",,"1. All applied filters removed
+2. No filters represented above the Products
+3. All selected Filter's check-box setup is off.
+",,1. Сlick Reset filters block,
+C396951,Select filter > Scroll to the end > Reset filter,,,,Set zoom 80% in browser,High,,Filters (Desktop and Mobile),0,,Filters (Desktop and Mobile),,"Step Description:
+1. Open the application and navigate to the catalog page.
+
+2. Scroll down the catalog page to load additional items
+
+3. Select value (count more than 100) in the facet filter.
+
+4. Attempt to continue scrolling to the bottom of the list
+Expected Result:
+The page scrolls up to the first product. The appropriate products are returned
+",,"The page scrolls up to the first product. The appropriate products are returned
+",,"1. Open the application and navigate to the catalog page.
+
+2. Scroll down the catalog page to load additional items
+
+3. Select value (count more than 100) in the facet filter.
+
+4. Attempt to continue scrolling to the bottom of the list",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Select more value in the facet filter (count=11)
+
+2. Attempt to continue scrolling to the bottom text “You have reached the end of the list.“
+
+3. Deselect value in the facet filter
+Expected Result:
+The page scrolls up to the first product. The appropriate products are returned
+",,"The page scrolls up to the first product. The appropriate products are returned
+",,"1. Select more value in the facet filter (count=11)
+
+2. Attempt to continue scrolling to the bottom text “You have reached the end of the list.“
+
+3. Deselect value in the facet filter",
+C389540,Select several filters and open new catalog,,,,"1. Set filters for the product's Category_1 (Go to Admin Environment > Catalog > Properties widget )
+2. Set filters for the store (Go to Admin Environment > Store > Aggregation properties widget)
+3. Go to the store
+4. Open Category_1  
+5. There is Filter_1 with several choices (for example Brands)
+
+",Medium,,Filters (Desktop and Mobile),0,,Filters (Desktop and Mobile),,"Step Description:
+1. Select several filters
+Expected Result:
+1. Filters applied",,1. Filters applied,,1. Select several filters,0
+,,,,,,,,,,,,,"
+Step Description:
+1.  Open any Category (ex. Printers)
+Expected Result:
+1. Filters are cleaned
+2. Products presented",,"1. Filters are cleaned
+2. Products presented",,1.  Open any Category (ex. Printers),
+C389541,Select several filters,,,,"1. Set filters for the product's Category_1 (Go to Admin Environment > Catalog > Properties widget )
+2. Set filters for the store (Go to Admin Environment > Store > Aggregation properties widget)
+3. Go to the store
+4. Open Category_1 
+5. There is Filter_1 with several choices (for example Brands)
+
+",Medium,,Filters (Desktop and Mobile),0,,Filters (Desktop and Mobile),,"Step Description:
+1. Select several filters from left panel (for example brand, color, length)
+Expected Result:
+1. Possible select several filters 
+2. Products filtered
+3. The rest of the choices for filters (e.g. brand, color and length) are still shown.
+4. The applied filter is represented above the list as an Enabled Filters block; ",,"1. Possible select several filters 
+2. Products filtered
+3. The rest of the choices for filters (e.g. brand, color and length) are still shown.
+4. The applied filter is represented above the list as an Enabled Filters block; ",,"1. Select several filters from left panel (for example brand, color, length)",0
+C389542,Filter > Sticky filters,,,,There are 10 pages of products in the category and many facets for these products,Medium,ST-4373,Filters (Desktop and Mobile),0,,Filters (Desktop and Mobile),,"Step Description:
+Open Category page &gt; Scroll down
+Expected Result:
+1. Facets are scrolled with products before facets ending
+2. When there is the end of the last facet block then Facets are stuck and the Products are continued to be scrolled
+",,"1. Facets are scrolled with products before facets ending
+2. When there is the end of the last facet block then Facets are stuck and the Products are continued to be scrolled
+",,Open Category page &gt; Scroll down,0
+,,,,,,,,,,,,,"
+Step Description:
+Scroll up
+Expected Result:
+Facets and Products are scrolled up",,Facets and Products are scrolled up,,Scroll up,
+,,,,,,,,,,,,,"
+Step Description:
+Open Catalog
+Reapit all steps",,,,"Open Catalog
+Reapit all steps",
+C389543,Filter > variations (only),,,,"There are Variation properties that can be set up both for the Main product and its Variation. For this Test-case, Variation Properties should be set up  __only__ for the Variation, not for the Main Product. Better to check on the Carriage bolt Catalog.
+
+1. Product_1 has Variation_1 
+2. Product_1 __does not have set up Variation Properties__ (Go to Admin BackEnd > Catalog > Product_1 > widget Properties > Variation property > There is should NOT be set up Variation Propety (for example FASTENER LENGTH)
+3. Variation_1 __has set up Variation property__ (Go to Admin BackEnd > Catalog > Product_1 > widget Variations > Variation_1 > widget Properties > Variation property > There is should be set up Variation Propety (for example FASTENER LENGTH) > add any value (for example 1"")
+4. Filters include FASTENER LENGTH (Go to Admin BackEnd  >  Store  > B2b store > Agregation properties widget > Add FASTENER LENGTH to the Right column.
+5. Product_1 exists in the Catalog_1 (Carriage bolts)
+
+
+
+
+
+",Medium,,Filters (Desktop and Mobile),0,,Filters (Desktop and Mobile),,"Step Description:
+1. Go to the store.
+
+2. Open Catalog from preconditions (Carriage bolts)
+
+3. Find the FASTENER LENGTH filter.
+
+4. Select value 1"""".   
+											
+Expected Result:
+1. Product_1 __presented__ as this filter (FASTENER LENGTH: 1"""") corresponds to the properties which were set up for Variation_1 of the Product_1 
+												",,"1. Product_1 __presented__ as this filter (FASTENER LENGTH: 1"") corresponds to the properties which were set up for Variation_1 of the Product_1 
+												",,"1. Go to the store.
+
+2. Open Catalog from preconditions (Carriage bolts)
+
+3. Find the FASTENER LENGTH filter.
+
+4. Select value 1"".   
+											",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Repeat step 3 from the precondition and __remove__ or __edite__ Variation Property FASTENER LENGTH : 2""""
+2. Go to the store.
+
+3. Open Catalog from preconditions (Carriage bolts)
+
+4. Find the FASTENER LENGTH filter.
+
+5. Select value 1"""".
+
+Expected Result:
+1. Product_1 __does not present__ as this filter (FASTENER LENGTH: 1"""") does not corresponds to the properties which were set up for Variation of the Product_1 
+												",,"1. Product_1 __does not present__ as this filter (FASTENER LENGTH: 1"") does not corresponds to the properties which were set up for Variation of the Product_1 
+												",,"1. Repeat step 3 from the precondition and __remove__ or __edite__ Variation Property FASTENER LENGTH : 2""
+2. Go to the store.
+
+3. Open Catalog from preconditions (Carriage bolts)
+
+4. Find the FASTENER LENGTH filter.
+
+5. Select value 1"".
+",
+C389544,MOBILE > Filters > general view,,,,1. Go to the store,Medium,,Filters (Desktop and Mobile),0,,Filters (Desktop and Mobile),,"Step Description:
+1. Open Category_1 page
+2. Click button Filters
+Expected Result:
+1. Left side menu opens.
+
+",,"1. Left side menu opens.
+
+",,"1. Open Category_1 page
+2. Click button Filters",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the filters-menu
+Expected Result:
+1.Next elements are presented:
+- Filter results by
+- Search within these results field and button GO
+- Show in stock
+- Available at branches (Select a pickup branch to see the products that are in stock now)
+- The other filters as drop-down menu (may vary according to a category)
+- Buttons Reset and Apply",,"1.Next elements are presented:
+- Filter results by
+- Search within these results field and button GO
+- Show in stock
+- Available at branches (Select a pickup branch to see the products that are in stock now)
+- The other filters as drop-down menu (may vary according to a category)
+- Buttons Reset and Apply",,1. Check the filters-menu,
+C389545,MOBILE > apply Filters,,,,1. Go to the store,Medium,,Filters (Desktop and Mobile),0,,Filters (Desktop and Mobile),,"Step Description:
+1. Open Category_1 page
+2. Click button Filters
+3. Select several filters
+4. Click button Apply
+Expected Result:
+1. Filter menu is closed
+2. Selected filters are applied
+
+",,"1. Filter menu is closed
+2. Selected filters are applied
+
+",,"1. Open Category_1 page
+2. Click button Filters
+3. Select several filters
+4. Click button Apply",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Category_1 page
+2. Click button Filters
+3. Select several filters
+4. Click button Reset
+Expected Result:
+1. Filter menu is closed
+2. There are no selected filters 
+",,"1. Filter menu is closed
+2. There are no selected filters 
+",,"1. Open Category_1 page
+2. Click button Filters
+3. Select several filters
+4. Click button Reset",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Category_1 page
+2. Click button Filters
+3. Select several filters
+4. Click icon Close
+Expected Result:
+1. Filter menu is closed
+2. There are no selected filters ",,"1. Filter menu is closed
+2. There are no selected filters ",,"1. Open Category_1 page
+2. Click button Filters
+3. Select several filters
+4. Click icon Close",
+C412737,Single Facet Selection Badge Display,,,"- Badge appears in widget header showing '1'
+- Same badge appears in horizontal facets view
+- Badge is clearly visible and properly styled",User is on the faceted search page; Facets are available for selection,High,,Facets > Show qty of facets applied,1,VCST-4077,Filters (Desktop and Mobile) > Facets > Show qty of facets applied,"1. Locate any facet widget
+2. Select one value from the facet
+3. Observe the widget header
+4. Observe the horizontal facet display",,,,,,0
+C412738,Multiple Facet Values Selection,,,"- Badge updates incrementally with each selection (1→2→3)
+- Badge displays total number of selected values accurately
+- Badge updates appear in both widget header and horizontal view",User is on the faceted search page; Facet with multiple selectable values is available,High,,Facets > Show qty of facets applied,1,VCST-4077,Filters (Desktop and Mobile) > Facets > Show qty of facets applied,"1. Select first value from a facet
+2. Select second value from the same facet
+3. Select third value from the same facet
+4. Observe badge updates",,,,,,0
+C412739,Zero Selected Values Display,,,"- No badges should be visible when no values are selected
+- Badge appears when value is selected
+- Badge disappears when last value is deselected",User is on the faceted search page; No facet values are currently selected,Medium,,Facets > Show qty of facets applied,1,VCST-4077,Filters (Desktop and Mobile) > Facets > Show qty of facets applied,"1. Observe facet widget headers
+2. Observe horizontal facets
+3. Select one value then deselect it",,,,,,0
+C412740,Maximum Values Selection,,,"- Badge correctly displays maximum number of selections
+- Badge remains accurate when maximum limit is reached
+- Badge styling handles double-digit numbers correctly",User is on the faceted search page; Facet with maximum selection limit is available,Medium,,Facets > Show qty of facets applied,1,VCST-4077,Filters (Desktop and Mobile) > Facets > Show qty of facets applied,"1. Select maximum allowed values for a facet
+2. Attempt to select one more value
+3. Observe badge display",,,,,,0
+C412741,Cross-Browser Badge Display,,,"- Badge appears consistently across all browsers
+- Badge styling is consistent
+- Numbers are clearly visible in all browsers","Access to multiple browsers (Chrome, Firefox, Safari, Edge); Test environment is accessible",Medium,,Facets > Show qty of facets applied,1,VCST-4077,Filters (Desktop and Mobile) > Facets > Show qty of facets applied,"1. Open application in each browser
+2. Select multiple facet values
+3. Compare badge display across browsers",,,,,,0
+C412742,Badge Persistence After Page Refresh,,,"- Selected facets remain selected after refresh
+- Badges display correct counts after refresh
+- No visual glitches in badge display",,Medium,,Facets > Show qty of facets applied,1,VCST-4077,Filters (Desktop and Mobile) > Facets > Show qty of facets applied,"1. Select multiple facet values
+2. Refresh the page
+3. Observe badge status",,,,,,0
+C412743,Special Characters in Facet Values,,,"- Badge displays correct count regardless of value content
+- No display issues or errors occur",Facets containing special characters are available,Low,,Facets > Show qty of facets applied,1,VCST-4077,Filters (Desktop and Mobile) > Facets > Show qty of facets applied,"1. Select facet values containing special characters
+2. Observe badge display
+3. Deselect values",,,,,,0
+C412744,Rapid Selection/Deselection,,,"- Badge updates correctly keep pace with selections
+- No lag or incorrect counts displayed
+- UI remains stable during rapid interactions",,Low,,Facets > Show qty of facets applied,1,VCST-4077,Filters (Desktop and Mobile) > Facets > Show qty of facets applied,"1. Quickly select multiple facet values
+2. Quickly deselect multiple values
+3. Alternate between select/deselect rapidly",,,,,,0
+C389518,Facets > The number of values is less/equal 8 > Search field and Show more are not presented,https://virtowayqa.testrail.io/index.php?/attachments/get/1000003713,,,"The facet block contains exactly 8 facet values (ex. brand in Soft Drinks category).
+
+
+
+
+
+",Medium,,Search by facets value (Desktop + Mobile),1,,Filters (Desktop and Mobile) > Search by facets value (Desktop + Mobile),,"Step Description:
+Go to the Catalog page &gt; Facets 
+Click on Color
+
+
+Expected Result:
+There is no Search field inside the facet block
+There is no **Show more** button
+There is no Scrolling within block
+
+
+
+  
+
+ ![](index.php?/attachments/get/cdeda9e8-f6d7-4808-b340-2079361e1d8c) ",,"There is no Search field inside the facet block
+There is no **Show more** button
+There is no Scrolling within block
+
+
+
+  
+
+ ![](index.php?/attachments/get/cdeda9e8-f6d7-4808-b340-2079361e1d8c) ",,"Go to the Catalog page &gt; Facets 
+Click on Color
+
+",0
+C389519,Facets > The number of values is equal/more than 8 > Show more is presented,,,,The facet block contains exactly 10 values,Medium,,Search by facets value (Desktop + Mobile),1,,Filters (Desktop and Mobile) > Search by facets value (Desktop + Mobile),,"Step Description:
+Go to Catalog &gt; Facets
+Click on Flavor
+Verify the Show more
+Expected Result:
+There is no search filed within the block
+**Show more** is present in the footer
+There is no Scrolling within block
+
+
+ ![](index.php?/attachments/get/122f5beb-b6bf-4f0a-86bb-98a16f0bfacf) 
+",,"There is no search filed within the block
+**Show more** is present in the footer
+There is no Scrolling within block
+
+
+ ![](index.php?/attachments/get/122f5beb-b6bf-4f0a-86bb-98a16f0bfacf) 
+",,"Go to Catalog &gt; Facets
+Click on Flavor
+Verify the Show more",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on Show more
+Expected Result:
+The block is extended and all 10 value is shown
+The Show More changes to Show Less in the footer",,"The block is extended and all 10 value is shown
+The Show More changes to Show Less in the footer",,Click on Show more,
+,,,,,,,,,,,,,"
+Step Description:
+Click on Show less
+Expected Result:
+The block is collapsed and the 8 value is shown
+Show More is displayed in the footer",,"The block is collapsed and the 8 value is shown
+Show More is displayed in the footer",,Click on Show less,
+C389520,Facets > The number of values is  more than 10 > Search field is shown,,,,The facet block contains 11 values (ex. LCD size).,Medium,,Search by facets value (Desktop + Mobile),1,,Filters (Desktop and Mobile) > Search by facets value (Desktop + Mobile),,"Step Description:
+Go to Catalog &gt; Facets
+Click on LCD Size
+Verify Search field
+Expected Result:
+The Search field is shown with Place holder: Search {facetName}
+
+**Show more** is present in the footer
+
+Only **8 values** are shown
+
+There is no Scrolling within block
+
+ ![](index.php?/attachments/get/5673acbc-2674-4985-8b1c-b9cc26e5a48f) 
+
+
+
+
+
+
+
+
+
+
+
+
+  
+",,"The Search field is shown with Place holder: Search {facetName}
+
+**Show more** is present in the footer
+
+Only **8 values** are shown
+
+There is no Scrolling within block
+
+ ![](index.php?/attachments/get/5673acbc-2674-4985-8b1c-b9cc26e5a48f) 
+
+
+
+
+
+
+
+
+
+
+
+
+  
+",,"Go to Catalog &gt; Facets
+Click on LCD Size
+Verify Search field",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on Show more
+Expected Result:
+The block is extended and all values are shown
+The Show More changes to Show Less in the footer",,"The block is extended and all values are shown
+The Show More changes to Show Less in the footer",,Click on Show more,
+,,,,,,,,,,,,,"
+Step Description:
+Click on Show less
+Expected Result:
+The block is collapsed and the 8 value is shown
+Show more is displayed in the footer",,"The block is collapsed and the 8 value is shown
+Show more is displayed in the footer",,Click on Show less,
+C389521,Facets > The number of vales more than 14 > Scrolling within block,,,,The facet block contains 25 values (ex. Brand).,Medium,,Search by facets value (Desktop + Mobile),1,,Filters (Desktop and Mobile) > Search by facets value (Desktop + Mobile),,"Step Description:
+Go to Catalog &gt; Facets
+Click on Brand
+
+Expected Result:
+The Search field is shown with Place holder: Search {facetName}
+
+**Show more** is present in the footer
+
+Only **8 values** are shown
+
+There is no Scrolling within the block",,"The Search field is shown with Place holder: Search {facetName}
+
+**Show more** is present in the footer
+
+Only **8 values** are shown
+
+There is no Scrolling within the block",,"Go to Catalog &gt; Facets
+Click on Brand
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on Show More
+Expected Result:
+The block is extended
+
+The Max height is 14 values
+
+There is Scrolling within a block
+
+The Show More changes to Show Less in the footer",,"The block is extended
+
+The Max height is 14 values
+
+There is Scrolling within a block
+
+The Show More changes to Show Less in the footer",,Click on Show More,
+,,,,,,,,,,,,,"
+Step Description:
+Try to scroll within the block
+Expected Result:
+The Search field is sticky
+It's possible to scroll the values to the end of the block
+",,"The Search field is sticky
+It's possible to scroll the values to the end of the block
+",,Try to scroll within the block,
+C389522,Facets > Search by value > case insensitive,,,,"The facet block contains more than 10 values
+
+***Example:***
+The ""Color"" facet block contains color options with different letter case variations.
+",Medium,,Search by facets value (Desktop + Mobile),1,,Filters (Desktop and Mobile) > Search by facets value (Desktop + Mobile),,"Step Description:
+Go to Catalog &gt; Facets
+Click on Color
+Enter a color value in uppercase in the search field (e.g., """"PINK"""")
+Select value
+Expected Result:
+The appropriate value is found
+The search results include products matching the entered color value
+
+  
+
+  
+",,"The appropriate value is found
+The search results include products matching the entered color value
+
+  
+
+  
+",,"Go to Catalog &gt; Facets
+Click on Color
+Enter a color value in uppercase in the search field (e.g., ""PINK"")
+Select value",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter a color value in lowercase in the search field (e.g., """"pink"""")
+Select value
+Expected Result:
+The appropriate value is found
+The search results include products matching the entered color value
+
+
+",,"The appropriate value is found
+The search results include products matching the entered color value
+
+
+",,"Enter a color value in lowercase in the search field (e.g., ""pink"")
+Select value",
+,,,,,,,,,,,,,"
+Step Description:
+Repeat steps 1-2 with different facet values and case variations for each facet block to ensure case-insensitive filtering.
+Expected Result:
+The appropriate value is found
+The search results include products matching the entered color value",,"The appropriate value is found
+The search results include products matching the entered color value",,Repeat steps 1-2 with different facet values and case variations for each facet block to ensure case-insensitive filtering.,
+C389523,Facets > Search by value > Invalid value,,,,The facet block contains more than 10 values (ex. Brand).,Medium,,Search by facets value (Desktop + Mobile),1,,Filters (Desktop and Mobile) > Search by facets value (Desktop + Mobile),,"Step Description:
+Go to catalog &gt; Facets
+Click on Brand
+
+
+
+Expected Result:
+The Search field is shown with Place holder: Search {facetName}",,The Search field is shown with Place holder: Search {facetName},,"Go to catalog &gt; Facets
+Click on Brand
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter a non-existent facet value in the search field.
+Expected Result:
+There is no matching value
+
+""""No results""""
+
+
+ ![](index.php?/attachments/get/e02c8838-0110-41a8-b378-6e11f0fc250b) 
+
+
+",,"There is no matching value
+
+""No results""
+
+
+ ![](index.php?/attachments/get/e02c8838-0110-41a8-b378-6e11f0fc250b) 
+
+
+",,Enter a non-existent facet value in the search field.,
+,,,,,,,,,,,,,"
+Step Description:
+Enter symbols such as %@*&^%#
+Expected Result:
+There is no matching value
+
+""""No results""""
+
+",,"There is no matching value
+
+""No results""
+
+",,Enter symbols such as %@*&^%#,
+,,,,,,,,,,,,,"
+Step Description:
+Enter whitespace characters
+Expected Result:
+There is no matching value
+
+""""No results""""
+
+",,"There is no matching value
+
+""No results""
+
+",,Enter whitespace characters,
+,,,,,,,,,,,,,"
+Step Description:
+Enter digits to facet block which contains only string value (ex.Brand, Color)
+Expected Result:
+There is no matching value
+
+""""No results""""
+
+",,"There is no matching value
+
+""No results""
+
+",,"Enter digits to facet block which contains only string value (ex.Brand, Color)",
+,,,,,,,,,,,,,"
+Step Description:
+Enter string value to block which contains only digits (ex. LCD size)
+Expected Result:
+There is no matching value
+
+""""No results""""
+
+",,"There is no matching value
+
+""No results""
+
+",,Enter string value to block which contains only digits (ex. LCD size),
+C389524,Facets > Search by value > Term facets,,,,The facet block contains more than 10 values,Medium,,Search by facets value (Desktop + Mobile),1,,Filters (Desktop and Mobile) > Search by facets value (Desktop + Mobile),,"Step Description:
+Click on Brand 
+Enter the Brand name into the search field
+Expected Result:
+The appropriate value is found",,The appropriate value is found,,"Click on Brand 
+Enter the Brand name into the search field",0
+,,,,,,,,,,,,,"
+Step Description:
+Select value
+Expected Result:
+The search results include products matching the entered Brand value",,The search results include products matching the entered Brand value,,Select value,
+,,,,,,,,,,,,,"
+Step Description:
+Clear the search field
+Expected Result:
+Selected values remain selected.",,Selected values remain selected.,,Clear the search field,
+C389525,Facets > Search by value > Range facets,https://virtowayqa.testrail.io/index.php?/attachments/get/1000003402,,,The Price facet block contains more than 10 values,Medium,,Search by facets value (Desktop + Mobile),1,,Filters (Desktop and Mobile) > Search by facets value (Desktop + Mobile),,"Step Description:
+Click on Price
+Enter the price into the search field
+Expected Result:
+The appropriate value is found
+
+ ![](index.php?/attachments/get/bfbe1caa-195f-4b9d-8ab5-14ba4b16da2d) 
+",,"The appropriate value is found
+
+ ![](index.php?/attachments/get/bfbe1caa-195f-4b9d-8ab5-14ba4b16da2d) 
+",,"Click on Price
+Enter the price into the search field",0
+,,,,,,,,,,,,,"
+Step Description:
+Select value
+Expected Result:
+The search results include products matching the entered price value",,The search results include products matching the entered price value,,Select value,
+,,,,,,,,,,,,,"
+Step Description:
+Clear the search field
+Expected Result:
+Selected values remain selected.",,Selected values remain selected.,,Clear the search field,
+C389526,Facets > Search on fly > less/equal 8 values are found > Show more is not presented,,,,The facet block contains 25 values (ex. Brand).,Medium,,Search by facets value (Desktop + Mobile),1,,Filters (Desktop and Mobile) > Search by facets value (Desktop + Mobile),,"Step Description:
+Enter 1 symbol into the Search field (ex. p)
+Expected Result:
+searching on the fly 
+
+less/equal 8 values are found
+
+**Show more** is not presented
+
+
+ ![](index.php?/attachments/get/25efdd93-194b-4cf6-9b50-5c85ea84073b) 
+
+
+  
+
+
+
+",,"searching on the fly 
+
+less/equal 8 values are found
+
+**Show more** is not presented
+
+
+ ![](index.php?/attachments/get/25efdd93-194b-4cf6-9b50-5c85ea84073b) 
+
+
+  
+
+
+
+",,Enter 1 symbol into the Search field (ex. p),0
+C389527,Facets > Search on fly > more than 8 values are found > Show more is presented,https://virtowayqa.testrail.io/index.php?/attachments/get/1000002865,,,The facet block contains 25 values (ex. Brand).,Medium,,Search by facets value (Desktop + Mobile),1,,Filters (Desktop and Mobile) > Search by facets value (Desktop + Mobile),,"Step Description:
+Enter 1 symbol into the Search field (ex. a)
+Expected Result:
+searching on the fly 
+
+more than 8 values are found
+
+**Show more** is presented
+
+There is no Scrolling within block
+
+
+
+ ![](index.php?/attachments/get/9b43f020-461e-4dfc-9c3e-e4707edd020a) 
+
+
+
+  
+
+
+
+",,"searching on the fly 
+
+more than 8 values are found
+
+**Show more** is presented
+
+There is no Scrolling within block
+
+
+
+ ![](index.php?/attachments/get/9b43f020-461e-4dfc-9c3e-e4707edd020a) 
+
+
+
+  
+
+
+
+",,Enter 1 symbol into the Search field (ex. a),0
+C389528,Facets > Search on fly > more than 14 values are found > Scrolling within block,https://virtowayqa.testrail.io/index.php?/attachments/get/1000000296,,,The facet block contains 25 values (ex. Brand).,Medium,,Search by facets value (Desktop + Mobile),1,,Filters (Desktop and Mobile) > Search by facets value (Desktop + Mobile),,"Step Description:
+Enter 1 symbol into the Search field (ex. e)
+
+Expected Result:
+searching on the fly
+
+more than 14 values are found
+
+**Show More** is presented
+",,"searching on the fly
+
+more than 14 values are found
+
+**Show More** is presented
+",,"Enter 1 symbol into the Search field (ex. e)
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on Show More
+Expected Result:
+The block is extended
+
+The Max height is 14 values
+
+There is Scrolling within a block
+
+The Show More changes to Show Less in the footer",,"The block is extended
+
+The Max height is 14 values
+
+There is Scrolling within a block
+
+The Show More changes to Show Less in the footer",,Click on Show More,
+,,,,,,,,,,,,,"
+Step Description:
+Try to scroll within the block
+Expected Result:
+The Search field is sticky
+It's possible to scroll the values to the end of the block
+
+
+ ![](index.php?/attachments/get/101ee508-eb0a-468f-83f0-c9762c7b709e) 
+
+
+
+",,"The Search field is sticky
+It's possible to scroll the values to the end of the block
+
+
+ ![](index.php?/attachments/get/101ee508-eb0a-468f-83f0-c9762c7b709e) 
+
+
+
+",,Try to scroll within the block,
+C389508,Purchased before flag,,,,"Global Settings > Order > Product >
+Event-based purchased product indexation 
+Enable purchased product indexation
+Enable purchased product store filter
+Store settings > Enable purchased product store filter
+
+
+1. User logged in store",Medium,,Purchased Before,1,"https://virtocommerce.atlassian.net/browse/VCST-3197
+
+Available from vc-frontend version 2.22.0",Filters (Desktop and Mobile) > Purchased Before,,"Step Description:
+1. Open catalog page
+2. Add to Cart Product_1 and Product_2
+3. Place an Order
+Expected Result:
+1. Order successfully created",,1. Order successfully created,,"1. Open catalog page
+2. Add to Cart Product_1 and Product_2
+3. Place an Order",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open catalog page
+2. Select filter - """"Purchased Before""""
+Expected Result:
+1. Product_1 and Product_2 appears in results",,1. Product_1 and Product_2 appears in results,,"1. Open catalog page
+2. Select filter - ""Purchased Before""",
+C389509,Purchased before products > New registered user,,,,"1. New user registered in store
+2. User doesn't have Orders",Medium,,Purchased Before,1,"https://virtocommerce.atlassian.net/browse/VCST-3197
+
+Available from vc-frontend version 2.22.0",Filters (Desktop and Mobile) > Purchased Before,,"Step Description:
+1. Open catalog page
+2. Choose filter - """"Purchased Before products""""
+Expected Result:
+1. The products with Purchased before badges are not returned because user doesn't have orders",,1. The products with Purchased before badges are not returned because user doesn't have orders,,"1. Open catalog page
+2. Choose filter - ""Purchased Before products""",0
+C389510,Purchased before products > display for Anonymous user,,,,,Medium,,Purchased Before,1,"https://virtocommerce.atlassian.net/browse/VCST-3197
+
+Available from vc-frontend version 2.22.0",Filters (Desktop and Mobile) > Purchased Before,,"Step Description:
+1. Open catalog page with Anonymous user
+2. Select filter - """"Purchased Before products""""
+Expected Result:
+1. The products with Purchased before badges are not returned because user doesn't have orders",,1. The products with Purchased before badges are not returned because user doesn't have orders,,"1. Open catalog page with Anonymous user
+2. Select filter - ""Purchased Before products""",0
+C389511,Purchased before products > Product with variations,,,,"1. User logged in store
+2. Product_1 has Variation_1, Variation_2",Medium,,Purchased Before,1,"https://virtocommerce.atlassian.net/browse/VCST-3197
+
+Available from vc-frontend version 2.22.0",Filters (Desktop and Mobile) > Purchased Before,,"Step Description:
+1. Open catalog page > Product_1
+2. Add to Cart Variation_1, Variation_2
+3. Place an Order
+Expected Result:
+1. Order successfully created",,1. Order successfully created,,"1. Open catalog page > Product_1
+2. Add to Cart Variation_1, Variation_2
+3. Place an Order",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open catalog page
+2. Choose filter - """"Purchased before""""
+Expected Result:
+1. Variation is returned with badge
+
+",,"1. Variation is returned with badge
+
+",,"1. Open catalog page
+2. Choose filter - ""Purchased before""",
+C406199,Purchased before products > PDP > Product with variations,,,,"1. User logged in store
+2. Product_1 has Variation_1, Variation_2",Medium,,Purchased Before,1,"https://virtocommerce.atlassian.net/browse/VCST-3197
+
+Available from vc-frontend version 2.22.0",Filters (Desktop and Mobile) > Purchased Before,,"Step Description:
+1. Open catalog page > Product_1
+2. Add to Cart Variation_1, Variation_2
+3. Place an Order
+Expected Result:
+1. Order successfully created",,1. Order successfully created,,"1. Open catalog page > Product_1
+2. Add to Cart Variation_1, Variation_2
+3. Place an Order",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to PDP with variations
+2. Click on Filter > Select Purchased before filter > Apply
+Expected Result:
+1. Only purchased before variations are returned
+
+",,"1. Only purchased before variations are returned
+
+",,"1. Go to PDP with variations
+2. Click on Filter > Select Purchased before filter > Apply",
+C389512,Purchased before products > Configurable products,,,,"1. User logged in store
+2. Configurable product_1 with Parts
+3. Parts with available products",Medium,,Purchased Before,1,"https://virtocommerce.atlassian.net/browse/VCST-3197
+
+Available from vc-frontend version 2.22.0",Filters (Desktop and Mobile) > Purchased Before,,"Step Description:
+1. Open catalog page with Configurable product_1 
+2. Add to Cart Configurable product_1 
+3. Place an Order
+Expected Result:
+1. Order successfully created",,1. Order successfully created,,"1. Open catalog page with Configurable product_1 
+2. Add to Cart Configurable product_1 
+3. Place an Order",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open catalog page
+2. Choose filter - """"Previously purchased products""""
+Expected Result:
+1. Configurable product_1 appears in results",,1. Configurable product_1 appears in results,,"1. Open catalog page
+2. Choose filter - ""Previously purchased products""",
+C389563,product_filters_sorting: true > Order for facets is ascending,,,,"Set up setting in the config file as:
+
+product_filters_sorting: true
+product_filters_sorting_direction"": ""asc""
+",Medium,,Sorting facets,0,,Sorting facets,,"Step Description:
+Go to store &gt; open Aggregation property
+
+Change order for Brand or Color by d&d
+
+Save
+
+
+Expected Result:
+The properties are saved",,The properties are saved,,"Go to store &gt; open Aggregation property
+
+Change order for Brand or Color by d&d
+
+Save
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to storefront &gt; Open any category
+
+Check the order for facets 
+Expected Result:
+Order for facets is ascending (from A-Z order) and different than in the admin",,Order for facets is ascending (from A-Z order) and different than in the admin,,"Go to storefront &gt; Open any category
+
+Check the order for facets ",
+C389564,product_filters_sorting: true > Order for facets is descending,,,,"Set up setting in the config file as:
+
+product_filters_sorting: true
+product_filters_sorting_direction"": ""desc""
+",Medium,,Sorting facets,0,,Sorting facets,,"Step Description:
+Go to store &gt; open Aggregation property
+
+Change order for Brand or Color by d&d
+
+Save
+
+
+Expected Result:
+The properties are saved",,The properties are saved,,"Go to store &gt; open Aggregation property
+
+Change order for Brand or Color by d&d
+
+Save
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to storefront &gt; Open any category
+
+Check the order for facets 
+Expected Result:
+Order for facets is descending (from Z-A order) and different than in the admin",,Order for facets is descending (from Z-A order) and different than in the admin,,"Go to storefront &gt; Open any category
+
+Check the order for facets ",
+C389565,product_filters_sorting: false > Order for facets the same as in the admin panel,,,,"Set up setting in the config file as:
+
+product_filters_sorting: false
+product_filters_sorting_direction"": ""asc""
+",Medium,,Sorting facets,0,,Sorting facets,,"Step Description:
+Go to store &gt; open Aggregation property
+
+Change order for Brand or Color by d&d
+
+Save
+
+
+Expected Result:
+The properties are saved
+
+ ![](index.php?/attachments/get/7111776e-8676-4236-9cc4-008aba6a864d) 
+
+",,"The properties are saved
+
+ ![](index.php?/attachments/get/7111776e-8676-4236-9cc4-008aba6a864d) 
+
+",,"Go to store &gt; open Aggregation property
+
+Change order for Brand or Color by d&d
+
+Save
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to storefront &gt; Open any category
+
+Check the order for facets 
+Expected Result:
+Order for facets the same as in admin
+
+ ![](index.php?/attachments/get/399ff6b5-76c4-4ee5-9272-06a55e706693) 
+
+",,"Order for facets the same as in admin
+
+ ![](index.php?/attachments/get/399ff6b5-76c4-4ee5-9272-06a55e706693) 
+
+",,"Go to storefront &gt; Open any category
+
+Check the order for facets ",
+C389598,Product has only list price + promotion,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000003968, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000883, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002670",,,"Product_1 has only the list price
+There is no active promo on the Product_1
+
+
+",Medium,,Category page,0,,Category page,,"Step Description:
+Go to storefront &gt; Catelog &gt; Catagory page
+Find product_1
+
+
+
+
+Expected Result:
+The product has only the list price (green color)
+
+![](index.php?/attachments/get/93ecc2a6-7f3a-4df9-84a0-25b93e1f2166)     
+
+
+",,"The product has only the list price (green color)
+
+![](index.php?/attachments/get/93ecc2a6-7f3a-4df9-84a0-25b93e1f2166)     
+
+
+",,"Go to storefront &gt; Catelog &gt; Catagory page
+Find product_1
+
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to the admin side
+Create a promo with a discount on Product_1
+Go to storefront 
+Find product_1 on the category page
+
+ ![](index.php?/attachments/get/df61ec17-3c95-4948-be4d-d6b9fe232512)     
+
+
+Expected Result:
+The discounted price is displayed n Green color
+The List price is displayed in Grey color and Strikethrough
+The discount percentage is calculated and displayed as a label on the corner (if discount percentage more than 0.05)
+
+![](index.php?/attachments/get/2f768b77-e1d8-41eb-8725-196309309e41)     
+",,"The discounted price is displayed n Green color
+The List price is displayed in Grey color and Strikethrough
+The discount percentage is calculated and displayed as a label on the corner (if discount percentage more than 0.05)
+
+![](index.php?/attachments/get/2f768b77-e1d8-41eb-8725-196309309e41)     
+",,"Go to the admin side
+Create a promo with a discount on Product_1
+Go to storefront 
+Find product_1 on the category page
+
+ ![](index.php?/attachments/get/df61ec17-3c95-4948-be4d-d6b9fe232512)     
+
+",
+C389599,Product has list and sale price,,,"The sale price is displayed in Green color
+
+List price is displayed in Grey color and Strikethrough
+
+The discount percentage is calculated and displayed as a label on the corner
+
+  
+
+
+","Product_1 has the list and sale price
+There is no active promo",Medium,,Category page,0,,Category page,"Go to Catalog > Category page
+Find Product_1",,,,,,0
+C389600,Product has the list / sale price and the promotion,,,,"Product_1 has the list and sale price
+Create a promo with a discount on Product_1
+
+![](index.php?/attachments/get/3f7968e9-c6c3-48c4-b21d-76170135de8f) 
+",Medium,,Category page,0,,Category page,,"Step Description:
+Go to storefront &gt; Catalog &gt; Catagory page
+Find product_1
+
+  
+
+Expected Result:
+- The static discount is summed up with a promo discount
+
+Static discount = 10 
+Promo discount = 15 
+
+15 + 10 = 25 
+
+- The actual price is displayed in Green color
+
+130 - 25 = 105
+
+- The List price is displayed in Grey color and Strikethrough
+
+130
+
+- The discount percentage is calculated and displayed as a label on the corner
+
+25/130*100 = 0.19%
+
+![](index.php?/attachments/get/562d0024-f0ce-4952-a2aa-e2856fc2f2a2)    
+
+
+",,"- The static discount is summed up with a promo discount
+
+Static discount = 10 
+Promo discount = 15 
+
+15 + 10 = 25 
+
+- The actual price is displayed in Green color
+
+130 - 25 = 105
+
+- The List price is displayed in Grey color and Strikethrough
+
+130
+
+- The discount percentage is calculated and displayed as a label on the corner
+
+25/130*100 = 0.19%
+
+![](index.php?/attachments/get/562d0024-f0ce-4952-a2aa-e2856fc2f2a2)    
+
+
+",,"Go to storefront &gt; Catalog &gt; Catagory page
+Find product_1
+
+  
+",0
+C389601,Promo label > discountPercent more than 0.05 > Label displays,https://virtowayqa.testrail.io/index.php?/attachments/get/1000003146,,"The label displays for Product_1
+
+![](index.php?/attachments/get/ae7c83f5-9105-435e-9863-07c08b0535f5) 
+","Product_1 has list /sale price (ex. 1233 / 1150)
+There is no active promo for product_1",Medium,,Category page,0,,Category page,"Go to storefront > Catalog > Catagory page
+Find product_1",,,,,,0
+C389602,Promo label > discountPercent less than 0.05 > Label is not displayed,https://virtowayqa.testrail.io/index.php?/attachments/get/1000003269,,"The label is not displayed for Product_1
+
+![](index.php?/attachments/get/b20198a1-2ccd-4682-b32a-0bb261bf4d54)   
+","Product_1 has list /sale price (ex. 1233 / 1190)
+There is no active promo for product_1",Medium,,Category page,0,,Category page,"Go to storefront > Catalog > Catagory page
+Find product_1",,,,,,0
+C389603,Promo label > discountPercent  = 0.05 > Label  displays,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000002770, https://virtowayqa.testrail.io/index.php?/attachments/get/1000003743",,"The label displays for Product_1
+
+
+ ![](index.php?/attachments/get/d359cb6f-afa3-4664-b6e1-5dff8b1e9685)    
+","Product_1 has list /sale price (ex. 1233 / 1190)
+The product has an active promo 15$ off for the Product_1
+
+![](index.php?/attachments/get/98bd994d-76ff-43cd-9eaf-42d64ea6c673) 
+
+
+
+ 
+",Medium,,Category page,0,,Category page,"Go to storefront > Catalog > Catagory page
+Find product_1",,,,,,0

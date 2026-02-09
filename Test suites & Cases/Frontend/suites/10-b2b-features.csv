@@ -1,0 +1,5151 @@
+ID,Title,Attachments,Estimate,Expected Result,Preconditions,Priority,References,Section,Section Depth,Section Description,Section Hierarchy,Steps,Steps,Steps (Additional Info),Steps (Expected Result),Steps (References),Steps (Step),is_converted
+C389086,Drop-down list with Organizations,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001402,,"<ol>
+<li>Drop-down list with Organizations shown</li>
+<li>The current organization is selected</li>
+</ol>
+
+<hr />
+
+<p><span class=""""markdown-img-container""""><img src='index.php?/attachments/get/4c06b829-0c7e-482c-9f3d-1655b0ceda70' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-4c06b829-0c7e-482c-9f3d-1655b0ceda70' data-attachment-id='4c06b829-0c7e-482c-9f3d-1655b0ceda70' data-entity-id='389086' /></span></p>
+","<ol>
+<li>Go to admin site</li>
+<li>Contacts > Open the contact1</li>
+<li>Assign multiple organizations to contact1</li>
+</ol>
+",Low,,Multi Organization Support,0,,Multi Organization Support,"<ol>
+<li><p>Sign in to the store as a contact1</p></li>
+<li><p>Click on user name in the top right corner</p></li>
+</ol>
+",,,,,,1
+C389087,Switch between organizations,https://virtowayqa.testrail.io/index.php?/attachments/get/1000000605,,,"Go to admin site
+Contacts > Open the contact1
+Assign multiple organizations to contact1
+Sign in to the store as a contact1",Medium,,Multi Organization Support,0,,Multi Organization Support,,"Step Description:
+Click on User name in the top right corner
+
+
+Expected Result:
+The List of organizations is shown
+The radio button is checked near the current organization
+
+---
+
+ ![](index.php?/attachments/get/204d5956-a985-4172-9e71-c807d7733a44) 
+
+",,"The List of organizations is shown
+The radio button is checked near the current organization
+
+---
+
+ ![](index.php?/attachments/get/204d5956-a985-4172-9e71-c807d7733a44) 
+
+",,"Click on User name in the top right corner
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Switch between the organizations
+Expected Result:
+The Organization is selected
+The page is refreshed
+The title of organization is updated in the header
+The Cart is updated
+All information for Organization is updated",,"The Organization is selected
+The page is refreshed
+The title of organization is updated in the header
+The Cart is updated
+All information for Organization is updated",,Switch between the organizations,
+C389088,Select the organization > Logout > Login,,,,"1. Go to admin site
+2. Contacts > Open the contact1
+3. Assign multiple organizations to contact1
+4. Sign in to the store as a contact1",High,,Multi Organization Support,0,,Multi Organization Support,,"Step Description:
+Click on User name in the top right corner
+Select the organization2
+Expected Result:
+1. The Organization is selected
+2. The title of organization is updated in the header
+3. The Cart is updated
+4. All information for Organization2 is updated",,"1. The Organization is selected
+2. The title of organization is updated in the header
+3. The Cart is updated
+4. All information for Organization2 is updated",,"Click on User name in the top right corner
+Select the organization2",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on User name in the top right corner
+Logout
+Expected Result:
+The user is logout from account",,The user is logout from account,,"Click on User name in the top right corner
+Logout",
+,,,,,,,,,,,,,"
+Step Description:
+Login as a contact1
+Check the organization name
+Expected Result:
+The Organization2 is selected",,The Organization2 is selected,,"Login as a contact1
+Check the organization name",
+,,,,,,,,,,,,,"
+Step Description:
+Select another organization
+Repeat all steps
+
+
+Expected Result:
+The last selected organization should saved",,The last selected organization should saved,,"Select another organization
+Repeat all steps
+
+",
+C389089,Select the organization > Logout > Login under User2 from Org2,,,,"1. Go to admin site
+2. Contacts > Open the contact1
+3. Assign multiple organizations to contact1
+4. Sign in to the store as a contact1",Medium,,Multi Organization Support,0,,Multi Organization Support,,"Step Description:
+Select Organization1
+Logout
+Sign in under contact2 from Org2
+Expected Result:
+The User2 is sign-in under Organization2",,The User2 is sign-in under Organization2,,"Select Organization1
+Logout
+Sign in under contact2 from Org2",0
+,,,,,,,,,,,,,"
+Step Description:
+Logout
+Sign in under contact1
+
+Expected Result:
+The Organization1 is selected",,The Organization1 is selected,,"Logout
+Sign in under contact1
+",
+C396959,Impersonate > switch between organization,,,,,Medium,,Multi Organization Support,0,,Multi Organization Support,,"Step Description:
+Go to admin → Security → Search kutasina.elena+user4@gmail.com → Open
+
+Click on Login on behalf → Use admin credential for login
+
+Change organization 
+Expected Result:
+The organization should be changed",,The organization should be changed,,"Go to admin → Security → Search kutasina.elena+user4@gmail.com → Open
+
+Click on Login on behalf → Use admin credential for login
+
+Change organization ",0
+C398685,Default Organization = Selected,,,,"The customer has multiple organizations (OrgA, OrgB, etc.). Default company is set.",High,,Sign-in under Organization account,1,"https://virtocommerce.atlassian.net/browse/VCST-2630
+
+**Priority:**
+
+1. Selected Organization - only if Selected Organization in Default company + Member of company.
+
+2. Default Company
+
+3. First org from Member of company
+
+---
+
+ ![](index.php?/attachments/get/1000004617) 
+",Multi Organization Support > Sign-in under Organization account,,"Step Description:
+1. Sign in to the frontend as a customer.
+
+2. Verify that the customer is logged into the Default company.
+
+3. Sign Out - Sign In
+Expected Result:
+- Customer is logged into the Default company.
+",,"- Customer is logged into the Default company.
+",,"1. Sign in to the frontend as a customer.
+
+2. Verify that the customer is logged into the Default company.
+
+3. Sign Out - Sign In",0
+C398686,Verify Organization Selection When Default Company Is Empty,,,,The customer has multiple organizations. Default company is empty. The customer is a member of at least one company.,High,,Sign-in under Organization account,1,"https://virtocommerce.atlassian.net/browse/VCST-2630
+
+**Priority:**
+
+1. Selected Organization - only if Selected Organization in Default company + Member of company.
+
+2. Default Company
+
+3. First org from Member of company
+
+---
+
+ ![](index.php?/attachments/get/1000004617) 
+",Multi Organization Support > Sign-in under Organization account,,"Step Description:
+1. Sign in to the frontend as a customer.
+2. Verify that the customer is logged into the first organization from the list of member companies.
+
+Expected Result:
+- Customer is logged into the first organization from the list of member companies.
+",,"- Customer is logged into the first organization from the list of member companies.
+",,"1. Sign in to the frontend as a customer.
+2. Verify that the customer is logged into the first organization from the list of member companies.
+",0
+C398687,Verify Organization Switching,,,,The customer is logged into a default or assigned organization.,High,,Sign-in under Organization account,1,"https://virtocommerce.atlassian.net/browse/VCST-2630
+
+**Priority:**
+
+1. Selected Organization - only if Selected Organization in Default company + Member of company.
+
+2. Default Company
+
+3. First org from Member of company
+
+---
+
+ ![](index.php?/attachments/get/1000004617) 
+",Multi Organization Support > Sign-in under Organization account,,"Step Description:
+1. Switch to another organization (e.g., OrgB) from the frontend.
+2. Sign Out
+3. Sign In
+
+Expected Result:
+A customer Sign In under Last Selected OrgB",,A customer Sign In under Last Selected OrgB,,"1. Switch to another organization (e.g., OrgB) from the frontend.
+2. Sign Out
+3. Sign In
+",0
+C398688,Verify Organization Persistence After Sign Out and Sign In on Another Browser,,,,The customer has switched to OrgB. Customer.SelectedOrganization is set to OrgB.,Medium,,Sign-in under Organization account,1,"https://virtocommerce.atlassian.net/browse/VCST-2630
+
+**Priority:**
+
+1. Selected Organization - only if Selected Organization in Default company + Member of company.
+
+2. Default Company
+
+3. First org from Member of company
+
+---
+
+ ![](index.php?/attachments/get/1000004617) 
+",Multi Organization Support > Sign-in under Organization account,,"Step Description:
+1. Sign out from the application.
+2. Open the application in another browser.
+3. Sign in as the same customer.
+4. Verify that the customer is logged into OrgB.
+5. Check the API call to /token to ensure that the OrganizationId is OrgB.
+Expected Result:
+- The customer is assigned to OrgB upon signing in.
+- API call /token contains OrganizationId of OrgB.
+- Customer.SelectedOrganization retains OrgB.",,"- The customer is assigned to OrgB upon signing in.
+- API call /token contains OrganizationId of OrgB.
+- Customer.SelectedOrganization retains OrgB.",,"1. Sign out from the application.
+2. Open the application in another browser.
+3. Sign in as the same customer.
+4. Verify that the customer is logged into OrgB.
+5. Check the API call to /token to ensure that the OrganizationId is OrgB.",0
+C398690,Invite member > Assign multiple organization > Sign In under First org,,,,"1. Company owner invited a new member
+2. Invited member completed Registration
+3. Assign multiple organization for a new member (from admin site > Contacts)
+4. Default company does not exist.",High,,Sign-in under Organization account,1,"https://virtocommerce.atlassian.net/browse/VCST-2630
+
+**Priority:**
+
+1. Selected Organization - only if Selected Organization in Default company + Member of company.
+
+2. Default Company
+
+3. First org from Member of company
+
+---
+
+ ![](index.php?/attachments/get/1000004617) 
+",Multi Organization Support > Sign-in under Organization account,,"Step Description:
+1. Sign in as a customer.
+2. Verify the priority for selecting an organization
+
+  
+Expected Result:
+A new member has not a selected Organization, that is why the First organization from the Member list is returned.",,"A new member has not a selected Organization, that is why the First organization from the Member list is returned.",,"1. Sign in as a customer.
+2. Verify the priority for selecting an organization
+
+  ",0
+C398691,Invite member > Assign multiple organization > Sign In under Default company,,,,"1. Company owner invited a new member
+2. Invited member completed Registration
+3. Assign multiple organization for a new member (from admin site > Contacts)
+4. Set a Default company.",High,,Sign-in under Organization account,1,"https://virtocommerce.atlassian.net/browse/VCST-2630
+
+**Priority:**
+
+1. Selected Organization - only if Selected Organization in Default company + Member of company.
+
+2. Default Company
+
+3. First org from Member of company
+
+---
+
+ ![](index.php?/attachments/get/1000004617) 
+",Multi Organization Support > Sign-in under Organization account,,"Step Description:
+1. Sign in as a customer.
+2. Verify the priority for selecting an organization
+
+  
+Expected Result:
+A new member sign in under Default Company",,A new member sign in under Default Company,,"1. Sign in as a customer.
+2. Verify the priority for selecting an organization
+
+  ",0
+C412652,Remove company user from Organization > Current Organization is updated,,,,"The customer has multiple organizations (OrgA, OrgB, etc.). Default company is OrgA.",High,,Sign-in under Organization account,1,"https://virtocommerce.atlassian.net/browse/VCST-2630
+
+**Priority:**
+
+1. Selected Organization - only if Selected Organization in Default company + Member of company.
+
+2. Default Company
+
+3. First org from Member of company
+
+---
+
+ ![](index.php?/attachments/get/1000004617) 
+",Multi Organization Support > Sign-in under Organization account,,"Step Description:
+Go to frontend
+Sign-in under Company User
+Sign-out
+Expected Result:
+The current organization is OrgA",,The current organization is OrgA,,"Go to frontend
+Sign-in under Company User
+Sign-out",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to admin site
+Open Contacts
+Find User with multiple organization
+Open contact details
+Remove OrgA
+Save
+Expected Result:
+The default organization is changed to OrgB",,The default organization is changed to OrgB,,"Go to admin site
+Open Contacts
+Find User with multiple organization
+Open contact details
+Remove OrgA
+Save",
+,,,,,,,,,,,,,"
+Step Description:
+Go to frontend
+Sign-in under Company User
+Expected Result:
+The current organization is OrgB",,The current organization is OrgB,,"Go to frontend
+Sign-in under Company User",
+C413993,Search Bar Visibility - More Than 10 Organizations,,,"<p>Search bar is visible at the top of the organization list; Search bar has a native input field appearance; Search bar is positioned above the organization list items</p>
+","<p>User is logged in as Sales Rep; User belongs to more than 10 organizations</p>
+",Critical,https://github.com/VirtoCommerce/vc-testing-module,Multi-organizations > Search the org in the list,1,"<p><a data-fr-linked=""""true"""" href=""""https://virtocommerce.atlassian.net/browse/VCST-4357"""" id=""""isPasted"""">https://virtocommerce.atlassian.net/browse/VCST-4357</a></p><p>available from vc-frontend 2.38.0</p>",Multi Organization Support > Multi-organizations > Search the org in the list,"<ol>
+<li>Navigate to the organization selector/dropdown</li>
+<li>Click to expand the organization list</li>
+<li>Observe the dropdown content</li>
+</ol>
+",,,,,,1
+C413994,Search Bar Visibility - 10 or Fewer Organizations,,,"<p>Search bar is NOT visible; Organization list is displayed without a search field; All organizations are visible in the list</p>
+","<p>User is logged in as Sales Rep; User belongs to exactly 10 or fewer organizations</p>
+",Critical,https://github.com/VirtoCommerce/vc-testing-module,Multi-organizations > Search the org in the list,1,"<p><a data-fr-linked=""""true"""" href=""""https://virtocommerce.atlassian.net/browse/VCST-4357"""" id=""""isPasted"""">https://virtocommerce.atlassian.net/browse/VCST-4357</a></p><p>available from vc-frontend 2.38.0</p>",Multi Organization Support > Multi-organizations > Search the org in the list,"<ol>
+<li>Navigate to the organization selector/dropdown</li>
+<li>Click to expand the organization list</li>
+<li>Observe the dropdown content</li>
+</ol>
+",,,,,,1
+C413995,Search Bar Visibility - Exactly 10 Organizations (Boundary),,,"<p>Search bar is NOT visible (threshold is >10, not ≥10); All 10 organizations are displayed in the list</p>
+","<p>User is logged in as Sales Rep; User belongs to exactly 10 organizations</p>
+",High,,Multi-organizations > Search the org in the list,1,"<p><a data-fr-linked=""""true"""" href=""""https://virtocommerce.atlassian.net/browse/VCST-4357"""" id=""""isPasted"""">https://virtocommerce.atlassian.net/browse/VCST-4357</a></p><p>available from vc-frontend 2.38.0</p>",Multi Organization Support > Multi-organizations > Search the org in the list,"<ol>
+<li>Navigate to the organization selector/dropdown</li>
+<li>Click to expand the organization list</li>
+<li>Count the organizations in the list</li>
+<li>Observe if search bar is present</li>
+</ol>
+",,,,,,1
+C413996,Search Bar Visibility - Exactly 11 Organizations (Boundary),,,"<p>Search bar IS visible (threshold is >10); Search bar is positioned at the top of the list; All 11 organizations are initially displayed</p>
+","<p>User is logged in as Sales Rep; User belongs to exactly 11 organizations</p>
+",High,https://github.com/VirtoCommerce/vc-testing-module,Multi-organizations > Search the org in the list,1,"<p><a data-fr-linked=""""true"""" href=""""https://virtocommerce.atlassian.net/browse/VCST-4357"""" id=""""isPasted"""">https://virtocommerce.atlassian.net/browse/VCST-4357</a></p><p>available from vc-frontend 2.38.0</p>",Multi Organization Support > Multi-organizations > Search the org in the list,"<ol>
+<li>Navigate to the organization selector/dropdown</li>
+<li>Click to expand the organization list</li>
+<li>Count the organizations in the list</li>
+<li>Observe if search bar is present</li>
+</ol>
+",,,,,,1
+C413997,Basic Search Functionality - Full Name Match,,,<p>List is filtered to show current organization and only matching organization(s); The matching organization is highlighted or visible; Non-matching organizations are hidden from the list</p>,"<p>User has access to more than 10 organizations; Search bar is visible; Known organization name exists</p>
+",Critical,https://github.com/VirtoCommerce/vc-testing-module,Multi-organizations > Search the org in the list,1,"<p><a data-fr-linked=""""true"""" href=""""https://virtocommerce.atlassian.net/browse/VCST-4357"""" id=""""isPasted"""">https://virtocommerce.atlassian.net/browse/VCST-4357</a></p><p>available from vc-frontend 2.38.0</p>",Multi Organization Support > Multi-organizations > Search the org in the list,"<ol>
+<li>Open the organization dropdown</li>
+<li>Enter the full organization name in the search field</li>
+<li>Observe the filtered results</li>
+</ol>
+",,,,,,1
+C413998,Search Functionality - Partial Name Match,,,"<p>List shows all organizations containing the partial keyword; Results include organizations where the keyword appears at beginning, middle, or end; Filtering is case-insensitive</p>
+","<p>User has access to more than 10 organizations; Search bar is visible</p>
+",Critical,https://github.com/VirtoCommerce/vc-testing-module,Multi-organizations > Search the org in the list,1,"<p><a data-fr-linked=""""true"""" href=""""https://virtocommerce.atlassian.net/browse/VCST-4357"""" id=""""isPasted"""">https://virtocommerce.atlassian.net/browse/VCST-4357</a></p><p>available from vc-frontend 2.38.0</p>",Multi Organization Support > Multi-organizations > Search the org in the list,"<ol>
+<li>Open the organization dropdown</li>
+<li>Enter a partial organization name (e.g., 'Acme')</li>
+<li>Observe the filtered results</li>
+</ol>
+",,,,,,1
+C413999,Search Functionality - Case Insensitivity,,,"<p>All three searches return the same results; Search is case-insensitive for all variations</p>
+","<p>User has access to more than 10 organizations; Search bar is visible; Known organization name exists</p>
+",High,https://github.com/VirtoCommerce/vc-testing-module,Multi-organizations > Search the org in the list,1,"<p><a data-fr-linked=""""true"""" href=""""https://virtocommerce.atlassian.net/browse/VCST-4357"""" id=""""isPasted"""">https://virtocommerce.atlassian.net/browse/VCST-4357</a></p><p>available from vc-frontend 2.38.0</p>",Multi Organization Support > Multi-organizations > Search the org in the list,"<ol>
+<li>Open the organization dropdown</li>
+<li>Search with lowercase: 'acme'</li>
+<li>Note the results</li>
+<li>Clear search</li>
+<li>Search with uppercase: 'ACME'</li>
+<li>Note the results</li>
+<li>Clear search</li>
+<li>Search with mixed case: 'AcMe'</li>
+<li>Note the results</li>
+</ol>
+",,,,,,1
+C414000,Search Functionality - No Results Found,,,"<p>List shows empty state or 'No results found' message; UI handles empty state gracefully; User can clear search and see full list again</p>
+","<p>User has access to more than 10 organizations; Search bar is visible</p>
+",High,https://github.com/VirtoCommerce/vc-testing-module,Multi-organizations > Search the org in the list,1,"<p><a data-fr-linked=""""true"""" href=""""https://virtocommerce.atlassian.net/browse/VCST-4357"""" id=""""isPasted"""">https://virtocommerce.atlassian.net/browse/VCST-4357</a></p><p>available from vc-frontend 2.38.0</p>",Multi Organization Support > Multi-organizations > Search the org in the list,"<ol>
+<li>Open the organization dropdown</li>
+<li>Enter a search term that doesn't match any organization (e.g., 'xyz123nonexistent')</li>
+<li>Observe the dropdown behavior</li>
+</ol>
+",,,,,,1
+C414001,Search Functionality - Clear Search,,,"<p>Full organization list is restored; All organizations are visible again; Search field is empty</p>
+","<p>User has access to more than 10 organizations; Search has been performed and list is filtered</p>
+",High,https://github.com/VirtoCommerce/vc-testing-module,Multi-organizations > Search the org in the list,1,"<p><a data-fr-linked=""""true"""" href=""""https://virtocommerce.atlassian.net/browse/VCST-4357"""" id=""""isPasted"""">https://virtocommerce.atlassian.net/browse/VCST-4357</a></p><p>available from vc-frontend 2.38.0</p>",Multi Organization Support > Multi-organizations > Search the org in the list,"<ol>
+<li>Open the organization dropdown</li>
+<li>Enter a search term to filter the list</li>
+<li>Verify list is filtered</li>
+<li>Clear the search field</li>
+<li>Observe the list</li>
+</ol>
+",,,,,,1
+C414002,Search Functionality - Special Characters,,,"<p>No JavaScript errors in console; Application handles special characters gracefully; No XSS vulnerability; Either shows 'no results' or filters appropriately</p>
+","<p>User has access to more than 10 organizations; Search bar is visible</p>
+",Medium,https://github.com/VirtoCommerce/vc-testing-module,Multi-organizations > Search the org in the list,1,"<p><a data-fr-linked=""""true"""" href=""""https://virtocommerce.atlassian.net/browse/VCST-4357"""" id=""""isPasted"""">https://virtocommerce.atlassian.net/browse/VCST-4357</a></p><p>available from vc-frontend 2.38.0</p>",Multi Organization Support > Multi-organizations > Search the org in the list,"<ol>
+<li>Open the organization dropdown</li>
+<li>Enter special characters: !@#$%^&*()</li>
+<li>Observe behavior</li>
+<li>Clear search</li>
+<li>Enter HTML/script tags: <script>alert('test')</script></li>
+<li>Observe behavior</li>
+</ol>
+",,,,,,1
+C414003,Search Functionality - Leading/Trailing Spaces,,,"<p>Search works correctly with leading/trailing whitespace; Whitespace is trimmed and correct results are displayed</p>
+","<p>User has access to more than 10 organizations; Search bar is visible; Known organization name exists</p>
+",Medium,,Multi-organizations > Search the org in the list,1,"<p><a data-fr-linked=""""true"""" href=""""https://virtocommerce.atlassian.net/browse/VCST-4357"""" id=""""isPasted"""">https://virtocommerce.atlassian.net/browse/VCST-4357</a></p><p>available from vc-frontend 2.38.0</p>",Multi Organization Support > Multi-organizations > Search the org in the list,"<ol>
+<li>Open the organization dropdown</li>
+<li>Enter search with leading spaces: '   Acme'</li>
+<li>Note the results</li>
+<li>Clear search</li>
+<li>Enter search with trailing spaces: 'Acme   '</li>
+<li>Note the results</li>
+</ol>
+",,,,,,1
+C414005,Search Functionality - Organization Selection After Search,,,"<p>Organization is successfully selected; Dropdown closes after selection; Selected organization is now active/displayed; Search field is cleared or ready for next use</p>
+","<p>User has access to more than 10 organizations; Search bar is visible</p>
+",Critical,https://github.com/VirtoCommerce/vc-testing-module,Multi-organizations > Search the org in the list,1,"<p><a data-fr-linked=""""true"""" href=""""https://virtocommerce.atlassian.net/browse/VCST-4357"""" id=""""isPasted"""">https://virtocommerce.atlassian.net/browse/VCST-4357</a></p><p>available from vc-frontend 2.38.0</p>",Multi Organization Support > Multi-organizations > Search the org in the list,"<ol>
+<li>Open the organization dropdown</li>
+<li>Enter a search term to filter the list</li>
+<li>Click on one of the filtered organizations</li>
+<li>Observe the selection</li>
+</ol>
+",,,,,,1
+C414006,Search Functionality - Keyboard Navigation,,,"<p>Arrow keys navigate through filtered results; Selected/highlighted item is visually indicated; Enter key selects the highlighted organization; Navigation wraps or stops at list boundaries</p>
+","<p>User has access to more than 10 organizations; Search bar is visible</p>
+",Low,,Multi-organizations > Search the org in the list,1,"<p><a data-fr-linked=""""true"""" href=""""https://virtocommerce.atlassian.net/browse/VCST-4357"""" id=""""isPasted"""">https://virtocommerce.atlassian.net/browse/VCST-4357</a></p><p>available from vc-frontend 2.38.0</p>",Multi Organization Support > Multi-organizations > Search the org in the list,"<ol>
+<li>Open the organization dropdown</li>
+<li>Enter a search term to filter the list</li>
+<li>Use Arrow Down key to navigate results</li>
+<li>Use Arrow Up key to navigate up</li>
+<li>Press Enter to select highlighted item</li>
+</ol>
+",,,,,,1
+C414007,Search Input Placeholder and Styling,,,"<p>Search input has appropriate placeholder text; Search input styling matches the design system; Search icon is present (if per design); Focus state is visually indicated</p>
+","<p>User has access to more than 10 organizations</p>
+",Low,,Multi-organizations > Search the org in the list,1,"<p><a data-fr-linked=""""true"""" href=""""https://virtocommerce.atlassian.net/browse/VCST-4357"""" id=""""isPasted"""">https://virtocommerce.atlassian.net/browse/VCST-4357</a></p><p>available from vc-frontend 2.38.0</p>",Multi Organization Support > Multi-organizations > Search the org in the list,"<ol>
+<li>Open the organization dropdown</li>
+<li>Observe the search input field appearance</li>
+<li>Check for placeholder text</li>
+<li>Check for search icon (if applicable)</li>
+</ol>
+",,,,,,1
+C414008,[Need to clarify] Search Persistence Across Dropdown Toggle,,,"<p>Search field is cleared when dropdown reopens; Full organization list is displayed; User starts fresh with each dropdown open</p>
+","<p>User has access to more than 10 organizations; Search bar is visible</p>
+",Low,,Multi-organizations > Search the org in the list,1,"<p><a data-fr-linked=""""true"""" href=""""https://virtocommerce.atlassian.net/browse/VCST-4357"""" id=""""isPasted"""">https://virtocommerce.atlassian.net/browse/VCST-4357</a></p><p>available from vc-frontend 2.38.0</p>",Multi Organization Support > Multi-organizations > Search the org in the list,"<ol>
+<li>Open the organization dropdown</li>
+<li>Enter a search term to filter the list</li>
+<li>Close the dropdown (click outside)</li>
+<li>Reopen the dropdown</li>
+<li>Observe the search field state</li>
+</ol>
+",,,,,,1
+C414010,Empty Search Field Behavior,,,"<p>Empty search field displays all organizations; List immediately returns to full state when search is empty; No partial filter state remains</p>
+","<p>User has access to more than 10 organizations; Search bar is visible</p>
+",High,,Multi-organizations > Search the org in the list,1,"<p><a data-fr-linked=""""true"""" href=""""https://virtocommerce.atlassian.net/browse/VCST-4357"""" id=""""isPasted"""">https://virtocommerce.atlassian.net/browse/VCST-4357</a></p><p>available from vc-frontend 2.38.0</p>",Multi Organization Support > Multi-organizations > Search the org in the list,"<ol>
+<li>Open the organization dropdown</li>
+<li>Observe list with empty search field</li>
+<li>Enter a character</li>
+<li>Delete the character (backspace)</li>
+<li>Observe the list</li>
+</ol>
+",,,,,,1
+C388974,Bulk order > general view,,,,"1. Go to the store
+",Medium,,Bulk order  (Destop+Mobile),0,,Bulk order  (Destop+Mobile),,"Step Description:
+1. Click **BULK ORDER PAD** in menu
+2. Check the page
+
+Expected Result:
+1. Bulk order pad page opens
+2. Next elements are presented:
+- Title
+- 2 blocks: Manually and Copy&Paste",,"1. Bulk order pad page opens
+2. Next elements are presented:
+- Title
+- 2 blocks: Manually and Copy&Paste",,"1. Click **BULK ORDER PAD** in menu
+2. Check the page
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check Manually block
+Expected Result:
+1.  Next elements are presented:
+- Title
+- Information about the block
+- Product SKU column
+- Quantity column
+- Link Add 5 more rows
+- Buttons: Reset, Add to cart (buttons inactive)",,"1.  Next elements are presented:
+- Title
+- Information about the block
+- Product SKU column
+- Quantity column
+- Link Add 5 more rows
+- Buttons: Reset, Add to cart (buttons inactive)",,1. Check Manually block,
+,,,,,,,,,,,,,"
+Step Description:
+1. Check Copy&Paste block
+Expected Result:
+1.  Next elements are presented:
+- Title
+- Information about the block
+- Empty field with formatting example (e.g. 6AF8SM0VPFV6,10)
+- Buttons: Reset, Add to cart  (buttons inactive)",,"1.  Next elements are presented:
+- Title
+- Information about the block
+- Empty field with formatting example (e.g. 6AF8SM0VPFV6,10)
+- Buttons: Reset, Add to cart  (buttons inactive)",,1. Check Copy&Paste block,
+C388975,Bulk order > Manually > Correct SKU,,,,"1. Product_1 exist in the store
+2. Product_1 has SKU_1
+3. Go to the store
+
+
+",Medium,,Bulk order  (Destop+Mobile),0,,Bulk order  (Destop+Mobile),,"Step Description:
+1. Open **BULK ORDER PAD**.
+2. Enter SKU: SKU_1
+3. Specify any quantity. 
+4. Click """"Add to cart"""". 
+Expected Result:
+1. The **Cart** page is opened. 
+2. There is an added item in the cart. 
+3. Quantity matches the one you specified in the bulk order pad. ",,"1. The **Cart** page is opened. 
+2. There is an added item in the cart. 
+3. Quantity matches the one you specified in the bulk order pad. ",,"1. Open **BULK ORDER PAD**.
+2. Enter SKU: SKU_1
+3. Specify any quantity. 
+4. Click ""Add to cart"". ",0
+,,,,,,,,,,,,,"
+Step Description:
+1.  Open bulk order again
+Expected Result:
+1. SKU and Quantity field are empty
+
+",,"1. SKU and Quantity field are empty
+
+",,1.  Open bulk order again,
+C388976,Bulk order > Manually > Incorrect SKU,,,"1. Bulk order page presented
+2. An error has occurred: **Products with following SKUs was not added to cart**
+
+
+ 
+","1. Product_1 not exist in the store
+3. Product_1 has SKU_1
+4. Go to the store",Medium,,Bulk order  (Destop+Mobile),0,,Bulk order  (Destop+Mobile),"1. Open **BULK ORDER PAD**.
+2. Enter SKU: SKU_1
+3. Specify any quantity. 
+4. Click """"Add to cart"""". ",,,,,,0
+C388977,Bulk order > Manually > More rows,,,,"1. Go to the store
+
+
+",Medium,,Bulk order  (Destop+Mobile),0,,Bulk order  (Destop+Mobile),,"Step Description:
+1. Open **BULK ORDER PAD**.
+2. Mouse over Manually block
+3. Click link Add 5 more rows 
+Expected Result:
+1. More fields opens",,1. More fields opens,,"1. Open **BULK ORDER PAD**.
+2. Mouse over Manually block
+3. Click link Add 5 more rows ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click link Add 5 more rows several times
+Expected Result:
+1. More fields opens
+
+",,"1. More fields opens
+
+",,1. Click link Add 5 more rows several times,
+C388978,Bulk order > Copy&Paste > Correct SKU,,,,"1. Product_1 exist in the store
+2. Product_1 has SKU_1
+3. Go to the store
+
+
+",Medium,,Bulk order  (Destop+Mobile),0,,Bulk order  (Destop+Mobile),,"Step Description:
+1. Open **BULK ORDER PAD**.
+2. Enter to the input field SKU_1 and any quantity using the following format: SKU,Quantity
+3. Click """"Add to cart"""". 
+Expected Result:
+1. The **Cart** page is opened. 
+2. There is an added item in the cart. 
+3. Quantity matches the one you specified in the bulk order pad. ",,"1. The **Cart** page is opened. 
+2. There is an added item in the cart. 
+3. Quantity matches the one you specified in the bulk order pad. ",,"1. Open **BULK ORDER PAD**.
+2. Enter to the input field SKU_1 and any quantity using the following format: SKU,Quantity
+3. Click ""Add to cart"". ",0
+,,,,,,,,,,,,,"
+Step Description:
+1.  Open bulk order again
+Expected Result:
+1. SKU and Quantity field are empty
+
+",,"1. SKU and Quantity field are empty
+
+",,1.  Open bulk order again,
+C388979,Bulk order > Copy&Paste > Incorrect SKU,,,"1. Bulk order page presented
+2. An error has occurred: **Products with following SKUs was not added to cart**
+
+
+ 
+","1. Product_1 not exist in the store
+3. Product_1 has SKU_1
+4. Go to the store",Medium,,Bulk order  (Destop+Mobile),0,,Bulk order  (Destop+Mobile),"1. Open **BULK ORDER PAD**.
+2. Enter SKU_1 and any quantity using the following format: SKU,Quantity.
+3. Click """"Add to cart"""". ",,,,,,0
+C388980,Bulk order > Copy&Pastу > mix,,,,"1. Product_1, Product_2 exist in the store
+2. Product_1 has SKU_1, Product_2 has SKU_2
+3. Go to the store
+
+",Medium,,Bulk order  (Destop+Mobile),0,,Bulk order  (Destop+Mobile),,"Step Description:
+1. Open **BULK ORDER PAD** 
+2. Enter in the the block Copy&Paste next value:
+- SKU_1, 1
+- SKU_2, 1
+3. Click """"Add to cart"""". 
+
+Expected Result:
+1. Product_1 added to the cart 
+2. Error message shown on top of the columns
+3. Product_2 was not added to the cart 
+",,"1. Product_1 added to the cart 
+2. Error message shown on top of the columns
+3. Product_2 was not added to the cart 
+",,"1. Open **BULK ORDER PAD** 
+2. Enter in the the block Copy&Paste next value:
+- SKU_1, 1
+- SKU_2, 1
+3. Click ""Add to cart"". 
+",0
+C388981,Bulk order > Reset,,,,"1. Product_1 exist in the store
+2. Product_1 has SKU_1
+3. Go to the store
+
+
+",Medium,,Bulk order  (Destop+Mobile),0,,Bulk order  (Destop+Mobile),,"Step Description:
+1. Open **BULK ORDER PAD**.
+2. Mouse over Manually block
+3. Enter SKU: SKU_1
+4. Specify any quantity. 
+5. Click """"Reset"""". 
+Expected Result:
+1. Entered SKU and Quantity has been removed
+2. Fields are empty",,"1. Entered SKU and Quantity has been removed
+2. Fields are empty",,"1. Open **BULK ORDER PAD**.
+2. Mouse over Manually block
+3. Enter SKU: SKU_1
+4. Specify any quantity. 
+5. Click ""Reset"". ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open **BULK ORDER PAD**.
+2. Mouse over Copy&Paste block
+3. Enter SKU: SKU_1
+4. Specify any quantity. 
+5. Click """"Reset"""". 
+Expected Result:
+1. SKU and Quantity field are empty
+
+",,"1. SKU and Quantity field are empty
+
+",,"1. Open **BULK ORDER PAD**.
+2. Mouse over Copy&Paste block
+3. Enter SKU: SKU_1
+4. Specify any quantity. 
+5. Click ""Reset"". ",
+C388982,Bulk order > Manually > validation > quantity,,,,"1. Product_1 - Product_7 exist in the store
+2. Product_1 has SKU_1, Product_2 has SKU_2 etc.
+3. Go to the store
+
+",Medium,,Bulk order  (Destop+Mobile),0,,Bulk order  (Destop+Mobile),,"Step Description:
+1. Open **BULK ORDER PAD** 
+2. Try to enter in the the block Copy&Paste next value:
+- SKU_1, quantity 5
+- SKU_2, quantity 0
+- SKU_3, quantity -1
+- SKU_4, quantity 999 999
+- SKU_5, quantity 100 0000
+- SKU_6, quantity 2,3
+- SKU_7, quantity leave empty
+3. Click """"Add to cart"""". 
+
+
+
+Expected Result:
+1. Product_2 - can not enter 0 in the field
+2. Product_3 - can not enter -1 in the field
+3. Product_5 - can not enter 100 000 in the field
+4. Product_6 - can not enter 2,3 in the field
+5. Only only positive, less than 999 999, only integer quantity possible enter to the field Quantity.
+
+",,"1. Product_2 - can not enter 0 in the field
+2. Product_3 - can not enter -1 in the field
+3. Product_5 - can not enter 100 000 in the field
+4. Product_6 - can not enter 2,3 in the field
+5. Only only positive, less than 999 999, only integer quantity possible enter to the field Quantity.
+
+",,"1. Open **BULK ORDER PAD** 
+2. Try to enter in the the block Copy&Paste next value:
+- SKU_1, quantity 5
+- SKU_2, quantity 0
+- SKU_3, quantity -1
+- SKU_4, quantity 999 999
+- SKU_5, quantity 100 0000
+- SKU_6, quantity 2,3
+- SKU_7, quantity leave empty
+3. Click ""Add to cart"". 
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click """"Add to cart"""". 
+
+
+Expected Result:
+1. Product_1 added to the cart in quantity 1
+2. Product_4 added to the cart in quantity 999 999
+3. Product_7 was not added to the cart 
+
+",,"1. Product_1 added to the cart in quantity 1
+2. Product_4 added to the cart in quantity 999 999
+3. Product_7 was not added to the cart 
+
+",,"1. Click ""Add to cart"". 
+
+",
+C388983,Bulk order > Copy&Pastу > validation,,,,"1. Product_1 - Product_7 exist in the store
+2. Product_1 has SKU_1, Product_2 has SKU_2 etc.
+3. Go to the store
+
+",Medium,,Bulk order  (Destop+Mobile),0,,Bulk order  (Destop+Mobile),,"Step Description:
+1. Open **BULK ORDER PAD** 
+2. Try to enter in the the block Copy&Paste next value:
+- SKU_1, quantity 5
+- SKU_2, quantity 0
+- SKU_3, quantity -1
+- SKU_4, quantity 999 999
+- SKU_5, quantity 100 0000
+- SKU_6, quantity 2,3
+- SKU_7, quantity leave empty
+3. Click """"Add to cart"""". 
+
+
+
+Expected Result:
+1. Product_2 - can not enter 0 in the field
+2. Product_3 - can not enter -1 in the field
+3. Product_5 - can not enter 100 000 in the field
+4. Product_6 - can not enter 2,3 in the field
+5. Only only positive, less than 999 999, only integer quantity possible enter to the field Quantity.
+
+",,"1. Product_2 - can not enter 0 in the field
+2. Product_3 - can not enter -1 in the field
+3. Product_5 - can not enter 100 000 in the field
+4. Product_6 - can not enter 2,3 in the field
+5. Only only positive, less than 999 999, only integer quantity possible enter to the field Quantity.
+
+",,"1. Open **BULK ORDER PAD** 
+2. Try to enter in the the block Copy&Paste next value:
+- SKU_1, quantity 5
+- SKU_2, quantity 0
+- SKU_3, quantity -1
+- SKU_4, quantity 999 999
+- SKU_5, quantity 100 0000
+- SKU_6, quantity 2,3
+- SKU_7, quantity leave empty
+3. Click ""Add to cart"". 
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click """"Add to cart"""". 
+
+
+Expected Result:
+1. Product_1 added to the cart in quantity 1
+2. Product_4 added to the cart in quantity 999 999
+3. Product_7 was not added to the cart 
+
+",,"1. Product_1 added to the cart in quantity 1
+2. Product_4 added to the cart in quantity 999 999
+3. Product_7 was not added to the cart 
+
+",,"1. Click ""Add to cart"". 
+
+",
+C388984,Submit empty filed,,,,"1. Product_1 exist in the store
+2. Product_1 has SKU_1
+3. Go to the store",Medium,,Bulk order  (Destop+Mobile),0,,Bulk order  (Destop+Mobile),,"Step Description:
+1. Open BULK ORDER PAD 
+2. Enter SKU_1
+3. Leave quantity field empty
+4. Try to click button Add to cart
+Expected Result:
+1. Button Add to cart is not active",,1. Button Add to cart is not active,,"1. Open BULK ORDER PAD 
+2. Enter SKU_1
+3. Leave quantity field empty
+4. Try to click button Add to cart",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open BULK ORDER PAD 
+2. Enter quantity as 1
+3. Leave SKU field empty
+4. Try to click button Add to cart
+Expected Result:
+1. Button Add to cart is not active",,1. Button Add to cart is not active,,"1. Open BULK ORDER PAD 
+2. Enter quantity as 1
+3. Leave SKU field empty
+4. Try to click button Add to cart",
+C389318,Create quote from cart > Billing and Shipping set up in cart > Check address in quote,,,,,Medium,,Quote requests (Desktop+Mobile),0,,Quote requests (Desktop+Mobile),,,,,,,0
+C389319,Create a quote from cart > Different billing and shipping set up in cart > Check address in quote,,,,,Medium,,Quote requests (Desktop+Mobile),0,,Quote requests (Desktop+Mobile),,,,,,,0
+C389320,Create quote from cart > Only  Shipping set up in cart > Check address in quote,,,,,Medium,,Quote requests (Desktop+Mobile),0,,Quote requests (Desktop+Mobile),,,,,,,0
+C406761,Create quote with configurable product > All type of options,,,,"Sign in as a regular user
+Go to catalog > Open category Products with options
+Find config product with all type of sections (product, text, files)
+Open product page
+Select options
+Add configurable product to cart
+Go to cart",Medium,,Quote requests (Desktop+Mobile),0,,Quote requests (Desktop+Mobile),,"Step Description:
+Create a quote
+Expected Result:
+Quote with product configuration is created
+The list of configurable options is displayed
+Quantity is remain the same ",,"Quote with product configuration is created
+The list of configurable options is displayed
+Quantity is remain the same ",,Create a quote,0
+,,,,,,,,,,,,,"
+Step Description:
+Add shipments and payments
+Submit quote
+Expected Result:
+The quote is submitted with config product",,The quote is submitted with config product,,"Add shipments and payments
+Submit quote",
+C389198,Quote history page > General view,,,,"User sign in
+Quotes were created",Medium,,Quote history page,1,,Quote requests (Desktop+Mobile) > Quote history page,,"Step Description:
+Go to Account &gt; Quote requests
+Expected Result:
+The list of quotes is opened.
+",,"The list of quotes is opened.
+",,Go to Account &gt; Quote requests,0
+,,,,,,,,,,,,,"
+Step Description:
+Check the page
+Expected Result:
+The next elements are presented:
+
+Full-text search (by status, by number)
+Filters block (by number, by status, by date)
+
+
+*Table Quote list*
+
+- Quote Number
+- Date
+- Status (Draft, New, Processing, Proposal sent, Ordered, On Hold)
+- Total
+
+Pagination
+
+
+
+
+
+",,"The next elements are presented:
+
+Full-text search (by status, by number)
+Filters block (by number, by status, by date)
+
+
+*Table Quote list*
+
+- Quote Number
+- Date
+- Status (Draft, New, Processing, Proposal sent, Ordered, On Hold)
+- Total
+
+Pagination
+
+
+
+
+
+",,Check the page,
+C389199,Quote history page > Date format,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000003056, https://virtowayqa.testrail.io/index.php?/attachments/get/1000001201, https://virtowayqa.testrail.io/index.php?/attachments/get/1000001048",,,"User_1 created
+User_1 logged into the store
+User_1 created 11 quotes",Medium,,Quote history page,1,,Quote requests (Desktop+Mobile) > Quote history page,,"Step Description:
+Set localization = EN
+Check the data format in the table
+Expected Result:
+The date format is consistent everywhere
+
+
+ ![](index.php?/attachments/get/39421f47-207a-472f-9926-4f5b81ba42a2) 
+
+  
+",,"The date format is consistent everywhere
+
+
+ ![](index.php?/attachments/get/39421f47-207a-472f-9926-4f5b81ba42a2) 
+
+  
+",,"Set localization = EN
+Check the data format in the table",0
+,,,,,,,,,,,,,"
+Step Description:
+Open Quote details
+Check Created date
+Expected Result:
+The date format is the same as in the table",,The date format is the same as in the table,,"Open Quote details
+Check Created date",
+,,,,,,,,,,,,,"
+Step Description:
+Set localization = DE
+Check the data format in the table
+Expected Result:
+The date format is consistent everywhere
+
+ ![](index.php?/attachments/get/41df0b52-02d5-435d-97f1-9ab1d3a6228f) 
+",,"The date format is consistent everywhere
+
+ ![](index.php?/attachments/get/41df0b52-02d5-435d-97f1-9ab1d3a6228f) 
+",,"Set localization = DE
+Check the data format in the table",
+,,,,,,,,,,,,,"
+Step Description:
+Open Quote details
+Check Created date
+Expected Result:
+The date format is the same as in the table
+
+ ![](index.php?/attachments/get/a8eda096-b6bf-4307-91d1-91d854f98265) 
+",,"The date format is the same as in the table
+
+ ![](index.php?/attachments/get/a8eda096-b6bf-4307-91d1-91d854f98265) 
+",,"Open Quote details
+Check Created date",
+,,,,,,,,,,,,,"
+Step Description:
+Set localization = FR
+Check the data format in the table
+Expected Result:
+The date format is consistent everywhere",,The date format is consistent everywhere,,"Set localization = FR
+Check the data format in the table",
+,,,,,,,,,,,,,"
+Step Description:
+Open Quote details
+Check Created date
+Expected Result:
+The date format is the same as in the table
+
+
+",,"The date format is the same as in the table
+
+
+",,"Open Quote details
+Check Created date",
+C389200,Quote history page > Sorting,,,,"User sign in
+Quotes were created
+
+",Medium,,Quote history page,1,,Quote requests (Desktop+Mobile) > Quote history page,,"Step Description:
+Try to sort by quote number
+Click one more time
+Expected Result:
+The list is sorted by quote number descending
+The list is sorted by quote number ascending",,"The list is sorted by quote number descending
+The list is sorted by quote number ascending",,"Try to sort by quote number
+Click one more time",0
+,,,,,,,,,,,,,"
+Step Description:
+Try to sort by Date
+Click one more time
+Expected Result:
+The list is sorted by Date descending (createdDate:desc)
+The list is sorted by Date ascending (createdDate:asc)",,"The list is sorted by Date descending (createdDate:desc)
+The list is sorted by Date ascending (createdDate:asc)",,"Try to sort by Date
+Click one more time",
+,,,,,,,,,,,,,"
+Step Description:
+Try to sort by Status
+Click one more time
+Expected Result:
+The list is sorted by Status descending (status:desc)
+The list is sorted by Status ascending (status:asc)",,"The list is sorted by Status descending (status:desc)
+The list is sorted by Status ascending (status:asc)",,"Try to sort by Status
+Click one more time",
+C389201,Quote history page > Request Quote > Create new quote under personal account,,,,"Sign in as a company Owner
+ 
+",Medium,,Quote history page,1,,Quote requests (Desktop+Mobile) > Quote history page,,"Step Description:
+Go to account &gt; Quote request
+Click on Request Quote button
+
+Expected Result:
+1. The Request quote Page is opened
+2. All fields are empty, and “Submit” and “Save changes“ are disabled 
+",,"1. The Request quote Page is opened
+2. All fields are empty, and “Submit” and “Save changes“ are disabled 
+",,"Go to account &gt; Quote request
+Click on Request Quote button
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Start to type and clean the “Comment” field 
+
+
+Expected Result:
+Warning message under the field appears “Comment is required“",,Warning message under the field appears “Comment is required“,,"Start to type and clean the “Comment” field 
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Add comment
+Check Save button
+Expected Result:
+The Save button is activated",,The Save button is activated,,"Add comment
+Check Save button",
+,,,,,,,,,,,,,"
+Step Description:
+Click Save
+Expected Result:
+The quote was created with status Draft",,The quote was created with status Draft,,Click Save,
+C397183,Quote history page > Request Quote > Create new quote under default Organization account,,,,"1. User has assigned to Org1, Org2, Org3
+2. Set default Company as Org3
+3. User sign in under **Org3** account",High,,Quote history page,1,,Quote requests (Desktop+Mobile) > Quote history page,,"Step Description:
+Go to account > Quote request
+Click on Request Quote button
+
+Expected Result:
+1. The Request quote Page is opened
+2. All fields are empty, and “Submit” and “Save changes“ are disabled 
+",,"1. The Request quote Page is opened
+2. All fields are empty, and “Submit” and “Save changes“ are disabled 
+",,"Go to account > Quote request
+Click on Request Quote button
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Start to type and clean the “Comment” field 
+
+
+Expected Result:
+Warning message under the field appears “Comment is required“",,Warning message under the field appears “Comment is required“,,"Start to type and clean the “Comment” field 
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Add comment
+Check Save button
+Expected Result:
+The Save button is activated",,The Save button is activated,,"Add comment
+Check Save button",
+,,,,,,,,,,,,,"
+Step Description:
+Click Save
+Expected Result:
+The quote was created with status Draft",,The quote was created with status Draft,,Click Save,
+,,,,,,,,,,,,,"
+Step Description:
+Open Quote history
+
+/account/quotes
+
+Expected Result:
+The last created quote is returned",,The last created quote is returned,,"Open Quote history
+
+/account/quotes
+",
+C397184,Quote history page > Request Quote > Create new quote under Organization account,,,,"1. User has assigned to Org1, Org2, Org3
+2. Set default Company as Org3
+3. User sign in under **Org2** account",High,,Quote history page,1,,Quote requests (Desktop+Mobile) > Quote history page,,"Step Description:
+Go to account > Quote request
+Click on Request Quote button
+
+Expected Result:
+1. The Request quote Page is opened
+2. All fields are empty, and “Submit” and “Save changes“ are disabled 
+",,"1. The Request quote Page is opened
+2. All fields are empty, and “Submit” and “Save changes“ are disabled 
+",,"Go to account > Quote request
+Click on Request Quote button
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Start to type and clean the “Comment” field 
+
+
+Expected Result:
+Warning message under the field appears “Comment is required“",,Warning message under the field appears “Comment is required“,,"Start to type and clean the “Comment” field 
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Add comment
+Check Save button
+Expected Result:
+The Save button is activated",,The Save button is activated,,"Add comment
+Check Save button",
+,,,,,,,,,,,,,"
+Step Description:
+Click Save
+Expected Result:
+The quote was created with status Draft",,The quote was created with status Draft,,Click Save,
+,,,,,,,,,,,,,"
+Step Description:
+Open Quote history
+
+/account/quotes
+
+Expected Result:
+The last created quote is returned",,The last created quote is returned,,"Open Quote history
+
+/account/quotes
+",
+C389202,Quote request page > general view,,,,"User sign-in > Dashboard > Account > Quote requests
+Quotes were created",Medium,,Quote request page,1,,Quote requests (Desktop+Mobile) > Quote request page,,"Step Description:
+Click on Quote1
+Expected Result:
+The quote request page is opened",,The quote request page is opened,,Click on Quote1,0
+,,,,,,,,,,,,,"
+Step Description:
+Check the page
+Expected Result:
+The next elements are presented:
+
+- The title of the page is Quote request with quote number (QUOTE REQUEST #RFQ221121-00004)
+
+- Comment block (Required if there are no products in Quote)
+- Files
+- Products block (Line items details, qty field-editable, the total price, remove button)
+- Shipping address (edit button)
+- Billing address (edit button)
+- Checkbox Same as the shipping address (unselected if shipping and billing addresses were not provided )
+
+***Buttons***:
+
+- Save changes (disabled by default)
+- Submit (disabled if shipping and billing addresses were not provided)
+",,"The next elements are presented:
+
+- The title of the page is Quote request with quote number (QUOTE REQUEST #RFQ221121-00004)
+
+- Comment block (Required if there are no products in Quote)
+- Files
+- Products block (Line items details, qty field-editable, the total price, remove button)
+- Shipping address (edit button)
+- Billing address (edit button)
+- Checkbox Same as the shipping address (unselected if shipping and billing addresses were not provided )
+
+***Buttons***:
+
+- Save changes (disabled by default)
+- Submit (disabled if shipping and billing addresses were not provided)
+",,Check the page,
+C389203,Quote request page > Update quote > Change quote comment,,,,"Quotes were created
+The user on the Quote request page
+
+txt1 = ""The quote request has been successfully saved""
+
+",Medium,,Quote request page,1,,Quote requests (Desktop+Mobile) > Quote request page,,"Step Description:
+Enter a new comment to the Comment field
+Click on the Save changes button
+
+
+Expected Result:
+The comment is updated and saved for the Quote
+The green popup on top of a page appears with the txt1 
+",,"The comment is updated and saved for the Quote
+The green popup on top of a page appears with the txt1 
+",,"Enter a new comment to the Comment field
+Click on the Save changes button
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Refresh the page
+Re-check the comment for the Quote
+Expected Result:
+A new comment is displayed in the Comment box
+The status of the quote is Draft",,"A new comment is displayed in the Comment box
+The status of the quote is Draft",,"Refresh the page
+Re-check the comment for the Quote",
+,,,,,,,,,,,,,"
+Step Description:
+Remove comment
+Expected Result:
+The button **Save changes** enabled",,The button **Save changes** enabled,,Remove comment,
+,,,,,,,,,,,,,"
+Step Description:
+Click on **Save changes**
+Refresh page F5
+Expected Result:
+All changes saved",,All changes saved,,"Click on **Save changes**
+Refresh page F5",
+C389204,Quote request page > Update quote > Change item quantity,,,,"Quotes were created
+The user on the Quote request page
+
+txt1 = ""The quote request has been successfully saved""
+
+",Medium,,Quote request page,1,,Quote requests (Desktop+Mobile) > Quote request page,,"Step Description:
+Scroll the page to the Products block
+Change the quantity of an item
+Expected Result:
+The new value is saved for the line item",,The new value is saved for the line item,,"Scroll the page to the Products block
+Change the quantity of an item",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Save changes button
+Refresh the page
+Expected Result:
+The qty of the line items is updated
+The green popup on top of a page appears with the txt1 
+
+The status of the quote is Draft
+",,"The qty of the line items is updated
+The green popup on top of a page appears with the txt1 
+
+The status of the quote is Draft
+",,"Click on the Save changes button
+Refresh the page",
+C389205,Quote request page > Update quote > Remove items from quote,,,,"Quote with more than 3 products was created
+The user on the Quote request page
+
+txt1 = ""The quote request has been successfully saved""
+
+",Medium,,Quote request page,1,,Quote requests (Desktop+Mobile) > Quote request page,,"Step Description:
+Scroll the page to the Products block
+Click on the cross to remove the item
+Expected Result:
+The item is removed from the quote request",,The item is removed from the quote request,,"Scroll the page to the Products block
+Click on the cross to remove the item",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Save changes button
+Refresh the page
+Expected Result:
+Deleted items has been no longer displayed in the list
+The green popup on top of a page appears with the txt1
+
+The status of quote is Draft ",,"Deleted items has been no longer displayed in the list
+The green popup on top of a page appears with the txt1
+
+The status of quote is Draft ",,"Click on the Save changes button
+Refresh the page",
+C389206,Quote request page > Update quote > Remove All items from quote,,,,"Quote with more than 3 products was created
+The user on the Quote request page
+
+txt1 = ""The quote request has been successfully saved""
+
+",Medium,,Quote request page,1,,Quote requests (Desktop+Mobile) > Quote request page,,"Step Description:
+Scroll the page to the Products block
+Click on the cross to remove all items
+Expected Result:
+The item is removed from the list",,The item is removed from the list,,"Scroll the page to the Products block
+Click on the cross to remove all items",0
+,,,,,,,,,,,,,"
+Step Description:
+Check the buttons
+
+
+Expected Result:
+
+**Submit** button is disabled
+
+
+",,"
+**Submit** button is disabled
+
+
+",,"Check the buttons
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Refresh the page
+Expected Result:
+All items are displayed",,All items are displayed,,Refresh the page,
+C389207,Quote request page > Add comment after removing items,,,,"Items were deleted from quote [C350448]
+There is no comment in the quote
+
+
+
+The user on the Quote request page
+
+txt1 = ""The quote request has been successfully saved""",Medium,,Quote request page,1,,Quote requests (Desktop+Mobile) > Quote request page,,"Step Description:
+Remove all items from the quote
+Add new comment
+Expected Result:
+The SAVE button is enabled
+The comment was added",,"The SAVE button is enabled
+The comment was added",,"Remove all items from the quote
+Add new comment",0
+C389208,Quote request page > Update quote > Set up New shipping/billing addresses,,,,"Quotes were created
+The user on the Quote request page
+
+txt1 = ""The quote request has been successfully saved""
+
+",Medium,,Quote request page,1,,Quote requests (Desktop+Mobile) > Quote request page,,"Step Description:
+Scroll the page to the Shipping block
+Click on the pencil button (Edit)
+Expected Result:
+The pop-up is called with the title New address
+The save button is disabled by default",,"The pop-up is called with the title New address
+The save button is disabled by default",,"Scroll the page to the Shipping block
+Click on the pencil button (Edit)",0
+,,,,,,,,,,,,,"
+Step Description:
+Fill in all required fields
+Save
+Expected Result:
+The save button is activated 
+The new address is added 
+
+
+
+
+",,"The save button is activated 
+The new address is added 
+
+
+
+
+",,"Fill in all required fields
+Save",
+,,,,,,,,,,,,,"
+Step Description:
+Go to the Billing address
+Unselect the checkbox Same as a shipping address
+Click on the pencil button
+
+
+Expected Result:
+The pop-up is called with the title New address
+The save button is disabled by default
+
+
+
+",,"The pop-up is called with the title New address
+The save button is disabled by default
+
+
+
+",,"Go to the Billing address
+Unselect the checkbox Same as a shipping address
+Click on the pencil button
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Fill in all required fields
+Save
+Expected Result:
+The save button is activated 
+The new address is added 
+
+
+
+",,"The save button is activated 
+The new address is added 
+
+
+
+",,"Fill in all required fields
+Save",
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Save changes button
+Refresh the page
+Re-check the addresses
+
+Expected Result:
+New addresses are saved
+
+The green popup on top of a page appears with the txt1
+
+The status of quote is Draft
+",,"New addresses are saved
+
+The green popup on top of a page appears with the txt1
+
+The status of quote is Draft
+",,"Click on the Save changes button
+Refresh the page
+Re-check the addresses
+",
+C389209,Quote request page > Add corporate address from list,,,,,Medium,,Quote request page,1,,Quote requests (Desktop+Mobile) > Quote request page,,,,,,,0
+C389210,Quote request page > Add new corporate address (owner),,,,,Medium,,Quote request page,1,,Quote requests (Desktop+Mobile) > Quote request page,,,,,,,0
+C389211,Quote request page > Submit quote,,,,"Quotes with more than 3 line items were created
+The user on the Quote request page",Medium,,Quote request page,1,,Quote requests (Desktop+Mobile) > Quote request page,,"Step Description:
+Change comment
+Change qty of line-items
+Remove item
+Set shipping address
+Set billing address
+Submit
+
+
+Expected Result:
+The redirect to the quote history page
+The status is Processing for Quote1",,"The redirect to the quote history page
+The status is Processing for Quote1",,"Change comment
+Change qty of line-items
+Remove item
+Set shipping address
+Set billing address
+Submit
+
+",0
+C389212,Quote details page > general view,,,,"Quote1 was created and submitted
+
+
+",Medium,,Quote request page,1,,Quote requests (Desktop+Mobile) > Quote request page,,"Step Description:
+Go to the Quote1 details page
+Check the page
+Expected Result:
+The next elements are presented:
+
+- The title of the page is Quote request with quote number (QUOTE REQUEST #RFQ221121-00004)
+
+
+- Quote summary (Total)
+- Quote Data (Created:Dec 19, 2022, 12:14:40 PM Status Processing)
+- Shipping address
+- Billing address
+
+- Products block (Product, Properties, Price per item, qty field-read only, the total price)
+
+- Comment block (comment box-read only)
+
+ ![](index.php?/attachments/get/eb479209-8784-489c-94fb-0ba8b19f0fe2) 
+",,"The next elements are presented:
+
+- The title of the page is Quote request with quote number (QUOTE REQUEST #RFQ221121-00004)
+
+
+- Quote summary (Total)
+- Quote Data (Created:Dec 19, 2022, 12:14:40 PM Status Processing)
+- Shipping address
+- Billing address
+
+- Products block (Product, Properties, Price per item, qty field-read only, the total price)
+
+- Comment block (comment box-read only)
+
+ ![](index.php?/attachments/get/eb479209-8784-489c-94fb-0ba8b19f0fe2) 
+",,"Go to the Quote1 details page
+Check the page",0
+C389213,"Shipping and billing addresses were not provided > """"Same as shipping address"""" is unselected",,,,Create a quote from the cart without shipping or billing addresses,Medium,,"Checkbox ''Same as shipping address""""",2,,"Quote requests (Desktop+Mobile) > Quote request page > Checkbox ''Same as shipping address""""",,"Step Description:
+Open the last created quote
+Scroll the page to the Shipping and Billing address block
+Verify the checkbox """"Same as shipping address""""
+Expected Result:
+1. The link Please """"select a shipping address"""" is displayed under the shipping address block
+
+2. The link Please """"select a billing address"""" is displayed under the billing address block
+
+3. Checkbox """"Same as shipping address"""" is unselected
+
+4. Buttons **Save changes** and **Submit** are disabled
+
+---------------------------------------------------------------------
+
+
+
+
+
+
+
+
+ ![](index.php?/attachments/get/3d2be1c1-0134-4301-ac64-e58ec2cc10b4)
+",,"1. The link Please ""select a shipping address"" is displayed under the shipping address block
+
+2. The link Please ""select a billing address"" is displayed under the billing address block
+
+3. Checkbox ""Same as shipping address"" is unselected
+
+4. Buttons **Save changes** and **Submit** are disabled
+
+---------------------------------------------------------------------
+
+
+
+
+
+
+
+
+ ![](index.php?/attachments/get/3d2be1c1-0134-4301-ac64-e58ec2cc10b4)
+",,"Open the last created quote
+Scroll the page to the Shipping and Billing address block
+Verify the checkbox ""Same as shipping address""",0
+C389214,"Set shipping address > """"Same as shipping address""""  is selected",https://virtowayqa.testrail.io/index.php?/attachments/get/1000001125,,,"Create a quote from the cart without shipping or billing addresses
+User_1 doesn't have any addresses in personal or company account
+
+ 
+",Medium,,"Checkbox ''Same as shipping address""""",2,,"Quote requests (Desktop+Mobile) > Quote request page > Checkbox ''Same as shipping address""""",,"Step Description:
+Open the last created quote
+Click on the link select a shipping address
+Fill in all required fields
+Create
+Expected Result:
+Pop-up closed.
+The address_1 was created.
+The address_1 appears in the block Shipping address.
+The button Pencil is presented",,"Pop-up closed.
+The address_1 was created.
+The address_1 appears in the block Shipping address.
+The button Pencil is presented",,"Open the last created quote
+Click on the link select a shipping address
+Fill in all required fields
+Create",0
+,,,,,,,,,,,,,"
+Step Description:
+Verify billing address block
+Expected Result:
+Checkbox """"Same as shipping address"""" is selected by default and the address from the shipping block is displayed under the checkbox
+
+**Save changes** and **Submit** are enabled
+
+-------------------------------------------------------------
+
+
+
+
+ ![](index.php?/attachments/get/3d15b466-54bc-42cc-9949-f54a9f110a51) 
+
+
+
+
+
+
+
+
+
+
+",,"Checkbox ""Same as shipping address"" is selected by default and the address from the shipping block is displayed under the checkbox
+
+**Save changes** and **Submit** are enabled
+
+-------------------------------------------------------------
+
+
+
+
+ ![](index.php?/attachments/get/3d15b466-54bc-42cc-9949-f54a9f110a51) 
+
+
+
+
+
+
+
+
+
+
+",,Verify billing address block,
+C389215,"Set different billing address >  """"Same as shipping address""""  is unselected",,,,"Create a quote from the cart without shipping or billing addresses
+
+Set shipping address [C362074]
+
+
+ 
+",Medium,,"Checkbox ''Same as shipping address""""",2,,"Quote requests (Desktop+Mobile) > Quote request page > Checkbox ''Same as shipping address""""",,"Step Description:
+Open the last created quote
+Unselect the """"Same as shipping address"""" 
+
+
+Click on the link and select a billing address
+A pop-up with the list of addresses appeared
+Add new
+Fill in all required fields
+Create
+
+
+Expected Result:
+Pop-up closed.
+The address_1 was created.
+The address_1 appears in the block Billing address.
+The button Pencil is presented",,"Pop-up closed.
+The address_1 was created.
+The address_1 appears in the block Billing address.
+The button Pencil is presented",,"Open the last created quote
+Unselect the ""Same as shipping address"" 
+
+
+Click on the link and select a billing address
+A pop-up with the list of addresses appeared
+Add new
+Fill in all required fields
+Create
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Verify buttons
+Expected Result:
+Checkbox """"Same as shipping address"""" is unselected
+
+**Save changes** and **Submit** are enabled
+
+-------------------------------------------------------------
+
+
+
+
+ ![](index.php?/attachments/get/49000523-6c86-4e2e-84a1-480091365f0f) 
+
+
+
+
+
+
+
+
+
+
+",,"Checkbox ""Same as shipping address"" is unselected
+
+**Save changes** and **Submit** are enabled
+
+-------------------------------------------------------------
+
+
+
+
+ ![](index.php?/attachments/get/49000523-6c86-4e2e-84a1-480091365f0f) 
+
+
+
+
+
+
+
+
+
+
+",,Verify buttons,
+,,,,,,,,,,,,,"
+Step Description:
+Click on Save changes
+Refresh the page
+Expected Result:
+The shipping and billing addresses are different
+The """"Same as shipping address"""" is unselected
+
+The **Save changes** is disabled
+The **Submit** is enabled
+  
+",,"The shipping and billing addresses are different
+The ""Same as shipping address"" is unselected
+
+The **Save changes** is disabled
+The **Submit** is enabled
+  
+",,"Click on Save changes
+Refresh the page",
+C389291,Attachment > Add one file,,,One file was added to quote  ![](index.php?/attachments/get/434a3c9f-ba58-4565-8acb-15820df71dc2) ,,Medium,,Attachment in quote,1,,Quote requests (Desktop+Mobile) > Attachment in quote,"1. Open quote with status Draft
+2. Click on Browse your files
+3. Select one file
+4. Click Open
+",,,,,,0
+C389292,Attachment  > Add few files,,,Both files added   button save is active,,Medium,,Attachment in quote,1,,Quote requests (Desktop+Mobile) > Attachment in quote,"1. Open quote with status Draft
+2. Click on Browse your files
+3. Select two files
+4. Click Open
+",,,,,,0
+C389293,Attachment  > Progress bar > Check the loading progress bar,https://virtowayqa.testrail.io/index.php?/attachments/get/1000004463,,"The progress bar is shown
+It starts from 0% and reaches 100% upon the completion of file upload.
+The progress bar reflects the progress for each file being uploaded.
+
+
+---
+
+  ![](index.php?/attachments/get/f78eddaf-7d6d-4306-ae78-97b57e018460)  
+
+---
+
+
+All files added 
+
+button save is active","Prepare files with a size of about 10 MB
+Open DevTools > Network > Set Slow 3G
+
+
+",Medium,,Attachment in quote,1,,Quote requests (Desktop+Mobile) > Attachment in quote,"1. Open quote with status Draft
+2. Click on Browse your files
+3. Select a few files > Open
+4. Ensure that the progress bar starts filling up.
+
+
+
+",,,,,,0
+C389294,Attachment > Progress bar > Network interruption,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000003562, https://virtowayqa.testrail.io/index.php?/attachments/get/1000004463",,,"Prepare files with a size of about 10 MB
+Open DevTools > Network > Set Slow 3G
+
+
+",Medium,,Attachment in quote,1,,Quote requests (Desktop+Mobile) > Attachment in quote,,"Step Description:
+1. Open quote with status Draft
+2. Click on Browse your files
+3. Select a few files &gt; Open
+4. Ensure that the progress bar starts filling up.
+5. Open DevTools &gt; Network &gt; offline
+Expected Result:
+The progress is stopped and freezing
+The network error in the console
+The error banner is shown
+
+ ![](index.php?/attachments/get/c4af9df5-8f3a-4bd0-9ffd-0584b07ef8ee) 
+
+",,"The progress is stopped and freezing
+The network error in the console
+The error banner is shown
+
+ ![](index.php?/attachments/get/c4af9df5-8f3a-4bd0-9ffd-0584b07ef8ee) 
+
+",,"1. Open quote with status Draft
+2. Click on Browse your files
+3. Select a few files &gt; Open
+4. Ensure that the progress bar starts filling up.
+5. Open DevTools &gt; Network &gt; offline",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Developer Tools &gt; Network &gt; Fast 3G.
+2. Verify that the file upload has resumed.
+Expected Result:
+The file starts loading again
+
+",,"The file starts loading again
+
+",,"1. Open Developer Tools &gt; Network &gt; Fast 3G.
+2. Verify that the file upload has resumed.",
+C389295,Attachment > No files,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001041,,Upload component display  ![](index.php?/attachments/get/38cffdd5-3dbe-43a6-99ad-81051fbe735f)  ,,Medium,,Attachment in quote,1,,Quote requests (Desktop+Mobile) > Attachment in quote,"1. Open quote with status Draft and without any files
+2. Check component ",,,,,,0
+C389296,Attachment > File with extension in whitelist,,,CSV file was added ,1. Configured  FileUpload__Scopes__0__AllowedExtensions__0: .csv,Medium,,Attachment in quote,1,,Quote requests (Desktop+Mobile) > Attachment in quote,"Open quote with status Draft
+Click on Browse your files (only .csv and folder display in explorer)
+Select one .csv file
+Click Open",,,,,,0
+C389297,Attachment > File with extension NOT IN whitelist,https://virtowayqa.testrail.io/index.php?/attachments/get/1000003795,,"User sees error **File format is not allowed.**   Button Save inactive
+
+---
+
+ ![](index.php?/attachments/get/d5d624a9-13c3-4b51-9d4a-2246c3c7e483) 
+
+
+
+
+
+",Configured  FileUpload__Scopes__0AllowedExtensions0: .csv,Medium,,Attachment in quote,1,,Quote requests (Desktop+Mobile) > Attachment in quote,"Open quote with status Draft
+Click on Browse your files (only .csv and folder display in explorer)
+Select one .docs file
+Click Open",,,,,,0
+C389298,Attachment > File size over limit.,,,Error  ![](index.php?/attachments/get/17b74557-e8be-4171-8255-be41a943cc92)  ,Configure  FileUpload__Scopes__0__MaxFileSize: 10485760,Medium,,Attachment in quote,1,,Quote requests (Desktop+Mobile) > Attachment in quote,1. Try to upload file more than 10mb,,,,,,0
+C389299,Attachment > case-insensitive file extensions,,,,"Create files with formats in different cases (PDF, jPg, dOCx, pNG)",Medium,,Attachment in quote,1,,Quote requests (Desktop+Mobile) > Attachment in quote,,"Step Description:
+Open quote with status draft
+Click on Browse your files
+Select files with different cases in extensions
+
+
+Expected Result:
+All allowed files are uploaded",,All allowed files are uploaded,,"Open quote with status draft
+Click on Browse your files
+Select files with different cases in extensions
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Add new file with non-allow format but in UPPER case
+Expected Result:
+The error is shown
+
+**File format is not allowed.**
+",,"The error is shown
+
+**File format is not allowed.**
+",,Add new file with non-allow format but in UPPER case,
+C389300,Attachment > 2 files with the same name,https://virtowayqa.testrail.io/index.php?/attachments/get/1000003662,,"Error """"Cannot upload file with the same name.""""
+ ![](index.php?/attachments/get/c97cd02d-7c8b-4e91-b180-54df6c9500a1) 
+",,Medium,,Attachment in quote,1,,Quote requests (Desktop+Mobile) > Attachment in quote,Try to upload 2 files with the same name ,,,,,,0
+C389301,Attachment > Remove file,,,"File removed from quote
+File exist in assets
+
+",,Medium,,Attachment in quote,1,,Quote requests (Desktop+Mobile) > Attachment in quote,"1. Upload file to quote
+2. Save
+3. Remove file from quote
+4. Save and reload page
+
+
+
+",,,,,,0
+C389302,Attachment > Copy link,,,"Link looks like this - /api/files/95834038c0f64edc9638b133ce2250bf
+User can download file. 
+Anonymous cannot downlload file (403)
+ 
+",,Medium,,Attachment in quote,1,,Quote requests (Desktop+Mobile) > Attachment in quote,"1. Upload file to quote
+2. Click RMB > Copy link 
+3. Paste link to address bar in browser
+
+
+
+",,,,,,0
+C389303,Submit quote > Check created quote,https://virtowayqa.testrail.io/index.php?/attachments/get/1000000791,,,Create quote from the cart or from the Quote request page,Medium,,Quote review,1,,Quote requests (Desktop+Mobile) > Quote review,,"Step Description:
+Add comment
+Add some files
+Set shipping and billing addresses
+Submit quote
+Expected Result:
+The quote was created successfully",,The quote was created successfully,,"Add comment
+Add some files
+Set shipping and billing addresses
+Submit quote",0
+,,,,,,,,,,,,,"
+Step Description:
+Check the  submitted quote
+Expected Result:
+The quote contains ALL data that the user has initially added:
+
+Product items
+
+Comment
+
+File attachments
+
+Shipping and billing data
+
+---
+ ![](index.php?/attachments/get/29a1a495-8ca8-4519-827a-c3df5b852cb1) 
+
+
+  
+",,"The quote contains ALL data that the user has initially added:
+
+Product items
+
+Comment
+
+File attachments
+
+Shipping and billing data
+
+---
+ ![](index.php?/attachments/get/29a1a495-8ca8-4519-827a-c3df5b852cb1) 
+
+
+  
+",,Check the  submitted quote,
+C389304,Status Proposal sent > Approve > Order from quote created,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001558,,,"Quote1 was created and submitted by User1
+Go to admin > Quotes
+Open Quote1
+Open widget with prices and totals > Set shipping method
+Set status Proposal sent 
+Save
+
+
+--
+ ![](index.php?/attachments/get/55a7ff90-17f3-4e16-9c07-fc70be010bda)   
+
+
+
+
+ 
+",Medium,,Quote review,1,,Quote requests (Desktop+Mobile) > Quote review,,"Step Description:
+Sign in as User1
+Open account/quotes
+Click on the quote1 with status Proposal sent
+Expected Result:
+The Quote details page is opened
+Approve and Decline buttons are shown 
+",,"The Quote details page is opened
+Approve and Decline buttons are shown 
+",,"Sign in as User1
+Open account/quotes
+Click on the quote1 with status Proposal sent",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Approve button
+Expected Result:
+The quote status should be changed **Ordered**
+The order page should be opened for order review.
+Order items, price, quantity,totals, shipments should be taken from Quote
+",,"The quote status should be changed **Ordered**
+The order page should be opened for order review.
+Order items, price, quantity,totals, shipments should be taken from Quote
+",,Click on the Approve button,
+C389305,Create Order from Quote > Pay Now,https://virtowayqa.testrail.io/index.php?/attachments/get/1000004506,,,"Quote has status Proposal Sent
+Create Order from Quote",Medium,,Quote review,1,,Quote requests (Desktop+Mobile) > Quote review,,"Step Description:
+Click on Approve
+
+Expected Result:
+1. Order detailed page is opened
+2. The status is **New**
+3. Shipping/Billing addresses are displayed (if were added in the quote)
+4. Shipping method will displayed if set in the back office in Quote!!!",,"1. Order detailed page is opened
+2. The status is **New**
+3. Shipping/Billing addresses are displayed (if were added in the quote)
+4. Shipping method will displayed if set in the back office in Quote!!!",,"Click on Approve
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on Pay now
+Expected Result:
+The payment page is opened
+A user can Edit a billing address and Select a payment method
+
+--- 
+
+ ![](index.php?/attachments/get/fd347946-4b69-4186-a710-f03182bf9cbd)
+",,"The payment page is opened
+A user can Edit a billing address and Select a payment method
+
+--- 
+
+ ![](index.php?/attachments/get/fd347946-4b69-4186-a710-f03182bf9cbd)
+",,Click on Pay now,
+,,,,,,,,,,,,,"
+Step Description:
+Select a payment method
+Click on Edit
+Expected Result:
+The Select payment method pop-up is shown
+
+",,"The Select payment method pop-up is shown
+
+",,"Select a payment method
+Click on Edit",
+,,,,,,,,,,,,,"
+Step Description:
+Select any payment method (ex. Bank card (Authorize.Net))
+
+
+Expected Result:
+The payment method was selected successfully",,The payment method was selected successfully,,"Select any payment method (ex. Bank card (Authorize.Net))
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Fill out the payment form
+Pay now
+Expected Result:
+The payment process completed
+
+",,"The payment process completed
+
+",,"Fill out the payment form
+Pay now",
+C389306,Status Proposal sent > Decline,,,,"Quote1 was created and submitted by User1
+Go to admin > Quotes
+Open Quote1
+Set status Proposal sent 
+Save
+
+
+ 
+",Medium,,Quote review,1,,Quote requests (Desktop+Mobile) > Quote review,,"Step Description:
+Sign in as User1
+Open account/quotes
+Click on the quote1 with status Proposal sent
+Expected Result:
+The Quote details page is opened
+Approve and Decline buttons are shown
+---
+
+  
+",,"The Quote details page is opened
+Approve and Decline buttons are shown
+---
+
+  
+",,"Sign in as User1
+Open account/quotes
+Click on the quote1 with status Proposal sent",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Decline button
+Expected Result:
+The quote status should be changed Declined
+After the action the Quote detail page should be updated
+Decline and Approve buttons disappeared
+The Order was not created
+
+",,"The quote status should be changed Declined
+After the action the Quote detail page should be updated
+Decline and Approve buttons disappeared
+The Order was not created
+
+",,Click on the Decline button,
+C389354,Corporate block > User_1 is not a member of the Company,,,The Corporate block is not displayed for User_1,"The User_1 is not a member of any organization (registered as personal account)
+
+",Medium,,Corporate (Desktop+Mobile),0,,Corporate (Desktop+Mobile),"Sign in as User_1
+Dashboard > Check Corporate block",,,,,,0
+C389355,Corporate block > User_2 is a member of the Company,,,The Corporate block is displayed for User_2,The User_2 is a member of Company_1 (registered as company account),Medium,,Corporate (Desktop+Mobile),0,,Corporate (Desktop+Mobile),"Sign in as User_2
+Dashboard > Check Corporate block",,,,,,0
+C389441,Company Info > Empty page > User without permission,https://virtowayqa.testrail.io/index.php?/attachments/get/1000002366,,,"User is a Company member without permissions
+User logged in store
+User is on account > Corporate > Company info
+
+There are no added addresses",Medium,,Company info,1,,Corporate (Desktop+Mobile) > Company info,,"Step Description:
+Check the page
+Expected Result:
+The page is empty. The text """"There are no addresses yet""""
+
+![](index.php?/attachments/get/82e87d35-641a-4db9-b7c8-8a5841080044)   
+",,"The page is empty. The text ""There are no addresses yet""
+
+![](index.php?/attachments/get/82e87d35-641a-4db9-b7c8-8a5841080044)   
+",,Check the page,0
+C389442,Company info > View for User without permissions,,,"![](index.php?/attachments/get/66774660-c9ac-4632-b361-f7552946500d) 
+
+The User can only read data without any actions","User is a Company member without permissions
+User logged in store
+User is on account > Corporate > Company info
+
+There are several addresses added",Medium,,Company info,1,,Corporate (Desktop+Mobile) > Company info,Check the page,,,,,,0
+C389443,Company Info > Empty page > Admin,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000000360, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000360",,,"Admin has Organization maintainer Role
+Admin logged in store
+Admin is on account > Corporate > Company info
+
+There are no added addresses ",Medium,,Company info,1,,Corporate (Desktop+Mobile) > Company info,,"Step Description:
+Check the page
+Expected Result:
+The page is empty. The text """"There are no addresses yet"""" and the button """"Add new addresses"""" are presented on the page
+
+![](index.php?/attachments/get/13d390bd-ea31-412c-818e-00acf133f9b9) 
+",,"The page is empty. The text ""There are no addresses yet"" and the button ""Add new addresses"" are presented on the page
+
+![](index.php?/attachments/get/13d390bd-ea31-412c-818e-00acf133f9b9) 
+",,Check the page,0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the button """"Add new address""""
+Expected Result:
+The """"Create new company address"""" form is opened",,"The ""Create new company address"" form is opened",,"Click on the button ""Add new address""",
+C389444,Company name > Update organization name > Admin,,,"1. Changed organization name saved
+2. Addresses and emails are not removed after updating
+
+","1. Admin has Organization maintainer Role
+2. Admin logged in store
+3. Admin is on account page
+4. Admin opened **Company info** link",Medium,,Company info,1,,Corporate (Desktop+Mobile) > Company info,"1. Enter **new** organization name
+2. Press button **Save**
+3. Open Organization in admin environment",,,,,,0
+C389445,Company name > Validation > Length of name,,,,"1. Admin has Organization maintainer Role
+2. Admin logged in store
+3. Admin is on account > Corporate > **Company info** link",Medium,,Company info,1,,Corporate (Desktop+Mobile) > Company info,,"Step Description:
+Enter the Name with the length  = 63 chars 
+Save
+Expected Result:
+The button Save is active
+The New Company name is Saved and updated 
+
+",,"The button Save is active
+The New Company name is Saved and updated 
+
+",,"Enter the Name with the length  = 63 chars 
+Save",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter the Name with the length = 64 chars
+Save
+Expected Result:
+The button Save is active
+The New Company name is Saved and updated 
+",,"The button Save is active
+The New Company name is Saved and updated 
+",,"Enter the Name with the length = 64 chars
+Save",
+,,,,,,,,,,,,,"
+Step Description:
+Enter the Name with a length more than 64 chars
+Expected Result:
+Impossible to enter more than 64 chars
+Save is disabled",,"Impossible to enter more than 64 chars
+Save is disabled",,Enter the Name with a length more than 64 chars,
+C389446,Company name > Validation > Empty field,,,,"Admin has Organization maintainer Role
+Admin logged in store
+Admin is on account > Corporate > Company info link",Medium,,Company info,1,,Corporate (Desktop+Mobile) > Company info,,"Step Description:
+Leave the Company name empty
+Expected Result:
+The Save button is disabled",,The Save button is disabled,,Leave the Company name empty,0
+,,,,,,,,,,,,,"
+Step Description:
+Enter Space several times
+Expected Result:
+The Save button is disabled",,The Save button is disabled,,Enter Space several times,
+C389447,Company addresses list > general view > Desktop,,,,"Admin has Organization maintainer Role
+Admin logged in store
+Admin is on account page
+Admin opened Company info link
+
+There are more than 10 addresses were added to the list",Medium,,Company info,1,,Corporate (Desktop+Mobile) > Company info,,"Step Description:
+Check the page
+Expected Result:
+The next elements are presented:
+
+- The field Company name
+- Save - becomes Active when the Company name updated
+- Add a new address button
+
+ **Table Addresses with a list of company addresses**
+
+- column Address - sorting
+- column Description - sorting
+- Zip code
+- Country
+- column Default [not implemented yet]
+- column Action (context menu with Edit, Delete)
+- Paging for Desktop (set 10 addresses on the page) and Infinity scroll for Mobile
+
+*There are no breadcrumbs*
+
+",,"The next elements are presented:
+
+- The field Company name
+- Save - becomes Active when the Company name updated
+- Add a new address button
+
+ **Table Addresses with a list of company addresses**
+
+- column Address - sorting
+- column Description - sorting
+- Zip code
+- Country
+- column Default [not implemented yet]
+- column Action (context menu with Edit, Delete)
+- Paging for Desktop (set 10 addresses on the page) and Infinity scroll for Mobile
+
+*There are no breadcrumbs*
+
+",,Check the page,0
+C389448,Company addresses list > general view > Mobile,https://virtowayqa.testrail.io/index.php?/attachments/get/1000003655,,,"Admin has Organization maintainer Role
+Admin logged in store
+Admin is on account page
+Admin opened Company info link
+
+There are more than 10 addresses were added to the list",Medium,,Company info,1,,Corporate (Desktop+Mobile) > Company info,,"Step Description:
+Go to Hamburger menu &gt; Corporate &gt; Company info
+Check the page
+Expected Result:
+	
+The next elements are presented:
+
+- The field Company name
+- Save (diskette icon ) - becomes Active when the Company name updated
+- Add new button
+
+**Table Addresses with a list of company addresses**
+
+- Address
+- Country
+- Description
+- Zip Code
+- Edit - swipe to the left
+- Delete - swipe to the right
+
+- Infinity scroll
+
+![](index.php?/attachments/get/c972e426-6b67-4ab3-b24e-e92546549785)        
+",,"	
+The next elements are presented:
+
+- The field Company name
+- Save (diskette icon ) - becomes Active when the Company name updated
+- Add new button
+
+**Table Addresses with a list of company addresses**
+
+- Address
+- Country
+- Description
+- Zip Code
+- Edit - swipe to the left
+- Delete - swipe to the right
+
+- Infinity scroll
+
+![](index.php?/attachments/get/c972e426-6b67-4ab3-b24e-e92546549785)        
+",,"Go to Hamburger menu &gt; Corporate &gt; Company info
+Check the page",0
+C389449,Company addresses list > Sorting,,,,"Admin has Organization maintainer Role
+Admin logged in store
+Admin is on account page
+Admin opened Company info link
+
+
+There are more than 10 addresses were added to the list",Medium,,Company info,1,,Corporate (Desktop+Mobile) > Company info,,"Step Description:
+Try to sort by Address
+Click one more time
+Expected Result:
+The list is sorted by Address descending (from Z-A)
+The list is sorted by Address ascending (from A-Z)",,"The list is sorted by Address descending (from Z-A)
+The list is sorted by Address ascending (from A-Z)",,"Try to sort by Address
+Click one more time",0
+,,,,,,,,,,,,,"
+Step Description:
+Try to sort by Description
+Click one more time
+Expected Result:
+The list is sorted by Description descending (from Z-A)
+The list is sorted by Description ascending (from A-Z)",,"The list is sorted by Description descending (from Z-A)
+The list is sorted by Description ascending (from A-Z)",,"Try to sort by Description
+Click one more time",
+C389450,Company addresses list > Action column > Make default [not implemented yet] ???,,,,"Admin has Organization maintainer Role
+Admin logged in store
+Admin is on account > Corporate > Company info link
+
+**There is no default address in the list**",Medium,ST-3022,Company info,1,,Corporate (Desktop+Mobile) > Company info,,"Step Description:
+Choose an address from the list
+Click on Action &gt; Make default in the context menu
+Expected Result:
+The address was set up as a default
+
+![](index.php?/attachments/get/c87c5ce0-9699-4534-959b-d9ababa59f1e)      
+",,"The address was set up as a default
+
+![](index.php?/attachments/get/c87c5ce0-9699-4534-959b-d9ababa59f1e)      
+",,"Choose an address from the list
+Click on Action &gt; Make default in the context menu",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on Action one more time
+Expected Result:
+Make default is no longer displayed in the context menu. Only Edit and Delete icons",,Make default is no longer displayed in the context menu. Only Edit and Delete icons,,Click on Action one more time,
+,,,,,,,,,,,,,"
+Step Description:
+Choose no default address from the list
+Click Action
+Expected Result:
+The context menu is appeared with Make default, Edit, and Delete icons",,"The context menu is appeared with Make default, Edit, and Delete icons",,"Choose no default address from the list
+Click Action",
+C389451,Company addresses list > Action column > Edit,,,,"Admin has Organization maintainer Role
+Admin logged in store
+Admin is on account > Corporate > Company info link",Medium,,Company info,1,,Corporate (Desktop+Mobile) > Company info,,"Step Description:
+Click on Action &gt; Edit in the context menu
+
+
+Expected Result:
+- Pop-up """"Edit company address"""" has appeared
+- Save is disabled by default
+- All fields are prefilled and editable
+",,"- Pop-up ""Edit company address"" has appeared
+- Save is disabled by default
+- All fields are prefilled and editable
+",,"Click on Action &gt; Edit in the context menu
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter new value Address_2 in the address field
+Save changes
+
+Expected Result:
+The button Save is activated
+All changes saved
+The notification green popup appeared with the text """"Address {Address_1} has been successfully saved""""",,"The button Save is activated
+All changes saved
+The notification green popup appeared with the text ""Address {Address_1} has been successfully saved""",,"Enter new value Address_2 in the address field
+Save changes
+",
+,,,,,,,,,,,,,"
+Step Description:
+Open Organization_1 &gt; Addresses in the admin environment
+Expected Result:
+Address_2 shown in the Organization information",,Address_2 shown in the Organization information,,Open Organization_1 &gt; Addresses in the admin environment,
+C389452,Company addresses list > Action column > Delete,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001193,,,"Admin has Organization maintainer Role
+Admin logged in store
+Admin is on account > Corporate > Company info link
+
+There are 11 addresses were added to the list
+",Medium,,Company info,1,,Corporate (Desktop+Mobile) > Company info,,"Step Description:
+Choose no default address from the list
+Click on Action &gt; Delete in the context menu
+Expected Result:
+Popup """"Delete address"""" appears. The text """"Are you sure you want to delete address from the list""""?
+The buttons Ok and Cancel are presented 
+
+![](index.php?/attachments/get/417e17d8-a363-46fa-8213-43305015deff)    
+
+",,"Popup ""Delete address"" appears. The text ""Are you sure you want to delete address from the list""?
+The buttons Ok and Cancel are presented 
+
+![](index.php?/attachments/get/417e17d8-a363-46fa-8213-43305015deff)    
+
+",,"Choose no default address from the list
+Click on Action &gt; Delete in the context menu",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on Cancel or X
+Expected Result:
+The action is canceled. Popup is closed",,The action is canceled. Popup is closed,,Click on Cancel or X,
+,,,,,,,,,,,,,"
+Step Description:
+Click on Delete from the context menu &gt; Ok
+Expected Result:
+The address was removed from list.
+The notification green popup appeared with the text """"Address {Address_1} has been successfully deleted""""
+",,"The address was removed from list.
+The notification green popup appeared with the text ""Address {Address_1} has been successfully deleted""
+",,Click on Delete from the context menu &gt; Ok,
+C389453,Company info > Addresses > Pagination > Add pages,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000001123, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002000",,,Sign in as a company owner,Medium,,Company info,1,,Corporate (Desktop+Mobile) > Company info,,"Step Description:
+Open Account &gt; Company Info
+Add 10 address
+Expected Result:
+The addresses list is displayed without pagination",,The addresses list is displayed without pagination,,"Open Account &gt; Company Info
+Add 10 address",0
+,,,,,,,,,,,,,"
+Step Description:
+Add one address
+Expected Result:
+1. The 2nd page is added
+2. Previous and Next buttons are displayed
+
+
+**Buttons:**
+
+Previous - active (disabled if the cursor is on the first page)
+Next - (active) disabled if the cursor is on the last page
+
+**Pagination view:**
+
+1 2
+
+-------------------------------------------------------
+
+ ![](index.php?/attachments/get/6b30a648-cbf8-4f23-99ba-50fb683142f6) 
+
+
+
+
+",,"1. The 2nd page is added
+2. Previous and Next buttons are displayed
+
+
+**Buttons:**
+
+Previous - active (disabled if the cursor is on the first page)
+Next - (active) disabled if the cursor is on the last page
+
+**Pagination view:**
+
+1 2
+
+-------------------------------------------------------
+
+ ![](index.php?/attachments/get/6b30a648-cbf8-4f23-99ba-50fb683142f6) 
+
+
+
+
+",,Add one address,
+,,,,,,,,,,,,,"
+Step Description:
+Generate 90 addresses via Postman
+Check the number of pages
+Expected Result:
+1. There are 9 pages for 10 addresses on each page
+
+**Buttons:**
+
+Previous - active/disabled if the cursor on the first page
+Next - active/disabled if the cursor on the last page
+
+The 1st page is selected and active
+
+
+**Pagination view:**
+
+1 2 3 4 5 6 7 8 9
+
+----------------------------------------------------
+
+ ![](index.php?/attachments/get/3bb825bc-dce1-44c3-8aec-329f9c8ef6de) 
+",,"1. There are 9 pages for 10 addresses on each page
+
+**Buttons:**
+
+Previous - active/disabled if the cursor on the first page
+Next - active/disabled if the cursor on the last page
+
+The 1st page is selected and active
+
+
+**Pagination view:**
+
+1 2 3 4 5 6 7 8 9
+
+----------------------------------------------------
+
+ ![](index.php?/attachments/get/3bb825bc-dce1-44c3-8aec-329f9c8ef6de) 
+",,"Generate 90 addresses via Postman
+Check the number of pages",
+C389454,Company info > Addresses > Pagination > Next button,,,,"Generate 120 mock addresses via Postman
+Sign in as a company owner",Medium,,Company info,1,,Corporate (Desktop+Mobile) > Company info,,"Step Description:
+Open Account &gt; Company Info
+Check Pagination
+Expected Result:
+**Buttons:**
+
+- Previous - disabled if the cursor on the first page active
+- Next - active
+
+- The 1st page is selected and active
+- There are 12 pages with 10 addresses on each 
+
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...12
+
+------------------------------------------------------
+
+
+ ![](index.php?/attachments/get/51a8a1b2-80dd-485c-8c98-36207e73baf3) 
+
+
+",,"**Buttons:**
+
+- Previous - disabled if the cursor on the first page active
+- Next - active
+
+- The 1st page is selected and active
+- There are 12 pages with 10 addresses on each 
+
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...12
+
+------------------------------------------------------
+
+
+ ![](index.php?/attachments/get/51a8a1b2-80dd-485c-8c98-36207e73baf3) 
+
+
+",,"Open Account &gt; Company Info
+Check Pagination",0
+,,,,,,,,,,,,,"
+Step Description:
+Click Next button
+Expected Result:
+1. System opens 2nd page &gt; 2nd page is selected, pages in the list are changed
+2. The page is scrolling up
+
+**Buttons:**
+
+- Previous - active
+- Next - active
+
+
+
+",,"1. System opens 2nd page &gt; 2nd page is selected, pages in the list are changed
+2. The page is scrolling up
+
+**Buttons:**
+
+- Previous - active
+- Next - active
+
+
+
+",,Click Next button,
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Next button till the 6-page
+Expected Result:
+1. System opens 6th page &gt; 6th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+4. Three dots after 1st and before the last page were added 
+
+**Pagination view:**
+
+1...4 5 6 7 8...12
+
+-----------------------------------------------------------
+
+ ![](index.php?/attachments/get/e1171622-e0de-46b5-8011-190ba4dee11a) 
+
+",,"1. System opens 6th page &gt; 6th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+4. Three dots after 1st and before the last page were added 
+
+**Pagination view:**
+
+1...4 5 6 7 8...12
+
+-----------------------------------------------------------
+
+ ![](index.php?/attachments/get/e1171622-e0de-46b5-8011-190ba4dee11a) 
+
+",,Proceed to push the Next button till the 6-page,
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Next button till the 8-page
+Expected Result:
+1. System opens 8th page &gt; 8th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+4. Three dots are displayed after the 1st page and all of the last seven pages.
+
+**Pagination view:**
+
+1...6 7 8 9 10 11 12
+
+-----------------------------------------------------------
+
+ ![](index.php?/attachments/get/b07f64b8-57f7-4b81-8568-35f29f4eeb90) 
+",,"1. System opens 8th page &gt; 8th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+4. Three dots are displayed after the 1st page and all of the last seven pages.
+
+**Pagination view:**
+
+1...6 7 8 9 10 11 12
+
+-----------------------------------------------------------
+
+ ![](index.php?/attachments/get/b07f64b8-57f7-4b81-8568-35f29f4eeb90) 
+",,Proceed to push the Next button till the 8-page,
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Next button till the last page
+Expected Result:
+1. System opens 12th page &gt; 12th page is selected, pages in the list are changed
+2. The page is scrolling up
+3. Three dots are displayed after the 1st page and all of the last seven pages.
+
+
+**Buttons:**
+
+- Previous - active
+- Next - disabled if the cursor on the last page 
+
+
+**Pagination view:**
+
+1...6 7 8 9 10 11 12
+
+--------------------------------------------------------------
+
+ ![](index.php?/attachments/get/00c5eb5c-21b7-4175-abf1-8e258104da62) 
+",,"1. System opens 12th page &gt; 12th page is selected, pages in the list are changed
+2. The page is scrolling up
+3. Three dots are displayed after the 1st page and all of the last seven pages.
+
+
+**Buttons:**
+
+- Previous - active
+- Next - disabled if the cursor on the last page 
+
+
+**Pagination view:**
+
+1...6 7 8 9 10 11 12
+
+--------------------------------------------------------------
+
+ ![](index.php?/attachments/get/00c5eb5c-21b7-4175-abf1-8e258104da62) 
+",,Proceed to push the Next button till the last page,
+C389455,Company info > Addresses > Pagination > Previous button,,,,"Generate 120 mock addresses via Postman
+Sign in as a company owner",Medium,,Company info,1,,Corporate (Desktop+Mobile) > Company info,,"Step Description:
+Select the last 12th page
+Click on the Previous button
+Expected Result:
+1. System opens 11th page &gt; 11th page is selected, pages in the list are changed
+2. The page is scrolling up
+3. Three dots are displayed after the 1st page and all of the last seven pages.
+
+
+**Buttons:**
+
+- Previous - active
+- Next - active 
+
+
+**Pagination view:**
+
+1...6 7 8 9 10 11 12
+
+--------------------------------------------------------------
+
+ ![](index.php?/attachments/get/4142081d-8db5-4cdf-8215-c34207a5eb79) 
+",,"1. System opens 11th page &gt; 11th page is selected, pages in the list are changed
+2. The page is scrolling up
+3. Three dots are displayed after the 1st page and all of the last seven pages.
+
+
+**Buttons:**
+
+- Previous - active
+- Next - active 
+
+
+**Pagination view:**
+
+1...6 7 8 9 10 11 12
+
+--------------------------------------------------------------
+
+ ![](index.php?/attachments/get/4142081d-8db5-4cdf-8215-c34207a5eb79) 
+",,"Select the last 12th page
+Click on the Previous button",0
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Previous button till the 7-page
+Expected Result:
+1. System opens 7th page &gt; 7th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+4. Three dots after 1st and before the last page were added 
+
+**Pagination view:**
+
+1...4 5 6 7 8...12
+
+-----------------------------------------------------------
+
+ ![](index.php?/attachments/get/3b83e259-d08c-4899-97cf-6018f2e9e8d1) 
+
+",,"1. System opens 7th page &gt; 7th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+4. Three dots after 1st and before the last page were added 
+
+**Pagination view:**
+
+1...4 5 6 7 8...12
+
+-----------------------------------------------------------
+
+ ![](index.php?/attachments/get/3b83e259-d08c-4899-97cf-6018f2e9e8d1) 
+
+",,Proceed to push the Previous button till the 7-page,
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Previous button till the 1st page
+Expected Result:
+**Buttons:**
+
+- Previous - disabled if the cursor on the first page active
+- Next - active
+
+- The 1st page is selected and active
+- There are 12 pages with 10 addresses on each 
+
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...12
+
+------------------------------------------------------
+
+
+ ![](index.php?/attachments/get/812fef9e-419b-43a6-8ade-4ad2c2cc8655) 
+
+
+",,"**Buttons:**
+
+- Previous - disabled if the cursor on the first page active
+- Next - active
+
+- The 1st page is selected and active
+- There are 12 pages with 10 addresses on each 
+
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...12
+
+------------------------------------------------------
+
+
+ ![](index.php?/attachments/get/812fef9e-419b-43a6-8ade-4ad2c2cc8655) 
+
+
+",,Proceed to push the Previous button till the 1st page,
+C389456,Company info > Addresses > Pagination > Delete pages,,,,"Generate 120 mock addresses via Postman
+Sign in as a company owner",Medium,,Company info,1,,Corporate (Desktop+Mobile) > Company info,,"Step Description:
+Open the last page
+Delete all addresses
+Check the number of pages
+Check Next button
+Expected Result:
+1. The last page is deleted
+2. System opens 11th page &gt; 11th page is selected, pages in the list are changed
+
+**Buttons:**
+
+Previous - active
+Next - disabled
+
+There are 11 pages with 10 addresses on each
+
+**Pagination view:**
+
+1...5 6 7 8 9 10 11
+
+
+
+",,"1. The last page is deleted
+2. System opens 11th page &gt; 11th page is selected, pages in the list are changed
+
+**Buttons:**
+
+Previous - active
+Next - disabled
+
+There are 11 pages with 10 addresses on each
+
+**Pagination view:**
+
+1...5 6 7 8 9 10 11
+
+
+
+",,"Open the last page
+Delete all addresses
+Check the number of pages
+Check Next button",0
+C389457,Mobile > Edit address,,,"1. The notification green popup appeared with the text """"Address {Address_1} has been successfully saved""""
+2. Address_2 shown in the user contact information","Admin has Organization maintainer Role
+Admin logged in store
+Admin is on account > Corporate > Company info
+
+There are 11 addresses were added to the list",Medium,,Company info,1,,Corporate (Desktop+Mobile) > Company info,"1. Swipe to the left and tap on **Edit**
+2. Enter **new value** Address_2 in address field 
+3. Save changes
+4. Open Organization_1 contact info in admin environment",,,,,,0
+C389458,Mobile > Delete address,,,"1. The address was removed from list.
+2. The notification green popup appeared with the text """"Address {Address_1} has been successfully deleted""""
+
+","Admin has Organization maintainer Role
+Admin logged in store
+Admin is on account > Corporate > Company info
+
+There are 11 addresses were added to the list",Medium,,Company info,1,,Corporate (Desktop+Mobile) > Company info,"1. Choose no default address
+2. Swipe to the right and tap on **Delete**
+2. Confirm deletion
+3. Open Organization_1 > Addresses in admin environment",,,,,,0
+C389360,Add new address,,,,"Admin has Organization maintainer Role
+Admin logged in store
+Admin is on account > Corporate > Company info",Medium,,Add new address,2,,Corporate (Desktop+Mobile) > Company info > Add new address,,"Step Description:
+Click the button """"Add new address""""
+Expected Result:
+When you hover over the button, a pointer appears
+The """"Create new Company address popup"""" has appeared
+
+The next fields presented:
+
+Description field
+Country - mark required
+Zip/Postal code - mark required
+Region
+City - mark required
+Address - mark required
+Apt, suit, etc
+checkbox Set as default (unselected by default) [not implemented yet]
+
+
+
+
+",,"When you hover over the button, a pointer appears
+The ""Create new Company address popup"" has appeared
+
+The next fields presented:
+
+Description field
+Country - mark required
+Zip/Postal code - mark required
+Region
+City - mark required
+Address - mark required
+Apt, suit, etc
+checkbox Set as default (unselected by default) [not implemented yet]
+
+
+
+
+",,"Click the button ""Add new address""",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click button **Add new address**
+2. Enter all necessary fields
+3. Click button **Save**
+4. Open User in admin environment
+Expected Result:
+1. New address added to Organization_1 contact information",,1. New address added to Organization_1 contact information,,"1. Click button **Add new address**
+2. Enter all necessary fields
+3. Click button **Save**
+4. Open User in admin environment",
+C389361,Add new address >  Validation > required fields,,,,"Admin has Organization maintainer Role
+Admin logged in store
+Admin is on account > Corporate > Company info
+
+",Medium,,Add new address,2,,Corporate (Desktop+Mobile) > Company info > Add new address,,"Step Description:
+Click the button """"Add new address""""
+Fill in only one required field (ex. Country)
+Expected Result:
+The Save button is disabled
+
+",,"The Save button is disabled
+
+",,"Click the button ""Add new address""
+Fill in only one required field (ex. Country)",0
+,,,,,,,,,,,,,"
+Step Description:
+Fill in the required fields but one field leaves empty (ex. address)
+Expected Result:
+The Save button is disabled
+The text is displayed: """"This field is required"""" under the field
+",,"The Save button is disabled
+The text is displayed: ""This field is required"" under the field
+",,Fill in the required fields but one field leaves empty (ex. address),
+,,,,,,,,,,,,,"
+Step Description:
+Fill in all required fields and Save
+Expected Result:
+The Save button is active
+New address added to the list",,"The Save button is active
+New address added to the list",,Fill in all required fields and Save,
+C389362,Add new address >  Validation > fields limits,,,,"Admin has Organization maintainer Role
+Admin logged in store
+Admin is on account > Corporate > Company info
+
+",Medium,,Add new address,2,,Corporate (Desktop+Mobile) > Company info > Add new address,,"Step Description:
+Click the button """"Add new address""""
+Enter text in the next fields:
+- Description - more than 128 chars
+- Zip/Postal code - more than 32 chars
+- City-more than 128 chars
+- Address fields - more than 128
+
+Fill in all required fields &gt; Save
+
+Expected Result:
+The field does not accept characters greater than the set limit
+The text is cut off
+The Save button is activated
+Address is saved
+
+
+",,"The field does not accept characters greater than the set limit
+The text is cut off
+The Save button is activated
+Address is saved
+
+
+",,"Click the button ""Add new address""
+Enter text in the next fields:
+- Description - more than 128 chars
+- Zip/Postal code - more than 32 chars
+- City-more than 128 chars
+- Address fields - more than 128
+
+Fill in all required fields &gt; Save
+",0
+C389363,Cancel adding address,,,1. Address was not added to User contact information,"1. User logged in store
+2. User is on account page
+3. User opened **Company** info page
+4. User assigned to Organization_1",Medium,,Add new address,2,,Corporate (Desktop+Mobile) > Company info > Add new address,"1. Click button **Add**
+2. Enter all necessary fields
+3. Click button **Cancel**",,,,,,0
+C389378,Company user registration,,,There only the company address is displayed,,Medium,,Company address in checkout,3,,Corporate (Desktop+Mobile) > Company info > Add new address > Company address in checkout,"Register company user
+
+Go to Account > Corporate > Company Info
+
+Add addresses
+
+Add products to cart > open checkout page
+
+Add shipping address / billing address
+
+Check address field",,,,,,0
+C389379,Company owner add new addresses in checkout,,,"Only users with role “organization maintainer” can add a new addresses from the checkout page
+The address is added to the company addresses ",The user with the role of “organization maintainer” ,Medium,,Company address in checkout,3,,Corporate (Desktop+Mobile) > Company info > Add new address > Company address in checkout,"The company user is on the checkout page
+
+Add new address in addresses pop up",,,,,,0
+C389380,Company user add new address in checkout,,,"There is no Add button in pop-up Select the address
+The address is not added to the company addresses
+
+ ![](index.php?/attachments/get/15d1e524-eb4b-448d-8d2b-cc19da5bc888) 
+
+",The user is a member of a company ,Medium,,Company address in checkout,3,,Corporate (Desktop+Mobile) > Company info > Add new address > Company address in checkout,"The company user is on the checkout page
+
+Add new address in addresses pop up",,,,,,0
+C389381,All company users see the same addresses,,,,,Medium,,Company address in checkout,3,,Corporate (Desktop+Mobile) > Company info > Add new address > Company address in checkout,,"Step Description:
+The company user1 is logged
+
+Open checkout page &gt; check addresses field
+Expected Result:
+The company addresses are displayed",,The company addresses are displayed,,"The company user1 is logged
+
+Open checkout page &gt; check addresses field",0
+,,,,,,,,,,,,,"
+Step Description:
+Log in with Company user2
+
+Open checkout page &gt; check addresses field
+Expected Result:
+The same company addresses are displayed",,The same company addresses are displayed,,"Log in with Company user2
+
+Open checkout page &gt; check addresses field",
+C389391,Address > Mark as favorite address > Check sorting,,,Third address became the first address,"Create 3 addresses for organization 
+
+",Medium,VCST-327,Favorite address,2,,Corporate (Desktop+Mobile) > Company info > Favorite address,Open Dashboard > Look at the organization address > Remember sorting for address > Click on star icon for third address > Check sorting,,,,,,0
+C389392,Address > Mark as unfavorite address > Check sorting,,,,,Medium,,Favorite address,2,,Corporate (Desktop+Mobile) > Company info > Favorite address,,,,,,,0
+C389393,Favorite address > Check sorting in cart,,,,,Medium,,Favorite address,2,,Corporate (Desktop+Mobile) > Company info > Favorite address,,,,,,,0
+C389394,Favorite address > Check sorting in quote,,,,,Medium,,Favorite address,2,,Corporate (Desktop+Mobile) > Company info > Favorite address,,,,,,,0
+C398710,Verify Organization Logo Upload Block Availability,https://virtowayqa.testrail.io/index.php?/attachments/get/1000004623,,,Organization Maintainer is logged in and navigates to the Company Info page.,Medium,,Company Logo,2,"https://virtocommerce.atlassian.net/browse/VCST-2627
+
+Available from 2.16.0 vc-frontend",Corporate (Desktop+Mobile) > Company info > Company Logo,,"Step Description:
+1. Navigate to the """"Company Info"""" page. 
+2. Locate the """"Organization Logo"""" block. 
+3. Verify that the file upload functionality is available.
+Expected Result:
+The Organization Logo block is visible
+
+---
+ 
+ ![](index.php?/attachments/get/1000004623) 
+
+",,"The Organization Logo block is visible
+
+---
+ 
+ ![](index.php?/attachments/get/1000004623) 
+
+",,"1. Navigate to the ""Company Info"" page. 
+2. Locate the ""Organization Logo"" block. 
+3. Verify that the file upload functionality is available.",0
+C398719,Verify Organization Logo Upload Block Availability (Mobile),"https://virtowayqa.testrail.io/index.php?/attachments/get/1000004623, https://virtowayqa.testrail.io/index.php?/attachments/get/1000004625",,,Organization Maintainer is logged in and navigates to the Company Info page.,Medium,,Company Logo,2,"https://virtocommerce.atlassian.net/browse/VCST-2627
+
+Available from 2.16.0 vc-frontend",Corporate (Desktop+Mobile) > Company info > Company Logo,,"Step Description:
+1. Navigate to the """"Company Info"""" page. 
+2. Locate the """"Organization Logo"""" block. 
+3. Verify that the file upload functionality is available.
+Expected Result:
+The Organization Logo block is visible
+
+---
+ 
+Desktop
+
+ ![](index.php?/attachments/get/1000004623) 
+
+Mobile
+
+ ![](index.php?/attachments/get/1000004625) 
+
+",,"The Organization Logo block is visible
+
+---
+ 
+Desktop
+
+ ![](index.php?/attachments/get/1000004623) 
+
+Mobile
+
+ ![](index.php?/attachments/get/1000004625) 
+
+",,"1. Navigate to the ""Company Info"" page. 
+2. Locate the ""Organization Logo"" block. 
+3. Verify that the file upload functionality is available.",0
+C398711,Upload a Valid Logo File (Desktop/Mobile),"https://virtowayqa.testrail.io/index.php?/attachments/get/1000004624, https://virtowayqa.testrail.io/index.php?/attachments/get/1000004626",,,Organization Maintainer is on the Company Info page.,Medium,,Company Logo,2,"https://virtocommerce.atlassian.net/browse/VCST-2627
+
+Available from 2.16.0 vc-frontend",Corporate (Desktop+Mobile) > Company info > Company Logo,,"Step Description:
+1. Click on the """"Browse your files"""" button in the Organization Logo block. 2. Select a valid image file (JPG, PNG, GIF) within the size limit (5MB). 3. Click the """"Save"""" button. 
+4. Verify that the frontend calls the mutation to update the logo link.
+5. Refresh the page and verify that the uploaded logo is displayed.
+Expected Result:
+The logo is successfully uploaded and displayed in the Company Info page.
+
+---
+
+ ![](index.php?/attachments/get/1000004624) 
+
+mobile
+
+ ![](index.php?/attachments/get/1000004626) 
+",,"The logo is successfully uploaded and displayed in the Company Info page.
+
+---
+
+ ![](index.php?/attachments/get/1000004624) 
+
+mobile
+
+ ![](index.php?/attachments/get/1000004626) 
+",,"1. Click on the ""Browse your files"" button in the Organization Logo block. 2. Select a valid image file (JPG, PNG, GIF) within the size limit (5MB). 3. Click the ""Save"" button. 
+4. Verify that the frontend calls the mutation to update the logo link.
+5. Refresh the page and verify that the uploaded logo is displayed.",0
+C398712,Upload an Invalid File Format,,,,Organization Maintainer is on the Company Info page.,Medium,,Company Logo,2,"https://virtocommerce.atlassian.net/browse/VCST-2627
+
+Available from 2.16.0 vc-frontend",Corporate (Desktop+Mobile) > Company info > Company Logo,,"Step Description:
+1. Click on the """"Browse your files"""" button in the Organization Logo block. 2. Select an invalid file format (e.g., PDF, DOCX, TXT).
+3. Click the """"Save"""" button.
+Expected Result:
+An error message is displayed",,An error message is displayed,,"1. Click on the ""Browse your files"" button in the Organization Logo block. 2. Select an invalid file format (e.g., PDF, DOCX, TXT).
+3. Click the ""Save"" button.",0
+C398713,Upload a File Exceeding the Size Limit,,,,Organization Maintainer is on the Company Info page.,Medium,,Company Logo,2,"https://virtocommerce.atlassian.net/browse/VCST-2627
+
+Available from 2.16.0 vc-frontend",Corporate (Desktop+Mobile) > Company info > Company Logo,,"Step Description:
+1. Click on the """"Browse your files"""" button in the Organization Logo block. 2. Select an image file larger than 5MB. 
+3. Click the """"Save"""" button.
+Expected Result:
+An error message is displayed stating that the file size exceeds the allowed limit of 5MB.",,An error message is displayed stating that the file size exceeds the allowed limit of 5MB.,,"1. Click on the ""Browse your files"" button in the Organization Logo block. 2. Select an image file larger than 5MB. 
+3. Click the ""Save"" button.",0
+C398714,Verify Organization Logo Display for Employees,,,,A custom organization logo has been successfully uploaded.,Medium,,Company Logo,2,"https://virtocommerce.atlassian.net/browse/VCST-2627
+
+Available from 2.16.0 vc-frontend",Corporate (Desktop+Mobile) > Company info > Company Logo,,"Step Description:
+1. Log in as an organization employee. 2. Navigate to any storefront page. 3. Verify that the organization logo is displayed in the header instead of the default logo.
+Expected Result:
+The custom organization logo is visible to all organization employees.",,The custom organization logo is visible to all organization employees.,,1. Log in as an organization employee. 2. Navigate to any storefront page. 3. Verify that the organization logo is displayed in the header instead of the default logo.,0
+C398715,Remove the Custom Organization Logo,,,,A custom organization logo has been successfully uploaded.,Medium,,Company Logo,2,"https://virtocommerce.atlassian.net/browse/VCST-2627
+
+Available from 2.16.0 vc-frontend",Corporate (Desktop+Mobile) > Company info > Company Logo,,"Step Description:
+1. Navigate to the """"Company Info"""" page.
+2. Click the """"Remove"""" button in the Organization Logo block. 
+3. Confirm the removal action. 
+4. Refresh the page and verify that the default organization logo is displayed.
+Expected Result:
+The custom logo is removed",,The custom logo is removed,,"1. Navigate to the ""Company Info"" page.
+2. Click the ""Remove"" button in the Organization Logo block. 
+3. Confirm the removal action. 
+4. Refresh the page and verify that the default organization logo is displayed.",0
+C398716,Update the Organization Logo,,,,A custom organization logo has been successfully uploaded.,Medium,,Company Logo,2,"https://virtocommerce.atlassian.net/browse/VCST-2627
+
+Available from 2.16.0 vc-frontend",Corporate (Desktop+Mobile) > Company info > Company Logo,,"Step Description:
+1. Navigate to the """"Company Info"""" page. 
+2. Click on the """"Browse your files"""" button in the Organization Logo block. 3. Select a new valid image file (JPG, PNG, GIF, less than 5MB).
+4. Click the """"Save"""" button. 
+5. Verify that the frontend calls the mutation to update the logo link.
+6. Refresh the page and verify that the new logo is displayed.
+Expected Result:
+The new logo replaces the previous one",,The new logo replaces the previous one,,"1. Navigate to the ""Company Info"" page. 
+2. Click on the ""Browse your files"" button in the Organization Logo block. 3. Select a new valid image file (JPG, PNG, GIF, less than 5MB).
+4. Click the ""Save"" button. 
+5. Verify that the frontend calls the mutation to update the logo link.
+6. Refresh the page and verify that the new logo is displayed.",0
+C398717,Verify Permissions for Logo Management,,,,An employee without Organization Maintainer role is logged in.,Medium,,Company Logo,2,"https://virtocommerce.atlassian.net/browse/VCST-2627
+
+Available from 2.16.0 vc-frontend",Corporate (Desktop+Mobile) > Company info > Company Logo,,"Step Description:
+1. Navigate to the """"Company Info"""" page.
+2. Attempt to upload, update, or remove the organization logo.
+Expected Result:
+The employee should not have access to logo management functions",,The employee should not have access to logo management functions,,"1. Navigate to the ""Company Info"" page.
+2. Attempt to upload, update, or remove the organization logo.",0
+C398718,Verify Administrator Role in White Labeling,,,,ECommerce administrator is logged in.,Medium,,Company Logo,2,"https://virtocommerce.atlassian.net/browse/VCST-2627
+
+Available from 2.16.0 vc-frontend",Corporate (Desktop+Mobile) > Company info > Company Logo,,"Step Description:
+1. Navigate to the """"White Labeling"""" module in the back office. 
+2. Locate an organization's logo settings.
+3. Change the logo manually.
+4. Verify that the new logo appears in the Company Info page for the respective organization.
+Expected Result:
+The administrator successfully updates the organization's logo via the White Labeling module.",,The administrator successfully updates the organization's logo via the White Labeling module.,,"1. Navigate to the ""White Labeling"" module in the back office. 
+2. Locate an organization's logo settings.
+3. Change the logo manually.
+4. Verify that the new logo appears in the Company Info page for the respective organization.",0
+C389338,General view > Desktop,,,,"Company_1 exists in the system
+Contact_1-18 are members of Company_1",Medium,,Company members,1,,Corporate (Desktop+Mobile) > Company members,,"Step Description:
+Sign in as a company user
+Go to Corporate &gt; Company members
+Expected Result:
+The company members page is opened.",,The company members page is opened.,,"Sign in as a company user
+Go to Corporate &gt; Company members",0
+,,,,,,,,,,,,,"
+Step Description:
+Check the page
+Expected Result:
+Next elements are presented:
+
+- Fulltext search field (by Name, Role, Email)
+- Filters block
+- Invite members button
+- Add new member button
+
+*Table Company members with a list of members*
+
+- Role icon column
+- Name column - sorting
+- Role column - sorting
+- Email column
+- Active column - with icons
+- Action column
+
+- Paging for Desktop and Infinity scroll for Mobile
+
+
+",,"Next elements are presented:
+
+- Fulltext search field (by Name, Role, Email)
+- Filters block
+- Invite members button
+- Add new member button
+
+*Table Company members with a list of members*
+
+- Role icon column
+- Name column - sorting
+- Role column - sorting
+- Email column
+- Active column - with icons
+- Action column
+
+- Paging for Desktop and Infinity scroll for Mobile
+
+
+",,Check the page,
+C389339,General view > Mobile [Draft],,,,"Company_1 exists in the system
+Contact_1-18 are members of Company_1",Medium,,Company members,1,,Corporate (Desktop+Mobile) > Company members,,"Step Description:
+Sign in as a company user
+Go to Hamburger menu &gt; Corporate &gt; Company members
+
+![](index.php?/attachments/get/a5354bf0-b205-4349-9df1-9d11fa24468b)    
+
+Expected Result:
+The company members page is opened.
+
+  
+",,"The company members page is opened.
+
+  
+",,"Sign in as a company user
+Go to Hamburger menu &gt; Corporate &gt; Company members
+
+![](index.php?/attachments/get/a5354bf0-b205-4349-9df1-9d11fa24468b)    
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Check the page
+Expected Result:
+Next elements are presented:
+
+- Fulltext search field (by Name, Role, Email)
+- Filters block
+- Invite
+- New
+
+*Table Company members with a list of members*
+
+- Role icon column
+- Name column
+- Role column 
+- Email column
+- Active column - with icons
+- column Action
+
+- Infinity scroll
+
+
+",,"Next elements are presented:
+
+- Fulltext search field (by Name, Role, Email)
+- Filters block
+- Invite
+- New
+
+*Table Company members with a list of members*
+
+- Role icon column
+- Name column
+- Role column 
+- Email column
+- Active column - with icons
+- column Action
+
+- Infinity scroll
+
+
+",,Check the page,
+C389340,Search > Name,,,,"Company_1 exists in the system
+Contact_1-18 are members of Company_1
+
+User logged in store
+User is on account page
+User opened Company members link
+",Medium,,Company members,1,,Corporate (Desktop+Mobile) > Company members,,"Step Description:
+Enter to Search field **full name**
+Click on magnifier
+Expected Result:
+Appropriate Contact is returned in the search result",,Appropriate Contact is returned in the search result,,"Enter to Search field **full name**
+Click on magnifier",0
+,,,,,,,,,,,,,"
+Step Description:
+Clear the Search field
+Click on cross
+Expected Result:
+The Search field is cleared
+The list of members is displayed",,"The Search field is cleared
+The list of members is displayed",,"Clear the Search field
+Click on cross",
+,,,,,,,,,,,,,"
+Step Description:
+Enter to Search field **first name**
+Click on magnifier
+Expected Result:
+Appropriate Contacts are returned in the search result",,Appropriate Contacts are returned in the search result,,"Enter to Search field **first name**
+Click on magnifier",
+,,,,,,,,,,,,,"
+Step Description:
+Clear the field
+Enter to Search field **Last name**
+Click on magnifier
+
+Expected Result:
+Appropriate Contacts are returned in the search result",,Appropriate Contacts are returned in the search result,,"Clear the field
+Enter to Search field **Last name**
+Click on magnifier
+",
+,,,,,,,,,,,,,"
+Step Description:
+Clear the field
+Enter to Search field Contact which does not member of Company_1
+
+Expected Result:
+""""No results found"""" in response
+The button """"Reset Search"""" is appeared",,"""No results found"" in response
+The button ""Reset Search"" is appeared",,"Clear the field
+Enter to Search field Contact which does not member of Company_1
+",
+,,,,,,,,,,,,,"
+Step Description:
+Click on """"Reset Search"""" or on cross in Search field
+Expected Result:
+The list of members is displayed
+The search field is cleared",,"The list of members is displayed
+The search field is cleared",,"Click on ""Reset Search"" or on cross in Search field",
+C389341,Search > Role (deprecated),,,,"Company_1 exists in the system
+Contact_1-18 are members of Company_1
+Roles were assigned to company members
+
+User logged in store
+User is on account page
+User opened Company members link",Medium,,Company members,1,,Corporate (Desktop+Mobile) > Company members,,"Step Description:
+Enter to Search field Role_1 (ex.Store manager)
+Click on magnifier
+Expected Result:
+Contact with Role_1 are returned in the search result",,Contact with Role_1 are returned in the search result,,"Enter to Search field Role_1 (ex.Store manager)
+Click on magnifier",0
+,,,,,,,,,,,,,"
+Step Description:
+Clear the field
+Enter to Search field Role which does not assign on Company member
+Click on magnifier
+Expected Result:
+""""No results found"""" in response
+The button """"Reset Search"""" is appeared",,"""No results found"" in response
+The button ""Reset Search"" is appeared",,"Clear the field
+Enter to Search field Role which does not assign on Company member
+Click on magnifier",
+,,,,,,,,,,,,,"
+Step Description:
+Click on """"Reset Search"""" or on cross in Search field
+Expected Result:
+The list of members is displayed
+The search field is cleared",,"The list of members is displayed
+The search field is cleared",,"Click on ""Reset Search"" or on cross in Search field",
+C389342,Search > Email,,,,"Company_1 exists in the system
+Contact_1-18 are members of Company_1
+
+User logged in store
+User is on account page
+User opened Company members link",Medium,,Company members,1,,Corporate (Desktop+Mobile) > Company members,,"Step Description:
+Enter to Search field **full Email**
+Click on magnifier
+Expected Result:
+Appropriate Contact is returned in the search result",,Appropriate Contact is returned in the search result,,"Enter to Search field **full Email**
+Click on magnifier",0
+,,,,,,,,,,,,,"
+Step Description:
+Clear the field
+Enter to Search field **half Email**
+Click on magnifier
+Expected Result:
+Appropriate Contact is returned in the search result",,Appropriate Contact is returned in the search result,,"Clear the field
+Enter to Search field **half Email**
+Click on magnifier",
+,,,,,,,,,,,,,"
+Step Description:
+Clear the field
+Enter to Search field **invalid Email**
+Click on magnifier
+Expected Result:
+""""No results found"""" in response
+The button """"Reset Search"""" is appeared",,"""No results found"" in response
+The button ""Reset Search"" is appeared",,"Clear the field
+Enter to Search field **invalid Email**
+Click on magnifier",
+,,,,,,,,,,,,,"
+Step Description:
+Click on """"Reset Search"""" or on cross in Search field
+Expected Result:
+The list of members is displayed
+The search field is cleared",,"The list of members is displayed
+The search field is cleared",,"Click on ""Reset Search"" or on cross in Search field",
+C389343,Company members list > Sorting list,,,,"Company_1 exists in the system
+Contact_1-18 are members of Company_1
+
+User logged in store
+User is on account page
+User opened Company members link",Medium,,Company members,1,,Corporate (Desktop+Mobile) > Company members,,"Step Description:
+Try to sort by Name
+Click one more time
+
+Expected Result:
+The list is sorted by Name descending
+The list is sorted by Name ascending
+",,"The list is sorted by Name descending
+The list is sorted by Name ascending
+",,"Try to sort by Name
+Click one more time
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Try to sort by Role
+Click one more time
+Expected Result:
+The list is sorted by Role descending
+The list is sorted by Role ascending",,"The list is sorted by Role descending
+The list is sorted by Role ascending",,"Try to sort by Role
+Click one more time",
+C389344,Company member list > Icon and Role column,,,,"Admin logged in store > Account > Company members
+
+The Users with roles were added to the Company member list
+
+- Organization maintainer
+- Organization employee
+- Store manager
+- Purchasing agent
+- Store administrator",Medium,,Company members,1,,Corporate (Desktop+Mobile) > Company members,,"Step Description:
+Check the icon for role = ***Organization maintainer*** 
+Expected Result:
+The icon, Contact and Role name are displayed in the list
+
+![](index.php?/attachments/get/e442e501-2977-4d20-b140-031c999f2e88)     
+",,"The icon, Contact and Role name are displayed in the list
+
+![](index.php?/attachments/get/e442e501-2977-4d20-b140-031c999f2e88)     
+",,Check the icon for role = ***Organization maintainer*** ,0
+,,,,,,,,,,,,,"
+Step Description:
+Check the icon for role = ***Organization employee*** 
+Expected Result:
+The icon, Contact and Role name are displayed in the list
+
+![](index.php?/attachments/get/1074be40-499a-4753-9c58-6d3968bc88a1)     
+",,"The icon, Contact and Role name are displayed in the list
+
+![](index.php?/attachments/get/1074be40-499a-4753-9c58-6d3968bc88a1)     
+",,Check the icon for role = ***Organization employee*** ,
+,,,,,,,,,,,,,"
+Step Description:
+Check the icon for role = ***Store manager*** 
+Expected Result:
+The icon, Contact and Role name are displayed in the list
+
+![](index.php?/attachments/get/aadd386e-a52b-4638-9c4f-16ef93e448e7)    
+",,"The icon, Contact and Role name are displayed in the list
+
+![](index.php?/attachments/get/aadd386e-a52b-4638-9c4f-16ef93e448e7)    
+",,Check the icon for role = ***Store manager*** ,
+,,,,,,,,,,,,,"
+Step Description:
+Check the icon for role = ***Purchasing agent*** 
+Expected Result:
+The icon, Contact and Role name are displayed in the list 
+
+![](index.php?/attachments/get/495acf73-dd99-47d3-b7c6-40445e846d4e)     
+",,"The icon, Contact and Role name are displayed in the list 
+
+![](index.php?/attachments/get/495acf73-dd99-47d3-b7c6-40445e846d4e)     
+",,Check the icon for role = ***Purchasing agent*** ,
+,,,,,,,,,,,,,"
+Step Description:
+Check the icon for role = ***Store administrator*** 
+Expected Result:
+The icon, Contact, and Role name are displayed in the list
+
+![](index.php?/attachments/get/01d20cb2-167e-48c7-b05a-6efb9a0af2b8)     
+",,"The icon, Contact, and Role name are displayed in the list
+
+![](index.php?/attachments/get/01d20cb2-167e-48c7-b05a-6efb9a0af2b8)     
+",,Check the icon for role = ***Store administrator*** ,
+,,,,,,,,,,,,,"
+Step Description:
+Check the icon for invited User
+Expected Result:
+The icon of role, Invite Sent, and Role name are displayed in the list
+
+
+  
+
+
+
+
+
+   
+",,"The icon of role, Invite Sent, and Role name are displayed in the list
+
+
+  
+
+
+
+
+
+   
+",,Check the icon for invited User,
+C389345,Company members list > Active column,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000001614, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002984, https://virtowayqa.testrail.io/index.php?/attachments/get/1000004251, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000845",,,"Contact_1-18 are members of Company_1
+
+Contact_1 has been registered by Invite message
+Contact_2 has been sent an Invite message
+Contact_3 did not log in / status in admin Rejected
+
+User as a Company member logged in store > Account > Company members
+",Medium,,Company members,1,,Corporate (Desktop+Mobile) > Company members,,"Step Description:
+Pay attention to the column Active
+Try to hover over the icon of status (Desktop)
+Expected Result:
+The tooltip with the name of the status appears (Desktop)
+The name of the status is displayed on the nameplate (Mobile)
+
+",,"The tooltip with the name of the status appears (Desktop)
+The name of the status is displayed on the nameplate (Mobile)
+
+",,"Pay attention to the column Active
+Try to hover over the icon of status (Desktop)",0
+,,,,,,,,,,,,,"
+Step Description:
+Find Contact_1 in the list
+Check the status
+Expected Result:
+The status is Green - Active, the user has been autorithed
+
+![](index.php?/attachments/get/a4e4bda0-e544-4c81-87dd-0a854d0b4928)      
+",,"The status is Green - Active, the user has been autorithed
+
+![](index.php?/attachments/get/a4e4bda0-e544-4c81-87dd-0a854d0b4928)      
+",,"Find Contact_1 in the list
+Check the status",
+,,,,,,,,,,,,,"
+Step Description:
+Find Contact_2 in the list
+Check the status
+Expected Result:
+The status is Blue - Inactive, an invite was sent, but the user didn’t log in
+
+
+---
+
+ ![](index.php?/attachments/get/593639d9-15cb-4740-bfdb-ed93fe813c1c) 
+
+
+
+---
+
+
+ ![](index.php?/attachments/get/f112ab16-80cb-44e4-86c0-124a94f1dc21) 
+
+
+
+
+      
+
+
+",,"The status is Blue - Inactive, an invite was sent, but the user didn’t log in
+
+
+---
+
+ ![](index.php?/attachments/get/593639d9-15cb-4740-bfdb-ed93fe813c1c) 
+
+
+
+---
+
+
+ ![](index.php?/attachments/get/f112ab16-80cb-44e4-86c0-124a94f1dc21) 
+
+
+
+
+      
+
+
+",,"Find Contact_2 in the list
+Check the status",
+,,,,,,,,,,,,,"
+Step Description:
+Find Contact_3 in the list
+Check the status
+Expected Result:
+The status is Red - Blocked, the user is blocked and does not log in at all
+
+![](index.php?/attachments/get/2e9a9de5-673d-43ae-89bd-772e88558dc2)       ",,"The status is Red - Blocked, the user is blocked and does not log in at all
+
+![](index.php?/attachments/get/2e9a9de5-673d-43ae-89bd-772e88558dc2)       ",,"Find Contact_3 in the list
+Check the status",
+C389346,Company members list > Action column,,,"the context menu is opened with Edit role, Block user, Delete
+
+---
+
+ ![](index.php?/attachments/get/76b2d7dc-7067-474f-9766-489845826238) 
+
+
+
+","Contact_1-18 are members of Company_1
+
+Contact_1 has been registered by Invite message
+Contact_2 has been sent an Invite message
+Contact_3 did not log in / status in admin Rejected
+
+User as a Company member logged in store > Account > Company members",Medium,,Company members,1,,Corporate (Desktop+Mobile) > Company members,Click on the icon Action,,,,,,0
+C389347,Company members list > Action column > Edit role,https://virtowayqa.testrail.io/index.php?/attachments/get/1000000118,,,"Contact_1-18 are members of Company_1
+
+Contact_1 has been registered by Invite message
+Contact_2 has been sent an Invite message
+Contact_3 did not log in / status in admin Rejected
+
+User as a Company member logged in store > Account > Company members",Medium,,Company members,1,,Corporate (Desktop+Mobile) > Company members,,"Step Description:
+Click on Action &gt; Edit role
+Expected Result:
+Popup “Change role” is opened from the context menu
+
+",,"Popup “Change role” is opened from the context menu
+
+",,Click on Action &gt; Edit role,0
+,,,,,,,,,,,,,"
+Step Description:
+View the list of Roles
+Expected Result:
+![](index.php?/attachments/get/09459a04-1dd2-4ec8-ab3a-f4c303833a7f)   
+
+-The radio buttons near the name of the Role
+-The description under the role
+-The icon Role
+-Cancel
+-Save
+
+
+",,"![](index.php?/attachments/get/09459a04-1dd2-4ec8-ab3a-f4c303833a7f)   
+
+-The radio buttons near the name of the Role
+-The description under the role
+-The icon Role
+-Cancel
+-Save
+
+
+",,View the list of Roles,
+,,,,,,,,,,,,,"
+Step Description:
+Click on the radio button
+Save
+Expected Result:
+The Role is changed and the radio button highlighted 
+Icon also changed after changing role
+",,"The Role is changed and the radio button highlighted 
+Icon also changed after changing role
+",,"Click on the radio button
+Save",
+C389348,Company member list > Action column > Update member role,,,1. New role saved for Member_1,"1. User logged in store
+2. User is on account page
+3. User opened **Company members** link
+4. Member_1 created in Organization",Medium,,Company members,1,,Corporate (Desktop+Mobile) > Company members,"1. Click on drop-down list
+2. Select new role for user
+3. Press **Save**",,,,,,0
+C389349,Company members list > Action column > Delete user,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001189,,,"Contact_1-18 are members of Company_1
+
+User as a Company member logged in store > Account > Company members",Medium,,Company members,1,,Corporate (Desktop+Mobile) > Company members,,"Step Description:
+Choose Contact_1
+Click on Actions &gt; Delete
+Expected Result:
+Popup about confirmation appears
+
+![](index.php?/attachments/get/4173f9f9-8f93-4503-9dfc-5824d8d0124f)    
+",,"Popup about confirmation appears
+
+![](index.php?/attachments/get/4173f9f9-8f93-4503-9dfc-5824d8d0124f)    
+",,"Choose Contact_1
+Click on Actions &gt; Delete",0
+,,,,,,,,,,,,,"
+Step Description:
+Click Cancel
+Expected Result:
+The popup is closed. The action is canceled",,The popup is closed. The action is canceled,,Click Cancel,
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Delete button &gt; Ok
+Expected Result:
+The popup is closed.
+the user is removed from the company",,"The popup is closed.
+the user is removed from the company",,Click on the Delete button &gt; Ok,
+,,,,,,,,,,,,,"
+Step Description:
+Try to find the user in the list of members
+Expected Result:
+""""No result found""""",,"""No result found""",,Try to find the user in the list of members,
+,,,,,,,,,,,,,"
+Step Description:
+Check User in admin
+Expected Result:
+Contact is no longer belongs to this Company
+
+
+",,"Contact is no longer belongs to this Company
+
+
+",,Check User in admin,
+,,,,,,,,,,,,,"
+Step Description:
+Sign in as a Contact_1
+Go to Account
+Expected Result:
+The user was sign in to the personal account 
+The corporate block is hidden",,"The user was sign in to the personal account 
+The corporate block is hidden",,"Sign in as a Contact_1
+Go to Account",
+C389350,Company members list > Pagination > Add pages,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000002000, https://virtowayqa.testrail.io/index.php?/attachments/get/1000001123",,,Sign in as a company owner,Medium,,Company members,1,,Corporate (Desktop+Mobile) > Company members,,"Step Description:
+Open Account &gt; Company members
+Invite 16 members
+Expected Result:
+The members list is displayed without pagination",,The members list is displayed without pagination,,"Open Account &gt; Company members
+Invite 16 members",0
+,,,,,,,,,,,,,"
+Step Description:
+Add one member
+Expected Result:
+1. The 2nd page is added
+2. Previous and Next buttons are displayed
+
+
+**Buttons:**
+
+Previous - active (disabled if the cursor is on the first page)
+Next - (active) disabled if the cursor is on the last page
+
+**Pagination view:**
+
+1 2
+
+-------------------------------------------------------
+
+ ![](index.php?/attachments/get/6b30a648-cbf8-4f23-99ba-50fb683142f6) 
+
+
+
+
+",,"1. The 2nd page is added
+2. Previous and Next buttons are displayed
+
+
+**Buttons:**
+
+Previous - active (disabled if the cursor is on the first page)
+Next - (active) disabled if the cursor is on the last page
+
+**Pagination view:**
+
+1 2
+
+-------------------------------------------------------
+
+ ![](index.php?/attachments/get/6b30a648-cbf8-4f23-99ba-50fb683142f6) 
+
+
+
+
+",,Add one member,
+,,,,,,,,,,,,,"
+Step Description:
+Invite members
+Enter 144 emails &gt; Send 
+Check the number of pages
+Expected Result:
+1. There are 9 pages for 16 members on each page
+
+**Buttons:**
+
+Previous - active/disabled if the cursor on the first page
+Next - active/disabled if the cursor on the last page
+
+The 1st page is selected and active
+
+
+**Pagination view:**
+
+1 2 3 4 5 6 7 8 9
+
+----------------------------------------------------
+
+ ![](index.php?/attachments/get/3bb825bc-dce1-44c3-8aec-329f9c8ef6de) 
+",,"1. There are 9 pages for 16 members on each page
+
+**Buttons:**
+
+Previous - active/disabled if the cursor on the first page
+Next - active/disabled if the cursor on the last page
+
+The 1st page is selected and active
+
+
+**Pagination view:**
+
+1 2 3 4 5 6 7 8 9
+
+----------------------------------------------------
+
+ ![](index.php?/attachments/get/3bb825bc-dce1-44c3-8aec-329f9c8ef6de) 
+",,"Invite members
+Enter 144 emails &gt; Send 
+Check the number of pages",
+C389351,Company members list > Pagination > Next button,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000001517, https://virtowayqa.testrail.io/index.php?/attachments/get/1000003917, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002691, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002399",,,Sign in as a company owner,Medium,,Company members,1,,Corporate (Desktop+Mobile) > Company members,,"Step Description:
+Open Account &gt; Company members
+Invite members &gt; Send invitation
+Create 12 pages with a member list
+
+Check Pagination
+Expected Result:
+**Buttons:**
+
+- Previous - disabled if the cursor on the first page active
+- Next - active
+
+- The 1st page is selected and active
+- There are 12 pages with 16 members on each 
+
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...12
+
+------------------------------------------------------
+
+
+ ![](index.php?/attachments/get/852d40c4-3727-492f-b99d-cb0a91e797a0) 
+
+
+",,"**Buttons:**
+
+- Previous - disabled if the cursor on the first page active
+- Next - active
+
+- The 1st page is selected and active
+- There are 12 pages with 16 members on each 
+
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...12
+
+------------------------------------------------------
+
+
+ ![](index.php?/attachments/get/852d40c4-3727-492f-b99d-cb0a91e797a0) 
+
+
+",,"Open Account &gt; Company members
+Invite members &gt; Send invitation
+Create 12 pages with a member list
+
+Check Pagination",0
+,,,,,,,,,,,,,"
+Step Description:
+Click Next button
+Expected Result:
+1. System opens 2nd page &gt; 2nd page is selected, pages in the list are changed
+2. The page is scrolling up
+
+**Buttons:**
+
+- Previous - active
+- Next - active
+
+
+
+",,"1. System opens 2nd page &gt; 2nd page is selected, pages in the list are changed
+2. The page is scrolling up
+
+**Buttons:**
+
+- Previous - active
+- Next - active
+
+
+
+",,Click Next button,
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Next button till the 6-page
+Expected Result:
+1. System opens 2nd page &gt; 2nd page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+4. Three dots after 1st and before the last page were added 
+
+**Pagination view:**
+
+1...4 5 6 7 8...12
+
+-----------------------------------------------------------
+
+ ![](index.php?/attachments/get/da219570-95cf-486d-9587-73373a850c89) 
+
+",,"1. System opens 2nd page &gt; 2nd page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+4. Three dots after 1st and before the last page were added 
+
+**Pagination view:**
+
+1...4 5 6 7 8...12
+
+-----------------------------------------------------------
+
+ ![](index.php?/attachments/get/da219570-95cf-486d-9587-73373a850c89) 
+
+",,Proceed to push the Next button till the 6-page,
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Next button till the 8-page
+Expected Result:
+1. System opens 8th page &gt; 8th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+4. Three dots are displayed after the 1st page and all of the last seven pages.
+
+**Pagination view:**
+
+1...6 7 8 9 10 11 12
+
+-----------------------------------------------------------
+
+ ![](index.php?/attachments/get/52bfde92-1110-482f-8a11-c7645a69db03) 
+",,"1. System opens 8th page &gt; 8th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+4. Three dots are displayed after the 1st page and all of the last seven pages.
+
+**Pagination view:**
+
+1...6 7 8 9 10 11 12
+
+-----------------------------------------------------------
+
+ ![](index.php?/attachments/get/52bfde92-1110-482f-8a11-c7645a69db03) 
+",,Proceed to push the Next button till the 8-page,
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Next button till the last page
+Expected Result:
+1. System opens 12th page &gt; 12th page is selected, pages in the list are changed
+2. The page is scrolling up
+3. Three dots are displayed after the 1st page and all of the last seven pages.
+
+
+**Buttons:**
+
+- Previous - active
+- Next - disabled if the cursor on the last page 
+
+
+**Pagination view:**
+
+1...6 7 8 9 10 11 12
+
+--------------------------------------------------------------
+
+ ![](index.php?/attachments/get/94913e2d-d872-444e-9c92-7bcc4a3160d0) 
+",,"1. System opens 12th page &gt; 12th page is selected, pages in the list are changed
+2. The page is scrolling up
+3. Three dots are displayed after the 1st page and all of the last seven pages.
+
+
+**Buttons:**
+
+- Previous - active
+- Next - disabled if the cursor on the last page 
+
+
+**Pagination view:**
+
+1...6 7 8 9 10 11 12
+
+--------------------------------------------------------------
+
+ ![](index.php?/attachments/get/94913e2d-d872-444e-9c92-7bcc4a3160d0) 
+",,Proceed to push the Next button till the last page,
+C389352,Company members list > Pagination > Previous button,,,,"Sign in as a company owner
+
+Dashboard > Account > Open Company members
+
+12 pages were created
+
+
+
+",Medium,,Company members,1,,Corporate (Desktop+Mobile) > Company members,,"Step Description:
+Select the last 12th page
+Click on the Previous button
+Expected Result:
+1. System opens 11th page &gt; 11th page is selected, pages in the list are changed
+2. The page is scrolling up
+3. Three dots are displayed after the 1st page and all of the last seven pages.
+
+
+**Buttons:**
+
+- Previous - active
+- Next - active 
+
+
+**Pagination view:**
+
+1...6 7 8 9 10 11 12
+
+--------------------------------------------------------------
+
+ ![](index.php?/attachments/get/457927fa-bf21-42f2-8049-2a5ee92c6911) 
+",,"1. System opens 11th page &gt; 11th page is selected, pages in the list are changed
+2. The page is scrolling up
+3. Three dots are displayed after the 1st page and all of the last seven pages.
+
+
+**Buttons:**
+
+- Previous - active
+- Next - active 
+
+
+**Pagination view:**
+
+1...6 7 8 9 10 11 12
+
+--------------------------------------------------------------
+
+ ![](index.php?/attachments/get/457927fa-bf21-42f2-8049-2a5ee92c6911) 
+",,"Select the last 12th page
+Click on the Previous button",0
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Previous button till the 7-page
+Expected Result:
+1. System opens 7th page &gt; 7th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+4. Three dots after 1st and before the last page were added 
+
+**Pagination view:**
+
+1...4 5 6 7 8...12
+
+-----------------------------------------------------------
+
+ ![](index.php?/attachments/get/e2cf1beb-5f9f-41d8-a8a6-a56617cd8549) 
+
+",,"1. System opens 7th page &gt; 7th page is selected, pages in the list are changed
+2. The Previous and Next buttons are active
+3. The page is scrolling up
+4. Three dots after 1st and before the last page were added 
+
+**Pagination view:**
+
+1...4 5 6 7 8...12
+
+-----------------------------------------------------------
+
+ ![](index.php?/attachments/get/e2cf1beb-5f9f-41d8-a8a6-a56617cd8549) 
+
+",,Proceed to push the Previous button till the 7-page,
+,,,,,,,,,,,,,"
+Step Description:
+Proceed to push the Previous button till the 1st page
+Expected Result:
+**Buttons:**
+
+- Previous - disabled if the cursor on the first page active
+- Next - active
+
+- The 1st page is selected and active
+- There are 12 pages with 10 addresses on each 
+
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...12
+
+------------------------------------------------------
+
+
+ ![](index.php?/attachments/get/36a5c5ec-0ee8-48b3-a93c-5d6f3de8a8c2) 
+
+
+",,"**Buttons:**
+
+- Previous - disabled if the cursor on the first page active
+- Next - active
+
+- The 1st page is selected and active
+- There are 12 pages with 10 addresses on each 
+
+
+**Pagination view:**
+
+1 2 3 4 5 6 7...12
+
+------------------------------------------------------
+
+
+ ![](index.php?/attachments/get/36a5c5ec-0ee8-48b3-a93c-5d6f3de8a8c2) 
+
+
+",,Proceed to push the Previous button till the 1st page,
+C389353,Company members list > Pagination > Delete pages,,,,"Sign in as a company owner
+
+Dashboard > Account > Open Company members
+
+12 pages were created",Medium,,Company members,1,,Corporate (Desktop+Mobile) > Company members,,"Step Description:
+Open the last page
+Delete all members
+Check the number of pages
+Check Next button
+Expected Result:
+1. The last page is deleted
+2. System opens 11th page &gt; 11th page is selected, pages in the list are changed
+
+**Buttons:**
+
+Previous - active
+Next - disabled
+
+There are 11 pages with 16 members on each
+
+**Pagination view:**
+
+1...5 6 7 8 9 10 11
+
+
+
+",,"1. The last page is deleted
+2. System opens 11th page &gt; 11th page is selected, pages in the list are changed
+
+**Buttons:**
+
+Previous - active
+Next - disabled
+
+There are 11 pages with 16 members on each
+
+**Pagination view:**
+
+1...5 6 7 8 9 10 11
+
+
+
+",,"Open the last page
+Delete all members
+Check the number of pages
+Check Next button",0
+C389356,Company members list > Action column > Block user,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000002674, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002108",,,"Contact1 is assigned to the Organization1
+Contact1 is active
+The company owner was signed in > Company members page
+
+",Medium,,Block user,2,,Corporate (Desktop+Mobile) > Company members > Block user,,"Step Description:
+Choose Contact_1
+Click on Actions &gt; Block
+Expected Result:
+A popup about confirmation appears 
+
+ ![](index.php?/attachments/get/9351d7b0-9db8-444e-9a30-b8d70b8fe2de) 
+ 
+",,"A popup about confirmation appears 
+
+ ![](index.php?/attachments/get/9351d7b0-9db8-444e-9a30-b8d70b8fe2de) 
+ 
+",,"Choose Contact_1
+Click on Actions &gt; Block",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Ok
+Expected Result:
+The popup is closed. The status is blocked
+
+ ![](index.php?/attachments/get/755be157-6c95-4395-a443-ad592a7432e4) 
+",,"The popup is closed. The status is blocked
+
+ ![](index.php?/attachments/get/755be157-6c95-4395-a443-ad592a7432e4) 
+",,Click on the Ok,
+,,,,,,,,,,,,,"
+Step Description:
+Open admin &gt; Contacts
+Find the Contact1
+Verify the Status
+Expected Result:
+The status of contact is Locked",,The status of contact is Locked,,"Open admin &gt; Contacts
+Find the Contact1
+Verify the Status",
+,,,,,,,,,,,,,"
+Step Description:
+Go to Account
+Verify the state
+Expected Result:
+The locked state is Locked",,The locked state is Locked,,"Go to Account
+Verify the state",
+C389357,Company members list > Action column > Unblock user,,,,"Contact1 is assigned to the Organization1
+Contact1 is blocked
+The company owner was signed in > Company members page",Medium,,Block user,2,,Corporate (Desktop+Mobile) > Company members > Block user,,"Step Description:
+Choose Contact_1
+Click on Actions &gt; Unblock user
+Expected Result:
+A popup about confirmation appears
+
+ ![](index.php?/attachments/get/7d5f68af-f879-49a2-81d0-f5e1f247942a) 
+",,"A popup about confirmation appears
+
+ ![](index.php?/attachments/get/7d5f68af-f879-49a2-81d0-f5e1f247942a) 
+",,"Choose Contact_1
+Click on Actions &gt; Unblock user",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Ok
+Expected Result:
+The user has been successfully unblocked. The status is approved
+
+
+ ![](index.php?/attachments/get/1a822342-0034-4b60-a25c-7acfd0a848ae) 
+",,"The user has been successfully unblocked. The status is approved
+
+
+ ![](index.php?/attachments/get/1a822342-0034-4b60-a25c-7acfd0a848ae) 
+",,Click on the Ok,
+,,,,,,,,,,,,,"
+Step Description:
+Open admin &gt; Contacts
+Find the Contact1
+Verify the Status
+Expected Result:
+The status of contact is Approved",,The status of contact is Approved,,"Open admin &gt; Contacts
+Find the Contact1
+Verify the Status",
+,,,,,,,,,,,,,"
+Step Description:
+Go to Account
+Verify the state
+Expected Result:
+The locked state is Unlocked",,The locked state is Unlocked,,"Go to Account
+Verify the state",
+C389358,Log in as a Blocked user,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000004166, https://virtowayqa.testrail.io/index.php?/attachments/get/1000003055",,,"Contact1 is assigned to the Organization1
+Contact1 is blocked",Medium,,Block user,2,,Corporate (Desktop+Mobile) > Company members > Block user,,"Step Description:
+Go to the Sign-in page
+Enter email and password locked user
+Sign in
+Check the query login &gt; Preview (Devtools &gt; Network)
+Expected Result:
+**The error description is:**
+
+Your account has been locked. Please contact support for assistance.
+
+**Storefront message is:**
+
+You have been blocked. You can not reach any information or create the order. For more details please contact your site administrator
+
+
+ ![](index.php?/attachments/get/e82b0805-6b50-47d8-b23e-20e5c1bb788b) 
+
+
+",,"**The error description is:**
+
+Your account has been locked. Please contact support for assistance.
+
+**Storefront message is:**
+
+You have been blocked. You can not reach any information or create the order. For more details please contact your site administrator
+
+
+ ![](index.php?/attachments/get/e82b0805-6b50-47d8-b23e-20e5c1bb788b) 
+
+
+",,"Go to the Sign-in page
+Enter email and password locked user
+Sign in
+Check the query login &gt; Preview (Devtools &gt; Network)",0
+,,,,,,,,,,,,,"
+Step Description:
+Click the link in the error message """"contact the site administrator.""""
+Expected Result:
+The 'Contacts' page is opened.
+
+ ![](index.php?/attachments/get/a75d93fb-bb13-4d5f-98df-c3e2a5b562f9) 
+",,"The 'Contacts' page is opened.
+
+ ![](index.php?/attachments/get/a75d93fb-bb13-4d5f-98df-c3e2a5b562f9) 
+",,"Click the link in the error message ""contact the site administrator.""",
+C389359,Log in as a active user > block the user,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000003055, https://virtowayqa.testrail.io/index.php?/attachments/get/1000003702",,,"Contact1 is assigned to the Organization1
+Contact1 is active
+The company owner was signed in > Company members page",Medium,,Block user,2,,Corporate (Desktop+Mobile) > Company members > Block user,,"Step Description:
+Sign in as an active user
+Add product to cart
+Go to cart
+Expected Result:
+The products were added to the cart",,The products were added to the cart,,"Sign in as an active user
+Add product to cart
+Go to cart",0
+,,,,,,,,,,,,,"
+Step Description:
+Sign in as a company owner in another window
+Block Contact1 as a company owner
+
+
+Expected Result:
+The company member is blocked",,The company member is blocked,,"Sign in as a company owner in another window
+Block Contact1 as a company owner
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Return to the Contact1 
+Try to proceed checkout
+Expected Result:
+The user is automatically log out by the system and redirected to a blocked page
+
+The user has the same access as the anonymous user.
+
+ ![](index.php?/attachments/get/cdd09b97-92d6-4bc4-90aa-2d8f3bf22c5f) 
+",,"The user is automatically log out by the system and redirected to a blocked page
+
+The user has the same access as the anonymous user.
+
+ ![](index.php?/attachments/get/cdd09b97-92d6-4bc4-90aa-2d8f3bf22c5f) 
+",,"Return to the Contact1 
+Try to proceed checkout",
+,,,,,,,,,,,,,"
+Step Description:
+Click the link in the error message """"contact the site administrator.""""
+Expected Result:
+The 'Contacts' page is opened.
+
+ ![](index.php?/attachments/get/a75d93fb-bb13-4d5f-98df-c3e2a5b562f9) 
+",,"The 'Contacts' page is opened.
+
+ ![](index.php?/attachments/get/a75d93fb-bb13-4d5f-98df-c3e2a5b562f9) 
+",,"Click the link in the error message ""contact the site administrator.""",
+C389369,Filters > View,https://virtowayqa.testrail.io/index.php?/attachments/get/1000001429,,,"User as a Company member logged in store > Account > Company members
+
+",Medium,,Filters block (Desktop+Mobile),2,,Corporate (Desktop+Mobile) > Company members > Filters block (Desktop+Mobile),,"Step Description:
+Click on the Filters button
+
+
+Expected Result:
+1. When you hover over the button, a pointer appears, and the button turns orange
+
+2. Pop-ups with filters have appeared:
+
+- Column Role (Organization maintainer, Organization employee,
+Purchasing agent)
+- Column Status (Active, Inactive, Blocked)
+- All filters unselected by default
+- Reset and Apply are disabled
+
+
+![](index.php?/attachments/get/4f75aca1-e47b-4625-9f29-2051067cadf0)   
+",,"1. When you hover over the button, a pointer appears, and the button turns orange
+
+2. Pop-ups with filters have appeared:
+
+- Column Role (Organization maintainer, Organization employee,
+Purchasing agent)
+- Column Status (Active, Inactive, Blocked)
+- All filters unselected by default
+- Reset and Apply are disabled
+
+
+![](index.php?/attachments/get/4f75aca1-e47b-4625-9f29-2051067cadf0)   
+",,"Click on the Filters button
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the close button 
+Expected Result:
+The pop-up is closed",,The pop-up is closed,,Click on the close button ,
+,,,,,,,,,,,,,"
+Step Description:
+Click outside of the pop-up
+Expected Result:
+The pop-up is closed",,The pop-up is closed,,Click outside of the pop-up,
+C389370,Filters > Count,,,,User as a Company member logged in store > Account > Company members,Medium,,Filters block (Desktop+Mobile),2,,Corporate (Desktop+Mobile) > Company members > Filters block (Desktop+Mobile),,"Step Description:
+Click on the Filters button
+Select 1 filter
+Expected Result:
+1. When hovering over any status, role or checkbox, a pointer appears
+2. If one of the Checkboxes is selected, then the Reset and Apply buttons are activated
+
+![](index.php?/attachments/get/58a38219-7e14-4cad-82d1-0a89676577ab)   
+
+ 
+",,"1. When hovering over any status, role or checkbox, a pointer appears
+2. If one of the Checkboxes is selected, then the Reset and Apply buttons are activated
+
+![](index.php?/attachments/get/58a38219-7e14-4cad-82d1-0a89676577ab)   
+
+ 
+",,"Click on the Filters button
+Select 1 filter",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on Apply
+Expected Result:
+1. Pop-up with filters is closed
+2. The number is displayed on the button Filters and matches with a count of chosen filters
+3. The chips: Reset filters and the name of chosen filter are displayed under the Search field
+4. The appropriate result is returned
+
+![](index.php?/attachments/get/99f2fbaf-4efe-46b9-b7d4-83ef3f5786f1)   
+
+
+",,"1. Pop-up with filters is closed
+2. The number is displayed on the button Filters and matches with a count of chosen filters
+3. The chips: Reset filters and the name of chosen filter are displayed under the Search field
+4. The appropriate result is returned
+
+![](index.php?/attachments/get/99f2fbaf-4efe-46b9-b7d4-83ef3f5786f1)   
+
+
+",,Click on Apply,
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Filter
+
+
+Expected Result:
+- The checkbox is selected 
+- button Apply is disabled",,"- The checkbox is selected 
+- button Apply is disabled",,"Click on the Filter
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Click outside of the pop-up
+Expected Result:
+The pop-up is closed, but the filter is not reset",,"The pop-up is closed, but the filter is not reset",,Click outside of the pop-up,
+,,,,,,,,,,,,,"
+Step Description:
+Click on Filters 
+try adding filters one by one
+Apply
+Expected Result:
+- The number is increased by one and displayed on the button Filters
+- The chips are added by one under the Search field
+
+
+",,"- The number is increased by one and displayed on the button Filters
+- The chips are added by one under the Search field
+
+
+",,"Click on Filters 
+try adding filters one by one
+Apply",
+,,,,,,,,,,,,,"
+Step Description:
+Click on Filters 
+Unselect filters one by one
+Apply
+Expected Result:
+- The number is decreased by one and displayed on the button Filters
+- The chips are deleted by one under the Search field",,"- The number is decreased by one and displayed on the button Filters
+- The chips are deleted by one under the Search field",,"Click on Filters 
+Unselect filters one by one
+Apply",
+C389371,Filters > By role,,,,"User logged in store > Account > Company members
+
+The Users with roles were added to the Company member list
+
+Organization maintainer
+Organization employee
+Purchasing agent
+
+",Medium,,Filters block (Desktop+Mobile),2,,Corporate (Desktop+Mobile) > Company members > Filters block (Desktop+Mobile),,"Step Description:
+Click on Filters
+Select Organization maintainer Role
+Apply
+Expected Result:
+The role Organization maintainer returns in the result
+
+![](index.php?/attachments/get/850a2e4b-7ffd-44c1-b841-90e2638322fa) 
+",,"The role Organization maintainer returns in the result
+
+![](index.php?/attachments/get/850a2e4b-7ffd-44c1-b841-90e2638322fa) 
+",,"Click on Filters
+Select Organization maintainer Role
+Apply",0
+,,,,,,,,,,,,,"
+Step Description:
+Clear previous filter &gt; Reset filters chip
+Click on Filters
+Select Organization employee Role
+Apply
+Expected Result:
+The role Organization employee returns in the result
+
+![](index.php?/attachments/get/0ea17433-1c96-4b88-86f5-53cb37dd7c41) 
+",,"The role Organization employee returns in the result
+
+![](index.php?/attachments/get/0ea17433-1c96-4b88-86f5-53cb37dd7c41) 
+",,"Clear previous filter &gt; Reset filters chip
+Click on Filters
+Select Organization employee Role
+Apply",
+,,,,,,,,,,,,,"
+Step Description:
+Clear previous filter &gt; Reset filters chip
+Click on Filters
+Select Purchasing agent Role
+Apply
+Expected Result:
+The role Purchasing agent returns in the result
+
+![](index.php?/attachments/get/b2718f79-ece4-4bb2-90d9-2078bb975cc6) 
+",,"The role Purchasing agent returns in the result
+
+![](index.php?/attachments/get/b2718f79-ece4-4bb2-90d9-2078bb975cc6) 
+",,"Clear previous filter &gt; Reset filters chip
+Click on Filters
+Select Purchasing agent Role
+Apply",
+C389372,Filters > By status,https://virtowayqa.testrail.io/index.php?/attachments/get/1000002232,,,"User logged in store > Account > Company members
+
+The Users with statuses were added to the Company member list
+
+storefront status = contact status
+
+- Active = Approved
+
+- Invited = Invited
+
+- Blocked = Locked
+
+
+",Medium,,Filters block (Desktop+Mobile),2,,Corporate (Desktop+Mobile) > Company members > Filters block (Desktop+Mobile),,"Step Description:
+Click on Filters
+Select Active Status
+Apply
+Expected Result:
+The users with the status Active are displayed the result",,The users with the status Active are displayed the result,,"Click on Filters
+Select Active Status
+Apply",0
+,,,,,,,,,,,,,"
+Step Description:
+Clear previous filter &gt; Reset filters chip
+Click on Filters
+Select Invited Status
+Apply
+Expected Result:
+The users with the status Invited are displayed the result
+
+---
+
+ ![](index.php?/attachments/get/7b6c631c-26e1-4705-85cb-4daee31abe7a) 
+
+
+
+",,"The users with the status Invited are displayed the result
+
+---
+
+ ![](index.php?/attachments/get/7b6c631c-26e1-4705-85cb-4daee31abe7a) 
+
+
+
+",,"Clear previous filter &gt; Reset filters chip
+Click on Filters
+Select Invited Status
+Apply",
+,,,,,,,,,,,,,"
+Step Description:
+Clear previous filter &gt; Reset filters chip
+Click on Filters
+Select Blocked Status
+Apply
+Expected Result:
+The users with the status Blocked are displayed the result",,The users with the status Blocked are displayed the result,,"Clear previous filter &gt; Reset filters chip
+Click on Filters
+Select Blocked Status
+Apply",
+C389373,Filters > Role + Status,,,,"User logged in store > Account > Company members
+
+The Users with roles and statuses were added to the Company member list
+
+Organization maintainer - active, Invited, Blocked
+
+Organization employee - active, Invited, Blocked
+
+Purchasing agent - active, Invited, Blocked
+",Medium,,Filters block (Desktop+Mobile),2,,Corporate (Desktop+Mobile) > Company members > Filters block (Desktop+Mobile),,"Step Description:
+Click on Filters
+Select Organization maintainer Role + Select all statuses
+Apply
+Expected Result:
+All users with the role Organization maintainer and chosen statuses are displayed in the result",,All users with the role Organization maintainer and chosen statuses are displayed in the result,,"Click on Filters
+Select Organization maintainer Role + Select all statuses
+Apply",0
+,,,,,,,,,,,,,"
+Step Description:
+Clear previous filter &gt; Reset filters chip
+Click on Filters
+Select Organization employee Role + Select all statuses
+Apply
+Expected Result:
+All users with the role Organization employee and chosen statuses are displayed in the result",,All users with the role Organization employee and chosen statuses are displayed in the result,,"Clear previous filter &gt; Reset filters chip
+Click on Filters
+Select Organization employee Role + Select all statuses
+Apply",
+,,,,,,,,,,,,,"
+Step Description:
+Clear previous filter &gt; Reset filters chip
+Click on Filters
+Select Purchasing agent Role + Select all statuses
+Apply
+Expected Result:
+All users with the role Purchasing agent and chosen statuses are displayed in the result",,All users with the role Purchasing agent and chosen statuses are displayed in the result,,"Clear previous filter &gt; Reset filters chip
+Click on Filters
+Select Purchasing agent Role + Select all statuses
+Apply",
+C389374,Filters >  Select all /Delete all > View Chips,https://virtowayqa.testrail.io/index.php?/attachments/get/1000000261,,,"User logged in store > Account > Company members
+
+The Users with roles and statuses were added to the Company member list",Medium,,Filters block (Desktop+Mobile),2,,Corporate (Desktop+Mobile) > Company members > Filters block (Desktop+Mobile),,"Step Description:
+Click on the Filters button
+Select All filters
+Apply
+Expected Result:
+The filters are applied
+The Reset filter chip + 6 chips are displayed under the field Search
+The name of the chips matches with names of filters in the pop-up
+
+![](index.php?/attachments/get/0e02d272-d7d4-4d4b-b249-10fa1cfb268b)   
+
+",,"The filters are applied
+The Reset filter chip + 6 chips are displayed under the field Search
+The name of the chips matches with names of filters in the pop-up
+
+![](index.php?/attachments/get/0e02d272-d7d4-4d4b-b249-10fa1cfb268b)   
+
+",,"Click on the Filters button
+Select All filters
+Apply",0
+,,,,,,,,,,,,,"
+Step Description:
+Close chip one by one
+Expected Result:
+The chip is deleted and the number on the filter button is decreased by one
+The result matches the filter criteria",,"The chip is deleted and the number on the filter button is decreased by one
+The result matches the filter criteria",,Close chip one by one,
+C389375,Filters > Reset,,,,"User logged in store > Account > Company members
+
+The Users with roles and statuses were added to the Company member list",Medium,,Filters block (Desktop+Mobile),2,,Corporate (Desktop+Mobile) > Company members > Filters block (Desktop+Mobile),,"Step Description:
+Сlick Button """"filters""""
+Choose several filters &gt; Apply
+
+
+Expected Result:
+The filters applied",,The filters applied,,"Сlick Button ""filters""
+Choose several filters &gt; Apply
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Сlick on Filters &gt; """"Reset""""
+Expected Result:
+All filters are removed
+
+
+",,"All filters are removed
+
+
+",,"Сlick on Filters &gt; ""Reset""",
+,,,,,,,,,,,,,"
+Step Description:
+Сlick Button """"filters""""
+Choose several filters &gt; Reset
+Expected Result:
+The filters selected but are not applied
+The pop-up with filters is cleared",,"The filters selected but are not applied
+The pop-up with filters is cleared",,"Сlick Button ""filters""
+Choose several filters &gt; Reset",
+,,,,,,,,,,,,,"
+Step Description:
+Сlick Button """"filters""""
+Choose several filters &gt; Apply
+Click on the chip """"Reset filters""""
+Expected Result:
+All filters and chips are removed
+The pop-up with filters is cleared
+
+
+",,"All filters and chips are removed
+The pop-up with filters is cleared
+
+
+",,"Сlick Button ""filters""
+Choose several filters &gt; Apply
+Click on the chip ""Reset filters""",
+C389376,Filters > Reset Search,,,"1. The No results found and Reset search button are displayed in the result 
+2. The filter is reset and all members list is returned
+
+
+![](index.php?/attachments/get/abfa68b6-33f6-4d58-b577-bb763eea97c7)  
+","User logged in store > Account > Company members
+
+There is no user with an assigned role or status in the system",Medium,,Filters block (Desktop+Mobile),2,,Corporate (Desktop+Mobile) > Company members > Filters block (Desktop+Mobile),"1. Try to filter users with no existing role or status in the system
+2. Click on Reset Search",,,,,,0
+C389377,Filters > Mobile,,,,User as a Company member logged in store > Account > Company members,Medium,,Filters block (Desktop+Mobile),2,,Corporate (Desktop+Mobile) > Company members > Filters block (Desktop+Mobile),,"Step Description:
+Tap on the icon Filter
+Expected Result:
+The menu """"Filters"""" from the left side has appeared
+
+Column Role (Organization maintainer, Organization employee,
+Purchasing agent)
+Column Status (Active, Inactive, Blocked)
+
+All filters unselected by default
+
+Reset and Apply are disabled
+
+![](index.php?/attachments/get/b1368150-306f-468d-b3a1-d3b34a64cead)      
+",,"The menu ""Filters"" from the left side has appeared
+
+Column Role (Organization maintainer, Organization employee,
+Purchasing agent)
+Column Status (Active, Inactive, Blocked)
+
+All filters unselected by default
+
+Reset and Apply are disabled
+
+![](index.php?/attachments/get/b1368150-306f-468d-b3a1-d3b34a64cead)      
+",,Tap on the icon Filter,0
+,,,,,,,,,,,,,"
+Step Description:
+Select several filters
+Expected Result:
+If one of the Checkboxes is selected, then the Reset and Apply buttons are activated",,"If one of the Checkboxes is selected, then the Reset and Apply buttons are activated",,Select several filters,
+,,,,,,,,,,,,,"
+Step Description:
+Tap on Reset
+Expected Result:
+All filters are removed
+The left-side menu is closed",,"All filters are removed
+The left-side menu is closed",,Tap on Reset,
+,,,,,,,,,,,,,"
+Step Description:
+Tap on the icon Filter
+Select several filters
+Apply
+Expected Result:
+The chosen filters are applied
+The number of filters is displayed near the icon
+
+![](index.php?/attachments/get/14af5261-b73e-432b-bf75-1cb041c69823)     
+",,"The chosen filters are applied
+The number of filters is displayed near the icon
+
+![](index.php?/attachments/get/14af5261-b73e-432b-bf75-1cb041c69823)     
+",,"Tap on the icon Filter
+Select several filters
+Apply",
+C389382,Invite member >  Role > Select Role,https://virtowayqa.testrail.io/index.php?/attachments/get/1000004512,,,"User as a Company member logged in store
+User is on the account page
+User opened Company members link",Medium,,Invite members,2,,Corporate (Desktop+Mobile) > Company members > Invite members,,"Step Description:
+Click on Invite members
+Check Role
+ 
+
+
+Expected Result:
+The Role is required field and marked by asterisks
+The Organization employee is selected by default
+
+",,"The Role is required field and marked by asterisks
+The Organization employee is selected by default
+
+",,"Click on Invite members
+Check Role
+ 
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on the Role selector
+Expected Result:
+The list of roles has appeared:
+
+ ![](index.php?/attachments/get/fe9a91e6-6223-465e-b2d9-ec8e8c442fb6) 
+
+
+",,"The list of roles has appeared:
+
+ ![](index.php?/attachments/get/fe9a91e6-6223-465e-b2d9-ec8e8c442fb6) 
+
+
+",,Click on the Role selector,
+,,,,,,,,,,,,,"
+Step Description:
+Select the Purchase agent
+Expected Result:
+The role is selected",,The role is selected,,Select the Purchase agent,
+,,,,,,,,,,,,,"
+Step Description:
+Select the Organization maintainer 
+Expected Result:
+The role is selected",,The role is selected,,Select the Organization maintainer ,
+,,,,,,,,,,,,,"
+Step Description:
+Select the Organization employee
+Expected Result:
+The role is selected",,The role is selected,,Select the Organization employee,
+C389383,Invite member > Email > Delimiter,https://virtowayqa.testrail.io/index.php?/attachments/get/1000003076,,,"Sign in as a company owner (role Organization maintainer)
+Open Account > Corporate > Company members
+ ",Medium,,Invite members,2,,Corporate (Desktop+Mobile) > Company members > Invite members,,"Step Description:
+Click on Invite members
+Check Email field
+Expected Result:
+The field is required and marked by asterisks
+
+The title is:
+
+Enter email addresses of people you want to invite*
+
+The placeholder is:
+
+Use commas, semicolons, or line breaks to separate multiple entries
+",,"The field is required and marked by asterisks
+
+The title is:
+
+Enter email addresses of people you want to invite*
+
+The placeholder is:
+
+Use commas, semicolons, or line breaks to separate multiple entries
+",,"Click on Invite members
+Check Email field",0
+,,,,,,,,,,,,,"
+Step Description:
+Check email validator
+Start typing an email address
+Expected Result:
+The red text error appears under the field on the fly:
+
+Incorrect email addresses: new-email
+",,"The red text error appears under the field on the fly:
+
+Incorrect email addresses: new-email
+",,"Check email validator
+Start typing an email address",
+,,,,,,,,,,,,,"
+Step Description:
+Enter several emails with space delimiter
+
+rolfson.karli@johnston.info geovanni.weber@barrows.biz judah35@vandervort.biz alba34@gmail.com
+
+Expected Result:
+There is no error message. The field takes the space delimiter",,There is no error message. The field takes the space delimiter,,"Enter several emails with space delimiter
+
+rolfson.karli@johnston.info geovanni.weber@barrows.biz judah35@vandervort.biz alba34@gmail.com
+",
+,,,,,,,,,,,,,"
+Step Description:
+Enter several emails with semicolon delimiter
+
+rolfson.karli@johnston.info; geovanni.weber@barrows.biz; judah35@vandervort.biz; alba34@gmail.com;
+
+
+
+Expected Result:
+There is no error message. The field takes the semi-colon delimiter",,There is no error message. The field takes the semi-colon delimiter,,"Enter several emails with semicolon delimiter
+
+rolfson.karli@johnston.info; geovanni.weber@barrows.biz; judah35@vandervort.biz; alba34@gmail.com;
+
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Enter several emails with commas delimiter
+
+rolfson.karli@johnston.info, geovanni.weber@barrows.biz, judah35@vandervort.biz, alba34@gmail.com,
+
+Expected Result:
+There is no error message. The field takes the commas delimiter",,There is no error message. The field takes the commas delimiter,,"Enter several emails with commas delimiter
+
+rolfson.karli@johnston.info, geovanni.weber@barrows.biz, judah35@vandervort.biz, alba34@gmail.com,
+",
+,,,,,,,,,,,,,"
+Step Description:
+Enter several emails with break line delimiter
+
+rolfson.karli@johnston.info
+geovanni.weber@barrows.biz
+judah35@vandervort.biz
+alba34@gmail.com
+Expected Result:
+There is no error message. The field takes the break line delimiter",,There is no error message. The field takes the break line delimiter,,"Enter several emails with break line delimiter
+
+rolfson.karli@johnston.info
+geovanni.weber@barrows.biz
+judah35@vandervort.biz
+alba34@gmail.com",
+,,,,,,,,,,,,,"
+Step Description:
+Use mixed delimiters
+
+rolfson.karli@johnston.info; geovanni.weber@barrows.biz,
+judah35@vandervort.biz,
+alba34@gmail.com,
+
+Expected Result:
+There is no error message. The field takes all valid delimiters ",,There is no error message. The field takes all valid delimiters ,,"Use mixed delimiters
+
+rolfson.karli@johnston.info; geovanni.weber@barrows.biz,
+judah35@vandervort.biz,
+alba34@gmail.com,
+",
+,,,,,,,,,,,,,"
+Step Description:
+Enter invalid delimiter (ex. | / % + - &)
+
+rolfson.karli@johnston.info| geovanni.weber@barrows.biz/
+judah35@vandervort.biz+
+alba34@gmail.com&rolfson.karli@johnston.info; geovanni.weber@barrows.biz,
+judah35@vandervort.biz,
+alba34@gmail.com,
+
+Expected Result:
+An error message appears below the field. The field does not accept invalid delimiters.
+
+Incorrect email addresses
+
+ ![](index.php?/attachments/get/ac2c8577-74f5-42f9-a7ae-48655e54ed4c)  ",,"An error message appears below the field. The field does not accept invalid delimiters.
+
+Incorrect email addresses
+
+ ![](index.php?/attachments/get/ac2c8577-74f5-42f9-a7ae-48655e54ed4c)  ",,"Enter invalid delimiter (ex. | / % + - &)
+
+rolfson.karli@johnston.info| geovanni.weber@barrows.biz/
+judah35@vandervort.biz+
+alba34@gmail.com&rolfson.karli@johnston.info; geovanni.weber@barrows.biz,
+judah35@vandervort.biz,
+alba34@gmail.com,
+",
+C389384,Invite member > Email > Invalid email,,,,"Sign in as a company owner (role Organization maintainer)
+Open Account > Corporate > Company members
+Open Invite members pop-up",Medium,,Invite members,2,,Corporate (Desktop+Mobile) > Company members > Invite members,,"Step Description:
+Enter invalid email 
+
+npourosgottlieb.com
+@tes.com
+Expected Result:
+An error message appears below the field
+
+Incorrect email addresses: {email},{email1}",,"An error message appears below the field
+
+Incorrect email addresses: {email},{email1}",,"Enter invalid email 
+
+npourosgottlieb.com
+@tes.com",0
+,,,,,,,,,,,,,"
+Step Description:
+Fix the error
+Enter valid email
+Expected Result:
+The error has disappeared.",,The error has disappeared.,,"Fix the error
+Enter valid email",
+,,,,,,,,,,,,,"
+Step Description:
+Enter the email that has already been invited
+Expected Result:
+The error on the top of the pop-up:
+
+Email {email} is already taken
+
+
+
+
+",,"The error on the top of the pop-up:
+
+Email {email} is already taken
+
+
+
+
+",,Enter the email that has already been invited,
+,,,,,,,,,,,,,"
+Step Description:
+Clear the field
+Expected Result:
+The error has disappeared.",,The error has disappeared.,,Clear the field,
+C389385,Invite member > One Email,,,1. Email with invitation sent on Email_1,"1. User as a Company member logged in store
+2. User is on the account page
+3. User opened **Company members** link
+",Medium,,Invite members,2,,Corporate (Desktop+Mobile) > Company members > Invite members,"1. Click on button **Invite member**
+2. Enter email address and message (e.g. Email_1)
+3. Click button **Send**",,,,,,0
+C389386,Invite member >  Multiple Emails,,,,"User as a Company member logged in store
+User is on the account page
+User opened Company members link",Medium,,Invite members,2,,Corporate (Desktop+Mobile) > Company members > Invite members,,"Step Description:
+Click on Invite members
+Enter 50 email addresses (use commas, semicolons, and carriage returns to separate multiples entries)
+Enter Message 
+Click on Send
+Expected Result:
+There is no validation message.
+The notification message displayed: The invite has been successfully sent
+The emails are displayed in the list of members
+ 
+ ",,"There is no validation message.
+The notification message displayed: The invite has been successfully sent
+The emails are displayed in the list of members
+ 
+ ",,"Click on Invite members
+Enter 50 email addresses (use commas, semicolons, and carriage returns to separate multiples entries)
+Enter Message 
+Click on Send",0
+,,,,,,,,,,,,,"
+Step Description:
+Check admin side
+Expected Result:
+The contacts were created with status Invited",,The contacts were created with status Invited,,Check admin side,
+C389387,Invite member > Validation > Email > Char limit 120,,,,"User as a Company member logged in store
+User is on the account page
+User opened Company members link",Medium,,Invite members,2,,Corporate (Desktop+Mobile) > Company members > Invite members,,"Step Description:
+Click on Invite member
+Enter an email address with 121 chars
+
+2LoremipsumtueemipsumdolorsitametconsetetursadipscingelitrseddiamnonumyLoremipsumyLoremipseycingelitrseddon@sdgdfg.sdbgnf
+
+Expected Result:
+The validation message has appeared: The maximum length of the email address is 120 symbols
+The """"Send"""" button is disabled",,"The validation message has appeared: The maximum length of the email address is 120 symbols
+The ""Send"" button is disabled",,"Click on Invite member
+Enter an email address with 121 chars
+
+2LoremipsumtueemipsumdolorsitametconsetetursadipscingelitrseddiamnonumyLoremipsumyLoremipseycingelitrseddon@sdgdfg.sdbgnf
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter an email address with 119 chars
+
+2LoremipsumtueemipsumdolorsitametconsetetursadipscingelitrseddiamnonumyLoremipsumyLoremipseycingelitrseddon@sdgdfg.sdgf
+
+Expected Result:
+There is no validation message
+The Send is activated
+The green pop-up has appeared 
+User is added to the list
+The contact is created with the account and email on the admin side
+
+",,"There is no validation message
+The Send is activated
+The green pop-up has appeared 
+User is added to the list
+The contact is created with the account and email on the admin side
+
+",,"Enter an email address with 119 chars
+
+2LoremipsumtueemipsumdolorsitametconsetetursadipscingelitrseddiamnonumyLoremipsumyLoremipseycingelitrseddon@sdgdfg.sdgf
+",
+,,,,,,,,,,,,,"
+Step Description:
+Enter an email address with 120 chars
+
+2LoremipsumtueemipsumdolorsitametconsetetursadipscingelitrseddiamnonumyLoremipsumyLoremipseycingelitrseddon@sdgdfg.sdbgn
+
+Expected Result:
+There is no validation message
+The Send is activated
+The green pop-up has appeared 
+User is added to the list
+The contact is created with the account and email on the admin side",,"There is no validation message
+The Send is activated
+The green pop-up has appeared 
+User is added to the list
+The contact is created with the account and email on the admin side",,"Enter an email address with 120 chars
+
+2LoremipsumtueemipsumdolorsitametconsetetursadipscingelitrseddiamnonumyLoremipsumyLoremipseycingelitrseddon@sdgdfg.sdbgn
+",
+C389388,Invite member > Validation > Email > Array limit 200,,,,"User as a Company member logged in store
+User is on the account page
+User opened Company members link",Medium,,Invite members,2,,Corporate (Desktop+Mobile) > Company members > Invite members,,"Step Description:
+Click on Invite member
+Enter more than 300 email addresses for the same time (see the file in attach)
+Expected Result:
+The validation message has appeared: You can invite up to 200 users at once. The """"Send"""" button is disabled.",,"The validation message has appeared: You can invite up to 200 users at once. The ""Send"" button is disabled.",,"Click on Invite member
+Enter more than 300 email addresses for the same time (see the file in attach)",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on Invite member
+Enter  100 email addresses for the same time (see the file in attach)
+Expected Result:
+There is no validation message.
+The """"Send"""" button is activated.
+The contact is created and added to the list of members on Storefront and on the admin side with email.",,"There is no validation message.
+The ""Send"" button is activated.
+The contact is created and added to the list of members on Storefront and on the admin side with email.",,"Click on Invite member
+Enter  100 email addresses for the same time (see the file in attach)",
+,,,,,,,,,,,,,"
+Step Description:
+Click on Invite member
+Enter  200 email addresses for the same time (see the file in attach)
+Expected Result:
+There is no validation message.
+The """"Send"""" button is activated.
+The contact is created and added to the list of members on Storefront and on the admin side with email.",,"There is no validation message.
+The ""Send"" button is activated.
+The contact is created and added to the list of members on Storefront and on the admin side with email.",,"Click on Invite member
+Enter  200 email addresses for the same time (see the file in attach)",
+C389389,Invite member > Validation > Email=120 &Message = 1000,,,,"User as a Company member logged in store
+User is on the account page
+User opened Company members link",Medium,,Invite members,2,,Corporate (Desktop+Mobile) > Company members > Invite members,,"Step Description:
+Enter email= 120 symbols
+Expected Result:
+There is no validation message. The Send button is activated",,There is no validation message. The Send button is activated,,Enter email= 120 symbols,0
+,,,,,,,,,,,,,"
+Step Description:
+Click on Invite member
+Enter email addresses
+Enter the text of more than 1000 chars to the Message field
+Expected Result:
+Impossible to enter more than 1000 chars. The text is cut off
+
+",,"Impossible to enter more than 1000 chars. The text is cut off
+
+",,"Click on Invite member
+Enter email addresses
+Enter the text of more than 1000 chars to the Message field",
+,,,,,,,,,,,,,"
+Step Description:
+Click on Send
+Expected Result:
+The green pop-up has appeared. The contact is added to the list and to the admin site. ",,The green pop-up has appeared. The contact is added to the list and to the admin site. ,,Click on Send,
+C389390,Invite member > User's registration process,,,,"The invite has been sent to Email_1
+The user receives welcome email with link
+",High,,Invite members,2,,Corporate (Desktop+Mobile) > Company members > Invite members,,"Step Description:
+Click on Link
+Expected Result:
+The user is redirected to the “Registration” page
+
+![](index.php?/attachments/get/1000002540)   
+
+Email is prefilled and disabled
+",,"The user is redirected to the “Registration” page
+
+![](index.php?/attachments/get/1000002540)   
+
+Email is prefilled and disabled
+",,Click on Link,0
+,,,,,,,,,,,,,"
+Step Description:
+Fill in all necessary fields
+Click """"Register"""" > Home
+Expected Result:
+A Pop-up appears """"Registration successfully completed!""""
+The user is logged in and redirected to the Catalog page
+
+",,"A Pop-up appears ""Registration successfully completed!""
+The user is logged in and redirected to the Catalog page
+
+",,"Fill in all necessary fields
+Click ""Register"" > Home",
+,,,,,,,,,,,,,"
+Step Description:
+Go to admin
+Contacts > Find the user > Account
+Check that the email was verified
+Expected Result:
+The user was verified his email",,The user was verified his email,,"Go to admin
+Contacts > Find the user > Account
+Check that the email was verified",
+C397227,Invite member > Reset Password > Login without Registration Failed,,,,"Sign in as a company owner
+
+Go to Company members > Invite members
+
+Enter user email
+
+Send a invite",High,,Invite members,2,,Corporate (Desktop+Mobile) > Company members > Invite members,,"Step Description:
+Open sign in page 
+
+Click forgot password > enter email for new user
+
+Check email
+
+
+
+Expected Result:
+The email with reset password was not send",,The email with reset password was not send,,"Open sign in page 
+
+Click forgot password > enter email for new user
+
+Check email
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to admin site > Find the customer
+Check the contact status and user account
+Expected Result:
+Contact Status - Invited
+User has a locked status
+
+",,"Contact Status - Invited
+User has a locked status
+
+",,"Go to admin site > Find the customer
+Check the contact status and user account",
+C389425,Enable thumbnail job,,,,,Medium,,White Labeling,0,,White Labeling,,,,,,,0
+C390295,Store and organization don’t have any settings in whitelabeling,,,,,Medium,,White Labeling,0,,White Labeling,,,,,,,0
+C390296,The store has enabled settings in whitelabelng and the organization doesn’t have any settings in whitelabeling,,,,,Medium,,Store > White Labeling,1,"Feature available from VC FrontEnd 2.4.0
+
+https://virtocommerce.atlassian.net/browse/VCST-1634",White Labeling > Store > White Labeling,,,,,,,0
+C390297,The store and the organization have enabled settings in whitelabelng,,,,,Medium,,Store > White Labeling,1,"Feature available from VC FrontEnd 2.4.0
+
+https://virtocommerce.atlassian.net/browse/VCST-1634",White Labeling > Store > White Labeling,,,,,,,0
+C391195,Set nonexist preset > Check Frontend APP,,,"The APP works properly
+The default theme preset Mercury is applied",,Medium,,Store > White Labeling,1,"Feature available from VC FrontEnd 2.4.0
+
+https://virtocommerce.atlassian.net/browse/VCST-1634",White Labeling > Store > White Labeling,"Go to store settings
+White labeling
+Set non-exist preset as a theme preset
+Save
+Open Frontend APP",,,,,,0
+C389426,Set logo and Favicon > Sign in under Company1 account,,,,,Medium,,Company > White Labeling from backend,1,,White Labeling > Company > White Labeling from backend,,,,,,,0
+C389427,Set Enabled = Off > Logo and Favicon are displayed by default,,,,,Medium,,Company > White Labeling from backend,1,,White Labeling > Company > White Labeling from backend,,,,,,,0
+C389428,Set Enabled = ON > Logo and Favicon are displayed as Custom,,,,,Medium,,Company > White Labeling from backend,1,,White Labeling > Company > White Labeling from backend,,,,,,,0
+C389429,Store settings > White labeling = OFF,,,,,Medium,,Company > White Labeling from backend,1,,White Labeling > Company > White Labeling from backend,,,,,,,0
+C389430,Set Theme presets > Sign in under company account,,,,,Medium,,Company > White Labeling from backend,1,,White Labeling > Company > White Labeling from backend,,,,,,,0
+C389431,Add parent footer links for Organization1,,,,,Medium,,Footer links,2,,White Labeling > Company > White Labeling from backend > Footer links,,,,,,,0
+C389432,Add children footer links,,,,,Medium,,Footer links,2,,White Labeling > Company > White Labeling from backend > Footer links,,,,,,,0
+C389433,Check footer links in graphql query,,,,,Medium,,Footer links,2,,White Labeling > Company > White Labeling from backend > Footer links,,,,,,,0
+C389434,Set footer-Company1 > Sign in under Company1 account,,,,,Medium,,Footer links,2,,White Labeling > Company > White Labeling from backend > Footer links,,,,,,,0

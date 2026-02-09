@@ -1,0 +1,3647 @@
+ID,Title,Attachments,Estimate,Expected Result,Preconditions,Priority,References,Section,Section Depth,Section Description,Section Hierarchy,Steps,Steps,Steps (Additional Info),Steps (Expected Result),Steps (References),Steps (Step),is_converted
+C389665,Category page > add product,,,,"1. Go to the store
+2. Product_1 is available in stock (for example 10 items)",Medium,,Add Product from Category  (Desktop+Mobile),1,,Add Product to cart > Add Product from Category  (Desktop+Mobile),,"Step Description:
+1. Open any Category.
+2. Choose Product_1
+3. Enter 2 to the field near the button Add to cart.
+4. Click Add to cart.
+Expected Result:
+1. Button change title as Update cart
+2. Product added to the cart
+
+
+
+
+",,"1. Button change title as Update cart
+2. Product added to the cart
+
+
+
+
+",,"1. Open any Category.
+2. Choose Product_1
+3. Enter 2 to the field near the button Add to cart.
+4. Click Add to cart.",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the cart
+Expected Result:
+1. Product_1 added to the cart",,1. Product_1 added to the cart,,1. Check the cart,
+,,,,,,,,,,,,,"
+Step Description:
+1.  Open Product_1 page
+Expected Result:
+1. Quantity is the same as you specified while adding.",,1. Quantity is the same as you specified while adding.,,1.  Open Product_1 page,
+C389666,Category page > update product amount,,,,"1. Go to the store
+2. Product_1 is available in stock (for example 10 items)
+3. Product_1 belongs to the Category_1
+4. N amount of the Product_1 is already added to the cart
+",Medium,,Add Product from Category  (Desktop+Mobile),1,,Add Product to cart > Add Product from Category  (Desktop+Mobile),,"Step Description:
+1. Open Category_1.
+2. Choose Product_1
+3. Update amount to the field near the button Add to cart.
+4. Click Add to cart.
+
+
+Expected Result:
+1. Quantity is the same as you specified while updating.
+2. Button title as Update cart
+
+
+
+
+
+",,"1. Quantity is the same as you specified while updating.
+2. Button title as Update cart
+
+
+
+
+
+",,"1. Open Category_1.
+2. Choose Product_1
+3. Update amount to the field near the button Add to cart.
+4. Click Add to cart.
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open the Cart
+2. Check the Product_1 
+Expected Result:
+1. Quantity is the same as you specified while updating.",,1. Quantity is the same as you specified while updating.,,"1. Open the Cart
+2. Check the Product_1 ",
+,,,,,,,,,,,,,"
+Step Description:
+1.  Open Product_1 page
+Expected Result:
+1. Quantity is the same as you specified while updating.",,1. Quantity is the same as you specified while updating.,,1.  Open Product_1 page,
+C389667,Category page > delete product,,,,"1. Go to the store
+2. Product_1 is available in stock (for example 10 items)
+3. Product_1 belongs to the Category_1
+4. N amount of the Product_1 is already added to the cart
+",Medium,,Add Product from Category  (Desktop+Mobile),1,,Add Product to cart > Add Product from Category  (Desktop+Mobile),,"Step Description:
+1. Open Category_1.
+2. Find Product_1
+3. Delete amount from the field near the button Update cart.
+4. Click button Update cart.
+
+
+Expected Result:
+1. Product deleted from the cart
+2. Button title is Add to cart
+
+
+
+
+
+",,"1. Product deleted from the cart
+2. Button title is Add to cart
+
+
+
+
+
+",,"1. Open Category_1.
+2. Find Product_1
+3. Delete amount from the field near the button Update cart.
+4. Click button Update cart.
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open the Cart
+2. Check the Product_1 
+Expected Result:
+1. Product has been removed from the cart.",,1. Product has been removed from the cart.,,"1. Open the Cart
+2. Check the Product_1 ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Product_1 details page
+Expected Result:
+1. Product_1 not added ",,1. Product_1 not added ,,1. Open Product_1 details page,
+C389671,Product page > add product without variations,,,,"1. Go to the store
+2. Product_1 is available in stock (for example 10 items)
+3. Product_1 do not have variation
+4. Product_1 belongs to the Category_1",Medium,,Add product from the Product page,1,,Add Product to cart > Add product from the Product page,,"Step Description:
+1. Open Category_1.
+2. Choose Product_1
+3. Enter 2 to the field near the button Add to cart.
+4. Click Add to cart.
+Expected Result:
+1. Button change title as Update cart
+2. Product added to the cart
+
+
+
+",,"1. Button change title as Update cart
+2. Product added to the cart
+
+
+
+",,"1. Open Category_1.
+2. Choose Product_1
+3. Enter 2 to the field near the button Add to cart.
+4. Click Add to cart.",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the cart
+Expected Result:
+1. Product_1 added to the cart",,1. Product_1 added to the cart,,1. Check the cart,
+C389672,Product page > add product with variations,,,,"1. Go to the store
+2. Product_1 has Variation_1 and Variation_2
+3. Variation_1 is available in the stock (for example 10 items)
+4. Variation_2 is available in the stock (for example 10 items)
+5. Product_1 belongs to the Category_1",Medium,,Add product from the Product page,1,,Add Product to cart > Add product from the Product page,,"Step Description:
+1. Open Category_1
+2. Open Product_1 page
+3. Click button Add to cart near Variation_1 
+
+
+Expected Result:
+1. Button change title as Update cart
+2. Product added to the cart
+
+
+
+
+",,"1. Button change title as Update cart
+2. Product added to the cart
+
+
+
+
+",,"1. Open Category_1
+2. Open Product_1 page
+3. Click button Add to cart near Variation_1 
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click button Add to cart near Variation_2
+Expected Result:
+1. A pop-up appears informing that the product has been added to the cart.
+2. Button change title as Update cart
+",,"1. A pop-up appears informing that the product has been added to the cart.
+2. Button change title as Update cart
+",,1. Click button Add to cart near Variation_2,
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the cart
+Expected Result:
+1. Variation_1 and Variation_2 added to the cart",,1. Variation_1 and Variation_2 added to the cart,,1. Check the cart,
+C389673,Product page > update product amount,,,,"1. Go to the store
+2. Product_1 is available in stock (for example 10 items)
+3. Product_1 belongs to the Category_1
+4. N amount of the Product_1 is already added to the cart
+",Medium,,Add product from the Product page,1,,Add Product to cart > Add product from the Product page,,"Step Description:
+1. Open Category_1.
+2. Choose Product_1
+3. Update amount to the field near the button Add to cart.
+4. Click Add to cart.
+
+
+Expected Result:
+1. Quantity is the same as you specified while updating.
+2. Button title as Update cart
+
+
+
+
+
+",,"1. Quantity is the same as you specified while updating.
+2. Button title as Update cart
+
+
+
+
+
+",,"1. Open Category_1.
+2. Choose Product_1
+3. Update amount to the field near the button Add to cart.
+4. Click Add to cart.
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open the Cart
+2. Check the Product_1 
+Expected Result:
+1. Quantity is the same as you specified while updating.",,1. Quantity is the same as you specified while updating.,,"1. Open the Cart
+2. Check the Product_1 ",
+,,,,,,,,,,,,,"
+Step Description:
+1.  Open Product_1 page
+Expected Result:
+1. Quantity is the same as you specified while updating.",,1. Quantity is the same as you specified while updating.,,1.  Open Product_1 page,
+C389674,Product page > delete product,,,,"1. Go to the store
+2. Product_1 is available in stock (for example 10 items)
+3. Product_1 belongs to the Category_1
+4. N amount of the Product_1 is already added to the cart
+",Medium,,Add product from the Product page,1,,Add Product to cart > Add product from the Product page,,"Step Description:
+1. Open Category_1.
+2. Find Product_1
+3. Delete amount from the field near the button Update cart.
+4. Click button Update cart.
+
+
+Expected Result:
+1. Product deleted from the cart
+2. Button title is Add to cart
+
+
+
+",,"1. Product deleted from the cart
+2. Button title is Add to cart
+
+
+
+",,"1. Open Category_1.
+2. Find Product_1
+3. Delete amount from the field near the button Update cart.
+4. Click button Update cart.
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open the Cart
+2. Check the Product_1 
+Expected Result:
+1. Product has been removed from the cart.",,1. Product has been removed from the cart.,,"1. Open the Cart
+2. Check the Product_1 ",
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Product_1 details page
+Expected Result:
+1. Product_1 not added ",,1. Product_1 not added ,,1. Open Product_1 details page,
+C389646,Can't add to cart > inactive button > price N/A or 0,,,,"1. Product_1 exists in the system in stock 
+2. Product_1 - belong to the Category_1 
+3. There is a price assigned to the product.
+4. Go to Admin Environment > Catalog > Product_1 > widget __Price__ > set up the price as 0 or remove  price
+
+
+
+
+
+",Medium,,Can not add product to the cart,1,,Add Product to cart > Can not add product to the cart,,"Step Description:
+1. Go to the store. 
+2. Go to the product from the second precondition. 
+3. Pay attention to the price and button. 
+Expected Result:
+1. The price is __updated__ = 0
+2. The product is not displayed in catalog
+
+",,"1. The price is __updated__ = 0
+2. The product is not displayed in catalog
+
+",,"1. Go to the store. 
+2. Go to the product from the second precondition. 
+3. Pay attention to the price and button. ",0
+C389647,Can't add to cart > inactive button > can't be purchased,,,,"1. Product_1 exists in the system in stock 
+2. Product_1 - belong to the Category_1 
+3. There is a price assigned to the product.
+4. Go to Admin Environment > Catalog > Product_1 > Switch off toggle __Can be purchased__  
+
+
+
+
+
+",Medium,,Can not add product to the cart,1,,Add Product to cart > Can not add product to the cart,,"Step Description:
+1. Go to the store. 
+2. Go to the product from the second precondition. 
+3. Pay attention to the button. 
+Expected Result:
+1. Inactive field and button with is shown
+2. Product could not be added to the cart",,"1. Inactive field and button with is shown
+2. Product could not be added to the cart",,"1. Go to the store. 
+2. Go to the product from the second precondition. 
+3. Pay attention to the button. ",0
+C389648,Can't add to cart > inactive button > visible,,,,"1. Product_1 exists in the system in stock 
+2. Product_1 - belong to the Category_1 
+3. There is a price assigned to the product.
+4. Go to Admin Environment > Catalog > Product_1 > Switch off toggle __Visible__  
+",Medium,,Can not add product to the cart,1,,Add Product to cart > Can not add product to the cart,,"Step Description:
+1. Go to the store. 
+2. Go to the product from the second precondition. 
+3. Pay attention to the button. 
+Expected Result:
+1. The product is not displayed in catalog
+2. Product could not be added to the cart",,"1. The product is not displayed in catalog
+2. Product could not be added to the cart",,"1. Go to the store. 
+2. Go to the product from the second precondition. 
+3. Pay attention to the button. ",0
+C389649,Can't add to cart > inactive button > out of stock > FFC 0,,,,"1. Product_1 exists in the system in stock 
+2. Product_1 - belong to the Category_1 
+3. There is a price assigned to the product.
+4. Go to Admin Environment > Catalog > Product_1 > widget __Fulfillment center__ > Set 0 for all available FFC
+
+
+
+
+",Medium,,Can not add product to the cart,1,,Add Product to cart > Can not add product to the cart,,"Step Description:
+1. Go to the store. 
+2. Go to the product from the second precondition. 
+3. Pay attention to the button. 
+Expected Result:
+1. Red label __Out is stock__ shown
+2. Inactive field and button with is shown
+3. Product could not be added to the cart",,"1. Red label __Out is stock__ shown
+2. Inactive field and button with is shown
+3. Product could not be added to the cart",,"1. Go to the store. 
+2. Go to the product from the second precondition. 
+3. Pay attention to the button. ",0
+C389668,Add Product > notifications > add to cart,,,,"1. Go to the store
+2. Product_1 is available in stock (for example 10 items)
+
+
+",Medium,,Notifications under the input field (Desktop+Mobile) (Add from Category+ Add from Product page),1,,Add Product to cart > Notifications under the input field (Desktop+Mobile) (Add from Category+ Add from Product page),,"Step Description:
+1. Open any Category.
+2. Choose Product_1
+3. Add Product_1 to the cart (for example 5)
+4. Check the Product_1 block
+5. Pay attention to the input field and button
+
+
+Expected Result:
+1. Field save the input as 5 items
+2. Text under the field is next: """"5 in cart""""
+3. Button title has changed as Update Cart
+
+
+
+",,"1. Field save the input as 5 items
+2. Text under the field is next: ""5 in cart""
+3. Button title has changed as Update Cart
+
+
+
+",,"1. Open any Category.
+2. Choose Product_1
+3. Add Product_1 to the cart (for example 5)
+4. Check the Product_1 block
+5. Pay attention to the input field and button
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Product_1 details page
+Expected Result:
+1. Quantity is the same as you specified while adding. (5 items)
+2. Text under the field is next: """"5 in cart""""
+3. Button title has changed as Update Cart
+",,"1. Quantity is the same as you specified while adding. (5 items)
+2. Text under the field is next: ""5 in cart""
+3. Button title has changed as Update Cart
+",,1. Open Product_1 details page,
+C389669,Add Product > notifications > item updated,,,,"1. Go to the store
+2. Product_1 is available in stock (for example 10 items)
+3. N amount of the Product_1 are already added to the cart
+4. Product_1 belongs to the Catalog_1",Medium,,Notifications under the input field (Desktop+Mobile) (Add from Category+ Add from Product page),1,,Add Product to cart > Notifications under the input field (Desktop+Mobile) (Add from Category+ Add from Product page),,"Step Description:
+1. Go to the Catalog_1
+2. Change the amount of the Product_1 (for example, 7)
+3. Pay attention to the notification under the input field
+
+Expected Result:
+1. Quantity is the same as you specified while updating. 
+2. Text under the field  is next: """"N in cart""""
+
+",,"1. Quantity is the same as you specified while updating. 
+2. Text under the field  is next: ""N in cart""
+
+",,"1. Go to the Catalog_1
+2. Change the amount of the Product_1 (for example, 7)
+3. Pay attention to the notification under the input field
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Product_1 details page
+2. Pay attention to the notification under the input field
+Expected Result:
+1. Quantity is the same as you specified while updating. 
+2. Text under the field  is next: """"N in cart""""
+",,"1. Quantity is the same as you specified while updating. 
+2. Text under the field  is next: ""N in cart""
+",,"1. Open Product_1 details page
+2. Pay attention to the notification under the input field",
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to the Cart
+2. Change the amount of the product_1 (for example, 3)
+3. Open Product_1 details page
+4. Pay attention to the notification under the input field
+Expected Result:
+1. Quantity is the same as you specified while updating. 
+2. Text under the field  is next: """"N in cart""""
+
+",,"1. Quantity is the same as you specified while updating. 
+2. Text under the field  is next: ""N in cart""
+
+",,"1. Go to the Cart
+2. Change the amount of the product_1 (for example, 3)
+3. Open Product_1 details page
+4. Pay attention to the notification under the input field",
+,,,,,,,,,,,,,"
+Step Description:
+1. Change the amount of the Product_1 (for example, 5)
+2. Open Catalog page
+3. Pay attention to the notification under the input field of the Product_1
+Expected Result:
+1. Quantity is the same as you specified while updating.
+2. Text under the field  is next: """"N in cart""""
+",,"1. Quantity is the same as you specified while updating.
+2. Text under the field  is next: ""N in cart""
+",,"1. Change the amount of the Product_1 (for example, 5)
+2. Open Catalog page
+3. Pay attention to the notification under the input field of the Product_1",
+C389670,Add Product > notifications >  item removed,,,,"1. Go to the store
+2. Product_1 is available in stock (for example 10 items)
+3. N amount of the Product_1 is already added to the cart",Medium,,Notifications under the input field (Desktop+Mobile) (Add from Category+ Add from Product page),1,,Add Product to cart > Notifications under the input field (Desktop+Mobile) (Add from Category+ Add from Product page),,"Step Description:
+1. Go to the Catalog
+2. Clear the field of the Product_1
+3. Click button Add to cart
+3. Open Product_1 details page
+4. Remove  number from the field
+
+
+Expected Result:
+1. Pop ap appears, that product was removed.
+
+",,"1. Pop ap appears, that product was removed.
+
+",,"1. Go to the Catalog
+2. Clear the field of the Product_1
+3. Click button Add to cart
+3. Open Product_1 details page
+4. Remove  number from the field
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1.  Check the text under the field
+Expected Result:
+1. No text under the field",,1. No text under the field,,1.  Check the text under the field,
+C411163,Catalog Page > Increment (+) Button,,,,User is on the Catalog page; product has available stock.,High,,+ / - buttons behavior,2,,Add Product to cart > + and - Add to Cart [critical functionality] > + / - buttons behavior,,"Step Description:
+1. Locate a product with (+ / - ) buttons.
+Expected Result:
+The ( - ) button is disabled.
+The ( + ) button is enabled.
+The 0 is displayed in input field.
+
+",,"The ( - ) button is disabled.
+The ( + ) button is enabled.
+The 0 is displayed in input field.
+
+",,1. Locate a product with (+ / - ) buttons.,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click + button once.
+Expected Result:
+Product is added to cart. Quantity increases by 1, respecting min/max rules. ",,"Product is added to cart. Quantity increases by 1, respecting min/max rules. ",,1. Click + button once.,
+,,,,,,,,,,,,,"
+Step Description:
+Update the qty, click +
+Expected Result:
+The product qty is updated in cart",,The product qty is updated in cart,,"Update the qty, click +",
+C411164,Catalog Page > Decrement (-) Button,,,,Product in Catalog has min qty=3,High,,+ / - buttons behavior,2,,Add Product to cart > + and - Add to Cart [critical functionality] > + / - buttons behavior,,"Step Description:
+Locate a product with (+ / - ) buttons.
+Expected Result:
+The ( - ) button is disabled.
+The ( + ) button is enabled.
+The 0 is displayed in input field.",,"The ( - ) button is disabled.
+The ( + ) button is enabled.
+The 0 is displayed in input field.",,Locate a product with (+ / - ) buttons.,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Increase quantity using + to 3
+2. Click - once.
+Expected Result:
+Quantity decreases to 0. 
+Product is removed from cart
+( - ) button is disabled",,"Quantity decreases to 0. 
+Product is removed from cart
+( - ) button is disabled",,"1. Increase quantity using + to 3
+2. Click - once.",
+C411168,Product Page > (+ / -) Button,,,,User is on product details page.,High,,+ / - buttons behavior,2,,Add Product to cart > + and - Add to Cart [critical functionality] > + / - buttons behavior,,"Step Description:
+1. Click + to set quantity = 2.
+
+
+Expected Result:
+2 items added to cart. Cart counter updated.",,2 items added to cart. Cart counter updated.,,"1. Click + to set quantity = 2.
+
+",0
+C406783,Quates > Check + / - component,,,The quantity is changed with step +1 or according with pack size step,,Medium,,+ / - buttons behavior,2,,Add Product to cart > + and - Add to Cart [critical functionality] > + / - buttons behavior,"1. On a quote page, use '+/-' or input field to set quantity for a quoted product.",,,,,,0
+C406784,Compare > Check + / - component,,,Compared product can be added to cart with correct quantity and validation.,,Medium,,+ / - buttons behavior,2,,Add Product to cart > + and - Add to Cart [critical functionality] > + / - buttons behavior,"1. On the compare page, use '+/-' or input field to set quantity for a compared product.",,,,,,0
+C406782,Related Products > Check + / - component,,,Related product can be added to cart with correct quantity and validation.,,Medium,,+ / - buttons behavior,2,,Add Product to cart > + and - Add to Cart [critical functionality] > + / - buttons behavior,"1. On a product page, locate the related products section. 2. Use '+/-' or input field to set quantity for a related product.",,,,,,0
+C406768,Stock Limit,,,The quantity stops increasing at the maximum available stock.,,Medium,,"Min-max, pack size validation",2,,"Add Product to cart > + and - Add to Cart [critical functionality] > Min-max, pack size validation",1. Click the '+' button repeatedly.,,,,,,0
+C406778,Variation Table Min-Max/Stock/Pack Validation,,,System prevents invalid input and shows appropriate error for each variation.,,High,,"Min-max, pack size validation",2,,"Add Product to cart > + and - Add to Cart [critical functionality] > Min-max, pack size validation","1. Enter invalid quantities (below min, above max, above stock, invalid pack size) for a variation.",,,,,,0
+C406781,Variation List Min-Max/Stock/Pack Validation,,,System prevents invalid input and shows appropriate error for each variation.,,High,,"Min-max, pack size validation",2,,"Add Product to cart > + and - Add to Cart [critical functionality] > Min-max, pack size validation","1. Enter invalid quantities (below min, above max, above stock, invalid pack size) for a variation.",,,,,,0
+C406773,Min-Max Quantity Validation,,,The system prevents input below min and above max,,Medium,,"Min-max, pack size validation",2,,"Add Product to cart > + and - Add to Cart [critical functionality] > Min-max, pack size validation",1. Enter a quantity below the minimum allowed. 2. Enter a quantity above the maximum allowed.,,,,,,0
+C406775,Pack Size Validation,,,The system prevents invalid pack sizes,,Medium,,"Min-max, pack size validation",2,,"Add Product to cart > + and - Add to Cart [critical functionality] > Min-max, pack size validation","1. Enter a quantity not matching the pack size (e.g., pack of 6, enter 7).",,,,,,0
+C411165,Catalog Page – Min Quantity Validation,,,,Product has min qty = 1 or pack = 3.,High,,"Min-max, pack size validation",2,,"Add Product to cart > + and - Add to Cart [critical functionality] > Min-max, pack size validation",,"Step Description:
+1. Manually set input field below min (e.g., 0 or 2).
+2. Click outside input.
+Expected Result:
+Value auto-corrected to min pack quantity.",,Value auto-corrected to min pack quantity.,,"1. Manually set input field below min (e.g., 0 or 2).
+2. Click outside input.",0
+C411166,Catalog Page – Max Quantity Validation,,,,Product has defined max = 10.,High,,"Min-max, pack size validation",2,,"Add Product to cart > + and - Add to Cart [critical functionality] > Min-max, pack size validation",,"Step Description:
+1. Enter 15 in input field.
+2. Confirm input.
+Expected Result:
+Value corrected to max allowed (10).",,Value corrected to max allowed (10).,,"1. Enter 15 in input field.
+2. Confirm input.",0
+C411167,Catalog Page – Pack Quantity Validation,,,,Product sold in packs of 3.,High,,"Min-max, pack size validation",2,,"Add Product to cart > + and - Add to Cart [critical functionality] > Min-max, pack size validation",,"Step Description:
+1. Enter quantity = 5.
+2. Try to confirm.
+Expected Result:
+Value rounded/adjusted to nearest valid pack (e.g., 6). Error/warning if validation strict.",,"Value rounded/adjusted to nearest valid pack (e.g., 6). Error/warning if validation strict.",,"1. Enter quantity = 5.
+2. Try to confirm.",0
+C411170,Product Variations – Default Min Quantity,,,,Product has variations with different min values.,Medium,,"Min-max, pack size validation",2,,"Add Product to cart > + and - Add to Cart [critical functionality] > Min-max, pack size validation",,"Step Description:
+1. Select variation A (min = 1).
+2. Select variation B (min = 3).
+Expected Result:
+Input field updates to correct min for each variation.",,Input field updates to correct min for each variation.,,"1. Select variation A (min = 1).
+2. Select variation B (min = 3).",0
+C411169,Product Page – Input Field Manual Entry,,,,"User on product details page, stock available.",High,,Qty input field,2,,Add Product to cart > + and - Add to Cart [critical functionality] > Qty input field,,"Step Description:
+1. Enter custom quantity (e.g., 7).
+2. Add to Cart.
+Expected Result:
+7 items added, within allowed min-max.",,"7 items added, within allowed min-max.",,"1. Enter custom quantity (e.g., 7).
+2. Add to Cart.",0
+C411171,Product Variations – Invalid Quantity for Variation,,,,Variation requires pack of 5.,High,,Qty input field,2,,Add Product to cart > + and - Add to Cart [critical functionality] > Qty input field,,"Step Description:
+1. Enter 7.
+2. Add to Cart.
+Expected Result:
+Auto-adjust to 5 or 10; validation error shown.",,Auto-adjust to 5 or 10; validation error shown.,,"1. Enter 7.
+2. Add to Cart.",0
+C406777,Variation Table and List > Invalid value,,,"1. The input field accepts only valid numbers. 
+2. System prevents non-numeric or negative input
+",,High,,Qty input field,2,,Add Product to cart > + and - Add to Cart [critical functionality] > Qty input field,"1. Enter a quantity for a variation directly in the input field.
+2. Enter non-numeric or negative values in the quantity input field.
+",,,,,,0
+C411172,Clear Input Field,,,,Input allows manual editing.,High,,Qty input field,2,,Add Product to cart > + and - Add to Cart [critical functionality] > Qty input field,,"Step Description:
+1. Delete all characters in the input field (leave empty).
+2. Click outside.
+Expected Result:
+The (+/-) buttons are disabled when the field has focus.
+The field resets to the previous quantity (e.g. 1 or the pack size) when focus is not set.",,"The (+/-) buttons are disabled when the field has focus.
+The field resets to the previous quantity (e.g. 1 or the pack size) when focus is not set.",,"1. Delete all characters in the input field (leave empty).
+2. Click outside.",0
+C411151,Product is added to cart > Qty input cleared → previous value restored on blur,,,,"User is on the catalog/product page
+Add product to cart
+Cart has 1 product with Qty=2; [−] is enabled.",Medium,,Qty input field,2,,Add Product to cart > + and - Add to Cart [critical functionality] > Qty input field,,"Step Description:
+1. Focus qty input.
+2. Clear the input (field becomes empty).
+3. Click outside the input (blur).
+Expected Result:
+Input value is restored to 2 (previous value). Item remains in cart. [±] state unchanged.",,Input value is restored to 2 (previous value). Item remains in cart. [±] state unchanged.,,"1. Focus qty input.
+2. Clear the input (field becomes empty).
+3. Click outside the input (blur).",0
+C411150,Qty input: “0000” → normalize to “0” and remove item on blur,,,,Cart has 1 product with Qty=1; [−] is enabled.,Medium,,Qty input field,2,,Add Product to cart > + and - Add to Cart [critical functionality] > Qty input field,,"Step Description:
+1. Focus qty input.
+2. Replace content with 0000.
+3. Click outside the input (blur).
+Expected Result:
+Input value normalizes to 0. Line item is removed from cart. Cart totals update accordingly. [±] controls no longer visible.",,Input value normalizes to 0. Line item is removed from cart. Cart totals update accordingly. [±] controls no longer visible.,,"1. Focus qty input.
+2. Replace content with 0000.
+3. Click outside the input (blur).",0
+C411152,Qty input “0005” → normalize to “5”; item retained,,,,Cart has 1 product with Qty=1.,Medium,,Qty input field,2,,Add Product to cart > + and - Add to Cart [critical functionality] > Qty input field,,"Step Description:
+1. Enter 0005 into qty input.
+2. Click outside.
+Expected Result:
+Input normalizes to 5. Item remains in cart; totals reflect qty 5. [−] and [+] enabled.",,Input normalizes to 5. Item remains in cart; totals reflect qty 5. [−] and [+] enabled.,,"1. Enter 0005 into qty input.
+2. Click outside.",0
+C411153,Enter “0” then blur → item removed (no stuck disabled state),,,,Cart has 1 product with Qty=1.,Medium,,Qty input field,2,,Add Product to cart > + and - Add to Cart [critical functionality] > Qty input field,,"Step Description:
+1. Type 0.
+2. Click outside.
+Expected Result:
+Item removed from cart. No state where item remains with qty 0 and disabled controls.",,Item removed from cart. No state where item remains with qty 0 and disabled controls.,,"1. Type 0.
+2. Click outside.",0
+C411156,Qty “0000000000000000” → normalize to “0” and remove item,,,,Cart has 1 product with Qty=1.,Medium,,Qty input field,2,,Add Product to cart > + and - Add to Cart [critical functionality] > Qty input field,,"Step Description:
+1. Paste a long string of zeros (≥16).
+2. Click outside.
+Expected Result:
+Normalizes to 0. Item removed; no performance lag or UI freeze.",,Normalizes to 0. Item removed; no performance lag or UI freeze.,,"1. Paste a long string of zeros (≥16).
+2. Click outside.",0
+C411157,Rapidly type “0000” and immediately click outside → consistent removal,,,,Cart has 1 product with Qty=1.,Medium,,Qty input field,2,,Add Product to cart > + and - Add to Cart [critical functionality] > Qty input field,,"Step Description:
+1. Type quickly 0000.
+2. Immediately click elsewhere.
+Expected Result:
+Debounce/validation resolves to 0. Item removed; no flicker leaving ghost line.",,Debounce/validation resolves to 0. Item removed; no flicker leaving ghost line.,,"1. Type quickly 0000.
+2. Immediately click elsewhere.",0
+C411162,Cart Qty input: Products with min qty=0 or NULL must behave like min qty=1 (disable [−]),,,,"Backend configured so products can have min qty set to:
+
+Explicit ≥1 ( Product1)
+
+Zero or NULL (Product2)
+
+Cart has two products from each group.",High,,Qty input field,2,,Add Product to cart > + and - Add to Cart [critical functionality] > Qty input field,,"Step Description:
+Open cart page.
+
+Locate product with min qty=1.
+
+Locate product with min qty=0 (or NULL).
+
+Check [−] button state for both.
+Expected Result:
+For both products, [−] button is disabled (cannot decrease below 1).
+
+User can only remove product using [x] (remove) button.
+
+Backend normalizes min qty=0/NULL to 1.",,"For both products, [−] button is disabled (cannot decrease below 1).
+
+User can only remove product using [x] (remove) button.
+
+Backend normalizes min qty=0/NULL to 1.",,"Open cart page.
+
+Locate product with min qty=1.
+
+Locate product with min qty=0 (or NULL).
+
+Check [−] button state for both.",0
+C411160,"Cart Qty input: Clear field (e.g., 1) → restore to previous value",,,,Cart has 1 product with Qty=1; min = 1.,High,,Qty input field,2,,Add Product to cart > + and - Add to Cart [critical functionality] > Qty input field,,"Step Description:
+1. Clear field.
+2. Click outside.
+Expected Result:
+Restores to 1. [−] disabled, [+] enabled.",,"Restores to 1. [−] disabled, [+] enabled.",,"1. Clear field.
+2. Click outside.",0
+C389701,Add product > validation > boundary values NOT  IMPLEMENTED FULLY,,,,"1. Product_1- Product_2 - exist in the system in the Category_1
+2. Product_1 in stock 5
+3. Product_2 in stock 5
+4. User logged in to the store
+5. Add Product_1-Product_2 (for example 1 item each)
+6. Open the Checkout page
+
+
+
+
+
+
+",Medium,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page),0,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page),,"Step Description:
+1. Change the amount of the items for the: 
+- Product_1 to 5 items (as all items in the stock)
+- Product_2 to 6 items (as exceeded items in the stock)
+2. Click  button Update 
+3. Check count in the field for the Product_1-Product_3 updated
+
+
+Expected Result:
+1. Count in the field for the Product_1-Product_3 updated
+- Product_1: 5 in stock  
+- Product_1: 5 in stock NOT IMPLEMENTED YET
+
+ ",,"1. Count in the field for the Product_1-Product_3 updated
+- Product_1: 5 in stock  
+- Product_1: 5 in stock NOT IMPLEMENTED YET
+
+ ",,"1. Change the amount of the items for the: 
+- Product_1 to 5 items (as all items in the stock)
+- Product_2 to 6 items (as exceeded items in the stock)
+2. Click  button Update 
+3. Check count in the field for the Product_1-Product_3 updated
+
+",0
+C389702,Add product > validation > messages under input field NOT IMPLEMENTED YET,,,,"1. Product_1- Product_3 - exist in the system in the Category_1
+2. Product_1 in stock 5 
+3. Product_2 in stock 5
+4. Product_3 in stock 5
+5. User logged in to the store
+6. Add Product_1-Product_3 (for example 1 item each)
+7. Open the Checkout page
+
+
+
+
+
+
+",Medium,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page),0,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page),,"Step Description:
+1. Change the amount of the items for the: 
+- Product_1 to 0 items.
+- Product_2 to 5 items (as all items in the stock)
+- Product_3 to 6 items (as exceeded items in the stock)
+2. Click  button Update 
+3. Check message under the input field
+
+
+Expected Result:
+1. Message under the input field shown next message:
+- Product_1: Error message - can not add 0
+- Product_2: Already in the cart
+- Product_3: reduce the amount?",,"1. Message under the input field shown next message:
+- Product_1: Error message - can not add 0
+- Product_2: Already in the cart
+- Product_3: reduce the amount?",,"1. Change the amount of the items for the: 
+- Product_1 to 0 items.
+- Product_2 to 5 items (as all items in the stock)
+- Product_3 to 6 items (as exceeded items in the stock)
+2. Click  button Update 
+3. Check message under the input field
+
+",0
+C389703,Add product > validation > input field,,,,"1. User logged in to the store
+2. Product_1-Product_10 added to the cart.
+3. Product_1-Product_10 in stock more than 10 items  each
+
+
+
+
+
+
+
+",Medium,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page),0,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page),,"Step Description:
+1. Change the amount of the items for the: 
+- Product_1: 0
+- Product_2: 1 0
+- Product_3: space10
+- Product_4: 10space
+- Product_5: 01
+- Product_6: any text
+- Product_7: 10text
+- Product_8: space
+- Product_9: copy and paste the amount (for example 5)
+- Product_10: special char, such “, _ - / # etc.
+- Product_11: copy and paste special char, such “, _ - / # etc.
+- Product_12: <>
+- Product_13: %%%/%%%
+
+
+
+
+Expected Result:
+1. Can't enter such chars
+ ",,"1. Can't enter such chars
+ ",,"1. Change the amount of the items for the: 
+- Product_1: 0
+- Product_2: 1 0
+- Product_3: space10
+- Product_4: 10space
+- Product_5: 01
+- Product_6: any text
+- Product_7: 10text
+- Product_8: space
+- Product_9: copy and paste the amount (for example 5)
+- Product_10: special char, such “, _ - / # etc.
+- Product_11: copy and paste special char, such “, _ - / # etc.
+- Product_12: <>
+- Product_13: %%%/%%%
+
+
+
+",0
+C389759,No limits > User enter value greater than available stock,,,,"Product1 has no min-max limits, only stock qty = 20
+
+",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+Change qty for Product1
+Enter value more than available in stock (ex. 21)
+Expected Result:
+1. The validation error displays under the input field
+
+**Max order 20 item(s)**
+
+
+2. The Add to Cart button is disabled",,"1. The validation error displays under the input field
+
+**Max order 20 item(s)**
+
+
+2. The Add to Cart button is disabled",,"Change qty for Product1
+Enter value more than available in stock (ex. 21)",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter value less than available in stock (ex. 10)
+Expected Result:
+1. There is no error message under the input field
+2. The Add to Cart button is activated
+
+",,"1. There is no error message under the input field
+2. The Add to Cart button is activated
+
+",,Enter value less than available in stock (ex. 10),
+,,,,,,,,,,,,,"
+Step Description:
+1. Set qty 10 &gt; Add to cart
+2. Set qty 21
+Expected Result:
+1. The button changed to Update cart
+2. The warning message is displayed under the input
+
+**Max order 20 item(s)**
+
+The Update cart is disabled",,"1. The button changed to Update cart
+2. The warning message is displayed under the input
+
+**Max order 20 item(s)**
+
+The Update cart is disabled",,"1. Set qty 10 &gt; Add to cart
+2. Set qty 21",
+C389760,Product has only Max qty > Track inventory = off,,,,"Product1 has only max qty = 80
+Track inventory = off
+ 
+",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+Change qty for Product1
+Enter value more than max (ex. 81)
+Expected Result:
+1. The validation error displays under the input field
+**Max order 80 item(s)**
+2. The Add to Cart button is disabled
+
+----------------------------------------------
+
+
+
+  
+",,"1. The validation error displays under the input field
+**Max order 80 item(s)**
+2. The Add to Cart button is disabled
+
+----------------------------------------------
+
+
+
+  
+",,"Change qty for Product1
+Enter value more than max (ex. 81)",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter a value equal to max qty = 80
+Expected Result:
+1. There is no error message under the input field
+2. The Add to Cart button is activated",,"1. There is no error message under the input field
+2. The Add to Cart button is activated",,Enter a value equal to max qty = 80,
+,,,,,,,,,,,,,"
+Step Description:
+1. Set qty 80 &gt; Add to cart
+2. Set qty 81
+Expected Result:
+1. The button changed to Update cart
+
+The warning message is displayed under the input
+
+**Max order 80 item(s)**
+
+2. The Update cart is disabled",,"1. The button changed to Update cart
+
+The warning message is displayed under the input
+
+**Max order 80 item(s)**
+
+2. The Update cart is disabled",,"1. Set qty 80 &gt; Add to cart
+2. Set qty 81",
+C389761,Product has only Min qty > Track inventory = off,,,,"Product1 has only min qty = 4
+Track inventory = off
+ 
+",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+Change qty for Product1
+Enter value less than max (ex. 3)
+Expected Result:
+1. The validation error displays under the input field
+**Min order 4 item(s)**
+2. The Add to Cart button is disabled
+
+----------------------------------------------
+
+
+
+  
+",,"1. The validation error displays under the input field
+**Min order 4 item(s)**
+2. The Add to Cart button is disabled
+
+----------------------------------------------
+
+
+
+  
+",,"Change qty for Product1
+Enter value less than max (ex. 3)",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter a value equal to min qty = 4
+Expected Result:
+1. There is no error message under the input field
+2. The Add to Cart button is activated",,"1. There is no error message under the input field
+2. The Add to Cart button is activated",,Enter a value equal to min qty = 4,
+,,,,,,,,,,,,,"
+Step Description:
+1. Set qty 4 &gt; Add to cart
+2. Set qty 5
+Expected Result:
+1. The button changed to Update cart
+
+The warning message is displayed under the input
+
+**Min order 4 item(s)**
+
+2. The Update cart is disabled",,"1. The button changed to Update cart
+
+The warning message is displayed under the input
+
+**Min order 4 item(s)**
+
+2. The Update cart is disabled",,"1. Set qty 4 &gt; Add to cart
+2. Set qty 5",
+C389762,Max qty greater than available stock,,,,"Product1 has only max qty = 40
+
+Stock = 39",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+1. Change qty for Product1
+Enter value max (ex.40)
+Expected Result:
+1. The validation error displays under the input field
+
+**Max order 39 item(s)**
+
+2. The Add to Cart button is disabled
+",,"1. The validation error displays under the input field
+
+**Max order 39 item(s)**
+
+2. The Add to Cart button is disabled
+",,"1. Change qty for Product1
+Enter value max (ex.40)",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter a value equal to stock = 39
+Expected Result:
+1. There is no error message under the input field
+2. The Add to Cart button is activated",,"1. There is no error message under the input field
+2. The Add to Cart button is activated",,1. Enter a value equal to stock = 39,
+,,,,,,,,,,,,,"
+Step Description:
+1. Set qty 39 &gt; Add to cart
+2. Set qty 40
+Expected Result:
+1. The button changed to Update cart
+
+The warning message is displayed under the input
+
+**Max order 39 item(s)**
+
+2. The Update cart is disabled",,"1. The button changed to Update cart
+
+The warning message is displayed under the input
+
+**Max order 39 item(s)**
+
+2. The Update cart is disabled",,"1. Set qty 39 &gt; Add to cart
+2. Set qty 40",
+C389763,Max qty less than available stock,,,,"Product1 has only max qty = 12
+
+Stock = 39",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+1. Change qty for Product1
+
+Enter value max (ex.12)
+Expected Result:
+1. The Add to cart is active
+2. There are no errors",,"1. The Add to cart is active
+2. There are no errors",,"1. Change qty for Product1
+
+Enter value max (ex.12)",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter a value equal to stock= 39
+Expected Result:
+1. The Add to Cart button is disabled
+
+The warning message is shown under the input:
+
+**Max order 12 item(s)**
+",,"1. The Add to Cart button is disabled
+
+The warning message is shown under the input:
+
+**Max order 12 item(s)**
+",,1. Enter a value equal to stock= 39,
+,,,,,,,,,,,,,"
+Step Description:
+1. Set qty 12 &gt; Add to cart
+2. Set qty 13
+Expected Result:
+1. The button changed to Update cart
+
+2. The warning message is displayed under the input
+
+**Max order 12 item(s)**
+
+3. The Update cart is disabled",,"1. The button changed to Update cart
+
+2. The warning message is displayed under the input
+
+**Max order 12 item(s)**
+
+3. The Update cart is disabled",,"1. Set qty 12 &gt; Add to cart
+2. Set qty 13",
+C389764,Only Min and Stock greater than Min qty,,,,"Product1 has only min qty = 2
+
+stock = 18
+
+Track inventory = on 
+",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+Change qty for Product1
+Enter value less than min (ex. 1)
+Expected Result:
+1. The validation error displays under the input field
+
+
+**Order from 2 to 18 item(s)**
+
+
+2. The Add to Cart button is disabled
+
+--------------------------------------------
+
+
+  
+",,"1. The validation error displays under the input field
+
+
+**Order from 2 to 18 item(s)**
+
+
+2. The Add to Cart button is disabled
+
+--------------------------------------------
+
+
+  
+",,"Change qty for Product1
+Enter value less than min (ex. 1)",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter a value equal to min or more than min qty = 4
+Expected Result:
+1. There is no error message under the input field
+2. The Add to Cart button is activated",,"1. There is no error message under the input field
+2. The Add to Cart button is activated",,Enter a value equal to min or more than min qty = 4,
+,,,,,,,,,,,,,"
+Step Description:
+Enter a value more than the stock = 19
+Expected Result:
+1. 1. The validation error displays under the input field
+
+
+**Order from 2 to 18 item(s)**
+
+
+2. The Add to Cart button is disabled
+
+--------------------------------------------",,"1. 1. The validation error displays under the input field
+
+
+**Order from 2 to 18 item(s)**
+
+
+2. The Add to Cart button is disabled
+
+--------------------------------------------",,Enter a value more than the stock = 19,
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter a value equal to stock or less stock qty = 17
+Add to cart
+2. Change qty to 20
+
+
+Expected Result:
+1. The button changed to Update cart
+
+The warning message is displayed under the input
+
+**Order from 2 to 18 item(s)**
+
+2. The Update cart is disabled",,"1. The button changed to Update cart
+
+The warning message is displayed under the input
+
+**Order from 2 to 18 item(s)**
+
+2. The Update cart is disabled",,"1. Enter a value equal to stock or less stock qty = 17
+Add to cart
+2. Change qty to 20
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Change qty less min = 1
+Expected Result:
+1. The button changed to Update cart
+
+The warning message is displayed under the input
+
+**Order from 2 to 18 item(s)**
+
+2. The Update cart is disabled",,"1. The button changed to Update cart
+
+The warning message is displayed under the input
+
+**Order from 2 to 18 item(s)**
+
+2. The Update cart is disabled",,Change qty less min = 1,
+C389765,Product has only Min qty + available stock is less than min qty,,,,"Product1 has only min qty = 8
+
+stock = 6
+
+Track inventory = on",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+1. Find Product1 in catalog
+2. Take a look at the product card
+Expected Result:
+1. The Add to the card is disabled
+
+The warning message is shown under the input field
+
+
+**Min order 8 item(s) is not available in stock**
+
+---
+
+  
+
+",,"1. The Add to the card is disabled
+
+The warning message is shown under the input field
+
+
+**Min order 8 item(s) is not available in stock**
+
+---
+
+  
+
+",,"1. Find Product1 in catalog
+2. Take a look at the product card",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Try to change qty less, equal or greater than stock or min qty
+Expected Result:
+Nothing change. The Add to Cart stays disabled",,Nothing change. The Add to Cart stays disabled,,"1. Try to change qty less, equal or greater than stock or min qty",
+C389766,Product has min-max qty + available stock is more than max,,,,"Product1 has only min qty = 4 and max qty = 55
+
+
+Track inventory = on
+ 
+",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+Change qty for Product1
+Enter value less than min (ex. 3)
+Expected Result:
+1. The validation error displays under the input field
+**Order from 4 to 55 item(s)**
+2. The Add to Cart button is disabled
+
+----------------------------------------------
+
+
+ 
+",,"1. The validation error displays under the input field
+**Order from 4 to 55 item(s)**
+2. The Add to Cart button is disabled
+
+----------------------------------------------
+
+
+ 
+",,"Change qty for Product1
+Enter value less than min (ex. 3)",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter a value equal to or more than min qty = 4
+Expected Result:
+1. There is no error message under the input field
+2. The Add to Cart button is activated",,"1. There is no error message under the input field
+2. The Add to Cart button is activated",,Enter a value equal to or more than min qty = 4,
+,,,,,,,,,,,,,"
+Step Description:
+Change qty for Product1
+Enter a value greater than max (ex. 56)
+Expected Result:
+1. The validation error displays under the input field
+**Order from 4 to 55 item(s)**
+2. The Add to Cart button is disabled",,"1. The validation error displays under the input field
+**Order from 4 to 55 item(s)**
+2. The Add to Cart button is disabled",,"Change qty for Product1
+Enter a value greater than max (ex. 56)",
+,,,,,,,,,,,,,"
+Step Description:
+1. Add to cart product
+2. Change qty less-greater than min-max qty
+3. Check """"Update Cart"""" behavior
+Expected Result:
+1. The """"Update Cart"""" stays disabled if the value is beyond the boundaries of min-max qty
+
+2. The warning message displays:
+
+**Order from 4 to 55 item(s)**
+",,"1. The ""Update Cart"" stays disabled if the value is beyond the boundaries of min-max qty
+
+2. The warning message displays:
+
+**Order from 4 to 55 item(s)**
+",,"1. Add to cart product
+2. Change qty less-greater than min-max qty
+3. Check ""Update Cart"" behavior",
+C389767,Product has min-max qty + available stock is less than max,,,,"Product1 has min = 5; stock = 15; max = 25
+
+Track inventory = on",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+1. Find Product1 in the catalog
+2. Enter a value less min = 4
+Expected Result:
+1. The Add to Cart button is disabled
+2. The validation error displays under the input field
+
+
+**Order from 5 to 15 item(s)**
+",,"1. The Add to Cart button is disabled
+2. The validation error displays under the input field
+
+
+**Order from 5 to 15 item(s)**
+",,"1. Find Product1 in the catalog
+2. Enter a value less min = 4",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter a value more than stock = 16
+Expected Result:
+1. The Add to Cart button is disabled
+2. The validation error displays under the input field
+
+
+**Order from 5 to 15 item(s)**",,"1. The Add to Cart button is disabled
+2. The validation error displays under the input field
+
+
+**Order from 5 to 15 item(s)**",,1. Enter a value more than stock = 16,
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter a value max=25
+Expected Result:
+1. The Add to Cart button is disabled
+2. The validation error displays under the input field
+
+
+**Order from 5 to 15 item(s)**",,"1. The Add to Cart button is disabled
+2. The validation error displays under the input field
+
+
+**Order from 5 to 15 item(s)**",,1. Enter a value max=25,
+,,,,,,,,,,,,,"
+Step Description:
+1. Add to cart product
+2. Change qty less-greater than min-max qty
+3. Check the """"Update Cart"""" behavior
+Expected Result:
+1. The """"Update Cart"""" stays disabled if the value is beyond the boundaries of min-max qty
+
+2. The warning message displays:
+
+**Order from 5 to 15 item(s)**",,"1. The ""Update Cart"" stays disabled if the value is beyond the boundaries of min-max qty
+
+2. The warning message displays:
+
+**Order from 5 to 15 item(s)**",,"1. Add to cart product
+2. Change qty less-greater than min-max qty
+3. Check the ""Update Cart"" behavior",
+C389768,Product has min-max qty + available stock is less than min,,,,"Product1 has stock = 2; min = 5; max = 35
+
+Track inventory = on",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+1. Find Product1 in catalog
+2. Take a look at the product card
+Expected Result:
+1. The Add to the card is disabled
+
+The warning message is shown under the input field
+
+**Min order 5 item(s) is not available in stock**
+
+---
+
+  
+
+  
+",,"1. The Add to the card is disabled
+
+The warning message is shown under the input field
+
+**Min order 5 item(s) is not available in stock**
+
+---
+
+  
+
+  
+",,"1. Find Product1 in catalog
+2. Take a look at the product card",0
+,,,,,,,,,,,,,"
+Step Description:
+Try to change qty less, equal or greater than stock or min qty
+Expected Result:
+Nothing changed. The Add to Cart stays disabled",,Nothing changed. The Add to Cart stays disabled,,"Try to change qty less, equal or greater than stock or min qty",
+C389769,Product has min-max qty + available stock is out of stock,,,,"Product1 has stock = 0; min = 5; max = 35
+
+Track inventory = on",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+1. Find Product1 in catalog
+2. Take a look at the product card
+Expected Result:
+1. The Add to the card is disabled
+The warning message is not shown under the input field
+The chip Out of stock is displayed 
+",,"1. The Add to the card is disabled
+The warning message is not shown under the input field
+The chip Out of stock is displayed 
+",,"1. Find Product1 in catalog
+2. Take a look at the product card",0
+,,,,,,,,,,,,,"
+Step Description:
+Try to change qty less, equal or greater than stock or min qty
+Expected Result:
+Nothing changed. The Add to Cart stays disabled",,Nothing changed. The Add to Cart stays disabled,,"Try to change qty less, equal or greater than stock or min qty",
+C389770,Available Stock = MIN,,,,"Product1 has stock = 2; min = 2; max = 35
+
+Track inventory = on",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+1. Enter less than stock/min
+Expected Result:
+1. The Add to the card is disabled
+
+The warning message is shown under the input field
+
+**Min order 2 item(s)**
+
+---
+
+  
+
+
+
+  
+",,"1. The Add to the card is disabled
+
+The warning message is shown under the input field
+
+**Min order 2 item(s)**
+
+---
+
+  
+
+
+
+  
+",,1. Enter less than stock/min,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter greater than stock/min
+Expected Result:
+1. The Add to the card is disabled
+
+The warning message is shown under the input field
+
+**Min order 2 item(s)**
+
+---",,"1. The Add to the card is disabled
+
+The warning message is shown under the input field
+
+**Min order 2 item(s)**
+
+---",,1. Enter greater than stock/min,
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter a value equal to stock/min
+Expected Result:
+1. There is no error message under the input field
+2. The Add to Cart button is activated",,"1. There is no error message under the input field
+2. The Add to Cart button is activated",,1. Enter a value equal to stock/min,
+,,,,,,,,,,,,,"
+Step Description:
+1. Add to cart product
+2. Change qty less-greater than min-max qty
+3. Check the """"Update Cart"""" behavior
+Expected Result:
+1. The """"Update Cart"""" stays disabled if the value is beyond the boundaries of stock/min qty
+
+2. The warning message displays:
+
+**Min order 2 item(s)**
+
+
+",,"1. The ""Update Cart"" stays disabled if the value is beyond the boundaries of stock/min qty
+
+2. The warning message displays:
+
+**Min order 2 item(s)**
+
+
+",,"1. Add to cart product
+2. Change qty less-greater than min-max qty
+3. Check the ""Update Cart"" behavior",
+C389771,Add Product > min order limit > not defined,,,,"1. Go to the store
+2. Product_1 is available in stock (for example 10 items)
+3. Product_1 doesn't have minimum an order limitation (to check the settings go to Admin/BAckEnd > Catalog > Category > Product 1)
+
+",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+1. Open any Category.
+2. Choose Product_1
+3. Click button Add to cart (do not enter numder to the field)
+
+
+Expected Result:
+1. 1 product by default have been added to the cart by default.
+
+
+
+",,"1. 1 product by default have been added to the cart by default.
+
+
+
+",,"1. Open any Category.
+2. Choose Product_1
+3. Click button Add to cart (do not enter numder to the field)
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the Product_1 block
+2. Pay attention to the input field and button
+Expected Result:
+1. Field save the input as 1
+2. Text under the field is next: """"1 in cart""""
+3. Button title has changed as Update Cart
+",,"1. Field save the input as 1
+2. Text under the field is next: ""1 in cart""
+3. Button title has changed as Update Cart
+",,"1. Check the Product_1 block
+2. Pay attention to the input field and button",
+C389772,Add Product > min order limit > set up,,,,"1. Go to the store
+2. Product_1 is available in stock (for example 10 items)
+3. Min order limitation set up as for example 5 (to set up settings go to Admin/BAckEnd > Catalog > Category > Product 1)
+
+",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+1. Open any Category.
+2. Choose Product_1
+Expected Result:
+5 is displayed in the input field",,5 is displayed in the input field,,"1. Open any Category.
+2. Choose Product_1",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Enter less than 5
+
+Expected Result:
+1. The validation informer is displayed:
+
+Order from 5 to 10 item(s)
+
+2. The Add to Cart button is disabled
+
+
+
+
+",,"1. The validation informer is displayed:
+
+Order from 5 to 10 item(s)
+
+2. The Add to Cart button is disabled
+
+
+
+
+",,"1. Enter less than 5
+",
+,,,,,,,,,,,,,"
+Step Description:
+Enter 5
+Click the button Add to cart
+Expected Result:
+5 products have been added to the cart by default.",,5 products have been added to the cart by default.,,"Enter 5
+Click the button Add to cart",
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the Product_1 block
+2. Pay attention to the input field and button
+Expected Result:
+1. Field save the input as 5
+2. Text under the field is next: """"N in cart""""
+3. Button title has changed as Update Cart
+",,"1. Field save the input as 5
+2. Text under the field is next: ""N in cart""
+3. Button title has changed as Update Cart
+",,"1. Check the Product_1 block
+2. Pay attention to the input field and button",
+,,,,,,,,,,,,,"
+Step Description:
+1. Go to the cart
+2. Delete the Product_1
+3. Go to the Category
+4. Find Product_1
+Expected Result:
+1. Field save the input is empty
+2. No Text under the field presented
+3. Button title Add to Cart",,"1. Field save the input is empty
+2. No Text under the field presented
+3. Button title Add to Cart",,"1. Go to the cart
+2. Delete the Product_1
+3. Go to the Category
+4. Find Product_1",
+C389773,Add Product > max order limit > not defined,,,,"1. Go to the store
+2. Product_1 is available in stock (for example 50 items)
+3. Product_1 doesn't have max order limitation (to check the settings go to Admin/BAckEnd > Catalog > Category > Product 1)
+
+",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+1. Open any Category.
+2. Choose Product_1
+3. Enter 45 in the field
+3. Click button Add to cart 
+
+
+Expected Result:
+1. 45 products have been added to the cart by default.
+
+
+
+",,"1. 45 products have been added to the cart by default.
+
+
+
+",,"1. Open any Category.
+2. Choose Product_1
+3. Enter 45 in the field
+3. Click button Add to cart 
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check the Product_1 block
+2. Pay attention to the input field and button
+Expected Result:
+1. Field save the input as 45
+2. Text under the field is next: """"N in cart""""
+3. Button title has changed as Update Cart
+",,"1. Field save the input as 45
+2. Text under the field is next: ""N in cart""
+3. Button title has changed as Update Cart
+",,"1. Check the Product_1 block
+2. Pay attention to the input field and button",
+C389774,Add Product > max order limit > set up,,,,"1. Go to the store
+2. Product_1 is available in stock (for example 100 items)
+3. Max order limitation set up as for example 10 (to set up settings go to Admin/BAckEnd > Catalog > Category > Product 1)
+
+",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+1. Open any Category.
+2. Choose Product_1
+3. Enter 11 to the field near the button Add to cart.
+4. Click the button Add to cart.
+
+
+
+Expected Result:
+1. Error message showed that max limit to order is 10 items
+
+Max order 10 item(s)
+
+Add to cart button is disabled
+
+
+
+
+
+
+
+",,"1. Error message showed that max limit to order is 10 items
+
+Max order 10 item(s)
+
+Add to cart button is disabled
+
+
+
+
+
+
+
+",,"1. Open any Category.
+2. Choose Product_1
+3. Enter 11 to the field near the button Add to cart.
+4. Click the button Add to cart.
+
+
+",0
+C389775,Add Product > max and min qty > set up,,,,"1. Go to the store
+2. Product_1 is available in stock (for example 100 items)
+3. Set up Min qty = 5; Max order = 10 (to set up settings go to Admin/BAckEnd > Catalog > Category > Product 1)
+
+",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+1. Open any Category.
+2. Choose Product_1
+3. Enter 4 to the field near the button Add to cart.
+4. Click the button Add to cart.
+
+
+
+Expected Result:
+1. Error message showed:
+
+Order from 5 to 10 item(s)
+
+Add to cart button is disabled
+
+
+
+
+
+
+
+",,"1. Error message showed:
+
+Order from 5 to 10 item(s)
+
+Add to cart button is disabled
+
+
+
+
+
+
+
+",,"1. Open any Category.
+2. Choose Product_1
+3. Enter 4 to the field near the button Add to cart.
+4. Click the button Add to cart.
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter 11 to the field near the button Add to cart.
+Expected Result:
+1. Error message showed:
+
+Order from 5 to 10 item(s)
+
+Add to cart button is disabled
+
+
+",,"1. Error message showed:
+
+Order from 5 to 10 item(s)
+
+Add to cart button is disabled
+
+
+",,Enter 11 to the field near the button Add to cart.,
+C389776,Add Product > max order limit > in stock (FFC default),,,,"1. Go to the store
+2. Default FFC for the Product_1 set up as for example 200 (to set up the stock go to Admin/BackEnd > Catalog > Category > Product 1 > Fulfillment center > Default center. Do not set up any other FFC, only first one).",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+1. Open any Category.
+2. Choose Product_1
+3. Enter 201 to the field near the button Add to cart.
+4. Click Add to cart.
+Expected Result:
+1. Warning test under the field presented: 
+
+""""Max order 200 item(s)""""
+
+2. Button Add to cart Inactive
+
+
+
+",,"1. Warning test under the field presented: 
+
+""Max order 200 item(s)""
+
+2. Button Add to cart Inactive
+
+
+
+",,"1. Open any Category.
+2. Choose Product_1
+3. Enter 201 to the field near the button Add to cart.
+4. Click Add to cart.",0
+C389777,Add Product > max order limit > in stock (FFC default + available),,,,"1. Go to the store
+2. Several FFC for the Product_1 set up as for example 200 each, total 400 in the stock (to set up the stock go to Admin/BackEnd > Catalog > Category > Product 1 > Fulfillment center).",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+1. Open any Category.
+2. Choose Product_1
+3. Enter 401 to the field near the button Add to cart.
+4. Click Add to cart.
+Expected Result:
+1. Warning test under the field presented: 
+
+""""Max order 400 item(s)
+
+2. Button Add to cart Inactive
+
+
+
+",,"1. Warning test under the field presented: 
+
+""Max order 400 item(s)
+
+2. Button Add to cart Inactive
+
+
+
+",,"1. Open any Category.
+2. Choose Product_1
+3. Enter 401 to the field near the button Add to cart.
+4. Click Add to cart.",0
+C389778,Add Product > max field input,,,,"1. Go to the store
+2. Product1 has default and available stock = 12159
+
+
+",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+1. Open any Category.
+2. Choose Product_1
+3. Enter 1 000 000 to the field near the button Add to cart.
+
+
+Expected Result:
+1. Warning message appeared under the input:
+
+Max order 12159 item(s)
+
+2. Add to cart is disabled
+
+
+
+
+
+
+",,"1. Warning message appeared under the input:
+
+Max order 12159 item(s)
+
+2. Add to cart is disabled
+
+
+
+
+
+
+",,"1. Open any Category.
+2. Choose Product_1
+3. Enter 1 000 000 to the field near the button Add to cart.
+
+",0
+C389779,Add Product > input 0 or leave empty (deprecated),,,,"1. Go to the store
+2. Product_1 is available in the stock (for example 10 items)
+3. Product_1 doesn't have min order (to check the settings go to Admin/BAckEnd > Catalog > Category > 
+4. Product _1 added еще the cart",Medium,,Limits (new design) Category page + product page,1,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Limits (new design) Category page + product page,,"Step Description:
+1. Open any Category.
+2. Choose Product_1
+3. Enter 0 to the field near the button Update cart.
+4. Click Update cart.
+Expected Result:
+1. Pop-ap Notification shown that product has beed deleted from the Cart
+
+
+
+",,"1. Pop-ap Notification shown that product has beed deleted from the Cart
+
+
+
+",,"1. Open any Category.
+2. Choose Product_1
+3. Enter 0 to the field near the button Update cart.
+4. Click Update cart.",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Add product_1 to the cart (for example 2)
+2. Click button Add to cart
+3. Remove 2 from the input
+4.  Click button Update cart
+Expected Result:
+1. Pop-ap Notification shown that product has beed deleted from the Cart",,1. Pop-ap Notification shown that product has beed deleted from the Cart,,"1. Add product_1 to the cart (for example 2)
+2. Click button Add to cart
+3. Remove 2 from the input
+4.  Click button Update cart",
+C394432,"MinQnt = Empty, 0 Pack Size = 10, XAPI should return min qnt = 10",,,Min qty = 10,"Product1 has minqty = 0, Packsize=10, FFC=1000",Medium,,Catalog page (Add to cart/Update cart),2,"!! If min more than Pack size then the number is multiple of Pack Size (6*n)
+!! If min less than PackSize then min = PackSize",Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Catalog page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394433,"MinQnt = 9 Pack Size = 10, XAPI should return min qnt = 10",,,Min qty = 10,"Product1 has minqty = 9, Packsize=10, FFC=1000",Medium,,Catalog page (Add to cart/Update cart),2,"!! If min more than Pack size then the number is multiple of Pack Size (6*n)
+!! If min less than PackSize then min = PackSize",Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Catalog page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394434,"MinQnt = 11, Pack Size = 10, XAPI should return min qnt = 20",,,"Min Package size is a multiple of 10
+
+Min qty = 20","Product1 has minqty = 11, Packsize=10, FFC=1000",Medium,,Catalog page (Add to cart/Update cart),2,"!! If min more than Pack size then the number is multiple of Pack Size (6*n)
+!! If min less than PackSize then min = PackSize",Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Catalog page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394436,"MinQnt = 19, Pack Size = 10, Check bounders and text errors",,,,"Product1 has minqty = 19, Packsize=10, FFC=1000",Medium,,Catalog page (Add to cart/Update cart),2,"!! If min more than Pack size then the number is multiple of Pack Size (6*n)
+!! If min less than PackSize then min = PackSize",Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Catalog page (Add to cart/Update cart),,"Step Description:
+Go to Frontend
+Open Product1
+Enter Pack size = 10
+Expected Result:
+The error is Min order 20 item(s)
+The Add to cart is disabled",,"The error is Min order 20 item(s)
+The Add to cart is disabled",,"Go to Frontend
+Open Product1
+Enter Pack size = 10",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to Frontend
+Open Product1
+Enter less than Pack size = 19
+Expected Result:
+The error is Min order 20 item(s)
+The Add to cart is disabled",,"The error is Min order 20 item(s)
+The Add to cart is disabled",,"Go to Frontend
+Open Product1
+Enter less than Pack size = 19",
+,,,,,,,,,,,,,"
+Step Description:
+Go to Frontend
+Open Product1
+Enter more than Pack size = 21
+Expected Result:
+The error is Order in packs of (10)
+The Add to cart is disabled
+",,"The error is Order in packs of (10)
+The Add to cart is disabled
+",,"Go to Frontend
+Open Product1
+Enter more than Pack size = 21",
+C394437,"MinQnt = 44, Pack Size = 12, XAPI should return min qnt = 48",,,"Min Package size is a multiple of 12
+
+Min qty = 48","Product1 has minqty = 44, Packsize=12, FFC=996",Medium,,Catalog page (Add to cart/Update cart),2,"!! If min more than Pack size then the number is multiple of Pack Size (6*n)
+!! If min less than PackSize then min = PackSize",Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Catalog page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394438,"PackSize=-n,  Save is disabled",,,The field Pack size does not take negative value. The Save button is disabled,"Product1 has minqty = 0, Packsize=-2, FFC=1000",Medium,,Catalog page (Add to cart/Update cart),2,"!! If min more than Pack size then the number is multiple of Pack Size (6*n)
+!! If min less than PackSize then min = PackSize",Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Catalog page (Add to cart/Update cart),"Go to admin site
+Open Product1
+Set PackSize=-2
+Save",,,,,,0
+C394439,Change min Pack Size!=n,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000000796, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000743",,,"Product1 has min qty = 15, Pack size= 15, FFC=996",Medium,,Catalog page (Add to cart/Update cart),2,"!! If min more than Pack size then the number is multiple of Pack Size (6*n)
+!! If min less than PackSize then min = PackSize",Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Catalog page (Add to cart/Update cart),,"Step Description:
+Go to Frontend
+Open Product1
+Check min qty
+Expected Result:
+The min qty = 15
+The Add to cart is active
+",,"The min qty = 15
+The Add to cart is active
+",,"Go to Frontend
+Open Product1
+Check min qty",0
+,,,,,,,,,,,,,"
+Step Description:
+Change value
+Enter min qty = 16
+Expected Result:
+The error txt: Order in packs of (15)
+The Add to cart is disabled
+
+---
+
+ ![](index.php?/attachments/get/2b24f2f1-631b-47d5-9ebd-ac76e1493ec5) 
+",,"The error txt: Order in packs of (15)
+The Add to cart is disabled
+
+---
+
+ ![](index.php?/attachments/get/2b24f2f1-631b-47d5-9ebd-ac76e1493ec5) 
+",,"Change value
+Enter min qty = 16",
+,,,,,,,,,,,,,"
+Step Description:
+Change value
+Enter min qty = 30
+Expected Result:
+The min qty = 30
+The Add to cart is active
+ 
+---
+
+ ![](index.php?/attachments/get/27a60ab5-ad3c-4704-86bd-f9dfee418277)
+
+",,"The min qty = 30
+The Add to cart is active
+ 
+---
+
+ ![](index.php?/attachments/get/27a60ab5-ad3c-4704-86bd-f9dfee418277)
+
+",,"Change value
+Enter min qty = 30",
+C394440,Min qty = PackSize= n,,,,"Min qty = 15
+Pack size = 15
+FCC = 996",Medium,,Catalog page (Add to cart/Update cart),2,"!! If min more than Pack size then the number is multiple of Pack Size (6*n)
+!! If min less than PackSize then min = PackSize",Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Catalog page (Add to cart/Update cart),,"Step Description:
+Enter value less than min qty = 14
+Expected Result:
+The error: Order from 15 to 996 item(s)
+Add to cart is disabled",,"The error: Order from 15 to 996 item(s)
+Add to cart is disabled",,Enter value less than min qty = 14,0
+,,,,,,,,,,,,,"
+Step Description:
+Enter value Pack Size = 15
+Expected Result:
+The add to cart is active
+There is no validation message",,"The add to cart is active
+There is no validation message",,Enter value Pack Size = 15,
+,,,,,,,,,,,,,"
+Step Description:
+Enter value Pack size = 16
+Enter value Pack size = 25
+
+Expected Result:
+The error: Order in packs of (15) 
+Add to cart is disabled",,"The error: Order in packs of (15) 
+Add to cart is disabled",,"Enter value Pack size = 16
+Enter value Pack size = 25
+",
+,,,,,,,,,,,,,"
+Step Description:
+Enter value Pack size = 30
+Expected Result:
+The add to cart is active
+There is no validation message",,"The add to cart is active
+There is no validation message",,Enter value Pack size = 30,
+C394441,Min qty less than Pack Size = inStock,,,,"Product1 has min qty = 40, Pack Size=44, FFC=44",Medium,,Catalog page (Add to cart/Update cart),2,"!! If min more than Pack size then the number is multiple of Pack Size (6*n)
+!! If min less than PackSize then min = PackSize",Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Catalog page (Add to cart/Update cart),,"Step Description:
+Go to Frontend
+Open Product1
+Check min qty
+
+Expected Result:
+The min qty = 44
+The add to cart is active",,"The min qty = 44
+The add to cart is active",,"Go to Frontend
+Open Product1
+Check min qty
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to Frontend
+Open Product1
+Try to change qty = 45
+Expected Result:
+The error """"Min order 44 item(s)""""
+The add to cart is disabled",,"The error ""Min order 44 item(s)""
+The add to cart is disabled",,"Go to Frontend
+Open Product1
+Try to change qty = 45",
+C394442,"MinQnt = 19, Pack Size = 10, XAPI should return min qnt = 20",,,"Min Package size is a multiple of 10
+
+Min qty = 20","Product1 has minqty = 19, Packsize=10, FFC=1000",Medium,,Catalog page (Add to cart/Update cart),2,"!! If min more than Pack size then the number is multiple of Pack Size (6*n)
+!! If min less than PackSize then min = PackSize",Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Catalog page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394443,"Min qty = n, Check Paks size more than inStock",,,"The error """"Min order 2000 item(s) is not available in stock""""
+The add to cart is disabled","Product1 has minqty = 0, Packsize=2000, FFC=1000",Medium,,Catalog page (Add to cart/Update cart),2,"!! If min more than Pack size then the number is multiple of Pack Size (6*n)
+!! If min less than PackSize then min = PackSize",Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Catalog page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394444,"Track inventory = off, Pack Size = n",,,"Min qty = 44
+InStock chip is displayed
+The add to cart is active","Product1 has minqty = 0, Packsize=44
+Track inventory = off
+FFC = 35",Medium,,Catalog page (Add to cart/Update cart),2,"!! If min more than Pack size then the number is multiple of Pack Size (6*n)
+!! If min less than PackSize then min = PackSize",Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Catalog page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394621,Max >= Pack size < Stock,,,,"Min = 0, Max = 24 Pack size = 6 Stock = 32",Medium,,Catalog page (Add to cart/Update cart),2,"!! If min more than Pack size then the number is multiple of Pack Size (6*n)
+!! If min less than PackSize then min = PackSize",Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Catalog page (Add to cart/Update cart),,"Step Description:
+Check qty
+Expected Result:
+QTY = 6",,QTY = 6,,Check qty,0
+,,,,,,,,,,,,,"
+Step Description:
+Enter value = 5
+Expected Result:
+Order in packs of 6
+Proceed button is disabled",,"Order in packs of 6
+Proceed button is disabled",,Enter value = 5,
+,,,,,,,,,,,,,"
+Step Description:
+Enter value = stock = 32
+Expected Result:
+Order in packs of 6
+Proceed button is disabled",,"Order in packs of 6
+Proceed button is disabled",,Enter value = stock = 32,
+,,,,,,,,,,,,,"
+Step Description:
+Enter value multiple of packsize = 36
+Expected Result:
+You can order from 6 to 24 item(s)
+Proceed button is disabled
+",,"You can order from 6 to 24 item(s)
+Proceed button is disabled
+",,Enter value multiple of packsize = 36,
+C394622,"Min=10, Max=24, PackSize=6, Stock=24",,,,"Min=10, Max=24, PackSize=6, Stock=24
+
+!! If min more than Pack size then the number is multiple of Pack Size number (6*n)",Medium,,Catalog page (Add to cart/Update cart),2,"!! If min more than Pack size then the number is multiple of Pack Size (6*n)
+!! If min less than PackSize then min = PackSize",Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Catalog page (Add to cart/Update cart),,"Step Description:
+Check Product1
+Enter less than min = 9
+Expected Result:
+Order from 12 to 24 item(s)
+Button is disabled",,"Order from 12 to 24 item(s)
+Button is disabled",,"Check Product1
+Enter less than min = 9",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter more than max = 23
+Expected Result:
+Order in packs of (6)
+Button is disabled
+",,"Order in packs of (6)
+Button is disabled
+",,Enter more than max = 23,
+,,,,,,,,,,,,,"
+Step Description:
+Enter more than max = 25
+Expected Result:
+Order from 12 to 24 item(s)
+Button is disabled",,"Order from 12 to 24 item(s)
+Button is disabled",,Enter more than max = 25,
+,,,,,,,,,,,,,"
+Step Description:
+Enter Pack size = 6
+Expected Result:
+Order from 12 to 24 item(s)
+Button is active
+",,"Order from 12 to 24 item(s)
+Button is active
+",,Enter Pack size = 6,
+,,,,,,,,,,,,,"
+Step Description:
+Enter 12
+Expected Result:
+There is no error",,There is no error,,Enter 12,
+C394445,"MinQnt = Empty, 0 Pack Size = 10, XAPI should return min qnt = 10",,,Min qty = 10,"Product1 has minqty = 0, Packsize=10, FFC=1000",Medium,,Product/Variation page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Product/Variation page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394446,"MinQnt = 9 Pack Size = 10, XAPI should return min qnt = 10",,,Min qty = 10,"Product1 has minqty = 9, Packsize=10, FFC=1000",Medium,,Product/Variation page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Product/Variation page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394448,"MinQnt = 19, Pack Size = 10, XAPI should return min qnt = 20",,,"Min Package size is a multiple of 10
+
+Min qty = 20","Product1 has minqty = 19, Packsize=10, FFC=1000",Medium,,Product/Variation page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Product/Variation page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394449,"MinQnt = 19, Pack Size = 10, Check bounders and text errors",,,,"Product1 has minqty = 19, Packsize=10, FFC=1000",Medium,,Product/Variation page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Product/Variation page (Add to cart/Update cart),,"Step Description:
+Go to Frontend
+Open Product1
+Enter Pack size = 10
+Expected Result:
+The error is Min order 20 item(s)
+The Add to cart is disabled",,"The error is Min order 20 item(s)
+The Add to cart is disabled",,"Go to Frontend
+Open Product1
+Enter Pack size = 10",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to Frontend
+Open Product1
+Enter less than Pack size = 19
+Expected Result:
+The error is Min order 20 item(s)
+The Add to cart is disabled",,"The error is Min order 20 item(s)
+The Add to cart is disabled",,"Go to Frontend
+Open Product1
+Enter less than Pack size = 19",
+,,,,,,,,,,,,,"
+Step Description:
+Go to Frontend
+Open Product1
+Enter more than Pack size = 21
+Expected Result:
+The error is Order in packs of (10)
+The Add to cart is disabled
+",,"The error is Order in packs of (10)
+The Add to cart is disabled
+",,"Go to Frontend
+Open Product1
+Enter more than Pack size = 21",
+C394450,"MinQnt = 44, Pack Size = 12, XAPI should return min qnt = 48",,,"Min Package size is a multiple of 12
+
+Min qty = 48","Product1 has minqty = 44, Packsize=12, FFC=996",Medium,,Product/Variation page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Product/Variation page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394451,"PackSize=-n,  Save is disabled",,,The field Pack size does not take negative value. The Save button is disabled,"Product1 has minqty = 0, Packsize=-2, FFC=1000",Medium,,Product/Variation page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Product/Variation page (Add to cart/Update cart),"Go to admin site
+Open Product1
+Set PackSize=-2
+Save",,,,,,0
+C394452,Change min Pack Size!=n,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000000796, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000743",,,"Product1 has min qty = 15, Pack size= 15, FFC=996",Medium,,Product/Variation page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Product/Variation page (Add to cart/Update cart),,"Step Description:
+Go to Frontend
+Open Product1
+Check min qty
+Expected Result:
+The min qty = 15
+The Add to cart is active
+",,"The min qty = 15
+The Add to cart is active
+",,"Go to Frontend
+Open Product1
+Check min qty",0
+,,,,,,,,,,,,,"
+Step Description:
+Change value
+Enter min qty = 16
+Expected Result:
+The error txt: Order in packs of (15)
+The Add to cart is disabled
+
+---
+
+ ![](index.php?/attachments/get/2b24f2f1-631b-47d5-9ebd-ac76e1493ec5) 
+",,"The error txt: Order in packs of (15)
+The Add to cart is disabled
+
+---
+
+ ![](index.php?/attachments/get/2b24f2f1-631b-47d5-9ebd-ac76e1493ec5) 
+",,"Change value
+Enter min qty = 16",
+,,,,,,,,,,,,,"
+Step Description:
+Change value
+Enter min qty = 30
+Expected Result:
+The min qty = 30
+The Add to cart is active
+ 
+---
+
+ ![](index.php?/attachments/get/27a60ab5-ad3c-4704-86bd-f9dfee418277)
+
+",,"The min qty = 30
+The Add to cart is active
+ 
+---
+
+ ![](index.php?/attachments/get/27a60ab5-ad3c-4704-86bd-f9dfee418277)
+
+",,"Change value
+Enter min qty = 30",
+C394453,Min qty = PackSize= n,,,,"Min qty = 15
+Pack size = 15
+FCC = 996",Medium,,Product/Variation page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Product/Variation page (Add to cart/Update cart),,"Step Description:
+Enter value less than min qty = 14
+Expected Result:
+The error: Order from 15 to 996 item(s)
+Add to cart is disabled",,"The error: Order from 15 to 996 item(s)
+Add to cart is disabled",,Enter value less than min qty = 14,0
+,,,,,,,,,,,,,"
+Step Description:
+Enter value Pack Size = 15
+Expected Result:
+The add to cart is active
+There is no validation message",,"The add to cart is active
+There is no validation message",,Enter value Pack Size = 15,
+,,,,,,,,,,,,,"
+Step Description:
+Enter value Pack size = 16
+Enter value Pack size = 25
+
+Expected Result:
+The error: Order in packs of (15) 
+Add to cart is disabled",,"The error: Order in packs of (15) 
+Add to cart is disabled",,"Enter value Pack size = 16
+Enter value Pack size = 25
+",
+,,,,,,,,,,,,,"
+Step Description:
+Enter value Pack size = 30
+Expected Result:
+The add to cart is active
+There is no validation message",,"The add to cart is active
+There is no validation message",,Enter value Pack size = 30,
+C394454,Min qty less than Pack Size = inStock,,,,"Product1 has min qty = 40, Pack Size=44, FFC=44",Medium,,Product/Variation page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Product/Variation page (Add to cart/Update cart),,"Step Description:
+Go to Frontend
+Open Product1
+Check min qty
+
+Expected Result:
+The min qty = 44
+The add to cart is active",,"The min qty = 44
+The add to cart is active",,"Go to Frontend
+Open Product1
+Check min qty
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to Frontend
+Open Product1
+Try to change qty = 45
+Expected Result:
+The error """"Min order 44 item(s)""""
+The add to cart is disabled",,"The error ""Min order 44 item(s)""
+The add to cart is disabled",,"Go to Frontend
+Open Product1
+Try to change qty = 45",
+C394455,"MinQnt = 19, Pack Size = 10, XAPI should return min qnt = 20",,,"Min Package size is a multiple of 10
+
+Min qty = 20","Product1 has minqty = 19, Packsize=10, FFC=1000",Medium,,Product/Variation page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Product/Variation page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394456,"Min qty = n, Check Paks size more than inStock",,,"The error """"Min order 2000 item(s) is not available in stock""""
+The add to cart is disabled","Product1 has minqty = 0, Packsize=2000, FFC=1000",Medium,,Product/Variation page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Product/Variation page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394457,"Track inventory = off, Pack Size = n",,,"Min qty = 44
+InStock chip is displayed
+The add to cart is active","Product1 has minqty = 0, Packsize=44
+Track inventory = off
+FFC = 35",Medium,,Product/Variation page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Product/Variation page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394619,Max >= Pack size < Stock,,,,"Min = 0, Max = 24 Pack size = 6 Stock = 32",Medium,,Product/Variation page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Product/Variation page (Add to cart/Update cart),,"Step Description:
+Check qty
+Expected Result:
+QTY = 6",,QTY = 6,,Check qty,0
+,,,,,,,,,,,,,"
+Step Description:
+Enter value = 5
+Expected Result:
+Order in packs of 6
+Proceed button is disabled",,"Order in packs of 6
+Proceed button is disabled",,Enter value = 5,
+,,,,,,,,,,,,,"
+Step Description:
+Enter value = stock = 32
+Expected Result:
+Order in packs of 6
+Proceed button is disabled",,"Order in packs of 6
+Proceed button is disabled",,Enter value = stock = 32,
+,,,,,,,,,,,,,"
+Step Description:
+Enter value multiple of packsize = 36
+Expected Result:
+You can order from 6 to 24 item(s)
+Proceed button is disabled
+",,"You can order from 6 to 24 item(s)
+Proceed button is disabled
+",,Enter value multiple of packsize = 36,
+C394620,"Min=10, Max=24, PackSize=6, Stock=24",,,,"Min=10, Max=24, PackSize=6, Stock=24
+
+!! If min more than Pack size then the number is multiple of Pack Size number (6*n)",Medium,,Product/Variation page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Product/Variation page (Add to cart/Update cart),,"Step Description:
+Check Product1
+Enter less than min = 9
+Expected Result:
+Order from 12 to 24 item(s)
+Button is disabled",,"Order from 12 to 24 item(s)
+Button is disabled",,"Check Product1
+Enter less than min = 9",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter more than max = 23
+Expected Result:
+Order in packs of (6)
+Button is disabled
+",,"Order in packs of (6)
+Button is disabled
+",,Enter more than max = 23,
+,,,,,,,,,,,,,"
+Step Description:
+Enter more than max = 25
+Expected Result:
+Order from 12 to 24 item(s)
+Button is disabled",,"Order from 12 to 24 item(s)
+Button is disabled",,Enter more than max = 25,
+,,,,,,,,,,,,,"
+Step Description:
+Enter Pack size = 6
+Expected Result:
+Order from 12 to 24 item(s)
+Button is active
+",,"Order from 12 to 24 item(s)
+Button is active
+",,Enter Pack size = 6,
+,,,,,,,,,,,,,"
+Step Description:
+Enter 12
+Expected Result:
+There is no error",,There is no error,,Enter 12,
+C394419,"MinQnt = Empty, 0 Pack Size = 10, XAPI should return min qnt = 10",,,Min qty = 10,"Product1 has minqty = 0, Packsize=10, FFC=1000",Medium,,List detail page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > List detail page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394420,"MinQnt = 9 Pack Size = 10, XAPI should return min qnt = 10",,,Min qty = 10,"Product1 has minqty = 9, Packsize=10, FFC=1000",Medium,,List detail page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > List detail page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394422,"MinQnt = 19, Pack Size = 10, XAPI should return min qnt = 20",,,"Min Package size is a multiple of 10
+
+Min qty = 20","Product1 has minqty = 19, Packsize=10, FFC=1000",Medium,,List detail page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > List detail page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394428,"MinQnt = 44, Pack Size = 12, XAPI should return min qnt = 48",,,"Min Package size is a multiple of 12
+
+Min qty = 48","Product1 has minqty = 44, Packsize=12, FFC=996",Medium,,List detail page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > List detail page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394431,"MinQnt = 19, Pack Size = 10, Check bounders and text errors",,,,"Product1 has minqty = 19, Packsize=10, FFC=1000",Medium,,List detail page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > List detail page (Add to cart/Update cart),,"Step Description:
+Go to Frontend
+Open Product1
+Enter Pack size = 10
+Expected Result:
+The error is Min order 20 item(s)
+The Add to cart is disabled",,"The error is Min order 20 item(s)
+The Add to cart is disabled",,"Go to Frontend
+Open Product1
+Enter Pack size = 10",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to Frontend
+Open Product1
+Enter less than Pack size = 19
+Expected Result:
+The error is Min order 20 item(s)
+The Add to cart is disabled",,"The error is Min order 20 item(s)
+The Add to cart is disabled",,"Go to Frontend
+Open Product1
+Enter less than Pack size = 19",
+,,,,,,,,,,,,,"
+Step Description:
+Go to Frontend
+Open Product1
+Enter more than Pack size = 21
+Expected Result:
+The error is Order in packs of (10)
+The Add to cart is disabled
+",,"The error is Order in packs of (10)
+The Add to cart is disabled
+",,"Go to Frontend
+Open Product1
+Enter more than Pack size = 21",
+C394423,"PackSize=-n,  Save is disabled",,,The field Pack size does not take negative value. The Save button is disabled,"Product1 has minqty = 0, Packsize=-2, FFC=1000",Medium,,List detail page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > List detail page (Add to cart/Update cart),"Go to admin site
+Open Product1
+Set PackSize=-2
+Save",,,,,,0
+C394424,Change min Pack Size!=n,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000000743, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000796",,,"Product1 has min qty = 15, Pack size= 15, FFC=996",Medium,,List detail page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > List detail page (Add to cart/Update cart),,"Step Description:
+Go to Frontend
+Open Product1
+Check min qty
+Expected Result:
+The min qty = 15
+The Add to cart is active
+",,"The min qty = 15
+The Add to cart is active
+",,"Go to Frontend
+Open Product1
+Check min qty",0
+,,,,,,,,,,,,,"
+Step Description:
+Change value
+Enter min qty = 16
+Expected Result:
+The error txt: Order in packs of (15)
+The Add to cart is disabled
+
+---
+
+ ![](index.php?/attachments/get/2b24f2f1-631b-47d5-9ebd-ac76e1493ec5) 
+",,"The error txt: Order in packs of (15)
+The Add to cart is disabled
+
+---
+
+ ![](index.php?/attachments/get/2b24f2f1-631b-47d5-9ebd-ac76e1493ec5) 
+",,"Change value
+Enter min qty = 16",
+,,,,,,,,,,,,,"
+Step Description:
+Change value
+Enter min qty = 30
+Expected Result:
+The min qty = 30
+The Add to cart is active
+ 
+---
+
+ ![](index.php?/attachments/get/27a60ab5-ad3c-4704-86bd-f9dfee418277)
+
+",,"The min qty = 30
+The Add to cart is active
+ 
+---
+
+ ![](index.php?/attachments/get/27a60ab5-ad3c-4704-86bd-f9dfee418277)
+
+",,"Change value
+Enter min qty = 30",
+C394426,Min qty = PackSize= n,,,,"Min qty = 15
+Pack size = 15
+FCC = 996",Medium,,List detail page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > List detail page (Add to cart/Update cart),,"Step Description:
+Enter value less than min qty = 14
+Expected Result:
+The error: Order from 15 to 996 item(s)
+Add to cart is disabled",,"The error: Order from 15 to 996 item(s)
+Add to cart is disabled",,Enter value less than min qty = 14,0
+,,,,,,,,,,,,,"
+Step Description:
+Enter value Pack Size = 15
+Expected Result:
+The add to cart is active
+There is no validation message",,"The add to cart is active
+There is no validation message",,Enter value Pack Size = 15,
+,,,,,,,,,,,,,"
+Step Description:
+Enter value Pack size = 16
+Enter value Pack size = 25
+
+Expected Result:
+The error: Order in packs of (15) 
+Add to cart is disabled",,"The error: Order in packs of (15) 
+Add to cart is disabled",,"Enter value Pack size = 16
+Enter value Pack size = 25
+",
+,,,,,,,,,,,,,"
+Step Description:
+Enter value Pack size = 30
+Expected Result:
+The add to cart is active
+There is no validation message",,"The add to cart is active
+There is no validation message",,Enter value Pack size = 30,
+C394425,Min qty less than Pack Size = inStock,,,,"Product1 has min qty = 40, Pack Size=44, FFC=44",Medium,,List detail page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > List detail page (Add to cart/Update cart),,"Step Description:
+Go to Frontend
+Open Product1
+Check min qty
+
+Expected Result:
+The min qty = 44
+The add to cart is active",,"The min qty = 44
+The add to cart is active",,"Go to Frontend
+Open Product1
+Check min qty
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to Frontend
+Open Product1
+Try to change qty = 45
+Expected Result:
+The error """"Min order 44 item(s)""""
+The add to cart is disabled",,"The error ""Min order 44 item(s)""
+The add to cart is disabled",,"Go to Frontend
+Open Product1
+Try to change qty = 45",
+C394430,"MinQnt = 19, Pack Size = 10, XAPI should return min qnt = 20",,,"Min Package size is a multiple of 10
+
+Min qty = 20","Product1 has minqty = 19, Packsize=10, FFC=1000",Medium,,List detail page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > List detail page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394427,"Min qty = n, Check Paks size more than inStock",,,"The error """"Min order 2000 item(s) is not available in stock""""
+The add to cart is disabled","Product1 has minqty = 0, Packsize=2000, FFC=1000",Medium,,List detail page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > List detail page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394429,"Track inventory = off, Pack Size = n",,,"Min qty = 44
+InStock chip is displayed
+The add to cart is active","Product1 has minqty = 0, Packsize=44
+Track inventory = off
+FFC = 35",Medium,,List detail page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > List detail page (Add to cart/Update cart),"Go to Frontend
+Open Product1
+Check min qty",,,,,,0
+C394617,Max >= Pack size < Stock,,,,"Min = 0, Max = 24 Pack size = 6 Stock = 32",Medium,,List detail page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > List detail page (Add to cart/Update cart),,"Step Description:
+Check qty
+Expected Result:
+QTY = 6",,QTY = 6,,Check qty,0
+,,,,,,,,,,,,,"
+Step Description:
+Enter value = 5
+Expected Result:
+Order in packs of 6
+Proceed button is disabled",,"Order in packs of 6
+Proceed button is disabled",,Enter value = 5,
+,,,,,,,,,,,,,"
+Step Description:
+Enter value = stock = 32
+Expected Result:
+Order in packs of 6
+Proceed button is disabled",,"Order in packs of 6
+Proceed button is disabled",,Enter value = stock = 32,
+,,,,,,,,,,,,,"
+Step Description:
+Enter value multiple of packsize = 36
+Expected Result:
+You can order from 6 to 24 item(s)
+Proceed button is disabled
+",,"You can order from 6 to 24 item(s)
+Proceed button is disabled
+",,Enter value multiple of packsize = 36,
+C394618,"Min=10, Max=24, PackSize=6, Stock=24",,,,"Min=10, Max=24, PackSize=6, Stock=24
+
+!! If min more than Pack size then the number is multiple of Pack Size number (6*n)",Medium,,List detail page (Add to cart/Update cart),2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > List detail page (Add to cart/Update cart),,"Step Description:
+Check Product1
+Enter less than min = 9
+Expected Result:
+Order from 12 to 24 item(s)
+Button is disabled",,"Order from 12 to 24 item(s)
+Button is disabled",,"Check Product1
+Enter less than min = 9",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter more than max = 23
+Expected Result:
+Order in packs of (6)
+Button is disabled
+",,"Order in packs of (6)
+Button is disabled
+",,Enter more than max = 23,
+,,,,,,,,,,,,,"
+Step Description:
+Enter more than max = 25
+Expected Result:
+Order from 12 to 24 item(s)
+Button is disabled",,"Order from 12 to 24 item(s)
+Button is disabled",,Enter more than max = 25,
+,,,,,,,,,,,,,"
+Step Description:
+Enter Pack size = 6
+Expected Result:
+Order from 12 to 24 item(s)
+Button is active
+",,"Order from 12 to 24 item(s)
+Button is active
+",,Enter Pack size = 6,
+,,,,,,,,,,,,,"
+Step Description:
+Enter 12
+Expected Result:
+There is no error",,There is no error,,Enter 12,
+C394458,"MinQnt = 0, Pack Size = 10",,,Min qty = 10,"Product1 has minqty = 0, Packsize=10, FFC=1000",Medium,,Cart page,2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Cart page,"Go to Frontend
+Add Product1 to cart",,,,,,0
+C394459,MinQnt less than Pack Size,,,Min qty = 10,"Product1 has minqty = 9, Packsize=10, FFC=1000",Medium,,Cart page,2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Cart page,"Go to Frontend
+Add Product1 to cart
+Open cart",,,,,,0
+C394460,"MinQnt = 11, Pack Size = 10, XAPI should return min qnt = 20",,,"Min Package size is a multiple of 10
+
+Min qty = 20","Product1 has minqty = 11, Packsize=10, FFC=1000",Medium,,Cart page,2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Cart page,"Go to Frontend
+Add Product1 to cart",,,,,,0
+C394461,"MinQnt = 19, Pack Size = 10, XAPI should return min qnt = 20",,,"Min Package size is a multiple of 10
+
+Min qty = 20","Product1 has minqty = 19, Packsize=10, FFC=1000",Medium,,Cart page,2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Cart page,"Go to Frontend
+Add Product1 to cart
+Check min qty",,,,,,0
+C394462,"MinQnt = 44, Pack Size = 12, XAPI should return min qnt = 48",,,"Min Package size is a multiple of 12
+
+Min qty = 48","Product1 has minqty = 44, Packsize=12, FFC=996",Medium,,Cart page,2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Cart page,"Go to Frontend
+Add Product1 to cart
+Check min qty",,,,,,0
+C394463,"MinQnt = 19, Pack Size = 10, Check bounders and text errors",,,,"Product1 has minqty = 19, Packsize=10, FFC=1000",Medium,,Cart page,2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Cart page,,"Step Description:
+Add Product1 to cart
+Open cart
+Change Pack size = 10
+Expected Result:
+You can order minimum 20 item(s)
+Proceed to checkout is disabled
+
+",,"You can order minimum 20 item(s)
+Proceed to checkout is disabled
+
+",,"Add Product1 to cart
+Open cart
+Change Pack size = 10",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter less than Pack size = 19
+Expected Result:
+You can order minimum 20 item(s)
+Proceed to checkout is disabled
+",,"You can order minimum 20 item(s)
+Proceed to checkout is disabled
+",,Enter less than Pack size = 19,
+,,,,,,,,,,,,,"
+Step Description:
+Enter more than Pack size = 21
+Expected Result:
+The error: Order in packs of (10)
+Proceed to checkout is disabled
+
+
+",,"The error: Order in packs of (10)
+Proceed to checkout is disabled
+
+
+",,Enter more than Pack size = 21,
+C394466,Min qty = PackSize= n,,,,"Min qty = 15
+Pack size = 15
+FCC = 996",Medium,,Cart page,2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Cart page,,"Step Description:
+Enter value less than min qty = 14
+Expected Result:
+The error: Order from 15 to 996 item(s)
+Add to cart is disabled",,"The error: Order from 15 to 996 item(s)
+Add to cart is disabled",,Enter value less than min qty = 14,0
+,,,,,,,,,,,,,"
+Step Description:
+Enter value Pack Size = 15
+Expected Result:
+The add to cart is active
+There is no validation message",,"The add to cart is active
+There is no validation message",,Enter value Pack Size = 15,
+,,,,,,,,,,,,,"
+Step Description:
+Enter value Pack size = 16
+Enter value Pack size = 25
+
+Expected Result:
+The error: Order in packs of (15) 
+Add to cart is disabled",,"The error: Order in packs of (15) 
+Add to cart is disabled",,"Enter value Pack size = 16
+Enter value Pack size = 25
+",
+,,,,,,,,,,,,,"
+Step Description:
+Enter value Pack size = 30
+Expected Result:
+The add to cart is active
+There is no validation message",,"The add to cart is active
+There is no validation message",,Enter value Pack size = 30,
+C394467,Min qty less than Pack Size = inStock,,,,"Product1 has min qty = 40, Pack Size=44, FFC=44",Medium,,Cart page,2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Cart page,,"Step Description:
+Go to Frontend
+Add Product1 to cart
+Check min qty
+
+Expected Result:
+The min qty = 44
+The Proceed to cart is active",,"The min qty = 44
+The Proceed to cart is active",,"Go to Frontend
+Add Product1 to cart
+Check min qty
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Try to change qty = 45
+Expected Result:
+The error """"You can order maximum 44 item(s)""""
+The Proceed to checkout is disabled",,"The error ""You can order maximum 44 item(s)""
+The Proceed to checkout is disabled",,Try to change qty = 45,
+,,,,,,,,,,,,,"
+Step Description:
+Change qty = 43
+Expected Result:
+The error """"Order in packs of 44""""
+The Proceed to checkout is disabled",,"The error ""Order in packs of 44""
+The Proceed to checkout is disabled",,Change qty = 43,
+,,,,,,,,,,,,,"
+Step Description:
+Change qty = 40
+Expected Result:
+The error """"Order in packs of 44""""
+The Proceed to checkout is disabled",,"The error ""Order in packs of 44""
+The Proceed to checkout is disabled",,Change qty = 40,
+C394469,Min qty < Packs size > inStock,,,"The error """"Min order 176 item(s) is not available in stock"""" (Multiple of 88)
+The Proceed to checkout is disabled","Product1 has minqty = 100, Packsize=88, FFC=44",Medium,,Cart page,2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Cart page,"Go to Frontend
+Add Product1 to cart
+Check min qty",,,,,,0
+C394471,"Min qty > Pack size > inStock, check error",,,"The error """"Min order 2000 item(s) is not available in stock""""
+The add to cart is disabled","Product1 has minqty = 0, Packsize=2000, FFC=1000",Medium,,Cart page,2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Cart page,"Go to Frontend
+Add Product1 to cart
+Check min qty",,,,,,0
+C394470,"Track inventory = off, Pack Size = n",,,"Min qty = 44
+InStock chip is displayed
+The Proceed to checkout is active","Product1 has minqty = 0, Packsize=44
+Track inventory = off
+FFC = 35",Medium,,Cart page,2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Cart page,"Go to Frontend
+Add Product1 cart
+Check min qty",,,,,,0
+C394615,Max >= Pack size < Stock,,,,"Min = 0, Max = 24 Pack size = 6 Stock = 32",Medium,,Cart page,2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Cart page,,"Step Description:
+Check qty
+Expected Result:
+QTY = 6",,QTY = 6,,Check qty,0
+,,,,,,,,,,,,,"
+Step Description:
+Enter value = 5
+Expected Result:
+Order in packs of 6
+Proceed button is disabled",,"Order in packs of 6
+Proceed button is disabled",,Enter value = 5,
+,,,,,,,,,,,,,"
+Step Description:
+Enter value = stock = 32
+Expected Result:
+Order in packs of 6
+Proceed button is disabled",,"Order in packs of 6
+Proceed button is disabled",,Enter value = stock = 32,
+,,,,,,,,,,,,,"
+Step Description:
+Enter value multiple of packsize = 36
+Expected Result:
+You can order from 6 to 24 item(s)
+Proceed button is disabled
+",,"You can order from 6 to 24 item(s)
+Proceed button is disabled
+",,Enter value multiple of packsize = 36,
+C394616,"Min=10, Max=24, PackSize=6, Stock=24",,,,"Min=10, Max=24, PackSize=6, Stock=24
+
+!! If min more than Pack size then the number is multiple of Pack Size number (6*n)",Medium,,Cart page,2,,Validation   (Desktop+Mobile)  (Add from Category+ Add from Product page) > Products sold in Packs [ need to automate!] > Cart page,,"Step Description:
+Check Product1
+Enter less than min = 9
+Expected Result:
+Order from 12 to 24 item(s)
+Button is disabled",,"Order from 12 to 24 item(s)
+Button is disabled",,"Check Product1
+Enter less than min = 9",0
+,,,,,,,,,,,,,"
+Step Description:
+Enter more than max = 23
+Expected Result:
+Order in packs of (6)
+Button is disabled
+",,"Order in packs of (6)
+Button is disabled
+",,Enter more than max = 23,
+,,,,,,,,,,,,,"
+Step Description:
+Enter more than max = 25
+Expected Result:
+Order from 12 to 24 item(s)
+Button is disabled",,"Order from 12 to 24 item(s)
+Button is disabled",,Enter more than max = 25,
+,,,,,,,,,,,,,"
+Step Description:
+Enter Pack size = 6
+Expected Result:
+Order from 12 to 24 item(s)
+Button is active
+",,"Order from 12 to 24 item(s)
+Button is active
+",,Enter Pack size = 6,
+,,,,,,,,,,,,,"
+Step Description:
+Enter 12
+Expected Result:
+There is no error",,There is no error,,Enter 12,
+C412753,Display Default View with 6 Items,,,"<ul>
+<li>All 6 items are displayed in a grid format</li>
+<li>Each item shows product image, title, and price</li>
+<li>No pagination or carousel controls are visible</li>
+<li>Layout is responsive and properly aligned</li>
+</ul>
+","<p>User is logged in; User has exactly 6 items saved for later; User is on the cart page</p>
+",High,,Saved for later block in cart - display more than 6 items,1,VCST-3728,Save for later > Saved for later block in cart - display more than 6 items,"<ol>
+<li>Navigate to the cart page</li>
+<li>Locate the 'Saved for Later' block</li>
+<li>Count the number of displayed items</li>
+<li>Verify the layout and spacing of items</li>
+</ol>
+",,,,,,1
+C412754,Carousel Navigation with More Than 6 Items,,,"- First 6 items are initially visible
+- Carousel navigation arrows are present and functional
+- Items smoothly transition when navigating
+- Item count indicator shows current position",User is logged in; User has 10 items saved for later; User is on the cart page,High,,Saved for later block in cart - display more than 6 items,1,VCST-3728,Save for later > Saved for later block in cart - display more than 6 items,"1. Navigate to the cart page
+2. Locate the 'Saved for Later' block
+3. Verify presence of carousel controls
+4. Click next/previous arrows
+5. Check item visibility after each navigation",,,,,,0
+C412755,Wishlist Link Integration,,,"- Link is clearly visible
+- Redirects to wishlist page
+- All saved items are displayed in wishlist
+- Navigation maintains user session",User has more than 6 saved items; User is on the cart page,Medium,,Saved for later block in cart - display more than 6 items,1,VCST-3728,Save for later > Saved for later block in cart - display more than 6 items,"1. Locate 'View All in Wishlist' link
+2. Click the link
+3. Verify redirect to wishlist page
+4. Confirm all saved items are present",,,,,,0
+C412756,Empty State Display,,,"- Appropriate empty state message displayed
+- No carousel controls visible
+- Section maintains proper layout
+- Optional CTA to continue shopping",User is logged in; No items saved for later; User is on the cart page,Medium,,Saved for later block in cart - display more than 6 items,1,VCST-3728,Save for later > Saved for later block in cart - display more than 6 items,"1. Navigate to cart page
+2. Locate 'Saved for Later' section",,,,,,0
+C412757,Maximum Items Boundary Test,,,"- Appropriate error message displayed
+- Existing items remain unchanged
+- User notified of item limit","User is logged in; User has maximum allowed items saved (e.g., 50 items)",Medium,,Saved for later block in cart - display more than 6 items,1,VCST-3728,Save for later > Saved for later block in cart - display more than 6 items,"1. Navigate to cart page
+2. Attempt to save another item for later
+3. Verify system response",,,,,,0
+C412758,Response to Network Issues,,,"- Appropriate error handling
+- Graceful degradation of carousel
+- Recovery when connection restored
+- No data loss",User has saved items; Network connection is unstable,Low,,Saved for later block in cart - display more than 6 items,1,VCST-3728,Save for later > Saved for later block in cart - display more than 6 items,"1. Load cart page with poor connection
+2. Attempt carousel navigation
+3. Simulate connection loss
+4. Restore connection",,,,,,0
+C412759,Cross-Browser Compatibility,,,"- Consistent behavior across browsers
+- Proper rendering of all elements
+- Carousel works as expected
+- No visual glitches",Test environment setup with multiple browsers; Items saved for later,High,,Saved for later block in cart - display more than 6 items,1,VCST-3728,Save for later > Saved for later block in cart - display more than 6 items,"1. Test on Chrome, Firefox, Safari, Edge
+2. Verify carousel functionality
+3. Check responsive design
+4. Validate navigation",,,,,,0
+C410287,The 'Saved for later' section is displayed when list exists,,,,User logged in; cart has items; 'savedforlater' list exists with ≥1 item,High,,Main functionality,1,,Save for later > Main functionality,,"Step Description:
+Open Cart page
+Expected Result:
+“Saved for later” section is visible at bottom and displays items from the saved list (name, image, price).",,"“Saved for later” section is visible at bottom and displays items from the saved list (name, image, price).",,Open Cart page,0
+C410288,Hide state when list doesn’t exist,,,,User logged in; cart has items; no 'saved for later' list,Medium,,Main functionality,1,,Save for later > Main functionality,,"Step Description:
+Open Cart page
+Expected Result:
+Section is hidden; no stale items displayed.",,Section is hidden; no stale items displayed.,,Open Cart page,0
+C410289,Save a single line item,,,,Cart with ≥1 line item,High,,Main functionality,1,,Save for later > Main functionality,,"Step Description:
+Click 'Save for later' on one line item
+Expected Result:
+UI removes item from cart, calls mutation, updated saved list contains item, totals updated.",,"UI removes item from cart, calls mutation, updated saved list contains item, totals updated.",,Click 'Save for later' on one line item,0
+,,,,,,,,,,,,,"
+Step Description:
+Go to lists
+Check the Save for later list
+Expected Result:
+The list is created. The product count is match with in cart list",,The list is created. The product count is match with in cart list,,"Go to lists
+Check the Save for later list",
+C410290,Auto-create 'saved for later' list when missing,,,,No existing saved list,High,,Main functionality,1,,Save for later > Main functionality,,"Step Description:
+Click 'Save for later' on a cart line item
+Expected Result:
+Backend creates list type saved for later; UI renders section with moved item.",,Backend creates list type saved for later; UI renders section with moved item.,,Click 'Save for later' on a cart line item,0
+C410291,Save multiple items sequentially,,,,Cart with ≥3 items,High,,Main functionality,1,,Save for later > Main functionality,,"Step Description:
+Save item A, then B
+Expected Result:
+Both items removed from cart, appear in saved list; subtotals/taxes updated correctly.",,"Both items removed from cart, appear in saved list; subtotals/taxes updated correctly.",,"Save item A, then B",0
+C410298,Save for later > check products in lists,,,The list is created. The product count is match with cart list,,High,,Main functionality,1,,Save for later > Main functionality,"Go to list
+Open Save for later
+Check products",,,,,,0
+C410297,Double-clicking on Save / Move to cart,,,,,High,,Main functionality,1,,Save for later > Main functionality,,"Step Description:
+Open the shopping cart with at least 4 items.
+Click the Save for later button several times in a row for each product.
+
+
+
+Expected Result:
+The product removes from cart and moves to Saved for later block
+When you quickly click on each item, the interface is blocked until all requests are completed.",,"The product removes from cart and moves to Saved for later block
+When you quickly click on each item, the interface is blocked until all requests are completed.",,"Open the shopping cart with at least 4 items.
+Click the Save for later button several times in a row for each product.
+
+
+",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on Move to cart for each item in cart
+
+Expected Result:
+The product removes from Saved for later block and go to cart
+When you quickly click on each item, the interface is blocked until all requests are completed.",,"The product removes from Saved for later block and go to cart
+When you quickly click on each item, the interface is blocked until all requests are completed.",,"Click on Move to cart for each item in cart
+",
+C410292,Move back to cart (single item),,,,Saved list has item X; cart open,High,,Main functionality,1,,Save for later > Main functionality,,"Step Description:
+Click 'Move to cart' on item X
+Expected Result:
+Item appears in cart; removed from saved list; totals updated; merged with existing SKU if applicable.",,Item appears in cart; removed from saved list; totals updated; merged with existing SKU if applicable.,,Click 'Move to cart' on item X,0
+C410293,Move back multiple items,,,,"Saved list has more than 6 items A,B etc.",High,,Main functionality,1,,Save for later > Main functionality,,"Step Description:
+Click on move A then B, C, D quickly
+Expected Result:
+All items reappear in cart; saved list updates; stock/price respected.",,All items reappear in cart; saved list updates; stock/price respected.,,"Click on move A then B, C, D quickly",0
+C410294,Preserve variant options on save/restore,,,,Item with variants in cart,High,,Main functionality,1,,Save for later > Main functionality,,"Step Description:
+Save item, then move back
+Expected Result:
+correct SKU returns; correct image/pricing.",,correct SKU returns; correct image/pricing.,,"Save item, then move back",0
+C410295,Price/stock refresh,,,,Saved item had old price/stock,High,,Main functionality,1,,Save for later > Main functionality,,"Step Description:
+Open cart page
+Expected Result:
+Saved section shows current price and availability;",,Saved section shows current price and availability;,,Open cart page,0
+C410296,Guest user behavior,,,,Anonyms user with cart,Medium,,Main functionality,1,,Save for later > Main functionality,,"Step Description:
+Add products to cart
+Open cart
+Check Save for later icon
+Expected Result:
+The Saved for later icon is not shown. The feature is not available for Anonymus",,The Saved for later icon is not shown. The feature is not available for Anonymus,,"Add products to cart
+Open cart
+Check Save for later icon",0
+C410299,Save for later > Change currency,,,,Store currency USD,Medium,,Save for later > Multi-currency support,1,,Save for later > Save for later > Multi-currency support,,"Step Description:
+Add products to cart
+Open cart
+Click on Save for later
+Check the Saved for later section
+Expected Result:
+The products are added to Saved for later block",,The products are added to Saved for later block,,"Add products to cart
+Open cart
+Click on Save for later
+Check the Saved for later section",0
+,,,,,,,,,,,,,"
+Step Description:
+Change currency in Store
+Click on Saved for later for each product
+Check the Saved for later section
+
+
+Expected Result:
+The Save for later (N) is created. Products are added to list",,The Save for later (N) is created. Products are added to list,,"Change currency in Store
+Click on Saved for later for each product
+Check the Saved for later section
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Click on Move to Cart
+Expected Result:
+The product moves to cart again",,The product moves to cart again,,Click on Move to Cart,
+C410304,Save for later > Out of stock,,,,The  cart contains the product out of stock,Medium,,Saver for later > Unavailable products,1,,Save for later > Saver for later > Unavailable products,,"Step Description:
+Click on the Save for later button
+Check the product in 'Saved for later' section
+Check product in the lists >  Save for later
+Expected Result:
+The product is displayed in the list  'Saved for later'",,The product is displayed in the list  'Saved for later',,"Click on the Save for later button
+Check the product in 'Saved for later' section
+Check product in the lists >  Save for later",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to cart
+Click on the Move to cart button
+Check the product removed from 'Saved for later' section and goes to cart
+Check product in the lists >  Save for later
+Expected Result:
+The product is displayed in the cart. The error message is shown",,The product is displayed in the cart. The error message is shown,,"Go to cart
+Click on the Move to cart button
+Check the product removed from 'Saved for later' section and goes to cart
+Check product in the lists >  Save for later",
+C410309,Save an out-of-stock (OOS) item to Saved for later,,,Item is saved to Saved for later; it does not contribute to cart totals.,A product becomes OOS while in cart or on refresh,High,,Saver for later > Unavailable products,1,,Save for later > Saver for later > Unavailable products,Click 'Save for later' for the OOS item,,,,,,0
+C410310,Attempt to move OOS item back to cart [Draft] ???,,,Action is blocked with a clear message; item remains in Saved for later.,Saved list contains an OOS item,High,,Saver for later > Unavailable products,1,,Save for later > Saver for later > Unavailable products,Click 'Move to cart' on the OOS item,,,,,,0
+C410312,Add all to cart with mixed availability,,,In-stock items move to cart; OOS item remains with inline error;,"Saved list has 3 items: 2 in stock, 1 OOS",Medium,,Saver for later > Unavailable products,1,,Save for later > Saver for later > Unavailable products,Click Move to cart for each product,,,,,,0
+C410313,Discontinued/inactive SKU in Saved for later [Draft] ???,,,Move prevented; message indicates item is no longer sold; offer 'Remove'/'Find similar'.,Saved list contains an item that has been discontinued,Medium,,Saver for later > Unavailable products,1,,Save for later > Saver for later > Unavailable products,Open cart page; attempt 'Move to cart',,,,,,0
+C410314,Price changed while in Saved for later,,,Cart reflects current price; totals correct.,Saved item price changed since it was saved,Medium,,Saver for later > Unavailable products,1,,Save for later > Saver for later > Unavailable products,Move item to cart,,,,,,0
+C410315,Variant option unavailable while in Saved for later,,,The variation moved to cart. The error message is shown,"Saved item variant (e.g., size M) is no longer available; other variants exist",Medium,,Saver for later > Unavailable products,1,,Save for later > Saver for later > Unavailable products,Attempt 'Move to cart',,,,,,0
+C410311,Move back succeeds after restock,,,Item is added to cart; removed from Saved for later; totals recalc; price change indicated if applicable.,Saved list contains an item that has just come back in stock,High,,Saver for later > Unavailable products,1,,Save for later > Saver for later > Unavailable products,Click 'Move to cart',,,,,,0
+C410305,Save for later > Visible = false,,,,The cart contains the Invisible product,Medium,,Saver for later > Unavailable products,1,,Save for later > Saver for later > Unavailable products,,"Step Description:
+Click on the Save for later button
+Check the product in 'Saved for later' section
+Check product in the lists >  Save for later
+Expected Result:
+The product is displayed in the list  'Saved for later'",,The product is displayed in the list  'Saved for later',,"Click on the Save for later button
+Check the product in 'Saved for later' section
+Check product in the lists >  Save for later",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to cart
+Click on the Move to cart button
+Check the product removed from 'Saved for later' section and goes to cart
+Check product in the lists >  Save for later
+Expected Result:
+The product is displayed in the cart. The error message is shown",,The product is displayed in the cart. The error message is shown,,"Go to cart
+Click on the Move to cart button
+Check the product removed from 'Saved for later' section and goes to cart
+Check product in the lists >  Save for later",
+C410306,Save for later > Can't be purchased,,,,The  cart contains the *Can't be purchased* product,Medium,,Saver for later > Unavailable products,1,,Save for later > Saver for later > Unavailable products,,"Step Description:
+Click on the Save for later button
+Check the product in 'Saved for later' section
+Check product in the lists >  Save for later
+Expected Result:
+The product is displayed in the list  'Saved for later'",,The product is displayed in the list  'Saved for later',,"Click on the Save for later button
+Check the product in 'Saved for later' section
+Check product in the lists >  Save for later",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to cart
+Click on the Move to cart button
+Check the product removed from 'Saved for later' section and goes to cart
+Check product in the lists >  Save for later
+Expected Result:
+The product is displayed in the cart. The error message is shown",,The product is displayed in the cart. The error message is shown,,"Go to cart
+Click on the Move to cart button
+Check the product removed from 'Saved for later' section and goes to cart
+Check product in the lists >  Save for later",
+C410307,Save for later > N/A pricelist or 0 price,,,,The cart contains the product with N/A pricelist,Medium,,Saver for later > Unavailable products,1,,Save for later > Saver for later > Unavailable products,,"Step Description:
+Click on the Save for later button
+Check the product in 'Saved for later' section
+Check product in the lists >  Save for later
+Expected Result:
+The product is displayed in the list  'Saved for later'",,The product is displayed in the list  'Saved for later',,"Click on the Save for later button
+Check the product in 'Saved for later' section
+Check product in the lists >  Save for later",0
+,,,,,,,,,,,,,"
+Step Description:
+Go to cart
+Click on the Move to cart button
+Check the product removed from 'Saved for later' section and goes to cart
+Check product in the lists >  Save for later
+Expected Result:
+The product is displayed in the cart. The error message is shown",,The product is displayed in the cart. The error message is shown,,"Go to cart
+Click on the Move to cart button
+Check the product removed from 'Saved for later' section and goes to cart
+Check product in the lists >  Save for later",
+C410308,Save for later > Deleted product,,,,The cart contains the deleted product,Low,,Saver for later > Unavailable products,1,,Save for later > Saver for later > Unavailable products,,"Step Description:
+Click on the Save for later button
+Check the product in 'Saved for later' section
+Check product in the lists >  Save for later
+Expected Result:
+The product is not added to the list  'Saved for later'",,The product is not added to the list  'Saved for later',,"Click on the Save for later button
+Check the product in 'Saved for later' section
+Check product in the lists >  Save for later",0
+C412760,Verify Save for Later Menu Access,,,"- Save for Later section is accessible from My Account menu
+- Save for Later page loads successfully
+- Previously saved items are displayed",User has an active account; User is logged in; User has previously saved items for later,High,,Save for later - Display All - Management in my account,1,VCST-4084,Save for later > Save for later - Display All - Management in my account,"1. Navigate to My Account section
+2. Look for 'Save for Later' menu option
+3. Click on 'Save for Later' menu item",,,,,,0
+C412761,Display Saved Items List,,,"- All saved items are displayed
+- Each item shows correct information
+- List is properly formatted and readable
+- Pagination works if applicable",User is logged in; Multiple items are saved for later,High,,Save for later - Display All - Management in my account,1,VCST-4084,Save for later > Save for later - Display All - Management in my account,"1. Access Save for Later section
+2. Verify display of item details:
+   - Product image
+   - Product name
+   - Price
+   - Date saved
+3. Scroll through entire list",,,,,,0
+C412762,Remove Single Item,,,"- Item is successfully removed
+- Confirmation message appears
+- List updates immediately
+- Removed item no longer appears in list",User is logged in; At least one item in Save for Later list,Medium,,Save for later - Display All - Management in my account,1,VCST-4084,Save for later > Save for later - Display All - Management in my account,"1. Access Save for Later section
+2. Locate remove/delete button for specific item
+3. Click remove button
+4. Confirm deletion if prompted",,,,,,0
+C412763,Bulk Delete Items,,,"- Selected items are removed
+- Confirmation message appears
+- List updates correctly
+- Item count updates accurately",User is logged in; Multiple items in Save for Later list,Medium,,Save for later - Display All - Management in my account,1,VCST-4084,Save for later > Save for later - Display All - Management in my account,"1. Access Save for Later section
+2. Select multiple items using checkboxes
+3. Click bulk delete option
+4. Confirm deletion",,,,,,0
+C412764,Empty State Display,,,"- Appropriate empty state message displayed
+- Suggestions for adding items shown if applicable
+- Layout remains intact",User is logged in; No items in Save for Later list,Medium,,Save for later - Display All - Management in my account,1,VCST-4084,Save for later > Save for later - Display All - Management in my account,"1. Access Save for Later section
+2. Observe empty state message",,,,,,0
+C412765,Move to Cart Functionality,,,"- Item successfully moves to cart
+- Item removes from Save for Later list
+- Cart count updates
+- Confirmation message appears",User is logged in; Items present in Save for Later list,High,,Save for later - Display All - Management in my account,1,VCST-4084,Save for later > Save for later - Display All - Management in my account,"1. Access Save for Later section
+2. Click 'Move to Cart' button for an item
+3. Verify cart update
+4. Check Save for Later list update",,,,,,0
+C412766,Session Timeout Handling,,,"- Appropriate session timeout message
+- User data preserved
+- Redirect to login page
+- No data loss after re-login",User session near timeout; Active Save for Later page,Low,,Save for later - Display All - Management in my account,1,VCST-4084,Save for later > Save for later - Display All - Management in my account,"1. Wait for session timeout
+2. Attempt to perform actions on saved items
+3. Observe system response",,,,,,0
+C412767,Invalid Item Handling,,,"- Clear indication of unavailable status
+- Appropriate messaging
+- Option to remove invalid items
+- System stability maintained",User has saved items; One or more items become unavailable,Medium,,Save for later - Display All - Management in my account,1,VCST-4084,Save for later > Save for later - Display All - Management in my account,"1. Access Save for Later list
+2. Observe display of unavailable items
+3. Attempt actions on unavailable items",,,,,,0
+C389995,Only Digital products in the cart > Shipping Step skipped,"https://virtowayqa.testrail.io/index.php?/attachments/get/1000002646, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000214",,,There is a Digital product in the catalog,Medium,ST-4141,Digital product in cart,0,,Digital product in cart,,"Step Description:
+Add Digital products to the cart
+Go to the cart
+Expected Result:
+The Digital product is added to the cart.
+The bubble Digital product is displayed
+
+Verify:
+
+!! There is no """"shipping cost"""" in the Order Summary 
+
+
+
+
+
+
+  
+
+",,"The Digital product is added to the cart.
+The bubble Digital product is displayed
+
+Verify:
+
+!! There is no ""shipping cost"" in the Order Summary 
+
+
+
+
+
+
+  
+
+",,"Add Digital products to the cart
+Go to the cart",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on Proceed to Checkout
+Expected Result:
+1. The redirection on {domain-name}/checkout/billing
+
+2. The next elements are displayed:
+
+title *Billing*
+
+***Steps***
+
+Back to Cart (active link) - Billing (unclickable) - 2 Order review (unclickable) - 3 Completed (unclickable)
+
+***Payment details***
+
+Billing address
+
+Please select a billing address (link)
+
+
+Payment method
+
+Select payment method with options: Bank card (Authorize.Net) and Manual
+
+
+***Order Summary***
+
+!! There is no """"shipping cost"""" in the Order Summary 
+
+
+Purchase Order field
+
+Button Place Order (disabled by default if an address is not selected yet) 
+
+ ![](index.php?/attachments/get/0a903a94-e92d-4b47-831e-e38ad399f360) 
+",,"1. The redirection on {domain-name}/checkout/billing
+
+2. The next elements are displayed:
+
+title *Billing*
+
+***Steps***
+
+Back to Cart (active link) - Billing (unclickable) - 2 Order review (unclickable) - 3 Completed (unclickable)
+
+***Payment details***
+
+Billing address
+
+Please select a billing address (link)
+
+
+Payment method
+
+Select payment method with options: Bank card (Authorize.Net) and Manual
+
+
+***Order Summary***
+
+!! There is no ""shipping cost"" in the Order Summary 
+
+
+Purchase Order field
+
+Button Place Order (disabled by default if an address is not selected yet) 
+
+ ![](index.php?/attachments/get/0a903a94-e92d-4b47-831e-e38ad399f360) 
+",,Click on Proceed to Checkout,
+,,,,,,,,,,,,,"
+Step Description:
+Click on the link """"Select a billing address""""
+Select address
+Select Payment Method (ex. Manual)
+Expected Result:
+1. The billing address was added to the cart (pencil icon is displayed)
+2. Payment method is selected
+3. Review Order button activated",,"1. The billing address was added to the cart (pencil icon is displayed)
+2. Payment method is selected
+3. Review Order button activated",,"Click on the link ""Select a billing address""
+Select address
+Select Payment Method (ex. Manual)",
+,,,,,,,,,,,,,"
+Step Description:
+Click on Review Order
+Expected Result:
+The new page opens with URL/checkout/review
+
+The next elements are displayed:
+
+Title ORDER REVIEW
+
+***Steps***
+
+Back to Cart (active link) - Billing (clickable) - 2 Order review (active, unclickable) - 3 Completed (unclickable)
+
+------------------------------------------------------------------------
+
+Title PLEASE REVIEW YOUR ORDER
+
+Sections with next elements (read-only):
+
+Line-items grouping by Vendors
+
+Billing address
+Payment method
+Order comment (optional)
+Accepted gifts (optional)
+
+------------------------------------------------------------------------
+Order Summary
+
+!! There is no """"shipping cost"""" in the Order Summary
+
+
+Button Place Order (enable by default)",,"The new page opens with URL/checkout/review
+
+The next elements are displayed:
+
+Title ORDER REVIEW
+
+***Steps***
+
+Back to Cart (active link) - Billing (clickable) - 2 Order review (active, unclickable) - 3 Completed (unclickable)
+
+------------------------------------------------------------------------
+
+Title PLEASE REVIEW YOUR ORDER
+
+Sections with next elements (read-only):
+
+Line-items grouping by Vendors
+
+Billing address
+Payment method
+Order comment (optional)
+Accepted gifts (optional)
+
+------------------------------------------------------------------------
+Order Summary
+
+!! There is no ""shipping cost"" in the Order Summary
+
+
+Button Place Order (enable by default)",,Click on Review Order,
+,,,,,,,,,,,,,"
+Step Description:
+Click on Place order
+Expected Result:
+The new page opens with URL/checkout/completed
+
+The next elements are displayed:
+
+title ORDER COMPLETED
+
+***Text***
+
+Order CO{0:yyMMdd}-{1:D5} has been successfully submitted.
+You will be notified via email about the order status change.
+
+***Buttons***
+
+- Show Order
+- Home Page
+
+
+
+ ![](index.php?/attachments/get/9201e351-68c5-4305-8e0d-60dfc3985c72) 
+
+",,"The new page opens with URL/checkout/completed
+
+The next elements are displayed:
+
+title ORDER COMPLETED
+
+***Text***
+
+Order CO{0:yyMMdd}-{1:D5} has been successfully submitted.
+You will be notified via email about the order status change.
+
+***Buttons***
+
+- Show Order
+- Home Page
+
+
+
+ ![](index.php?/attachments/get/9201e351-68c5-4305-8e0d-60dfc3985c72) 
+
+",,Click on Place order,
+C389996,Physical and Digital products in the cart > Shipping step required,,,,There is a Digital product in the catalog,Medium,ST-4141,Digital product in cart,0,,Digital product in cart,,"Step Description:
+Add Digital products to the cart
+Add Physical products to the cart
+Go to the cart
+Expected Result:
+All products are added to the cart
+
+**Note**: There is a """"shipping cost"""" in the Order Summary 
+
+
+
+
+ ![](index.php?/attachments/get/1126ff51-d9a5-4b56-bd31-84de2e8506c8) 
+
+
+",,"All products are added to the cart
+
+**Note**: There is a ""shipping cost"" in the Order Summary 
+
+
+
+
+ ![](index.php?/attachments/get/1126ff51-d9a5-4b56-bd31-84de2e8506c8) 
+
+
+",,"Add Digital products to the cart
+Add Physical products to the cart
+Go to the cart",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on Proceed to Checkout
+Expected Result:
+The Shipping Page opened.
+
+Verify:
+
+1. The shipping step was added to the link steps.
+
+2. **Note**: There is a """"shipping cost"""" in the Order Summary 
+
+
+
+ 
+",,"The Shipping Page opened.
+
+Verify:
+
+1. The shipping step was added to the link steps.
+
+2. **Note**: There is a ""shipping cost"" in the Order Summary 
+
+
+
+ 
+",,Click on Proceed to Checkout,
+,,,,,,,,,,,,,"
+Step Description:
+Click on the link """"Select a shipping address""""
+Select address
+Select Delivery Method (ex. Fixed Rate (Air))
+
+
+
+Expected Result:
+The shipping address was added to the cart (pencil icon is displayed)
+Delivery method is selected
+Proceed to Billing button activated",,"The shipping address was added to the cart (pencil icon is displayed)
+Delivery method is selected
+Proceed to Billing button activated",,"Click on the link ""Select a shipping address""
+Select address
+Select Delivery Method (ex. Fixed Rate (Air))
+
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Click on Proceed to Billing button
+Expected Result:
+The Billing Page opened.
+
+Verify:
+
+1. The shipping step was added to the link steps.
+
+2. Checkbox """"Same as shipping address"""" is selected by default and the address is displayed under the checkbox
+
+3. **Note**: There is a """"shipping cost"""" in the Order Summary 
+
+
+",,"The Billing Page opened.
+
+Verify:
+
+1. The shipping step was added to the link steps.
+
+2. Checkbox ""Same as shipping address"" is selected by default and the address is displayed under the checkbox
+
+3. **Note**: There is a ""shipping cost"" in the Order Summary 
+
+
+",,Click on Proceed to Billing button,
+,,,,,,,,,,,,,"
+Step Description:
+Select Payment Method (ex. Bank card (Authorize.Net))
+
+Click on Review Order
+Expected Result:
+The Review Order Page is opened
+
+Verify:
+
+1. The shipping step was added to the link steps.
+
+2. There is a block with the Shiping address and Delivery method in the review order
+
+3. **Note**: There is a """"shipping cost"""" in the Order Summary ",,"The Review Order Page is opened
+
+Verify:
+
+1. The shipping step was added to the link steps.
+
+2. There is a block with the Shiping address and Delivery method in the review order
+
+3. **Note**: There is a ""shipping cost"" in the Order Summary ",,"Select Payment Method (ex. Bank card (Authorize.Net))
+
+Click on Review Order",
+,,,,,,,,,,,,,"
+Step Description:
+Click on Place Order
+Finish the Payment
+Expected Result:
+Order successfully created",,Order successfully created,,"Click on Place Order
+Finish the Payment",
+C389997,Mixed cart > Shipping step required > Delete all Physical products> Shipping step skipped,,,,There is a Digital product in the catalog,Medium,ST-4141,Digital product in cart,0,,Digital product in cart,,"Step Description:
+Add Digital products to the cart
+Add Physical products to the cart
+Go to the cart
+Expected Result:
+All products are added to the cart
+
+**Note**: There is a """"shipping cost"""" in the Order Summary 
+
+
+
+
+ ![](index.php?/attachments/get/39e5b01b-cf61-40be-bf93-3d4323e71c54) 
+
+
+",,"All products are added to the cart
+
+**Note**: There is a ""shipping cost"" in the Order Summary 
+
+
+
+
+ ![](index.php?/attachments/get/39e5b01b-cf61-40be-bf93-3d4323e71c54) 
+
+
+",,"Add Digital products to the cart
+Add Physical products to the cart
+Go to the cart",0
+,,,,,,,,,,,,,"
+Step Description:
+Click on Proceed to Checkout
+Expected Result:
+The Shipping Page opened.
+
+Verify:
+
+1. The shipping step was added to the link steps.
+
+2. **Note**: There is a """"shipping cost"""" in the Order Summary 
+
+
+
+ 
+",,"The Shipping Page opened.
+
+Verify:
+
+1. The shipping step was added to the link steps.
+
+2. **Note**: There is a ""shipping cost"" in the Order Summary 
+
+
+
+ 
+",,Click on Proceed to Checkout,
+,,,,,,,,,,,,,"
+Step Description:
+Click on the link """"Select a shipping address""""
+Select address
+Select Delivery Method (ex. Fixed Rate (Air))
+
+
+
+Expected Result:
+The shipping address was added to the cart (pencil icon is displayed)
+Delivery method is selected
+Proceed to Billing button activated",,"The shipping address was added to the cart (pencil icon is displayed)
+Delivery method is selected
+Proceed to Billing button activated",,"Click on the link ""Select a shipping address""
+Select address
+Select Delivery Method (ex. Fixed Rate (Air))
+
+
+",
+,,,,,,,,,,,,,"
+Step Description:
+Click on Proceed to Billing button
+Expected Result:
+The Billing Page opened.
+
+Verify:
+
+1. The shipping step was added to the link steps.
+
+2. Checkbox """"Same as shipping address"""" is selected by default and the address is displayed under the checkbox
+
+3. **Note**: There is a """"shipping cost"""" in the Order Summary 
+
+
+",,"The Billing Page opened.
+
+Verify:
+
+1. The shipping step was added to the link steps.
+
+2. Checkbox ""Same as shipping address"" is selected by default and the address is displayed under the checkbox
+
+3. **Note**: There is a ""shipping cost"" in the Order Summary 
+
+
+",,Click on Proceed to Billing button,
+,,,,,,,,,,,,,"
+Step Description:
+Select Payment Method (ex. Bank card (Authorize.Net))
+
+Click on Review Order
+Expected Result:
+The Review Order Page is opened
+
+Verify:
+
+1. The shipping step was added to the link steps.
+
+2. There is a block with the Shiping address and Delivery method in the review order
+
+3. **Note**: There is a """"shipping cost"""" in the Order Summary ",,"The Review Order Page is opened
+
+Verify:
+
+1. The shipping step was added to the link steps.
+
+2. There is a block with the Shiping address and Delivery method in the review order
+
+3. **Note**: There is a ""shipping cost"" in the Order Summary ",,"Select Payment Method (ex. Bank card (Authorize.Net))
+
+Click on Review Order",
+,,,,,,,,,,,,,"
+Step Description:
+Return to Cart
+Delete all Physical Products
+Expected Result:
+All Physical Products were deleted
+
+Verify:
+
+!! There is no """"shipping cost"""" in the Order Summary
+
+",,"All Physical Products were deleted
+
+Verify:
+
+!! There is no ""shipping cost"" in the Order Summary
+
+",,"Return to Cart
+Delete all Physical Products",
+,,,,,,,,,,,,,"
+Step Description:
+Proceed The Checkout
+Check all pages
+Expected Result:
+Verify:
+
+1. Shipping step was skipped
+2. !! There is no """"shipping cost"""" in the Order Summary",,"Verify:
+
+1. Shipping step was skipped
+2. !! There is no ""shipping cost"" in the Order Summary",,"Proceed The Checkout
+Check all pages",
+C389998,Place Digital Product into the cart > Add Physical product,,,,The Digital product in the catalog,Medium,,Digital product in cart,0,,Digital product in cart,,"Step Description:
+Place Digital Products into the cart
+Verify that the shipping step skipped
+Expected Result:
+The only digital product in the cart
+
+Verify:
+
+1. ***Note***: There is a """"shipping cost"""" in the Order Summary on all pages
+
+2. Shipping step skipped on all pages
+",,"The only digital product in the cart
+
+Verify:
+
+1. ***Note***: There is a ""shipping cost"" in the Order Summary on all pages
+
+2. Shipping step skipped on all pages
+",,"Place Digital Products into the cart
+Verify that the shipping step skipped",0
+,,,,,,,,,,,,,"
+Step Description:
+Return to the cart
+Add Physical product
+Verify that the shipping step required
+
+Expected Result:
+The Physical product was added to the cart
+
+Verify:
+
+1. ***Note***: There is a """"shipping cost"""" in the Order Summary on all pages
+2. Shipping step is added on all pages",,"The Physical product was added to the cart
+
+Verify:
+
+1. ***Note***: There is a ""shipping cost"" in the Order Summary on all pages
+2. Shipping step is added on all pages",,"Return to the cart
+Add Physical product
+Verify that the shipping step required
+",
+C389999,Create Order with Digital products > Verify Order,,,,Order_1 with Digital products created [C359499],Medium,,Digital product in cart,0,,Digital product in cart,,"Step Description:
+Go to Order &gt; Open Order_1 details
+Verify the page
+Expected Result:
+1. The Order_1 does not contain Shipping details
+
+2. !! There is no """"shipping cost"""" in the Order Summary
+",,"1. The Order_1 does not contain Shipping details
+
+2. !! There is no ""shipping cost"" in the Order Summary
+",,"Go to Order &gt; Open Order_1 details
+Verify the page",0
+,,,,,,,,,,,,,"
+Step Description:
+**For registered users! (for company or personal accounts)**
+
+Go to Account
+Check addresses list
+Check the newly added address
+Expected Result:
+A new address is displayed in the list",,A new address is displayed in the list,,"**For registered users! (for company or personal accounts)**
+
+Go to Account
+Check addresses list
+Check the newly added address",
+C390000,Create Order with mixed products > Verify Order,,,"Order_2 contains Shipping and Billing details
+
+Order Summary contains """"shipping cost""""","Create an Order_2 with Physical and Digital Products [C359512]
+",Medium,,Digital product in cart,0,,Digital product in cart,"Go to Order > Open Order_2 details
+Verify the page",,,,,,0

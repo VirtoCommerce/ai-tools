@@ -1,0 +1,251 @@
+ID,Title,Attachments,Estimate,Expected Result,Preconditions,Priority,References,Section,Section Depth,Section Description,Section Hierarchy,Steps,Steps,Steps (Additional Info),Steps (Expected Result),Steps (References),Steps (Step),is_converted
+C389654,Compare page > empty page,,,,"1. User_1 haven't compare products
+2. Go to the store - Compare page",Medium,,Compare products (Desktop and mobile),0,,Compare products (Desktop and mobile),,"Step Description:
+1. Check the empty compare page
+Expected Result:
+1. Next elements are presented:
+-- Compare products title
+-- Text 'Your product compare list is empty'
+-- 'Continue browsing here' button
+",,"1. Next elements are presented:
+-- Compare products title
+-- Text 'Your product compare list is empty'
+-- 'Continue browsing here' button
+",,1. Check the empty compare page,0
+,,,,,,,,,,,,,"
+Step Description:
+1. Click on the 'Continue browsing here' button
+
+Expected Result:
+1. Opens page with products catalog
+",,"1. Opens page with products catalog
+",,"1. Click on the 'Continue browsing here' button
+",
+C389655,Compare products > add product,,,,"1. Go to the store.
+
+",Medium,,Compare products (Desktop and mobile),0,,Compare products (Desktop and mobile),,"Step Description:
+1. Go to any Catalog
+2. Click the **Compare** checkbox for any product
+
+Expected Result:
+1. Item has been added to the compare list.
+2. A notification window appears in the top.
+3. Link Compare in the menu shows count 1.
+
+
+",,"1. Item has been added to the compare list.
+2. A notification window appears in the top.
+3. Link Compare in the menu shows count 1.
+
+
+",,"1. Go to any Catalog
+2. Click the **Compare** checkbox for any product
+",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check floating bar notifications
+Expected Result:
+1. Message with information the product has been added to the Compare list.
+2. Button Compare presented
+3. Icon close presented",,"1. Message with information the product has been added to the Compare list.
+2. Button Compare presented
+3. Icon close presented",,1. Check floating bar notifications,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click  button Compare
+Expected Result:
+1. Compare page opens",,1. Compare page opens,,1. Click  button Compare,
+,,,,,,,,,,,,,"
+Step Description:
+1. Add to Compare 1 more product.
+2. On floating bar notifications click icon Close
+Expected Result:
+1.  Notification closed",,1.  Notification closed,,"1. Add to Compare 1 more product.
+2. On floating bar notifications click icon Close",
+C389656,Compare products > remove product,,,,"1. Go to the store.
+2. Product_1, Product_2 added to Compare list",Medium,,Compare products (Desktop and mobile),0,,Compare products (Desktop and mobile),,"Step Description:
+1. Open Product_1 page
+2. Remove **Compare** checkbox  
+Expected Result:
+1. Item has been removed from  the compare list.
+2. A notification window appears in the top.
+3. Link Compare in the menu presented without count
+
+
+",,"1. Item has been removed from  the compare list.
+2. A notification window appears in the top.
+3. Link Compare in the menu presented without count
+
+
+",,"1. Open Product_1 page
+2. Remove **Compare** checkbox  ",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check notification
+Expected Result:
+1.Message with information the product has been removed from the Compare list. 
+2. Icon close presented",,"1.Message with information the product has been removed from the Compare list. 
+2. Icon close presented",,1. Check notification,
+,,,,,,,,,,,,,"
+Step Description:
+1. Click Icon close
+Expected Result:
+1. Notification closed",,1. Notification closed,,1. Click Icon close,
+C389657,Compare products > limit,,,,"1. Go to the store.
+2. There is 5 product added to the Compare
+
+",Medium,,Compare products (Desktop and mobile),0,,Compare products (Desktop and mobile),,"Step Description:
+1. Go to any Catalog
+2. Click the **Compare** checkbox for any product
+
+Expected Result:
+1. A notification window appears in the top with information the there is a limitation in the Compare list as 5 product.
+",,"1. A notification window appears in the top with information the there is a limitation in the Compare list as 5 product.
+",,"1. Go to any Catalog
+2. Click the **Compare** checkbox for any product
+",0
+C389658,Compare page > general view,,,,"1. Product_1-Product_5 have with two prices: sale price, list price
+2. Go to the store
+3. Add Product_1-Product_5 to the Compare list
+
+
+
+",Medium,,Compare products (Desktop and mobile),0,,Compare products (Desktop and mobile),,"Step Description:
+1. Open compare list
+2. Check the page
+Expected Result:
+1. Next elements are presented:
+- breadcrumbs
+- title Compare products
+- checkbox Show only differences
+- button Clear product compare list
+- count Added N items out of 5
+- Compare products block",,"1. Next elements are presented:
+- breadcrumbs
+- title Compare products
+- checkbox Show only differences
+- button Clear product compare list
+- count Added N items out of 5
+- Compare products block",,"1. Open compare list
+2. Check the page",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Check Compare products any block
+Expected Result:
+1. Next elements are presented:
+- picture of the product with Close icon on right top corner
+- product title
+- List price and Sale price
+- field with amount added product 
+- button Add to cart
+- list of the properties
+- repeated field with amount added product 
+- repeated button Add to cart
+",,"1. Next elements are presented:
+- picture of the product with Close icon on right top corner
+- product title
+- List price and Sale price
+- field with amount added product 
+- button Add to cart
+- list of the properties
+- repeated field with amount added product 
+- repeated button Add to cart
+",,1. Check Compare products any block,
+C389659,Compare page > differences,,,,"1. Go to the store
+2. Add 5 products to the Compare list
+
+
+",Medium,,Compare products (Desktop and mobile),0,,Compare products (Desktop and mobile),,"Step Description:
+1. Open Compare page
+2. Click checkbox Show only differences
+Expected Result:
+1. Only different products properties shown in the list",,1. Only different products properties shown in the list,,"1. Open Compare page
+2. Click checkbox Show only differences",0
+C389660,Compare page > remove one product,,,,"1. Go to the store
+2. Add 5 products to the Compare list
+
+
+",Medium,,Compare products (Desktop and mobile),0,,Compare products (Desktop and mobile),,"Step Description:
+1. Open Compare page
+2. Click icon Remove on any prodcut
+Expected Result:
+1. Only 4 products left in the compare list",,1. Only 4 products left in the compare list,,"1. Open Compare page
+2. Click icon Remove on any prodcut",0
+C389661,Compare page > remove all,,,,"1. Go to the store
+2. Add 5 products to the Compare list
+
+
+",Medium,,Compare products (Desktop and mobile),0,,Compare products (Desktop and mobile),,"Step Description:
+1. Open Compare page
+2. Click the button Clear list
+Expected Result:
+1.The Pop-up is shown:
+
+Header: Confirm Clear
+
+Text on the popup: Do you confirm the removal of all products from the compare list?
+
+Buttons: Cancel (secondary color) and OK (primary color)
+",,"1.The Pop-up is shown:
+
+Header: Confirm Clear
+
+Text on the popup: Do you confirm the removal of all products from the compare list?
+
+Buttons: Cancel (secondary color) and OK (primary color)
+",,"1. Open Compare page
+2. Click the button Clear list",0
+,,,,,,,,,,,,,"
+Step Description:
+
+Click Cancel
+
+Expected Result:
+The pop-up closed
+All products remain the same",,"The pop-up closed
+All products remain the same",,"
+Click Cancel
+",
+,,,,,,,,,,,,,"
+Step Description:
+Click one more time on the Clear list
+OK
+Expected Result:
+All products removed
+Empty compare page presented with a button Continue browsing here",,"All products removed
+Empty compare page presented with a button Continue browsing here",,"Click one more time on the Clear list
+OK",
+C389662,Compare page > product page,,,,"1. Go to the store
+2. Add 5 products to the Compare list
+
+
+",Medium,,Compare products (Desktop and mobile),0,,Compare products (Desktop and mobile),,"Step Description:
+1. Open Compare page
+2. Click on the picture of any product
+Expected Result:
+1. Product page opens",,1. Product page opens,,"1. Open Compare page
+2. Click on the picture of any product",0
+,,,,,,,,,,,,,"
+Step Description:
+1. Open Compare page
+2. Click on the title of any product
+Expected Result:
+1. Product page opens",,1. Product page opens,,"1. Open Compare page
+2. Click on the title of any product",
+C389663,Desktop > Compare page > check small screen size,,,,"1. Go to the store
+2. Add 5 products to the Compare list
+3. Set the screen size enough (small size) that only part of the list will shows.
+
+
+",Medium,,Compare products (Desktop and mobile),0,,Compare products (Desktop and mobile),,"Step Description:
+1. Check the Compare list
+Expected Result:
+1. There is scroll presented.",,1. There is scroll presented.,,1. Check the Compare list,0
+C389664,MOBILE > Compare page > check small screen size,,,,"1. Go to the store
+2. Add 5 products to the Compare list
+
+
+",Medium,,Compare products (Desktop and mobile),0,,Compare products (Desktop and mobile),,"Step Description:
+1. Check the Compare list
+Expected Result:
+1. There is right and left swipe in action presented.",,1. There is right and left swipe in action presented.,,1. Check the Compare list,0
