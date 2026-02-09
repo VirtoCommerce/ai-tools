@@ -54,7 +54,7 @@
         "--minimal"
       ],
       "env": {
-        "POSTMAN_API_KEY": "PMAK-6980603b201ec50001f11268-d2237f73ddcd815097c9dea9601212fa78"
+        "POSTMAN_API_KEY": "%POSTMAN_API_KEY%"
       }
     }
   }
