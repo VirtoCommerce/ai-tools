@@ -1,0 +1,800 @@
+"ID","Title","Attachments","Expected Result","Priority","Section","Section Depth","Section Description","Section Hierarchy","Steps","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (References)","Steps (Step)","Type","is_converted"
+"C415199","Admin > Store > Settings > Enable GA","","","Medium","Store settings","0","","Store settings","","Step Description:
+<p>Go to the Admin side<br />Store > B2B-store > Settings<br />Scroll the page till Google Analytics 4<br />Toggle Enable = True<br />Enter Measurement Id (ex. <strong><em>G-S2KXT3KTJZ</em></strong>)<br />Save</p>
+Expected Result:
+<p>All settings are saved for store</p>","","<p>All settings are saved for store</p>","","<p>Go to the Admin side<br />Store > B2B-store > Settings<br />Scroll the page till Google Analytics 4<br />Toggle Enable = True<br />Enter Measurement Id (ex. <strong><em>G-S2KXT3KTJZ</em></strong>)<br />Save</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to Storefront<br />Open Dev tools (F12) > Network<br />GetStore<br />Check Preview tab<br />Settings > Modules</p>
+Expected Result:
+<p>The GA is enabled</p>
+
+<p>name: """"GoogleAnalytics4.EnableTracking"""", value: true<br />The  Measurement Id is shown</p>
+
+<p><span class=""""markdown-img-container""""><a class='fancy' href='index.php?/attachments/get/48e13c78-c76c-4d2b-951e-5a78344d3d53'><img class=""""markdown-img markdown-img-properties"""" src=""""index.php?/attachments/get/48e13c78-c76c-4d2b-951e-5a78344d3d53"""" alt="""""""" /></a></span> </p>","","<p>The GA is enabled</p>
+
+<p>name: ""GoogleAnalytics4.EnableTracking"", value: true<br />The  Measurement Id is shown</p>
+
+<p><span class=""markdown-img-container""><a class='fancy' href='index.php?/attachments/get/48e13c78-c76c-4d2b-951e-5a78344d3d53'><img class=""markdown-img markdown-img-properties"" src=""index.php?/attachments/get/48e13c78-c76c-4d2b-951e-5a78344d3d53"" alt="""" /></a></span> </p>","","<p>Go to Storefront<br />Open Dev tools (F12) > Network<br />GetStore<br />Check Preview tab<br />Settings > Modules</p>","",""
+"C415200","Admin > Store > Settings > Disable GA","","","Medium","Store settings","0","","Store settings","","Step Description:
+Go to the Admin side
+Store &gt; B2B-store &gt; Settings
+Scroll the page till Google Analytics 4
+Toggle Enable = False
+Save
+Expected Result:
+All settings are saved for store","","All settings are saved for store","","Go to the Admin side
+Store &gt; B2B-store &gt; Settings
+Scroll the page till Google Analytics 4
+Toggle Enable = False
+Save","Other","0"
+"","","","","","","","","","","
+Step Description:
+Go to Storefront
+Open Dev tools (F12) &gt; Network
+GetStore
+Check Preview tab
+Settings &gt; Modules
+Expected Result:
+The GA is disabled
+
+name: """"GoogleAnalytics4.EnableTracking"""", value: false
+
+","","The GA is disabled
+
+name: ""GoogleAnalytics4.EnableTracking"", value: false
+
+","","Go to Storefront
+Open Dev tools (F12) &gt; Network
+GetStore
+Check Preview tab
+Settings &gt; Modules","",""
+"C415234","View item list > Category","","","Medium","View item list event","0","","View item list event","","Step Description:
+<p>Go to Storefront<br />Click on Catalog menu > Choose a category (ex. Snacks)</p>
+Expected Result:
+<p>The category is opened</p>","","<p>The category is opened</p>","","<p>Go to Storefront<br />Click on Catalog menu > Choose a category (ex. Snacks)</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to the GA website <a href=""""https://analytics.google.com/analytics/web"""">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments</p>
+Expected Result:
+<p>The name of the category is displayed in the report</p>
+
+<p><span class=""""markdown-img-container""""><a class='fancy' href='index.php?/attachments/get/dbea33bd-a39f-435f-b854-4f974b88fed6'><img class=""""markdown-img markdown-img-properties"""" src=""""index.php?/attachments/get/dbea33bd-a39f-435f-b854-4f974b88fed6"""" alt="""""""" /></a></span> </p>","","<p>The name of the category is displayed in the report</p>
+
+<p><span class=""markdown-img-container""><a class='fancy' href='index.php?/attachments/get/dbea33bd-a39f-435f-b854-4f974b88fed6'><img class=""markdown-img markdown-img-properties"" src=""index.php?/attachments/get/dbea33bd-a39f-435f-b854-4f974b88fed6"" alt="""" /></a></span> </p>","","<p>Go to the GA website <a href=""https://analytics.google.com/analytics/web"">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments</p>","",""
+"C415235","View item > Product page","https://virtowayqa.testrail.io/index.php?/attachments/get/1000003036","","Medium","View item list event","0","","View item list event","","Step Description:
+Go to Storefront
+Click on Catalog menu &gt; Choose a product &gt; Open product details (ex.MONIN SYRUP CARAMEL BOTTLE 0,70L)
+Expected Result:
+The product page is opened","","The product page is opened","","Go to Storefront
+Click on Catalog menu &gt; Choose a product &gt; Open product details (ex.MONIN SYRUP CARAMEL BOTTLE 0,70L)","Other","0"
+"","","","","","","","","","","
+Step Description:
+Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Interaction
+Overview of visitor activity
+
+
+Expected Result:
+The name of the product is displayed in the report
+
+  
+ ![](index.php?/attachments/get/a71707f7-2d3d-4526-a911-e9cb2d0c4274) 
+","","The name of the product is displayed in the report
+
+  
+ ![](index.php?/attachments/get/a71707f7-2d3d-4526-a911-e9cb2d0c4274) 
+","","Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Interaction
+Overview of visitor activity
+
+","",""
+"C415236","View item list > Related products","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000887","","Medium","View item list event","0","","View item list event","","Step Description:
+Go to Storefront
+Click on Catalog menu &gt; Choose a product &gt; Open product details (ex.DORITOS NACHO CHEESE BOX 20X44GR)
+Scroll the page
+Click on the Related product (ex. LAYS CHIPS PAPRIKA BOX 20X40GR)
+Expected Result:
+The related product details page is opened","","The related product details page is opened","","Go to Storefront
+Click on Catalog menu &gt; Choose a product &gt; Open product details (ex.DORITOS NACHO CHEESE BOX 20X44GR)
+Scroll the page
+Click on the Related product (ex. LAYS CHIPS PAPRIKA BOX 20X40GR)","Other","0"
+"","","","","","","","","","","
+Step Description:
+Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Real-time overview 
+
+Expected Result:
+The name of the products are displayed in the report
+
+ ![](index.php?/attachments/get/2fc1908d-927c-44f3-994e-bce8ef2c36e7) 
+","","The name of the products are displayed in the report
+
+ ![](index.php?/attachments/get/2fc1908d-927c-44f3-994e-bce8ef2c36e7) 
+","","Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Real-time overview 
+","",""
+"C415237","View item list > Compare products","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001050","","Medium","View item list event","0","","View item list event","","Step Description:
+Go to Storefront
+Click on Catalog menu &gt; Choose any product
+Click on Compare icon on the product card
+Expected Result:
+The product was added to the compare list ","","The product was added to the compare list ","","Go to Storefront
+Click on Catalog menu &gt; Choose any product
+Click on Compare icon on the product card","Other","0"
+"","","","","","","","","","","
+Step Description:
+Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Real-time overview
+Expected Result:
+The Compare page is displayed in the report
+
+ ![](index.php?/attachments/get/39478b87-e765-450b-810a-fa84d622db7c) 
+","","The Compare page is displayed in the report
+
+ ![](index.php?/attachments/get/39478b87-e765-450b-810a-fa84d622db7c) 
+","","Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Real-time overview","",""
+"C415238","View item list > Wish list details","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004118","","Medium","View item list event","0","","View item list event","","Step Description:
+Go to Storefront
+Add any products to Wishlist1 and Wishlist2
+Open wishlist details &gt; Try to update the wishlist (remove/add products, change qty of items)
+Switch between wishlists
+
+
+Expected Result:
+The list of products is opened
+The wish list is updated","","The list of products is opened
+The wish list is updated","","Go to Storefront
+Add any products to Wishlist1 and Wishlist2
+Open wishlist details &gt; Try to update the wishlist (remove/add products, change qty of items)
+Switch between wishlists
+
+","Other","0"
+"","","","","","","","","","","
+Step Description:
+Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Real-time overview
+Expected Result:
+The names of the wishlists are displayed in the report
+
+ ![](index.php?/attachments/get/eb375a37-f7e5-49cf-95b1-0b193c546861) 
+","","The names of the wishlists are displayed in the report
+
+ ![](index.php?/attachments/get/eb375a37-f7e5-49cf-95b1-0b193c546861) 
+","","Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Real-time overview","",""
+"C415239","View item list > Search phrase","","","Medium","View item list event","0","","View item list event","","Step Description:
+Go Storefront
+Enter the search phrase into the Search field (ex.Lays) 
+Press enter
+Expected Result:
+The Search result page is opened
+
+","","The Search result page is opened
+
+","","Go Storefront
+Enter the search phrase into the Search field (ex.Lays) 
+Press enter","Other","0"
+"","","","","","","","","","","
+Step Description:
+Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Interaction
+Developments
+
+Choose View_item_list_event &gt; Select Parameter name: item_list_name
+Expected Result:
+The appropriate Search phrase is displayed in the report
+
+ ![](index.php?/attachments/get/66435ecb-34c8-47d0-9630-f044a061d8d5)
+","","The appropriate Search phrase is displayed in the report
+
+ ![](index.php?/attachments/get/66435ecb-34c8-47d0-9630-f044a061d8d5)
+","","Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Interaction
+Developments
+
+Choose View_item_list_event &gt; Select Parameter name: item_list_name","",""
+"C415210","Select item > Category > List view","","","Medium","Select item event","0","","Select item event","","Step Description:
+<p>Go to Storefront<br />Click on Catalog menu > Click on a category (list view)<br />Click on a facet > Select Brand (ex. Fanta)<br />Go to the product page</p>
+Expected Result:
+<p>The appropriate products are displayed</p>","","<p>The appropriate products are displayed</p>","","<p>Go to Storefront<br />Click on Catalog menu > Click on a category (list view)<br />Click on a facet > Select Brand (ex. Fanta)<br />Go to the product page</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to the GA website <a href=""""https://analytics.google.com/analytics/web"""">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments<br />Choose Select_item > Select Parameter name: page_location</p>
+Expected Result:
+<p>The appropriate URL address is displayed in the report</p>
+
+<p><span class=""""markdown-img-container""""><a class='fancy' href='index.php?/attachments/get/5a06a413-2491-463b-b9a2-58d6b92136e8'><img class=""""markdown-img markdown-img-properties"""" src=""""index.php?/attachments/get/5a06a413-2491-463b-b9a2-58d6b92136e8"""" alt="""""""" /></a></span> </p>","","<p>The appropriate URL address is displayed in the report</p>
+
+<p><span class=""markdown-img-container""><a class='fancy' href='index.php?/attachments/get/5a06a413-2491-463b-b9a2-58d6b92136e8'><img class=""markdown-img markdown-img-properties"" src=""index.php?/attachments/get/5a06a413-2491-463b-b9a2-58d6b92136e8"" alt="""" /></a></span> </p>","","<p>Go to the GA website <a href=""https://analytics.google.com/analytics/web"">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments<br />Choose Select_item > Select Parameter name: page_location</p>","",""
+"C415211","Select item > Category > Grid view","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001118","","High","Select item event","0","","Select item event","","Step Description:
+<p>Go to Storefront<br />Click on Catalog menu > Click on a category (Grid view)<br />Click on a facet> Select Brand (ex. Fanta)<br />Go to the product page</p>
+Expected Result:
+<p>The appropriate products are displayed</p>","","<p>The appropriate products are displayed</p>","","<p>Go to Storefront<br />Click on Catalog menu > Click on a category (Grid view)<br />Click on a facet> Select Brand (ex. Fanta)<br />Go to the product page</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to the GA website <a href=""""https://analytics.google.com/analytics/web"""">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments<br />Choose Select_item > Select Parameter name: page_location</p>
+Expected Result:
+<p>The appropriate URL address is displayed in the report</p>
+
+<p><span class=""""markdown-img-container""""><img src='index.php?/attachments/get/1000001118' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-1000001118' data-attachment-id='1000001118' data-entity-id='390037' /></span> </p>","","<p>The appropriate URL address is displayed in the report</p>
+
+<p><span class=""markdown-img-container""><img src='index.php?/attachments/get/1000001118' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-1000001118' data-attachment-id='1000001118' data-entity-id='390037' /></span> </p>","","<p>Go to the GA website <a href=""https://analytics.google.com/analytics/web"">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments<br />Choose Select_item > Select Parameter name: page_location</p>","",""
+"C415212","Select item > Category > Search by keyword","","","Medium","Select item event","0","","Select item event","","Step Description:
+Go to Storefront
+Click on Catalog menu &gt; Click on a category (list view)
+Enter the name of the product into the Search phrase field (ex. Moretti)
+Go to the product page
+Expected Result:
+The appropriate products are displayed","","The appropriate products are displayed","","Go to Storefront
+Click on Catalog menu &gt; Click on a category (list view)
+Enter the name of the product into the Search phrase field (ex. Moretti)
+Go to the product page","Other","0"
+"","","","","","","","","","","
+Step Description:
+Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Interaction
+Developments
+Choose Select_item &gt; Select Parameter name: page_location
+Expected Result:
+The URL with the keyword is displayed in the report
+
+   ![](index.php?/attachments/get/3cd7e08c-6043-4486-9793-bb942f725998) 
+","","The URL with the keyword is displayed in the report
+
+   ![](index.php?/attachments/get/3cd7e08c-6043-4486-9793-bb942f725998) 
+","","Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Interaction
+Developments
+Choose Select_item &gt; Select Parameter name: page_location","",""
+"C415213","Select item > Related products","","","Medium","Select item event","0","","Select item event","","","","","","","Other","0"
+"C415214","Select item > Compare product","","","Medium","Select item event","0","","Select item event","","","","","","","Other","0"
+"C415215","Select item > Wishlist","","","Medium","Select item event","0","","Select item event","","Step Description:
+Go to Storefront
+Sign in as a regular user
+Click on List &gt; Go to Wishlist1
+Go to the product page
+Expected Result:
+The product page is opened","","The product page is opened","","Go to Storefront
+Sign in as a regular user
+Click on List &gt; Go to Wishlist1
+Go to the product page","Other","0"
+"","","","","","","","","","","
+Step Description:
+Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Interaction
+Developments
+Choose Select_item &gt; Select Parameter name: page_title
+Expected Result:
+The names of the wishlists are displayed in the report
+
+
+    
+ ![](index.php?/attachments/get/7e77faf9-3129-4e26-b8f7-ae96e8543925) ","","The names of the wishlists are displayed in the report
+
+
+    
+ ![](index.php?/attachments/get/7e77faf9-3129-4e26-b8f7-ae96e8543925) ","","Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Interaction
+Developments
+Choose Select_item &gt; Select Parameter name: page_title","",""
+"C415216","Select item > Search","","","High","Select item event","0","","Select item event","","Step Description:
+<p>Go Storefront<br />Enter the search phrase into the Search field (ex.Fanta pineapple)<br />Click on the product title</p>
+Expected Result:
+<p>The product page is opened</p>","","<p>The product page is opened</p>","","<p>Go Storefront<br />Enter the search phrase into the Search field (ex.Fanta pineapple)<br />Click on the product title</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to the GA website <a href=""""https://analytics.google.com/analytics/web"""">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments</p>
+
+<p>Choose select_item > Parameter name: items<br />Check Search_term</p>
+Expected Result:
+<p>The appropriate product is displayed in the report<br />The search_term is Fanta pineapple</p>","","<p>The appropriate product is displayed in the report<br />The search_term is Fanta pineapple</p>","","<p>Go to the GA website <a href=""https://analytics.google.com/analytics/web"">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments</p>
+
+<p>Choose select_item > Parameter name: items<br />Check Search_term</p>","",""
+"C415223","Search by Enter > Check GA report","","","Medium","Search event","0","","Search event","","Step Description:
+<p>Enter part of the product name into the Search bar (ex. Xerox)<br />Hit the enter</p>
+Expected Result:
+<p>The search result page is opened</p>","","<p>The search result page is opened</p>","","<p>Enter part of the product name into the Search bar (ex. Xerox)<br />Hit the enter</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to GA account > settings > Admin > DebugView <br />Check search event > open details<br />Check search_term</p>
+Expected Result:
+<ol>
+<li>The search event is displayed in the report</li>
+<li>The search_term is appropriate for the last query</li>
+</ol>
+
+<hr />
+
+<p><span class=""""markdown-img-container""""><a class='fancy' href='index.php?/attachments/get/3bd7d065-c8d2-4730-955f-8ee75337f43a'><img class=""""markdown-img markdown-img-properties"""" src=""""index.php?/attachments/get/3bd7d065-c8d2-4730-955f-8ee75337f43a"""" alt="""""""" /></a></span> </p>","","<ol>
+<li>The search event is displayed in the report</li>
+<li>The search_term is appropriate for the last query</li>
+</ol>
+
+<hr />
+
+<p><span class=""markdown-img-container""><a class='fancy' href='index.php?/attachments/get/3bd7d065-c8d2-4730-955f-8ee75337f43a'><img class=""markdown-img markdown-img-properties"" src=""index.php?/attachments/get/3bd7d065-c8d2-4730-955f-8ee75337f43a"" alt="""" /></a></span> </p>","","<p>Go to GA account > settings > Admin > DebugView <br />Check search event > open details<br />Check search_term</p>","",""
+"C415224","Search by full product name and click the magnify button > Check GA report","","","Medium","Search event","0","","Search event","","Step Description:
+<p>Enter the full product name into the Search bar (ex. BALISTO MUESLI MIX GREEN BOX 20X37GR)<br />Click on the magnify button</p>
+Expected Result:
+<ol>
+<li>The search result page is opened</li>
+<li>The list of products is shown</li>
+</ol>","","<ol>
+<li>The search result page is opened</li>
+<li>The list of products is shown</li>
+</ol>","","<p>Enter the full product name into the Search bar (ex. BALISTO MUESLI MIX GREEN BOX 20X37GR)<br />Click on the magnify button</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to GA account > settings > Admin > DebugView<br />Check search event > open details<br />Check search_term</p>
+Expected Result:
+<ol>
+<li>The search event is displayed in the report</li>
+<li>The search_term is appropriate for the last query</li>
+</ol>
+
+<hr />
+
+<p><span class=""""markdown-img-container""""><a class='fancy' href='index.php?/attachments/get/cd74fcb8-550b-4b41-bb96-158316130081'><img class=""""markdown-img markdown-img-properties"""" src=""""index.php?/attachments/get/cd74fcb8-550b-4b41-bb96-158316130081"""" alt="""""""" /></a></span> </p>","","<ol>
+<li>The search event is displayed in the report</li>
+<li>The search_term is appropriate for the last query</li>
+</ol>
+
+<hr />
+
+<p><span class=""markdown-img-container""><a class='fancy' href='index.php?/attachments/get/cd74fcb8-550b-4b41-bb96-158316130081'><img class=""markdown-img markdown-img-properties"" src=""index.php?/attachments/get/cd74fcb8-550b-4b41-bb96-158316130081"" alt="""" /></a></span> </p>","","<p>Go to GA account > settings > Admin > DebugView<br />Check search event > open details<br />Check search_term</p>","",""
+"C415225","Search by View all results button > Check GA","","","Medium","Search event","0","","Search event","","Step Description:
+<p>Enter part of the product name into the Search bar (ex. Vizio)<br />Wait for a drop-down<br />Click on the View All Results button</p>
+Expected Result:
+<p>The search result page is opened</p>","","<p>The search result page is opened</p>","","<p>Enter part of the product name into the Search bar (ex. Vizio)<br />Wait for a drop-down<br />Click on the View All Results button</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to GA account > settings > Admin > DebugView<br />Check search event > open details<br />Check search_term</p>
+Expected Result:
+<p>The search event is displayed in the report<br />The search_term is appropriate for the last query</p>","","<p>The search event is displayed in the report<br />The search_term is appropriate for the last query</p>","","<p>Go to GA account > settings > Admin > DebugView<br />Check search event > open details<br />Check search_term</p>","",""
+"C415226","Search by product SKU > Check GA report","","","Medium","Search event","0","","Search event","","Step Description:
+<p>Enter SKU into the Search bar<br />Hit the Enter</p>
+Expected Result:
+<ol>
+<li>The search result page is opened</li>
+<li>The list of products is shown</li>
+</ol>","","<ol>
+<li>The search result page is opened</li>
+<li>The list of products is shown</li>
+</ol>","","<p>Enter SKU into the Search bar<br />Hit the Enter</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to GA account > settings > Admin > DebugView<br />Check search event > open details<br />Check search_term</p>
+Expected Result:
+<ol>
+<li>The search event is displayed in the report</li>
+<li>The search_term is appropriate for the last query</li>
+</ol>","","<ol>
+<li>The search event is displayed in the report</li>
+<li>The search_term is appropriate for the last query</li>
+</ol>","","<p>Go to GA account > settings > Admin > DebugView<br />Check search event > open details<br />Check search_term</p>","",""
+"C415227","Search by category > Check GA report","","","Medium","Search event","0","","Search event","","Step Description:
+<p>Enter the category name into the Search bar (ex.Printers)<br />Hit the Enter</p>
+Expected Result:
+<p>The search result page is opened<br />The list of products is shown</p>","","<p>The search result page is opened<br />The list of products is shown</p>","","<p>Enter the category name into the Search bar (ex.Printers)<br />Hit the Enter</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to GA account > settings > Admin > DebugView<br />Check search event > open details<br />Check search_term</p>
+Expected Result:
+<ol>
+<li>The search event is displayed in the report</li>
+<li>The search_term is appropriate for the last query</li>
+</ol>","","<ol>
+<li>The search event is displayed in the report</li>
+<li>The search_term is appropriate for the last query</li>
+</ol>","","<p>Go to GA account > settings > Admin > DebugView<br />Check search event > open details<br />Check search_term</p>","",""
+"C415228","Search by pages > Check GA report","","","Medium","Search event","0","","Search event","","","","","","","Other","1"
+"C415202","View item > Product page","","","Medium","View Item event","0","","View Item event","","Step Description:
+<p>Go to Storefront<br />Click on Catalog menu > Click on a category (ex.Home > Living room)<br />Go to the product page (ex.Sofa)</p>
+Expected Result:
+<p>The product page is opened</p>","","<p>The product page is opened</p>","","<p>Go to Storefront<br />Click on Catalog menu > Click on a category (ex.Home > Living room)<br />Go to the product page (ex.Sofa)</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to the GA website <a href=""""https://analytics.google.com/analytics/web"""">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments<br />Choose View_item > Select Parameter name: page_location or page_title</p>
+Expected Result:
+<p>The appropriate URL address is displayed in the report</p>
+
+<p><span class=""""markdown-img-container""""><a class='fancy' href='index.php?/attachments/get/5dfe52e2-02ae-431a-b9ba-36de32e8b2f0'><img class=""""markdown-img markdown-img-properties"""" src=""""index.php?/attachments/get/5dfe52e2-02ae-431a-b9ba-36de32e8b2f0"""" alt="""""""" /></a></span></p>","","<p>The appropriate URL address is displayed in the report</p>
+
+<p><span class=""markdown-img-container""><a class='fancy' href='index.php?/attachments/get/5dfe52e2-02ae-431a-b9ba-36de32e8b2f0'><img class=""markdown-img markdown-img-properties"" src=""index.php?/attachments/get/5dfe52e2-02ae-431a-b9ba-36de32e8b2f0"" alt="""" /></a></span></p>","","<p>Go to the GA website <a href=""https://analytics.google.com/analytics/web"">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments<br />Choose View_item > Select Parameter name: page_location or page_title</p>","",""
+"C415201","View cart","","","High","View cart event","0","","View cart event","","Step Description:
+<p>Go to Storefront<br />Add product to cart<br />Open the cart several times</p>
+Expected Result:
+<p>The user sees the cart with products</p>","","<p>The user sees the cart with products</p>","","<p>Go to Storefront<br />Add product to cart<br />Open the cart several times</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to the GA website <a href=""""https://analytics.google.com/analytics/web"""">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments</p>
+Expected Result:
+<p>The Checkout page is displayed in the report </p>","","<p>The Checkout page is displayed in the report </p>","","<p>Go to the GA website <a href=""https://analytics.google.com/analytics/web"">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments</p>","",""
+"C415217","Add to cart","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004006","","High","Add to cart event","0","","Add to cart event","","Step Description:
+<p>Go to Storefront<br />Catalog > Category<br />Add several products to the cart from the category page<br />Add products with variations<br />Add product from the product page</p>
+Expected Result:
+<p>All products were added to the cart</p>","","<p>All products were added to the cart</p>","","<p>Go to Storefront<br />Catalog > Category<br />Add several products to the cart from the category page<br />Add products with variations<br />Add product from the product page</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to the GA website <a href=""""https://analytics.google.com/analytics/web"""">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments<br />Choose add_to_cart > Select Parameter name: page_title</p>
+Expected Result:
+<p>The appropriate products are displayed in the report. </p>
+
+<p><span class=""""markdown-img-container""""><img src='index.php?/attachments/get/1000004006' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-1000004006' data-attachment-id='1000004006' data-entity-id='390035' /></span> </p>","","<p>The appropriate products are displayed in the report. </p>
+
+<p><span class=""markdown-img-container""><img src='index.php?/attachments/get/1000004006' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-1000004006' data-attachment-id='1000004006' data-entity-id='390035' /></span> </p>","","<p>Go to the GA website <a href=""https://analytics.google.com/analytics/web"">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments<br />Choose add_to_cart > Select Parameter name: page_title</p>","",""
+"C415233","update_cart_item","","","Medium","Update cart item","0","<p><a data-fr-linked=""""true"""" href=""""https://virtocommerce.atlassian.net/browse/VCST-3161"""" id=""""isPasted"""">https://virtocommerce.atlassian.net/browse/VCST-3161</a></p><p><a data-fr-linked=""""true"""" href=""""https://github.com/VirtoCommerce/vc-frontend/pull/1712/files"""" id=""""isPasted"""">https://github.com/VirtoCommerce/vc-frontend/pull/1712/files</a></p><p><br></p>","Update cart item","","Step Description:
+<p>Go to Catalog</p><p>Add product to cart</p><p>Update product qty</p>
+Expected Result:
+<p>Check update_cart_item event</p>","","<p>Check update_cart_item event</p>","","<p>Go to Catalog</p><p>Add product to cart</p><p>Update product qty</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p id=""""isPasted"""">Go to Product page</p><p>Add product to cart</p><p>Update product qty</p>
+Expected Result:
+<p><span style='color: rgb(32, 32, 32); font-family: Arial, Consolas, Menlo, """"Liberation Mono"""", """"DejaVu Sans Mono"""", """"Bitstream Vera Sans Mono"""", """"Courier New"""", monospace; font-size: 14px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;' id=""""isPasted"""">Check update_cart_item event</span></p>","","<p><span style='color: rgb(32, 32, 32); font-family: Arial, Consolas, Menlo, ""Liberation Mono"", ""DejaVu Sans Mono"", ""Bitstream Vera Sans Mono"", ""Courier New"", monospace; font-size: 14px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;' id=""isPasted"">Check update_cart_item event</span></p>","","<p id=""isPasted"">Go to Product page</p><p>Add product to cart</p><p>Update product qty</p>","",""
+"","","","","","","","","","","
+Step Description:
+<p><span style=""""color: rgb(32, 32, 32); font-family: Arial, -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-size: 14px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;"""" id=""""isPasted"""">Add items to cart</span></p><p><span id=""""isPasted"""">Open cart</span></p><p><span>Update item quantity</span></p><p><br></p>
+Expected Result:
+<p>Check update_cart_item event</p><ol style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; list-style-type: none; padding-left: 12px; display: block; color: rgb(226, 226, 233); font-family: monospace; font-size: 12px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: pre-wrap; background-color: rgb(62, 71, 89); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;"""" id=""""isPasted""""><li data-object-property-name-for-test=""""0"""" style=""""box-sizing: border-box; min-width: 0px; min-height: 16px; text-overflow: ellipsis; white-space: nowrap; position: relative; display: flex; align-items: center; user-select: text;""""><span style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; line-height: 16px; display: flex; white-space: nowrap;""""><span title=""""[30][0]"""" style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; color: rgb(124, 172, 248); flex-shrink: 0; font-weight: bold;"""">0</span><span style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; white-space: pre; flex-shrink: 0;"""">: </span><span title=""""event"""" style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; white-space: pre; unicode-bidi: -webkit-isolate; color: rgb(92, 213, 251);"""">""""event""""</span></span></li><li data-object-property-name-for-test=""""1"""" style=""""box-sizing: border-box; min-width: 0px; min-height: 16px; text-overflow: ellipsis; white-space: nowrap; position: relative; display: flex; align-items: center; user-select: text;""""><span style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; line-height: 16px; display: flex; white-space: nowrap;""""><span title=""""[30][1]"""" style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; color: rgb(124, 172, 248); flex-shrink: 0; font-weight: bold;"""">1</span><span style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; white-space: pre; flex-shrink: 0;"""">: </span><span title=""""update_cart_item"""" style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; white-space: pre; unicode-bidi: -webkit-isolate; color: rgb(92, 213, 251);"""">""""update_cart_item""""</span></span></li><li data-object-property-name-for-test=""""2"""" style=""""box-sizing: border-box; min-width: 0px; min-height: 16px; text-overflow: ellipsis; white-space: nowrap; position: relative; display: flex; align-items: center; user-select: text;""""><span style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; line-height: 16px; display: flex; white-space: nowrap;""""><span title=""""[30][2]"""" style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; color: rgb(124, 172, 248); flex-shrink: 0; font-weight: bold;"""">2</span><span style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; white-space: pre; flex-shrink: 0;"""">: </span></span><ol style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; list-style-type: none; padding-left: 12px; display: block;""""><li data-object-property-name-for-test=""""item_id"""" style=""""box-sizing: border-box; min-width: 0px; min-height: 16px; text-overflow: ellipsis; white-space: nowrap; position: relative; display: flex; align-items: center; user-select: text;""""><span style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; line-height: 16px; display: flex; white-space: nowrap;""""><span title=""""[30][2].item_id"""" style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; color: rgb(124, 172, 248); flex-shrink: 0; font-weight: bold;"""">item_id</span><span style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; white-space: pre; flex-shrink: 0;"""">: </span><span title=""""555929564"""" style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; white-space: pre; unicode-bidi: -webkit-isolate; color: rgb(92, 213, 251);"""">""""555929564""""</span></span></li><li data-object-property-name-for-test=""""new_quantity"""" style=""""box-sizing: border-box; min-width: 0px; min-height: 16px; text-overflow: ellipsis; white-space: nowrap; position: relative; display: flex; align-items: center; user-select: text;""""><span style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; line-height: 16px; display: flex; white-space: nowrap;""""><span title=""""[30][2].new_quantity"""" style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; color: rgb(124, 172, 248); flex-shrink: 0; font-weight: bold;"""">new_quantity</span><span style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; white-space: pre; flex-shrink: 0;"""">: </span><span title=""""4"""" style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; color: rgb(153, 128, 255); --override-primitive-dark-mode-color: hsl(252deg 100% 75%);"""">4</span></span></li><li data-object-property-name-for-test=""""previous_quantity"""" tabindex=""""-1"""" style=""""box-sizing: border-box; min-width: 0px; min-height: 16px; outline-width: 0px; text-overflow: ellipsis; white-space: nowrap; position: relative; display: flex; align-items: center; user-select: text;""""><span style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; line-height: 16px; display: flex; white-space: nowrap;""""><span title=""""[30][2].previous_quantity"""" style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; color: rgb(124, 172, 248); flex-shrink: 0; font-weight: bold;"""">previous_quantity</span><span style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; white-space: pre; flex-shrink: 0;"""">: </span><span title=""""2"""" style=""""box-sizing: border-box; min-width: 0px; min-height: 0px; color: rgb(153, 128, 255); --override-primitive-dark-mode-color: hsl(252deg 100% 75%);"""">2</span></span></li></ol></li></ol>","","<p>Check update_cart_item event</p><ol style=""box-sizing: border-box; min-width: 0px; min-height: 0px; list-style-type: none; padding-left: 12px; display: block; color: rgb(226, 226, 233); font-family: monospace; font-size: 12px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: pre-wrap; background-color: rgb(62, 71, 89); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;"" id=""isPasted""><li data-object-property-name-for-test=""0"" style=""box-sizing: border-box; min-width: 0px; min-height: 16px; text-overflow: ellipsis; white-space: nowrap; position: relative; display: flex; align-items: center; user-select: text;""><span style=""box-sizing: border-box; min-width: 0px; min-height: 0px; line-height: 16px; display: flex; white-space: nowrap;""><span title=""[30][0]"" style=""box-sizing: border-box; min-width: 0px; min-height: 0px; color: rgb(124, 172, 248); flex-shrink: 0; font-weight: bold;"">0</span><span style=""box-sizing: border-box; min-width: 0px; min-height: 0px; white-space: pre; flex-shrink: 0;"">: </span><span title=""event"" style=""box-sizing: border-box; min-width: 0px; min-height: 0px; white-space: pre; unicode-bidi: -webkit-isolate; color: rgb(92, 213, 251);"">""event""</span></span></li><li data-object-property-name-for-test=""1"" style=""box-sizing: border-box; min-width: 0px; min-height: 16px; text-overflow: ellipsis; white-space: nowrap; position: relative; display: flex; align-items: center; user-select: text;""><span style=""box-sizing: border-box; min-width: 0px; min-height: 0px; line-height: 16px; display: flex; white-space: nowrap;""><span title=""[30][1]"" style=""box-sizing: border-box; min-width: 0px; min-height: 0px; color: rgb(124, 172, 248); flex-shrink: 0; font-weight: bold;"">1</span><span style=""box-sizing: border-box; min-width: 0px; min-height: 0px; white-space: pre; flex-shrink: 0;"">: </span><span title=""update_cart_item"" style=""box-sizing: border-box; min-width: 0px; min-height: 0px; white-space: pre; unicode-bidi: -webkit-isolate; color: rgb(92, 213, 251);"">""update_cart_item""</span></span></li><li data-object-property-name-for-test=""2"" style=""box-sizing: border-box; min-width: 0px; min-height: 16px; text-overflow: ellipsis; white-space: nowrap; position: relative; display: flex; align-items: center; user-select: text;""><span style=""box-sizing: border-box; min-width: 0px; min-height: 0px; line-height: 16px; display: flex; white-space: nowrap;""><span title=""[30][2]"" style=""box-sizing: border-box; min-width: 0px; min-height: 0px; color: rgb(124, 172, 248); flex-shrink: 0; font-weight: bold;"">2</span><span style=""box-sizing: border-box; min-width: 0px; min-height: 0px; white-space: pre; flex-shrink: 0;"">: </span></span><ol style=""box-sizing: border-box; min-width: 0px; min-height: 0px; list-style-type: none; padding-left: 12px; display: block;""><li data-object-property-name-for-test=""item_id"" style=""box-sizing: border-box; min-width: 0px; min-height: 16px; text-overflow: ellipsis; white-space: nowrap; position: relative; display: flex; align-items: center; user-select: text;""><span style=""box-sizing: border-box; min-width: 0px; min-height: 0px; line-height: 16px; display: flex; white-space: nowrap;""><span title=""[30][2].item_id"" style=""box-sizing: border-box; min-width: 0px; min-height: 0px; color: rgb(124, 172, 248); flex-shrink: 0; font-weight: bold;"">item_id</span><span style=""box-sizing: border-box; min-width: 0px; min-height: 0px; white-space: pre; flex-shrink: 0;"">: </span><span title=""555929564"" style=""box-sizing: border-box; min-width: 0px; min-height: 0px; white-space: pre; unicode-bidi: -webkit-isolate; color: rgb(92, 213, 251);"">""555929564""</span></span></li><li data-object-property-name-for-test=""new_quantity"" style=""box-sizing: border-box; min-width: 0px; min-height: 16px; text-overflow: ellipsis; white-space: nowrap; position: relative; display: flex; align-items: center; user-select: text;""><span style=""box-sizing: border-box; min-width: 0px; min-height: 0px; line-height: 16px; display: flex; white-space: nowrap;""><span title=""[30][2].new_quantity"" style=""box-sizing: border-box; min-width: 0px; min-height: 0px; color: rgb(124, 172, 248); flex-shrink: 0; font-weight: bold;"">new_quantity</span><span style=""box-sizing: border-box; min-width: 0px; min-height: 0px; white-space: pre; flex-shrink: 0;"">: </span><span title=""4"" style=""box-sizing: border-box; min-width: 0px; min-height: 0px; color: rgb(153, 128, 255); --override-primitive-dark-mode-color: hsl(252deg 100% 75%);"">4</span></span></li><li data-object-property-name-for-test=""previous_quantity"" tabindex=""-1"" style=""box-sizing: border-box; min-width: 0px; min-height: 16px; outline-width: 0px; text-overflow: ellipsis; white-space: nowrap; position: relative; display: flex; align-items: center; user-select: text;""><span style=""box-sizing: border-box; min-width: 0px; min-height: 0px; line-height: 16px; display: flex; white-space: nowrap;""><span title=""[30][2].previous_quantity"" style=""box-sizing: border-box; min-width: 0px; min-height: 0px; color: rgb(124, 172, 248); flex-shrink: 0; font-weight: bold;"">previous_quantity</span><span style=""box-sizing: border-box; min-width: 0px; min-height: 0px; white-space: pre; flex-shrink: 0;"">: </span><span title=""2"" style=""box-sizing: border-box; min-width: 0px; min-height: 0px; color: rgb(153, 128, 255); --override-primitive-dark-mode-color: hsl(252deg 100% 75%);"">2</span></span></li></ol></li></ol>","","<p><span style=""color: rgb(32, 32, 32); font-family: Arial, -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-size: 14px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;"" id=""isPasted"">Add items to cart</span></p><p><span id=""isPasted"">Open cart</span></p><p><span>Update item quantity</span></p><p><br></p>","",""
+"C415203","Remove from cart > 1 item","","","High","Remove from cart event","0","","Remove from cart event","","Step Description:
+<p>Go to cart<br />Remove one item</p>
+Expected Result:
+<p>The item is removed from the cart</p>","","<p>The item is removed from the cart</p>","","<p>Go to cart<br />Remove one item</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to the GA website <a href=""""https://analytics.google.com/analytics/web"""">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments<br />Choose remove_from_cart > Select Parameter name: page_title</p>
+Expected Result:
+<p>Only 1 event was sent to the report</p>","","<p>Only 1 event was sent to the report</p>","","<p>Go to the GA website <a href=""https://analytics.google.com/analytics/web"">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments<br />Choose remove_from_cart > Select Parameter name: page_title</p>","",""
+"C415204","Remove from cart > Multiple items","https://virtowayqa.testrail.io/index.php?/attachments/get/1000003793, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000188","","Medium","Remove from cart event","0","","Remove from cart event","","Step Description:
+Go to cart
+Remove 9 items
+
+
+Expected Result:
+The items were removed from the cart","","The items were removed from the cart","","Go to cart
+Remove 9 items
+
+","Other","0"
+"","","","","","","","","","","
+Step Description:
+Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Interaction
+Developments
+Choose remove_from_cart &gt; Select Parameter name: page_title
+Expected Result:
+9 events were sent to the report
+
+ ![](index.php?/attachments/get/d72abb48-2604-461d-aa40-c4208c789cdb) 
+","","9 events were sent to the report
+
+ ![](index.php?/attachments/get/d72abb48-2604-461d-aa40-c4208c789cdb) 
+","","Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Interaction
+Developments
+Choose remove_from_cart &gt; Select Parameter name: page_title","",""
+"C415205","Add shipping method > Ground >  Check GA report","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000768","","High","Add shipping info event","0","","Add shipping info event","","Step Description:
+<p>Go to cart<br />Select shipping method > Ground<br />Ok</p>
+Expected Result:
+<p>The FixedRate Ground is selected</p>","","<p>The FixedRate Ground is selected</p>","","<p>Go to cart<br />Select shipping method > Ground<br />Ok</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to the GA website <a href=""""https://analytics.google.com/analytics/web"""">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments<br />Choose add_shipping_info > Select Parameter name: shipping_tier</p>
+Expected Result:
+<p>The shipping tier displayed as Ground in the report</p>
+
+<p><span class=""""markdown-img-container""""><img src='index.php?/attachments/get/1000000768' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-1000000768' data-attachment-id='1000000768' data-entity-id='390047' /></span></p>","","<p>The shipping tier displayed as Ground in the report</p>
+
+<p><span class=""markdown-img-container""><img src='index.php?/attachments/get/1000000768' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-1000000768' data-attachment-id='1000000768' data-entity-id='390047' /></span></p>","","<p>Go to the GA website <a href=""https://analytics.google.com/analytics/web"">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments<br />Choose add_shipping_info > Select Parameter name: shipping_tier</p>","",""
+"C415206","Add shipping method > Air > Check GA report","","","High","Add shipping info event","0","","Add shipping info event","","Step Description:
+Go to cart
+Select shipping method > Air
+Ok
+Expected Result:
+The FixedRate Air is selected","","The FixedRate Air is selected","","Go to cart
+Select shipping method > Air
+Ok","Other","0"
+"","","","","","","","","","","
+Step Description:
+Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar > Reports > Interaction
+Developments
+Choose add_shipping_info > Select Parameter name: shipping_tier
+Expected Result:
+The shipping tier displayed as Air in the report
+
+
+","","The shipping tier displayed as Air in the report
+
+
+","","Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar > Reports > Interaction
+Developments
+Choose add_shipping_info > Select Parameter name: shipping_tier","",""
+"C415218","Add DefaultManualPaymentMethod > Check GA report","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001693","","High","Add payment info event","0","","Add payment info event","","Step Description:
+<p>Go to cart<br />Add Shipping address<br />Select Shipping method<br />Select Payment method > DefaultManualPaymentMethod > Ok<br />Place an order</p>
+Expected Result:
+<p>The order is created</p>","","<p>The order is created</p>","","<p>Go to cart<br />Add Shipping address<br />Select Shipping method<br />Select Payment method > DefaultManualPaymentMethod > Ok<br />Place an order</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to the GA website <a href=""""https://analytics.google.com/analytics/web"""">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments<br />Choose add_payment_info > Select Parameter name: payment_type</p>
+Expected Result:
+<p>The payment type is displayed as Manual in the report. </p>
+
+<p><span class=""""markdown-img-container""""><img src='index.php?/attachments/get/1000001693' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-1000001693' data-attachment-id='1000001693' data-entity-id='390052' /></span> </p>","","<p>The payment type is displayed as Manual in the report. </p>
+
+<p><span class=""markdown-img-container""><img src='index.php?/attachments/get/1000001693' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-1000001693' data-attachment-id='1000001693' data-entity-id='390052' /></span> </p>","","<p>Go to the GA website <a href=""https://analytics.google.com/analytics/web"">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments<br />Choose add_payment_info > Select Parameter name: payment_type</p>","",""
+"C415219","Add AuthorizeNetPaymentMethod > Check GA report","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001693","","High","Add payment info event","0","","Add payment info event","","Step Description:
+Go to cart
+Add Shipping address
+Select Shipping method
+Select Payment method > AuthorizeNetPaymentMethod > Ok
+Place an order
+
+
+
+
+Expected Result:
+The order is created","","The order is created","","Go to cart
+Add Shipping address
+Select Shipping method
+Select Payment method > AuthorizeNetPaymentMethod > Ok
+Place an order
+
+
+
+","Other","0"
+"","","","","","","","","","","
+Step Description:
+Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar > Reports > Interaction
+Developments
+Choose add_payment_info > Select Parameter name: payment_type
+Expected Result:
+The payment type is displayed as Alternative in the report. 
+
+ ![](index.php?/attachments/get/1000001693) 
+
+
+","","The payment type is displayed as Alternative in the report. 
+
+ ![](index.php?/attachments/get/1000001693) 
+
+
+","","Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar > Reports > Interaction
+Developments
+Choose add_payment_info > Select Parameter name: payment_type","",""
+"C415220","Add SkyflowPaymentMethod > Check GA report","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001693","","High","Add payment info event","0","","Add payment info event","","Step Description:
+Go to cart
+Add Shipping address
+Select Shipping method
+Select Payment method > SkyflowPaymentMethod > Ok
+Place an order
+
+
+
+
+Expected Result:
+The order is created","","The order is created","","Go to cart
+Add Shipping address
+Select Shipping method
+Select Payment method > SkyflowPaymentMethod > Ok
+Place an order
+
+
+
+","Other","0"
+"","","","","","","","","","","
+Step Description:
+Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar > Reports > Interaction
+Developments
+Choose add_payment_info > Select Parameter name: payment_type
+Expected Result:
+The payment type is displayed as Alternative in the report. 
+
+ ![](index.php?/attachments/get/1000001693) 
+
+
+","","The payment type is displayed as Alternative in the report. 
+
+ ![](index.php?/attachments/get/1000001693) 
+
+
+","","Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar > Reports > Interaction
+Developments
+Choose add_payment_info > Select Parameter name: payment_type","",""
+"C415207","Add product to wish list from category page/Grid view > Check GA report","https://virtowayqa.testrail.io/index.php?/attachments/get/1000003247","","Medium","Add to wish list event","0","","Add to wish list event","","Step Description:
+<p>Go to Storefront<br />Click on Catalog menu > Choose a category (ex. Snacks)<br />Click on the icon Add to list from the grid view<br />Select one wish list > Save</p>
+Expected Result:
+<p>The product was added to the wish list</p>","","<p>The product was added to the wish list</p>","","<p>Go to Storefront<br />Click on Catalog menu > Choose a category (ex. Snacks)<br />Click on the icon Add to list from the grid view<br />Select one wish list > Save</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to the GA website <a href=""""https://analytics.google.com/analytics/web"""">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments<br />Choose add_to_wishlist > Select Parameter name: page_title</p>
+Expected Result:
+<p>The title and number of added items to the wishlist are correctly displayed in the report</p>
+
+<p><span class=""""markdown-img-container""""><img src='index.php?/attachments/get/b38804d1-2483-448a-9f5c-dd718234a8f8' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-b38804d1-2483-448a-9f5c-dd718234a8f8' data-attachment-id='b38804d1-2483-448a-9f5c-dd718234a8f8' data-entity-id='390049' /></span> </p>","","<p>The title and number of added items to the wishlist are correctly displayed in the report</p>
+
+<p><span class=""markdown-img-container""><img src='index.php?/attachments/get/b38804d1-2483-448a-9f5c-dd718234a8f8' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-b38804d1-2483-448a-9f5c-dd718234a8f8' data-attachment-id='b38804d1-2483-448a-9f5c-dd718234a8f8' data-entity-id='390049' /></span> </p>","","<p>Go to the GA website <a href=""https://analytics.google.com/analytics/web"">https://analytics.google.com/analytics/web</a><br />Click on Left sidebar > Reports > Interaction<br />Developments<br />Choose add_to_wishlist > Select Parameter name: page_title</p>","",""
+"C415208","Add product to wish list from category page/List view > Check GA report","","","Medium","Add to wish list event","0","","Add to wish list event","","Step Description:
+Go to Storefront
+Click on Catalog menu &gt; Choose a category (ex. Printers)
+Click on the icon Add to list from the List view
+Select one wish list &gt; Save
+Expected Result:
+The product was added to the wish list","","The product was added to the wish list","","Go to Storefront
+Click on Catalog menu &gt; Choose a category (ex. Printers)
+Click on the icon Add to list from the List view
+Select one wish list &gt; Save","Other","0"
+"","","","","","","","","","","
+Step Description:
+Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Interaction
+Developments
+Choose add_to_wishlist &gt; Select Parameter name: page_title
+Expected Result:
+The title and number of added items to the wishlist are correctly displayed in the report","","The title and number of added items to the wishlist are correctly displayed in the report","","Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Interaction
+Developments
+Choose add_to_wishlist &gt; Select Parameter name: page_title","",""
+"C415209","Add product to wish list from Product page > Check GA report","","","Medium","Add to wish list event","0","","Add to wish list event","","Step Description:
+Go to Storefront
+Click on Catalog menu &gt; Choose a category (ex. SoftDrinks)
+Open the product detail page (ex. Coca-Cola cherry)
+Click on the icon Add to list
+Select two wish lists&gt; Save
+Expected Result:
+The product was added to the different wish lists","","The product was added to the different wish lists","","Go to Storefront
+Click on Catalog menu &gt; Choose a category (ex. SoftDrinks)
+Open the product detail page (ex. Coca-Cola cherry)
+Click on the icon Add to list
+Select two wish lists&gt; Save","Other","0"
+"","","","","","","","","","","
+Step Description:
+Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Interaction
+Developments
+Choose add_to_wishlist &gt; Select Parameter name: page_title
+Expected Result:
+The title and number of added items to the wishlist are correctly displayed in the report. The quantity is 1
+
+ ![](index.php?/attachments/get/abf270e0-b7e6-4d7a-82b8-c6e213355fc7) 
+","","The title and number of added items to the wishlist are correctly displayed in the report. The quantity is 1
+
+ ![](index.php?/attachments/get/abf270e0-b7e6-4d7a-82b8-c6e213355fc7) 
+","","Go to the GA website https://analytics.google.com/analytics/web
+Click on Left sidebar &gt; Reports &gt; Interaction
+Developments
+Choose add_to_wishlist &gt; Select Parameter name: page_title","",""
+"C415221","Add products to cart > Proceed to Checkout > Check GA report","","","High","Begin checkout event","0","","Begin checkout event","","Step Description:
+<p>Go to Cart<br />Click on Proceed to Checkout</p>
+Expected Result:
+<p>The shipping page is opened</p>","","<p>The shipping page is opened</p>","","<p>Go to Cart<br />Click on Proceed to Checkout</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to the GA website <a href=""""https://analytics.google.com/analytics/web"""">https://analytics.google.com/analytics/web</a><br />Click on the Left sidebar > Report in real-time > Scroll the page to the table with Events</p>
+
+<p>Choose begin_checkout </p>
+Expected Result:
+<p>The begin_checkout is displayed in the report.  The number of event increased by 1</p>","","<p>The begin_checkout is displayed in the report.  The number of event increased by 1</p>","","<p>Go to the GA website <a href=""https://analytics.google.com/analytics/web"">https://analytics.google.com/analytics/web</a><br />Click on the Left sidebar > Report in real-time > Scroll the page to the table with Events</p>
+
+<p>Choose begin_checkout </p>","",""
+"C415222","Apply coupon to cart > Proceed to Checkout > Check GA report","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001552","","High","Begin checkout event","0","","Begin checkout event","","Step Description:
+<p>Go to cart<br />Enter valid coupon <br />Apply coupon </p>
+Expected Result:
+<p>The coupon is applied successfully</p>","","<p>The coupon is applied successfully</p>","","<p>Go to cart<br />Enter valid coupon <br />Apply coupon </p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Click on Proceed to checkout</p>
+Expected Result:
+<p>The shipping page is opened</p>","","<p>The shipping page is opened</p>","","<p>Click on Proceed to checkout</p>","",""
+"","","","","","","","","","","
+Step Description:
+<p>Go to the GA website <a href=""""https://analytics.google.com/analytics/web"""">https://analytics.google.com/analytics/web</a><br />Click on the Left sidebar > Report in real-time > Scroll the page to the table with Events</p>
+
+<p>Choose begin_checkout > Coupon</p>
+Expected Result:
+<p>The begin_checkout is displayed in the report. The number of coupon-applying events increased by 1</p>
+
+<p><span class=""""markdown-img-container""""><img src='index.php?/attachments/get/1000001552' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-1000001552' data-attachment-id='1000001552' data-entity-id='390056' /></span> </p>","","<p>The begin_checkout is displayed in the report. The number of coupon-applying events increased by 1</p>
+
+<p><span class=""markdown-img-container""><img src='index.php?/attachments/get/1000001552' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-1000001552' data-attachment-id='1000001552' data-entity-id='390056' /></span> </p>","","<p>Go to the GA website <a href=""https://analytics.google.com/analytics/web"">https://analytics.google.com/analytics/web</a><br />Click on the Left sidebar > Report in real-time > Scroll the page to the table with Events</p>
+
+<p>Choose begin_checkout > Coupon</p>","",""
+"C415229","Order > Pay now > Check GA report","","","High","Purchase event","0","","Purchase event","","Step Description:
+<p>Go to Order > Pay now<br />Finish payment</p>
+Expected Result:
+<p>The payment was finished successfully</p>","","<p>The payment was finished successfully</p>","","<p>Go to Order > Pay now<br />Finish payment</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to the GA website <a href=""""https://analytics.google.com/analytics/web"""">https://analytics.google.com/analytics/web</a><br />Click on the Left sidebar > Report in real-time > Scroll the page to the table with Events</p>
+
+<p>Choose <strong>purchase</strong></p>
+Expected Result:
+<p>The <strong>purchase</strong> is displayed in the report. The number of events increased by 1</p>","","<p>The <strong>purchase</strong> is displayed in the report. The number of events increased by 1</p>","","<p>Go to the GA website <a href=""https://analytics.google.com/analytics/web"">https://analytics.google.com/analytics/web</a><br />Click on the Left sidebar > Report in real-time > Scroll the page to the table with Events</p>
+
+<p>Choose <strong>purchase</strong></p>","",""
+"C415230","Create order > Check GA report","","","High","Place order","0","","Place order","","Step Description:
+Go to Cart
+Click on Proceed to Checkout
+Finish order creation
+Click on the Place Order button
+Expected Result:
+The order was created","","The order was created","","Go to Cart
+Click on Proceed to Checkout
+Finish order creation
+Click on the Place Order button","Other","0"
+"","","","","","","","","","","
+Step Description:
+Go to the GA website https://analytics.google.com/analytics/web
+Click on the Left sidebar > Report in real-time > Scroll the page to the table with Events
+
+Choose place_order
+Expected Result:
+The place_order is displayed in the report.  The number of events increased by 1
+
+  
+
+","","The place_order is displayed in the report.  The number of events increased by 1
+
+  
+
+","","Go to the GA website https://analytics.google.com/analytics/web
+Click on the Left sidebar > Report in real-time > Scroll the page to the table with Events
+
+Choose place_order","",""
+"C415231","Clear cart > Check GA report","","","High","Clear cart","0","","Clear cart","","Step Description:
+<p>Go to Cart<br />Click on Clear cart > OK</p>
+Expected Result:
+<p>The cart is empty</p>","","<p>The cart is empty</p>","","<p>Go to Cart<br />Click on Clear cart > OK</p>","Other","1"
+"","","","","","","","","","","
+Step Description:
+<p>Go to the GA website <a href=""""https://analytics.google.com/analytics/web"""">https://analytics.google.com/analytics/web</a><br />Click on the Left sidebar > Report in real-time > Scroll the page to the table with Events</p>
+
+<p>Choose clear_cart</p>
+Expected Result:
+<p>The clear_cart is displayed in the report.  The number of events increased by 1</p>","","<p>The clear_cart is displayed in the report.  The number of events increased by 1</p>","","<p>Go to the GA website <a href=""https://analytics.google.com/analytics/web"">https://analytics.google.com/analytics/web</a><br />Click on the Left sidebar > Report in real-time > Scroll the page to the table with Events</p>
+
+<p>Choose clear_cart</p>","",""
+"C415232","Remove line-item from cart > Check GA report","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001283","","High","Clear cart","0","","Clear cart","","Step Description:
+Go to Cart
+Delete any line-item
+Click on the cross button near any line item
+
+Expected Result:
+The line item is removed from the cart","","The line item is removed from the cart","","Go to Cart
+Delete any line-item
+Click on the cross button near any line item
+","Other","0"
+"","","","","","","","","","","
+Step Description:
+Go to the GA website https://analytics.google.com/analytics/web
+Click on the Left sidebar > Report in real-time > Scroll the page to the table with Events
+
+Choose remove_from_cart
+Expected Result:
+The remove_from_cart is displayed in the report.  The number of events increased by 1
+
+ ![](index.php?/attachments/get/1000001283) 
+
+
+
+  
+
+","","The remove_from_cart is displayed in the report.  The number of events increased by 1
+
+ ![](index.php?/attachments/get/1000001283) 
+
+
+
+  
+
+","","Go to the GA website https://analytics.google.com/analytics/web
+Click on the Left sidebar > Report in real-time > Scroll the page to the table with Events
+
+Choose remove_from_cart","",""
