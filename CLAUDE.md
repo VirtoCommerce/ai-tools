@@ -38,6 +38,11 @@ Create a `.env` file with required variables (29 total). Run `npm run env:check`
 
 Access via `config.js`: `import { env } from './config.js'`
 
+## Environment Configuration
+
+- QA environment URLs must come from environment variables, never hardcoded. When referencing environments (QA, Stage, Prod), always check env config files for the correct URL mapping.
+- Default testing environment is QA unless explicitly specified otherwise.
+
 ## Repository Structure
 
 ```
@@ -50,14 +55,23 @@ vc-mcp-testing-module/
 │   └── guides/              # Testing guides (e.g., Storybook testing)
 ├── storybook/               # Visual regression baselines (Atomic Design: atoms/molecules/organisms)
 ├── regression/
-│   └── suites/              # 12 regression test suites (283 test cases, CSV)
+│   └── suites/
+│       ├── Frontend/        # 14 frontend regression test suites (325 test cases, CSV)
+│       └── Backend (admin site)/  # Backend/admin regression suites
 ├── test-data/               # Test data (organizations, search queries, uploads)
 ├── tests/VCST-XXXX-*/       # Test cases organized by JIRA ticket
 ├── reports/
 │   ├── bugs/                # Bug reports with evidence
 │   └── regression/          # Regression test reports
 ├── archive/sprints/         # Historical sprint test cases
+├── ci/                      # CI regression testing (Docker + Claude Agent SDK)
+│   ├── run-regression.ts    # Orchestrator script
+│   ├── agents/              # CI-specific agent definitions (subset of 3)
+│   ├── config/              # Headless browser configs for CI
+│   └── Dockerfile
+├── docs/workshop/           # Workshop materials (presentation, setup, plan)
 ├── config.js                # Environment configuration
+├── settings.json            # Claude Code teammate mode config
 └── sitemap.md               # Site structure reference
 ```
 
@@ -81,6 +95,12 @@ Additional MCP servers (configured at user level):
 
 **Note:** `.mcp.json`, `config/`, `.claude/`, and `CLAUDE.md` are gitignored. New clones must set up MCP configs and agent definitions locally.
 
+## Browser Automation
+
+- Default to `chromium` (not `chrome`) for Playwright MCP browser launches. WebKit is NOT supported on Windows — fall back to Edge or Chrome immediately without attempting installation.
+- Always verify MCP server config uses correct browser engine names: `chromium`, `firefox`, `webkit` (not `chrome`, `edge`).
+- After any MCP config change, remind the user that a server restart is required before the new config takes effect.
+
 ## Claude Code Specialized Agents
 
 Six agents in `.claude/agents/` for QA tasks:
@@ -96,6 +116,8 @@ Six agents in `.claude/agents/` for QA tasks:
 
 Usage: `"Use the qa-frontend-expert to verify the checkout flow"` or `@qa-lead`
 
+**Agent Teams mode** is enabled via `settings.json` (`teammateMode: "in-process"`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`).
+
 **Parallel execution:** When running multiple agents in parallel, each agent MUST use its own separate browser session via a different Playwright MCP server. Agents sharing a browser will interfere with each other (navigation, cookies, state). Assign one MCP server per agent:
 
 | Agent | Playwright MCP Server | Alternative |
@@ -107,6 +129,12 @@ Usage: `"Use the qa-frontend-expert to verify the checkout flow"` or `@qa-lead`
 | **test-management-specialist** | `playwright-chrome` (sequential, not parallel with frontend) | |
 
 If more than 4 agents need browsers simultaneously, run them in sequential batches.
+
+## Agent Delegation
+
+- When delegating to sub-agents/specialist agents, verify the agent has the required tool permissions BEFORE dispatching.
+- If a delegated agent fails with an internal error (e.g., classifyHandoffIfNeeded), immediately fall back to working directly rather than retrying the same broken delegation.
+- For multi-suite regression runs, plan for rate limits: batch in groups of 4-6 rather than launching all 14 simultaneously.
 
 ## Testing Environments (from .env)
 
@@ -121,22 +149,24 @@ Theme presets: Default, Coffee
 
 ## Regression Test Suites
 
-12 test suites in `regression/suites/` (283 total test cases, TestRail CSV format):
+14 test suites in `regression/suites/Frontend/` (325 test cases in suites 01-13, TestRail CSV format):
 
 | Suite | Tests | Priority | Use Case |
 |-------|-------|----------|----------|
+| 00-full-regression-release | 90 | P0 | Composite suite for full release regression |
 | 01-smoke-tests | 12 | P0 | Daily validation before deployment |
 | 02-authentication-tests | 28 | P1 | Login, SSO, password management |
 | 03-catalog-search-tests | 23 | P1 | Browsing, filters, search |
-| 04-cart-checkout-tests | 26 | P1 | Cart ops, checkout flow |
+| 04-cart-checkout-tests | 31 | P1 | Cart ops, checkout flow |
 | 05-bopis-pickup-tests | 27 | P1 | Buy Online Pickup In Store |
-| 06-payment-tests | 32 | P0 | All payment processors |
+| 06-payment-tests | 28 | P0 | All payment processors |
 | 07-google-analytics-tests | 24 | P2 | GA4 event tracking |
-| 08-security-tests | 21 | P0 | PCI compliance, auth security |
-| 09-accessibility-tests | 27 | P1 | WCAG 2.1 AA compliance |
+| 08-security-tests | 18 | P0 | PCI compliance, auth security |
+| 09-accessibility-tests | 23 | P1 | WCAG 2.1 AA compliance |
 | 10-localization-tests | 21 | P2 | 13 languages |
 | 11-performance-tests | 20 | P2 | Load times, Core Web Vitals |
-| 12-browser-compatibility-tests | 22 | P1 | Cross-browser matrix |
+| 12-browser-compatibility-tests | 21 | P1 | Cross-browser matrix |
+| 13-b2c-features-tests | 49 | P1 | B2C variations, wishlists, compare, reviews |
 
 **Execution strategies:** Daily (P0 only ~30min), Sprint Release (P0+P1 critical ~3-4hrs), Major Release (all suites ~24hrs)
 
@@ -152,6 +182,31 @@ Key prompt templates:
 - `storybook-testing.md` - Component testing
 - `platform-tests.md` - Backend/API testing
 - `How to test Builder.io.md` - Builder.io, Virto Pages & vc-frontend testing
+- `setup.xml` - XML-structured regression prompt with execution steps
+- `story-testing.txt` - Story-level testing prompt
+
+## CI Regression Testing
+
+The `ci/` directory provides Docker-based CI regression using the Claude Agent SDK:
+
+```bash
+# Build and run locally
+docker build -t vc-regression -f ci/Dockerfile .
+docker run --rm --shm-size=2gb --env-file .env \
+  -e ANTHROPIC_API_KEY=your-key \
+  -e SUITE_SELECTION=smoke \
+  -e TEST_ENVIRONMENT=qa \
+  -e MAX_BUDGET_USD=5.0 \
+  vc-regression
+```
+
+Suite selection: `smoke` (01), `critical` (01,06,08), `sprint` (01-06,08), `full` (all 14), or comma-separated IDs (`01,04,06`). CI uses only 3 agents (qa-testing-expert, qa-frontend-expert, qa-backend-expert) with headless Chrome. Also available as a GitHub Actions workflow (`workflow_dispatch`).
+
+## Testing Approach
+
+- For regression testing, NEVER use parallel agents sharing a single browser session. Each agent must have its own isolated browser context.
+- Always run deep/comprehensive tests unless explicitly told to run smoke tests. Do not default to smoke testing.
+- Always capture HAR files during browser test sessions as required by project guidelines.
 
 ## Test Documentation Pattern
 
@@ -175,6 +230,10 @@ Reports in `reports/bugs/`:
 - **Expected vs Actual:** Explicit comparison
 - **Evidence:** Screenshots, HAR files, console logs, API traces
 - **References:** VCST-XXXX ticket link
+
+## Team Communication
+
+- The team uses Microsoft Teams. All sign-off templates and notification references should use Teams.
 
 ## Storybook Visual Regression
 
