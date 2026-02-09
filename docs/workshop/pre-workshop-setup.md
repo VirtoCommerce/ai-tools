@@ -389,4 +389,4 @@ model: opus
 
 ## Need Help?
 
-If you're stuck, reach out to the team lead or post in the QA Slack channel. Don't worry if you can't complete every step - we'll troubleshoot any remaining issues at the start of the workshop.
+If you're stuck, reach out to the team lead or post in the QA Team channel. Don't worry if you can't complete every step - we'll troubleshoot any remaining issues at the start of the workshop.
