@@ -1,0 +1,2820 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C183314","Add content item",""," Katalon","Volha Baban","3/24/2020 1:11 PM","","<p>New content item appears on the list of content items. </p>
+","","","Medium","","Content item","2","","","","","","V3 Marketing","S1495","Other","1"
+"C183317","Edit content item > update name",""," Katalon","Volha Baban","3/24/2020 1:12 PM","","The content item name is updated. ","","Add content item [C183314]","Medium","","Content item","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183321","Edit content item > update description",""," Katalon","Volha Baban","3/24/2020 1:15 PM","","The description of the content item is updated. ","","Add content item [C183314]","Medium","","Content item","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183320","Edit content item > add new content type",""," Katalon","Volha Baban","3/24/2020 1:14 PM","","","","Add content item [C183314]","Medium","","Content item","2","","Step Description:
+1. Go to the content item from preconditions. 
+2. Click the """"Edit"""" button next to the """"Content type"""". 
+![](index.php?/attachments/get/23145)  
+
+Expected Result:
+""""Manage dictionary values"""" blade is opened. 
+
+ 
+
+Step Description:
+1. Enter the new type name. 
+2. Click """"Add"""". 
+Expected Result:
+The new type appears in the list of current values. 
+Step Description:
+1. Click """"Save"""". 
+2. Click on the """"Content type"""" drop-down. 
+Expected Result:
+The added content type is available for selection.","1. 
+2. 
+3.","1. """"Manage dictionary values"""" blade is opened. 
+
+ 
+
+2. The new type appears in the list of current values. 
+3. The added content type is available for selection.","1. 1. Go to the content item from preconditions. 
+2. Click the """"Edit"""" button next to the """"Content type"""". 
+![](index.php?/attachments/get/23145)  
+
+2. 1. Enter the new type name. 
+2. Click """"Add"""". 
+3. 1. Click """"Save"""". 
+2. Click on the """"Content type"""" drop-down.","V3 Marketing","S1495","Other","0"
+"C183322","Edit content item > update HTML",""," Katalon","Volha Baban","3/24/2020 1:15 PM","","Made changes are saved. ","","Add content item [C183314]
+
+","Medium","","Content item","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183316","Delete content item",""," Katalon","Volha Baban","3/24/2020 1:12 PM","","The content item is deleted. ","","There are some content items. ","Medium","","Content item","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183315","Bulk delete of content items",""," Katalon","Volha Baban","3/24/2020 1:12 PM","","All selected items are deleted. ","","Create some content items [C183314]","Medium","","Content item","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183348","Searching in list view",""," Katalon","Volha Baban","3/24/2020 1:47 PM","","Only those content items and folders are displayed which names match the search query. ","","Create some content items [C183314]","Medium","","Content item","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183502","Add content folder",""," Katalon","Volha Baban","3/25/2020 9:59 AM","","The new folder appears in the list of content items. ","","","Medium","","Content folder","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183318","Edit content folder > name",""," Katalon","Volha Baban","3/24/2020 1:12 PM","","Made changes are saved. The folder name is updated. ","","Add content folder [C183502]","Medium","","Content folder","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183503","Edit content folder > description",""," Katalon","Volha Baban","3/25/2020 10:04 AM","","Made changes are saved. The folder description is updated. ","","Add content folder [C183502]","Medium","","Content folder","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183504","Delete content folder",""," Katalon","Volha Baban","3/25/2020 10:05 AM","","The folder is deleted. ","","Add content folder [C183502]","Medium","","Content folder","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183505","Add placeholder",""," Katalon","Volha Baban","3/25/2020 10:08 AM","","New placeholder appears on the list of placeholders. ","","","Medium","","Placeholder","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183332","Add image to placeholder via drag&drop",""," Katalon (generic)","Volha Baban","3/24/2020 1:35 PM","","","","Add placeholder [C183505]","Medium","","Placeholder","2","","Step Description:
+1. Go to the placeholder from preconditions. 
+2. Drag and drop the image that you want to add to the marked zone. 
+3. Wait until the uploading is completed. 
+Expected Result:
+The image appears in the """"Placeholder image description"""" section.
+
+![](index.php?/attachments/get/23146)  
+
+Step Description:
+1. Click """"Save"""".
+2. Pay attention to the """"Pic"""" column of the placeholder. 
+Expected Result:
+The added image appears in the """"Pic"""" column.
+
+![](index.php?/attachments/get/23147)  ","1. 
+2.","1. The image appears in the """"Placeholder image description"""" section.
+
+![](index.php?/attachments/get/23146)  
+
+2. The added image appears in the """"Pic"""" column.
+
+![](index.php?/attachments/get/23147)  ","1. 1. Go to the placeholder from preconditions. 
+2. Drag and drop the image that you want to add to the marked zone. 
+3. Wait until the uploading is completed. 
+2. 1. Click """"Save"""".
+2. Pay attention to the """"Pic"""" column of the placeholder.","V3 Marketing","S1495","Other","0"
+"C183333","Add image to placeholder via upload",""," Katalon","Volha Baban","3/24/2020 1:35 PM","","","","Add placeholder [C183505]
+
+
+
+","Medium","","Placeholder","2","","Step Description:
+1. Go to the placeholder from preconditions. 
+2. Click on the open file button.
+![](index.php?/attachments/get/23148)  
+3. Choose the image that you want to upload. 
+4. Click """"Open"""".
+5. Wait until the uploading is completed.
+
+Expected Result:
+The image appears in the """"Placeholder image description"""" section.
+
+![](index.php?/attachments/get/23149)  
+
+Step Description:
+1. Click """"Save"""". 
+2. Pay attention to the """"Pic"""" column of the placeholder.
+
+
+Expected Result:
+The added image appears in the """"Pic"""" column.
+
+![](index.php?/attachments/get/23151)  ","1. 
+2.","1. The image appears in the """"Placeholder image description"""" section.
+
+![](index.php?/attachments/get/23149)  
+
+2. The added image appears in the """"Pic"""" column.
+
+![](index.php?/attachments/get/23151)  ","1. 1. Go to the placeholder from preconditions. 
+2. Click on the open file button.
+![](index.php?/attachments/get/23148)  
+3. Choose the image that you want to upload. 
+4. Click """"Open"""".
+5. Wait until the uploading is completed.
+
+2. 1. Click """"Save"""". 
+2. Pay attention to the """"Pic"""" column of the placeholder.","V3 Marketing","S1495","Other","0"
+"C183340","Edit placeholder > name",""," Katalon","Volha Baban","3/24/2020 1:38 PM","","The placeholder name is updated. ","","Add placeholder [C183505]","Medium","","Placeholder","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183341","Edit placeholder > description",""," Katalon","Volha Baban","3/24/2020 1:38 PM","","The placeholder description is updated. ","","Add placeholder [C183505]
+
+","Medium","","Placeholder","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183342","Edit placeholder > update image via drag&drop",""," Katalon (generic)","Volha Baban","3/24/2020 1:38 PM","","The image that was in the placeholder is replaced with the image you added.
+","","1. Add placeholder [C183505]
+2. Add image to the placeholder in any way. ","Medium","","Placeholder","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183343","Edit placeholder > update image via upload file",""," Katalon","Volha Baban","3/24/2020 1:38 PM","","The image that was in the placeholder is replaced with the image you added.
+
+","","1. Add placeholder [C183505]
+2. Add image to the placeholder in any way.
+","Medium","","Placeholder","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183338","Delete placeholder via RBC",""," Katalon (generic)","Volha Baban","3/24/2020 1:37 PM","","The placeholder is deleted.","","Add placeholder [C183505]
+
+","Medium","","Placeholder","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183339","Delete placeholder via bulk delete",""," Katalon","Volha Baban","3/24/2020 1:37 PM","","All selected placeholders are deleted.","","Add some placeholders [C183505]","Medium","","Placeholder","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183350","Searching in listview",""," Katalon","Volha Baban","3/24/2020 1:47 PM","","Only those placeholders and folders are displayed which names match the search query.","","Add some placeholders [C183505]
+
+","Medium","","Placeholder","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183334","Add placeholder folder",""," Katalon","Volha Baban","3/24/2020 1:36 PM","","The new folder appears in the list of content placeholders.
+","","","Medium","","Placeholder folder","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183335","Edit placeholder folder > name",""," Katalon","Volha Baban","3/24/2020 1:36 PM","","Made changes are saved. The folder name is updated.
+
+","","Add placeholder folder [C183334]","Medium","","Placeholder folder","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183336","Edit placeholder folder > description",""," Katalon","Volha Baban","3/24/2020 1:36 PM","","Made changes are saved. The folder description is updated.
+
+","","Add placeholder folder [C183334]
+
+","Medium","","Placeholder folder","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183337","Delete placeholder folder",""," Katalon","Volha Baban","3/24/2020 1:37 PM","","The folder is deleted. ","","Add placeholder folder [C183334]
+
+","Medium","","Placeholder folder","2","","","","","","V3 Marketing","S1495","Other","0"
+"C184664","Add content publishing",""," None","Volha Baban","4/1/2020 9:50 AM","","The content publishing is created. New content publishing appears in the list. ","","","Medium","","Content publishing","1","It is set up via the Virto Commerce platform manager by a marketer.
+https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-content-publishing.md","","","","","V3 Marketing","S1495","Other","0"
+"C198278","Edit content publishing > name",""," None","Volha Baban","4/2/2020 6:57 AM","","1. New name is saved. 
+2. Name in the content publishing list is updated. ","","Add content publishing [C184664]","Medium","","Content publishing","1","It is set up via the Virto Commerce platform manager by a marketer.
+https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-content-publishing.md","","","","","V3 Marketing","S1495","Other","0"
+"C198279","Edit content publishing > description",""," None","Volha Baban","4/2/2020 6:57 AM","","The changed description is saved.","","Add content publishing [C184664]
+
+","Medium","","Content publishing","1","It is set up via the Virto Commerce platform manager by a marketer.
+https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-content-publishing.md","","","","","V3 Marketing","S1495","Other","0"
+"C198280","Edit content publishing > store",""," None","Volha Baban","4/2/2020 6:57 AM","","The selected store is saved. ","","Add content publishing [C184664]
+
+","Medium","","Content publishing","1","It is set up via the Virto Commerce platform manager by a marketer.
+https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-content-publishing.md","","","","","V3 Marketing","S1495","Other","0"
+"C198281","Edit content publishing > start date",""," None","Volha Baban","4/2/2020 6:57 AM","","The changed start date is saved. ","","Add content publishing [C184664]
+
+","Medium","","Content publishing","1","It is set up via the Virto Commerce platform manager by a marketer.
+https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-content-publishing.md","","","","","V3 Marketing","S1495","Other","0"
+"C199250","Edit content publishing > end date",""," None","Volha Baban","4/2/2020 7:46 AM","","The changed end date is saved. ","","Add content publishing [C184664]
+
+","Medium","","Content publishing","1","It is set up via the Virto Commerce platform manager by a marketer.
+https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-content-publishing.md","","","","","V3 Marketing","S1495","Other","0"
+"C183327","Add placeholder to content publishing",""," None","Volha Baban","3/24/2020 1:30 PM","","","","Add content publishing [C183324]","Medium","","Content publishing","1","It is set up via the Virto Commerce platform manager by a marketer.
+https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-content-publishing.md","Step Description:
+1. Go to the content publishing from preconditions. 
+2. Click on the """"Placeholders"""" tab. 
+![](index.php?/attachments/get/23152) 
+
+Expected Result:
+""""Add placeholders elements"""" screen is opened. 
+
+![](index.php?/attachments/get/23154) 
+
+
+
+
+
+Step Description:
+1. Click on the placeholder that you want to add to the content publishing. 
+Expected Result:
+Placeholder is added to the list of chosen placeholders. 
+Step Description:
+1. Close """"Add placeholders elements"""" blade. 
+2. Pay attention to the """"Placeholders"""" counter.
+
+Expected Result:
+The placeholder counter is increased by one. 
+
+![](index.php?/attachments/get/23156) 
+
+Step Description:
+1. Click """"Save"""". 
+2. Open the """"Placeholders"""" tab again. 
+Expected Result:
+Added placeholder is in the list of chosen placeholders.","1. 
+2. 
+3. 
+4.","1. """"Add placeholders elements"""" screen is opened. 
+
+![](index.php?/attachments/get/23154) 
+
+
+
+
+
+2. Placeholder is added to the list of chosen placeholders. 
+3. The placeholder counter is increased by one. 
+
+![](index.php?/attachments/get/23156) 
+
+4. Added placeholder is in the list of chosen placeholders.","1. 1. Go to the content publishing from preconditions. 
+2. Click on the """"Placeholders"""" tab. 
+![](index.php?/attachments/get/23152) 
+
+2. 1. Click on the placeholder that you want to add to the content publishing. 
+3. 1. Close """"Add placeholders elements"""" blade. 
+2. Pay attention to the """"Placeholders"""" counter.
+
+4. 1. Click """"Save"""". 
+2. Open the """"Placeholders"""" tab again.","V3 Marketing","S1495","Other","0"
+"C183747","Add content item to content publishing",""," None","Volha Baban","3/25/2020 12:49 PM","","","","Add content publishing [C183324]","Medium","","Content publishing","1","It is set up via the Virto Commerce platform manager by a marketer.
+https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-content-publishing.md","Step Description:
+1. Go to the content publishing from preconditions. 
+2. Click on the """"Content items"""" tab. 
+![](index.php?/attachments/get/23157) 
+
+Expected Result:
+""""Add content items elements"""" screen is opened. 
+
+![](index.php?/attachments/get/23158) 
+
+
+
+
+
+
+Step Description:
+1. Click on the content item that you want to add to the content publishing. 
+Expected Result:
+Placeholder is added to the list of chosen content items. 
+Step Description:
+1. Close """"Add content items elements"""" blade. 
+2. Pay attention to the """"Content items"""" counter.
+
+Expected Result:
+The content items counter is increased by one. 
+
+![](index.php?/attachments/get/23159) 
+
+
+Step Description:
+1. Click """"Save"""". 
+2. Open the """"Content items"""" tab again. 
+Expected Result:
+Added content item is in the list of chosen content items.","1. 
+2. 
+3. 
+4.","1. """"Add content items elements"""" screen is opened. 
+
+![](index.php?/attachments/get/23158) 
+
+
+
+
+
+
+2. Placeholder is added to the list of chosen content items. 
+3. The content items counter is increased by one. 
+
+![](index.php?/attachments/get/23159) 
+
+
+4. Added content item is in the list of chosen content items.","1. 1. Go to the content publishing from preconditions. 
+2. Click on the """"Content items"""" tab. 
+![](index.php?/attachments/get/23157) 
+
+2. 1. Click on the content item that you want to add to the content publishing. 
+3. 1. Close """"Add content items elements"""" blade. 
+2. Pay attention to the """"Content items"""" counter.
+
+4. 1. Click """"Save"""". 
+2. Open the """"Content items"""" tab again.","V3 Marketing","S1495","Other","0"
+"C183329","Set Is Active = FALSE",""," None","Volha Baban","3/24/2020 1:31 PM","","There is no content item on the place from the fifth step","","There is a content publishing which content item is correctly displayed on the StoreFront.","Medium","","Content publishing","1","It is set up via the Virto Commerce platform manager by a marketer.
+https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-content-publishing.md","","","","","V3 Marketing","S1495","Other","0"
+"C183330","Set Is Active = TRUE",""," None","Volha Baban","3/24/2020 1:31 PM","","There is a content item on the place from fifth step","","1. There is a content publishing which content item is correctly displayed on the StoreFront.
+2. Set is active = false for content publishing from the previous precondition. [C183329]","Medium","","Content publishing","1","It is set up via the Virto Commerce platform manager by a marketer.
+https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-content-publishing.md","","","","","V3 Marketing","S1495","Other","0"
+"C183352","Searching in list view",""," None","Volha Baban","3/24/2020 1:48 PM","","Only those catalog publishings are displayed which names match the search query.","","Create some content publishings [C183324]","Medium","","Content publishing","1","It is set up via the Virto Commerce platform manager by a marketer.
+https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-content-publishing.md","","","","","V3 Marketing","S1495","Other","0"
+"C198276","Delete content pulishing via bulk delete",""," None","Volha Baban","4/2/2020 6:56 AM","","Content publishing is deleted.","","Add content publishing [C184664]
+
+","Medium","","Content publishing","1","It is set up via the Virto Commerce platform manager by a marketer.
+https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-content-publishing.md","","","","","V3 Marketing","S1495","Other","0"
+"C198277","Delete  content publishing on details balde",""," None","Volha Baban","4/2/2020 6:56 AM","","Content publishing is deleted. ","","Add content publishing [C184664]
+
+
+","Medium","","Content publishing","1","It is set up via the Virto Commerce platform manager by a marketer.
+https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-content-publishing.md","","","","","V3 Marketing","S1495","Other","0"
+"C184649","Type of applying: all",""," None","Volha Baban","4/1/2020 8:15 AM","","""""All"""" type of applying is saved. ","","Add content publishing [C184664]","Medium","","Publishing conditions","2","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/publishing-conditions.md","","","","","V3 Marketing","S1495","Other","0"
+"C184650","Type of applying: any",""," None","Volha Baban","4/1/2020 8:15 AM","","""""Any"""" type of applying is saved.
+
+","","Add content publishing [C184664]
+
+","Medium","","Publishing conditions","2","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/publishing-conditions.md","","","","","V3 Marketing","S1495","Other","0"
+"C184654","Add publishing condition",""," None","Volha Baban","4/1/2020 8:18 AM","","The added condition is saved.","","Add content publishing [C184664]","Medium","","Publishing conditions management","3","","","","","","V3 Marketing","S1495","Other","0"
+"C184655","Edit publishing condition",""," None","Volha Baban","4/1/2020 8:18 AM","","The new value of the publishing condition is saved. ","","1. Add content publishing [C184664]
+2. Add publishing condition [C184654]","Medium","","Publishing conditions management","3","","","","","","V3 Marketing","S1495","Other","0"
+"C184656","Delete publishing condition",""," None","Volha Baban","4/1/2020 8:18 AM","","There is no deleted publishing condition in the publishing conditions list. ","","1. Add content publishing [C184664]
+2. Add publishing condition [C184654]","Medium","","Publishing conditions management","3","","","","","","V3 Marketing","S1495","Other","0"
+"C184651","Browsing from a time zone -/+ offset from UTC []","","","Volha Baban","4/1/2020 8:16 AM","","The added publishing condition is saved with the entered value.","","Add content publishing [C184664]
+","Medium","","Geo location","3","","","","","","V3 Marketing","S1495","Other","0"
+"C184652","Browsing from zip/postal code []","","","Volha Baban","4/1/2020 8:16 AM","","The added publishing condition is saved with the entered value.
+
+","","Add content publishing [C184664]
+
+","Medium","","Geo location","3","","","","","","V3 Marketing","S1495","Other","0"
+"C184653","Browsing from city []","","","Volha Baban","4/1/2020 8:16 AM","","The added publishing condition is saved with the entered value.
+
+","","Add content publishing [C184664]
+
+","Medium","","Geo location","3","","","","","","V3 Marketing","S1495","Other","0"
+"C184657","Browsing from country []","","","Volha Baban","4/1/2020 8:19 AM","","The added publishing condition is saved with the entered value.
+
+","","Add content publishing [C184664]
+
+","Medium","","Geo location","3","","","","","","V3 Marketing","S1495","Other","0"
+"C184658","Browsing from state []","","","Volha Baban","4/1/2020 8:19 AM","","The added publishing condition is saved with the entered value.
+
+","","Add content publishing [C184664]
+
+","Medium","","Geo location","3","","","","","","V3 Marketing","S1495","Other","0"
+"C184665","Shopper searched for phrase [] in store","","","Volha Baban","4/1/2020 11:16 AM","","The added publishing condition is saved with the entered value.
+
+","","Add content publishing [C184664]
+
+","Medium","","Browse behavior","3","","","","","","V3 Marketing","S1495","Other","0"
+"C184666","Current language is []","","","Volha Baban","4/1/2020 11:20 AM","","The added publishing condition is saved with the selected language.
+
+","","Add content publishing [C184664]
+
+","Medium","","Browse behavior","3","","","","","","V3 Marketing","S1495","Other","0"
+"C184667","Shopper age is []","","","Volha Baban","4/1/2020 11:24 AM","","The added publishing condition is saved with the entered value.
+
+","","Add content publishing [C184664]
+
+","Medium","","Shopper profile","3","","","","","","V3 Marketing","S1495","Other","0"
+"C184668","Shopper gender is []","","","Volha Baban","4/1/2020 11:27 AM","","The added publishing condition is saved with the selected gender.
+","","Add content publishing [C184664]
+
+","Medium","","Shopper profile","3","","","","","","V3 Marketing","S1495","Other","0"
+"C184669","User groups contains []","","","Volha Baban","4/1/2020 11:28 AM","","The added publishing condition is saved with the entered value.
+
+","","Add content publishing [C184664]
+
+","Medium","","Shopper profile","3","","","","","","V3 Marketing","S1495","Other","0"
+"C295625","Category","","","Alexandr Tzykin","6/30/2021 11:27 AM","","","","","Medium","","Catalog","3","","Step Description:
+Select any category for content publishing 
+Expected Result:
+Category selected success
+Step Description:
+Go to swager > Run POST
+​/api​/marketing​/contentitems​/evaluate with body 
+
+
+{
+  """"storeId"""": """"Electronics"""",
+  """"categoryId"""": """"baa4931161214690ad51c50787b1ed94""""
+} 
+Expected Result:
+in response user sees info about content publishing[
+  {
+    """"contentType"""": """"Html"""",
+    """"priority"""": 0,
+    """"outline"""": """"ContentItem;31560b99c7114a4ab37fd09297a27022"""",
+    """"path"""": """"ContentItem\\Home Page"""",
+    """"folderId"""": """"31560b99c7114a4ab37fd09297a27022"""",
+    """"folder"""": {
+      """"path"""": """"ContentItem\\Home Page"""",
+      """"outline"""": """"ContentItem;31560b99c7114a4ab37fd09297a27022"""",
+      """"parentFolderId"""": """"ContentItem"""",
+      """"parentFolder"""": {
+        """"path"""": """"ContentItem"""",
+        """"outline"""": """"ContentItem"""",
+        """"objectType"""": """"DynamicContentFolder"""",
+        """"name"""": """"ContentItem"""",
+        """"createdDate"""": """"2020-07-14T07:43:15.7906789Z"""",
+        """"modifiedDate"""": """"2020-07-14T07:43:15.7906789Z"""",
+        """"createdBy"""": """"unknown"""",
+        """"modifiedBy"""": """"unknown"""",
+        """"id"""": """"ContentItem""""
+      },
+      """"objectType"""": """"DynamicContentFolder"""",
+      """"name"""": """"Home Page"""",
+      """"description"""": """"Index store page"""",
+      """"createdDate"""": """"2015-10-06T22:39:44.947Z"""",
+      """"modifiedDate"""": """"2021-01-21T12:29:30.7955463Z"""",
+      """"createdBy"""": """"unknown"""",
+      """"modifiedBy"""": """"admin"""",
+      """"id"""": """"31560b99c7114a4ab37fd09297a27022""""
+    },
+    """"objectType"""": """"VirtoCommerce.MarketingModule.Core.Model.DynamicContentItem"""",
+    """"dynamicProperties"""": [
+      {
+        """"values"""": [
+          {
+            """"objectType"""": """"VirtoCommerce.MarketingModule.Core.Model.DynamicContentItem"""",
+            """"objectId"""": """"6f8a6e9b632b4c428a5e18dfb47dba21"""",
+            """"value"""": """"Html"""",
+            """"valueId"""": """"8539baa3fe83445a8052209b9bdd498c"""",
+            """"valueType"""": """"ShortText"""",
+            """"propertyId"""": """"Marketing_DynamicContentItem_Type_Property"""",
+            """"propertyName"""": """"Content type""""
+          }
+        ],
+        """"name"""": """"Content type"""",
+        """"isArray"""": false,
+        """"isDictionary"""": false,
+        """"isMultilingual"""": false,
+        """"isRequired"""": false,
+        """"valueType"""": """"Undefined"""",
+        """"createdDate"""": """"0001-01-01T00:00:00Z"""",
+        """"id"""": """"Marketing_DynamicContentItem_Type_Property""""
+      },
+      {
+        """"values"""": [
+          {
+            """"objectType"""": """"VirtoCommerce.MarketingModule.Core.Model.DynamicContentItem"""",
+            """"objectId"""": """"6f8a6e9b632b4c428a5e18dfb47dba21"""",
+            """"value"""": """"
+
+FREE GROUND SHIPPINGON ORDERS OVER $100
+WE SHIP GLOBALLYSEE LIST OF COUNTRIES
+EASY RETURNS AND EXCHANGEWE'VE MADE IT EASY FOR YOU!"""",
+            """"valueType"""": """"Html"""",
+            """"propertyId"""": """"a381c55f8b624f53a8ae99c1387299e3"""",
+            """"propertyName"""": """"Html""""
+          }
+        ],
+        """"name"""": """"Html"""",
+        """"isArray"""": false,
+        """"isDictionary"""": false,
+        """"isMultilingual"""": false,
+        """"isRequired"""": false,
+        """"valueType"""": """"Undefined"""",
+        """"createdDate"""": """"0001-01-01T00:00:00Z"""",
+        """"id"""": """"a381c55f8b624f53a8ae99c1387299e3""""
+      }
+    ],
+    """"name"""": """"Benefits banner"""",
+    """"description"""": """"Describes some promo information"""",
+    """"createdDate"""": """"2015-10-06T22:39:45.097Z"""",
+    """"modifiedDate"""": """"2015-10-06T22:39:45.097Z"""",
+    """"createdBy"""": """"unknown"""",
+    """"modifiedBy"""": """"unknown"""",
+    """"id"""": """"6f8a6e9b632b4c428a5e18dfb47dba21""""
+  }
+] ","1. 
+2.","1. Category selected success
+2. in response user sees info about content publishing[
+  {
+    """"contentType"""": """"Html"""",
+    """"priority"""": 0,
+    """"outline"""": """"ContentItem;31560b99c7114a4ab37fd09297a27022"""",
+    """"path"""": """"ContentItem\\Home Page"""",
+    """"folderId"""": """"31560b99c7114a4ab37fd09297a27022"""",
+    """"folder"""": {
+      """"path"""": """"ContentItem\\Home Page"""",
+      """"outline"""": """"ContentItem;31560b99c7114a4ab37fd09297a27022"""",
+      """"parentFolderId"""": """"ContentItem"""",
+      """"parentFolder"""": {
+        """"path"""": """"ContentItem"""",
+        """"outline"""": """"ContentItem"""",
+        """"objectType"""": """"DynamicContentFolder"""",
+        """"name"""": """"ContentItem"""",
+        """"createdDate"""": """"2020-07-14T07:43:15.7906789Z"""",
+        """"modifiedDate"""": """"2020-07-14T07:43:15.7906789Z"""",
+        """"createdBy"""": """"unknown"""",
+        """"modifiedBy"""": """"unknown"""",
+        """"id"""": """"ContentItem""""
+      },
+      """"objectType"""": """"DynamicContentFolder"""",
+      """"name"""": """"Home Page"""",
+      """"description"""": """"Index store page"""",
+      """"createdDate"""": """"2015-10-06T22:39:44.947Z"""",
+      """"modifiedDate"""": """"2021-01-21T12:29:30.7955463Z"""",
+      """"createdBy"""": """"unknown"""",
+      """"modifiedBy"""": """"admin"""",
+      """"id"""": """"31560b99c7114a4ab37fd09297a27022""""
+    },
+    """"objectType"""": """"VirtoCommerce.MarketingModule.Core.Model.DynamicContentItem"""",
+    """"dynamicProperties"""": [
+      {
+        """"values"""": [
+          {
+            """"objectType"""": """"VirtoCommerce.MarketingModule.Core.Model.DynamicContentItem"""",
+            """"objectId"""": """"6f8a6e9b632b4c428a5e18dfb47dba21"""",
+            """"value"""": """"Html"""",
+            """"valueId"""": """"8539baa3fe83445a8052209b9bdd498c"""",
+            """"valueType"""": """"ShortText"""",
+            """"propertyId"""": """"Marketing_DynamicContentItem_Type_Property"""",
+            """"propertyName"""": """"Content type""""
+          }
+        ],
+        """"name"""": """"Content type"""",
+        """"isArray"""": false,
+        """"isDictionary"""": false,
+        """"isMultilingual"""": false,
+        """"isRequired"""": false,
+        """"valueType"""": """"Undefined"""",
+        """"createdDate"""": """"0001-01-01T00:00:00Z"""",
+        """"id"""": """"Marketing_DynamicContentItem_Type_Property""""
+      },
+      {
+        """"values"""": [
+          {
+            """"objectType"""": """"VirtoCommerce.MarketingModule.Core.Model.DynamicContentItem"""",
+            """"objectId"""": """"6f8a6e9b632b4c428a5e18dfb47dba21"""",
+            """"value"""": """"
+
+FREE GROUND SHIPPINGON ORDERS OVER $100
+WE SHIP GLOBALLYSEE LIST OF COUNTRIES
+EASY RETURNS AND EXCHANGEWE'VE MADE IT EASY FOR YOU!"""",
+            """"valueType"""": """"Html"""",
+            """"propertyId"""": """"a381c55f8b624f53a8ae99c1387299e3"""",
+            """"propertyName"""": """"Html""""
+          }
+        ],
+        """"name"""": """"Html"""",
+        """"isArray"""": false,
+        """"isDictionary"""": false,
+        """"isMultilingual"""": false,
+        """"isRequired"""": false,
+        """"valueType"""": """"Undefined"""",
+        """"createdDate"""": """"0001-01-01T00:00:00Z"""",
+        """"id"""": """"a381c55f8b624f53a8ae99c1387299e3""""
+      }
+    ],
+    """"name"""": """"Benefits banner"""",
+    """"description"""": """"Describes some promo information"""",
+    """"createdDate"""": """"2015-10-06T22:39:45.097Z"""",
+    """"modifiedDate"""": """"2015-10-06T22:39:45.097Z"""",
+    """"createdBy"""": """"unknown"""",
+    """"modifiedBy"""": """"unknown"""",
+    """"id"""": """"6f8a6e9b632b4c428a5e18dfb47dba21""""
+  }
+] ","1. Select any category for content publishing 
+2. Go to swager > Run POST
+​/api​/marketing​/contentitems​/evaluate with body 
+
+
+{
+  """"storeId"""": """"Electronics"""",
+  """"categoryId"""": """"baa4931161214690ad51c50787b1ed94""""
+} ","V3 Marketing","S1495","Other","0"
+"C295626","Product","","","Alexandr Tzykin","6/30/2021 11:30 AM","","","","","Medium","","Catalog","3","","Step Description:
+Select any category for content publishing 
+Expected Result:
+Category selected success
+Step Description:
+Go to swager > Run POST
+​/api​/marketing​/contentitems​/evaluate with body 
+
+{
+""""storeId"""": """"Electronics"""",
+""""productId"""": """"baa4931161214690ad51c50787b1ed94""""
+} 
+Expected Result:
+in response user sees info about content publishing[
+{
+""""contentType"""": """"Html"""",
+""""priority"""": 0,
+""""outline"""": """"ContentItem;31560b99c7114a4ab37fd09297a27022"""",
+""""path"""": """"ContentItem\Home Page"""",
+""""folderId"""": """"31560b99c7114a4ab37fd09297a27022"""",
+""""folder"""": {
+""""path"""": """"ContentItem\Home Page"""",
+""""outline"""": """"ContentItem;31560b99c7114a4ab37fd09297a27022"""",
+""""parentFolderId"""": """"ContentItem"""",
+""""parentFolder"""": {
+""""path"""": """"ContentItem"""",
+""""outline"""": """"ContentItem"""",
+""""objectType"""": """"DynamicContentFolder"""",
+""""name"""": """"ContentItem"""",
+""""createdDate"""": """"2020-07-14T07:43:15.7906789Z"""",
+""""modifiedDate"""": """"2020-07-14T07:43:15.7906789Z"""",
+""""createdBy"""": """"unknown"""",
+""""modifiedBy"""": """"unknown"""",
+""""id"""": """"ContentItem""""
+},
+""""objectType"""": """"DynamicContentFolder"""",
+""""name"""": """"Home Page"""",
+""""description"""": """"Index store page"""",
+""""createdDate"""": """"2015-10-06T22:39:44.947Z"""",
+""""modifiedDate"""": """"2021-01-21T12:29:30.7955463Z"""",
+""""createdBy"""": """"unknown"""",
+""""modifiedBy"""": """"admin"""",
+""""id"""": """"31560b99c7114a4ab37fd09297a27022""""
+},
+""""objectType"""": """"VirtoCommerce.MarketingModule.Core.Model.DynamicContentItem"""",
+""""dynamicProperties"""": [
+{
+""""values"""": [
+{
+""""objectType"""": """"VirtoCommerce.MarketingModule.Core.Model.DynamicContentItem"""",
+""""objectId"""": """"6f8a6e9b632b4c428a5e18dfb47dba21"""",
+""""value"""": """"Html"""",
+""""valueId"""": """"8539baa3fe83445a8052209b9bdd498c"""",
+""""valueType"""": """"ShortText"""",
+""""propertyId"""": """"Marketing_DynamicContentItem_Type_Property"""",
+""""propertyName"""": """"Content type""""
+}
+],
+""""name"""": """"Content type"""",
+""""isArray"""": false,
+""""isDictionary"""": false,
+""""isMultilingual"""": false,
+""""isRequired"""": false,
+""""valueType"""": """"Undefined"""",
+""""createdDate"""": """"0001-01-01T00:00:00Z"""",
+""""id"""": """"Marketing_DynamicContentItem_Type_Property""""
+},
+{
+""""values"""": [
+{
+""""objectType"""": """"VirtoCommerce.MarketingModule.Core.Model.DynamicContentItem"""",
+""""objectId"""": """"6f8a6e9b632b4c428a5e18dfb47dba21"""",
+""""value"""": """"
+
+FREE GROUND SHIPPINGON ORDERS OVER $100
+WE SHIP GLOBALLYSEE LIST OF COUNTRIES
+EASY RETURNS AND EXCHANGEWE'VE MADE IT EASY FOR YOU!"""",
+""""valueType"""": """"Html"""",
+""""propertyId"""": """"a381c55f8b624f53a8ae99c1387299e3"""",
+""""propertyName"""": """"Html""""
+}
+],
+""""name"""": """"Html"""",
+""""isArray"""": false,
+""""isDictionary"""": false,
+""""isMultilingual"""": false,
+""""isRequired"""": false,
+""""valueType"""": """"Undefined"""",
+""""createdDate"""": """"0001-01-01T00:00:00Z"""",
+""""id"""": """"a381c55f8b624f53a8ae99c1387299e3""""
+}
+],
+""""name"""": """"Benefits banner"""",
+""""description"""": """"Describes some promo information"""",
+""""createdDate"""": """"2015-10-06T22:39:45.097Z"""",
+""""modifiedDate"""": """"2015-10-06T22:39:45.097Z"""",
+""""createdBy"""": """"unknown"""",
+""""modifiedBy"""": """"unknown"""",
+""""id"""": """"6f8a6e9b632b4c428a5e18dfb47dba21""""
+}
+]   ","1. 
+2.","1. Category selected success
+2. in response user sees info about content publishing[
+{
+""""contentType"""": """"Html"""",
+""""priority"""": 0,
+""""outline"""": """"ContentItem;31560b99c7114a4ab37fd09297a27022"""",
+""""path"""": """"ContentItem\Home Page"""",
+""""folderId"""": """"31560b99c7114a4ab37fd09297a27022"""",
+""""folder"""": {
+""""path"""": """"ContentItem\Home Page"""",
+""""outline"""": """"ContentItem;31560b99c7114a4ab37fd09297a27022"""",
+""""parentFolderId"""": """"ContentItem"""",
+""""parentFolder"""": {
+""""path"""": """"ContentItem"""",
+""""outline"""": """"ContentItem"""",
+""""objectType"""": """"DynamicContentFolder"""",
+""""name"""": """"ContentItem"""",
+""""createdDate"""": """"2020-07-14T07:43:15.7906789Z"""",
+""""modifiedDate"""": """"2020-07-14T07:43:15.7906789Z"""",
+""""createdBy"""": """"unknown"""",
+""""modifiedBy"""": """"unknown"""",
+""""id"""": """"ContentItem""""
+},
+""""objectType"""": """"DynamicContentFolder"""",
+""""name"""": """"Home Page"""",
+""""description"""": """"Index store page"""",
+""""createdDate"""": """"2015-10-06T22:39:44.947Z"""",
+""""modifiedDate"""": """"2021-01-21T12:29:30.7955463Z"""",
+""""createdBy"""": """"unknown"""",
+""""modifiedBy"""": """"admin"""",
+""""id"""": """"31560b99c7114a4ab37fd09297a27022""""
+},
+""""objectType"""": """"VirtoCommerce.MarketingModule.Core.Model.DynamicContentItem"""",
+""""dynamicProperties"""": [
+{
+""""values"""": [
+{
+""""objectType"""": """"VirtoCommerce.MarketingModule.Core.Model.DynamicContentItem"""",
+""""objectId"""": """"6f8a6e9b632b4c428a5e18dfb47dba21"""",
+""""value"""": """"Html"""",
+""""valueId"""": """"8539baa3fe83445a8052209b9bdd498c"""",
+""""valueType"""": """"ShortText"""",
+""""propertyId"""": """"Marketing_DynamicContentItem_Type_Property"""",
+""""propertyName"""": """"Content type""""
+}
+],
+""""name"""": """"Content type"""",
+""""isArray"""": false,
+""""isDictionary"""": false,
+""""isMultilingual"""": false,
+""""isRequired"""": false,
+""""valueType"""": """"Undefined"""",
+""""createdDate"""": """"0001-01-01T00:00:00Z"""",
+""""id"""": """"Marketing_DynamicContentItem_Type_Property""""
+},
+{
+""""values"""": [
+{
+""""objectType"""": """"VirtoCommerce.MarketingModule.Core.Model.DynamicContentItem"""",
+""""objectId"""": """"6f8a6e9b632b4c428a5e18dfb47dba21"""",
+""""value"""": """"
+
+FREE GROUND SHIPPINGON ORDERS OVER $100
+WE SHIP GLOBALLYSEE LIST OF COUNTRIES
+EASY RETURNS AND EXCHANGEWE'VE MADE IT EASY FOR YOU!"""",
+""""valueType"""": """"Html"""",
+""""propertyId"""": """"a381c55f8b624f53a8ae99c1387299e3"""",
+""""propertyName"""": """"Html""""
+}
+],
+""""name"""": """"Html"""",
+""""isArray"""": false,
+""""isDictionary"""": false,
+""""isMultilingual"""": false,
+""""isRequired"""": false,
+""""valueType"""": """"Undefined"""",
+""""createdDate"""": """"0001-01-01T00:00:00Z"""",
+""""id"""": """"a381c55f8b624f53a8ae99c1387299e3""""
+}
+],
+""""name"""": """"Benefits banner"""",
+""""description"""": """"Describes some promo information"""",
+""""createdDate"""": """"2015-10-06T22:39:45.097Z"""",
+""""modifiedDate"""": """"2015-10-06T22:39:45.097Z"""",
+""""createdBy"""": """"unknown"""",
+""""modifiedBy"""": """"unknown"""",
+""""id"""": """"6f8a6e9b632b4c428a5e18dfb47dba21""""
+}
+]   ","1. Select any category for content publishing 
+2. Go to swager > Run POST
+​/api​/marketing​/contentitems​/evaluate with body 
+
+{
+""""storeId"""": """"Electronics"""",
+""""productId"""": """"baa4931161214690ad51c50787b1ed94""""
+} ","V3 Marketing","S1495","Other","0"
+"C352334","Add published content in admin > Check query","https://virtowayqa.testrail.io/index.php?/attachments/get/1000003847"," None","Elena Mutykova","12/21/2022 5:13 PM","","","","Create a new published content
+
+ ![](index.php?/attachments/get/d7ef921a-b88d-46ee-a996-30cf69a8d3e5) 
+","Medium","","XAPI for Dynamic Content","1","","Step Description:
+Set storeId, cultureName
+Run query
+
+Example:
+
+{
+  evaluateDynamicContent(
+    storeId:""""B2B-store""""
+    cultureName:""""en-US""""
+        
+  )
+  {
+    items
+    {
+      id
+      contentType
+      name
+      priority
+      description
+      dynamicProperties
+      {
+        name
+        valueType
+        value
+              
+      }
+    }
+    totalCount
+  }
+}
+
+
+Expected Result:
+All fields are returned in response
+
+{
+  """"data"""": {
+    """"evaluateDynamicContent"""": {
+      """"items"""": [
+        {
+          """"id"""": """"1a2ad90f-a3b3-4a26-b1d2-a96846929c98"""",
+          """"contentType"""": """"newType1"""",
+          """"name"""": """"Page1"""",
+          """"priority"""": 0,
+          """"description"""": """"New slider"""",
+          """"dynamicProperties"""": [
+            {
+              """"name"""": """"Content type"""",
+              """"valueType"""": """"ShortText"""",
+              """"value"""": """"newType1""""
+            },
+            {
+              """"name"""": """"Pic"""",
+              """"valueType"""": """"Image"""",
+              """"value"""": null
+            }
+          ]
+        }
+      ],
+      """"totalCount"""": 1
+    }
+  }
+}","1","1. All fields are returned in response
+
+{
+  """"data"""": {
+    """"evaluateDynamicContent"""": {
+      """"items"""": [
+        {
+          """"id"""": """"1a2ad90f-a3b3-4a26-b1d2-a96846929c98"""",
+          """"contentType"""": """"newType1"""",
+          """"name"""": """"Page1"""",
+          """"priority"""": 0,
+          """"description"""": """"New slider"""",
+          """"dynamicProperties"""": [
+            {
+              """"name"""": """"Content type"""",
+              """"valueType"""": """"ShortText"""",
+              """"value"""": """"newType1""""
+            },
+            {
+              """"name"""": """"Pic"""",
+              """"valueType"""": """"Image"""",
+              """"value"""": null
+            }
+          ]
+        }
+      ],
+      """"totalCount"""": 1
+    }
+  }
+}","1. Set storeId, cultureName
+Run query
+
+Example:
+
+{
+  evaluateDynamicContent(
+    storeId:""""B2B-store""""
+    cultureName:""""en-US""""
+        
+  )
+  {
+    items
+    {
+      id
+      contentType
+      name
+      priority
+      description
+      dynamicProperties
+      {
+        name
+        valueType
+        value
+              
+      }
+    }
+    totalCount
+  }
+}","V3 Marketing","S1495","Other","0"
+"C352335","Published content > Add Content Items  > Check query","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000634, https://virtowayqa.testrail.io/index.php?/attachments/get/1000003254, https://virtowayqa.testrail.io/index.php?/attachments/get/1000003157"," None","Elena Mutykova","12/21/2022 5:23 PM","","","","Create a new published content
+Set store (ex. B2B-store)
+Set isActive = true
+Add Placeholders
+Add Content Items
+
+ ![](index.php?/attachments/get/b02151c0-81b8-4603-9856-9d7ba070c663) 
+
+
+","Medium","","XAPI for Dynamic Content","1","","Step Description:
+Go to playground
+Execute query evaluateDynamicContent
+
+{
+  evaluateDynamicContent(
+    storeId:""""B2B-store""""
+    cultureName:""""en-US"""" 
+)
+{
+  totalCount
+    items
+    {
+      id
+      contentType
+      name
+      priority
+      description
+      dynamicProperties
+      {
+        name
+        valueType
+        value
+
+  }
+}
+}
+}
+
+
+Expected Result:
+The Selected content items were returned
+The total count is 3
+
+
+
+Step Description:
+Go to admin
+Open Published Content1
+Remove one Content item
+
+Go to playground
+Execute query evaluateDynamicContent
+Check the data
+
+Expected Result:
+The Selected content items were returned
+The total count is 2
+
+ ![](index.php?/attachments/get/21d250ff-e7dd-4969-8d42-bdd7153f63c2) 
+
+Step Description:
+Go to admin
+Open Published Content1
+Add 5 Content items
+
+Go to playground
+Execute query evaluateDynamicContent
+Check the data
+
+Expected Result:
+The Selected content items were returned
+The total count is the same as in the Published Content1
+
+ ![](index.php?/attachments/get/b6f59505-ab7d-497d-8cd3-5f195beb9f84)","1. 
+2. 
+3.","1. The Selected content items were returned
+The total count is 3
+
+
+
+2. The Selected content items were returned
+The total count is 2
+
+ ![](index.php?/attachments/get/21d250ff-e7dd-4969-8d42-bdd7153f63c2) 
+
+3. The Selected content items were returned
+The total count is the same as in the Published Content1
+
+ ![](index.php?/attachments/get/b6f59505-ab7d-497d-8cd3-5f195beb9f84)","1. Go to playground
+Execute query evaluateDynamicContent
+
+{
+  evaluateDynamicContent(
+    storeId:""""B2B-store""""
+    cultureName:""""en-US"""" 
+)
+{
+  totalCount
+    items
+    {
+      id
+      contentType
+      name
+      priority
+      description
+      dynamicProperties
+      {
+        name
+        valueType
+        value
+
+  }
+}
+}
+}
+
+
+2. Go to admin
+Open Published Content1
+Remove one Content item
+
+Go to playground
+Execute query evaluateDynamicContent
+Check the data
+
+3. Go to admin
+Open Published Content1
+Add 5 Content items
+
+Go to playground
+Execute query evaluateDynamicContent
+Check the data","V3 Marketing","S1495","Other","0"
+"C352336","Published content > Set Is Active = False >  Check query",""," None","Elena Mutykova","12/21/2022 5:26 PM","","","","","Medium","","XAPI for Dynamic Content","1","","","","","","V3 Marketing","S1495","Other","0"
+"C352337","Published content > Set Is Active = True >  Check query","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004495, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000656"," None","Elena Mutykova","12/21/2022 5:26 PM","","","","Create a new published content
+Set isActive = true","Medium","","XAPI for Dynamic Content","1","","Step Description:
+Go to playground
+Execute query evaluateDynamicContent
+
+{
+  evaluateDynamicContent(
+    storeId:""""B2B-store""""
+    cultureName:""""en-US"""" 
+)
+{
+  totalCount
+    items
+    {
+      id
+      contentType
+      name
+      priority
+      description
+      dynamicProperties
+      {
+        name
+        valueType
+        value
+
+  }
+}
+}
+}
+
+
+Expected Result:
+The appropriate data was returned
+
+ ![](index.php?/attachments/get/fcd2dbd5-6308-4c9d-a23c-04961fded2bd) 
+
+Step Description:
+Go to admin
+Open Published Content1
+Set isActive = false
+Go to playground
+Execute query evaluateDynamicContent
+Check the data
+Expected Result:
+Nothing returned
+
+ ![](index.php?/attachments/get/2299f2ff-16b7-4435-baf8-82ca7a2c9a58)","1. 
+2.","1. The appropriate data was returned
+
+ ![](index.php?/attachments/get/fcd2dbd5-6308-4c9d-a23c-04961fded2bd) 
+
+2. Nothing returned
+
+ ![](index.php?/attachments/get/2299f2ff-16b7-4435-baf8-82ca7a2c9a58)","1. Go to playground
+Execute query evaluateDynamicContent
+
+{
+  evaluateDynamicContent(
+    storeId:""""B2B-store""""
+    cultureName:""""en-US"""" 
+)
+{
+  totalCount
+    items
+    {
+      id
+      contentType
+      name
+      priority
+      description
+      dynamicProperties
+      {
+        name
+        valueType
+        value
+
+  }
+}
+}
+}
+
+
+2. Go to admin
+Open Published Content1
+Set isActive = false
+Go to playground
+Execute query evaluateDynamicContent
+Check the data","V3 Marketing","S1495","Other","0"
+"C352338","Published content > Change StoreId > Check query",""," None","Elena Mutykova","12/21/2022 6:03 PM","","","","","Medium","","XAPI for Dynamic Content","1","","","","","","V3 Marketing","S1495","Other","0"
+"C352344","Published content > Start Date > Check query",""," None","Elena Mutykova","12/21/2022 6:28 PM","","","","Create two published content with different dates
+
+Content1 Start date: 23.12 End date 25.12
+Content2 Start date: 26.12 End date 28.12
+
+
+","Medium","","XAPI for Dynamic Content","1","","Step Description:
+Go to playground
+Execute query evaluateDynamicContent
+
+
+{
+  evaluateDynamicContent(
+    storeId:""""B2B-store""""
+    cultureName:""""en-US""""
+    placeName:""""DynamicContent""""
+    toDate: """"2022-12-23T12:00:00Z""""
+
+                     
+  )
+  {
+    items
+    {
+      id
+      contentType
+      name
+      priority
+      description
+      dynamicProperties
+      {
+        name
+        valueType
+        value
+              
+      }
+    }
+    totalCount
+  }
+}
+
+Expected Result:
+Only Content1 returns in response","1","1. Only Content1 returns in response","1. Go to playground
+Execute query evaluateDynamicContent
+
+
+{
+  evaluateDynamicContent(
+    storeId:""""B2B-store""""
+    cultureName:""""en-US""""
+    placeName:""""DynamicContent""""
+    toDate: """"2022-12-23T12:00:00Z""""
+
+                     
+  )
+  {
+    items
+    {
+      id
+      contentType
+      name
+      priority
+      description
+      dynamicProperties
+      {
+        name
+        valueType
+        value
+              
+      }
+    }
+    totalCount
+  }
+}","V3 Marketing","S1495","Other","0"
+"C352345","Published content > End Date > Check query","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000303, https://virtowayqa.testrail.io/index.php?/attachments/get/1000004021"," None","Elena Mutykova","12/21/2022 6:29 PM","","Only Content2 returns in response
+
+
+ ![](index.php?/attachments/get/1090ef52-fc4d-4a24-ac9d-d5b69535e501) 
+","","Create two published content with different dates
+
+Example:
+
+Content1 Start date: 21.04 End date 24.04
+Content2 Start date: 25.04 End date 01.05
+
+---
+
+ ![](index.php?/attachments/get/dfe68ba5-9434-4f60-ad61-f4ddb863237d) 
+
+
+
+","Medium","","XAPI for Dynamic Content","1","","","","","","V3 Marketing","S1495","Other","0"
+"C352339","Published content > Change Placeholder > Check query",""," None","Elena Mutykova","12/21/2022 6:04 PM","","","","","Medium","","XAPI for Dynamic Content","1","","","","","","V3 Marketing","S1495","Other","0"
+"C352340","Published content > Change Content item > Check query",""," None","Elena Mutykova","12/21/2022 6:05 PM","","","","","Medium","","XAPI for Dynamic Content","1","","","","","","V3 Marketing","S1495","Other","0"
+"C352341","Published content > Publish Conditions > Set Category > Check query",""," None","Elena Mutykova","12/21/2022 6:08 PM","","Appropriate content returned in response","","Create a new published content with publish conditions:  Category: [categoryName]
+
+  
+
+","Medium","","XAPI for Dynamic Content","1","","","","","","V3 Marketing","S1495","Other","0"
+"C352342","Published content > Publish Conditions > Set Product > Check query",""," None","Elena Mutykova","12/21/2022 6:09 PM","","Appropriate content returned in response","","Create a new published content with publish conditions:  Product: [productName]","Medium","","XAPI for Dynamic Content","1","","","","","","V3 Marketing","S1495","Other","0"
+"C352343","Published content > Publish Conditions > Set User groups > Check query",""," None","Elena Mutykova","12/21/2022 6:18 PM","","","","","Medium","","XAPI for Dynamic Content","1","","","","","","V3 Marketing","S1495","Other","0"
+"C352346","Assign tag on category >  Set Category for publish content > check query",""," None","Elena Mutykova","12/21/2022 6:46 PM","","","","","Medium","","XAPI for Dynamic Content","1","","","","","","V3 Marketing","S1495","Other","0"
+"C183346","Add promotion > name is required",""," Katalon","Volha Baban","3/24/2020 1:44 PM","","","","","Medium","","Promotion management","1","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-promotions.md","Step Description:
+1. Go to the """"Marketing"""" module. 
+2. Open """"Promotions"""". 
+3. Click """"Add"""". 
+Expected Result:
+The name field is required.
+Step Description:
+1. Fill in the """"Name"""" field. 
+2. Click """"Create"""". 
+Expected Result:
+New promo appears on the """"Promotions"""" list.","1. 
+2.","1. The name field is required.
+2. New promo appears on the """"Promotions"""" list.","1. 1. Go to the """"Marketing"""" module. 
+2. Open """"Promotions"""". 
+3. Click """"Add"""". 
+2. 1. Fill in the """"Name"""" field. 
+2. Click """"Create"""".","V3 Marketing","S1495","Other","0"
+"C183347","Delete promotion",""," Katalon","Volha Baban","3/24/2020 1:46 PM","","The promotion is deleted. ","","Add promotion [C183346]","Medium","","Promotion management","1","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-promotions.md","","","","","V3 Marketing","S1495","Other","0"
+"C183353","Edit promption > name",""," Katalon","Volha Baban","3/24/2020 1:49 PM","","The promotion name is changed. ","","Add promotion [C183346]","Medium","","Promotion management","1","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-promotions.md","","","","","V3 Marketing","S1495","Other","0"
+"C183354","Edit promotion > description",""," Katalon","Volha Baban","3/24/2020 1:49 PM","","The promotion description is changed. ","","Add promotion [C183346]
+
+","Medium","","Promotion management","1","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-promotions.md","","","","","V3 Marketing","S1495","Other","0"
+"C183355","Edit promotion > Is Active = TRUE > check in storefront",""," Out of priority","Volha Baban","3/24/2020 1:50 PM","","You get the effect specified in the promotion on one of the creating order stage.","","1. Add promotion [C183346]
+2. ""Is active"" checkbox = TRUE.","Medium","","Promotion management","1","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-promotions.md","","","","","V3 Marketing","S1495","Other","0"
+"C183356","Edit promotion > Is Active = FALSE > check in storefront",""," Out of priority","Volha Baban","3/24/2020 1:50 PM","","The effect specified in the promotion doesn't apply to your order.","","1. Add promotion [C183346]
+2. ""Is active"" checkbox = FALSE.","Medium","","Promotion management","1","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-promotions.md","","","","","V3 Marketing","S1495","Other","0"
+"C183357","Start date  in the future > promotion is not shown, can not be used",""," Out of priority","Volha Baban","3/24/2020 1:51 PM","","The effect specified in the promotion doesn't apply to your order.
+
+","","Add promotion [C183346]
+","Medium","","Promotion management","1","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-promotions.md","","","","","V3 Marketing","S1495","Other","0"
+"C183358","Start date in the past > promotion is active > can be used",""," Out of priority","Volha Baban","3/24/2020 1:51 PM","","You get the effect specified in the promotion on one of the creating order stage.
+
+","","Add promotion [C183346]
+
+","Medium","","Promotion management","1","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-promotions.md","","","","","V3 Marketing","S1495","Other","0"
+"C183359","Expiration date in the past > promotion can not be used",""," Out of priority","Volha Baban","3/24/2020 1:52 PM","","The effect specified in the promotion doesn't apply to your order.
+
+","","Add promotion [C183346]
+
+","Medium","","Promotion management","1","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-promotions.md","","","","","V3 Marketing","S1495","Other","0"
+"C183360","Expiration date in the future > promotion can be used",""," Out of priority","Volha Baban","3/24/2020 1:52 PM","","You get the effect specified in the promotion on one of the creating order stage.","","Add promotion [C183346]
+","Medium","","Promotion management","1","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-promotions.md","","","","","V3 Marketing","S1495","Other","0"
+"C183361","Promotion store is not current store > promotion is not visible",""," Out of priority","Volha Baban","3/24/2020 1:53 PM","","The effect specified in the promotion doesn't apply to your order.
+
+","","Add promotion [C183346]","Medium","","Promotion management","1","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-promotions.md","","","","","V3 Marketing","S1495","Other","0"
+"C183362","Promotion store is current store > promotion is visible",""," Out of priority","Volha Baban","3/24/2020 1:53 PM","","You get the effect specified in the promotion on one of the creating order stage.
+
+","","Add promotion [C183346]
+
+","Medium","","Promotion management","1","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/manage-promotions.md","","","","","V3 Marketing","S1495","Other","0"
+"C183365","Everyone",""," Katalon","Volha Baban","3/24/2020 1:56 PM","","","","Add promotion [C183346]","Medium","","Visitors","3","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/promotion-rules.md#expression-builders-visitor-block","Step Description:
+1. Go to the promotions from preconditions. 
+2. Add """"Everyone"""" user group to the list of eligibilities. 
+3. Delete all other user groups. 
+4. Go to the StoreFront anonymously.
+5. Create order in accordance with the conditions of the promotion.
+Expected Result:
+You get the effect specified in the promotion on one of the creating order stage.
+
+
+Step Description:
+1. Log in to the StoreFront. 
+2. Create order in accordance with the conditions of the promotion.
+Expected Result:
+You get the effect specified in the promotion on one of the creating order stage.","1. 
+2.","1. You get the effect specified in the promotion on one of the creating order stage.
+
+
+2. You get the effect specified in the promotion on one of the creating order stage.","1. 1. Go to the promotions from preconditions. 
+2. Add """"Everyone"""" user group to the list of eligibilities. 
+3. Delete all other user groups. 
+4. Go to the StoreFront anonymously.
+5. Create order in accordance with the conditions of the promotion.
+2. 1. Log in to the StoreFront. 
+2. Create order in accordance with the conditions of the promotion.","V3 Marketing","S1495","Other","0"
+"C183364","Registered user",""," Katalon","Volha Baban","3/24/2020 1:56 PM","","","","Add promotion [C183346]
+
+","Medium","","Visitors","3","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/promotion-rules.md#expression-builders-visitor-block","Step Description:
+1. Go to the promotion from preconditions. 
+2. Make this promotion actual only for registered users.
+3. Go to the StoreFront anonymously. 
+4. Create order in accordance with conditions specified in the promotion. 
+Expected Result:
+The effect specified in the promotion doesn't apply to your order.
+
+
+Step Description:
+1. Log in to the StoreFront.
+2. Create the same order. 
+Expected Result:
+You get the effect specified in the promotion on one of the creating order stage.","1. 
+2.","1. The effect specified in the promotion doesn't apply to your order.
+
+
+2. You get the effect specified in the promotion on one of the creating order stage.","1. 1. Go to the promotion from preconditions. 
+2. Make this promotion actual only for registered users.
+3. Go to the StoreFront anonymously. 
+4. Create order in accordance with conditions specified in the promotion. 
+2. 1. Log in to the StoreFront.
+2. Create the same order.","V3 Marketing","S1495","Other","0"
+"C183366","First time buyer",""," Katalon","Volha Baban","3/24/2020 1:56 PM","","","","Add promotion [C183346]","Medium","","Visitors","3","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/promotion-rules.md#expression-builders-visitor-block","Step Description:
+1. Go to the promotion from preconditions. 
+2. Make the promotion actual only for first-time buyer. 
+3. Create a new user. 
+4. Log in to the StoreFront as a user from previous step. 
+5. Create order in accordance with the conditions of the promotion.
+Expected Result:
+You get the effect specified in the promotion on one of the creating order stage.
+
+
+Step Description:
+1. Create the same order one more time. 
+Expected Result:
+The effect specified in the promotion doesn't apply to your order.","1. 
+2.","1. You get the effect specified in the promotion on one of the creating order stage.
+
+
+2. The effect specified in the promotion doesn't apply to your order.","1. 1. Go to the promotion from preconditions. 
+2. Make the promotion actual only for first-time buyer. 
+3. Create a new user. 
+4. Log in to the StoreFront as a user from previous step. 
+5. Create order in accordance with the conditions of the promotion.
+2. 1. Create the same order one more time.","V3 Marketing","S1495","Other","0"
+"C183367","User groups",""," Katalon","Volha Baban","3/24/2020 1:57 PM","","","","Add promotion [C183346]","Medium","","Visitors","3","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/promotion-rules.md#expression-builders-visitor-block","Step Description:
+
+1. Go to the promotion from preconditions.
+2. Make the promotion actual only for user group.
+3. Add user to user group.
+4. Log in to the StoreFront as a user from previous step.
+5. Create order in accordance with the conditions of the promotion.
+
+Expected Result:
+You get the effect specified in the promotion on one of the creating order stage.
+Step Description:
+1. Login as user out of user group 
+2. Create the same order one more time.
+Expected Result:
+The effect specified in the promotion doesn't apply to your order.","1. 
+2.","1. You get the effect specified in the promotion on one of the creating order stage.
+2. The effect specified in the promotion doesn't apply to your order.","1. 
+1. Go to the promotion from preconditions.
+2. Make the promotion actual only for user group.
+3. Add user to user group.
+4. Log in to the StoreFront as a user from previous step.
+5. Create order in accordance with the conditions of the promotion.
+
+2. 1. Login as user out of user group 
+2. Create the same order one more time.","V3 Marketing","S1495","Other","0"
+"C183368","Category - fully","","","Volha Baban","3/24/2020 1:57 PM","","1. Promotion is applied to the order. 
+2. Discount = X.","","1. Create a promotion. 
+2. Add catalog condition to the promotion: Category is [CATEGORY_NAME] without excluding.
+3. Add effect: Get $ [X] off cart subtotal.","Medium","","Catalog conditions","3","","","","","","V3 Marketing","S1495","Other","0"
+"C183369","Category - without Subcategory","","","Volha Baban","3/24/2020 1:58 PM","","","","1. Create a promotion.
+2. Add catalog condition to the promotion: Category is [CATEGORY_NAME] excluding items of category [SUBCATEGORY_NAME]
+3. Add effect: Get $ [X] off cart subtotal.
+","Medium","","Catalog conditions","3","","Step Description:
+1. Go to the StoreFront. 
+2. Add any item from the CATEGORY_NAME to the cart except items from the SUBCATEGORY_NAME.
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Pay attention to the order summary.
+Expected Result:
+1. The promotion is applied to the order. 
+2. Discount = X.
+
+Postcondition: delete all products from the cart.
+Step Description:
+1. Add to the cart any product of SUBCATEGORY_NAME.
+2. Go to the cart. 
+3. Click """"Checkout"""".
+4. Pay attention to the order summary. 
+Expected Result:
+The promotion doesn't apply to the order.","1. 
+2.","1. 1. The promotion is applied to the order. 
+2. Discount = X.
+
+Postcondition: delete all products from the cart.
+2. The promotion doesn't apply to the order.","1. 1. Go to the StoreFront. 
+2. Add any item from the CATEGORY_NAME to the cart except items from the SUBCATEGORY_NAME.
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Pay attention to the order summary.
+2. 1. Add to the cart any product of SUBCATEGORY_NAME.
+2. Go to the cart. 
+3. Click """"Checkout"""".
+4. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C183370","Category - without Items","","","Volha Baban","3/24/2020 1:58 PM","","","","1. Create a promotion.
+2. Add catalog condition to the promotion: Category is [CATEGORY_NAME] excluding items of entry [ITEM_NAME]
+3. Add effect: Get $ [X] off cart subtotal.","Medium","","Catalog conditions","3","","Step Description:
+1. Go to the StoreFront.
+2. Add any item from the CATEGORY_NAME to the cart except the ITEM_NAME.
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Pay attention to the order summary.
+Expected Result:
+1. The promotion is applied to the order.
+2. Discount = X.
+
+Postcondition: remove all items from the cart. 
+Step Description:
+1. Add ITEM_NAME to the cart. 
+2. Go to the cart. 
+3. Click """"Checkout"""".
+4. Pay attention to the order summary. 
+Expected Result:
+The promotion doesn't apply to the order.","1. 
+2.","1. 1. The promotion is applied to the order.
+2. Discount = X.
+
+Postcondition: remove all items from the cart. 
+2. The promotion doesn't apply to the order.","1. 1. Go to the StoreFront.
+2. Add any item from the CATEGORY_NAME to the cart except the ITEM_NAME.
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Pay attention to the order summary.
+2. 1. Add ITEM_NAME to the cart. 
+2. Go to the cart. 
+3. Click """"Checkout"""".
+4. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C183371","Product - contains SKU","","","Volha Baban","3/24/2020 2:00 PM","","The promotion is applied to the order. 
+Discount = X.","","1. Create a promotion.
+2. Add catalog condition to the promotion: Product code contains [CODE]
+3. Add effect: Get $ [X] off cart subtotal.","Medium","","Catalog conditions","3","","","","","","V3 Marketing","S1495","Other","0"
+"C183373","Product - contains Name","","","Volha Baban","3/24/2020 2:00 PM","","1. Promotion is applied to the order. 
+2. Discount = X.","","1. Create a promotion.
+2. Add catalog condition to the promotion: Product is [SELECTED_PRODUCT]
+3. Add effect: Get $ [X] off cart subtotal.","Medium","","Catalog conditions","3","","","","","","V3 Marketing","S1495","Other","0"
+"C183372","Currency is [] USD, but the current currency in storefront is EUR - promo not applied","","","Volha Baban","3/24/2020 2:00 PM","","Promotion is not applied to the order. ","","1. Create a promotion.
+2. Add catalog condition to the promotion: Currency is [USD]
+3. Add effect: Get $ [X] off cart subtotal.","Medium","","Catalog conditions","3","","","","","","V3 Marketing","S1495","Other","0"
+"C184212","Currency is [] USD, and current currency in storefront is USD - promo applied","","","Volha Baban","3/26/2020 2:28 PM","","1. Promotion is applied to the order.
+2. Discount = X.","","1. Create a promotion.
+2. Add catalog condition to the promotion: Currency is [USD]
+3. Add effect: Get $ [X] off cart subtotal.
+","Medium","","Catalog conditions","3","","","","","","V3 Marketing","S1495","Other","0"
+"C183374","InStock quantity - at least","","","Volha Baban","3/24/2020 2:01 PM","","","","1. Create a promotion.
+2. Add catalog condition to the promotion: InStock quantity is at least [Y] items.
+3. Add effect: Get $ [X] off cart subtotal.","Medium","","Catalog conditions","3","","Step Description:
+1. Go to the StoreFront.
+2. Add to the cart an item which stock quantity is at least Y. (You can find stock quantity of the item on the BackEnd: """"Product details > Inventory"""").
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Pay attention to the order summary. 
+Expected Result:
+1. Promotion is applied to the order.
+2. Discount = X.
+
+Postcondition: delete the item from the cart. 
+Step Description:
+1. Go to the BackEnd. 
+2. Go to the item from the previous step. 
+3. Go to the inventory. 
+4. Change the stock quantity to the value less than Y.
+5. Go back to the StoreFront.
+6. Add the item to the cart. 
+7. Checkout. 
+8. Pay attention to the order summary. 
+Expected Result:
+Promotion is not applied to the order.","1. 
+2.","1. 1. Promotion is applied to the order.
+2. Discount = X.
+
+Postcondition: delete the item from the cart. 
+2. Promotion is not applied to the order.","1. 1. Go to the StoreFront.
+2. Add to the cart an item which stock quantity is at least Y. (You can find stock quantity of the item on the BackEnd: """"Product details > Inventory"""").
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Pay attention to the order summary. 
+2. 1. Go to the BackEnd. 
+2. Go to the item from the previous step. 
+3. Go to the inventory. 
+4. Change the stock quantity to the value less than Y.
+5. Go back to the StoreFront.
+6. Add the item to the cart. 
+7. Checkout. 
+8. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C183375","InStock quantity - exactly","","","Volha Baban","3/24/2020 2:13 PM","","","","1. Create a promotion.
+2. Add catalog condition to the promotion: InStock quantity is exactly [Y] items.
+3. Add effect: Get $ [X] off cart subtotal.","Medium","","Catalog conditions","3","","Step Description:
+1. Go to the StoreFront.
+2. Add to the cart an item which stock quantity is exactly Y. (You can find stock quantity of the item on the BackEnd: """"Product details > Inventory"""").
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Pay attention to the order summary.
+Expected Result:
+1. Promotion is applied to the order.
+2. Discount = X.
+
+Postcondition: delete the item from the cart.
+
+
+Step Description:
+1. Go to the BackEnd.
+2. Go to the item from the previous step.
+3. Go to the inventory.
+4. Decrease the stock quantity by one.
+5. Go back to the StoreFront.
+6. Add the item to the cart.
+7. Checkout.
+8. Pay attention to the order summary.
+Expected Result:
+Promotion is not applied to the order.
+
+Postcondition: delete the item from the cart.
+
+Step Description:
+1. Go to the BackEnd. 
+2. Increase the stock quantity of the item by two. 
+3. Go back to the StoreFront. 
+4. Add the item to the cart.
+5. Checkout.
+6. Pay attention to the order summary.
+Expected Result:
+Promotion is not applied to the order.","1. 
+2. 
+3.","1. 1. Promotion is applied to the order.
+2. Discount = X.
+
+Postcondition: delete the item from the cart.
+
+
+2. Promotion is not applied to the order.
+
+Postcondition: delete the item from the cart.
+
+3. Promotion is not applied to the order.","1. 1. Go to the StoreFront.
+2. Add to the cart an item which stock quantity is exactly Y. (You can find stock quantity of the item on the BackEnd: """"Product details > Inventory"""").
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Pay attention to the order summary.
+2. 1. Go to the BackEnd.
+2. Go to the item from the previous step.
+3. Go to the inventory.
+4. Decrease the stock quantity by one.
+5. Go back to the StoreFront.
+6. Add the item to the cart.
+7. Checkout.
+8. Pay attention to the order summary.
+3. 1. Go to the BackEnd. 
+2. Increase the stock quantity of the item by two. 
+3. Go back to the StoreFront. 
+4. Add the item to the cart.
+5. Checkout.
+6. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C183376","InStock quantity - less than or equals","","","Volha Baban","3/24/2020 2:13 PM","","1. Promotion is applied to the order.
+2. Discount = X.","","1. Create a promotion.
+2. Add catalog condition to the promotion: InStock quantity is less than or equals [Y] items.
+3. Add effect: Get $ [X] off cart subtotal.
+","Medium","","Catalog conditions","3","","","","","","V3 Marketing","S1495","Other","0"
+"C183377","InStock quantity - between","","","Volha Baban","3/24/2020 2:13 PM","","","","1. Create a promotion.
+2. Add catalog condition to the promotion: InStock quantity is between [Y] and [Z] items. 
+3. Add effect: Get $ [X] off cart subtotal.","Medium","","Catalog conditions","3","","Step Description:
+1. Go to the StoreFront.
+2. Add to the cart an item which stock quantity is between Y and Z. (You can find stock quantity of the item on the BackEnd: Product details > Inventory"""").
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Pay attention to the order summary.
+Expected Result:
+Promotion is applied to the order.
+Discount = X.
+
+Postcondition: delete all items from the cart. 
+Step Description:
+1. Go to the BackEnd.
+2. Go to the item from the previous step. 
+3. Go to the inventory.
+4. Set the stock quantity of the item to the value less than Y by one. 
+5. Go to the StoreFront. 
+6. Add the item to the cart. 
+7. Go to the cart. 
+8. Click """"Checkout"""". 
+9. Pay attention to the summary. 
+Expected Result:
+Promotion is not applied to the cart. 
+
+Postcondition: delete all items from the cart. 
+Step Description:
+1. Go to the BackEnd. 
+2. Set the stock quantity of the item to the values more than Z by one. 
+3. Go to the StoreFront. 
+4. Add the item to the cart. 
+5. Go to the cart. 
+6. Click """"Checkout"""". 
+7. Pay attention to the summary. 
+Expected Result:
+Promotion is not applied to the cart.","1. 
+2. 
+3.","1. Promotion is applied to the order.
+Discount = X.
+
+Postcondition: delete all items from the cart. 
+2. Promotion is not applied to the cart. 
+
+Postcondition: delete all items from the cart. 
+3. Promotion is not applied to the cart.","1. 1. Go to the StoreFront.
+2. Add to the cart an item which stock quantity is between Y and Z. (You can find stock quantity of the item on the BackEnd: Product details > Inventory"""").
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Pay attention to the order summary.
+2. 1. Go to the BackEnd.
+2. Go to the item from the previous step. 
+3. Go to the inventory.
+4. Set the stock quantity of the item to the value less than Y by one. 
+5. Go to the StoreFront. 
+6. Add the item to the cart. 
+7. Go to the cart. 
+8. Click """"Checkout"""". 
+9. Pay attention to the summary. 
+3. 1. Go to the BackEnd. 
+2. Set the stock quantity of the item to the values more than Z by one. 
+3. Go to the StoreFront. 
+4. Add the item to the cart. 
+5. Go to the cart. 
+6. Click """"Checkout"""". 
+7. Pay attention to the summary.","V3 Marketing","S1495","Other","0"
+"C183382","Cart subtotal - at least","","","Volha Baban","3/24/2020 2:18 PM","","1. Promotion is applied to the order.
+2. Discount = X.
+","","1. Create a promotion.
+2. Add cart condition to the promotion: Cart subtotal is at least [Y]
+3. Add effect: Get $ [X] off cart subtotal.","Medium","","Catalog conditions","3","","","","","","V3 Marketing","S1495","Other","0"
+"C183383","Cart subtotal - exactly","","","Volha Baban","3/24/2020 2:19 PM","","","","1. Create a promotion.
+2. Add cart condition to the promotion: Cart subtotal is exactly [Y]
+3. Add effect: Get $ [X] off cart subtotal.","Medium","","Catalog conditions","3","","Step Description:
+1. Go to the StoreFront. 
+2. Add items to the cart in the amount of $Y.
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Pay attention to the order summary. 
+Expected Result:
+1. Promotion is applied to the order.
+2. Discount = X.
+
+Postconditions: remove all items from the cart. 
+Step Description:
+1. Add items to the cart in the amount less or more than $Y.
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary. 
+Expected Result:
+Promotion is not applied to the order","1. 
+2.","1. 1. Promotion is applied to the order.
+2. Discount = X.
+
+Postconditions: remove all items from the cart. 
+2. Promotion is not applied to the order","1. 1. Go to the StoreFront. 
+2. Add items to the cart in the amount of $Y.
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Pay attention to the order summary. 
+2. 1. Add items to the cart in the amount less or more than $Y.
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C183384","Cart subtotal - less than or equals","","","Volha Baban","3/24/2020 2:19 PM","","","","1. Create a promotion.
+2. Add cart condition to the promotion: Cart subtotal is less than or equals [Y]
+3. Add effect: Get $ [X] off cart subtotal.","Medium","","Catalog conditions","3","","Step Description:
+1. Go to the StoreFront. 
+2. Add product to the cart in the amount of $Y.
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Pay attention to the order summary.
+Expected Result:
+1. Promotion is applied to the order.
+2. Discount = X.
+
+Postconditions: remove all items from the cart.
+
+
+Step Description:
+1. Add product to the cart in the amount less than $Y.
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary. 
+Expected Result:
+1. Promotion is applied to the order.
+2. Discount = X.","1. 
+2.","1. 1. Promotion is applied to the order.
+2. Discount = X.
+
+Postconditions: remove all items from the cart.
+
+
+2. 1. Promotion is applied to the order.
+2. Discount = X.","1. 1. Go to the StoreFront. 
+2. Add product to the cart in the amount of $Y.
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Pay attention to the order summary.
+2. 1. Add product to the cart in the amount less than $Y.
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C183385","Cart subtotal - between","","","Volha Baban","3/24/2020 2:19 PM","","","","1. Create a promotion.
+2. Add cart condition to the promotion: Cart subtotal is between [Y] and [Z]
+3. Add effect: Get $ [X] off cart subtotal.
+4. Limit values are not included in the promotion","Medium","PT-2317","Catalog conditions","3","","Step Description:
+1. Go to the StoreFront. 
+2. Add product to the cart in the amount of between Y and Z dollars.
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Pay attention to the order summary.
+Expected Result:
+1. Promotion is applied to the order.
+2. Discount = X.
+
+Postconditions: remove all items from the cart.
+
+
+Step Description:
+1. Add product to the cart in the amount of more than $Y.
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary.
+Expected Result:
+1. Promotion is applied to the order.
+2. Discount = X.
+
+Postconditions: remove all items from the cart.
+Step Description:
+1. Add product to the cart in the amount of $Z.
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary.
+Expected Result:
+1. Promotion is applied to the order.
+2. Discount = X.","1. 
+2. 
+3.","1. 1. Promotion is applied to the order.
+2. Discount = X.
+
+Postconditions: remove all items from the cart.
+
+
+2. 1. Promotion is applied to the order.
+2. Discount = X.
+
+Postconditions: remove all items from the cart.
+3. 1. Promotion is applied to the order.
+2. Discount = X.","1. 1. Go to the StoreFront. 
+2. Add product to the cart in the amount of between Y and Z dollars.
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Pay attention to the order summary.
+2. 1. Add product to the cart in the amount of more than $Y.
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary.
+3. 1. Add product to the cart in the amount of $Z.
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C216972","Product - full price","","","Volha Baban","4/25/2020 7:47 AM","","","","1. Create a promotion.
+2. Add catalog condition to the promotion: Apply only to full price items and not sales items
+3. Add effect: Get $ [X] off cart subtotal.","Medium","","Catalog conditions","3","","Step Description:
+1. Go to the StoreFront.
+2. Add to the cart a product that has only list price.
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Pay attention to the order summary.
+Expected Result:
+1. Promotion is applied to the order.
+2. Discount = X.
+
+Postcondition: remove product from the cart. 
+
+Step Description:
+1. Add to the cart any product that has sale price. 
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary. 
+Expected Result:
+Promotion is not applied to the order.","1. 
+2.","1. 1. Promotion is applied to the order.
+2. Discount = X.
+
+Postcondition: remove product from the cart. 
+
+2. Promotion is not applied to the order.","1. 1. Go to the StoreFront.
+2. Add to the cart a product that has only list price.
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Pay attention to the order summary.
+2. 1. Add to the cart any product that has sale price. 
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C183378","Cart items - at least","","","Volha Baban","3/24/2020 2:17 PM","","","","1. Create a promotion.
+2. Add cart condition to the promotion: at least [Y] items are in shopping cart.
+3. Add effect: Get $ [X] off cart subtotal.","Medium","","Cart conditions","3","","Step Description:
+1. Go to StoreFront. 
+2. Add Y different items to the cart. 
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Pay attention to the order summary.
+Expected Result:
+1. Promotion is applied to the order.
+2. Discount = X. 
+
+Postcondition: remove all items from the cart.
+Step Description:
+1. Add Y units of one item to the cart. 
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary.
+Expected Result:
+1. Promotion is applied to the order.
+2. Discount = X. 
+
+Postcondition: remove all items from the cart.
+Step Description:
+1. Add to the cart any number of items that more than Y.
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary.
+Expected Result:
+1. Promotion is applied to the order.
+2. Discount = X.","1. 
+2. 
+3.","1. 1. Promotion is applied to the order.
+2. Discount = X. 
+
+Postcondition: remove all items from the cart.
+2. 1. Promotion is applied to the order.
+2. Discount = X. 
+
+Postcondition: remove all items from the cart.
+3. 1. Promotion is applied to the order.
+2. Discount = X.","1. 1. Go to StoreFront. 
+2. Add Y different items to the cart. 
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Pay attention to the order summary.
+2. 1. Add Y units of one item to the cart. 
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary.
+3. 1. Add to the cart any number of items that more than Y.
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C184273","Cart items - exactly","","","Volha Baban","3/27/2020 11:34 AM","","","","1. Create a promotion.
+2. Add cart condition to the promotion: exactly [Y] items are in shopping cart.
+3. Add effect: Get $ [X] off cart subtotal.","Medium","","Cart conditions","3","","Step Description:
+1. Go to StoreFront.
+2. Add Y different items to the cart.
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Pay attention to the order summary.
+Expected Result:
+1. Promotion is applied to the order.
+2. Discount = X.
+
+Postcondition: remove all items from the cart.
+
+
+Step Description:
+1. Add Y-1 different items to the cart.
+2. Go to the cart.
+3. Click """"Checkout"""".
+4. Pay attention to the order summary.
+Expected Result:
+Promotion isn't applied to the order.
+
+Postcondition: remove all items from the cart.
+
+Step Description:
+1. Add Y+1 different items to the cart.
+2. Go to the cart.
+3. Click """"Checkout"""".
+4. Pay attention to the order summary.
+Expected Result:
+Promotion isn't applied to the order.","1. 
+2. 
+3.","1. 1. Promotion is applied to the order.
+2. Discount = X.
+
+Postcondition: remove all items from the cart.
+
+
+2. Promotion isn't applied to the order.
+
+Postcondition: remove all items from the cart.
+
+3. Promotion isn't applied to the order.","1. 1. Go to StoreFront.
+2. Add Y different items to the cart.
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Pay attention to the order summary.
+2. 1. Add Y-1 different items to the cart.
+2. Go to the cart.
+3. Click """"Checkout"""".
+4. Pay attention to the order summary.
+3. 1. Add Y+1 different items to the cart.
+2. Go to the cart.
+3. Click """"Checkout"""".
+4. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C184274","Cart items - less than or equals","","","Volha Baban","3/27/2020 11:34 AM","","","","1. Create a promotion.
+2. Add cart condition to the promotion: less than or equals [Y] items are in shopping cart.
+3. Add effect: Get $ [X] off cart subtotal.","Medium","","Cart conditions","3","","Step Description:
+1. Go to the StoreFront.
+2. Add Y items to the shopping cart. 
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Pay attention to the order summary. 
+Expected Result:
+1. Promotion is applied to the order.
+2. Discount = X
+
+Postcondition: remove all items from the cart.
+
+
+Step Description:
+1. Add Y-1 items to the shopping cart. 
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary. 
+Expected Result:
+1. Promotion is applied to the order.
+2. Discount = X
+
+Postcondition: remove all items from the cart.
+Step Description:
+1. Add Y+1 items to the shopping cart. 
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary. 
+Expected Result:
+Promotion is not applied to the cart.","1. 
+2. 
+3.","1. 1. Promotion is applied to the order.
+2. Discount = X
+
+Postcondition: remove all items from the cart.
+
+
+2. 1. Promotion is applied to the order.
+2. Discount = X
+
+Postcondition: remove all items from the cart.
+3. Promotion is not applied to the cart.","1. 1. Go to the StoreFront.
+2. Add Y items to the shopping cart. 
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Pay attention to the order summary. 
+2. 1. Add Y-1 items to the shopping cart. 
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary. 
+3. 1. Add Y+1 items to the shopping cart. 
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C184275","Cart items - between","","","Volha Baban","3/27/2020 11:35 AM","","","","1. Create a promotion.
+2. Add cart condition to the promotion: between [Y] and [Z] items are in the shopping cart.
+3. Add effect: Get $ [X] off cart subtotal.
+","Medium","","Cart conditions","3","","Step Description:
+1. Go to the StoreFront.
+2. Add Y+1 items to the shopping cart.
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Pay attention to the order summary.
+Expected Result:
+1. Promotion is applied to the order.
+2. Discount = X
+
+Postcondition: remove all items from the cart.
+
+
+Step Description:
+1. Go to the StoreFront.
+2. Add Z-1 items to the shopping cart.
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Pay attention to the order summary.
+Expected Result:
+1. Promotion is applied to the order.
+2. Discount = X
+
+Postcondition: remove all items from the cart.
+Step Description:
+1. Go to the StoreFront.
+2. Add Y-1 items to the shopping cart.
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Pay attention to the order summary.
+Expected Result:
+Promotion isn't applied to the cart.
+
+Postcondition: remove all items from the cart.
+Step Description:
+1. Go to the StoreFront.
+2. Add Z+1 items to the shopping cart.
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Pay attention to the order summary.
+Expected Result:
+Promotion isn't applied to the cart.","1. 
+2. 
+3. 
+4.","1. 1. Promotion is applied to the order.
+2. Discount = X
+
+Postcondition: remove all items from the cart.
+
+
+2. 1. Promotion is applied to the order.
+2. Discount = X
+
+Postcondition: remove all items from the cart.
+3. Promotion isn't applied to the cart.
+
+Postcondition: remove all items from the cart.
+4. Promotion isn't applied to the cart.","1. 1. Go to the StoreFront.
+2. Add Y+1 items to the shopping cart.
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Pay attention to the order summary.
+2. 1. Go to the StoreFront.
+2. Add Z-1 items to the shopping cart.
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Pay attention to the order summary.
+3. 1. Go to the StoreFront.
+2. Add Y-1 items to the shopping cart.
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Pay attention to the order summary.
+4. 1. Go to the StoreFront.
+2. Add Z+1 items to the shopping cart.
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C183379","Cart items  - with excluding items","","","Volha Baban","3/24/2020 2:18 PM","","","","1. Create a promotion.
+2. Add cart condition to the promotion: at least [Y] items are in shopping cart excluding [SELECTED_ITEM]
+3. Add effect: Get $ [X] off cart subtotal.","Medium","","Cart conditions","3","","Step Description:
+1. Go to StoreFront.
+2. Add Y different items to the cart.
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Pay attention to the order summary.
+Expected Result:
+1. Promotion is applied to the order.
+2. Discount = X.
+
+Postcondition: remove all items from the cart.
+
+
+Step Description:
+1. Add Y-1 any items to the cart. 
+2. Add SELECTED_ITEM to the cart. 
+3. Go to the cart. 
+4. Click """"Checkout"""".
+5. Pay attention to the order summary. 
+Expected Result:
+Promotion is not applied to the cart. 
+
+Postcondition: remove all items from the cart.
+
+Step Description:
+1. Add Y units of the SELECTED_ITEM to the cart. 
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary. 
+Expected Result:
+Promotion is not applied to the cart. 
+
+Postcondition: remove all items from the cart.","1. 
+2. 
+3.","1. 1. Promotion is applied to the order.
+2. Discount = X.
+
+Postcondition: remove all items from the cart.
+
+
+2. Promotion is not applied to the cart. 
+
+Postcondition: remove all items from the cart.
+
+3. Promotion is not applied to the cart. 
+
+Postcondition: remove all items from the cart.","1. 1. Go to StoreFront.
+2. Add Y different items to the cart.
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Pay attention to the order summary.
+2. 1. Add Y-1 any items to the cart. 
+2. Add SELECTED_ITEM to the cart. 
+3. Go to the cart. 
+4. Click """"Checkout"""".
+5. Pay attention to the order summary. 
+3. 1. Add Y units of the SELECTED_ITEM to the cart. 
+2. Go to the cart. 
+3. Click """"Checkout"""". 
+4. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C183380","Cart items of category","","","Volha Baban","3/24/2020 2:18 PM","","","","1. Create a promotion.
+2. Add cart condition to the promotion: at least [Y] items of category [SELECTED_CATEGORY] are in shopping cart
+3. Add effect: Get $ [X] off cart subtotal.","Medium","","Cart conditions","3","","Step Description:
+1. Go to the StoreFront.
+2. Add Y items of the SELECTED_CATEGORY to the cart. 
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Pay attention to the order summary. 
+Expected Result:
+1. Promotion is applied to the order. 
+2. Discount = X.","1","1. 1. Promotion is applied to the order. 
+2. Discount = X.","1. 1. Go to the StoreFront.
+2. Add Y items of the SELECTED_CATEGORY to the cart. 
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C183381","Cart items of entry","","","Volha Baban","3/24/2020 2:18 PM","","1. Promotion is applied to the order.
+2. Discount = X.","","1. Create a promotion.
+2. Add cart condition to the promotion: at least [Y] items of entry [SELECTED_ENTRY] are in shopping cart
+3. Add effect: Get $ [X] off cart subtotal.
+","Medium","","Cart conditions","3","","","","","","V3 Marketing","S1495","Other","0"
+"C380806","Payment type is",""," None","Alexandr Tzykin","1/29/2024 9:54 AM",""," Promo applied to cart","","","Medium","VCST-328","Cart conditions","3","","","","","","V3 Marketing","S1495","Other","0"
+"C380807","Shipping type is",""," None","Alexandr Tzykin","1/29/2024 9:54 AM","","Promo applied to cart",""," ","Medium","VCST-328","Cart conditions","3","","","","","","V3 Marketing","S1495","Other","0"
+"C183363","Get $[] off cart subtotal","","","Volha Baban","3/24/2020 1:56 PM","","1. Discount = X. 
+2. Total = Subtotal (including shipping and taxes) - X.","","1. Create a promotion with any condition. 
+2. Add effect: Get $ [X] off cart subtotal. ","Medium","","Effects","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183386","Get [] % off cart subtotal not to exceed $ []","","","Volha Baban","3/24/2020 2:28 PM","","","","1. Create a promotion with any condition.
+2. Add effect: Get [X] %  off cart subtotal not to exceed $ [Y].","Medium","","Effects","2","","Step Description:
+1. Go to the StoreFront. 
+2. Add products to the cart in accordance with the promotion conditions. 
+3. And X % from the cart subtotal should be less than Y. 
+4. Go to the cart. 
+5. Checkout.
+6. Pay attention to the order summary.
+Expected Result:
+1. Discount = X % from the cart subtotal. 
+2. Total = subtotal (including shipping and taxes) - discount.
+
+Postcondition: delete all products from the cart. 
+Step Description:
+1. Add products to the cart in accordance with the promotion conditions. 
+2. And X % from the cart subtotal should be more than Y. 
+3. Go to the cart. 
+4. Checkout. 
+5. Pay attention to the order summary. 
+Expected Result:
+1. Discount = Y. 
+2. Total = subtotal (including shipping and taxes) - discount.","1. 
+2.","1. 1. Discount = X % from the cart subtotal. 
+2. Total = subtotal (including shipping and taxes) - discount.
+
+Postcondition: delete all products from the cart. 
+2. 1. Discount = Y. 
+2. Total = subtotal (including shipping and taxes) - discount.","1. 1. Go to the StoreFront. 
+2. Add products to the cart in accordance with the promotion conditions. 
+3. And X % from the cart subtotal should be less than Y. 
+4. Go to the cart. 
+5. Checkout.
+6. Pay attention to the order summary.
+2. 1. Add products to the cart in accordance with the promotion conditions. 
+2. And X % from the cart subtotal should be more than Y. 
+3. Go to the cart. 
+4. Checkout. 
+5. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C183387","Get [] free items of product []","","","Volha Baban","3/24/2020 2:28 PM","","1. X products from cart goes for free","","1. Create a promotion with any condition.
+2. Add effect: Get [X] free items of product [].","Medium","","Effects","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183388","Get $[] off","","","Volha Baban","3/24/2020 2:28 PM","","1. Discount = X * Product1 quantity
+2. Total = subtotal - discount","","1. Create a promotion with any condition.
+2. Add effect: Get $ [X] off for Product1.
+","Medium","","Effects","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183389","Get $[] off [] items of entry []","","","Volha Baban","3/24/2020 2:28 PM","","","","1. Create a promotion with any condition.
+2. Add effect: Get $ [X] off [Y] items of entry [SELECTED PRODUCT].
+","Medium","","Effects","2","","Step Description:
+1. Go to the StoreFront.
+2. Add product to the cart in accordance with the promotion condition. 
+3. Add SELECTED PRODUCT to the cart. 
+4. Go to the cart. 
+5. Set the quantity of the SELECTED PRODUCT to Y. 
+6. Click """"Checkout"""".
+7. Pay attention to the order summary.
+Expected Result:
+1. Discount = X * quantity of the SELECTED PRODUCT. 
+2. Total = subtotal (including shipping and taxes) - discount. 
+
+
+Step Description:
+1. Go back to the cart. 
+2. Increase the quantity of the product by several units.
+3. Click """"Checkout"""".
+4. Pay attention to the order summary. 
+
+Expected Result:
+1. Discount still the same. Discount = X*Y. 
+2. Total = subtotal (including shipping and taxes) - discount","1. 
+2.","1. 1. Discount = X * quantity of the SELECTED PRODUCT. 
+2. Total = subtotal (including shipping and taxes) - discount. 
+
+
+2. 1. Discount still the same. Discount = X*Y. 
+2. Total = subtotal (including shipping and taxes) - discount","1. 1. Go to the StoreFront.
+2. Add product to the cart in accordance with the promotion condition. 
+3. Add SELECTED PRODUCT to the cart. 
+4. Go to the cart. 
+5. Set the quantity of the SELECTED PRODUCT to Y. 
+6. Click """"Checkout"""".
+7. Pay attention to the order summary.
+2. 1. Go back to the cart. 
+2. Increase the quantity of the product by several units.
+3. Click """"Checkout"""".
+4. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C183390","Get [] % off [] not to exceed $ []","","","Volha Baban","3/24/2020 2:28 PM","","","","1. Create a promotion with any condition.
+2. Add effect: Get [X] % off [SELECTED PRODUCT] not to exceed $ [Y].","Medium","","Effects","2","","Step Description:
+X % from SELECTED PRODUCT price < Y $
+1. Go to the StoreFront. 
+2. Add products to the cart in accordance with the promotion conditions. 
+3. Add SELECTED PRODUCT to the cart. 
+4. Go to the cart. 
+5. Click """"Checkout"""". 
+6. Pay attention to the order summary. 
+Expected Result:
+1. Discount = X % from the price of the selected product.
+2. Total = subtotal (including shipping and taxes) - discount.
+
+
+Step Description:
+X % from SELECTED PRODUCT price > Y $
+1. Go to the StoreFront. 
+2. Add products to the cart in accordance with the promotion conditions. 
+3. Add SELECTED PRODUCT to the cart. 
+4. Go to the cart. 
+5. Click """"Checkout"""". 
+6. Pay attention to the order summary. 
+Expected Result:
+1. Discount = Y.","1. 
+2.","1. 1. Discount = X % from the price of the selected product.
+2. Total = subtotal (including shipping and taxes) - discount.
+
+
+2. 1. Discount = Y.","1. X % from SELECTED PRODUCT price < Y $
+1. Go to the StoreFront. 
+2. Add products to the cart in accordance with the promotion conditions. 
+3. Add SELECTED PRODUCT to the cart. 
+4. Go to the cart. 
+5. Click """"Checkout"""". 
+6. Pay attention to the order summary. 
+2. X % from SELECTED PRODUCT price > Y $
+1. Go to the StoreFront. 
+2. Add products to the cart in accordance with the promotion conditions. 
+3. Add SELECTED PRODUCT to the cart. 
+4. Go to the cart. 
+5. Click """"Checkout"""". 
+6. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C183392","Get [] % off not to exceed [] for [] items of entry","","","Volha Baban","3/24/2020 2:28 PM","","","","1. Create a promotion with any condition.
+2. Add effect: Get [X] % off not to exceed $ [Y] for [Z] items of entry [SELECTED PRODUCT]","Medium","","Effects","2","","Step Description:
+1. Go to the StoreFront.
+2. Add products to the cart in accordance with the promotion conditions.
+3. Add SELECTED PRODUCT to the cart.
+4. Go to the cart.
+5. Click """"Checkout"""".
+6. Pay attention to the order summary.
+Expected Result:
+1. The user gets [X]% discount for [Z] items of the SELECTED PRODUCT, but the total discount not exceed $[Y]","1","1. 1. The user gets [X]% discount for [Z] items of the SELECTED PRODUCT, but the total discount not exceed $[Y]","1. 1. Go to the StoreFront.
+2. Add products to the cart in accordance with the promotion conditions.
+3. Add SELECTED PRODUCT to the cart.
+4. Go to the cart.
+5. Click """"Checkout"""".
+6. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C183393","Gift [] of product [] - THIS EFFECT NOT IMPLEMENTED",""," None","Volha Baban","3/24/2020 2:28 PM","","","","1. Admin is logged on environment","Medium","","Effects","2","","Step Description:
+1. Open Marketing &gt; Promotions &gt; Add new promotion
+Expected Result:
+Promotion conditions: 
+Gift [] of product (select product and specify quantity) 
+
+Optional: 
+
+- Name is (enter gift name)
+- Measure unit is (enter measure unit if needed)
+- Image URL is (enter image URL) 
+- Description is (enter description)","1","1. Promotion conditions: 
+Gift [] of product (select product and specify quantity) 
+
+Optional: 
+
+- Name is (enter gift name)
+- Measure unit is (enter measure unit if needed)
+- Image URL is (enter image URL) 
+- Description is (enter description)","1. 1. Open Marketing &gt; Promotions &gt; Add new promotion","V3 Marketing","S1495","Other","0"
+"C183394","Get $[] off shipping []","","","Volha Baban","3/24/2020 2:30 PM","","Discount = $X. ","","1. Create a promotion with any condition.
+2. Add effect: Get $ [X] off shipping [ShippingMethod]","Medium","","Effects","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183395","Get [] % off shipping [] not to exceed $ []","","","Volha Baban","3/24/2020 2:30 PM","","","","1. Create a promotion with any condition.
+2. Add effect: Get [X] % off shipping [ShippingMethod] not to exceed $ [Y]
+","Medium","","Effects","2","","Step Description:
+X % off shipping <  $Y
+1. Go to StoreFront.
+2. Add products to the cart in accordance with the promotion conditions. 
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Fill in customer information and shipping address. 
+6. Click """"Shipping method"""". 
+7. Select ShippingMethod that you specified in the promotion. 
+8. Click """"Payment method"""". 
+9. Pay attention to the order summary. 
+Expected Result:
+Discount = X% off ShippingMethod. 
+Step Description:
+X % off shipping >  $Y
+1. Go to StoreFront.
+2. Add products to the cart in accordance with the promotion conditions. 
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Fill in customer information and shipping address. 
+6. Click """"Shipping method"""". 
+7. Select ShippingMethod that you specified in the promotion. 
+8. Click """"Payment method"""". 
+9. Pay attention to the order summary. 
+
+Expected Result:
+Discount = Y.","1. 
+2.","1. Discount = X% off ShippingMethod. 
+2. Discount = Y.","1. X % off shipping <  $Y
+1. Go to StoreFront.
+2. Add products to the cart in accordance with the promotion conditions. 
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Fill in customer information and shipping address. 
+6. Click """"Shipping method"""". 
+7. Select ShippingMethod that you specified in the promotion. 
+8. Click """"Payment method"""". 
+9. Pay attention to the order summary. 
+2. X % off shipping >  $Y
+1. Go to StoreFront.
+2. Add products to the cart in accordance with the promotion conditions. 
+3. Go to the cart. 
+4. Click """"Checkout"""". 
+5. Fill in customer information and shipping address. 
+6. Click """"Shipping method"""". 
+7. Select ShippingMethod that you specified in the promotion. 
+8. Click """"Payment method"""". 
+9. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C183396","Get $[] off payment method []","","","Volha Baban","3/24/2020 2:30 PM","","Discount = X. ","","1. Create a promotion with any condition.
+2. Add effect: Get $[X] off payment method [PAYMENT_METHOD]
+3. Payment method contains field in Setting page to set price.(https://virtocommerce.atlassian.net/browse/VP-6089 )","Medium","","Effects","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183397","Get [] % off payment method [] not to exceed $ []","","","Volha Baban","3/24/2020 2:30 PM","","","","1. Create a promotion with any condition.
+2. Add effect: Get [X] % off payment method [PAYMENT_METHOD] not to exceed $ [Y].
+3. Payment method contains field in Setting page to set price.
+(https://virtocommerce.atlassian.net/browse/VP-6089 )","Medium","","Effects","2","","Step Description:
+X % off PAYMENT_METHOD < $Y
+1. Go to StoreFront.
+2. Add products to the cart in accordance with the promotion conditions.
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Fill in customer information and shipping address.
+6. Click """"Shipping Method"""".
+7. Select shipping method and click """"Payment method"""".
+8. Select PAYMENT_METHOD as a payment method.
+9. Click """"Create order"""".
+10. Pay attention to the order summary.
+
+Expected Result:
+Discount = X % off PAYMENT_METHOD
+Step Description:
+X % off PAYMENT_METHOD > $Y
+1. Go to StoreFront.
+2. Add products to the cart in accordance with the promotion conditions.
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Fill in customer information and shipping address.
+6. Click """"Shipping Method"""".
+7. Select shipping method and click """"Payment method"""".
+8. Select PAYMENT_METHOD as a payment method.
+9. Click """"Create order"""".
+10. Pay attention to the order summary.
+
+Expected Result:
+Discount = Y.","1. 
+2.","1. Discount = X % off PAYMENT_METHOD
+2. Discount = Y.","1. X % off PAYMENT_METHOD < $Y
+1. Go to StoreFront.
+2. Add products to the cart in accordance with the promotion conditions.
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Fill in customer information and shipping address.
+6. Click """"Shipping Method"""".
+7. Select shipping method and click """"Payment method"""".
+8. Select PAYMENT_METHOD as a payment method.
+9. Click """"Create order"""".
+10. Pay attention to the order summary.
+
+2. X % off PAYMENT_METHOD > $Y
+1. Go to StoreFront.
+2. Add products to the cart in accordance with the promotion conditions.
+3. Go to the cart.
+4. Click """"Checkout"""".
+5. Fill in customer information and shipping address.
+6. Click """"Shipping Method"""".
+7. Select shipping method and click """"Payment method"""".
+8. Select PAYMENT_METHOD as a payment method.
+9. Click """"Create order"""".
+10. Pay attention to the order summary.","V3 Marketing","S1495","Other","0"
+"C183398","For [] in every [] items of entry [] get [] % off no more than  []  not to exceed $[]","","","Volha Baban","3/24/2020 2:30 PM","","1. For every [first, second, etc] item in every [M] of entry (SPECIFIED PRODUCT) get [X]% discount, but the number of discounted items should not exceed [Y] and the total discount should not exceed $[Z]","","1. Create a promotion with any condition.
+2. Add effect: For [N] in every [M] items of entry [SPECIFIED PRODUCT] get [X] % off no more than [Y]  not to exceed $[Z]
+","Medium","","Effects","2","","","","","","V3 Marketing","S1495","Other","0"
+"C183399","For [] items of entry [] in every [] items of entry [] get [] % off no more than   []  not to exceed $ []","","","Volha Baban","3/24/2020 2:31 PM","","1. For [M] items of entry [SPECIFIED PRODUCT_1] with every [N] items of entry [SPECIFIED PRODUCT_2] get [X] % discount, but the discounted items should not exceed [Y] and the total discount should not exceed $[Z]
+
+**Example:**
+To get discount for 2 items of ASUS ZenFone 2 ZE551ML 16GB Smartphone the user should also add 2 items of ASUS ZenFone 2 ZE551ML 64GB Smartphone. Then he will get the specified % discount for the first 2 items. ","","1. Create a promotion with any condition.
+2. Add effect: For [M] items of entry [SPECIFIED PRODUCT_1] in every [N] items of entry [SPECIFIED PRODUCT_2] get [X] % off no more than [Y] not to exceed $ [Z]","Medium","","Effects","2","","","","","","V3 Marketing","S1495","Other","0"
+"C184642","Settings > Switch to 'CombineStackable'  (need to reboot in Azure)","","","Volha Baban","3/31/2020 11:12 AM","","In promotion 3 new fields appeared
+Priority
+Exclusivity
+Combine with self
+![](index.php?/attachments/get/23237)
+","","","Medium","","Stackable Combination Policy","2","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/combine-active-promotions.md#switch-on-promotion-stackable-combination-policy
+
+Thre are 2 promotions: Promotion A (priority=100), Promotion B (priority=10)
+![](index.php?/attachments/get/23236)","","","","","V3 Marketing","S1495","Other","0"
+"C184644","Promo A (Can be combine with other), Promo B (Can be combine with other) - two promotions are applied","","","Volha Baban","3/31/2020 1:17 PM","","1. Both promoA and promoB are applied to the order.
+2. Discount = X+Y.","","1. Create two promotions with the same conditions. (promoA, promoB)
+2. Add ""Get $ [X] off cart subtotal"" effect to the promoA.
+3. Add ""Get $ [Y] off cart subtotal"" effect to the promoB.
+4. Promo A - Can be combine with other
+5. Promo B - Can be combine with other","Medium","","Stackable Combination Policy","2","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/combine-active-promotions.md#switch-on-promotion-stackable-combination-policy
+
+Thre are 2 promotions: Promotion A (priority=100), Promotion B (priority=10)
+![](index.php?/attachments/get/23236)","","","","","V3 Marketing","S1495","Other","0"
+"C184645","Promo A (Can be combined with other), Promo B (Globally Exclusive) - Promo B is applied","","","Volha Baban","3/31/2020 1:17 PM","","1. Only promoB is applied to the order. 
+2. Discount = Y.","","1. Create two promotions with the same conditions. (promoA, promoB)
+2. Add ""Get $ [X] off cart subtotal"" effect to the promoA.
+3. Add ""Get $ [Y] off cart subtotal"" effect to the promoB.
+4. Promo A - Can be combine with other
+5. Promo B - Globally Exclusive","Medium","","Stackable Combination Policy","2","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/combine-active-promotions.md#switch-on-promotion-stackable-combination-policy
+
+Thre are 2 promotions: Promotion A (priority=100), Promotion B (priority=10)
+![](index.php?/attachments/get/23236)","","","","","V3 Marketing","S1495","Other","0"
+"C184646","Promo A (Globally Exclusive), Promo B (Can be combined with other) - Promo A is applied","","","Volha Baban","3/31/2020 1:18 PM","","1. Only promoA is applied to the order.
+2. Discount = X.","","1. Create two promotions with the same conditions. (promoA, promoB)
+2. Add ""Get $ [X] off cart subtotal"" effect to the promoA.
+3. Add ""Get $ [Y] off cart subtotal"" effect to the promoB.
+4. Promo A - Globally Exclusive
+5. Promo B - Can be combined with other","Medium","","Stackable Combination Policy","2","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/combine-active-promotions.md#switch-on-promotion-stackable-combination-policy
+
+Thre are 2 promotions: Promotion A (priority=100), Promotion B (priority=10)
+![](index.php?/attachments/get/23236)","","","","","V3 Marketing","S1495","Other","0"
+"C184647","Promo A (Globally Exclusive), Promo B (Globally Exclusive) - Promo A is applied","","","Volha Baban","3/31/2020 1:18 PM","","1. Only promoA is applied to the order.
+2. Discount = X.","","1. Create two promotions with the same conditions. (promoA, promoB)
+2. Add ""Get $ [X] off cart subtotal"" effect to the promoA.
+3. Add ""Get $ [Y] off cart subtotal"" effect to the promoB.
+4. Promo A - Globally Exclusive, priority = 100.
+5. Promo B - Globally Exclusive, priority = 10.
+
+
+Note: Priority is editable if Exclusivity set on Can be combined with other.","Medium","","Stackable Combination Policy","2","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/combine-active-promotions.md#switch-on-promotion-stackable-combination-policy
+
+Thre are 2 promotions: Promotion A (priority=100), Promotion B (priority=10)
+![](index.php?/attachments/get/23236)","","","","","V3 Marketing","S1495","Other","0"
+"C204277","Regular user, if cart subtotal > X, then free shipping","","","Volha Baban","4/10/2020 8:14 AM","","Free shipping promo effect applied
+","","Add Promo_1 = if First time user, then -20% [Y] off cart subtotal
+Add Promo_2 = if cart subtotal > 100 [X] then Free shipping","Medium","","Promo_1_priority = Promo_2_priority","4","Promo_1 = if First time user, then -20% [Y] off cart subtotal
+Promo_2 = if cart subtotal > 100 [X] then Free shipping","","","","","V3 Marketing","S1495","Other","0"
+"C204283","Regular user, if cart subtotal < X, then NO free shipping","","","Volha Baban","4/10/2020 8:42 AM","","Free shipping promo effect NOT  applied
+","","Add Promo_1 = if First time user, then -20% [Y] off cart subtotal
+Add Promo_2 = if cart subtotal > 100 [X] then Free shipping","Medium","","Promo_1_priority = Promo_2_priority","4","Promo_1 = if First time user, then -20% [Y] off cart subtotal
+Promo_2 = if cart subtotal > 100 [X] then Free shipping","","","","","V3 Marketing","S1495","Other","0"
+"C204279","First time buyer, if cart subtotal > X, then -Y and free shipping","","","Volha Baban","4/10/2020 8:33 AM","","Free shipping promo effect applied (promo_2)
+-Y is applied to cart subtotal (promo_1)","","1. Add Promo_1 = if First time user, then -20% [Y] off cart subtotal
+2. Add Promo_2 = if cart subtotal > 100 [X] then Free shipping
+3. Add a new user - USER1
+
+
+
+","Medium","","Promo_1_priority = Promo_2_priority","4","Promo_1 = if First time user, then -20% [Y] off cart subtotal
+Promo_2 = if cart subtotal > 100 [X] then Free shipping","","","","","V3 Marketing","S1495","Other","0"
+"C204284","First time buyer, if cart subtotal < X, then Y","","","Volha Baban","4/10/2020 8:46 AM","","Free shipping promo effect NOT applied (promo_2)
+ONLY: -Y is applied to cart subtotal (promo_1)","","1. Add Promo_1 = if First time user, then -20% [Y] off cart subtotal
+2. Add Promo_2 = if cart subtotal > 100 [X] then Free shipping
+3. Add a new user - USER1
+
+
+
+","Medium","","Promo_1_priority = Promo_2_priority","4","Promo_1 = if First time user, then -20% [Y] off cart subtotal
+Promo_2 = if cart subtotal > 100 [X] then Free shipping","","","","","V3 Marketing","S1495","Other","0"
+"C204281","First time buyer, if cart subtotal before promo_1 >X, and subtotal after promo_1 > X, then -20% and free shipping","","","Volha Baban","4/10/2020 8:37 AM","","Free shipping promo effect applied (promo_2)
+-Y is applied to cart subtotal (promo_1)","","1. Add Promo_1 = if First time user, then -20% [Y] off cart subtotal
+2. Add Promo_2 = if cart subtotal > 100 [X] then Free shipping
+3. Add a new user - USER1
+
+","Medium","","Promo_1_priority > Promo_2_priority","4","Promo_1 = if First time user, then -20% [Y] off cart subtotal
+Promo_2 = if cart subtotal > 100 [X] then Free shipping","","","","","V3 Marketing","S1495","Other","0"
+"C204285","First time buyer, if cart subtotal before promo_1 >X, and subtotal after promo_1 < X, then -20%","","","Volha Baban","4/10/2020 8:49 AM","","Free shipping promo effect applied (promo_2)
+-Y is applied to cart subtotal (promo_1)","","1. Add Promo_1 = if First time user, then -20% [Y] off cart subtotal
+2. Add Promo_2 = if cart subtotal > 100 [X] then Free shipping
+3. Add a new user - USER1
+
+","Medium","","Promo_1_priority > Promo_2_priority","4","Promo_1 = if First time user, then -20% [Y] off cart subtotal
+Promo_2 = if cart subtotal > 100 [X] then Free shipping","","","","","V3 Marketing","S1495","Other","0"
+"C204286","Regular user, if cart subtotal > X, then free shipping","","","Volha Baban","4/10/2020 8:52 AM","","Free shipping promo effect applied
+","","Add Promo_1 = if First time user, then -20% [Y] off cart subtotal
+Add Promo_2 = if cart subtotal > 100 [X] then Free shipping","Medium","","Promo_1_priority > Promo_2_priority","4","Promo_1 = if First time user, then -20% [Y] off cart subtotal
+Promo_2 = if cart subtotal > 100 [X] then Free shipping","","","","","V3 Marketing","S1495","Other","0"
+"C204287","Regular user, if cart subtotal < X, then NO free shipping","","","Volha Baban","4/10/2020 8:52 AM","","Free shipping promo effect NOT  applied
+","","Add Promo_1 = if First time user, then -20% [Y] off cart subtotal
+Add Promo_2 = if cart subtotal > 100 [X] then Free shipping","Medium","","Promo_1_priority > Promo_2_priority","4","Promo_1 = if First time user, then -20% [Y] off cart subtotal
+Promo_2 = if cart subtotal > 100 [X] then Free shipping","","","","","V3 Marketing","S1495","Other","0"
+"C204288","First time buyer, if cart subtotal < X, then Y","","","Volha Baban","4/10/2020 8:52 AM","","Free shipping promo effect NOT applied (promo_2)
+ONLY: -Y is applied to cart subtotal (promo_1)","","1. Add Promo_1 = if First time user, then -20% [Y] off cart subtotal
+2. Add Promo_2 = if cart subtotal > 100 [X] then Free shipping
+3. Add a new user - USER1
+
+
+
+","Medium","","Promo_1_priority > Promo_2_priority","4","Promo_1 = if First time user, then -20% [Y] off cart subtotal
+Promo_2 = if cart subtotal > 100 [X] then Free shipping","","","","","V3 Marketing","S1495","Other","0"
+"C184643","Settings > Switch to 'BestReward' (need to reboot in Azure)","","","Volha Baban","3/31/2020 11:12 AM","","The """"Priority"""" field is absent on the promotion screen","","","Medium","","Best Reward Policy","2","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/combine-active-promotions.md#best-reward-policy","","","","","V3 Marketing","S1495","Other","0"
+"C184648","Promo A, Promo B > promo with the biggest discount is applied","","","Volha Baban","3/31/2020 1:20 PM","","1. PromoB is applied to the order. 
+2. Discount = Y.","","1. Create two promotions with the same conditions. (promoA, promoB)
+2. Add  ""Get $ [X] off cart subtotal"" effect to the promoA.
+3. Add  ""Get $ [Y] off cart subtotal"" effect to the promoB.
+4. Y > X.","Medium","","Best Reward Policy","2","https://github.com/VirtoCommerce/vc-module-marketing/blob/dev/docs/combine-active-promotions.md#best-reward-policy","","","","","V3 Marketing","S1495","Other","0"
+"C359150","Personal coupon > Assigne coupon to organization > Check via organization member",""," None","Alexandr Tzykin","4/17/2023 9:18 AM","","","","","Medium","","Coupons","1","","","","","","V3 Marketing","S1495","Other","0"
+"C359151","Personal coupon > Assigne coupon to organization > Check via anonymous",""," None","Alexandr Tzykin","4/17/2023 9:19 AM","","","","","Medium","","Coupons","1","","","","","","V3 Marketing","S1495","Other","0"
+"C359152","Personal coupon > Assigne coupon to organization > Check via register user ( not member)",""," None","Alexandr Tzykin","4/17/2023 9:19 AM","","","","","Medium","","Coupons","1","","","","","","V3 Marketing","S1495","Other","0"
+"C359153","Personal coupon > Assigne coupon to user> Check via user from coupon",""," None","Alexandr Tzykin","4/17/2023 9:19 AM","","","","","Medium","","Coupons","1","","","","","","V3 Marketing","S1495","Other","0"
+"C359154","Personal coupon > Assigne coupon to user> Check via anonymous",""," None","Alexandr Tzykin","4/17/2023 9:19 AM","","","","","Medium","","Coupons","1","","","","","","V3 Marketing","S1495","Other","0"
+"C359155","Personal coupon > Assigne coupon to user> Check via another user",""," None","Alexandr Tzykin","4/17/2023 9:20 AM","","","","","Medium","","Coupons","1","","","","","","V3 Marketing","S1495","Other","0"
+"C359156","Personal coupon > No assign > Check via user from organization",""," None","Alexandr Tzykin","4/17/2023 9:20 AM","","","","","Medium","","Coupons","1","","","","","","V3 Marketing","S1495","Other","0"
+"C359157","Personal coupon > No assign > Check via user without organization",""," None","Alexandr Tzykin","4/17/2023 9:20 AM","","","","","Medium","","Coupons","1","","","","","","V3 Marketing","S1495","Other","0"
+"C359158","Personal coupon > No assign > Check via anonymous",""," None","Alexandr Tzykin","4/17/2023 9:23 AM","","","","","Medium","","Coupons","1","","","","","","V3 Marketing","S1495","Other","0"
+"C184605","Add coupon",""," Katalon","Volha Baban","3/30/2020 1:30 PM","","1. New coupon appears in the list of coupons. 
+2. Coupons counter is increased by one. ","","Add promotion [C183346]","Medium","","Coupon management","2","","","","","","V3 Marketing","S1495","Other","0"
+"C184622","Add coupon > required fields validation",""," Katalon","Volha Baban","3/31/2020 10:26 AM","","","","1. Promotion_1 was created","Medium","","Coupon management","2","","Step Description:
+1. Go to the Promotion_1 from preconditions.
+2. Click on the """"Coupons"""" widget.
+3. Click """"Add"""".
+4. Check shown fields
+Expected Result:
+1. Next fields required:
+- Code
+- Maximum uses number
+- Maximum uses per user
+
+2. Button """"Save"""" is not active
+Step Description:
+Enter digit numbers in fields: Code, Maximum uses number, Maximum uses per number 
+Expected Result:
+1. Button """"Save"""" becomes active
+Step Description:
+Enter characters in fields: Code, Maximum uses number, Maximum uses per number 
+Expected Result:
+1. Button """"Save"""" is not active","1. 
+2. 
+3.","1. 1. Next fields required:
+- Code
+- Maximum uses number
+- Maximum uses per user
+
+2. Button """"Save"""" is not active
+2. 1. Button """"Save"""" becomes active
+3. 1. Button """"Save"""" is not active","1. 1. Go to the Promotion_1 from preconditions.
+2. Click on the """"Coupons"""" widget.
+3. Click """"Add"""".
+4. Check shown fields
+2. Enter digit numbers in fields: Code, Maximum uses number, Maximum uses per number 
+3. Enter characters in fields: Code, Maximum uses number, Maximum uses per number","V3 Marketing","S1495","Other","0"
+"C184606","Edit coupon > edit code",""," Katalon","Volha Baban","3/30/2020 1:30 PM","","The coupon code is changed. ","","Add coupon [C184605]","Medium","","Coupon management","2","","","","","","V3 Marketing","S1495","Other","0"
+"C184624","Edit coupon > edit 'Maximum uses number'",""," Katalon","Volha Baban","3/31/2020 10:35 AM","","Maximum uses number is updated. ","","Add coupon [C184605]
+
+","Medium","","Coupon management","2","","","","","","V3 Marketing","S1495","Other","0"
+"C184625","Edit coupon > edit 'Maximum uses per user'",""," Katalon","Volha Baban","3/31/2020 10:36 AM","","Maximum uses per user is updated. ","","Add coupon [C184605]","Medium","","Coupon management","2","","","","","","V3 Marketing","S1495","Other","0"
+"C184626","Delete Coupon via bulk delete",""," Katalon","Volha Baban","3/31/2020 10:37 AM","","The coupon is deleted.
+
+","","Add coupon [C184605]
+
+","Medium","","Coupon management","2","","","","","","V3 Marketing","S1495","Other","0"
+"C184627","Search for coupon",""," Katalon","Volha Baban","3/31/2020 10:37 AM","","","","Add some coupons [C184605]
+
+","Medium","","Coupon management","2","","Step Description:
+1. Enter something to the """"Search"""" field. 
+2. Press 'Enter'.
+
+Expected Result:
+Only coupons which codes match the search query are displayed.
+Step Description:
+1. Enter a query that would not match any coupon.
+
+Expected Result:
+1. Coupons list is empty. 
+2. """"There are no coupons yet"""" inscription is displayed.","1. 
+2.","1. Only coupons which codes match the search query are displayed.
+2. 1. Coupons list is empty. 
+2. """"There are no coupons yet"""" inscription is displayed.","1. 1. Enter something to the """"Search"""" field. 
+2. Press 'Enter'.
+
+2. 1. Enter a query that would not match any coupon.","V3 Marketing","S1495","Other","0"
+"C184628","Import the valid file > add new coupons","","","Volha Baban","3/31/2020 10:38 AM","","1. When the import process is over, the following text is displayed: """"Import finished successfully"""".
+2. Coupons from the CSV file appear in the list of the promotion coupons.","","1. Prepare .csv file in the next format: 
+coupon_code [delimiter] max_uses_number
+2. Add promotion [C183346]
+
+","Medium","","Import coupons","3","Example of file: 
+
+TESTIMPORT;100;userid
+testimport2;0;
+undefined","","","","","V3 Marketing","S1495","Other","0"
+"C184629","Import the valid file > update already existed coupons","","","Volha Baban","3/31/2020 10:38 AM","","Import finished with errors. The coupon is not updated. It is unable to import already existed coupons.","","1. Add a coupon [C184605]
+2. Create a CSV file with a code of coupon from the previous step. For that coupon specify any max uses number different from the current. ","Medium","","Import coupons","3","Example of file: 
+
+TESTIMPORT;100;userid
+testimport2;0;
+undefined","","","","","V3 Marketing","S1495","Other","0"
+"C184630","Import invalid file > missing 'coupon_code' column","","","Volha Baban","3/31/2020 10:39 AM","","An error occurs. Coupons are not imported. ","","Prepare a CSV file with coupon in which coupon_code column is empty.","Medium","","Import coupons","3","Example of file: 
+
+TESTIMPORT;100;userid
+testimport2;0;
+undefined","","","","","V3 Marketing","S1495","Other","0"
+"C184631","Import invalid file > missing 'max_uses_number' column","","","Volha Baban","3/31/2020 10:40 AM","","An error occurs. Coupons are not imported.
+
+","","Prepare a CSV file with a coupon in which max_uses_number column is empty.
+
+","Medium","","Import coupons","3","Example of file: 
+
+TESTIMPORT;100;userid
+testimport2;0;
+undefined","","","","","V3 Marketing","S1495","Other","0"
+"C184632","Import invalid file > 'delimiter' is different that specified in drop down","","","Volha Baban","3/31/2020 10:40 AM","","An error occurs. Coupons are not imported. ","","Prepare .csv file in the next format: coupon_code [delimiter] max_uses_number","Medium","","Import coupons","3","Example of file: 
+
+TESTIMPORT;100;userid
+testimport2;0;
+undefined","","","","","V3 Marketing","S1495","Other","0"
+"C184633","Import invalid file > 'max_uses_number' is text","","","Volha Baban","3/31/2020 10:41 AM","","An error occurs. Coupons are not imported. ","","Prepare a CSV file with coupons. For one of the coupons fill in max_uses_number column with text.","Medium","","Import coupons","3","Example of file: 
+
+TESTIMPORT;100;userid
+testimport2;0;
+undefined","","","","","V3 Marketing","S1495","Other","0"
+"C184635","Add coupon > check in storefront that promotion is applied","","","Volha Baban","3/31/2020 10:44 AM","","1. The promotion is applied to the order. 
+2. Discount = X.
+3. """"Coupon is valid"""" inscription is displayed. ","","1. Add a promotion [C183346]
+2. Add ""Get $ [X] off cart subtotal"" effect to the promotion
+
+","Medium","","Main logic","2","","","","","","V3 Marketing","S1495","Other","0"
+"C184636","Expiration date in the past > coupon is not applied in storefront","","","Volha Baban","3/31/2020 10:44 AM","","1. The promotion is not applied to the order.
+2. The following text appears: """"This code did not match any active coupon. Was it entered correctly?"""" 
+
+![](index.php?/attachments/get/23239)
+
+
+","","1. Add a promotion [C183346].
+2. Add a coupon to the promotion [C184605]
+","Medium","","Main logic","2","","","","","","V3 Marketing","S1495","Other","0"
+"C184637","Expiration date is in the future > coupon is applied in storefront","","","Volha Baban","3/31/2020 10:45 AM","","1. The promotion is applied to the order.
+2. Discount = X.
+3. """"Coupon is valid"""" inscription is displayed.","","1. Add a promotion [C183346]
+2. Add ""Get $ [X] off cart subtotal"" effect to the promotion.
+3. Add a coupon to the promotion [C184605]","Medium","","Main logic","2","","","","","","V3 Marketing","S1495","Other","0"
+"C184638","Uses number < 'Maximum uses number'   - coupon is applied","","","Volha Baban","3/31/2020 10:47 AM","","1. The promotion is applied to the order.
+2. Discount = X.
+3. """"Coupon is valid"""" inscription is displayed.
+
+![](index.php?/attachments/get/23240)
+","","1. Add a promotion [C183346]
+2. Add ""Get $ [X] off cart subtotal"" effect to the promotion.
+3. Add a coupon to the promotion [C184605]
+","Medium","","Main logic","2","","","","","","V3 Marketing","S1495","Other","0"
+"C184639","Uses number >= 'Maximum uses number' in admin  - coupon is not applied","","","Volha Baban","3/31/2020 10:47 AM","","1. The promotion is not applied to the order.
+2. The following text appears: """"This code did not match any active coupon. Was it entered correctly?""""
+
+![](index.php?/attachments/get/23239)
+","","1. Add a promotion [C183346]
+2. Add ""Get $ [X] off cart subtotal"" effect to the promotion.
+3. Add a coupon to the promotion [C184605]
+4. Use the coupon at least one time.","Medium","","Main logic","2","","","","","","V3 Marketing","S1495","Other","0"
+"C184641","Uses number per user > 'Maximum uses per user' in admin  - coupon is not applied","","","Volha Baban","3/31/2020 10:47 AM","","1. The promotion is not applied to the order.
+2. The following text appears: """"This code did not match any active coupon. Was it entered correctly?""""","","1. Add a promotion [C183346]
+2. Add ""Get $ [X] off cart subtotal"" effect to the promotion.
+3. Add a coupon to the promotion [C184605]
+4. Use the coupon at least one time on behalf of the USER_1.","Medium","","Main logic","2","","","","","","V3 Marketing","S1495","Other","0"
+"C184640","Uses number per user < 'Maximum uses per user' in admin  - coupon is applied","","","Volha Baban","3/31/2020 10:47 AM","","1. The promotion is applied to the order.
+2. Discount = X.
+3. """"Coupon is valid"""" inscription is displayed.","","1. Add a promotion [C183346]
+2. Add ""Get $ [X] off cart subtotal"" effect to the promotion.
+3. Add a coupon to the promotion [C184605]
+4. Use the coupon at least one time on behalf of the USER_1.","Medium","","Main logic","2","","","","","","V3 Marketing","S1495","Other","0"
+"C241402","Access","","","Grotem","6/26/2020 4:36 PM","","1. Link to marketing shown","","1. Role_1 created in system
+2. Next permissions assigned to Role_1:
+- marketing:access
+
+3. Role_1 assigned to User_1","Medium","","Permissions","0","","","","","","V3 Marketing","S1495","Other","0"
+"C241407","Read","","","Grotem","6/26/2020 4:42 PM","","1. List of corresponding data shown","","1. Role_1 created in system
+2. Next permissions assigned to Role_1:
+- marketing:access
+- marketing:read
+
+3. Role_1 assigned to User_1","Medium","","Permissions","0","","","","","","V3 Marketing","S1495","Other","0"
+"C241408","Create","","","Grotem","6/26/2020 4:44 PM","","1. New entity added to corresponding list","","1. Role_1 created in system
+2. Next permissions assigned to Role_1:
+- marketing:access
+- marketing:read
+- marketing:create
+- store:read
+- catalog:read
+
+3. Role_1 assigned to User_1","Medium","","Permissions","0","","","","","","V3 Marketing","S1495","Other","0"
+"C241409","Update","","","Grotem","6/26/2020 4:48 PM","","1. Changes saved to corresponding entity","","1. Role_1 created in system
+2. Next permissions assigned to Role_1:
+- marketing:access
+- marketing:read
+- marketing:update
+- store:read
+- catalog:read
+
+3. Role_1 assigned to User_1","Medium","","Permissions","0","","","","","","V3 Marketing","S1495","Other","0"
+"C241410","Delete","","","Grotem","6/26/2020 4:53 PM","","1. Entity deleted
+2. Entity removed from list","","1. Role_1 created in system
+2. Next permissions assigned to Role_1:
+- marketing:access
+- marketing:read
+- marketing:delete
+
+3. Role_1 assigned to User_1","Medium","","Permissions","0","","","","","","V3 Marketing","S1495","Other","0"
+"C328341","Available gifts > Out of stock",""," None","Elena Mutykova","3/22/2022 7:27 AM","","","","Set Marketing > Promotion > Gift_1 for the product_1 
+
+Do not set FFC (for example FFС=0)","Medium","","Gifts","0","","Step Description:
+Go to the store 
+Add product_1 to the cart 
+Check the checkbox for the Gift_1 
+Try to process checkout
+
+
+Expected Result:
+Button Checkout is inactive
+The error message shows on UI that gift_1 is unavailable","1","1. Button Checkout is inactive
+The error message shows on UI that gift_1 is unavailable","1. Go to the store 
+Add product_1 to the cart 
+Check the checkbox for the Gift_1 
+Try to process checkout","V3 Marketing","S1495","Other","0"
+"C328342","Available gifts > Can be purchased=false","","","Elena Mutykova","3/22/2022 8:23 AM","","","","Set Marketing > Promotion > Gift_1 for the product_1
+
+Set flag Can be purchased=false for product_1","Medium","","Gifts","0","","Step Description:
+Go to the store
+Add product_1 to the cart
+Check the checkbox for the Gift_1
+Try to process checkout
+Expected Result:
+Button Checkout is inactive
+The error message shows on UI that gift_1 is unavailable","1","1. Button Checkout is inactive
+The error message shows on UI that gift_1 is unavailable","1. Go to the store
+Add product_1 to the cart
+Check the checkbox for the Gift_1
+Try to process checkout","V3 Marketing","S1495","Other","0"
+"C328343","Available gifts > Visible=false","","","Elena Mutykova","3/22/2022 8:25 AM","","","","Set Marketing > Promotion > Gift_1 for the product_1
+
+Set flag Visible=false for product_1","Medium","","Gifts","0","","Step Description:
+Go to the store
+Add product_1 to the cart
+Check the checkbox for the Gift_1
+Try to process checkout
+Expected Result:
+Button Checkout is inactive
+The error message shows on UI that gift_1 is unavailable","1","1. Button Checkout is inactive
+The error message shows on UI that gift_1 is unavailable","1. Go to the store
+Add product_1 to the cart
+Check the checkbox for the Gift_1
+Try to process checkout","V3 Marketing","S1495","Other","0"
+"C338431","UI > Tool-tips","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004012"," None","Elena Mutykova","4/20/2022 12:46 PM","","","","","Medium","","Settings","0","","Step Description:
+Open blade with Settings &gt; Pay attention to tooltips
+
+![](index.php?/attachments/get/e5609f38-2bdf-4fc1-a7fc-af0d24f86403)    
+
+
+
+
+
+Expected Result:
+All tooltips are folded
+
+Step Description:
+1. Click on blue question mark for field1
+2. Click on blue question mark for field2
+
+
+
+
+
+Expected Result:
+1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded.
+
+
+Step Description:
+Click on the Hide link
+
+Expected Result:
+All tooltips are folded","1. 
+2. 
+3.","1. All tooltips are folded
+
+2. 1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded.
+
+
+3. All tooltips are folded","1. Open blade with Settings &gt; Pay attention to tooltips
+
+![](index.php?/attachments/get/e5609f38-2bdf-4fc1-a7fc-af0d24f86403)    
+
+
+
+
+
+2. 1. Click on blue question mark for field1
+2. Click on blue question mark for field2
+
+
+
+
+
+3. Click on the Hide link","V3 Marketing","S1495","Other","0"
+"C380797","MultiStore > Select 2 store for promo",""," None","Alexandr Tzykin","1/26/2024 1:09 PM","","","","","Medium","","Multistore selections","0","","","","","","V3 Marketing","S1495","Other","0"
+"C380798","Multistore > Change promo with access to 1 store",""," None","Alexandr Tzykin","1/26/2024 1:10 PM","","","","","Medium","","Multistore selections","0","","","","","","V3 Marketing","S1495","Other","0"
+"C380799","Multistore > Change promo with access to both store",""," None","Alexandr Tzykin","1/26/2024 1:11 PM","","","","","Medium","","Multistore selections","0","","","","","","V3 Marketing","S1495","Other","0"

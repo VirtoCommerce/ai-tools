@@ -1,0 +1,259 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C242661","Permission > currency:create","","","Volha Baban","7/10/2020 12:35 PM","","","","<p>Role_1 created in system<br />Role_1 contains next permissions:</p>
+
+<ul>
+<li>pricing:access</li>
+<li>pricing:read</li>
+<li><p>core:currency:create<br />Role_1 assigned for User_1</p></li>
+</ul>
+","Medium","","Permissions - Core module","0","","Step Description:
+<ol>
+<li>User_1 logged in admin environment</li>
+<li>User_1 open main menu</li>
+<li>User_1 click on <strong>Pricing</strong></li>
+<li>User_1 click on <strong>Price lists</strong></li>
+<li>User_1 click on button <strong>Add</strong> </li>
+<li>User_1 click Edit Currency</li>
+<li>User_1 click """"Add"""" button</li>
+<li>User_1 fill necessary fields for new Currency</li>
+<li>User_1 click """"Create"""" button</li>
+</ol>
+Expected Result:
+<ol>
+<li>New Currency added to Currencies</li>
+</ol>","1","1. <ol>
+<li>New Currency added to Currencies</li>
+</ol>","1. <ol>
+<li>User_1 logged in admin environment</li>
+<li>User_1 open main menu</li>
+<li>User_1 click on <strong>Pricing</strong></li>
+<li>User_1 click on <strong>Price lists</strong></li>
+<li>User_1 click on button <strong>Add</strong> </li>
+<li>User_1 click Edit Currency</li>
+<li>User_1 click """"Add"""" button</li>
+<li>User_1 fill necessary fields for new Currency</li>
+<li>User_1 click """"Create"""" button</li>
+</ol>","V3 Core Module","S2074","Functional","1"
+"C242662","Permission > currency:update","","","Volha Baban","7/10/2020 12:35 PM","","","","Role_1 created in system
+Role_1 contains next permissions:
+- pricing:access
+- pricing:read
+- core:currency:update
+Role_1 assigned for User_1
+
+","Medium","","Permissions - Core module","0","","Step Description:
+1. User_1 logged in admin environment
+2. User_1 open main menu
+3. User_1 click on **Pricing**
+4. User_1 click on **Price lists**
+5. User_1 click on button **Add** 
+6. User_1 click Edit Currency
+7. User_1 select any currency
+5. User_1 change necessary fields
+6. User_1 press Save
+Expected Result:
+1. Changes for Currency saved","1","1. 1. Changes for Currency saved","1. 1. User_1 logged in admin environment
+2. User_1 open main menu
+3. User_1 click on **Pricing**
+4. User_1 click on **Price lists**
+5. User_1 click on button **Add** 
+6. User_1 click Edit Currency
+7. User_1 select any currency
+5. User_1 change necessary fields
+6. User_1 press Save","V3 Core Module","S2074","Functional","0"
+"C242663","Permission > currency:delete","","","Volha Baban","7/10/2020 12:35 PM","","","","Role_1 created in system
+Role_1 contains next permissions:
+- pricing:access
+- pricing:read
+- core:currency:delete
+Role_1 assigned for User_1
+
+","Medium","","Permissions - Core module","0","","Step Description:
+1. User_1 logged in admin environment
+2. User_1 open main menu
+3. User_1 click on **Pricing**
+4. User_1 click on **Price lists**
+5. User_1 click on button **Add** 
+6. User_1 click Edit Currency
+7. User_1 choose any testing currency
+5. User_1 click on Delete
+6. User_1 confirm delete
+Expected Result:
+1. Currency deleted from the list","1","1. 1. Currency deleted from the list","1. 1. User_1 logged in admin environment
+2. User_1 open main menu
+3. User_1 click on **Pricing**
+4. User_1 click on **Price lists**
+5. User_1 click on button **Add** 
+6. User_1 click Edit Currency
+7. User_1 choose any testing currency
+5. User_1 click on Delete
+6. User_1 confirm delete","V3 Core Module","S2074","Functional","0"
+"C242664","Permission > core:packageType:create","","","Volha Baban","7/10/2020 12:35 PM","","","","Role_1 created in system
+Role_1 contains next permissions:
+- core:packageType:create
+- catalog:access
+- catalog:read
+Role_1 assigned for User_1
+
+","Medium","","Permissions - Core module","0","","Step Description:
+1. User_1 logged in admin environment
+2. User_1 open main menu
+3. User_1 click on **Catalog -> Category -> select Product**
+4. User_1 click on **Item dimensions** (Height, Width, Length, Weight)
+5. User_1 click Edit **Package type**
+6. User_1 click """"Add"""" button
+5. User_1 fill necessary fields for new Currency
+6. User_1 click """"Create"""" button
+Expected Result:
+1. New Package type created","1","1. 1. New Package type created","1. 1. User_1 logged in admin environment
+2. User_1 open main menu
+3. User_1 click on **Catalog -> Category -> select Product**
+4. User_1 click on **Item dimensions** (Height, Width, Length, Weight)
+5. User_1 click Edit **Package type**
+6. User_1 click """"Add"""" button
+5. User_1 fill necessary fields for new Currency
+6. User_1 click """"Create"""" button","V3 Core Module","S2074","Functional","0"
+"C242665","Permission > core:packageType:update","","","Volha Baban","7/10/2020 12:35 PM","","","","Role_1 created in system
+Role_1 contains next permissions:
+- core:packageType:update
+- catalog:access
+- catalog:read
+Role_1 assigned for User_1
+
+","Medium","","Permissions - Core module","0","","Step Description:
+1. User_1 logged in admin environment
+2. User_1 open main menu
+3. User_1 click on Catalog -> Category -> select Product
+4. User_1 click on Item dimensions (Height, Width, Length, Weight)
+6. User_1 click Edit **Package type**
+7. User_1 select any Package type
+5. User_1 change necessary fields
+6. User_1 press Save
+Expected Result:
+1. Changes for Package type saved","1","1. 1. Changes for Package type saved","1. 1. User_1 logged in admin environment
+2. User_1 open main menu
+3. User_1 click on Catalog -> Category -> select Product
+4. User_1 click on Item dimensions (Height, Width, Length, Weight)
+6. User_1 click Edit **Package type**
+7. User_1 select any Package type
+5. User_1 change necessary fields
+6. User_1 press Save","V3 Core Module","S2074","Functional","0"
+"C242666","Permission > core:packageType:delete","","","Volha Baban","7/10/2020 12:35 PM","","","","Role_1 created in system
+Role_1 contains next permissions:
+- core:packageType:delete
+- catalog:access
+- catalog:read
+Role_1 assigned for User_1
+
+","Medium","","Permissions - Core module","0","","Step Description:
+1. User_1 logged in admin environment
+2. User_1 open main menu
+3. User_1 click on Catalog -> Category -> select Product
+4. User_1 click on Item dimensions (Height, Width, Length, Weight)
+5. User_1 click Edit Package type
+6. User_1 choose any testing Package type
+7. User_1 click on Delete
+8. User_1 confirm delete
+Expected Result:
+1. Package type deleted from the list","1","1. 1. Package type deleted from the list","1. 1. User_1 logged in admin environment
+2. User_1 open main menu
+3. User_1 click on Catalog -> Category -> select Product
+4. User_1 click on Item dimensions (Height, Width, Length, Weight)
+5. User_1 click Edit Package type
+6. User_1 choose any testing Package type
+7. User_1 click on Delete
+8. User_1 confirm delete","V3 Core Module","S2074","Functional","0"
+"C338421","Settings > Core > Tool-tips",""," None","Elena Mutykova","4/20/2022 8:30 AM","","","","","Medium","","Settings","0","","Step Description:
+Open blade with general Settings &gt; Pay attention to tooltips
+
+
+
+
+
+Expected Result:
+All tooltips are folded
+
+Step Description:
+1. Click on Blue question mark for field1
+2. Click on Blue question mar for field2
+
+
+
+
+
+Expected Result:
+1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded. The tooltip for the field1 is folded
+
+
+Step Description:
+Click on the Hide link
+
+Expected Result:
+All tooltips are folded","1. 
+2. 
+3.","1. All tooltips are folded
+
+2. 1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded. The tooltip for the field1 is folded
+
+
+3. All tooltips are folded","1. Open blade with general Settings &gt; Pay attention to tooltips
+
+
+
+
+
+2. 1. Click on Blue question mark for field1
+2. Click on Blue question mar for field2
+
+
+
+
+
+3. Click on the Hide link","V3 Core Module","S2074","Other","0"
+"C242728","Mass units -> Add new value",""," Katalon","Grotem","7/13/2020 10:33 AM","","1. New value saved ","","1. Admin is on Settings page
+2. Admin opened **Core** settings blade","Medium","","Mass units","1","","","","","","V3 Core Module","S2074","Other","0"
+"C242729","Mass units -> Update value",""," Katalon","Grotem","7/13/2020 10:33 AM","","1. Change saved","","1. Admin is on Settings page
+2. Admin opened **Core** settings blade
+3. **Mass_unit** exist in system","Medium","","Mass units","1","","","","","","V3 Core Module","S2074","Other","0"
+"C242730","Mass units -> Delete",""," Katalon","Grotem","7/13/2020 10:33 AM","","1. **Mass_unit** deleted","","1. Admin is on Settings page
+2. Admin opened **Core** settings blade
+3. **Mass_unit** exist in system","Medium","","Mass units","1","","","","","","V3 Core Module","S2074","Other","0"
+"C242731","Mass units -> Reset changes","","","Grotem","7/13/2020 10:33 AM","","1. **Mass_unit** shown in list","","1. Admin is on Settings page
+2. Admin opened **Core** settings blade
+3. **Mass_unit** exist in system","Medium","","Mass units","1","","","","","","V3 Core Module","S2074","Other","0"
+"C242732","Mass units shown in properties",""," None","Grotem","7/13/2020 10:45 AM","","1. **Mass_unit-1** and **Mass_unit-2** shown in list
+","","1. **Category_1** exist in system
+2. Physical **Product_1** assigned to **Category_1**
+3. **Mass_unit-1** and **Mass_unit-2** added in **Core** settings","Medium","","Mass units","1","","","","","","V3 Core Module","S2074","Other","0"
+"C242735","Units of length -> Add new value",""," Katalon","Grotem","7/13/2020 10:50 AM","","1. New value saved ","","1. Admin is on Settings page
+2. Admin opened **Core** settings blade","Medium","","Units of length","1","","","","","","V3 Core Module","S2074","Other","0"
+"C242736","Units of length -> Update value",""," Katalon","Grotem","7/13/2020 10:50 AM","","1. Changed value saved ","","1. Admin is on Settings page
+2. Admin opened **Core** settings blade
+3. **Unit-of-length** exist in system","Medium","","Units of length","1","","","","","","V3 Core Module","S2074","Other","0"
+"C242737","Units of length -> Delete",""," Katalon","Grotem","7/13/2020 10:50 AM","","1. **Unit-of-length** deleted","","1. Admin is on Settings page
+2. Admin opened **Core** settings blade
+3. **Unit-of-length** exist in system","Medium","","Units of length","1","","","","","","V3 Core Module","S2074","Other","0"
+"C242738","Units of length -> Reset changes","","","Grotem","7/13/2020 10:50 AM","","1. **Unit-of-length** shown in list","","1. Admin is on Settings page
+2. Admin opened **Core** settings blade
+3. **Unit-of-length** exist in system","Medium","","Units of length","1","","","","","","V3 Core Module","S2074","Other","0"
+"C242739","Units of length shown in properties",""," None","Grotem","7/13/2020 10:50 AM","","1. **Unit-of-length-1** and **Unit-of-length-2** shown in list
+","","1. **Category_1** exist in system
+2. Physical **Product_1** assigned to **Category_1**
+3. **Unit-of-length-1** and **Unit-of-length-1** added in **Core** settings","Medium","","Units of length","1","","","","","","V3 Core Module","S2074","Other","0"
+"C242742","Languages -> Add new value",""," Katalon","Grotem","7/13/2020 11:00 AM","","1. New value saved ","","1. Admin is on Settings page
+2. Admin opened **Core** settings blade","Medium","","Languages","1","","","","","","V3 Core Module","S2074","Other","0"
+"C242743","Languages -> Update value",""," Katalon","Grotem","7/13/2020 11:00 AM","","1. New value saved ","","1. Admin is on Settings page
+2. Admin opened **Core** settings blade
+3. **Language_1** exist in system","Medium","","Languages","1","","","","","","V3 Core Module","S2074","Other","0"
+"C242744","Languages -> Delete",""," Katalon","Grotem","7/13/2020 11:00 AM","","1. **Language_1** deleted","","1. Admin is on Settings page
+2. Admin opened **Core** settings blade
+3. **Language_1** exist in system","Medium","","Languages","1","","","","","","V3 Core Module","S2074","Other","0"
+"C242745","Languages -> Reset changes","","","Grotem","7/13/2020 11:00 AM","","1. **Language_1** shown in list","","1. Admin is on Settings page
+2. Admin opened **Core** settings blade
+3. **Language_1** exist in system","Medium","","Languages","1","","","","","","V3 Core Module","S2074","Other","0"
+"C242746","Languages shown in store",""," None","Grotem","7/13/2020 11:00 AM","","1. **Language_1** and **Language_2** shown in list
+","","1. **Store_1** exist in system
+2. **Language_1** and **Language_2** exist in system
+","Medium","","Languages","1","","","","","","V3 Core Module","S2074","Other","0"

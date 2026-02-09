@@ -1,0 +1,690 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C139043","Elastic search > Search by full product name","","","Alexandr Tzykin","11/15/2019 12:50 PM","","","","<p>Some products contains in catalog.</p>
+","Medium","","Elastic search","0","","Step Description:
+<p>Enter full name products in search line </p>
+Expected Result:
+<p>Products shown in search bar</p>
+Step Description:
+<p>Press Enter</p>
+Expected Result:
+<p>System open page with result of search </p>","1. 
+2.","1. <p>Products shown in search bar</p>
+2. <p>System open page with result of search </p>","1. <p>Enter full name products in search line </p>
+2. <p>Press Enter</p>","Search","S1100","Other","1"
+"C139044","Elastic search > Search by few symbols","","","Alexandr Tzykin","11/15/2019 12:51 PM","","","","Some products contains in catalog.","Medium","","Elastic search","0","","Step Description:
+Enter few symbols from name of products
+Expected Result:
+Products shown in search bar
+Step Description:
+Press Enter 
+Expected Result:
+System open page with result of search","1. 
+2.","1. Products shown in search bar
+2. System open page with result of search","1. Enter few symbols from name of products
+2. Press Enter","Search","S1100","Functional","0"
+"C139045","Elastic search > Incorrect value","","","Alexandr Tzykin","11/15/2019 12:51 PM","","","","Some products contains in catalog.","Medium","","Elastic search","0","","Step Description:
+Enter incorrect value in search line 
+Expected Result:
+""""no result"""" shown in search bar
+Step Description:
+Press Enter
+Expected Result:
+	
+System open page with result of search","1. 
+2.","1. """"no result"""" shown in search bar
+2. 	
+System open page with result of search","1. Enter incorrect value in search line 
+2. Press Enter","Search","S1100","Other","0"
+"C139046","Elastic search > Search by few words","","","Alexandr Tzykin","11/15/2019 12:51 PM","","","","Some products contains in catalog.
+Products have name with few words","Medium","","Elastic search","0","","Step Description:
+Enter few words by name of products in search line
+Expected Result:
+Products shown in search bar
+Step Description:
+Press Enter
+Expected Result:
+	
+System open page with result of search","1. 
+2.","1. Products shown in search bar
+2. 	
+System open page with result of search","1. Enter few words by name of products in search line
+2. Press Enter","Search","S1100","Functional","0"
+"C180636","Lucene > Search by full product name",""," None","Alexandr Tzykin","3/19/2020 11:46 AM","","","","User on Storefront","Medium","","Lucene","0","","Step Description:
+Enter full name products in search line
+Expected Result:
+System display required product in helpers
+Step Description:
+Click Enter
+Expected Result:
+System open search result page.
+In search result user can see all result from helper and other relevander result","1. 
+2.","1. System display required product in helpers
+2. System open search result page.
+In search result user can see all result from helper and other relevander result","1. Enter full name products in search line
+2. Click Enter","Search","S1100","Other","0"
+"C180637","Lucene > Search by few symbols",""," None","Alexandr Tzykin","3/19/2020 11:46 AM","","","","Some products contains in catalog.
+User on Storefront ","Medium","","Lucene","0","","Step Description:
+Enter few symbols from name of products
+Expected Result:
+System open helper with correct search result.
+System sort product by more relevanted
+Step Description:
+Click Enter 
+Expected Result:
+The system opens the search result page. On page displayed products which matches a few symbols from the list","1. 
+2.","1. System open helper with correct search result.
+System sort product by more relevanted
+2. The system opens the search result page. On page displayed products which matches a few symbols from the list","1. Enter few symbols from name of products
+2. Click Enter","Search","S1100","Other","0"
+"C180638","Lucene > Search by few words","","","Alexandr Tzykin","3/19/2020 11:46 AM","","","","Need create few product with few word in name of product
+User on Storefront ","Medium","","Lucene","0","","Step Description:
+Enter 2 correct words
+Expected Result:
+System display search result in helper.
+User can click on any product or category/
+Step Description:
+Click Enter 
+Expected Result:
+If correct product exist system diplay this products on page","1. 
+2.","1. System display search result in helper.
+User can click on any product or category/
+2. If correct product exist system diplay this products on page","1. Enter 2 correct words
+2. Click Enter","Search","S1100","Other","0"
+"C180639","Lucene > Incorrect value",""," None","Alexandr Tzykin","3/19/2020 11:46 AM","","","","User on Storefront","Medium","","Lucene","0","","Step Description:
+Enter incorrect value (not existing in cataloge) in search line 
+Expected Result:
+In helper system display text """"No products found""""
+Step Description:
+Click Enter
+Expected Result:
+system display empty serach result page","1. 
+2.","1. In helper system display text """"No products found""""
+2. system display empty serach result page","1. Enter incorrect value (not existing in cataloge) in search line 
+2. Click Enter","Search","S1100","Other","0"
+"C327396","Run index",""," Katalon","Elena Mutykova","2/10/2022 2:30 PM","","","","Enable event-based indexing for catalog entities = OFF
+
+
+","Medium","PT-6520","Blue-green index storages (implemented for Elastic Search)","0","","Step Description:
+Go to the Search module
+Choose Product &gt; Build index &gt; Build
+Expected Result:
+Record count for Active Product index = **N**
+Step Description:
+1. Make some changes in the Product_1 (ex. update prices)
+2. Add Product_2, but don't index it
+
+
+3. Go to the Search module &gt; Choose Product &gt; Build index &gt; Build
+Expected Result:
+Process indexation finish successfully
+Record count for Active Product index = **N+1**
+
+Step Description:
+Go to Catalog &gt; Product_1 &gt; click on the Search Index
+Expected Result:
+Changes added to the active index","1. 
+2. 
+3.","1. Record count for Active Product index = **N**
+2. Process indexation finish successfully
+Record count for Active Product index = **N+1**
+
+3. Changes added to the active index","1. Go to the Search module
+Choose Product &gt; Build index &gt; Build
+2. 1. Make some changes in the Product_1 (ex. update prices)
+2. Add Product_2, but don't index it
+
+
+3. Go to the Search module &gt; Choose Product &gt; Build index &gt; Build
+3. Go to Catalog &gt; Product_1 &gt; click on the Search Index","Search","S1100","Other","0"
+"C327397","Rebuild index > Both indices built","","","Elena Mutykova","2/10/2022 2:32 PM","","","","Enable event-based indexing for customer entities = OFF","Medium","PT-6520","Blue-green index storages (implemented for Elastic Search)","0","","Step Description:
+Go to the Search module
+Choose Member > Build index > Build
+Expected Result:
+Process indexation finish successfully
+
+Record count for Active Member index = **N**
+
+Step Description:
+1. Make some changes for Contact_1 (ex. add Date of Birth)
+2. Create Contact_2, but don't index it
+
+3. Go to the Search module > Choose Member > Build index > Delete+Build
+4. Click on """"Refresh""""
+
+
+Expected Result:
+Process indexation finish successfully
+
+
+Record count for Active Member index = **N+1**
+Record count for inActive Member index = **N**
+
+Step Description:
+Go to the Contact module > Choose Contact_1 > Search Index > Check index
+Expected Result:
+Changes apply and appear in Active index
+Step Description:
+ 1. Go to the Search module > Choose Member > Swape indices
+ 2. Go to the Contact module > Choose Contact_1 > Search Index > Check index
+
+
+
+Expected Result:
+Changes are not reflected in the active index","1. 
+2. 
+3. 
+4.","1. Process indexation finish successfully
+
+Record count for Active Member index = **N**
+
+2. Process indexation finish successfully
+
+
+Record count for Active Member index = **N+1**
+Record count for inActive Member index = **N**
+
+3. Changes apply and appear in Active index
+4. Changes are not reflected in the active index","1. Go to the Search module
+Choose Member > Build index > Build
+2. 1. Make some changes for Contact_1 (ex. add Date of Birth)
+2. Create Contact_2, but don't index it
+
+3. Go to the Search module > Choose Member > Build index > Delete+Build
+4. Click on """"Refresh""""
+
+
+3. Go to the Contact module > Choose Contact_1 > Search Index > Check index
+4.  1. Go to the Search module > Choose Member > Swape indices
+ 2. Go to the Contact module > Choose Contact_1 > Search Index > Check index","Search","S1100","Other","0"
+"C329242","Rebuild index > Only Active index built","","","Daria Ponamareva","4/4/2022 2:57 PM","","","","Enable event-based indexing for customer entities = OFF","Medium","PT-6520","Blue-green index storages (implemented for Elastic Search)","0","","Step Description:
+Go to the Search module
+Choose Member > Build index > Build
+Expected Result:
+Process indexation finish successfully
+
+Record count for Active Member index = **N**
+
+Step Description:
+1. Make some changes for Contact_1 (ex. add Date of Birth)
+2. Create Contact_2, but don't index it
+
+3. Go to the Search module > Choose Member > Build index > Delete+Build
+4. Click on """"Refresh""""
+
+
+Expected Result:
+Process indexation finish successfully
+
+
+Record count for Active Member index = **N+1**
+Record count for inActive Member index = **N**
+
+Step Description:
+Go to the Contact module > Choose Contact_1 > Search Index > Check index
+Expected Result:
+Changes apply and appear in Active index
+Step Description:
+ 1. Go to the Search module > Choose Member > Swape indices
+ 2. Go to the Contact module > Choose Contact_1 > Search Index > Check index
+
+
+
+Expected Result:
+Changes are not reflected in the active index","1. 
+2. 
+3. 
+4.","1. Process indexation finish successfully
+
+Record count for Active Member index = **N**
+
+2. Process indexation finish successfully
+
+
+Record count for Active Member index = **N+1**
+Record count for inActive Member index = **N**
+
+3. Changes apply and appear in Active index
+4. Changes are not reflected in the active index","1. Go to the Search module
+Choose Member > Build index > Build
+2. 1. Make some changes for Contact_1 (ex. add Date of Birth)
+2. Create Contact_2, but don't index it
+
+3. Go to the Search module > Choose Member > Build index > Delete+Build
+4. Click on """"Refresh""""
+
+
+3. Go to the Contact module > Choose Contact_1 > Search Index > Check index
+4.  1. Go to the Search module > Choose Member > Swape indices
+ 2. Go to the Contact module > Choose Contact_1 > Search Index > Check index","Search","S1100","Other","0"
+"C329241","Rebuild index > Only inActive index built [DRAFT]","","","Daria Ponamareva","4/4/2022 2:57 PM","","","","","Medium","","Blue-green index storages (implemented for Elastic Search)","0","","","","","","Search","S1100","Other","0"
+"C329243","Rebuild index > Both indices not built [DRAFT]","","","Daria Ponamareva","4/4/2022 2:59 PM","","","","","Medium","","Blue-green index storages (implemented for Elastic Search)","0","","","","","","Search","S1100","Other","0"
+"C327398","Swap indexes > Both indices built","","","Elena Mutykova","2/10/2022 2:33 PM","","","","","Medium","PT-6520","Blue-green index storages (implemented for Elastic Search)","0","","Step Description:
+Go to Search module
+Show backup indices > choose index for Member >
+Right-click > Swap indices
+
+
+
+Expected Result:
+Active index changed
+Step Description:
+Go to Contact_1 > Search index > Check index
+Expected Result:
+Old data displayed in Index","1. 
+2.","1. Active index changed
+2. Old data displayed in Index","1. Go to Search module
+Show backup indices > choose index for Member >
+Right-click > Swap indices
+
+
+
+2. Go to Contact_1 > Search index > Check index","Search","S1100","Other","0"
+"C329244","Swap indexes > Only active index built [DRAFT]","","","Daria Ponamareva","4/4/2022 3:03 PM","","","","1,2. if one of them is not built
+3. if two of them are not built","Medium","","Blue-green index storages (implemented for Elastic Search)","0","","","","","","Search","S1100","Other","0"
+"C329245","Swap indexes > Only inActive index built [DRAFT]","","","Daria Ponamareva","4/4/2022 3:03 PM","","","","1,2. if one of them is not built
+3. if two of them are not built","Medium","","Blue-green index storages (implemented for Elastic Search)","0","","","","","","Search","S1100","Other","0"
+"C329030","Swap indexes > Both indices not built [DRAFT]","","","Daria Ponamareva","4/1/2022 11:53 AM","","","","1,2. if one of them is not built
+3. if two of them are not built","Medium","","Blue-green index storages (implemented for Elastic Search)","0","","","","","","Search","S1100","Other","0"
+"C329031","Refresh several times search index blade","","","Daria Ponamareva","4/1/2022 11:55 AM","","","","Make some changes for Contact_1 (ex. add Date of Birth)","Medium","","Blue-green index storages (implemented for Elastic Search)","0","","Step Description:
+1. Go to Search module
+2. Show backup indices 
+3. Click on button """"Refresh"""" 
+Expected Result:
+Blade refreshed
+Step Description:
+Click several times on the refresh button (more than 3 times)
+Expected Result:
+Data doesn't change from click to click","1. 
+2.","1. Blade refreshed
+2. Data doesn't change from click to click","1. 1. Go to Search module
+2. Show backup indices 
+3. Click on button """"Refresh"""" 
+2. Click several times on the refresh button (more than 3 times)","Search","S1100","Other","0"
+"C329034","Refresh search index blade after build","","","Daria Ponamareva","4/1/2022 2:34 PM","","Last indexation time and record count updated","","
+**Note**: Setting event-based indexation for catalog = off","Medium","","Blue-green index storages (implemented for Elastic Search)","0","","","","","","Search","S1100","Other","0"
+"C329028","Cancel build","","","Daria Ponamareva","4/1/2022 11:50 AM","","Build process cancelled","","","Medium","","Blue-green index storages (implemented for Elastic Search)","0","","","","","","Search","S1100","Other","0"
+"C329230","Backup indices > Select all","","","Daria Ponamareva","4/4/2022 11:00 AM","","Selected only Active indexes","","","Medium","","Blue-green index storages (implemented for Elastic Search)","0","","","","","","Search","S1100","Other","0"
+"C329231","Backup indices > Select one","","","Daria Ponamareva","4/4/2022 11:00 AM","","Inactive index not marked","","","Medium","","Blue-green index storages (implemented for Elastic Search)","0","","","","","","Search","S1100","Other","0"
+"C329232","Backup indices > context menu","","","Daria Ponamareva","4/4/2022 11:07 AM","","","","","Medium","","Blue-green index storages (implemented for Elastic Search)","0","","Step Description:
+Go to Search module > Show backup indices > Right click on inActive index
+
+Expected Result:
+Only option """"Swap indices"""" is displayed in the context menu.
+Step Description:
+Go to Search module > Show backup indices > Click on three dots on an inactive index
+Expected Result:
+Only option """"Swap indices"""" is displayed in the context menu.","1. 
+2.","1. Only option """"Swap indices"""" is displayed in the context menu.
+2. Only option """"Swap indices"""" is displayed in the context menu.","1. Go to Search module > Show backup indices > Right click on inActive index
+
+2. Go to Search module > Show backup indices > Click on three dots on an inactive index","Search","S1100","Other","0"
+"C338456","Build index > Refresh index blade",""," None","Elena Mutykova","4/21/2022 7:25 AM","","","","Deploy 2 or more pods for the environment (Set up replicas in config file platform-deploy.yaml)","Medium","","Multi-Instance","0","","Step Description:
+Go to Search module
+Choose any record type &gt; Build index &gt; Build
+Expected Result:
+The indexation was started and finished successfully
+Step Description:
+Click on Refresh
+Pay attention to the record count
+Expected Result:
+The record count is refreshed
+Step Description:
+Build index one more time
+Click on Refresh several times
+
+Expected Result:
+The record count is the same after each refresh","1. 
+2. 
+3.","1. The indexation was started and finished successfully
+2. The record count is refreshed
+3. The record count is the same after each refresh","1. Go to Search module
+Choose any record type &gt; Build index &gt; Build
+2. Click on Refresh
+Pay attention to the record count
+3. Build index one more time
+Click on Refresh several times","Search","S1100","Other","0"
+"C338458","Create product > Refresh index blade",""," None","Elena Mutykova","4/21/2022 7:27 AM","","","","Deploy 2 or more pods for the environment (Set up replicas in config file platform-deploy.yaml)","Medium","","Multi-Instance","0","","Step Description:
+Go to Catalog &gt; Create product
+Go to Search module &gt; Rebuild index
+Click on Refresh several times 
+Expected Result:
+The number of documents in the index does not change after each click","1","1. The number of documents in the index does not change after each click","1. Go to Catalog &gt; Create product
+Go to Search module &gt; Rebuild index
+Click on Refresh several times","Search","S1100","Other","0"
+"C338460","Delete product > Rebuild index > Refresh index blade",""," None","Elena Mutykova","4/21/2022 8:44 AM","","","","Deploy 2 or more pods for the environment (Set up replicas in config file platform-deploy.yaml)","Medium","","Multi-Instance","0","","Step Description:
+Go to catalog &gt; Delete any product
+Open Search module &gt; Rebuild Active index for products
+Click on Refresh several times
+
+
+Expected Result:
+The number of documents in the index does not change","1","1. The number of documents in the index does not change","1. Go to catalog &gt; Delete any product
+Open Search module &gt; Rebuild Active index for products
+Click on Refresh several times","Search","S1100","Other","0"
+"C338457","Delete+Build > Refresh index blade",""," None","Elena Mutykova","4/21/2022 7:25 AM","","","","Deploy 2 or more pods for the environment (Set up replicas in config file platform-deploy.yaml)","Medium","","Multi-Instance","0","","Step Description:
+Go to the Search module
+Choose record type &gt; build index &gt; Delete+build
+Click on Refresh several times
+Expected Result:
+The record count and date of last indexation are refreshed
+Step Description:
+Rebuild the index with Delete+Build again
+Click on Refresh several times
+
+Expected Result:
+The number of document does not change","1. 
+2.","1. The record count and date of last indexation are refreshed
+2. The number of document does not change","1. Go to the Search module
+Choose record type &gt; build index &gt; Delete+build
+Click on Refresh several times
+2. Rebuild the index with Delete+Build again
+Click on Refresh several times","Search","S1100","Other","0"
+"C338459","Cancel indexation task",""," None","Elena Mutykova","4/21/2022 7:27 AM","","","","Deploy 2 or more pods for the environment (Set up replicas in config file platform-deploy.yaml)","Medium","","Multi-Instance","0","","Step Description:
+Select all record types &gt; Build index &gt; Build
+Click on Cancel
+Click on Refresh several times
+Expected Result:
+The number of documents does not change","1","1. The number of documents does not change","1. Select all record types &gt; Build index &gt; Build
+Click on Cancel
+Click on Refresh several times","Search","S1100","Other","0"
+"C338464","Build Active index > Refresh index blade",""," None","Elena Mutykova","4/21/2022 12:51 PM","","","","Deploy 2 or more pods for the environment (Set up replicas in config file platform-deploy.yaml)
+
+","Medium","","Blue-green with multi-instance","1","","Step Description:
+Go to the Search module &gt; Click on Show backup indices
+Choose Active index &gt; Build index &gt; Build
+
+
+Expected Result:
+The indexation was started and finished successfully
+Step Description:
+Click on Refresh
+Pay attention to the record count
+Expected Result:
+The record count is refreshed
+Step Description:
+Build index one more time
+Click on Refresh several times
+Expected Result:
+The record count is the same after each refresh","1. 
+2. 
+3.","1. The indexation was started and finished successfully
+2. The record count is refreshed
+3. The record count is the same after each refresh","1. Go to the Search module &gt; Click on Show backup indices
+Choose Active index &gt; Build index &gt; Build
+
+
+2. Click on Refresh
+Pay attention to the record count
+3. Build index one more time
+Click on Refresh several times","Search","S1100","Other","0"
+"C338469","Delete+Build > Refresh index blade",""," None","Elena Mutykova","4/21/2022 5:35 PM","","","","Deploy 2 or more pods for the environment (Set up replicas in config file platform-deploy.yaml)","Medium","","Blue-green with multi-instance","1","","Step Description:
+Go to the Search module
+Choose record type &gt; build index &gt; Delete+build
+Click on Refresh several times
+Expected Result:
+The record count and date of last indexation are refreshed
+Step Description:
+Rebuild the index with Delete+Build again
+Click on Refresh several times
+
+Expected Result:
+The number of document does not change","1. 
+2.","1. The record count and date of last indexation are refreshed
+2. The number of document does not change","1. Go to the Search module
+Choose record type &gt; build index &gt; Delete+build
+Click on Refresh several times
+2. Rebuild the index with Delete+Build again
+Click on Refresh several times","Search","S1100","Other","0"
+"C338467","Swap indexes >  Build index > Refresh",""," None","Elena Mutykova","4/21/2022 1:06 PM","","","","Deploy 2 or more pods for the environment (Set up replicas in config file platform-deploy.yaml)
+
+","Medium","","Blue-green with multi-instance","1","","Step Description:
+Go to Search module &gt; Show backup indices
+Swap indices &gt; Select Active index &gt; Build index
+Click on refresh
+Expected Result:
+The date and time of the last indexation are refreshed only for Active index
+Step Description:
+Click Refresh several times
+Expected Result:
+The record count is the same after each refresh","1. 
+2.","1. The date and time of the last indexation are refreshed only for Active index
+2. The record count is the same after each refresh","1. Go to Search module &gt; Show backup indices
+Swap indices &gt; Select Active index &gt; Build index
+Click on refresh
+2. Click Refresh several times","Search","S1100","Other","0"
+"C338468","Swap indexes > Cancel indexation",""," None","Elena Mutykova","4/21/2022 1:12 PM","","","","Deploy 2 or more pods for the environment (Set up replicas in config file platform-deploy.yaml)","Medium","","Blue-green with multi-instance","1","","Step Description:
+Go to Search indices &gt; Click on Show backup indices
+Select any record type with an Active index &gt; Build
+Click on Cancel
+Click on Refresh several times
+
+Expected Result:
+The number of documents does not change
+Step Description:
+Swap indices &gt; Build index &gt; Build
+Click on Cancel
+Click on Refresh several times
+Expected Result:
+The number of documents does not change","1. 
+2.","1. The number of documents does not change
+2. The number of documents does not change","1. Go to Search indices &gt; Click on Show backup indices
+Select any record type with an Active index &gt; Build
+Click on Cancel
+Click on Refresh several times
+
+2. Swap indices &gt; Build index &gt; Build
+Click on Cancel
+Click on Refresh several times","Search","S1100","Other","0"
+"C356720","Verify product schema creation",""," None","Elena Mutykova","2/14/2023 9:45 AM","","","","A database containing a large number of products > 10K","Medium","","Scalable Indexation","0","https://virtocommerce.atlassian.net/browse/PT-10719
+
+
+AppSettings for main instance:
+
+{
+  """"VirtoCommerce"""": {
+    """"Hangfire"""": {
+      """"Queues"""": [ """"default"""" ]
+    }
+  }
+}
+AppSettings for worker instances:
+
+{
+  """"VirtoCommerce"""": {
+    """"Hangfire"""": {
+      """"Queues"""": [ """"index_worker"""" ]
+    }
+  }
+}","Step Description:
+Run the process to create a product schema
+Expected Result:
+Product schema created once before the indexation process","1","1. Product schema created once before the indexation process","1. Run the process to create a product schema","Search","S1100","Other","0"
+"C356721","Verify partitioning",""," None","Elena Mutykova","2/14/2023 9:45 AM","","","","The intermediate data structure generated in the previous test [C356720]","Medium","","Scalable Indexation","0","https://virtocommerce.atlassian.net/browse/PT-10719
+
+
+AppSettings for main instance:
+
+{
+  """"VirtoCommerce"""": {
+    """"Hangfire"""": {
+      """"Queues"""": [ """"default"""" ]
+    }
+  }
+}
+AppSettings for worker instances:
+
+{
+  """"VirtoCommerce"""": {
+    """"Hangfire"""": {
+      """"Queues"""": [ """"index_worker"""" ]
+    }
+  }
+}","Step Description:
+Run the reduce process to group the products' ids by partitions and add them to Queue.
+Expected Result:
+All products’ ids should be grouped and added as unit of work into the Queue.","1","1. All products’ ids should be grouped and added as unit of work into the Queue.","1. Run the reduce process to group the products' ids by partitions and add them to Queue.","Search","S1100","Other","0"
+"C356722","Verify scalable indexation x2",""," None","Elena Mutykova","2/14/2023 9:45 AM","","The generated product index should be complete, accurate, faster, and same utilization for each worker","","The grouped and added to Queue data from the previous test. Several instances of Virto Commerce are running in parallel.
+
+All is ok with DB and Elastic Search. 
+Run the current indexation process and get duration.","Medium","","Scalable Indexation","0","https://virtocommerce.atlassian.net/browse/PT-10719
+
+
+AppSettings for main instance:
+
+{
+  """"VirtoCommerce"""": {
+    """"Hangfire"""": {
+      """"Queues"""": [ """"default"""" ]
+    }
+  }
+}
+AppSettings for worker instances:
+
+{
+  """"VirtoCommerce"""": {
+    """"Hangfire"""": {
+      """"Queues"""": [ """"index_worker"""" ]
+    }
+  }
+}","","","","","Search","S1100","Other","0"
+"C356723","Verify scalable indexation x4, x8",""," None","Elena Mutykova","2/14/2023 9:45 AM","","The indexation process should efficiently handle additional workers and index products in parallel > be faster.","","We can index products faster by adding more workers.","Medium","","Scalable Indexation","0","https://virtocommerce.atlassian.net/browse/PT-10719
+
+
+AppSettings for main instance:
+
+{
+  """"VirtoCommerce"""": {
+    """"Hangfire"""": {
+      """"Queues"""": [ """"default"""" ]
+    }
+  }
+}
+AppSettings for worker instances:
+
+{
+  """"VirtoCommerce"""": {
+    """"Hangfire"""": {
+      """"Queues"""": [ """"index_worker"""" ]
+    }
+  }
+}","","","","","Search","S1100","Other","0"
+"C356724","Verifying time execution of Scalable indexation vs Indexation",""," None","Elena Mutykova","2/14/2023 10:35 AM","","","","","Medium","","Scalable Indexation","0","https://virtocommerce.atlassian.net/browse/PT-10719
+
+
+AppSettings for main instance:
+
+{
+  """"VirtoCommerce"""": {
+    """"Hangfire"""": {
+      """"Queues"""": [ """"default"""" ]
+    }
+  }
+}
+AppSettings for worker instances:
+
+{
+  """"VirtoCommerce"""": {
+    """"Hangfire"""": {
+      """"Queues"""": [ """"index_worker"""" ]
+    }
+  }
+}","","","","","Search","S1100","Other","0"
+"C242224","Token filter (?)","","","Grotem","7/10/2020 7:17 AM","","","","","Medium","","Azure search","1","","","","","","Search","S1100","Other","0"
+"C242225","Min Gram (?)","","","Grotem","7/10/2020 7:17 AM","","","","","Medium","","Azure search","1","","","","","","Search","S1100","Other","0"
+"C242226","Max Gram (?)","","","Grotem","7/10/2020 7:17 AM","","","","","Medium","","Azure search","1","","","","","","Search","S1100","Other","0"
+"C242231","Maximum number of fields in an index","","","Grotem","7/10/2020 7:48 AM","","1. Category contains **not more** than Count_1 fields in index ","","1. Admin is on **Settings** blade
+2. Admin opened **Search** settings blade
+3. DevOps team set **Elastic search** as index engine","Medium","","Elastic search","1","","","","","","Search","S1100","Other","0"
+"C242228","Token filter (?)","","","Grotem","7/10/2020 7:18 AM","","","","","Medium","","Elastic search","1","","","","","","Search","S1100","Other","0"
+"C242229","Min Gram (?)","","","Grotem","7/10/2020 7:18 AM","","","","","Medium","","Elastic search","1","","","","","","Search","S1100","Other","0"
+"C242230","Max Gram (?)","","","Grotem","7/10/2020 7:18 AM","","","","","Medium","","Elastic search","1","","","","","","Search","S1100","Other","0"
+"C242223","The maximum items count per indexing partition","","","Grotem","7/10/2020 7:17 AM","","1. The maximum items count per indexing partition is **Count_1**","","1. Admin is on **Settings** blade
+2. Admin opened **Search** settings blade
+3. Admin set **Maximum items count** as Count_1
+","Medium","","General","1","","","","","","Search","S1100","Other","0"
+"C242232","Schedule indexing jobs [TRUE]","","","Grotem","7/10/2020 7:54 AM","","1. Indexing job **shown** in list
+2. Products indexing automatically","","1. Admin is on **Settings** blade
+2. Admin opened **Search** settings blade
+","Medium","","Job","1","","","","","","Search","S1100","Other","0"
+"C242233","Schedule indexing jobs [FALSE]","","","Grotem","7/10/2020 7:55 AM","","1. Indexing job **hidden** in list
+2. Products not indexing automatically","","1. Admin is on **Settings** blade
+2. Admin opened **Search** settings blade
+","Medium","","Job","1","","","","","","Search","S1100","Other","0"
+"C242234","Indexing jobs cron expression","","","Grotem","7/10/2020 8:12 AM","","1. Indexing job execution time set as Expression_1","","1. Admin is on **Settings** blade
+2. Admin opened **Search** settings blade
+3. Scheduling job set to **TRUE**
+","Medium","","Job","1","","","","","","Search","S1100","Other","0"
+"C242235","Enable scale out indexing (?)","","","Grotem","7/10/2020 8:13 AM","","","","1. Admin is on **Settings** blade
+2. Admin opened **Search** settings blade
+3. Scheduling job set to **TRUE**
+","Medium","","Job","1","","","","","","Search","S1100","Other","0"
+"C242236","The maximum number queued indexing jobs","","","Grotem","7/10/2020 8:22 AM","","1. More than **Number_1** jobs can be started","","1. Admin is on **Settings** blade
+2. Admin opened **Search** settings blade
+3. Scheduling job set to **TRUE**
+","Medium","","Job","1","","","","","","Search","S1100","Other","0"
+"C338437","UI > Tool-tips","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004012"," None","Elena Mutykova","4/20/2022 1:01 PM","","","","","Medium","","Settings > UI","1","","Step Description:
+Open blade with Settings &gt; Pay attention to tooltips
+
+![](index.php?/attachments/get/e5609f38-2bdf-4fc1-a7fc-af0d24f86403)    
+
+
+
+
+
+Expected Result:
+All tooltips are folded
+
+Step Description:
+1. Click on blue question mark for field1
+2. Click on blue question mark for field2
+
+
+
+
+
+Expected Result:
+1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded.
+
+
+Step Description:
+Click on the Hide link
+
+Expected Result:
+All tooltips are folded","1. 
+2. 
+3.","1. All tooltips are folded
+
+2. 1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded.
+
+
+3. All tooltips are folded","1. Open blade with Settings &gt; Pay attention to tooltips
+
+![](index.php?/attachments/get/e5609f38-2bdf-4fc1-a7fc-af0d24f86403)    
+
+
+
+
+
+2. 1. Click on blue question mark for field1
+2. Click on blue question mark for field2
+
+
+
+
+
+3. Click on the Hide link","Search","S1100","Other","0"
+"C406817","Apply single TermFilter",""," None","Elena Mutykova","6/12/2025 10:52 AM","","Only products with Color == 'red' are returned.","","Product entity has a property Color.","Medium","","Search and filter","0","","","","","","Search","S1100","Functional","0"
+"C406818","Apply multiple TermFilters (AND logic)",""," None","Elena Mutykova","6/12/2025 10:52 AM","","Only products with Color == 'red' and Size == 'M' are returned.","","","Medium","","Search and filter","0","","","","","","Search","S1100","Functional","0"
+"C406819","Apply OrFilter",""," None","Elena Mutykova","6/12/2025 10:52 AM","","Products with Color == 'red' or Color == 'blue' are returned.","","","Medium","","Search and filter","0","","","","","","Search","S1100","Functional","0"
+"C406820","Apply AndFilter with nested OrFilter",""," None","Elena Mutykova","6/12/2025 10:52 AM","","Products with Size == 'M' and (Color == 'red' or Color == 'Green') are returned.","","","Medium","","Search and filter","0","","","","","","Search","S1100","Functional","0"
+"C406821","Apply NotFilter","https://virtowayqa.testrail.io/index.php?/attachments/get/1000005159"," None","Elena Mutykova","6/12/2025 10:52 AM","","Only products where !Brand:Vizio' are returned. Product with brand vizio are not returned
+
+---
+ ![](index.php?/attachments/get/1000005159) 
+","","","Medium","","Search and filter","0","","","","","","Search","S1100","Functional","0"
+"C406822","Apply RangeFilter (greater than)",""," None","Elena Mutykova","6/12/2025 10:52 AM","","Products with Price > 100 are returned.","","","Medium","","Search and filter","0","","","","","","Search","S1100","Functional","0"
+"C406823","Apply RangeFilter (between)",""," None","Elena Mutykova","6/12/2025 10:52 AM","","Products with 100 <= Price <= 200 are returned.","","","Medium","","Search and filter","0","","","","","","Search","S1100","Functional","0"
+"C406824","Filter on nested property",""," None","Elena Mutykova","6/12/2025 10:52 AM","","Products where any Items.Sku == '1513491' are returned.","","Product entity has a collection property Items with property Sku.","Medium","","Search and filter","0","","","","","","Search","S1100","Functional","0"
+"C406825","Property name is case-sensitive",""," None","Elena Mutykova","6/12/2025 10:52 AM","","No products are returned (property name mismatch).","","","Medium","","Search and filter","0","","","","","","Search","S1100","Functional","0"

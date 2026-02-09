@@ -1,0 +1,30 @@
+{
+  "browser": {
+    "browserName": "chromium",
+    "launchOptions": {
+      "headless": false,
+      "channel": "msedge"
+    },
+    "contextOptions": {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "recordVideo": {
+        "dir": "./test-results/edge/videos",
+        "video": "on-failure",
+        "size": {
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      "recordHar": {
+        "path": "./test-results/edge/har",
+        "omitContent": true
+      }
+    }
+  },
+  "isolated": true,
+  "outputDir": "./test-results/edge",
+  "screenshot": "only-on-failure"
+}

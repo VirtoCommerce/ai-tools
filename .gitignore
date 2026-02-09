@@ -1,13 +1,9 @@
 node_modules
 .env
 .cursorrules
-.mcp.json
 .playwright-mcp/
 .vscode/
-.claude/
-CLAUDE.md
 .serena/
-config/
 settings.json
 test-results/
 

@@ -1,0 +1,157 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C385366","Draft > Save an empty fields",""," None","Elena Mutykova","5/9/2024 8:00 AM","","","","","Medium","","Drafts","0","","","","","","[Apps] Push Messages","S5473","Other","1"
+"C385358","Draft > Confirmation pop-up for Unsaved Changes",""," None","Elena Mutykova","5/9/2024 7:26 AM","","","","","Medium","","Drafts","0","","","","","","[Apps] Push Messages","S5473","Other","0"
+"C385359","Draft > Save as a draft > Log out",""," None","Elena Mutykova","5/9/2024 7:27 AM","","","","","Medium","","Drafts","0","","","","","","[Apps] Push Messages","S5473","Other","0"
+"C385368","Draft > Save with schedule date",""," None","Elena Mutykova","5/9/2024 8:49 AM","","","","","Medium","","Drafts","0","","","","","","[Apps] Push Messages","S5473","Other","0"
+"C385360","Draft > Edit draft",""," None","Elena Mutykova","5/9/2024 7:30 AM","","","","","Medium","","Drafts","0","","","","","","[Apps] Push Messages","S5473","Other","0"
+"C385361","Draft > Search by status",""," None","Elena Mutykova","5/9/2024 7:30 AM","","","","","Medium","","Drafts","0","","","","","","[Apps] Push Messages","S5473","Other","0"
+"C385363","Draft > Delete draft",""," None","Elena Mutykova","5/9/2024 7:40 AM","","","","","Medium","","Drafts","0","","","","","","[Apps] Push Messages","S5473","Other","0"
+"C385367","Schedule > Publish with schedule date",""," None","Elena Mutykova","5/9/2024 8:48 AM","","","","","Medium","","Scheduled","0","","","","","","[Apps] Push Messages","S5473","Other","0"
+"C385362","Schedule > Check created date in store","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000567, https://virtowayqa.testrail.io/index.php?/attachments/get/1000004360"," None","Elena Mutykova","5/9/2024 7:35 AM","","","","","Medium","","Scheduled","0","","Step Description:
+Create a new push message with a schedule (Schedule send)
+
+Wait for the message to be sent
+
+Go to storefront
+
+Check the date
+Expected Result:
+The date matches to Scheduled send date
+
+---
+
+  ![](index.php?/attachments/get/1df796c6-1cc3-44a7-af81-bff8fef79487) 
+
+---
+
+ ![](index.php?/attachments/get/f3c6f0d1-b2c6-43ba-adfa-862ecbe7ad29)","1","1. The date matches to Scheduled send date
+
+---
+
+  ![](index.php?/attachments/get/1df796c6-1cc3-44a7-af81-bff8fef79487) 
+
+---
+
+ ![](index.php?/attachments/get/f3c6f0d1-b2c6-43ba-adfa-862ecbe7ad29)","1. Create a new push message with a schedule (Schedule send)
+
+Wait for the message to be sent
+
+Go to storefront
+
+Check the date","[Apps] Push Messages","S5473","Other","0"
+"C385364","Create a message tracking new recipients",""," None","Elena Mutykova","5/9/2024 7:45 AM","","","","","Medium","","Track new recipients","0","","","","","","[Apps] Push Messages","S5473","Other","0"
+"C385365","Track new recipients = off",""," None","Elena Mutykova","5/9/2024 7:54 AM","","","","","Medium","","Track new recipients","0","","","","","","[Apps] Push Messages","S5473","Other","0"
+"C397014","Successful retrieval of unread messages with valid data",""," None","Elena Kutasina","1/12/2025 8:50 PM","","1. totalCount matches the number of messages with isRead = false.
+2. All messages in the items array have isRead = false.
+3. Each field (id, shortMessage, createdDate, isRead, isHidden) is present and contains the correct data.","","1. The query works only for a logged-in user.
+2. The system contains both read and unread messages with valid data (id, shortMessage, createdDate, isRead, isHidden).","Medium","","Graphql","0","","","","","","[Apps] Push Messages","S5473","Other","0"
+"C397015","Filtering messages by culture (Not actual now)",""," None","Elena Kutasina","1/12/2025 8:50 PM","","All messages in the items array are filtered by the en-Us culture.","","1. The query works only for a logged-in user.
+2. The system contains messages with different cultureName values.","Medium","","Graphql","0","","","","","","[Apps] Push Messages","S5473","Other","0"
+"C397016","Correct representation of hidden messages",""," None","Elena Kutasina","1/12/2025 8:50 PM","","The isHidden field accurately represents the hidden status (true/false).","","1. The query works only for a logged-in user.
+2. The system contains both hidden and non-hidden messages.","Medium","","Graphql","0","","","","","","[Apps] Push Messages","S5473","Other","0"
+"C397017","No messages available for the given filters",""," None","Elena Kutasina","1/12/2025 8:50 PM","","totalCount is 0.
+The items array is empty.","","1. The query works only for a logged-in user.
+2. The system contains no unread messages for the specified culture.","Medium","","Graphql","0","","","","","","[Apps] Push Messages","S5473","Other","0"
+"C397018","Clear all push messages",""," None","Elena Kutasina","1/12/2025 9:06 PM","","Response: 
+>{
+  """"data"""": {
+    """"clearAllPushMessages"""": true
+  }
+}
+
+All push messages are cleared from the system, and the response does not return any errors.","","1. The query works only for a logged-in user.
+2. The system contains at least one unread push message.","Medium","","Graphql","0","","","","","","[Apps] Push Messages","S5473","Other","0"
+"C397019","Mark all push messages as read",""," None","Elena Kutasina","1/12/2025 9:19 PM","","All push messages are marked as read, and the response does not return any errors.","","1. The query works only for a logged-in user.
+2. The system contains at least one unread push message.","Medium","","Graphql","0","","","","","","[Apps] Push Messages","S5473","Other","0"
+"C397020","Mark all push messages as unread",""," None","Elena Kutasina","1/12/2025 9:21 PM","","* response contains a successful status
+* All messages previously marked as read are now displayed as unread in the user interface.","","* User is logged into the application.
+* User has at least one push message marked as read.","Medium","","Graphql","0","","","","","","[Apps] Push Messages","S5473","Other","0"
+"C397021","Mark a push message as read",""," None","Elena Kutasina","1/12/2025 9:29 PM","","The mutation successfully marks the specified push message as read.","","* User is logged into the application.
+* User has at least one unread push message.","Medium","","Graphql","0","","","","","","[Apps] Push Messages","S5473","Other","0"
+"C397022","Mark a push message as unread",""," None","Elena Kutasina","1/12/2025 9:33 PM","","The mutation successfully marks the specified push message as unread.","","* User is logged into the application.
+* User has at least one read push message.","Medium","","Graphql","0","","","","","","[Apps] Push Messages","S5473","Other","0"
+"C387818","How to setup settings","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002382"," None","Elena Mutykova","6/11/2024 1:04 PM","","","","Open environment.yml
+Set settings from firebase
+
+- name: string
+  platform:
+    config:
+      PushMessages__UseFirebaseCloudMessaging: true
+      PushMessages__FcmSenderOptions__Type: string
+      PushMessages__FcmSenderOptions__ProjectId: string
+      PushMessages__FcmSenderOptions__PrivateKeyId: string
+      PushMessages__FcmSenderOptions__ClientEmail: string
+      PushMessages__FcmSenderOptions__ClientId: string
+      PushMessages__FcmSenderOptions__AuthUri: string
+      PushMessages__FcmSenderOptions__TokenUri: string
+      PushMessages__FcmSenderOptions__AuthProviderX509CertUrl: string
+      PushMessages__FcmSenderOptions__ClientX509CertUrl: string
+      PushMessages__FcmSenderOptions__UniverseDomain: string
+      PushMessages__FcmReceiverOptions__ApiKey: string
+      PushMessages__FcmReceiverOptions__AuthDomain: string
+      PushMessages__FcmReceiverOptions__ProjectId: string
+      PushMessages__FcmReceiverOptions__StorageBucket: string
+      PushMessages__FcmReceiverOptions__MessagingSenderId: string
+      PushMessages__FcmReceiverOptions__AppId: string
+      PushMessages__FcmReceiverOptions__VapidKey: string
+    secretConfig:
+      PushMessages__FcmSenderOptions__PrivateKey: fcm-private-key
+
+","Medium","","Firebase - Browser push notifications","0","","Step Description:
+Open https://console.firebase.google.com/
+Click Add project
+Enter project name
+Click Create project
+When the project is created, click Continue
+
+Step Description:
+Sender settings
+Click Project settings
+Click Service accounts
+Click Generate new private key
+In the popup window click Generate key
+Open the downloaded JSON file and copy all fields to the corresponding fields in the
+appSettings.json
+When using the YAML file for settings, remove all \n characters from the private_key field
+and put the resulting value in the Key Vault
+
+Step Description:
+Receiver settings
+On the Project Overview page click Add Web app
+Enter application name
+Click Register app
+In the Add Firebase SDK section you will find settings that should be placed in the
+PushMessages.FcmReceiverOptions section in the appSettings.json
+Click Continue to console
+Click Project settings
+Click Cloud Messaging
+In the Web Push certificates section click Generate key pair","1. 
+2. 
+3.","1. 
+2. 
+3.","1. Open https://console.firebase.google.com/
+Click Add project
+Enter project name
+Click Create project
+When the project is created, click Continue
+
+2. Sender settings
+Click Project settings
+Click Service accounts
+Click Generate new private key
+In the popup window click Generate key
+Open the downloaded JSON file and copy all fields to the corresponding fields in the
+appSettings.json
+When using the YAML file for settings, remove all \n characters from the private_key field
+and put the resulting value in the Key Vault
+
+3. Receiver settings
+On the Project Overview page click Add Web app
+Enter application name
+Click Register app
+In the Add Firebase SDK section you will find settings that should be placed in the
+PushMessages.FcmReceiverOptions section in the appSettings.json
+Click Continue to console
+Click Project settings
+Click Cloud Messaging
+In the Web Push certificates section click Generate key pair","[Apps] Push Messages","S5473","Other","0"

@@ -1,0 +1,3155 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C169774","Add ogranization",""," Katalon","Volha Baban","2/14/2020 8:20 AM","","","","","Medium","","Customer management module - Auto-tests","1","https://github.com/mayaalsamarrai/vc-module-customer","Step Description:
+<ol>
+<li>Log in to the BackEnd. </li>
+<li>Go to the """"Contacts"""" tab. </li>
+<li>Click """"Add"""". </li>
+<li>Select """"Organization"""".</li>
+<li>Select a user group.</li>
+<li>Enter the business category and description.  </li>
+<li>Pay attention to the """"Create"""" button. </li>
+</ol>
+Expected Result:
+<p>The """"Create"""" button is inactive because the required field """"Name"""" is unfilled.</p>
+Step Description:
+<ol>
+<li>Fill in the """"Name"""" field.</li>
+<li>Click """"Create"""".</li>
+</ol>
+Expected Result:
+<p>The new organization is created. You cand find it in the list of contacts. </p>","1. 
+2.","1. <p>The """"Create"""" button is inactive because the required field """"Name"""" is unfilled.</p>
+2. <p>The new organization is created. You cand find it in the list of contacts. </p>","1. <ol>
+<li>Log in to the BackEnd. </li>
+<li>Go to the """"Contacts"""" tab. </li>
+<li>Click """"Add"""". </li>
+<li>Select """"Organization"""".</li>
+<li>Select a user group.</li>
+<li>Enter the business category and description.  </li>
+<li>Pay attention to the """"Create"""" button. </li>
+</ol>
+2. <ol>
+<li>Fill in the """"Name"""" field.</li>
+<li>Click """"Create"""".</li>
+</ol>","V3 Customer Management","S1591","Other","1"
+"C169775","Add employee",""," Katalon","Volha Baban","2/14/2020 8:20 AM","","New contact of the """"Employee"""" type is created. You can find it in the list of contacts. ","","","Medium","","Customer management module - Auto-tests","1","https://github.com/mayaalsamarrai/vc-module-customer","","","","","V3 Customer Management","S1591","Other","0"
+"C169776","Add customer",""," Katalon","Volha Baban","2/14/2020 8:20 AM","","New customer is created. You can find it in the list of contacts. ","","","Medium","","Customer management module - Auto-tests","1","https://github.com/mayaalsamarrai/vc-module-customer","","","","","V3 Customer Management","S1591","Other","0"
+"C169777","Add vendor",""," Katalon","Volha Baban","2/14/2020 8:20 AM","","The new vendor is created. You can find it in the list of contacts.","","","Medium","","Customer management module - Auto-tests","1","https://github.com/mayaalsamarrai/vc-module-customer","","","","","V3 Customer Management","S1591","Other","0"
+"C169780","Add contact to the organization",""," Katalon","Volha Baban","2/14/2020 8:53 AM","","","","Add organization [C169774]","Medium","","Customer management module - Auto-tests","1","https://github.com/mayaalsamarrai/vc-module-customer","Step Description:
+1. Go to the organization from preconditions. 
+2. Click """"Add"""". 
+Expected Result:
+There are all types of contacts except """"Vendor"""" in the appeared menu.
+Step Description:
+1. Choose any type. 
+2. Fill in all required fields. 
+3. Click """"Create"""". 
+Expected Result:
+New contact appears inside of the organization.
+Step Description:
+1. Try to find that contact in the general contacts list.
+Expected Result:
+This contact is not in the general contact list. It is contained inside of the organization.","1. 
+2. 
+3.","1. There are all types of contacts except """"Vendor"""" in the appeared menu.
+2. New contact appears inside of the organization.
+3. This contact is not in the general contact list. It is contained inside of the organization.","1. 1. Go to the organization from preconditions. 
+2. Click """"Add"""". 
+2. 1. Choose any type. 
+2. Fill in all required fields. 
+3. Click """"Create"""". 
+3. 1. Try to find that contact in the general contacts list.","V3 Customer Management","S1591","Other","0"
+"C169789","Edit contact",""," Katalon","Volha Baban","2/14/2020 9:29 AM","","All changes are saved.","","","Medium","","Customer management module - Auto-tests","1","https://github.com/mayaalsamarrai/vc-module-customer","","","","","V3 Customer Management","S1591","Other","0"
+"C169793","Add account to customer or employee",""," None","Volha Baban","2/14/2020 10:03 AM","","","","Add employee [C169775] or
+Add customer [C169776]","Medium","","Customer management module - Auto-tests","1","https://github.com/mayaalsamarrai/vc-module-customer","Step Description:
+1. Go to one of the contacts from preconditions. 
+2. Go to the """"Accounts"""" section. 
+3. Click """"Add"""". 
+4. Select the store with which a new account will be associated.
+5. Enter login.
+6. Start to enter a password. 
+Expected Result:
+After entering the first symbol security rules to which this password doesn't comply appear.
+Step Description:
+1. Enter the password according to these rules. 
+
+Expected Result:
+Password security rules disappear.
+Step Description:
+1. To the """"Repeat Password"""" field enter a value that doesn't match the password.
+Expected Result:
+The next red warning appears: """"Entered passwords do not match!""""
+Step Description:
+1. Enter the correct value to the """"Repeat Password"""" field. 
+Expected Result:
+Warning disappears. The """"Create"""" button becomes clickable. 
+Step Description:
+1. Select roles for the new account. 
+2. Click """"Create"""". 
+Expected Result:
+The new account is created. The information matches the one you entered while creating.","1. 
+2. 
+3. 
+4. 
+5.","1. After entering the first symbol security rules to which this password doesn't comply appear.
+2. Password security rules disappear.
+3. The next red warning appears: """"Entered passwords do not match!""""
+4. Warning disappears. The """"Create"""" button becomes clickable. 
+5. The new account is created. The information matches the one you entered while creating.","1. 1. Go to one of the contacts from preconditions. 
+2. Go to the """"Accounts"""" section. 
+3. Click """"Add"""". 
+4. Select the store with which a new account will be associated.
+5. Enter login.
+6. Start to enter a password. 
+2. 1. Enter the password according to these rules. 
+
+3. 1. To the """"Repeat Password"""" field enter a value that doesn't match the password.
+4. 1. Enter the correct value to the """"Repeat Password"""" field. 
+5. 1. Select roles for the new account. 
+2. Click """"Create"""".","V3 Customer Management","S1591","Other","0"
+"C169794","Change account password",""," None","Volha Baban","2/14/2020 10:19 AM","","The password has changed.","","Add account [C169793]","Medium","","Customer management module - Auto-tests","1","https://github.com/mayaalsamarrai/vc-module-customer","","","","","V3 Customer Management","S1591","Other","0"
+"C169795","Delete account",""," Katalon","Volha Baban","2/14/2020 10:44 AM","","The account is deleted. ","","Add account [C169793]","Medium","","Customer management module - Auto-tests","1","https://github.com/mayaalsamarrai/vc-module-customer","","","","","V3 Customer Management","S1591","Other","0"
+"C169790","Add address to contact",""," Katalon (generic)","Volha Baban","2/14/2020 9:32 AM","","The address counter increased by one. The added address is in the """"Addresses"""" section.","","","Medium","","Customer management module - Auto-tests","1","https://github.com/mayaalsamarrai/vc-module-customer","","","","","V3 Customer Management","S1591","Other","0"
+"C169791","Add email to contact",""," Katalon (generic)","Volha Baban","2/14/2020 10:01 AM","","","","","Medium","","Customer management module - Auto-tests","1","https://github.com/mayaalsamarrai/vc-module-customer","Step Description:
+1. Go to the """"Contacts"""" tab.
+2. Right-click on any contact or organization.
+3. Click """"Manage"""".
+4. Go to the """"Emails"""" section.
+5. Click """"Add"""".
+6. Enter email in the correct form. 
+Expected Result:
+The button """"Ok"""" becomes clickable. 
+Step Description:
+1. Delete from the email all symbols before """"@"""".
+Expected Result:
+The text becomes red. """"Ok"""" button is unclickable. 
+Step Description:
+1. Enter email in the correct form. 
+2. Delete all symbols after """"@"""". 
+Expected Result:
+The text becomes red. """"Ok"""" button is unclickable. 
+Step Description:
+1. Enter email in the correct form. 
+2. Add to any place one of the invalid symbols ($+;=%{}[]|\/@ ~#!^*&?:'&lt;&gt;,)
+Expected Result:
+The text becomes red. """"Ok"""" button is unclickable. 
+Step Description:
+1. Enter email in the correct form. 
+2. Click """"Ok"""".
+Expected Result:
+New email is added. Emails counter is increase by one.","1. 
+2. 
+3. 
+4. 
+5.","1. The button """"Ok"""" becomes clickable. 
+2. The text becomes red. """"Ok"""" button is unclickable. 
+3. The text becomes red. """"Ok"""" button is unclickable. 
+4. The text becomes red. """"Ok"""" button is unclickable. 
+5. New email is added. Emails counter is increase by one.","1. 1. Go to the """"Contacts"""" tab.
+2. Right-click on any contact or organization.
+3. Click """"Manage"""".
+4. Go to the """"Emails"""" section.
+5. Click """"Add"""".
+6. Enter email in the correct form. 
+2. 1. Delete from the email all symbols before """"@"""".
+3. 1. Enter email in the correct form. 
+2. Delete all symbols after """"@"""". 
+4. 1. Enter email in the correct form. 
+2. Add to any place one of the invalid symbols ($+;=%{}[]|\/@ ~#!^*&?:'&lt;&gt;,)
+5. 1. Enter email in the correct form. 
+2. Click """"Ok"""".","V3 Customer Management","S1591","Other","0"
+"C169792","Add phone number",""," Katalon (generic)","Volha Baban","2/14/2020 10:03 AM","","New phone number is added. Phones counter is increased by one.","","","Medium","","Customer management module - Auto-tests","1","https://github.com/mayaalsamarrai/vc-module-customer","","","","","V3 Customer Management","S1591","Other","0"
+"C169796","Add URL",""," Katalon (generic)","Volha Baban","2/14/2020 11:05 AM","","","","","Medium","","Customer management module - Auto-tests","1","https://github.com/mayaalsamarrai/vc-module-customer","Step Description:
+1. Go to the """"Contacts"""" tab. 
+2. Go to the contact which has the URL field (employee or vendor). 
+3. Enter the correct URL with """"http://"""" at the beginning. 
+Expected Result:
+The """"Save"""" button is clickable, so you can save added URL.
+Step Description:
+1. Delete one of the symbols from """"http://"""".
+Expected Result:
+The text becomes red. The """"Save"""" button is not clickable.
+Step Description:
+1. Enter the correct URL with """"http://"""" at the beginning. 
+2. Delete all symbols after """"http://"""".
+Expected Result:
+The text becomes red. The """"Save"""" button is not clickable.
+Step Description:
+1. Enter the correct URL with """"http://"""" at the beginning. 
+2. Click """"Save"""". 
+Expected Result:
+URL is saved.","1. 
+2. 
+3. 
+4.","1. The """"Save"""" button is clickable, so you can save added URL.
+2. The text becomes red. The """"Save"""" button is not clickable.
+3. The text becomes red. The """"Save"""" button is not clickable.
+4. URL is saved.","1. 1. Go to the """"Contacts"""" tab. 
+2. Go to the contact which has the URL field (employee or vendor). 
+3. Enter the correct URL with """"http://"""" at the beginning. 
+2. 1. Delete one of the symbols from """"http://"""".
+3. 1. Enter the correct URL with """"http://"""" at the beginning. 
+2. Delete all symbols after """"http://"""".
+4. 1. Enter the correct URL with """"http://"""" at the beginning. 
+2. Click """"Save"""".","V3 Customer Management","S1591","Other","0"
+"C169797","Delete contact",""," Katalon","Volha Baban","2/14/2020 11:13 AM","","The contact is deleted. You cannot find it in the contact list.","","Add organization [C169774] or
+Add employee [C169775] or
+Add customer [C169776] or
+Add vendor [C169777]","Medium","","Customer management module - Auto-tests","1","https://github.com/mayaalsamarrai/vc-module-customer","","","","","V3 Customer Management","S1591","Other","0"
+"C169782","Delete contact(customer or employee) from organization",""," Katalon (generic)","Volha Baban","2/14/2020 9:01 AM","","Contact disappears from the organization contacts list. You can find it in the general contacts list. ","","Add contact to the organization [C169780]","Medium","","Customer management module - Auto-tests","1","https://github.com/mayaalsamarrai/vc-module-customer","","","","","V3 Customer Management","S1591","Other","0"
+"C343606","Contact > Add About field","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001948"," Modified","Julia Viniarskaia","7/11/2022 8:33 AM","","","","1. Go to admin > Click ""Contacts"" tab.
+
+","Medium","","Add About field to Contact","2","https://virtocommerce.atlassian.net/browse/PT-8151","Step Description:
+1. Open any contact card
+2. Click on the About field &gt; enter information about the contact &gt; Click Save
+
+![](index.php?/attachments/get/6a8c351f-6d5d-4bfb-80b0-365c349182c3)      
+
+Expected Result:
+1. The contact information has been successfully entered and saved.","1","1. 1. The contact information has been successfully entered and saved.","1. 1. Open any contact card
+2. Click on the About field &gt; enter information about the contact &gt; Click Save
+
+![](index.php?/attachments/get/6a8c351f-6d5d-4bfb-80b0-365c349182c3)     ","V3 Customer Management","S1591","Other","0"
+"C343690","Contact > Save with an empty About field",""," Modified","Julia Viniarskaia","7/11/2022 9:05 AM","","","","1. Go to admin > Click ""Contacts"" tab.","Medium","","Add About field to Contact","2","https://virtocommerce.atlassian.net/browse/PT-8151","Step Description:
+1. Click """"Contacts"""" tab
+2. Open any contact card
+3. Click on the About field &gt; Leave the field empty &gt; Click Save
+Expected Result:
+1. Contact is saved with an empty field About
+Step Description:
+1. Check the placeholder's wording in the empty About field
+Expected Result:
+1. When the About field is empty, the placeholder will contain a notice: """"Please, enter the information about contact""""","1. 
+2.","1. 1. Contact is saved with an empty field About
+2. 1. When the About field is empty, the placeholder will contain a notice: """"Please, enter the information about contact""""","1. 1. Click """"Contacts"""" tab
+2. Open any contact card
+3. Click on the About field &gt; Leave the field empty &gt; Click Save
+2. 1. Check the placeholder's wording in the empty About field","V3 Customer Management","S1591","Other","0"
+"C343689","Contact > Manage About field",""," Modified","Julia Viniarskaia","7/11/2022 9:04 AM","","","","1. Go to admin > Click ""Contacts"" tab.
+2. Сontact_1 has information in the About field","Medium","","Add About field to Contact","2","https://virtocommerce.atlassian.net/browse/PT-8151","Step Description:
+1. Click the Manage button on the Contact_1 field &gt; Opens Contact_1 card 
+2. In the About field, edit information about contact_1 &gt; click Save button
+
+
+Expected Result:
+1. The updated Contact_1 information in the About field has been successfully saved.","1","1. 1. The updated Contact_1 information in the About field has been successfully saved.","1. 1. Click the Manage button on the Contact_1 field &gt; Opens Contact_1 card 
+2. In the About field, edit information about contact_1 &gt; click Save button","V3 Customer Management","S1591","Other","0"
+"C343693","Contact >  Entering characters in the About field",""," Modified","Julia Viniarskaia","7/11/2022 11:18 AM","","","","1. Go to admin > Click ""Contacts"" tab.","Medium","","Add About field to Contact","2","https://virtocommerce.atlassian.net/browse/PT-8151","Step Description:
+1. Open any contact card &gt; Click on the About field
+
+2. Enter next carters in the About field:
+
+Ex:
+
+
+
+Books in our life
+
+It is interesting to read different kind of books. “Except of a living man there is nothing more wonderful than a book! They teach us and open their hearts to us as brothers”, wrote Charles Kingsley, an English writer of the 19th century.
+
+
+Books teach us to live. We learn many things by reading books. There different kinds of books: novels, short stories, tales, fairy-tales, fables, poems, plays, memoirs, atlases and text-books.
+Book can be humorous, adventurous, detective, fantastic, historical, political, and scientific. They can be interesting, thrilling, fascinating, exciting, powerful, useful, unusual, original, amusing, moving, true-to-life, well well-written, unoriginal. 
+Books are certainly one of the greatest inventions of man.
+
+O. Wilde wrote: “Books, I believe, may be divided into three groups:
+
+obooks to read;
+
+obooks to re-read;
+
+obooks not to read at all.”
+
+But to tell people what not to read is a very difficult matter..!@#$%^&*()-_+=;:,./?\|`~[0123456789]{1}^'""""&lt;2&gt;~1111
+
+3. Click Save button
+
+
+
+
+Expected Result:
+
+1. The entered characters are saved and displayed correctly.","1","1. 
+1. The entered characters are saved and displayed correctly.","1. 1. Open any contact card &gt; Click on the About field
+
+2. Enter next carters in the About field:
+
+Ex:
+
+
+
+Books in our life
+
+It is interesting to read different kind of books. “Except of a living man there is nothing more wonderful than a book! They teach us and open their hearts to us as brothers”, wrote Charles Kingsley, an English writer of the 19th century.
+
+
+Books teach us to live. We learn many things by reading books. There different kinds of books: novels, short stories, tales, fairy-tales, fables, poems, plays, memoirs, atlases and text-books.
+Book can be humorous, adventurous, detective, fantastic, historical, political, and scientific. They can be interesting, thrilling, fascinating, exciting, powerful, useful, unusual, original, amusing, moving, true-to-life, well well-written, unoriginal. 
+Books are certainly one of the greatest inventions of man.
+
+O. Wilde wrote: “Books, I believe, may be divided into three groups:
+
+obooks to read;
+
+obooks to re-read;
+
+obooks not to read at all.”
+
+But to tell people what not to read is a very difficult matter..!@#$%^&*()-_+=;:,./?\|`~[0123456789]{1}^'""""&lt;2&gt;~1111
+
+3. Click Save button","V3 Customer Management","S1591","Other","0"
+"C343694","Query Contact > new About field xapi","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000079"," Modified","Julia Viniarskaia","7/11/2022 11:18 AM","","","","1. Go to admin > Click ""Contacts"" tab > Companies and Contacts are presented on page","Medium","","Add About field to Contact","2","https://virtocommerce.atlassian.net/browse/PT-8151","Step Description:
+1. Go to playgrond
+2. Enter (eg):
+
+Query:
+
+mutation requestRegistration($command: InputRequestRegistrationType!){
+requestRegistration(command:$command){
+contact
+{
+status
+about
+}
+result
+{
+  succeeded
+  errors
+}}}
+
+Variables:
+
+{
+""""command"""": {
+""""storeId"""":""""Electronics"""",
+""""contact"""":
+  {
+""""firstName"""": """"test"""",
+""""lastName"""": """"test"""",
+""""phoneNumber"""":""""1231"""",
+""""middleName"""": """"dasdsa"""",
+""""about"""":""""welcome home""""
+  },
+""""account"""": {
+""""username"""": """"DaryaPon202"""",
+""""password"""": """"DaryaPon202"""",
+""""email"""":""""bb@bb.tu""""
+}
+}}
+
+Expected Result:
+![](index.php?/attachments/get/014190a9-b86b-41db-ae52-f5deff582825)","1","1. ![](index.php?/attachments/get/014190a9-b86b-41db-ae52-f5deff582825)","1. 1. Go to playgrond
+2. Enter (eg):
+
+Query:
+
+mutation requestRegistration($command: InputRequestRegistrationType!){
+requestRegistration(command:$command){
+contact
+{
+status
+about
+}
+result
+{
+  succeeded
+  errors
+}}}
+
+Variables:
+
+{
+""""command"""": {
+""""storeId"""":""""Electronics"""",
+""""contact"""":
+  {
+""""firstName"""": """"test"""",
+""""lastName"""": """"test"""",
+""""phoneNumber"""":""""1231"""",
+""""middleName"""": """"dasdsa"""",
+""""about"""":""""welcome home""""
+  },
+""""account"""": {
+""""username"""": """"DaryaPon202"""",
+""""password"""": """"DaryaPon202"""",
+""""email"""":""""bb@bb.tu""""
+}
+}}","V3 Customer Management","S1591","Other","0"
+"C343734","Contact > Create contact with About field","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001393, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002748"," Modified","Julia Viniarskaia","7/14/2022 6:43 AM","","","","1. Go to admin > Click ""Contacts"" tab > Companies and Contacts are presented on page 
+2. The Companies and Contacts page hasn't got a сontact User_B","Medium","","Add About field to Contact","2","https://virtocommerce.atlassian.net/browse/PT-8151","Step Description:
+1. Go to playgrond
+2. Create contact with About field 
+
+Query:
+
+mutation createContact ($command: InputCreateContactType!) {
+createContact (command: $command) {
+    fullName
+    id
+    lastName
+    name
+  about
+}
+}
+
+variables:
+{
+""""command"""": {
+""""name"""": """"UserB"""",
+""""memberType"""": """"Contact"""",
+""""addresses"""": [],
+""""fullName"""": """"UserB"""",
+""""firstName"""": """"UserB"""",
+""""lastName"""": """"UserB"""",
+  """"about"""": """"Books in our life It is interesting to read different kind of books. “Except of a living man there is nothing more wonderful than a book! They teach us and open their hearts to us as brothers”, wrote Charles Kingsley, an English writer of the 19th century.Books teach us to live. We learn many things by reading books. There different kinds of books: novels, short stories, tales, fairy-tales, fables, poems, plays, memoirs, atlases and text-books.Book can be humorous, adventurous, detective, fantastic, historical, political, and scientific. They can be interesting, thrilling, fascinating, exciting, powerful, useful, unusual, original, amusing, moving, true-to-life, well well-written, unoriginal.Boos are certainly one of the greatest inventions of man.O. Wilde wrote: “Books, I believe, may be divided into three groups:obooks to read;obooks to re-read;obooks not to read at all.”But to tell people what not to read is a very difficult matter..!@#$%^&*()-_+=;:,./?|`~[0123456789]{1}^'""""
+} 
+}
+
+
+
+Expected Result:
+1. The Contact User_B was created with Information_1 in About field
+
+ 
+
+Step Description:
+1. Go to Admin &gt; Contacts &gt; Open User_B card
+2. Check the User_B contact on the """"Companies and Contacts"""" page  
+Expected Result:
+1. The Companies and Contacts page contain a сontact User_B
+2. The About field of User_B contains Information_1","1. 
+2.","1. 1. The Contact User_B was created with Information_1 in About field
+
+ 
+
+2. 1. The Companies and Contacts page contain a сontact User_B
+2. The About field of User_B contains Information_1","1. 1. Go to playgrond
+2. Create contact with About field 
+
+Query:
+
+mutation createContact ($command: InputCreateContactType!) {
+createContact (command: $command) {
+    fullName
+    id
+    lastName
+    name
+  about
+}
+}
+
+variables:
+{
+""""command"""": {
+""""name"""": """"UserB"""",
+""""memberType"""": """"Contact"""",
+""""addresses"""": [],
+""""fullName"""": """"UserB"""",
+""""firstName"""": """"UserB"""",
+""""lastName"""": """"UserB"""",
+  """"about"""": """"Books in our life It is interesting to read different kind of books. “Except of a living man there is nothing more wonderful than a book! They teach us and open their hearts to us as brothers”, wrote Charles Kingsley, an English writer of the 19th century.Books teach us to live. We learn many things by reading books. There different kinds of books: novels, short stories, tales, fairy-tales, fables, poems, plays, memoirs, atlases and text-books.Book can be humorous, adventurous, detective, fantastic, historical, political, and scientific. They can be interesting, thrilling, fascinating, exciting, powerful, useful, unusual, original, amusing, moving, true-to-life, well well-written, unoriginal.Boos are certainly one of the greatest inventions of man.O. Wilde wrote: “Books, I believe, may be divided into three groups:obooks to read;obooks to re-read;obooks not to read at all.”But to tell people what not to read is a very difficult matter..!@#$%^&*()-_+=;:,./?|`~[0123456789]{1}^'""""
+} 
+}
+
+
+
+2. 1. Go to Admin &gt; Contacts &gt; Open User_B card
+2. Check the User_B contact on the """"Companies and Contacts"""" page","V3 Customer Management","S1591","Other","0"
+"C343735","Contact > Update information in About field","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002748, https://virtowayqa.testrail.io/index.php?/attachments/get/1000001393"," Modified","Julia Viniarskaia","7/14/2022 7:04 AM","","","","1. Go to admin > Click ""Contacts"" tab > Companies and Contacts are presented on page 
+2. The Companies and Contacts page has a сontact User_B
+3. User_B contain Information_1 in About field ","Medium","","Add About field to Contact","2","https://virtocommerce.atlassian.net/browse/PT-8151","Step Description:
+1. Go to playgrond
+2.  Update information in About field 
+
+Query:
+
+mutation updateContact ( $command: InputUpdateContactType!) {
+updateContact (command: $command) {
+fullName
+id
+lastName
+name
+about
+}
+}
+
+variables:
+
+{
+""""command"""": {
+""""id"""": """"656ed41a-ad67-4298-bac7-6ff818af2759"""",
+""""name"""": """"UserB"""",
+""""memberType"""": """"Contact"""",
+""""addresses"""": [],
+""""fullName"""": """"UserB"""",
+""""firstName"""": """"UserB"""",
+""""lastName"""": """"UserB"""",
+""""about"""": """"Hello! Wake UP! Hale-Hop""""
+}
+}
+
+HTTP Headers:
+
+{
+""""authorization"""": """"Bearer @id token of admin@ """"
+}
+
+Expected Result:
+1. The Contact User_B saved Information_2 in About field
+
+ 
+
+Step Description:
+1. Go to Admin &gt; Contacts &gt; Open User_B card
+2. Check the content of the About field
+Expected Result:
+1. The About field of User_B contains Information_2","1. 
+2.","1. 1. The Contact User_B saved Information_2 in About field
+
+ 
+
+2. 1. The About field of User_B contains Information_2","1. 1. Go to playgrond
+2.  Update information in About field 
+
+Query:
+
+mutation updateContact ( $command: InputUpdateContactType!) {
+updateContact (command: $command) {
+fullName
+id
+lastName
+name
+about
+}
+}
+
+variables:
+
+{
+""""command"""": {
+""""id"""": """"656ed41a-ad67-4298-bac7-6ff818af2759"""",
+""""name"""": """"UserB"""",
+""""memberType"""": """"Contact"""",
+""""addresses"""": [],
+""""fullName"""": """"UserB"""",
+""""firstName"""": """"UserB"""",
+""""lastName"""": """"UserB"""",
+""""about"""": """"Hello! Wake UP! Hale-Hop""""
+}
+}
+
+HTTP Headers:
+
+{
+""""authorization"""": """"Bearer @id token of admin@ """"
+}
+
+2. 1. Go to Admin &gt; Contacts &gt; Open User_B card
+2. Check the content of the About field","V3 Customer Management","S1591","Other","0"
+"C343726","Contact > Check changes in Indexed","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002748, https://virtowayqa.testrail.io/index.php?/attachments/get/1000001393"," Modified","Julia Viniarskaia","7/13/2022 2:25 PM","","","","1. Go to admin > Click ""Contacts"" tab > Companies and Contacts are presented on page 
+2. Contact_1 has Information_1 in About field","Medium","","Add About field to Contact","2","https://virtocommerce.atlassian.net/browse/PT-8151","Step Description:
+1. Go to playgrond
+2. Change Information_1 to Information_2 in the About field
+
+Query:
+
+mutation updateContact ( $command: InputUpdateContactType!) {
+updateContact (command: $command) {
+   fullName
+    id
+    lastName
+    name
+  about
+}
+}
+
+variables:
+
+{
+""""command"""": {
+""""id"""": """"656ed41a-ad67-4298-bac7-6ff818af2759"""",
+""""name"""": """"UserB"""",
+""""memberType"""": """"Contact"""",
+""""addresses"""": [],
+""""fullName"""": """"UserB"""",
+""""firstName"""": """"UserB"""",
+""""lastName"""": """"UserB"""",
+  """"about"""": """"Hello! Wake UP! Hale-Hop""""
+}
+}
+
+HTTP Headers:
+
+{
+  """"authorization"""": """"Bearer @id token of admin@ """"
+}
+
+Expected Result:
+1. Changes have been saved.
+
+ 
+
+Step Description:
+1. Go to Admin &gt; Contacts &gt; Open Contact_1 card
+2. Check the display of information_2 in the About field
+Expected Result:
+1. The About field contains Information_2
+Step Description:
+1. Go to Admin &gt; Click Indexed vidget &gt; Open Search index details page
+2. Check if Information_2 is present in the Index content field 
+Expected Result:
+1. Information_2 is displayed in the """"About"""" data in the Index content field","1. 
+2. 
+3.","1. 1. Changes have been saved.
+
+ 
+
+2. 1. The About field contains Information_2
+3. 1. Information_2 is displayed in the """"About"""" data in the Index content field","1. 1. Go to playgrond
+2. Change Information_1 to Information_2 in the About field
+
+Query:
+
+mutation updateContact ( $command: InputUpdateContactType!) {
+updateContact (command: $command) {
+   fullName
+    id
+    lastName
+    name
+  about
+}
+}
+
+variables:
+
+{
+""""command"""": {
+""""id"""": """"656ed41a-ad67-4298-bac7-6ff818af2759"""",
+""""name"""": """"UserB"""",
+""""memberType"""": """"Contact"""",
+""""addresses"""": [],
+""""fullName"""": """"UserB"""",
+""""firstName"""": """"UserB"""",
+""""lastName"""": """"UserB"""",
+  """"about"""": """"Hello! Wake UP! Hale-Hop""""
+}
+}
+
+HTTP Headers:
+
+{
+  """"authorization"""": """"Bearer @id token of admin@ """"
+}
+
+2. 1. Go to Admin &gt; Contacts &gt; Open Contact_1 card
+2. Check the display of information_2 in the About field
+3. 1. Go to Admin &gt; Click Indexed vidget &gt; Open Search index details page
+2. Check if Information_2 is present in the Index content field","V3 Customer Management","S1591","Other","0"
+"C343700","Contact > Download picture by URL",""," Modified","Julia Viniarskaia","7/11/2022 12:25 PM","","","","1. Go to admin > Click ""Contacts"" tab.
+2. Companies and Contacts page contains Contact_1","Medium","","Add Icon to Contact and Organization","2","https://virtocommerce.atlassian.net/browse/PT-8145","Step Description:
+1. Open Contact_1 details page
+2. Click Icon vidget &gt; Enter URL picture &gt; Click Save button
+3. Check the display of a contact's avatar
+Expected Result:
+1. When you open the contact details page &gt; the avatar changes size and is displayed in a round box
+Step Description:
+1. Close Contact_1 details page
+2. Open Contacts tab &gt; Check the display of Contact_1 with the avatar in the header and in the grid in the list of companies and contacts.
+Expected Result:
+1. The Contact_1's avatar is displayed in the round box in the header on the contact and organization page
+
+2. The Contact_1's avatar is displayed in the round box in the grid in the list of organizations and contacts.","1. 
+2.","1. 1. When you open the contact details page &gt; the avatar changes size and is displayed in a round box
+2. 1. The Contact_1's avatar is displayed in the round box in the header on the contact and organization page
+
+2. The Contact_1's avatar is displayed in the round box in the grid in the list of organizations and contacts.","1. 1. Open Contact_1 details page
+2. Click Icon vidget &gt; Enter URL picture &gt; Click Save button
+3. Check the display of a contact's avatar
+2. 1. Close Contact_1 details page
+2. Open Contacts tab &gt; Check the display of Contact_1 with the avatar in the header and in the grid in the list of companies and contacts.","V3 Customer Management","S1591","Other","0"
+"C343708","Contact > Download picture using drag-n-drop",""," Modified","Julia Viniarskaia","7/11/2022 1:44 PM","","","","1. Go to admin > Click ""Contacts"" tab.
+2. Companies and Contacts page contains Contact_1","Medium","","Add Icon to Contact and Organization","2","https://virtocommerce.atlassian.net/browse/PT-8145","Step Description:
+1. Open Contact_1 details page
+2. Click Icon vidget &gt; Download picture using drag-n-drop &gt; Click Save button
+3. Close the Organization_1 details page 
+4. Reopen Organization detail page &gt; Check the display of a contact_1's avatar
+Expected Result:
+1. The Contact_1 Avatar resized and displays in a round field
+Step Description:
+1. Close the Contact_1 details page
+
+2. Open Contacts tab &gt; Check the display of Contact_1 with the avatar in the header and in the grid in the list of companies and contacts.
+Expected Result:
+1. The Contact_1's avatar is displayed in the round box in the header on the contact and organization page
+
+2. The Contact_1's avatar is displayed in the round box in the grid in the list of organizations and contacts.","1. 
+2.","1. 1. The Contact_1 Avatar resized and displays in a round field
+2. 1. The Contact_1's avatar is displayed in the round box in the header on the contact and organization page
+
+2. The Contact_1's avatar is displayed in the round box in the grid in the list of organizations and contacts.","1. 1. Open Contact_1 details page
+2. Click Icon vidget &gt; Download picture using drag-n-drop &gt; Click Save button
+3. Close the Organization_1 details page 
+4. Reopen Organization detail page &gt; Check the display of a contact_1's avatar
+2. 1. Close the Contact_1 details page
+
+2. Open Contacts tab &gt; Check the display of Contact_1 with the avatar in the header and in the grid in the list of companies and contacts.","V3 Customer Management","S1591","Other","0"
+"C343709","Contact > size of icon avatar",""," Modified","Julia Viniarskaia","7/11/2022 1:53 PM","","","","1. Go to admin > Click Contact tab
+2. Companies and Contacts page contains Contact_1
+3. Contact_1 has an avatar Icon","Medium","","Add Icon to Contact and Organization","2","https://virtocommerce.atlassian.net/browse/PT-8145","Step Description:
+1. Check the size of the Save image and Resize the icons for the header and for the list
+Expected Result:
+1. When save Icon size of image must to be 90х90
+2. Icons resizing:
+- For the header - 34x34
+- For the list - 32x32","1","1. 1. When save Icon size of image must to be 90х90
+2. Icons resizing:
+- For the header - 34x34
+- For the list - 32x32","1. 1. Check the size of the Save image and Resize the icons for the header and for the list","V3 Customer Management","S1591","Other","0"
+"C343707","Organization > Download picture by URL",""," Modified","Julia Viniarskaia","7/11/2022 1:44 PM","","","","1. Go to admin > Click ""Contacts"" tab.
+2. Companies and Contacts page contains Organization_1","Medium","","Add Icon to Contact and Organization","2","https://virtocommerce.atlassian.net/browse/PT-8145","Step Description:
+1. Open the Organization_1 details page
+2. Click Icon vidget &gt; Enter URL picture &gt; Click Save button
+3. Check the display of a contact's avatar
+Expected Result:
+1. When you open the Organization_1 details page &gt; the avatar changes size and is displayed in a round box
+Step Description:
+1. Close Organization_1 details page
+2. Open Contacts tab &gt; Check the display of  Organization_1 with the avatar in the header and in the grid in the list of companies and contacts.
+Expected Result:
+1. The  Organization_1's avatar is displayed in the round box in the header on the contact and organization page
+
+2. The  Organization_1's avatar is displayed in the round box in the grid in the list of organizations and contacts.","1. 
+2.","1. 1. When you open the Organization_1 details page &gt; the avatar changes size and is displayed in a round box
+2. 1. The  Organization_1's avatar is displayed in the round box in the header on the contact and organization page
+
+2. The  Organization_1's avatar is displayed in the round box in the grid in the list of organizations and contacts.","1. 1. Open the Organization_1 details page
+2. Click Icon vidget &gt; Enter URL picture &gt; Click Save button
+3. Check the display of a contact's avatar
+2. 1. Close Organization_1 details page
+2. Open Contacts tab &gt; Check the display of  Organization_1 with the avatar in the header and in the grid in the list of companies and contacts.","V3 Customer Management","S1591","Other","0"
+"C343703","Organization > Download picture using drag-n-drop",""," Modified","Julia Viniarskaia","7/11/2022 12:26 PM","","","","1. Go to admin > Click ""Contacts"" tab.
+2. Companies and Contacts page contains Organization_1","Medium","","Add Icon to Contact and Organization","2","https://virtocommerce.atlassian.net/browse/PT-8145","Step Description:
+1. Open the Organization_1 details page
+2. Click Icon vidget &gt; Download picture using drag-n-drop &gt; Click Save button
+3. Close the Organization_1 details page 
+
+4. Reopen Organization detail page &gt; Check the display avatar of Organization_1
+Expected Result:
+1. Organization_1 Avatar resized and displays in a round field
+Step Description:
+1. Close Organization_1 details page
+
+2. Click Contacts tab &gt; Check the display of Organization_1 with the avatar in the header and in the grid in the list of companies and contacts.
+Expected Result:
+1. The Organization_1's avatar is displayed in the round box in the header on the contact and organization page
+
+2. The Organization_1's avatar is displayed in the round box in the grid in the list of organizations and contacts.","1. 
+2.","1. 1. Organization_1 Avatar resized and displays in a round field
+2. 1. The Organization_1's avatar is displayed in the round box in the header on the contact and organization page
+
+2. The Organization_1's avatar is displayed in the round box in the grid in the list of organizations and contacts.","1. 1. Open the Organization_1 details page
+2. Click Icon vidget &gt; Download picture using drag-n-drop &gt; Click Save button
+3. Close the Organization_1 details page 
+
+4. Reopen Organization detail page &gt; Check the display avatar of Organization_1
+2. 1. Close Organization_1 details page
+
+2. Click Contacts tab &gt; Check the display of Organization_1 with the avatar in the header and in the grid in the list of companies and contacts.","V3 Customer Management","S1591","Other","0"
+"C343711","Organization > size of icon avatar",""," Modified","Julia Viniarskaia","7/11/2022 2:12 PM","","","","1. Go to admin > Click Contact tab
+2. Companies and Contacts page contains Organization_1
+3. Organization_1 has an avatar Icon","Medium","","Add Icon to Contact and Organization","2","https://virtocommerce.atlassian.net/browse/PT-8145","Step Description:
+1. Check the size of the Save image and Resize the icons for the header and for the list
+Expected Result:
+1. When save Icon size of image must to be 90х90
+2. Icons resizing:
+- For the header - 34x34
+- For the list - 32x32","1","1. 1. When save Icon size of image must to be 90х90
+2. Icons resizing:
+- For the header - 34x34
+- For the list - 32x32","1. 1. Check the size of the Save image and Resize the icons for the header and for the list","V3 Customer Management","S1591","Other","0"
+"C278825","User email verification","","","Grotem","3/1/2021 2:00 PM","","1. Account_1 email verified
+2. Verified toggle near Email_1 set to TRUE","","1. Account_1 created in platform
+2. Email_1 assigned for Account_1
+3. Verification_link sent to Email_1","Medium","","Verification","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C278826","User email verification sent. User change address","","","Grotem","3/1/2021 2:02 PM","","1. Error shown
+2. Account_1 email not verified","","1. Account_1 created in platform
+2. Email_1 assigned for Account_1","Medium","","Verification","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C278789","Verification toggle UI (Security blade)","","","Grotem","2/26/2021 2:15 PM","","1. Toggle """"Verification"""" near email address shown
+![](index.php?/attachments/get/61975)
+","","1. Admin is on security blade
+2. Account_1 created in platform","Medium","","Design","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C278791","Verification toggle UI (Contact blade)","","","Grotem","2/26/2021 2:18 PM","","1. Toggle """"Verification"""" near email address shown
+![](index.php?/attachments/get/61976)
+","","1. Admin is on contact blade
+3. Contact_1 created in platform
+2. Account_1 created in platform and assigned to Contact_1
+","Medium","","Design","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C278828","Resend link title (Security blade)","","","Grotem","3/1/2021 2:51 PM","","1. Title changed
+![](index.php?/attachments/get/62079)
+","","1. Admin is on security blade
+2. Account_1 created in platform","Medium","","Design","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C278829","Resend link title (Contact blade)","","","Grotem","3/1/2021 2:52 PM","","1. Title changed
+![](index.php?/attachments/get/62081)
+","","1. Admin is on contact blade
+3. Contact_1 created in platform
+2. Account_1 created in platform and assigned to Contact_1
+","Medium","","Design","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C278833","Resend link title not shown if email changed but not saved (Security blade)","","","Grotem","3/3/2021 7:51 AM","","","","1. Admin is on security blade
+2. Account_1 created in platform
+
+
+
+
+1. Title changed
+![](index.php?/attachments/get/62079)
+","Medium","","Design","2","","Step Description:
+1. Open Account_1
+2. Check UI of account blade
+Expected Result:
+1. Resend link title shown
+
+![](index.php?/attachments/get/62078)
+Step Description:
+1. Change account email address
+2. Do not save changes
+Expected Result:
+1. Resend link title disabled","1. 
+2.","1. 1. Resend link title shown
+
+![](index.php?/attachments/get/62078)
+2. 1. Resend link title disabled","1. 1. Open Account_1
+2. Check UI of account blade
+2. 1. Change account email address
+2. Do not save changes","V3 Customer Management","S1591","Other","0"
+"C278834","Resend link title not shown if email changed but not saved (Contact blade)","","","Grotem","3/3/2021 7:51 AM","","","","1. Admin is on contact blade
+3. Contact_1 created in platform
+2. Account_1 created in platform and assigned to Contact_1
+
+
+
+1. Title changed
+![](index.php?/attachments/get/62081)
+
+","Medium","","Design","2","","Step Description:
+1. Open Contact_1
+2. Click on """"Accounts"""" widget
+3. Open Account_1
+
+Expected Result:
+1. Resend link title shown
+![](index.php?/attachments/get/62080)
+
+Step Description:
+1. Change account email address
+2. Do not save changes
+Expected Result:
+1. Resend link title disabled","1. 
+2.","1. 1. Resend link title shown
+![](index.php?/attachments/get/62080)
+
+2. 1. Resend link title disabled","1. 1. Open Contact_1
+2. Click on """"Accounts"""" widget
+3. Open Account_1
+
+2. 1. Change account email address
+2. Do not save changes","V3 Customer Management","S1591","Other","0"
+"C278784","Email verification after account creation (Security blade)","","","Grotem","2/26/2021 1:45 PM","","1. New account created in platform
+2. Verification link sent to Email_1
+3. Verified toggle set to FALSE","","1. Admin is on security blade","Medium","","Registration","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C278781","Email verification after account creation (Contacts blade)","","","Grotem","2/26/2021 1:41 PM","","1. New account created for Contact_1
+2. Verification link sent to Email_1
+3. Verified toggle set to FALSE","","1. Contact_1 created in platform","Medium","","Registration","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C278785","Email verification after account creation (Storefront)","","","Grotem","2/26/2021 1:49 PM","","","","1. User is on store page","Medium","","Registration","2","","Step Description:
+1. Click on Create Account button
+2. Enter all necessary fields
+3. Set email address as Email_1
+4. Click button """"Create""""
+
+Expected Result:
+1. New Contact_1 with Account_1 created
+2. Verification_link sent to Email_1
+Step Description:
+1. Login in platform
+2. Open Contact page
+3. Find Contact_1
+4. Click on widget """"Accounts""""
+5. Open Account_1
+Expected Result:
+Verified toggle set to FALSE","1. 
+2.","1. 1. New Contact_1 with Account_1 created
+2. Verification_link sent to Email_1
+2. Verified toggle set to FALSE","1. 1. Click on Create Account button
+2. Enter all necessary fields
+3. Set email address as Email_1
+4. Click button """"Create""""
+
+2. 1. Login in platform
+2. Open Contact page
+3. Find Contact_1
+4. Click on widget """"Accounts""""
+5. Open Account_1","V3 Customer Management","S1591","Other","0"
+"C278786","Email verification after changed email address (Security blade)","","","Grotem","2/26/2021 2:13 PM","","1. New email address saved
+2. Verified toggle set to FALSE","","1. Admin is on security blade
+2. Account_1 created in platform
+3. Verified toggle set to TRUE","Medium","","Change email address","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C278787","Email verification after changed email address (Contacts blade)","","","Grotem","2/26/2021 2:13 PM","","1. New email address saved for account
+2. Verified toggle set to FALSE","","1. Admin is on contact blade
+2. Contact_1 created in platform 
+2. Account_1 created in platform and assigned to Contact_1
+3. Verified toggle set to TRUE","Medium","","Change email address","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C278792","Email verification after changed email address (Store)","","","Grotem","2/26/2021 2:35 PM","","","","1. Admin is on contact blade
+2. Contact_1 created in platform 
+3. Account_1 created in platform and assigned to Contact_1
+4. Verified toggle set to TRUE","Medium","","Change email address","2","","Step Description:
+1. User open profile in store
+2. User enter new email address
+3. User save changes
+
+Expected Result:
+1. New email address saved
+Step Description:
+1. Admin open Contact blade
+2. Admin open Contact_1
+3. Admin click on widget """"Accounts""""
+4. Admin open Account_1
+Expected Result:
+1. New email address set for Account
+2. Verified toggle set to FALSE","1. 
+2.","1. 1. New email address saved
+2. 1. New email address set for Account
+2. Verified toggle set to FALSE","1. 1. User open profile in store
+2. User enter new email address
+3. User save changes
+
+2. 1. Admin open Contact blade
+2. Admin open Contact_1
+3. Admin click on widget """"Accounts""""
+4. Admin open Account_1","V3 Customer Management","S1591","Other","0"
+"C278810","Permission added in platform","","","Grotem","3/1/2021 8:56 AM","","1. Permission shown in list
+2. Permission can be added and saved for role","","1. Admin is on security blade","Medium","","Permission","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C278794","Verification toggle for admin (Security blade)","","","Grotem","3/1/2021 6:55 AM","","1. Verified toggle shown
+2. Admin can turn on/turn off toggle
+3. Admin can resend link","","1. Admin is on security blade
+2. Account_1 created in platform","Medium","","Admin","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C278819","Send link - admin (Security blade)","","","Grotem","3/1/2021 1:32 PM","","1. Email sent to Account_1 email address","","1. Admin is on security blade
+2. Account_1 created in platform","Medium","","Admin","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C278795","Verification toggle for admin (Contact blade)","","","Grotem","3/1/2021 6:55 AM","","1. Verified toggle shown
+2. Admin can turn on/turn off toggle
+3. Admin can resend link","","1. Admin is on contact blade
+2. Contact_1 created in platform 
+2. Account_1 created in platform and assigned to Contact_1","Medium","","Admin","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C278820","Send link - admin (Contact blade)","","","Grotem","3/1/2021 1:33 PM","","1. Email sent to Account_1 email address","","1. Admin is on contact blade
+2. Contact_1 created in platform 
+2. Account_1 created in platform and assigned to Contact_1","Medium","","Admin","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C278812","Send verification email - admin (API)","","","Grotem","3/1/2021 10:43 AM","","1. Request response is 200 OK
+2. Verification email sent","","1. Admin is swagger page
+2. Admin authorized in swagger
+3. Account_1 created in platform
+4. Account_1 id is accountId_1","Medium","","Admin","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C278811","Change toggle state - admin (API)","","","Grotem","3/1/2021 10:32 AM","","1. Account_1 information changed
+2. Verified toggle set according to sent value","","1. Admin is swagger page
+2. Admin authorized in swagger
+3. Account_1 created in platform
+4. Account_1 id is accountId_1","Medium","","Admin","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C278796","Verification toggle for user with permission (Security blade)","","","Grotem","3/1/2021 6:57 AM","","1. Verified toggle shown
+2. User can turn on/turn off toggle
+3. User can resend link","","1. User is on security blade
+2. Account_1 created in platform
+3. User have permission **platform:security:verifyEmail**
+4. User have permissions to see list of users and update users in security blade","Medium","","User contain permission","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C278822","Send link - user with permission (Security blade)","","","Grotem","3/1/2021 1:52 PM","","1. Email sent to Account_1 email address","","1. User is on security blade
+2. Account_1 created in platform
+3. User have permission **platform:security:verifyEmail**
+4. User have permissions to see list of users and update users in security blade","Medium","","User contain permission","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C278797","Verification toggle for user with permission (Contact blade)","","","Grotem","3/1/2021 6:57 AM","","1. Verified toggle shown
+2. User can turn on/turn off toggle
+3. User can resend link","","1. User is on contact blade
+2. Contact_1 created in platform 
+3. Account_1 created in platform and assigned to Contact_1
+4. User have permission **platform:security:verifyEmail**
+5. User have permissions to see list of users and update users in security blade and in contact blade","Medium","","User contain permission","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C278821","Send link - user with permission (Contact blade)","","","Grotem","3/1/2021 1:52 PM","","1. Email sent to Account_1 email address","","1. User is on contact blade
+2. Contact_1 created in platform 
+3. Account_1 created in platform and assigned to Contact_1
+4. User have permission **platform:security:verifyEmail**
+5. User have permissions to see list of users and update users in security blade and in contact blade","Medium","","User contain permission","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C278814","Send verification email - user with permission (API)","","","Grotem","3/1/2021 10:46 AM","","1. Request response is 200 OK
+2. Verification email sent","","1. User is swagger page
+2. User authorized in swagger
+3. Account_1 created in platform
+4. Account_1 id is accountId_1
+5. User have permission **platform:security:verifyEmail**
+","Medium","","User contain permission","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C278802","Change toggle state - user with permission (API)","","","Grotem","3/1/2021 7:08 AM","","1. Account_1 information changed
+2. Verified toggle set according to sent value","","1. User is swagger page
+2. User have permission **platform:security:verifyEmail**
+3. User have permission to update user details 
+4. User authorized in swagger
+5. Account_1 created in platform
+6. Account_1 id is accountId_1","Medium","","User contain permission","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C278798","Verification toggle for user without permission (Security blade)","","","Grotem","3/1/2021 7:00 AM","","1. Verified toggle shown
+2. User **can not** turn on/turn off toggle
+3. User **can not** resend link","","1. User is on security blade
+2. Account_1 created in platform
+3. User **does not** have permission **platform:security:verifyEmail**
+
+4. User have permissions to see list of users and update users in security blade","Medium","","User does not contain permission","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C278823","Send link - user without permission (Security blade)","","","Grotem","3/1/2021 1:53 PM","","1. Verified toggle shown
+2. """"Resend link"""" title not shown","","1. User is on security blade
+2. Account_1 created in platform
+3. User **does not** have permission **platform:security:verifyEmail**
+
+4. User have permissions to see list of users and update users in security blade","Medium","","User does not contain permission","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C278799","Verification toggle for user without permission (Contact blade)","","","Grotem","3/1/2021 7:00 AM","","1. Verified toggle shown
+2. User **can not** turn on/turn off toggle
+3. User **can not** resend link","","1. User is on contact blade
+2. Contact_1 created in platform 
+3. Account_1 created in platform and assigned to Contact_1
+4. User **does not** have permission **platform:security:verifyEmail**
+
+5. User have permissions to see list of users and update users in security blade and in contact blade","Medium","","User does not contain permission","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C278824","Send link - user without permission (Contact blade)","","","Grotem","3/1/2021 1:53 PM","","1. Verified toggle shown
+2. """"Resend link"""" title not shown","","1. User is on contact blade
+2. Contact_1 created in platform 
+3. Account_1 created in platform and assigned to Contact_1
+4. User **does not** have permission **platform:security:verifyEmail**
+
+5. User have permissions to see list of users and update users in security blade and in contact blade","Medium","","User does not contain permission","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C278815","Send verification email - user without permission (API)","","","Grotem","3/1/2021 10:48 AM","","1. Request response is 403
+2. Access denied
+3. Email not sent","","1. User is swagger page
+2. User authorized in swagger
+3. Account_1 created in platform
+4. Account_1 id is accountId_1
+5. User **does not** have permission **platform:security:verifyEmail**
+","Medium","","User does not contain permission","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C278816","Change toggle state - user with permission (API)","","","Grotem","3/1/2021 10:48 AM","","1. Response code is 403
+2. Access denied
+3. Account did not changed","","1. User is swagger page
+2. User **does not** have permission **platform:security:verifyEmail**
+3. User have permission to update user details 
+4. User authorized in swagger
+5. Account_1 created in platform
+6. Account_1 id is accountId_1","Medium","","User does not contain permission","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C223623","Add new filter","","","Volha Baban","5/14/2020 1:34 PM","","","","1. Admin is on contact module page
+","Medium","VP-1279","Filters in Contact module","1","Main functions to create/edit/delete filters","Step Description:
+1. Click on """"Select filters"""" button
+2. Click """"Add new filter""""
+Expected Result:
+1. Filter's management blade opened
+Step Description:
+1. Enter filter name
+2. Enter filter search phrase
+3. Click """"Save & Apply""""
+Expected Result:
+1. Created filter shown in list
+2. Created filter applied
+3. Search result shown according to search phrase","1. 
+2.","1. 1. Filter's management blade opened
+2. 1. Created filter shown in list
+2. Created filter applied
+3. Search result shown according to search phrase","1. 1. Click on """"Select filters"""" button
+2. Click """"Add new filter""""
+2. 1. Enter filter name
+2. Enter filter search phrase
+3. Click """"Save & Apply""""","V3 Customer Management","S1591","Other","0"
+"C223624","Edit filter","","","Volha Baban","5/14/2020 1:34 PM","","","","1. Admin is on contact module page
+2. Filter_1 was created in system","Medium","VP-1279","Filters in Contact module","1","Main functions to create/edit/delete filters","Step Description:
+1. Click on filters list
+2. Click on """"Pencil"""" icon near Filter_1
+Expected Result:
+1. Filter's management blade opened
+Step Description:
+1. Change filter's name
+2. Change search phrase
+3. Click """"Save & Apply""""
+Expected Result:
+1. Filter_1 changes saved
+2. Search result shown according to search phrase","1. 
+2.","1. 1. Filter's management blade opened
+2. 1. Filter_1 changes saved
+2. Search result shown according to search phrase","1. 1. Click on filters list
+2. Click on """"Pencil"""" icon near Filter_1
+2. 1. Change filter's name
+2. Change search phrase
+3. Click """"Save & Apply""""","V3 Customer Management","S1591","Other","0"
+"C223625","Delete filter","","","Volha Baban","5/14/2020 1:34 PM","","1. Filter_1 delted
+2. Search result not filtered","","1. Admin is on contact module page 
+2. Filter was created in system","Medium","VP-1279","Filters in Contact module","1","Main functions to create/edit/delete filters","","","","","V3 Customer Management","S1591","Other","0"
+"C223626","Few search criteria in one query","","","Volha Baban","5/14/2020 1:34 PM","","1. Search result contains results that fulfill both rules","","1. Admin is on contact module page","Medium","VP-1279","Filters in Contact module","1","Main functions to create/edit/delete filters","","","","","V3 Customer Management","S1591","Other","0"
+"C261101","Search by indexed fields","","","Grotem","11/24/2020 11:43 AM","","1. Search result contains results for selected search phrase (e.g. shown only contacts of type Organization)","","1. Admin is on contact module page
+2. Filter_1 contains search phrase - Rule_1
+3. Rule_1 is filtering by indexed fields (e.g. memberType:Organization)","Medium","VP-1279","Filters in Contact module","1","Main functions to create/edit/delete filters","","","","","V3 Customer Management","S1591","Other","0"
+"C346120","Contact > Filters >UI","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004491, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000100"," None","Julia Viniarskaia","8/16/2022 9:44 AM","","","","1. Go to Admin ","Medium","","Filters in Contact module","1","Main functions to create/edit/delete filters","Step Description:
+1. Open Contact module &gt; Companies and Contacts page is open
+2. Click the Please select a filter button near the search bar 
+Expected Result:
+1. A popup window with a list of filters appears
+2. The popup window should look like this:
+![](index.php?/attachments/get/fcc320f2-8656-4089-adf8-3490e18441bc) 
+
+   ","1","1. 1. A popup window with a list of filters appears
+2. The popup window should look like this:
+![](index.php?/attachments/get/fcc320f2-8656-4089-adf8-3490e18441bc) 
+
+   ","1. 1. Open Contact module &gt; Companies and Contacts page is open
+2. Click the Please select a filter button near the search bar","V3 Customer Management","S1591","Other","0"
+"C261091","Rule - *. Replace zero or more characters","","","Grotem","11/24/2020 10:03 AM","","1. Search result should contain all results that contains Adm __+ any amount of other symbols__","","1. Admin is on contact module page","Medium","","Operators","2","Rules can be combined with fields' filters","","","","","V3 Customer Management","S1591","Other","0"
+"C261093","Rule - !. NOT operator","","","Grotem","11/24/2020 10:26 AM","","1. Search result should contain only contacts that first name __IS NOT__ Test","","1. Admin is on contact module page","Medium","","Operators","2","Rules can be combined with fields' filters","","","","","V3 Customer Management","S1591","Other","0"
+"C261103","Rule not set. Search contacts that contains entered value in index. Single word","","","Grotem","11/24/2020 11:51 AM","","1. Search result should contain all contacts that contains 'Test123' in indexed property values","","1. Admin is on contact module page","Medium","","Indexed property values","2","Tests can be implemented with several other fields. In these cases shown examples.","","","","","V3 Customer Management","S1591","Other","0"
+"C261102","Rule not set. Search contacts that contains entered value in index. Space delimiter","","","Grotem","11/24/2020 11:48 AM","","1. Search result should contain all contacts that contains 'Test' AND '123' in indexed property values","","1. Admin is on contact module page","Medium","","Indexed property values","2","Tests can be implemented with several other fields. In these cases shown examples.","","","","","V3 Customer Management","S1591","Other","0"
+"C261092","Rule - firstName:. All contacts where first name contains words","","","Grotem","11/24/2020 10:15 AM","","1. Search result should contain only contacts that first name is Test
+","","1. Admin is on contact module","Medium","","Indexed property values","2","Tests can be implemented with several other fields. In these cases shown examples.","","","","","V3 Customer Management","S1591","Other","0"
+"C261094","Rule - memberType:. All contacts of particular member type","","","Grotem","11/24/2020 10:35 AM","","1. Search result contains only contacts with type **Organization**","","1. Admin is on contact module page","Medium","","Indexed property values","2","Tests can be implemented with several other fields. In these cases shown examples.","","","","","V3 Customer Management","S1591","Other","0"
+"C261095","Rule - createddate:[start TO end]. All contacts created in particular period. Including bounds.","","","Grotem","11/24/2020 10:57 AM","","1. Search result contains all contacts that were created in that period
+2. start/end dates INCLUDED","","1. Admin is in contact module page","Medium","","Indexed property values","2","Tests can be implemented with several other fields. In these cases shown examples.","","","","","V3 Customer Management","S1591","Other","0"
+"C261096","Rule - createddate:(start TO end) . All contact crated in particular period. Excluding bounds","","","Grotem","11/24/2020 11:11 AM","","1. Search result contains all contact that were created in particular period
+2. start/end dates EXCLUDED","","1. Admin is on contact page","Medium","","Indexed property values","2","Tests can be implemented with several other fields. In these cases shown examples.","","","","","V3 Customer Management","S1591","Other","0"
+"C261097","Rule - modifieddate:[start TO]. Only one bound set","","","Grotem","11/24/2020 11:25 AM","","1. Search result must contain values with modified date greater or equal start","","1. Admin is on contact page","Medium","","Indexed property values","2","Tests can be implemented with several other fields. In these cases shown examples.","","","","","V3 Customer Management","S1591","Other","0"
+"C239996","Customer > Access","","","Aleksandra Balabanova","6/19/2020 12:02 PM","","","","Role_1 created in system
+Role_1 contains next permissions:
+- customer:access
+Role_1 assigned for User_1","Medium","","Permissions","1","","Step Description:
+1.User_1 logged in admin environment
+2. User_1 open main menu
+Expected Result:
+1. User_1 can open Contacts page","1","1. 1. User_1 can open Contacts page","1. 1.User_1 logged in admin environment
+2. User_1 open main menu","V3 Customer Management","S1591","Functional","0"
+"C239995","Customer > Read","","","Aleksandra Balabanova","6/19/2020 12:02 PM","","","","Role_1 created in system
+Role_1 contains next permissions:
+- customer:access
+- customer:read
+Role_1 assigned for User_1","Medium","","Permissions","1","","Step Description:
+1. User_1 logged in admin environment
+2. User_1 open main menu
+3. User_1 click on Contacts
+Expected Result:
+1. Contacts page opened
+2. List with Organizations/Contacts are shown
+3. User can not add or modify Organizations/Contacts","1","1. 1. Contacts page opened
+2. List with Organizations/Contacts are shown
+3. User can not add or modify Organizations/Contacts","1. 1. User_1 logged in admin environment
+2. User_1 open main menu
+3. User_1 click on Contacts","V3 Customer Management","S1591","Functional","0"
+"C239997","Customer > Create","","","Aleksandra Balabanova","6/19/2020 12:02 PM","","","","Role_1 created in system
+Role_1 contains next permissions:
+- customer:access
+- customer:read
+- customer:create
+Role_1 assigned for User_1
+","Medium","","Permissions","1","","Step Description:
+1. User_1 logged in admin environment
+2. User_1 open main menu
+3. User_1 click on **Contacts**
+4. User_1 click on button **Add**
+5. Select **Contact**
+6. User_1 enter necessary fields
+7. User press **Create**
+Expected Result:
+1. New Contact created","1","1. 1. New Contact created","1. 1. User_1 logged in admin environment
+2. User_1 open main menu
+3. User_1 click on **Contacts**
+4. User_1 click on button **Add**
+5. Select **Contact**
+6. User_1 enter necessary fields
+7. User press **Create**","V3 Customer Management","S1591","Functional","0"
+"C239998","Customer > Update","","","Aleksandra Balabanova","6/19/2020 12:02 PM","","","","Role_1 created in system
+Role_1 contains next permissions:
+- customer:access
+- customer:read
+- customer:update
+Role_1 assigned for User_1","Medium","","Permissions","1","","Step Description:
+1. User_1 logged in admin environment
+2. User_1 open main menu
+3. User_1 click on **Contacts**
+4. User_1 choose any Contact
+5. User_1 change some fields
+6. User_1 press **Save**
+Expected Result:
+1. Changes for Contact saved","1","1. 1. Changes for Contact saved","1. 1. User_1 logged in admin environment
+2. User_1 open main menu
+3. User_1 click on **Contacts**
+4. User_1 choose any Contact
+5. User_1 change some fields
+6. User_1 press **Save**","V3 Customer Management","S1591","Functional","0"
+"C239999","Customer > Delete","","","Aleksandra Balabanova","6/19/2020 12:02 PM","","","","Role_1 created in system
+Role_1 contains next permissions:
+- customer:access
+- customer:read
+- customer:delete
+Role_1 assigned for User_1","Medium","","Permissions","1","","Step Description:
+1. User_1 logged in admin environment
+2. User_1 open main menu
+3. User_1 click on **Contacts**
+4. User_1 select any Contact
+5. User_1 click on **Delete**
+6. User_1 confirm delete
+Expected Result:
+1. Contact deleted from the list","1","1. 1. Contact deleted from the list","1. 1. User_1 logged in admin environment
+2. User_1 open main menu
+3. User_1 click on **Contacts**
+4. User_1 select any Contact
+5. User_1 click on **Delete**
+6. User_1 confirm delete","V3 Customer Management","S1591","Functional","0"
+"C241844","Settings > Customer > Member groups dictionary","","","Aleksandra Balabanova","7/3/2020 8:59 AM","","","","1. Admin logged in environment
+2. Admin is on settings pannel
+
+","Medium","","Settings - Customer","1","","Step Description:
+1. Admin open Settings -> Customer blade
+2. Click on """"Pencil"""" **Member groups dictionary**
+3. Add new Group
+4. Click Save
+Expected Result:
+1. New Member group saved
+Step Description:
+1. Admin open Contacts page
+2. Find User_1
+3. Change **User groups** to new created gropup
+4. Click Save
+Expected Result:
+1. User group saved for User_1
+Step Description:
+1. Admin open Catalog -> Category
+2. Click Manage with right-click button
+3. Choose Tags
+4. Select new created group
+5. Click Save
+Expected Result:
+1. New created group saved for Category
+Step Description:
+1. Admin open Catalog -> Category -> choose any Product
+2. Click Manage with right-click button
+3. Choose Tags
+4. Select new created group
+5. Click Save
+Expected Result:
+1. New created group saved for Product","1. 
+2. 
+3. 
+4.","1. 1. New Member group saved
+2. 1. User group saved for User_1
+3. 1. New created group saved for Category
+4. 1. New created group saved for Product","1. 1. Admin open Settings -> Customer blade
+2. Click on """"Pencil"""" **Member groups dictionary**
+3. Add new Group
+4. Click Save
+2. 1. Admin open Contacts page
+2. Find User_1
+3. Change **User groups** to new created gropup
+4. Click Save
+3. 1. Admin open Catalog -> Category
+2. Click Manage with right-click button
+3. Choose Tags
+4. Select new created group
+5. Click Save
+4. 1. Admin open Catalog -> Category -> choose any Product
+2. Click Manage with right-click button
+3. Choose Tags
+4. Select new created group
+5. Click Save","V3 Customer Management","S1591","Functional","0"
+"C241846","Settings > Customer > The page size being used for Export / Import","","","Aleksandra Balabanova","7/3/2020 8:59 AM","","","","1. Admin logged in environment
+2. Admin is on settings pannel","Medium","","Settings - Customer","1","","Step Description:
+1. Admin open Customer settings blade
+2. Change value for field """"The page size being used for Export / Import"""" (for example """"1"""")
+3. Click Save
+Expected Result:
+1. Changes saved
+Step Description:
+1. Admin open Export & Import page
+2. Select Export blade
+3. Choose **VirtoCommerce.Customer**
+4. Click """"Start Export""""
+Expected Result:
+1. Progress bar updating with such values from setting 
+Step Description:
+1. Admin open Export & Import page
+2. Select Import blade
+3. Choose **VirtoCommerce.Customer**
+4. Click """"Start Import""""
+Expected Result:
+1. Progress bar updating with such values from setting","1. 
+2. 
+3.","1. 1. Changes saved
+2. 1. Progress bar updating with such values from setting 
+3. 1. Progress bar updating with such values from setting","1. 1. Admin open Customer settings blade
+2. Change value for field """"The page size being used for Export / Import"""" (for example """"1"""")
+3. Click Save
+2. 1. Admin open Export & Import page
+2. Select Export blade
+3. Choose **VirtoCommerce.Customer**
+4. Click """"Start Export""""
+3. 1. Admin open Export & Import page
+2. Select Import blade
+3. Choose **VirtoCommerce.Customer**
+4. Click """"Start Import""""","V3 Customer Management","S1591","Functional","0"
+"C241847","Settings > Customer > Member indexation date and time","","","Aleksandra Balabanova","7/3/2020 9:00 AM","","","","1. Admin logged in environment
+2. Admin is on settings pannel","Medium","","Settings - Customer","1","","Step Description:
+1. Admin open Customer settings blade
+2. Check field """"Member indexation date and time""""
+
+
+Expected Result:
+1. Last indexation date and time displays in format """"Jul 3, 2020 12:50:14 PM""""
+Step Description:
+1. Admin open """"Search index"""" page
+2. Select **Member** -> **Build index**
+3. Choose """"Build"""" button
+Expected Result:
+1. Build process finished successfully
+Step Description:
+1. Admin open Customer settings blade
+2. Check field """"Member indexation date and time""""
+Expected Result:
+1. Current date and time displays in the field (for example - Jul 3, 2020 1:05:08 PM)","1. 
+2. 
+3.","1. 1. Last indexation date and time displays in format """"Jul 3, 2020 12:50:14 PM""""
+2. 1. Build process finished successfully
+3. 1. Current date and time displays in the field (for example - Jul 3, 2020 1:05:08 PM)","1. 1. Admin open Customer settings blade
+2. Check field """"Member indexation date and time""""
+
+
+2. 1. Admin open """"Search index"""" page
+2. Select **Member** -> **Build index**
+3. Choose """"Build"""" button
+3. 1. Admin open Customer settings blade
+2. Check field """"Member indexation date and time""""","V3 Customer Management","S1591","Functional","0"
+"C241848","Settings > Customer > Enable event-based indexation for customer entities","","","Aleksandra Balabanova","7/3/2020 9:00 AM","","","","1. Admin logged in environment
+2. User_1 created","Medium","","Settings - Customer","1","","Step Description:
+1. Admin open Customer settings blade
+2. Choose """"Enable event-based indexation for customer entities (Restart required)"""" is enabled
+3. Click Save
+4. Click Restart
+Expected Result:
+1. Setting saved as enabled
+Step Description:
+1. Admin open Contacts page
+2. Find User_1
+3. Change any value 
+4. Click Save
+5. Reopen edit user blade 
+6. Check the Indexation widget
+
+
+Expected Result:
+The system was reindexed User_1 values after saving change","1. 
+2.","1. 1. Setting saved as enabled
+2. The system was reindexed User_1 values after saving change","1. 1. Admin open Customer settings blade
+2. Choose """"Enable event-based indexation for customer entities (Restart required)"""" is enabled
+3. Click Save
+4. Click Restart
+2. 1. Admin open Contacts page
+2. Find User_1
+3. Change any value 
+4. Click Save
+5. Reopen edit user blade 
+6. Check the Indexation widget","V3 Customer Management","S1591","Functional","0"
+"C241849","Settings > Customer > Disable event-based indexation for customer entities","","","Aleksandra Balabanova","7/3/2020 9:03 AM","","","","1. Admin logged in environment
+2. User_1 created","Medium","","Settings - Customer","1","","Step Description:
+1. Admin open Customer settings blade
+2. Choose """"Enable event-based indexation for customer  entities (Restart required)"""" is disabled
+3. Click Save
+4. Click Restart
+Expected Result:
+1. Setting saved as disabled
+Step Description:
+1. Admin open Contacts page
+2. Find User_1
+3. Change any value 
+4. Click Save
+5. Reopen edit user blade 
+6. Check the Indexation widget
+Expected Result:
+1. System doesn't index users after saving change","1. 
+2.","1. 1. Setting saved as disabled
+2. 1. System doesn't index users after saving change","1. 1. Admin open Customer settings blade
+2. Choose """"Enable event-based indexation for customer  entities (Restart required)"""" is disabled
+3. Click Save
+4. Click Restart
+2. 1. Admin open Contacts page
+2. Find User_1
+3. Change any value 
+4. Click Save
+5. Reopen edit user blade 
+6. Check the Indexation widget","V3 Customer Management","S1591","Functional","0"
+"C338425","Settings > Customer > Tool-tips","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004012"," None","Elena Mutykova","4/20/2022 9:51 AM","","","","","Medium","","Settings - Customer","1","","Step Description:
+Open blade with Settings &gt; Pay attention to tooltips
+
+![](index.php?/attachments/get/e5609f38-2bdf-4fc1-a7fc-af0d24f86403)   
+
+
+
+
+
+Expected Result:
+All tooltips are folded
+
+Step Description:
+1. Click on blue question mark for field1
+2. Click on blue question mark for field2
+
+
+
+
+
+Expected Result:
+1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded.
+
+
+Step Description:
+Click on the Hide link
+
+Expected Result:
+All tooltips are folded","1. 
+2. 
+3.","1. All tooltips are folded
+
+2. 1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded.
+
+
+3. All tooltips are folded","1. Open blade with Settings &gt; Pay attention to tooltips
+
+![](index.php?/attachments/get/e5609f38-2bdf-4fc1-a7fc-af0d24f86403)   
+
+
+
+
+
+2. 1. Click on blue question mark for field1
+2. Click on blue question mark for field2
+
+
+
+
+
+3. Click on the Hide link","V3 Customer Management","S1591","Other","0"
+"C273060","Statuses values separated between entities","","","Grotem","1/15/2021 1:52 PM","","","","1. Admin is on contact page
+2. New status for Vendor - ""TestVendStatus"" added
+3. New status for Organization - ""TestOrgStatus"" added
+4. New status for Contact -""TestContStatus"" added
+5. New status for Employee - ""TestEmpStatus"" added
+6. New status for Account - ""TestAccStatus"" added
+7. Vendor_1 added in platform
+8. Organization_1 added in platform
+9. Contact_1 added in platform
+10. Employee_1 added in platform
+11. Account_1 added in platform
+","Medium","","Status","2","","Step Description:
+1. Open Vendor_1
+2. Find field Status
+3. Click on field to select value
+Expected Result:
+1. Only default statuses and status TestVendStatus shown
+2. Statuses added for other entities not shown
+Step Description:
+1. Open Organization_1
+2. Find field Status
+3. Click on field to select value
+Expected Result:
+1. Only default statuses and status TestOrgStatus shown
+2. Statuses added for other entities not shown
+Step Description:
+1. Open Contact_1
+2. Find field Status
+3. Click on field to select value
+Expected Result:
+1. Only default statuses and status TestContStatus shown
+2. Statuses added for other entities not shown
+Step Description:
+1. Open Employee_1
+2. Find field Status
+3. Click on field to select value
+Expected Result:
+1. Only default statuses and status TestEmpStatus shown
+2. Statuses added for other entities not shown
+Step Description:
+1. Open Account_1
+2. Find field Status
+3. Click on field to select value
+Expected Result:
+1. Only default statuses and status TestAccStatus shown
+2. Statuses added for other entities not shown","1. 
+2. 
+3. 
+4. 
+5.","1. 1. Only default statuses and status TestVendStatus shown
+2. Statuses added for other entities not shown
+2. 1. Only default statuses and status TestOrgStatus shown
+2. Statuses added for other entities not shown
+3. 1. Only default statuses and status TestContStatus shown
+2. Statuses added for other entities not shown
+4. 1. Only default statuses and status TestEmpStatus shown
+2. Statuses added for other entities not shown
+5. 1. Only default statuses and status TestAccStatus shown
+2. Statuses added for other entities not shown","1. 1. Open Vendor_1
+2. Find field Status
+3. Click on field to select value
+2. 1. Open Organization_1
+2. Find field Status
+3. Click on field to select value
+3. 1. Open Contact_1
+2. Find field Status
+3. Click on field to select value
+4. 1. Open Employee_1
+2. Find field Status
+3. Click on field to select value
+5. 1. Open Account_1
+2. Find field Status
+3. Click on field to select value","V3 Customer Management","S1591","Other","0"
+"C273072","Statuses count can be up to 20 values","","","Grotem","1/15/2021 2:29 PM","","1. Statuses can be saved in list","","1. Admin is on Settings page
+2. Admin is on Customer -> General blade","Medium","","Status","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C273103","Entity can be found by full-text search","","","Grotem","1/15/2021 3:09 PM","","","","There are some entities with different statuses.
+
+**Note:** Not implemented for Security blade (account entity)","Medium","","Status","2","","Step Description:
+1. Go to the """"Contacts"""" module. 
+2. Enter in the search field word status and any value of the status field separated by a colon. (e.g """"status:New"""" or """"status:Approved"""")
+3. Press 'Enter'. 
+
+Expected Result:
+Only those entities are shown that has the searched status","1","1. Only those entities are shown that has the searched status","1. 1. Go to the """"Contacts"""" module. 
+2. Enter in the search field word status and any value of the status field separated by a colon. (e.g """"status:New"""" or """"status:Approved"""")
+3. Press 'Enter'.","V3 Customer Management","S1591","Other","0"
+"C273053","Default status values","","","Grotem","1/15/2021 1:42 PM","","1. List contains:
+- New
+- Approved
+- Rejected
+- Deleted","","1. Admin is on contacts page
+2. Contact_1 created in platform
+3. New statuses was not added in platform","Medium","","Contact","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C273059","Default status on creation","","","Grotem","1/15/2021 1:46 PM","","1. Status value is """"New""""","","1. Admin is on contacts page
+2. Contact_1 **not** created in platform
+","Medium","","Contact","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C273093","Set new status","","","Grotem","1/15/2021 2:57 PM","","1. Status value is """"Status_1""""","","1. Admin is on contacts page
+2. Contact_1 created in platform
+3. Status_1 created for Contact entity
+","Medium","","Contact","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C273349","Contact doesn't inherit organization status","","","Volha Baban","1/19/2021 3:47 PM","","","","1. There is an organization with any status besides the ""New"".","Medium","","Contact","3","","Step Description:
+1. Go to the organization from preconditions. 
+2. Click """"Add"""". 
+3. Click """"Contact"""". 
+4. Fill in required fields. 
+5. Do not change the value in the """"Status"""" field
+6. Click """"Create"""". 
+7. Open the created contact. 
+8. Pay attention to the """"Status"""" field. 
+Expected Result:
+Status of the new contact = New. The contact did not inherit the organization status","1","1. Status of the new contact = New. The contact did not inherit the organization status","1. 1. Go to the organization from preconditions. 
+2. Click """"Add"""". 
+3. Click """"Contact"""". 
+4. Fill in required fields. 
+5. Do not change the value in the """"Status"""" field
+6. Click """"Create"""". 
+7. Open the created contact. 
+8. Pay attention to the """"Status"""" field.","V3 Customer Management","S1591","Other","0"
+"C273055","Default status values","","","Grotem","1/15/2021 1:43 PM","","1. List contains:
+- New
+- Approved
+- Rejected
+- Deleted","","1. Admin is on contacts page
+2. Employee_1 created in platform
+3. New statuses was not added in platform","Medium","","Employee","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C273058","Default status on creation","","","Grotem","1/15/2021 1:46 PM","","1. Status value is """"New""""","","1. Admin is on contacts page
+2. Employee_1 **not** created in platform
+","Medium","","Employee","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C273094","Set new status","","","Grotem","1/15/2021 2:59 PM","","1. Status value is """"Status_1""""","","1. Admin is on contacts page
+2. Employee_1 created in platform
+3. Status_1 created for Employee entity
+","Medium","","Employee","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C273054","Default status values","","","Grotem","1/15/2021 1:43 PM","","1. List contains:
+- New
+- Approved
+- Rejected
+- Deleted","","1. Admin is on contacts page
+2. Vendor_1 created in platform
+3. New statuses was not added in platform","Medium","","Vendor","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C273057","Default status on creation","","","Grotem","1/15/2021 1:45 PM","","1. Status value is """"New""""","","1. Admin is on contacts page
+2. Vendor_1 **not** created in platform
+","Medium","","Vendor","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C273095","Set new status","","","Grotem","1/15/2021 2:59 PM","","1. Status value is """"Status_1""""","","1. Admin is on contacts page
+2. Vendor_1 created in platform
+3. Status_1 created for Vendor entity
+","Medium","","Vendor","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C273052","Default status values","","","Grotem","1/15/2021 1:42 PM","","1. List contains:
+- New
+- Approved
+- Rejected
+- Deleted","","1. Admin is on contacts page
+2. Organization_1 created in platform
+3. New statuses was not added in platform","Medium","","Organization","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C273056","Default status on creation","","","Grotem","1/15/2021 1:44 PM","","1. Status value is """"New""""","","1. Admin is on contacts page
+2. Organization_1 **not** created in platform
+","Medium","","Organization","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C273096","Set new status","","","Grotem","1/15/2021 3:00 PM","","1. Status value is """"Status_1""""","","1. Admin is on contacts page
+2. Organization_1 created in platform
+3. Status_1 created for Organization entity
+","Medium","","Organization","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C273100","Default status values","","","Grotem","1/15/2021 3:06 PM","","1. List contains:
+- New
+- Approved
+- Rejected
+- Deleted","","1. Admin is on security page
+2. Account_1 created in platform
+3. New statuses was not added in platform","Medium","","Account","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C273101","Default status on creation","","","Grotem","1/15/2021 3:06 PM","","1. Status value is """"New""""","","1. Admin is on security page
+2. Account_1  **not** created in platform
+","Medium","","Account","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C273102","Set new status","","","Grotem","1/15/2021 3:06 PM","","1. Status value is """"Status_1""""","","1. Admin is on Security page
+2. Account_1 created in platform
+3. Status_1 created for Organization entity
+","Medium","","Account","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C273063","Contact statuses","","","Grotem","1/15/2021 2:08 PM","","","","1. Admin is on Settings page","Medium","","Contact","4","","Step Description:
+1. Open Customer option
+2. Open Statuses option
+3. Click on pencil near Contact statuses
+Expected Result:
+1. All values of statuses for Contact entity shown","1","1. 1. All values of statuses for Contact entity shown","1. 1. Open Customer option
+2. Open Statuses option
+3. Click on pencil near Contact statuses","V3 Customer Management","S1591","Other","0"
+"C273065","Add new status in settings","","","Grotem","1/15/2021 2:14 PM","","","","1. Admin is on Settings page
+2. List of statuses for Contact entity shown
+3. Contact_1 created in platform","Medium","","Contact","4","","Step Description:
+1. Click on button to add new status
+2. Enter new status name - Status_1
+3. Click button to save status
+
+Expected Result:
+Status saved in list
+Step Description:
+1. Open Contact page
+2. Open Contact_1
+3. Find field status
+4. Click on field to open list
+Expected Result:
+Status_1 shown in list","1. 
+2.","1. Status saved in list
+2. Status_1 shown in list","1. 1. Click on button to add new status
+2. Enter new status name - Status_1
+3. Click button to save status
+
+2. 1. Open Contact page
+2. Open Contact_1
+3. Find field status
+4. Click on field to open list","V3 Customer Management","S1591","Other","0"
+"C273067","Add new status in contact entity","","","Grotem","1/15/2021 2:16 PM","","","","1. Admin is on Contact page
+2. Contact_1 created in platform","Medium","","Contact","4","","Step Description:
+1. Open Contact page
+2. Open Contact_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Enter new status name - Status_1
+5. Click button to save status
+Expected Result:
+Status saved in list
+Step Description:
+1. Open Settings page
+2. Open Customer option
+3. Open Statuses blade
+4. Click on pencil near Contact statuses
+Expected Result:
+Status_1 shown in list","1. 
+2.","1. Status saved in list
+2. Status_1 shown in list","1. 1. Open Contact page
+2. Open Contact_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Enter new status name - Status_1
+5. Click button to save status
+2. 1. Open Settings page
+2. Open Customer option
+3. Open Statuses blade
+4. Click on pencil near Contact statuses","V3 Customer Management","S1591","Other","0"
+"C273070","Delete status in settings","","","Grotem","1/15/2021 2:24 PM","","","","1. Admin is on Settings page
+2. List of statuses for Contact entity shown
+3. Contact_1 created in platform
+4. Status_1 created for Contact
+5. Contact_1 status is Status_1","Medium","","Contact","4","","Step Description:
+1. Select Status_1
+2. Click button to delete status
+3. Confirm deletion
+Expected Result:
+Status_1 deleted
+Step Description:
+1. Open Contact page
+2. Open Contact_1
+3. Find field status
+4. Click on field to open list
+Expected Result:
+1. Status_1 still set for Contact_1
+2. Status_1 not shown in list of statuses","1. 
+2.","1. Status_1 deleted
+2. 1. Status_1 still set for Contact_1
+2. Status_1 not shown in list of statuses","1. 1. Select Status_1
+2. Click button to delete status
+3. Confirm deletion
+2. 1. Open Contact page
+2. Open Contact_1
+3. Find field status
+4. Click on field to open list","V3 Customer Management","S1591","Other","0"
+"C273071","Delete status in contact entity","","","Grotem","1/15/2021 2:26 PM","","","","1. Admin is on Contact page
+2. Contact_1 created in platform
+3. Status_1 created for Contact
+4. Contact_1 status is Status_1","Medium","","Contact","4","","Step Description:
+1. Open Contact page
+2. Open Contact_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Select Status_1
+5. Click button to delete status
+6. Confirm deletion
+Expected Result:
+1. Status_1 deleted
+2. Status_1 still set for Contact_1
+Step Description:
+1. Open Settings page
+2. Open Customer option
+3. Open Statuses blade
+4. Click on pencil near Contact statuses
+Expected Result:
+Status_1 not shown in list","1. 
+2.","1. 1. Status_1 deleted
+2. Status_1 still set for Contact_1
+2. Status_1 not shown in list","1. 1. Open Contact page
+2. Open Contact_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Select Status_1
+5. Click button to delete status
+6. Confirm deletion
+2. 1. Open Settings page
+2. Open Customer option
+3. Open Statuses blade
+4. Click on pencil near Contact statuses","V3 Customer Management","S1591","Other","0"
+"C273081","Employee statuses","","","Grotem","1/15/2021 2:41 PM","","","","1. Admin is on Settings page","Medium","","Employee","4","","Step Description:
+1. Open Customer option
+2. Open Statuses option
+3. Click on pencil near Employee statuses
+Expected Result:
+1. All values of statuses for Employee entity shown","1","1. 1. All values of statuses for Employee entity shown","1. 1. Open Customer option
+2. Open Statuses option
+3. Click on pencil near Employee statuses","V3 Customer Management","S1591","Other","0"
+"C273082","Add new status in settings","","","Grotem","1/15/2021 2:41 PM","","","","1. Admin is on Settings page
+2. List of statuses for Employee entity shown
+3. Employee_1 created in platform","Medium","","Employee","4","","Step Description:
+1. Click on button to add new status
+2. Enter new status name - Status_1
+3. Click button to save status
+
+Expected Result:
+Status saved in list
+Step Description:
+1. Open Contact page
+2. Open Employee_1
+3. Find field status
+4. Click on field to open list
+Expected Result:
+Status_1 shown in list","1. 
+2.","1. Status saved in list
+2. Status_1 shown in list","1. 1. Click on button to add new status
+2. Enter new status name - Status_1
+3. Click button to save status
+
+2. 1. Open Contact page
+2. Open Employee_1
+3. Find field status
+4. Click on field to open list","V3 Customer Management","S1591","Other","0"
+"C273083","Add new status in employee entity","","","Grotem","1/15/2021 2:41 PM","","","","1. Admin is on Contact page
+2. Employee_1 created in platform","Medium","","Employee","4","","Step Description:
+1. Open Contact page
+2. Open Employee_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Enter new status name - Status_1
+5. Click button to save status
+Expected Result:
+Status saved in list
+Step Description:
+1. Open Settings page
+2. Open Customer option
+3. Open Statuses option
+4. Click on pencil near Employee statuses
+Expected Result:
+Status_1 shown in list","1. 
+2.","1. Status saved in list
+2. Status_1 shown in list","1. 1. Open Contact page
+2. Open Employee_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Enter new status name - Status_1
+5. Click button to save status
+2. 1. Open Settings page
+2. Open Customer option
+3. Open Statuses option
+4. Click on pencil near Employee statuses","V3 Customer Management","S1591","Other","0"
+"C273084","Delete status in settings","","","Grotem","1/15/2021 2:41 PM","","","","1. Admin is on Settings page
+2. List of statuses for Employee entity shown
+3. Employee_1 created in platform
+4. Status_1 created for Employee
+5. Employee_1 status is Status_1","Medium","","Employee","4","","Step Description:
+1. Select Status_1
+2. Click button to delete status
+3. Confirm deletion
+Expected Result:
+Status_1 deleted
+Step Description:
+1. Open Contact page
+2. Open Employee_1
+3. Find field status
+4. Click on field to open list
+Expected Result:
+1. Status_1 still set for Employee_1
+2. Status_1 not shown in list of statuses","1. 
+2.","1. Status_1 deleted
+2. 1. Status_1 still set for Employee_1
+2. Status_1 not shown in list of statuses","1. 1. Select Status_1
+2. Click button to delete status
+3. Confirm deletion
+2. 1. Open Contact page
+2. Open Employee_1
+3. Find field status
+4. Click on field to open list","V3 Customer Management","S1591","Other","0"
+"C273085","Delete status in employee entity","","","Grotem","1/15/2021 2:41 PM","","","","1. Admin is on Employee page
+2. Employee_1 created in platform
+3. Status_1 created for Employee
+4. Employee_1 status is Status_1","Medium","","Employee","4","","Step Description:
+1. Open Contact page
+2. Open Employee_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Select Status_1
+5. Click button to delete status
+6. Confirm deletion
+Expected Result:
+1. Status_1 deleted
+2. Status_1 still set for Employee_1
+Step Description:
+1. Open Settings page
+2. Open Customer option
+3. Open Statuses option
+4. Click on pencil near Employee statuses
+Expected Result:
+Status_1 not shown in list","1. 
+2.","1. 1. Status_1 deleted
+2. Status_1 still set for Employee_1
+2. Status_1 not shown in list","1. 1. Open Contact page
+2. Open Employee_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Select Status_1
+5. Click button to delete status
+6. Confirm deletion
+2. 1. Open Settings page
+2. Open Customer option
+3. Open Statuses option
+4. Click on pencil near Employee statuses","V3 Customer Management","S1591","Other","0"
+"C273076","Vendor statuses","","","Grotem","1/15/2021 2:32 PM","","","","1. Admin is on Settings page","Medium","","Vendor","4","","Step Description:
+1. Open Customer option
+2. Open Statuses option
+3. Click on pencil near Vendor statuses
+Expected Result:
+1. All values of statuses for Vendor entity shown","1","1. 1. All values of statuses for Vendor entity shown","1. 1. Open Customer option
+2. Open Statuses option
+3. Click on pencil near Vendor statuses","V3 Customer Management","S1591","Other","0"
+"C273077","Add new status in settings","","","Grotem","1/15/2021 2:32 PM","","","","1. Admin is on Settings page
+2. List of statuses for Vendor entity shown
+3. Vendor_1 created in platform","Medium","","Vendor","4","","Step Description:
+1. Click on button to add new status
+2. Enter new status name - Status_1
+3. Click button to save status
+
+Expected Result:
+Status saved in list
+Step Description:
+1. Open Contact page
+2. Open Vendor_1
+3. Find field status
+4. Click on field to open list
+Expected Result:
+Status_1 shown in list","1. 
+2.","1. Status saved in list
+2. Status_1 shown in list","1. 1. Click on button to add new status
+2. Enter new status name - Status_1
+3. Click button to save status
+
+2. 1. Open Contact page
+2. Open Vendor_1
+3. Find field status
+4. Click on field to open list","V3 Customer Management","S1591","Other","0"
+"C273078","Add new status in vendor entity","","","Grotem","1/15/2021 2:32 PM","","","","1. Admin is on Vendor page
+2. Vendor_1 created in platform","Medium","","Vendor","4","","Step Description:
+1. Open Vendor page
+2. Open Vendor_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Enter new status name - Status_1
+5. Click button to save status
+Expected Result:
+Status saved in list
+Step Description:
+1. Open Settings page
+2. Open Customer option
+3. Open Statuses option
+4. Click on pencil near Vendor statuses
+Expected Result:
+Status_1 shown in list","1. 
+2.","1. Status saved in list
+2. Status_1 shown in list","1. 1. Open Vendor page
+2. Open Vendor_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Enter new status name - Status_1
+5. Click button to save status
+2. 1. Open Settings page
+2. Open Customer option
+3. Open Statuses option
+4. Click on pencil near Vendor statuses","V3 Customer Management","S1591","Other","0"
+"C273079","Delete status in settings","","","Grotem","1/15/2021 2:32 PM","","","","1. Admin is on Settings page
+2. List of statuses for Vendor entity shown
+3. Vendor_1 created in platform
+4. Status_1 created for Vendor
+5. Vendor_1 status is Status_1","Medium","","Vendor","4","","Step Description:
+1. Select Status_1
+2. Click button to delete status
+3. Confirm deletion
+Expected Result:
+Status_1 deleted
+Step Description:
+1. Open Contact page
+2. Open Vendor_1
+3. Find field status
+4. Click on field to open list
+Expected Result:
+1. Status_1 still set for Vendor_1
+2. Status_1 not shown in list of statuses","1. 
+2.","1. Status_1 deleted
+2. 1. Status_1 still set for Vendor_1
+2. Status_1 not shown in list of statuses","1. 1. Select Status_1
+2. Click button to delete status
+3. Confirm deletion
+2. 1. Open Contact page
+2. Open Vendor_1
+3. Find field status
+4. Click on field to open list","V3 Customer Management","S1591","Other","0"
+"C273080","Delete status in vendor entity","","","Grotem","1/15/2021 2:32 PM","","","","1. Admin is on Vendor page
+2. Vendor_1 created in platform
+3. Status_1 created for Contact
+4. Vendor_1 status is Status_1","Medium","","Vendor","4","","Step Description:
+1. Open Contact page
+2. Open Vendor_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Select Status_1
+5. Click button to delete status
+6. Confirm deletion
+Expected Result:
+1. Status_1 deleted
+2. Status_1 still set for Vendor_1
+Step Description:
+1. Open Settings page
+2. Open Customer option
+3. Open Statuses option
+4. Click on pencil near Vendor statuses
+Expected Result:
+Status_1 not shown in list","1. 
+2.","1. 1. Status_1 deleted
+2. Status_1 still set for Vendor_1
+2. Status_1 not shown in list","1. 1. Open Contact page
+2. Open Vendor_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Select Status_1
+5. Click button to delete status
+6. Confirm deletion
+2. 1. Open Settings page
+2. Open Customer option
+3. Open Statuses option
+4. Click on pencil near Vendor statuses","V3 Customer Management","S1591","Other","0"
+"C273086","Organization statuses","","","Grotem","1/15/2021 2:45 PM","","","","1. Admin is on Settings page","Medium","","Organization","4","","Step Description:
+1. Open Customer option
+2. Open Statuses option
+3. Click on pencil near Organization statuses
+Expected Result:
+1. All values of statuses for Organization entity shown","1","1. 1. All values of statuses for Organization entity shown","1. 1. Open Customer option
+2. Open Statuses option
+3. Click on pencil near Organization statuses","V3 Customer Management","S1591","Other","0"
+"C273087","Add new status in settings","","","Grotem","1/15/2021 2:45 PM","","","","1. Admin is on Settings page
+2. List of statuses for Organization entity shown
+3. Organization_1 created in platform","Medium","","Organization","4","","Step Description:
+1. Click on button to add new status
+2. Enter new status name - Status_1
+3. Click button to save status
+
+Expected Result:
+Status saved in list
+Step Description:
+1. Open Contact page
+2. Open Organization_1
+3. Find field status
+4. Click on field to open list
+Expected Result:
+Status_1 shown in list","1. 
+2.","1. Status saved in list
+2. Status_1 shown in list","1. 1. Click on button to add new status
+2. Enter new status name - Status_1
+3. Click button to save status
+
+2. 1. Open Contact page
+2. Open Organization_1
+3. Find field status
+4. Click on field to open list","V3 Customer Management","S1591","Other","0"
+"C273088","Add new status in organization entity","","","Grotem","1/15/2021 2:45 PM","","","","1. Admin is on Contact page
+2. Organization_1 created in platform","Medium","","Organization","4","","Step Description:
+1. Open Contact page
+2. Open Organization_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Enter new status name - Status_1
+5. Click button to save status
+Expected Result:
+Status saved in list
+Step Description:
+1. Open Settings page
+2. Open Customer option
+3. Open Statuses option
+4. Click on pencil near Organization statuses
+Expected Result:
+Status_1 shown in list","1. 
+2.","1. Status saved in list
+2. Status_1 shown in list","1. 1. Open Contact page
+2. Open Organization_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Enter new status name - Status_1
+5. Click button to save status
+2. 1. Open Settings page
+2. Open Customer option
+3. Open Statuses option
+4. Click on pencil near Organization statuses","V3 Customer Management","S1591","Other","0"
+"C273089","Delete status in settings","","","Grotem","1/15/2021 2:45 PM","","","","1. Admin is on Settings page
+2. List of statuses for Contact entity shown
+3. Organization_1 created in platform
+4. Status_1 created for Organzation
+5. Organization_1 status is Status_1","Medium","","Organization","4","","Step Description:
+1. Select Status_1
+2. Click button to delete status
+3. Confirm deletion
+Expected Result:
+Status_1 deleted
+Step Description:
+1. Open Contact page
+2. Open Organization_1
+3. Find field status
+4. Click on field to open list
+Expected Result:
+1. Status_1 set for Organization_1
+2. Status_1 not shown in list of statuses","1. 
+2.","1. Status_1 deleted
+2. 1. Status_1 set for Organization_1
+2. Status_1 not shown in list of statuses","1. 1. Select Status_1
+2. Click button to delete status
+3. Confirm deletion
+2. 1. Open Contact page
+2. Open Organization_1
+3. Find field status
+4. Click on field to open list","V3 Customer Management","S1591","Other","0"
+"C273090","Delete status in organization entity","","","Grotem","1/15/2021 2:45 PM","","","","1. Admin is on Contact page
+2. Organization_1 created in platform
+3. Status_1 created for Organization
+4. Organization_1 status is Status_1","Medium","","Organization","4","","Step Description:
+1. Open Contact page
+2. Open Organization_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Select Status_1
+5. Click button to delete status
+6. Confirm deletion
+Expected Result:
+1. Status_1 deleted
+2. Status_1 still set for Organization_1
+Step Description:
+1. Open Settings page
+2. Open Customer option
+3. Open Statuses option
+4. Click on pencil near Organization statuses
+Expected Result:
+Status_1 not shown in list","1. 
+2.","1. 1. Status_1 deleted
+2. Status_1 still set for Organization_1
+2. Status_1 not shown in list","1. 1. Open Contact page
+2. Open Organization_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Select Status_1
+5. Click button to delete status
+6. Confirm deletion
+2. 1. Open Settings page
+2. Open Customer option
+3. Open Statuses option
+4. Click on pencil near Organization statuses","V3 Customer Management","S1591","Other","0"
+"C273104","Account statuses","","","Grotem","1/15/2021 3:10 PM","","","","1. Admin is on Settings page","Medium","","Account","4","","Step Description:
+1. Open Platform -> Other option
+2. Click on pencil near Account statuses
+Expected Result:
+1. All values of statuses for Account entity shown","1","1. 1. All values of statuses for Account entity shown","1. 1. Open Platform -> Other option
+2. Click on pencil near Account statuses","V3 Customer Management","S1591","Other","0"
+"C273105","Add new status in settings","","","Grotem","1/15/2021 3:10 PM","","","","1. Admin is on Settings page (Platform -> Other option)
+2. List of statuses for Account entity shown
+3. Account_1 created in platform","Medium","","Account","4","","Step Description:
+1. Click on button to add new status
+2. Enter new status name - Status_1
+3. Click button to save status
+
+Expected Result:
+Status saved in list
+Step Description:
+1. Open Security page
+2. Open Account_1
+3. Find field status
+4. Click on field to open list
+Expected Result:
+Status_1 shown in list","1. 
+2.","1. Status saved in list
+2. Status_1 shown in list","1. 1. Click on button to add new status
+2. Enter new status name - Status_1
+3. Click button to save status
+
+2. 1. Open Security page
+2. Open Account_1
+3. Find field status
+4. Click on field to open list","V3 Customer Management","S1591","Other","0"
+"C273106","Add new status in account entity","","","Grotem","1/15/2021 3:10 PM","","","","1. Admin is on Contact page
+2. Account_1 created in platform","Medium","","Account","4","","Step Description:
+1. Open Security page
+2. Open Account_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Enter new status name - Status_1
+5. Click button to save status
+Expected Result:
+Status saved in list
+Step Description:
+1. Open Settings page
+2. Open Platform -> Other option
+3. Click on pencil near Account statuses
+Expected Result:
+Status_1 shown in list","1. 
+2.","1. Status saved in list
+2. Status_1 shown in list","1. 1. Open Security page
+2. Open Account_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Enter new status name - Status_1
+5. Click button to save status
+2. 1. Open Settings page
+2. Open Platform -> Other option
+3. Click on pencil near Account statuses","V3 Customer Management","S1591","Other","0"
+"C273107","Delete status in settings","","","Grotem","1/15/2021 3:10 PM","","","","1. Admin is on Settings page (Platform -> Other option)
+2. List of statuses for Account entity shown
+3. Account_1 created in platform
+4. Status_1 created for Account
+5. Account_1 status is Status_1","Medium","","Account","4","","Step Description:
+1. Select Status_1
+2. Click button to delete status
+3. Confirm deletion
+Expected Result:
+Status_1 deleted
+Step Description:
+1. Open Security page
+2. Open Account_1 
+3. Find field status
+4. Click on field to open list
+Expected Result:
+1. Status_1 set for Account_1
+2. Status_1 not shown in list of statuses","1. 
+2.","1. Status_1 deleted
+2. 1. Status_1 set for Account_1
+2. Status_1 not shown in list of statuses","1. 1. Select Status_1
+2. Click button to delete status
+3. Confirm deletion
+2. 1. Open Security page
+2. Open Account_1 
+3. Find field status
+4. Click on field to open list","V3 Customer Management","S1591","Other","0"
+"C273108","Delete status in account entity","","","Grotem","1/15/2021 3:10 PM","","","","1. Admin is on Security page
+2. Account_1 created in platform
+3. Status_1 created for Account
+4. Account_1 status is Status_1","Medium","","Account","4","","Step Description:
+1. Open Security page
+2. Open Account_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Select Status_1
+5. Click button to delete status
+6. Confirm deletion
+Expected Result:
+1. Status_1 deleted
+2. Status_1 still set for Account_1
+Step Description:
+1. Open Settings page
+2. Open Platform -> Other option
+4. Click on pencil near Account statuses
+Expected Result:
+Status_1 not shown in list","1. 
+2.","1. 1. Status_1 deleted
+2. Status_1 still set for Account_1
+2. Status_1 not shown in list","1. 1. Open Security page
+2. Open Account_1
+3. Find field status
+4. Click on pencil to open statuses list
+4. Select Status_1
+5. Click button to delete status
+6. Confirm deletion
+2. 1. Open Settings page
+2. Open Platform -> Other option
+4. Click on pencil near Account statuses","V3 Customer Management","S1591","Other","0"
+"C261115","User groups","","","Grotem","11/25/2020 9:44 AM","","1. List of user groups that were created in system shown","","1. Admin is on contact module page
+2. Contact_1 created in system","Medium","","Contact","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C261116","Member of organization","","","Grotem","11/25/2020 9:44 AM","","1. All organizations: Organization_1, Organization_2, Organization_3 shown in list","","1. Admin is on contact module page
+2. Contact_1 created in system
+3. Contact_1 not assigned to any organization
+4. Organization_1, Organization_2, Organization_3 created in system","Medium","","Contact","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C261124","Associated organization","","","Grotem","11/25/2020 10:21 AM","","1. All organizations: Organization_1, Organization_2, Organization_3 shown in list","","1. Admin is on contact module page
+2. Contact_1 created in system
+3. Contact_1 not associated with any organization
+4. Organization_1, Organization_2, Organization_3 created in system","Medium","","Contact","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C261122","Time zone","","","Grotem","11/25/2020 9:59 AM","","1. All available timezones shown","","1. Admin is on contact module page
+2. Contact_1 created in system","Medium","","Contact","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C261720","Full name - optional field","","","Aleksandra Balabanova","12/7/2020 2:31 PM","","","","1. Admin is on contact module page
+","Medium","","Contact","3","","Step Description:
+1. Go to the """"Contacts"""" tab.
+2. Click """"Add"""".
+3. Select """"Contact"""".
+Expected Result:
+1. Blade with Contact fields opens
+2. Two required fields: First name and Last name
+Step Description:
+1. Add the First name 
+2. Move cursor to other fields
+Expected Result:
+1. First name  added to Full added on the fly
+Step Description:
+1. Add the Last name 
+2. Move cursor to other fields
+Expected Result:
+1. Last name added to Full name on the fly","1. 
+2. 
+3.","1. 1. Blade with Contact fields opens
+2. Two required fields: First name and Last name
+2. 1. First name  added to Full added on the fly
+3. 1. Last name added to Full name on the fly","1. 1. Go to the """"Contacts"""" tab.
+2. Click """"Add"""".
+3. Select """"Contact"""".
+2. 1. Add the First name 
+2. Move cursor to other fields
+3. 1. Add the Last name 
+2. Move cursor to other fields","V3 Customer Management","S1591","Functional","0"
+"C261129","Address type","","","Grotem","11/25/2020 11:09 AM","","1. List of available address types shown","","1. Admin is on contact module page
+2. Contact_1 created in system","Medium","","Address","4","","","","","","V3 Customer Management","S1591","Other","0"
+"C261130","Country",""," None","Grotem","11/25/2020 11:09 AM","","1. List of available countries shown
+2. The list of countries is identical in content to this file, but is displayed in alphabetical order.
+
+https://github.com/VirtoCommerce/vc-platform/blob/dev/src/VirtoCommerce.Platform.Web/localization/common/countries.json","","1. Admin is on contact module page
+2. Contact_1 created in system","Medium","","Address","4","","","","","","V3 Customer Management","S1591","Other","0"
+"C261138","Value type","","","Grotem","11/25/2020 11:14 AM","","1. List of available value types shown","","1. Admin is on contact module page
+2. Contact_1 created in system","Medium","","Dynamic properties","4","","","","","","V3 Customer Management","S1591","Other","0"
+"C289520","Hide empty values","","","Volha Baban","4/20/2021 4:12 PM","","","","There is Contact_1
+Some properties of the Contact_1 are empty. ","Medium","","Dynamic properties","4","","Step Description:
+1. Go to Contact_1. 
+2. Open Dynamic Properties. 
+3. Click """"Hide empty values"""". 
+Expected Result:
+Properties that don't have values are hidden. The button has changed to """"Show empty fields"""".
+Step Description:
+1. Click """"Show empty fields"""".
+Expected Result:
+Properties that don't have values are shown. The button has changed to """"Hide empty fields"""".","1. 
+2.","1. Properties that don't have values are hidden. The button has changed to """"Show empty fields"""".
+2. Properties that don't have values are shown. The button has changed to """"Hide empty fields"""".","1. 1. Go to Contact_1. 
+2. Open Dynamic Properties. 
+3. Click """"Hide empty values"""". 
+2. 1. Click """"Show empty fields"""".","V3 Customer Management","S1591","Other","0"
+"C289521","Hide empty fields > Required","","","Volha Baban","4/20/2021 4:18 PM","","The required property is not hidden.
+
+","","","Medium","","Dynamic properties","4","","","","","","V3 Customer Management","S1591","Other","0"
+"C289522","Hide empty fields > Switchers","","","Volha Baban","4/20/2021 4:19 PM","","Both switchers are not hidden.
+
+","","","Medium","","Dynamic properties","4","","","","","","V3 Customer Management","S1591","Other","0"
+"C261125","User groups","","","Grotem","11/25/2020 10:28 AM","","1. List of user groups that were created in sysyem shown","","1. Admin is on contact module page
+2. Organization_1 created in system","Medium","","Organization","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C261132","Address type","","","Grotem","11/25/2020 11:10 AM","","1. List of available address types shown","","1. Admin is on contact module page
+2. Organization_1 created in system","Medium","","Address","4","","","","","","V3 Customer Management","S1591","Other","0"
+"C261133","Country",""," None","Grotem","11/25/2020 11:10 AM","","1. List of available countries shown
+2. The list of countries is identical in content to this file, but is displayed in alphabetical order.
+
+
+
+https://github.com/VirtoCommerce/vc-platform/blob/dev/src/VirtoCommerce.Platform.Web/localization/common/countries.json","","1. Admin is on contact module page
+2. Organization_1 created in system","Medium","","Address","4","","","","","","V3 Customer Management","S1591","Other","0"
+"C261139","Value type","","","Grotem","11/25/2020 11:14 AM","","1. List of available value types shown","","1. Admin is on contact module page
+2. Organization_1 of any type created in system","Medium","","Dynamic properties","4","","","","","","V3 Customer Management","S1591","Other","0"
+"C289523","Hide empty values","","","Volha Baban","4/20/2021 4:22 PM","","","","There is Organization_1
+Some properties of the Organization_1 are empty. ","Medium","","Dynamic properties","4","","Step Description:
+1. Go to Organization_1. 
+2. Open Dynamic Properties. 
+3. Click """"Hide empty values"""". 
+Expected Result:
+Properties that don't have values are hidden. The button has changed to """"Show empty fields"""".
+Step Description:
+1. Click """"Show empty fields"""".
+Expected Result:
+Properties that don't have values are shown. The button has changed to """"Hide empty fields"""".","1. 
+2.","1. Properties that don't have values are hidden. The button has changed to """"Show empty fields"""".
+2. Properties that don't have values are shown. The button has changed to """"Hide empty fields"""".","1. 1. Go to Organization_1. 
+2. Open Dynamic Properties. 
+3. Click """"Hide empty values"""". 
+2. 1. Click """"Show empty fields"""".","V3 Customer Management","S1591","Other","0"
+"C261126","Organization","","","Grotem","11/25/2020 10:29 AM","","1. All organizations: Organization_1, Organization_2, Organization_3 shown in list","","1. Admin is on contact module page
+2. Employee_1 created in system
+3. Employee_1 not assigned to any organization
+4. Organization_1, Organization_2, Organization_3 created in system","Medium","","Employee","3","","","","","","V3 Customer Management","S1591","Other","0"
+"C261721","Full name - optional field","","","Aleksandra Balabanova","12/7/2020 2:43 PM","","","","1. Admin is on contact module page
+","Medium","","Employee","3","","Step Description:
+1. Go to the """"Contacts"""" tab.
+2. Click """"Add"""".
+3. Select """"Employee"""".
+Expected Result:
+1. Blade with Employee fields opens
+2. Two required fields: First name and Last name
+Step Description:
+1. Add the First name 
+2. Move cursor to other fields
+Expected Result:
+1. First name  added to Full added on the fly
+Step Description:
+1. Add the Last name 
+2. Move cursor to other fields
+Expected Result:
+1. Last name added to Full name on the fly","1. 
+2. 
+3.","1. 1. Blade with Employee fields opens
+2. Two required fields: First name and Last name
+2. 1. First name  added to Full added on the fly
+3. 1. Last name added to Full name on the fly","1. 1. Go to the """"Contacts"""" tab.
+2. Click """"Add"""".
+3. Select """"Employee"""".
+2. 1. Add the First name 
+2. Move cursor to other fields
+3. 1. Add the Last name 
+2. Move cursor to other fields","V3 Customer Management","S1591","Functional","0"
+"C261135","Address type","","","Grotem","11/25/2020 11:10 AM","","1. List of available address types shown","","1. Admin is on contact module page
+2. Employee_1 of any type created in system","Medium","","Address","4","","","","","","V3 Customer Management","S1591","Other","0"
+"C261136","Country",""," None","Grotem","11/25/2020 11:10 AM","","1. List of available countries shown
+2. The list of countries is identical in content to this file, but is displayed in alphabetical order.
+
+
+
+https://github.com/VirtoCommerce/vc-platform/blob/dev/src/VirtoCommerce.Platform.Web/localization/common/countries.json","","1. Admin is on contact module page
+2. Employee_1 created in system","Medium","","Address","4","","","","","","V3 Customer Management","S1591","Other","0"
+"C261140","Value type","","","Grotem","11/25/2020 11:15 AM","","1. List of available value types shown","","1. Admin is on contact module page
+2. Employee_1 of any type created in system","Medium","","Dynamic properties","4","","","","","","V3 Customer Management","S1591","Other","0"
+"C289524","Hide empty values","","","Volha Baban","4/20/2021 4:22 PM","","","","There is Employee_1
+Some properties of the Employee_1 are empty. ","Medium","","Dynamic properties","4","","Step Description:
+1. Go to Employee_1. 
+2. Open Dynamic Properties. 
+3. Click """"Hide empty values"""". 
+Expected Result:
+Properties that don't have values are hidden. The button has changed to """"Show empty fields"""".
+Step Description:
+1. Click """"Show empty fields"""".
+Expected Result:
+Properties that don't have values are shown. The button has changed to """"Hide empty fields"""".","1. 
+2.","1. Properties that don't have values are hidden. The button has changed to """"Show empty fields"""".
+2. Properties that don't have values are shown. The button has changed to """"Hide empty fields"""".","1. 1. Go to Employee_1. 
+2. Open Dynamic Properties. 
+3. Click """"Hide empty values"""". 
+2. 1. Click """"Show empty fields"""".","V3 Customer Management","S1591","Other","0"
+"C261185","Contact > Index widget > Copy to clipboard",""," None","Grotem","11/26/2020 2:18 PM","","","","1. Contact_1 created in system
+2. Contact_1  contain index","Medium","","Contact","3","","Step Description:
+1. Open Contact_1 index blade
+2. Click on button """"Copy"""" in blade's toolbar
+
+Expected Result:
+1. Full index object copied to clipboard
+
+Step Description:
+1. Open any notepad application
+2. Paste data from clipboard
+Expected Result:
+1. Full index pasted in file","1. 
+2.","1. 1. Full index object copied to clipboard
+
+2. 1. Full index pasted in file","1. 1. Open Contact_1 index blade
+2. Click on button """"Copy"""" in blade's toolbar
+
+2. 1. Open any notepad application
+2. Paste data from clipboard","V3 Customer Management","S1591","Other","0"
+"C290341","Customer","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004048","","Volha Baban","5/12/2021 1:43 PM","","","","","Medium","PT-1340","OuterID column","2","","Step Description:
+1. Go to the """"Contacts"""" module. 
+2. Open the """"Columns"""" list. 
+
+
+
+
+
+
+
+
+
+Expected Result:
+
+
+There is the """"Outer Id"""" column on the list. It is unchecked by default. 
+ ![](index.php?/attachments/get/e458d3ac-7c63-4212-9cdb-9f4efd59ff98)    
+
+
+
+
+
+
+
+Step Description:
+1. Click the """"Outer Id"""" column. 
+
+
+
+
+Expected Result:
+The """"Outer Id"""" column appears for all customers. 
+Step Description:
+1. Open any organization that contains some customers. 
+Expected Result:
+The """"Outer Id"""" column is present on the blade.","1. 
+2. 
+3.","1. 
+
+There is the """"Outer Id"""" column on the list. It is unchecked by default. 
+ ![](index.php?/attachments/get/e458d3ac-7c63-4212-9cdb-9f4efd59ff98)    
+
+
+
+
+
+
+
+2. The """"Outer Id"""" column appears for all customers. 
+3. The """"Outer Id"""" column is present on the blade.","1. 1. Go to the """"Contacts"""" module. 
+2. Open the """"Columns"""" list. 
+
+
+
+
+
+
+
+
+
+2. 1. Click the """"Outer Id"""" column. 
+
+
+
+
+3. 1. Open any organization that contains some customers.","V3 Customer Management","S1591","Other","0"
+"C290342","Organization","","","Volha Baban","5/12/2021 1:43 PM","","The """"Outer Id"""" column appears on the list. ","","","Medium","PT-1340","OuterID column","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C290348","Vendor","","","Volha Baban","5/12/2021 3:24 PM","","The """"Outer Id"""" column appears on the list for all vendors.","","","Medium","PT-1340","OuterID column","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C290349","Employee","","","Volha Baban","5/12/2021 3:24 PM","","The """"Outer Id"""" column appears on the list. ","","","Medium","PT-1340","OuterID column","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C290350","Create contact manually > Outer ID field is empty","","","Volha Baban","5/12/2021 3:27 PM","","The """"Outer ID"""" field is empty","","","Medium","PT-1340","OuterID column","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C290352","Create contact via API > Outer ID field is populated","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000551, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000468","","Volha Baban","5/12/2021 3:28 PM","","The Outer ID field is populated with the value you specified while creation.
+
+
+ ![](index.php?/attachments/get/1903f5ca-9b4e-49b0-a3ae-9aac3cd6eef0)  ![](index.php?/attachments/get/1d85eb74-5cee-494c-a5ea-c068f9e6d08e) 
+
+
+
+
+
+","","","Medium","PT-1340","OuterID column","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C311901","Install CustomerSample module","","","Elena Mutykova","9/7/2021 1:39 PM","","CustomerSample module is installed","","","Medium","","CustomerSample module","0","","","","","","V3 Customer Management","S1591","Other","0"
+"C311903","Create and read contact","","","Elena Mutykova","9/7/2021 1:41 PM","","","","CustomerSample module is installed","Medium","","CustomerSample module","0","","Step Description:
+Go to Contacts > Add Contact > Fill in all fields > Create
+Expected Result:
+The contact_1 is created. The contact_1 is displayed in the list of contacts.  
+Step Description:
+Find contact_1 in the list of contacts > Click on it
+Expected Result:
+Contact_1 is opened in editable format.","1. 
+2.","1. The contact_1 is created. The contact_1 is displayed in the list of contacts.  
+2. Contact_1 is opened in editable format.","1. Go to Contacts > Add Contact > Fill in all fields > Create
+2. Find contact_1 in the list of contacts > Click on it","V3 Customer Management","S1591","Other","0"
+"C311904","Update contact","","","Elena Mutykova","9/7/2021 1:41 PM","","","","CustomerSample module is installed","Medium","","CustomerSample module","0","","Step Description:
+Go to the """"Contacts"""" tab.
+Right-click on any contact or organization.
+Click """"Manage"""".
+Make some changes.
+Click """"Save"""".
+Expected Result:
+All changes are saved.
+Step Description:
+Reopened contact > check
+Expected Result:
+Contact is opened with new data.","1. 
+2.","1. All changes are saved.
+2. Contact is opened with new data.","1. Go to the """"Contacts"""" tab.
+Right-click on any contact or organization.
+Click """"Manage"""".
+Make some changes.
+Click """"Save"""".
+2. Reopened contact > check","V3 Customer Management","S1591","Other","0"
+"C311902","Delete contact","","","Elena Mutykova","9/7/2021 1:40 PM","","","","CustomerSample module is installed
+Contact_1 exists in the system ","Medium","","CustomerSample module","0","","Step Description:
+Go to Contacts > Find Contact_1
+Right-click on the Contact_1.
+Click """"Delete"""".
+Confirm deletion.
+Expected Result:
+The account is deleted.
+Step Description:
+Enter Contact_1 in the search field in the Contacts 
+Expected Result:
+The search result is empty """"no data""""","1. 
+2.","1. The account is deleted.
+2. The search result is empty """"no data""""","1. Go to Contacts > Find Contact_1
+Right-click on the Contact_1.
+Click """"Delete"""".
+Confirm deletion.
+2. Enter Contact_1 in the search field in the Contacts ","V3 Customer Management","S1591","Other","0"
+"C345040","Contact > Adress with description",""," Recently added","Daria Ponamareva","7/29/2022 7:05 AM","","","","","Medium","","Address description","1","https://virtocommerce.atlassian.net/browse/PT-8487","Step Description:
+1. Go to Admin  &gt; Contacts
+2. Open details any contact &gt; Add address
+3. Enter description (more than 128 symbols) 
+Expected Result:
+The field description is in the text area and the user has no possibility to write more than 128 symbols.
+Step Description:
+1. Enter description less than 128 symbols
+2. Enter another necessary fields 
+Expected Result:
+Fields """"first name"""" and """"last name"""" are optional
+Step Description:
+1. Save address &gt; Save contact&gt; Reopen address
+Expected Result:
+Description saved
+Step Description:
+1. Edit descrription &gt; Save address &gt;  Save contact
+2. Reopen address
+Expected Result:
+Change saved","1. 
+2. 
+3. 
+4.","1. The field description is in the text area and the user has no possibility to write more than 128 symbols.
+2. Fields """"first name"""" and """"last name"""" are optional
+3. Description saved
+4. Change saved","1. 1. Go to Admin  &gt; Contacts
+2. Open details any contact &gt; Add address
+3. Enter description (more than 128 symbols) 
+2. 1. Enter description less than 128 symbols
+2. Enter another necessary fields 
+3. 1. Save address &gt; Save contact&gt; Reopen address
+4. 1. Edit descrription &gt; Save address &gt;  Save contact
+2. Reopen address","V3 Customer Management","S1591","Other","0"
+"C345041","Company > Adress with description",""," Recently added","Daria Ponamareva","7/29/2022 7:05 AM","","","","","Medium","","Address description","1","https://virtocommerce.atlassian.net/browse/PT-8487","Step Description:
+1. Go to Admin  &gt; Contacts
+2. Open details any Company &gt; Add address
+3. Enter description (more than 128 symbols) 
+Expected Result:
+Validation error
+Step Description:
+1. Enter description less than 128 symbols
+2. Enter another necessary fields 
+Expected Result:
+Fields """"first name"""" and """"last name"""" are optional
+Step Description:
+1. Save address &gt; Save company &gt; Reopen address
+Expected Result:
+Description saved
+Step Description:
+1. Edit description &gt; Save address &gt;  Save company
+2. Reopen address
+Expected Result:
+Change saved","1. 
+2. 
+3. 
+4.","1. Validation error
+2. Fields """"first name"""" and """"last name"""" are optional
+3. Description saved
+4. Change saved","1. 1. Go to Admin  &gt; Contacts
+2. Open details any Company &gt; Add address
+3. Enter description (more than 128 symbols) 
+2. 1. Enter description less than 128 symbols
+2. Enter another necessary fields 
+3. 1. Save address &gt; Save company &gt; Reopen address
+4. 1. Edit description &gt; Save address &gt;  Save company
+2. Reopen address","V3 Customer Management","S1591","Other","0"
+"C345042","Vendor > Adress with description",""," Recently added","Daria Ponamareva","7/29/2022 7:05 AM","","","","","Medium","","Address description","1","https://virtocommerce.atlassian.net/browse/PT-8487","Step Description:
+1. Go to Admin  &gt; Contacts
+2. Open details any vendor &gt; Add address
+3. Enter description (more 128 than symbols) 
+Expected Result:
+Validation error
+Step Description:
+1. Enter description less than 128 symbols
+2. Enter another necessary fields 
+Expected Result:
+Fields """"first name"""" and """"last name"""" are optional
+Step Description:
+1. Save address &gt; Save vendor &gt; Reopen address
+Expected Result:
+Description saved
+Step Description:
+1. Edit description &gt; Save address &gt;  Save vendor
+2. Reopen address
+Expected Result:
+Change saved","1. 
+2. 
+3. 
+4.","1. Validation error
+2. Fields """"first name"""" and """"last name"""" are optional
+3. Description saved
+4. Change saved","1. 1. Go to Admin  &gt; Contacts
+2. Open details any vendor &gt; Add address
+3. Enter description (more 128 than symbols) 
+2. 1. Enter description less than 128 symbols
+2. Enter another necessary fields 
+3. 1. Save address &gt; Save vendor &gt; Reopen address
+4. 1. Edit description &gt; Save address &gt;  Save vendor
+2. Reopen address","V3 Customer Management","S1591","Other","0"
+"C345043","Employee > Adress with description",""," Recently added","Daria Ponamareva","7/29/2022 7:06 AM","","","","","Medium","","Address description","1","https://virtocommerce.atlassian.net/browse/PT-8487","Step Description:
+1. Go to Admin  &gt; Contacts
+2. Open details any employee&gt; Add address
+3. Enter description (more 128 than symbols) 
+Expected Result:
+Validation error
+Step Description:
+1. Enter description less than 128 symbols
+2. Enter another necessary fields 
+Expected Result:
+Fields """"first name"""" and """"last name"""" are optional
+Step Description:
+1. Save address &gt; Save employee &gt; Reopen address
+Expected Result:
+Description saved
+Step Description:
+1. Edit descrription &gt; Save address &gt;  Save employee
+2. Reopen address
+Expected Result:
+Change saved","1. 
+2. 
+3. 
+4.","1. Validation error
+2. Fields """"first name"""" and """"last name"""" are optional
+3. Description saved
+4. Change saved","1. 1. Go to Admin  &gt; Contacts
+2. Open details any employee&gt; Add address
+3. Enter description (more 128 than symbols) 
+2. 1. Enter description less than 128 symbols
+2. Enter another necessary fields 
+3. 1. Save address &gt; Save employee &gt; Reopen address
+4. 1. Edit descrription &gt; Save address &gt;  Save employee
+2. Reopen address","V3 Customer Management","S1591","Other","0"
+"C312145","Add Address with OuterId","","","Daria Ponamareva","9/10/2021 1:09 PM","","address with outerId added","","Go to swagger","Medium","","Employee","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C312146","Update Address with new OuterId","","","Daria Ponamareva","9/10/2021 1:09 PM","","Address outerId updated","","Go to swagger  ","Medium","","Employee","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C312147","Delete address","","","Daria Ponamareva","9/10/2021 1:09 PM","","Address deleted","","","Medium","","Employee","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C312148","Add Address with OuterId","","","Daria Ponamareva","9/10/2021 1:10 PM","","address with outerId added","","Go to swagger","Medium","","Contact","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C312149","Update Address with new OuterId","","","Daria Ponamareva","9/10/2021 1:10 PM","","Address outerId updated","","Go to swagger  ","Medium","","Contact","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C312150","Delete address","","","Daria Ponamareva","9/10/2021 1:10 PM","","Address deleted","","","Medium","","Contact","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C312151","Add Address with OuterId","","","Daria Ponamareva","9/10/2021 1:10 PM","","address with outerId added","","Go to swagger","Medium","","Vendor","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C312152","Update Address with new OuterId","","","Daria Ponamareva","9/10/2021 1:10 PM","","Address outerId updated","","Go to swagger  ","Medium","","Vendor","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C312153","Delete address","","","Daria Ponamareva","9/10/2021 1:10 PM","","Address deleted","","","Medium","","Vendor","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C312156","Add Address with OuterId","","","Daria Ponamareva","9/10/2021 1:10 PM","","address with outerId added","","Go to swagger","Medium","","Organization","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C312155","Update Address with new OuterId","","","Daria Ponamareva","9/10/2021 1:10 PM","","Address outerId updated","","Go to swagger  ","Medium","","Organization","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C312154","Delete address","","","Daria Ponamareva","9/10/2021 1:10 PM","","Address deleted","","","Medium","","Organization","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C315409","Default address > Add > First of Shipping or Billing type - default","","","Daria Ponamareva","10/13/2021 8:26 AM","","Label Default appears for both addresses in the list","","","Medium","","Default address","1","","","","","","V3 Customer Management","S1591","Other","0"
+"C315401","Default address > Organization",""," Katalon (generic)","Daria Ponamareva","10/13/2021 8:18 AM","","Label Default appears for this address in the list","","Organization does not have addresses","Medium","","ContactType","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C315402","Default address > Employee",""," Katalon (generic)","Daria Ponamareva","10/13/2021 8:18 AM","","Label Default appears for this address in the list","","Employee does not have addresses
+
+","Medium","","ContactType","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C315403","Default address > Contact",""," Katalon (generic)","Daria Ponamareva","10/13/2021 8:19 AM","","Label Default appears for this address in the list","","Contact does not have addresses
+
+","Medium","","ContactType","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C315411","Default address > Vendor",""," Katalon (generic)","Daria Ponamareva","10/13/2021 9:50 AM","","Label Default appears for this address in the list","","Vendor does not have addresses
+
+
+","Medium","","ContactType","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C315407","Default address > New default > Change default address > Only one default Billing","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001692, https://virtowayqa.testrail.io/index.php?/attachments/get/1000001692"," Katalon (generic)","Daria Ponamareva","10/13/2021 8:24 AM","","","","","Medium","","New default","2","","Step Description:
+1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. Add two billing addresses default Address_1, Address_2
+
+5. Open edit blade address Address_1
+
+
+
+Expected Result:
+Make Default button inactive
+Step Description:
+Open edit blade address Address_2
+Expected Result:
+Make Default button active
+
+Step Description:
+Click """"Make Default"""" button 
+
+
+
+
+Expected Result:
+1. """"Make Default"""" button become inactive
+
+2. Button Save and Reset enable
+
+3. Address Address_2 hasn't Label Default in the list
+
+
+
+
+Step Description:
+ Save
+
+Expected Result:
+1. Label """"Default"""" appears for Address_2 in the list
+
+2. Only address Address_2 has Label Default
+
+			
+![](index.php?/attachments/get/5bb22e91-4339-409f-bb41-f4648c850107)      ","1. 
+2. 
+3. 
+4.","1. Make Default button inactive
+2. Make Default button active
+
+3. 1. """"Make Default"""" button become inactive
+
+2. Button Save and Reset enable
+
+3. Address Address_2 hasn't Label Default in the list
+
+
+
+
+4. 1. Label """"Default"""" appears for Address_2 in the list
+
+2. Only address Address_2 has Label Default
+
+			
+![](index.php?/attachments/get/5bb22e91-4339-409f-bb41-f4648c850107)      ","1. 1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. Add two billing addresses default Address_1, Address_2
+
+5. Open edit blade address Address_1
+
+
+
+2. Open edit blade address Address_2
+3. Click """"Make Default"""" button 
+
+
+
+
+4.  Save","V3 Customer Management","S1591","Other","0"
+"C315408","Default address > New default > Change default address > Only one default Shipping","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000063, https://virtowayqa.testrail.io/index.php?/attachments/get/1000001692"," Katalon (generic)","Daria Ponamareva","10/13/2021 8:25 AM","","","","","Medium","","New default","2","","Step Description:
+1. Go to Admin &gt; Contacts
+
+2. Open any Organization
+
+3. Open addresses
+
+4. Add two billing addresses default Address_1, Address_2
+
+5. Open edit blade address Address_1
+Expected Result:
+Make Default button inactive
+Step Description:
+Open edit blade address Address_2
+Expected Result:
+Make Default button active
+
+Step Description:
+Click """"Make Default"""" button 
+
+
+
+
+Expected Result:
+1. """"Make Default"""" button become inactive
+
+2. Button Save and Reset enable
+
+3. Address Address_2 hasn't Label Default in the list
+
+
+
+Step Description:
+Save
+
+Expected Result:
+1. Label """"Default"""" appears for this address in the list
+
+2. Only address Address_2 has Label Default
+
+ 
+![](index.php?/attachments/get/5bb22e91-4339-409f-bb41-f4648c850107)    ","1. 
+2. 
+3. 
+4.","1. Make Default button inactive
+2. Make Default button active
+
+3. 1. """"Make Default"""" button become inactive
+
+2. Button Save and Reset enable
+
+3. Address Address_2 hasn't Label Default in the list
+
+
+
+4. 1. Label """"Default"""" appears for this address in the list
+
+2. Only address Address_2 has Label Default
+
+ 
+![](index.php?/attachments/get/5bb22e91-4339-409f-bb41-f4648c850107)    ","1. 1. Go to Admin &gt; Contacts
+
+2. Open any Organization
+
+3. Open addresses
+
+4. Add two billing addresses default Address_1, Address_2
+
+5. Open edit blade address Address_1
+2. Open edit blade address Address_2
+3. Click """"Make Default"""" button 
+
+
+
+
+4. Save","V3 Customer Management","S1591","Other","0"
+"C315466","Default address > New default > Delete",""," Katalon (generic)","Daria Ponamareva","10/18/2021 11:24 AM","","","","Organization does not have addresses","Medium","","New default","2","","Step Description:
+1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. Add two billing addresses default Address_1, Address_2
+
+5. Delete Address_1 
+
+Expected Result:
+Label """"Default"""" appears for Address_2 in the list
+
+Address_1 deleted
+Step Description:
+1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. Add two shipping addresses default Address_3, Address_4
+
+5. Delete Address_3 
+Expected Result:
+Label """"Default"""" appears for Address_4 in the list
+
+Address_3 deleted","1. 
+2.","1. Label """"Default"""" appears for Address_2 in the list
+
+Address_1 deleted
+2. Label """"Default"""" appears for Address_4 in the list
+
+Address_3 deleted","1. 1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. Add two billing addresses default Address_1, Address_2
+
+5. Delete Address_1 
+
+2. 1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. Add two shipping addresses default Address_3, Address_4
+
+5. Delete Address_3","V3 Customer Management","S1591","Other","0"
+"C315467","Default address > New default > Update type",""," Katalon (generic)","Daria Ponamareva","10/18/2021 11:24 AM","","","","Organization does not have addresses
+
+","Medium","","New default","2","","Step Description:
+1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. Add two billing addresses  default Address_1, Address_2
+
+5. Open Address_1 &gt; Change type to shipping &gt; Save
+Expected Result:
+Label """"Default"""" appears for Address_1 in the list
+Label """"Default"""" appears for Address_2 in the list
+
+Address_1 changed type to shipping
+Step Description:
+Delete  Addresses_1, Addresses_2
+Expected Result:
+Addresses deleted
+Step Description:
+1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. Add two shipping addresses  default Address_3, Address_4
+
+5. Open Address_3 &gt; Change type to billing &gt; Save
+Expected Result:
+Label """"Default"""" appears for Address_3 in the list
+Label """"Default"""" appears for Address_4 in the list
+
+Address_3 changed type to billing","1. 
+2. 
+3.","1. Label """"Default"""" appears for Address_1 in the list
+Label """"Default"""" appears for Address_2 in the list
+
+Address_1 changed type to shipping
+2. Addresses deleted
+3. Label """"Default"""" appears for Address_3 in the list
+Label """"Default"""" appears for Address_4 in the list
+
+Address_3 changed type to billing","1. 1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. Add two billing addresses  default Address_1, Address_2
+
+5. Open Address_1 &gt; Change type to shipping &gt; Save
+2. Delete  Addresses_1, Addresses_2
+3. 1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. Add two shipping addresses  default Address_3, Address_4
+
+5. Open Address_3 &gt; Change type to billing &gt; Save","V3 Customer Management","S1591","Other","0"
+"C315717","Default address > No new default in the current group > Update",""," Out of priority","Daria Ponamareva","10/26/2021 10:00 AM","","","","Organization has 3 billing addresses default Addresses_1, Addresses_2, Addresses_3
+Organization has 2 shipping addresses default Addresses_4, Addresses_5
+","Medium","","New default","2","","Step Description:
+1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. For default Address_1 change type to shipping &gt; Save
+Expected Result:
+There is no default billing address in the organization's address list
+Step Description:
+1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. For default Address_4 change type to billing &gt; Save
+Expected Result:
+There is no default shipping address in the organization's address list","1. 
+2.","1. There is no default billing address in the organization's address list
+2. There is no default shipping address in the organization's address list","1. 1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. For default Address_1 change type to shipping &gt; Save
+2. 1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. For default Address_4 change type to billing &gt; Save","V3 Customer Management","S1591","Other","0"
+"C315718","Default address > No new default in the current group > Delete",""," Out of priority","Daria Ponamareva","10/26/2021 10:01 AM","","","","Organization has 3 billing addresses default Addresses_1, Addresses_2, Addresses_3
+Organization has 3 shipping addresses default Addresses_4, Addresses_5, Addresses_6
+
+","Medium","","New default","2","","Step Description:
+1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. Delete default Address_1 
+Expected Result:
+There is no default billing address in the organization's address list
+Step Description:
+1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. Delete default Address_4 
+Expected Result:
+There is no default shipping address in the organization's address list","1. 
+2.","1. There is no default billing address in the organization's address list
+2. There is no default shipping address in the organization's address list","1. 1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. Delete default Address_1 
+2. 1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. Delete default Address_4","V3 Customer Management","S1591","Other","0"
+"C315719","Default address > New default > Add Billing",""," Out of priority","Daria Ponamareva","10/26/2021 10:58 AM","","","","Organization does not have addresses
+
+","Medium","","New default","2","","Step Description:
+1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. Add Billing address Address_1
+
+
+
+Expected Result:
+Label """"Default"""" appears for Address_1 in the list
+Step Description:
+1. Click Add &gt; Choose type """"billing"""" &gt; click """"Make default""""
+
+2. Fill in required fields &gt; Save
+Expected Result:
+Label """"Default"""" disappears for Address_1 in the list
+
+In the list adresses appears Address_2 with label """"Default""""","1. 
+2.","1. Label """"Default"""" appears for Address_1 in the list
+2. Label """"Default"""" disappears for Address_1 in the list
+
+In the list adresses appears Address_2 with label """"Default""""","1. 1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. Add Billing address Address_1
+
+
+
+2. 1. Click Add &gt; Choose type """"billing"""" &gt; click """"Make default""""
+
+2. Fill in required fields &gt; Save","V3 Customer Management","S1591","Other","0"
+"C315720","Default address > New default > Add Shipping",""," Out of priority","Daria Ponamareva","10/26/2021 11:19 AM","","","","Organization does not have addresses
+
+","Medium","","New default","2","","Step Description:
+1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. Add Shipping address Address_1
+
+
+
+Expected Result:
+Label """"Default"""" appears for Address_1 in the list
+Step Description:
+1. Click Add &gt; Choose type """"Shipping"""" &gt; click """"Make default""""
+
+2. Fill in required fields &gt; Save
+Expected Result:
+Label """"Default"""" disappears for Address_1 in the list
+
+In the list adresses appears Address_2 with label """"Default""""","1. 
+2.","1. Label """"Default"""" appears for Address_1 in the list
+2. Label """"Default"""" disappears for Address_1 in the list
+
+In the list adresses appears Address_2 with label """"Default""""","1. 1. Go to Admin &gt; Contacts
+
+2. Open any Organization 
+
+3. Open addresses
+
+4. Add Shipping address Address_1
+
+
+
+2. 1. Click Add &gt; Choose type """"Shipping"""" &gt; click """"Make default""""
+
+2. Fill in required fields &gt; Save","V3 Customer Management","S1591","Other","0"
+"C315424","Default address > Billing&Shipping > Add","","","Daria Ponamareva","10/13/2021 2:10 PM","","","","","Medium","","Billing&Shipping","2","","Step Description:
+1. Go to Admin > Contacts > Open Contact_1 
+
+2. Open Addresses blade > Add> Choose address with type Billing&Shipping
+
+
+
+
+Expected Result:
+Address of BillingAndShipping type can’t be default. Button """"Make default"""" disabled.
+Step Description:
+1. Reopen add blade
+2. Click """"Make default"""" 
+3. Choose address with type Billing&Shipping
+4. Save
+Expected Result:
+Label Default doesn't appear for this address in the list","1. 
+2.","1. Address of BillingAndShipping type can’t be default. Button """"Make default"""" disabled.
+2. Label Default doesn't appear for this address in the list","1. 1. Go to Admin > Contacts > Open Contact_1 
+
+2. Open Addresses blade > Add> Choose address with type Billing&Shipping
+
+
+
+
+2. 1. Reopen add blade
+2. Click """"Make default"""" 
+3. Choose address with type Billing&Shipping
+4. Save","V3 Customer Management","S1591","Other","0"
+"C315405","Default address > Billing&Shipping > Update","https://virtowayqa.testrail.io/index.php?/attachments/get/1000003608","","Daria Ponamareva","10/13/2021 8:21 AM","","Address of BillingAndShipping type can’t be default. Button """"Make default"""" disabled.
+![](index.php?/attachments/get/cd1563da-30e9-4ac2-95d0-d5dd36c49e1d) 
+","","Сontact Contact_1 has address with the type ""Billing&Shipping""","Medium","","Billing&Shipping","2","","","","","","V3 Customer Management","S1591","Other","0"
+"C347478","Contact > Role name in index",""," None","Alexandr Tzykin","8/30/2022 9:34 AM","","","","","Medium","","Indexation","0","","","","","","V3 Customer Management","S1591","Other","0"
+"C347479","Contact > RoleId name in index",""," None","Alexandr Tzykin","8/30/2022 9:34 AM",""," ",""," ","Medium","","Indexation","0","","","","","","V3 Customer Management","S1591","Other","0"
+"C347480","Contact > Search by role name",""," None","Alexandr Tzykin","8/30/2022 9:34 AM","","","","","Medium","","Indexation","0","","","","","","V3 Customer Management","S1591","Other","0"
+"C347481","Contact > Search by roleId",""," None","Alexandr Tzykin","8/30/2022 9:34 AM","","The appropriate contacts were returned","","The Contacts with roles are exist in the system: 
+
+roleid:org-employee
+roleid:purchasing-agent
+roleid:715c4398-d02e-44a9-ba39-1fae9631af6c","Medium","","Indexation","0","","","","","","V3 Customer Management","S1591","Other","0"
+"C398728","Verify the display of the current photo in the list of customer",""," None","Elena Kutasina","3/17/2025 2:59 PM","","The user's photo is displayed in the header.","","The admin has an uploaded photo for a customer in the contacts module","Medium","","Customer profile photo","0","","","","","","V3 Customer Management","S1591","Other","0"
+"C398729","Verify the default photo (logo) is displayed when no photo is uploaded",""," None","Elena Kutasina","3/17/2025 2:59 PM","","The default photo (logo) is displayed.",""," 
+","Medium","","Customer profile photo","0","","","","","","V3 Customer Management","S1591","Other","0"
+"C398731","Verify the upload photo window opens","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004680, https://virtowayqa.testrail.io/index.php?/attachments/get/1000004681"," None","Elena Kutasina","3/17/2025 2:59 PM","","The upload and preview photo window opens.
+ ![](index.php?/attachments/get/1000004680) 
+","","The account is active, and the 'Manage Profile' page is open.","Medium","","Customer profile photo","0","","","","","","V3 Customer Management","S1591","Other","0"
+"C398732","Verify uploading a new photo",""," None","Elena Kutasina","3/17/2025 2:59 PM","","The photo is uploaded and displayed in the preview window.","","The upload photo window is open.","Medium","","Customer profile photo","0","","","","","","V3 Customer Management","S1591","Other","0"
+"C398733","Verify the list of customers updates after photo upload",""," None","Elena Kutasina","3/17/2025 2:59 PM","","The new photo is displayed in the list of customers instead of the previous one (or the default).
+  
+","","The photo was uploaded to the contact through icon blade","Medium","","Customer profile photo","0","","","","","","V3 Customer Management","S1591","Other","0"
+"C398734","Verify uploading an unsupported file format","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004684"," None","Elena Kutasina","3/17/2025 2:59 PM","","An error message appears, and the upload is not allowed.
+ ![](index.php?/attachments/get/1000004684) 
+","","The upload photo window is open.","Medium","","Customer profile photo","0","","","","","","V3 Customer Management","S1591","Other","0"
+"C398737","Verify canceling the photo upload",""," None","Elena Kutasina","3/17/2025 2:59 PM","","The image is not uploaded, and the previous photo remains unchanged.","","The upload photo window is open.","Medium","","Customer profile photo","0","","","","","","V3 Customer Management","S1591","Other","0"
+"C398738","Verify the uploaded photo persists after logout and re-login",""," None","Elena Kutasina","3/17/2025 2:59 PM","","The uploaded photo persists and is displayed after re-login.","","The photo has been successfully uploaded and saved.","Medium","","Customer profile photo","0","","","","","","V3 Customer Management","S1591","Other","0"

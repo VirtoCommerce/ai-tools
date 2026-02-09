@@ -1,0 +1,2310 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C169626","View Store Details","","","Maya Alsamarrai","2/12/2020 9:21 AM","","<p>The system displays the Store details blade in editable format </p>
+
+<p><span class=""""markdown-img-container""""><img src='index.php?/attachments/get/22429' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-22429' data-attachment-id='22429' data-entity-id='169626' /></span></p>
+","","<p>Store is added to Virtocommerce</p>
+","Medium","","Store Management","1","","","","","","V3 Store","S1584","Other","1"
+"C169627","Add New Store",""," None","Maya Alsamarrai","2/12/2020 9:36 AM","","","","Stores Module is installed","Medium","","Store Management","1","","Step Description:
+Navigate to More->Stores
+Expected Result:
+The system opens the 'Stores' module
+The 'Add' button is active
+Step Description:
+Click the 'Add' button 
+Expected Result:
+The system opens the 'New Store' (Create New Store) blade
+All fields are required 
+The 'Create' button is disabled
+![](index.php?/attachments/get/22437) 
+
+Step Description:
+Fill out the form:
+
+1. Code (required field)- alfanumeric only , no space
+2. Name (required field) 
+3. Catalog- drop down. Select the catalog 
+4. Default language- drop down. Select from drop down
+5. Default currency- drop down. Select from drop down
+6. State- drop down. Select the state from drop down
+![](index.php?/attachments/get/22442) 
+
+
+
+Expected Result:
+The 'Create' button becomes active
+Step Description:
+Click 'Create' 
+Expected Result:
+A new Store is created and displayed on the Stores blade
+The new store details are displayed in editable format 
+![](index.php?/attachments/get/22443) ","1. 
+2. 
+3. 
+4.","1. The system opens the 'Stores' module
+The 'Add' button is active
+2. The system opens the 'New Store' (Create New Store) blade
+All fields are required 
+The 'Create' button is disabled
+![](index.php?/attachments/get/22437) 
+
+3. The 'Create' button becomes active
+4. A new Store is created and displayed on the Stores blade
+The new store details are displayed in editable format 
+![](index.php?/attachments/get/22443) ","1. Navigate to More->Stores
+2. Click the 'Add' button 
+3. Fill out the form:
+
+1. Code (required field)- alfanumeric only , no space
+2. Name (required field) 
+3. Catalog- drop down. Select the catalog 
+4. Default language- drop down. Select from drop down
+5. Default currency- drop down. Select from drop down
+6. State- drop down. Select the state from drop down
+![](index.php?/attachments/get/22442) 
+
+
+
+4. Click 'Create'","V3 Store","S1584","Other","0"
+"C169631","Edit Store Details (input fields)",""," None","Maya Alsamarrai","2/12/2020 9:56 AM","","","","Store is added to the system ","Medium","","Store Management","1","","Step Description:
+Go to More->Stores->select a Store and click on it
+Expected Result:
+The system opens the Store details in editable format
+'Code' is a label- not editable 
+Step Description:
+Edit Store name:
+
+In the Store name field edit the name
+
+
+Expected Result:
+The system displays the edited name
+Validation: only alphanumeric
+Step Description:
+Edit Catalog:
+
+Open the drop down list and select a different catalog
+Expected Result:
+The system displays the newly selected catalog
+Step Description:
+Edit State:
+
+Select a different state from the drop down list 
+Expected Result:
+The system displays the new state in the field
+Step Description:
+Enter Store URL 
+(This field is optional) 
+Expected Result:
+The Store URL is displayed in the field
+Step Description:
+Edit default language- select a different default language from the drop down 
+
+
+Expected Result:
+The system displays the selected default language in the field
+Step Description:
+Add a new language- 
+follow the same steps as for 'Add a new state'
+Expected Result:
+The new language appears on the list and in the drop down 
+
+Step Description:
+Edit Additional language- 
+click on the 'Select..' in the field and select the language from the drop down
+
+
+Expected Result:
+The system displays the selected language in the field
+Step Description:
+Select more than one additional language
+Expected Result:
+The system displays the selected languages in the field
+Step Description:
+Delete one or more additional languages by clicking the 'x' (delete) icon
+Expected Result:
+The system deletes the language(s) and remove it (them) from the field
+Step Description:
+Add Additional language- follow the same steps as for 'Add new state' 
+Expected Result:
+The new additional language is added to the list and displayed in the drop down and available for selection 
+Step Description:
+Edit Default currency - select a different currency from the drop down list
+Expected Result:
+The new currency is displayed in the field
+Step Description:
+Edit the selected currency details:
+1. Click the 'edit' icon next to the Default currency
+2. Select the currency on Currencies blade
+3. Edit the details on 'Edit currency details' blade
+4. Save the changes
+![](index.php?/attachments/get/22460)      
+
+Expected Result:
+The system saves the changes made and display the updated information 
+Step Description:
+Add new Default currency:
+1. Click the 'Edit' icon
+2. Click 'Add' icon located on the toolbar
+3. Fill out the the 'New currency' form:
+- Code is a required field (ex. USD) 
+- Name is required field 
+- 'Is primary' is disabled by default
+- Exchange rate, Symbol and Currency custom formatting are optional fields
+4. Click the 'Create' button 
+Expected Result:
+The system creates the new currency and is available for selection 
+Step Description:
+Edit Additional currency - select a different currency from the drop down list 
+Select more than one currency
+Expected Result:
+The new currency (or currencies) is displayed in the field
+Step Description:
+Add new additional currency- follow the same steps as for Default currency
+Expected Result:
+The system saves the new currency and display is on the blade
+The new currency is available for selection 
+Step Description:
+Select linked stores by clicking on the 'Linked stores' field
+Select one or more stores from the appeared drop down
+Expected Result:
+The system displays the selected store(s) in the filed
+Step Description:
+Delete the linked store(s) 
+click the 'delete' icon
+Expected Result:
+The system removes the linked store from the field","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+11. 
+12. 
+13. 
+14. 
+15. 
+16. 
+17. 
+18.","1. The system opens the Store details in editable format
+'Code' is a label- not editable 
+2. The system displays the edited name
+Validation: only alphanumeric
+3. The system displays the newly selected catalog
+4. The system displays the new state in the field
+5. The Store URL is displayed in the field
+6. The system displays the selected default language in the field
+7. The new language appears on the list and in the drop down 
+
+8. The system displays the selected language in the field
+9. The system displays the selected languages in the field
+10. The system deletes the language(s) and remove it (them) from the field
+11. The new additional language is added to the list and displayed in the drop down and available for selection 
+12. The new currency is displayed in the field
+13. The system saves the changes made and display the updated information 
+14. The system creates the new currency and is available for selection 
+15. The new currency (or currencies) is displayed in the field
+16. The system saves the new currency and display is on the blade
+The new currency is available for selection 
+17. The system displays the selected store(s) in the filed
+18. The system removes the linked store from the field","1. Go to More->Stores->select a Store and click on it
+2. Edit Store name:
+
+In the Store name field edit the name
+
+
+3. Edit Catalog:
+
+Open the drop down list and select a different catalog
+4. Edit State:
+
+Select a different state from the drop down list 
+5. Enter Store URL 
+(This field is optional) 
+6. Edit default language- select a different default language from the drop down 
+
+
+7. Add a new language- 
+follow the same steps as for 'Add a new state'
+8. Edit Additional language- 
+click on the 'Select..' in the field and select the language from the drop down
+
+
+9. Select more than one additional language
+10. Delete one or more additional languages by clicking the 'x' (delete) icon
+11. Add Additional language- follow the same steps as for 'Add new state' 
+12. Edit Default currency - select a different currency from the drop down list
+13. Edit the selected currency details:
+1. Click the 'edit' icon next to the Default currency
+2. Select the currency on Currencies blade
+3. Edit the details on 'Edit currency details' blade
+4. Save the changes
+![](index.php?/attachments/get/22460)      
+
+14. Add new Default currency:
+1. Click the 'Edit' icon
+2. Click 'Add' icon located on the toolbar
+3. Fill out the the 'New currency' form:
+- Code is a required field (ex. USD) 
+- Name is required field 
+- 'Is primary' is disabled by default
+- Exchange rate, Symbol and Currency custom formatting are optional fields
+4. Click the 'Create' button 
+15. Edit Additional currency - select a different currency from the drop down list 
+Select more than one currency
+16. Add new additional currency- follow the same steps as for Default currency
+17. Select linked stores by clicking on the 'Linked stores' field
+Select one or more stores from the appeared drop down
+18. Delete the linked store(s) 
+click the 'delete' icon","V3 Store","S1584","Other","0"
+"C237773","Open store in browser","","","Grotem","6/8/2020 12:38 PM","","1. Admin redirected to Store_1 page","","1. Admin logged in environment
+2. Admin is on Store blade
+3. Store_1 created ","Medium","","Toolbar","2","","","","","","V3 Store","S1584","Other","0"
+"C237892","Save",""," None","Grotem","6/8/2020 12:45 PM","","1. Changes in Store_1 saved","","1. Admin logged in environment
+2. Admin is on Store blade
+3. Store_1 created ","Medium","","Toolbar","2","","","","","","V3 Store","S1584","Other","0"
+"C237894","Reset","","","Grotem","6/8/2020 12:51 PM","","1. Changes in Store_1 not saved. Initial data is displayed.","","1. Admin logged in environment
+2. Admin is on Store blade
+3. Store_1 created ","Medium","","Toolbar","2","","","","","","V3 Store","S1584","Other","0"
+"C237895","Delete",""," None","Grotem","6/8/2020 12:56 PM","","1. Store_1 deleted","","1. Admin logged in environment
+2. Admin is on Store blade
+3. Store_1 created ","Medium","","Toolbar","2","","","","","","V3 Store","S1584","Other","0"
+"C169669","Edit Aggregation properties","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004627, https://virtowayqa.testrail.io/index.php?/attachments/get/1000004628"," None","Maya Alsamarrai","2/12/2020 2:49 PM","","","","Store is added and exists in the Stores Module","Medium","","Additional edit","1","","Step Description:
+Open the Store details blade and click on the 'Aggregation properties' widget
+Expected Result:
+The system opens the 'Filtering properties' blade
+ ![](index.php?/attachments/get/1000004627) 
+
+Step Description:
+To add a new property select the desired property from the list on the left and click on it
+Expected Result:
+The system displays the new property under the 'Selected properties' on the right 
+Step Description:
+To unselect the property, click delete (cross) the property from the list on the right side under 'Selected properties' 
+Expected Result:
+The system removes the property from the selected list 
+Step Description:
+Select a property from the 'Selected properties' list and click on it 
+Expected Result:
+The system opens the property details blade in editable format 
+The property name filed is a label (not editable) 
+Aggregation type is a drop down with two options: Attribute, Range
+Aggregation size is editable and displayed only when 'Attribute' is selected
+Allowed values- editable. The system allows removing the existing values and adding new ones 
+'Cancel' and 'OK' buttons are enabled
+Step Description:
+Click in the text box under 'Allowed values' and enter a new value - type a text and click on the blue text field that appears on the bottom of the box
+Expected Result:
+The system adds the new value 
+Step Description:
+Delete one ore more of the existing values by clicking the 'x' icon 
+Expected Result:
+The system removes the value from the text box
+Step Description:
+Click the 'OK' button 
+Expected Result:
+The system saves the changes
+Step Description:
+Make changes and click the 'Cancel button
+Expected Result:
+The system displays the warning message 
+ ![](index.php?/attachments/get/1000004628) 
+
+Step Description:
+Confirm canceling the operation 
+Expected Result:
+The system cancels the operation. Changes will not be saved","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9.","1. The system opens the 'Filtering properties' blade
+ ![](index.php?/attachments/get/1000004627) 
+
+2. The system displays the new property under the 'Selected properties' on the right 
+3. The system removes the property from the selected list 
+4. The system opens the property details blade in editable format 
+The property name filed is a label (not editable) 
+Aggregation type is a drop down with two options: Attribute, Range
+Aggregation size is editable and displayed only when 'Attribute' is selected
+Allowed values- editable. The system allows removing the existing values and adding new ones 
+'Cancel' and 'OK' buttons are enabled
+5. The system adds the new value 
+6. The system removes the value from the text box
+7. The system saves the changes
+8. The system displays the warning message 
+ ![](index.php?/attachments/get/1000004628) 
+
+9. The system cancels the operation. Changes will not be saved","1. Open the Store details blade and click on the 'Aggregation properties' widget
+2. To add a new property select the desired property from the list on the left and click on it
+3. To unselect the property, click delete (cross) the property from the list on the right side under 'Selected properties' 
+4. Select a property from the 'Selected properties' list and click on it 
+5. Click in the text box under 'Allowed values' and enter a new value - type a text and click on the blue text field that appears on the bottom of the box
+6. Delete one ore more of the existing values by clicking the 'x' icon 
+7. Click the 'OK' button 
+8. Make changes and click the 'Cancel button
+9. Confirm canceling the operation","V3 Store","S1584","Other","0"
+"C342153","Edit Aggregation properties > Edit Attribute","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000192"," None","Elena Mutykova","6/3/2022 9:52 AM","","","","Go to catalog > Properties > Edit Brand > Add to dictionary a new value_1 > Save","Medium","","Additional edit","1","","Step Description:
+Go to Store &gt; Aggregation properties &gt; Select Brand &gt; Edit icon
+
+
+Expected Result:
+The system opens the property details blade in editable format
+
+The property name filed is a label (not editable)
+
+Aggregation type is a drop-down with two options: Attribute, Range
+Aggregation size is editable and displayed only when 'Attribute' is selected
+
+Allowed values- editable. The system allows removing the existing values and adding new ones
+'Cancel' and 'OK' buttons are enabled
+Step Description:
+Allowed values &gt; Click on Add button &gt; Select from drop-down list value_1 
+
+
+Expected Result:
+A new value was added and the system allows selecting it from the list.
+
+![](index.php?/attachments/get/0a7311f7-d98b-4906-9778-b600a05e1ba7)              
+
+Step Description:
+Remove value_1 &gt; Click on X 
+Expected Result:
+Value_1 was removed from the field
+Step Description:
+Click on Add button &gt; Check value_1 in dictionary 
+Expected Result:
+Value_1 was added to the dictionary 
+Step Description:
+1. Add all values from the dictionary
+2. Remove one value
+Expected Result:
+The values were added to the field. Button Add disappeared.
+The button Add appeared
+Step Description:
+Remove all values &gt; Save
+Expected Result:
+All values were removed.
+Add button displayed after deleting","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. The system opens the property details blade in editable format
+
+The property name filed is a label (not editable)
+
+Aggregation type is a drop-down with two options: Attribute, Range
+Aggregation size is editable and displayed only when 'Attribute' is selected
+
+Allowed values- editable. The system allows removing the existing values and adding new ones
+'Cancel' and 'OK' buttons are enabled
+2. A new value was added and the system allows selecting it from the list.
+
+![](index.php?/attachments/get/0a7311f7-d98b-4906-9778-b600a05e1ba7)              
+
+3. Value_1 was removed from the field
+4. Value_1 was added to the dictionary 
+5. The values were added to the field. Button Add disappeared.
+The button Add appeared
+6. All values were removed.
+Add button displayed after deleting","1. Go to Store &gt; Aggregation properties &gt; Select Brand &gt; Edit icon
+
+
+2. Allowed values &gt; Click on Add button &gt; Select from drop-down list value_1 
+
+
+3. Remove value_1 &gt; Click on X 
+4. Click on Add button &gt; Check value_1 in dictionary 
+5. 1. Add all values from the dictionary
+2. Remove one value
+6. Remove all values &gt; Save","V3 Store","S1584","Other","0"
+"C342152","Edit Aggregation properties > Edit PriceRange","https://virtowayqa.testrail.io/index.php?/attachments/get/1000003600, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002234, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002234"," None","Elena Mutykova","6/3/2022 9:51 AM","","","","","Medium","","Additional edit","1","","Step Description:
+Go to Store &gt; Aggregation properties &gt; Select any Price &gt; Edit icon
+Expected Result:
+	
+The system opens the property details blade in editable format
+
+The property name filed is a label (not editable)
+
+Aggregation type is a drop-down with two options: Range
+
+Price range bounds - editable.
+
+The system allows removing the existing values and adding new ones
+'Cancel' and 'OK' buttons are enabled
+Step Description:
+Price range bounds &gt; Click the button Add &gt; Select a new value from the drop-down list
+
+![](index.php?/attachments/get/7ec1a9f7-8181-47ad-84f8-8913194f63bb)  
+
+Expected Result:
+A new value was added to the file
+Step Description:
+Remove value_1 &gt; Click on X &gt; Click Ok
+
+  
+
+Expected Result:
+Value_1 was removed from the field.
+The system saved all changes.
+Step Description:
+Remove all values &gt; Save
+Expected Result:
+All values were removed.
+Add button is displayed after deleting 
+
+![](index.php?/attachments/get/cd033680-2a56-435a-8a87-a2ab6093a6b7)  ","1. 
+2. 
+3. 
+4.","1. 	
+The system opens the property details blade in editable format
+
+The property name filed is a label (not editable)
+
+Aggregation type is a drop-down with two options: Range
+
+Price range bounds - editable.
+
+The system allows removing the existing values and adding new ones
+'Cancel' and 'OK' buttons are enabled
+2. A new value was added to the file
+3. Value_1 was removed from the field.
+The system saved all changes.
+4. All values were removed.
+Add button is displayed after deleting 
+
+![](index.php?/attachments/get/cd033680-2a56-435a-8a87-a2ab6093a6b7)  ","1. Go to Store &gt; Aggregation properties &gt; Select any Price &gt; Edit icon
+2. Price range bounds &gt; Click the button Add &gt; Select a new value from the drop-down list
+
+![](index.php?/attachments/get/7ec1a9f7-8181-47ad-84f8-8913194f63bb)  
+
+3. Remove value_1 &gt; Click on X &gt; Click Ok
+
+  
+
+4. Remove all values &gt; Save","V3 Store","S1584","Other","0"
+"C398720","Edit Aggregation properties > Value mapping",""," None","Elena Kutasina","2/24/2025 7:37 PM","","","","","Medium","","Additional edit","1","","","","","","V3 Store","S1584","Other","0"
+"C169670","Edit Assets","","","Maya Alsamarrai","2/12/2020 2:50 PM","","","","Store is created in the Stores Module ","Medium","","Additional edit","1","","Step Description:
+Go to More->Stores module->Select a Store and click on it
+Expected Result:
+The system displays the Store details blade
+Step Description:
+Click on Assets widget
+Expected Result:
+The system displays the Asset Management blade:
+'Refresh', 'New folder', 'Upload' buttons are active
+'Delete' button  is disabled unless an asset is selected
+List of assets is displayed if assets were uploaded before
+The blade is empty if no assets were uploaded before
+Step Description:
+Click 'Upload' button to add a new asset 
+Expected Result:
+The system opens the Asset upload blade:
+
+1. Possibility to drag and drop files
+2. Possibility to browse files
+3. Possibility to enter file URL
+Step Description:
+Drag and drop file:
+Select a file on your PC
+Drag the file and drop it into the box
+Expected Result:
+The system adds the asset to the list
+Step Description:
+Click the 'Upload' icon and browse the selected file 
+Expected Result:
+The system uploads the file and adds it to the list of assets 
+Step Description:
+Paste the file URL into the correspondent field and click the '+' button
+Expected Result:
+The system adds the file to the assets list 
+Step Description:
+Select one of the assets and click 'Delete' 
+Expected Result:
+The system displays the notification message 
+
+![](index.php?/attachments/get/22480) 
+
+Step Description:
+Confirm asset deletion 
+Expected Result:
+The system removes the file from the list","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8.","1. The system displays the Store details blade
+2. The system displays the Asset Management blade:
+'Refresh', 'New folder', 'Upload' buttons are active
+'Delete' button  is disabled unless an asset is selected
+List of assets is displayed if assets were uploaded before
+The blade is empty if no assets were uploaded before
+3. The system opens the Asset upload blade:
+
+1. Possibility to drag and drop files
+2. Possibility to browse files
+3. Possibility to enter file URL
+4. The system adds the asset to the list
+5. The system uploads the file and adds it to the list of assets 
+6. The system adds the file to the assets list 
+7. The system displays the notification message 
+
+![](index.php?/attachments/get/22480) 
+
+8. The system removes the file from the list","1. Go to More->Stores module->Select a Store and click on it
+2. Click on Assets widget
+3. Click 'Upload' button to add a new asset 
+4. Drag and drop file:
+Select a file on your PC
+Drag the file and drop it into the box
+5. Click the 'Upload' icon and browse the selected file 
+6. Paste the file URL into the correspondent field and click the '+' button
+7. Select one of the assets and click 'Delete' 
+8. Confirm asset deletion","V3 Store","S1584","Other","0"
+"C169671","Edit Seo","","","Maya Alsamarrai","2/12/2020 2:50 PM","","","","Store is created in Stores module ","Medium","","Additional edit","1","","Step Description:
+Go to More->Stores module->select a Store and click on it
+Expected Result:
+The system opens the Store details blade
+Step Description:
+Select the SEO widget and click on it
+Expected Result:
+The system opens the 'Manage SEOs' blade
+The list of SEOs is displayed
+The 'Add' button is active
+The 'Delete' button is disabled by default
+Step Description:
+Click on a SEO from the list to view the details
+Expected Result:
+The system opens the SEO details blade in editable format
+'Cancel' button is active
+'Ok' button is disabled by default
+
+
+![](index.php?/attachments/get/22481)
+
+Step Description:
+Edit SEO details and click the 'OK' button
+Expected Result:
+The system updates the details
+Step Description:
+Click the 'Add' button on SEO details blade 
+Expected Result:
+The system opens the 'New SEO' blade:
+
+1. 'Is Active' is switched on by default but can be switched off
+2. Language can be selected from the drop down list
+3. URL keyword is a required field
+4. Page title field is optional
+5. Metadiscription text box is optional
+6. Image Alternative text input field is optional
+7. 'Cancel' button is active
+8. 'OK' button is disabled
+Step Description:
+Fill out the form and click 'OK'
+Expected Result:
+The new SEO is created and added to the list 
+Step Description:
+Select any SEO from the list and click 'Delete' 
+Expected Result:
+The system displays a notification message
+Step Description:
+Confirm deletion
+Expected Result:
+The system deletes the SEO and removes it from the list","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8.","1. The system opens the Store details blade
+2. The system opens the 'Manage SEOs' blade
+The list of SEOs is displayed
+The 'Add' button is active
+The 'Delete' button is disabled by default
+3. The system opens the SEO details blade in editable format
+'Cancel' button is active
+'Ok' button is disabled by default
+
+
+![](index.php?/attachments/get/22481)
+
+4. The system updates the details
+5. The system opens the 'New SEO' blade:
+
+1. 'Is Active' is switched on by default but can be switched off
+2. Language can be selected from the drop down list
+3. URL keyword is a required field
+4. Page title field is optional
+5. Metadiscription text box is optional
+6. Image Alternative text input field is optional
+7. 'Cancel' button is active
+8. 'OK' button is disabled
+6. The new SEO is created and added to the list 
+7. The system displays a notification message
+8. The system deletes the SEO and removes it from the list","1. Go to More->Stores module->select a Store and click on it
+2. Select the SEO widget and click on it
+3. Click on a SEO from the list to view the details
+4. Edit SEO details and click the 'OK' button
+5. Click the 'Add' button on SEO details blade 
+6. Fill out the form and click 'OK'
+7. Select any SEO from the list and click 'Delete' 
+8. Confirm deletion","V3 Store","S1584","Other","0"
+"C169672","Edit Advanced properties","","","Maya Alsamarrai","2/12/2020 2:50 PM","","","","Store is added to Stores module","Medium","","Additional edit","1","","Step Description:
+Go to More->Stores Module->select the store and open Store details
+Expected Result:
+The system displays the Store details blade
+Step Description:
+Select the 'Advanced properties' widget and click on it 
+Expected Result:
+The system displays the 'Advanced properties' widget
+All fields are editable
+All fields are optional
+Step Description:
+Edit any field and click """"Ok""""
+Expected Result:
+1. Button """"Save"""" become available
+2. Button """"Reset"""" become available
+Step Description:
+Press on """"Reset"""" button
+Expected Result:
+Properties returned to initial form
+Step Description:
+Edit any field and click """"Ok""""
+Expected Result:
+1. Button """"Save"""" become available
+2. Button """"Reset"""" become available
+Step Description:
+Press on """"Save"""" button
+Expected Result:
+All changes saved","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. The system displays the Store details blade
+2. The system displays the 'Advanced properties' widget
+All fields are editable
+All fields are optional
+3. 1. Button """"Save"""" become available
+2. Button """"Reset"""" become available
+4. Properties returned to initial form
+5. 1. Button """"Save"""" become available
+2. Button """"Reset"""" become available
+6. All changes saved","1. Go to More->Stores Module->select the store and open Store details
+2. Select the 'Advanced properties' widget and click on it 
+3. Edit any field and click """"Ok""""
+4. Press on """"Reset"""" button
+5. Edit any field and click """"Ok""""
+6. Press on """"Save"""" button","V3 Store","S1584","Other","0"
+"C237961","Edit fulfillment center","","","Grotem","6/9/2020 7:22 AM","","","","Store is added to Stores module","Medium","","Additional edit","1","","Step Description:
+Go to More->Stores Module->select the store and open Store details
+Expected Result:
+1. The system displays the Store details blade
+2. Fulfillment widget shown
+Step Description:
+Edit the default fulfillment center by selecting a different center from the drop down list 
+Expected Result:
+The selected fulfillment center is displayed in the field
+Step Description:
+Manage fulfillment center
+Click on the three dots on the left side of the selected fulfillment center and select 'Manage' 
+![](index.php?/attachments/get/22485)
+
+Expected Result:
+The system opens the 'Edit fulfillment center' blade with possibility to edit the details
+Step Description:
+Make changes to the fulfillment center details and click 'Save'
+Expected Result:
+The system saves the changes and update the details
+Step Description:
+Select a fulfillment center, click the three dots and select 'Delete' 
+Expected Result:
+The system displays a notification message 
+
+![](index.php?/attachments/get/22486)
+
+Step Description:
+Confirm deletion
+Expected Result:
+The fulfillment center is deleted and removed from the list 
+Step Description:
+Add a new fulfillment center:
+Click on the 'Edit' icon 
+On the 'Manage fulfillment centers' blade click the 'Add' button 
+Fill out the form 
+Enter the fulfillment center address
+Click the 'Save' button to save the new fulfillment center
+
+![](index.php?/attachments/get/22483)
+
+Expected Result:
+The system adds the new fulfillment canter and displays it on the list 
+![](index.php?/attachments/get/22484)","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7.","1. 1. The system displays the Store details blade
+2. Fulfillment widget shown
+2. The selected fulfillment center is displayed in the field
+3. The system opens the 'Edit fulfillment center' blade with possibility to edit the details
+4. The system saves the changes and update the details
+5. The system displays a notification message 
+
+![](index.php?/attachments/get/22486)
+
+6. The fulfillment center is deleted and removed from the list 
+7. The system adds the new fulfillment canter and displays it on the list 
+![](index.php?/attachments/get/22484)","1. Go to More->Stores Module->select the store and open Store details
+2. Edit the default fulfillment center by selecting a different center from the drop down list 
+3. Manage fulfillment center
+Click on the three dots on the left side of the selected fulfillment center and select 'Manage' 
+![](index.php?/attachments/get/22485)
+
+4. Make changes to the fulfillment center details and click 'Save'
+5. Select a fulfillment center, click the three dots and select 'Delete' 
+6. Confirm deletion
+7. Add a new fulfillment center:
+Click on the 'Edit' icon 
+On the 'Manage fulfillment centers' blade click the 'Add' button 
+Fill out the form 
+Enter the fulfillment center address
+Click the 'Save' button to save the new fulfillment center
+
+![](index.php?/attachments/get/22483)","V3 Store","S1584","Other","0"
+"C169747","Edit Dynamic properties","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004303","","Maya Alsamarrai","2/13/2020 12:16 PM","","","","Store is created in Stores module","Medium","","Additional edit","1","","Step Description:
+Go to More->Store module->select a Store and open Store details
+Expected Result:
+Store details blade is displayed
+Step Description:
+Select the Dynamic properties widget and click on it
+Expected Result:
+The system displays the 'Edit properties values' blade
+![](index.php?/attachments/get/f2d84557-e88e-4cc0-98bf-f0e8a43afe7b)  
+The fields are editable 
+'Cancel' and 'OK' buttons are active
+'Manage type properties' button is active 
+""""Hide empty fields"""" 
+Step Description:
+Click on 'Manage type properties' button 
+Expected Result:
+The system displays the 'Manage dynamic properties' blade
+
+![](index.php?/attachments/get/22489) 
+
+Step Description:
+Select a property and click on it 
+
+![](index.php?/attachments/get/22490) 
+
+Expected Result:
+The system displays the 'Manage property' blade
+
+![](index.php?/attachments/get/22492) 
+
+
+Step Description:
+Click the 'Add new property' button 
+Expected Result:
+The system displays the 'New property' blade
+Step Description:
+Enter property name
+Select value type from drop down
+Select order from drop down
+Enter description
+Enter display name for each language
+Click 'Create'
+![](index.php?/attachments/get/22494) 
+
+Expected Result:
+The new property is created and displayed on the list 
+The property has the value type specified
+The property is displayed according to the specified order 
+![](index.php?/attachments/get/22495) 
+
+Step Description:
+Select a property and click 'Delete' 
+Expected Result:
+The system displays a notification message
+Step Description:
+Confirm deletion
+Expected Result:
+The property is deleted and removed from the list","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8.","1. Store details blade is displayed
+2. The system displays the 'Edit properties values' blade
+![](index.php?/attachments/get/f2d84557-e88e-4cc0-98bf-f0e8a43afe7b)  
+The fields are editable 
+'Cancel' and 'OK' buttons are active
+'Manage type properties' button is active 
+""""Hide empty fields"""" 
+3. The system displays the 'Manage dynamic properties' blade
+
+![](index.php?/attachments/get/22489) 
+
+4. The system displays the 'Manage property' blade
+
+![](index.php?/attachments/get/22492) 
+
+
+5. The system displays the 'New property' blade
+6. The new property is created and displayed on the list 
+The property has the value type specified
+The property is displayed according to the specified order 
+![](index.php?/attachments/get/22495) 
+
+7. The system displays a notification message
+8. The property is deleted and removed from the list","1. Go to More->Store module->select a Store and open Store details
+2. Select the Dynamic properties widget and click on it
+3. Click on 'Manage type properties' button 
+4. Select a property and click on it 
+
+![](index.php?/attachments/get/22490) 
+
+5. Click the 'Add new property' button 
+6. Enter property name
+Select value type from drop down
+Select order from drop down
+Enter description
+Enter display name for each language
+Click 'Create'
+![](index.php?/attachments/get/22494) 
+
+7. Select a property and click 'Delete' 
+8. Confirm deletion","V3 Store","S1584","Other","0"
+"C169756","Manage Settings",""," None","Maya Alsamarrai","2/13/2020 2:52 PM","","","","Store is created in Stores module ","Medium","","Additional edit","1","","Step Description:
+Go to More-&gt;Stores module-&gt;select the Store-&gt;open Store details and click on Settings widget
+Expected Result:
+The system opens the Settings blade
+Step Description:
+Enable 'Quotes' (switch on) and click 'OK'
+Open the Store on Storefront
+
+Expected Result:
+Quotes functionality on Storefront for this store is enabled
+Step Description:
+Disable 'Quotes' (switch off) and click 'OK
+Open Storefront
+Expected Result:
+Quotes function on Storefront for this store is not available
+Step Description:
+Allow 'Allow anonymous users for store' (switch on), click 'OK'
+Go to Storefront and create an order as an anonymous user
+Expected Result:
+The system enables creating orders
+Step Description:
+Switch off 'Allow anonymous users for store', click 'OK'
+Go to storefront and try to create an order as an anonymous 
+Expected Result:
+The system prevents the access to store
+Step Description:
+Switch on 'Enable tax calculation', click 'OK'
+Go to Storefront and create an order
+Expected Result:
+The system calculates the taxes automatically
+Step Description:
+Switch off 'Enable tax calculation', click 'OK'
+Go to Storefront and create an order
+Expected Result:
+Taxes are not calculated
+Step Description:
+Switch on 'Enable subscriptions', click 'OK'
+Go to Storefront and crate an order
+Expected Result:
+Subscription is available
+Step Description:
+Switch off 'Enable subscription' , click 'OK
+Go to Storefront
+Create an order
+Expected Result:
+Subscription is not allowed 
+Step Description:
+Scroll the page till Google Analytics 4
+Toggle Enable = True
+Enter Measurement Id (ex. G-S2KXT3KTJZ)
+Save
+
+Go to Storefront
+Open Dev tools (F12) &gt; Elements
+Click on tag head
+
+Expected Result:
+The script was activated for the Google tag.
+The  Measurement Id is shown in the script
+Step Description:
+Scroll the page till Google Analytics 4
+Toggle Enable = False
+Save
+
+Go to Storefront
+Open Dev tools (F12) &gt; Elements
+Click on the tag head
+
+Expected Result:
+The script Google tag was disabled","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+11.","1. The system opens the Settings blade
+2. Quotes functionality on Storefront for this store is enabled
+3. Quotes function on Storefront for this store is not available
+4. The system enables creating orders
+5. The system prevents the access to store
+6. The system calculates the taxes automatically
+7. Taxes are not calculated
+8. Subscription is available
+9. Subscription is not allowed 
+10. The script was activated for the Google tag.
+The  Measurement Id is shown in the script
+11. The script Google tag was disabled","1. Go to More-&gt;Stores module-&gt;select the Store-&gt;open Store details and click on Settings widget
+2. Enable 'Quotes' (switch on) and click 'OK'
+Open the Store on Storefront
+
+3. Disable 'Quotes' (switch off) and click 'OK
+Open Storefront
+4. Allow 'Allow anonymous users for store' (switch on), click 'OK'
+Go to Storefront and create an order as an anonymous user
+5. Switch off 'Allow anonymous users for store', click 'OK'
+Go to storefront and try to create an order as an anonymous 
+6. Switch on 'Enable tax calculation', click 'OK'
+Go to Storefront and create an order
+7. Switch off 'Enable tax calculation', click 'OK'
+Go to Storefront and create an order
+8. Switch on 'Enable subscriptions', click 'OK'
+Go to Storefront and crate an order
+9. Switch off 'Enable subscription' , click 'OK
+Go to Storefront
+Create an order
+10. Scroll the page till Google Analytics 4
+Toggle Enable = True
+Enter Measurement Id (ex. G-S2KXT3KTJZ)
+Save
+
+Go to Storefront
+Open Dev tools (F12) &gt; Elements
+Click on tag head
+
+11. Scroll the page till Google Analytics 4
+Toggle Enable = False
+Save
+
+Go to Storefront
+Open Dev tools (F12) &gt; Elements
+Click on the tag head","V3 Store","S1584","Other","0"
+"C169758","Manage payment methods","","","Maya Alsamarrai","2/13/2020 2:57 PM","","Payment method is not available
+Not possible to complete the order","","At least one payment method is created and selected","Medium","","Additional edit","1","","","","","","V3 Store","S1584","Other","0"
+"C169759","Manage shipping methods","","","Maya Alsamarrai","2/13/2020 2:57 PM","","Shipping method is not visible in the shopping cart ","","At least one shipping method is added ","Medium","","Additional edit","1","","","","","","V3 Store","S1584","Other","0"
+"C184229","Add store URL",""," None","Volha Baban","3/27/2020 9:01 AM","","Make sure the store is open in separate tab","","","Medium","VP-1759","Additional edit","1","","","","","","V3 Store","S1584","Other","0"
+"C341063","Set attributes > Change order > Check storefront",""," None","Daria Ponamareva","5/18/2022 4:14 PM","","Attribute order changed","","NOTE: [C341069]","Medium","","Attributes","3","","","","","","V3 Store","S1584","Other","0"
+"C341066","Set attributes > Change allowed values > Check storefront and Admin",""," None","Daria Ponamareva","5/18/2022 4:20 PM","","","","NOTE: [C341070]","Medium","","Attributes","3","","Step Description:
+1. Go to admin &gt; Stores &gt; Store &gt; Dynamic properties &gt; FilterBrowsing
+2. Add new attribute
+3. Save
+4. Go to admin &gt; Stores &gt; Store &gt; Aggregetion properties &gt; Pencil near the changed price range
+5. Go to storefront &gt; Products &gt; check filters 
+Expected Result:
+New attribute added
+Step Description:
+1. Go to admin &gt; Stores &gt; Store &gt; Dynamic properties &gt; FilterBrowsing
+2. Delete attribute
+3. Save
+4. Go to admin &gt; Stores &gt; Store &gt; Aggregetion properties &gt; Pencil near the changed price range
+5. Go to storefront &gt; Products &gt; check filters 
+Expected Result:
+Attribute deleted","1. 
+2.","1. New attribute added
+2. Attribute deleted","1. 1. Go to admin &gt; Stores &gt; Store &gt; Dynamic properties &gt; FilterBrowsing
+2. Add new attribute
+3. Save
+4. Go to admin &gt; Stores &gt; Store &gt; Aggregetion properties &gt; Pencil near the changed price range
+5. Go to storefront &gt; Products &gt; check filters 
+2. 1. Go to admin &gt; Stores &gt; Store &gt; Dynamic properties &gt; FilterBrowsing
+2. Delete attribute
+3. Save
+4. Go to admin &gt; Stores &gt; Store &gt; Aggregetion properties &gt; Pencil near the changed price range
+5. Go to storefront &gt; Products &gt; check filters","V3 Store","S1584","Other","0"
+"C341064","Set ranges > Include > Check storefront",""," None","Daria Ponamareva","5/18/2022 4:18 PM","","All inclusions and non-inclusions of the ends of the ranges correspond to json file in dynamic properties","","NOTE: [C341067]","Medium","","PriceRange","3","","","","","","V3 Store","S1584","Other","0"
+"C341065","Set ranges > Change allowed values > Check storefront and Admin",""," None","Daria Ponamareva","5/18/2022 4:18 PM","","","","NOTE: [C341068]","Medium","","PriceRange","3","","Step Description:
+1. Go to admin &gt; Stores &gt; Store &gt; Dynamic properties &gt; FilterBrowsing
+2. Add new range
+3. Save
+4. Go to admin &gt; Stores &gt; Store &gt; Aggregetion properties &gt; Pencil near the changed price range
+5. Go to storefront &gt; Products &gt; check filters 
+Expected Result:
+New range added in admin and on storefront
+Step Description:
+1. Go to admin &gt; Stores &gt; Store &gt; Dynamic properties &gt; FilterBrowsing
+2. Edit range
+3. Save
+4. Go to admin &gt; Stores &gt; Store &gt; Aggregetion properties &gt; Pencil near the changed price range
+5. Go to storefront &gt; Products &gt; check filters 
+Expected Result:
+Range updated added in admin and on storefront
+Step Description:
+1. Go to admin &gt; Stores &gt; Store &gt; Dynamic properties &gt; FilterBrowsing
+2. Delete range
+3. Save
+4. Go to admin &gt; Stores &gt; Store &gt; Aggregetion properties &gt; Pencil near the changed price range
+5. Go to storefront &gt; Products &gt; check filters 
+Expected Result:
+Range deleted in admin and on storefront","1. 
+2. 
+3.","1. New range added in admin and on storefront
+2. Range updated added in admin and on storefront
+3. Range deleted in admin and on storefront","1. 1. Go to admin &gt; Stores &gt; Store &gt; Dynamic properties &gt; FilterBrowsing
+2. Add new range
+3. Save
+4. Go to admin &gt; Stores &gt; Store &gt; Aggregetion properties &gt; Pencil near the changed price range
+5. Go to storefront &gt; Products &gt; check filters 
+2. 1. Go to admin &gt; Stores &gt; Store &gt; Dynamic properties &gt; FilterBrowsing
+2. Edit range
+3. Save
+4. Go to admin &gt; Stores &gt; Store &gt; Aggregetion properties &gt; Pencil near the changed price range
+5. Go to storefront &gt; Products &gt; check filters 
+3. 1. Go to admin &gt; Stores &gt; Store &gt; Dynamic properties &gt; FilterBrowsing
+2. Delete range
+3. Save
+4. Go to admin &gt; Stores &gt; Store &gt; Aggregetion properties &gt; Pencil near the changed price range
+5. Go to storefront &gt; Products &gt; check filters","V3 Store","S1584","Other","0"
+"C237734","Access","","","Grotem","6/8/2020 8:17 AM","","1. User_1 can see Store blade
+","","1. User_1 created
+2. Role_1 created
+3. Role_1 contains store permissions:
+- store:access
+
+4. Role_1 assigned to User_1
+5. Store_1 created","Medium","","Permissions","1","","","","","","V3 Store","S1584","Other","0"
+"C237741","Read","","","Grotem","6/8/2020 8:41 AM","","1. User_1 can view Store settings
+2. User_1 **can not** modify settings
+3. Button """"Save"""" hidden
+4. Button """"Reset"""" hidden","","1. User_1 created
+2. Role_1 created
+3. Role_1 contains store permissions:
+- store:access 
+- store:read
+
+4. Role_1 contains dynamic properties permissions:
+- platform:dynamic_properties:access
+- platform:dynamic_properties:update
+- platform:dynamic_properties:read
+
+5. Role_1 contains catalog permissions: 
+- catalog:read
+
+6. Role_1 assigned to User_1
+7. Store_1 created","Medium","","Permissions","1","","","","","","V3 Store","S1584","Other","0"
+"C237732","Update","","","Grotem","6/8/2020 7:17 AM","","1. Store blade opened
+2. Button to save changes shown
+3. Button to reset changes shown","","1. User_1 created
+2. Role_1 created
+3. Role_1 contains next permissions: 
+- store:access 
+- store:update 
+- store:read
+
+4. Role_1 containst next permissions:
+- platform:dynamic_properties:access
+- platform:dynamic_properties:update
+- platform:dynamic_properties:read
+
+5. Role_1 contains catalog permissions:
+- catalog:read
+
+6. Role_1 assigned to User_1
+7. Store_1 created","Medium","","Permissions","1","","","","","","V3 Store","S1584","Other","0"
+"C237742","Create","","","Grotem","6/8/2020 9:07 AM","","1. Button """"Add"""" shown
+2. User_1 can create new store","","1. User_1 created
+2. Role_1 created
+3. Role_1 contains store permissions:
+- store:access 
+- store:read
+- store:create
+
+4. Role_1 contains catalog permissions: 
+- catalog:read
+
+5. Role_1 assigned to User_1
+6. Store_1 created","Medium","","Permissions","1","","","","","","V3 Store","S1584","Other","0"
+"C237743","Delete","","","Grotem","6/8/2020 9:19 AM","","1. Button """"Delete"""" shown
+2. User_1 can select and delete store","","1. User_1 created
+2. Role_1 created
+3. Role_1 contains store permissions:
+- store:access 
+- store:read
+- store:delete
+
+4. Role_1 assigned to User_1
+5. Store_1 created","Medium","","Permissions","1","","","","","","V3 Store","S1584","Other","0"
+"C237744","Login on behalf","","","Grotem","6/8/2020 9:19 AM","","1. Admin logged on behalf of User_1
+2. User_1 information shown in store","","1. User_1 created
+2. Role_1 created
+3. Role_1 contains store permissions:
+- store:loginOnBehalf
+
+4. Role_1 assigned to User_1","Medium","","Permissions","1","","","","","","V3 Store","S1584","Other","0"
+"C338428","UI > Tool-tips",""," None","Elena Mutykova","4/20/2022 12:36 PM","","","","","Medium","","General","2","","Step Description:
+Open blade with general Settings &gt; Pay attention to tooltips
+
+
+
+
+
+Expected Result:
+All tooltips are folded
+
+Step Description:
+1. Click on Blue question mark for field1
+2. Click on Blue question mar for field2
+
+
+
+
+
+Expected Result:
+1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded. 
+
+Step Description:
+Click on the Hide link
+
+Expected Result:
+All tooltips are folded","1. 
+2. 
+3.","1. All tooltips are folded
+
+2. 1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded. 
+
+3. All tooltips are folded","1. Open blade with general Settings &gt; Pay attention to tooltips
+
+
+
+
+
+2. 1. Click on Blue question mark for field1
+2. Click on Blue question mar for field2
+
+
+
+
+
+3. Click on the Hide link","V3 Store","S1584","Other","0"
+"C237748","Enable tax calculation",""," None","Grotem","6/8/2020 10:18 AM","","1. Taxes calculated according to Tax Provider","","1. Admin logged in environment
+2. Admin is on settings pannel
+3. User_1 created for Store_1
+4. Store_1 created
+","Medium","","Tax calculation","3","","","","","","V3 Store","S1584","Other","0"
+"C237749","[to check when clean cache]Disable tax calculation",""," None","Grotem","6/8/2020 10:21 AM","","1. Taxes **not** calculated","","1. Admin logged in environment
+2. Admin is on settings pannel
+3. User_1 created for Store_1
+4. Store_1 created
+","Medium","","Tax calculation","3","","","","","","V3 Store","S1584","Other","0"
+"C237750","Allow anonymous user for store",""," None","Grotem","6/8/2020 10:24 AM","","1. Catalog opened
+2. User_1 can add product and create order","","1. Admin logged in environment
+2. Admin is on settings pannel
+3. User_1 created for Store_1
+4. User_1 not logged in store
+5. Store_1 created
+","Medium","","Anonymous user for store","3","","","","","","V3 Store","S1584","Other","0"
+"C237754","Not allow anonymous user for store",""," None","Grotem","6/8/2020 10:42 AM","","1. User_1 not allowed to finished the checkout","","1. Admin logged in environment
+2. Admin is on settings pannel
+3. User_1 created for Store_1
+4. User_1 not logged in store
+5. Store_1 created
+","Medium","","Anonymous user for store","3","","","","","","V3 Store","S1584","Other","0"
+"C237757","Is SPA",""," None","Grotem","6/8/2020 10:46 AM","","1. Store now is Single page application","","1. Admin logged in environment
+2. Admin is on settings pannel
+3. User_1 created for Store_1
+4. Store_1 created
+","Medium","","SPA","3","","","","","","V3 Store","S1584","Other","0"
+"C237760","Not SPA",""," None","Grotem","6/8/2020 10:47 AM","","1. Store is **not** Single page application","","1. Admin logged in environment
+2. Admin is on settings pannel
+3. User_1 created for Store_1
+4. Store_1 created
+","Medium","","SPA","3","","","","","","V3 Store","S1584","Other","0"
+"C369081","Allow anonymous users to create orders (XAPI) = On","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000052"," None","Elena Mutykova","10/10/2023 9:51 AM","","",""," ","Medium","","Allow anonymous user to create an order","3","https://virtocommerce.atlassian.net/browse/PT-13757","Step Description:
+Go to Store &gt; Settings
+Check the setting 
+Allow anonymous users to create orders (XAPI)
+Expected Result:
+Allow anonymous users to create orders (XAPI) by default is True
+
+ ![](index.php?/attachments/get/04ae98f1-2ba2-44b5-b124-fd1f9da055f2) 
+
+Step Description:
+Go to Storefront as Anonim
+Add products to the cart
+Create an order
+
+
+Expected Result:
+The order was created by anonim
+Step Description:
+Open Playground
+Create an order by Anonim
+Expected Result:
+The order was created","1. 
+2. 
+3.","1. Allow anonymous users to create orders (XAPI) by default is True
+
+ ![](index.php?/attachments/get/04ae98f1-2ba2-44b5-b124-fd1f9da055f2) 
+
+2. The order was created by anonim
+3. The order was created","1. Go to Store &gt; Settings
+Check the setting 
+Allow anonymous users to create orders (XAPI)
+2. Go to Storefront as Anonim
+Add products to the cart
+Create an order
+
+
+3. Open Playground
+Create an order by Anonim","V3 Store","S1584","Other","0"
+"C369082","Allow anonymous users to create orders (XAPI) = Off","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002088"," None","Elena Mutykova","10/10/2023 9:52 AM","","","","","Medium","","Allow anonymous user to create an order","3","https://virtocommerce.atlassian.net/browse/PT-13757","Step Description:
+Go to Store &gt; Settings
+Switch Off
+Allow anonymous users to create orders (XAPI)
+Save
+Expected Result:
+Allow anonymous users to create orders (XAPI) is false
+Step Description:
+Go to Storefront
+Add products to the cart
+Try to create an order
+
+
+Expected Result:
+The order was not created
+Step Description:
+Open Playground
+Create an order by Anonim
+Expected Result:
+The order was not created.
+error_code: “Unauthorized“  
+
+
+ ![](index.php?/attachments/get/745ea9b1-da88-45bd-8034-cb8742477794)","1. 
+2. 
+3.","1. Allow anonymous users to create orders (XAPI) is false
+2. The order was not created
+3. The order was not created.
+error_code: “Unauthorized“  
+
+
+ ![](index.php?/attachments/get/745ea9b1-da88-45bd-8034-cb8742477794)","1. Go to Store &gt; Settings
+Switch Off
+Allow anonymous users to create orders (XAPI)
+Save
+2. Go to Storefront
+Add products to the cart
+Try to create an order
+
+
+3. Open Playground
+Create an order by Anonim","V3 Store","S1584","Other","0"
+"C237768","None",""," None","Grotem","6/8/2020 11:21 AM","","1. URL address look like (e.g. /product/123 )","","1. Admin logged in environment
+2. Admin is on settings pannel
+
+??3. User_1 created for Store_1
+4. User_1 logged in store
+5. Store_1 created
+","Medium","","Link type","3","","","","","","V3 Store","S1584","Other","0"
+"C237769","Short",""," None","Grotem","6/8/2020 12:35 PM","","1. URL address look like (e.g. /my-cool-product )","","1. Admin logged in environment
+2. Admin is on settings pannel
+3. User_1 created for Store_1
+4. User_1 logged in store
+5. Store_1 created
+","Medium","","Link type","3","","","","","","V3 Store","S1584","Other","0"
+"C237770","Collapsed",""," None","Grotem","6/8/2020 12:36 PM","","1. URL address look like (e.g. /virtual-parent-category/my-cool-category/my-cool-product )","","1. Admin logged in environment
+2. Admin is on settings pannel
+3. User_1 created for Store_1
+4. User_1 logged in store
+5. Store_1 created
+","Medium","","Link type","3","","","","","","V3 Store","S1584","Other","0"
+"C237771","Long",""," None","Grotem","6/8/2020 12:36 PM","","1. URL address look like (e.g. /virtual-parent-category/physical-parent-category/my-cool-category/my-cool-product )","","1. Admin logged in environment
+2. Admin is on settings pannel
+3. User_1 created for Store_1
+4. User_1 logged in store
+5. Store_1 created
+","Medium","","Link type","3","","","","","","V3 Store","S1584","Other","0"
+"C278771","Email address verification","","","Volha Baban","2/26/2021 11:09 AM","","","","","Medium","","Email verification","2","","Step Description:
+1. Go to the """"Store"""" module. 
+2. Open any store. 
+3. Click the """"Settings"""" widget. 
+4. Look through the list of settings. 
+Expected Result:
+The is the """"Email address verification"""" toggle on the list of settings","1","1. The is the """"Email address verification"""" toggle on the list of settings","1. 1. Go to the """"Store"""" module. 
+2. Open any store. 
+3. Click the """"Settings"""" widget. 
+4. Look through the list of settings.","V3 Store","S1584","Other","0"
+"C278768","Enable email verification",""," None","Volha Baban","2/26/2021 10:51 AM","","","","Email confirmation notification is active
+Template_1 set for the notification
+User_1 was created in Store_1.
+User_1 email is Email_1","Medium","","Email verification","2","","Step Description:
+1. Go to the """"Stores"""" module. 
+2. Open Store_1. 
+3. Open the """"Settings"""" blade. 
+4. Switch on the """"Enable email address verification"""" toggle. 
+5. Click Ok and Save. 
+6. Reopen the """"Settings"""" blade. 
+7. Pay attention to the """"Enable email address verification"""" toggle. 
+Expected Result:
+The """"Enable email address verification"""" toggle has been saved in the ON position
+Step Description:
+1. Login to the StoreFront as a User_1. 
+2. Go to the My Account &gt; Profile page. 
+3. Change Email_1 to Email_2. 
+4. Go to the Email_2 inbox. 
+Expected Result:
+The inbox contains email address verification notification. 
+Step Description:
+1. Open the received email. 
+2. Click the link. 
+Expected Result:
+You are redirected to the email address verification page.","1. 
+2. 
+3.","1. The """"Enable email address verification"""" toggle has been saved in the ON position
+2. The inbox contains email address verification notification. 
+3. You are redirected to the email address verification page.","1. 1. Go to the """"Stores"""" module. 
+2. Open Store_1. 
+3. Open the """"Settings"""" blade. 
+4. Switch on the """"Enable email address verification"""" toggle. 
+5. Click Ok and Save. 
+6. Reopen the """"Settings"""" blade. 
+7. Pay attention to the """"Enable email address verification"""" toggle. 
+2. 1. Login to the StoreFront as a User_1. 
+2. Go to the My Account &gt; Profile page. 
+3. Change Email_1 to Email_2. 
+4. Go to the Email_2 inbox. 
+3. 1. Open the received email. 
+2. Click the link.","V3 Store","S1584","Other","0"
+"C278769","Disable email verification",""," None","Volha Baban","2/26/2021 10:51 AM","","","","1. Email confirmation notification is active
+2. Template_1 set for the notification
+3. User_1 was created in Store_1.
+4. User_1 email is Email_1","Medium","","Email verification","2","","Step Description:
+1. Go to the """"Stores"""" module.
+2. Open Store_1.
+3. Open the """"Settings"""" blade.
+4. Switch off the """"Enable email address verification"""" toggle.
+5. Click Ok and Save.
+6. Reopen the """"Settings"""" blade.
+7. Pay attention to the """"Enable email address verification"""" toggle.
+Expected Result:
+The """"Enable email address verification"""" toggle has been saved in the OFF position
+
+
+Step Description:
+1. Login to the StoreFront as a User_1.
+2. Go to the My Account > Profile page.
+3. Change Email_1 to Email_2.
+4. Go to the Email_2 inbox.
+Expected Result:
+There is no address verification email in the inbox.","1. 
+2.","1. The """"Enable email address verification"""" toggle has been saved in the OFF position
+
+
+2. There is no address verification email in the inbox.","1. 1. Go to the """"Stores"""" module.
+2. Open Store_1.
+3. Open the """"Settings"""" blade.
+4. Switch off the """"Enable email address verification"""" toggle.
+5. Click Ok and Save.
+6. Reopen the """"Settings"""" blade.
+7. Pay attention to the """"Enable email address verification"""" toggle.
+2. 1. Login to the StoreFront as a User_1.
+2. Go to the My Account > Profile page.
+3. Change Email_1 to Email_2.
+4. Go to the Email_2 inbox.","V3 Store","S1584","Other","0"
+"C278770","Disable feature > Statuses and status assignment are not changed","","","Volha Baban","2/26/2021 11:09 AM","","1. Email not verified
+2. Error shown","","1. Admin is on Store page
+2. Verification_link sent to User_1
+3. User_1 assigned to Store_1
+4. Settings ""Enable email address verification"" set to TRUE for Store_1
+","Medium","","Email verification","2","","","","","","V3 Store","S1584","Other","0"
+"C279038","Resend link - Email verification is ON","https://virtowayqa.testrail.io/index.php?/attachments/get/62577","","Volha Baban","3/3/2021 10:17 AM","","","","Email confirmation notification is active
+Template_1 set for the notification
+User_1 was created in Store_1.
+User_1 email is Email_1
+The ""Enable email address verification"" feature is enabled in the Store settings. 
+","Medium","","Email verification","2","","Step Description:
+1. Log in to BackEnd as Admin. 
+2. Go to Security > Users and open User_1 blade. 
+3. Click """"Resend link"""". 
+![](index.php?/attachments/get/62577)
+
+4. Go to Email_1 inbox. 
+Expected Result:
+There is a confirmation email in the inbox.
+Step Description:
+1. Open the received email. 
+Expected Result:
+The content of the received email matches Template_1.","1. 
+2.","1. There is a confirmation email in the inbox.
+2. The content of the received email matches Template_1.","1. 1. Log in to BackEnd as Admin. 
+2. Go to Security > Users and open User_1 blade. 
+3. Click """"Resend link"""". 
+![](index.php?/attachments/get/62577)
+
+4. Go to Email_1 inbox. 
+2. 1. Open the received email.","V3 Store","S1584","Other","0"
+"C279040","Resend link - Email verification is OFF","https://virtowayqa.testrail.io/index.php?/attachments/get/62577","","Volha Baban","3/3/2021 10:27 AM","","","","Email confirmation notification is active
+Template_1 set for the notification
+User_1 was created in Store_1.
+User_1 email is Email_1
+The ""Enable email address verification"" feature is disabled in the Store settings. 
+","Medium","","Email verification","2","","Step Description:
+1. Log in to BackEnd as Admin. 
+2. Go to Security > Users and open User_1 blade. 
+3. Click """"Resend link"""". 
+![](index.php?/attachments/get/62577)
+
+4. Go to Email_1 inbox. 
+Expected Result:
+There is no confirmation email in the inbox.","1","1. There is no confirmation email in the inbox.","1. 1. Log in to BackEnd as Admin. 
+2. Go to Security > Users and open User_1 blade. 
+3. Click """"Resend link"""". 
+![](index.php?/attachments/get/62577)
+
+4. Go to Email_1 inbox.","V3 Store","S1584","Other","0"
+"C307018","Rounding 001 & Away from zero","","","Daria Ponamareva","8/16/2021 3:09 PM","","system displays rounded price = 24,94
+
+Total is: 24,9375*3=74,81","","Set ""Midpoint Rounding""=""Away from zero"", ""RoundingType"" = ""Rounding001"" for shop currency (Store>Edit default currency> currency> RoundingType/Midpoint Rounding)
+
+Create a product_1 with a price of $26.25","Medium","","Rounding Policy","2","","","","","","V3 Store","S1584","Other","0"
+"C307019","Rounding 001 &To zero","","","Daria Ponamareva","8/16/2021 3:09 PM","","system displays rounded price = 24,94
+
+Total is: 24,94*3=74,82","","Set ""Midpoint Rounding""=""ToZero"", ""RoundingType"" = ""Rounding001"" for shop currency (Store>Edit default currency> currency> RoundingType/Midpoint Rounding)
+
+Create a product_1 with a price of $26.25","Medium","","Rounding Policy","2","","","","","","V3 Store","S1584","Other","0"
+"C307435","deploy rounding policy","","","Daria Ponamareva","8/23/2021 8:46 AM","","system displays rounded price = 24,94
+
+Total is: 24,9375*3=74,81","","Create a product_1 with a price of 26.25","Medium","","Rounding Policy","2","","","","","","V3 Store","S1584","Other","0"
+"C307436","Rounding settings only for one currency","","","Daria Ponamareva","8/23/2021 9:49 AM","","Settings applied only for choosen currency ","","Go to any store > Edit Currency  > Set ""Midpoint Rounding""=""ToZero"", ""RoundingType"" = ""Rounding1""","Medium","","Rounding Policy","2","","","","","","V3 Store","S1584","Other","0"
+"C306961","To Even","","","Daria Ponamareva","8/12/2021 2:29 PM","","","","Set ""Midpoint Rounding""=""ToEven"", ""RoundingType"" = ""Rounding001"" for shop currency (Store>Edit default currency> currency> RoundingType/Midpoint Rounding)
+
+Create a product_1 with a price of $26.25,  product_2 with a price of $26.48, product_3 with a price of $26.12","Medium","","Midpoint Rounding","4","","Step Description:
+Add product_1 to cart
+Set QTY is 2
+Expected Result:
+Subtotal = $52,5  
+
+Step Description:
+Add product_2 to cart
+Set QTY is 2
+Expected Result:
+Subtotal = $105.46  
+Step Description:
+Add product_3 to cart
+Set QTY is 2
+Expected Result:
+Subtotal = $157.7 
+
+Step Description:
+Apply coupon_1 for product_1 5% 
+Expected Result:
+
+Subtotal = $155.70
+Total = $155.08 
+totalDiscount = $2.62  
+Step Description:
+Click Checkout> Go to Orders on storefront> open order> check order details
+Expected Result:
+
+Subtotal = $155.70
+Total = $155.08 + (Shipment)
+ totalDiscount = $2.62  
+
+Step Description:
+Go to admin> Orders> find order from the previous step > check Order and Payment details
+Expected Result:
+
+Subtotal = $155.70
+Total = $155.08 + (Shipment)
+totalDiscount = $2.62","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. Subtotal = $52,5  
+
+2. Subtotal = $105.46  
+3. Subtotal = $157.7 
+
+4. 
+Subtotal = $155.70
+Total = $155.08 
+totalDiscount = $2.62  
+5. 
+Subtotal = $155.70
+Total = $155.08 + (Shipment)
+ totalDiscount = $2.62  
+
+6. 
+Subtotal = $155.70
+Total = $155.08 + (Shipment)
+totalDiscount = $2.62","1. Add product_1 to cart
+Set QTY is 2
+2. Add product_2 to cart
+Set QTY is 2
+3. Add product_3 to cart
+Set QTY is 2
+4. Apply coupon_1 for product_1 5% 
+5. Click Checkout> Go to Orders on storefront> open order> check order details
+6. Go to admin> Orders> find order from the previous step > check Order and Payment details","V3 Store","S1584","Other","0"
+"C306962","Away From Zero","","","Daria Ponamareva","8/12/2021 2:30 PM","","","","Set ""Midpoint Rounding""=""AwayFromZero"", ""RoundingType"" = ""Rounding001"" for shop currency (Store>Edit default currency> currency> RoundingType/Midpoint Rounding)
+
+Create a product_1 with a price of $26.25,  product_2 with a price of $26.48, product_3 with a price of $26.12","Medium","","Midpoint Rounding","4","","Step Description:
+Add product_1 to cart
+Set QTY is 2 
+
+Expected Result:
+ Subtotal = $52.5 
+
+Step Description:
+Add product_2 to cart
+Set QTY is 2  
+
+Expected Result:
+Subtotal = $105.46 
+
+Step Description:
+Add product_3 to cart
+Set QTY is 2  
+
+Expected Result:
+Subtotal = $157.7  
+Step Description:
+Apply coupon_1 for product_1 5%    
+Expected Result:
+Subtotal = $155.70
+Total = $155.07 + (Shipment) 
+Discount = $2.63
+
+Step Description:
+Click Checkout> Go to Orders on storefront> open order> check order details
+
+Expected Result:
+Subtotal = $155.70
+Total = $155.07 + (Shipment)
+ Discount = $2.63
+
+Step Description:
+Go to admin> Orders> find order from the previous step > check Order and Payment details
+Expected Result:
+Subtotal = $155.70
+Total = $155.07 + (Shipment)
+ Discount = $2.63","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1.  Subtotal = $52.5 
+
+2. Subtotal = $105.46 
+
+3. Subtotal = $157.7  
+4. Subtotal = $155.70
+Total = $155.07 + (Shipment) 
+Discount = $2.63
+
+5. Subtotal = $155.70
+Total = $155.07 + (Shipment)
+ Discount = $2.63
+
+6. Subtotal = $155.70
+Total = $155.07 + (Shipment)
+ Discount = $2.63","1. Add product_1 to cart
+Set QTY is 2 
+
+2. Add product_2 to cart
+Set QTY is 2  
+
+3. Add product_3 to cart
+Set QTY is 2  
+
+4. Apply coupon_1 for product_1 5%    
+5. Click Checkout> Go to Orders on storefront> open order> check order details
+
+6. Go to admin> Orders> find order from the previous step > check Order and Payment details","V3 Store","S1584","Other","0"
+"C306963","ToZero","","","Daria Ponamareva","8/12/2021 2:30 PM","","","","Set ""Midpoint Rounding""=""ToZero"", ""RoundingType"" = ""Rounding001"" for shop currency (Store>Edit default currency> currency> RoundingType/Midpoint Rounding)
+
+Create a product_1 with a price of $26.25,  product_2 with a price of $26.48, product_3 with a price of $26.12","Medium","","Midpoint Rounding","4","","Step Description:
+Add product_1 to cart
+Set QTY is 2 
+
+Expected Result:
+ Subtotal = $52.5 
+
+Step Description:
+Add product_2 to cart
+Set QTY is 2  
+
+Expected Result:
+Subtotal = $105.46 
+
+Step Description:
+Add product_3 to cart
+Set QTY is 2  
+
+Expected Result:
+Subtotal = $155.70
+
+Step Description:
+Apply coupon_2 for product_1 5%   
+
+Expected Result:
+
+Subtotal = $155.70
+Total = $155.08  
+Discount = $2.62
+
+Step Description:
+remove coupon  
+
+Expected Result:
+Subtotal = $157.50
+
+SubtotalDiscount = $0 
+
+Step Description:
+Apply coupon  for total cart 55%  
+
+Expected Result:
+Subtotal = $157.7
+Total = $70.96
+Discount = $86.74  ","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1.  Subtotal = $52.5 
+
+2. Subtotal = $105.46 
+
+3. Subtotal = $155.70
+
+4. 
+Subtotal = $155.70
+Total = $155.08  
+Discount = $2.62
+
+5. Subtotal = $157.50
+
+SubtotalDiscount = $0 
+
+6. Subtotal = $157.7
+Total = $70.96
+Discount = $86.74  ","1. Add product_1 to cart
+Set QTY is 2 
+
+2. Add product_2 to cart
+Set QTY is 2  
+
+3. Add product_3 to cart
+Set QTY is 2  
+
+4. Apply coupon_2 for product_1 5%   
+
+5. remove coupon  
+
+6. Apply coupon  for total cart 55%  ","V3 Store","S1584","Other","0"
+"C306964","To Negative Infinity","","","Daria Ponamareva","8/12/2021 2:31 PM","","","","Set ""Midpoint Rounding""=""To Negative Infinity"", ""RoundingType"" = ""Rounding001"" for shop currency (Store>Edit default currency> currency> RoundingType/Midpoint Rounding)
+
+Create a product_1 with a price of $26.25,  product_2 with a price of $26.48, product_3 with a price of $26.12","Medium","","Midpoint Rounding","4","","Step Description:
+Add product_1 to cart
+Set QTY is 2
+
+Expected Result:
+Subtotal = $52.5
+Step Description:
+	
+Add product_2 to cart
+Set QTY is 2  
+
+Expected Result:
+Subtotal = $105.46
+Step Description:
+Add product_3 to cart
+Set QTY is 2  
+
+Expected Result:
+Subtotal = $155.70
+Step Description:
+Apply coupon_2 for product_1 5%  
+
+Expected Result:
+Subtotal = $155.70
+Total = $155.08
+Discount = $2.62
+Step Description:
+remove coupon 
+
+Expected Result:
+Subtotal = $157.50
+
+SubtotalDiscount = $0
+Step Description:
+Apply coupon  for total cart 55% 
+
+Expected Result:
+	
+Subtotal = $157.7
+Total = $70.96
+Discount = $86.74","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. Subtotal = $52.5
+2. Subtotal = $105.46
+3. Subtotal = $155.70
+4. Subtotal = $155.70
+Total = $155.08
+Discount = $2.62
+5. Subtotal = $157.50
+
+SubtotalDiscount = $0
+6. 	
+Subtotal = $157.7
+Total = $70.96
+Discount = $86.74","1. Add product_1 to cart
+Set QTY is 2
+
+2. 	
+Add product_2 to cart
+Set QTY is 2  
+
+3. Add product_3 to cart
+Set QTY is 2  
+
+4. Apply coupon_2 for product_1 5%  
+
+5. remove coupon 
+
+6. Apply coupon  for total cart 55%","V3 Store","S1584","Other","0"
+"C306965","To Positive Infinity","","","Daria Ponamareva","8/12/2021 2:31 PM","","","","Set ""Midpoint Rounding""=""To Positive Infinity"", ""RoundingType"" = ""Rounding001"" for shop currency (Store>Edit default currency> currency> RoundingType/Midpoint Rounding)
+
+Create a product_1 with a price of $26.25,  product_2 with a price of $26.48, product_3 with a price of $26.12","Medium","","Midpoint Rounding","4","","Step Description:
+Add product_1 to cart
+Set QTY is 2 
+
+Expected Result:
+Subtotal = $52.5
+Step Description:
+Add product_2 to cart
+Set QTY is 2  
+
+Expected Result:
+ Subtotal = $105.46
+Step Description:
+Add product_3 to cart
+Set QTY is 2  
+
+Expected Result:
+Subtotal = $157.7  
+Step Description:
+Apply coupon_1 for product_1 5%     
+Expected Result:
+Subtotal = $155.70
+Total = $155.07 
+ Discount = $2.63","1. 
+2. 
+3. 
+4.","1. Subtotal = $52.5
+2.  Subtotal = $105.46
+3. Subtotal = $157.7  
+4. Subtotal = $155.70
+Total = $155.07 
+ Discount = $2.63","1. Add product_1 to cart
+Set QTY is 2 
+
+2. Add product_2 to cart
+Set QTY is 2  
+
+3. Add product_3 to cart
+Set QTY is 2  
+
+4. Apply coupon_1 for product_1 5%     ","V3 Store","S1584","Other","0"
+"C306967","Rounding 005 Up","","","Daria Ponamareva","8/12/2021 2:32 PM","","","","Set ""Midpoint Rounding""=""AwayFromZero"", ""RoundingType"" = ""Rounding005Up"" for shop currency (Store>Edit default currency> currency> RoundingType/Midpoint Rounding)
+
+Create a **product_1 with a price of $26.26**,  product_2 with a price of $26.48, product_3 with a price of $26.12","Medium","","Rounding Type","4","","Step Description:
+Add product_1 to cart
+Set QTY is 2     
+Expected Result:
+Subtotal = $52,55
+Step Description:
+Add product_2 to cart 
+Set QTY is 2  
+
+Expected Result:
+ Subtotal = $105.5 
+
+Step Description:
+Add product_3 to cart
+Set QTY is 2
+
+Expected Result:
+	Subtotal = $157.75
+
+Step Description:
+Apply coupon_1 for product_1 5% 
+Expected Result:
+Subtotal = $157.75
+Total =  $155.10
+Discount =  $2.65","1. 
+2. 
+3. 
+4.","1. Subtotal = $52,55
+2.  Subtotal = $105.5 
+
+3. 	Subtotal = $157.75
+
+4. Subtotal = $157.75
+Total =  $155.10
+Discount =  $2.65","1. Add product_1 to cart
+Set QTY is 2     
+2. Add product_2 to cart 
+Set QTY is 2  
+
+3. Add product_3 to cart
+Set QTY is 2
+
+4. Apply coupon_1 for product_1 5%","V3 Store","S1584","Other","0"
+"C306988","Rounding 005 Down","","","Daria Ponamareva","8/16/2021 9:47 AM","","","","Set ""Midpoint Rounding""=""AwayFromZero"", ""RoundingType"" = ""Rounding005Down"" for shop currency (Store>Edit default currency> currency> RoundingType/Midpoint Rounding)
+
+Create a **product_1 with a price of $26.26**, product_2 with a price of $26.48, product_3 with a price of $26.12","Medium","","Rounding Type","4","","Step Description:
+Add product_1 to cart
+Set QTY is 2    
+Expected Result:
+Subtotal = $52.50
+Step Description:
+Add product_2 to cart
+Set QTY is 2  
+Expected Result:
+Subtotal = $105.50
+Step Description:
+Add product_3 to cart
+Set QTY is 2
+Expected Result:
+Subtotal = $157.70
+Step Description:
+Apply coupon_1 for product_1 5%
+Expected Result:
+ Subtotal = $157.70
+ Total = $155.10
+ Discount = $2.60","1. 
+2. 
+3. 
+4.","1. Subtotal = $52.50
+2. Subtotal = $105.50
+3. Subtotal = $157.70
+4.  Subtotal = $157.70
+ Total = $155.10
+ Discount = $2.60","1. Add product_1 to cart
+Set QTY is 2    
+2. Add product_2 to cart
+Set QTY is 2  
+3. Add product_3 to cart
+Set QTY is 2
+4. Apply coupon_1 for product_1 5%","V3 Store","S1584","Other","0"
+"C306989","Rounding 01 Up","","","Daria Ponamareva","8/16/2021 9:48 AM","","","","Set ""Midpoint Rounding""=""AwayFromZero"", ""RoundingType"" = ""Rounding01Up"" for shop currency (Store>Edit default currency> currency> RoundingType/Midpoint Rounding)
+
+Create a product_1 with a **price of $26.26**, product_2 with a price of $26.48, product_3 with a price of $26.12","Medium","","Rounding Type","4","","Step Description:
+Add product_1 to cart
+Set QTY is 2    
+Expected Result:
+Subtotal = $52.60
+Step Description:
+Add product_2 to cart
+Set QTY is 2  
+Expected Result:
+Subtotal = $105.50
+Step Description:
+Add product_3 to cart
+Set QTY is 2
+Expected Result:
+Subtotal = $157.80
+Step Description:
+Apply coupon_1 for product_1 5%
+Expected Result:
+ Subtotal = $157.80
+ Total =$155.10
+ Discount = $2.70","1. 
+2. 
+3. 
+4.","1. Subtotal = $52.60
+2. Subtotal = $105.50
+3. Subtotal = $157.80
+4.  Subtotal = $157.80
+ Total =$155.10
+ Discount = $2.70","1. Add product_1 to cart
+Set QTY is 2    
+2. Add product_2 to cart
+Set QTY is 2  
+3. Add product_3 to cart
+Set QTY is 2
+4. Apply coupon_1 for product_1 5%","V3 Store","S1584","Other","0"
+"C306990","Rounding 01 Down","","","Daria Ponamareva","8/16/2021 9:48 AM","","","","Set ""Midpoint Rounding""=""AwayFromZero"", ""RoundingType"" = ""Rounding01Down"" for shop currency (Store>Edit default currency> currency> RoundingType/Midpoint Rounding)
+
+Create a **product_1 with a price of $26.26**, product_2 with a price of $26.48, product_3 with a price of $26.12","Medium","","Rounding Type","4","","Step Description:
+Add product_1 to cart
+Set QTY is 2    
+Expected Result:
+Subtotal = $52.50
+Step Description:
+Add product_2 to cart
+Set QTY is 2  
+Expected Result:
+Subtotal = $105.4
+Step Description:
+Add product_3 to cart
+Set QTY is 2
+Expected Result:
+Subtotal = $157.7
+Step Description:
+Apply coupon_1 for product_1 5%
+Expected Result:
+ Subtotal = $157.7
+ Total = $155.1
+ Discount = $2.6","1. 
+2. 
+3. 
+4.","1. Subtotal = $52.50
+2. Subtotal = $105.4
+3. Subtotal = $157.7
+4.  Subtotal = $157.7
+ Total = $155.1
+ Discount = $2.6","1. Add product_1 to cart
+Set QTY is 2    
+2. Add product_2 to cart
+Set QTY is 2  
+3. Add product_3 to cart
+Set QTY is 2
+4. Apply coupon_1 for product_1 5%","V3 Store","S1584","Other","0"
+"C306991","Rounding 1 Up","","","Daria Ponamareva","8/16/2021 9:49 AM","","","","Set ""Midpoint Rounding""=""AwayFromZero"", ""RoundingType"" = ""Rounding1Up"" for shop currency (Store>Edit default currency> currency> RoundingType/Midpoint Rounding)
+
+Create a **product_1 with a price of $26.26**, product_2 with a price of $26.48, product_3 with a price of $26.12","Medium","","Rounding Type","4","","Step Description:
+Add product_1 to cart
+Set QTY is 2    
+Expected Result:
+Subtotal = $53
+Step Description:
+Add product_2 to cart
+Set QTY is 2  
+Expected Result:
+Subtotal = $106
+Step Description:
+Add product_3 to cart
+Set QTY is 2
+Expected Result:
+Subtotal = $158
+Step Description:
+Apply coupon_1 for product_1 5%
+Expected Result:
+ Subtotal = $158
+ Total =$155
+ Discount = $13","1. 
+2. 
+3. 
+4.","1. Subtotal = $53
+2. Subtotal = $106
+3. Subtotal = $158
+4.  Subtotal = $158
+ Total =$155
+ Discount = $13","1. Add product_1 to cart
+Set QTY is 2    
+2. Add product_2 to cart
+Set QTY is 2  
+3. Add product_3 to cart
+Set QTY is 2
+4. Apply coupon_1 for product_1 5%","V3 Store","S1584","Other","0"
+"C306992","Rounding 1","","","Daria Ponamareva","8/16/2021 9:49 AM","","","","Set ""Midpoint Rounding""=""AwayFromZero"", ""RoundingType"" = ""Rounding1"" for shop currency (Store>Edit default currency> currency> RoundingType/Midpoint Rounding)
+
+Create a **product_1 with a price of $26.25**, product_2 with a price of $26.48, product_3 with a price of $26.12","Medium","","Rounding Type","4","","Step Description:
+Add product_1 to cart
+Set QTY is 25    
+Expected Result:
+Subtotal = $657
+Step Description:
+Add product_2 to cart
+Set QTY is 2  
+Expected Result:
+Subtotal = $709
+Step Description:
+Add product_3 to cart
+Set QTY is 2
+Expected Result:
+Subtotal = $762
+Step Description:
+Apply coupon_1 for product_1 5%
+Expected Result:
+Subtotal = $762
+Total = $729
+Discount = $33","1. 
+2. 
+3. 
+4.","1. Subtotal = $657
+2. Subtotal = $709
+3. Subtotal = $762
+4. Subtotal = $762
+Total = $729
+Discount = $33","1. Add product_1 to cart
+Set QTY is 25    
+2. Add product_2 to cart
+Set QTY is 2  
+3. Add product_3 to cart
+Set QTY is 2
+4. Apply coupon_1 for product_1 5%","V3 Store","S1584","Other","0"
+"C306993","Rounding 001","","","Daria Ponamareva","8/16/2021 9:49 AM","","","","Set ""Midpoint Rounding""=""AwayFromZero"", ""RoundingType"" = ""Rounding001"" for shop currency (Store>Edit default currency> currency> RoundingType/Midpoint Rounding)
+
+Create a **product_1 with a price of $26.25**, product_2 with a price of $26.48, product_3 with a price of $26.12
+
+","Medium","","Rounding Type","4","","Step Description:
+Add product_1 to cart
+Set QTY is 2    
+Expected Result:
+Subtotal = $52.50
+Step Description:
+Add product_2 to cart
+Set QTY is 2  
+Expected Result:
+Subtotal = $105.46
+Step Description:
+Add product_3 to cart
+Set QTY is 2
+Expected Result:
+Subtotal = $157.7
+Step Description:
+Apply coupon_1 for product_1 5%
+Expected Result:
+ Subtotal = $157.7
+ Total =$157.07
+ Discount = $2.63","1. 
+2. 
+3. 
+4.","1. Subtotal = $52.50
+2. Subtotal = $105.46
+3. Subtotal = $157.7
+4.  Subtotal = $157.7
+ Total =$157.07
+ Discount = $2.63","1. Add product_1 to cart
+Set QTY is 2    
+2. Add product_2 to cart
+Set QTY is 2  
+3. Add product_3 to cart
+Set QTY is 2
+4. Apply coupon_1 for product_1 5%","V3 Store","S1584","Other","0"
+"C306994","Rounding 05","","","Daria Ponamareva","8/16/2021 9:50 AM","","","","Set ""Midpoint Rounding""=""AwayFromZero"", ""RoundingType"" = ""Rounding05"" for shop currency (Store>Edit default currency> currency> RoundingType/Midpoint Rounding)
+
+Create a **product_1 with a price of $26.25**, product_2 with a price of $26.48, product_3 with a price of $26.12","Medium","","Rounding Type","4","","Step Description:
+Add product_1 to cart
+Set QTY is 5    
+Expected Result:
+Subtotal = $131.50
+Step Description:
+Add product_2 to cart
+Set QTY is 2  
+Expected Result:
+Subtotal = $184
+Step Description:
+Add product_3 to cart
+Set QTY is 2
+Expected Result:
+Subtotal = $236.5
+Step Description:
+Apply coupon_1 for product_1 5%
+Expected Result:
+Subtotal = $236.5
+Total = $230
+Discount = $6.5","1. 
+2. 
+3. 
+4.","1. Subtotal = $131.50
+2. Subtotal = $184
+3. Subtotal = $236.5
+4. Subtotal = $236.5
+Total = $230
+Discount = $6.5","1. Add product_1 to cart
+Set QTY is 5    
+2. Add product_2 to cart
+Set QTY is 2  
+3. Add product_3 to cart
+Set QTY is 2
+4. Apply coupon_1 for product_1 5%","V3 Store","S1584","Other","0"
+"C340860","Default company status > Default status","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001017"," None","Daria Ponamareva","5/4/2022 6:50 AM","","A field with the title """"Default company status"""" and a text field
+by default field is empty![](index.php?/attachments/get/378b3bf5-4fa0-4c4f-bac6-335b14b2b3d6) ","","","Medium","","Default company status","2","","","","","","V3 Store","S1584","Other","0"
+"C340863","Default company status > Edit default status",""," None","Daria Ponamareva","5/4/2022 6:54 AM","","Status changed","","","Medium","","Default company status","2","","","","","","V3 Store","S1584","Other","0"
+"C340869","Default company status > Add organization via XAPI",""," None","Daria Ponamareva","5/4/2022 11:20 AM","","""""Status"""" = **Status_1**","","1. default status defined as ""status_!""","Medium","","Default company status","2","","","","","","V3 Store","S1584","Other","0"
+"C340916","Default account status > Default status","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001384"," None","Daria Ponamareva","5/16/2022 9:44 AM","","A text field with the title """"Default account status""""
+field is empty by default![](index.php?/attachments/get/4d9b0735-6e95-4a7e-9703-bfd4704e9b36) ","","","Medium","","Default account status","2","","","","","","V3 Store","S1584","Other","0"
+"C340920","Default account status > Edit default status",""," None","Daria Ponamareva","5/16/2022 9:44 AM","","Status changed","","","Medium","","Default account status","2","","","","","","V3 Store","S1584","Other","0"
+"C340921","Default account status > Add organization via XAPI",""," None","Daria Ponamareva","5/16/2022 9:44 AM","","""""Status"""" = **Status_1**","","
+2. Store_1 > Setting > ""Default account status"" = **Status_1**","Medium","","Default account status","2","","","","","","V3 Store","S1584","Other","0"
+"C281482","Email configuration","https://virtowayqa.testrail.io/index.php?/attachments/get/63538, https://virtowayqa.testrail.io/index.php?/attachments/get/63539, https://virtowayqa.testrail.io/index.php?/attachments/get/63540, https://virtowayqa.testrail.io/index.php?/attachments/get/63541, https://virtowayqa.testrail.io/index.php?/attachments/get/63535, https://virtowayqa.testrail.io/index.php?/attachments/get/63536, https://virtowayqa.testrail.io/index.php?/attachments/get/63537","","Volha Baban","4/1/2021 1:56 PM","","The user should receive an email with correctly named sender
+
+![](index.php?/attachments/get/63541)
+
+","","","Medium","PT-377","Email","1","","","","","","V3 Store","S1584","Other","0"
+"C280412","Store  > Empty name","","","Alexandr Tzykin","3/23/2021 1:11 PM","","","","Name for Store email is empty","Medium","PT-377","Email","1","","Step Description:
+Trigger send notification with Store email in field from 
+Expected Result:
+Notification was sent
+Step Description:
+Go to email box > Look at the field From
+Expected Result:
+User see only store email without friendly name","1. 
+2.","1. Notification was sent
+2. User see only store email without friendly name","1. Trigger send notification with Store email in field from 
+2. Go to email box > Look at the field From","V3 Store","S1584","Other","0"
+"C280413","Store > Fill name","","","Alexandr Tzykin","3/23/2021 1:11 PM","","","","Name for Store email is empty","Medium","PT-377","Email","1","","Step Description:
+Go to admin > Store
+Step Description:
+Manage any store > Advanced property
+Step Description:
+Fill Name for Store email with value less then 256 character > Enter email > Save
+Expected Result:
+All value was saved
+Step Description:
+Trigger send notification with Store email in field from
+Expected Result:
+Notification was sent
+Step Description:
+Go to email box > Look at the field From
+Expected Result:
+User see Friendly name in field From. After hover on Friendly name - user see email from Store email field","1. 
+2. 
+3. 
+4. 
+5.","1. 
+2. 
+3. All value was saved
+4. Notification was sent
+5. User see Friendly name in field From. After hover on Friendly name - user see email from Store email field","1. Go to admin > Store
+2. Manage any store > Advanced property
+3. Fill Name for Store email with value less then 256 character > Enter email > Save
+4. Trigger send notification with Store email in field from
+5. Go to email box > Look at the field From","V3 Store","S1584","Other","0"
+"C280414","Store > Fill more the 257 character in name","","","Alexandr Tzykin","3/23/2021 1:11 PM","","","","Name for Store email is empty","Medium","PT-377","Email","1","","Step Description:
+Go to admin > Store
+Step Description:
+Manage any store > Advanced property
+Step Description:
+Fill Name for Store email with value less then 257 character > Enter email > Save
+Expected Result:
+User see error about length of value","1. 
+2. 
+3.","1. 
+2. 
+3. User see error about length of value","1. Go to admin > Store
+2. Manage any store > Advanced property
+3. Fill Name for Store email with value less then 257 character > Enter email > Save","V3 Store","S1584","Other","0"
+"C280415","Store > Check on Desktop app","","","Alexandr Tzykin","3/23/2021 1:12 PM","","","","[C280420]","Medium","PT-377","Email","1","","Step Description:
+Go to Desktop client Outlook > Check Friendly name in From field
+Expected Result:
+User see Friendly name for email","1","1. User see Friendly name for email","1. Go to Desktop client Outlook > Check Friendly name in From field","V3 Store","S1584","Other","0"
+"C280416","Store > Check in Browser","","","Alexandr Tzykin","3/23/2021 1:12 PM","","","","[C280413]","Medium","PT-377","Email","1","","Step Description:
+Go to email box in browser (Gmail, Outlook, etc) > Check Friendly name in field From
+Expected Result:
+User see Friendly name. 
+When user hover on name user see email","1","1. User see Friendly name. 
+When user hover on name user see email","1. Go to email box in browser (Gmail, Outlook, etc) > Check Friendly name in field From","V3 Store","S1584","Other","0"
+"C280417","Store > Send notification > SMTP","","","Alexandr Tzykin","3/23/2021 1:13 PM","","User see new email in email box.
+In field From user see correct Friendly name","","Need use SMTP for send email notification","Medium","PT-377","Email","1","","","","","","V3 Store","S1584","Other","0"
+"C280418","Store > Send notification > Sendgrid","","","Alexandr Tzykin","3/23/2021 1:13 PM","","User see new email in email box.
+In field From user see correct Friendly name","","Need use Sendgrid for send email notification","Medium","PT-377","Email","1","","","","","","V3 Store","S1584","Other","0"
+"C280419","Store admin  > Empty name","","","Alexandr Tzykin","3/23/2021 1:16 PM","","","","Name for Store admin email is empty","Medium","PT-377","Email","1","","Step Description:
+Trigger send notification with Store admin email in field from
+Expected Result:
+	
+Notification was sent
+Step Description:
+Go to email box > Look at the field From
+Expected Result:
+User see only store admin email without friendly name","1. 
+2.","1. 	
+Notification was sent
+2. User see only store admin email without friendly name","1. Trigger send notification with Store admin email in field from
+2. Go to email box > Look at the field From","V3 Store","S1584","Other","0"
+"C280420","Store admin> Fill name","","","Alexandr Tzykin","3/23/2021 1:16 PM","","","","Name for Store admin email is empty
+
+","Medium","PT-377","Email","1","","Step Description:
+Go to admin > Store
+Step Description:
+Manage any store > Advanced property
+Step Description:
+Fill Name for Store admin email with value less then 256 character > Enter email > Save
+Expected Result:
+All value was saved
+Step Description:
+	
+Trigger send notification with Store admin email in field from
+Expected Result:
+Notification was sent
+Step Description:
+Go to email box > Look at the field From
+Expected Result:
+	
+User see Friendly name in field From. After hover on Friendly name - user see email from Store admin email field","1. 
+2. 
+3. 
+4. 
+5.","1. 
+2. 
+3. All value was saved
+4. Notification was sent
+5. 	
+User see Friendly name in field From. After hover on Friendly name - user see email from Store admin email field","1. Go to admin > Store
+2. Manage any store > Advanced property
+3. Fill Name for Store admin email with value less then 256 character > Enter email > Save
+4. 	
+Trigger send notification with Store admin email in field from
+5. Go to email box > Look at the field From","V3 Store","S1584","Other","0"
+"C280421","Store admin > Fill more the 256 character in name","","","Alexandr Tzykin","3/23/2021 1:16 PM","","","","Name for Store admin email is empty","Medium","PT-377","Email","1","","Step Description:
+Go to admin > Store
+Step Description:
+Manage any store > Advanced property
+Step Description:
+Fill Name for Store admin email with value less then 257 character > Enter email > Save
+Expected Result:
+User see error about length of value","1. 
+2. 
+3.","1. 
+2. 
+3. User see error about length of value","1. Go to admin > Store
+2. Manage any store > Advanced property
+3. Fill Name for Store admin email with value less then 257 character > Enter email > Save","V3 Store","S1584","Other","0"
+"C280422","Store admin > Check on Desktop app","","","Alexandr Tzykin","3/23/2021 1:16 PM","","","","[C280420]","Medium","PT-377","Email","1","","Step Description:
+Go to Desktop client Outlook > Check Friendly name in From field
+Expected Result:
+User see Friendly name for email","1","1. User see Friendly name for email","1. Go to Desktop client Outlook > Check Friendly name in From field","V3 Store","S1584","Other","0"
+"C280423","Store admin > Check in Browser","","","Alexandr Tzykin","3/23/2021 1:16 PM","","","","[C280420]","Medium","PT-377","Email","1","","Step Description:
+Go to email box in browser (Gmail, Outlook, etc) > Check Friendly name in field From
+Expected Result:
+User see Friendly name. 
+When user hover on name user see email","1","1. User see Friendly name. 
+When user hover on name user see email","1. Go to email box in browser (Gmail, Outlook, etc) > Check Friendly name in field From","V3 Store","S1584","Other","0"
+"C280424","Store admin > Send notification > SMTP","","","Alexandr Tzykin","3/23/2021 1:16 PM","","User see new email in email box.
+In field From user see correct Friendly name","","Need use SMTP for send email notification","Medium","PT-377","Email","1","","","","","","V3 Store","S1584","Other","0"
+"C280425","Store admin > Send notification > Sendgrid","","","Alexandr Tzykin","3/23/2021 1:16 PM","","User see new email in email box.
+In field From user see correct Friendly name","","Need use Sendgrid for send email notification","Medium","PT-377","Email","1","","","","","","V3 Store","S1584","Other","0"

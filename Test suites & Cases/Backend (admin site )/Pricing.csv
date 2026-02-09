@@ -1,0 +1,1282 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C178828","Create a new price list",""," Katalon","Volha Baban","3/11/2020 8:40 AM","","<ol>
+<li>The New Price list is created. </li>
+<li>The New Price List is displayed on the Price Lists screen.</li>
+</ol>
+","","","Medium","","Pricelist management","1","","","","","","V3 Pricing","S1585","Other","1"
+"C178873","Edit price list",""," Katalon","Volha Baban","3/11/2020 11:23 AM","","All changes are saved. Data in the table is updated.","","Create a new price list [C178828]","Medium","","Pricelist management","1","","","","","","V3 Pricing","S1585","Other","0"
+"C178875","Delete price list",""," Katalon","Volha Baban","3/11/2020 11:23 AM","","Price list is deleted.
+
+","","Create a new price list [C178828]
+
+","Medium","","Pricelist management","1","","","","","","V3 Pricing","S1585","Other","0"
+"C178894","Filters pricelists",""," Katalon","Volha Baban","3/11/2020 3:18 PM","","","","Go to pricing module > Price lists
+
+
+Filter_1 created for Price list    ","Medium","","Pricelist management","1","","Step Description:
+Select filter_1 from the dropdown list
+Expected Result:
+The filter_1 is selected
+
+
+The price list sorted by filter_1  
+
+Step Description:
+Click on blue cross and clear filter
+Expected Result:
+The filter cleared
+Step Description:
+Click on Select filter and Add new filter
+Expected Result:
+Blade with Filter criteria opened
+Step Description:
+Fill fields Filter name and Currencies
+Expected Result:
+The fields are filled
+Step Description:
+Click on Save&Apply
+Expected Result:
+New filter_2 created and save in the list of filters
+The price list sorted by filter_2   ","1. 
+2. 
+3. 
+4. 
+5.","1. The filter_1 is selected
+
+
+The price list sorted by filter_1  
+
+2. The filter cleared
+3. Blade with Filter criteria opened
+4. The fields are filled
+5. New filter_2 created and save in the list of filters
+The price list sorted by filter_2   ","1. Select filter_1 from the dropdown list
+2. Click on blue cross and clear filter
+3. Click on Select filter and Add new filter
+4. Fill fields Filter name and Currencies
+5. Click on Save&Apply","V3 Pricing","S1585","Other","0"
+"C178852","View price list via catalog module",""," Katalon (generic)","Volha Baban","3/11/2020 9:50 AM","","The system opens the next screen that displays the prices for the selected item from all Price lists which contain this item.
+
+![](index.php?/attachments/get/22873)
+","","","Medium","","Pricelist Main logic","1","","","","","","V3 Pricing","S1585","Other","0"
+"C178848","Add prices to the product",""," Katalon","Volha Baban","3/11/2020 9:16 AM","","","","1. Create a new price list [C178828]
+2. Add products to the price list [C178829]","Medium","","Pricelist Main logic","1","","Step Description:
+1. Go to the price list from the first precondition. 
+2. Click on the """"Prices"""" widget.
+3. Go to any product. 
+4. Enter the price into the """"List Price"""" input field.
+5. Click """"Save"""". 
+Expected Result:
+The system saves the entered price and displays the product Price in the """"Price range"""" column of the table.
+
+![](index.php?/attachments/get/22871)  
+
+Step Description:
+1. Go to the same product again. 
+2. Enter the Sale price to the input field. 
+3. Click """"Save"""". 
+Expected Result:
+The system saves the changes. The Price range consists of List price and Sale price.
+
+![](index.php?/attachments/get/22872)  
+
+Step Description:
+1. Go to the same product again. 
+2. Add one more price. 
+3. Specify min quantity different from the quantity of price from the previous steps.
+4. Enter List and Sales prices to the appropriate input fields. 
+5. Click """"Save"""".
+Expected Result:
+1. The system saves changes and the entered prices are displayed in the """"Price range"""" column.
+2. The number of prices is displayed in the """"#"""" column. 
+3. The specified price is available for the specified Min. Quantity","1. 
+2. 
+3.","1. The system saves the entered price and displays the product Price in the """"Price range"""" column of the table.
+
+![](index.php?/attachments/get/22871)  
+
+2. The system saves the changes. The Price range consists of List price and Sale price.
+
+![](index.php?/attachments/get/22872)  
+
+3. 1. The system saves changes and the entered prices are displayed in the """"Price range"""" column.
+2. The number of prices is displayed in the """"#"""" column. 
+3. The specified price is available for the specified Min. Quantity","1. 1. Go to the price list from the first precondition. 
+2. Click on the """"Prices"""" widget.
+3. Go to any product. 
+4. Enter the price into the """"List Price"""" input field.
+5. Click """"Save"""". 
+2. 1. Go to the same product again. 
+2. Enter the Sale price to the input field. 
+3. Click """"Save"""". 
+3. 1. Go to the same product again. 
+2. Add one more price. 
+3. Specify min quantity different from the quantity of price from the previous steps.
+4. Enter List and Sales prices to the appropriate input fields. 
+5. Click """"Save"""".","V3 Pricing","S1585","Other","0"
+"C178871","Export price lists","","","Volha Baban","3/11/2020 10:55 AM","","After the export is completed, you can download the file with the price lists you have selected.
+","","","Medium","","Pricelist Main logic","1","","","","","","V3 Pricing","S1585","Other","0"
+"C178829","Add products to the price list",""," Katalon","Volha Baban","3/11/2020 8:45 AM","","1. The selected products are added to the price list.
+2. The number of products added is displayed in the Prices widget
+
+![](index.php?/attachments/get/22870)
+","","Create a new price list [C178828]","Medium","","Pricelist Main logic","1","","","","","","V3 Pricing","S1585","Other","0"
+"C183312","Change price on the BackEnd > Price is updated on StoreFront",""," None","Volha Baban","3/24/2020 1:02 PM","","The price is updated. ","","There is a price assigned to the product. ","Medium","","Pricelist Main logic","1","","","","","","V3 Pricing","S1585","Other","0"
+"C251761","Remove price on the BackEnd > Price is updated on StoreFront to 0, Unavailable label appeared",""," None","Volha Baban","8/19/2020 2:07 PM","","The price is updated = 0
+Unavailable label is shown
+Product could not be added to the cart","","There is a price assigned to the product. ","Medium","","Pricelist Main logic","1","","","","","","V3 Pricing","S1585","Other","0"
+"C183310","Price with highest priority is shown on StoreFront","","","Volha Baban","3/24/2020 12:58 PM","","","","`1. There are two price lists assigned to the same product.","Medium","","Pricelist Main logic","1","","Step Description:
+1. Go to the BackEnd (admin/store)
+2. Set priority of the price list assignment #1 higher than the priority of price list assignment #2.
+3. Go to the storefront. 
+4. Go to the product from preconditions. 
+5. Pay attention to the price of the product. 
+Expected Result:
+Product price = price specified in the price list#1.
+Step Description:
+1. Go back to the BackEnd (admin/store)
+2. Set priority of the price list assignment #2 higher than the priority of price list assignment #2.
+3. Go to the storefront. 
+4. Reload the page. 
+5. Go to the product from preconditions. 
+6. Pay attention to the product price. 
+Expected Result:
+Product price = price specified in the price list#2.","1. 
+2.","1. Product price = price specified in the price list#1.
+2. Product price = price specified in the price list#2.","1. 1. Go to the BackEnd (admin/store)
+2. Set priority of the price list assignment #1 higher than the priority of price list assignment #2.
+3. Go to the storefront. 
+4. Go to the product from preconditions. 
+5. Pay attention to the price of the product. 
+2. 1. Go back to the BackEnd (admin/store)
+2. Set priority of the price list assignment #2 higher than the priority of price list assignment #2.
+3. Go to the storefront. 
+4. Reload the page. 
+5. Go to the product from preconditions. 
+6. Pay attention to the product price.","V3 Pricing","S1585","Other","0"
+"C183311","Delete price > Next price by priority is shown on the StoreFront","","","Volha Baban","3/24/2020 1:01 PM","","1. The price has changed. 
+2. Product price = price that has a higher priority among the two remaining
+","","1. There are three prices with different priorities for the same product. 
+2. Price with higher priority is displayed as a product price on the StoreFront. ","Medium","","Pricelist Main logic","1","","","","","","V3 Pricing","S1585","Other","0"
+"C183323","Price is changed when switch currency on the StoreFront","","","Volha Baban","3/24/2020 1:17 PM","","","","1. Create two price lists with different currencies (USD, EUR) for the same product. 
+2. Assign price lists from the previous step to the catalog in which this product is contained. 
+3. The currency on the storefront = USD. ","Medium","","Pricelist Main logic","1","","Step Description:
+1. Go to the StoreFront. 
+2. Go to the product from preconditions. 
+3. Pay attention to the price.
+Expected Result:
+The product price = price specified in the USD price list.
+Step Description:
+1. Switch currency to EUR. 
+2. Go to the product from preconditions. 
+3. Pay attention to the price.
+Expected Result:
+The product price = price specified in the EUR price list.","1. 
+2.","1. The product price = price specified in the USD price list.
+2. The product price = price specified in the EUR price list.","1. 1. Go to the StoreFront. 
+2. Go to the product from preconditions. 
+3. Pay attention to the price.
+2. 1. Switch currency to EUR. 
+2. Go to the product from preconditions. 
+3. Pay attention to the price.","V3 Pricing","S1585","Other","0"
+"C183344","There is no price for currency > Currency is autoconverted","","","Volha Baban","3/24/2020 1:39 PM","","Product price = price in primary currency * exchange rate of set currency ","","1. There is a price in primary currency for the product. 
+2. There are no prices for that product in any other currency. 
+3. For other currencies, the exchange rate relative to primary currency is set. ","Medium","","Pricelist Main logic","1","","","","","","V3 Pricing","S1585","Other","0"
+"C358947","Add product with price lists in different currencies to cart > Check price in cart",""," None","Elena Mutykova","4/10/2023 3:04 PM","","","","The product has two price lists in USD and EUR 
+The default currency in store is USD","Medium","","Pricelist Main logic","1","","Step Description:
+Add Product1 to the cart
+
+Go to catalog &gt; Product1 &gt; Price
+
+Change the price for the USD price list
+
+re-build index
+
+go to Storefront &gt; Cart
+
+refresh the page
+ 
+Expected Result:
+The line-item price = price_usd
+
+currencyCode = USD for store and for cart
+Step Description:
+Try to switch currency in the Store (currencyCode = Eur)
+
+Put Product1 into the cart
+
+Go to catalog &gt; Product1 &gt; Price
+
+Change the price for the Eur price list
+
+re-build index
+
+go to Storefront &gt; Cart
+
+refresh the page
+Expected Result:
+The line-item price = price_eur
+currencyCode = Eur for store and for cart","1. 
+2.","1. The line-item price = price_usd
+
+currencyCode = USD for store and for cart
+2. The line-item price = price_eur
+currencyCode = Eur for store and for cart","1. Add Product1 to the cart
+
+Go to catalog &gt; Product1 &gt; Price
+
+Change the price for the USD price list
+
+re-build index
+
+go to Storefront &gt; Cart
+
+refresh the page
+ 
+2. Try to switch currency in the Store (currencyCode = Eur)
+
+Put Product1 into the cart
+
+Go to catalog &gt; Product1 &gt; Price
+
+Change the price for the Eur price list
+
+re-build index
+
+go to Storefront &gt; Cart
+
+refresh the page","V3 Pricing","S1585","Other","0"
+"C317549","Pricelist > Assigne to store","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001427, https://virtowayqa.testrail.io/index.php?/attachments/get/1000003919","","Alexandr Tzykin","12/16/2021 9:23 AM","","![](index.php?/attachments/get/dea90797-51f2-43c6-89ae-188785b6f3a8)user sees correct price for current store ![](index.php?/attachments/get/4f72f641-6d46-4cbd-bb6b-251bd1fe7862) ","","Store1, Virtual catalog1 exist in system
+assigne virtual catalog1 to store1","Medium","","Pricelist Main logic","1","","","","","","V3 Pricing","S1585","Other","0"
+"C317550","Pricelist > Assigne to store > Assigne to catalog","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004258, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000480, https://virtowayqa.testrail.io/index.php?/attachments/get/1000004224, https://virtowayqa.testrail.io/index.php?/attachments/get/1000004424","","Alexandr Tzykin","12/16/2021 9:27 AM","","1.User see price from catalog![](index.php?/attachments/get/eda2de18-cb8b-43cd-bf64-2681c42dd9cb) ","","[C317549]
+
+","Medium","","Pricelist Main logic","1","","","","","","V3 Pricing","S1585","Other","0"
+"C317551","Pricelist > Assigne to catalog > Assigne to store","","","Alexandr Tzykin","12/16/2021 9:28 AM","","User see correct price","","[C317550]","Medium","","Pricelist Main logic","1","","","","","","V3 Pricing","S1585","Other","0"
+"C317552","Pricelist > Assigne to store > Check in Xapi","","","Alexandr Tzykin","12/16/2021 9:28 AM","","","","Pricelist1 assigned to mystore1","Medium","","Pricelist Main logic","1","","Step Description:
+request in xapi 
+query {
+  products(
+    storeId: """"mystore1""""
+    cultureName: """"en-US""""
+    currencyCode:""""USD"""",
+    productIds:""""e853d990-a314-4121-83af-cd29ab61ff58""""
+)
+  {
+    items
+    {
+      name
+      id
+    prices
+      {
+        list
+        {
+          formattedAmountWithoutPoint
+        }
+        pricelistId
+    actual
+        {
+          formattedAmount
+        }
+      }
+    }
+  }
+}
+
+Expected Result:
+{
+  """"data"""": {
+    """"products"""": {
+      """"items"""": [
+        {
+          """"name"""": """"test prod"""",
+          """"id"""": """"e853d990-a314-4121-83af-cd29ab61ff58"""",
+          """"prices"""": [
+            {
+              """"list"""": {
+                """"formattedAmountWithoutPoint"""": """"$111""""
+              },
+              """"pricelistId"""": """"26bcc36e-f6d1-499d-9892-bc48500ca669"""",
+              """"actual"""": {
+                """"formattedAmount"""": """"$111.00""""
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}","1. 
+2.","1. {
+  """"data"""": {
+    """"products"""": {
+      """"items"""": [
+        {
+          """"name"""": """"test prod"""",
+          """"id"""": """"e853d990-a314-4121-83af-cd29ab61ff58"""",
+          """"prices"""": [
+            {
+              """"list"""": {
+                """"formattedAmountWithoutPoint"""": """"$111""""
+              },
+              """"pricelistId"""": """"26bcc36e-f6d1-499d-9892-bc48500ca669"""",
+              """"actual"""": {
+                """"formattedAmount"""": """"$111.00""""
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
+2.","1. request in xapi 
+query {
+  products(
+    storeId: """"mystore1""""
+    cultureName: """"en-US""""
+    currencyCode:""""USD"""",
+    productIds:""""e853d990-a314-4121-83af-cd29ab61ff58""""
+)
+  {
+    items
+    {
+      name
+      id
+    prices
+      {
+        list
+        {
+          formattedAmountWithoutPoint
+        }
+        pricelistId
+    actual
+        {
+          formattedAmount
+        }
+      }
+    }
+  }
+}
+
+2.","V3 Pricing","S1585","Other","0"
+"C340884","Pricelist > Validate for description",""," None","Daria Ponamareva","5/12/2022 4:22 PM","","Error:
+Response body
+[
+  """"Description must not be longer than 512 symbols""""
+]","","POST
+​/api​/pricing​/pricelists","Medium","","Pricelist Main logic","1","","","","","","V3 Pricing","S1585","Other","0"
+"C342188","Delete price with min. qty =1  for product  >  last one with min. qty =1",""," None","Daria Ponamareva","6/6/2022 1:40 PM","","Error """"You must have at least one price per single unit (with minimum quantity at 1).""""","","","Medium","","Min qty","2","","","","","","V3 Pricing","S1585","Other","0"
+"C342189","Delete prices with min. qty =1 for product > last two with min. qty =1",""," None","Daria Ponamareva","6/6/2022 1:40 PM","","Error """"You must have at least one price per single unit (with minimum quantity at 1).""""
+
+","","","Medium","","Min qty","2","","","","","","V3 Pricing","S1585","Other","0"
+"C342190","Delete prices with min. qty =1 for product > all prices",""," None","Daria Ponamareva","6/6/2022 1:41 PM","","","","1. Go to Catalog > Any product > widget “Price”
+2. Add Price_1, Price_2 from PriceList_1, Price_3 from PriceList_3
+3. Set min.qty Price_1 = 1, min.qty Price_2 = 2, min.qty Price_3 = 1
+4. Save
+5. Select all prices > Delete ","Medium","","Min qty","2","","","","","","V3 Pricing","S1585","Other","0"
+"C357936","Add priceList with different Min qty  > Check list/sale price in the Cart","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000986, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000093, https://virtowayqa.testrail.io/index.php?/attachments/get/1000003991, https://virtowayqa.testrail.io/index.php?/attachments/get/1000004155"," None","Elena Mutykova","3/10/2023 3:26 PM","","","","Add prices for the Product1
+
+qty=10 : ListPrice3 = 88.00 / SalePrice3 = 69.00
+
+qty=4 : ListPrice2 = 100.00 /SalePrice2 = N/A   ***Note!*** (if Sale Price is N/A it would be ignored)
+
+qty=1 : ListPrice1 = 349.00 / SalePrice1 = 210.00
+
+
+
+
+
+ ![](index.php?/attachments/get/35f0c3e1-e476-4acd-a522-559922ee53ad) 
+
+
+ ","Medium","","Min qty","2","","Step Description:
+Go to Storefront
+Open the product page for product1
+Expected Result:
+The list/sale price match with 349 / 210 USD per 1 item
+
+
+
+
+Step Description:
+Add 1 product to the cart
+Verify the list/sale price in the cart
+Expected Result:
+The list/sale price matches the price of the catalog
+
+Discount calculated:
+
+
+DiscountAmount = ListPrice1 - SalePrice1 (per item with Min qty 1)
+
+
+
+ ![](index.php?/attachments/get/e795e64c-a9a9-470b-8e88-80da87eb394c) 
+
+
+
+
+
+  
+
+ 
+Step Description:
+Set qty = 4
+Verify the list/sale price in the cart
+
+Expected Result:
+The list price is still 349, but the new price is 100
+
+Discount re-calculated:
+
+DiscountAmount = (ListPrice1 - ListPrice2) * 4
+
+
+
+ ![](index.php?/attachments/get/df9b6154-76a4-4f0c-8a62-7c2522698d9f) 
+
+Step Description:
+Set qty = 10
+Verify the list/sale price in the cart
+
+Expected Result:
+The list price is still 349, but the new price is 69
+
+Discount re-calculated:
+
+
+DiscountAmount = (ListPrice1 - SalePrice3) * 10
+
+
+
+ ![](index.php?/attachments/get/04069cb7-e5b5-431b-9656-743807f01664)","1. 
+2. 
+3. 
+4.","1. The list/sale price match with 349 / 210 USD per 1 item
+
+
+
+
+2. The list/sale price matches the price of the catalog
+
+Discount calculated:
+
+
+DiscountAmount = ListPrice1 - SalePrice1 (per item with Min qty 1)
+
+
+
+ ![](index.php?/attachments/get/e795e64c-a9a9-470b-8e88-80da87eb394c) 
+
+
+
+
+
+  
+
+ 
+3. The list price is still 349, but the new price is 100
+
+Discount re-calculated:
+
+DiscountAmount = (ListPrice1 - ListPrice2) * 4
+
+
+
+ ![](index.php?/attachments/get/df9b6154-76a4-4f0c-8a62-7c2522698d9f) 
+
+4. The list price is still 349, but the new price is 69
+
+Discount re-calculated:
+
+
+DiscountAmount = (ListPrice1 - SalePrice3) * 10
+
+
+
+ ![](index.php?/attachments/get/04069cb7-e5b5-431b-9656-743807f01664)","1. Go to Storefront
+Open the product page for product1
+2. Add 1 product to the cart
+Verify the list/sale price in the cart
+3. Set qty = 4
+Verify the list/sale price in the cart
+
+4. Set qty = 10
+Verify the list/sale price in the cart","V3 Pricing","S1585","Other","0"
+"C343697","Pricelists  > Lowest price > User group",""," None","Daria Ponamareva","7/11/2022 12:08 PM","","There is the lowest product price","","1. Create two price lists **priceLsit_1**,**priceLsit_2** with different prices **price_1**,**price_2** for the same product **product_1**
+
+2. Set the same priority for there Price lists
+
+3. Assign these price lists to the same user group (example: **VIP**)
+
+4. Add **user_1** to this user group (example: **VIP**)","Medium","","Lowest price","2","","","","","","V3 Pricing","S1585","Other","0"
+"C343699","Pricelists  > Lowest price > without User group",""," None","Daria Ponamareva","7/11/2022 12:15 PM","","There is the lowest product price","","1. Create two price lists **priceLsit_1**,**priceLsit_2** with different prices **price_1**,**price_2** for the same product **product_1**
+
+2. Set the same priority for there price lists
+
+3. Do not assign user groups to these price lists
+
+4. The **user_1** does not belong to any user groups","Medium","","Lowest price","2","","","","","","V3 Pricing","S1585","Other","0"
+"C178853","Add New Assignment",""," Katalon","Volha Baban","3/11/2020 10:14 AM","","1. The system creates an assignment without additional rules and conditions. 
+2. The system displays the number of assignments in the """"Assignment"""" widget
+
+![](index.php?/attachments/get/22874)
+","","","Medium","","Pricelist Assignment management","1","","","","","","V3 Pricing","S1585","Other","0"
+"C178874","Edit price list assignment",""," Katalon","Volha Baban","3/11/2020 11:23 AM","","All changes are saved. Data in the table is updated.
+
+","","Add new assignment [C178853]","Medium","","Pricelist Assignment management","1","","","","","","V3 Pricing","S1585","Other","0"
+"C178876","Delete price list assignment",""," Katalon","Volha Baban","3/11/2020 11:24 AM","","The assignment is deleted. ","","Add New Assignment [C178853]","Medium","","Pricelist Assignment management","1","","","","","","V3 Pricing","S1585","Other","0"
+"C178870","Assignments with Rules and Conditions",""," Katalon","Volha Baban","3/11/2020 10:25 AM","","","","Add New Assignment [C178853]","Medium","","Pricelist Assignments Main logic","1","","Step Description:
+1. Go to the assignment from preconditions. 
+2. Go to the """"Eligible Shoppers"""" section. 
+3. Click """"Add condition"""". 
+4. Select some conditions and configure them. 
+5. Click """"Save"""". 
+Expected Result:
+The system displays the selected conditions with the possibility to delete them. 
+
+![](index.php?/attachments/get/22875)   ","1","1. The system displays the selected conditions with the possibility to delete them. 
+
+![](index.php?/attachments/get/22875)   ","1. 1. Go to the assignment from preconditions. 
+2. Go to the """"Eligible Shoppers"""" section. 
+3. Click """"Add condition"""". 
+4. Select some conditions and configure them. 
+5. Click """"Save"""".","V3 Pricing","S1585","Other","0"
+"C178872","Export price list assignments","","","Volha Baban","3/11/2020 11:15 AM","","After the export is completed, you can download the file with the assignments you have selected.
+
+","","","Medium","","Pricelist Assignments Main logic","1","","","","","","V3 Pricing","S1585","Other","0"
+"C340925","Pricing > Add recommended price to the price list",""," None","Elena Mutykova","5/16/2022 12:15 PM","","","","","Medium","","Recommended Price","1","","Step Description:
+Open Price module &gt; price list &gt; Prices widget
+Select and Click on the product
+
+Expected Result:
+In the new blade Recommended price field is displayed in the table before the List and the Sale price
+Step Description:
+Add value in the Recommended price field &gt; Save
+Expected Result:
+The value for recommended price field was saved","1. 
+2.","1. In the new blade Recommended price field is displayed in the table before the List and the Sale price
+2. The value for recommended price field was saved","1. Open Price module &gt; price list &gt; Prices widget
+Select and Click on the product
+
+2. Add value in the Recommended price field &gt; Save","V3 Pricing","S1585","Other","0"
+"C340928","Pricing > Price lists > Edit recommended price field",""," None","Elena Mutykova","5/16/2022 12:49 PM","","","","[C340925] The recommended price was added for product_1","Medium","","Recommended Price","1","","Step Description:
+Click on Pricing &gt; Price lists &gt; Choose pricelist_1
+Click on Product_1
+Expected Result:
+The new blade was opened with value in the recommended price field
+
+
+Step Description:
+Enter new value &gt; Save
+Re-open blade
+Expected Result:
+New value was saved","1. 
+2.","1. The new blade was opened with value in the recommended price field
+
+
+2. New value was saved","1. Click on Pricing &gt; Price lists &gt; Choose pricelist_1
+Click on Product_1
+2. Enter new value &gt; Save
+Re-open blade","V3 Pricing","S1585","Other","0"
+"C340926","Product > Price widget > Check recommened price field",""," None","Elena Mutykova","5/16/2022 12:16 PM","","Recommended price field with value displays and editable","","The recommended price was added to pricelist_1","Medium","","Recommended Price","1","","","","","","V3 Pricing","S1585","Other","0"
+"C340929","Product > Price widget > Edit recommended price field",""," None","Elena Mutykova","5/16/2022 1:08 PM","","","","[C340925] The recommended price was added for product_1","Medium","","Recommended Price","1","","Step Description:
+Click on Product_1 &gt; Price widget
+
+
+Expected Result:
+The new blade was opened with value in the recommended price field
+
+
+Step Description:
+Enter new value &gt; Save
+Re-open blade
+Expected Result:
+New value was saved","1. 
+2.","1. The new blade was opened with value in the recommended price field
+
+
+2. New value was saved","1. Click on Product_1 &gt; Price widget
+
+
+2. Enter new value &gt; Save
+Re-open blade","V3 Pricing","S1585","Other","0"
+"C182896","Search Pricelist > Search by",""," None","Volha Baban","3/24/2020 10:18 AM","","","","Open Pricing module > Pricelist","Medium","VP-1309","Search Price","1","","Step Description:
+Enter """"Clothing"""" in search field
+Expected Result:
+System display result for request 
+![](index.php?/attachments/get/21534) 
+
+Step Description:
+Enter """"elect"""" in search field 
+Expected Result:
+System display result for request
+![](index.php?/attachments/get/21535) 
+
+Step Description:
+Enter """"USD"""" in search field
+Expected Result:
+System display result for request
+![](index.php?/attachments/get/21536) ","1. 
+2. 
+3.","1. System display result for request 
+![](index.php?/attachments/get/21534) 
+
+2. System display result for request
+![](index.php?/attachments/get/21535) 
+
+3. System display result for request
+![](index.php?/attachments/get/21536) ","1. Enter """"Clothing"""" in search field
+2. Enter """"elect"""" in search field 
+3. Enter """"USD"""" in search field","V3 Pricing","S1585","Other","0"
+"C182897","Search Pricelist assignment > Search",""," None","Volha Baban","3/24/2020 10:18 AM","","","","Open Pricing module > Pricelist assignment ","Medium","VP-1309","Search Price","1","","Step Description:
+Enter """"B2B-mixed"""" in search field
+Expected Result:
+System display search result
+![](index.php?/attachments/get/21537) 
+
+Step Description:
+Enter """"B2B-MIxed-MFD"""" in search field 
+Expected Result:
+System display search result
+![](index.php?/attachments/get/21538) ","1. 
+2.","1. System display search result
+![](index.php?/attachments/get/21537) 
+
+2. System display search result
+![](index.php?/attachments/get/21538) ","1. Enter """"B2B-mixed"""" in search field
+2. Enter """"B2B-MIxed-MFD"""" in search field","V3 Pricing","S1585","Other","0"
+"C182898","Search Price > Create filter",""," None","Volha Baban","3/24/2020 10:18 AM","","","","Open Pricelist module > Pricelist/Pricelist assignment","Medium","VP-1309","Search Price","1","","Step Description:
+Click Select filter > Add new filter > Select any filter criteria > Save& Apply
+Expected Result:
+System display filtering object. 
+![](index.php?/attachments/get/21539) 
+
+Step Description:
+Create another filters > Apply filter
+Expected Result:
+System display correct filtering data
+![](index.php?/attachments/get/21540) ","1. 
+2.","1. System display filtering object. 
+![](index.php?/attachments/get/21539) 
+
+2. System display correct filtering data
+![](index.php?/attachments/get/21540) ","1. Click Select filter > Add new filter > Select any filter criteria > Save& Apply
+2. Create another filters > Apply filter","V3 Pricing","S1585","Other","0"
+"C182899","Search Price > wrong request",""," None","Volha Baban","3/24/2020 10:18 AM","","","","Open Pricing module","Medium","","Search Price","1","","Step Description:
+Enter wrong request in search field
+Expected Result:
+System display message no data","1","1. System display message no data","1. Enter wrong request in search field","V3 Pricing","S1585","Other","0"
+"C182900","Search Price >  Filter > Search",""," None","Volha Baban","3/24/2020 10:18 AM","","","","Need create filter for pricelist
+Open Pricing module","Medium","","Search Price","1","","Step Description:
+Apply filter > Enter correct search request in search line 
+Expected Result:
+System display search result from filtering data","1","1. System display search result from filtering data","1. Apply filter > Enter correct search request in search line","V3 Pricing","S1585","Other","0"
+"C205045","Searching products in pricelist by SKU/ color/ size/ category/name",""," None","Volha Baban","4/13/2020 2:09 PM","","Search results are shown","","","Medium","","Search Price","1","","","","","","V3 Pricing","S1585","Other","0"
+"C242158","Settings > Pricing > The page size being used for Export / Import",""," None","Aleksandra Balabanova","7/8/2020 9:29 AM","","","","1. Admin logged in environment
+2. Admin is on settings pannel","Medium","","General","2","","Step Description:
+1. Admin open Settings -> Pricing -> General
+2. Change value for field """"The page size being used for Export / Import"""" (for example - 1)
+3. Click Save
+Expected Result:
+1. Changes saved
+Step Description:
+1. Admin open Export & Import page
+2. Select Export blade
+3. Choose **VirtoCommerce.Pricing**
+4. Click """"Start Export""""
+Expected Result:
+1. Progress bar updating with such values from setting 
+Step Description:
+1. Admin open Export & Import page
+2. Select Import blade
+3. Choose **VirtoCommerce.Pricing**
+4. Click """"Start Import""""
+Expected Result:
+1. Progress bar updating with such values from setting","1. 
+2. 
+3.","1. 1. Changes saved
+2. 1. Progress bar updating with such values from setting 
+3. 1. Progress bar updating with such values from setting","1. 1. Admin open Settings -> Pricing -> General
+2. Change value for field """"The page size being used for Export / Import"""" (for example - 1)
+3. Click Save
+2. 1. Admin open Export & Import page
+2. Select Export blade
+3. Choose **VirtoCommerce.Pricing**
+4. Click """"Start Export""""
+3. 1. Admin open Export & Import page
+2. Select Import blade
+3. Choose **VirtoCommerce.Pricing**
+4. Click """"Start Import""""","V3 Pricing","S1585","Functional","0"
+"C242159","Settings > Pricing > Enable event-based indexation for pricing entities","","","Aleksandra Balabanova","7/8/2020 9:31 AM","","","","1. Admin logged in environment","Medium","","General","2","","Step Description:
+1. Admin open Settings -> Pricing -> General
+2. Choose """"Enable event-based indexation for pricing entities"""" is enabled
+3. Click Save
+Expected Result:
+1. Setting saved as enabled
+Step Description:
+1. Admin open Catalog page -> Category -> any product -> open widget Price
+3. Change **Min. quantity** value 
+4. Click Save
+5. Reopen edit user blade 
+6. Check the Indexation widget
+
+
+Expected Result:
+1. The system was reindexed after saving change","1. 
+2.","1. 1. Setting saved as enabled
+2. 1. The system was reindexed after saving change","1. 1. Admin open Settings -> Pricing -> General
+2. Choose """"Enable event-based indexation for pricing entities"""" is enabled
+3. Click Save
+2. 1. Admin open Catalog page -> Category -> any product -> open widget Price
+3. Change **Min. quantity** value 
+4. Click Save
+5. Reopen edit user blade 
+6. Check the Indexation widget","V3 Pricing","S1585","Functional","0"
+"C242160","Settings > Pricing > Disable event-based indexation for pricing entities","","","Aleksandra Balabanova","7/8/2020 9:31 AM","","","","1. Admin logged in environment","Medium","","General","2","","Step Description:
+1. Admin open Settings -> Pricing -> General
+2. Choose """"Enable event-based indexation for pricing entities"""" is disabled
+3. Click Save
+Expected Result:
+1. Setting saved as disabled
+Step Description:
+1. Admin open Catalog page -> Category -> any product -> widget Price
+3. Change **Min. quantity** value 
+4. Click Save
+5. Reopen edit user blade 
+6. Check the Indexation widget
+Expected Result:
+1. System doesn't index after saving change","1. 
+2.","1. 1. Setting saved as disabled
+2. 1. System doesn't index after saving change","1. 1. Admin open Settings -> Pricing -> General
+2. Choose """"Enable event-based indexation for pricing entities"""" is disabled
+3. Click Save
+2. 1. Admin open Catalog page -> Category -> any product -> widget Price
+3. Change **Min. quantity** value 
+4. Click Save
+5. Reopen edit user blade 
+6. Check the Indexation widget","V3 Pricing","S1585","Functional","0"
+"C261705","Settings  > Pricing > Enable Log pricing changes","","","Grotem","12/4/2020 2:33 PM","","","","1. Admin logged in environment
+","Medium","","General","2","","Step Description:
+1. Admin open Settings -> Pricing -> General
+2. Set """"Log pricing changes"""" as enabled
+3. Click Save
+Expected Result:
+1. Setting saved as enabled
+Step Description:
+1. Admin open Catalog page -> Category -> any product -> widget Price
+2. Change price value in product
+3. Save changes
+Expected Result:
+1. New row **was** added to PlatformOperationLog","1. 
+2.","1. 1. Setting saved as enabled
+2. 1. New row **was** added to PlatformOperationLog","1. 1. Admin open Settings -> Pricing -> General
+2. Set """"Log pricing changes"""" as enabled
+3. Click Save
+2. 1. Admin open Catalog page -> Category -> any product -> widget Price
+2. Change price value in product
+3. Save changes","V3 Pricing","S1585","Other","0"
+"C261704","Settings  > Pricing > Disable Log pricing changes","","","Grotem","12/4/2020 2:30 PM","","","","1. Admin logged in environment
+","Medium","","General","2","","Step Description:
+1. Admin open Settings -> Pricing -> General
+2. Set """"Log pricing changes"""" as disabled
+3. Click Save
+Expected Result:
+1. Setting saved as disabled
+Step Description:
+1. Admin open Catalog page -> Category -> any product -> widget Price
+2. Change price value in product
+3. Save changes
+Expected Result:
+1. New row **was not** added to PlatformOperationLog","1. 
+2.","1. 1. Setting saved as disabled
+2. 1. New row **was not** added to PlatformOperationLog","1. 1. Admin open Settings -> Pricing -> General
+2. Set """"Log pricing changes"""" as disabled
+3. Click Save
+2. 1. Admin open Catalog page -> Category -> any product -> widget Price
+2. Change price value in product
+3. Save changes","V3 Pricing","S1585","Other","0"
+"C338422","Settings > Pricing > Tool-tips",""," None","Elena Mutykova","4/20/2022 8:39 AM","","","","","Medium","","General","2","","Step Description:
+Open blade with general Settings &gt; Pay attention to tooltips
+
+
+
+
+
+Expected Result:
+All tooltips are folded
+
+Step Description:
+1. Click on Show link for field1
+2. Click on Show link for field2
+
+
+
+
+
+Expected Result:
+1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded. The tooltip for the field1 is folded
+
+
+Step Description:
+Click on the Hide link
+
+Expected Result:
+All tooltips are folded","1. 
+2. 
+3.","1. All tooltips are folded
+
+2. 1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded. The tooltip for the field1 is folded
+
+
+3. All tooltips are folded","1. Open blade with general Settings &gt; Pay attention to tooltips
+
+
+
+
+
+2. 1. Click on Show link for field1
+2. Click on Show link for field2
+
+
+
+
+
+3. Click on the Hide link","V3 Pricing","S1585","Other","0"
+"C242161","Settings > Pricing >  Pricing indexation date and time","","","Aleksandra Balabanova","7/8/2020 9:32 AM","","","","1. Admin logged in environment
+2. Admin is on settings pannel","Medium","","Search","2","","Step Description:
+1. Admin open Pricing settings blade > Search
+2. Check field """"Pricing indexation date and time""""
+
+Expected Result:
+1. Last indexation date and time displays in format """"Jul 3, 2020 12:50:14 PM""""
+Step Description:
+1. Admin open Catalog > Category > choose any Product > widget Price
+2. Change Price value
+3. Set valid from/to dates
+![](index.php?/attachments/get/36114)   
+ 
+4. Click Save
+Expected Result:
+1. Product price changed
+Step Description:
+1. Admin open """"Search index"""" page
+2. Select **Products** -> **Build index**
+3. Choose """"Build"""" button
+Expected Result:
+1. Build process finished successfully
+Step Description:
+1. Admin open Pricing settings blade > Search
+2. After running backround job “IndexingJobs.IndexChangesJob“ check field """"Pricing indexation date and time""""
+Expected Result:
+1. New indexation date and time displays  in the field (for example - Jul 4, 2020 1:05:08 PM)","1. 
+2. 
+3. 
+4.","1. 1. Last indexation date and time displays in format """"Jul 3, 2020 12:50:14 PM""""
+2. 1. Product price changed
+3. 1. Build process finished successfully
+4. 1. New indexation date and time displays  in the field (for example - Jul 4, 2020 1:05:08 PM)","1. 1. Admin open Pricing settings blade > Search
+2. Check field """"Pricing indexation date and time""""
+
+2. 1. Admin open Catalog > Category > choose any Product > widget Price
+2. Change Price value
+3. Set valid from/to dates
+![](index.php?/attachments/get/36114)   
+ 
+4. Click Save
+3. 1. Admin open """"Search index"""" page
+2. Select **Products** -> **Build index**
+3. Choose """"Build"""" button
+4. 1. Admin open Pricing settings blade > Search
+2. After running backround job “IndexingJobs.IndexChangesJob“ check field """"Pricing indexation date and time""""","V3 Pricing","S1585","Functional","0"
+"C242163","Settings > Pricing > Enable product price indexing","","","Aleksandra Balabanova","7/8/2020 9:32 AM","","","","1. Admin logged in environment
+2. Enable event-based indexation for pricing entities is **ON**
+![](index.php?/attachments/get/37386)
+","Medium","","Search","2","","Step Description:
+1. Admin open Settings -> Pricing -> Search 
+2. Choose """"Enable product price indexing"""" is enabled
+3. Click Save
+Expected Result:
+1. Setting saved as enabled
+Step Description:
+1. Admin open Catalog page -> Category -> any product -> widget Price
+3. Change **Price** value 
+4. Click Save
+5. Reopen edit user blade 
+6. Check the Indexation widget
+
+
+Expected Result:
+1. Prices reindexed
+2. Prices included in index","1. 
+2.","1. 1. Setting saved as enabled
+2. 1. Prices reindexed
+2. Prices included in index","1. 1. Admin open Settings -> Pricing -> Search 
+2. Choose """"Enable product price indexing"""" is enabled
+3. Click Save
+2. 1. Admin open Catalog page -> Category -> any product -> widget Price
+3. Change **Price** value 
+4. Click Save
+5. Reopen edit user blade 
+6. Check the Indexation widget","V3 Pricing","S1585","Functional","0"
+"C242168","Settings > Pricing > Disable product price indexing","","","Aleksandra Balabanova","7/8/2020 11:16 AM","","","","1. Admin logged in environment
+2. Enable event-based indexation for pricing entities is **ON**
+![](index.php?/attachments/get/37386)
+","Medium","","Search","2","","Step Description:
+1. Admin open Settings -> Pricing -> Search 
+2. Choose """"Enable product price indexing"""" is disabled
+3. Click Save
+Expected Result:
+1. Setting saved as disabled
+Step Description:
+1. Admin open Catalog page -> Category -> any product -> widget Price
+3. Change **Price** value 
+4. Click Save
+5. Reopen edit user blade 
+6. Check the Indexation widget
+
+
+Expected Result:
+1. Prices reindexed
+2. Prices **NOT** included in index","1. 
+2.","1. 1. Setting saved as disabled
+2. 1. Prices reindexed
+2. Prices **NOT** included in index","1. 1. Admin open Settings -> Pricing -> Search 
+2. Choose """"Enable product price indexing"""" is disabled
+3. Click Save
+2. 1. Admin open Catalog page -> Category -> any product -> widget Price
+3. Change **Price** value 
+4. Click Save
+5. Reopen edit user blade 
+6. Check the Indexation widget","V3 Pricing","S1585","Functional","0"
+"C242165","Settings > Pricing > Enable """"Store all product prices as object in index"""" (deprecated: PT-8571, PT-8365: remove StorePricesInIndex setting #179)",""," None","Aleksandra Balabanova","7/8/2020 9:34 AM","","","","1. Admin logged in environment
+2. Admin is on settings pannel
+3. Setting Enable product price indexing is **ON**
+![](index.php?/attachments/get/37396)","Medium","","Search","2","","Step Description:
+1. Admin open Pricing settings blade &gt; Search
+2. Open Search page
+3. Choose """"Store all product prices as object in index"""" is enabled
+4. Click Save
+Expected Result:
+1. Setting saved as enabled
+Step Description:
+1. Open """"Search index""""
+2. Choose Products and Catalog
+3. Click """"Build index"""" -&gt; Build 
+Expected Result:
+1. Build process finished successfully
+Step Description:
+1. Admin open Catalog -&gt; Category -&gt; choose any Product
+2. Open Index widget
+Expected Result:
+1. Json file with __price added with whole product details","1. 
+2. 
+3.","1. 1. Setting saved as enabled
+2. 1. Build process finished successfully
+3. 1. Json file with __price added with whole product details","1. 1. Admin open Pricing settings blade &gt; Search
+2. Open Search page
+3. Choose """"Store all product prices as object in index"""" is enabled
+4. Click Save
+2. 1. Open """"Search index""""
+2. Choose Products and Catalog
+3. Click """"Build index"""" -&gt; Build 
+3. 1. Admin open Catalog -&gt; Category -&gt; choose any Product
+2. Open Index widget","V3 Pricing","S1585","Functional","0"
+"C242169","Settings > Pricing > Disable """"Store all product prices as object in index"""" (deprecated: PT-8571, PT-8365: remove StorePricesInIndex setting #179)",""," None","Aleksandra Balabanova","7/8/2020 11:20 AM","","","","1. Admin logged in environment
+2. Admin is on settings pannel
+3. Setting Enable product price indexing is **ON**
+![](index.php?/attachments/get/37396)","Medium","","Search","2","","Step Description:
+1. Admin open Pricing settings blade &gt; Search
+2. Open Search page
+3. Choose """"Store all product prices as object in index"""" is disabled
+4. Click Save
+Expected Result:
+1. Setting saved as enabled
+Step Description:
+1. Open """"Search index""""
+2. Choose Products and Catalog
+3. Click """"Build index"""" -&gt; Build 
+Expected Result:
+1. Build process finished successfully
+Step Description:
+1. Admin open Catalog -&gt; Category -&gt; choose any Product
+2. Open Index widget
+Expected Result:
+1. There are no product details in """"__price"""" Json file","1. 
+2. 
+3.","1. 1. Setting saved as enabled
+2. 1. Build process finished successfully
+3. 1. There are no product details in """"__price"""" Json file","1. 1. Admin open Pricing settings blade &gt; Search
+2. Open Search page
+3. Choose """"Store all product prices as object in index"""" is disabled
+4. Click Save
+2. 1. Open """"Search index""""
+2. Choose Products and Catalog
+3. Click """"Build index"""" -&gt; Build 
+3. 1. Admin open Catalog -&gt; Category -&gt; choose any Product
+2. Open Index widget","V3 Pricing","S1585","Functional","0"
+"C338376","Access",""," None","Daria Ponamareva","4/15/2022 11:18 AM","","","","1. Create Role_1.
+2. Add the following permissions to the Role_1:
+    pricing:access 
+catalog:read
+
+3. Role_1 assigned to User_1","Medium","","Permissions","0","","Step Description:
+1. Login to BackEnd as a User_1.
+2. Try to find the """"Pricing"""" module in the Navigation. 
+
+Expected Result:
+There is the """"Pricing"""" module in the Navigation. 
+Step Description:
+Try to open the """"Pricing"""" blade. 
+Expected Result:
+The """"Pricing"""" blade is opened. 
+Step Description:
+Try to open the """"Price lists"""" tab. 
+Expected Result:
+The """"Price lists"""" tab is opened. 
+Step Description:
+Try to open any price list. 
+Expected Result:
+It is unable for you to open the price list. Nothing happens while clicking. 
+Step Description:
+Try to open the """"Price list assignments"""" tab. 
+Expected Result:
+The tab is opened. 
+Step Description:
+Try to open any assignment. 
+Expected Result:
+It is unable for you to open the price list assignment. Nothing happens while clicking.","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. There is the """"Pricing"""" module in the Navigation. 
+2. The """"Pricing"""" blade is opened. 
+3. The """"Price lists"""" tab is opened. 
+4. It is unable for you to open the price list. Nothing happens while clicking. 
+5. The tab is opened. 
+6. It is unable for you to open the price list assignment. Nothing happens while clicking.","1. 1. Login to BackEnd as a User_1.
+2. Try to find the """"Pricing"""" module in the Navigation. 
+
+2. Try to open the """"Pricing"""" blade. 
+3. Try to open the """"Price lists"""" tab. 
+4. Try to open any price list. 
+5. Try to open the """"Price list assignments"""" tab. 
+6. Try to open any assignment.","V3 Pricing","S1585","Other","0"
+"C338377","Read",""," None","Daria Ponamareva","4/15/2022 11:18 AM","","","","1. Create Role_1.
+2. Add the following permissions to the Role_1:
+    pricing:access
+    pricing:read
+    catalog:read
+
+3. Role_1 assigned to User_1","Medium","","Permissions","0","","Step Description:
+1. Login to BackEnd as a User_1.
+2. Open """"Pricing"""" module.
+3. Open """"Price lists"""" tab.
+4. Try to open any price list. 
+Expected Result:
+The price list is opened. All data is visible.
+Step Description:
+1. Open """"Price list assignments"""" tab.
+2. Try to open any assignment. 
+Expected Result:
+The price list assignment is opened. All data is visible.","1. 
+2.","1. The price list is opened. All data is visible.
+2. The price list assignment is opened. All data is visible.","1. 1. Login to BackEnd as a User_1.
+2. Open """"Pricing"""" module.
+3. Open """"Price lists"""" tab.
+4. Try to open any price list. 
+2. 1. Open """"Price list assignments"""" tab.
+2. Try to open any assignment.","V3 Pricing","S1585","Other","0"
+"C338378","Export",""," None","Daria Ponamareva","4/15/2022 11:18 AM","","","","1. Create Role_1.
+2. Add the following permissions to the Role_1:
+    pricing:access
+    pricing:read
+    pricing:export
+catalog:read
+
+3. Role_1 assigned to User_1","Medium","","Permissions","0","","Step Description:
+1. Login to BackEnd as a User_1.
+2. Open """"Pricing"""" module.
+3. Open """"Price lists"""" tab.
+4. Pay attention to the header of the blade. 
+Expected Result:
+There is an """"Export"""" button on the header.
+Step Description:
+1. Click """"Export"""". 
+2. Select provider, data for export, and properties. 
+3. Click """"Start export"""". 
+Expected Result:
+""""Export progress"""" blade is opened. When the export is finished you will be able to download the file.
+Step Description:
+1. Open """"Price list assignment"""" tab. 
+2. Pay attention to the header of the blade. 
+
+Expected Result:
+There is an """"Export"""" button on the header.
+Step Description:
+1. Click """"Export"""". 
+2. Select provider, data for export, and properties. 
+3. Click """"Start export"""". 
+Expected Result:
+""""Export progress"""" blade is opened. When the export is finished you will be able to download the file.","1. 
+2. 
+3. 
+4.","1. There is an """"Export"""" button on the header.
+2. """"Export progress"""" blade is opened. When the export is finished you will be able to download the file.
+3. There is an """"Export"""" button on the header.
+4. """"Export progress"""" blade is opened. When the export is finished you will be able to download the file.","1. 1. Login to BackEnd as a User_1.
+2. Open """"Pricing"""" module.
+3. Open """"Price lists"""" tab.
+4. Pay attention to the header of the blade. 
+2. 1. Click """"Export"""". 
+2. Select provider, data for export, and properties. 
+3. Click """"Start export"""". 
+3. 1. Open """"Price list assignment"""" tab. 
+2. Pay attention to the header of the blade. 
+
+4. 1. Click """"Export"""". 
+2. Select provider, data for export, and properties. 
+3. Click """"Start export"""".","V3 Pricing","S1585","Other","0"
+"C338379","Create",""," None","Daria Ponamareva","4/15/2022 11:18 AM","","","","1. Create Role_1.
+2. Add the following permissions to the Role_1: 
+    pricing:access
+    pricing:read
+    pricing:create
+catalog:read
+
+3. Role_1 assigned to User_1
+","Medium","","Permissions","0","","Step Description:
+1. Login to BackEnd as a User_1. 
+2. Open """"Pricing"""" module. 
+3. Open """"Price lists"""" tab. 
+4. Pay attention to the header of the blade.
+Expected Result:
+There is an """"Add"""" button on the header.
+It is clickable.
+Step Description:
+1. Click """"Add"""". 
+2. Enter a name and select currency. 
+3. Click """"Create"""".
+Expected Result:
+A new price list has been created.
+Step Description:
+1. Open """"Price list assignments"""" tab. 
+2. Pay attention to the header of the blade.
+
+
+Expected Result:
+There is an """"Add"""" button on the header.
+It is clickable.
+Step Description:
+1. Click """"Add"""". 
+2. Enter the assignment name. 
+3. Select the catalog and price list.
+4. Click """"Create"""". 
+Expected Result:
+A new price list assignment has been created.","1. 
+2. 
+3. 
+4.","1. There is an """"Add"""" button on the header.
+It is clickable.
+2. A new price list has been created.
+3. There is an """"Add"""" button on the header.
+It is clickable.
+4. A new price list assignment has been created.","1. 1. Login to BackEnd as a User_1. 
+2. Open """"Pricing"""" module. 
+3. Open """"Price lists"""" tab. 
+4. Pay attention to the header of the blade.
+2. 1. Click """"Add"""". 
+2. Enter a name and select currency. 
+3. Click """"Create"""".
+3. 1. Open """"Price list assignments"""" tab. 
+2. Pay attention to the header of the blade.
+
+
+4. 1. Click """"Add"""". 
+2. Enter the assignment name. 
+3. Select the catalog and price list.
+4. Click """"Create"""".","V3 Pricing","S1585","Other","0"
+"C338380","Update",""," None","Daria Ponamareva","4/15/2022 11:18 AM","","","","1. Create Role_1.
+2. Add the following permissions to the Role_1:
+    pricing:access
+    pricing:read
+    pricing:update
+catalog:read
+3. Role_1 assigned to User_1.","Medium","","Permissions","0","","Step Description:
+1. Login to BackEnd as a User_1.
+2. Open """"Pricing"""" module.
+3. Open """"Price lists"""" tab.
+4. Open any price list. 
+5. Change some fields. 
+6. Click """"Save"""". 
+Expected Result:
+All changes are saved. 
+Step Description:
+1. Open """"Price list assignments"""" tab. 
+2. Open any assignment. 
+3. Change some fields. 
+4. Click """"Save"""".
+Expected Result:
+All changes are saved.","1. 
+2.","1. All changes are saved. 
+2. All changes are saved.","1. 1. Login to BackEnd as a User_1.
+2. Open """"Pricing"""" module.
+3. Open """"Price lists"""" tab.
+4. Open any price list. 
+5. Change some fields. 
+6. Click """"Save"""". 
+2. 1. Open """"Price list assignments"""" tab. 
+2. Open any assignment. 
+3. Change some fields. 
+4. Click """"Save"""".","V3 Pricing","S1585","Other","0"
+"C338381","Delete",""," None","Daria Ponamareva","4/15/2022 11:18 AM","","","","1. Create Role_1.
+2. Add the following permissions to the Role_1:
+    pricing:access
+    pricing:read
+    pricing:delete
+catalog:read
+
+3. Role_1 assigned to User_1","Medium","","Permissions","0","","Step Description:
+1. Login to BackEnd as a User_1.
+2. Open """"Pricing"""" module.
+3. Open """"Price lists"""" tab.
+4. Pay attention to the header of the blade. 
+Expected Result:
+There is """"Delete"""" button on the header.
+Step Description:
+1. Mark price list that you want to delete. 
+2. Click """"Delete"""". 
+3. Confirm deletion.
+Expected Result:
+The price list has been deleted. 
+Step Description:
+1. Open """"Price list assignments"""" tab.
+2. Pay attention to the header of the blade. 
+Expected Result:
+There is """"Delete"""" button on the header.
+Step Description:
+1. Mark price list assignment that you want to delete. 
+2. Click """"Delete"""". 
+3. Confirm deletion.
+Expected Result:
+The price list assignment has been deleted.","1. 
+2. 
+3. 
+4.","1. There is """"Delete"""" button on the header.
+2. The price list has been deleted. 
+3. There is """"Delete"""" button on the header.
+4. The price list assignment has been deleted.","1. 1. Login to BackEnd as a User_1.
+2. Open """"Pricing"""" module.
+3. Open """"Price lists"""" tab.
+4. Pay attention to the header of the blade. 
+2. 1. Mark price list that you want to delete. 
+2. Click """"Delete"""". 
+3. Confirm deletion.
+3. 1. Open """"Price list assignments"""" tab.
+2. Pay attention to the header of the blade. 
+4. 1. Mark price list assignment that you want to delete. 
+2. Click """"Delete"""". 
+3. Confirm deletion.","V3 Pricing","S1585","Other","0"

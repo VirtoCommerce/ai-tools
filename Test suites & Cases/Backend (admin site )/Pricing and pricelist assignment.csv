@@ -1,0 +1,307 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C122744","Pricing > Add Pricelist",""," Katalon","Alexandr Tzykin","10/2/2019 9:50 AM","","","","<p>Open Pricing module.</p>
+","Medium","","Add Pricelist","1","","Step Description:
+<p>Price list > Add Pricelist </p>
+Expected Result:
+<p>The system will display the New Price List screen</p>
+Step Description:
+<p>Look at the New Price List screen</p>
+Expected Result:
+<p>User sees some elements:<br />1.Price list name - required<br />2.Select the currency from the drop-down list - required<br />3.Add description- optional<br />4.Assignment widget with zero assignments<br />5.Create button remains disabled until the user enters the Name and selects the currency</p>
+Step Description:
+<p>Fill all fields > Click Create button</p>
+Expected Result:
+<p>The New Price List will be created by the system:<br />1.The New Price List is displayed on the Price Lists screen<br />2.Prices and Assignments widgets are active</p>","1. 
+2. 
+3.","1. <p>The system will display the New Price List screen</p>
+2. <p>User sees some elements:<br />1.Price list name - required<br />2.Select the currency from the drop-down list - required<br />3.Add description- optional<br />4.Assignment widget with zero assignments<br />5.Create button remains disabled until the user enters the Name and selects the currency</p>
+3. <p>The New Price List will be created by the system:<br />1.The New Price List is displayed on the Price Lists screen<br />2.Prices and Assignments widgets are active</p>","1. <p>Price list > Add Pricelist </p>
+2. <p>Look at the New Price List screen</p>
+3. <p>Fill all fields > Click Create button</p>","Pricing","S934","Functional","1"
+"C122747","Pricing > Open Pricelist","","","Alexandr Tzykin","10/2/2019 11:20 AM","","","","","Medium","","Edit Pricelist","1","","Step Description:
+Click on created Pricelist
+Expected Result:
+System display new screen ![](index.php?/attachments/get/16584)
+
+Step Description:
+Look at the opened screen
+Expected Result:
+On screen user see:
+1. Name - required field
+2. Currency - select field
+3. Description
+4. Button Prices
+5. Button Assignment
+
+The Save button is disable until changes have been made or the required field is not filled
+Step Description:
+Change information in any field
+Expected Result:
+Save button active. 
+Step Description:
+Save 
+Expected Result:
+All changes was save","1. 
+2. 
+3. 
+4.","1. System display new screen ![](index.php?/attachments/get/16584)
+
+2. On screen user see:
+1. Name - required field
+2. Currency - select field
+3. Description
+4. Button Prices
+5. Button Assignment
+
+The Save button is disable until changes have been made or the required field is not filled
+3. Save button active. 
+4. All changes was save","1. Click on created Pricelist
+2. Look at the opened screen
+3. Change information in any field
+4. Save","Pricing","S934","Functional","0"
+"C122748","Pricing > Pricelist > Prices","","","Alexandr Tzykin","10/2/2019 11:29 AM","","","","","Medium","","Edit Pricelist","1","","Step Description:
+Open Pricelist > Click on Prices 
+Expected Result:
+System open screen with information about all Price in this Pricelist
+Step Description:
+Click Add 
+Expected Result:
+System open screen with catalog
+Step Description:
+Select any product > Add selected
+Expected Result:
+The system will display the created price in the list
+Step Description:
+Select created Price > Delete
+Expected Result:
+Selected Price must be deleted","1. 
+2. 
+3. 
+4.","1. System open screen with information about all Price in this Pricelist
+2. System open screen with catalog
+3. The system will display the created price in the list
+4. Selected Price must be deleted","1. Open Pricelist > Click on Prices 
+2. Click Add 
+3. Select any product > Add selected
+4. Select created Price > Delete","Pricing","S934","Functional","0"
+"C122749","Pricing > Pricelist > Pricelist assignment","","","Alexandr Tzykin","10/2/2019 11:29 AM","","","","","Medium","","Edit Pricelist","1","","Step Description:
+Open Pricelist > Click on Pricelist assignment 
+Expected Result:
+System open screen with information about all Pricelist assignment in this Pricelist
+Step Description:
+Click Add
+Expected Result:
+System open screen Create Pricelist assignment
+Step Description:
+Fill all required fields > Create
+Expected Result:
+	
+The system will display the created pricelist assignment in the list
+Step Description:
+Select created Pricelist assignment > Delete
+Expected Result:
+Selected Pricelist assignment must be deleted","1. 
+2. 
+3. 
+4.","1. System open screen with information about all Pricelist assignment in this Pricelist
+2. System open screen Create Pricelist assignment
+3. 	
+The system will display the created pricelist assignment in the list
+4. Selected Pricelist assignment must be deleted","1. Open Pricelist > Click on Pricelist assignment 
+2. Click Add
+3. Fill all required fields > Create
+4. Select created Pricelist assignment > Delete","Pricing","S934","Functional","0"
+"C122745","Pricing > Select few price > Delete","","","Alexandr Tzykin","10/2/2019 10:08 AM","","","","","Medium","","Delete Pricelist","1","","Step Description:
+Open Pricelist > Select few Pricelists > Delete 
+Expected Result:
+User sees notification ![](index.php?/attachments/get/16583)
+
+Step Description:
+Click No , Cancel
+Expected Result:
+Notification will be hide. Price lists not deleted
+Step Description:
+Open Pricelist > Select few Pricelists > Delete  > Click Yes
+Expected Result:
+Notification will be hide. Price lists was deleted","1. 
+2. 
+3.","1. User sees notification ![](index.php?/attachments/get/16583)
+
+2. Notification will be hide. Price lists not deleted
+3. Notification will be hide. Price lists was deleted","1. Open Pricelist > Select few Pricelists > Delete 
+2. Click No , Cancel
+3. Open Pricelist > Select few Pricelists > Delete  > Click Yes","Pricing","S934","Functional","0"
+"C122746","Pricing > Click RBM > Delete","","","Alexandr Tzykin","10/2/2019 10:09 AM","","","","","Medium","","Delete Pricelist","1","","","","","","Pricing","S934","Other","0"
+"C122750","Pricing > Pricelist assignment > Add Pricelist assignment","","","Alexandr Tzykin","10/2/2019 11:52 AM","","","","","Medium","","Add Pricelist assignment","1","","Step Description:
+Open Pricing > Pricelist assignment 
+Expected Result:
+	
+System open screen with information about all Pricelist assignment in all Pricelists
+Step Description:
+	
+Click Add
+Expected Result:
+	
+System open screen Create Pricelist assignment
+Step Description:
+	
+Fill all required fields > Create
+Expected Result:
+	
+The system will display the created pricelist assignment in the list","1. 
+2. 
+3.","1. 	
+System open screen with information about all Pricelist assignment in all Pricelists
+2. 	
+System open screen Create Pricelist assignment
+3. 	
+The system will display the created pricelist assignment in the list","1. Open Pricing > Pricelist assignment 
+2. 	
+Click Add
+3. 	
+Fill all required fields > Create","Pricing","S934","Functional","0"
+"C122751","Pricing > Pricelist assignment > Edit Pricelist assignment","","","Alexandr Tzykin","10/2/2019 11:54 AM","","","","","Medium","","Edit Pricelist assignment","1","","Step Description:
+Click on created Pricelist assignment
+Expected Result:
+![](index.php?/attachments/get/16585)
+	
+System display new screen
+Step Description:
+Look at the screen
+Expected Result:
+The screen will display the following elements:
+1.Assignment Name input field - required
+2.Catalog drop down - required.
+3.Price List drop down- required
+4.Priority input field - required
+5.Description input field- optional
+6.Enable date – date picker optional
+7.Expiration date- date picker optional
+8.Under Eligible Shoppers:
+8.1 If any of these conditions are true:
+8.1.1 Any is a link
+8.1.2 Under Any selection is available: ALL, ANY
+8.2 Add condition button
+Step Description:
+Change information in any field
+Expected Result:
+Save button active.","1. 
+2. 
+3.","1. ![](index.php?/attachments/get/16585)
+	
+System display new screen
+2. The screen will display the following elements:
+1.Assignment Name input field - required
+2.Catalog drop down - required.
+3.Price List drop down- required
+4.Priority input field - required
+5.Description input field- optional
+6.Enable date – date picker optional
+7.Expiration date- date picker optional
+8.Under Eligible Shoppers:
+8.1 If any of these conditions are true:
+8.1.1 Any is a link
+8.1.2 Under Any selection is available: ALL, ANY
+8.2 Add condition button
+3. Save button active.","1. Click on created Pricelist assignment
+2. Look at the screen
+3. Change information in any field","Pricing","S934","Functional","0"
+"C122752","Pricing > Pricelist assignment > Delete Pricelist assignment","","","Alexandr Tzykin","10/2/2019 12:33 PM","","","","","Medium","","Delete Pricelist assignment","1","","Step Description:
+	
+Open Pricelist assignment  > Select few Pricelist assignment > Delete
+Expected Result:
+![](index.php?/attachments/get/16587)
+
+Step Description:
+Click No , Cancel
+Expected Result:
+	
+Notification will be hide. Pricelists assignment not deleted
+Step Description:
+	
+Open Pricelist assignment  > Select few Pricelist assignment > Delete > Yes 
+Expected Result:
+	
+Notification will be hide. Pricelist assignment was deleted","1. 
+2. 
+3.","1. ![](index.php?/attachments/get/16587)
+
+2. 	
+Notification will be hide. Pricelists assignment not deleted
+3. 	
+Notification will be hide. Pricelist assignment was deleted","1. 	
+Open Pricelist assignment  > Select few Pricelist assignment > Delete
+2. Click No , Cancel
+3. 	
+Open Pricelist assignment  > Select few Pricelist assignment > Delete > Yes","Pricing","S934","Functional","0"
+"C163366","Search Pricelist > Search by","","","Alexandr Tzykin","1/29/2020 8:04 AM","","","","Open Pricing module > Pricelist","Medium","VP-1309","Search Price","0","","Step Description:
+Enter """"Clothing"""" in search field
+Expected Result:
+System display result for request 
+![](index.php?/attachments/get/21534)
+
+Step Description:
+Enter """"elect"""" in search field 
+Expected Result:
+System display result for request
+![](index.php?/attachments/get/21535)
+
+Step Description:
+Enter """"USD"""" in search field
+Expected Result:
+System display result for request
+![](index.php?/attachments/get/21536)","1. 
+2. 
+3.","1. System display result for request 
+![](index.php?/attachments/get/21534)
+
+2. System display result for request
+![](index.php?/attachments/get/21535)
+
+3. System display result for request
+![](index.php?/attachments/get/21536)","1. Enter """"Clothing"""" in search field
+2. Enter """"elect"""" in search field 
+3. Enter """"USD"""" in search field","Pricing","S934","Other","0"
+"C163367","Search Pricelist assignment > Search","","","Alexandr Tzykin","1/29/2020 8:05 AM","","","","Open Pricing module > Pricelist assignment ","Medium","VP-1309","Search Price","0","","Step Description:
+Enter """"B2B-mixed"""" in search field
+Expected Result:
+System display search result
+![](index.php?/attachments/get/21537)
+
+Step Description:
+Enter """"B2B-MIxed-MFD"""" in search field 
+Expected Result:
+System display search result
+![](index.php?/attachments/get/21538)","1. 
+2.","1. System display search result
+![](index.php?/attachments/get/21537)
+
+2. System display search result
+![](index.php?/attachments/get/21538)","1. Enter """"B2B-mixed"""" in search field
+2. Enter """"B2B-MIxed-MFD"""" in search field","Pricing","S934","Other","0"
+"C163368","Search Price > Create filter","","","Alexandr Tzykin","1/29/2020 8:06 AM","","","","Open Pricelist module > Pricelist/Pricelist assignment","Medium","VP-1309","Search Price","0","","Step Description:
+Click Select filter > Add new filter > Select any filter criteria > Save& Apply
+Expected Result:
+System display filtering object. 
+![](index.php?/attachments/get/21539)
+
+Step Description:
+Create another filters > Apply filter
+Expected Result:
+System display correct filtering data
+![](index.php?/attachments/get/21540)","1. 
+2.","1. System display filtering object. 
+![](index.php?/attachments/get/21539)
+
+2. System display correct filtering data
+![](index.php?/attachments/get/21540)","1. Click Select filter > Add new filter > Select any filter criteria > Save& Apply
+2. Create another filters > Apply filter","Pricing","S934","Other","0"
+"C163369","Search Price > wrong request","","","Alexandr Tzykin","1/29/2020 8:06 AM","","","","Open Pricing module","Medium","","Search Price","0","","Step Description:
+Enter wrong request in search field
+Expected Result:
+System display message no data","1","1. System display message no data","1. Enter wrong request in search field","Pricing","S934","Other","0"
+"C163370","Search Price >  Filter > Search","","","Alexandr Tzykin","1/29/2020 8:07 AM","","","","Need create filter for pricelist
+Open Pricing module","Medium","","Search Price","0","","Step Description:
+Apply filter > Enter correct search request in search line 
+Expected Result:
+System display search result from filtering data","1","1. System display search result from filtering data","1. Apply filter > Enter correct search request in search line","Pricing","S934","Other","0"

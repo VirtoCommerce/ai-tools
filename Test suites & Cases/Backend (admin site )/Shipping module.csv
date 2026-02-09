@@ -1,0 +1,242 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C229325","Activate shipping method","","","Grotem","5/27/2020 2:51 PM","","<ol>
+<li>Shipping_method_1 with all option shown in store</li>
+</ol>
+","","<ol>
+<li>Admin logged in store</li>
+<li>User_1 created for store</li>
+<li>Shipping_method_1 created for store</li>
+</ol>
+","Medium","","Test cases","0","","","","","","V3 Shipping module","S1735","Other","1"
+"C229329","Deactivate shipping method","","","Grotem","5/27/2020 3:32 PM","","1. Shipping_method_1 not shown on page","","1. Admin logged in store
+2. User_1 created for store
+3. Shipping_method_1 created for Store
+","Medium","","Test cases","0","","","","","","V3 Shipping module","S1735","Other","0"
+"C229330","Ground shipping rate","","","Grotem","5/27/2020 3:35 PM","","1. Shipping_method_1 with all option shown in store
+2. Rate_1 added to total","","1. Admin logged in store
+2. User_1 created for store
+3. Shipping_method_1 created for store
+4. Shipping_method_1 have ground shipping rate","Medium","","Settings","1","","","","","","V3 Shipping module","S1735","Other","0"
+"C229331","Air shipping rate","","","Grotem","5/27/2020 3:44 PM","","1. Shipping_method_1 with all option shown in store
+2. Rate_1 added to total","","1. Admin logged in store
+2. User_1 created for store
+3. Shipping_method_1 created for store
+4. Shipping_method_1 have air shipping method","Medium","","Settings","1","","","","","","V3 Shipping module","S1735","Other","0"
+"C229334","Save","","","Grotem","5/28/2020 7:37 AM","","Changes saved","","1. Admin logged in environment
+2. Admin is on 'Shipping methods' widget
+","Medium","","Toolbar","2","","","","","","V3 Shipping module","S1735","Other","0"
+"C229336","Reset","","","Grotem","5/28/2020 7:49 AM","","Entity returned to initial state","","1. Admin logged in environment
+2. Admin is on 'Shipping methods' widget
+","Medium","","Toolbar","2","","","","","","V3 Shipping module","S1735","Other","0"
+"C229332","Tax type = """"FR020100"""" > Taxes are calculated without taking into account shipping value","","","Grotem","5/27/2020 3:46 PM","","Taxes remain the same regardless of the shipping method.","","1. Select ""FR020100"" as tax type in settings of the shipping method
+2. Tax Provider must be: Avalara Tax Provider in store tax providers.
+![](index.php?/attachments/get/39269)
+","Medium","vp-1266","Tax type","1","","","","","","V3 Shipping module","S1735","Other","0"
+"C229333","""""FR020100"""" tax type is off > Taxes are calculated taking into account shipping value","","","Grotem","5/27/2020 3:46 PM","","Taxes change depending on the cost of the shipping method.","","1. There is no specified tax type for the shipping method
+2. Tax Provider must be: Avalara Tax Provider in store tax providers.
+![](index.php?/attachments/get/39269)
+","Medium","VP-1266","Tax type","1","","","","","","V3 Shipping module","S1735","Other","0"
+"C229337","Save","","","Grotem","5/28/2020 7:49 AM","","Changes saved","","1. Admin logged in environment
+2. Admin is on 'Shipping methods' widget
+","Medium","","Toolbar","2","","","","","","V3 Shipping module","S1735","Other","0"
+"C229338","Reset","","","Grotem","5/28/2020 7:49 AM","","Entity returned to initial state","","1. Admin logged in environment
+2. Admin is on 'Shipping methods' widget
+","Medium","","Toolbar","2","","","","","","V3 Shipping module","S1735","Other","0"
+"C398841","Enable BuyOnlinePickupInStore Shipping Method for a Store",""," None","Elena Mutykova","4/1/2025 5:59 PM","","","","The user has admin access to the back-office.
+The store exists in the system.","Medium","","Pickup location","0","","Step Description:
+1. Log in to the back-office.
+2. Navigate to Stores.
+3. Select a store.
+4. Locate the Shipping Methods section.
+5. Enable BuyOnlinePickupInStore.
+6. Save the changes.
+Expected Result:
+The BuyOnlinePickupInStore shipping method is enabled for the selected store.
+The store settings are saved successfully.","1","1. The BuyOnlinePickupInStore shipping method is enabled for the selected store.
+The store settings are saved successfully.","1. 1. Log in to the back-office.
+2. Navigate to Stores.
+3. Select a store.
+4. Locate the Shipping Methods section.
+5. Enable BuyOnlinePickupInStore.
+6. Save the changes.","V3 Shipping module","S1735","Other","0"
+"C398842","Add a New Pickup Location",""," None","Elena Mutykova","4/1/2025 5:59 PM","","","","The user has admin access to the back-office.
+The BuyOnlinePickupInStore shipping method is enabled for the store.","Medium","","Pickup location","0","","Step Description:
+1. Log in to the back-office.
+2. Navigate to Stores and select a store.
+3. Open the Pickup Locations tab.
+4. Click the Add button.
+5. Enter valid details for Location Name, Address, Contact Email & Phone, and Fulfillment Center.
+6. Save the location.
+Expected Result:
+A new pickup location is added successfully.
+The location is displayed in the Pickup Locations list.","1","1. A new pickup location is added successfully.
+The location is displayed in the Pickup Locations list.","1. 1. Log in to the back-office.
+2. Navigate to Stores and select a store.
+3. Open the Pickup Locations tab.
+4. Click the Add button.
+5. Enter valid details for Location Name, Address, Contact Email & Phone, and Fulfillment Center.
+6. Save the location.","V3 Shipping module","S1735","Other","0"
+"C398843","Edit an Existing Pickup Location",""," None","Elena Mutykova","4/1/2025 5:59 PM","","","","At least one pickup location exists.","Medium","","Pickup location","0","","Step Description:
+1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Select a location.
+4. Edit any field (e.g., address or contact email).
+5. Save the changes.
+Expected Result:
+The edited pickup location is updated successfully.","1","1. The edited pickup location is updated successfully.","1. 1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Select a location.
+4. Edit any field (e.g., address or contact email).
+5. Save the changes.","V3 Shipping module","S1735","Other","0"
+"C398846","Verify Adding a Pickup Location with Empty Name Field",""," None","Elena Mutykova","4/1/2025 6:00 PM","","","","User has admin access to the back-office.
+The BuyOnlinePickupInStore shipping method is enabled.","Medium","","Pickup location","0","","Step Description:
+1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Click 'Add' and leave the 'Name' field empty.
+4. Fill in other required fields.
+5. Click 'Save'.
+Expected Result:
+The Save button is disabled","1","1. The Save button is disabled","1. 1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Click 'Add' and leave the 'Name' field empty.
+4. Fill in other required fields.
+5. Click 'Save'.","V3 Shipping module","S1735","Other","0"
+"C398848","Verify Multiple Selection in Transfer Fulfillment Centers",""," None","Elena Mutykova","4/1/2025 6:00 PM","","","","User has admin access to the back-office.
+At least two fulfillment centers exist.","Medium","","Pickup location","0","","Step Description:
+1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Right click 'Manage' an existing location.
+4. In the 'Transfer Fulfillment Centers' field, select multiple options.
+5. Save the changes.
+Expected Result:
+The selected fulfillment centers should be saved and correctly displayed in the list.","1","1. The selected fulfillment centers should be saved and correctly displayed in the list.","1. 1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Right click 'Manage' an existing location.
+4. In the 'Transfer Fulfillment Centers' field, select multiple options.
+5. Save the changes.","V3 Shipping module","S1735","Other","0"
+"C398851","Delete Multiple Selection in Transfer Fulfillment Centers",""," None","Elena Mutykova","4/1/2025 6:03 PM","","","","User has admin access to the back-office.
+At least two fulfillment centers exist.","Medium","","Pickup location","0","","Step Description:
+1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Right click 'Manage' an existing location.
+4. In the 'Transfer Fulfillment Centers' field, delete multiple options.
+5. Save the changes.
+Expected Result:
+The selected fulfillment centers should be saved and correctly displayed in the list.","1","1. The selected fulfillment centers should be saved and correctly displayed in the list.","1. 1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Right click 'Manage' an existing location.
+4. In the 'Transfer Fulfillment Centers' field, delete multiple options.
+5. Save the changes.","V3 Shipping module","S1735","Other","0"
+"C398852","Disable Active Status of a Pickup Location",""," None","Elena Mutykova","4/1/2025 6:04 PM","","","","At least one pickup location exists.","Medium","","Pickup location","0","","Step Description:
+1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Select an existing location.
+4. Toggle the 'Active' switch to disable the location.
+5. Save the changes.
+6. Go to frontend > Checkout > Pickup
+7. Check the inactive location
+Expected Result:
+The location’s status should update successfully. The inactive location is not returned in frontend","1","1. The location’s status should update successfully. The inactive location is not returned in frontend","1. 1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Select an existing location.
+4. Toggle the 'Active' switch to disable the location.
+5. Save the changes.
+6. Go to frontend > Checkout > Pickup
+7. Check the inactive location","V3 Shipping module","S1735","Other","0"
+"C398849","Enable Active Status of a Pickup Location",""," None","Elena Mutykova","4/1/2025 6:00 PM","","","","At least one pickup location exists.","Medium","","Pickup location","0","","Step Description:
+1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Select an existing location.
+4. Toggle the 'Active' switch to enable the location.
+5. Save the changes.
+Expected Result:
+The location’s status should update successfully, and it should reflect correctly in both the back-office and frontend.","1","1. The location’s status should update successfully, and it should reflect correctly in both the back-office and frontend.","1. 1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Select an existing location.
+4. Toggle the 'Active' switch to enable the location.
+5. Save the changes.","V3 Shipping module","S1735","Other","0"
+"C398850","Verify Editing and Updating Pickup Location Fields",""," None","Elena Mutykova","4/1/2025 6:00 PM","","","","At least one pickup location exists.","Medium","","Pickup location","0","","Step Description:
+1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Select an existing location.
+4. Modify the 'Name', 'Address', and 'Fulfillment Center' fields.
+5. Save the changes.
+Expected Result:
+The updated information should be saved and displayed correctly on the frontend.","1","1. The updated information should be saved and displayed correctly on the frontend.","1. 1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Select an existing location.
+4. Modify the 'Name', 'Address', and 'Fulfillment Center' fields.
+5. Save the changes.","V3 Shipping module","S1735","Other","0"
+"C398844","Delete a Pickup Location",""," None","Elena Mutykova","4/1/2025 5:59 PM","","","","At least one pickup location exists.","Medium","","Pickup location","0","","Step Description:
+1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Select a location.
+4. Right click > Delete.
+5. Confirm deletion.
+Expected Result:
+The selected pickup location is removed.","1","1. The selected pickup location is removed.","1. 1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Select a location.
+4. Right click > Delete.
+5. Confirm deletion.","V3 Shipping module","S1735","Other","0"
+"C398845","Validate Locations Appear on Frontend",""," None","Elena Mutykova","4/1/2025 5:59 PM","","","","At least one pickup location exists.
+The BuyOnlinePickupInStore shipping method is enabled.","Medium","","Pickup location","0","","Step Description:
+1. Open the store's frontend.
+2. Proceed to checkout.
+3. Select Pickup In Store as the shipping method.
+4. Check the list of available locations.
+Expected Result:
+The correct pickup locations are displayed instead of dummy data.","1","1. The correct pickup locations are displayed instead of dummy data.","1. 1. Open the store's frontend.
+2. Proceed to checkout.
+3. Select Pickup In Store as the shipping method.
+4. Check the list of available locations.","V3 Shipping module","S1735","Other","0"
+"C398853","Search > Valid Input",""," None","Elena Mutykova","4/1/2025 6:15 PM","","","","At least one pickup location exists.","Medium","","Search","1","","Step Description:
+1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Enter a valid pickup location name in the search field.
+4. Press Enter or click the search icon.
+Expected Result:
+Only matching pickup locations should be displayed in the results.","1","1. Only matching pickup locations should be displayed in the results.","1. 1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Enter a valid pickup location name in the search field.
+4. Press Enter or click the search icon.","V3 Shipping module","S1735","Other","0"
+"C398854","Search >  Partial Input",""," None","Elena Mutykova","4/1/2025 6:15 PM","","","","At least one pickup location exists.","Medium","","Search","1","","Step Description:
+1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Enter a partial name of a pickup location in the search field.
+4. Press Enter or click the search icon.
+Expected Result:
+All pickup locations that contain the partial input should be displayed.","1","1. All pickup locations that contain the partial input should be displayed.","1. 1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Enter a partial name of a pickup location in the search field.
+4. Press Enter or click the search icon.","V3 Shipping module","S1735","Other","0"
+"C398855","Search >  Special Characters",""," None","Elena Mutykova","4/1/2025 6:15 PM","","","","At least one pickup location exists.","Medium","","Search","1","","Step Description:
+1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Enter special characters (e.g., @, #, $, %, &) in the search field.
+4. Press Enter or click the search icon.
+Expected Result:
+The system should handle special characters gracefully and return appropriate results or an error message.","1","1. The system should handle special characters gracefully and return appropriate results or an error message.","1. 1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Enter special characters (e.g., @, #, $, %, &) in the search field.
+4. Press Enter or click the search icon.","V3 Shipping module","S1735","Other","0"
+"C398856","Search >  Non-Existing Pickup Location",""," None","Elena Mutykova","4/1/2025 6:15 PM","","","","No pickup location matches the input.","Medium","","Search","1","","Step Description:
+1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Enter a non-existing pickup location name in the search field.
+4. Press Enter or click the search icon.
+Expected Result:
+A 'No results found' message should be displayed.","1","1. A 'No results found' message should be displayed.","1. 1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Enter a non-existing pickup location name in the search field.
+4. Press Enter or click the search icon.","V3 Shipping module","S1735","Other","0"
+"C398857","Search >  Case Insensitivity in Search",""," None","Elena Mutykova","4/1/2025 6:15 PM","","","","At least one pickup location exists.","Medium","","Search","1","","Step Description:
+1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Enter a pickup location name in uppercase or lowercase letters.
+4. Press Enter or click the search icon.
+Expected Result:
+The system should return matching results regardless of letter case.","1","1. The system should return matching results regardless of letter case.","1. 1. Log in to the back-office.
+2. Navigate to Stores → Pickup Locations.
+3. Enter a pickup location name in uppercase or lowercase letters.
+4. Press Enter or click the search icon.","V3 Shipping module","S1735","Other","0"

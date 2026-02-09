@@ -1,0 +1,430 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C406874","Detect broken link on SEO slug miss",""," None","Elena Mutykova","6/25/2025 4:31 PM","","","","","Medium","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+<ol>
+<li>Navigate to a non-existent SEO URL</li>
+<li>Ensure Slug in GraphQL query returns empty</li>
+<li>Go to Back office > store > Click on widget Broken links</li>
+<li>Find the page</li>
+</ol>
+Expected Result:
+<p>Broken Page event is logged with relevant permalink and metadata</p>","1","1. <p>Broken Page event is logged with relevant permalink and metadata</p>","1. <ol>
+<li>Navigate to a non-existent SEO URL</li>
+<li>Ensure Slug in GraphQL query returns empty</li>
+<li>Go to Back office > store > Click on widget Broken links</li>
+<li>Find the page</li>
+</ol>","V3 SEO module","S5652","Functional","1"
+"C407390","Display 'Broken Page' widget in dashboard",""," None","Elena Mutykova","7/4/2025 11:40 AM","","","","1. Admin user logged into {{domain}} environment
+2. User has access to B2B-store
+
+","High","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Navigate to Admin panel
+2. Login with admin credentials
+3. Navigate to Stores section
+4. Click on B2B-store
+5. Verify 'Active broken links' widget is visible on store dashboard
+Expected Result:
+1. 'Active broken links' widget should be visible on dashboard
+2. Widget should display current count of active broken links
+3. Widget should be clickable to access broken links grid
+4. No console errors should be present","1","1. 1. 'Active broken links' widget should be visible on dashboard
+2. Widget should display current count of active broken links
+3. Widget should be clickable to access broken links grid
+4. No console errors should be present","1. 1. Navigate to Admin panel
+2. Login with admin credentials
+3. Navigate to Stores section
+4. Click on B2B-store
+5. Verify 'Active broken links' widget is visible on store dashboard","V3 SEO module","S5652","Other","0"
+"C407391","Widget opens scoped Broken Page grid",""," None","Elena Mutykova","7/4/2025 11:40 AM","","","","1. C406875 test case passed
+2. 'Active broken links' widget is visible
+3. Admin user has appropriate permissions","High","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Click on 'Active broken links' widget
+2. Wait for grid to load
+3. Verify grid opens with broken links data
+4. Verify grid shows appropriate columns (Permalink, Status, Hit count)
+5. Check that grid is scoped to current store
+Expected Result:
+1. Grid should open successfully
+2. Grid should display broken links data
+3. Columns should include: Permalink, Status, Hit count
+4. Data should be scoped to B2B-store only
+5. Grid should show total count of items","1","1. 1. Grid should open successfully
+2. Grid should display broken links data
+3. Columns should include: Permalink, Status, Hit count
+4. Data should be scoped to B2B-store only
+5. Grid should show total count of items","1. 1. Click on 'Active broken links' widget
+2. Wait for grid to load
+3. Verify grid opens with broken links data
+4. Verify grid shows appropriate columns (Permalink, Status, Hit count)
+5. Check that grid is scoped to current store","V3 SEO module","S5652","Other","0"
+"C407392","Grid provides multi-select management",""," None","Elena Mutykova","7/4/2025 11:40 AM","","","","1. C406876 test case passed
+2. Broken links grid is open and populated
+3. Multiple broken link entries are visible","High","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Click on checkbox for first broken link row
+2. Click on checkbox for second broken link row
+3. Verify multi-select functionality works
+4. Verify Delete button becomes enabled
+5. Check bulk operation controls are available
+Expected Result:
+1. Individual checkboxes should be selectable
+2. Multiple rows can be selected simultaneously
+3. Delete button should become enabled when items selected
+4. Bulk operation controls should be accessible
+5. Selection state should be maintained","1","1. 1. Individual checkboxes should be selectable
+2. Multiple rows can be selected simultaneously
+3. Delete button should become enabled when items selected
+4. Bulk operation controls should be accessible
+5. Selection state should be maintained","1. 1. Click on checkbox for first broken link row
+2. Click on checkbox for second broken link row
+3. Verify multi-select functionality works
+4. Verify Delete button becomes enabled
+5. Check bulk operation controls are available","V3 SEO module","S5652","Other","0"
+"C407393","Column sorting functionality",""," None","Elena Mutykova","7/4/2025 11:40 AM","","","","1. C406876 test case passed
+2. Broken links grid is open with data
+3. Grid contains multiple rows for sorting test","Medium","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Click on 'Status' column header
+2. Verify data is sorted by Status
+3. Check sort indicator is visible
+4. Click on 'Permalink' column header
+5. Verify sorting works for different columns
+Expected Result:
+1. Clicking column headers should sort data
+2. Sort indicator should be visible (ascending/descending)
+3. Data should be reordered correctly
+4. Multiple columns should support sorting
+5. Sort state should be maintained","1","1. 1. Clicking column headers should sort data
+2. Sort indicator should be visible (ascending/descending)
+3. Data should be reordered correctly
+4. Multiple columns should support sorting
+5. Sort state should be maintained","1. 1. Click on 'Status' column header
+2. Verify data is sorted by Status
+3. Check sort indicator is visible
+4. Click on 'Permalink' column header
+5. Verify sorting works for different columns","V3 SEO module","S5652","Other","0"
+"C407394","Search functionality",""," None","Elena Mutykova","7/4/2025 11:40 AM","","","","1. C406876 test case passed
+2. Broken links grid is open with data
+3. Search box is visible and accessible","Medium","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Locate search keyword textbox
+2. Enter search term 'fake' in search box
+3. Press Enter or trigger search
+4. Verify results are filtered
+5. Check item count updates correctly
+Expected Result:
+1. Search box should accept input
+2. Search should filter results based on keyword
+3. Only matching entries should be displayed
+4. Item count should update to reflect filtered results
+5. Search should be case-insensitive","1","1. 1. Search box should accept input
+2. Search should filter results based on keyword
+3. Only matching entries should be displayed
+4. Item count should update to reflect filtered results
+5. Search should be case-insensitive","1. 1. Locate search keyword textbox
+2. Enter search term 'fake' in search box
+3. Press Enter or trigger search
+4. Verify results are filtered
+5. Check item count updates correctly","V3 SEO module","S5652","Other","0"
+"C406877","Active",""," None","Elena Mutykova","6/25/2025 4:31 PM","","","","Back office > store > Click on widget Broken links
+
+All broken pages","Medium","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Open page
+
+2. Set Active status and redirect URL
+
+3. Save
+Expected Result:
+The 404 page is returned
+
+The redirect URL is null
+
+The page is detected and hit count should increase","1","1. The 404 page is returned
+
+The redirect URL is null
+
+The page is detected and hit count should increase","1. 1. Open page
+
+2. Set Active status and redirect URL
+
+3. Save","V3 SEO module","S5652","Functional","0"
+"C406878","Resolved",""," None","Elena Mutykova","6/25/2025 4:31 PM","","","","Back office > store > Click on widget Broken links
+
+All broken pages","Medium","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Open page
+
+2. Set Resolved status and redirect URL
+
+3. Save
+Expected Result:
+The user should be redirected to another page
+
+The page is no longer detected and hit count should be the same","1","1. The user should be redirected to another page
+
+The page is no longer detected and hit count should be the same","1. 1. Open page
+
+2. Set Resolved status and redirect URL
+
+3. Save","V3 SEO module","S5652","Functional","0"
+"C406879","Accepted",""," None","Elena Mutykova","6/25/2025 4:31 PM","","","","Back office > store > Click on widget Broken links
+
+All broken pages","Medium","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+Open page
+
+Set redirect URL
+
+Set Accepted status
+
+Save
+Expected Result:
+The hit count is no longer increase
+
+The 404 page is returned
+
+Redirect URL is null","1","1. The hit count is no longer increase
+
+The 404 page is returned
+
+Redirect URL is null","1. Open page
+
+Set redirect URL
+
+Set Accepted status
+
+Save","V3 SEO module","S5652","Functional","0"
+"C406880","Display correct columns in row",""," None","Elena Mutykova","6/25/2025 4:31 PM","","","","","Medium","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Observe any row in the grid
+Expected Result:
+Columns: Permalink, Language, Count, Created, Modified, Status","1","1. Columns: Permalink, Language, Count, Created, Modified, Status","1. 1. Observe any row in the grid","V3 SEO module","S5652","Other","0"
+"C406883","Open row for redirect edit",""," None","Elena Mutykova","6/25/2025 4:31 PM","","","","","Medium","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Click on any broken link entry
+Expected Result:
+Redirect field is editable","1","1. Redirect field is editable","1. 1. Click on any broken link entry","V3 SEO module","S5652","Functional","0"
+"C406884","Save redirect URL and resolve status",""," None","Elena Mutykova","6/25/2025 4:31 PM","","","","","Medium","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Add a valid redirect permalink
+2. Click Save
+Expected Result:
+Entry status changes to 'Resolved', modified timestamp updates","1","1. Entry status changes to 'Resolved', modified timestamp updates","1. 1. Add a valid redirect permalink
+2. Click Save","V3 SEO module","S5652","Functional","0"
+"C406885","Display target description",""," None","Elena Mutykova","6/25/2025 4:31 PM","","","","","Medium","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Add redirect to product slug
+Expected Result:
+Description: 'Redirected to Product: Red Shoes' is shown","1","1. Description: 'Redirected to Product: Red Shoes' is shown","1. 1. Add redirect to product slug","V3 SEO module","S5652","Other","0"
+"C406886","Update redirect after resolution",""," None","Elena Mutykova","6/25/2025 4:31 PM","","","","","Medium","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Edit resolved entry
+2. Change redirect URL
+Expected Result:
+New redirect saved, timestamp updated","1","1. New redirect saved, timestamp updated","1. 1. Edit resolved entry
+2. Change redirect URL","V3 SEO module","S5652","Functional","0"
+"C406887","Reject empty or invalid redirect",""," None","Elena Mutykova","6/25/2025 4:31 PM","","","","","Medium","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Try to save empty or invalid redirect
+Expected Result:
+Validation error shown, redirect not saved","1","1. Validation error shown, redirect not saved","1. 1. Try to save empty or invalid redirect","V3 SEO module","S5652","Other","0"
+"C406888","Visit a broken page with known redirect",""," None","Elena Mutykova","6/25/2025 4:31 PM","","","","","Medium","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Open a URL previously marked 'Resolved'
+Expected Result:
+User is automatically redirected","1","1. User is automatically redirected","1. 1. Open a URL previously marked 'Resolved'","V3 SEO module","S5652","Other","0"
+"C406889","Visit broken link with no redirect",""," None","Elena Mutykova","6/25/2025 4:31 PM","","","","","Medium","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Open a broken URL not yet resolved
+Expected Result:
+Standard 404 page is shown","1","1. Standard 404 page is shown","1. 1. Open a broken URL not yet resolved","V3 SEO module","S5652","Functional","0"
+"C406890","Accept broken page without redirect",""," None","Elena Mutykova","6/25/2025 4:31 PM","","","","","Medium","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Open a broken page row
+2. Click 'Accept'
+Expected Result:
+Status changes to 'Accepted'; removed from Active list.
+Step Description:
+Go to frontend
+Open broken link
+Return to admin site
+Open the last page with Accept status
+Check hit number
+
+
+Expected Result:
+The hit count is no longer increase","1. 
+2.","1. Status changes to 'Accepted'; removed from Active list.
+2. The hit count is no longer increase","1. 1. Open a broken page row
+2. Click 'Accept'
+2. Go to frontend
+Open broken link
+Return to admin site
+Open the last page with Accept status
+Check hit number","V3 SEO module","S5652","Functional","0"
+"C407395","Status filtering/management functionality",""," None","Elena Mutykova","7/4/2025 11:40 AM","","","","1. C406876 test case passed
+2. Broken links grid is open
+3. At least one broken link entry is available for testing","High","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Click on a broken link row to open details
+2. Locate Status dropdown field
+3. Click on Status dropdown
+4. Verify all status options are available (Active, Resolved, Accepted)
+5. Select 'Resolved' status
+6. Save changes
+Expected Result:
+1. Broken link detail view should open
+2. Status dropdown should be accessible
+3. All three status options should be available
+4. Status change should be successful
+5. Changes should be saved and reflected in grid","1","1. 1. Broken link detail view should open
+2. Status dropdown should be accessible
+3. All three status options should be available
+4. Status change should be successful
+5. Changes should be saved and reflected in grid","1. 1. Click on a broken link row to open details
+2. Locate Status dropdown field
+3. Click on Status dropdown
+4. Verify all status options are available (Active, Resolved, Accepted)
+5. Select 'Resolved' status
+6. Save changes","V3 SEO module","S5652","Other","0"
+"C407396","Redirect URL creation and management",""," None","Elena Mutykova","7/4/2025 11:40 AM","","","","1. C406880 test case passed
+2. Broken link detail view is open
+3. Status is set to 'Resolved'","Critical","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Locate 'Redirect URL' textbox
+2. Enter valid redirect URL: '{{domain}}/en-us/catalog'
+3. Verify URL is accepted and formatted
+4. Click Save button
+5. Verify changes are saved successfully
+Expected Result:
+1. Redirect URL field should accept input
+2. URL should be validated and formatted correctly
+3. Save operation should complete successfully
+4. URL should be stored in system
+5. Grid should reflect updated information","1","1. 1. Redirect URL field should accept input
+2. URL should be validated and formatted correctly
+3. Save operation should complete successfully
+4. URL should be stored in system
+5. Grid should reflect updated information","1. 1. Locate 'Redirect URL' textbox
+2. Enter valid redirect URL: '{{domain}}/en-us/catalog'
+3. Verify URL is accepted and formatted
+4. Click Save button
+5. Verify changes are saved successfully","V3 SEO module","S5652","Other","0"
+"C407397","Bulk operations management",""," None","Elena Mutykova","7/4/2025 11:40 AM","","","","1. C406877 test case passed
+2. Broken links grid is open
+3. Multi-select functionality is working","High","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Select multiple broken link entries using checkboxes
+2. Verify Delete button is enabled
+3. Check that bulk operations toolbar is accessible
+4. Verify selection count is displayed
+5. Test bulk selection/deselection functionality
+Expected Result:
+1. Multiple items should be selectable
+2. Delete button should become enabled
+3. Bulk operations should be accessible
+4. Selection count should be accurate
+5. Bulk operations should be functional","1","1. 1. Multiple items should be selectable
+2. Delete button should become enabled
+3. Bulk operations should be accessible
+4. Selection count should be accurate
+5. Bulk operations should be functional","1. 1. Select multiple broken link entries using checkboxes
+2. Verify Delete button is enabled
+3. Check that bulk operations toolbar is accessible
+4. Verify selection count is displayed
+5. Test bulk selection/deselection functionality","V3 SEO module","S5652","Other","0"
+"C407398","Frontend 404 page detection",""," None","Elena Mutykova","7/4/2025 11:40 AM","","","","1. Frontend URL accessible (https://vcst-qa-storefront.govirto.com)
+2. Known broken link '/not-found' exists in system
+3. Browser console is open for monitoring","Critical","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Navigate to frontend URL
+2. Access broken link: https://vcst-qa-storefront.govirto.com/not-found
+3. Verify 404 page is displayed
+4. Check page title and content
+5. Verify proper 404 page structure
+Expected Result:
+1. 404 page should be displayed for broken links
+2. Page title should indicate '404 Page not found'
+3. Proper error message should be shown
+4. Navigation options should be provided
+5. Page should maintain site structure","1","1. 1. 404 page should be displayed for broken links
+2. Page title should indicate '404 Page not found'
+3. Proper error message should be shown
+4. Navigation options should be provided
+5. Page should maintain site structure","1. 1. Navigate to frontend URL
+2. Access broken link: https://vcst-qa-storefront.govirto.com/not-found
+3. Verify 404 page is displayed
+4. Check page title and content
+5. Verify proper 404 page structure","V3 SEO module","S5652","Other","0"
+"C407399","Frontend redirect functionality",""," None","Elena Mutykova","7/4/2025 11:40 AM","","","","1. C406881 test case passed
+2. Broken link has been configured with redirect URL
+3. Frontend is accessible","Critical","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Navigate to broken link with configured redirect (/fake)
+2. Verify automatic redirect occurs
+3. Check final destination URL
+4. Verify page loads correctly
+5. Confirm redirect is seamless
+Expected Result:
+1. Broken link should automatically redirect
+2. User should reach configured destination page
+3. Redirect should be immediate and seamless
+4. Destination page should load fully
+5. No 404 error should be visible to user","1","1. 1. Broken link should automatically redirect
+2. User should reach configured destination page
+3. Redirect should be immediate and seamless
+4. Destination page should load fully
+5. No 404 error should be visible to user","1. 1. Navigate to broken link with configured redirect (/fake)
+2. Verify automatic redirect occurs
+3. Check final destination URL
+4. Verify page loads correctly
+5. Confirm redirect is seamless","V3 SEO module","S5652","Other","0"
+"C407400","Complete redirect workflow validation",""," None","Elena Mutykova","7/4/2025 11:40 AM","","","","1. C406880 and C406881 test cases passed
+2. Specific test broken link '/fake1' configured
+3. Redirect URL set to '/contacts'","Critical","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Access broken link: https://vcst-qa-storefront.govirto.com/fake1
+2. Verify automatic redirect to /contacts
+3. Check final URL and page content
+4. Verify page title and functionality
+5. Confirm complete workflow is working
+Expected Result:
+1. Broken link should redirect to /contacts page
+2. Final URL should be correct
+3. Contacts page should load with full functionality
+4. Page title should reflect correct destination
+5. Complete admin-to-frontend workflow validated","1","1. 1. Broken link should redirect to /contacts page
+2. Final URL should be correct
+3. Contacts page should load with full functionality
+4. Page title should reflect correct destination
+5. Complete admin-to-frontend workflow validated","1. 1. Access broken link: https://vcst-qa-storefront.govirto.com/fake1
+2. Verify automatic redirect to /contacts
+3. Check final URL and page content
+4. Verify page title and functionality
+5. Confirm complete workflow is working","V3 SEO module","S5652","Other","0"
+"C407401","Hit count tracking validation",""," None","Elena Mutykova","7/4/2025 11:40 AM","","","","1. Previous frontend tests completed
+2. Admin dashboard accessible
+3. Broken links grid contains hit count data","High","","Broken links","0","https://virtocommerce.atlassian.net/browse/VCST-3156
+Available from 3.802.0","Step Description:
+1. Access admin dashboard and navigate to broken links grid
+2. Note current hit count for 'not-found' broken link
+3. Navigate to frontend and access /not-found URL
+4. Return to admin dashboard
+5. Verify hit count has been updated
+Expected Result:
+1. Initial hit count should be recorded
+2. Frontend visit should be tracked
+3. Hit count should increment after visit
+4. Admin dashboard should reflect updated count
+5. Tracking should be real-time and accurate","1","1. 1. Initial hit count should be recorded
+2. Frontend visit should be tracked
+3. Hit count should increment after visit
+4. Admin dashboard should reflect updated count
+5. Tracking should be real-time and accurate","1. 1. Access admin dashboard and navigate to broken links grid
+2. Note current hit count for 'not-found' broken link
+3. Navigate to frontend and access /not-found URL
+4. Return to admin dashboard
+5. Verify hit count has been updated","V3 SEO module","S5652","Other","0"

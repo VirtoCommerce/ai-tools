@@ -1,0 +1,2863 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C169802","Add role and permissions","","","Maya Alsamarrai","2/14/2020 2:09 PM","","","","<p>User with admin role has permissions to create new role with order permissions</p>
+","Medium","","Order module","0","https://github.com/VirtoCommerce/vc-module-order","Step Description:
+<p>Navigate to browse->Security->Roles.</p>
+Expected Result:
+<p>The system displays the ‘Roles’ screen.</p>
+Step Description:
+<p>Click the ‘Add’ button to create a new role.<br /><span class=""""markdown-img-container""""><img src='index.php?/attachments/get/22498' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-22498' data-attachment-id='22498' data-entity-id='169802' /></span><br /><span class=""""markdown-img-container""""><img src='index.php?/attachments/get/22499' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-22499' data-attachment-id='22499' data-entity-id='169802' /></span></p>
+Expected Result:
+<p>The system displays the ‘New Role’ screen </p>
+Step Description:
+<p>Fill out the form and assign the permissions related to orders <br />Click 'Create</p>
+Expected Result:
+<p>The system creates the new role with permissions</p>","1. 
+2. 
+3.","1. <p>The system displays the ‘Roles’ screen.</p>
+2. <p>The system displays the ‘New Role’ screen </p>
+3. <p>The system creates the new role with permissions</p>","1. <p>Navigate to browse->Security->Roles.</p>
+2. <p>Click the ‘Add’ button to create a new role.<br /><span class=""""markdown-img-container""""><img src='index.php?/attachments/get/22498' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-22498' data-attachment-id='22498' data-entity-id='169802' /></span><br /><span class=""""markdown-img-container""""><img src='index.php?/attachments/get/22499' class='fr-fic fr-dib fr-fil markdown-img' width='300' id='attachment-22499' data-attachment-id='22499' data-entity-id='169802' /></span></p>
+3. <p>Fill out the form and assign the permissions related to orders <br />Click 'Create</p>","V3 Orders","S1590","Other","1"
+"C169803","Assign order role to user","","","Maya Alsamarrai","2/14/2020 2:09 PM","","","","User with admin permissions to manage users","Medium","","Order module","0","https://github.com/VirtoCommerce/vc-module-order","Step Description:
+Navigate to Browse->Security->Users and selects a user.
+Expected Result:
+The system displays the user details.
+Step Description:
+1.Select the Roles widget that can be either empty or contains the roles previously assigned to the selected user.
+2.Click the ‘Assign’ button to assign a new role to the user.
+3. Select the role(s) and confirms the selection by clicking the ‘OK’ button.
+Expected Result:
+The system assigns the selected role to the user.","1. 
+2.","1. The system displays the user details.
+2. The system assigns the selected role to the user.","1. Navigate to Browse->Security->Users and selects a user.
+2. 1.Select the Roles widget that can be either empty or contains the roles previously assigned to the selected user.
+2.Click the ‘Assign’ button to assign a new role to the user.
+3. Select the role(s) and confirms the selection by clicking the ‘OK’ button.","V3 Orders","S1590","Other","0"
+"C169804","Assign permissions to Order Manager role","","","Maya Alsamarrai","2/14/2020 2:10 PM","","The assigned permissions will be applied to the 'order manager' role.","","","Medium","","Order module","0","https://github.com/VirtoCommerce/vc-module-order","","","","","V3 Orders","S1590","Other","0"
+"C169801","View and edit order details","https://virtowayqa.testrail.io/index.php?/attachments/get/1000003717, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002757"," None","Maya Alsamarrai","2/14/2020 2:04 PM","","","","Order [T591949]","Medium","","Order module","0","https://github.com/VirtoCommerce/vc-module-order","Step Description:
+1. Login to VC admin side
+2. Go to More->Orders module
+3. View list of ordersSelect Order and click on it 
+Expected Result:
+ ![](index.php?/attachments/get/cdf350c3-1925-475d-a219-2bd618a2b2e5)  ![](index.php?/attachments/get/97e23d4d-d850-4da5-b77b-004c3e11c883)       
+
+
+
+
+
+The system displays the order details blade in editable format
+
+
+
+
+
+
+
+
+Step Description:
+1. Change any fields
+2. Click """"Save""""
+3. Reopen blade with Order details 
+
+
+Expected Result:
+Changes saved","1. 
+2.","1.  ![](index.php?/attachments/get/cdf350c3-1925-475d-a219-2bd618a2b2e5)  ![](index.php?/attachments/get/97e23d4d-d850-4da5-b77b-004c3e11c883)       
+
+
+
+
+
+The system displays the order details blade in editable format
+
+
+
+
+
+
+
+
+2. Changes saved","1. 1. Login to VC admin side
+2. Go to More->Orders module
+3. View list of ordersSelect Order and click on it 
+2. 1. Change any fields
+2. Click """"Save""""
+3. Reopen blade with Order details ","V3 Orders","S1590","Other","0"
+"C169605","create new order",""," None","Maya Alsamarrai","2/12/2020 8:58 AM","","The new order is displayed on 'Customer orders' blade 
+
+![](index.php?/attachments/get/22502)
+","","Login to VC as an admin ","Medium","","Order module","0","https://github.com/VirtoCommerce/vc-module-order","","","","","V3 Orders","S1590","Other","0"
+"C169805","Line items widget",""," None","Maya Alsamarrai","2/14/2020 2:14 PM","","1. The system displays the Line items details 
+![](index.php?/attachments/get/22503) 
+
+2. Possibility to add a line item to the existing order 
+3. Possibility to remove one or more line items","","The order is created on Storefront and is visible on admin side ","Medium","","Order module","0","https://github.com/VirtoCommerce/vc-module-order","","","","","V3 Orders","S1590","Other","0"
+"C169806","Changes widget",""," None","Maya Alsamarrai","2/14/2020 2:15 PM","","","","Order is created and displayed on admin side ","Medium","","Order module","0","https://github.com/VirtoCommerce/vc-module-order","Step Description:
+Go to More->Orders module->click the 'Changes' widget
+Expected Result:
+The system displays the 'Changes history' blade
+Step Description:
+1. Make some changes to the order and save the changes
+2. Open the 'Changes' widget
+
+Expected Result:
+The system displays the changes made to the order
+
+![](index.php?/attachments/get/22504) ","1. 
+2.","1. The system displays the 'Changes history' blade
+2. The system displays the changes made to the order
+
+![](index.php?/attachments/get/22504) ","1. Go to More->Orders module->click the 'Changes' widget
+2. 1. Make some changes to the order and save the changes
+2. Open the 'Changes' widget","V3 Orders","S1590","Other","0"
+"C169807","Addresses widget",""," None","Maya Alsamarrai","2/14/2020 2:15 PM","","","","Order is created on Storefront and is visible on admin side","Medium","","Order module","0","https://github.com/VirtoCommerce/vc-module-order","Step Description:
+Go to More->Orders module->select the order and open order details
+Click on 'Addresses' widget 
+Expected Result:
+The 'Manage addresses' blade is displayed
+
+![](index.php?/attachments/get/22505) 
+
+Step Description:
+Click on the address
+Expected Result:
+The system displays the 'Edit address' blade
+Possibility to edit the address details
+Possibility to delete the address
+Step Description:
+Click on 'Add' button
+![](index.php?/attachments/get/22507) 
+
+Expected Result:
+The system displays the 'Manage address' blade 
+
+Step Description:
+Fill out the form and save the changes 
+Expected Result:
+The system adds the new address and displays it on the blade","1. 
+2. 
+3. 
+4.","1. The 'Manage addresses' blade is displayed
+
+![](index.php?/attachments/get/22505) 
+
+2. The system displays the 'Edit address' blade
+Possibility to edit the address details
+Possibility to delete the address
+3. The system displays the 'Manage address' blade 
+
+4. The system adds the new address and displays it on the blade","1. Go to More->Orders module->select the order and open order details
+Click on 'Addresses' widget 
+2. Click on the address
+3. Click on 'Add' button
+![](index.php?/attachments/get/22507) 
+
+4. Fill out the form and save the changes","V3 Orders","S1590","Other","0"
+"C169808","Comments widget",""," None","Maya Alsamarrai","2/14/2020 2:15 PM","","The comment is added and saved 
+
+![](index.php?/attachments/get/22508)
+","","Order is created 
+Login as an admin ","Medium","","Order module","0","https://github.com/VirtoCommerce/vc-module-order","","","","","V3 Orders","S1590","Other","0"
+"C169809","Dynamic properties widget","","","Maya Alsamarrai","2/14/2020 2:16 PM","","1. The system displays the 'Manage dynamic properties' blade
+2. Possibility to manage existing properties
+3. Possibility to add new dynamic properties 
+","","Order is created ","Medium","","Order module","0","https://github.com/VirtoCommerce/vc-module-order","","","","","V3 Orders","S1590","Other","0"
+"C169810","Open subscription","","","Maya Alsamarrai","2/14/2020 2:18 PM","","","","Order is created and displayed on admin side ","Medium","","Order module","0","https://github.com/VirtoCommerce/vc-module-order","Step Description:
+Go to More->Order module->select the order and open order details
+Select the 'Open subscription' widget
+Expected Result:
+The system displays the 'Subscription' details
+
+![](index.php?/attachments/get/22509)
+
+Step Description:
+Use the date picker to enter the following dates:
+
+Next billing date
+Subscription expiration date
+Trial expiration date
+Save the changes 
+Expected Result:
+The specified data are saved
+The customer will be notified via email before the expiration dates","1. 
+2.","1. The system displays the 'Subscription' details
+
+![](index.php?/attachments/get/22509)
+
+2. The specified data are saved
+The customer will be notified via email before the expiration dates","1. Go to More->Order module->select the order and open order details
+Select the 'Open subscription' widget
+2. Use the date picker to enter the following dates:
+
+Next billing date
+Subscription expiration date
+Trial expiration date
+Save the changes","V3 Orders","S1590","Other","0"
+"C169822","Create new document",""," None","Maya Alsamarrai","2/17/2020 1:32 PM","","","","Order is created and visible on admin side","Medium","","Order module","0","https://github.com/VirtoCommerce/vc-module-order","Step Description:
+Go to More->Orders module->select an order and open Order details
+Click on the 'Open subscriptions' widget 
+Click the 'New document' button 
+Expected Result:
+The system displays the 'New operation' blade
+![](index.php?/attachments/get/22511) 
+
+Step Description:
+Select Shipment document a and follow the steps:
+1. Select shipment method from drop down and switch on 'Approved'
+2. Select status from drop down
+3. Specify shipment amount
+4. Specify shipment amount with taxes
+5. Select fulfillment center from drop down
+6. Click 'OK' and save the changes
+Expected Result:
+The system creates a new Shipment document 
+
+![](index.php?/attachments/get/22512) 
+
+Step Description:
+Click 'New document' and select PaymentIn
+Follow the steps:
+1. Select Payment method from drop down
+2. Switch on 'Approved' 
+3. Enter Payment fees
+4. Enter payment fees (inc. taxes) 
+5. Specify status (select from drop down)
+6. Enter amount
+7. Enter Payment purpose
+8. Click 'OK' and save the document
+Expected Result:
+The system creates the new Payment document and displays it with the existing ones","1. 
+2. 
+3.","1. The system displays the 'New operation' blade
+![](index.php?/attachments/get/22511) 
+
+2. The system creates a new Shipment document 
+
+![](index.php?/attachments/get/22512) 
+
+3. The system creates the new Payment document and displays it with the existing ones","1. Go to More->Orders module->select an order and open Order details
+Click on the 'Open subscriptions' widget 
+Click the 'New document' button 
+2. Select Shipment document a and follow the steps:
+1. Select shipment method from drop down and switch on 'Approved'
+2. Select status from drop down
+3. Specify shipment amount
+4. Specify shipment amount with taxes
+5. Select fulfillment center from drop down
+6. Click 'OK' and save the changes
+3. Click 'New document' and select PaymentIn
+Follow the steps:
+1. Select Payment method from drop down
+2. Switch on 'Approved' 
+3. Enter Payment fees
+4. Enter payment fees (inc. taxes) 
+5. Specify status (select from drop down)
+6. Enter amount
+7. Enter Payment purpose
+8. Click 'OK' and save the document","V3 Orders","S1590","Other","0"
+"C169823","Delete order",""," None","Maya Alsamarrai","2/17/2020 2:02 PM","","The systems deletes the order
+The order no longer exists in the system","","Order is created and visible on admin side","Medium","","Order module","0","https://github.com/VirtoCommerce/vc-module-order","","","","","V3 Orders","S1590","Other","0"
+"C169824","Get Invoice","","","Maya Alsamarrai","2/17/2020 2:05 PM","","The system generates the invoice in PDF format
+The invoice can be downloaded 
+
+![](index.php?/attachments/get/22513)
+","","Order is created and visible on admin side","Medium","","Order module","0","https://github.com/VirtoCommerce/vc-module-order","","","","","V3 Orders","S1590","Other","0"
+"C396953","Create an order with configuration items > Check the order","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001686"," None","Elena Mutykova","12/12/2024 4:33 PM","","","","Go to frontend
+Create an order with configurations","Medium","","Order with configurable products","1","","Step Description:
+Open Order with configurations
+Click on Line item widget
+Verify that the order is created successfully with the correct details (product name, price, quantity, etc.).
+
+Expected Result:
+The line items with prices, taxes, discounts, totals are displayed correctly
+
+ ![](index.php?/attachments/get/5d013471-c607-4762-ab77-98294a59527a)","1","1. The line items with prices, taxes, discounts, totals are displayed correctly
+
+ ![](index.php?/attachments/get/5d013471-c607-4762-ab77-98294a59527a)","1. Open Order with configurations
+Click on Line item widget
+Verify that the order is created successfully with the correct details (product name, price, quantity, etc.).","V3 Orders","S1590","Other","0"
+"C396954","Open line item details blade > View","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000403, https://virtowayqa.testrail.io/index.php?/attachments/get/1000004051, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002996"," None","Elena Mutykova","12/12/2024 4:49 PM","","","","Go to frontend
+Create an order with configurations
+Open Order with configurations","Medium","","Order with configurable products","1","","Step Description:
+Click on Line item widget
+Click on a line item in the list.
+Expected Result:
+Clicking on a line item opens the Line Item Details blade.
+Step Description:
+Check the fields
+Expected Result:
+All meta fields are displayed correctly with appropriate view/edit permissions.
+The line item details blade is displayed as:
+
+- Product Name: Link navigates to the Product blade.
+- Status: Editable dropdown to change the status.
+- Quantity: Editable field.
+- Unit price (excl. tax): Editable.
+- Unit price (incl. tax): Read-only.
+- Discount (excl. tax): Editable.
+- Discount (incl. tax): Read-only.
+- Tax: Read-only.
+- Total line items: Read-only.
+
+---
+ ![](index.php?/attachments/get/e1fe6708-f5e6-4266-b615-8935e81d8ae0) 
+
+Step Description:
+Verify that the following fields are editable:
+
+Quantity
+Unit price (excl. tax)
+Discount (excl. tax)
+
+
+Expected Result:
+Editable fields can be edited.
+Step Description:
+Verify that the following fields are read-only:
+
+Unit price (incl. tax)
+Discount (incl. tax)
+Tax
+Total line items
+Attempt to edit any read-only field.
+Expected Result:
+Read-only fields cannot be edited.
+Step Description:
+Check the widgets
+Expected Result:
+There are 3 widgets are displayed:
+
+- Dynamic properties
+- Discounts
+- Configuration (displays if product contains options)
+
+---
+
+ ![](index.php?/attachments/get/156ace1a-966a-4366-bd59-028222df42ef) 
+
+Step Description:
+1. Change the Status dropdown to a different value (e.g., Completed).
+2. Save the changes.
+3. Verify that the status is updated correctly
+Expected Result:
+The status can be updated successfully and is reflected in the line item list.
+
+---
+ ![](index.php?/attachments/get/a65f85ff-a3ff-4d0e-b11c-b063f67343c7)","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. Clicking on a line item opens the Line Item Details blade.
+2. All meta fields are displayed correctly with appropriate view/edit permissions.
+The line item details blade is displayed as:
+
+- Product Name: Link navigates to the Product blade.
+- Status: Editable dropdown to change the status.
+- Quantity: Editable field.
+- Unit price (excl. tax): Editable.
+- Unit price (incl. tax): Read-only.
+- Discount (excl. tax): Editable.
+- Discount (incl. tax): Read-only.
+- Tax: Read-only.
+- Total line items: Read-only.
+
+---
+ ![](index.php?/attachments/get/e1fe6708-f5e6-4266-b615-8935e81d8ae0) 
+
+3. Editable fields can be edited.
+4. Read-only fields cannot be edited.
+5. There are 3 widgets are displayed:
+
+- Dynamic properties
+- Discounts
+- Configuration (displays if product contains options)
+
+---
+
+ ![](index.php?/attachments/get/156ace1a-966a-4366-bd59-028222df42ef) 
+
+6. The status can be updated successfully and is reflected in the line item list.
+
+---
+ ![](index.php?/attachments/get/a65f85ff-a3ff-4d0e-b11c-b063f67343c7)","1. Click on Line item widget
+Click on a line item in the list.
+2. Check the fields
+3. Verify that the following fields are editable:
+
+Quantity
+Unit price (excl. tax)
+Discount (excl. tax)
+
+
+4. Verify that the following fields are read-only:
+
+Unit price (incl. tax)
+Discount (incl. tax)
+Tax
+Total line items
+Attempt to edit any read-only field.
+5. Check the widgets
+6. 1. Change the Status dropdown to a different value (e.g., Completed).
+2. Save the changes.
+3. Verify that the status is updated correctly","V3 Orders","S1590","Other","0"
+"C396955","Open line item details blade >  Configuration","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004031"," None","Elena Mutykova","12/12/2024 4:50 PM","","","","","Medium","","Order with configurable products","1","","Step Description:
+1. Open the Line Item Details blade for a configurable product.
+2. Verify that the Configuration widget is visible.
+3. Click on the Configuration widget.
+4. Verify that a Quantity field is read-only.
+Expected Result:
+The Configuration widget is visible and displays the configuration options in a read-only list.
+
+---
+
+ ![](index.php?/attachments/get/e40f8665-d390-48b4-8efc-845a7b36f0ce) 
+
+Step Description:
+Click on any option
+Expected Result:
+The product details blade is opened","1. 
+2.","1. The Configuration widget is visible and displays the configuration options in a read-only list.
+
+---
+
+ ![](index.php?/attachments/get/e40f8665-d390-48b4-8efc-845a7b36f0ce) 
+
+2. The product details blade is opened","1. 1. Open the Line Item Details blade for a configurable product.
+2. Verify that the Configuration widget is visible.
+3. Click on the Configuration widget.
+4. Verify that a Quantity field is read-only.
+2. Click on any option","V3 Orders","S1590","Other","0"
+"C396956","Open line item details blade > Discounts","https://virtowayqa.testrail.io/index.php?/attachments/get/1000003614"," None","Elena Mutykova","12/12/2024 4:50 PM","","","","Create a promo for config product
+Create the order with configuration","Medium","","Order with configurable products","1","","Step Description:
+1. Open the Line Item Details blade for a product with discounts.
+2. Verify that the Discounts widget is visible.
+3. Click on the Discounts widget.
+4. Verify that a read-only list of applied discounts is displayed.
+Expected Result:
+The Discounts widget is visible and displays a read-only list of discounts.
+
+---
+
+ ![](index.php?/attachments/get/ca2210a6-0453-4db1-a2c8-087786888eba)","1","1. The Discounts widget is visible and displays a read-only list of discounts.
+
+---
+
+ ![](index.php?/attachments/get/ca2210a6-0453-4db1-a2c8-087786888eba)","1. 1. Open the Line Item Details blade for a product with discounts.
+2. Verify that the Discounts widget is visible.
+3. Click on the Discounts widget.
+4. Verify that a read-only list of applied discounts is displayed.","V3 Orders","S1590","Other","0"
+"C396957","Open line item details blade > Dynamic properties","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000212"," None","Elena Mutykova","12/12/2024 4:52 PM","","","","","Medium","","Order with configurable products","1","","Step Description:
+1. Open the Line Item Details blade for a configurable product.
+2. Verify that the Dynamic properties widget is visible.
+3. Click on Dynamic Properties widget
+Expected Result:
+The system displays the 'Manage dynamic properties' blade
+Possibility to manage existing properties
+Possibility to add new dynamic properties
+
+---
+
+ ![](index.php?/attachments/get/0f48e08d-8637-4de9-adf8-e9e7a8e30b00)","1","1. The system displays the 'Manage dynamic properties' blade
+Possibility to manage existing properties
+Possibility to add new dynamic properties
+
+---
+
+ ![](index.php?/attachments/get/0f48e08d-8637-4de9-adf8-e9e7a8e30b00)","1. 1. Open the Line Item Details blade for a configurable product.
+2. Verify that the Dynamic properties widget is visible.
+3. Click on Dynamic Properties widget","V3 Orders","S1590","Other","0"
+"C232798","Orders > Documents","","","Aleksandra Mitricheva","6/3/2020 12:54 AM","","","","Open Order Details > Look at the Document block![](index.php?/attachments/get/16605)
+","Medium","","Payment document","1","","Step Description:
+Click on Payment documents > Look at the opened screen 
+Expected Result:
+![](index.php?/attachments/get/16606)
+User sees information about Payment
+Step Description:
+Click on Shipping documents > Look at the opened screen 
+Expected Result:
+User sees information about Shipping![](index.php?/attachments/get/16607)","1. 
+2.","1. ![](index.php?/attachments/get/16606)
+User sees information about Payment
+2. User sees information about Shipping![](index.php?/attachments/get/16607)","1. Click on Payment documents > Look at the opened screen 
+2. Click on Shipping documents > Look at the opened screen","V3 Orders","S1590","Functional","0"
+"C232799","Payment document > Changing Statuses","","","Aleksandra Mitricheva","6/3/2020 1:01 AM","","","","","Medium","","Payment document","1","","Step Description:
+Create new order > check payment status in admin side
+
+Expected Result:
+Payment status is New
+Step Description:
+Paid with incorrect credit card > check payment status in admin side
+Expected Result:
+Payment status is Error
+Step Description:
+Paid with correct card > check Payment status in admin side
+Expected Result:
+Payment status is Paid
+Step Description:
+Open Payment document in admin side > change Payment status 
+Expected Result:
+Payment status is changed","1. 
+2. 
+3. 
+4.","1. Payment status is New
+2. Payment status is Error
+3. Payment status is Paid
+4. Payment status is changed","1. Create new order > check payment status in admin side
+
+2. Paid with incorrect credit card > check payment status in admin side
+3. Paid with correct card > check Payment status in admin side
+4. Open Payment document in admin side > change Payment status","V3 Orders","S1590","Other","0"
+"C232800","Payment document > Cancel document",""," None","Aleksandra Mitricheva","6/3/2020 1:02 AM","","","","1. Order where payment document has status Paid
+2. Payment method is - AuthorizeNet","Medium","","Payment document","1","","Step Description:
+Open Order in admin side &gt; click on Cancel document in header &gt; Check statuses
+Expected Result:
+Order status is Cancelled","1","1. Order status is Cancelled","1. Open Order in admin side &gt; click on Cancel document in header &gt; Check statuses","V3 Orders","S1590","Other","0"
+"C232801","Payment document > New order","","","Aleksandra Mitricheva","6/3/2020 1:08 AM","","","","","Medium","","Payment document","1","","Step Description:
+Create new Order without payment > check payment document of this order in admin side
+Expected Result:
+Payment document has status New","1","1. Payment document has status New","1. Create new Order without payment > check payment document of this order in admin side","V3 Orders","S1590","Other","0"
+"C232802","Payment document > Payment address block > Checkbox Same as shipping address selected","","","Aleksandra Mitricheva","6/3/2020 1:26 AM","","","","Product is added to cart","Medium","","Payment document","1","","Step Description:
+Go to Payment method step > select checkbox  Same as shipping address
+Expected Result:
+Checkbox is selected 
+form for billing address is hidden
+Create order button is active
+Step Description:
+Click Create order button > fill correct credit cart
+Expected Result:
+Order is created 
+
+
+Step Description:
+Open order in admin > open Payment document > check Payment address block
+Expected Result:
+Address type is BillingAndShipping
+
+all fields are filled as in shipping address","1. 
+2. 
+3.","1. Checkbox is selected 
+form for billing address is hidden
+Create order button is active
+2. Order is created 
+
+
+3. Address type is BillingAndShipping
+
+all fields are filled as in shipping address","1. Go to Payment method step > select checkbox  Same as shipping address
+2. Click Create order button > fill correct credit cart
+3. Open order in admin > open Payment document > check Payment address block","V3 Orders","S1590","Other","0"
+"C232803","Payment document > Payment price block","","","Aleksandra Mitricheva","6/3/2020 7:28 AM","","","","","Medium","","Payment document","1","","Step Description:
+Create order > Paid > check this order in admin side
+Expected Result:
+Order has status Processing
+Payment document has status Paid
+Step Description:
+Check Payment price block in the order 
+Expected Result:
+There next fields with correct values:
+
+- Subtotal
+- Shipping subtotal
+- Payment fees
+- Tax total
+- Discount total
+- Total
+Step Description:
+Check Payment price block in the Payment document
+Expected Result:
+There next fields with correct values:
+
+- Payment price
+- Tax total
+- Discount total
+- Total
+
+Please note: this section is about payment fees, not about payment information
+more in https://virtocommerce.atlassian.net/browse/VP-2840","1. 
+2. 
+3.","1. Order has status Processing
+Payment document has status Paid
+2. There next fields with correct values:
+
+- Subtotal
+- Shipping subtotal
+- Payment fees
+- Tax total
+- Discount total
+- Total
+3. There next fields with correct values:
+
+- Payment price
+- Tax total
+- Discount total
+- Total
+
+Please note: this section is about payment fees, not about payment information
+more in https://virtocommerce.atlassian.net/browse/VP-2840","1. Create order > Paid > check this order in admin side
+2. Check Payment price block in the order 
+3. Check Payment price block in the Payment document","V3 Orders","S1590","Other","0"
+"C232804","Payment document > Transactions  block","","","Aleksandra Mitricheva","6/3/2020 7:28 AM","","","","","Medium","","Payment document","1","","Step Description:
+Create new order without payment > check Transactions  block in Payment document 
+Expected Result:
+Transactions block is empty
+Step Description:
+Paid order > check Transactions  block in Payment document 
+Expected Result:
+Transaction block has value 1
+there are Transaction details in the Transaction detail blade","1. 
+2.","1. Transactions block is empty
+2. Transaction block has value 1
+there are Transaction details in the Transaction detail blade","1. Create new order without payment > check Transactions  block in Payment document 
+2. Paid order > check Transactions  block in Payment document","V3 Orders","S1590","Other","0"
+"C358190","Payment in status """"Authorized"""" and manual payment method > Success",""," None","Alexandr Tzykin","3/20/2023 7:48 AM","","","","","Medium","","Capture","2","","","","","","V3 Orders","S1590","Other","0"
+"C358191","Payment in status """"Authorized"""" and authorize,net payment method > False",""," None","Alexandr Tzykin","3/20/2023 7:48 AM","","","","","Medium","","Capture","2","","","","","","V3 Orders","S1590","Other","0"
+"C358192","Payment in status """"Authorized"""" and native payment method > False",""," None","Alexandr Tzykin","3/20/2023 7:48 AM","","","","","Medium","","Capture","2","","","","","","V3 Orders","S1590","Other","0"
+"C358193","Payment not in status """"Authorized"""" - False",""," None","Alexandr Tzykin","3/20/2023 7:51 AM","","","","","Medium","","Capture","2","","","","","","V3 Orders","S1590","Other","0"
+"C358194","Payment in status Paid > Success",""," None","Alexandr Tzykin","3/20/2023 7:54 AM","","","","","Medium","","Refund","2","","","","","","V3 Orders","S1590","Other","0"
+"C358195","Payment not in status Paid > False",""," None","Alexandr Tzykin","3/20/2023 7:55 AM","","","","","Medium","","Refund","2","","","","","","V3 Orders","S1590","Other","0"
+"C358196","Refund document > number template",""," None","Alexandr Tzykin","3/20/2023 7:55 AM","","","","","Medium","","Refund","2","","","","","","V3 Orders","S1590","Other","0"
+"C358197","Refund document > Remove",""," None","Alexandr Tzykin","3/20/2023 8:13 AM","","","","","Medium","","Refund","2","","","","","","V3 Orders","S1590","Other","0"
+"C358198","Refund document > Dynamic property",""," None","Alexandr Tzykin","3/20/2023 8:14 AM","","","","","Medium","","Refund","2","","","","","","V3 Orders","S1590","Other","0"
+"C237967","Orders > Documents","","","Aleksandra Mitricheva","6/9/2020 7:54 AM","","","","Open Order Details > Look at the Document block![](index.php?/attachments/get/16605)
+","Medium","","Shipment document","1","","Step Description:
+Click on Payment documents > Look at the opened screen 
+Expected Result:
+![](index.php?/attachments/get/16606)
+User sees information about Payment
+Step Description:
+Click on Shipping documents > Look at the opened screen 
+Expected Result:
+User sees information about Shipping![](index.php?/attachments/get/16607)","1. 
+2.","1. ![](index.php?/attachments/get/16606)
+User sees information about Payment
+2. User sees information about Shipping![](index.php?/attachments/get/16607)","1. Click on Payment documents > Look at the opened screen 
+2. Click on Shipping documents > Look at the opened screen","V3 Orders","S1590","Functional","0"
+"C237963","Shipment document > Changing statuses","","","Aleksandra Mitricheva","6/9/2020 7:38 AM","","","","","Medium","","Shipment document","1","","Step Description:
+Create new order > check shipment status in admin side
+Expected Result:
+Shipment status is New
+Step Description:
+Change status manually > click Save button
+Expected Result:
+Status is changed to selected","1. 
+2.","1. Shipment status is New
+2. Status is changed to selected","1. Create new order > check shipment status in admin side
+2. Change status manually > click Save button","V3 Orders","S1590","Other","0"
+"C237964","Shipment document > Shipment address block","","","Aleksandra Mitricheva","6/9/2020 7:38 AM","","","","OPen shipment document","Medium","","Shipment document","1","","Step Description:
+Check delivery address block
+Expected Result:
+delivery address displays
+Step Description:
+Click on delivery address block
+Expected Result:
+blade Manage delivery address is opened
+Step Description:
+Check blade Manage delivery address
+Expected Result:
+Field Address type is shipping
+All field are filled with correct values","1. 
+2. 
+3.","1. delivery address displays
+2. blade Manage delivery address is opened
+3. Field Address type is shipping
+All field are filled with correct values","1. Check delivery address block
+2. Click on delivery address block
+3. Check blade Manage delivery address","V3 Orders","S1590","Other","0"
+"C237965","Shipment document > Shipment price block","","","Aleksandra Mitricheva","6/9/2020 7:40 AM","","","","Open shipment document","Medium","","Shipment document","1","","Step Description:
+check Shipment amount field
+Expected Result:
+there is value of selected shipment type
+Step Description:
+Check Shipment amount with tax field
+Expected Result:
+there is value of selected shipment type
+Step Description:
+Check shipping price block 
+Expected Result:
+There are next field:
+- Shipping price
+- Discount total
+- Tax total
+- Total
+
+Shipping price and Total are filled with value of selected shipment type","1. 
+2. 
+3.","1. there is value of selected shipment type
+2. there is value of selected shipment type
+3. There are next field:
+- Shipping price
+- Discount total
+- Tax total
+- Total
+
+Shipping price and Total are filled with value of selected shipment type","1. check Shipment amount field
+2. Check Shipment amount with tax field
+3. Check shipping price block","V3 Orders","S1590","Other","0"
+"C237966","Shipment document > New order","","","Aleksandra Mitricheva","6/9/2020 7:40 AM","","","","","Medium","","Shipment document","1","","Step Description:
+Create new Order > check shipment document of this order in admin side
+Expected Result:
+Shipment document has status New","1","1. Shipment document has status New","1. Create new Order > check shipment document of this order in admin side","V3 Orders","S1590","Other","0"
+"C238704","Shipment document > Add new line item to shipment","","","Aleksandra Balabanova","6/11/2020 1:31 PM","","","","Order is created and visible on admin side
+
+","Medium","VP-2481","Shipment document","1","","Step Description:
+1. Go to Admin > Orders > Choose order
+2. Select Shipment document
+3. Select Shipment items
+Expected Result:
+""""Shipment line items"""" blade is opened
+Step Description:
+1. Click """"Add item""""
+2. Choose the product from the order list
+3. Click """"Ok"""" 
+4. Save order
+5. Select Shipment document again 
+Expected Result:
+New line item added to the shipment","1. 
+2.","1. """"Shipment line items"""" blade is opened
+2. New line item added to the shipment","1. 1. Go to Admin > Orders > Choose order
+2. Select Shipment document
+3. Select Shipment items
+2. 1. Click """"Add item""""
+2. Choose the product from the order list
+3. Click """"Ok"""" 
+4. Save order
+5. Select Shipment document again","V3 Orders","S1590","Functional","0"
+"C357118","Cancel Order > Verify stock inventory adjust for a product with Default FFC",""," None","Elena Mutykova","2/28/2023 8:12 AM","","","","Set Default FFC and Available FFC for Store1
+
+Add product with qty = 6 to cart
+
+Go to admin > Product details > FFC > check stock qty for a product before Order creation
+
+inStock qty = 6 for FFC1
+
+Create Order1","Medium","","Adjust Inventory on Order Cancellation","1","","Step Description:
+Go to admin &gt; Orders &gt; Find Order1
+Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+Expected Result:
+inStock qty = 0 for FFC1 after Order creation
+Step Description:
+Open Orders details &gt; Set status Cancelled
+Expected Result:
+Order was Cancelled
+Step Description:
+Click on line-items  &gt; Open product details
+FFC &gt; Check stock qty
+Expected Result:
+All stock inventory was returned
+inStock qty = 6 for FFC1 after Order cancellation","1. 
+2. 
+3.","1. inStock qty = 0 for FFC1 after Order creation
+2. Order was Cancelled
+3. All stock inventory was returned
+inStock qty = 6 for FFC1 after Order cancellation","1. Go to admin &gt; Orders &gt; Find Order1
+Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+2. Open Orders details &gt; Set status Cancelled
+3. Click on line-items  &gt; Open product details
+FFC &gt; Check stock qty","V3 Orders","S1590","Other","0"
+"C357121","Cancel Order > Verify stock inventory adjust for a product with Available FFC",""," None","Elena Mutykova","2/28/2023 12:17 PM","","","","Set Default FFC and Available FFC for Store1
+
+Add product with qty = 6 to cart
+
+Go to admin > Product details > FFC > check stock qty for a product before Order creation
+
+inStock qty = 6 for FFC1
+
+Create Order1","Medium","","Adjust Inventory on Order Cancellation","1","","Step Description:
+Go to admin &gt; Orders &gt; Find Order1
+Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+Expected Result:
+inStock qty = 0 for FFC1 after Order creation
+Step Description:
+Open Orders details &gt; Set status Cancelled
+Expected Result:
+Order was Cancelled
+Step Description:
+Click on line-items  &gt; Open product details
+FFC &gt; Check stock qty
+Expected Result:
+All stock inventory was returned
+inStock qty = 6 for FFC1 after Order cancellation","1. 
+2. 
+3.","1. inStock qty = 0 for FFC1 after Order creation
+2. Order was Cancelled
+3. All stock inventory was returned
+inStock qty = 6 for FFC1 after Order cancellation","1. Go to admin &gt; Orders &gt; Find Order1
+Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+2. Open Orders details &gt; Set status Cancelled
+3. Click on line-items  &gt; Open product details
+FFC &gt; Check stock qty","V3 Orders","S1590","Other","0"
+"C357119","Cancel Order > Verify stock inventory adjust for several products with different FFC",""," None","Elena Mutykova","2/28/2023 9:06 AM","","","","Set Default FFC and Available FFC for Store1
+
+Add 5 products with different FFC
+
+Go to admin > Product details > FFC > check stock qty for each product before Order creation
+
+Create Order1
+","Medium","","Adjust Inventory on Order Cancellation","1","","Step Description:
+Go to admin &gt; Orders &gt; Find Order1
+
+Click on Line-items &gt; Product
+
+Compare Stock inventory before and after order creation
+Expected Result:
+The number of stocks has decreased
+Step Description:
+Open Orders details &gt; Set status Cancelled
+Expected Result:
+Order was Cancelled
+Step Description:
+Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+Expected Result:
+The number of stocks has increased
+The stock qty is the same as before the Order creation
+All stock inventory was returned for all products","1. 
+2. 
+3.","1. The number of stocks has decreased
+2. Order was Cancelled
+3. The number of stocks has increased
+The stock qty is the same as before the Order creation
+All stock inventory was returned for all products","1. Go to admin &gt; Orders &gt; Find Order1
+
+Click on Line-items &gt; Product
+
+Compare Stock inventory before and after order creation
+2. Open Orders details &gt; Set status Cancelled
+3. Click on line-items &gt; Open product details
+FFC &gt; Check stock qty","V3 Orders","S1590","Other","0"
+"C357120","Order status is not Cancelled > Stock inventory does not change",""," None","Elena Mutykova","2/28/2023 9:33 AM","","","","Set Default FFC and Available FFC for Store1
+
+Add product with qty = 6 to cart
+
+Go to admin > Product details > FFC > check stock qty for a product before Order creation
+
+inStock qty = 6 for FFC1
+
+Create Order1
+
+","Medium","","Adjust Inventory on Order Cancellation","1","","Step Description:
+Go to admin &gt; Orders &gt; Find Order1
+Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+Expected Result:
+inStock qty = 0 for FFC1 after Order creation
+Step Description:
+1) Open Orders details &gt; Set Order status Pending &gt; Save
+2) Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+Expected Result:
+Order1 has the status Pending
+Stock inventory did not change
+
+
+Step Description:
+1) Set status Processing &gt; Save
+2) Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+Expected Result:
+Order1 has the status Processing
+Stock inventory did not change
+Step Description:
+1) Set status New &gt; Save
+2) Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+Expected Result:
+Order1 has the status New
+Stock inventory did not change
+Step Description:
+1) Set status Completed &gt; Save
+2) Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+Expected Result:
+Order1 has the status Completed
+Stock inventory did not change","1. 
+2. 
+3. 
+4. 
+5.","1. inStock qty = 0 for FFC1 after Order creation
+2. Order1 has the status Pending
+Stock inventory did not change
+
+
+3. Order1 has the status Processing
+Stock inventory did not change
+4. Order1 has the status New
+Stock inventory did not change
+5. Order1 has the status Completed
+Stock inventory did not change","1. Go to admin &gt; Orders &gt; Find Order1
+Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+2. 1) Open Orders details &gt; Set Order status Pending &gt; Save
+2) Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+3. 1) Set status Processing &gt; Save
+2) Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+4. 1) Set status New &gt; Save
+2) Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+5. 1) Set status Completed &gt; Save
+2) Click on line-items &gt; Open product details
+FFC &gt; Check stock qty","V3 Orders","S1590","Other","0"
+"C357122","Set Payment status = Cancelled > Stock inventory does not change",""," None","Elena Mutykova","2/28/2023 12:25 PM","","","","Set Default FFC and Available FFC for Store1
+
+Add product with qty = 6 to cart
+
+Go to admin > Product details > FFC > check stock qty for a product before Order creation
+
+inStock qty = 6 for FFC1
+
+Create Order1
+
+","Medium","","Adjust Inventory on Order Cancellation","1","","Step Description:
+Go to admin &gt; Orders &gt; Find Order1
+Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+Expected Result:
+inStock qty = 0 for FFC1 after Order creation
+Step Description:
+1) Open Orders details
+2) Click on Payment &gt; Set status Cancelled &gt; Save
+2) Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+Expected Result:
+The payment document has the status Cancelled
+Stock inventory did not change","1. 
+2.","1. inStock qty = 0 for FFC1 after Order creation
+2. The payment document has the status Cancelled
+Stock inventory did not change","1. Go to admin &gt; Orders &gt; Find Order1
+Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+2. 1) Open Orders details
+2) Click on Payment &gt; Set status Cancelled &gt; Save
+2) Click on line-items &gt; Open product details
+FFC &gt; Check stock qty","V3 Orders","S1590","Other","0"
+"C357123","Set Shipment status = Cancelled > Stock inventory does not change",""," None","Elena Mutykova","2/28/2023 12:28 PM","","","","Set Default FFC and Available FFC for Store1
+
+Add product with qty = 6 to cart
+
+Go to admin > Product details > FFC > check stock qty for a product before Order creation
+
+inStock qty = 6 for FFC1
+
+Create Order1
+
+","Medium","","Adjust Inventory on Order Cancellation","1","","Step Description:
+Go to admin &gt; Orders &gt; Find Order1
+Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+Expected Result:
+inStock qty = 0 for FFC1 after Order creation
+Step Description:
+1) Open Orders details
+2) Click on Shipment &gt; Set status Cancelled &gt; Save
+2) Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+Expected Result:
+The shipment document has the status Cancelled
+Stock inventory did not change","1. 
+2.","1. inStock qty = 0 for FFC1 after Order creation
+2. The shipment document has the status Cancelled
+Stock inventory did not change","1. Go to admin &gt; Orders &gt; Find Order1
+Click on line-items &gt; Open product details
+FFC &gt; Check stock qty
+2. 1) Open Orders details
+2) Click on Shipment &gt; Set status Cancelled &gt; Save
+2) Click on line-items &gt; Open product details
+FFC &gt; Check stock qty","V3 Orders","S1590","Other","0"
+"C385328","Adjustment Inventory for multiple products in Order",""," None","Elena Mutykova","5/1/2024 3:48 PM","","","","Several items were reserved from the same warehouse (ex. Chicago)
+
+Create order with products
+
+Example:
+
+Sorgesana Acqua Minerale
+
+Chicago > instock = 228
+
+Fanta Orange Bottle 500ml
+
+Chicago > instock = 677
+
+
+
+","Medium","","Adjust Inventory on Order Cancellation","1","","Step Description:
+Add two products to cart
+Set qty (ex. 8 and 7)
+Create an order
+Check FFC &gt; instock for each products
+
+Expected Result:
+After Order creation
+
+Sorgesana Acqua Minerale
+
+instock = 220
+
+Fanta Orange Bottle 500ml
+
+instock = 670
+Step Description:
+Go to admin &gt; Orders &gt; Open last Order
+Cancel Order
+Check FFC &gt; instock for each products
+Expected Result:
+The adjustment inventory works for each product in Order after order Cancellation
+
+After adjustment inventory
+
+Sorgesana Acqua Minerale
+
+instock = 228
+
+Fanta Orange Bottle 500ml
+
+instock = 677","1. 
+2.","1. After Order creation
+
+Sorgesana Acqua Minerale
+
+instock = 220
+
+Fanta Orange Bottle 500ml
+
+instock = 670
+2. The adjustment inventory works for each product in Order after order Cancellation
+
+After adjustment inventory
+
+Sorgesana Acqua Minerale
+
+instock = 228
+
+Fanta Orange Bottle 500ml
+
+instock = 677","1. Add two products to cart
+Set qty (ex. 8 and 7)
+Create an order
+Check FFC &gt; instock for each products
+
+2. Go to admin &gt; Orders &gt; Open last Order
+Cancel Order
+Check FFC &gt; instock for each products","V3 Orders","S1590","Other","0"
+"C241270","Access","","","Grotem","6/26/2020 8:48 AM","","1. Link to **Orders** blade shown","","1. Role_1 created in system
+2. Role_1 contains next permissions:
+- order:access
+
+3. Role_1 assigned to User_1","Medium","","Permissions","1","","","","","","V3 Orders","S1590","Other","0"
+"C241273","Read","","","Grotem","6/26/2020 8:52 AM","","1. Orders blade opened
+2. List of orders shown","","1. Role_1 created in system
+2. Role_1 contains next permissions:
+- order:access
+- order:read
+
+3. Role_1 assigned to User_1","Medium","","Permissions","1","","","","","","V3 Orders","S1590","Other","0"
+"C241274","Create [draft]","","","Grotem","6/26/2020 8:53 AM","","1. New document created for Order_1","","1. Role_1 created in system
+2. Role_1 contains next permissions:
+- order:access
+- order:read
+- order:create
+ 
+
+3. Role_1 assigned to User_1","Medium","","Permissions","1","","","","","","V3 Orders","S1590","Other","0"
+"C241276","Delete","","","Grotem","6/26/2020 9:02 AM","","1. Order_1 deleted
+2. Order_1 removed from list","","1. Role_1 created in system
+2. Role_1 contains next permissions:
+- order:access
+- order:read
+- order:delete
+
+3. Role_1 assigned to User_1","Medium","","Permissions","1","","","","","","V3 Orders","S1590","Other","0"
+"C241277","Update","","","Grotem","6/26/2020 9:03 AM","","1. Order_1 changes saved","","1. Role_1 created in system
+2. Role_1 contains next permissions:
+- order:access
+- order:read
+- order:update
+
+3. Role_1 assigned to User_1","Medium","","Permissions","1","","","","","","V3 Orders","S1590","Other","0"
+"C241278","Read prices","","","Grotem","6/26/2020 9:14 AM","","1. Prices for line items shown","","1. Role_1 created in system
+2. Role_1 contains next permissions:
+- order:access
+- order:read
+- order:read_prices
+
+3. Role_1 assigned to User_1","Medium","","Permissions","1","","","","","","V3 Orders","S1590","Other","0"
+"C358274","Update shipments",""," None","Elena Mutykova","3/23/2023 10:10 AM","","","","","Medium","","Permissions","1","","","","","","V3 Orders","S1590","Other","0"
+"C358272","Create Organization1 and sub-organization > add employees",""," None","Elena Mutykova","3/23/2023 9:13 AM","","","","","Medium","","Assign Employee as Order Responsible","2","https://virtocommerce.atlassian.net/browse/PT-11234","Step Description:
+Go to Contacts
+Add Organization1
+Expected Result:
+Organization1 was created
+Step Description:
+Open Organization1 &gt; Add sub-organization 
+Expected Result:
+Sub-organization was created at the root of Organization1
+Step Description:
+Add **employee** to Organzation1 and to sub-organization
+Expected Result:
+An employees were added","1. 
+2. 
+3.","1. Organization1 was created
+2. Sub-organization was created at the root of Organization1
+3. An employees were added","1. Go to Contacts
+Add Organization1
+2. Open Organization1 &gt; Add sub-organization 
+3. Add **employee** to Organzation1 and to sub-organization","V3 Orders","S1590","Other","0"
+"C358243","Create role Order manager > assigned role on employee",""," None","Elena Mutykova","3/22/2023 2:32 PM","","","","Organization1 and sub-organization were added
+Employees were added to both companies
+
+Employee 1 has the role of Order manager with permissions
+
+order: access
+order: read > assigned scope > Only for order responsible
+order: read_prices
+order: create
+order: update > assigned scope > Only for order responsible
+order: delete > assigned scope > Only for order responsible
+order: update_shipments
+
+
+
+
+","Medium","","Assign Employee as Order Responsible","2","https://virtocommerce.atlassian.net/browse/PT-11234","Step Description:
+Go to Security &gt; Roles
+Create a new role Order manager with permissions for Orders
+Save
+Expected Result:
+A new role Order manager was created and displayed in the list
+Step Description:
+Go to Contacts &gt; Open Organization1
+Assign the role of """"Order manager"""" to employee1 and employee2 from the root Organization and from sub-organization
+Expected Result:
+The role was assigned to employees","1. 
+2.","1. A new role Order manager was created and displayed in the list
+2. The role was assigned to employees","1. Go to Security &gt; Roles
+Create a new role Order manager with permissions for Orders
+Save
+2. Go to Contacts &gt; Open Organization1
+Assign the role of """"Order manager"""" to employee1 and employee2 from the root Organization and from sub-organization","V3 Orders","S1590","Other","0"
+"C358248","Order details >  assign an employee1 from the root Organization as the order responsible","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002177"," None","Elena Mutykova","3/22/2023 2:36 PM","","","","Organization1 and sub-organization were added
+Employees were added to both companies
+Create several Orders
+
+
+","Medium","","Order details > Assigned to","3","","Step Description:
+Go to Orders &gt; Open Order details
+Click on the drop-down """"Assigned to"""" 
+
+
+
+Expected Result:
+The list with member type """"Employee"""" returned
+
+
+
+
+
+ ![](index.php?/attachments/get/79f69504-c565-4149-bb39-d9971f392642) 
+
+Step Description:
+Assign Order1 to employee1
+Save
+
+
+Expected Result:
+The name of employee 1 is displayed in the field","1. 
+2.","1. The list with member type """"Employee"""" returned
+
+
+
+
+
+ ![](index.php?/attachments/get/79f69504-c565-4149-bb39-d9971f392642) 
+
+2. The name of employee 1 is displayed in the field","1. Go to Orders &gt; Open Order details
+Click on the drop-down """"Assigned to"""" 
+
+
+
+2. Assign Order1 to employee1
+Save","V3 Orders","S1590","Other","0"
+"C358244","Check that the employee from the root organization can see only assigned orders",""," None","Elena Mutykova","3/22/2023 2:32 PM","","","","Employee 1 belongs to Organization1
+Employee 1 has the role of Order manager with permissions
+
+order: access
+order: read > assigned scope > Only for order responsible
+order: read_prices
+order: create
+order: update > assigned scope > Only for order responsible
+order: delete > assigned scope > Only for order responsible
+order: update_shipments
+
+
+Order1 assigned to employee 1
+
+ ","Medium","","Order details > Assigned to","3","","Step Description:
+Go to the admin site
+Log in under employee 1
+Open Orders module
+Expected Result:
+Employee1 has access to the Orders module
+
+Employee1 can see ***only self-assigned orders***
+Step Description:
+Open Order1
+Expected Result:
+Order1 is opened successfully. The prices are displayed for employee 1
+
+
+
+Step Description:
+Change some fields
+Save
+Expected Result:
+Employee 1 is able to update the order
+Step Description:
+Delete Order1
+Expected Result:
+Employee 1 is able to delete the order","1. 
+2. 
+3. 
+4.","1. Employee1 has access to the Orders module
+
+Employee1 can see ***only self-assigned orders***
+2. Order1 is opened successfully. The prices are displayed for employee 1
+
+
+
+3. Employee 1 is able to update the order
+4. Employee 1 is able to delete the order","1. Go to the admin site
+Log in under employee 1
+Open Orders module
+2. Open Order1
+3. Change some fields
+Save
+4. Delete Order1","V3 Orders","S1590","Other","0"
+"C358250","Order details > assign an employee 1 from the sub-organization as the order responsible",""," None","Elena Mutykova","3/22/2023 2:54 PM","","","","Organization1 and sub-organization were added
+Employees were added to both companies
+Create several Orders","Medium","","Order details > Assigned to","3","","Step Description:
+Go to Orders &gt; Open Order details
+Click on the drop-down """"Assigned to""""
+Expected Result:
+The list with member type """"Employee"""" returned
+Step Description:
+Assign Order2 to employee 1 from the sub-organization 
+Save
+Expected Result:
+The name of employee 1 is displayed in the field","1. 
+2.","1. The list with member type """"Employee"""" returned
+2. The name of employee 1 is displayed in the field","1. Go to Orders &gt; Open Order details
+Click on the drop-down """"Assigned to""""
+2. Assign Order2 to employee 1 from the sub-organization 
+Save","V3 Orders","S1590","Other","0"
+"C358268","Check that the employee from the sub-organization can see only assigned orders",""," None","Elena Mutykova","3/23/2023 9:06 AM","","","","Employee 1 belongs to sub-organization
+Employee 1 has the role of Order manager with permissions
+
+order: access
+order: read > assigned scope > Only for order responsible
+order: read_prices
+order: create
+order: update > assigned scope > Only for order responsible
+order: delete > assigned scope > Only for order responsible
+order: update_shipments
+
+
+Order2 assigned to employee 1","Medium","","Order details > Assigned to","3","","Step Description:
+Go to the admin site
+Log in under employee 1
+Open Orders module
+Expected Result:
+Employee1 has access to the Orders module
+
+Employee1 can see ***only self-assigned orders***
+Step Description:
+Open Order2
+Expected Result:
+Order 2 is opened successfully. The prices are displayed for employee 1
+Step Description:
+Change some fields
+Save
+Expected Result:
+Employee 1 is able to update the order
+Step Description:
+Delete Order2
+Expected Result:
+Employee1 is able to delete the order","1. 
+2. 
+3. 
+4.","1. Employee1 has access to the Orders module
+
+Employee1 can see ***only self-assigned orders***
+2. Order 2 is opened successfully. The prices are displayed for employee 1
+3. Employee 1 is able to update the order
+4. Employee1 is able to delete the order","1. Go to the admin site
+Log in under employee 1
+Open Orders module
+2. Open Order2
+3. Change some fields
+Save
+4. Delete Order2","V3 Orders","S1590","Other","0"
+"C358251","Order details > Update > Assign order to employee 2 from root Organization",""," None","Elena Mutykova","3/22/2023 3:35 PM","","","","Organization1 and sub-organization were added
+Employee 2 has Order permissions 
+
+
+order: access
+order: read > assigned scope > Only for order responsible
+order: read_prices
+order: create
+order: update > assigned scope > Only for order responsible
+order: delete > assigned scope > Only for order responsible
+order: update_shipments
+
+Create several Orders","Medium","","Order details > Assigned to","3","","Step Description:
+Open Order1
+Choose employee 2 from Organization1 with Order permissions
+Save
+Expected Result:
+The name of employee 1 is displayed in the field
+Step Description:
+Go to the admin site
+Log in under employee 2
+Open Orders module
+Expected Result:
+Employee2 has access to the Orders module
+
+Employee2 can see Order1
+Step Description:
+Open Order1
+Expected Result:
+Order1 is opened successfully
+Step Description:
+Change some fields
+Save
+Expected Result:
+Employee 2 is able to update the order
+Step Description:
+Delete Order1
+Expected Result:
+Employee 2 is able to delete the order","1. 
+2. 
+3. 
+4. 
+5.","1. The name of employee 1 is displayed in the field
+2. Employee2 has access to the Orders module
+
+Employee2 can see Order1
+3. Order1 is opened successfully
+4. Employee 2 is able to update the order
+5. Employee 2 is able to delete the order","1. Open Order1
+Choose employee 2 from Organization1 with Order permissions
+Save
+2. Go to the admin site
+Log in under employee 2
+Open Orders module
+3. Open Order1
+4. Change some fields
+Save
+5. Delete Order1","V3 Orders","S1590","Other","0"
+"C358252","Order details > Update > Assign order to employee 2 from sub-organization",""," None","Elena Mutykova","3/22/2023 3:36 PM","","","","","Medium","","Order details > Assigned to","3","","","","","","V3 Orders","S1590","Other","0"
+"C358275","Order details > assign an order to an employee without order permission",""," None","Elena Mutykova","3/23/2023 11:06 AM","","","","Employee belongs to Organization1
+The employee does not have Order permission
+Create several Orders","Medium","","Order details > Assigned to","3","","Step Description:
+Assign an order to the employee without permission
+Log in to the admin site as an employee
+Open order module
+Expected Result:
+The employee does not have access to Order module","1","1. The employee does not have access to Order module","1. Assign an order to the employee without permission
+Log in to the admin site as an employee
+Open order module","V3 Orders","S1590","Other","0"
+"C358256","Shipment document > Assigned employee from root organization as order responsible",""," None","Elena Mutykova","3/23/2023 8:10 AM","","","","Employee 1 has the role of Order manager with permissions
+
+order: access
+order: create
+order: read > assigned scope > Only for order responsible
+order: read_prices
+order: update > assigned scope > Only for order responsible
+order: delete > assigned scope > Only for order responsible
+order: update_shipments
+","Medium","","Shipment > Assigned to","3","","Step Description:
+Assign Order1 and shipment document to employee 1
+Log in to the admin site as an employee 1
+Open order module
+
+Expected Result:
+Employee 1 has access to the Orders module
+
+Employee 1 can see Order1
+Step Description:
+Open Order1
+Expected Result:
+Order 1 is opened successfully. The prices are displayed for employee 1
+Step Description:
+Go to Shipment document &gt; Change status, add items, change the shipping address
+Save 
+Expected Result:
+Employee 1 is able to update the order shipment document","1. 
+2. 
+3.","1. Employee 1 has access to the Orders module
+
+Employee 1 can see Order1
+2. Order 1 is opened successfully. The prices are displayed for employee 1
+3. Employee 1 is able to update the order shipment document","1. Assign Order1 and shipment document to employee 1
+Log in to the admin site as an employee 1
+Open order module
+
+2. Open Order1
+3. Go to Shipment document &gt; Change status, add items, change the shipping address
+Save","V3 Orders","S1590","Other","0"
+"C358257","Shipment document > Assigned employee from  sub-organization as order responsible",""," None","Elena Mutykova","3/23/2023 8:10 AM","","","","Employee 1 has the role of Order manager with permissions
+
+order: access
+order: read > assigned scope > Only for order responsible
+order: read_prices
+order: update > assigned scope > Only for order responsible
+order: delete > assigned scope > Only for order responsible
+order: update_shipments","Medium","","Shipment > Assigned to","3","","Step Description:
+Assign Order1 and shipment document to employee 1 from sub-organization
+Log in to the admin site as an employee 1
+Open order module
+Expected Result:
+Employee 1 has access to the Orders module
+
+Employee 1 can see Order1
+Step Description:
+Open Order1
+Expected Result:
+Order 1 is opened successfully. The prices are displayed for employee 1
+Step Description:
+Go to Shipment document &gt; Change status, add items, change the shipping address
+Save
+Expected Result:
+Employee 1 is able to update the order shipment document","1. 
+2. 
+3.","1. Employee 1 has access to the Orders module
+
+Employee 1 can see Order1
+2. Order 1 is opened successfully. The prices are displayed for employee 1
+3. Employee 1 is able to update the order shipment document","1. Assign Order1 and shipment document to employee 1 from sub-organization
+Log in to the admin site as an employee 1
+Open order module
+2. Open Order1
+3. Go to Shipment document &gt; Change status, add items, change the shipping address
+Save","V3 Orders","S1590","Other","0"
+"C358254","Add filter > filter by assigned to employee from root organization",""," None","Elena Mutykova","3/23/2023 8:06 AM","","","","","Medium","","Filter by Assigned to","3","","Step Description:
+Open Orders list &gt; Add new filter
+Fill out name
+Set up Assigned to field
+Choose an employee from the root organization
+Save and apply
+
+  
+  
+
+
+Expected Result:
+The filter was added
+The orders filtered by assigned employee
+Step Description:
+Edit filter &gt; Choose another employee from the root organization
+Expected Result:
+The filter was updated
+The appropriate orders filtered by assigned employee","1. 
+2.","1. The filter was added
+The orders filtered by assigned employee
+2. The filter was updated
+The appropriate orders filtered by assigned employee","1. Open Orders list &gt; Add new filter
+Fill out name
+Set up Assigned to field
+Choose an employee from the root organization
+Save and apply
+
+  
+  
+
+
+2. Edit filter &gt; Choose another employee from the root organization","V3 Orders","S1590","Other","0"
+"C358255","Add filter > Assigned to employee from sub-organization","https://virtowayqa.testrail.io/index.php?/attachments/get/1000003536"," None","Elena Mutykova","3/23/2023 8:07 AM","","The filter was added
+The orders filtered by assigned employee
+
+ ![](index.php?/attachments/get/c2dbfcf4-1c8c-43b7-8568-7e59b206ae27) 
+
+","","","Medium","","Filter by Assigned to","3","","","","","","V3 Orders","S1590","Other","0"
+"C360517","Delete order > Order1 assigned to employee1",""," None","Elena Mutykova","5/22/2023 1:11 PM","","","","Employee 1 belongs to sub-organization
+Employee 1 has the role of Order manager with permissions
+
+order: access
+order: read > assigned scope > Only for order responsible
+order: read_prices
+order: update > assigned scope > Only for order responsible
+order: delete > assigned scope > Only for order responsible
+order: update_shipments
+
+**Order1 assigned to employee1**","Medium","","Permissions > API","3","","Step Description:
+Open Swagger
+
+Sign in as employee1
+
+Find Order management &gt; DELETE /api/order/customerOrders/{OrderId}
+
+Set OrderId1
+Execute
+Expected Result:
+Employee 1 is able to delete the order. The status code is 204","1","1. Employee 1 is able to delete the order. The status code is 204","1. Open Swagger
+
+Sign in as employee1
+
+Find Order management &gt; DELETE /api/order/customerOrders/{OrderId}
+
+Set OrderId1
+Execute","V3 Orders","S1590","Other","0"
+"C360518","Delete order > Order2 assigned to another employee",""," None","Elena Mutykova","5/22/2023 1:17 PM","","","","Employee 1 belongs to sub-organization
+Employee 1 has the role of Order manager with permissions
+
+order: access
+order: read > assigned scope > Only for order responsible
+order: read_prices
+order: update > assigned scope > Only for order responsible
+order: delete > assigned scope > Only for order responsible
+order: update_shipments
+
+**Order2 assigned to another employee**
+","Medium","","Permissions > API","3","","Step Description:
+Open Swagger
+
+Sign in as employee1
+
+Find Order management &gt; DELETE /api/order/customerOrders/{OrderId}
+
+Set OrderId2
+Execute
+Expected Result:
+Order2 was not deleted. The status code is 401 Unauthorized","1","1. Order2 was not deleted. The status code is 401 Unauthorized","1. Open Swagger
+
+Sign in as employee1
+
+Find Order management &gt; DELETE /api/order/customerOrders/{OrderId}
+
+Set OrderId2
+Execute","V3 Orders","S1590","Other","0"
+"C360519","Delete order > Order3 is not exist",""," None","Elena Mutykova","5/22/2023 1:38 PM","","","","","Medium","","Permissions > API","3","","Step Description:
+Open Swagger
+
+Sign in as employee1
+
+Find Order management &gt; DELETE /api/order/customerOrders/{OrderId}
+
+Set OrderId3
+
+Execute
+Expected Result:
+The status code is 204","1","1. The status code is 204","1. Open Swagger
+
+Sign in as employee1
+
+Find Order management &gt; DELETE /api/order/customerOrders/{OrderId}
+
+Set OrderId3
+
+Execute","V3 Orders","S1590","Other","0"
+"C360520","Delete order > Order1+Order2",""," None","Elena Mutykova","5/22/2023 1:39 PM","","","","Order1 assigned to employee1
+
+Order2 assigned to another employee","Medium","","Permissions > API","3","","Step Description:
+Open Swagger
+
+Sign in as employee1
+
+Find Order management &gt; DELETE /api/order/customerOrders/{OrderId}
+
+Set OrderId1 and OrderId2
+
+Execute
+Expected Result:
+Order 1 was deleted
+Order 2 was not deleted. The status code 401 Unauthorized","1","1. Order 1 was deleted
+Order 2 was not deleted. The status code 401 Unauthorized","1. Open Swagger
+
+Sign in as employee1
+
+Find Order management &gt; DELETE /api/order/customerOrders/{OrderId}
+
+Set OrderId1 and OrderId2
+
+Execute","V3 Orders","S1590","Other","0"
+"C360521","Delete order > Order2+Order3",""," None","Elena Mutykova","5/22/2023 1:40 PM","","","","Order2 assigned to another employee
+Order3 is not exist
+","Medium","","Permissions > API","3","","Step Description:
+Open Swagger
+
+Sign in as employee1
+
+Find Order management &gt; DELETE /api/order/customerOrders/{OrderId}
+
+Set OrderId2 and OrderId3
+
+Execute
+Expected Result:
+Order 2 was not deleted. The status code 204","1","1. Order 2 was not deleted. The status code 204","1. Open Swagger
+
+Sign in as employee1
+
+Find Order management &gt; DELETE /api/order/customerOrders/{OrderId}
+
+Set OrderId2 and OrderId3
+
+Execute","V3 Orders","S1590","Other","0"
+"C360522","Delete order> Order1+Order2+Order3",""," None","Elena Mutykova","5/22/2023 1:40 PM","","","","Order1 assigned to employee1
+Order2 assigned to another employee
+Order3 is not exist","Medium","","Permissions > API","3","","Step Description:
+Open Swagger
+
+Sign in as employee1
+
+Find Order management &gt; DELETE /api/order/customerOrders/{OrderId}
+
+Set OrderId1, OrderId2 and OrderId3
+
+Execute
+Expected Result:
+Order 1 was deleted.
+Order 2 was not deleted. The status code is 401 Unauthorized","1","1. Order 1 was deleted.
+Order 2 was not deleted. The status code is 401 Unauthorized","1. Open Swagger
+
+Sign in as employee1
+
+Find Order management &gt; DELETE /api/order/customerOrders/{OrderId}
+
+Set OrderId1, OrderId2 and OrderId3
+
+Execute","V3 Orders","S1590","Other","0"
+"C242170","Settings > Orders > Customer order statuses","","","Aleksandra Balabanova","7/8/2020 1:44 PM","","","","1. Admin logged in environment
+2. Admin is on settings pannel","Medium","","General","2","","Step Description:
+1. Admin open Settings > Orders
+2. Click on """"Pencil"""" **Customer order statuses**
+3. Add new Status
+4. Click Save
+Expected Result:
+1. New Status saved
+Step Description:
+1. Admin open Orders page
+2. Open any testing Order
+3. Change **Status** to new created status
+4. Click Save
+Expected Result:
+1. Status saved for Order
+Step Description:
+1. Admin re-open Order blade
+2. Check Status field
+Expected Result:
+1. Status saved for Order","1. 
+2. 
+3.","1. 1. New Status saved
+2. 1. Status saved for Order
+3. 1. Status saved for Order","1. 1. Admin open Settings > Orders
+2. Click on """"Pencil"""" **Customer order statuses**
+3. Add new Status
+4. Click Save
+2. 1. Admin open Orders page
+2. Open any testing Order
+3. Change **Status** to new created status
+4. Click Save
+3. 1. Admin re-open Order blade
+2. Check Status field","V3 Orders","S1590","Functional","0"
+"C242171","Settings > Orders > Shipment statuses","","","Aleksandra Balabanova","7/8/2020 1:44 PM","","","","1. Admin logged in environment
+2. Admin is on settings pannel","Medium","","General","2","","Step Description:
+1. Admin open Settings > Orders
+2. Click on """"Pencil"""" **Shipment statuses**
+3. Add new Shipment Status
+4. Click Save
+Expected Result:
+1. New Shipment Status saved
+Step Description:
+1. Admin open Orders page
+2. Open any testing Order
+3. Change **Shipment Status** to new created status
+4. Click Save
+Expected Result:
+1. Shipment Status saved for Order
+Step Description:
+1. Admin re-open Order blade
+2. Check Shipment Status field
+Expected Result:
+1. Shipment Status saved for Order","1. 
+2. 
+3.","1. 1. New Shipment Status saved
+2. 1. Shipment Status saved for Order
+3. 1. Shipment Status saved for Order","1. 1. Admin open Settings > Orders
+2. Click on """"Pencil"""" **Shipment statuses**
+3. Add new Shipment Status
+4. Click Save
+2. 1. Admin open Orders page
+2. Open any testing Order
+3. Change **Shipment Status** to new created status
+4. Click Save
+3. 1. Admin re-open Order blade
+2. Check Shipment Status field","V3 Orders","S1590","Functional","0"
+"C242172","Settings > Orders > Payment statuses","","","Aleksandra Balabanova","7/8/2020 1:44 PM","","","","1. Admin logged in environment
+2. Admin is on settings pannel","Medium","","General","2","","Step Description:
+1. Admin open Settings > Orders
+2. Click on """"Pencil"""" **Payment statuses**
+3. Add new Payment Status
+4. Click Save
+Expected Result:
+1. New Payment Status saved
+Step Description:
+1. Admin open Orders page
+2. Open any testing Order
+3. Change **Payment Status** to new created status
+4. Click Save
+Expected Result:
+1. Payment Status saved for Order
+Step Description:
+1. Admin re-open Order blade
+2. Check Payment Status field
+Expected Result:
+1. Payment Status saved for Order","1. 
+2. 
+3.","1. 1. New Payment Status saved
+2. 1. Payment Status saved for Order
+3. 1. Payment Status saved for Order","1. 1. Admin open Settings > Orders
+2. Click on """"Pencil"""" **Payment statuses**
+3. Add new Payment Status
+4. Click Save
+2. 1. Admin open Orders page
+2. Open any testing Order
+3. Change **Payment Status** to new created status
+4. Click Save
+3. 1. Admin re-open Order blade
+2. Check Payment Status field","V3 Orders","S1590","Functional","0"
+"C242173","Settings > Orders > Order number template","","","Aleksandra Balabanova","7/8/2020 1:45 PM","","","","1. Admin logged in environment
+2. Store_1 is created
+3. ""Order number template"" field is empty in Store_1 
+4. User_1 logged in Storefront","Medium","","General","2","","Step Description:
+1. Admin open Settings > General > Orders
+2. Change order template, for example - CO{0:MMddyyyy}-{1:D5}
+3. Click Save
+Expected Result:
+1. Template saved
+Step Description:
+1. User_1 add any product to Cart 
+2. Place an order
+Expected Result:
+1. Order created successfully with order number in new format
+Step Description:
+1. Admin open Order page
+2. Find new created order
+Expected Result:
+1. Order created with order number in new format","1. 
+2. 
+3.","1. 1. Template saved
+2. 1. Order created successfully with order number in new format
+3. 1. Order created with order number in new format","1. 1. Admin open Settings > General > Orders
+2. Change order template, for example - CO{0:MMddyyyy}-{1:D5}
+3. Click Save
+2. 1. User_1 add any product to Cart 
+2. Place an order
+3. 1. Admin open Order page
+2. Find new created order","V3 Orders","S1590","Functional","0"
+"C242667","Settings > Orders > Order shipment number template","","","Aleksandra Balabanova","7/10/2020 12:44 PM","","","","1. Admin logged in environment
+2. Store_1 is created
+3. ""Order shipment number template"" field is empty in Store_1 
+4. User_1 logged in Storefront","Medium","","General","2","","Step Description:
+1. Admin open Settings > General > Orders
+2. Change Order shipment number template, for example - SH{0:MMddyy}-{1:D5}
+3. Click Save
+Expected Result:
+1. Template saved
+Step Description:
+1. User_1 add any product to Cart 
+2. Place an order
+Expected Result:
+1. Order created successfully with Order shipment number template in new format
+Step Description:
+1. Admin open Order page
+2. Find new created order
+3. Open Shipment widget
+Expected Result:
+1. Order created with Order shipment number template in new format","1. 
+2. 
+3.","1. 1. Template saved
+2. 1. Order created successfully with Order shipment number template in new format
+3. 1. Order created with Order shipment number template in new format","1. 1. Admin open Settings > General > Orders
+2. Change Order shipment number template, for example - SH{0:MMddyy}-{1:D5}
+3. Click Save
+2. 1. User_1 add any product to Cart 
+2. Place an order
+3. 1. Admin open Order page
+2. Find new created order
+3. Open Shipment widget","V3 Orders","S1590","Functional","0"
+"C242668","Settings > Orders > Order payment number template","","","Aleksandra Balabanova","7/10/2020 12:46 PM","","","","1. Admin logged in environment
+2. Store_1 is created
+3. ""Order payment number template"" field is empty in Store_1 
+4. User_1 logged in Storefront","Medium","","General","2","","Step Description:
+1. Admin open Settings > General > Orders
+2. Change Order payment number template, for example - SH{0:MMddyy}-{1:D5}
+3. Click Save
+Expected Result:
+1. Template saved
+Step Description:
+1. User_1 add any product to Cart 
+2. Place an order
+Expected Result:
+1. Order created successfully with Order payment number template in new format
+Step Description:
+1. Admin open Order page
+2. Find new created order
+3. Open Payment widget
+Expected Result:
+1. Order created with Order payment number template in new format","1. 
+2. 
+3.","1. 1. Template saved
+2. 1. Order created successfully with Order payment number template in new format
+3. 1. Order created with Order payment number template in new format","1. 1. Admin open Settings > General > Orders
+2. Change Order payment number template, for example - SH{0:MMddyy}-{1:D5}
+3. Click Save
+2. 1. User_1 add any product to Cart 
+2. Place an order
+3. 1. Admin open Order page
+2. Find new created order
+3. Open Payment widget","V3 Orders","S1590","Functional","0"
+"C242176","Settings > Orders > Enable notifications for orders","","","Aleksandra Balabanova","7/8/2020 1:45 PM","","","","1. Admin logged in environment
+2. User_1 logged on Storefront","Medium","","General","2","","Step Description:
+1. Admin open Settings -> Orders -> General
+2. Choose """"Enable notifications for orders"""" is enabled
+3. Click Save
+Expected Result:
+1. Setting saved as enabled
+Step Description:
+1. User_1 choose any product
+2. Place an order with testing email
+3. Check an email
+
+Expected Result:
+1. Email is sent that was placed an order
+Step Description:
+1. Admin open Orders page
+2. Find order of User_1
+3. Change Status 
+4. Click Save
+Expected Result:
+1. New Status saved
+Step Description:
+1. User_1 check an email
+Expected Result:
+1. Email is sent that status of order has been changed","1. 
+2. 
+3. 
+4.","1. 1. Setting saved as enabled
+2. 1. Email is sent that was placed an order
+3. 1. New Status saved
+4. 1. Email is sent that status of order has been changed","1. 1. Admin open Settings -> Orders -> General
+2. Choose """"Enable notifications for orders"""" is enabled
+3. Click Save
+2. 1. User_1 choose any product
+2. Place an order with testing email
+3. Check an email
+
+3. 1. Admin open Orders page
+2. Find order of User_1
+3. Change Status 
+4. Click Save
+4. 1. User_1 check an email","V3 Orders","S1590","Functional","0"
+"C242180","Settings > Orders > Disable notifications for orders","","","Aleksandra Balabanova","7/8/2020 3:29 PM","","","","1. Admin logged in environment
+2. User_1 logged on Storefront","Medium","","General","2","","Step Description:
+1. Admin open Settings -> Orders-> General
+2. Choose """"Enable notifications for orders"""" is disabled
+3. Click Save
+Expected Result:
+1. Setting saved as disabled
+Step Description:
+1. User_1 choose any product
+2. Place an order with testing email
+3. Check an email
+
+Expected Result:
+1. Email is NOT sent that was placed an order
+Step Description:
+1. Admin open Orders page
+2. Find order of User_1
+3. Change Status 
+4. Click Save
+Expected Result:
+1. New Status saved
+Step Description:
+1. User_1 check an email
+Expected Result:
+1. Email is NOT sent that status of order has been changed","1. 
+2. 
+3. 
+4.","1. 1. Setting saved as disabled
+2. 1. Email is NOT sent that was placed an order
+3. 1. New Status saved
+4. 1. Email is NOT sent that status of order has been changed","1. 1. Admin open Settings -> Orders-> General
+2. Choose """"Enable notifications for orders"""" is disabled
+3. Click Save
+2. 1. User_1 choose any product
+2. Place an order with testing email
+3. Check an email
+
+3. 1. Admin open Orders page
+2. Find order of User_1
+3. Change Status 
+4. Click Save
+4. 1. User_1 check an email","V3 Orders","S1590","Functional","0"
+"C242178","Settings > Orders > Enable """"Adjust inventory for orders""""","","","Aleksandra Balabanova","7/8/2020 1:46 PM","","","","1. Admin logged in environment
+2. User_1 logged on Storefront","Medium","","General","2","","Step Description:
+1. Admin open Settings -> Orders-> General
+2. Choose """"Adjust inventory for orders"""" is enabled
+3. Click Save
+Expected Result:
+1. Setting saved as enabled
+Step Description:
+1. Admin open Catalog
+2. Find any product (for example - Product_1)
+3. Open Fulfillment Center widget
+4. Check """"In stock"""" value
+Expected Result:
+1. Value should be more than 1 item
+Step Description:
+1. User_1 choose Product_1
+2. Place an order 
+
+Expected Result:
+1. Order successfully created with Product_1
+Step Description:
+1. Admin open Catalog
+2. Find Product_1
+3. Open Fulfillment Center widget
+4. Check """"In stock"""" value
+Expected Result:
+1. Value decreased in 1 item","1. 
+2. 
+3. 
+4.","1. 1. Setting saved as enabled
+2. 1. Value should be more than 1 item
+3. 1. Order successfully created with Product_1
+4. 1. Value decreased in 1 item","1. 1. Admin open Settings -> Orders-> General
+2. Choose """"Adjust inventory for orders"""" is enabled
+3. Click Save
+2. 1. Admin open Catalog
+2. Find any product (for example - Product_1)
+3. Open Fulfillment Center widget
+4. Check """"In stock"""" value
+3. 1. User_1 choose Product_1
+2. Place an order 
+
+4. 1. Admin open Catalog
+2. Find Product_1
+3. Open Fulfillment Center widget
+4. Check """"In stock"""" value","V3 Orders","S1590","Functional","0"
+"C242181","Settings > Orders > Disable """"Adjust inventory for orders""""","","","Aleksandra Balabanova","7/8/2020 3:39 PM","","","","1. Admin logged in environment
+2. User_1 logged on Storefront","Medium","","General","2","","Step Description:
+1. Admin open Settings -> Orders-> General
+2. Choose """"Adjust inventory for orders"""" is disabled
+3. Click Save
+Expected Result:
+1. Setting saved as disabled
+Step Description:
+1. Admin open Catalog
+2. Find any product (for example - Product_1)
+3. Open Fulfillment Center widget
+4. Check """"In stock"""" value
+Expected Result:
+1. Value should be more than 1 item
+Step Description:
+1. User_1 choose Product_1
+2. Place an order 
+
+Expected Result:
+1. Order successfully created with Product_1
+Step Description:
+1. Admin open Catalog
+2. Find Product_1
+3. Open Fulfillment Center widget
+4. Check """"In stock"""" value
+Expected Result:
+1. Value doesn't changed","1. 
+2. 
+3. 
+4.","1. 1. Setting saved as disabled
+2. 1. Value should be more than 1 item
+3. 1. Order successfully created with Product_1
+4. 1. Value doesn't changed","1. 1. Admin open Settings -> Orders-> General
+2. Choose """"Adjust inventory for orders"""" is disabled
+3. Click Save
+2. 1. Admin open Catalog
+2. Find any product (for example - Product_1)
+3. Open Fulfillment Center widget
+4. Check """"In stock"""" value
+3. 1. User_1 choose Product_1
+2. Place an order 
+
+4. 1. Admin open Catalog
+2. Find Product_1
+3. Open Fulfillment Center widget
+4. Check """"In stock"""" value","V3 Orders","S1590","Functional","0"
+"C380814","Number Template > {0}",""," None","Alexandr Tzykin","1/31/2024 12:59 PM","","Order number create with datetime UTC data","","Set {0} in Order ID template setting","Medium","VCST-122","Order number generation","3","","","","","","V3 Orders","S1590","Other","0"
+"C380815","Number Template > {1}",""," None","Alexandr Tzykin","1/31/2024 1:02 PM","","Orders have number 1 and 2","","Set {1} in Order ID template setting
+
+","Medium","VCST-122","Order number generation","3","","","","","","V3 Orders","S1590","Other","0"
+"C380816","Number Template > CO{1:D5}",""," None","Alexandr Tzykin","1/31/2024 1:04 PM","","First order number - CO00001
+Second order number - CO00002","","Set CO{1:D5} in Order ID template setting
+
+","Medium","VCST-122","Order number generation","3","","","","","","V3 Orders","S1590","Other","0"
+"C380817","Number Template > CO-{0:yyMMdd}-{1:D5}",""," None","Alexandr Tzykin","1/31/2024 1:07 PM","","First order - CO-240131-00001
+Second order - CO-240131-00002","","Set  CO-{0:yyMMdd}-{1:D5}  in Order ID template setting
+
+","Medium","VCST-122","Order number generation","3","","","","","","V3 Orders","S1590","Other","0"
+"C380818","Number Template > PO{0:yyMMdd}-{1:D5}@Weekly:1:10",""," None","Alexandr Tzykin","1/31/2024 1:12 PM","","First order - CO-240131-00001
+Second order - CO-240131-00011 
+After 1 week, number for new orders must reset to first","","Set  CO-{0:yyMMdd}-{1:D5}  in Order ID template setting
+
+","Medium","VCST-122","Order number generation","3","","","","","","V3 Orders","S1590","Other","0"
+"C338423","Settings > Orders > Tool-tips",""," None","Elena Mutykova","4/20/2022 8:42 AM","","","","","Medium","","General settings","2","","Step Description:
+Open blade with general Settings &gt; Pay attention to tooltips
+
+
+
+
+
+Expected Result:
+All tooltips are folded
+
+Step Description:
+1. Click on Show link for field1
+2. Click on Show link for field2
+
+
+
+
+
+Expected Result:
+1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded. The tooltip for the field1 is folded
+
+
+Step Description:
+Click on the Hide link
+
+Expected Result:
+All tooltips are folded","1. 
+2. 
+3.","1. All tooltips are folded
+
+2. 1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded. The tooltip for the field1 is folded
+
+
+3. All tooltips are folded","1. Open blade with general Settings &gt; Pay attention to tooltips
+
+
+
+
+
+2. 1. Click on Show link for field1
+2. Click on Show link for field2
+
+
+
+
+
+3. Click on the Hide link","V3 Orders","S1590","Other","0"
+"C292301","Notifications widget","","","Alexandr Tzykin","5/27/2021 10:59 AM","","User see widget Notifications ","","Need to create and paid orders
+
+
+Enable notifications ","Medium","","Notifications","1","","","","","","V3 Orders","S1590","Other","0"
+"C292302","Notifications widget > Refresh","","","Alexandr Tzykin","5/27/2021 10:59 AM","","After refresh user see actual state in notifications","","","Medium","","Notifications","1","","","","","","V3 Orders","S1590","Other","0"
+"C292303","Notifications widget > Resend","","","Alexandr Tzykin","5/27/2021 10:59 AM","","In email box user see new emails.
+
+In notification list user see new notifications    
+","","","Medium","","Notifications","1","","","","","","V3 Orders","S1590","Other","0"
+"C357126","Notification > Use order paid and order sent notifications = true",""," None","Elena Mutykova","2/28/2023 3:43 PM","","","","Setting Use order paid and order sent notifications by default true","Medium","","Notifications","1","","","","","","V3 Orders","S1590","Other","0"
+"C357127","Notification > Use payments/shipments status changed notifications = false","https://virtowayqa.testrail.io/index.php?/attachments/get/1000003469"," None","Elena Mutykova","2/28/2023 3:44 PM","","","","Setting Use payments/shipments status changed notifications by default false","Medium","","Notifications","1","","Step Description:
+Go to Settings &gt; Orders &gt; Notifications
+Toggle Use payments/shipments status changed notifications = false
+Save
+Expected Result:
+Setting is saved
+
+ ![](index.php?/attachments/get/bdbeea44-0897-4eec-b0b8-8dd48a588a2c) 
+
+Step Description:
+Open Order1
+Change the status of shipment and payment documents
+Save
+Expected Result:
+The statuses are saved
+Step Description:
+Check Notifications activity feed
+Expected Result:
+There are no notifications PaymentStatusChangedEmailNotification / ShipmentStatusChangedEmailNotification which were recently sent in the list
+Step Description:
+Check email
+Expected Result:
+The email notifications did not receive","1. 
+2. 
+3. 
+4.","1. Setting is saved
+
+ ![](index.php?/attachments/get/bdbeea44-0897-4eec-b0b8-8dd48a588a2c) 
+
+2. The statuses are saved
+3. There are no notifications PaymentStatusChangedEmailNotification / ShipmentStatusChangedEmailNotification which were recently sent in the list
+4. The email notifications did not receive","1. Go to Settings &gt; Orders &gt; Notifications
+Toggle Use payments/shipments status changed notifications = false
+Save
+2. Open Order1
+Change the status of shipment and payment documents
+Save
+3. Check Notifications activity feed
+4. Check email","V3 Orders","S1590","Other","0"
+"C357150","Notification > Use payments/shipments status changed notifications = true","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000104"," None","Elena Mutykova","3/1/2023 12:35 PM","","","","Setting Use payments/shipments status changed notifications by default false
+
+Create Order","Medium","","Notifications","1","","Step Description:
+Go to Settings &gt; Orders &gt; Notifications
+Toggle Use payments/shipments status changed notifications = true
+Save
+Expected Result:
+Setting is saved
+
+
+ ![](index.php?/attachments/get/06deccb3-060c-4459-9139-5216fac76a5b) 
+
+
+
+Step Description:
+Open Order1
+Change the status of shipment and payment documents
+Save
+Expected Result:
+The statuses are saved
+Step Description:
+Check Notifications activity feed
+Expected Result:
+The notifications for all documents sent
+Step Description:
+Check email
+Expected Result:
+The inbox contains a notification email for each document and action","1. 
+2. 
+3. 
+4.","1. Setting is saved
+
+
+ ![](index.php?/attachments/get/06deccb3-060c-4459-9139-5216fac76a5b) 
+
+
+
+2. The statuses are saved
+3. The notifications for all documents sent
+4. The inbox contains a notification email for each document and action","1. Go to Settings &gt; Orders &gt; Notifications
+Toggle Use payments/shipments status changed notifications = true
+Save
+2. Open Order1
+Change the status of shipment and payment documents
+Save
+3. Check Notifications activity feed
+4. Check email","V3 Orders","S1590","Other","0"
+"C293162","Settings > Orders > Disable Order Index","","","Daria Ponamareva","6/16/2021 1:02 PM","","Setting saved as disabled
+Order  index widget in order HIDE
+user can't index order","","1. Admin logged in environment
+2. Admin is on settings pannel
+
+Need set Search:OrderFullTextSearchEnabled:false in azure ","Medium","","Search","0","","","","","","V3 Orders","S1590","Other","0"
+"C293163","Settings > Orders > Enable Order Index","","","Daria Ponamareva","6/16/2021 1:04 PM","","Setting saved as enabled
+User can index order
+Order has widget Index
+
+","","
+
+Admin logged in environment
+Admin is on settings pannel
+Need set Search:OrderFullTextSearchEnabled:true in azure
+","Medium","","Search","0","","","","","","V3 Orders","S1590","Other","0"
+"C293763","Orders> Index widget",""," None","Daria Ponamareva","6/16/2021 2:41 PM","","","","Create some order [C169605]
+
+","Medium","","Search","0","","Step Description:
+Go to Orders &gt; Click on order
+Expected Result:
+There is """"Index"""" widget in the order details
+Step Description:
+1. Click on """"Index"""" widget
+2. View on Index content """"__content""""
+Expected Result:
+The list of fields for FTS (Full text search) __content field in an index: 
+
+
+1. Number 
+2. EmployeeName 
+3. OrganizationName
+4. CustomerNameComment 
+5. Addresses 
+6. InPayments.Number 
+7. InPayments.BillingAddress 
+8. lineShipments.Number 
+9. Shipments.DeliveryAddress 
+10. lineShipments.FulfillmentCenter 
+11. NameShipments.Comment 
+12. ImPayments.Comment 
+13. LineItems.Comment 
+14. DynamicProperties that have the ShortText value type?
+Step Description:
+2. View on other """"term"""" properties
+Expected Result:
+1. CreatedDate
+2. ModifiedDate
+3. CreatedBy
+4. ModifiedBy
+5. CustomerId
+6. CustomerName
+7. EmployeeId
+8. EmployeeName
+9. OrganizationId
+10. OrganizationName
+11. StoreId
+12. Storename
+13. OuterId
+14. Status
+15. Number
+16. Currency
+17. StoreId
+18. Total
+19. SubTotal
+20. TaxTotal
+21. DiscountTotal
+22. IsCancelled
+23. Customer Order: Dynamic Properties","1. 
+2. 
+3.","1. There is """"Index"""" widget in the order details
+2. The list of fields for FTS (Full text search) __content field in an index: 
+
+
+1. Number 
+2. EmployeeName 
+3. OrganizationName
+4. CustomerNameComment 
+5. Addresses 
+6. InPayments.Number 
+7. InPayments.BillingAddress 
+8. lineShipments.Number 
+9. Shipments.DeliveryAddress 
+10. lineShipments.FulfillmentCenter 
+11. NameShipments.Comment 
+12. ImPayments.Comment 
+13. LineItems.Comment 
+14. DynamicProperties that have the ShortText value type?
+3. 1. CreatedDate
+2. ModifiedDate
+3. CreatedBy
+4. ModifiedBy
+5. CustomerId
+6. CustomerName
+7. EmployeeId
+8. EmployeeName
+9. OrganizationId
+10. OrganizationName
+11. StoreId
+12. Storename
+13. OuterId
+14. Status
+15. Number
+16. Currency
+17. StoreId
+18. Total
+19. SubTotal
+20. TaxTotal
+21. DiscountTotal
+22. IsCancelled
+23. Customer Order: Dynamic Properties","1. Go to Orders &gt; Click on order
+2. 1. Click on """"Index"""" widget
+2. View on Index content """"__content""""
+3. 2. View on other """"term"""" properties","V3 Orders","S1590","Other","0"
+"C293761","Search by keyword",""," None","Daria Ponamareva","6/16/2021 2:07 PM","","","","1. Create some orders [C169605] 
+2. ""Order Index"" enabled [C293163]","Medium","","Search","0","","Step Description:
+1. Go to Orders
+2. Enter in the search field part of the indexed property (PurchaseOrderNumber, PurchaseOrderNumber, Customer, City, etc.)
+Expected Result:
+All orders that contains searched value shown in list
+Step Description:
+Enter in the search field indexed property (PurchaseOrderNumber, PurchaseOrderNumber, Customer, City, etc.)
+Expected Result:
+All orders that contains searched value shown in list
+Step Description:
+Enter any random letters in the search field so that no order matches your query
+Expected Result:
+The list is empty","1. 
+2. 
+3.","1. All orders that contains searched value shown in list
+2. All orders that contains searched value shown in list
+3. The list is empty","1. 1. Go to Orders
+2. Enter in the search field part of the indexed property (PurchaseOrderNumber, PurchaseOrderNumber, Customer, City, etc.)
+2. Enter in the search field indexed property (PurchaseOrderNumber, PurchaseOrderNumber, Customer, City, etc.)
+3. Enter any random letters in the search field so that no order matches your query","V3 Orders","S1590","Other","0"
+"C293762","Search by Term",""," None","Daria Ponamareva","6/16/2021 2:41 PM","","","","
+
+Create some orders [C169605] 
+
+
+""Order Index"" enabled [C293163]
+
+
+","Medium","","Search","0","","Step Description:
+1. Go to Orders
+2. Enter in the search field part of the indexed property (PurchaseOrderNumber, Status, Customer, AssignedTo, etc.). Example: """"PurchaseOrderNumber"""": [code]
+Expected Result:
+All orders that contains searched value shown in list
+Step Description:
+Enter in the search field indexed property (PurchaseOrderNumber, Status, Customer, AssignedTo, etc.)
+Expected Result:
+All orders that contains searched value shown in list
+Step Description:
+Enter any random letters in the search field so that no order matches your query
+Expected Result:
+The list is empty","1. 
+2. 
+3.","1. All orders that contains searched value shown in list
+2. All orders that contains searched value shown in list
+3. The list is empty","1. 1. Go to Orders
+2. Enter in the search field part of the indexed property (PurchaseOrderNumber, Status, Customer, AssignedTo, etc.). Example: """"PurchaseOrderNumber"""": [code]
+2. Enter in the search field indexed property (PurchaseOrderNumber, Status, Customer, AssignedTo, etc.)
+3. Enter any random letters in the search field so that no order matches your query","V3 Orders","S1590","Other","0"
+"C293764","Search by range Date and time",""," None","Daria Ponamareva","6/16/2021 2:58 PM","","","","Create some orders [C169605]
+
+
+""Order Index"" enabled [C293163]","Medium","","Search","0","","Step Description:
+1. Go to Orders
+2. Enter in the search field date 
+
+createddate:[2023-12-01 TO]
+
+Expected Result:
+All orders that were created at this date shown in list
+Step Description:
+createddate:[2023-12-01 TO 2023-12-31]
+Expected Result:
+All orders that were created at this date shown in list
+Step Description:
+createddate:[2023-12-01 TO 2023-12-31]
+Expected Result:
+All orders that were created at this date shown in list
+Step Description:
+createddate:[""""2023-12-01T01:12:00Z"""" TO """"2023-12-31T01:12:00Z""""]
+Expected Result:
+All orders that were created at this date shown in list","1. 
+2. 
+3. 
+4.","1. All orders that were created at this date shown in list
+2. All orders that were created at this date shown in list
+3. All orders that were created at this date shown in list
+4. All orders that were created at this date shown in list","1. 1. Go to Orders
+2. Enter in the search field date 
+
+createddate:[2023-12-01 TO]
+
+2. createddate:[2023-12-01 TO 2023-12-31]
+3. createddate:[2023-12-01 TO 2023-12-31]
+4. createddate:[""""2023-12-01T01:12:00Z"""" TO """"2023-12-31T01:12:00Z""""]","V3 Orders","S1590","Other","0"
+"C293760","Search > Reindex","","","Daria Ponamareva","6/16/2021 1:43 PM","","","","Created order [C169605] and ""Order Index"" enabled [C293163]","Medium","","Search","0","","Step Description:
+1. Go to Orders
+2. Click on order
+3. Make any changes to order details
+4. Click Save 
+
+
+Expected Result:
+Changes saved
+Step Description:
+1. Open """"Index"""" widget
+2. Build index 
+
+
+Expected Result:
+Changes to order details were reflected in """"Index"""" widget > Index content
+Step Description:
+Go to Orders > Search for orders by the changed property
+Expected Result:
+The modified order is displayed in the search","1. 
+2. 
+3.","1. Changes saved
+2. Changes to order details were reflected in """"Index"""" widget > Index content
+3. The modified order is displayed in the search","1. 1. Go to Orders
+2. Click on order
+3. Make any changes to order details
+4. Click Save 
+
+
+2. 1. Open """"Index"""" widget
+2. Build index 
+
+
+3. Go to Orders > Search for orders by the changed property","V3 Orders","S1590","Other","0"
+"C295632","Orders > Validation > Number",""," None","Daria Ponamareva","7/5/2021 7:43 AM","","","","Admin logged in environment","Medium","","admin","1","","Step Description:
+Admin open Orders > click on order
+Expected Result:
+Blade with order details open
+Step Description:
+Type in the """"Customer order number"""" less than 64 chars (but more then 0) > click Save> Reopen order blade 
+Expected Result:
+Changed value saved 
+Step Description:
+Type in the """"Customer order number"""" the big string (more than 64 chars) > click Save
+Expected Result:
+System must show you the validation error. The validation error must prevent the save order.
+Step Description:
+Delete value from """"Customer order number""""
+Expected Result:
+Button """"save"""" disable","1. 
+2. 
+3. 
+4.","1. Blade with order details open
+2. Changed value saved 
+3. System must show you the validation error. The validation error must prevent the save order.
+4. Button """"save"""" disable","1. Admin open Orders > click on order
+2. Type in the """"Customer order number"""" less than 64 chars (but more then 0) > click Save> Reopen order blade 
+3. Type in the """"Customer order number"""" the big string (more than 64 chars) > click Save
+4. Delete value from """"Customer order number""""","V3 Orders","S1590","Other","0"
+"C301874","Orders > Validation > SubscriptionNumber","","","Daria Ponamareva","7/16/2021 9:16 AM","","","","Admin logged in environment
+Create order with  subscription","Medium","","admin","1","","Step Description:
+Admin open Orders > click on order >click on widget """"subscription""""
+Expected Result:
+Blade with subscription details open  
+Step Description:
+Type in the """"Number"""" less than 64 chars (but more then 0)  > click Save > Reopen subscription blade 
+Expected Result:
+Changed value saved   
+Step Description:
+Type in the """"Number"""" the big string (more than 64 chars ) > click Save
+Expected Result:
+System must show you the validation error. The validation error must prevent the save order.","1. 
+2. 
+3.","1. Blade with subscription details open  
+2. Changed value saved   
+3. System must show you the validation error. The validation error must prevent the save order.","1. Admin open Orders > click on order >click on widget """"subscription""""
+2. Type in the """"Number"""" less than 64 chars (but more then 0)  > click Save > Reopen subscription blade 
+3. Type in the """"Number"""" the big string (more than 64 chars ) > click Save","V3 Orders","S1590","Other","0"
+"C301875","Validation > order.Number",""," None","Daria Ponamareva","7/16/2021 9:22 AM","","","","PUT api/order/customerOrders","Medium","","Order","2","","Step Description:
+Update customer order to system with """"order.Number"""" more than 64 chars
+
+
+
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""". 
+Step Description:
+Update customer order to system with empty """"order.Number"""" 
+Expected Result:
+Order is not updated, system responds with a validation error. 
+Step Description:
+Update customer order to system with """"order.Number"""" equal 64 chars
+Expected Result:
+Order updated","1. 
+2. 
+3.","1. System responds with a validation error """"String or binary data would be truncated..."""". 
+2. Order is not updated, system responds with a validation error. 
+3. Order updated","1. Update customer order to system with """"order.Number"""" more than 64 chars
+
+
+
+2. Update customer order to system with empty """"order.Number"""" 
+3. Update customer order to system with """"order.Number"""" equal 64 chars","V3 Orders","S1590","Other","0"
+"C301876","Validation > order.CustomerId",""," None","Daria Ponamareva","7/16/2021 9:23 AM","","","","PUT api/order/customerOrders","Medium","","Order","2","","Step Description:
+Update customer order to system with """"order.CustomerId"""" more than 64 chars  
+
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""". 
+Step Description:
+Update  customer order to system with empty """"order.CustomerId""""
+Expected Result:
+ Order is not updated, system responds with a validation error.
+Step Description:
+Update customer order to system with """"order.CustomerId"""" equal 64 chars  
+Expected Result:
+Order updated","1. 
+2. 
+3.","1. System responds with a validation error """"String or binary data would be truncated..."""". 
+2.  Order is not updated, system responds with a validation error.
+3. Order updated","1. Update customer order to system with """"order.CustomerId"""" more than 64 chars  
+
+2. Update  customer order to system with empty """"order.CustomerId""""
+3. Update customer order to system with """"order.CustomerId"""" equal 64 chars  ","V3 Orders","S1590","Other","0"
+"C301877","Validation > order.CustomerName",""," None","Daria Ponamareva","7/16/2021 9:23 AM","","","","PUT api/order/customerOrders","Medium","","Order","2","","Step Description:
+Update order to system with """"order.CustomerName"""" more than 255 chars
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""". 
+Step Description:
+Update  customer order to system with empty """"order.CustomerName""""   
+Expected Result:
+Order is not updated, system responds with a validation error.   
+Step Description:
+Update order to system with """"order.CustomerName"""" equal 255 chars
+Expected Result:
+Order updated","1. 
+2. 
+3.","1. System responds with a validation error """"String or binary data would be truncated..."""". 
+2. Order is not updated, system responds with a validation error.   
+3. Order updated","1. Update order to system with """"order.CustomerName"""" more than 255 chars
+2. Update  customer order to system with empty """"order.CustomerName""""   
+3. Update order to system with """"order.CustomerName"""" equal 255 chars","V3 Orders","S1590","Other","0"
+"C301878","Validation > order.StoreId",""," None","Daria Ponamareva","7/16/2021 9:24 AM","","","","PUT api/order/customerOrders","Medium","","Order","2","","Step Description:
+Update customer order to system with """"order.StoreId"""" more than 64 chars
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""". 
+Step Description:
+Update customer order to system with empty """"order.StoreId""""   
+Expected Result:
+Order is not updated, system responds with a validation error.   
+Step Description:
+Update customer order to system with """"order.StoreId"""" equal 64 chars
+Expected Result:
+Order updated","1. 
+2. 
+3.","1. System responds with a validation error """"String or binary data would be truncated..."""". 
+2. Order is not updated, system responds with a validation error.   
+3. Order updated","1. Update customer order to system with """"order.StoreId"""" more than 64 chars
+2. Update customer order to system with empty """"order.StoreId""""   
+3. Update customer order to system with """"order.StoreId"""" equal 64 chars","V3 Orders","S1590","Other","0"
+"C301879","Validation > order.StoreName",""," None","Daria Ponamareva","7/16/2021 9:24 AM","","","","PUT api/order/customerOrders","Medium","","Order","2","","Step Description:
+Update customer order to system with """"order.StoreName"""" more than 255 chars
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""". 
+Step Description:
+Update customer order to system with """"order.StoreName"""" equal 255 chars
+Expected Result:
+Order updated","1. 
+2.","1. System responds with a validation error """"String or binary data would be truncated..."""". 
+2. Order updated","1. Update customer order to system with """"order.StoreName"""" more than 255 chars
+2. Update customer order to system with """"order.StoreName"""" equal 255 chars","V3 Orders","S1590","Other","0"
+"C301880","Validation > order.ChanneId",""," None","Daria Ponamareva","7/16/2021 9:24 AM","","","","PUT api/order/customerOrders","Medium","","Order","2","","Step Description:
+Update customer order to system with """"order.ChanneId"""" more than 64 chars
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""". 
+Step Description:
+Update customer order to system with """"order.ChanneId"""" equal 64 chars
+Expected Result:
+Order updated","1. 
+2.","1. System responds with a validation error """"String or binary data would be truncated..."""". 
+2. Order updated","1. Update customer order to system with """"order.ChanneId"""" more than 64 chars
+2. Update customer order to system with """"order.ChanneId"""" equal 64 chars","V3 Orders","S1590","Other","0"
+"C301881","Validation > order.OrganizationId",""," None","Daria Ponamareva","7/16/2021 9:24 AM","","","","PUT api/order/customerOrders","Medium","","Order","2","","Step Description:
+Update customer order to system with """"order.OrganizationId"""" more than 64 chars
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""". 
+Step Description:
+Update customer order to system with """"order.OrganizationId"""" equal 64 chars
+Expected Result:
+Order updated","1. 
+2.","1. System responds with a validation error """"String or binary data would be truncated..."""". 
+2. Order updated","1. Update customer order to system with """"order.OrganizationId"""" more than 64 chars
+2. Update customer order to system with """"order.OrganizationId"""" equal 64 chars","V3 Orders","S1590","Other","0"
+"C301882","Validation > order.OrganizationName",""," None","Daria Ponamareva","7/16/2021 9:25 AM","","","","PUT api/order/customerOrders","Medium","","Order","2","","Step Description:
+Update customer order to system with """"order.OrganizationName"""" more than 255 chars
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""". 
+Step Description:
+Update customer order to system with """"order.OrganizationName"""" equal 255 chars
+Expected Result:
+Order updated","1. 
+2.","1. System responds with a validation error """"String or binary data would be truncated..."""". 
+2. Order updated","1. Update customer order to system with """"order.OrganizationName"""" more than 255 chars
+2. Update customer order to system with """"order.OrganizationName"""" equal 255 chars","V3 Orders","S1590","Other","0"
+"C301883","Validatio > order.EmployeeId",""," None","Daria Ponamareva","7/16/2021 9:39 AM","","","","PUT api/order/customerOrders","Medium","","Order","2","","Step Description:
+Update customer order to system with """"order.EmployeeIdEmployeeId"""" more than 64 chars
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""". 
+Step Description:
+Update customer order to system with """"order.EmployeeIdEmployeeId"""" equal 64 chars
+Expected Result:
+Order updated","1. 
+2.","1. System responds with a validation error """"String or binary data would be truncated..."""". 
+2. Order updated","1. Update customer order to system with """"order.EmployeeIdEmployeeId"""" more than 64 chars
+2. Update customer order to system with """"order.EmployeeIdEmployeeId"""" equal 64 chars","V3 Orders","S1590","Other","0"
+"C301884","Validation > order.EmployeeName",""," None","Daria Ponamareva","7/16/2021 9:39 AM","","","","PUT api/order/customerOrders","Medium","","Order","2","","Step Description:
+Update customer order to system with """"order.EmployeeName"""" more than 255 chars
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""". 
+Step Description:
+Update customer order to system with """"order.EmployeeName"""" equal 255 chars
+Expected Result:
+Order updated","1. 
+2.","1. System responds with a validation error """"String or binary data would be truncated..."""". 
+2. Order updated","1. Update customer order to system with """"order.EmployeeName"""" more than 255 chars
+2. Update customer order to system with """"order.EmployeeName"""" equal 255 chars","V3 Orders","S1590","Other","0"
+"C301885","Validation > order.SubscriptionId",""," None","Daria Ponamareva","7/16/2021 9:40 AM","","","","PUT api/order/customerOrders","Medium","","Order","2","","Step Description:
+Update customer order to system with """"order.SubscriptionId"""" more than 64 chars
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""". 
+Step Description:
+Update customer order to system with """"order.SubscriptionId"""" equal 64 chars
+Expected Result:
+Order updated","1. 
+2.","1. System responds with a validation error """"String or binary data would be truncated..."""". 
+2. Order updated","1. Update customer order to system with """"order.SubscriptionId"""" more than 64 chars
+2. Update customer order to system with """"order.SubscriptionId"""" equal 64 chars","V3 Orders","S1590","Other","0"
+"C301886","Validation > order.SubscriptionNumber",""," None","Daria Ponamareva","7/16/2021 9:40 AM","","","","PUT api/order/customerOrders","Medium","","Order","2","","Step Description:
+Update customer order to system with """"order.SubscriptionNumber"""" more than 64 chars
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""". 
+Step Description:
+Update customer order to system with """"order.SubscriptionNumber"""" more than 64 chars
+Expected Result:
+Order updated","1. 
+2.","1. System responds with a validation error """"String or binary data would be truncated..."""". 
+2. Order updated","1. Update customer order to system with """"order.SubscriptionNumber"""" more than 64 chars
+2. Update customer order to system with """"order.SubscriptionNumber"""" more than 64 chars","V3 Orders","S1590","Other","0"
+"C301887","Validation > order.LanguageCode",""," None","Daria Ponamareva","7/16/2021 9:40 AM","","","","PUT api/order/customerOrders","Medium","","Order","2","","Step Description:
+Update customer order to system with """"order.LanguageCode"""" more than 16 chars
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""". 
+Step Description:
+Update customer order to system with """"order.LanguageCode"""" equal 16  chars
+Expected Result:
+Order updated","1. 
+2.","1. System responds with a validation error """"String or binary data would be truncated..."""". 
+2. Order updated","1. Update customer order to system with """"order.LanguageCode"""" more than 16 chars
+2. Update customer order to system with """"order.LanguageCode"""" equal 16  chars","V3 Orders","S1590","Other","0"
+"C301888","Validation > order.ShoppingCardId",""," None","Daria Ponamareva","7/16/2021 9:40 AM","","","","PUT api/order/customerOrders","Medium","","Order","2","","Step Description:
+Update customer order to system with """"order.ShoppingCardId"""" more than 128 chars
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""". 
+Step Description:
+Update customer order to system with """"order.ShoppingCardId"""" equal 128 chars
+Expected Result:
+Order updated","1. 
+2.","1. System responds with a validation error """"String or binary data would be truncated..."""". 
+2. Order updated","1. Update customer order to system with """"order.ShoppingCardId"""" more than 128 chars
+2. Update customer order to system with """"order.ShoppingCardId"""" equal 128 chars","V3 Orders","S1590","Other","0"
+"C301889","Validation > order.PurchaseOrderNumber",""," None","Daria Ponamareva","7/16/2021 9:41 AM","","","","PUT api/order/customerOrders","Medium","","Order","2","","Step Description:
+Update customer order to system with """"order.PurchaseOrderNumber"""" more than 128 chars
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""". 
+Step Description:
+Update customer order to system with """"order.PurchaseOrderNumber"""" equal 128 chars
+Expected Result:
+Order updated","1. 
+2.","1. System responds with a validation error """"String or binary data would be truncated..."""". 
+2. Order updated","1. Update customer order to system with """"order.PurchaseOrderNumber"""" more than 128 chars
+2. Update customer order to system with """"order.PurchaseOrderNumber"""" equal 128 chars","V3 Orders","S1590","Other","0"
+"C301890","Validation > payment.OrganizationId",""," None","Daria Ponamareva","7/16/2021 9:50 AM","","","","PUT api/order/customerOrders
+
+","Medium","","Payment","2","","Step Description:
+Update order with """"payment.OrganizationId"""" more than 64 chars  
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""".
+
+
+Step Description:
+Update order with """"payment.OrganizationId"""" equal 64 chars  
+Expected Result:
+Payment updated  ","1. 
+2.","1. System responds with a validation error """"String or binary data would be truncated..."""".
+
+
+2. Payment updated  ","1. Update order with """"payment.OrganizationId"""" more than 64 chars  
+2. Update order with """"payment.OrganizationId"""" equal 64 chars  ","V3 Orders","S1590","Other","0"
+"C301891","Validation > payment.OrganizationName",""," None","Daria Ponamareva","7/16/2021 9:51 AM","","","","PUT api/order/customerOrders
+
+","Medium","","Payment","2","","Step Description:
+Update order with """"payment.OrganizationName"""" more than 255 chars  
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""".
+
+
+Step Description:
+Update order with """"payment.OrganizationName"""" equal 64 chars  
+Expected Result:
+Payment updated  ","1. 
+2.","1. System responds with a validation error """"String or binary data would be truncated..."""".
+
+
+2. Payment updated  ","1. Update order with """"payment.OrganizationName"""" more than 255 chars  
+2. Update order with """"payment.OrganizationName"""" equal 64 chars  ","V3 Orders","S1590","Other","0"
+"C301892","Validation > payment.CustomerId",""," None","Daria Ponamareva","7/16/2021 9:51 AM","","","","PUT api/order/customerOrders
+
+","Medium","","Payment","2","","Step Description:
+Update order payment with """"payment.CustomerId"""" more than 64 chars
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""".
+
+
+
+Step Description:
+Update order payment with empty """"payment.CustomerId""""
+Expected Result:
+Payment is not updated, system responds with a validation error.
+
+Step Description:
+Update order payment with """"payment.CustomerId"""" equal 64 chars
+Expected Result:
+Payment updated","1. 
+2. 
+3.","1. System responds with a validation error """"String or binary data would be truncated..."""".
+
+
+
+2. Payment is not updated, system responds with a validation error.
+
+3. Payment updated","1. Update order payment with """"payment.CustomerId"""" more than 64 chars
+2. Update order payment with empty """"payment.CustomerId""""
+3. Update order payment with """"payment.CustomerId"""" equal 64 chars","V3 Orders","S1590","Other","0"
+"C301893","Validation > payment.CustomerName",""," None","Daria Ponamareva","7/16/2021 9:51 AM","","","","PUT api/order/customerOrders
+
+","Medium","","Payment","2","","Step Description:
+Update order with """"payment.CustomerName"""" more than 255 chars
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""".
+
+
+Step Description:
+Update order with """"payment.CustomerName"""" equal 255 chars
+Expected Result:
+Payment updated","1. 
+2.","1. System responds with a validation error """"String or binary data would be truncated..."""".
+
+
+2. Payment updated","1. Update order with """"payment.CustomerName"""" more than 255 chars
+2. Update order with """"payment.CustomerName"""" equal 255 chars","V3 Orders","S1590","Other","0"
+"C301894","Validation > payment.Purpose",""," None","Daria Ponamareva","7/16/2021 9:51 AM","","","","PUT api/order/customerOrders
+
+","Medium","","Payment","2","","Step Description:
+Update order with """"payment.Purpose"""" more than 1024 chars
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""".
+
+
+Step Description:
+Update order with """"payment.Purpose"""" equal 1024 chars
+Expected Result:
+Payment updated","1. 
+2.","1. System responds with a validation error """"String or binary data would be truncated..."""".
+
+
+2. Payment updated","1. Update order with """"payment.Purpose"""" more than 1024 chars
+2. Update order with """"payment.Purpose"""" equal 1024 chars","V3 Orders","S1590","Other","0"
+"C301895","Validation > payment.GatewayCode",""," None","Daria Ponamareva","7/16/2021 9:52 AM","","","","PUT api/order/customerOrders","Medium","","Payment","2","","Step Description:
+Update order with """"payment.GatewayCode"""" more than 64 chars
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""".
+
+
+Step Description:
+Update order with """"payment.GatewayCode"""" equal 64 chars
+Expected Result:
+Payment updated","1. 
+2.","1. System responds with a validation error """"String or binary data would be truncated..."""".
+
+
+2. Payment updated","1. Update order with """"payment.GatewayCode"""" more than 64 chars
+2. Update order with """"payment.GatewayCode"""" equal 64 chars","V3 Orders","S1590","Other","0"
+"C301896","Validation > payment.TaxType",""," None","Daria Ponamareva","7/16/2021 9:52 AM","","","","PUT api/order/customerOrders
+
+","Medium","","Payment","2","","Step Description:
+Update order with """"payment.TaxType"""" more than 64 chars
+Expected Result:
+System responds with a validation error """"String or binary data would be truncated..."""".
+
+
+Step Description:
+Update order with """"payment.TaxType"""" equal 64 chars 
+
+Expected Result:
+ Payment updated","1. 
+2.","1. System responds with a validation error """"String or binary data would be truncated..."""".
+
+
+2.  Payment updated","1. Update order with """"payment.TaxType"""" more than 64 chars
+2. Update order with """"payment.TaxType"""" equal 64 chars ","V3 Orders","S1590","Other","0"
+"C311912","Install Order2Sample module","","","Elena Mutykova","9/7/2021 2:18 PM","","Order2Sample module is installed","","","Medium","","Order2Sample module","0","","","","","","V3 Orders","S1590","Other","0"
+"C311913","Create a new order","","","Elena Mutykova","9/7/2021 2:18 PM","","","","Order2Sample module is installed ( https://github.com/VirtoCommerce/vc-module-order/tree/dev/samples/VirtoCommerce.OrdersModule2.Web )  ","Medium","","Order2Sample module","0","","Step Description:
+Go to Storefront 
+Add some products to the cart 
+Complete Checkout
+ 
+Expected Result:
+A new order was created.
+Step Description:
+Go to admin panel > Orders
+Find new Order from the previous step 
+Open Order 
+Expected Result:
+Order is displayed in the Orders list.
+Order details blade is opened
+    ","1. 
+2.","1. A new order was created.
+2. Order is displayed in the Orders list.
+Order details blade is opened
+    ","1. Go to Storefront 
+Add some products to the cart 
+Complete Checkout
+ 
+2. Go to admin panel > Orders
+Find new Order from the previous step 
+Open Order ","V3 Orders","S1590","Other","0"
+"C311914","Read order","","","Elena Mutykova","9/7/2021 2:19 PM","","","","Order2Sample module is installed ( https://github.com/VirtoCommerce/vc-module-order/tree/dev/samples/VirtoCommerce.OrdersModule2.Web ) 
+Order_1 created","Medium","","Order2Sample module","0","","Step Description:
+Open Orders module
+Click on Order_1
+ 
+Expected Result:
+Order_1 is opened with order's details
+Order_1 has the status """"New""""  
+Step Description:
+Click on LineItems widget
+Expected Result:
+Line Items blade is opened.
+Items are displayed.
+Add is active and the user is able to add a line item to the existing order.
+The Remove is disabled and becomes active after the marked checkbox.
+Step Description:
+Click on Payment block
+Expected Result:
+Payment details blade is opened.
+The status new 
+Step Description:
+Click on shipment block
+Expected Result:
+User sees information about Shipping
+The status new","1. 
+2. 
+3. 
+4.","1. Order_1 is opened with order's details
+Order_1 has the status """"New""""  
+2. Line Items blade is opened.
+Items are displayed.
+Add is active and the user is able to add a line item to the existing order.
+The Remove is disabled and becomes active after the marked checkbox.
+3. Payment details blade is opened.
+The status new 
+4. User sees information about Shipping
+The status new","1. Open Orders module
+Click on Order_1
+ 
+2. Click on LineItems widget
+3. Click on Payment block
+4. Click on shipment block","V3 Orders","S1590","Other","0"
+"C311915","Update order","","","Elena Mutykova","9/7/2021 2:19 PM","","","","Order_1 created
+Order2Sample module is installed ( https://github.com/VirtoCommerce/vc-module-order/tree/dev/samples/VirtoCommerce.OrdersModule2.Web )  ","Medium","","Order2Sample module","0","","Step Description:
+Admin panel > Orders > Order_1
+Expected Result:
+The system displays the order details blade in editable format
+Step Description:
+Change status to any from the drop-down list
+Save
+Reopened blade  
+Expected Result:
+Status was changed
+All changes saved ","1. 
+2.","1. The system displays the order details blade in editable format
+2. Status was changed
+All changes saved ","1. Admin panel > Orders > Order_1
+2. Change status to any from the drop-down list
+Save
+Reopened blade  ","V3 Orders","S1590","Other","0"
+"C311916","Delete order","","","Elena Mutykova","9/7/2021 2:19 PM","","The systems delete the order
+The order no longer exists in the system","","Order2Sample module is installed ( https://github.com/VirtoCommerce/vc-module-order/tree/dev/samples/VirtoCommerce.OrdersModule2.Web )
+Order_1 created  ","Medium","","Order2Sample module","0","","","","","","V3 Orders","S1590","Other","0"
+"C312160","Add Address with OuterId","","","Daria Ponamareva","9/10/2021 1:15 PM","","Address and OuterId added","","Go to Swagger","Medium","","Address with OuterId property","0","","","","","","V3 Orders","S1590","Other","0"
+"C312161","Update Address with new OuterId","","","Daria Ponamareva","9/10/2021 1:15 PM","","OuterId updated","","Go to Swagger","Medium","","Address with OuterId property","0","","","","","","V3 Orders","S1590","Other","0"
+"C312162","Delete address","","","Daria Ponamareva","9/10/2021 1:16 PM","","Address deleted","","Order with added Address [C312160]","Medium","","Address with OuterId property","0","","","","","","V3 Orders","S1590","Other","0"
+"C361429","OrganizationOrder > Get orders from organization > Correct token&Correct organizationId",""," None","Alexandr Tzykin","6/20/2023 5:10 AM","","List of order with organizationId=2be32440-ee84-4dd5-aa9b-fcbe35bf61f0","","","Medium","","OrganizationOrder","0","","","","","","V3 Orders","S1590","Other","0"
+"C361430","OrganizationOrder> Incorrect organizationId",""," None","Alexandr Tzykin","6/20/2023 5:12 AM","","empty list","","","Medium","","OrganizationOrder","0","","","","","","V3 Orders","S1590","Other","0"
+"C361431","OrganizationOrder> Incorrect token",""," None","Alexandr Tzykin","6/20/2023 5:16 AM","","Error access denied ","","","Medium","","OrganizationOrder","0","","","","","","V3 Orders","S1590","Other","0"

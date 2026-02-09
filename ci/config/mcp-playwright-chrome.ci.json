@@ -1,0 +1,32 @@
+{
+  "browser": {
+    "browserName": "chromium",
+    "launchOptions": {
+      "headless": true,
+      "args": [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage"
+      ]
+    },
+    "contextOptions": {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "recordVideo": {
+        "dir": "./test-results/chrome/videos",
+        "size": {
+          "width": 1280,
+          "height": 720
+        }
+      },
+      "recordHar": {
+        "path": "./test-results/chrome/har",
+        "omitContent": true
+      }
+    }
+  },
+  "isolated": true,
+  "outputDir": "./test-results/chrome"
+}

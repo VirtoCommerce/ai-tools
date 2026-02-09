@@ -1,0 +1,696 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C217134","Full indexation","","","Grotem","4/28/2020 7:36 AM","","","","<ol>
+<li>User logged in admin environment</li>
+<li>Catalog, Contacts, Category added to store</li>
+</ol>
+","Medium","","Search index","1","","Step Description:
+<p>User click on """"Search engine"""" page</p>
+Expected Result:
+<ol>
+<li>Blade with list of entities to index shown</li>
+<li>List contains next entities</li>
+</ol>
+
+<ul>
+<li>Product</li>
+<li>Category</li>
+<li>Member</li>
+<li>CustomerOrder </li>
+</ul>
+
+<ol>
+<li>Button """"Build index"""" disabled</li>
+</ol>
+Step Description:
+<p>Click on checkbox in the top left corner of list</p>
+Expected Result:
+<ol>
+<li>All entities selected</li>
+<li>""""Build index"""" button becomes active</li>
+</ol>
+Step Description:
+<p>Click on button """"Bild index"""" and select any of build options</p>
+Expected Result:
+<ol>
+<li>Indexation started</li>
+<li>Indexation ended without errors</li>
+</ol>
+Step Description:
+<ol>
+<li>Click on button """"Refresh""""</li>
+</ol>
+Expected Result:
+<ol>
+<li>Amount indexed objects changed in all entities</li>
+<li>Column """"Provider"""" must have values """"Elastic search""""</li>
+</ol>","1. 
+2. 
+3. 
+4.","1. <ol>
+<li>Blade with list of entities to index shown</li>
+<li>List contains next entities</li>
+</ol>
+
+<ul>
+<li>Product</li>
+<li>Category</li>
+<li>Member</li>
+<li>CustomerOrder </li>
+</ul>
+
+<ol>
+<li>Button """"Build index"""" disabled</li>
+</ol>
+2. <ol>
+<li>All entities selected</li>
+<li>""""Build index"""" button becomes active</li>
+</ol>
+3. <ol>
+<li>Indexation started</li>
+<li>Indexation ended without errors</li>
+</ol>
+4. <ol>
+<li>Amount indexed objects changed in all entities</li>
+<li>Column """"Provider"""" must have values """"Elastic search""""</li>
+</ol>","1. <p>User click on """"Search engine"""" page</p>
+2. <p>Click on checkbox in the top left corner of list</p>
+3. <p>Click on button """"Bild index"""" and select any of build options</p>
+4. <ol>
+<li>Click on button """"Refresh""""</li>
+</ol>","V3 Elastic Search Module","S1673","Other","1"
+"C217147","Index concrete entity","","","Grotem","4/28/2020 9:05 AM","","","","1. User logged in admin environment
+2. Catalog, Contacts, Category added to store","Medium","","Search index","1","","Step Description:
+User click on """"Search engine"""" page
+Expected Result:
+1. Blade with list of entities to index shown
+2. List contains next entities
+- Product
+- Category
+- Member
+- CustomerOrder
+3. Button """"Build index"""" disabled
+Step Description:
+Click on checkbox of one entity (e.g. Products)
+Expected Result:
+1. Entity selected
+2. """"Build index"""" button becomes active
+Step Description:
+Click on button """"Bild index"""" and select any of build options
+Expected Result:
+1. Indexation started
+2. Indexation ended without errors
+
+Step Description:
+1. Click on button """"Refresh""""
+Expected Result:
+1. Amount indexed objects for selected entity (e.g. Products) changed 
+2. Column """"Provider"""" must have values """"Elastic search""""","1. 
+2. 
+3. 
+4.","1. 1. Blade with list of entities to index shown
+2. List contains next entities
+- Product
+- Category
+- Member
+- CustomerOrder
+3. Button """"Build index"""" disabled
+2. 1. Entity selected
+2. """"Build index"""" button becomes active
+3. 1. Indexation started
+2. Indexation ended without errors
+
+4. 1. Amount indexed objects for selected entity (e.g. Products) changed 
+2. Column """"Provider"""" must have values """"Elastic search""""","1. User click on """"Search engine"""" page
+2. Click on checkbox of one entity (e.g. Products)
+3. Click on button """"Bild index"""" and select any of build options
+4. 1. Click on button """"Refresh""""","V3 Elastic Search Module","S1673","Other","0"
+"C217148","Index update on entities","","","Grotem","4/28/2020 9:09 AM","","","","1. User logged in admin environment
+2. Catalog, Contacts, Category added to store
+3. Indexation was previously done to entities","Medium","","Search index","1","","Step Description:
+User click on """"Search engine"""" page
+Expected Result:
+1. Blade with list of entities to index shown
+2. List contains next entities
+- Product
+- Category
+- Member
+- CustomerOrder
+3. Button """"Build index"""" disabled
+Step Description:
+Click on checkbox of one entity (e.g. Products)
+Expected Result:
+1. Entity selected
+2. """"Build index"""" button becomes active
+Step Description:
+Click on button """"Bild index"""" and select any of build options
+Expected Result:
+1. Indexation started
+2. Indexation ended without errors
+
+Step Description:
+Click on button """"Refresh""""
+Expected Result:
+1. Amount indexed objects for selected entity (e.g. Products) changed 
+2. Column """"Provider"""" must have values """"Elastic search""""
+3. Time of indexation changed 
+
+Step Description:
+User open Products blade
+Expected Result:
+1. List of products shown
+2. List contains Product_1
+Step Description:
+Click on Product_1
+Expected Result:
+1. Product_1 details blade opened
+2. Index widget time updated (e.g. """"Indexes 1 min ago"""")","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. 1. Blade with list of entities to index shown
+2. List contains next entities
+- Product
+- Category
+- Member
+- CustomerOrder
+3. Button """"Build index"""" disabled
+2. 1. Entity selected
+2. """"Build index"""" button becomes active
+3. 1. Indexation started
+2. Indexation ended without errors
+
+4. 1. Amount indexed objects for selected entity (e.g. Products) changed 
+2. Column """"Provider"""" must have values """"Elastic search""""
+3. Time of indexation changed 
+
+5. 1. List of products shown
+2. List contains Product_1
+6. 1. Product_1 details blade opened
+2. Index widget time updated (e.g. """"Indexes 1 min ago"""")","1. User click on """"Search engine"""" page
+2. Click on checkbox of one entity (e.g. Products)
+3. Click on button """"Bild index"""" and select any of build options
+4. Click on button """"Refresh""""
+5. User open Products blade
+6. Click on Product_1","V3 Elastic Search Module","S1673","Other","0"
+"C217785","Build","","","Grotem","4/29/2020 9:15 AM","","","","1. User logged in admin environment
+2. Catalog, Contacts, Category added to store","Medium","","Build type","2","","Step Description:
+User click on """"Search engine"""" page
+Expected Result:
+1. Blade with list of entities to index shown
+2. List contains next entities
+- Product
+- Category
+- Member
+- CustomerOrder
+3. Button """"Build index"""" in toolbar disabled
+Step Description:
+Click on checkbox in the top left corner of list
+Expected Result:
+1. All entities selected
+2. """"Build index"""" button becomes active
+Step Description:
+Click on button """"Bild index"""" and select """"Build""""
+Expected Result:
+Indexation started
+Step Description:
+Click on button """"Cancel"""" on toolbar of notifications blade
+Expected Result:
+1. Indexation stopped
+2. Some indexes were built
+3. Old indexes were not deleted","1. 
+2. 
+3. 
+4.","1. 1. Blade with list of entities to index shown
+2. List contains next entities
+- Product
+- Category
+- Member
+- CustomerOrder
+3. Button """"Build index"""" in toolbar disabled
+2. 1. All entities selected
+2. """"Build index"""" button becomes active
+3. Indexation started
+4. 1. Indexation stopped
+2. Some indexes were built
+3. Old indexes were not deleted","1. User click on """"Search engine"""" page
+2. Click on checkbox in the top left corner of list
+3. Click on button """"Bild index"""" and select """"Build""""
+4. Click on button """"Cancel"""" on toolbar of notifications blade","V3 Elastic Search Module","S1673","Other","0"
+"C217786","Delete + Build","","","Grotem","4/29/2020 9:38 AM","","","","1. User logged in admin environment
+2. Catalog, Contacts, Category added to store","Medium","","Build type","2","","Step Description:
+User click on """"Search engine"""" page
+Expected Result:
+1. Blade with list of entities to index shown
+2. List contains next entities
+- Product
+- Category
+- Member
+- CustomerOrder
+3. Button """"Build index"""" in toolbar disabled
+Step Description:
+Click on checkbox in the top left corner of list
+Expected Result:
+1. All entities selected
+2. """"Build index"""" button becomes active
+Step Description:
+Click on button """"Bild index"""" and select """"Delete + Build""""
+Expected Result:
+Indexation started
+Step Description:
+Click on button """"Cancel"""" on toolbar of notifications blade
+Expected Result:
+1. Indexation stopped
+2. All old indexes were deleted
+3. Some indexes were built","1. 
+2. 
+3. 
+4.","1. 1. Blade with list of entities to index shown
+2. List contains next entities
+- Product
+- Category
+- Member
+- CustomerOrder
+3. Button """"Build index"""" in toolbar disabled
+2. 1. All entities selected
+2. """"Build index"""" button becomes active
+3. Indexation started
+4. 1. Indexation stopped
+2. All old indexes were deleted
+3. Some indexes were built","1. User click on """"Search engine"""" page
+2. Click on checkbox in the top left corner of list
+3. Click on button """"Bild index"""" and select """"Delete + Build""""
+4. Click on button """"Cancel"""" on toolbar of notifications blade","V3 Elastic Search Module","S1673","Other","0"
+"C217787","Cancel","","","Grotem","4/29/2020 9:39 AM","","","","1. User logged in admin environment
+2. Catalog, Contacts, Category added to store","Medium","","Build type","2","","Step Description:
+User click on """"Search engine"""" page
+Expected Result:
+1. Blade with list of entities to index shown
+2. List contains next entities
+- Product
+- Category
+- Member
+- CustomerOrder
+3. Button """"Build index"""" in toolbar disabled
+Step Description:
+Click on checkbox in the top left corner of list
+Expected Result:
+1. All entities selected
+2. """"Build index"""" button becomes active
+Step Description:
+Click on button """"Bild index"""" and select """"Cancel""""
+Expected Result:
+1. Indexation not started
+2. Popup closed","1. 
+2. 
+3.","1. 1. Blade with list of entities to index shown
+2. List contains next entities
+- Product
+- Category
+- Member
+- CustomerOrder
+3. Button """"Build index"""" in toolbar disabled
+2. 1. All entities selected
+2. """"Build index"""" button becomes active
+3. 1. Indexation not started
+2. Popup closed","1. User click on """"Search engine"""" page
+2. Click on checkbox in the top left corner of list
+3. Click on button """"Bild index"""" and select """"Cancel""""","V3 Elastic Search Module","S1673","Other","0"
+"C217784","Build","","","Grotem","4/29/2020 9:14 AM","","","","1. User logged in admin environment
+2. Catalog, Contacts, Category added to store","Medium","","Context menu","2","","Step Description:
+User click on """"Search engine"""" page
+Expected Result:
+1. Blade with list of entities to index shown
+2. List contains next entities
+- Product
+- Category
+- Member
+- CustomerOrder
+3. Button """"Build index"""" in toolbar disabled
+Step Description:
+Click on entity with right mouse button (e.g. Catalog)
+Expected Result:
+1. Context menu opened
+2. Context menu contain button """"Build""""
+Step Description:
+Click on button """"Bild"""" and select any of build options
+Expected Result:
+1. Indexation started
+2. Indexation ended without errors","1. 
+2. 
+3.","1. 1. Blade with list of entities to index shown
+2. List contains next entities
+- Product
+- Category
+- Member
+- CustomerOrder
+3. Button """"Build index"""" in toolbar disabled
+2. 1. Context menu opened
+2. Context menu contain button """"Build""""
+3. 1. Indexation started
+2. Indexation ended without errors","1. User click on """"Search engine"""" page
+2. Click on entity with right mouse button (e.g. Catalog)
+3. Click on button """"Bild"""" and select any of build options","V3 Elastic Search Module","S1673","Other","0"
+"C217782","Refresh","","","Grotem","4/29/2020 8:24 AM","","","","1. User logged in admin environment
+2. Catalog, Contacts, Category added to store
+3. Indexation was previously done to entities","Medium","","Toolbar","2","","Step Description:
+User click on """"Search engine"""" page
+Expected Result:
+1. Blade with list of entities to index shown
+2. List contains next entities
+- Product
+- Category
+- Member
+- CustomerOrder
+3. Button """"Build index"""" disabled
+Step Description:
+Click on checkbox of one entity (e.g. Products)
+Expected Result:
+1. Entity selected
+2. """"Build index"""" button becomes active
+Step Description:
+Click on button """"Bild index"""" and select any of build options
+Expected Result:
+1. Indexation started
+2. Indexation ended without errors
+
+Step Description:
+Click on button """"Refresh""""
+Expected Result:
+1. Amount indexed objects for selected entity (e.g. Products) changed 
+2. Column """"Provider"""" must have values """"Elastic search""""
+3. Time of indexation changed","1. 
+2. 
+3. 
+4.","1. 1. Blade with list of entities to index shown
+2. List contains next entities
+- Product
+- Category
+- Member
+- CustomerOrder
+3. Button """"Build index"""" disabled
+2. 1. Entity selected
+2. """"Build index"""" button becomes active
+3. 1. Indexation started
+2. Indexation ended without errors
+
+4. 1. Amount indexed objects for selected entity (e.g. Products) changed 
+2. Column """"Provider"""" must have values """"Elastic search""""
+3. Time of indexation changed","1. User click on """"Search engine"""" page
+2. Click on checkbox of one entity (e.g. Products)
+3. Click on button """"Bild index"""" and select any of build options
+4. Click on button """"Refresh""""","V3 Elastic Search Module","S1673","Other","0"
+"C217783","Build","","","Grotem","4/29/2020 8:25 AM","","","","1. User logged in admin environment
+2. Catalog, Contacts, Category added to store","Medium","","Toolbar","2","","Step Description:
+User click on """"Search engine"""" page
+Expected Result:
+1. Blade with list of entities to index shown
+2. List contains next entities
+- Product
+- Category
+- Member
+- CustomerOrder
+3. Button """"Build index"""" in toolbar disabled
+Step Description:
+Click on checkbox in the top left corner of list
+Expected Result:
+1. All entities selected
+2. """"Build index"""" button becomes active
+Step Description:
+Click on button """"Bild index"""" and select any of build options
+Expected Result:
+1. Indexation started
+2. Indexation ended without errors","1. 
+2. 
+3.","1. 1. Blade with list of entities to index shown
+2. List contains next entities
+- Product
+- Category
+- Member
+- CustomerOrder
+3. Button """"Build index"""" in toolbar disabled
+2. 1. All entities selected
+2. """"Build index"""" button becomes active
+3. 1. Indexation started
+2. Indexation ended without errors","1. User click on """"Search engine"""" page
+2. Click on checkbox in the top left corner of list
+3. Click on button """"Bild index"""" and select any of build options","V3 Elastic Search Module","S1673","Other","0"
+"C217788","Index product","","","Grotem","4/29/2020 9:40 AM","","","","1. User logged in admin environment
+2. Catalog, Contacts, Category added to store
+3. Catalogs list contains Catalog_1
+4. Catalog_1 contains Product_1","Medium","","Catalog","1","","Step Description:
+User click on """"Catalog"""" page
+Expected Result:
+Blade with list of catalogs shown
+Step Description:
+User click on Catalog_1
+Expected Result:
+List with products shown
+Step Description:
+User click on Product_1
+Expected Result:
+1. Blade with product details shown
+2. Widget to index proudct shown
+Step Description:
+Open widget """"Index""""
+Expected Result:
+1. Blade with JSON index of product shown
+2. Button """"Build index"""" is active
+Step Description:
+Change any property Property_1 in Product_1 that shown in index and save changes
+Expected Result:
+1. Property changed
+2. Changes saved
+Step Description:
+Open widet """"Index"""" and click """"Build index"""" 
+Expected Result:
+1. Indexation started
+2. Indexation completed without errors
+Step Description:
+Open widget """"Index""""
+Expected Result:
+1. Blade with JSON index of product shown
+2. Property_1 changed in index","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7.","1. Blade with list of catalogs shown
+2. List with products shown
+3. 1. Blade with product details shown
+2. Widget to index proudct shown
+4. 1. Blade with JSON index of product shown
+2. Button """"Build index"""" is active
+5. 1. Property changed
+2. Changes saved
+6. 1. Indexation started
+2. Indexation completed without errors
+7. 1. Blade with JSON index of product shown
+2. Property_1 changed in index","1. User click on """"Catalog"""" page
+2. User click on Catalog_1
+3. User click on Product_1
+4. Open widget """"Index""""
+5. Change any property Property_1 in Product_1 that shown in index and save changes
+6. Open widet """"Index"""" and click """"Build index"""" 
+7. Open widget """"Index""""","V3 Elastic Search Module","S1673","Other","0"
+"C217793","Search product","","","Grotem","4/29/2020 9:52 AM","","","","1. User logged in admin environment
+2. Catalog, Contacts, Category added to store
+3. Catalogs list contains Catalog_1
+4. Catalog_1 contains Product_1","Medium","","Catalog","1","","Step Description:
+User click on """"Catalog"""" page
+Expected Result:
+Blade with list of catalogs shown
+Step Description:
+User click on Catalog_1
+Expected Result:
+List with products shown
+Step Description:
+Type in search field Product_1 name
+Expected Result:
+Product_1 shown in list
+Step Description:
+Type in search field part of Product_1 name
+Expected Result:
+All products that contains part or Product_1 name shown","1. 
+2. 
+3. 
+4.","1. Blade with list of catalogs shown
+2. List with products shown
+3. Product_1 shown in list
+4. All products that contains part or Product_1 name shown","1. User click on """"Catalog"""" page
+2. User click on Catalog_1
+3. Type in search field Product_1 name
+4. Type in search field part of Product_1 name","V3 Elastic Search Module","S1673","Other","0"
+"C217794","Filtered search","","","Grotem","4/29/2020 10:00 AM","","","","1. User logged in admin environment
+2. Catalog, Contacts, Category added to store
+3. Catalogs list contains Catalog_1
+4. Catalog_1 contains Product_1
+5. Product_1 contains Property_1","Medium","","Catalog","1","","Step Description:
+User click on """"Catalog"""" page
+Expected Result:
+Blade with list of catalogs shown
+Step Description:
+User click on Catalog_1
+Expected Result:
+List with products shown
+Step Description:
+Click on filter near search field
+Expected Result:
+Blade to create filter shown 
+Step Description:
+Create custom filter by property Property_1 and click """"Save and apply""""
+Expected Result:
+1. Filter saved
+2. Filter set in search field
+3. Product_1 shown","1. 
+2. 
+3. 
+4.","1. Blade with list of catalogs shown
+2. List with products shown
+3. Blade to create filter shown 
+4. 1. Filter saved
+2. Filter set in search field
+3. Product_1 shown","1. User click on """"Catalog"""" page
+2. User click on Catalog_1
+3. Click on filter near search field
+4. Create custom filter by property Property_1 and click """"Save and apply""""","V3 Elastic Search Module","S1673","Other","0"
+"C219131","Search product","","","Grotem","4/29/2020 3:06 PM","","","","1. User logged in admin environment
+2. Catalog, Contacts, Category added to store
+3. Catalogs list contains Catalog_1
+4. Catalog_1 contains Product_1","Medium","","Search in catalog blade","2","","Step Description:
+User click on """"Catalog"""" page
+Expected Result:
+Blade with list of catalogs shown
+Step Description:
+Type in search field Product_1 name
+Expected Result:
+Product_1 shown in list
+Step Description:
+Type in search field part of Product_1 name
+Expected Result:
+All products that contains part or Product_1 name shown","1. 
+2. 
+3.","1. Blade with list of catalogs shown
+2. Product_1 shown in list
+3. All products that contains part or Product_1 name shown","1. User click on """"Catalog"""" page
+2. Type in search field Product_1 name
+3. Type in search field part of Product_1 name","V3 Elastic Search Module","S1673","Other","0"
+"C219132","Filtered search","","","Grotem","4/29/2020 3:06 PM","","","","1. User logged in admin environment
+2. Catalog, Contacts, Category added to store
+3. Catalogs list contains Catalog_1
+4. Catalog_1 contains Product_1
+5. Product_1 contains Property_1","Medium","","Search in catalog blade","2","","Step Description:
+User click on """"Catalog"""" page
+Expected Result:
+Blade with list of catalogs shown
+Step Description:
+Click on filter near search field
+Expected Result:
+Blade to create filter shown 
+Step Description:
+Create custom filter by property Property_1 and click """"Save and apply""""
+Expected Result:
+1. Filter saved
+2. Filter set in search field
+3. Product_1 shown","1. 
+2. 
+3.","1. Blade with list of catalogs shown
+2. Blade to create filter shown 
+3. 1. Filter saved
+2. Filter set in search field
+3. Product_1 shown","1. User click on """"Catalog"""" page
+2. Click on filter near search field
+3. Create custom filter by property Property_1 and click """"Save and apply""""","V3 Elastic Search Module","S1673","Other","0"
+"C217795","Index contact","","","Grotem","4/29/2020 10:02 AM","","","","1. User logged in admin environment
+2. Catalog, Contacts, Category added to store
+3. Contacts list contains Concact_1","Medium","","Contacts","1","","Step Description:
+User click on """"Contacts"""" page
+Expected Result:
+Blade with list of contacts shown
+Step Description:
+User click on Сontact_1
+Expected Result:
+1. Blade with Contact_1 details shown 
+2. Widget to index contact shown
+Step Description:
+Open widget """"Index""""
+Expected Result:
+1. Blade with JSON index of product shown
+2. Button """"Build index"""" is active
+Step Description:
+Change any property Property_1 in Contact_1 that shown in index and save changes
+Expected Result:
+1. Property changed
+2. Changes saved
+Step Description:
+Open widet """"Index"""" and click """"Build index"""" 
+Expected Result:
+1. Indexation started
+2. Indexation completed without errors
+Step Description:
+Open widget """"Index""""
+Expected Result:
+1. Blade with JSON index of product shown
+2. Property_1 changed in index","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. Blade with list of contacts shown
+2. 1. Blade with Contact_1 details shown 
+2. Widget to index contact shown
+3. 1. Blade with JSON index of product shown
+2. Button """"Build index"""" is active
+4. 1. Property changed
+2. Changes saved
+5. 1. Indexation started
+2. Indexation completed without errors
+6. 1. Blade with JSON index of product shown
+2. Property_1 changed in index","1. User click on """"Contacts"""" page
+2. User click on Сontact_1
+3. Open widget """"Index""""
+4. Change any property Property_1 in Contact_1 that shown in index and save changes
+5. Open widet """"Index"""" and click """"Build index"""" 
+6. Open widget """"Index""""","V3 Elastic Search Module","S1673","Other","0"
+"C217796","Search contact","","","Grotem","4/29/2020 10:02 AM","","","","1. User logged in admin environment
+2. Catalog, Contacts, Category added to store
+3. Contacts list contains Concact_1","Medium","","Contacts","1","","Step Description:
+User click on """"Contacts"""" page
+Expected Result:
+Blade with list of contacts shown
+Step Description:
+Type in search field Contact_1 name
+Expected Result:
+Contact_1 shown in list
+Step Description:
+Type in search field part of Contact_1 name
+Expected Result:
+All contacts that contains part or Contact_1 name shown
+Step Description:
+Type in search field part of indexed property Property_1
+Expected Result:
+All contacts that contains part or Property_1 shown","1. 
+2. 
+3. 
+4.","1. Blade with list of contacts shown
+2. Contact_1 shown in list
+3. All contacts that contains part or Contact_1 name shown
+4. All contacts that contains part or Property_1 shown","1. User click on """"Contacts"""" page
+2. Type in search field Contact_1 name
+3. Type in search field part of Contact_1 name
+4. Type in search field part of indexed property Property_1","V3 Elastic Search Module","S1673","Other","0"
+"C255641","Search product","","","Volha Baban","9/29/2020 11:03 AM","","","","1. User logged in admin environment
+2. Catalog, Contacts, Category added to store
+3. Catalogs list contains Catalog_1
+4. Catalog_1 contains Product_1
+5. Catalog_1 contains Product_1 2","Medium","","Storefront","1","","Step Description:
+User logged in Storefront
+User click search for Product_1
+Expected Result:
+Quick results is shown in the following order
+Product_1 (full compliance with the search query )
+Product_1 2","1","1. Quick results is shown in the following order
+Product_1 (full compliance with the search query )
+Product_1 2","1. User logged in Storefront
+User click search for Product_1","V3 Elastic Search Module","S1673","Other","0"

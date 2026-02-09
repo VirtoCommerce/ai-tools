@@ -1,0 +1,437 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C179549","Add new folder",""," Katalon","Volha Baban","3/13/2020 1:44 PM","","","","<p>User is logged in into backend admin/store</p>
+","High","","Assets","0","More like file system in platform.
+---
+Blob storage
+File system","Step Description:
+<ol>
+<li>Go to the """"Assets"""" module. </li>
+<li>Click """"New folder"""".</li>
+<li><p>Enter the folder name to the appeared input field breaking one of the following rules:</p>
+
+<ul>
+<li>folder name must be from 3 through 63 characters long. </li>
+<li>folder name must start with a letter or number, and can contain only letters, numbers, and the dash (-) character.</li>
+<li>every dash (-) character must be immediately preceded and followed by a letter or number; consecutive dashes are not permitted.</li>
+<li>all letters in a folder name must be lowercase.</li>
+</ul></li>
+<li>Click """"Ok"""" or press 'Enter' on the keyboard.</li>
+</ol>
+Expected Result:
+<p>Folder not created. The system error appear in the top panel. If I click on """"View details"""" I see correct error details in popup</p>
+Step Description:
+<ol>
+<li>Enter the folder name according to the rules. </li>
+<li>Click """"Ok"""" or press 'Enter' on the keyboard. </li>
+</ol>
+Expected Result:
+<p>The folder is created. You can find it in the folder list.</p>","1. 
+2.","1. <p>Folder not created. The system error appear in the top panel. If I click on """"View details"""" I see correct error details in popup</p>
+2. <p>The folder is created. You can find it in the folder list.</p>","1. <ol>
+<li>Go to the """"Assets"""" module. </li>
+<li>Click """"New folder"""".</li>
+<li><p>Enter the folder name to the appeared input field breaking one of the following rules:</p>
+
+<ul>
+<li>folder name must be from 3 through 63 characters long. </li>
+<li>folder name must start with a letter or number, and can contain only letters, numbers, and the dash (-) character.</li>
+<li>every dash (-) character must be immediately preceded and followed by a letter or number; consecutive dashes are not permitted.</li>
+<li>all letters in a folder name must be lowercase.</li>
+</ul></li>
+<li>Click """"Ok"""" or press 'Enter' on the keyboard.</li>
+</ol>
+2. <ol>
+<li>Enter the folder name according to the rules. </li>
+<li>Click """"Ok"""" or press 'Enter' on the keyboard. </li>
+</ol>","Assets","S4300","Other","1"
+"C179526","Search [to do]",""," None","Volha Baban","3/13/2020 12:27 PM","","","","1. User is logged in into backend admin/store
+2. There are some folders and files.
+","Medium","","Assets","0","More like file system in platform.
+---
+Blob storage
+File system","Step Description:
+1. Go to the """"Assets"""" module. 
+2. Go to the directory that contains some folders and files. 
+3. Enter smth to the """"Search"""" field.
+4. Press 'Enter'.
+Expected Result:
+Only folders and files that match the search query are displayed.","1","1. Only folders and files that match the search query are displayed.","1. 1. Go to the """"Assets"""" module. 
+2. Go to the directory that contains some folders and files. 
+3. Enter smth to the """"Search"""" field.
+4. Press 'Enter'.","Assets","S4300","Other","0"
+"C179552","Copy link",""," Out of priority","Volha Baban","3/13/2020 1:45 PM","","","","1. User is logged in into backend admin/store
+2. There are some folders with files.","High","","Assets","0","More like file system in platform.
+---
+Blob storage
+File system","Step Description:
+1. Go to the """"Assets"""" module. 
+2. Right-click on any folder. 
+3. Click """"Copy link"""".
+
+Expected Result:
+A pop-up with a link in the input field appears.
+Step Description:
+1. Go to any directory that contains some files. 
+2. Right-click on any file. 
+3. Click """"Copy link"""". 
+Expected Result:
+A pop-up with a link in the input field appears.","1. 
+2.","1. A pop-up with a link in the input field appears.
+2. A pop-up with a link in the input field appears.","1. 1. Go to the """"Assets"""" module. 
+2. Right-click on any folder. 
+3. Click """"Copy link"""".
+
+2. 1. Go to any directory that contains some files. 
+2. Right-click on any file. 
+3. Click """"Copy link"""".","Assets","S4300","Other","0"
+"C179531","Sorting in columns",""," Out of priority","Volha Baban","3/13/2020 1:01 PM","","","","1. User is logged in into backend admin/store
+2. There are some folders and files.
+","High","","Assets","0","More like file system in platform.
+---
+Blob storage
+File system","Step Description:
+1. Go to the """"Assets"""" module.
+2. Go to the directory that contains some folders and files.
+3. Click on the """"Name"""" column. 
+Expected Result:
+All content of the directory is sorted by the name in alphabetical order.
+Step Description:
+1. Click on the """"Name"""" column one more time. 
+
+Expected Result:
+All content of the directory is sorted by the name in reverse alphabetical order.
+Step Description:
+1. Click on the """"Size"""" column. 
+Expected Result:
+All content of the directory is sorted by size - smallest to largest.
+Step Description:
+1. Click on the """"Size"""" column one more time. 
+Expected Result:
+All content of the directory is sorted by size - largest to smallest. 
+Step Description:
+1. Click on the """"Modified"""" column.
+Expected Result:
+All content of the directory is sorted by the last modified date - from earliest to latest
+
+Step Description:
+1. Click on the """"Modified"""" column one more time. 
+Expected Result:
+All content of the directory is sorted by the last modified date - from latest to earliest.","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. All content of the directory is sorted by the name in alphabetical order.
+2. All content of the directory is sorted by the name in reverse alphabetical order.
+3. All content of the directory is sorted by size - smallest to largest.
+4. All content of the directory is sorted by size - largest to smallest. 
+5. All content of the directory is sorted by the last modified date - from earliest to latest
+
+6. All content of the directory is sorted by the last modified date - from latest to earliest.","1. 1. Go to the """"Assets"""" module.
+2. Go to the directory that contains some folders and files.
+3. Click on the """"Name"""" column. 
+2. 1. Click on the """"Name"""" column one more time. 
+
+3. 1. Click on the """"Size"""" column. 
+4. 1. Click on the """"Size"""" column one more time. 
+5. 1. Click on the """"Modified"""" column.
+6. 1. Click on the """"Modified"""" column one more time.","Assets","S4300","Other","0"
+"C179550","Delete folder via righ-click",""," Katalon","Volha Baban","3/13/2020 1:44 PM","","The folder is deleted. ","","1. User is logged in into backend admin/store
+2. Add new folder [C179549]
+
+","High","","Assets","0","More like file system in platform.
+---
+Blob storage
+File system","","","","","Assets","S4300","Other","0"
+"C179551","Bulk delete via selecting check boxes",""," Katalon","Volha Baban","3/13/2020 1:45 PM","","Folders are deleted. ","","1. User is logged in into backend admin/store
+2. Create some folders [C179549]","High","","Assets","0","More like file system in platform.
+---
+Blob storage
+File system","","","","","Assets","S4300","Other","0"
+"C179521","Upload file to root folder",""," Katalon","Volha Baban","3/13/2020 12:22 PM","","An error occurs: """"Need to choose a folder! Can't upload a file to the root!""""
+
+![](index.php?/attachments/get/22902)
+","","User is logged in into backend admin/store
+","High","","Upload","1","","","","","","Assets","S4300","Other","0"
+"C179523","Upload picture to custom folder",""," Katalon","Volha Baban","3/13/2020 12:23 PM","","1. When the upload is complete, a message appears that the asset uploaded.
+2. The image appears in the list of all directory files.","","1. User is logged in into backend admin/store
+2. Add new folder [C179549]","High","","Upload","1","","","","","","Assets","S4300","Other","0"
+"C179524","Upload not picture file to custom folder",""," Katalon","Volha Baban","3/13/2020 12:23 PM","","1. When the upload is complete, a message appears that the asset uploaded.
+2. The file appears in the list of all directory files.","","1. User is logged in into backend admin/store
+2. Add new folder [C179549]","Medium","","Upload","1","","","","","","Assets","S4300","Other","0"
+"C179532","Upload via Drag&Drop section",""," Katalon","Volha Baban","3/13/2020 1:28 PM","","1. A loading line appears that displays uploading progress.
+2. When the upload is complete, a message appears that the asset uploaded.
+3. The file appears in the list of all directory files.","","1. User is logged in into backend admin/store
+2. Add new folder [C179549]","Medium","","Upload","1","","","","","","Assets","S4300","Other","0"
+"C179533","Upload via select from file system",""," Katalon","Volha Baban","3/13/2020 1:29 PM","","1. A loading line appears that displays uploading progress.
+2. When the upload is complete, a message appears that the asset uploaded.
+3. The file appears in the list of all directory files.
+","","1. User is logged in into backend admin/store
+2. Add new folder [C179549]
+","Medium","","Upload","1","","","","","","Assets","S4300","Other","0"
+"C179534","Upload via URL",""," Katalon","Volha Baban","3/13/2020 1:29 PM","","1. A loading line appears that displays uploading progress.
+2. When the upload is complete, a message appears that the asset uploaded.
+3. The file appears in the list of all directory files.
+","","User is logged in into backend admin/store
+Add new folder [C179549]","Medium","","Upload","1","","","","","","Assets","S4300","Other","0"
+"C176981","Download file, picture",""," None","Volha Baban","3/10/2020 2:40 PM","","The file opens in the new browser tab. ","","Upload picture to custom folder [C179523]","High","","Download","1","","","","","","Assets","S4300","Other","0"
+"C179525","Download file, not picture",""," None","Volha Baban","3/13/2020 12:24 PM","","The file opens in the new browser tab.
+
+","","Upload not picture file to custom folder [C179524]	","Medium","","Download","1","","","","","","Assets","S4300","Other","0"
+"C179535","Add asset via drag & drop",""," Katalon (generic)","Volha Baban","3/13/2020 1:36 PM","","","","User is logged in into backend.","High","","Widget 'Assets' in Catalog > Product","2","","Step Description:
+1. Go to the """"Catalog"""" tab. 
+2. Go to any product. 
+3. Click """"Add"""". 
+4. Drag and drop the file that you want to add to the marked zone.
+Expected Result:
+1. A loading line appears that displays uploading progress.
+2. When the upload is complete the file appears in the list.
+
+![](index.php?/attachments/get/22906) 
+
+
+Step Description:
+1. Click """"Ok"""".
+
+Expected Result:
+The file is added to the assets list.
+
+![](index.php?/attachments/get/22907) 
+
+Step Description:
+1. Click """"Ok"""".
+2. Click """"Save"""". 
+Expected Result:
+Counter on the """"Assets"""" widget is increased by one.
+
+![](index.php?/attachments/get/22908) 
+
+Step Description:
+1. Click on the """"Assets"""" widget again. 
+
+Expected Result:
+There is the uploaded file from previous steps in the assets list.","1. 
+2. 
+3. 
+4.","1. 1. A loading line appears that displays uploading progress.
+2. When the upload is complete the file appears in the list.
+
+![](index.php?/attachments/get/22906) 
+
+
+2. The file is added to the assets list.
+
+![](index.php?/attachments/get/22907) 
+
+3. Counter on the """"Assets"""" widget is increased by one.
+
+![](index.php?/attachments/get/22908) 
+
+4. There is the uploaded file from previous steps in the assets list.","1. 1. Go to the """"Catalog"""" tab. 
+2. Go to any product. 
+3. Click """"Add"""". 
+4. Drag and drop the file that you want to add to the marked zone.
+2. 1. Click """"Ok"""".
+
+3. 1. Click """"Ok"""".
+2. Click """"Save"""". 
+4. 1. Click on the """"Assets"""" widget again.","Assets","S4300","Other","0"
+"C179567","Add asset via select from file system field",""," Katalon (generic)","Volha Baban","3/16/2020 10:50 AM","","","","User is logged in into backend.","Medium","","Widget 'Assets' in Catalog > Product","2","","Step Description:
+1. Go to the """"Catalog"""" tab. 
+2. Go to any product. 
+3. Click """"Add"""". 
+4. Click on the file icon.
+5. Choose the file that you want to upload.
+6. Click """"Open"""".
+Expected Result:
+1. A loading line appears that displays uploading progress.
+2. When the upload is complete the file appears in the list.
+
+![](index.php?/attachments/get/22906) 
+
+
+Step Description:
+1. Click """"Ok"""".
+
+Expected Result:
+The file is added to the assets list.
+
+![](index.php?/attachments/get/22907) 
+
+Step Description:
+1. Click """"Ok"""".
+2. Click """"Save"""". 
+Expected Result:
+Counter on the """"Assets"""" widget is increased by one.
+
+![](index.php?/attachments/get/22908) 
+
+Step Description:
+1. Click on the """"Assets"""" widget again. 
+
+Expected Result:
+There is the uploaded file from previous steps in the assets list.","1. 
+2. 
+3. 
+4.","1. 1. A loading line appears that displays uploading progress.
+2. When the upload is complete the file appears in the list.
+
+![](index.php?/attachments/get/22906) 
+
+
+2. The file is added to the assets list.
+
+![](index.php?/attachments/get/22907) 
+
+3. Counter on the """"Assets"""" widget is increased by one.
+
+![](index.php?/attachments/get/22908) 
+
+4. There is the uploaded file from previous steps in the assets list.","1. 1. Go to the """"Catalog"""" tab. 
+2. Go to any product. 
+3. Click """"Add"""". 
+4. Click on the file icon.
+5. Choose the file that you want to upload.
+6. Click """"Open"""".
+2. 1. Click """"Ok"""".
+
+3. 1. Click """"Ok"""".
+2. Click """"Save"""". 
+4. 1. Click on the """"Assets"""" widget again.","Assets","S4300","Other","0"
+"C179536","Remove asset via selecting checkbox > click 'Remove'",""," Katalon (generic)","Volha Baban","3/13/2020 1:36 PM","","","","Add an asset to the product in any way [C179535], [C179567]","High","","Widget 'Assets' in Catalog > Product","2","","Step Description:
+1. Go to the product that has the asset from preconditions. 
+2. Mark the asset that you want to delete. 
+3. Click """"Remove"""". 
+
+
+Expected Result:
+The asset disappears from the list.
+
+Step Description:
+1. Click """"Ok"""".
+2. Click """"Save"""".
+Expected Result:
+The counter on the """"Assets"""" widget decreased by one","1. 
+2.","1. The asset disappears from the list.
+
+2. The counter on the """"Assets"""" widget decreased by one","1. 1. Go to the product that has the asset from preconditions. 
+2. Mark the asset that you want to delete. 
+3. Click """"Remove"""". 
+
+
+2. 1. Click """"Ok"""".
+2. Click """"Save"""".","Assets","S4300","Other","0"
+"C179537","Get link of asset",""," Out of priority","Volha Baban","3/13/2020 1:36 PM","","Selected assets appear in the list of product assets. ","","User is logged in into backend.","High","","Widget 'Assets' in Catalog > Product","2","","","","","","Assets","S4300","Other","0"
+"C179539","Righ-click > Download","","","Volha Baban","3/13/2020 1:38 PM","","The file opens in the new browser tab.
+
+","","Add an asset to the product in any way [C179535], [C179567]
+
+","Medium","","Widget 'Assets' in Catalog > Product","2","","","","","","Assets","S4300","Other","0"
+"C179540","Right-click > Copy Link","","","Volha Baban","3/13/2020 1:38 PM","","A pop-up with a link in the input field appears.
+
+","","Add an asset to the product in any way [C179535], [C179567]
+
+","Medium","","Widget 'Assets' in Catalog > Product","2","","","","","","Assets","S4300","Other","0"
+"C179541","Right-click > Delete",""," Katalon (generic)","Volha Baban","3/13/2020 1:39 PM","","The asset is deleted.","","Add an asset to the product in any way [C179535], [C179567]
+
+","Medium","","Widget 'Assets' in Catalog > Product","2","","","","","","Assets","S4300","Other","0"
+"C387839","External link",""," None","Elena Mutykova","6/18/2024 11:50 AM","","","","","Medium","","Widget 'Assets' in Catalog > Product","2","","Step Description:
+Open product &gt; Image
+
+Add external link to images - for example https://hakron.ma.informationstore.net/informationstore/E/E0002734.jpg?expires=20240610171629&secretname=InformationStore&id=0&ticket=D5F61AC9DAC00B7056AA4120BB28ED8F
+
+Save changes
+
+Check added image → Download the link
+Expected Result:
+External link shouldn’t be changed","1","1. External link shouldn’t be changed","1. Open product &gt; Image
+
+Add external link to images - for example https://hakron.ma.informationstore.net/informationstore/E/E0002734.jpg?expires=20240610171629&secretname=InformationStore&id=0&ticket=D5F61AC9DAC00B7056AA4120BB28ED8F
+
+Save changes
+
+Check added image → Download the link","Assets","S4300","Other","0"
+"C179574","Add new folder",""," Katalon (generic)","Volha Baban","3/16/2020 11:44 AM","","","","User is logged in into backend admin/store
+
+","High","","Widget 'Assets' in Store","2","copy from root
+upload, download, new, edit, delete","Step Description:
+1. Go to the """"Store"""" module. 
+2. Go to any store.
+3. Click on the """"Assets"""" widget. 
+4. Click """"New folder"""".
+3. Enter the folder name to the appeared input field breaking one of the following rules:
+      - folder name must be from 3 through 63 characters long. 
+      - folder name must start with a letter or number, and can contain only letters, numbers, and the dash (-) character.
+      - every dash (-) character must be immediately preceded and followed by a letter or number; consecutive dashes are not permitted.
+      - all letters in a folder name must be lowercase.
+4. Click """"Ok"""" or press 'Enter' on the keyboard.
+
+
+
+
+
+Expected Result:
+Folder is not created. The system error appear in the top panel. If I click on """"View details"""" I see correct error details in popup
+Step Description:
+1. Enter the folder name according to the rules. 
+2. Click """"Ok"""" or press 'Enter' on the keyboard. 
+Expected Result:
+The folder is created. You can find it in the folder list.","1. 
+2.","1. Folder is not created. The system error appear in the top panel. If I click on """"View details"""" I see correct error details in popup
+2. The folder is created. You can find it in the folder list.","1. 1. Go to the """"Store"""" module. 
+2. Go to any store.
+3. Click on the """"Assets"""" widget. 
+4. Click """"New folder"""".
+3. Enter the folder name to the appeared input field breaking one of the following rules:
+      - folder name must be from 3 through 63 characters long. 
+      - folder name must start with a letter or number, and can contain only letters, numbers, and the dash (-) character.
+      - every dash (-) character must be immediately preceded and followed by a letter or number; consecutive dashes are not permitted.
+      - all letters in a folder name must be lowercase.
+4. Click """"Ok"""" or press 'Enter' on the keyboard.
+
+
+
+
+
+2. 1. Enter the folder name according to the rules. 
+2. Click """"Ok"""" or press 'Enter' on the keyboard.","Assets","S4300","Other","0"
+"C179575","Delete folder via right-click",""," Katalon (generic)","Volha Baban","3/16/2020 11:44 AM","","The folder is deleted. ","","1. User is logged in into backend admin/store
+2. Add new folder [C179574]
+
+","Medium","","Widget 'Assets' in Store","2","copy from root
+upload, download, new, edit, delete","","","","","Assets","S4300","Other","0"
+"C179576","Bulk delete via selecting check boxes",""," Katalon (generic)","Volha Baban","3/16/2020 11:44 AM","","Folders are deleted. ","","1. User is logged in into backend admin/store
+2. Create some folders [C179574]","Medium","","Widget 'Assets' in Store","2","copy from root
+upload, download, new, edit, delete","","","","","Assets","S4300","Other","0"
+"C179577","Upload picture to custom folder",""," Katalon (generic)","Volha Baban","3/16/2020 11:44 AM","","1. When the upload is complete, a message appears that the asset uploaded.
+2. The image appears in the list of all directory files.","","1. User is logged in into backend admin/store
+2. Add new folder [C179574]","Medium","","Widget 'Assets' in Store","2","copy from root
+upload, download, new, edit, delete","","","","","Assets","S4300","Other","0"
+"C179578","Upload not picture file to custom folder",""," Katalon (generic)","Volha Baban","3/16/2020 11:44 AM","","1. When the upload is complete, a message appears that the asset uploaded.
+2. The file appears in the list of all directory files.","","1. User is logged in into backend admin/store
+2. Add new folder [C179574]","High","","Widget 'Assets' in Store","2","copy from root
+upload, download, new, edit, delete","","","","","Assets","S4300","Other","0"
+"C179579","Upload via Drag&Drop section",""," Katalon (generic)","Volha Baban","3/16/2020 11:44 AM","","1. A loading line appears that displays uploading progress.
+2. When the upload is complete, a message appears that the asset uploaded.
+3. The file appears in the list of all directory files.","","1. User is logged in into backend admin/store
+2. Add new folder [C179574]","Medium","","Widget 'Assets' in Store","2","copy from root
+upload, download, new, edit, delete","","","","","Assets","S4300","Other","0"
+"C179580","Upload via select from file system",""," Katalon (generic)","Volha Baban","3/16/2020 11:44 AM","","1. A loading line appears that displays uploading progress.
+2. When the upload is complete, a message appears that the asset uploaded.
+3. The file appears in the list of all directory files.
+","","1. User is logged in into backend admin/store
+2. Add new folder [C179574]
+","Medium","","Widget 'Assets' in Store","2","copy from root
+upload, download, new, edit, delete","","","","","Assets","S4300","Other","0"
+"C179581","Upload via URL",""," Katalon (generic)","Volha Baban","3/16/2020 11:44 AM","","1. A loading line appears that displays uploading progress.
+2. When the upload is complete, a message appears that the asset uploaded.
+3. The file appears in the list of all directory files.
+","","User is logged in into backend admin/store
+Add new folder [C179574]","High","","Widget 'Assets' in Store","2","copy from root
+upload, download, new, edit, delete","","","","","Assets","S4300","Other","0"
+"C179582","Download file, picture","","","Volha Baban","3/16/2020 11:44 AM","","The file opens in the new browser tab. ","","Upload picture to custom folder [C179577]","Medium","","Widget 'Assets' in Store","2","copy from root
+upload, download, new, edit, delete","","","","","Assets","S4300","Other","0"
+"C179583","Download file, not picture","","","Volha Baban","3/16/2020 11:44 AM","","The file opens in the new browser tab.
+
+","","Upload not picture file to custom folder [C179578]	","Medium","","Widget 'Assets' in Store","2","copy from root
+upload, download, new, edit, delete","","","","","Assets","S4300","Other","0"

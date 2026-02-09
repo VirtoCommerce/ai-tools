@@ -1,0 +1,29 @@
+{
+  "browser": {
+    "browserName": "firefox",
+    "launchOptions": {
+      "headless": false
+    },
+    "contextOptions": {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "recordVideo": {
+        "dir": "./test-results/firefox/videos",
+        "video": "on-failure",
+        "size": {
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      "recordHar": {
+        "path": "./test-results/firefox/har",
+        "omitContent": true
+      }
+    }
+  },
+  "isolated": true,
+  "outputDir": "./test-results/firefox",
+  "screenshot": "only-on-failure"
+}

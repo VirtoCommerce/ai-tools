@@ -1,0 +1,1592 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C221162","Page builder > Create Page","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","","Medium","","Page builder","1","","Step Description:
+<p>Content module > Pages > Add > Design page</p>
+Expected Result:
+<p>System will open screen with information of page. Create button is unactive</p>
+Step Description:
+<p>Fill Name and Permalink fields </p>
+Expected Result:
+<p>Button Create is active</p>
+Step Description:
+<p>Click Create button </p>
+Expected Result:
+<p>System open new tabs in browser. Page builder will display.</p>
+Step Description:
+<p>Add few block to page > Fill some fields > Save</p>
+Expected Result:
+<p>System must display notification about success save. </p>","1. 
+2. 
+3. 
+4.","1. <p>System will open screen with information of page. Create button is unactive</p>
+2. <p>Button Create is active</p>
+3. <p>System open new tabs in browser. Page builder will display.</p>
+4. <p>System must display notification about success save. </p>","1. <p>Content module > Pages > Add > Design page</p>
+2. <p>Fill Name and Permalink fields </p>
+3. <p>Click Create button </p>
+4. <p>Add few block to page > Fill some fields > Save</p>","CMS Page Builder module","S1688","Functional","1"
+"C257813","Page builder > Create Page > Edit created page","","","Grotem","11/5/2020 9:04 AM","","","","Admin created DesignPage_1 ","Medium","","Page builder","1","","Step Description:
+Content module > Pages > Open DesignPage_1 
+Expected Result:
+System will open screen with information of page
+Step Description:
+Fill new Name and Permalink fields 
+Expected Result:
+Button Save is active
+
+Step Description:
+Click Save button 
+Expected Result:
+DesignPage_1 saved with new properties","1. 
+2. 
+3.","1. System will open screen with information of page
+2. Button Save is active
+
+3. DesignPage_1 saved with new properties","1. Content module > Pages > Open DesignPage_1 
+2. Fill new Name and Permalink fields 
+3. Click Save button","CMS Page Builder module","S1688","Functional","0"
+"C221163","Page builder > Edit page > Preview page","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","","Medium","","Page builder","1","","Step Description:
+Content module > Pages > Any page with .page 
+Expected Result:
+
+System will open screen with information of page. 
+Step Description:
+
+Click Preview page 
+Expected Result:
+
+System open preview page in new tab. The user sees all the blocks used on the page.","1. 
+2.","1. 
+System will open screen with information of page. 
+2. 
+System open preview page in new tab. The user sees all the blocks used on the page.","1. Content module > Pages > Any page with .page 
+2. 
+Click Preview page","CMS Page Builder module","S1688","Functional","0"
+"C221164","Page builder > Edit page > Open builder","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","","Medium","","Page builder","1","","Step Description:
+
+Content module > Pages > Any page with .page 
+Expected Result:
+
+System will open screen with information of page. 
+Step Description:
+
+Click Open in Designer 
+
+Expected Result:
+
+System open page builder in new tab. The user sees all the blocks used on the page. User can change page.","1. 
+2.","1. 
+System will open screen with information of page. 
+2. 
+System open page builder in new tab. The user sees all the blocks used on the page. User can change page.","1. 
+Content module > Pages > Any page with .page 
+2. 
+Click Open in Designer","CMS Page Builder module","S1688","Functional","0"
+"C221165","Page builder > Edit page > Add any section","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Open page in Designer.","Medium","PB-2","Page builder","1","","Step Description:
+CLick add Block > Look at the section list 
+Expected Result:
+User sees all available sections
+Step Description:
+Click on + button for add section 
+Expected Result:
+Section was added. 
+User sees added section in preview. User can edit content for section 
+Step Description:
+Click Save > Open page in Preview
+Expected Result:
+System display save blocks","1. 
+2. 
+3.","1. User sees all available sections
+2. Section was added. 
+User sees added section in preview. User can edit content for section 
+3. System display save blocks","1. CLick add Block > Look at the section list 
+2. Click on + button for add section 
+3. Click Save > Open page in Preview","CMS Page Builder module","S1688","Functional","0"
+"C221166","Page builder > Copy section","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Open page in Designer. 
+Page has few blocks","Medium","PB-2","Page builder","1","","Step Description:
+Look at the section list
+Expected Result:
+User sees all added sections
+Step Description:
+Open any added section 
+Expected Result:
+User can edit content in this section
+Step Description:
+Click on icon """"Copy sections"""" 
+Expected Result:
+New section was added with content from first block","1. 
+2. 
+3.","1. User sees all added sections
+2. User can edit content in this section
+3. New section was added with content from first block","1. Look at the section list
+2. Open any added section 
+3. Click on icon """"Copy sections""""","CMS Page Builder module","S1688","Functional","0"
+"C221167","Page builder > Edit page > Remove section","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Open page in Designer.
+Page has few blocks","Medium","PB-2","Page builder","1","","Step Description:
+Look at the section list
+Expected Result:
+User sees all added sections
+Step Description:
+	
+Open any added section
+Expected Result:
+	
+User can edit content in this section
+Step Description:
+Click on button """"Remove block""""
+Expected Result:
+Sections was removed from page.","1. 
+2. 
+3.","1. User sees all added sections
+2. 	
+User can edit content in this section
+3. Sections was removed from page.","1. Look at the section list
+2. 	
+Open any added section
+3. Click on button """"Remove block""""","CMS Page Builder module","S1688","Functional","0"
+"C221075","Sections > Image with text > Settings","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Add  Image with text block.
+Open block > Settings","Medium","PB-2","Settings Sections","1","","Step Description:
+Change Block name> Close block > Look at the list of sections
+Expected Result:
+	
+User sees Image with text block with new Block name
+Step Description:
+Change Header type > Save > Open preview > Look at the header of block
+Expected Result:
+	
+Header type was changed.
+Step Description:
+Change Align title > Save > Open preview > Look at the header of block
+Expected Result:
+Align title was changed.
+Step Description:
+Change block style > Save > Open preview > Look at the block
+Expected Result:
+	
+Background for block was changed
+Step Description:
+Change Image position > Save > Open preview > Look at the Image
+Expected Result:
+	
+Image position was changed.
+Step Description:
+Checked Remove top margin > Save > Look at the preview
+Expected Result:
+	
+Top margin removed
+Step Description:
+Checked Remove bottom margin > Save > Look at the preview
+Expected Result:
+	
+Bottom margin removed
+Step Description:
+Checked Remove paddings > Save > Look at the preview
+Expected Result:
+	
+Paddings removed","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8.","1. 	
+User sees Image with text block with new Block name
+2. 	
+Header type was changed.
+3. Align title was changed.
+4. 	
+Background for block was changed
+5. 	
+Image position was changed.
+6. 	
+Top margin removed
+7. 	
+Bottom margin removed
+8. 	
+Paddings removed","1. Change Block name> Close block > Look at the list of sections
+2. Change Header type > Save > Open preview > Look at the header of block
+3. Change Align title > Save > Open preview > Look at the header of block
+4. Change block style > Save > Open preview > Look at the block
+5. Change Image position > Save > Open preview > Look at the Image
+6. Checked Remove top margin > Save > Look at the preview
+7. Checked Remove bottom margin > Save > Look at the preview
+8. Checked Remove paddings > Save > Look at the preview","CMS Page Builder module","S1688","Functional","0"
+"C221076","Sections > Text over image > Settings","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Add Text over image block.
+Open block > Settings","Medium","PB-2","Settings Sections","1","","Step Description:
+Change Block name> Close block > Look at the list of sections
+Expected Result:
+	
+User sees Text over image block with new Block name
+Step Description:
+Change Header type > Save > Open preview > Look at the header of block
+Expected Result:
+Header type was changed.
+Step Description:
+Change Align title > Save > Open preview > Look at the header of block
+Expected Result:
+Align title was changed.
+Step Description:
+Checked Remove paddings > Save > Look at the preview
+Expected Result:
+Paddings removed
+Step Description:
+Checked Remove bottom margin > Save > Look at the preview
+Expected Result:
+Bottom margin removed
+Step Description:
+Checked Remove top margin > Save > Look at the preview
+Expected Result:
+Top margin removed","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. 	
+User sees Text over image block with new Block name
+2. Header type was changed.
+3. Align title was changed.
+4. Paddings removed
+5. Bottom margin removed
+6. Top margin removed","1. Change Block name> Close block > Look at the list of sections
+2. Change Header type > Save > Open preview > Look at the header of block
+3. Change Align title > Save > Open preview > Look at the header of block
+4. Checked Remove paddings > Save > Look at the preview
+5. Checked Remove bottom margin > Save > Look at the preview
+6. Checked Remove top margin > Save > Look at the preview","CMS Page Builder module","S1688","Functional","0"
+"C221078","Sections > Simple text > Settings","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Add Simple text  block.
+Open block > Settings","Medium","PB-2","Settings Sections","1","","Step Description:
+Change Block name> Close block > Look at the list of sections
+Expected Result:
+User sees Simple text block with new Block name
+Step Description:
+	
+Change Header type > Save > Open preview > Look at the header of block
+Expected Result:
+Header type was changed.
+Step Description:
+	
+Change Align title > Save > Open preview > Look at the header of block
+Expected Result:
+	
+Align title was changed.","1. 
+2. 
+3.","1. User sees Simple text block with new Block name
+2. Header type was changed.
+3. 	
+Align title was changed.","1. Change Block name> Close block > Look at the list of sections
+2. 	
+Change Header type > Save > Open preview > Look at the header of block
+3. 	
+Change Align title > Save > Open preview > Look at the header of block","CMS Page Builder module","S1688","Functional","0"
+"C221079","Sections > Two column text > Settings","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Add Two column text block.
+Open block > Settings","Medium","PB-2","Settings Sections","1","","Step Description:
+Change Block name> Close block > Look at the list of sections
+Expected Result:
+	
+User sees  Two column text  block with new Block name
+Step Description:
+Change Header type > Save > Open preview > Look at the header of block
+Expected Result:
+	
+Header type was changed.
+Step Description:
+Change Align title > Save > Open preview > Look at the header of block
+Expected Result:
+Align title was changed.
+Step Description:
+Change Title style > Save > Open preview > Look at the header of block
+Expected Result:
+Title style was changed.
+Step Description:
+Change block style > Save > Open preview > Look at the list
+Expected Result:
+	
+Background for block was changed
+Step Description:
+Checked Remove top margin > Save > Look at the preview
+Expected Result:
+	
+Top margin removed
+Step Description:
+Checked Remove bottom margin > Save > Look at the preview
+Expected Result:
+Bottom margin removed
+Step Description:
+Checked Remove paddings > Save > Look at the preview
+Expected Result:
+Paddings removed","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8.","1. 	
+User sees  Two column text  block with new Block name
+2. 	
+Header type was changed.
+3. Align title was changed.
+4. Title style was changed.
+5. 	
+Background for block was changed
+6. 	
+Top margin removed
+7. Bottom margin removed
+8. Paddings removed","1. Change Block name> Close block > Look at the list of sections
+2. Change Header type > Save > Open preview > Look at the header of block
+3. Change Align title > Save > Open preview > Look at the header of block
+4. Change Title style > Save > Open preview > Look at the header of block
+5. Change block style > Save > Open preview > Look at the list
+6. Checked Remove top margin > Save > Look at the preview
+7. Checked Remove bottom margin > Save > Look at the preview
+8. Checked Remove paddings > Save > Look at the preview","CMS Page Builder module","S1688","Functional","0"
+"C221082","Sections > Simple image > Settings","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Add Simple image block.
+Open block > Settings","Medium","PB-2","Settings Sections","1","","Step Description:
+
+Change Block name> Close block > Look at the list of sections
+Expected Result:
+	
+User sees Simple image block with new Block name
+Step Description:
+Change block style > Save > Open preview > Look at the list
+Expected Result:
+	
+Background for block was changed
+Step Description:
+	
+Checked Remove top margin > Save > Look at the preview
+Expected Result:
+	
+Top margin removed
+Step Description:
+Checked Remove bottom margin > Save > Look at the preview
+Expected Result:
+	
+Bottom margin removed
+Step Description:
+Checked Remove paddings > Save > Look at the preview
+Expected Result:
+	
+Paddings removed","1. 
+2. 
+3. 
+4. 
+5.","1. 	
+User sees Simple image block with new Block name
+2. 	
+Background for block was changed
+3. 	
+Top margin removed
+4. 	
+Bottom margin removed
+5. 	
+Paddings removed","1. 
+Change Block name> Close block > Look at the list of sections
+2. Change block style > Save > Open preview > Look at the list
+3. 	
+Checked Remove top margin > Save > Look at the preview
+4. Checked Remove bottom margin > Save > Look at the preview
+5. Checked Remove paddings > Save > Look at the preview","CMS Page Builder module","S1688","Functional","0"
+"C221053","Sections > Image with text","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Open Created page in Builder.
+Add Image with text block","Medium","PB-2","Sections","1","","Step Description:
+Look at the added blocks
+Expected Result:
+User must sees Image with text blocks
+Step Description:
+Open Block > Look at the Title
+Change text in the field
+Expected Result:
+Title fields was display.
+User can change text. Text was display in preview
+Step Description:
+Look at the Content > Change value in content field
+Expected Result:
+Content fields was display.
+User can change text. Text was display in preview
+Step Description:
+Add HTML tags in content
+Expected Result:
+
+A fragment with HTML markup should be displayed
+Step Description:
+Look at the image field
+Expected Result:
+User sees image fields
+Step Description:
+Upload Image
+Expected Result:
+User sees uploaded image
+Step Description:
+Look at the alt-text > Fill field > Click save > look at the preview
+Expected Result:
+User sees image. For picture system add attribute alt
+Step Description:
+Look at the Link block
+Expected Result:
+User sees Link block. Block has Link, Text, Link style fields
+Step Description:
+Fill all fields > Look at the preview > Click on link
+Expected Result:
+User must sees added link. Opened new page.
+Step Description:
+Look at the Second Link block
+Expected Result:
+User sees Link block. Block has Second Link, Text, Link style fields
+Step Description:
+Fill all fields > Look at the preview > Click on Second link
+Expected Result:
+User must sees added link. Opened new page.","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+11.","1. User must sees Image with text blocks
+2. Title fields was display.
+User can change text. Text was display in preview
+3. Content fields was display.
+User can change text. Text was display in preview
+4. 
+A fragment with HTML markup should be displayed
+5. User sees image fields
+6. User sees uploaded image
+7. User sees image. For picture system add attribute alt
+8. User sees Link block. Block has Link, Text, Link style fields
+9. User must sees added link. Opened new page.
+10. User sees Link block. Block has Second Link, Text, Link style fields
+11. User must sees added link. Opened new page.","1. Look at the added blocks
+2. Open Block > Look at the Title
+Change text in the field
+3. Look at the Content > Change value in content field
+4. Add HTML tags in content
+5. Look at the image field
+6. Upload Image
+7. Look at the alt-text > Fill field > Click save > look at the preview
+8. Look at the Link block
+9. Fill all fields > Look at the preview > Click on link
+10. Look at the Second Link block
+11. Fill all fields > Look at the preview > Click on Second link","CMS Page Builder module","S1688","Functional","0"
+"C221054","Sections > Text over image","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Open Created page in Builder.
+Add Text over image block","Medium","PB-2","Sections","1","","Step Description:
+Look at the added blocks
+Expected Result:
+User must sees Text over image blocks
+Step Description:
+	
+Open Block > Look at the Title
+Change text in the field
+Expected Result:
+Title fields was display.
+User can change text. Text was display in preview
+Step Description:
+	
+Look at the Content > Change value in content field > Add HTML tags in content
+Expected Result:
+Content fields was display.
+User can change text. Text was display in preview.
+A fragment with HTML markup should be displayed
+Step Description:
+	
+Look at the image field > Upload Image
+Expected Result:
+User sees uploaded image
+Step Description:
+Look at the alt-text > Fill field > Click save > look at the preview
+Expected Result:
+User sees image. For picture system add attribute alt
+Step Description:
+Look at the Link block
+Expected Result:
+User sees Link block. Block has Link, Text, Link style fields
+Step Description:
+Fill all fields > Look at the preview > Click on link
+Expected Result:
+User must sees added link. Opened new page.
+Step Description:
+Look at the Second Link block
+Expected Result:
+User sees Link block. Block has Second Link, Text, Link style fields
+Step Description:
+Fill all fields > Look at the preview > Click on Second link
+Expected Result:
+User must sees added link. Opened new page.
+Step Description:
+Look at the subtitle > Change text in the sub title field
+Expected Result:
+Subtitle field was display.
+User can change text. Text was display in preview","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10.","1. User must sees Text over image blocks
+2. Title fields was display.
+User can change text. Text was display in preview
+3. Content fields was display.
+User can change text. Text was display in preview.
+A fragment with HTML markup should be displayed
+4. User sees uploaded image
+5. User sees image. For picture system add attribute alt
+6. User sees Link block. Block has Link, Text, Link style fields
+7. User must sees added link. Opened new page.
+8. User sees Link block. Block has Second Link, Text, Link style fields
+9. User must sees added link. Opened new page.
+10. Subtitle field was display.
+User can change text. Text was display in preview","1. Look at the added blocks
+2. 	
+Open Block > Look at the Title
+Change text in the field
+3. 	
+Look at the Content > Change value in content field > Add HTML tags in content
+4. 	
+Look at the image field > Upload Image
+5. Look at the alt-text > Fill field > Click save > look at the preview
+6. Look at the Link block
+7. Fill all fields > Look at the preview > Click on link
+8. Look at the Second Link block
+9. Fill all fields > Look at the preview > Click on Second link
+10. Look at the subtitle > Change text in the sub title field","CMS Page Builder module","S1688","Functional","0"
+"C221056","Sections > Simple text","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Open Created page in Builder.
+Add Simple text block","Medium","PB-2","Sections","1","","Step Description:
+	
+Look at the added blocks
+Expected Result:
+	
+User must sees Simple text blocks
+Step Description:
+	
+Open Block > Look at the Title
+Change text in the field
+Expected Result:
+Title fields was display.
+User can change text. Text was display in preview
+Step Description:
+Look at the Content > Change value in content field > Add HTML tags in content
+Expected Result:
+Content fields was display.
+User can change text. Text was display in preview.
+A fragment with HTML markup should be displayed
+Step Description:
+Look at the Link block > Fill all fields > Look at the preview > Click on link
+Expected Result:
+User sees Link block. Block has Link, Text, Link style fields. User must sees added link. Opened new page.","1. 
+2. 
+3. 
+4.","1. 	
+User must sees Simple text blocks
+2. Title fields was display.
+User can change text. Text was display in preview
+3. Content fields was display.
+User can change text. Text was display in preview.
+A fragment with HTML markup should be displayed
+4. User sees Link block. Block has Link, Text, Link style fields. User must sees added link. Opened new page.","1. 	
+Look at the added blocks
+2. 	
+Open Block > Look at the Title
+Change text in the field
+3. Look at the Content > Change value in content field > Add HTML tags in content
+4. Look at the Link block > Fill all fields > Look at the preview > Click on link","CMS Page Builder module","S1688","Functional","0"
+"C221057","Sections > Two column text","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Open Created page in Builder.
+Add Two column block","Medium","PB-2","Sections","1","","Step Description:
+Look at the added blocks
+Expected Result:
+	
+User must sees Two column blocks
+Step Description:
+Open Block > Look at the Title
+Change text in the field
+Expected Result:
+Title fields was display.
+User can change text. Text was display in preview
+Step Description:
+Look at the Content > Change value in content field > Add HTML tags in content
+Expected Result:
+Content fields was display.
+User can change text. Text was display in preview.
+A fragment with HTML markup should be displayed
+Step Description:
+Look at the collections of items
+Expected Result:
+User must sees all items ![](index.php?/attachments/get/16623)
+
+Step Description:
+Click on any items > Look at the Text field >  Change value in Text field > Add HTML tags in Text
+Expected Result:
+User sees text field. User can change text. Text was display in preview.A fragment with HTML markup should be displayed
+Step Description:
+Add few items > Look at the preview
+Expected Result:
+Every second object is displayed on the right column","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. 	
+User must sees Two column blocks
+2. Title fields was display.
+User can change text. Text was display in preview
+3. Content fields was display.
+User can change text. Text was display in preview.
+A fragment with HTML markup should be displayed
+4. User must sees all items ![](index.php?/attachments/get/16623)
+
+5. User sees text field. User can change text. Text was display in preview.A fragment with HTML markup should be displayed
+6. Every second object is displayed on the right column","1. Look at the added blocks
+2. Open Block > Look at the Title
+Change text in the field
+3. Look at the Content > Change value in content field > Add HTML tags in content
+4. Look at the collections of items
+5. Click on any items > Look at the Text field >  Change value in Text field > Add HTML tags in Text
+6. Add few items > Look at the preview","CMS Page Builder module","S1688","Functional","0"
+"C221060","Sections > Simple image","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Open Created page in Builder.
+Add Simple image block","Medium","PB-2","Sections","1","","Step Description:
+	
+Look at the added blocks
+Expected Result:
+	
+User must sees Simple image blocks
+Step Description:
+Open Block > Look at the Title
+Change text in the field
+Expected Result:
+Title fields was display.
+User can change text. Text was display in preview
+Step Description:
+Upload Image
+Expected Result:
+User sees uploaded image
+Step Description:
+fill Alt text > Save >look at the alt for image 
+Expected Result:
+User sees filled alt-text for image
+Step Description:
+Look at the Block size > Change size
+Expected Result:
+User sees changes on block","1. 
+2. 
+3. 
+4. 
+5.","1. 	
+User must sees Simple image blocks
+2. Title fields was display.
+User can change text. Text was display in preview
+3. User sees uploaded image
+4. User sees filled alt-text for image
+5. User sees changes on block","1. 	
+Look at the added blocks
+2. Open Block > Look at the Title
+Change text in the field
+3. Upload Image
+4. fill Alt text > Save >look at the alt for image 
+5. Look at the Block size > Change size","CMS Page Builder module","S1688","Functional","0"
+"C221068","Page builder > Text field","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Add Section with Text field","Medium","PB-2","Type of fields","1","","Step Description:
+Fill in Field HTML tags with text
+Expected Result:
+HTML markup should be considered
+Step Description:
+Paste any text in Field
+Expected Result:
+All text was pasted
+Step Description:
+Fill any symbols (@,_,-,Aa-Zz, 0-9)
+Expected Result:
+All symbols was displayed","1. 
+2. 
+3.","1. HTML markup should be considered
+2. All text was pasted
+3. All symbols was displayed","1. Fill in Field HTML tags with text
+2. Paste any text in Field
+3. Fill any symbols (@,_,-,Aa-Zz, 0-9)","CMS Page Builder module","S1688","Functional","0"
+"C221069","Page builder > Upload image","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Add Section with Upload image field","Medium","PB-2","Type of fields","1","","Step Description:
+Upload non-image file
+Expected Result:
+Only images allowed for upload
+Step Description:
+Upload image file
+Expected Result:
+User can upload image file","1. 
+2.","1. Only images allowed for upload
+2. User can upload image file","1. Upload non-image file
+2. Upload image file","CMS Page Builder module","S1688","Functional","0"
+"C221070","Page builder > Rich text","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Add Section with Rich Text field","Medium","PB-2","Type of fields","1","","Step Description:
+Fill in Field HTML tags with text > Add class and id attributes for entered value
+Expected Result:
+	
+HTML markup should be considered. Attributes was added
+Step Description:
+Paste in field any JavaScript
+Expected Result:
+Scripts should not be executed.
+Step Description:
+Fill any symbols (@,_,-,Aa-Zz, 0-9)
+Expected Result:
+	
+All symbols was displayed
+Step Description:
+Fill some text > Apply any style from editor > Look at the preview
+Expected Result:
+User sees text highlighted with styles","1. 
+2. 
+3. 
+4.","1. 	
+HTML markup should be considered. Attributes was added
+2. Scripts should not be executed.
+3. 	
+All symbols was displayed
+4. User sees text highlighted with styles","1. Fill in Field HTML tags with text > Add class and id attributes for entered value
+2. Paste in field any JavaScript
+3. Fill any symbols (@,_,-,Aa-Zz, 0-9)
+4. Fill some text > Apply any style from editor > Look at the preview","CMS Page Builder module","S1688","Functional","0"
+"C221071","Page builder > Form field. DRAFT","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Add Section with Form field","Medium","PB-2","Type of fields","1","","Step Description:
+Fill Label > Look at the preview 
+Expected Result:
+User sees label for field.
+Step Description:
+Fill fieldname > Save > Devtools
+Expected Result:
+User sees name attribute with value from Field name
+Step Description:
+Change Field type > Select > Look at the preview
+Change Field type > Textarea> Look at the preview
+Change Field type > String > Look at the preview
+Expected Result:
+User sees select field
+User sees Textarea field
+User sees String field","1. 
+2. 
+3.","1. User sees label for field.
+2. User sees name attribute with value from Field name
+3. User sees select field
+User sees Textarea field
+User sees String field","1. Fill Label > Look at the preview 
+2. Fill fieldname > Save > Devtools
+3. Change Field type > Select > Look at the preview
+Change Field type > Textarea> Look at the preview
+Change Field type > String > Look at the preview","CMS Page Builder module","S1688","Functional","0"
+"C221072","Page builder >  Select fields","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Add Section with Select field","Medium","PB-2","Type of fields","1","","Step Description:
+Click on field
+Expected Result:
+User sees list of value
+Step Description:
+Select any value > Look at the preview 
+Expected Result:
+System change style for element. 
+Step Description:
+Select another value > Look at the preview 
+Expected Result:
+System change style for element.","1. 
+2. 
+3.","1. User sees list of value
+2. System change style for element. 
+3. System change style for element.","1. Click on field
+2. Select any value > Look at the preview 
+3. Select another value > Look at the preview","CMS Page Builder module","S1688","Functional","0"
+"C221092","Page builder > Image with text","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Add Image with text block","Medium","PB-2","UI/UX","1","","Step Description:
+	
+Look on the desktop
+Expected Result:
+System display block like this![](index.php?/attachments/get/16751)
+
+Step Description:
+	
+Look on the tablet
+Expected Result:
+System display block like this![](index.php?/attachments/get/16753)
+
+Step Description:
+	
+Look on the mobile
+Expected Result:
+System display block like this![](index.php?/attachments/get/16752)","1. 
+2. 
+3.","1. System display block like this![](index.php?/attachments/get/16751)
+
+2. System display block like this![](index.php?/attachments/get/16753)
+
+3. System display block like this![](index.php?/attachments/get/16752)","1. 	
+Look on the desktop
+2. 	
+Look on the tablet
+3. 	
+Look on the mobile","CMS Page Builder module","S1688","Usability","0"
+"C221093","Page builder > Text over image","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Add Text over image block","Medium","PB-2","UI/UX","1","","Step Description:
+	
+Look on the desktop
+Expected Result:
+	
+System display block like this ![](index.php?/attachments/get/16754)
+
+Step Description:
+	
+Look on the tablet
+Expected Result:
+	
+System display block like this![](index.php?/attachments/get/16756)
+
+Step Description:
+	
+Look on the mobile
+Expected Result:
+	
+System display block like this![](index.php?/attachments/get/16755)","1. 
+2. 
+3.","1. 	
+System display block like this ![](index.php?/attachments/get/16754)
+
+2. 	
+System display block like this![](index.php?/attachments/get/16756)
+
+3. 	
+System display block like this![](index.php?/attachments/get/16755)","1. 	
+Look on the desktop
+2. 	
+Look on the tablet
+3. 	
+Look on the mobile","CMS Page Builder module","S1688","Usability","0"
+"C221094","Page builder > Cards list","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Add Cards list block","Medium","PB-2","UI/UX","1","","Step Description:
+Look on the desktop
+Expected Result:
+	
+System display block like this![](index.php?/attachments/get/16757)
+
+Step Description:
+Look on the tablet
+Expected Result:
+	
+System display block like this![](index.php?/attachments/get/16759)
+
+Step Description:
+Look on the mobile
+Expected Result:
+	
+System display block like this![](index.php?/attachments/get/16758)","1. 
+2. 
+3.","1. 	
+System display block like this![](index.php?/attachments/get/16757)
+
+2. 	
+System display block like this![](index.php?/attachments/get/16759)
+
+3. 	
+System display block like this![](index.php?/attachments/get/16758)","1. Look on the desktop
+2. Look on the tablet
+3. Look on the mobile","CMS Page Builder module","S1688","Usability","0"
+"C221095","Page builder > Simple text","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Add Simple text block","Medium","PB-2","UI/UX","1","","Step Description:
+Look on the desktop
+Expected Result:
+System display block like this ![](index.php?/attachments/get/16760)
+
+Step Description:
+Look on the tablet
+Expected Result:
+System display block like this![](index.php?/attachments/get/16762)
+
+Step Description:
+Look on the mobile
+Expected Result:
+System display block like this![](index.php?/attachments/get/16761)","1. 
+2. 
+3.","1. System display block like this ![](index.php?/attachments/get/16760)
+
+2. System display block like this![](index.php?/attachments/get/16762)
+
+3. System display block like this![](index.php?/attachments/get/16761)","1. Look on the desktop
+2. Look on the tablet
+3. Look on the mobile","CMS Page Builder module","S1688","Usability","0"
+"C221096","Page builder > Two column text","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Add Two column text block","Medium","PB-2","UI/UX","1","","Step Description:
+Look on the desktop
+Expected Result:
+System display block like this![](index.php?/attachments/get/16765)
+
+Step Description:
+Look on the tablet
+Expected Result:
+System display block like this![](index.php?/attachments/get/16763)
+
+Step Description:
+Look on the mobile
+Expected Result:
+System display block like this![](index.php?/attachments/get/16764)","1. 
+2. 
+3.","1. System display block like this![](index.php?/attachments/get/16765)
+
+2. System display block like this![](index.php?/attachments/get/16763)
+
+3. System display block like this![](index.php?/attachments/get/16764)","1. Look on the desktop
+2. Look on the tablet
+3. Look on the mobile","CMS Page Builder module","S1688","Usability","0"
+"C221099","Page builder > Simple image","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Add Simple image block","Medium","PB-2","UI/UX","1","","Step Description:
+	
+Look on the desktop
+Expected Result:
+System display block like this![](index.php?/attachments/get/16774)
+
+Step Description:
+	
+Look on the tablet
+Expected Result:
+System display block like this![](index.php?/attachments/get/16772)
+
+Step Description:
+	
+Look on the mobile
+Expected Result:
+System display block like this![](index.php?/attachments/get/16773)","1. 
+2. 
+3.","1. System display block like this![](index.php?/attachments/get/16774)
+
+2. System display block like this![](index.php?/attachments/get/16772)
+
+3. System display block like this![](index.php?/attachments/get/16773)","1. 	
+Look on the desktop
+2. 	
+Look on the tablet
+3. 	
+Look on the mobile","CMS Page Builder module","S1688","Usability","0"
+"C221107","Preset > Blue","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","System will change preset in preview page in Design module
+In storefront system display all pages with new preset","","Need create few pages
+Open page in Design module","Medium","","Present","1","","","","","","CMS Page Builder module","S1688","Functional","0"
+"C221108","Preset > Dark","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","System will change preset in preview page in Design module
+In storefront system display all pages with new preset","","Need create few pages
+Open page in Design module","Medium","","Present","1","","","","","","CMS Page Builder module","S1688","Other","0"
+"C221109","Preset > Soft green","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","System will change preset in preview page in Design module
+In storefront system display all pages with new preset","","Need create few pages
+Open page in Design module","Medium","","Present","1","","","","","","CMS Page Builder module","S1688","Other","0"
+"C221110","Colors > General > Background","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Need create few pages
+Open page in Design module
+
+","Medium","","Colors","1","","Step Description:
+Open Theme setting tab > Colors >Background > Select any color ![](index.php?/attachments/get/19967) > Ok
+
+Expected Result:
+System apply changes Background color
+Step Description:
+Background > Select other color > ![](index.php?/attachments/get/19968) > Ok
+
+Expected Result:
+System apply changes Background color
+Step Description:
+Click Save > Open page in storefront 
+Expected Result:
+User sees pages with current background ![](index.php?/attachments/get/19969)","1. 
+2. 
+3.","1. System apply changes Background color
+2. System apply changes Background color
+3. User sees pages with current background ![](index.php?/attachments/get/19969)","1. Open Theme setting tab > Colors >Background > Select any color ![](index.php?/attachments/get/19967) > Ok
+
+2. Background > Select other color > ![](index.php?/attachments/get/19968) > Ok
+
+3. Click Save > Open page in storefront","CMS Page Builder module","S1688","Other","0"
+"C221111","Colors > General > Headings","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Need create few pages
+Open page in Design module","Medium","","Colors","1","","Step Description:
+Open Theme setting tab > Colors >Headings > Select any color > ![](index.php?/attachments/get/19970) > Click OK
+
+Expected Result:
+	
+System apply changes Headings color on preview
+Step Description:
+Headings > Select other color >![](index.php?/attachments/get/19971) > Click OK
+Expected Result:
+	
+System apply changes Headings color on preview
+Step Description:
+	
+Click Save > Open page in storefront
+Expected Result:
+Color for all Heading was changes","1. 
+2. 
+3.","1. 	
+System apply changes Headings color on preview
+2. 	
+System apply changes Headings color on preview
+3. Color for all Heading was changes","1. Open Theme setting tab > Colors >Headings > Select any color > ![](index.php?/attachments/get/19970) > Click OK
+
+2. Headings > Select other color >![](index.php?/attachments/get/19971) > Click OK
+3. 	
+Click Save > Open page in storefront","CMS Page Builder module","S1688","Other","0"
+"C221112","Colors > General > Text","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","","Medium","","Colors","1","","Step Description:
+Open Theme setting tab > Colors >Text > Select any color  > ![](index.php?/attachments/get/19973) > Click OK
+
+Expected Result:
+	
+System apply changes Text color ![](index.php?/attachments/get/19974)
+
+Step Description:
+Text > Select other color > ![](index.php?/attachments/get/19975) > CLick OK
+
+Expected Result:
+	
+System apply changes Text color
+![](index.php?/attachments/get/19976)
+
+Step Description:
+	
+Click Save > Open page in storefront
+Expected Result:
+Color for all Text in <p></p> tag was changes","1. 
+2. 
+3.","1. 	
+System apply changes Text color ![](index.php?/attachments/get/19974)
+
+2. 	
+System apply changes Text color
+![](index.php?/attachments/get/19976)
+
+3. Color for all Text in <p></p> tag was changes","1. Open Theme setting tab > Colors >Text > Select any color  > ![](index.php?/attachments/get/19973) > Click OK
+
+2. Text > Select other color > ![](index.php?/attachments/get/19975) > CLick OK
+
+3. 	
+Click Save > Open page in storefront","CMS Page Builder module","S1688","Other","0"
+"C221113","Colors > General > Links","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","","Medium","","Colors","1","","Step Description:
+Open Theme setting tab > Colors >Links > Select any color > Click OK
+Expected Result:
+System apply changes Links color
+Step Description:
+Links > Select another color > Click OK
+Expected Result:
+System apply changes Links color
+Step Description:
+Click Save > Open Page in store front
+Expected Result:
+System was changes all Links style","1. 
+2. 
+3.","1. System apply changes Links color
+2. System apply changes Links color
+3. System was changes all Links style","1. Open Theme setting tab > Colors >Links > Select any color > Click OK
+2. Links > Select another color > Click OK
+3. Click Save > Open Page in store front","CMS Page Builder module","S1688","Other","0"
+"C221114","Colors > General > Button","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","","Medium","","Colors","1","","Step Description:
+Open Theme setting tab > Colors >Button> Select any color >  ![](index.php?/attachments/get/20080) > Click OK
+
+Expected Result:
+	
+System apply changes Button color
+Step Description:
+Button > Select another color > ![](index.php?/attachments/get/20081) >
+Click OK
+Expected Result:
+	
+System apply changes Button color
+Step Description:
+Click Save > Open Page in store front
+Expected Result:
+	
+System was changes all Button style","1. 
+2. 
+3.","1. 	
+System apply changes Button color
+2. 	
+System apply changes Button color
+3. 	
+System was changes all Button style","1. Open Theme setting tab > Colors >Button> Select any color >  ![](index.php?/attachments/get/20080) > Click OK
+
+2. Button > Select another color > ![](index.php?/attachments/get/20081) >
+Click OK
+3. Click Save > Open Page in store front","CMS Page Builder module","S1688","Other","0"
+"C221115","Colors > General > Button text","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Need create few page.
+Open page in Designer","Medium","","Colors","1","","Step Description:
+	
+Open Theme setting tab > Colors >Button text> Select any color >![](index.php?/attachments/get/20082)
+> Click OK
+Expected Result:
+	
+System apply changes Button text color
+Step Description:
+Button text > Select another color > ![](index.php?/attachments/get/20083) > Click OK
+Expected Result:
+	
+System apply changes Button text color
+Step Description:
+	
+Click Save > Open Page in store front
+Expected Result:
+	
+System was changes all Button text style","1. 
+2. 
+3.","1. 	
+System apply changes Button text color
+2. 	
+System apply changes Button text color
+3. 	
+System was changes all Button text style","1. 	
+Open Theme setting tab > Colors >Button text> Select any color >![](index.php?/attachments/get/20082)
+> Click OK
+2. Button text > Select another color > ![](index.php?/attachments/get/20083) > Click OK
+3. 	
+Click Save > Open Page in store front","CMS Page Builder module","S1688","Other","0"
+"C221116","Colors > General > Sale tags","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","Need create few page.
+Open page in Designer","Medium","","Colors","1","","Step Description:
+Open Theme setting tab > Colors >Sale tags> Select any color > Click OK
+Expected Result:
+System apply changes Sale tags color
+Step Description:
+Sale tags> Select another color > Click OK
+Expected Result:
+System apply changes Sale tags color
+Step Description:
+Click Save > Open Page in store front
+
+
+Expected Result:
+	
+System was changes all Sale tags style","1. 
+2. 
+3.","1. System apply changes Sale tags color
+2. System apply changes Sale tags color
+3. 	
+System was changes all Sale tags style","1. Open Theme setting tab > Colors >Sale tags> Select any color > Click OK
+2. Sale tags> Select another color > Click OK
+3. Click Save > Open Page in store front","CMS Page Builder module","S1688","Other","0"
+"C221117","Colors > General > Borders","","","Aleksandra Mitricheva","5/7/2020 9:13 AM","","","","","Medium","","Colors","1","","Step Description:
+Open Theme setting tab > Colors >Borders > Select any color >![](index.php?/attachments/get/20084) > Click OK
+
+Expected Result:
+
+
+System apply changes Borders color
+All changes display in preview 
+Step Description:
+Borders > Select any color >![](index.php?/attachments/get/20085)
+> Click OK
+
+Expected Result:
+
+
+System apply changes Borders color
+All changes display in preview 
+Step Description:
+Click Save > Open Page in store front
+Expected Result:
+	
+System was changes all Borders style","1. 
+2. 
+3.","1. 
+
+System apply changes Borders color
+All changes display in preview 
+2. 
+
+System apply changes Borders color
+All changes display in preview 
+3. 	
+System was changes all Borders style","1. Open Theme setting tab > Colors >Borders > Select any color >![](index.php?/attachments/get/20084) > Click OK
+
+2. Borders > Select any color >![](index.php?/attachments/get/20085)
+> Click OK
+
+3. Click Save > Open Page in store front","CMS Page Builder module","S1688","Other","0"
+"C221889","Simple text > Add new block","","","Aleksandra Mitricheva","5/7/2020 11:58 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Simple text","2","","Step Description:
+Click on button + on Simple text block
+Expected Result:
+Preview of this block with default content and settings is opened 
+I can edit Content and settings in left sidebar
+Content is opened by default","1","1. Preview of this block with default content and settings is opened 
+I can edit Content and settings in left sidebar
+Content is opened by default","1. Click on button + on Simple text block","CMS Page Builder module","S1688","Other","0"
+"C221890","Simple text > Add new block > Preview","","","Aleksandra Mitricheva","5/7/2020 11:58 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Simple text","2","","Step Description:
+Select Simple text > Click on Plus button
+Expected Result:
+Content and Settings tab appear in left sidebar
+Default values are filled
+Block with default values displays in right Content  iframe
+Desktop mode is selected","1","1. Content and Settings tab appear in left sidebar
+Default values are filled
+Block with default values displays in right Content  iframe
+Desktop mode is selected","1. Select Simple text > Click on Plus button","CMS Page Builder module","S1688","Other","0"
+"C221891","Simple text > Settings tab","","","Aleksandra Mitricheva","5/7/2020 11:58 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Simple text > Settings","3","","Step Description:
+Add block Simple text > open Setting tab >  
+Expected Result:
+There are setting fields: 
+
+- Block name
+- Header type
+- Align title
+
+User can change values and Save","1","1. There are setting fields: 
+
+- Block name
+- Header type
+- Align title
+
+User can change values and Save","1. Add block Simple text > open Setting tab >","CMS Page Builder module","S1688","Other","0"
+"C221892","Simple text > Settings tab > Default values","","","Aleksandra Mitricheva","5/7/2020 11:58 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Simple text > Settings","3","","Step Description:
+Add block Simple text > open Setting tab > check values
+Expected Result:
+There are setting fields with next values:
+
+- Block name: Text
+- Header type: Like H2
+- Align title: Left","1","1. There are setting fields with next values:
+
+- Block name: Text
+- Header type: Like H2
+- Align title: Left","1. Add block Simple text > open Setting tab > check values","CMS Page Builder module","S1688","Other","0"
+"C221893","Simple text > Settings tab > Changing values","","","Aleksandra Mitricheva","5/7/2020 11:58 AM","","","","Opened Page in Designer
+List with available blocks are opened
+","Medium","","Blocks > Simple text > Settings","3","","Step Description:
+Add block Simple text > open Setting tab > change values
+Expected Result:
+user can change values
+changes appear in preview block iframe
+button Save is clikable
+Step Description:
+Change values > 
+Expected Result:
+changes appear in preview content iframe
+Step Description:
+Click button Save
+Expected Result:
+Two tooltips with approving messages appear:
+Page saved successefully
+Theme saved successefully
+Step Description:
+Close page > open again in Designer 
+Expected Result:
+All selected and saved values are displayed in fields in Content/Settings tab and in Preview
+Step Description:
+Open page in Storefront
+Expected Result:
+All selected and saved values are displayed","1. 
+2. 
+3. 
+4. 
+5.","1. user can change values
+changes appear in preview block iframe
+button Save is clikable
+2. changes appear in preview content iframe
+3. Two tooltips with approving messages appear:
+Page saved successefully
+Theme saved successefully
+4. All selected and saved values are displayed in fields in Content/Settings tab and in Preview
+5. All selected and saved values are displayed","1. Add block Simple text > open Setting tab > change values
+2. Change values > 
+3. Click button Save
+4. Close page > open again in Designer 
+5. Open page in Storefront","CMS Page Builder module","S1688","Other","0"
+"C221894","Simple text > General tab","","","Aleksandra Mitricheva","5/7/2020 11:58 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks >  Simple text > General tab","3","","Step Description:
+Add block Simple text > open Content tab >
+
+
+Expected Result:
+There are content fields:
+
+- Title - text field
+- Content - wysiwyg field
+
+
+User can change values and Save","1","1. There are content fields:
+
+- Title - text field
+- Content - wysiwyg field
+
+
+User can change values and Save","1. Add block Simple text > open Content tab >","CMS Page Builder module","S1688","Other","0"
+"C221895","Simple text > General tab > Default values","","","Aleksandra Mitricheva","5/7/2020 11:58 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks >  Simple text > General tab","3","","Step Description:
+Add block Simple text > open Content tab > check values
+Expected Result:
+There are content fields with next values:
+
+- Title: Block title
+- Content: Text block content","1","1. There are content fields with next values:
+
+- Title: Block title
+- Content: Text block content","1. Add block Simple text > open Content tab > check values","CMS Page Builder module","S1688","Other","0"
+"C221896","Simple text > Generalt tab > Changing values","","","Aleksandra Mitricheva","5/7/2020 11:58 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks >  Simple text > General tab","3","","Step Description:
+Add block Simple text > open General tab > change values
+Expected Result:
+user can change values
+changes appear in preview block iframe
+button Save is clikable
+Step Description:
+Change values >
+Expected Result:
+changes appear in preview content iframe
+Step Description:
+Click button Save
+Expected Result:
+Two tooltips with approving messages appear:
+Page saved successefully
+Theme saved successefully
+Step Description:
+Close page > open again in Designer
+Expected Result:
+All selected and saved values are displayed in fields in Content/Settings tab and in Preview
+Step Description:
+Open page in Storefront
+Expected Result:
+All selected and saved values are displayed","1. 
+2. 
+3. 
+4. 
+5.","1. user can change values
+changes appear in preview block iframe
+button Save is clikable
+2. changes appear in preview content iframe
+3. Two tooltips with approving messages appear:
+Page saved successefully
+Theme saved successefully
+4. All selected and saved values are displayed in fields in Content/Settings tab and in Preview
+5. All selected and saved values are displayed","1. Add block Simple text > open General tab > change values
+2. Change values >
+3. Click button Save
+4. Close page > open again in Designer
+5. Open page in Storefront","CMS Page Builder module","S1688","Other","0"
+"C221968","Simple image > Add new block","","","Aleksandra Mitricheva","5/8/2020 2:25 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Simple Image","2","","Step Description:
+Click on button + on Simple  image block
+Expected Result:
+Preview of this block with default content and settings is opened 
+I can edit Content and settings in left sidebar
+Content is opened by default","1","1. Preview of this block with default content and settings is opened 
+I can edit Content and settings in left sidebar
+Content is opened by default","1. Click on button + on Simple  image block","CMS Page Builder module","S1688","Other","0"
+"C221969","Simple  image > Add new block > Preview","","","Aleksandra Mitricheva","5/8/2020 2:25 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Simple Image","2","","Step Description:
+Select Simple  image > Click on Plus button
+Expected Result:
+Content and Settings tab appear in left sidebar
+Default values are filled
+Block with default values displays in right Content  iframe
+Desktop mode is selected","1","1. Content and Settings tab appear in left sidebar
+Default values are filled
+Block with default values displays in right Content  iframe
+Desktop mode is selected","1. Select Simple  image > Click on Plus button","CMS Page Builder module","S1688","Other","0"
+"C221962","Simple image > General tab","","","Aleksandra Mitricheva","5/8/2020 2:24 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Simple image > General tab","3","","Step Description:
+Add block Simple image > open Content tab >
+
+
+Expected Result:
+There are content fields:
+
+- Title - text field
+- Block size - selector
+- Upload image 
+- Alternative text
+
+
+User can change values and Save","1","1. There are content fields:
+
+- Title - text field
+- Block size - selector
+- Upload image 
+- Alternative text
+
+
+User can change values and Save","1. Add block Simple image > open Content tab >","CMS Page Builder module","S1688","Other","0"
+"C221963","Simple image > General tab > Default values","","","Aleksandra Mitricheva","5/8/2020 2:24 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Simple image > General tab","3","","Step Description:
+Add block Simple image > open Content tab > check values
+Expected Result:
+There are content fields with next values:
+
+- Title: Block title
+- Block size: Medium
+- Upload image: hero.png","1","1. There are content fields with next values:
+
+- Title: Block title
+- Block size: Medium
+- Upload image: hero.png","1. Add block Simple image > open Content tab > check values","CMS Page Builder module","S1688","Other","0"
+"C221964","Simple image > Generalt tab > Changing values","","","Aleksandra Mitricheva","5/8/2020 2:24 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Simple image > General tab","3","","Step Description:
+Add block Simple image > open General tab > change values
+Expected Result:
+user can change values
+changes appear in preview block iframe
+button Save is clikable
+Step Description:
+Change values >
+Expected Result:
+changes appear in preview content iframe
+Step Description:
+Click button Save
+Expected Result:
+Two tooltips with approving messages appear:
+Page saved successefully
+Theme saved successefully
+Step Description:
+Close page > open again in Designer
+Expected Result:
+All selected and saved values are displayed in fields in Content/Settings tab and in Preview
+Step Description:
+Open page in Storefront
+Expected Result:
+All selected and saved values are displayed","1. 
+2. 
+3. 
+4. 
+5.","1. user can change values
+changes appear in preview block iframe
+button Save is clikable
+2. changes appear in preview content iframe
+3. Two tooltips with approving messages appear:
+Page saved successefully
+Theme saved successefully
+4. All selected and saved values are displayed in fields in Content/Settings tab and in Preview
+5. All selected and saved values are displayed","1. Add block Simple image > open General tab > change values
+2. Change values >
+3. Click button Save
+4. Close page > open again in Designer
+5. Open page in Storefront","CMS Page Builder module","S1688","Other","0"
+"C221965","Simple image > Settings tab","","","Aleksandra Mitricheva","5/8/2020 2:24 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Simple Image > Settings","3","","Step Description:
+Add block Simple image > open Setting tab >  
+Expected Result:
+There are setting fields: 
+
+- Block name
+
+
+User can change values and Save","1","1. There are setting fields: 
+
+- Block name
+
+
+User can change values and Save","1. Add block Simple image > open Setting tab >","CMS Page Builder module","S1688","Other","0"
+"C221966","Simple image > Settings tab > Default values","","","Aleksandra Mitricheva","5/8/2020 2:24 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Simple Image > Settings","3","","Step Description:
+Add block Simple image > open Setting tab > check values
+Expected Result:
+There are setting fields with next values:
+
+- Block name: Text","1","1. There are setting fields with next values:
+
+- Block name: Text","1. Add block Simple image > open Setting tab > check values","CMS Page Builder module","S1688","Other","0"
+"C221967","Simple image > Settings tab > Changing values","","","Aleksandra Mitricheva","5/8/2020 2:24 AM","","","","Opened Page in Designer
+List with available blocks are opened
+","Medium","","Blocks > Simple Image > Settings","3","","Step Description:
+Add block Simple image > open Setting tab > change values
+Expected Result:
+user can change values
+changes appear in preview block iframe
+button Save is clikable
+Step Description:
+Change values > 
+Expected Result:
+changes appear in preview content iframe
+Step Description:
+Click button Save
+Expected Result:
+Two tooltips with approving messages appear:
+Page saved successefully
+Theme saved successefully
+Step Description:
+Close page > open again in Designer 
+Expected Result:
+All selected and saved values are displayed in fields in Content/Settings tab and in Preview
+Step Description:
+Open page in Storefront
+Expected Result:
+All selected and saved values are displayed","1. 
+2. 
+3. 
+4. 
+5.","1. user can change values
+changes appear in preview block iframe
+button Save is clikable
+2. changes appear in preview content iframe
+3. Two tooltips with approving messages appear:
+Page saved successefully
+Theme saved successefully
+4. All selected and saved values are displayed in fields in Content/Settings tab and in Preview
+5. All selected and saved values are displayed","1. Add block Simple image > open Setting tab > change values
+2. Change values > 
+3. Click button Save
+4. Close page > open again in Designer 
+5. Open page in Storefront","CMS Page Builder module","S1688","Other","0"
+"C221970","Text over image > Add new block","","","Aleksandra Mitricheva","5/8/2020 2:36 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Text Over image","2","","Step Description:
+Click on button + on Text over image
+Expected Result:
+Preview of this block with default content and settings is opened 
+I can edit Content and settings in left sidebar
+Content is opened by default","1","1. Preview of this block with default content and settings is opened 
+I can edit Content and settings in left sidebar
+Content is opened by default","1. Click on button + on Text over image","CMS Page Builder module","S1688","Other","0"
+"C221971","Text over image > Add new block > Preview","","","Aleksandra Mitricheva","5/8/2020 2:36 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Text Over image","2","","Step Description:
+Select Text over image > Click on Plus button
+Expected Result:
+Content and Settings tab appear in left sidebar
+Default values are filled
+Block with default values displays in right Content  iframe
+Desktop mode is selected","1","1. Content and Settings tab appear in left sidebar
+Default values are filled
+Block with default values displays in right Content  iframe
+Desktop mode is selected","1. Select Text over image > Click on Plus button","CMS Page Builder module","S1688","Other","0"
+"C221972","Cards list > Add new block","","","Aleksandra Mitricheva","5/8/2020 2:36 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Cards list","2","","Step Description:
+Click on button + on Cards list block
+Expected Result:
+Preview of this block with default content and settings is opened 
+I can edit Content and settings in left sidebar
+Content is opened by default","1","1. Preview of this block with default content and settings is opened 
+I can edit Content and settings in left sidebar
+Content is opened by default","1. Click on button + on Cards list block","CMS Page Builder module","S1688","Other","0"
+"C221973","Cards list > Add new block > Preview","","","Aleksandra Mitricheva","5/8/2020 2:36 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Cards list","2","","Step Description:
+Select Cards list > Click on Plus button
+Expected Result:
+Content and Settings tab appear in left sidebar
+Default values are filled
+Block with default values displays in right Content  iframe
+Desktop mode is selected","1","1. Content and Settings tab appear in left sidebar
+Default values are filled
+Block with default values displays in right Content  iframe
+Desktop mode is selected","1. Select Cards list > Click on Plus button","CMS Page Builder module","S1688","Other","0"
+"C221974","Two columns list  > Add new block","","","Aleksandra Mitricheva","5/8/2020 2:36 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Two columns list","2","","Step Description:
+Click on button + on Two columns list  block
+Expected Result:
+Preview of this block with default content and settings is opened 
+I can edit Content and settings in left sidebar
+Content is opened by default","1","1. Preview of this block with default content and settings is opened 
+I can edit Content and settings in left sidebar
+Content is opened by default","1. Click on button + on Two columns list  block","CMS Page Builder module","S1688","Other","0"
+"C221975","Two columns list > Add new block > Preview","","","Aleksandra Mitricheva","5/8/2020 2:36 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Two columns list","2","","Step Description:
+Select Two columns list  > Click on Plus button
+Expected Result:
+Content and Settings tab appear in left sidebar
+Default values are filled
+Block with default values displays in right Content  iframe
+Desktop mode is selected","1","1. Content and Settings tab appear in left sidebar
+Default values are filled
+Block with default values displays in right Content  iframe
+Desktop mode is selected","1. Select Two columns list  > Click on Plus button","CMS Page Builder module","S1688","Other","0"
+"C221976","Video and text > Add new block","","","Aleksandra Mitricheva","5/8/2020 2:36 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Video and text","2","","Step Description:
+Click on button + on Video and text block
+Expected Result:
+Preview of this block with default content and settings is opened 
+I can edit Content and settings in left sidebar
+Content is opened by default","1","1. Preview of this block with default content and settings is opened 
+I can edit Content and settings in left sidebar
+Content is opened by default","1. Click on button + on Video and text block","CMS Page Builder module","S1688","Other","0"
+"C221977","Video and text > Add new block > Preview","","","Aleksandra Mitricheva","5/8/2020 2:36 AM","","","","Opened Page in Designer
+List with available blocks are opened","Medium","","Blocks > Video and text","2","","Step Description:
+Select Video and text > Click on Plus button
+Expected Result:
+Content and Settings tab appear in left sidebar
+Default values are filled
+Block with default values displays in right Content  iframe
+Desktop mode is selected","1","1. Content and Settings tab appear in left sidebar
+Default values are filled
+Block with default values displays in right Content  iframe
+Desktop mode is selected","1. Select Video and text > Click on Plus button","CMS Page Builder module","S1688","Other","0"

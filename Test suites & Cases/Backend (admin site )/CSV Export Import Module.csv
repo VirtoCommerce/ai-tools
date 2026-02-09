@@ -1,0 +1,1227 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C222740","Import > Catalog > Categories & Items > General","","","Aleksandra Mitricheva","5/8/2020 12:55 PM","","","","<p>Logged user with permission </p>
+
+<p>Created csv file </p>
+","Medium","VP-2246","Import","0","","Step Description:
+<p>Open Catalog > open Categories & Items ></p>
+Expected Result:
+<p>Import icon displays</p>
+Step Description:
+<p>Click on Import </p>
+Expected Result:
+<p>New blade catalog.blades.importers-list.title is opened with link VirtoCommerce CSV import</p>
+Step Description:
+<p>Click on VirtoCommerce CSV import</p>
+Expected Result:
+<p>Blade Import catalog from csv is opened with next fields:</p>
+
+<ul>
+<li><p>Csv column delimiter selector - empty value by default</p>
+
+<ul>
+<li>Vertical</li>
+<li>Tab</li>
+<li>Semicolon</li>
+<li>Comma</li>
+</ul></li>
+<li>Upload Csv file - disabled before Csv column delimiter selector is empty</li>
+<li>Map columns link - disabled before Upload Csv file is empty</li>
+</ul>
+Step Description:
+<p>Select value in Csv column delimiter selector</p>
+Expected Result:
+<p>Value is selected</p>
+
+<p>Upload Csv file field is active</p>
+Step Description:
+<p>Select file in Upload Csv file field</p>
+Expected Result:
+<p>Map columns link is active</p>
+Step Description:
+<p>Click Map columns link</p>
+Expected Result:
+<p>Column mapping blade is opened</p>
+
+<p>CSV column is filled using first string from uploaded csv file </p>
+Step Description:
+<p>Click OK in Column mapping blade > </p>
+Expected Result:
+<p>Column mapping blade is closed</p>
+
+<p>Import catalog from csv is opened > button Start import is clicable</p>
+Step Description:
+<p>Click Start import</p>
+Expected Result:
+<p>Importing from csv blade is opened <br />Import is started - all info display in blade:</p>
+
+<ul>
+<li>import started, time</li>
+<li>import finished, time</li>
+<li>new section creating</li>
+<li>errors count</li>
+<li>table with errors</li>
+</ul>","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8.","1. <p>Import icon displays</p>
+2. <p>New blade catalog.blades.importers-list.title is opened with link VirtoCommerce CSV import</p>
+3. <p>Blade Import catalog from csv is opened with next fields:</p>
+
+<ul>
+<li><p>Csv column delimiter selector - empty value by default</p>
+
+<ul>
+<li>Vertical</li>
+<li>Tab</li>
+<li>Semicolon</li>
+<li>Comma</li>
+</ul></li>
+<li>Upload Csv file - disabled before Csv column delimiter selector is empty</li>
+<li>Map columns link - disabled before Upload Csv file is empty</li>
+</ul>
+4. <p>Value is selected</p>
+
+<p>Upload Csv file field is active</p>
+5. <p>Map columns link is active</p>
+6. <p>Column mapping blade is opened</p>
+
+<p>CSV column is filled using first string from uploaded csv file </p>
+7. <p>Column mapping blade is closed</p>
+
+<p>Import catalog from csv is opened > button Start import is clicable</p>
+8. <p>Importing from csv blade is opened <br />Import is started - all info display in blade:</p>
+
+<ul>
+<li>import started, time</li>
+<li>import finished, time</li>
+<li>new section creating</li>
+<li>errors count</li>
+<li>table with errors</li>
+</ul>","1. <p>Open Catalog > open Categories & Items ></p>
+2. <p>Click on Import </p>
+3. <p>Click on VirtoCommerce CSV import</p>
+4. <p>Select value in Csv column delimiter selector</p>
+5. <p>Select file in Upload Csv file field</p>
+6. <p>Click Map columns link</p>
+7. <p>Click OK in Column mapping blade > </p>
+8. <p>Click Start import</p>","V3 CSV Export /Import Module","S1703","Other","1"
+"C222741","Import > Catalog > Categories & Items > 1 subcategory","","","Aleksandra Mitricheva","5/8/2020 12:57 PM","","","","The user has permissions to import data and has access to Export/Import Module
+
+Created csv file with items related to 1 subcategory","Medium","VP-2246","Import","0","","Step Description:
+User upload csv file > click on start import
+Expected Result:
+Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+Step Description:
+Check Catalog
+Expected Result:
+All Items are added to Catalog with all values from csv to the one selected subcategory","1. 
+2.","1. Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+2. All Items are added to Catalog with all values from csv to the one selected subcategory","1. User upload csv file > click on start import
+2. Check Catalog","V3 CSV Export /Import Module","S1703","Other","0"
+"C222763","Import > Catalog > Categories & Items > Creation new items","","","Aleksandra Mitricheva","5/8/2020 8:34 PM","","","","The user has permissions to import data and has access to Export/Import Module
+
+Created csv file with new items without value in ItemId in csv","Medium","VP-2246","Import","0","","Step Description:
+User upload csv file > click on start import
+Expected Result:
+Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+Step Description:
+Check Catalog
+Expected Result:
+New items were added to Catalog with all values from csv
+
+ItemId field is created and filled for every new item","1. 
+2.","1. Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+2. New items were added to Catalog with all values from csv
+
+ItemId field is created and filled for every new item","1. User upload csv file > click on start import
+2. Check Catalog","V3 CSV Export /Import Module","S1703","Other","0"
+"C222764","Import > Catalog > Categories & Items > a few subcategories","","","Aleksandra Mitricheva","5/8/2020 8:37 PM","","","","The user has permissions to import data and has access to Export/Import Module
+
+Created csv file with items related to few subcategories","Medium","VP-2246","Import","0","","Step Description:
+User upload csv file > click on start import
+Expected Result:
+Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+Step Description:
+Check Catalog
+Expected Result:
+All Items are added to Catalog with all values from csv to the few selected subcategoryies","1. 
+2.","1. Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+2. All Items are added to Catalog with all values from csv to the few selected subcategoryies","1. User upload csv file > click on start import
+2. Check Catalog","V3 CSV Export /Import Module","S1703","Other","0"
+"C222765","Import > Catalog > Categories & Items > Creation a new subcategory","","","Aleksandra Mitricheva","5/8/2020 8:39 PM","","","","The user has permissions to import data and has access to Export/Import Module
+
+Created csv file with items with new Categories without value in CategoryId in csv","Medium","VP-2246","Import","0","","Step Description:
+User upload csv file > click on start import
+Expected Result:
+Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+Step Description:
+Check Catalog
+Expected Result:
+New Categories were created, CategoryId is filled for every
+
+New items were added to new Category with all values from csv","1. 
+2.","1. Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+2. New Categories were created, CategoryId is filled for every
+
+New items were added to new Category with all values from csv","1. User upload csv file > click on start import
+2. Check Catalog","V3 CSV Export /Import Module","S1703","Other","0"
+"C222774","Import > Catalog > Categories & Items > Updating existing items","","","Aleksandra Mitricheva","5/12/2020 2:20 AM","","","","The user has permissions to import data and has access to Export/Import Module
+
+Created csv file with items with value in ItemId in csv (items already exist)","Medium","VP-2246","Import","0","","Step Description:
+User upload csv file > click on start import
+
+
+Expected Result:
+Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+Step Description:
+Check Catalog
+
+
+Expected Result:
+Existing items from csv were updated with all values","1. 
+2.","1. Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+2. Existing items from csv were updated with all values","1. User upload csv file > click on start import
+
+
+2. Check Catalog","V3 CSV Export /Import Module","S1703","Other","0"
+"C222779","Import > Catalog > Categories & Items > Checking values","","","Aleksandra Mitricheva","5/12/2020 6:49 AM","","","","The user has permissions to import data and has access to Export/Import Module
+
+Created csv file with items with filled values","Medium","","Import","0","","Step Description:
+User upload csv file > click on start import
+
+Expected Result:
+Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+Step Description:
+Check Catalog
+Expected Result:
+New items were created, ItemId is filled for every items
+Step Description:
+Compare values for updated/added items with values in csv file
+Expected Result:
+Items from csv were updated/created with all values","1. 
+2. 
+3.","1. Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+2. New items were created, ItemId is filled for every items
+3. Items from csv were updated/created with all values","1. User upload csv file > click on start import
+
+2. Check Catalog
+3. Compare values for updated/added items with values in csv file","V3 CSV Export /Import Module","S1703","Other","0"
+"C243261","Import > Catalog > Import multiple product images via CSV","https://virtowayqa.testrail.io/index.php?/attachments/get/28463","","Aleksandra Balabanova","7/23/2020 12:04 PM","","","","The user has permissions to import data and has access to Export/Import Module
+Created csv file with several URLs for images in AltImage column
+Images uploaded to Assets > catalog > folder_1
+Documentation - https://github.com/VirtoCommerce/vc-content/blob/deploy/pages/docs/lessons/lesson2.md
+Example of file attached to test case
+","Medium","","Import","0","","Step Description:
+1. In CSV file set multiple values in AltImage using """"--"""" delimiter, for example - https://qademovc3.blob.core.windows.net/catalog/importtest/0a98425e7.jpg--https://qademovc3.blob.core.windows.net/catalog/importtest/3c7b6e154.jpg
+2. Open Catalog > Categories & Items > choose nessesary category 
+3. Click Import button
+Expected Result:
+1. Import started and finished successfully
+
+Step Description:
+1. Click Refresh button
+Expected Result:
+1. Product imported with images 
+Step Description:
+1. In CSV file set multiple values in AltImage using """"|"""" delimiter, for example - https://qademovc3.blob.core.windows.net/catalog/importtest/4abfa42d8.jpg|https://qademovc3.blob.core.windows.net/catalog/importtest/0a98425e7.jpg
+2. Open Catalog > Categories & Items > choose nessesary category 
+3. Click Import button
+Expected Result:
+1. Import started and finished successfully
+
+Step Description:
+1. Click Refresh button
+Expected Result:
+1. Product imported with images","1. 
+2. 
+3. 
+4.","1. 1. Import started and finished successfully
+
+2. 1. Product imported with images 
+3. 1. Import started and finished successfully
+
+4. 1. Product imported with images","1. 1. In CSV file set multiple values in AltImage using """"--"""" delimiter, for example - https://qademovc3.blob.core.windows.net/catalog/importtest/0a98425e7.jpg--https://qademovc3.blob.core.windows.net/catalog/importtest/3c7b6e154.jpg
+2. Open Catalog > Categories & Items > choose nessesary category 
+3. Click Import button
+2. 1. Click Refresh button
+3. 1. In CSV file set multiple values in AltImage using """"|"""" delimiter, for example - https://qademovc3.blob.core.windows.net/catalog/importtest/4abfa42d8.jpg|https://qademovc3.blob.core.windows.net/catalog/importtest/0a98425e7.jpg
+2. Open Catalog > Categories & Items > choose nessesary category 
+3. Click Import button
+4. 1. Click Refresh button","V3 CSV Export /Import Module","S1703","Functional","0"
+"C256725","Import > Catalog > Categories & Items > more than 4 Product Descriptions","","","Aleksandra Balabanova","10/21/2020 11:58 AM","","","","The user has permissions to import data and has access to Export/Import Module
+
+Created csv file with items with filled values: Name, Sku, ListPrice, PriceListId","Medium","","Import","0","","Step Description:
+1. Open Admin > Catalog > any Category > choose any Product
+2. Add several Description (more than 4 descriptions) 
+3. Save product
+Expected Result:
+1. Descriptions are saved 
+Step Description:
+1. Import product with values (Name, Sku, ListPrice, PriceListId)
+2. Open Product and check descriptions
+Expected Result:
+1. All descriptions should displays in Admin","1. 
+2.","1. 1. Descriptions are saved 
+2. 1. All descriptions should displays in Admin","1. 1. Open Admin > Catalog > any Category > choose any Product
+2. Add several Description (more than 4 descriptions) 
+3. Save product
+2. 1. Import product with values (Name, Sku, ListPrice, PriceListId)
+2. Open Product and check descriptions","V3 CSV Export /Import Module","S1703","Functional","0"
+"C256728","Import > Catalog > Categories & Items > Product Description with different languages (Localization)","","","Aleksandra Balabanova","10/21/2020 12:35 PM","","","","The user has permissions to import data and has access to Export/Import Module
+
+Created csv file with items with filled values: Name, Sku, ListPrice, PriceListId","Medium","","Import","0","","Step Description:
+1. Open Admin > Catalog > any Category > choose any Product
+2. Add several Descriptions in different languages (DE, FR)
+3. Save product
+Expected Result:
+1. Descriptions are saved 
+Step Description:
+1. Import product with values (Name, Sku, ListPrice, PriceListId)
+2. Open Product and check descriptions
+Expected Result:
+1. All descriptions should displays in Admin","1. 
+2.","1. 1. Descriptions are saved 
+2. 1. All descriptions should displays in Admin","1. 1. Open Admin > Catalog > any Category > choose any Product
+2. Add several Descriptions in different languages (DE, FR)
+3. Save product
+2. 1. Import product with values (Name, Sku, ListPrice, PriceListId)
+2. Open Product and check descriptions","V3 CSV Export /Import Module","S1703","Functional","0"
+"C256729","Import > Catalog > Categories & Items > Full export and import of product","","","Aleksandra Balabanova","10/21/2020 12:38 PM","","","","The user has permissions to import data and has access to Export/Import Module","Medium","","Import","0","","Step Description:
+1. Open Admin > Catalog > any Category > choose any Product
+2. Export this product
+Expected Result:
+1. Product exported successfully
+Step Description:
+1. Change price in exported CSV file
+2. Click Import > choose exported file
+3. Check the product after import
+Expected Result:
+1. Price updated
+2. Previously filled fields were not cleared (for example - properties, Priority, Listing expires on)","1. 
+2.","1. 1. Product exported successfully
+2. 1. Price updated
+2. Previously filled fields were not cleared (for example - properties, Priority, Listing expires on)","1. 1. Open Admin > Catalog > any Category > choose any Product
+2. Export this product
+2. 1. Change price in exported CSV file
+2. Click Import > choose exported file
+3. Check the product after import","V3 CSV Export /Import Module","S1703","Functional","0"
+"C222775","Import > Vertical column delimiter","","","Aleksandra Mitricheva","5/12/2020 3:13 AM","","","","The user has permissions to import data and has access to Export/Import Module
+
+Created csv file
+","Medium","","Type of Csv column delimiter","1","","Step Description:
+Click on Import > VirtoCommerce CSV import > Select Vertical in Csv column delimiter selector 
+
+
+
+
+Expected Result:
+Value is selected
+
+Upload Csv file field is active
+
+Step Description:
+Select file in Upload Csv file field
+Expected Result:
+Map columns link is active
+Step Description:
+Click Map columns link
+Expected Result:
+Column mapping blade is opened
+
+CSV column is filled using first string from uploaded csv file
+Step Description:
+Click OK in Column mapping blade >
+Expected Result:
+Column mapping blade is closed
+
+Import catalog from csv is opened > button Start import is clicable
+Step Description:
+Click Start import
+Expected Result:
+Import started and finished successfully
+
+Importing from csv tab displays count of imported items","1. 
+2. 
+3. 
+4. 
+5.","1. Value is selected
+
+Upload Csv file field is active
+
+2. Map columns link is active
+3. Column mapping blade is opened
+
+CSV column is filled using first string from uploaded csv file
+4. Column mapping blade is closed
+
+Import catalog from csv is opened > button Start import is clicable
+5. Import started and finished successfully
+
+Importing from csv tab displays count of imported items","1. Click on Import > VirtoCommerce CSV import > Select Vertical in Csv column delimiter selector 
+
+
+
+
+2. Select file in Upload Csv file field
+3. Click Map columns link
+4. Click OK in Column mapping blade >
+5. Click Start import","V3 CSV Export /Import Module","S1703","Other","0"
+"C222776","Import > Comma column delimiter","","","Aleksandra Mitricheva","5/12/2020 3:14 AM","","","","The user has permissions to import data and has access to Export/Import Module
+
+Created csv file","Medium","","Type of Csv column delimiter","1","","Step Description:
+Click on Import > VirtoCommerce CSV import > Select Comma in Csv column delimiter selector  
+
+
+Expected Result:
+Value is selected
+
+Upload Csv file field is active
+Step Description:
+Select file in Upload Csv file field
+Expected Result:
+Map columns link is active
+Step Description:
+Click Map columns link
+Expected Result:
+Column mapping blade is opened
+
+CSV column is filled using first string from uploaded csv file
+Step Description:
+Click OK in Column mapping blade >
+Expected Result:
+Column mapping blade is closed
+
+Import catalog from csv is opened > button Start import is clicable
+Step Description:
+Click Start import
+Expected Result:
+Import started and finished successfully
+
+Importing from csv tab displays count of imported items","1. 
+2. 
+3. 
+4. 
+5.","1. Value is selected
+
+Upload Csv file field is active
+2. Map columns link is active
+3. Column mapping blade is opened
+
+CSV column is filled using first string from uploaded csv file
+4. Column mapping blade is closed
+
+Import catalog from csv is opened > button Start import is clicable
+5. Import started and finished successfully
+
+Importing from csv tab displays count of imported items","1. Click on Import > VirtoCommerce CSV import > Select Comma in Csv column delimiter selector  
+
+
+2. Select file in Upload Csv file field
+3. Click Map columns link
+4. Click OK in Column mapping blade >
+5. Click Start import","V3 CSV Export /Import Module","S1703","Other","0"
+"C222777","Import > Tab column delimiter","","","Aleksandra Mitricheva","5/12/2020 3:14 AM","","","","The user has permissions to import data and has access to Export/Import Module
+
+Created csv file","Medium","","Type of Csv column delimiter","1","","Step Description:
+Click on Import > VirtoCommerce CSV import > Select Tab in Csv column delimiter selector  
+
+
+Expected Result:
+Value is selected
+
+Upload Csv file field is active
+Step Description:
+Select file in Upload Csv file field
+Expected Result:
+Map columns link is active
+Step Description:
+Click Map columns link
+Expected Result:
+Column mapping blade is opened
+
+CSV column is filled using first string from uploaded csv file
+Step Description:
+Click OK in Column mapping blade >
+Expected Result:
+Column mapping blade is closed
+
+Import catalog from csv is opened > button Start import is clicable
+Step Description:
+Click Start import
+Expected Result:
+Import started and finished successfully
+
+Importing from csv tab displays count of imported items","1. 
+2. 
+3. 
+4. 
+5.","1. Value is selected
+
+Upload Csv file field is active
+2. Map columns link is active
+3. Column mapping blade is opened
+
+CSV column is filled using first string from uploaded csv file
+4. Column mapping blade is closed
+
+Import catalog from csv is opened > button Start import is clicable
+5. Import started and finished successfully
+
+Importing from csv tab displays count of imported items","1. Click on Import > VirtoCommerce CSV import > Select Tab in Csv column delimiter selector  
+
+
+2. Select file in Upload Csv file field
+3. Click Map columns link
+4. Click OK in Column mapping blade >
+5. Click Start import","V3 CSV Export /Import Module","S1703","Other","0"
+"C222778","Import > Semicolon column delimiter","","","Aleksandra Mitricheva","5/12/2020 3:15 AM","","","","The user has permissions to import data and has access to Export/Import Module
+
+Created csv file","Medium","","Type of Csv column delimiter","1","","Step Description:
+Click on Import > VirtoCommerce CSV import > Select Semicolon in Csv column delimiter selector  
+
+
+Expected Result:
+Value is selected
+
+Upload Csv file field is active
+Step Description:
+Select file in Upload Csv file field
+Expected Result:
+Map columns link is active
+Step Description:
+Click Map columns link
+Expected Result:
+Column mapping blade is opened
+
+CSV column is filled using first string from uploaded csv file
+Step Description:
+Click OK in Column mapping blade >
+Expected Result:
+Column mapping blade is closed
+
+Import catalog from csv is opened > button Start import is clicable
+Step Description:
+Click Start import
+Expected Result:
+Import started and finished successfully
+
+Importing from csv tab displays count of imported items","1. 
+2. 
+3. 
+4. 
+5.","1. Value is selected
+
+Upload Csv file field is active
+2. Map columns link is active
+3. Column mapping blade is opened
+
+CSV column is filled using first string from uploaded csv file
+4. Column mapping blade is closed
+
+Import catalog from csv is opened > button Start import is clicable
+5. Import started and finished successfully
+
+Importing from csv tab displays count of imported items","1. Click on Import > VirtoCommerce CSV import > Select Semicolon in Csv column delimiter selector  
+
+
+2. Select file in Upload Csv file field
+3. Click Map columns link
+4. Click OK in Column mapping blade >
+5. Click Start import","V3 CSV Export /Import Module","S1703","Other","0"
+"C315281","Import > Vertical column delimiter","","","Daria Ponamareva","10/5/2021 7:23 AM","","","","The user has permissions to import data and has access to Export/Import Module
+
+Created csv file
+
+","Medium","","Type of Csv column delimiter","1","","Step Description:
+Click on Import > VirtoCommerce CSV import > Select Vertical """"|"""" in Csv column delimiter selector  
+
+
+
+
+
+Expected Result:
+Value is selected
+
+
+
+Upload Csv file field is active
+Step Description:
+
+
+Select file in Upload Csv file field
+
+
+
+
+
+Expected Result:
+Map columns link is active
+
+
+Step Description:
+
+
+Click Map columns link
+
+
+
+ 
+
+
+
+
+Expected Result:
+Column mapping blade is opened
+
+CSV column is filled using first string from uploaded csv file
+Step Description:
+
+
+Click OK in Column mapping blade >
+
+
+
+ 
+
+
+
+
+Expected Result:
+Column mapping blade is closed
+
+
+
+Import catalog from csv is opened > button Start import is clicable
+Step Description:
+
+Click Start import
+
+
+Expected Result:
+
+Import started and finished successfully
+
+Importing from csv tab displays count of imported items","1. 
+2. 
+3. 
+4. 
+5.","1. Value is selected
+
+
+
+Upload Csv file field is active
+2. Map columns link is active
+
+
+3. Column mapping blade is opened
+
+CSV column is filled using first string from uploaded csv file
+4. Column mapping blade is closed
+
+
+
+Import catalog from csv is opened > button Start import is clicable
+5. 
+Import started and finished successfully
+
+Importing from csv tab displays count of imported items","1. Click on Import > VirtoCommerce CSV import > Select Vertical """"|"""" in Csv column delimiter selector  
+
+
+
+
+
+2. 
+
+Select file in Upload Csv file field
+
+
+
+
+
+3. 
+
+Click Map columns link
+
+
+
+ 
+
+
+
+
+4. 
+
+Click OK in Column mapping blade >
+
+
+
+ 
+
+
+
+
+5. 
+Click Start import","V3 CSV Export /Import Module","S1703","Other","0"
+"C222780","Import > User permissions","","","Aleksandra Mitricheva","5/12/2020 6:52 AM","","","","1. User have access to catalog
+2. User does not have permissions to import files
+","Medium","VP-2246","Permission users for import","1","","Step Description:
+Add Import:access? > Open Catalog > check Import icon
+
+
+Expected Result:
+Import icon doesn't display
+Step Description:
+Add Import:access? > OPen Catalog > click on Import icon
+Expected Result:
+User sees 403
+Step Description:
+Add Import:access? > Try to select Upload Csv file
+Expected Result:
+User sees 403 error
+Step Description:
+Add Import:access? > select csv > start import
+Expected Result:
+Import is started","1. 
+2. 
+3. 
+4.","1. Import icon doesn't display
+2. User sees 403
+3. User sees 403 error
+4. Import is started","1. Add Import:access? > Open Catalog > check Import icon
+
+
+2. Add Import:access? > OPen Catalog > click on Import icon
+3. Add Import:access? > Try to select Upload Csv file
+4. Add Import:access? > select csv > start import","V3 CSV Export /Import Module","S1703","Other","0"
+"C226605","Properties > SEO > creation new item","","","Aleksandra Mitricheva","5/21/2020 10:12 AM","","","","The user has permissions to import data and has access to Export/Import Module
+
+Created csv file with items with filled SEO properties","Medium","","Import > Properties","1","","Step Description:
+User upload csv file > click on start import
+
+
+Expected Result:
+Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+Step Description:
+Check Catalog
+
+
+Expected Result:
+New items were created, ItemId is filled for every items
+
+
+Step Description:
+Check SEO properties for added items with values in csv file
+Expected Result:
+all seo properties are imported:
+- SeoUrl
+- SeoTitle
+- SeoDescription
+- SeoLanguage
+- SeoStore
+- SeoMetaKeywords
+- SeoImageAlternativeText ","1. 
+2. 
+3.","1. Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+2. New items were created, ItemId is filled for every items
+
+
+3. all seo properties are imported:
+- SeoUrl
+- SeoTitle
+- SeoDescription
+- SeoLanguage
+- SeoStore
+- SeoMetaKeywords
+- SeoImageAlternativeText ","1. User upload csv file > click on start import
+
+
+2. Check Catalog
+
+
+3. Check SEO properties for added items with values in csv file","V3 CSV Export /Import Module","S1703","Other","0"
+"C226606","Properties > SEO > updating existing item","","","Aleksandra Mitricheva","5/21/2020 10:12 AM","","","","The user has permissions to import data and has access to Export/Import Module
+
+Created csv file with items with filled SEO properties and filled ItemId","Medium","","Import > Properties","1","","Step Description:
+User upload csv file > click on start import
+Expected Result:
+Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+Step Description:
+Check Catalog
+
+
+Expected Result:
+Items from csv file are updated
+Step Description:
+Check SEO properties for added items with values in csv file
+
+
+Expected Result:
+all seo properties are updated:
+- SeoUrl
+- SeoTitle
+- SeoDescription
+- SeoLanguage
+- SeoStore
+- SeoMetaKeywords
+- SeoImageAlternativeText ","1. 
+2. 
+3.","1. Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+2. Items from csv file are updated
+3. all seo properties are updated:
+- SeoUrl
+- SeoTitle
+- SeoDescription
+- SeoLanguage
+- SeoStore
+- SeoMetaKeywords
+- SeoImageAlternativeText ","1. User upload csv file > click on start import
+2. Check Catalog
+
+
+3. Check SEO properties for added items with values in csv file","V3 CSV Export /Import Module","S1703","Other","0"
+"C226808","Properties > SEO > item variations","","","Aleksandra Mitricheva","5/21/2020 9:22 PM","","","","The user has permissions to import data and has access to Export/Import Module
+
+Created csv file with items with filled properties","Medium","VP-2519","Import > Properties","1","","Step Description:
+User upload csv file > click on start import
+
+
+Expected Result:
+Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+Step Description:
+Check Catalog
+
+
+Expected Result:
+Items were updated, ItemId is filled for every items
+
+
+Step Description:
+Check properties for added items with values in csv file
+
+
+Expected Result:
+all properties are imported:
+- Weight 
+- Height
+- Width
+- Length
+
+- Tax type
+- Vendor
+- Brand
+- Style
+- Type
+- Colour
+- Size
+
+- Price
+- Reviews
+- Type of review","1. 
+2. 
+3.","1. Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+2. Items were updated, ItemId is filled for every items
+
+
+3. all properties are imported:
+- Weight 
+- Height
+- Width
+- Length
+
+- Tax type
+- Vendor
+- Brand
+- Style
+- Type
+- Colour
+- Size
+
+- Price
+- Reviews
+- Type of review","1. User upload csv file > click on start import
+
+
+2. Check Catalog
+
+
+3. Check properties for added items with values in csv file","V3 CSV Export /Import Module","S1703","Other","0"
+"C226810","Properties > common > updating and creating items","","","Aleksandra Mitricheva","5/21/2020 9:51 PM","","","","The user has permissions to import data and has access to Export/Import Module
+
+Created csv file with items with filled properties","Medium","VP-2518","Import > Properties","1","","Step Description:
+User upload csv file > click on start import
+
+
+Expected Result:
+Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+Step Description:
+Check Catalog
+
+
+Expected Result:
+Items were updated, ItemId is filled for every items
+
+
+Step Description:
+Check properties for added items with values in csv file
+
+
+Expected Result:
+all properties are imported:
+- Weight 
+- Height
+- Width
+- Length
+
+- Tax type
+- Vendor
+- Brand
+- Style
+- Type
+- Colour
+- Size
+
+- Price
+- Reviews
+- Type of review","1. 
+2. 
+3.","1. Import started and finished successfully
+
+Importing from csv tab displays count of imported items
+2. Items were updated, ItemId is filled for every items
+
+
+3. all properties are imported:
+- Weight 
+- Height
+- Width
+- Length
+
+- Tax type
+- Vendor
+- Brand
+- Style
+- Type
+- Colour
+- Size
+
+- Price
+- Reviews
+- Type of review","1. User upload csv file > click on start import
+
+
+2. Check Catalog
+
+
+3. Check properties for added items with values in csv file","V3 CSV Export /Import Module","S1703","Other","0"
+"C256726","Properties > Multilanguage values (Localization)","","","Aleksandra Balabanova","10/21/2020 11:59 AM","","","","The user has permissions to import data and has access to Export/Import Module
+
+Create Property for Product with Multilanguage values (Catalog level)
+
+NOT IMPLEMENTED YET","Medium","","Import > Properties","1","","Step Description:
+1. Open Admin > Catalog > Category > any Product
+2. Add new created property to Product
+3. Export product
+Expected Result:
+1. Multilanguage property exported and separated with semicolon in file (for example - test1; test2)
+Step Description:
+1. Change price in exported CSV file
+2. Click Import > choose exported file
+3. Check the product after import
+Expected Result:
+1. Price updated
+2. Previously filled fields were not cleared (for example - properties, Priority, Listing expires on)
+3. Multilanguage values not duplicated","1. 
+2.","1. 1. Multilanguage property exported and separated with semicolon in file (for example - test1; test2)
+2. 1. Price updated
+2. Previously filled fields were not cleared (for example - properties, Priority, Listing expires on)
+3. Multilanguage values not duplicated","1. 1. Open Admin > Catalog > Category > any Product
+2. Add new created property to Product
+3. Export product
+2. 1. Change price in exported CSV file
+2. Click Import > choose exported file
+3. Check the product after import","V3 CSV Export /Import Module","S1703","Functional","0"
+"C311483","Export > Catalog > General","","","Elena Mutykova","8/26/2021 1:23 PM","","","","Create a product at the root of the Catalog.","Medium","","Export","0","","Step Description:
+Open Catalog > open Categories & Items
+Expected Result:
+Export icon displays
+Step Description:
+Click on the Export icon
+Expected Result:
+The new blade is opened. General export and export to VirtoCommerce CSV is available.
+Step Description:
+Click on VirtoCommerce CSV.
+Expected Result:
+Blade Export catalog to CSV is opened with next fields:
+
+Select fulfillment center for exported inventory. The dropdown shows all available fulfillment centers. 
+
+Select price-list for exported prices. The dropdown shows all available price lists - empty value by default. 
+
+  
+Step Description:
+Select value for fulfillment center from the list.
+Expected Result:
+Value is selected
+Step Description:
+Select available price-list from the list.
+Expected Result:
+Value is selected
+Step Description:
+Click on Start export
+Expected Result:
+Catalog to CSV export blade is opened
+Export is started - all info display in blade:
+
+Start
+End
+Total count
+Processed count
+Error count
+
+Download Url
+
+Step Description:
+Click on URL
+Expected Result:
+The report is downloaded and opened. All products from the Catalog, include a product from the root display in the CSV file.","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7.","1. Export icon displays
+2. The new blade is opened. General export and export to VirtoCommerce CSV is available.
+3. Blade Export catalog to CSV is opened with next fields:
+
+Select fulfillment center for exported inventory. The dropdown shows all available fulfillment centers. 
+
+Select price-list for exported prices. The dropdown shows all available price lists - empty value by default. 
+
+  
+4. Value is selected
+5. Value is selected
+6. Catalog to CSV export blade is opened
+Export is started - all info display in blade:
+
+Start
+End
+Total count
+Processed count
+Error count
+
+Download Url
+
+7. The report is downloaded and opened. All products from the Catalog, include a product from the root display in the CSV file.","1. Open Catalog > open Categories & Items
+2. Click on the Export icon
+3. Click on VirtoCommerce CSV.
+4. Select value for fulfillment center from the list.
+5. Select available price-list from the list.
+6. Click on Start export
+7. Click on URL","V3 CSV Export /Import Module","S1703","Other","0"
+"C311484","Export > Category","","","Elena Mutykova","8/26/2021 1:24 PM","","","","Choose 1 Category click on the checkbox > Export > Click on VirtoCommerce CSV.
+Create a product at the root of the Category. ","Medium","","Export","0","","Step Description:
+1.Select fulfillment center
+2.Select a price list
+3.Start export 
+Expected Result:
+Export is started and finished successfully. The URL is available for download.
+Step Description:
+Click on the Link
+Expected Result:
+The report is opened. All products from the selected category are displayed in the file. 
+Step Description:
+1.Go to Category which contains subcategories and the product at the root
+2.Mark all via checkbox > Export > Click on VirtoCommerce CSV. 
+3.Select fulfillment center > Select a price list > Start export 
+Expected Result:
+Export is started and finished successfully. The URL is available for download.
+Step Description:
+Click on the Link
+Expected Result:
+The report is opened. All products from the selected category, include a product from the root are displayed in the CSV file. ","1. 
+2. 
+3. 
+4.","1. Export is started and finished successfully. The URL is available for download.
+2. The report is opened. All products from the selected category are displayed in the file. 
+3. Export is started and finished successfully. The URL is available for download.
+4. The report is opened. All products from the selected category, include a product from the root are displayed in the CSV file. ","1. 1.Select fulfillment center
+2.Select a price list
+3.Start export 
+2. Click on the Link
+3. 1.Go to Category which contains subcategories and the product at the root
+2.Mark all via checkbox > Export > Click on VirtoCommerce CSV. 
+3.Select fulfillment center > Select a price list > Start export 
+4. Click on the Link","V3 CSV Export /Import Module","S1703","Other","0"
+"C311485","Export from Subcategory","","","Elena Mutykova","8/26/2021 1:24 PM","","","","Choose 1 subcategory click on the checkbox > Export > Click on VirtoCommerce CSV.  ","Medium","","Export","0","","Step Description:
+1.Select fulfillment center
+2.Select a price list
+3.Start export
+Expected Result:
+Export is started and finished successfully. The URL is available for download.
+Step Description:
+Click on the Link
+Expected Result:
+The report is opened. All products from the selected subcategory are displayed in the CSV file.","1. 
+2.","1. Export is started and finished successfully. The URL is available for download.
+2. The report is opened. All products from the selected subcategory are displayed in the CSV file.","1. 1.Select fulfillment center
+2.Select a price list
+3.Start export
+2. Click on the Link","V3 CSV Export /Import Module","S1703","Other","0"
+"C311486","Export 1 Physical product","","","Elena Mutykova","8/26/2021 1:24 PM","","","","Choose 1 product > Export > Click on VirtoCommerce CSV.  ","Medium","","Export","0","","Step Description:
+1.Select fulfillment center
+2.Select a price list
+3.Start export
+Expected Result:
+Export is started and finished successfully. The URL is available for download.
+Step Description:
+Click on the Link
+Expected Result:
+The report is opened. The selected product is displayed in the CSV file.","1. 
+2.","1. Export is started and finished successfully. The URL is available for download.
+2. The report is opened. The selected product is displayed in the CSV file.","1. 1.Select fulfillment center
+2.Select a price list
+3.Start export
+2. Click on the Link","V3 CSV Export /Import Module","S1703","Other","0"
+"C311489","Export from subcategory with digital product","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001906","","Elena Mutykova","8/26/2021 1:25 PM","","","","Create digital product
+Choose subcategory with digital product > Export > Click on VirtoCommerce CSV.","Medium","","Export","0","","Step Description:
+1.Select fulfillment center
+2.Select a price list
+3.Start export
+Expected Result:
+Export is started and finished successfully. The URL is available for download.
+Step Description:
+Click on the Link
+Expected Result:
+The report is opened. The selected subcategory with digital product is displayed in the CSV file.
+
+![](index.php?/attachments/get/698346cb-ce2b-4af3-9286-db5bc673e523)    ","1. 
+2.","1. Export is started and finished successfully. The URL is available for download.
+2. The report is opened. The selected subcategory with digital product is displayed in the CSV file.
+
+![](index.php?/attachments/get/698346cb-ce2b-4af3-9286-db5bc673e523)    ","1. 1.Select fulfillment center
+2.Select a price list
+3.Start export
+2. Click on the Link","V3 CSV Export /Import Module","S1703","Other","0"
+"C311490","Export from subcategory with BOM product","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002526","","Elena Mutykova","8/26/2021 1:25 PM","","","","Create BOM product.
+Choose subcategory with BOM product > Export > Click on VirtoCommerce CSV.","Medium","","Export","0","","Step Description:
+1.Select fulfillment center
+2.Select a price list
+3.Start export
+Expected Result:
+Export is started and finished successfully. The URL is available for download.
+Step Description:
+Click on the Link
+Expected Result:
+The report is opened. The selected subcategory with the BOM product is displayed in the CSV file.
+![](index.php?/attachments/get/8d69798c-9e74-4e6c-a00a-2a273c1fba71)  
+ ","1. 
+2.","1. Export is started and finished successfully. The URL is available for download.
+2. The report is opened. The selected subcategory with the BOM product is displayed in the CSV file.
+![](index.php?/attachments/get/8d69798c-9e74-4e6c-a00a-2a273c1fba71)  
+ ","1. 1.Select fulfillment center
+2.Select a price list
+3.Start export
+2. Click on the Link","V3 CSV Export /Import Module","S1703","Other","0"
+"C311493","Export > Product >  Select Fullfillment center & PriceList","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000202, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000703","","Elena Mutykova","8/26/2021 2:54 PM","","","","Choose product_1
+The product has at least 2 fulfillment centers with quantity In stock. (FC_1, FC_2)
+The product has PriceLists EURO: PL_1, and USD: PL_2, with the value in List price.
+Select product_1 > Export > Click on VirtoCommerce CSV.   ","Medium","","Export","0","","Step Description:
+1.Select FC_1
+2.Select a PL_1
+3.Start export
+Expected Result:
+Export is started and finished successfully. The URL is available for download.
+Step Description:
+Click on the Link
+Expected Result:
+The report is opened. The selected product with an FC_1 and PL_1 is displayed in the  CSV file.
+
+![](index.php?/attachments/get/257c0455-ddc5-4549-9a5f-6e9e8c648458)   
+ 
+Step Description:
+1.Select FC_2
+2.Select a PL_2
+3.Start export
+Expected Result:
+Export is started and finished successfully. The URL is available for download.
+Step Description:
+Click on the Link
+Expected Result:
+The report is opened. The selected product with an FC_2 and PL_2 is displayed in the CSV file.
+
+![](index.php?/attachments/get/0c172feb-e332-4ff5-a76f-7f2a653ef1f6)   ","1. 
+2. 
+3. 
+4.","1. Export is started and finished successfully. The URL is available for download.
+2. The report is opened. The selected product with an FC_1 and PL_1 is displayed in the  CSV file.
+
+![](index.php?/attachments/get/257c0455-ddc5-4549-9a5f-6e9e8c648458)   
+ 
+3. Export is started and finished successfully. The URL is available for download.
+4. The report is opened. The selected product with an FC_2 and PL_2 is displayed in the CSV file.
+
+![](index.php?/attachments/get/0c172feb-e332-4ff5-a76f-7f2a653ef1f6)   ","1. 1.Select FC_1
+2.Select a PL_1
+3.Start export
+2. Click on the Link
+3. 1.Select FC_2
+2.Select a PL_2
+3.Start export
+4. Click on the Link","V3 CSV Export /Import Module","S1703","Other","0"
+"C311487","Export 10 products","","","Elena Mutykova","8/26/2021 1:24 PM","","","","Choose 10 products > Export > Click on VirtoCommerce CSV.  ","Medium","","Export","0","","Step Description:
+1.Select fulfillment center
+2.Select a price list
+3.Start export
+Expected Result:
+Export is started and finished successfully. The URL is available for download.
+Step Description:
+Click on the Link
+Expected Result:
+The report is opened. 10 products are displayed in the CSV file.","1. 
+2.","1. Export is started and finished successfully. The URL is available for download.
+2. The report is opened. 10 products are displayed in the CSV file.","1. 1.Select fulfillment center
+2.Select a price list
+3.Start export
+2. Click on the Link","V3 CSV Export /Import Module","S1703","Other","0"

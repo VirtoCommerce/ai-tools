@@ -1,0 +1,1080 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C415379","TC-001: Verify Draft menu item displays counter",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","<p>User is logged in to Page Builder Admin (<a href=""https://vcst-qa.govirto.com/apps/page-builder/?storeId=B2B-store#/page-builder)"">https://vcst-qa.govirto.com/apps/page-builder/?storeId=B2B-store#/page-builder)</a></p>
+","High","","Navigation Menu > Counters","0","","Step Description:
+<ol>
+<li>Navigate to Page Builder Admin</li>
+<li>Login with valid credentials</li>
+<li>Observe the navigation menu on the left side</li>
+<li>Look at the Draft menu item</li>
+</ol>
+Expected Result:
+<p>Draft menu item should display a counter in parentheses showing the number of draft pages (e.g., 'Draft (2)')</p>","1","1. <p>Draft menu item should display a counter in parentheses showing the number of draft pages (e.g., 'Draft (2)')</p>","1. <ol>
+<li>Navigate to Page Builder Admin</li>
+<li>Login with valid credentials</li>
+<li>Observe the navigation menu on the left side</li>
+<li>Look at the Draft menu item</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415380","TC-002: Verify Pending menu item displays counter",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is logged in to Page Builder Admin","High","","Navigation Menu > Counters","0","","Step Description:
+1. Navigate to Page Builder Admin
+2. Observe the navigation menu
+3. Look at the Pending menu item
+Expected Result:
+Pending menu item should display a counter showing scheduled/pending pages (e.g., &#039;Pending [1]&#039;)","1","1. Pending menu item should display a counter showing scheduled/pending pages (e.g., &#039;Pending [1]&#039;)","1. 1. Navigate to Page Builder Admin
+2. Observe the navigation menu
+3. Look at the Pending menu item","[vc-shell ] Page builder","S5698","Functional","0"
+"C415381","TC-003: Verify Active menu item displays counter",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is logged in to Page Builder Admin","High","","Navigation Menu > Counters","0","","Step Description:
+1. Navigate to Page Builder Admin
+2. Observe the navigation menu
+3. Look at the Active menu item
+Expected Result:
+Active menu item should display a counter showing published pages (e.g., &#039;Active [9]&#039;)","1","1. Active menu item should display a counter showing published pages (e.g., &#039;Active [9]&#039;)","1. 1. Navigate to Page Builder Admin
+2. Observe the navigation menu
+3. Look at the Active menu item","[vc-shell ] Page builder","S5698","Functional","0"
+"C415382","TC-004: Verify Archived menu item displays counter",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is logged in to Page Builder Admin","High","","Navigation Menu > Counters","0","","Step Description:
+1. Navigate to Page Builder Admin
+2. Observe the navigation menu
+3. Look at the Archived menu item
+Expected Result:
+Archived menu item should display a counter showing archived pages (e.g., &#039;Archived (4)&#039;)","1","1. Archived menu item should display a counter showing archived pages (e.g., &#039;Archived (4)&#039;)","1. 1. Navigate to Page Builder Admin
+2. Observe the navigation menu
+3. Look at the Archived menu item","[vc-shell ] Page builder","S5698","Functional","0"
+"C415383","TC-005: Verify All Pages menu item displays total counter",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is logged in to Page Builder Admin","High","","Navigation Menu > Counters","0","","Step Description:
+1. Navigate to Page Builder Admin
+2. Observe the navigation menu
+3. Look at the All Pages menu item
+Expected Result:
+All Pages menu item should display a counter showing total pages (e.g., &#039;All pages (16)&#039;)","1","1. All Pages menu item should display a counter showing total pages (e.g., &#039;All pages (16)&#039;)","1. 1. Navigate to Page Builder Admin
+2. Observe the navigation menu
+3. Look at the All Pages menu item","[vc-shell ] Page builder","S5698","Functional","0"
+"C415384","TC-006: Verify counters update when page status changes",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is logged in to Page Builder Admin with existing pages","Medium","","Navigation Menu > Counters","0","","Step Description:
+1. Note current counter values in navigation menu
+2. Create a new draft page
+3. Observe the Draft counter
+4. Publish the page
+5. Observe Draft and Active counters
+Expected Result:
+Counters should update in real-time when page status changes","1","1. Counters should update in real-time when page status changes","1. 1. Note current counter values in navigation menu
+2. Create a new draft page
+3. Observe the Draft counter
+4. Publish the page
+5. Observe Draft and Active counters","[vc-shell ] Page builder","S5698","Functional","0"
+"C415385","TC-007: Verify Draft filter shows only draft pages",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is logged in with draft pages existing","High","","Navigation Menu > Filtering","0","","Step Description:
+1. Click on Draft menu item
+2. Observe the page list
+Expected Result:
+Only pages with Draft status should be displayed in the list","1","1. Only pages with Draft status should be displayed in the list","1. 1. Click on Draft menu item
+2. Observe the page list","[vc-shell ] Page builder","S5698","Functional","0"
+"C415386","TC-008: Verify Pending filter shows only scheduled pages",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is logged in with scheduled pages existing","High","","Navigation Menu > Filtering","0","","Step Description:
+1. Click on Pending menu item
+2. Observe the page list
+Expected Result:
+Only pages with Pending/Scheduled status should be displayed","1","1. Only pages with Pending/Scheduled status should be displayed","1. 1. Click on Pending menu item
+2. Observe the page list","[vc-shell ] Page builder","S5698","Functional","0"
+"C415387","TC-009: Verify Active filter shows only published pages",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is logged in with published pages existing","High","","Navigation Menu > Filtering","0","","Step Description:
+1. Click on Active menu item
+2. Observe the page list
+Expected Result:
+Only pages with Published status should be displayed","1","1. Only pages with Published status should be displayed","1. 1. Click on Active menu item
+2. Observe the page list","[vc-shell ] Page builder","S5698","Functional","0"
+"C415388","TC-010: Verify Archived filter shows only archived pages",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is logged in with archived pages existing","High","","Navigation Menu > Filtering","0","","Step Description:
+1. Click on Archived menu item
+2. Observe the page list
+Expected Result:
+Only pages with Archived status should be displayed","1","1. Only pages with Archived status should be displayed","1. 1. Click on Archived menu item
+2. Observe the page list","[vc-shell ] Page builder","S5698","Functional","0"
+"C415389","TC-011: Verify All Pages shows all pages",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is logged in with pages in various statuses","High","","Navigation Menu > Filtering","0","","Step Description:
+1. Click on All Pages menu item
+2. Observe the page list
+Expected Result:
+All pages regardless of status should be displayed","1","1. All pages regardless of status should be displayed","1. 1. Click on All Pages menu item
+2. Observe the page list","[vc-shell ] Page builder","S5698","Functional","0"
+"C415390","TC-012: Verify fields are grouped into Basic and Advanced sections",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","<p>User is logged in to Page Builder Admin</p>
+","High","","Page Blade > Field Grouping","0","","Step Description:
+<ol>
+<li>Click Add button to create new page</li>
+<li>Observe the page blade structure</li>
+</ol>
+Expected Result:
+<p>Fields should be organized into 'Basic information' and 'Advanced options' sections</p>","1","1. <p>Fields should be organized into 'Basic information' and 'Advanced options' sections</p>","1. <ol>
+<li>Click Add button to create new page</li>
+<li>Observe the page blade structure</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415391","TC-013: Verify Basic information section contains Name field",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is on New Page blade","High","","Page Blade > Basic Information","0","","Step Description:
+1. Open new page blade
+2. Look at Basic information section
+Expected Result:
+Name field with asterisk (required) should be visible in Basic information section","1","1. Name field with asterisk (required) should be visible in Basic information section","1. 1. Open new page blade
+2. Look at Basic information section","[vc-shell ] Page builder","S5698","Functional","0"
+"C415392","TC-014: Verify Basic information section contains Permalink field",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is on New Page blade","High","","Page Blade > Basic Information","0","","Step Description:
+1. Open new page blade
+2. Look at Basic information section
+Expected Result:
+Permalink field with asterisk (required) should be visible in Basic information section","1","1. Permalink field with asterisk (required) should be visible in Basic information section","1. 1. Open new page blade
+2. Look at Basic information section","[vc-shell ] Page builder","S5698","Functional","0"
+"C415394","TC-016: Verify Basic information section contains Language dropdown",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is on New Page blade","High","","Page Blade > Basic Information","0","","Step Description:
+1. Open new page blade
+2. Look at Basic information section
+Expected Result:
+Language dropdown with &#039;Click to select...&#039; placeholder should be visible","1","1. Language dropdown with &#039;Click to select...&#039; placeholder should be visible","1. 1. Open new page blade
+2. Look at Basic information section","[vc-shell ] Page builder","S5698","Functional","0"
+"C415393","TC-015: Verify domain is displayed in read-only mode for permalink",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","<p>User is on New Page blade</p>
+","High","","Page Blade > Permalink","0","","Step Description:
+<ol>
+<li>Open new page blade</li>
+<li>Look at Permalink field</li>
+</ol>
+Expected Result:
+<p>Domain URL (e.g., '<a href=""""https://vcst-qa-storefront.govirto.com')"""">https://vcst-qa-storefront.govirto.com')</a> should be displayed before the permalink input field in read-only mode</p>","1","1. <p>Domain URL (e.g., '<a href=""""https://vcst-qa-storefront.govirto.com')"""">https://vcst-qa-storefront.govirto.com')</a> should be displayed before the permalink input field in read-only mode</p>","1. <ol>
+<li>Open new page blade</li>
+<li>Look at Permalink field</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415395","TC-017: Verify Scheduling section is collapsed by default",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is on New Page blade","High","","Page Blade > Scheduling","0","","Step Description:
+1. Open new page blade
+2. Look at Advanced options section
+3. Observe Scheduling section
+Expected Result:
+Scheduling section should be collapsed with description &#039;Set when this page should be visible&#039;","1","1. Scheduling section should be collapsed with description &#039;Set when this page should be visible&#039;","1. 1. Open new page blade
+2. Look at Advanced options section
+3. Observe Scheduling section","[vc-shell ] Page builder","S5698","Functional","0"
+"C415396","TC-018: Verify Scheduling section can be expanded",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is on New Page blade with Scheduling collapsed","High","","Page Blade > Scheduling","0","","Step Description:
+1. Click on Scheduling section header
+2. Observe the section
+Expected Result:
+Scheduling section should expand to show Start date and End date fields","1","1. Scheduling section should expand to show Start date and End date fields","1. 1. Click on Scheduling section header
+2. Observe the section","[vc-shell ] Page builder","S5698","Functional","0"
+"C415397","TC-019: Verify Start date datepicker in Scheduling section",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User has expanded Scheduling section","Medium","","Page Blade > Scheduling","0","","Step Description:
+1. Expand Scheduling section
+2. Look at Start date field
+3. Click on datepicker
+Expected Result:
+Start date datepicker should be functional with label &#039;Page becomes visible&#039;","1","1. Start date datepicker should be functional with label &#039;Page becomes visible&#039;","1. 1. Expand Scheduling section
+2. Look at Start date field
+3. Click on datepicker","[vc-shell ] Page builder","S5698","Functional","0"
+"C415398","TC-020: Verify End date datepicker in Scheduling section",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User has expanded Scheduling section","Medium","","Page Blade > Scheduling","0","","Step Description:
+1. Expand Scheduling section
+2. Look at End date field
+3. Click on datepicker
+Expected Result:
+End date datepicker should be functional with label &#039;Page becomes hidden&#039;","1","1. End date datepicker should be functional with label &#039;Page becomes hidden&#039;","1. 1. Expand Scheduling section
+2. Look at End date field
+3. Click on datepicker","[vc-shell ] Page builder","S5698","Functional","0"
+"C415399","TC-021: Verify Personalization section is collapsed by default",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is on New Page blade","High","","Page Blade > Personalization","0","","Step Description:
+1. Open new page blade
+2. Look at Advanced options section
+3. Observe Personalization &amp; Access control section
+Expected Result:
+Personalization section should be collapsed with description &#039;Limit page visibility to specific audiences&#039;","1","1. Personalization section should be collapsed with description &#039;Limit page visibility to specific audiences&#039;","1. 1. Open new page blade
+2. Look at Advanced options section
+3. Observe Personalization &amp; Access control section","[vc-shell ] Page builder","S5698","Functional","0"
+"C415400","TC-022: Verify Personalization section can be expanded",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is on New Page blade with Personalization collapsed","High","","Page Blade > Personalization","0","","Step Description:
+1. Click on Personalization &amp; Access control section header
+2. Observe the section
+Expected Result:
+Personalization section should expand to show Visibility, User groups, and Organization options","1","1. Personalization section should expand to show Visibility, User groups, and Organization options","1. 1. Click on Personalization &amp; Access control section header
+2. Observe the section","[vc-shell ] Page builder","S5698","Functional","0"
+"C415401","TC-023: Verify Visibility toggle in Personalization section",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User has expanded Personalization section","High","","Page Blade > Personalization","0","","Step Description:
+1. Expand Personalization section
+2. Look at Visibility option
+Expected Result:
+Visibility checkbox should be present with description &#039;If Visibility is off the page will be available only for registered users&#039;","1","1. Visibility checkbox should be present with description &#039;If Visibility is off the page will be available only for registered users&#039;","1. 1. Expand Personalization section
+2. Look at Visibility option","[vc-shell ] Page builder","S5698","Functional","0"
+"C415402","TC-024: Verify User groups dropdown in Personalization section",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User has expanded Personalization section","Medium","","Page Blade > Personalization","0","","Step Description:
+1. Expand Personalization section
+2. Look at User groups field
+3. Click on dropdown
+Expected Result:
+User groups dropdown should be functional with &#039;Click to select...&#039; placeholder","1","1. User groups dropdown should be functional with &#039;Click to select...&#039; placeholder","1. 1. Expand Personalization section
+2. Look at User groups field
+3. Click on dropdown","[vc-shell ] Page builder","S5698","Functional","0"
+"C415403","TC-025: Verify Organization dropdown in Personalization section",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User has expanded Personalization section","Medium","","Page Blade > Personalization","0","","Step Description:
+1. Expand Personalization section
+2. Look at Organization field
+3. Click on dropdown
+Expected Result:
+Organization dropdown should be functional with &#039;Click to select...&#039; placeholder","1","1. Organization dropdown should be functional with &#039;Click to select...&#039; placeholder","1. 1. Expand Personalization section
+2. Look at Organization field
+3. Click on dropdown","[vc-shell ] Page builder","S5698","Functional","0"
+"C415404","TC-026: Verify Save button on page blade",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is on New Page blade","High","","Page Blade > Actions","0","","Step Description:
+1. Open new page blade
+2. Look at action buttons
+Expected Result:
+Save button should be visible and functional","1","1. Save button should be visible and functional","1. 1. Open new page blade
+2. Look at action buttons","[vc-shell ] Page builder","S5698","Functional","0"
+"C415405","TC-027: Verify Archive button on page blade",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is on New Page blade","Medium","","Page Blade > Actions","0","","Step Description:
+1. Open new page blade
+2. Look at action buttons
+Expected Result:
+Archive button should be visible","1","1. Archive button should be visible","1. 1. Open new page blade
+2. Look at action buttons","[vc-shell ] Page builder","S5698","Functional","0"
+"C415406","TC-028: Verify Open designer button on page blade",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is on New Page blade","High","","Page Blade > Actions","0","","Step Description:
+1. Open new page blade
+2. Look at action buttons
+Expected Result:
+Open designer button should be visible and functional","1","1. Open designer button should be visible and functional","1. 1. Open new page blade
+2. Look at action buttons","[vc-shell ] Page builder","S5698","Functional","0"
+"C415407","TC-029: Verify Draft status badge in grid view",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing All Pages with draft pages","High","","Grid View > Status Badges","0","","Step Description:
+1. Navigate to All Pages
+2. Look at page rows with Draft status
+Expected Result:
+Draft pages should display &#039;Draft&#039; badge in Status column","1","1. Draft pages should display &#039;Draft&#039; badge in Status column","1. 1. Navigate to All Pages
+2. Look at page rows with Draft status","[vc-shell ] Page builder","S5698","Functional","0"
+"C415408","TC-030: Verify Published status badge in grid view",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing All Pages with published pages","High","","Grid View > Status Badges","0","","Step Description:
+1. Navigate to All Pages
+2. Look at page rows with Published status
+Expected Result:
+Published pages should display &#039;Published&#039; badge in Status column","1","1. Published pages should display &#039;Published&#039; badge in Status column","1. 1. Navigate to All Pages
+2. Look at page rows with Published status","[vc-shell ] Page builder","S5698","Functional","0"
+"C415409","TC-031: Verify Archived status badge in grid view",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing All Pages with archived pages","High","","Grid View > Status Badges","0","","Step Description:
+1. Navigate to All Pages
+2. Look at page rows with Archived status
+Expected Result:
+Archived pages should display &#039;Archived&#039; badge in Status column","1","1. Archived pages should display &#039;Archived&#039; badge in Status column","1. 1. Navigate to All Pages
+2. Look at page rows with Archived status","[vc-shell ] Page builder","S5698","Functional","0"
+"C415410","TC-032: Verify Scheduled badge in grid view",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing pages with scheduled dates","High","","Grid View > Scheduled Badge","0","","Step Description:
+1. Navigate to All Pages or Pending
+2. Look at pages with scheduling enabled
+Expected Result:
+Scheduled pages should display &#039;Scheduled&#039; badge alongside status","1","1. Scheduled pages should display &#039;Scheduled&#039; badge alongside status","1. 1. Navigate to All Pages or Pending
+2. Look at pages with scheduling enabled","[vc-shell ] Page builder","S5698","Functional","0"
+"C415411","TC-033: Verify Personalized badge in grid view",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing pages with personalization settings","High","","Grid View > Personalization Badge","0","","Step Description:
+1. Navigate to All Pages
+2. Look at pages with personalization configured
+Expected Result:
+Personalized pages should display &#039;Personalized&#039; badge alongside status","1","1. Personalized pages should display &#039;Personalized&#039; badge alongside status","1. 1. Navigate to All Pages
+2. Look at pages with personalization configured","[vc-shell ] Page builder","S5698","Functional","0"
+"C415412","TC-034: Verify grid columns display correctly",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing page list","High","","Grid View > Columns","0","","Step Description:
+1. Navigate to All Pages
+2. Observe grid columns
+Expected Result:
+Grid should display columns: Name, Language, Permalink, Modified, Modified by, Status","1","1. Grid should display columns: Name, Language, Permalink, Modified, Modified by, Status","1. 1. Navigate to All Pages
+2. Observe grid columns","[vc-shell ] Page builder","S5698","Functional","0"
+"C415413","TC-035: Verify page row is clickable",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing page list","High","","Grid View > Interaction","0","","Step Description:
+1. Navigate to All Pages
+2. Click on a page row
+Expected Result:
+Page blade should open for the selected page","1","1. Page blade should open for the selected page","1. 1. Navigate to All Pages
+2. Click on a page row","[vc-shell ] Page builder","S5698","Functional","0"
+"C415414","TC-036: Verify checkbox selection on page rows",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing page list","Medium","","Grid View > Selection","0","","Step Description:
+1. Navigate to All Pages
+2. Click checkbox on a page row
+Expected Result:
+Page should be selected and checkbox should be checked","1","1. Page should be selected and checkbox should be checked","1. 1. Navigate to All Pages
+2. Click checkbox on a page row","[vc-shell ] Page builder","S5698","Functional","0"
+"C415415","TC-037: Verify bulk selection checkbox",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing page list","Medium","","Grid View > Selection","0","","Step Description:
+1. Navigate to All Pages
+2. Click header checkbox
+Expected Result:
+All visible pages should be selected","1","1. All visible pages should be selected","1. 1. Navigate to All Pages
+2. Click header checkbox","[vc-shell ] Page builder","S5698","Functional","0"
+"C415416","TC-038: Verify Totals counter at bottom",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing page list","Medium","","Grid View > Totals","0","","Step Description:
+1. Navigate to All Pages
+2. Look at bottom of the page list
+Expected Result:
+Totals counter should display the number of pages in current view","1","1. Totals counter should display the number of pages in current view","1. 1. Navigate to All Pages
+2. Look at bottom of the page list","[vc-shell ] Page builder","S5698","Functional","0"
+"C415417","TC-039: Verify Add button creates new page",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is on Page Builder main view","High","","Page Management > Create","0","","Step Description:
+1. Click Add button
+2. Fill in required fields (Name, Permalink, Language)
+3. Click Save
+Expected Result:
+New page should be created and appear in the list","1","1. New page should be created and appear in the list","1. 1. Click Add button
+2. Fill in required fields (Name, Permalink, Language)
+3. Click Save","[vc-shell ] Page builder","S5698","Functional","0"
+"C415418","TC-040: Verify Archive button functionality",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User has selected a page","High","","Page Management > Archive","0","","Step Description:
+1. Select a page
+2. Click Archive button
+3. Confirm action
+Expected Result:
+Page should be archived and moved to Archived section","1","1. Page should be archived and moved to Archived section","1. 1. Select a page
+2. Click Archive button
+3. Confirm action","[vc-shell ] Page builder","S5698","Functional","0"
+"C415419","TC-041: Verify Refresh button updates page list",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is on Page Builder main view","Medium","","Page Management > Refresh","0","","Step Description:
+1. Click Refresh button
+2. Observe page list
+Expected Result:
+Page list should refresh with latest data","1","1. Page list should refresh with latest data","1. 1. Click Refresh button
+2. Observe page list","[vc-shell ] Page builder","S5698","Functional","0"
+"C415420","TC-042: Verify Search functionality",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","<p>User is on Page Builder main view</p>
+","Medium","","Page Management > Search","0","","Step Description:
+<ol>
+<li>Enter search term in Search field</li>
+<li>Press Enter or wait for auto-search</li>
+</ol>
+Expected Result:
+<p>Page list should filter to show matching pages</p>","1","1. <p>Page list should filter to show matching pages</p>","1. <ol>
+<li>Enter search term in Search field</li>
+<li>Press Enter or wait for auto-search</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415421","TC-043: Verify login with valid credentials",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is on Page Builder login page","High","","Authentication","0","","Step Description:
+1. Enter valid username (admin)
+2. Enter valid password (Password3)
+3. Click Log in button
+Expected Result:
+User should be logged in and redirected to Page Builder main view","1","1. User should be logged in and redirected to Page Builder main view","1. 1. Enter valid username (admin)
+2. Enter valid password (Password3)
+3. Click Log in button","[vc-shell ] Page builder","S5698","Functional","0"
+"C415422","TC-044: Verify login button disabled without credentials",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is on Page Builder login page","Medium","","Authentication","0","","Step Description:
+1. Leave username empty
+2. Leave password empty
+3. Observe Log in button
+Expected Result:
+Log in button should be disabled","1","1. Log in button should be disabled","1. 1. Leave username empty
+2. Leave password empty
+3. Observe Log in button","[vc-shell ] Page builder","S5698","Functional","0"
+"C415423","TC-045: Verify Azure AD login option",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is on Page Builder login page","Low","","Authentication","0","","Step Description:
+1. Observe login options
+Expected Result:
+Azure Active Directory login button should be visible","1","1. Azure Active Directory login button should be visible","1. 1. Observe login options","[vc-shell ] Page builder","S5698","Functional","0"
+"C415424","TC-046: Verify Google login option",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is on Page Builder login page","Low","","Authentication","0","","Step Description:
+1. Observe login options
+Expected Result:
+Google sign-in button should be visible","1","1. Google sign-in button should be visible","1. 1. Observe login options","[vc-shell ] Page builder","S5698","Functional","0"
+"C415425","TC-047: Verify admin user profile display",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is logged in","Low","","User Interface > Profile","0","","Step Description:
+1. Look at top right corner
+2. Observe user button
+Expected Result:
+User button should display &#039;admin Administrator&#039;","1","1. User button should display &#039;admin Administrator&#039;","1. 1. Look at top right corner
+2. Observe user button","[vc-shell ] Page builder","S5698","Functional","0"
+"C415426","TC-048: Verify logo display",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is logged in","Low","","User Interface > Branding","0","","Step Description:
+1. Look at top left corner
+Expected Result:
+Page Builder logo should be displayed","1","1. Page Builder logo should be displayed","1. 1. Look at top left corner","[vc-shell ] Page builder","S5698","Functional","0"
+"C415427","TC-049: Cross-browser - Chrome compatibility",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","Chrome browser latest version","High","","Cross-Browser > Chrome","0","","Step Description:
+1. Open Page Builder in Chrome
+2. Login and navigate through features
+3. Verify all functionality
+Expected Result:
+All features should work correctly in Chrome","1","1. All features should work correctly in Chrome","1. 1. Open Page Builder in Chrome
+2. Login and navigate through features
+3. Verify all functionality","[vc-shell ] Page builder","S5698","Compatibility","0"
+"C415428","TC-050: Cross-browser - Edge compatibility",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","Edge browser latest version","High","","Cross-Browser > Edge","0","","Step Description:
+1. Open Page Builder in Edge
+2. Login and navigate through features
+3. Verify all functionality
+Expected Result:
+All features should work correctly in Edge","1","1. All features should work correctly in Edge","1. 1. Open Page Builder in Edge
+2. Login and navigate through features
+3. Verify all functionality","[vc-shell ] Page builder","S5698","Compatibility","0"
+"C415429","TC-051: Cross-browser - Firefox compatibility",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","Firefox browser latest version","High","","Cross-Browser > Firefox","0","","Step Description:
+1. Open Page Builder in Firefox
+2. Login and navigate through features
+3. Verify all functionality
+Expected Result:
+All features should work correctly in Firefox","1","1. All features should work correctly in Firefox","1. 1. Open Page Builder in Firefox
+2. Login and navigate through features
+3. Verify all functionality","[vc-shell ] Page builder","S5698","Compatibility","0"
+"C415430","TC-052: Cross-browser - Safari compatibility",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","Safari browser latest version on macOS","Medium","","Cross-Browser > Safari","0","","Step Description:
+1. Open Page Builder in Safari
+2. Login and navigate through features
+3. Verify all functionality
+Expected Result:
+All features should work correctly in Safari","1","1. All features should work correctly in Safari","1. 1. Open Page Builder in Safari
+2. Login and navigate through features
+3. Verify all functionality","[vc-shell ] Page builder","S5698","Compatibility","0"
+"C415431","TC-053: Verify Draft to Published status transition",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","<p>User is logged in with a draft page</p>
+","High","","Status Transitions","0","","Step Description:
+<ol>
+<li>Navigate to Draft filter</li>
+<li>Click on a draft page</li>
+<li>Click Publish button</li>
+<li>Navigate to Active filter</li>
+</ol>
+Expected Result:
+<p>Page status should change from Draft to Published and appear in Active section</p>","1","1. <p>Page status should change from Draft to Published and appear in Active section</p>","1. <ol>
+<li>Navigate to Draft filter</li>
+<li>Click on a draft page</li>
+<li>Click Publish button</li>
+<li>Navigate to Active filter</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415432","TC-054: Verify Published to Archived status transition",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","<p>User is logged in with a published page</p>
+","High","","Status Transitions","0","","Step Description:
+<ol>
+<li>Navigate to Active filter</li>
+<li>Click on a published page</li>
+<li>Click Archive button</li>
+<li>Confirm archive action</li>
+<li>Navigate to Archived filter</li>
+</ol>
+Expected Result:
+<p>Page status should change from Published to Archived and appear in Archived section</p>","1","1. <p>Page status should change from Published to Archived and appear in Archived section</p>","1. <ol>
+<li>Navigate to Active filter</li>
+<li>Click on a published page</li>
+<li>Click Archive button</li>
+<li>Confirm archive action</li>
+<li>Navigate to Archived filter</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415433","TC-055: Verify Draft to Archived status transition",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is logged in with a draft page","High","","Status Transitions","0","","Step Description:
+1. Navigate to Draft filter
+2. Click on a draft page
+3. Click Archive button
+4. Confirm archive action
+5. Navigate to Archived filter
+Expected Result:
+Page status should change from Draft to Archived and appear in Archived section","1","1. Page status should change from Draft to Archived and appear in Archived section","1. 1. Navigate to Draft filter
+2. Click on a draft page
+3. Click Archive button
+4. Confirm archive action
+5. Navigate to Archived filter","[vc-shell ] Page builder","S5698","Functional","0"
+"C415434","TC-056: Verify Publish button appears for Draft pages",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing a draft page blade","High","","Status Transitions","0","","Step Description:
+1. Click on a draft page from the list
+2. Observe the action buttons in page blade
+Expected Result:
+Publish button should be visible for draft pages","1","1. Publish button should be visible for draft pages","1. 1. Click on a draft page from the list
+2. Observe the action buttons in page blade","[vc-shell ] Page builder","S5698","Functional","0"
+"C415435","TC-057: Verify Publish button not visible for Archived pages",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing an archived page blade","Medium","","Status Transitions","0","","Step Description:
+1. Navigate to Archived filter
+2. Click on an archived page
+3. Observe the action buttons
+Expected Result:
+Publish button should NOT be visible for archived pages","1","1. Publish button should NOT be visible for archived pages","1. 1. Navigate to Archived filter
+2. Click on an archived page
+3. Observe the action buttons","[vc-shell ] Page builder","S5698","Functional","0"
+"C415436","TC-058: Verify Draft badge color styling",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","<p>User is viewing All Pages with draft pages</p>
+","Medium","","Badge Styling","0","","Step Description:
+<ol>
+<li>Navigate to All Pages</li>
+<li>Look at a page with Draft status</li>
+<li>Observe the badge color/styling</li>
+</ol>
+Expected Result:
+<p>Draft badge should have distinct styling (different color from Published/Archived)</p>","1","1. <p>Draft badge should have distinct styling (different color from Published/Archived)</p>","1. <ol>
+<li>Navigate to All Pages</li>
+<li>Look at a page with Draft status</li>
+<li>Observe the badge color/styling</li>
+</ol>","[vc-shell ] Page builder","S5698","Other","1"
+"C415437","TC-059: Verify Published badge color styling",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing All Pages with published pages","Medium","","Badge Styling","0","","Step Description:
+1. Navigate to All Pages
+2. Look at a page with Published status
+3. Observe the badge color/styling
+Expected Result:
+Published badge should have green or positive color styling","1","1. Published badge should have green or positive color styling","1. 1. Navigate to All Pages
+2. Look at a page with Published status
+3. Observe the badge color/styling","[vc-shell ] Page builder","S5698","Other","0"
+"C415438","TC-060: Verify Archived badge color styling",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing All Pages with archived pages","Medium","","Badge Styling","0","","Step Description:
+1. Navigate to All Pages
+2. Look at a page with Archived status
+3. Observe the badge color/styling
+Expected Result:
+Archived badge should have gray or muted color styling","1","1. Archived badge should have gray or muted color styling","1. 1. Navigate to All Pages
+2. Look at a page with Archived status
+3. Observe the badge color/styling","[vc-shell ] Page builder","S5698","Other","0"
+"C415439","TC-061: Verify Scheduled badge color styling",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing pages with scheduled dates","Medium","","Badge Styling","0","","Step Description:
+1. Navigate to All Pages or Pending
+2. Look at a scheduled page
+3. Observe the Scheduled badge color/styling
+Expected Result:
+Scheduled badge should have distinct color to indicate scheduling","1","1. Scheduled badge should have distinct color to indicate scheduling","1. 1. Navigate to All Pages or Pending
+2. Look at a scheduled page
+3. Observe the Scheduled badge color/styling","[vc-shell ] Page builder","S5698","Other","0"
+"C415440","TC-062: Verify Personalized badge color styling",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing pages with personalization","Medium","","Badge Styling","0","","Step Description:
+1. Navigate to All Pages
+2. Look at a personalized page
+3. Observe the Personalized badge color/styling
+Expected Result:
+Personalized badge should have distinct color to indicate personalization","1","1. Personalized badge should have distinct color to indicate personalization","1. 1. Navigate to All Pages
+2. Look at a personalized page
+3. Observe the Personalized badge color/styling","[vc-shell ] Page builder","S5698","Other","0"
+"C415441","TC-063: Verify Published + Scheduled badge combination",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User has a published page with future schedule","High","","Badge Combinations","0","","Step Description:
+1. Create or find a published page with scheduling
+2. Set a future end date
+3. Navigate to All Pages
+4. Look at the page row
+Expected Result:
+Page should display both &#039;Published&#039; and &#039;Scheduled&#039; badges","1","1. Page should display both &#039;Published&#039; and &#039;Scheduled&#039; badges","1. 1. Create or find a published page with scheduling
+2. Set a future end date
+3. Navigate to All Pages
+4. Look at the page row","[vc-shell ] Page builder","S5698","Functional","0"
+"C415442","TC-064: Verify Published + Personalized badge combination",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User has a published page with personalization","High","","Badge Combinations","0","","Step Description:
+1. Create or find a published page
+2. Set personalization (visibility off or user groups)
+3. Navigate to All Pages
+4. Look at the page row
+Expected Result:
+Page should display both &#039;Published&#039; and &#039;Personalized&#039; badges","1","1. Page should display both &#039;Published&#039; and &#039;Personalized&#039; badges","1. 1. Create or find a published page
+2. Set personalization (visibility off or user groups)
+3. Navigate to All Pages
+4. Look at the page row","[vc-shell ] Page builder","S5698","Functional","0"
+"C415443","TC-065: Verify Published + Scheduled + Personalized triple badge",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User has a published page with both scheduling and personalization","High","","Badge Combinations","0","","Step Description:
+1. Create or find a published page
+2. Set scheduling (start/end dates)
+3. Set personalization settings
+4. Navigate to All Pages
+5. Look at the page row
+Expected Result:
+Page should display &#039;Published&#039;, &#039;Scheduled&#039;, and &#039;Personalized&#039; badges together","1","1. Page should display &#039;Published&#039;, &#039;Scheduled&#039;, and &#039;Personalized&#039; badges together","1. 1. Create or find a published page
+2. Set scheduling (start/end dates)
+3. Set personalization settings
+4. Navigate to All Pages
+5. Look at the page row","[vc-shell ] Page builder","S5698","Functional","0"
+"C415444","TC-066: Verify Draft + Personalized badge combination",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User has a draft page with personalization","Medium","","Badge Combinations","0","","Step Description:
+1. Create a new draft page
+2. Set personalization settings
+3. Save (do not publish)
+4. Navigate to Draft filter
+5. Look at the page row
+Expected Result:
+Page should display both &#039;Draft&#039; and &#039;Personalized&#039; badges","1","1. Page should display both &#039;Draft&#039; and &#039;Personalized&#039; badges","1. 1. Create a new draft page
+2. Set personalization settings
+3. Save (do not publish)
+4. Navigate to Draft filter
+5. Look at the page row","[vc-shell ] Page builder","S5698","Functional","0"
+"C415445","TC-067: Verify Archived + Personalized badge combination",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","<p>User has an archived page with personalization</p>
+","Medium","","Badge Combinations","0","","Step Description:
+<ol>
+<li>Find or create a page with personalization</li>
+<li>Archive the page</li>
+<li>Navigate to Archived filter</li>
+<li>Look at the page row</li>
+</ol>
+Expected Result:
+<p>Page should display both 'Archived' and 'Personalized' badges</p>","1","1. <p>Page should display both 'Archived' and 'Personalized' badges</p>","1. <ol>
+<li>Find or create a page with personalization</li>
+<li>Archive the page</li>
+<li>Navigate to Archived filter</li>
+<li>Look at the page row</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415446","TC-068: Verify Draft status label in page blade header",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing a draft page","High","","Status Display > Page Blade","0","","Step Description:
+1. Click on a draft page from the list
+2. Observe the page blade header
+Expected Result:
+Page blade should display &#039;Draft&#039; status label in the header","1","1. Page blade should display &#039;Draft&#039; status label in the header","1. 1. Click on a draft page from the list
+2. Observe the page blade header","[vc-shell ] Page builder","S5698","Functional","0"
+"C415447","TC-069: Verify Published status label in page blade header",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing a published page","High","","Status Display > Page Blade","0","","Step Description:
+1. Click on a published page from the list
+2. Observe the page blade header
+Expected Result:
+Page blade should display &#039;Published&#039; status label in the header","1","1. Page blade should display &#039;Published&#039; status label in the header","1. 1. Click on a published page from the list
+2. Observe the page blade header","[vc-shell ] Page builder","S5698","Functional","0"
+"C415448","TC-070: Verify Archived status label in page blade header",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing an archived page","High","","Status Display > Page Blade","0","","Step Description:
+1. Click on an archived page from the list
+2. Observe the page blade header
+Expected Result:
+Page blade should display &#039;Archived&#039; status label in the header","1","1. Page blade should display &#039;Archived&#039; status label in the header","1. 1. Click on an archived page from the list
+2. Observe the page blade header","[vc-shell ] Page builder","S5698","Functional","0"
+"C415449","TC-071: Verify status changes after Publish action",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User has published a draft page","High","","Status Display > Page Blade","0","","Step Description:
+1. Open a draft page
+2. Click Publish button
+3. Observe page blade header
+Expected Result:
+Status label should change from &#039;Draft&#039; to &#039;Published&#039; after publishing","1","1. Status label should change from &#039;Draft&#039; to &#039;Published&#039; after publishing","1. 1. Open a draft page
+2. Click Publish button
+3. Observe page blade header","[vc-shell ] Page builder","S5698","Functional","0"
+"C415450","TC-072: Verify badge is visible in Draft filter view",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing Draft filter","Medium","","Badge Visibility > Filters","0","","Step Description:
+1. Navigate to Draft filter
+2. Look at page rows with badges
+Expected Result:
+Draft pages should display &#039;Draft&#039; badge and any additional badges (Personalized)","1","1. Draft pages should display &#039;Draft&#039; badge and any additional badges (Personalized)","1. 1. Navigate to Draft filter
+2. Look at page rows with badges","[vc-shell ] Page builder","S5698","Functional","0"
+"C415451","TC-073: Verify badge is visible in Active filter view",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing Active filter","Medium","","Badge Visibility > Filters","0","","Step Description:
+1. Navigate to Active filter
+2. Look at page rows with badges
+Expected Result:
+Active pages should display &#039;Published&#039; badge and any additional badges (Scheduled, Personalized)","1","1. Active pages should display &#039;Published&#039; badge and any additional badges (Scheduled, Personalized)","1. 1. Navigate to Active filter
+2. Look at page rows with badges","[vc-shell ] Page builder","S5698","Functional","0"
+"C415452","TC-074: Verify badge is visible in Archived filter view",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing Archived filter","Medium","","Badge Visibility > Filters","0","","Step Description:
+1. Navigate to Archived filter
+2. Look at page rows with badges
+Expected Result:
+Archived pages should display &#039;Archived&#039; badge and any additional badges (Personalized)","1","1. Archived pages should display &#039;Archived&#039; badge and any additional badges (Personalized)","1. 1. Navigate to Archived filter
+2. Look at page rows with badges","[vc-shell ] Page builder","S5698","Functional","0"
+"C415453","TC-075: Verify badge is visible in Pending filter view",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is viewing Pending filter","Medium","","Badge Visibility > Filters","0","","Step Description:
+1. Navigate to Pending filter
+2. Look at page rows with badges
+Expected Result:
+Pending/Scheduled pages should display &#039;Published&#039;, &#039;Scheduled&#039; and any additional badges","1","1. Pending/Scheduled pages should display &#039;Published&#039;, &#039;Scheduled&#039; and any additional badges","1. 1. Navigate to Pending filter
+2. Look at page rows with badges","[vc-shell ] Page builder","S5698","Functional","0"
+"C415454","TC-076: Verify new unsaved page has no status badge",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is creating a new page","Medium","","Badge Visibility > New Page","0","","Step Description:
+1. Click Add button
+2. Observe page blade before saving
+Expected Result:
+New unsaved page should not display any status badge until saved","1","1. New unsaved page should not display any status badge until saved","1. 1. Click Add button
+2. Observe page blade before saving","[vc-shell ] Page builder","S5698","Functional","0"
+"C415455","TC-077: Verify badge updates after save",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","<p>User has just saved a new page</p>
+","Medium","","Badge Updates","0","","Step Description:
+<ol>
+<li>Create a new page with Name, Permalink, Language</li>
+<li>Click Save</li>
+<li>Navigate to All Pages</li>
+<li>Look at the new page row</li>
+</ol>
+Expected Result:
+<p>New saved page should display 'Draft' badge in the list</p>","1","1. <p>New saved page should display 'Draft' badge in the list</p>","1. <ol>
+<li>Create a new page with Name, Permalink, Language</li>
+<li>Click Save</li>
+<li>Navigate to All Pages</li>
+<li>Look at the new page row</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415456","TC-078: Verify Scheduled badge appears after setting dates",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is editing a published page","Medium","","Badge Updates","0","","Step Description:
+1. Open a published page
+2. Expand Scheduling section
+3. Set future start date
+4. Save the page
+5. Navigate to Pending filter
+Expected Result:
+Page should now display &#039;Scheduled&#039; badge and appear in Pending filter","1","1. Page should now display &#039;Scheduled&#039; badge and appear in Pending filter","1. 1. Open a published page
+2. Expand Scheduling section
+3. Set future start date
+4. Save the page
+5. Navigate to Pending filter","[vc-shell ] Page builder","S5698","Functional","0"
+"C415457","TC-079: Verify Personalized badge appears after setting visibility",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","User is editing a page","Medium","","Badge Updates","0","","Step Description:
+1. Open a page
+2. Expand Personalization section
+3. Toggle Visibility off
+4. Save the page
+5. Navigate to All Pages
+Expected Result:
+Page should now display &#039;Personalized&#039; badge in the list","1","1. Page should now display &#039;Personalized&#039; badge in the list","1. 1. Open a page
+2. Expand Personalization section
+3. Toggle Visibility off
+4. Save the page
+5. Navigate to All Pages","[vc-shell ] Page builder","S5698","Functional","0"
+"C415458","TC-080: Verify multiple pages with same status in grid",""," None","Elena Mutykova","1/7/2026 2:41 PM","","","","<p>User is viewing All Pages with multiple pages of same status</p>
+","Medium","","Badge Display Consistency","0","","Step Description:
+<ol>
+<li>Navigate to All Pages</li>
+<li>Look at multiple pages with Draft status</li>
+<li>Look at multiple pages with Published status</li>
+</ol>
+Expected Result:
+<p>All pages with same status should display consistent badge styling</p>","1","1. <p>All pages with same status should display consistent badge styling</p>","1. <ol>
+<li>Navigate to All Pages</li>
+<li>Look at multiple pages with Draft status</li>
+<li>Look at multiple pages with Published status</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415460","TC-E2E-001: Published page accessible on frontend - same language",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>User is logged in on storefront</li>
+<li>Page exists with status Published and language matching user's storefront language</li>
+<li>Page has no organization restrictions</li>
+</ol>
+","High","","Language Filtering > Access","0","","Step Description:
+<ol>
+<li>Set storefront language to match page language (e.g., pl-PL)</li>
+<li>Navigate to page permalink (e.g., /pl/qa1)</li>
+</ol>
+Expected Result:
+<p>Page should load successfully with content rendered</p>","1","1. <p>Page should load successfully with content rendered</p>","1. <ol>
+<li>Set storefront language to match page language (e.g., pl-PL)</li>
+<li>Navigate to page permalink (e.g., /pl/qa1)</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415461","TC-E2E-002: Published page 404 on frontend - wrong language",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>User is logged in on storefront</li>
+<li>Page exists with status Published in language pl-PL</li>
+<li>Storefront is set to en-US</li>
+</ol>
+","High","","Language Filtering > Access","0","","Step Description:
+<ol>
+<li>Set storefront language to en-US</li>
+<li>Navigate directly to /qa1 (without language prefix)</li>
+</ol>
+Expected Result:
+<p>Page should return 404 error</p>","1","1. <p>Page should return 404 error</p>","1. <ol>
+<li>Set storefront language to en-US</li>
+<li>Navigate directly to /qa1 (without language prefix)</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415462","TC-E2E-003: Page URL requires language prefix",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>Page exists with permalink /qa1 and language pl-PL</li>
+<li>User is on storefront with Polish language</li>
+</ol>
+","High","","Language Filtering > URL Pattern","0","","Step Description:
+<ol>
+<li>Navigate to /pl/qa1</li>
+<li>Observe URL structure</li>
+</ol>
+Expected Result:
+<p>URL should include language prefix (e.g., /pl/qa1)</p>","1","1. <p>URL should include language prefix (e.g., /pl/qa1)</p>","1. <ol>
+<li>Navigate to /pl/qa1</li>
+<li>Observe URL structure</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415463","TC-E2E-004: Search returns only current language pages",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>Pages exist in multiple languages (e.g., pl-PL and en-US)</li>
+<li>User is on Polish storefront (pl-PL)</li>
+</ol>
+","High","","Language Filtering > Search","0","","Step Description:
+<ol>
+<li>Open search bar on storefront</li>
+<li>Type keyword that matches a page name</li>
+<li>Observe PAGES section in search results</li>
+</ol>
+Expected Result:
+<p>Only pages with pl-PL language should appear in search results</p>","1","1. <p>Only pages with pl-PL language should appear in search results</p>","1. <ol>
+<li>Open search bar on storefront</li>
+<li>Type keyword that matches a page name</li>
+<li>Observe PAGES section in search results</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415464","TC-E2E-005: Search does not show pages from other languages",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Page 'Watermelon Page builder32432' exists in de-DE language
+2. User is on English storefront (en-US)","High","","Language Filtering > Search","0","","Step Description:
+1. Search for &#039;Watermelon&#039; in English storefront
+2. Observe PAGES section
+Expected Result:
+Page should NOT appear in search results (wrong language)","1","1. Page should NOT appear in search results (wrong language)","1. 1. Search for &#039;Watermelon&#039; in English storefront
+2. Observe PAGES section","[vc-shell ] Page builder","S5698","Functional","0"
+"C415465","TC-E2E-006: Organization-restricted page accessible to authorized user",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>Page exists with organizationId set to user's organization</li>
+<li>Page is Published</li>
+<li>User belongs to the same organization</li>
+</ol>
+","High","","Organization Filtering > Access","0","","Step Description:
+<ol>
+<li>Navigate to page permalink</li>
+<li>Observe page rendering</li>
+</ol>
+Expected Result:
+<p>Page should load successfully for authorized organization user</p>","1","1. <p>Page should load successfully for authorized organization user</p>","1. <ol>
+<li>Navigate to page permalink</li>
+<li>Observe page rendering</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415466","TC-E2E-007: Organization-restricted page 404 for unauthorized user",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>Page 'Page33' exists with organizationId = 'Cypress-Company-Kft.'</li>
+<li>User belongs to 'Müller % Schmidt GmbH'</li>
+<li>Page is Published</li>
+</ol>
+","High","","Organization Filtering > Access","0","","Step Description:
+<ol>
+<li>Navigate to /page33</li>
+<li>Observe page rendering</li>
+</ol>
+Expected Result:
+<p>Page should return 404 error (wrong organization)</p>","1","1. <p>Page should return 404 error (wrong organization)</p>","1. <ol>
+<li>Navigate to /page33</li>
+<li>Observe page rendering</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415468","TC-E2E-009: Public page (no org) accessible to all authenticated users",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>Page exists with organizationId = null (no restriction)</li>
+<li>Page is Published</li>
+<li>User is authenticated</li>
+</ol>
+","High","","Organization Filtering > Access","0","","Step Description:
+<ol>
+<li>Navigate to page permalink</li>
+<li>Observe page rendering</li>
+</ol>
+Expected Result:
+<p>Page should load successfully for any authenticated user</p>","1","1. <p>Page should load successfully for any authenticated user</p>","1. <ol>
+<li>Navigate to page permalink</li>
+<li>Observe page rendering</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415467","TC-E2E-008: Organization-restricted page not in search for unauthorized user",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Page exists with organization restriction (different from user's org)
+2. Page is Published
+3. Page has matching language","High","","Organization Filtering > Search","0","","Step Description:
+1. Search for restricted page name
+2. Observe PAGES section in search
+Expected Result:
+Page should NOT appear in search results for unauthorized user","1","1. Page should NOT appear in search results for unauthorized user","1. 1. Search for restricted page name
+2. Observe PAGES section in search","[vc-shell ] Page builder","S5698","Functional","0"
+"C415469","TC-E2E-010: Public page appears in search for all users",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Page exists with no organization restriction
+2. Page is Published
+3. Language matches storefront","High","","Organization Filtering > Search","0","","Step Description:
+1. Search for public page name
+2. Observe PAGES section
+Expected Result:
+Page should appear in search results for all users","1","1. Page should appear in search results for all users","1. 1. Search for public page name
+2. Observe PAGES section","[vc-shell ] Page builder","S5698","Functional","0"
+"C415470","TC-E2E-011: Visibility ON - page accessible to all users",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Page exists with visibility = true
+2. Page is Published
+3. No organization/user group restrictions","High","","Visibility Settings > Public","0","","Step Description:
+1. Navigate to page permalink
+2. Test with authenticated user
+3. Test with anonymous user (if allowed)
+Expected Result:
+Page should be accessible to all users when visibility is ON","1","1. Page should be accessible to all users when visibility is ON","1. 1. Navigate to page permalink
+2. Test with authenticated user
+3. Test with anonymous user (if allowed)","[vc-shell ] Page builder","S5698","Functional","0"
+"C415471","TC-E2E-012: Visibility OFF - page only for registered users",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Page exists with visibility = false
+2. Page is Published
+3. User is NOT logged in","High","","Visibility Settings > Private","0","","Step Description:
+1. Navigate to page permalink as anonymous user
+2. Observe page rendering
+Expected Result:
+Page should return 404 or redirect to login when visibility is OFF","1","1. Page should return 404 or redirect to login when visibility is OFF","1. 1. Navigate to page permalink as anonymous user
+2. Observe page rendering","[vc-shell ] Page builder","S5698","Functional","0"
+"C415472","TC-E2E-013: Visibility OFF - page accessible to registered users",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Page exists with visibility = false
+2. Page is Published
+3. User IS logged in","High","","Visibility Settings > Private","0","","Step Description:
+1. Login to storefront
+2. Navigate to page permalink
+Expected Result:
+Page should load successfully for authenticated users when visibility is OFF","1","1. Page should load successfully for authenticated users when visibility is OFF","1. 1. Login to storefront
+2. Navigate to page permalink","[vc-shell ] Page builder","S5698","Functional","0"
+"C415473","TC-E2E-014: Published page appears in search",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Page exists with status Published
+2. Language matches storefront
+3. No organization restrictions","High","","Status Filtering > Published","0","","Step Description:
+1. Search for page name on storefront
+2. Observe PAGES section in search results
+Expected Result:
+Published page should appear in search results","1","1. Published page should appear in search results","1. 1. Search for page name on storefront
+2. Observe PAGES section in search results","[vc-shell ] Page builder","S5698","Functional","0"
+"C415474","TC-E2E-015: Draft page NOT accessible on frontend",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Page exists with status Draft
+2. Language matches storefront","High","","Status Filtering > Draft","0","","Step Description:
+1. Navigate directly to draft page permalink
+2. Observe page rendering
+Expected Result:
+Draft page should return 404 error (not published)","1","1. Draft page should return 404 error (not published)","1. 1. Navigate directly to draft page permalink
+2. Observe page rendering","[vc-shell ] Page builder","S5698","Functional","0"
+"C415475","TC-E2E-016: Draft page NOT in search results",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Page exists with status Draft
+2. Language matches storefront","High","","Status Filtering > Draft","0","","Step Description:
+1. Search for draft page name
+2. Observe PAGES section
+Expected Result:
+Draft page should NOT appear in search results","1","1. Draft page should NOT appear in search results","1. 1. Search for draft page name
+2. Observe PAGES section","[vc-shell ] Page builder","S5698","Functional","0"
+"C415476","TC-E2E-017: Archived page NOT accessible on frontend",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Page exists with status Archived
+2. Language matches storefront","High","","Status Filtering > Archived","0","","Step Description:
+1. Navigate directly to archived page permalink
+2. Observe page rendering
+Expected Result:
+Archived page should return 404 error","1","1. Archived page should return 404 error","1. 1. Navigate directly to archived page permalink
+2. Observe page rendering","[vc-shell ] Page builder","S5698","Functional","0"
+"C415477","TC-E2E-018: Archived page NOT in search results",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Page exists with status Archived
+2. Language matches storefront","High","","Status Filtering > Archived","0","","Step Description:
+1. Search for archived page name
+2. Observe PAGES section
+Expected Result:
+Archived page should NOT appear in search results","1","1. Archived page should NOT appear in search results","1. 1. Search for archived page name
+2. Observe PAGES section","[vc-shell ] Page builder","S5698","Functional","0"
+"C415478","TC-E2E-019: Newly published page becomes accessible",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>Draft page exists with valid permalink</li>
+<li>Language is en-US</li>
+</ol>
+","High","","Status Transitions > Publish","0","","Step Description:
+<ol>
+<li>Publish page from Page Builder Admin</li>
+<li>Navigate to frontend</li>
+<li>Access page permalink</li>
+</ol>
+Expected Result:
+<p>Newly published page should be accessible immediately</p>","1","1. <p>Newly published page should be accessible immediately</p>","1. <ol>
+<li>Publish page from Page Builder Admin</li>
+<li>Navigate to frontend</li>
+<li>Access page permalink</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415479","TC-E2E-020: Unpublished page becomes inaccessible",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>Published page exists and is accessible</li>
+<li>User is on frontend</li>
+</ol>
+","High","","Status Transitions > Unpublish","0","","Step Description:
+<ol>
+<li>Unpublish page from Page Builder Admin</li>
+<li>Refresh frontend</li>
+<li>Try to access page</li>
+</ol>
+Expected Result:
+<p>Unpublished page should return 404</p>","1","1. <p>Unpublished page should return 404</p>","1. <ol>
+<li>Unpublish page from Page Builder Admin</li>
+<li>Refresh frontend</li>
+<li>Try to access page</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415480","TC-E2E-021: Archived page becomes inaccessible",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Published page exists and is accessible
+2. User is on frontend","High","","Status Transitions > Archive","0","","Step Description:
+1. Archive page from Page Builder Admin
+2. Refresh frontend
+3. Try to access page
+Expected Result:
+Archived page should return 404","1","1. Archived page should return 404","1. 1. Archive page from Page Builder Admin
+2. Refresh frontend
+3. Try to access page","[vc-shell ] Page builder","S5698","Functional","0"
+"C415481","TC-E2E-022: Search API includes pageDocuments query",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. User is on storefront
+2. Search feature is used","Medium","","API > Search","0","","Step Description:
+1. Open browser DevTools Network tab
+2. Type in search bar
+3. Inspect GraphQL request
+Expected Result:
+Request should include pageDocuments query with cultureName filter","1","1. Request should include pageDocuments query with cultureName filter","1. 1. Open browser DevTools Network tab
+2. Type in search bar
+3. Inspect GraphQL request","[vc-shell ] Page builder","S5698","Other","0"
+"C415482","TC-E2E-023: Page context API includes language filter",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. User navigates to page URL","Medium","","API > Page Context","0","","Step Description:
+1. Open browser DevTools Network tab
+2. Navigate to page URL
+3. Inspect GetPageContext GraphQL request
+Expected Result:
+Request should include cultureName parameter matching storefront language","1","1. Request should include cultureName parameter matching storefront language","1. 1. Open browser DevTools Network tab
+2. Navigate to page URL
+3. Inspect GetPageContext GraphQL request","[vc-shell ] Page builder","S5698","Other","0"
+"C415483","TC-E2E-024: Combined filter - language + organization",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Page exists with language pl-PL AND organization restriction
+2. User is on Polish storefront but wrong organization","High","","Combined Filters","0","","Step Description:
+1. Navigate to page permalink
+2. Observe page rendering
+Expected Result:
+Page should return 404 (organization mismatch)","1","1. Page should return 404 (organization mismatch)","1. 1. Navigate to page permalink
+2. Observe page rendering","[vc-shell ] Page builder","S5698","Functional","0"
+"C415484","TC-E2E-025: Combined filter - language + visibility",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>Page exists with language de-DE AND visibility OFF</li>
+<li>Anonymous user on German storefront</li>
+</ol>
+","High","","Combined Filters","0","","Step Description:
+<ol>
+<li>Navigate to page permalink as anonymous</li>
+<li>Observe page rendering</li>
+</ol>
+Expected Result:
+<p>Page should return 404 (visibility requires login)</p>","1","1. <p>Page should return 404 (visibility requires login)</p>","1. <ol>
+<li>Navigate to page permalink as anonymous</li>
+<li>Observe page rendering</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415485","TC-E2E-026: Page without permalink not accessible",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>Page exists without permalink (empty string)</li>
+<li>Page is Published</li>
+</ol>
+","High","","Validation > Permalink","0","","Step Description:
+<ol>
+<li>Try to construct URL without permalink</li>
+<li>Observe behavior</li>
+</ol>
+Expected Result:
+<p>Page should not be accessible - no valid URL</p>","1","1. <p>Page should not be accessible - no valid URL</p>","1. <ol>
+<li>Try to construct URL without permalink</li>
+<li>Observe behavior</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415486","TC-E2E-027: Multiple pages same language - all searchable",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>Multiple Published pages exist in same language</li>
+<li>No restrictions on pages</li>
+</ol>
+","Medium","","Search > Multiple Results","0","","Step Description:
+<ol>
+<li>Search for common keyword</li>
+<li>Observe PAGES section</li>
+</ol>
+Expected Result:
+<p>All matching pages should appear in search results</p>","1","1. <p>All matching pages should appear in search results</p>","1. <ol>
+<li>Search for common keyword</li>
+<li>Observe PAGES section</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415487","TC-E2E-028: Search with special characters",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>Page exists with name containing special chars (e.g., 'qa & 1')</li>
+<li>Page is Published and accessible</li>
+</ol>
+","Medium","","Search > Edge Cases","0","","Step Description:
+<ol>
+<li>Search for &#039;qa &amp; 1&#039;</li>
+<li>Observe PAGES section</li>
+</ol>
+Expected Result:
+<p>Page should be found even with special characters in name</p>","1","1. <p>Page should be found even with special characters in name</p>","1. <ol>
+<li>Search for &#039;qa &amp; 1&#039;</li>
+<li>Observe PAGES section</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415488","TC-E2E-029: Partial search match for pages",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Page 'qa & 1' exists and is Published
+2. Storefront language matches","Medium","","Search > Partial Match","0","","Step Description:
+1. Search for &#039;qa&#039;
+2. Observe PAGES section
+Expected Result:
+Page should be found with partial keyword match","1","1. Page should be found with partial keyword match","1. 1. Search for &#039;qa&#039;
+2. Observe PAGES section","[vc-shell ] Page builder","S5698","Functional","0"
+"C415489","TC-E2E-030: Case-insensitive search for pages",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>Page 'Watermelon' exists and is Published</li>
+<li>No restrictions apply</li>
+</ol>
+","Medium","","Search > Case Sensitivity","0","","Step Description:
+<ol>
+<li>Search for &#039;WATERMELON&#039; (uppercase)</li>
+<li>Observe PAGES section</li>
+</ol>
+Expected Result:
+<p>Page should be found regardless of case</p>","1","1. <p>Page should be found regardless of case</p>","1. <ol>
+<li>Search for &#039;WATERMELON&#039; (uppercase)</li>
+<li>Observe PAGES section</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415490","TC-E2E-031: Scheduled page with future start date - not accessible",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Page exists with startDate in future
+2. Page is Published","High","","Scheduling > Future Start","0","","Step Description:
+1. Navigate to page permalink
+2. Observe page rendering
+Expected Result:
+Page should return 404 (scheduling not yet active)","1","1. Page should return 404 (scheduling not yet active)","1. 1. Navigate to page permalink
+2. Observe page rendering","[vc-shell ] Page builder","S5698","Functional","0"
+"C415491","TC-E2E-032: Scheduled page with past end date - not accessible",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Page exists with endDate in past
+2. Page is Published","High","","Scheduling > Past End","0","","Step Description:
+1. Navigate to page permalink
+2. Observe page rendering
+Expected Result:
+Page should return 404 (scheduling expired)","1","1. Page should return 404 (scheduling expired)","1. 1. Navigate to page permalink
+2. Observe page rendering","[vc-shell ] Page builder","S5698","Functional","0"
+"C415492","TC-E2E-033: Scheduled page within valid date range - accessible",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>Page exists with startDate in past and endDate in future</li>
+<li>Page is Published</li>
+</ol>
+","High","","Scheduling > Active Window","0","","Step Description:
+<ol>
+<li>Navigate to page permalink</li>
+<li>Observe page rendering</li>
+</ol>
+Expected Result:
+<p>Page should be accessible (within scheduled window)</p>","1","1. <p>Page should be accessible (within scheduled window)</p>","1. <ol>
+<li>Navigate to page permalink</li>
+<li>Observe page rendering</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415493","TC-E2E-034: User group restricted page - authorized group",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>Page exists with userGroups restriction</li>
+<li>User belongs to authorized group</li>
+</ol>
+","High","","User Groups > Authorized","0","","Step Description:
+<ol>
+<li>Navigate to page permalink</li>
+<li>Observe page rendering</li>
+</ol>
+Expected Result:
+<p>Page should be accessible for users in authorized group</p>","1","1. <p>Page should be accessible for users in authorized group</p>","1. <ol>
+<li>Navigate to page permalink</li>
+<li>Observe page rendering</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415494","TC-E2E-035: User group restricted page - unauthorized group",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Page exists with userGroups restriction
+2. User does NOT belong to authorized group","High","","User Groups > Unauthorized","0","","Step Description:
+1. Navigate to page permalink
+2. Observe page rendering
+Expected Result:
+Page should return 404 for users not in authorized group","1","1. Page should return 404 for users not in authorized group","1. 1. Navigate to page permalink
+2. Observe page rendering","[vc-shell ] Page builder","S5698","Functional","0"
+"C415495","TC-E2E-036: Empty page renders shell only",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Page exists with no content from designer
+2. Page is Published and accessible","Medium","","Content > Empty Page","0","","Step Description:
+1. Navigate to page permalink
+2. Observe page rendering
+Expected Result:
+Page should render header/footer but empty main content area","1","1. Page should render header/footer but empty main content area","1. 1. Navigate to page permalink
+2. Observe page rendering","[vc-shell ] Page builder","S5698","Functional","0"
+"C415496","TC-E2E-037: Page with content renders correctly",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","1. Page exists with content from designer
+2. Page is Published and accessible","High","","Content > With Content","0","","Step Description:
+1. Navigate to page permalink
+2. Observe page content
+Expected Result:
+Page should render full content from page designer","1","1. Page should render full content from page designer","1. 1. Navigate to page permalink
+2. Observe page content","[vc-shell ] Page builder","S5698","Functional","0"
+"C415497","TC-E2E-038: PAGES section appears in search dropdown",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>At least one page matches search query</li>
+<li>User is on storefront</li>
+</ol>
+","Medium","","Search UI > Pages Section","0","","Step Description:
+<ol>
+<li>Type search query</li>
+<li>Observe search dropdown</li>
+</ol>
+Expected Result:
+<p>PAGES section should be visible in search dropdown alongside products</p>","1","1. <p>PAGES section should be visible in search dropdown alongside products</p>","1. <ol>
+<li>Type search query</li>
+<li>Observe search dropdown</li>
+</ol>","[vc-shell ] Page builder","S5698","Other","1"
+"C415498","TC-E2E-039: Click page in search navigates correctly",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>Page appears in search results</li>
+<li>Storefront language is correct</li>
+</ol>
+","Medium","","Search UI > Navigation","0","","Step Description:
+<ol>
+<li>Search for page</li>
+<li>Click on page in PAGES section</li>
+</ol>
+Expected Result:
+<p>User should navigate to page URL with correct language prefix</p>","1","1. <p>User should navigate to page URL with correct language prefix</p>","1. <ol>
+<li>Search for page</li>
+<li>Click on page in PAGES section</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"
+"C415499","TC-E2E-040: Page Builder Admin shows correct frontend URL",""," None","Elena Mutykova","1/13/2026 6:03 PM","","","","<ol>
+<li>Page exists in Page Builder Admin</li>
+<li>Page has valid permalink</li>
+</ol>
+","Medium","","Admin > Preview URL","0","","Step Description:
+<ol>
+<li>Open page in Page Builder Admin</li>
+<li>Observe domain displayed before permalink</li>
+</ol>
+Expected Result:
+<p>Domain should show frontend URL (e.g., <a href=""""https://vcst-qa-storefront.govirto.com)"""">https://vcst-qa-storefront.govirto.com)</a></p>","1","1. <p>Domain should show frontend URL (e.g., <a href=""""https://vcst-qa-storefront.govirto.com)"""">https://vcst-qa-storefront.govirto.com)</a></p>","1. <ol>
+<li>Open page in Page Builder Admin</li>
+<li>Observe domain displayed before permalink</li>
+</ol>","[vc-shell ] Page builder","S5698","Functional","1"

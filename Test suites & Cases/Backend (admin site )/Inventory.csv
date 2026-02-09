@@ -1,0 +1,1078 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C356990","Inventory > View all",""," None","Elena Mutykova","2/20/2023 7:44 AM","","","","","Medium","","Inventory Section in Main Menu","1","https://virtocommerce.atlassian.net/browse/PT-10606","Step Description:
+<p>Go to Inventory</p>
+Expected Result:
+<p>The Managing fulfillment centers blade is opened</p>
+
+<p>The next elements are presented:</p>
+
+<ul>
+<li>Refresh button</li>
+<li>Add</li>
+<li>Search field</li>
+<li>Table with FFC</li>
+</ul>","1","1. <p>The Managing fulfillment centers blade is opened</p>
+
+<p>The next elements are presented:</p>
+
+<ul>
+<li>Refresh button</li>
+<li>Add</li>
+<li>Search field</li>
+<li>Table with FFC</li>
+</ul>","1. <p>Go to Inventory</p>","V3 Inventory","S1505","Other","1"
+"C356991","Inventory > Add new FFC",""," None","Elena Mutykova","2/20/2023 7:45 AM","","","","","Medium","","Inventory Section in Main Menu","1","https://virtocommerce.atlassian.net/browse/PT-10606","Step Description:
+Go to Inventory
+Click on Add 
+Expected Result:
+The blade """"New Fulfillment Center. Editing fulfillment center"""" is opened.
+
+The next buttons on the top menu are presented (disabled by default):
+
+- Save 
+- Reset 
+- Delete
+
+***Input fields***
+
+- Name
+- Location
+- Outer Id
+- Short description
+- Description
+
+***Widget***
+
+- Address (No address by default)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Step Description:
+Fill in the Name
+
+Expected Result:
+The buttons Save and Reset are activated.
+
+
+Step Description:
+Click on Reset
+Expected Result:
+The name is reset. The Save and Reset buttons are inactive
+Step Description:
+Fill in all necessary fields
+Click on Save
+Expected Result:
+The fulfillment center is created and displayed in the list.
+Step Description:
+Open new FFC
+Expected Result:
+The FFC1. The editing fulfillment center is opened
+
+All fields are saved.
+
+The dynamic properties widget is displayed","1. 
+2. 
+3. 
+4. 
+5.","1. The blade """"New Fulfillment Center. Editing fulfillment center"""" is opened.
+
+The next buttons on the top menu are presented (disabled by default):
+
+- Save 
+- Reset 
+- Delete
+
+***Input fields***
+
+- Name
+- Location
+- Outer Id
+- Short description
+- Description
+
+***Widget***
+
+- Address (No address by default)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2. The buttons Save and Reset are activated.
+
+
+3. The name is reset. The Save and Reset buttons are inactive
+4. The fulfillment center is created and displayed in the list.
+5. The FFC1. The editing fulfillment center is opened
+
+All fields are saved.
+
+The dynamic properties widget is displayed","1. Go to Inventory
+Click on Add 
+2. Fill in the Name
+
+3. Click on Reset
+4. Fill in all necessary fields
+Click on Save
+5. Open new FFC","V3 Inventory","S1505","Other","0"
+"C357011","Inventory > FFC > Add address",""," None","Elena Mutykova","2/20/2023 12:47 PM","","","","FFC1 was added [C356991]","Medium","","Inventory Section in Main Menu","1","https://virtocommerce.atlassian.net/browse/PT-10606","Step Description:
+Open FFC1 &gt; Click on the widget Address
+Expected Result:
+The Edit address blade is opened:
+
+The next fields are presented:
+
+- Country (dictionary with names of countries)
+- State/Province 
+- City
+- Address line 1
+- Zip code
+- Email
+- Phone
+
+***Buttons***
+
+On the top menu
+
+- Reset (inactive)
+- Delete
+
+On the bottom
+
+- Cancel
+- Ok (disabled by default)
+Step Description:
+Fill in all fields
+Click on Ok &gt; Save
+
+
+
+
+Expected Result:
+The button Ok is activated
+The address is created and displayed on the widget","1. 
+2.","1. The Edit address blade is opened:
+
+The next fields are presented:
+
+- Country (dictionary with names of countries)
+- State/Province 
+- City
+- Address line 1
+- Zip code
+- Email
+- Phone
+
+***Buttons***
+
+On the top menu
+
+- Reset (inactive)
+- Delete
+
+On the bottom
+
+- Cancel
+- Ok (disabled by default)
+2. The button Ok is activated
+The address is created and displayed on the widget","1. Open FFC1 &gt; Click on the widget Address
+2. Fill in all fields
+Click on Ok &gt; Save","V3 Inventory","S1505","Other","0"
+"C357007","Inventory > Update address",""," Katalon","Elena Mutykova","2/20/2023 12:43 PM","","The changed address is displayed on the widget.","","FFC1 was added [C356991]
+
+The address was added for FFC1
+
+","Medium","","Inventory Section in Main Menu","1","https://virtocommerce.atlassian.net/browse/PT-10606","","","","","V3 Inventory","S1505","Other","0"
+"C357015","Inventory > Delete address",""," Katalon","Elena Mutykova","2/20/2023 1:11 PM","","The address is deleted.
+""""No address"""" is displayed on the widget.","","FFC1 was added [C356991]
+
+The address was added for FFC1
+
+","Medium","","Inventory Section in Main Menu","1","https://virtocommerce.atlassian.net/browse/PT-10606","","","","","V3 Inventory","S1505","Other","0"
+"C357012","Inventory > Edit FFC > name",""," Katalon","Elena Mutykova","2/20/2023 1:06 PM","","New name is saved. ","","Add FFC [C356991]","Medium","","Inventory Section in Main Menu","1","https://virtocommerce.atlassian.net/browse/PT-10606","","","","","V3 Inventory","S1505","Other","0"
+"C357013","Inventory > Edit FFC > description",""," Katalon","Elena Mutykova","2/20/2023 1:06 PM","","The new description is saved.","","Add FFC [C356991]
+
+","Medium","","Inventory Section in Main Menu","1","https://virtocommerce.atlassian.net/browse/PT-10606","","","","","V3 Inventory","S1505","Other","0"
+"C357014","Inventory > Edit FFC > geo location",""," Katalon","Elena Mutykova","2/20/2023 1:06 PM","","New geolocation is saved. ","","Add FFC [C356991]
+","Medium","","Inventory Section in Main Menu","1","https://virtocommerce.atlassian.net/browse/PT-10606","","","","","V3 Inventory","S1505","Other","0"
+"C356992","Inventory > Search",""," None","Elena Mutykova","2/20/2023 7:45 AM","","","","","Medium","","Inventory Section in Main Menu","1","https://virtocommerce.atlassian.net/browse/PT-10606","Step Description:
+Enter the full name of the fulfillment center (Los Angeles Branch)
+Expected Result:
+The appropriate name of FFC is returned in the result (Los Angeles Branch)
+Step Description:
+Clear the field 
+Click on cross
+Expected Result:
+The Search field is cleared.
+All FFCs are returned
+Step Description:
+Enter part of the name (ex. New)
+Expected Result:
+The appropriate name of FFC is returned in the result. (New York Branch )
+Step Description:
+Enter the new name of the recently added FFC
+Expected Result:
+The appropriate name of FFC is returned in the result
+Step Description:
+Enter a not existing name
+Expected Result:
+Nothing returned as a result","1. 
+2. 
+3. 
+4. 
+5.","1. The appropriate name of FFC is returned in the result (Los Angeles Branch)
+2. The Search field is cleared.
+All FFCs are returned
+3. The appropriate name of FFC is returned in the result. (New York Branch )
+4. The appropriate name of FFC is returned in the result
+5. Nothing returned as a result","1. Enter the full name of the fulfillment center (Los Angeles Branch)
+2. Clear the field 
+Click on cross
+3. Enter part of the name (ex. New)
+4. Enter the new name of the recently added FFC
+5. Enter a not existing name","V3 Inventory","S1505","Other","0"
+"C357008","Inventory > FFC > Delete","https://virtowayqa.testrail.io/index.php?/attachments/get/1000003698"," None","Elena Mutykova","2/20/2023 12:43 PM","","The FFC1 is deleted. The count is decreased y one
+
+ ![](index.php?/attachments/get/cdcb8ade-bdad-4905-ab34-af5aaf1316aa) 
+
+","","FFC1 was added [C356991]","Medium","","Inventory Section in Main Menu","1","https://virtocommerce.atlassian.net/browse/PT-10606","","","","","V3 Inventory","S1505","Other","0"
+"C357009","Inventoy > FFC > Contex menu > Manage",""," None","Elena Mutykova","2/20/2023 12:44 PM","","The Manage is displayed in the Context menu.
+The Editing fulfillment center blade is opened","","FFC1 was created","Medium","","Inventory Section in Main Menu","1","https://virtocommerce.atlassian.net/browse/PT-10606","","","","","V3 Inventory","S1505","Other","0"
+"C357010","Inventoy > FFC > Contex menu > Delete","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002081, https://virtowayqa.testrail.io/index.php?/attachments/get/1000004375"," None","Elena Mutykova","2/20/2023 12:45 PM","","","","FFC1 was added [C356991]","Medium","","Inventory Section in Main Menu","1","https://virtocommerce.atlassian.net/browse/PT-10606","Step Description:
+Open Inventory &gt; Choose any FFC &gt; Right-click
+Expected Result:
+The Context menu is displayed
+Step Description:
+Click on Delete
+Expected Result:
+The Confirm Delete pop-up is displayed.
+
+ ![](index.php?/attachments/get/fa49ffef-6019-4d48-b8bd-b86008bde543) 
+
+Step Description:
+Click on Yes
+Expected Result:
+The FFC1 is deleted. The count is decreased by one
+
+ ![](index.php?/attachments/get/7430444d-7e4d-4cd2-a1b0-42f9ae9abc4b)","1. 
+2. 
+3.","1. The Context menu is displayed
+2. The Confirm Delete pop-up is displayed.
+
+ ![](index.php?/attachments/get/fa49ffef-6019-4d48-b8bd-b86008bde543) 
+
+3. The FFC1 is deleted. The count is decreased by one
+
+ ![](index.php?/attachments/get/7430444d-7e4d-4cd2-a1b0-42f9ae9abc4b)","1. Open Inventory &gt; Choose any FFC &gt; Right-click
+2. Click on Delete
+3. Click on Yes","V3 Inventory","S1505","Other","0"
+"C357002","Inventory > FFC > Dynamic properties > View","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004087"," None","Elena Mutykova","2/20/2023 8:57 AM","","","","","Medium","","Dynamic properties for Fulfillment centers","1","https://virtocommerce.atlassian.net/browse/PT-10845","Step Description:
+Open any FFC details page
+Click on the Dynamic properties widget
+Expected Result:
+The number of properties is displayed on the widget
+Dynamic Properties blade is opened.
+
+The buttons on the top menu are displayed as:
+
+- Ok (disabled by default)
+- Cancel (active)
+- Reset (disabled by default)
+- Types of properties
+- Hide empty fields
+
+Field with Properties values
+
+
+ ![](index.php?/attachments/get/ea891e52-f00d-4c94-abd7-2b8d74a20438)","1","1. The number of properties is displayed on the widget
+Dynamic Properties blade is opened.
+
+The buttons on the top menu are displayed as:
+
+- Ok (disabled by default)
+- Cancel (active)
+- Reset (disabled by default)
+- Types of properties
+- Hide empty fields
+
+Field with Properties values
+
+
+ ![](index.php?/attachments/get/ea891e52-f00d-4c94-abd7-2b8d74a20438)","1. Open any FFC details page
+Click on the Dynamic properties widget","V3 Inventory","S1505","Other","0"
+"C357003","Inventory > FFC > Dynamic properties > Add property",""," None","Elena Mutykova","2/20/2023 8:58 AM","","","","Open any FFC","Medium","","Dynamic properties for Fulfillment centers","1","https://virtocommerce.atlassian.net/browse/PT-10845","Step Description:
+Click on the dynamic properties widget &gt; Types of properties
+
+
+Expected Result:
+The blade VirtoCommerce.InventoryModule.Core.Model.FulfillmentCenter with the list of dynamic properties is opened
+
+The buttons are presented on the top menu:
+
+- Refresh
+- Add
+Step Description:
+Click on Add
+Expected Result:
+The New property blade is opened
+Step Description:
+Enter Property name
+Choose property type (Multivalue, Multilanguage, Dictionary)
+Choose Value type from the drop-down
+Create
+Expected Result:
+A new property is added to the list of properties
+The number of properties is increased by one on the widget","1. 
+2. 
+3.","1. The blade VirtoCommerce.InventoryModule.Core.Model.FulfillmentCenter with the list of dynamic properties is opened
+
+The buttons are presented on the top menu:
+
+- Refresh
+- Add
+2. The New property blade is opened
+3. A new property is added to the list of properties
+The number of properties is increased by one on the widget","1. Click on the dynamic properties widget &gt; Types of properties
+
+
+2. Click on Add
+3. Enter Property name
+Choose property type (Multivalue, Multilanguage, Dictionary)
+Choose Value type from the drop-down
+Create","V3 Inventory","S1505","Other","0"
+"C357005","Inventory > FFC > Dynamic properties > Set value",""," None","Elena Mutykova","2/20/2023 8:58 AM","","The Ok button activated
+The value saved
+","","The property1 was added ","Medium","","Dynamic properties for Fulfillment centers","1","https://virtocommerce.atlassian.net/browse/PT-10845","","","","","V3 Inventory","S1505","Other","0"
+"C357004","Inventory > FFC > Dynamic properties > Update property",""," None","Elena Mutykova","2/20/2023 8:58 AM","","","","","Medium","","Dynamic properties for Fulfillment centers","1","https://virtocommerce.atlassian.net/browse/PT-10845","Step Description:
+Click on the Dynamic properties widget
+Types of properties
+Click on Property1
+Change the name of the property
+Save
+
+Expected Result:
+The Save is activated
+The property name is updated
+Step Description:
+Change value for Property1
+Save
+Expected Result:
+The Property1 value is updated","1. 
+2.","1. The Save is activated
+The property name is updated
+2. The Property1 value is updated","1. Click on the Dynamic properties widget
+Types of properties
+Click on Property1
+Change the name of the property
+Save
+
+2. Change value for Property1
+Save","V3 Inventory","S1505","Other","0"
+"C357006","Inventory > FFC > Dynamic properties > Delete property",""," None","Elena Mutykova","2/20/2023 8:58 AM","","","","","Medium","","Dynamic properties for Fulfillment centers","1","https://virtocommerce.atlassian.net/browse/PT-10845","Step Description:
+Click on the Dynamic properties widget &gt; Types of properties
+Click on Property1 &gt; Delete
+Confirm deletion
+Expected Result:
+The Property1 has been deleted and is no longer displayed in the list
+The number of properties is decreased on the widget","1","1. The Property1 has been deleted and is no longer displayed in the list
+The number of properties is decreased on the widget","1. Click on the Dynamic properties widget &gt; Types of properties
+Click on Property1 &gt; Delete
+Confirm deletion","V3 Inventory","S1505","Other","0"
+"C201537","Edit """"in stock"""" quantity","","","Volha Baban","4/3/2020 8:57 AM","","1. New """"in stock"""" value is saved.
+2. """"In stock"""" value in the table is updated. ","","","Medium","","Inventory management","1","","","","","","V3 Inventory","S1505","Other","0"
+"C201538","Order product > in """"stock qty"""" of default FFC decreased","","","Volha Baban","4/3/2020 8:59 AM","","""""In stock"""" qty = initial quantity - X","","1. ""In stock"" qty of the product_1 in the default FFC > 1. 
+2. Track inventory = TRUE.","Medium","","Inventory management","1","","","","","","V3 Inventory","S1505","Other","0"
+"C201539","Order more items than are available in the FFC","","","Volha Baban","4/3/2020 9:00 AM","","","","1. There is only the default fulfillment center for the store. 
+2. Track inventory = TRUE.","Medium","","Inventory management","1","","Step Description:
+1. Go to the BackEnd. 
+2. Go to the product_1.
+3. Go to the """"Fulfillment centers"""" blade.
+4. Go to the fulfillment that is default for the store in which this product is contained. 
+5. Set the value of the """"In stock"""" field to X. 
+6. Go to the StoreFront. 
+7. Add product_1 to the cart. 
+8. Go to the cart. 
+9. Change the ordered quantity of the item to X+1. 
+Expected Result:
+A warning appears: """"Product quantity exceeded! Available quantity is: X""""
+Step Description:
+1. Change the quantity to X. 
+
+Expected Result:
+A warning disappears. You can order X items.","1. 
+2.","1. A warning appears: """"Product quantity exceeded! Available quantity is: X""""
+2. A warning disappears. You can order X items.","1. 1. Go to the BackEnd. 
+2. Go to the product_1.
+3. Go to the """"Fulfillment centers"""" blade.
+4. Go to the fulfillment that is default for the store in which this product is contained. 
+5. Set the value of the """"In stock"""" field to X. 
+6. Go to the StoreFront. 
+7. Add product_1 to the cart. 
+8. Go to the cart. 
+9. Change the ordered quantity of the item to X+1. 
+2. 1. Change the quantity to X.","V3 Inventory","S1505","Other","0"
+"C201540","[VDS-103]Amount of available items = """"in stock"""" qty of default and available FFC","","","Volha Baban","4/3/2020 9:15 AM","","","","1. Assign to the store default and at least one available FFC.
+2. Track inventory = TRUE.","Medium","","Inventory management","1","","Step Description:
+1. Go to the BackEnd. 
+2. Go to the product_1 that is contained in the store from preconditions. 
+3. Go to the """"Fulfillment centers"""". 
+4. Go to the default fulfillment center. 
+5. Set the """"In stock"""" value to X. 
+6. Go to the available FFC.
+7. Set the """"In stock"""" value to Y. 
+8. Go to the StoreFront. 
+9. Add product_1 to the cart. 
+10. Go to the cart. 
+11. Change the quantity of the item to X+Y.
+Expected Result:
+There is no warning message. You can order such a quantity of the item.
+Step Description:
+1. Change the quantity of the item to X+Y+1. 
+
+Expected Result:
+The warning message is displayed: Product quantity exceeded! Available quantity is: X+Y","1. 
+2.","1. There is no warning message. You can order such a quantity of the item.
+2. The warning message is displayed: Product quantity exceeded! Available quantity is: X+Y","1. 1. Go to the BackEnd. 
+2. Go to the product_1 that is contained in the store from preconditions. 
+3. Go to the """"Fulfillment centers"""". 
+4. Go to the default fulfillment center. 
+5. Set the """"In stock"""" value to X. 
+6. Go to the available FFC.
+7. Set the """"In stock"""" value to Y. 
+8. Go to the StoreFront. 
+9. Add product_1 to the cart. 
+10. Go to the cart. 
+11. Change the quantity of the item to X+Y.
+2. 1. Change the quantity of the item to X+Y+1.","V3 Inventory","S1505","Other","0"
+"C201541","In stock = 0, item is unavailable to order","","","Volha Baban","4/3/2020 9:18 AM","","""""Add to cart"""" button is inactive in the details view. 
+There is no """"Add to cart"""" button in the list view. 
+There is """"Sold out"""" label on item image in the list view. ","","Track inventory = TRUE.","Medium","","Inventory management","1","","","","","","V3 Inventory","S1505","Other","0"
+"C341053","Add to cart > Update Inventory > Create order",""," None","Daria Ponamareva","5/18/2022 1:46 PM","","Validation error","","","Medium","","Inventory management","1","","","","","","V3 Inventory","S1505","Other","0"
+"C199248","Track Inventory = FALSE","","","Volha Baban","4/2/2020 7:43 AM","","","","There is only default FFC for the store. ","Medium","","Catalog > Product","1","","Step Description:
+1. Go to the BackEnd.
+2. Go to the PRODUCT_1 that is contained in the store from preconditions. 
+3. Switch off """"Track inventory"""" checkbox. 
+4. Go to the default FFC and set the """"In stock"""" value to X. 
+5. Go to the StoreFront. 
+6. Order product_1 in quantities less than X.
+7. Go to the BackEnd. 
+8. Go to the PRODUCT_1.
+9. Go to the default FFC.
+10. Pay attention to the """"In stock"""" field. 
+
+Expected Result:
+The """"In stock"""" value still X. 
+Step Description:
+1. Go to the StoreFront. 
+2. Add PRODUCT_1 to the cart. 
+3. Change the quantity of PRODUCT_1 to any value higher than X.
+Expected Result:
+There is no warning message. You can order PRODUCT_1 in quantity higher than X.","1. 
+2.","1. The """"In stock"""" value still X. 
+2. There is no warning message. You can order PRODUCT_1 in quantity higher than X.","1. 1. Go to the BackEnd.
+2. Go to the PRODUCT_1 that is contained in the store from preconditions. 
+3. Switch off """"Track inventory"""" checkbox. 
+4. Go to the default FFC and set the """"In stock"""" value to X. 
+5. Go to the StoreFront. 
+6. Order product_1 in quantities less than X.
+7. Go to the BackEnd. 
+8. Go to the PRODUCT_1.
+9. Go to the default FFC.
+10. Pay attention to the """"In stock"""" field. 
+
+2. 1. Go to the StoreFront. 
+2. Add PRODUCT_1 to the cart. 
+3. Change the quantity of PRODUCT_1 to any value higher than X.","V3 Inventory","S1505","Other","0"
+"C199249","Track Inventory = TRUE","","","Volha Baban","4/2/2020 7:43 AM","","","","There is only default FFC for the store. ","Medium","","Catalog > Product","1","","Step Description:
+1. Go to the BackEnd.
+2. Go to the PRODUCT_1 that is contained in the store from preconditions. 
+3. Switch on """"Track inventory"""" checkbox. 
+4. Go to the default FFC and set the """"In stock"""" value to X. 
+5. Go to the StoreFront. 
+6. Order product_1 in quantities less than X.
+7. Go to the BackEnd. 
+8. Go to the PRODUCT_1.
+9. Go to the default FFC.
+10. Pay attention to the """"In stock"""" field. 
+
+Expected Result:
+The """"In stock"""" value = X - ordered quantity. 
+
+Postcondition: set the """"in stock"""" value to X. 
+Step Description:
+1. Go to the StoreFront. 
+2. Add PRODUCT_1 to the cart. 
+3. Change the quantity of PRODUCT_1 to any value higher than X.
+Expected Result:
+The warning message is displayed: """"Product quantity exceeded! Available quantity is: X""""","1. 
+2.","1. The """"In stock"""" value = X - ordered quantity. 
+
+Postcondition: set the """"in stock"""" value to X. 
+2. The warning message is displayed: """"Product quantity exceeded! Available quantity is: X""""","1. 1. Go to the BackEnd.
+2. Go to the PRODUCT_1 that is contained in the store from preconditions. 
+3. Switch on """"Track inventory"""" checkbox. 
+4. Go to the default FFC and set the """"In stock"""" value to X. 
+5. Go to the StoreFront. 
+6. Order product_1 in quantities less than X.
+7. Go to the BackEnd. 
+8. Go to the PRODUCT_1.
+9. Go to the default FFC.
+10. Pay attention to the """"In stock"""" field. 
+
+2. 1. Go to the StoreFront. 
+2. Add PRODUCT_1 to the cart. 
+3. Change the quantity of PRODUCT_1 to any value higher than X.","V3 Inventory","S1505","Other","0"
+"C204137","Allow Preorder = TRUE, set preorder qty > product can be purchased","","","Volha Baban","4/8/2020 2:46 PM","","Reserved = 1
+Preorder qty. = 1
+","","Login to admin
+Go to Catalog > Product >FFC Centers widget 
+In Stock = 0 of product
+","Medium","","Pre Order - not implemented","2","NOT IMPLEMENTED
+DO NOT TEST
+epic for implementation
+https://virtocommerce.atlassian.net/browse/VP-4256","","","","","V3 Inventory","S1505","Other","0"
+"C204140","Allow Preorder = TRUE, set preorder qty = 0 > product can not be purchased","","","Volha Baban","4/8/2020 2:51 PM","","SOLD OUT 
+product can not be purchased","","Login to admin
+Go to Catalog > Product >FFC Centers widget 
+In Stock = 0 of product
+","Medium","","Pre Order - not implemented","2","NOT IMPLEMENTED
+DO NOT TEST
+epic for implementation
+https://virtocommerce.atlassian.net/browse/VP-4256","","","","","V3 Inventory","S1505","Other","0"
+"C204141","Allow Preorder = FALSE > product can not be purchased, SOLD OUT","","","Volha Baban","4/8/2020 2:52 PM","","SOLD OUT 
+product can not be purchased","","Login to admin
+Go to Catalog > Product >FFC Centers widget 
+In Stock = 0 of product
+","Medium","","Pre Order - not implemented","2","NOT IMPLEMENTED
+DO NOT TEST
+epic for implementation
+https://virtocommerce.atlassian.net/browse/VP-4256","","","","","V3 Inventory","S1505","Other","0"
+"C204142","Allow backorder = TRUE, set backorder qty > product can be purchased","","","Volha Baban","4/8/2020 2:53 PM","","Reserved = 1
+Preorder qty. = 1
+","","Login to admin
+Go to Catalog > Product >FFC Centers widget 
+In Stock = 0 of product
+","Medium","","Back Order - not implemented","2","NOT IMPLEMENTED
+DO NOT TEST
+epic for implementation
+https://virtocommerce.atlassian.net/browse/VP-4256","","","","","V3 Inventory","S1505","Other","0"
+"C204143","Allow backorder = TRUE, set backorder qty = 0 > product can not be purchased","","","Volha Baban","4/8/2020 2:53 PM","","SOLD OUT 
+product can not be purchased","","Login to admin
+Go to Catalog > Product >FFC Centers widget 
+In Stock = 0 of product
+","Medium","","Back Order - not implemented","2","NOT IMPLEMENTED
+DO NOT TEST
+epic for implementation
+https://virtocommerce.atlassian.net/browse/VP-4256","","","","","V3 Inventory","S1505","Other","0"
+"C204144","Allow backorder = FALSE > product can not be purchased, SOLD OUT","","","Volha Baban","4/8/2020 2:53 PM","","SOLD OUT 
+product can not be purchased","","Login to admin
+Go to Catalog > Product >FFC Centers widget 
+In Stock = 0 of product
+","Medium","","Back Order - not implemented","2","NOT IMPLEMENTED
+DO NOT TEST
+epic for implementation
+https://virtocommerce.atlassian.net/browse/VP-4256","","","","","V3 Inventory","S1505","Other","0"
+"C239730","Access","","","Grotem","6/18/2020 8:11 AM","","1. Fulfillement centers' blade opened
+2. Fulfillment centers' can not be modified","","1. Role_1 created in system
+2. Role_1 contains next permission:
+- catalog:access
+- catalog:read
+- inventory:access
+
+3. Role_1 assigned to User_1","Medium","","Inventory","2","","","","","","V3 Inventory","S1505","Other","0"
+"C239888","Read","","","Grotem","6/18/2020 8:37 AM","","1. Fulfillement center's **details** blade opened
+2. Fulfillment center's **details** can not be modified","","1. Role_1 created in system
+2. Role_1 contains next permission:
+- catalog:access
+- catalog:read
+- inventory:read
+- inventory:access
+3. Role_1 assigned to User_1","Medium","","Inventory","2","","","","","","V3 Inventory","S1505","Other","0"
+"C239893","Create",""," None","Grotem","6/18/2020 10:06 AM","","1. Fulfillement center created","","1. Role_1 created in system
+2. Role_1 contains next permission:
+- catalog:access
+- catalog:read
+- inventory:read
+- inventory:access
+- inventory:create
+- inventory:fulfillment:edit
+
+3. Role_1 assigned to User_1","Medium","","Inventory","2","","","","","","V3 Inventory","S1505","Other","0"
+"C239894","Update",""," None","Grotem","6/18/2020 10:07 AM","","1. Fulfillement center changes saved","","1. Role_1 created in system
+2. Role_1 contains next permission:
+- catalog:access
+- catalog:read
+- inventory:read
+- inventory:access
+- inventory:update
+- inventory:fulfillment:edit
+
+3. Role_1 assigned to User_1","Medium","","Inventory","2","","","","","","V3 Inventory","S1505","Other","0"
+"C239895","Delete","","","Grotem","6/18/2020 10:09 AM","","1. Fulfillement center deleted","","1. Role_1 created in system
+2. Role_1 contains next permission:
+- catalog:access
+- catalog:read
+- inventory:read
+- inventory:access
+- inventory:delete
+3. Role_1 assigned to User_1","Medium","","Inventory","2","","","","","","V3 Inventory","S1505","Other","0"
+"C239889","Edit","","","Grotem","6/18/2020 9:09 AM","","1. Fulfillement changes saved","","1. Role_1 created in system
+2. Role_1 contains next permission:
+- store:access
+- store:read
+- inventory:fulfillment:edit
+3. Role_1 assigned to User_1","Medium","","Fulfillment center","2","","","","","","V3 Inventory","S1505","Other","0"
+"C239890","Delete","","","Grotem","6/18/2020 9:41 AM","","1. Fulfillement deleted","","1. Role_1 created in system
+2. Role_1 contains next permission:
+- store:access
+- store:read
+- inventory:fulfillment:edit
+- inventoru:fulfillment:delete
+3. Role_1 assigned to User_1","Medium","","Fulfillment center","2","","","","","","V3 Inventory","S1505","Other","0"
+"C343329","FFC > General viev",""," None","Julia Viniarskaia","6/28/2022 12:38 PM","","","","1. Go to Admin","Medium","","Fulfillment centers (FFC)","1","https://github.com/VirtoCommerce/vc-module-inventory/blob/dev/docs/manage-fullfilment.md
+
+https://virtocommerce.atlassian.net/browse/PT-8007","Step Description:
+1. Select More &gt; Catalog &gt; Categories & Items&gt; Item details&gt; Inventory widget
+2. Click Fulfillment Center button &gt; Select any FFC &gt; Click manage
+Expected Result:
+1. Open Editing fulfillment center page.
+Step Description:
+1. Check field on Editing fulfillment center page.
+Expected Result:
+1. Next elemented are presented:
+- Name
+- Discription
+- Short Description
+- Location","1. 
+2.","1. 1. Open Editing fulfillment center page.
+2. 1. Next elemented are presented:
+- Name
+- Discription
+- Short Description
+- Location","1. 1. Select More &gt; Catalog &gt; Categories & Items&gt; Item details&gt; Inventory widget
+2. Click Fulfillment Center button &gt; Select any FFC &gt; Click manage
+2. 1. Check field on Editing fulfillment center page.","V3 Inventory","S1505","Other","0"
+"C343330","FFC > Short discription",""," None","Julia Viniarskaia","6/28/2022 1:05 PM","","","","1. Go to Admin
+2. Select FFC_1 > Open Editing fulfillment center page.","Medium","","Fulfillment centers (FFC)","1","https://github.com/VirtoCommerce/vc-module-inventory/blob/dev/docs/manage-fullfilment.md
+
+https://virtocommerce.atlassian.net/browse/PT-8007","Step Description:
+1. Check Short Description field
+Expected Result:
+1. User can add different information for the same FFC
+2. After entering the information to save, you must click the Save button on the toolbar under the Edit Order Fulfillment Center heading.
+
+Step Description:
+1. Exit and Close Editing fulfillment center page_1.
+2. Then reopen FFC_1 &gt; Editing fulfillment center page_1.
+3. Check that the information entered earlier was saved in the Short description field.
+Expected Result:
+1. All previously entered information in the Short description field is saved and displayed.
+Step Description:
+1. The Short description field has a toolbar in the Markdown tab.
+2. Use the tools to edit the existing text in the Short description field &gt; click the save button
+3. Then open the Preview tab and check the display of the edited text
+Expected Result:
+1. The text is displayed as edited in Markdown.
+
+Step Description:
+1. Return to the Markdown tab.
+2. Add Html file (table) &gt; Save
+3. Go to the Preview tab &gt; Check if the Html file is displayed as a table.
+Expected Result:
+1. The Html file is displayed as a table in the Preview tab.","1. 
+2. 
+3. 
+4.","1. 1. User can add different information for the same FFC
+2. After entering the information to save, you must click the Save button on the toolbar under the Edit Order Fulfillment Center heading.
+
+2. 1. All previously entered information in the Short description field is saved and displayed.
+3. 1. The text is displayed as edited in Markdown.
+
+4. 1. The Html file is displayed as a table in the Preview tab.","1. 1. Check Short Description field
+2. 1. Exit and Close Editing fulfillment center page_1.
+2. Then reopen FFC_1 &gt; Editing fulfillment center page_1.
+3. Check that the information entered earlier was saved in the Short description field.
+3. 1. The Short description field has a toolbar in the Markdown tab.
+2. Use the tools to edit the existing text in the Short description field &gt; click the save button
+3. Then open the Preview tab and check the display of the edited text
+4. 1. Return to the Markdown tab.
+2. Add Html file (table) &gt; Save
+3. Go to the Preview tab &gt; Check if the Html file is displayed as a table.","V3 Inventory","S1505","Other","0"
+"C200191","Add FFC","","","Volha Baban","4/2/2020 8:40 AM","","","","","Medium","","FFC Management","2","","Step Description:
+1. Go to the BackEnd. 
+2. Go to the """"Catalog"""" module. 
+3. Open any catalog. 
+4. Open any category. 
+5. Open any item details. 
+6. Click on the """"Fulfillment centers"""" widget. 
+7. Click """"Manage Fulfillment centers"""" 
+Expected Result:
+List of fulfillment centers is opened.
+
+![](index.php?/attachments/get/23284)   
+
+Step Description:
+1. Click """"Add"""". 
+2. Fill in all required fields. 
+3. Click """"Save"""". 
+Expected Result:
+1. The fulfillment center has been created. 
+2. The new fulfillment center appears in the list of fulfillment centers.","1. 
+2.","1. List of fulfillment centers is opened.
+
+![](index.php?/attachments/get/23284)   
+
+2. 1. The fulfillment center has been created. 
+2. The new fulfillment center appears in the list of fulfillment centers.","1. 1. Go to the BackEnd. 
+2. Go to the """"Catalog"""" module. 
+3. Open any catalog. 
+4. Open any category. 
+5. Open any item details. 
+6. Click on the """"Fulfillment centers"""" widget. 
+7. Click """"Manage Fulfillment centers"""" 
+2. 1. Click """"Add"""". 
+2. Fill in all required fields. 
+3. Click """"Save"""".","V3 Inventory","S1505","Other","0"
+"C200192","Edit FFC > name","","","Volha Baban","4/2/2020 8:41 AM","","New name is saved. ","","Add FFC [C200191]","Medium","","FFC Management","2","","","","","","V3 Inventory","S1505","Other","0"
+"C200193","Edit FFC > description","","","Volha Baban","4/2/2020 8:41 AM","","The new description is saved.","","Add FFC [C200191]
+
+","Medium","","FFC Management","2","","","","","","V3 Inventory","S1505","Other","0"
+"C200194","Edit FFC > geo location","","","Volha Baban","4/2/2020 8:41 AM","","New geolocation is saved. ","","Add FFC [C200191]
+","Medium","","FFC Management","2","","","","","","V3 Inventory","S1505","Other","0"
+"C200205","Add address","","","Volha Baban","4/2/2020 10:07 AM","","","","Add FFC [C200191]
+
+","Medium","","FFC Management","2","","Step Description:
+1. Go to the FFC from preconditions. 
+2. Click on the """"Address"""" widget. 
+Expected Result:
+1. Edit address blade is opened. 
+2. """"Country"""" field is required.
+Step Description:
+1. Fill in the """"Country"""" field. 
+ 
+Expected Result:
+""""Ok"""" button becomes active. 
+Step Description:
+1. Fill in some other fields. 
+2. Click """"Ok"""". 
+Expected Result:
+The added address appears on the """"Address"""" widget. 
+Step Description:
+1. Click """"Save"""". 
+2. Reopen the FFC blade. 
+3. Pay attention to the """"Address"""" widget. 
+Expected Result:
+The added address is saved.","1. 
+2. 
+3. 
+4.","1. 1. Edit address blade is opened. 
+2. """"Country"""" field is required.
+2. """"Ok"""" button becomes active. 
+3. The added address appears on the """"Address"""" widget. 
+4. The added address is saved.","1. 1. Go to the FFC from preconditions. 
+2. Click on the """"Address"""" widget. 
+2. 1. Fill in the """"Country"""" field. 
+ 
+3. 1. Fill in some other fields. 
+2. Click """"Ok"""". 
+4. 1. Click """"Save"""". 
+2. Reopen the FFC blade. 
+3. Pay attention to the """"Address"""" widget.","V3 Inventory","S1505","Other","0"
+"C200195","Edit FFC > address","","","Volha Baban","4/2/2020 8:41 AM","","","","1. Add FFC [C200191]
+2. Add address [C200205]
+
+","Medium","","FFC Management","2","","Step Description:
+1. Go to the FFC from the first precondition. 
+2. Go to the """"Address"""" widget. 
+3. Change the content of some fields. 
+4. Click """"Ok"""". 
+5. Pay attention to the """"Address"""" widget.
+Expected Result:
+The changed address is displayed on the widget. 
+Step Description:
+1. Click """"Save"""". 
+2. Reopen the FFC blade. 
+3. Pay attention to the """"Address"""" widget. 
+Expected Result:
+The changed address is saved.","1. 
+2.","1. The changed address is displayed on the widget. 
+2. The changed address is saved.","1. 1. Go to the FFC from the first precondition. 
+2. Go to the """"Address"""" widget. 
+3. Change the content of some fields. 
+4. Click """"Ok"""". 
+5. Pay attention to the """"Address"""" widget.
+2. 1. Click """"Save"""". 
+2. Reopen the FFC blade. 
+3. Pay attention to the """"Address"""" widget.","V3 Inventory","S1505","Other","0"
+"C200207","Delete address","","","Volha Baban","4/2/2020 10:21 AM","","1. The address is deleted. 
+2. """"No address"""" is displayed on the widget. ","","1. Add FFC [C200191]
+2. Add address [C200205]","Medium","","FFC Management","2","","","","","","V3 Inventory","S1505","Other","0"
+"C200198","Search FFC in list view","","","Volha Baban","4/2/2020 8:43 AM","","Only the fulfillment centers that match the search query are displayed.","","There are some FFC. ","Medium","","FFC Management","2","","","","","","V3 Inventory","S1505","Other","0"
+"C200196","Delete FFC on details blade","","","Volha Baban","4/2/2020 8:43 AM","","The FFC is deleted. ","","Add FFC [C200191]
+
+","Medium","","FFC Management","2","","","","","","V3 Inventory","S1505","Other","0"
+"C200197","Delete FFC in list view","","","Volha Baban","4/2/2020 8:43 AM","","The FFC is deleted. ","","Add FFC [C200191]
+
+","Medium","","FFC Management","2","","","","","","V3 Inventory","S1505","Other","0"
+"C327758","Add FFC with outerId via API","","","Elena Mutykova","3/9/2022 9:20 AM","","","","Open Swagger 
+
+","Medium","","FFC Management","2","","Step Description:
+Create FFC via POST /api/inventory/fulfillmentcenters/batch
+
+[
+{
+""""name"""": """"MyTest1"""",
+""""outerId"""": """"mytest1""""
+}
+]
+Expected Result:
+Status 200 returned in response
+FFC is created with outerId","1","1. Status 200 returned in response
+FFC is created with outerId","1. Create FFC via POST /api/inventory/fulfillmentcenters/batch
+
+[
+{
+""""name"""": """"MyTest1"""",
+""""outerId"""": """"mytest1""""
+}
+]","V3 Inventory","S1505","Other","0"
+"C327759","Update outerId via API","","","Elena Mutykova","3/9/2022 9:21 AM","","","","Open Swagger","Medium","","FFC Management","2","","Step Description:
+ Update created FFC via POST /api/inventory/fulfillmentcenters/batch OR PUT /api/inventory/fulfillmentcenters , where 'outerId' = 'mytest2'
+
+
+
+for example:
+
+
+
+[
+
+{
+
+""""name"""": """"MyTest2"""",
+
+""""outerId"""": """"mytest2"""",
+
+""""id"""": """"<ffc_id>""""
+
+}
+
+]
+Expected Result:
+Status 200 returned in response
+'OuterId' is updated","1","1. Status 200 returned in response
+'OuterId' is updated","1.  Update created FFC via POST /api/inventory/fulfillmentcenters/batch OR PUT /api/inventory/fulfillmentcenters , where 'outerId' = 'mytest2'
+
+
+
+for example:
+
+
+
+[
+
+{
+
+""""name"""": """"MyTest2"""",
+
+""""outerId"""": """"mytest2"""",
+
+""""id"""": """"<ffc_id>""""
+
+}
+
+]","V3 Inventory","S1505","Other","0"
+"C201535","Set default FFC","","","Volha Baban","4/3/2020 8:53 AM","","The selected FFC is saved ","","","Medium","","Store > FFC","2","","","","","","V3 Inventory","S1505","Other","0"
+"C201536","Set available FFC","","","Volha Baban","4/3/2020 8:54 AM","","The selected FFC is saved. ","","","Medium","","Store > FFC","2","","","","","","V3 Inventory","S1505","Other","0"
+"C204132","Add new FFC","","","Volha Baban","4/8/2020 12:31 PM","","The new FFC is shown on the list of ffc. ","","","Medium","","Store > FFC","2","","","","","","V3 Inventory","S1505","Other","0"
+"C338430","UI > Tool-tips","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004012"," None","Elena Mutykova","4/20/2022 12:41 PM","","","","","Medium","","Settings - Inventory","1","","Step Description:
+Open blade with Settings &gt; Pay attention to tooltips
+
+![](index.php?/attachments/get/e5609f38-2bdf-4fc1-a7fc-af0d24f86403)    
+
+
+
+
+
+Expected Result:
+All tooltips are folded
+
+Step Description:
+1. Click on blue question mark for field1
+2. Click on blue question mark for field2
+
+
+
+
+
+Expected Result:
+1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded.
+
+
+Step Description:
+Click on the Hide link
+
+Expected Result:
+All tooltips are folded","1. 
+2. 
+3.","1. All tooltips are folded
+
+2. 1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded.
+
+
+3. All tooltips are folded","1. Open blade with Settings &gt; Pay attention to tooltips
+
+![](index.php?/attachments/get/e5609f38-2bdf-4fc1-a7fc-af0d24f86403)    
+
+
+
+
+
+2. 1. Click on blue question mark for field1
+2. Click on blue question mark for field2
+
+
+
+
+
+3. Click on the Hide link","V3 Inventory","S1505","Other","0"
+"C241979","Settings > Inventory > The page size being used for Export / Import","","","Aleksandra Balabanova","7/6/2020 10:20 AM","","","","1. Admin logged in environment
+2. Admin is on settings pannel","Medium","","General","2","","Step Description:
+1. Admin open Settings -> Inventory -> General
+2. Change value for field """"The page size being used for Export / Import"""" (for example - 1)
+3. Click Save
+Expected Result:
+1. Changes saved
+Step Description:
+1. Admin open Export & Import page
+2. Select Export blade
+3. Choose **VirtoCommerce.Inventory**
+4. Click """"Start Export""""
+Expected Result:
+1. Progress bar updating with such values from setting","1. 
+2.","1. 1. Changes saved
+2. 1. Progress bar updating with such values from setting","1. 1. Admin open Settings -> Inventory -> General
+2. Change value for field """"The page size being used for Export / Import"""" (for example - 1)
+3. Click Save
+2. 1. Admin open Export & Import page
+2. Select Export blade
+3. Choose **VirtoCommerce.Inventory**
+4. Click """"Start Export""""","V3 Inventory","S1505","Functional","0"
+"C273551","Settings  > Inventory > Disable Log inventory changes","","","Grotem","1/27/2021 10:59 AM","","","","1. Admin logged in environment
+","Medium","","General","2","","Step Description:
+1. Admin open Settings -> Inventory -> General
+2. Set """"Log inventory changes"""" as enabled
+3. Click Save
+Expected Result:
+1. Setting saved as enabled
+Step Description:
+1. Admin open Catalog page -> Category -> any product -> widget Fulfillment centers -> Any ffc
+2. Change """"In stock"""" value
+3. Save changes
+Expected Result:
+1. New row **was** added to PlatformOperationLog","1. 
+2.","1. 1. Setting saved as enabled
+2. 1. New row **was** added to PlatformOperationLog","1. 1. Admin open Settings -> Inventory -> General
+2. Set """"Log inventory changes"""" as enabled
+3. Click Save
+2. 1. Admin open Catalog page -> Category -> any product -> widget Fulfillment centers -> Any ffc
+2. Change """"In stock"""" value
+3. Save changes","V3 Inventory","S1505","Other","0"
+"C273550","Settings  > Inventory > Enable Log inventory changes","","","Grotem","1/27/2021 10:58 AM","","","","1. Admin logged in environment
+","Medium","","General","2","","Step Description:
+1. Admin open Settings -> Inventory -> General
+2. Set """"Log inventory changes"""" as enabled
+3. Click Save
+Expected Result:
+1. Setting saved as enabled
+Step Description:
+1. Admin open Catalog page -> Category -> any product -> widget Fulfillment centers -> Any ffc
+2. Change """"In stock"""" value
+3. Save changes
+Expected Result:
+1. New row **was** added to PlatformOperationLog","1. 
+2.","1. 1. Setting saved as enabled
+2. 1. New row **was** added to PlatformOperationLog","1. 1. Admin open Settings -> Inventory -> General
+2. Set """"Log inventory changes"""" as enabled
+3. Click Save
+2. 1. Admin open Catalog page -> Category -> any product -> widget Fulfillment centers -> Any ffc
+2. Change """"In stock"""" value
+3. Save changes","V3 Inventory","S1505","Other","0"
+"C241980","Settings > Inventory > Enable event-based indexation for inventory entities","","","Aleksandra Balabanova","7/6/2020 10:21 AM","","","","1. Admin logged in environment","Medium","","Search","2","","Step Description:
+1. Admin open Settings -> Inventory -> Search
+2. Choose """"Enable event-based indexation for inventory entities"""" is enabled
+3. Click Save
+4. Click Restart
+Expected Result:
+1. Setting saved as enabled
+Step Description:
+1. Admin open Catalog page -> Category -> any product -> widget Fulfillment Centers
+3. Change **In stock** value 
+4. Click Save
+5. Reopen edit user blade 
+6. Check the Indexation widget
+
+
+Expected Result:
+1. The system was reindexed after saving change","1. 
+2.","1. 1. Setting saved as enabled
+2. 1. The system was reindexed after saving change","1. 1. Admin open Settings -> Inventory -> Search
+2. Choose """"Enable event-based indexation for inventory entities"""" is enabled
+3. Click Save
+4. Click Restart
+2. 1. Admin open Catalog page -> Category -> any product -> widget Fulfillment Centers
+3. Change **In stock** value 
+4. Click Save
+5. Reopen edit user blade 
+6. Check the Indexation widget","V3 Inventory","S1505","Functional","0"
+"C241981","Settings > Inventory > Disable event-based indexation for inventory entities","","","Aleksandra Balabanova","7/6/2020 10:21 AM","","","","1. Admin logged in environment","Medium","","Search","2","","Step Description:
+1. Admin open Settings -> Inventory -> Search
+2. Choose """"Enable event-based indexation for inventory entities"""" is disabled
+3. Click Save
+4. Click Restart
+Expected Result:
+1. Setting saved as disabled
+Step Description:
+1. Admin open Catalog page -> Category -> any product -> widget Fulfillment Centers
+3. Change **In stock** value 
+4. Click Save
+5. Reopen edit user blade 
+6. Check the Indexation widget
+Expected Result:
+1. System doesn't index after saving change","1. 
+2.","1. 1. Setting saved as disabled
+2. 1. System doesn't index after saving change","1. 1. Admin open Settings -> Inventory -> Search
+2. Choose """"Enable event-based indexation for inventory entities"""" is disabled
+3. Click Save
+4. Click Restart
+2. 1. Admin open Catalog page -> Category -> any product -> widget Fulfillment Centers
+3. Change **In stock** value 
+4. Click Save
+5. Reopen edit user blade 
+6. Check the Indexation widget","V3 Inventory","S1505","Functional","0"

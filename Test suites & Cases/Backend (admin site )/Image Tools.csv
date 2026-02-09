@@ -1,0 +1,1929 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C205967","Refresh tasks list","","","Grotem","4/14/2020 12:48 PM","","","","<ol>
+<li>User logged in admin environment</li>
+<li>User opened Thumbnails page</li>
+<li>List contains Task_1</li>
+</ol>
+","Medium","","Main blade","2","","Step Description:
+<p>Check toolbar</p>
+Expected Result:
+<ol>
+<li>Button """"Refresh"""" shown</li>
+<li>Button """"Refresh"""" is available</li>
+</ol>
+Step Description:
+<p>Select Task_1</p>
+Expected Result:
+<p>Button """"Run"""" become available</p>
+Step Description:
+<p>Press button """"Run""""</p>
+Expected Result:
+<p>Popup to choose options shown</p>
+Step Description:
+<p>Select any of options to start generation</p>
+Expected Result:
+<ol>
+<li>Generation started</li>
+<li>Notification blade shown</li>
+</ol>
+Step Description:
+<p>Wait until generation will be finished</p>
+Expected Result:
+<p>Generation successfully finished</p>
+Step Description:
+<p>Press button """"Refresh""""</p>
+Expected Result:
+<p>Task_1 last run time refreshed</p>","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. <ol>
+<li>Button """"Refresh"""" shown</li>
+<li>Button """"Refresh"""" is available</li>
+</ol>
+2. <p>Button """"Run"""" become available</p>
+3. <p>Popup to choose options shown</p>
+4. <ol>
+<li>Generation started</li>
+<li>Notification blade shown</li>
+</ol>
+5. <p>Generation successfully finished</p>
+6. <p>Task_1 last run time refreshed</p>","1. <p>Check toolbar</p>
+2. <p>Select Task_1</p>
+3. <p>Press button """"Run""""</p>
+4. <p>Select any of options to start generation</p>
+5. <p>Wait until generation will be finished</p>
+6. <p>Press button """"Refresh""""</p>","V3 Image Tools","S1506","Other","1"
+"C205968","Add task","","","Grotem","4/14/2020 12:59 PM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. Settings_1 for thumbnails created
+4. Assets contain folder Folder_1
+","Medium","","Main blade","2","","Step Description:
+Check toolbar
+Expected Result:
+1. Button """"Add"""" shown
+2. Button """"Add"""" available
+Step Description:
+Press button """"Add""""
+Expected Result:
+1. Blade to add new task shown
+- Name field is required
+- Path to images field is required
+- Thumbnail settings required
+
+Step Description:
+1. Set name as Name_1
+2. Select Folder_1 in path field
+3. Select Settings_1 in thumbnail settings
+Expected Result:
+Button """"Save"""" become available
+Step Description:
+Press button """"Save""""
+Expected Result:
+1. Task with Name_1 saved
+2. Task shown in tasks list","1. 
+2. 
+3. 
+4.","1. 1. Button """"Add"""" shown
+2. Button """"Add"""" available
+2. 1. Blade to add new task shown
+- Name field is required
+- Path to images field is required
+- Thumbnail settings required
+
+3. Button """"Save"""" become available
+4. 1. Task with Name_1 saved
+2. Task shown in tasks list","1. Check toolbar
+2. Press button """"Add""""
+3. 1. Set name as Name_1
+2. Select Folder_1 in path field
+3. Select Settings_1 in thumbnail settings
+4. Press button """"Save""""","V3 Image Tools","S1506","Other","0"
+"C205971","Run task","","","Grotem","4/14/2020 1:54 PM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. List contains Task_1
+4. Folder Folder_1 set in Task_1
+5. Taks_1 contains Setting_1","Medium","","Main blade","2","","Step Description:
+Check toolbar
+Expected Result:
+Button """"Run"""" is unavailable
+Step Description:
+Select Task_1
+
+Expected Result:
+Button """"Run"""" become available
+Step Description:
+Press button """"Run""""
+Expected Result:
+Popup to choose options shown
+Step Description:
+Select any of options to start generation
+Expected Result:
+1. Generation started
+2. Notification blade shown
+3. Generation successfully finished
+Step Description:
+Open assets folder Folder_1
+Expected Result:
+1. Folder_1 contains generated thumbnails with Setting_1","1. 
+2. 
+3. 
+4. 
+5.","1. Button """"Run"""" is unavailable
+2. Button """"Run"""" become available
+3. Popup to choose options shown
+4. 1. Generation started
+2. Notification blade shown
+3. Generation successfully finished
+5. 1. Folder_1 contains generated thumbnails with Setting_1","1. Check toolbar
+2. Select Task_1
+
+3. Press button """"Run""""
+4. Select any of options to start generation
+5. Open assets folder Folder_1","V3 Image Tools","S1506","Other","0"
+"C205981","Delete task","","","Grotem","4/14/2020 2:29 PM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. List containts Task_1
+","Medium","","Main blade","2","","Step Description:
+Check toolbar
+Expected Result:
+1. Button """"Delete"""" shown
+2. Button """"Delete"""" is unavailable
+Step Description:
+Select Task_1
+Expected Result:
+1. Button """"Delete"""" become available
+Step Description:
+Click on button """"Delete""""
+Expected Result:
+1. Button about delete confirmation shown
+Step Description:
+Press """"Yes"""" in pop-up 
+Expected Result:
+1. Task_1 deleted
+2. Task_1 removed from list","1. 
+2. 
+3. 
+4.","1. 1. Button """"Delete"""" shown
+2. Button """"Delete"""" is unavailable
+2. 1. Button """"Delete"""" become available
+3. 1. Button about delete confirmation shown
+4. 1. Task_1 deleted
+2. Task_1 removed from list","1. Check toolbar
+2. Select Task_1
+3. Click on button """"Delete""""
+4. Press """"Yes"""" in pop-up","V3 Image Tools","S1506","Other","0"
+"C346096","Thumbnails > Setting up background work","https://virtowayqa.testrail.io/index.php?/attachments/get/1000003274, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000285, https://virtowayqa.testrail.io/index.php?/attachments/get/1000001678"," None","Julia Viniarskaia","8/15/2022 6:31 AM","","","","1. Open admin
+2. Open hangfire-recurring job (https://vcplatform-platform.qa.govirto.com/hangfire/recurring)","Medium","","Thumbnails","3","","Step Description:
+1. Go to admin 
+2. Click Settings &gt; Enable image processing job &gt; Turn on switch """"Enable image processing job"""" in """"Image Tods.."""" &gt; Save
+
+
+Expected Result:
+1. Settings saved
+
+![](index.php?/attachments/get/0d5bcd26-fe93-48f4-b14e-a9aac9d32f6f) 
+
+Step Description:
+1. Go to hangfire-recurring job
+2. Check if there is a background thumbnail job in the task list
+Expected Result:
+1. Thumbnail job is displayed in the background task list
+
+![](index.php?/attachments/get/ba399ad6-3abb-4a4c-a760-267a051eb1d5)     ","1. 
+2.","1. 1. Settings saved
+
+![](index.php?/attachments/get/0d5bcd26-fe93-48f4-b14e-a9aac9d32f6f) 
+
+2. 1. Thumbnail job is displayed in the background task list
+
+![](index.php?/attachments/get/ba399ad6-3abb-4a4c-a760-267a051eb1d5)     ","1. 1. Go to admin 
+2. Click Settings &gt; Enable image processing job &gt; Turn on switch """"Enable image processing job"""" in """"Image Tods.."""" &gt; Save
+
+
+2. 1. Go to hangfire-recurring job
+2. Check if there is a background thumbnail job in the task list","V3 Image Tools","S1506","Other","0"
+"C346097","Thumbnails > RUN > general view",""," None","Julia Viniarskaia","8/15/2022 6:32 AM","","","","1. Open admin > More > Thumbnails
+2. List of all tasks for thumbnails generations contains Image_1 and Image_new","Medium","","Thumbnails","3","","Step Description:
+1. Select Image_1 &gt; Click Run button
+Expected Result:
+1. Opens a """"The thumbnail generation"""" pop-up
+Step Description:
+1. Check pop-up 
+Expected Result:
+1. Next elements are presented:
+- Information for making choices
+- Process changes button
+- Regenerate button
+- Cancel button
+Step Description:
+1. Click the Cancel button on the pop-up
+Expected Result:
+1. Pop-up has closed
+2. No pictures were generated","1. 
+2. 
+3.","1. 1. Opens a """"The thumbnail generation"""" pop-up
+2. 1. Next elements are presented:
+- Information for making choices
+- Process changes button
+- Regenerate button
+- Cancel button
+3. 1. Pop-up has closed
+2. No pictures were generated","1. 1. Select Image_1 &gt; Click Run button
+2. 1. Check pop-up 
+3. 1. Click the Cancel button on the pop-up","V3 Image Tools","S1506","Other","0"
+"C346112","Thumbnails > RUN > Process changes",""," None","Julia Viniarskaia","8/15/2022 11:49 AM","","","","1. Open admin > More > Thumbnails
+2. List of all tasks for thumbnails generations contains Image_1 and Image_new","Medium","","Thumbnails","3","","Step Description:
+1. Select Image_1 &gt; Click Run button &gt; Opens a """"The thumbnail generation"""" pop-up
+2. Click the Regenerate button on """"The thumbnail generation"""" pop-up
+Expected Result:
+1. Manual generation for thumbnails only for all new or changed images","1","1. 1. Manual generation for thumbnails only for all new or changed images","1. 1. Select Image_1 &gt; Click Run button &gt; Opens a """"The thumbnail generation"""" pop-up
+2. Click the Regenerate button on """"The thumbnail generation"""" pop-up","V3 Image Tools","S1506","Other","0"
+"C346113","Thumbnails > RUN > Regenerate",""," None","Julia Viniarskaia","8/15/2022 11:49 AM","","","","1. Open admin > More > Thumbnails
+2. List of all tasks for thumbnails generations contains Image_1 and Image_new","Medium","","Thumbnails","3","","Step Description:
+1. Select Image_1 &gt; Click Run button &gt; """"The thumbnail generation"""" pop-up Opens 
+2. Click the Regenerate button on """"The thumbnail generation"""" pop-up
+Expected Result:
+1. Manual forced generation for all images","1","1. 1. Manual forced generation for all images","1. 1. Select Image_1 &gt; Click Run button &gt; """"The thumbnail generation"""" pop-up Opens 
+2. Click the Regenerate button on """"The thumbnail generation"""" pop-up","V3 Image Tools","S1506","Other","0"
+"C346101","Thumbnails > Thumbnail settings > Background color","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000958, https://virtowayqa.testrail.io/index.php?/attachments/get/1000001286"," None","Julia Viniarskaia","8/15/2022 6:57 AM","","","","1. Open admin > More > Thumbnails > the List of all tasks for thumbnail generation opens
+2. List of all tasks for thumbnails generations contains Image_1
+
+","Medium","","Thumbnails","3","","Step Description:
+1. Click on image_1 in the List of all tasks
+Expected Result:
+1. Thumbnails generation task detail page opens
+Step Description:
+1. Found Thumbnail settings block &gt; Click the pencil button to edit 
+2. The thumbnail settings management page opens &gt; Click on Setting
+
+Expected Result:
+2. The Manage thumbnail setting details page opens
+Step Description:
+1. Found Background color block
+2. Enter color in the field &gt; #633c3c for eg &gt; click Save
+
+
+Expected Result:
+1. Settings with #633c3c color are saved 
+
+![](index.php?/attachments/get/460c8281-42c8-4544-850c-c165788ec62e) 
+
+Step Description:
+1. Click the Run button on Manage the task settings and detail page &gt; Click the Regenerate button on """"The thumbnail generation"""" pop-up &gt; image_new saved to Folder_1
+2. Open Asset management page &gt; Open Folder_1 &gt; Check if Image_new is generated in folder_1  
+Expected Result:
+1. The Image_new contained in Folder_1
+Step Description:
+1.Click on Image_new menu button &gt; Cope link &gt; Open the Image_new link in a new tab
+
+2. Check the display of Image_new on the preview
+Expected Result:
+1. Image_new is displayed on the preview against the background color we specified in the settings 
+
+![](index.php?/attachments/get/343c7e48-6eac-43e5-91b2-41a1793ac0a2) ","1. 
+2. 
+3. 
+4. 
+5.","1. 1. Thumbnails generation task detail page opens
+2. 2. The Manage thumbnail setting details page opens
+3. 1. Settings with #633c3c color are saved 
+
+![](index.php?/attachments/get/460c8281-42c8-4544-850c-c165788ec62e) 
+
+4. 1. The Image_new contained in Folder_1
+5. 1. Image_new is displayed on the preview against the background color we specified in the settings 
+
+![](index.php?/attachments/get/343c7e48-6eac-43e5-91b2-41a1793ac0a2) ","1. 1. Click on image_1 in the List of all tasks
+2. 1. Found Thumbnail settings block &gt; Click the pencil button to edit 
+2. The thumbnail settings management page opens &gt; Click on Setting
+
+3. 1. Found Background color block
+2. Enter color in the field &gt; #633c3c for eg &gt; click Save
+
+
+4. 1. Click the Run button on Manage the task settings and detail page &gt; Click the Regenerate button on """"The thumbnail generation"""" pop-up &gt; image_new saved to Folder_1
+2. Open Asset management page &gt; Open Folder_1 &gt; Check if Image_new is generated in folder_1  
+5. 1.Click on Image_new menu button &gt; Cope link &gt; Open the Image_new link in a new tab
+
+2. Check the display of Image_new on the preview","V3 Image Tools","S1506","Other","0"
+"C346102","Thumbnails > Thumbnail settings > Anchor Position",""," None","Julia Viniarskaia","8/15/2022 6:57 AM","","","","1. Open admin > More > Thumbnails > the List of all tasks for thumbnail generation opens
+2. List of all tasks for thumbnails generations contains Image_1
+
+","Medium","","Thumbnails","3","","Step Description:
+1. Click on any image in the List of all tasks
+Expected Result:
+1. Thumbnails generation task detail page opens
+Step Description:
+1. Found Thumbnail settings block &gt; Click the pencil button to edit 
+2. The thumbnail settings management page opens &gt; Click on Setting_1
+Expected Result:
+1. The Manage thumbnail setting details page opens
+Step Description:
+1. Found Anchor Position block &gt;  click button for the drop-down menu
+
+2. Check block
+Expected Result:
+1. Next elements are presented on the drop-down menu:
+
+- Search field
+- TopLeft
+- TopCenter
+- TopRight
+- Center laft
+- Center
+- Center right
+- Bottom Left
+- Bottom
+- Bottom right
+
+
+Step Description:
+1. Select a specific picture position &gt; Save
+
+
+Expected Result:
+1. The selected picture position will be applied and displayed on the preview","1. 
+2. 
+3. 
+4.","1. 1. Thumbnails generation task detail page opens
+2. 1. The Manage thumbnail setting details page opens
+3. 1. Next elements are presented on the drop-down menu:
+
+- Search field
+- TopLeft
+- TopCenter
+- TopRight
+- Center laft
+- Center
+- Center right
+- Bottom Left
+- Bottom
+- Bottom right
+
+
+4. 1. The selected picture position will be applied and displayed on the preview","1. 1. Click on any image in the List of all tasks
+2. 1. Found Thumbnail settings block &gt; Click the pencil button to edit 
+2. The thumbnail settings management page opens &gt; Click on Setting_1
+3. 1. Found Anchor Position block &gt;  click button for the drop-down menu
+
+2. Check block
+4. 1. Select a specific picture position &gt; Save","V3 Image Tools","S1506","Other","0"
+"C346103","Thumbnails > Thumbnail settings >  Jpeg quality > Low","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000889"," None","Julia Viniarskaia","8/15/2022 6:58 AM","","","","1. Open admin > More > Thumbnails > the List of all tasks for thumbnail generation opens
+2. List of all tasks for thumbnails generations contains Image_1
+3. Admin generated image to folder_1
+4. Folder_1 contains Image_new","Medium","","Thumbnails","3","","Step Description:
+1. Click on any image in the List of all tasks &gt; Thumbnails generation task detail page opens
+2. Found Jpeg quality block with Drop-down list &gt; Check the  Drop-down list
+
+Expected Result:
+1. Next elements are presented:
+- low
+- medium
+- hight
+- very hight
+
+![](index.php?/attachments/get/2fcfd708-4a61-48fa-80bb-30560e6fcf37)   
+
+Step Description:
+1. Select low &gt; Save
+2. Click the Run button on Manage the task settings and detail page &gt; Click the Regenerate button on """"The thumbnail generation"""" pop-up 
+3. Open Asset management page &gt; Open Folder_1 &gt; Check if new images are generated in folder_1  
+
+
+Expected Result:
+1. The Image_new contained in Folder_1
+
+
+ 
+
+Step Description:
+1. Click on Image_new menu button &gt; Cope link &gt; Open the Image_new link in a new tab
+
+2. Check the quality of the generated image in folder_1
+
+
+Expected Result:
+1. Image_new quality matches the selected low setting","1. 
+2. 
+3.","1. 1. Next elements are presented:
+- low
+- medium
+- hight
+- very hight
+
+![](index.php?/attachments/get/2fcfd708-4a61-48fa-80bb-30560e6fcf37)   
+
+2. 1. The Image_new contained in Folder_1
+
+
+ 
+
+3. 1. Image_new quality matches the selected low setting","1. 1. Click on any image in the List of all tasks &gt; Thumbnails generation task detail page opens
+2. Found Jpeg quality block with Drop-down list &gt; Check the  Drop-down list
+
+2. 1. Select low &gt; Save
+2. Click the Run button on Manage the task settings and detail page &gt; Click the Regenerate button on """"The thumbnail generation"""" pop-up 
+3. Open Asset management page &gt; Open Folder_1 &gt; Check if new images are generated in folder_1  
+
+
+3. 1. Click on Image_new menu button &gt; Cope link &gt; Open the Image_new link in a new tab
+
+2. Check the quality of the generated image in folder_1","V3 Image Tools","S1506","Other","0"
+"C346116","Thumbnails > Thumbnail settings >  Jpeg quality > Very high","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002489, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000377, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000889"," None","Julia Viniarskaia","8/15/2022 3:35 PM","","","","1. Open admin > More > Thumbnails > the List of all tasks for thumbnail generation opens
+2. List of all tasks for thumbnails generations contains Image_1
+3. Admin generated image to folder_1
+4. Folder_1 contains Image_new","Medium","","Thumbnails","3","","Step Description:
+1. Click on any image in the List of all tasks &gt; Thumbnails generation task detail page opens
+2. Found Jpeg quality block with Drop-down list &gt; Check the  Drop-down list
+
+Expected Result:
+1. Next elements are presented:
+- low
+- medium
+- hight
+- very hight
+
+![](index.php?/attachments/get/2fcfd708-4a61-48fa-80bb-30560e6fcf37)    
+
+Step Description:
+1. Select Very hight &gt; Save
+2. Click the Run button on Manage the task settings and detail page &gt; Click the Regenerate button on """"The thumbnail generation"""" pop-up 
+3. Open Asset management page &gt; Open Folder_1 &gt; Check if Image_new  generated in folder_1  
+
+
+Expected Result:
+1. The Image_new contained in Folder_1
+
+![](index.php?/attachments/get/14534328-2c50-42bf-86a0-3cf1726bc716)  
+
+Step Description:
+1. Click on Image_new menu button &gt; Cope link &gt; Open the Image_new link in a new tab
+
+2. Check the quality of the generated image in folder_1
+
+
+Expected Result:
+1. Image_new quality matches the selected Very high setting
+
+![](index.php?/attachments/get/89ce53d6-1a19-4960-882b-5f1eafd91ddc) ","1. 
+2. 
+3.","1. 1. Next elements are presented:
+- low
+- medium
+- hight
+- very hight
+
+![](index.php?/attachments/get/2fcfd708-4a61-48fa-80bb-30560e6fcf37)    
+
+2. 1. The Image_new contained in Folder_1
+
+![](index.php?/attachments/get/14534328-2c50-42bf-86a0-3cf1726bc716)  
+
+3. 1. Image_new quality matches the selected Very high setting
+
+![](index.php?/attachments/get/89ce53d6-1a19-4960-882b-5f1eafd91ddc) ","1. 1. Click on any image in the List of all tasks &gt; Thumbnails generation task detail page opens
+2. Found Jpeg quality block with Drop-down list &gt; Check the  Drop-down list
+
+2. 1. Select Very hight &gt; Save
+2. Click the Run button on Manage the task settings and detail page &gt; Click the Regenerate button on """"The thumbnail generation"""" pop-up 
+3. Open Asset management page &gt; Open Folder_1 &gt; Check if Image_new  generated in folder_1  
+
+
+3. 1. Click on Image_new menu button &gt; Cope link &gt; Open the Image_new link in a new tab
+
+2. Check the quality of the generated image in folder_1","V3 Image Tools","S1506","Other","0"
+"C346114","Thumbnail option > Resize method > FixedSize",""," None","Julia Viniarskaia","8/15/2022 2:16 PM","","","","1. Open admin > More > Thumbnails > the List of all tasks for thumbnail generation opens
+2. List of all tasks for thumbnails generations contains Image_1
+3. Admin generated image to folder_1
+4. Folder_1 contains Image_new","Medium","","Thumbnails","3","","Step Description:
+1. Click on any image in the List of all tasks &gt; Thumbnails generation task detail page opens
+2. Found Resize method block &gt; Select FixedSize &gt; Save
+Expected Result:
+1. The selected FixedSize is saved in the settings for Image_new.
+
+  
+
+Step Description:
+1. Click the Run button on Manage the task settings and detail page &gt; Click the Regenerate button on """"The thumbnail generation"""" pop-up
+2. Open Asset management page &gt; Open Folder_1 &gt; Check if Image_new is generated in folder_1  
+Expected Result:
+1. The Image_new contained in Folder_1
+
+  
+
+Step Description:
+1.Click on Image_new menu button &gt; Cope link &gt; Open the Image_new link in a new tab
+
+2. Check the Resize method- FixedSize of the generated image in folder_1
+Expected Result:
+ 1. The selected FixedSize is applied to Image_new and shown in the preview.
+
+
+ ","1. 
+2. 
+3.","1. 1. The selected FixedSize is saved in the settings for Image_new.
+
+  
+
+2. 1. The Image_new contained in Folder_1
+
+  
+
+3.  1. The selected FixedSize is applied to Image_new and shown in the preview.
+
+
+ ","1. 1. Click on any image in the List of all tasks &gt; Thumbnails generation task detail page opens
+2. Found Resize method block &gt; Select FixedSize &gt; Save
+2. 1. Click the Run button on Manage the task settings and detail page &gt; Click the Regenerate button on """"The thumbnail generation"""" pop-up
+2. Open Asset management page &gt; Open Folder_1 &gt; Check if Image_new is generated in folder_1  
+3. 1.Click on Image_new menu button &gt; Cope link &gt; Open the Image_new link in a new tab
+
+2. Check the Resize method- FixedSize of the generated image in folder_1","V3 Image Tools","S1506","Other","0"
+"C346117","Thumbnail option > Resize method > Fixed Width",""," None","Julia Viniarskaia","8/15/2022 4:00 PM","","","","1. Open admin > More > Thumbnails > the List of all tasks for thumbnail generation opens
+2. List of all tasks for thumbnails generations contains Image_1
+3. Admin generated image to folder_1
+4. Folder_1 contains Image_new","Medium","","Thumbnails","3","","Step Description:
+1. Click on any image in the List of all tasks &gt; Thumbnails generation task detail page opens
+2. Found Resize method block &gt; Select Fixed Width &gt; Save
+Expected Result:
+1. The selected Fixed Width is saved in the settings for Image_new.
+
+  
+
+Step Description:
+1. Click the Run button on Manage the task settings and detail page &gt; Click the Regenerate button on """"The thumbnail generation"""" pop-up
+2. Open Asset management page &gt; Open Folder_1 &gt; Check if Image_new is generated in folder_1 with Fixed Width settings
+Expected Result:
+1. The Image_new contained in Folder_1
+
+  
+
+Step Description:
+1. Click on the Image_new menu button &gt; Cope link &gt; Open the Image_new link in a new tab
+
+2. Check the Resize method- Fixed Width of the generated image in folder_1
+Expected Result:
+ 1. The selected Fixed Width is applied to the Image_new and shown in the preview.
+
+
+     ","1. 
+2. 
+3.","1. 1. The selected Fixed Width is saved in the settings for Image_new.
+
+  
+
+2. 1. The Image_new contained in Folder_1
+
+  
+
+3.  1. The selected Fixed Width is applied to the Image_new and shown in the preview.
+
+
+     ","1. 1. Click on any image in the List of all tasks &gt; Thumbnails generation task detail page opens
+2. Found Resize method block &gt; Select Fixed Width &gt; Save
+2. 1. Click the Run button on Manage the task settings and detail page &gt; Click the Regenerate button on """"The thumbnail generation"""" pop-up
+2. Open Asset management page &gt; Open Folder_1 &gt; Check if Image_new is generated in folder_1 with Fixed Width settings
+3. 1. Click on the Image_new menu button &gt; Cope link &gt; Open the Image_new link in a new tab
+
+2. Check the Resize method- Fixed Width of the generated image in folder_1","V3 Image Tools","S1506","Other","0"
+"C346118","Thumbnail option > Resize method > Fixed Height",""," None","Julia Viniarskaia","8/15/2022 4:10 PM","","","","1. Open admin > More > Thumbnails > the List of all tasks for thumbnail generation opens
+2. List of all tasks for thumbnails generations contains Image_1
+3. Admin generated image to folder_1
+4. Folder_1 contains Image_new","Medium","","Thumbnails","3","","Step Description:
+1. Click on any image in the List of all tasks &gt; Thumbnails generation task detail page opens
+2. Found Resize method block &gt; Select Fixed Height &gt; Save
+Expected Result:
+1. The selected Fixed Height is saved in the settings for Image_new.
+
+      
+
+Step Description:
+1. Click the Run button on Manage the task settings and detail page &gt; Click the Regenerate button on """"The thumbnail generation"""" pop-up
+2. Open Asset management page &gt; Open Folder_1 &gt; Check if Image_new is generated in folder_1 with Fixed Height settings
+Expected Result:
+1. The Image_new contained in Folder_1
+
+ 
+
+Step Description:
+1. Click on the Image_new menu button &gt; Cope link &gt; Open the Image_new link in a new tab
+
+2. Check the Resize method- Fixed Height of the generated image in folder_1
+Expected Result:
+ 1. The selected Fixed Height is applied to the Image_new and shown in the preview.
+
+
+      ","1. 
+2. 
+3.","1. 1. The selected Fixed Height is saved in the settings for Image_new.
+
+      
+
+2. 1. The Image_new contained in Folder_1
+
+ 
+
+3.  1. The selected Fixed Height is applied to the Image_new and shown in the preview.
+
+
+      ","1. 1. Click on any image in the List of all tasks &gt; Thumbnails generation task detail page opens
+2. Found Resize method block &gt; Select Fixed Height &gt; Save
+2. 1. Click the Run button on Manage the task settings and detail page &gt; Click the Regenerate button on """"The thumbnail generation"""" pop-up
+2. Open Asset management page &gt; Open Folder_1 &gt; Check if Image_new is generated in folder_1 with Fixed Height settings
+3. 1. Click on the Image_new menu button &gt; Cope link &gt; Open the Image_new link in a new tab
+
+2. Check the Resize method- Fixed Height of the generated image in folder_1","V3 Image Tools","S1506","Other","0"
+"C346119","Thumbnail option > Resize method > Crop","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002742, https://virtowayqa.testrail.io/index.php?/attachments/get/1000001480, https://virtowayqa.testrail.io/index.php?/attachments/get/1000001506"," None","Julia Viniarskaia","8/15/2022 4:19 PM","","","","1. Open admin > More > Thumbnails > the List of all tasks for thumbnail generation opens
+2. List of all tasks for thumbnails generations contains Image_1
+3. Admin generated image to folder_1
+4. Folder_1 contains Image_new","Medium","","Thumbnails","3","","Step Description:
+1. Click on any image in the List of all tasks &gt; Thumbnails generation task detail page opens
+2. Found Resize method block &gt; Select Crop &gt; Save
+Expected Result:
+1. The selected Crop is saved in the settings for Image_new.
+
+![](index.php?/attachments/get/96f3af3e-cbbc-4282-93d3-ad771fd1ff97)     
+
+Step Description:
+1. Click the Run button on Manage the task settings and detail page &gt; Click the Regenerate button on """"The thumbnail generation"""" pop-up
+2. Open Asset management page &gt; Open Folder_1 &gt; Check if Image_new is generated in folder_1 with Crop settings
+Expected Result:
+1. The Image_new contained in Folder_1
+
+![](index.php?/attachments/get/525416b3-95cd-4025-a714-19bfd4825a1b)    
+
+Step Description:
+1. Click on the Image_new menu button &gt; Cope link &gt; Open the Image_new link in a new tab
+
+2. Check the Resize method- Crop of the generated image in folder_1
+Expected Result:
+ 1. The selected Crop is applied to the Image_new and shown in the preview.
+
+![](index.php?/attachments/get/50cd4d37-239b-40cf-bef7-86b4ef86e38f)    ","1. 
+2. 
+3.","1. 1. The selected Crop is saved in the settings for Image_new.
+
+![](index.php?/attachments/get/96f3af3e-cbbc-4282-93d3-ad771fd1ff97)     
+
+2. 1. The Image_new contained in Folder_1
+
+![](index.php?/attachments/get/525416b3-95cd-4025-a714-19bfd4825a1b)    
+
+3.  1. The selected Crop is applied to the Image_new and shown in the preview.
+
+![](index.php?/attachments/get/50cd4d37-239b-40cf-bef7-86b4ef86e38f)    ","1. 1. Click on any image in the List of all tasks &gt; Thumbnails generation task detail page opens
+2. Found Resize method block &gt; Select Crop &gt; Save
+2. 1. Click the Run button on Manage the task settings and detail page &gt; Click the Regenerate button on """"The thumbnail generation"""" pop-up
+2. Open Asset management page &gt; Open Folder_1 &gt; Check if Image_new is generated in folder_1 with Crop settings
+3. 1. Click on the Image_new menu button &gt; Cope link &gt; Open the Image_new link in a new tab
+
+2. Check the Resize method- Crop of the generated image in folder_1","V3 Image Tools","S1506","Other","0"
+"C205978","Save changes","","","Grotem","4/14/2020 2:01 PM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. Task_1 shown in list
+- Taks_1 name is Name_1
+- Taks_1 path is Folder_1
+- Task_1 settings is Settings_1
+
+4. Settings list contains Settings_2 
+5. Assets contains folder Folder_2","Medium","","Thumbnails generation task blade","2","","Step Description:
+Click on Task_1
+Expected Result:
+Task_1 blade opened
+Step Description:
+Change name to Name_2
+Expected Result:
+Button """"Save"""" become available
+Step Description:
+Change path to Folder_2
+Expected Result:
+Folder_2 set as path
+Step Description:
+Remove all settings and set Settings_2
+Expected Result:
+Settings_2 set as thumbnail settings 
+Step Description:
+Press button """"Save""""
+Expected Result:
+1. Task_1 changes saved
+2. Task shown in tasks list
+Step Description:
+Click on Task_1
+Expected Result:
+1. Task_1 name is Name_2
+2. Task_1 path is Folder_2
+3. Task_1 settings is Settings_2","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. Task_1 blade opened
+2. Button """"Save"""" become available
+3. Folder_2 set as path
+4. Settings_2 set as thumbnail settings 
+5. 1. Task_1 changes saved
+2. Task shown in tasks list
+6. 1. Task_1 name is Name_2
+2. Task_1 path is Folder_2
+3. Task_1 settings is Settings_2","1. Click on Task_1
+2. Change name to Name_2
+3. Change path to Folder_2
+4. Remove all settings and set Settings_2
+5. Press button """"Save""""
+6. Click on Task_1","V3 Image Tools","S1506","Other","0"
+"C205979","Reset changes","","","Grotem","4/14/2020 2:15 PM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. Task_1 shown in list
+- Taks_1 name is Name_1
+- Taks_1 path is Folder_1
+- Task_1 settings is Settings_1
+
+4. Settings list contains Settings_2 
+5. Assets contains folder Folder_2","Medium","","Thumbnails generation task blade","2","","Step Description:
+Click on Task_1
+Expected Result:
+Task_1 blade opened
+Step Description:
+Change name to Name_2
+Expected Result:
+Button """"Save"""" become available
+Step Description:
+Change path to Folder_2
+Expected Result:
+Folder_2 set as path
+Step Description:
+Remove all settings and set Settings_2
+Expected Result:
+Settings_2 set as thumbnail settings 
+Step Description:
+Press button """"Reset""""
+Expected Result:
+1. Name field returned to Name_1
+2. Path field returned to Folder_1
+3. Settings field returned to Settings_1
+Step Description:
+Click on Task_1
+Expected Result:
+1. Task_1 name is Name_1
+2. Task_1 path is Folder_1
+3. Task_1 settings is Settings_1","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. Task_1 blade opened
+2. Button """"Save"""" become available
+3. Folder_2 set as path
+4. Settings_2 set as thumbnail settings 
+5. 1. Name field returned to Name_1
+2. Path field returned to Folder_1
+3. Settings field returned to Settings_1
+6. 1. Task_1 name is Name_1
+2. Task_1 path is Folder_1
+3. Task_1 settings is Settings_1","1. Click on Task_1
+2. Change name to Name_2
+3. Change path to Folder_2
+4. Remove all settings and set Settings_2
+5. Press button """"Reset""""
+6. Click on Task_1","V3 Image Tools","S1506","Other","0"
+"C205980","Run task",""," None","Grotem","4/14/2020 2:20 PM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. List contains Task_1
+[C205980]","Medium","","Thumbnails generation task blade","2","","Step Description:
+Click on Task_1
+Expected Result:
+Task_1 blade opened
+Step Description:
+Check toolbar
+Expected Result:
+1. Button """"Run"""" shown
+2. Button """"Run"""" is avaiable
+Step Description:
+Press button """"Run""""
+Expected Result:
+Popup to choose options shown
+Step Description:
+Select any of options to start generation
+Expected Result:
+1. Generation started
+2. Notification blade shown
+3. Generation successfully finished
+Step Description:
+Open assets folder Folder_1
+Expected Result:
+1. Folder_1 contains generated thumbnails with Setting_1","1. 
+2. 
+3. 
+4. 
+5.","1. Task_1 blade opened
+2. 1. Button """"Run"""" shown
+2. Button """"Run"""" is avaiable
+3. Popup to choose options shown
+4. 1. Generation started
+2. Notification blade shown
+3. Generation successfully finished
+5. 1. Folder_1 contains generated thumbnails with Setting_1","1. Click on Task_1
+2. Check toolbar
+3. Press button """"Run""""
+4. Select any of options to start generation
+5. Open assets folder Folder_1","V3 Image Tools","S1506","Other","0"
+"C205972","Delete task","","","Grotem","4/14/2020 1:58 PM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. List containts Task_1
+","Medium","","Thumbnails generation task blade","2","","Step Description:
+Click on Task_1
+Expected Result:
+Task_1 blade opened
+Step Description:
+Check toolbar
+Expected Result:
+1. Button """"Delete"""" shown
+2. Button """"Delete"""" is available
+Step Description:
+Click on button """"Delete""""
+Expected Result:
+1. Button about delete confirmation shown
+Step Description:
+Press """"Yes"""" in pop-up 
+Expected Result:
+1. Task_1 deleted
+2. Task_1 removed from list","1. 
+2. 
+3. 
+4.","1. Task_1 blade opened
+2. 1. Button """"Delete"""" shown
+2. Button """"Delete"""" is available
+3. 1. Button about delete confirmation shown
+4. 1. Task_1 deleted
+2. Task_1 removed from list","1. Click on Task_1
+2. Check toolbar
+3. Click on button """"Delete""""
+4. Press """"Yes"""" in pop-up","V3 Image Tools","S1506","Other","0"
+"C206236","Changes in task","","","Grotem","4/15/2020 10:04 AM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. Task_1 shown in list
+- Taks_1 name is Name_1
+- Taks_1 path is Folder_1
+- Task_1 settings is Settings_1
+
+4. Settings list contains Settings_2 
+5. Assets contains folder Folder_2","Medium","","Thumbnails generation task blade","2","","Step Description:
+Click on Task_1
+Expected Result:
+Task_1 blade opened
+Step Description:
+Change name to Name_2
+Expected Result:
+1. Button """"Save"""" become disabled
+2. Button """"Run"""" become disabled
+Step Description:
+Press """"Reset"""" button
+Expected Result:
+1. Name field returned to Name_1
+2. Button """"Save"""" become disabled
+3. Button """"Run"""" become available
+Step Description:
+Remove all settings and set Settings_2
+Expected Result:
+1. Button """"Save"""" become available
+2. Button """"Run"""" become disabled
+Step Description:
+Press """"Reset"""" button
+Expected Result:
+1. Field settings returned to Settings_1
+2. Button """"Save"""" become disabled
+3. Button """"Run"""" become available
+Step Description:
+Change path to Folder_2
+Expected Result:
+1. Button """"Save"""" become available
+2. Button """"Run"""" become disabled
+Step Description:
+Press """"Reset"""" button
+Expected Result:
+1. Field path returned to Folder_1
+2. Button """"Save"""" become disabled
+3. Button """"Run"""" become available","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7.","1. Task_1 blade opened
+2. 1. Button """"Save"""" become disabled
+2. Button """"Run"""" become disabled
+3. 1. Name field returned to Name_1
+2. Button """"Save"""" become disabled
+3. Button """"Run"""" become available
+4. 1. Button """"Save"""" become available
+2. Button """"Run"""" become disabled
+5. 1. Field settings returned to Settings_1
+2. Button """"Save"""" become disabled
+3. Button """"Run"""" become available
+6. 1. Button """"Save"""" become available
+2. Button """"Run"""" become disabled
+7. 1. Field path returned to Folder_1
+2. Button """"Save"""" become disabled
+3. Button """"Run"""" become available","1. Click on Task_1
+2. Change name to Name_2
+3. Press """"Reset"""" button
+4. Remove all settings and set Settings_2
+5. Press """"Reset"""" button
+6. Change path to Folder_2
+7. Press """"Reset"""" button","V3 Image Tools","S1506","Other","0"
+"C205982","Confirm","","","Grotem","4/14/2020 2:30 PM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. List contains Task_1
+4. Assets contains Folder_1","Medium","","Path to images blade","2","","Step Description:
+Click on Task_1 
+Expected Result:
+Task_1 blade opened
+Step Description:
+Click on """"folder"""" icon in path field
+Expected Result:
+Blade with assets folders opened
+
+Step Description:
+Check folders blade toolbar
+Expected Result:
+1. Button """"Confirm"""" shown
+2. Button """"Confirm"""" is unavailable
+Step Description:
+Select Folder_1
+Expected Result:
+Button """"Confirm"""" become available
+Step Description:
+Press button """"Confirm
+Expected Result:
+Folder_1 set as path of Task_1","1. 
+2. 
+3. 
+4. 
+5.","1. Task_1 blade opened
+2. Blade with assets folders opened
+
+3. 1. Button """"Confirm"""" shown
+2. Button """"Confirm"""" is unavailable
+4. Button """"Confirm"""" become available
+5. Folder_1 set as path of Task_1","1. Click on Task_1 
+2. Click on """"folder"""" icon in path field
+3. Check folders blade toolbar
+4. Select Folder_1
+5. Press button """"Confirm","V3 Image Tools","S1506","Other","0"
+"C205983","Add settings","","","Grotem","4/14/2020 2:50 PM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. List contains Task_1
+","Medium","","Settings","2","","Step Description:
+Click on Task_1
+Expected Result:
+Task_1 blade opened
+Step Description:
+Click on """"Pencil"""" icon on settings field
+Expected Result:
+Blade with list of settings opened
+Step Description:
+Check toolbar
+Expected Result:
+1. Button """"Add"""" shown
+2. Button """"Add"""" is available
+Step Description:
+Click on button """"Add""""
+Expected Result:
+1. Blade to add new settings opened
+
+- Name field is required
+- Thumbnail file name suffix field is required
+- Width (pixels) field is required
+- Height (pixels) field is required
+Step Description:
+Set all required fields
+Expected Result:
+Button """"Save"""" become available
+Step Description:
+Press button """"Save""""
+Expected Result:
+1. Settings saved
+2. Settings shown in list","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. Task_1 blade opened
+2. Blade with list of settings opened
+3. 1. Button """"Add"""" shown
+2. Button """"Add"""" is available
+4. 1. Blade to add new settings opened
+
+- Name field is required
+- Thumbnail file name suffix field is required
+- Width (pixels) field is required
+- Height (pixels) field is required
+5. Button """"Save"""" become available
+6. 1. Settings saved
+2. Settings shown in list","1. Click on Task_1
+2. Click on """"Pencil"""" icon on settings field
+3. Check toolbar
+4. Click on button """"Add""""
+5. Set all required fields
+6. Press button """"Save""""","V3 Image Tools","S1506","Other","0"
+"C205987","Reset changes","","","Grotem","4/14/2020 3:26 PM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. Task_1 shown in list
+4. Settings_1 was created
+- Settings_1 name is Name_1
+- Settings_1 thumbnail file name suffix is Suffix_1
+- Settings_1 width (pixels) is Width_1
+- Settings_1 height (pixels) is Height_1","Medium","","Thumbnail settings","3","","Step Description:
+Click on Task_1
+Expected Result:
+Task_1 blade opened
+Step Description:
+Click on """"Pencil"""" icon on settings field
+Expected Result:
+Settings list blade shown
+Step Description:
+Click on Settings_1
+Expected Result:
+Blade to modify Settings_1 shown
+Step Description:
+Set Settings_1 name to Name_2
+Expected Result:
+1. Name_2 set as Name
+2. Button """"Reset"""" become available
+Step Description:
+Set Settings_1 thumbnail file name suffix to Suffix_2
+Expected Result:
+Suffix_2 set as suffix
+Step Description:
+Set Settings_1 width (pixels) to Width_2
+Expected Result:
+Width_2 set as width (pixels)
+Step Description:
+Set Settings_1 height (pixels) to Height_2
+Expected Result:
+Height_2 set as height (pixels)
+Step Description:
+Press button """"Reset""""
+Expected Result:
+1. Settings_1 name returned to Name_1
+2. Settings_1 thumbnail file name suffix returned to Suffix_1
+3. Settings_1 width (pixels) returned to Width_1
+4. Settings_1 height (pixels) returned to Height_1
+Step Description:
+Click on Settings_1
+Expected Result:
+1. Settings_1 name is Name_1
+2. Settings_1 thumbnail file name suffix is Suffix_1
+3. Settings_1 width (pixels) is Width_1
+4. Settings_1 height (pixels) is Height_1","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9.","1. Task_1 blade opened
+2. Settings list blade shown
+3. Blade to modify Settings_1 shown
+4. 1. Name_2 set as Name
+2. Button """"Reset"""" become available
+5. Suffix_2 set as suffix
+6. Width_2 set as width (pixels)
+7. Height_2 set as height (pixels)
+8. 1. Settings_1 name returned to Name_1
+2. Settings_1 thumbnail file name suffix returned to Suffix_1
+3. Settings_1 width (pixels) returned to Width_1
+4. Settings_1 height (pixels) returned to Height_1
+9. 1. Settings_1 name is Name_1
+2. Settings_1 thumbnail file name suffix is Suffix_1
+3. Settings_1 width (pixels) is Width_1
+4. Settings_1 height (pixels) is Height_1","1. Click on Task_1
+2. Click on """"Pencil"""" icon on settings field
+3. Click on Settings_1
+4. Set Settings_1 name to Name_2
+5. Set Settings_1 thumbnail file name suffix to Suffix_2
+6. Set Settings_1 width (pixels) to Width_2
+7. Set Settings_1 height (pixels) to Height_2
+8. Press button """"Reset""""
+9. Click on Settings_1","V3 Image Tools","S1506","Other","0"
+"C205988","Save changes","","","Grotem","4/14/2020 3:34 PM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. Task_1 shown in list
+4. Settings_1 was created
+- Settings_1 name is Name_1
+- Settings_1 thumbnail file name suffix is Suffix_1
+- Settings_1 width (pixels) is Width_1
+- Settings_1 height (pixels) is Height_1","Medium","","Thumbnail settings","3","","Step Description:
+Click on Task_1
+Expected Result:
+Task_1 blade opened
+Step Description:
+Click on """"Pencil"""" icon on settings field
+Expected Result:
+Settings list blade shown
+Step Description:
+Click on Settings_1
+Expected Result:
+Blade to modify Settings_1 shown
+Step Description:
+Set Settings_1 name to Name_2
+Expected Result:
+1. Name_2 set as Name
+2. Button """"Reset"""" become available
+Step Description:
+Set Settings_1 thumbnail file name suffix to Suffix_2
+Expected Result:
+Suffix_2 set as suffix
+Step Description:
+Set Settings_1 width (pixels) to Width_2
+Expected Result:
+Width_2 set as width (pixels)
+Step Description:
+Set Settings_1 height (pixels) to Height_2
+Expected Result:
+Height_2 set as height (pixels)
+Step Description:
+Press button """"Save""""
+Expected Result:
+Changes saved for Settings_1
+Step Description:
+Click on Settings_1
+Expected Result:
+1. Settings_1 name is Name_1
+2. Settings_1 thumbnail file name suffix us Suffix_1
+3. Settings_1 width (pixels) is Width_1
+4. Settings_1 height (pixels) is Height_1","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9.","1. Task_1 blade opened
+2. Settings list blade shown
+3. Blade to modify Settings_1 shown
+4. 1. Name_2 set as Name
+2. Button """"Reset"""" become available
+5. Suffix_2 set as suffix
+6. Width_2 set as width (pixels)
+7. Height_2 set as height (pixels)
+8. Changes saved for Settings_1
+9. 1. Settings_1 name is Name_1
+2. Settings_1 thumbnail file name suffix us Suffix_1
+3. Settings_1 width (pixels) is Width_1
+4. Settings_1 height (pixels) is Height_1","1. Click on Task_1
+2. Click on """"Pencil"""" icon on settings field
+3. Click on Settings_1
+4. Set Settings_1 name to Name_2
+5. Set Settings_1 thumbnail file name suffix to Suffix_2
+6. Set Settings_1 width (pixels) to Width_2
+7. Set Settings_1 height (pixels) to Height_2
+8. Press button """"Save""""
+9. Click on Settings_1","V3 Image Tools","S1506","Other","0"
+"C205995","Delete","","","Grotem","4/14/2020 3:43 PM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. Task_1 shown in list
+4. Settings_1 was created","Medium","","Thumbnail settings","3","","Step Description:
+Click on Task_1
+Expected Result:
+Task_1 blade opened
+Step Description:
+Click on """"Pencil"""" icon on settings field
+Expected Result:
+Settings list blade shown
+Step Description:
+Click on Settings_1
+Expected Result:
+Blade to modify Settings_1 shown
+Step Description:
+Check toolbar of Settings_1 blade
+Expected Result:
+1. Button """"Delete"""" shown
+2. Button """"Delete"""" is available
+Step Description:
+Click on button """"Delete"""" 
+Expected Result:
+Delete confirmation popup shown
+Step Description:
+Click on """"Yes"""" button
+Expected Result:
+1. Settings_1 deleted
+2. Settings_1 removed from list","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. Task_1 blade opened
+2. Settings list blade shown
+3. Blade to modify Settings_1 shown
+4. 1. Button """"Delete"""" shown
+2. Button """"Delete"""" is available
+5. Delete confirmation popup shown
+6. 1. Settings_1 deleted
+2. Settings_1 removed from list","1. Click on Task_1
+2. Click on """"Pencil"""" icon on settings field
+3. Click on Settings_1
+4. Check toolbar of Settings_1 blade
+5. Click on button """"Delete"""" 
+6. Click on """"Yes"""" button","V3 Image Tools","S1506","Other","0"
+"C206221","Cancel","","","Grotem","4/15/2020 7:33 AM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. List contains Task_1
+4. Folder Folder_1 set in Task_1
+5. Taks_1 contains Setting_1","Medium","","Notification","2","","Step Description:
+Check toolbar
+Expected Result:
+Button """"Run"""" is unavailable
+Step Description:
+Select Task_1
+
+Expected Result:
+Button """"Run"""" become available
+Step Description:
+Press button """"Run""""
+Expected Result:
+Popup to choose options shown
+Step Description:
+Select any of options to start generation
+Expected Result:
+1. Generation started
+2. Notification blade shown
+Step Description:
+Check notification blade
+Expected Result:
+1. Button """"Cancel"""" shown
+2. Button """"Cancel"""" is available
+Step Description:
+Click on button """"Cancel""""
+Expected Result:
+Generation stopped
+
+Step Description:
+Open Folder_1 on Assets page
+Expected Result:
+Only part of images was processed","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7.","1. Button """"Run"""" is unavailable
+2. Button """"Run"""" become available
+3. Popup to choose options shown
+4. 1. Generation started
+2. Notification blade shown
+5. 1. Button """"Cancel"""" shown
+2. Button """"Cancel"""" is available
+6. Generation stopped
+
+7. Only part of images was processed","1. Check toolbar
+2. Select Task_1
+
+3. Press button """"Run""""
+4. Select any of options to start generation
+5. Check notification blade
+6. Click on button """"Cancel""""
+7. Open Folder_1 on Assets page","V3 Image Tools","S1506","Other","0"
+"C205992","Click on """"Yes"""" button","","","Grotem","4/14/2020 3:40 PM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. User trying to delete any entity (e.g. Task, Settings)","Medium","","Deletion","1","Extended test of delete option with selection of all popup buttons","Step Description:
+Click on delete button
+Expected Result:
+Popup confirmation shown
+Step Description:
+Press button """"Yes""""
+Expected Result:
+1. Popup closed
+2. Selected entity was deleted","1. 
+2.","1. Popup confirmation shown
+2. 1. Popup closed
+2. Selected entity was deleted","1. Click on delete button
+2. Press button """"Yes""""","V3 Image Tools","S1506","Other","0"
+"C206208","Click on """"No"""" button","","","Grotem","4/15/2020 7:00 AM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. Uset trying to delete any entity (e.g. Task, Settings)","Medium","","Deletion","1","Extended test of delete option with selection of all popup buttons","Step Description:
+Click on delete button
+Expected Result:
+Popup confirmation shown
+Step Description:
+Press button """"No""""
+Expected Result:
+1. Popup closed
+2. Selected entity was not deleted","1. 
+2.","1. Popup confirmation shown
+2. 1. Popup closed
+2. Selected entity was not deleted","1. Click on delete button
+2. Press button """"No""""","V3 Image Tools","S1506","Other","0"
+"C206209","Click on """"Cancel"""" button","","","Grotem","4/15/2020 7:00 AM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. Uset trying to delete any entity (e.g. Task, Settings)","Medium","","Deletion","1","Extended test of delete option with selection of all popup buttons","Step Description:
+Click on delete button
+Expected Result:
+Popup confirmation shown
+Step Description:
+Press button """"Cancel""""
+Expected Result:
+1. Popup closed
+2. Selected entity was not deleted","1. 
+2.","1. Popup confirmation shown
+2. 1. Popup closed
+2. Selected entity was not deleted","1. Click on delete button
+2. Press button """"Cancel""""","V3 Image Tools","S1506","Other","0"
+"C205989","Process changes","","","Grotem","4/14/2020 3:40 PM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. Task_1 shown in list
+4. Thumbnails was already generated with Task_1
+- Task_1 settings is Settings_1
+- Path for Task_1 set as Folder_1","Medium","","Task processing","1","Extended test of task processing with selection of all options","Step Description:
+Open assets Folder_1 and add new image Image_1 there
+Expected Result:
+Image_1 saved in Folder_1
+Step Description:
+Open thumbnails page
+Expected Result:
+Taks list contains Task_1
+Step Description:
+Select Task_1 
+Expected Result:
+Button """"Run"""" becomes available in toolbar
+Step Description:
+Click on button """"Run""""
+Expected Result:
+Popup with options shown
+Step Description:
+Select """"Process changes"""" option 
+Expected Result:
+1. Thumbnails generation started
+2. New thumbnails generated only for Image_1","1. 
+2. 
+3. 
+4. 
+5.","1. Image_1 saved in Folder_1
+2. Taks list contains Task_1
+3. Button """"Run"""" becomes available in toolbar
+4. Popup with options shown
+5. 1. Thumbnails generation started
+2. New thumbnails generated only for Image_1","1. Open assets Folder_1 and add new image Image_1 there
+2. Open thumbnails page
+3. Select Task_1 
+4. Click on button """"Run""""
+5. Select """"Process changes"""" option","V3 Image Tools","S1506","Other","0"
+"C206214","Regenerate","","","Grotem","4/15/2020 7:11 AM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. Task_1 shown in list
+4. Thumbnails was already generated with Task_1
+- Task_1 settings is Settings_1
+- Path for Task_1 set as Folder_1","Medium","","Task processing","1","Extended test of task processing with selection of all options","Step Description:
+Open thumbnails page
+Expected Result:
+Taks list contains Task_1
+Step Description:
+Select Task_1 
+Expected Result:
+Button """"Run"""" becomes available in toolbar
+Step Description:
+Click on button """"Run""""
+Expected Result:
+Popup with options shown
+Step Description:
+Select """"Regenerate"""" option 
+Expected Result:
+1. Thumbnails generation started
+2. New thumbnails generated for all images in Folder_1.
+3. Old thumbnails overwritten","1. 
+2. 
+3. 
+4.","1. Taks list contains Task_1
+2. Button """"Run"""" becomes available in toolbar
+3. Popup with options shown
+4. 1. Thumbnails generation started
+2. New thumbnails generated for all images in Folder_1.
+3. Old thumbnails overwritten","1. Open thumbnails page
+2. Select Task_1 
+3. Click on button """"Run""""
+4. Select """"Regenerate"""" option","V3 Image Tools","S1506","Other","0"
+"C206219","Cancel","","","Grotem","4/15/2020 7:25 AM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. Task_1 shown in list
+4. Thumbnails was already generated with Task_1
+- Task_1 settings is Settings_1
+- Path for Task_1 set as Folder_1","Medium","","Task processing","1","Extended test of task processing with selection of all options","Step Description:
+Open thumbnails page
+Expected Result:
+Taks list contains Task_1
+Step Description:
+Select Task_1 
+Expected Result:
+Button """"Run"""" becomes available in toolbar
+Step Description:
+Click on button """"Run""""
+Expected Result:
+Popup with options shown
+Step Description:
+Select """"Cancel"""" option 
+Expected Result:
+1. Popup closed
+2. Regeneration did not started","1. 
+2. 
+3. 
+4.","1. Taks list contains Task_1
+2. Button """"Run"""" becomes available in toolbar
+3. Popup with options shown
+4. 1. Popup closed
+2. Regeneration did not started","1. Open thumbnails page
+2. Select Task_1 
+3. Click on button """"Run""""
+4. Select """"Cancel"""" option","V3 Image Tools","S1506","Other","0"
+"C206233","Process several tasks","","","Grotem","4/15/2020 9:52 AM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. Task_1 and Task_2 shown in list
+- Task_1 path is Folder_1
+- Task_2 settings is Settings_2
+
+- Task_2 path is Folder_2
+- Task_2 settings is Settings_2","Medium","","Task processing","1","Extended test of task processing with selection of all options","Step Description:
+Select Task_1 and Task_2
+Expected Result:
+Button """"Run"""" becomes available in toolbar
+Step Description:
+Click on button """"Run""""
+Expected Result:
+Popup with options shown
+Step Description:
+Select any option to start processing
+Expected Result:
+1. Task_1 and Task_2 processing started
+2. Processing finished successfully
+Step Description:
+Open Folder_1
+Expected Result:
+Images processed according to Settings_1
+Step Description:
+Open Folder_2
+Expected Result:
+Images processed according to Settings_2","1. 
+2. 
+3. 
+4. 
+5.","1. Button """"Run"""" becomes available in toolbar
+2. Popup with options shown
+3. 1. Task_1 and Task_2 processing started
+2. Processing finished successfully
+4. Images processed according to Settings_1
+5. Images processed according to Settings_2","1. Select Task_1 and Task_2
+2. Click on button """"Run""""
+3. Select any option to start processing
+4. Open Folder_1
+5. Open Folder_2","V3 Image Tools","S1506","Other","0"
+"C206228","Enter path manually","","","Grotem","4/15/2020 8:16 AM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. List contains Task_1
+4. Assets contains Folder_1","Medium","","Path selection","1","","Step Description:
+Click on Task_1 
+Expected Result:
+Task_1 blade opened
+Step Description:
+Enter Folder_1 in path field
+Expected Result:
+1. Button """"Save"""" become available on toolbar
+Step Description:
+Press button """"Save""""
+Expected Result:
+Folder_1 set as path of Task_1","1. 
+2. 
+3.","1. Task_1 blade opened
+2. 1. Button """"Save"""" become available on toolbar
+3. Folder_1 set as path of Task_1","1. Click on Task_1 
+2. Enter Folder_1 in path field
+3. Press button """"Save""""","V3 Image Tools","S1506","Other","0"
+"C206229","Select several pathes in list","","","Grotem","4/15/2020 8:18 AM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. List contains Task_1
+4. Assets contains Folder_1 and Folder_2","Medium","","Path selection","1","","Step Description:
+Click on Task_1 
+Expected Result:
+Task_1 blade opened
+Step Description:
+Click on """"folder"""" icon in path field
+Expected Result:
+Blade with assets folders opened
+
+Step Description:
+Check folders blade toolbar
+Expected Result:
+1. Button """"Confirm"""" shown
+2. Button """"Confirm"""" is unavailable
+Step Description:
+Select Folder_1 and Folder_2
+Expected Result:
+Button """"Confirm"""" become available
+Step Description:
+Press button """"Confirm
+Expected Result:
+1. Popup shown that only single folder can be selected
+2. No folders selected","1. 
+2. 
+3. 
+4. 
+5.","1. Task_1 blade opened
+2. Blade with assets folders opened
+
+3. 1. Button """"Confirm"""" shown
+2. Button """"Confirm"""" is unavailable
+4. Button """"Confirm"""" become available
+5. 1. Popup shown that only single folder can be selected
+2. No folders selected","1. Click on Task_1 
+2. Click on """"folder"""" icon in path field
+3. Check folders blade toolbar
+4. Select Folder_1 and Folder_2
+5. Press button """"Confirm","V3 Image Tools","S1506","Other","0"
+"C206230","Several settings in task","","","Grotem","4/15/2020 8:51 AM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. List contains Task_1
+4. Settings_1 and Settings_2 were created
+","Medium","","Settings (task options)","1","","Step Description:
+Click on Task_1
+Expected Result:
+Task_1 blade opened
+Step Description:
+Click on Settings field
+Expected Result:
+Blade with list of settings opened
+Step Description:
+Select Settings_1 and Settings_2 to filed
+Expected Result:
+Settings_1 and Settings_2 set for Task_1
+Step Description:
+Press button """"Save""""
+Expected Result:
+1. Settings saved for Task_1","1. 
+2. 
+3. 
+4.","1. Task_1 blade opened
+2. Blade with list of settings opened
+3. Settings_1 and Settings_2 set for Task_1
+4. 1. Settings saved for Task_1","1. Click on Task_1
+2. Click on Settings field
+3. Select Settings_1 and Settings_2 to filed
+4. Press button """"Save""""","V3 Image Tools","S1506","Other","0"
+"C206231","Remove settings from list","","","Grotem","4/15/2020 9:07 AM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. List contains Task_1
+4. Settings_1 and Settings_2 set as settings in Task_1
+","Medium","","Settings (task options)","1","","Step Description:
+Click on Task_1
+Expected Result:
+Task_1 blade opened
+Step Description:
+Click on """"Cross"""" icon on Settings_2 in settings list
+Expected Result:
+1. Settings_2 was removed from settings list
+2. Button """"Save"""" become available
+Step Description:
+Press button """"Save""""
+Expected Result:
+1. Settings_1 saved for Task_1
+Step Description:
+Click on Task_1
+Expected Result:
+1. Task_1 blade opened
+2. Only Settings_1 set for Task_1","1. 
+2. 
+3. 
+4.","1. Task_1 blade opened
+2. 1. Settings_2 was removed from settings list
+2. Button """"Save"""" become available
+3. 1. Settings_1 saved for Task_1
+4. 1. Task_1 blade opened
+2. Only Settings_1 set for Task_1","1. Click on Task_1
+2. Click on """"Cross"""" icon on Settings_2 in settings list
+3. Press button """"Save""""
+4. Click on Task_1","V3 Image Tools","S1506","Other","0"
+"C206237","Manage","","","Grotem","4/15/2020 10:25 AM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. List contains Task_1","Medium","","Context menu","1","","Step Description:
+Press with right mose button on Task_1
+Expected Result:
+1. Context menu opened
+2. Context menu contains next options
+- Manage
+- Run
+- Delete
+Step Description:
+Click on button """"Manage""""
+Expected Result:
+Task_1 blade opened","1. 
+2.","1. 1. Context menu opened
+2. Context menu contains next options
+- Manage
+- Run
+- Delete
+2. Task_1 blade opened","1. Press with right mose button on Task_1
+2. Click on button """"Manage""""","V3 Image Tools","S1506","Other","0"
+"C206240","Run","","","Grotem","4/15/2020 10:28 AM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. List contains Task_1","Medium","","Context menu","1","","Step Description:
+Press with right mose button on Task_1
+Expected Result:
+1. Context menu opened
+2. Context menu contains next options
+- Manage
+- Run
+- Delete
+Step Description:
+Click on button """"Run""""
+Expected Result:
+1. Task_1 processing started
+2. Notification blade opened","1. 
+2.","1. 1. Context menu opened
+2. Context menu contains next options
+- Manage
+- Run
+- Delete
+2. 1. Task_1 processing started
+2. Notification blade opened","1. Press with right mose button on Task_1
+2. Click on button """"Run""""","V3 Image Tools","S1506","Other","0"
+"C206241","Delete","","","Grotem","4/15/2020 10:28 AM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. List contains Task_1","Medium","","Context menu","1","","Step Description:
+Press with right mose button on Task_1
+Expected Result:
+1. Context menu opened
+2. Context menu contains next options
+- Manage
+- Run
+- Delete
+Step Description:
+Click on button """"Delete""""
+Expected Result:
+Popup with delete confirmation opened
+Step Description:
+Click on button """"Yes""""
+Expected Result:
+1. Task_1 deleted
+2. Task_1 removed from list","1. 
+2. 
+3.","1. 1. Context menu opened
+2. Context menu contains next options
+- Manage
+- Run
+- Delete
+2. Popup with delete confirmation opened
+3. 1. Task_1 deleted
+2. Task_1 removed from list","1. Press with right mose button on Task_1
+2. Click on button """"Delete""""
+3. Click on button """"Yes""""","V3 Image Tools","S1506","Other","0"
+"C206242","Add new columns to show","","","Grotem","4/15/2020 10:35 AM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. List contains Task_1","Medium","","View modification","1","","Step Description:
+Click on column selector in the header of table
+![](index.php?/attachments/get/23644)
+
+Expected Result:
+List of available columns shown
+Step Description:
+Select Column_1 and Column_2 from list
+Expected Result:
+1. Column_1 shown in table
+2. Column_2 shown in table","1. 
+2.","1. List of available columns shown
+2. 1. Column_1 shown in table
+2. Column_2 shown in table","1. Click on column selector in the header of table
+![](index.php?/attachments/get/23644)
+
+2. Select Column_1 and Column_2 from list","V3 Image Tools","S1506","Other","0"
+"C206243","Change column size","","","Grotem","4/15/2020 10:35 AM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. List contains Task_1","Medium","","View modification","1","","Step Description:
+Move mouse cursor to the edge of column Column_1
+e.g. ![](index.php?/attachments/get/23645)
+
+Expected Result:
+Cursor view changed
+
+Step Description:
+Press left mouse button and drag cursor to the left or to the right side
+Expected Result:
+Size of Column_1 changed","1. 
+2.","1. Cursor view changed
+
+2. Size of Column_1 changed","1. Move mouse cursor to the edge of column Column_1
+e.g. ![](index.php?/attachments/get/23645)
+
+2. Press left mouse button and drag cursor to the left or to the right side","V3 Image Tools","S1506","Other","0"
+"C206244","Close blade","","","Grotem","4/15/2020 10:35 AM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. List contains Task_1","Medium","","View modification","1","","Step Description:
+Click on Task_1
+Expected Result:
+Task_1 blade opened
+Step Description:
+Click on """"Folder"""" icon on path
+Expected Result:
+Blade to select forlders opened
+
+Step Description:
+Click on cross on folder blade
+Expected Result:
+Blade closed
+Step Description:
+Click on """"Pencil"""" icon in settings
+Expected Result:
+Blade with settings list opened
+Step Description:
+Click on cross on settings list blade
+Expected Result:
+Blade closed
+Step Description:
+Click on cross on Task_1 blade
+Expected Result:
+Blade closed","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. Task_1 blade opened
+2. Blade to select forlders opened
+
+3. Blade closed
+4. Blade with settings list opened
+5. Blade closed
+6. Blade closed","1. Click on Task_1
+2. Click on """"Folder"""" icon on path
+3. Click on cross on folder blade
+4. Click on """"Pencil"""" icon in settings
+5. Click on cross on settings list blade
+6. Click on cross on Task_1 blade","V3 Image Tools","S1506","Other","0"
+"C206245","Full screen size","","","Grotem","4/15/2020 10:50 AM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. List contains Task_1","Medium","","View modification","1","","Step Description:
+Click on the """"Full screen"""" icon on blade
+![](index.php?/attachments/get/23648)
+
+Expected Result:
+Blade size changed to """"Full screen""""
+Step Description:
+Click on the button to close """"Full screen"""" 
+![](index.php?/attachments/get/23649)
+
+Expected Result:
+Blade size changed to normal","1. 
+2.","1. Blade size changed to """"Full screen""""
+2. Blade size changed to normal","1. Click on the """"Full screen"""" icon on blade
+![](index.php?/attachments/get/23648)
+
+2. Click on the button to close """"Full screen"""" 
+![](index.php?/attachments/get/23649)","V3 Image Tools","S1506","Other","0"
+"C206797","Save changes","","","Grotem","4/15/2020 2:52 PM","","","","1. User logged in admin environment
+2. User opened Thumbnails page
+3. Task_1 shown in list (will use it for test)
+- Taks_1 name is Name_1
+- Taks_1 path is Folder_1
+- Task_1 settings is Settings_1
+
+4. Settings list contains Settings_2 
+5. Assets contains folder Folder_2","Medium","","Save changes on entity","1","","Step Description:
+Click on Task_1
+Expected Result:
+Task_1 blade opened
+Step Description:
+Change name to Name_2
+Expected Result:
+Button """"Save"""" become available
+Step Description:
+Change path to Folder_2
+Expected Result:
+Folder_2 set as path
+Step Description:
+Remove all settings and set Settings_2
+Expected Result:
+Settings_2 set as thumbnail settings 
+Step Description:
+Click on other task in tasks list
+Expected Result:
+Popup about saving changes shown
+Step Description:
+Press """"Yes""""
+Expected Result:
+1. Changes saved
+- Task_1 name is Name_2
+- Task_1 path is Folder_2
+- Task_1 settings is Settings_2","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. Task_1 blade opened
+2. Button """"Save"""" become available
+3. Folder_2 set as path
+4. Settings_2 set as thumbnail settings 
+5. Popup about saving changes shown
+6. 1. Changes saved
+- Task_1 name is Name_2
+- Task_1 path is Folder_2
+- Task_1 settings is Settings_2","1. Click on Task_1
+2. Change name to Name_2
+3. Change path to Folder_2
+4. Remove all settings and set Settings_2
+5. Click on other task in tasks list
+6. Press """"Yes""""","V3 Image Tools","S1506","Other","0"
+"C239981","Access","","","Grotem","6/18/2020 12:46 PM","","1. User_1 can open Thumbnail page","","1. Role_1 created in system
+2. Role_1 contains next permissions:
+- thumbnail:access
+3. Role_1 assigned for User_1","Medium","","Permissions","1","","","","","","V3 Image Tools","S1506","Other","0"
+"C239986","Read","","","Grotem","6/18/2020 12:52 PM","","1. Thumbnail page opened
+2. Thumbnail tasks shown
+3. User can not add or modify current tasks","","1. Role_1 created in system
+2. Role_1 contains next permissions:
+- thumbnail:access
+- thumbnail:read
+3. Role_1 assigned for User_1","Medium","","Permissions","1","","","","","","V3 Image Tools","S1506","Other","0"
+"C239987","Create","","","Grotem","6/18/2020 12:56 PM","","1. New task created","","1. Role_1 created in system
+2. Role_1 contains next permissions:
+- thumbnail:access
+- thumbnail:read
+- thumbnail:create
+- platform:assets:access
+- platform:assets:read
+3. Role_1 assigned for User_1","Medium","","Permissions","1","","","","","","V3 Image Tools","S1506","Other","0"
+"C239988","Udpate","","","Grotem","6/18/2020 1:02 PM","","1. Task changes saved","","1. Role_1 created in system
+2. Role_1 contains next permissions:
+- thumbnail:access
+- thumbnail:read
+- thumbnail:update
+3. Role_1 assigned for User_1","Medium","","Permissions","1","","","","","","V3 Image Tools","S1506","Other","0"
+"C239989","Delete","","","Grotem","6/18/2020 1:03 PM","","1. Task deleted
+2. Task removed from list","","1. Role_1 created in system
+2. Role_1 contains next permissions:
+- thumbnail:access
+- thumbnail:read
+- thumbnail:delete
+3. Role_1 assigned for User_1","Medium","","Permissions","1","","","","","","V3 Image Tools","S1506","Other","0"
+"C242716","Enable image processing job [TRUE]","","","Grotem","7/13/2020 6:54 AM","","1. New job created in hangfire
+2. Images will be processed automatically","","1. Admin is on **Settings** blade
+","Medium","","Settings","1","","","","","","V3 Image Tools","S1506","Other","0"
+"C242720","Enable image processing job [FALSE]","","","Grotem","7/13/2020 7:07 AM","","1. Job hidden in hangfire
+2. Images **will not** be processed automatically","","1. Admin is on **Settings** blade
+","Medium","","Settings","1","","","","","","V3 Image Tools","S1506","Other","0"
+"C242721","Cron expression for scheduling image processing job execution (requires restart)","","","Grotem","7/13/2020 7:08 AM","","1. Job will automatically run wihtin Expression_1
+2. Expression_1 shown in hangfire","","1. Admin is on **Settings** blade
+2. Enable image processing job set to **TRUE**","Medium","","Settings","1","","","","","","V3 Image Tools","S1506","Other","0"
+"C242722","Partition size","","","Grotem","7/13/2020 7:48 AM","","1. Images processed by Size_1","","1. Admin is on **Settings** blade
+","Medium","","Settings","1","","","","","","V3 Image Tools","S1506","Other","0"
+"C338426","UI > Tool-tips","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004012"," None","Elena Mutykova","4/20/2022 12:31 PM","","","","","Medium","","Settings","1","","Step Description:
+Open blade with Settings &gt; Pay attention to tooltips
+
+![](index.php?/attachments/get/e5609f38-2bdf-4fc1-a7fc-af0d24f86403)    
+
+
+
+
+
+Expected Result:
+All tooltips are folded
+
+Step Description:
+1. Click on blue question mark for field1
+2. Click on blue question mark for field2
+
+
+
+
+
+Expected Result:
+1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded.
+
+
+Step Description:
+Click on the Hide link
+
+Expected Result:
+All tooltips are folded","1. 
+2. 
+3.","1. All tooltips are folded
+
+2. 1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded.
+
+
+3. All tooltips are folded","1. Open blade with Settings &gt; Pay attention to tooltips
+
+![](index.php?/attachments/get/e5609f38-2bdf-4fc1-a7fc-af0d24f86403)    
+
+
+
+
+
+2. 1. Click on blue question mark for field1
+2. Click on blue question mark for field2
+
+
+
+
+
+3. Click on the Hide link","V3 Image Tools","S1506","Other","0"

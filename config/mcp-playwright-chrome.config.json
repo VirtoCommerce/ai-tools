@@ -1,0 +1,29 @@
+{
+  "browser": {
+    "browserName": "chromium",
+    "launchOptions": {
+      "headless": false
+    },
+    "contextOptions": {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "recordVideo": {
+        "dir": "./test-results/chrome/videos",
+        "video": "on-failure",
+        "size": {
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      "recordHar": {
+        "path": "./test-results/chrome/har",
+        "omitContent": true
+      }
+    }
+  },
+  "isolated": true,
+  "outputDir": "./test-results/chrome",
+  "screenshot": "only-on-failure"
+}

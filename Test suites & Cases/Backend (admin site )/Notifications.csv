@@ -1,0 +1,3587 @@
+"ID","Title","Attachments","Automation Type","Created By","Created On","Estimate","Expected Result","Forecast","Preconditions","Priority","References","Section","Section Depth","Section Description","Steps","Steps (Additional Info)","Steps (Expected Result)","Steps (Step)","Suite","Suite ID","Type","is_converted"
+"C207375","Send default tempalte","","","Grotem","4/16/2020 9:05 AM","","","","<ol>
+<li>Store_1 > Notification  Notification_1 set active</li>
+<li>Template for Localization_2 was not created. (e.g. For de-DE)</li>
+<li>Default template Template_1 for Notification_1 was created</li>
+<li>User_1 created for store</li>
+<li>User_1 email set as Email_1</li>
+<li>Admin logged in admin environment</li>
+<li>Make sure that Settings > Order > General > Enable notifications for orders is ON at the backend</li>
+</ol>
+","Medium","","Notification","1","","Step Description:
+<p>Login in store as User_1</p>
+Expected Result:
+<p>User_1 logged in store</p>
+Step Description:
+<p>User_1 set store localization to Localization_2</p>
+Expected Result:
+<p>Store localization changed</p>
+Step Description:
+<p>User_1 make any action that must send notification (e.g. Create order)</p>
+Expected Result:
+<ol>
+<li>Order created</li>
+<li>Notification sent to Email_1</li>
+<li>Notification added to notifications log</li>
+</ol>
+Step Description:
+<p>Open Email_1 and check template</p>
+Expected Result:
+<p>Email_1 inbox contains Template_1</p>","1. 
+2. 
+3. 
+4.","1. <p>User_1 logged in store</p>
+2. <p>Store localization changed</p>
+3. <ol>
+<li>Order created</li>
+<li>Notification sent to Email_1</li>
+<li>Notification added to notifications log</li>
+</ol>
+4. <p>Email_1 inbox contains Template_1</p>","1. <p>Login in store as User_1</p>
+2. <p>User_1 set store localization to Localization_2</p>
+3. <p>User_1 make any action that must send notification (e.g. Create order)</p>
+4. <p>Open Email_1 and check template</p>","V3 Notification","S1504","Other","1"
+"C207581","Send template for concrete localization","","","Grotem","4/16/2020 11:46 AM","","","","1. Store_1 > Notification  Notification_1 set active
+2. Template_2 for Localization_2 was created. (e.g. For de-DE)
+3. Default template Template_1 for Notification_1 was created
+4. User_1 created for store
+5. User_1 email set as Email_1
+6. Admin logged in admin environment
+7. Make sure that Settings > Order > General > Enable notifications for orders is ON at the backend","Medium","","Notification","1","","Step Description:
+Login in store as User_1
+Expected Result:
+User_1 logged in store
+Step Description:
+User_1 set store localization to Localization_2 (e.g for de-DE)
+Expected Result:
+Store localization changed
+Step Description:
+User_1 make any action that must send notification (e.g. Create order)
+Expected Result:
+1. Order created
+2. Notification sent to Email_1
+3. Notification added to notifications log
+Step Description:
+Open Email_1 and check template
+Expected Result:
+Email_1 inbox contains Template_2","1. 
+2. 
+3. 
+4.","1. User_1 logged in store
+2. Store localization changed
+3. 1. Order created
+2. Notification sent to Email_1
+3. Notification added to notifications log
+4. Email_1 inbox contains Template_2","1. Login in store as User_1
+2. User_1 set store localization to Localization_2 (e.g for de-DE)
+3. User_1 make any action that must send notification (e.g. Create order)
+4. Open Email_1 and check template","V3 Notification","S1504","Other","0"
+"C207583","Disable notification","","","Grotem","4/16/2020 11:48 AM","","","","1. Store_1 > Notification  Notification_1 disabled
+2. Default template Template_1 for Notification_1 was created
+3. User_1 created for store
+4. User_1 email set as Email_1
+5. Admin logged in admin environment
+6. Make sure that Settings > Order > General > Enable notifications for orders is ON at the backend","Medium","","Notification","1","","Step Description:
+Login in store as User_1
+Expected Result:
+User_1 logged in store
+Step Description:
+User_1 make any action that must send notification (e.g. Create order)
+Expected Result:
+1. Order created
+2. Notification was not sent to Email_1
+Step Description:
+Open Email_1
+Expected Result:
+Email_1 does not contain any notifications","1. 
+2. 
+3.","1. User_1 logged in store
+2. 1. Order created
+2. Notification was not sent to Email_1
+3. Email_1 does not contain any notifications","1. Login in store as User_1
+2. User_1 make any action that must send notification (e.g. Create order)
+3. Open Email_1","V3 Notification","S1504","Other","0"
+"C207584","Add default recepient for notification","","","Grotem","4/16/2020 11:50 AM","","","","1. Store_1 > Notification Notification_1 set active
+2. Default template Template_1 for Notification_1 was created
+3. Additionial email Email_2 set in recipient field
+4. User_1 created for store
+5. User_1 email set as Email_1
+6. Admin logged in admin environment
+7. Make sure that Settings > Order > General > Enable notifications for orders is ON at the backend","Medium","","Notification","1","","Step Description:
+Login in store as User_1
+Expected Result:
+User_1 logged in store
+Step Description:
+User_1 make any action that must send notification (e.g. Create order)
+Expected Result:
+1. Order created
+2. Notification sent to Email_1
+3. Notification added to notifications log
+Step Description:
+Open Email_1 and check template
+Expected Result:
+Email_1 inbox contains Template_1
+Step Description:
+Open Email_2 and check template
+Expected Result:
+Email_2 inbox contains Template_1","1. 
+2. 
+3. 
+4.","1. User_1 logged in store
+2. 1. Order created
+2. Notification sent to Email_1
+3. Notification added to notifications log
+3. Email_1 inbox contains Template_1
+4. Email_2 inbox contains Template_1","1. Login in store as User_1
+2. User_1 make any action that must send notification (e.g. Create order)
+3. Open Email_1 and check template
+4. Open Email_2 and check template","V3 Notification","S1504","Other","0"
+"C207585","Notification added to feed","","","Grotem","4/16/2020 11:53 AM","","","","1. Store_1 > Notification  Notification_1 set active
+2. Default template Template_1 for Notification_1 was created
+3. User_1 created for store
+4. User_1 email set as Email_1
+5. Admin logged in admin environment
+6. Make sure that Settings > Order > General > Enable notifications for orders is ON at the backend","Medium","","Notification","1","","Step Description:
+Login in store as User_1
+Expected Result:
+User_1 logged in store
+Step Description:
+User_1 make any action that must send notification (e.g. Create order)
+Expected Result:
+1. Order created
+2. Notification sent to Email_1
+3. Notification added to notifications log
+Step Description:
+Open Email_1 and check template
+Expected Result:
+Email_1 inbox contains Template_1
+Step Description:
+Admin open  notifications feed
+Expected Result:
+1. Notification_1 shown in feed list
+2. Notification_1 contains next information
+- Message ID
+- Created at
+- From
+- To
+- Sending attempts count
+- Errors
+- Subject
+- Body","1. 
+2. 
+3. 
+4.","1. User_1 logged in store
+2. 1. Order created
+2. Notification sent to Email_1
+3. Notification added to notifications log
+3. Email_1 inbox contains Template_1
+4. 1. Notification_1 shown in feed list
+2. Notification_1 contains next information
+- Message ID
+- Created at
+- From
+- To
+- Sending attempts count
+- Errors
+- Subject
+- Body","1. Login in store as User_1
+2. User_1 make any action that must send notification (e.g. Create order)
+3. Open Email_1 and check template
+4. Admin open  notifications feed","V3 Notification","S1504","Other","0"
+"C342062","Notification > No any attachment",""," None","Daria Ponamareva","5/31/2022 8:42 AM","","","","","Medium","","Notification","1","","","","","","V3 Notification","S1504","Other","0"
+"C342063","Notification > Attachment widget not displayed",""," None","Daria Ponamareva","5/31/2022 8:44 AM","","","","Note: according to https://virtocommerce.atlassian.net/browse/PT-7644","Medium","","Notification","1","","Step Description:
+1. Go to admin &gt; Notifications &gt; Any notification 
+Expected Result:
+There is no attachment widget among widgets
+Step Description:
+1. Go to admin &gt; Stores &gt; Any Store&gt; Notifications &gt; Any notification 
+Expected Result:
+There is no attachment widget among widgets","1. 
+2.","1. There is no attachment widget among widgets
+2. There is no attachment widget among widgets","1. 1. Go to admin &gt; Notifications &gt; Any notification 
+2. 1. Go to admin &gt; Stores &gt; Any Store&gt; Notifications &gt; Any notification","V3 Notification","S1504","Other","0"
+"C387780","Notification > Unregistered notifications",""," None","Elena Mutykova","6/4/2024 4:24 PM","","","","","Medium","","Notification","1","","Step Description:
+Uninstall Task Management module
+
+Open Notifications list
+
+Go to 2 page
+Expected Result:
+Display Unregistered notification with the correct Original notification type: WorkTaskAssignedEmailNotification
+Step Description:
+Click on the unregistered notification
+Expected Result:
+The pop-up with error is displayed:
+
+Unable to open 'WorkTaskAssignedEmailNotification' notification. Please contact your Site Administrator(s) for information.","1. 
+2.","1. Display Unregistered notification with the correct Original notification type: WorkTaskAssignedEmailNotification
+2. The pop-up with error is displayed:
+
+Unable to open 'WorkTaskAssignedEmailNotification' notification. Please contact your Site Administrator(s) for information.","1. Uninstall Task Management module
+
+Open Notifications list
+
+Go to 2 page
+2. Click on the unregistered notification","V3 Notification","S1504","Other","0"
+"C342249","Preview > Create template with sample data",""," Recently added","Daria Ponamareva","6/9/2022 8:55 AM","","The preview showed a template with test data","","","Medium","","Preview","3","","","","","","V3 Notification","S1504","Other","0"
+"C342250","Preview > Edit sample data",""," Recently added","Daria Ponamareva","6/9/2022 8:55 AM","","","","","Medium","","Preview","3","","Step Description:
+1. Open Notifications module &gt; Notification List
+2. Open any email and not predefined notification &gt; Widget """"Template"""" &gt; Open template
+3. Edit sample data and template 
+Expected Result:
+Changes saved in preview, template, sample data
+Step Description:
+Edit sample data and template &gt; Click Ok &gt; Reopen template 
+Expected Result:
+Changes saved in preview, template, sample data
+Step Description:
+1. Edit sample data and template &gt; Edit sample data and template &gt; Ok
+2. Save notification &gt; Reopen notification &gt; Template &gt;
+Expected Result:
+Changes saved in preview, template, sample data","1. 
+2. 
+3.","1. Changes saved in preview, template, sample data
+2. Changes saved in preview, template, sample data
+3. Changes saved in preview, template, sample data","1. 1. Open Notifications module &gt; Notification List
+2. Open any email and not predefined notification &gt; Widget """"Template"""" &gt; Open template
+3. Edit sample data and template 
+2. Edit sample data and template &gt; Click Ok &gt; Reopen template 
+3. 1. Edit sample data and template &gt; Edit sample data and template &gt; Ok
+2. Save notification &gt; Reopen notification &gt; Template &gt;","V3 Notification","S1504","Other","0"
+"C342251","Preview > Incorrect data samples > Check that """"Save"""" and """"Preview"""" buttons are not available",""," Recently added","Daria Ponamareva","6/9/2022 8:55 AM","","Save, OK and Preview buttons disabled.
+Field for entering sample data filled in red.
+","","","Medium","","Preview","3","","","","","","V3 Notification","S1504","Other","0"
+"C342252","Preview > Default style","https://virtowayqa.testrail.io/index.php?/attachments/get/1000003659, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002266"," Recently added","Daria Ponamareva","6/9/2022 8:55 AM","","Platform css not applied
+
+Example (Platform css applied):
+![](index.php?/attachments/get/7c363e58-4d41-4482-b2f5-5569132816de) 
+Example (Platform css not applied):
+![](index.php?/attachments/get/cae8a570-103d-48d4-8b72-8c0fecc0866b) 
+","","","Medium","","Preview","3","","","","","","V3 Notification","S1504","Other","0"
+"C342253","Preview > Use sample data in template","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002424"," Recently added","Daria Ponamareva","6/9/2022 8:55 AM","","Data from sample data displayed in preview
+
+Example:
+![](index.php?/attachments/get/858e6a6b-dd5e-46b0-aeb2-e3578afb9cfd) 
+","","","Medium","","Preview","3","","","","","","V3 Notification","S1504","Other","0"
+"C342254","Preview > Predefined notification > Edit sample data > Save",""," Recently added","Daria Ponamareva","6/9/2022 8:55 AM","","Changes saved in preview, template, sample data","","","Medium","","Preview","3","","","","","","V3 Notification","S1504","Other","0"
+"C342255","Preview > Predefined notification > Restore",""," Recently added","Daria Ponamareva","6/9/2022 8:55 AM","","Template and sample data restored to original.","","","Medium","","Preview","3","","","","","","V3 Notification","S1504","Other","0"
+"C342212","Preview > Share > Send an email with preview","https://virtowayqa.testrail.io/index.php?/attachments/get/1000003649, https://virtowayqa.testrail.io/index.php?/attachments/get/1000003046"," Recently added","Elena Mutykova","6/8/2022 12:19 PM","","","","Open Notifications > Choose any notification template
+Template_1 added with liquid and HTML as default template
+Sample data JSON added
+
+*Note*: Reset cache in the browser
+
+","Medium","","Share preview","3","","Step Description:
+Click on Preview &gt; Share
+Expected Result:
+The pop-up """"Confirm share notification preview"""" appeared. The admin@vc-demostore.com is set up as the default recipient. There are buttons Confirm and Ok displayed
+
+![](index.php?/attachments/get/a5d22fc4-7902-4388-9edf-f9146fe97703)         
+
+Step Description:
+Clear the field &gt; Enter valid email_1
+
+        
+
+Expected Result:
+The email address field is editable.
+Email_1 saved
+Step Description:
+Confirm &gt; Ok
+
+
+  
+
+Expected Result:
+The pop-up notification with the success message appeared
+
+![](index.php?/attachments/get/cc2b119a-263e-4d5c-ae86-d4c3d6a9aa4f)             ","1. 
+2. 
+3.","1. The pop-up """"Confirm share notification preview"""" appeared. The admin@vc-demostore.com is set up as the default recipient. There are buttons Confirm and Ok displayed
+
+![](index.php?/attachments/get/a5d22fc4-7902-4388-9edf-f9146fe97703)         
+
+2. The email address field is editable.
+Email_1 saved
+3. The pop-up notification with the success message appeared
+
+![](index.php?/attachments/get/cc2b119a-263e-4d5c-ae86-d4c3d6a9aa4f)             ","1. Click on Preview &gt; Share
+2. Clear the field &gt; Enter valid email_1
+
+        
+
+3. Confirm &gt; Ok
+
+
+ ","V3 Notification","S1504","Other","0"
+"C342214","Preview  > Share > Check email in inbox","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002820"," Recently added","Elena Mutykova","6/8/2022 12:21 PM","","","","The preview sent to email_1","Medium","","Share preview","3","","Step Description:
+Go to Email_1 &gt; Check the last letter
+
+
+Expected Result:
+The letter is displayed correctly with the last data from the preview.
+
+ ![](index.php?/attachments/get/9bfa8342-1cfd-483b-af4c-2a27615e9922)  ","1","1. The letter is displayed correctly with the last data from the preview.
+
+ ![](index.php?/attachments/get/9bfa8342-1cfd-483b-af4c-2a27615e9922)  ","1. Go to Email_1 &gt; Check the last letter","V3 Notification","S1504","Other","0"
+"C342213","Preview  > Share > Edit template > Send to email","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000478, https://virtowayqa.testrail.io/index.php?/attachments/get/1000003609"," Recently added","Elena Mutykova","6/8/2022 12:20 PM","","","","Open Notifications > Choose any notification template
+Template_1 added with liquid and HTML
+Sample data json added
+
+","Medium","","Share preview","3","","Step Description:
+Modify data in a template and in Sample data JSON (add field """"from"""": """"noreplay@mail.com"""")
+Click on Preview
+
+![](index.php?/attachments/get/19ac3038-5f1b-43f1-8aef-d32386529fe2)        
+
+Expected Result:
+New data is displayed in the template
+
+![](index.php?/attachments/get/cb862e6b-da2e-412a-a098-4e1f24443aaf)       
+
+Step Description:
+Share &gt; Enter Email_2
+Confirm &gt; Ok
+Expected Result:
+The admin@vc-demostore.com is set up as the default recipient.
+Email_2 saved
+The pop-up notification with the Success message appeared
+
+Step Description:
+Go to Email_2 &gt; Check the last letter
+Expected Result:
+The letter was sent from """"noreplay@mail.com""""
+The preview is displayed correctly with new data","1. 
+2. 
+3.","1. New data is displayed in the template
+
+![](index.php?/attachments/get/cb862e6b-da2e-412a-a098-4e1f24443aaf)       
+
+2. The admin@vc-demostore.com is set up as the default recipient.
+Email_2 saved
+The pop-up notification with the Success message appeared
+
+3. The letter was sent from """"noreplay@mail.com""""
+The preview is displayed correctly with new data","1. Modify data in a template and in Sample data JSON (add field """"from"""": """"noreplay@mail.com"""")
+Click on Preview
+
+![](index.php?/attachments/get/19ac3038-5f1b-43f1-8aef-d32386529fe2)        
+
+2. Share &gt; Enter Email_2
+Confirm &gt; Ok
+3. Go to Email_2 &gt; Check the last letter","V3 Notification","S1504","Other","0"
+"C342246","Preview > Share > Invalid email","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001941, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002582, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000948"," Recently added","Elena Mutykova","6/9/2022 7:09 AM","","","","Open Notifications > Choose any notification template
+Template_1 added with liquid and HTML
+Sample data json added","Medium","","Share preview","3","","Step Description:
+Click on Preview &gt; Share
+Edit email address field
+Enter mail.com
+Expected Result:
+The text is highlighted in red. The tool-tip with validation rules has appeared
+
+![](index.php?/attachments/get/3405ae42-b8cb-4383-8afa-ecd74093dd18)   
+
+Step Description:
+Click on Confirm
+Expected Result:
+The pop-up appeared with the error message """"Failed to send the message"""".
+
+![](index.php?/attachments/get/6e3e5e36-c00e-4bf8-88bb-5d7465769a97)   
+
+Step Description:
+Enter @com
+Click on Confirm
+
+Expected Result:
+The text is highlighted in red. The tool-tip with validation rules has appeared
+The pop-up appeared with the error message """"Failed to send the message"""".
+
+Step Description:
+Enter test@
+Click on Confirm
+
+Expected Result:
+The text is highlighted in red. The tool-tip with validation rules has appeared
+The pop-up appeared with the error message """"Failed to send the message"""".
+Step Description:
+Enter digits, symbols, and letters (Ex. 43df@dds&^&*)
+Click on Confirm
+
+Expected Result:
+The text is highlighted in red. The tool-tip with validation rules has appeared
+The pop-up appeared with the error message """"Failed to send the message"""".
+
+![](index.php?/attachments/get/8d031eff-c0ea-401b-a9cd-a3316df3f2a5) 
+
+  ","1. 
+2. 
+3. 
+4. 
+5.","1. The text is highlighted in red. The tool-tip with validation rules has appeared
+
+![](index.php?/attachments/get/3405ae42-b8cb-4383-8afa-ecd74093dd18)   
+
+2. The pop-up appeared with the error message """"Failed to send the message"""".
+
+![](index.php?/attachments/get/6e3e5e36-c00e-4bf8-88bb-5d7465769a97)   
+
+3. The text is highlighted in red. The tool-tip with validation rules has appeared
+The pop-up appeared with the error message """"Failed to send the message"""".
+
+4. The text is highlighted in red. The tool-tip with validation rules has appeared
+The pop-up appeared with the error message """"Failed to send the message"""".
+5. The text is highlighted in red. The tool-tip with validation rules has appeared
+The pop-up appeared with the error message """"Failed to send the message"""".
+
+![](index.php?/attachments/get/8d031eff-c0ea-401b-a9cd-a3316df3f2a5) 
+
+  ","1. Click on Preview &gt; Share
+Edit email address field
+Enter mail.com
+2. Click on Confirm
+3. Enter @com
+Click on Confirm
+
+4. Enter test@
+Click on Confirm
+
+5. Enter digits, symbols, and letters (Ex. 43df@dds&^&*)
+Click on Confirm","V3 Notification","S1504","Other","0"
+"C342247","Preview > Share > Empty email address",""," Recently added","Elena Mutykova","6/9/2022 7:17 AM","","","","Open Notifications > Choose any notification template
+Template_1 added with liquid and HTML
+Sample data json added","Medium","","Share preview","3","","Step Description:
+Click on Preview &gt; Share
+Expected Result:
+The pop-up with the email address field appears. The admin@vc-demostore.com is set up as the default recipient.
+Step Description:
+Clear the field &gt; Leave an empty field
+Confirm &gt; Ok
+Expected Result:
+An error message appeared.
+Step Description:
+Share &gt; Clear the field &gt; Hit the space several times
+Confirm &gt; Ok
+
+Expected Result:
+An error message appeared.","1. 
+2. 
+3.","1. The pop-up with the email address field appears. The admin@vc-demostore.com is set up as the default recipient.
+2. An error message appeared.
+3. An error message appeared.","1. Click on Preview &gt; Share
+2. Clear the field &gt; Leave an empty field
+Confirm &gt; Ok
+3. Share &gt; Clear the field &gt; Hit the space several times
+Confirm &gt; Ok","V3 Notification","S1504","Other","0"
+"C207586","Default tempalte","","","Grotem","4/16/2020 11:57 AM","","","","1. Store_1 > Notification  Notification_1 set active
+2. Default template Template_1 for Notification_1 was created
+3. User_1 created for store
+4. User_1 email set as Email_1
+5. Admin logged in admin environment
+6. Make sure that Settings > Order > General > Enable notifications for orders is ON at the backend","Medium","","Edit tempalate","1","","Step Description:
+Login in store as User_1
+Expected Result:
+User_1 logged in store
+Step Description:
+User_1 make any action that must send notification (e.g. Create order)
+Expected Result:
+1. Order created
+2. Notification sent to Email_1
+3. Notification added to notifications log
+Step Description:
+Open Email_1 and check template
+Expected Result:
+Email_1 inbox contains Template_1
+Step Description:
+Admin change Template_1 to Tamplate_changed
+Expected Result:
+Changes saved
+Step Description:
+User_1 make any action that must send notification (e.g. Create order)
+Expected Result:
+1. Order created
+2. Notification sent to Email_1
+3. Notification added to notifications log
+Step Description:
+Open Email_1 and check template
+Expected Result:
+Email_1 inbox contains Template_changed","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. User_1 logged in store
+2. 1. Order created
+2. Notification sent to Email_1
+3. Notification added to notifications log
+3. Email_1 inbox contains Template_1
+4. Changes saved
+5. 1. Order created
+2. Notification sent to Email_1
+3. Notification added to notifications log
+6. Email_1 inbox contains Template_changed","1. Login in store as User_1
+2. User_1 make any action that must send notification (e.g. Create order)
+3. Open Email_1 and check template
+4. Admin change Template_1 to Tamplate_changed
+5. User_1 make any action that must send notification (e.g. Create order)
+6. Open Email_1 and check template","V3 Notification","S1504","Other","0"
+"C207589","Concrete localization","","","Grotem","4/16/2020 11:59 AM","","","","1. Store_1 > Notification  Notification_1 set active
+2. Template_2 for Localization_2 was created. (e.g. For de-DE)
+3. Default template Template_1 for Notification_1 was created
+4. User_1 created for store
+5. User_1 email set as Email_1
+6. Admin logged in admin environment
+7. Make sure that Settings > Order > General > Enable notifications for orders is ON at the backend","Medium","","Edit tempalate","1","","Step Description:
+Login in store as User_1
+Expected Result:
+User_1 logged in store
+Step Description:
+Set store localization to Localization_2 (e.g for de-DE)
+Expected Result:
+Store localization changed
+Step Description:
+User_1 make any action that must send notification (e.g. Create order)
+Expected Result:
+1. Order created
+2. Notification sent to Email_1
+3. Notification added to notifications log
+Step Description:
+Open Email_1 and check template
+Expected Result:
+Email_1 inbox contains Template_2
+Step Description:
+Admin change Template_2 to Template_changed
+Expected Result:
+Changes saved
+Step Description:
+User_1 make any action that must send notification (e.g. Create order)
+Expected Result:
+1. Order created
+2. Notification sent to Email_1
+3. Notification added to notifications log
+Step Description:
+Open Email_1 and check template
+Expected Result:
+Email_1 inbox contains Template_changed","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7.","1. User_1 logged in store
+2. Store localization changed
+3. 1. Order created
+2. Notification sent to Email_1
+3. Notification added to notifications log
+4. Email_1 inbox contains Template_2
+5. Changes saved
+6. 1. Order created
+2. Notification sent to Email_1
+3. Notification added to notifications log
+7. Email_1 inbox contains Template_changed","1. Login in store as User_1
+2. Set store localization to Localization_2 (e.g for de-DE)
+3. User_1 make any action that must send notification (e.g. Create order)
+4. Open Email_1 and check template
+5. Admin change Template_2 to Template_changed
+6. User_1 make any action that must send notification (e.g. Create order)
+7. Open Email_1 and check template","V3 Notification","S1504","Other","0"
+"C212905","User is able to delete template only additional language, default - not","","","Volha Baban","4/22/2020 7:13 AM","","","","1. Store_1 > Notification  Notification_1 set active
+2. Template_2 for Localization_2 was created. (e.g. For de-DE)
+3. Default template Template_1 for Notification_1 was created
+4. User_1 created for store
+5. User_1 email set as Email_1
+6. Admin logged in admin environment
+7. Make sure that Settings > Order > General > Enable notifications for orders is ON at the backend","Medium","","Edit tempalate","1","","Step Description:
+1. Go to notification 
+2. Select any notification template
+3. Click templates widget
+4. Select via checkbox template with a default language
+Expected Result:
+Warning popup is shown
+
+![](index.php?/attachments/get/24162)
+
+Template is not deleted
+Step Description:
+Add template of available langauge
+Select via checkbox template with a this language
+Expected Result:
+Confirmation popup is shown
+
+![](index.php?/attachments/get/24163)
+
+The template is removed successfully","1. 
+2.","1. Warning popup is shown
+
+![](index.php?/attachments/get/24162)
+
+Template is not deleted
+2. Confirmation popup is shown
+
+![](index.php?/attachments/get/24163)
+
+The template is removed successfully","1. 1. Go to notification 
+2. Select any notification template
+3. Click templates widget
+4. Select via checkbox template with a default language
+2. Add template of available langauge
+Select via checkbox template with a this language","V3 Notification","S1504","Other","0"
+"C207386","Registration","","","Grotem","4/16/2020 9:14 AM","","","","1. Store_1 > Notification Registration notification set active
+![](index.php?/attachments/get/23817)
+2. Template_1 set for notification","Medium","","Account notification","2","","Step Description:
+User open store page
+Expected Result:
+Store opened
+Step Description:
+User click on """"Create account""""
+Expected Result:
+Registration form opened
+Step Description:
+User enter Email_1, other necessary fields and click """"Create""""
+Expected Result:
+1. User account was created
+2. Notification about registration sent to Email_1
+3. Notification was added to feed
+Step Description:
+Open Email_1 inbox
+Expected Result:
+1. Inbox contains notification email
+2. Email contains Template_1","1. 
+2. 
+3. 
+4.","1. Store opened
+2. Registration form opened
+3. 1. User account was created
+2. Notification about registration sent to Email_1
+3. Notification was added to feed
+4. 1. Inbox contains notification email
+2. Email contains Template_1","1. User open store page
+2. User click on """"Create account""""
+3. User enter Email_1, other necessary fields and click """"Create""""
+4. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C207600","Registration invitation","","","Grotem","4/16/2020 12:56 PM","","","","*NOTE:* this test case is B2B specific, to perform it go to:
+""Electronics"" home page > Store selector > select B2B
+
+1. Store_01 > Notification > Registration invitation notification set active
+![](index.php?/attachments/get/23819)
+
+2. Template_1 set for notification","Medium","","Account notification","2","","Step Description:
+User open store page
+Expected Result:
+Store opened
+Step Description:
+User click on """"Create account""""
+Expected Result:
+Registration form opened
+Step Description:
+User enter Email_1, other necessary fields and click """"Create""""
+Expected Result:
+1. User account was created
+2. Notification about registration sent to Email_1
+3. Notification was added to feed
+Step Description:
+Open Email_1 inbox
+Expected Result:
+1. Inbox contains notification email
+2. Email contains Template_1","1. 
+2. 
+3. 
+4.","1. Store opened
+2. Registration form opened
+3. 1. User account was created
+2. Notification about registration sent to Email_1
+3. Notification was added to feed
+4. 1. Inbox contains notification email
+2. Email contains Template_1","1. User open store page
+2. User click on """"Create account""""
+3. User enter Email_1, other necessary fields and click """"Create""""
+4. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C207609","Username remind","","","Grotem","4/16/2020 1:07 PM","","","","1. Store_1 > Notification > Username reminder notification set active
+![](index.php?/attachments/get/23818)
+
+2. Template_1 set for notification
+3. User_1 was created
+3. User_1 email is Email_1","Medium","","Account notification","2","","Step Description:
+User open store page
+Expected Result:
+Store opened
+Step Description:
+User click on """"Sign in"""" button
+Expected Result:
+Sign in page opened
+Step Description:
+User click on button """"Forgot your user name?""""
+Expected Result:
+Form to enter user email shown
+Step Description:
+User enter Email_1 in form and click submit
+Expected Result:
+1. Notification with username remind sent
+2. Notification was added to feed
+Step Description:
+Open Email_1 inbox
+Expected Result:
+1. Inbox contains notification email
+2. Email contains Template_1","1. 
+2. 
+3. 
+4. 
+5.","1. Store opened
+2. Sign in page opened
+3. Form to enter user email shown
+4. 1. Notification with username remind sent
+2. Notification was added to feed
+5. 1. Inbox contains notification email
+2. Email contains Template_1","1. User open store page
+2. User click on """"Sign in"""" button
+3. User click on button """"Forgot your user name?""""
+4. User enter Email_1 in form and click submit
+5. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C207610","Reset password","","","Grotem","4/16/2020 1:20 PM","","","","1. Store_1 > Reset password notification set active
+![](index.php?/attachments/get/23828)
+
+2. Template_1 set for notification
+3. User_1 was created
+3. User_1 email is Email_1
+4. In Azure the reset pass setting is set to Email
+![](index.php?/attachments/get/35113)
+","Medium","","Account notification","2","","Step Description:
+User open store page
+Expected Result:
+Store opened
+Step Description:
+User click on """"Sign in"""" button
+Expected Result:
+Sign in page opened
+Step Description:
+User click on button """"Reset password?""""
+Expected Result:
+Form to enter user email shown
+Step Description:
+User enter Email_1 in form and click submit
+Expected Result:
+1. Notification with reset password information sent
+2. Notification was added to feed
+Step Description:
+Open Email_1 inbox
+Expected Result:
+1. Inbox contains notification email
+2. Email contains Template_1","1. 
+2. 
+3. 
+4. 
+5.","1. Store opened
+2. Sign in page opened
+3. Form to enter user email shown
+4. 1. Notification with reset password information sent
+2. Notification was added to feed
+5. 1. Inbox contains notification email
+2. Email contains Template_1","1. User open store page
+2. User click on """"Sign in"""" button
+3. User click on button """"Reset password?""""
+4. User enter Email_1 in form and click submit
+5. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C307517","Limit of password reset","","","Daria Ponamareva","8/23/2021 2:07 PM","","","","Registered user User_1","Medium","","Account notification","2","","Step Description:
+Go to settings> Notification > Set limit count of the password reset to any time (Example 2 minute)> Save
+Expected Result:
+Setting saved
+Step Description:
+Go to storefront https://vcplatform-storefront.qa.govirto.com/en-US/account/forgotpassword
+Fill the field by User1 email or login
+Click """"Submit"""" 
+Expected Result:
+The user received an email with a link to reset the password
+Step Description:
+Try to make another password recovery request before the limit specified in the settings is exceeded
+Expected Result:
+The user did not receive an email with a link to reset their password.
+An error appears. 
+Step Description:
+Wait for the set time limit and try to make another password recovery request
+Expected Result:
+The user received an email with a link to reset the password","1. 
+2. 
+3. 
+4.","1. Setting saved
+2. The user received an email with a link to reset the password
+3. The user did not receive an email with a link to reset their password.
+An error appears. 
+4. The user received an email with a link to reset the password","1. Go to settings> Notification > Set limit count of the password reset to any time (Example 2 minute)> Save
+2. Go to storefront https://vcplatform-storefront.qa.govirto.com/en-US/account/forgotpassword
+Fill the field by User1 email or login
+Click """"Submit"""" 
+3. Try to make another password recovery request before the limit specified in the settings is exceeded
+4. Wait for the set time limit and try to make another password recovery request","V3 Notification","S1504","Other","0"
+"C207611","New subscription notification","","","Grotem","4/16/2020 1:27 PM","","","","1. Store_1 > Notification > New subscription notification set active
+![](index.php?/attachments/get/23829) 
+
+2. Template_1 set for notification
+3. User_1 was created
+3. User_1 email is Email_1
+4. User_1 logged in store
+5. Make sure that Store_1 > Settings > enable subscriptions > ON","Medium","","Account notification","2","","Step Description:
+User add prouct to cart
+Expected Result:
+Product was added to cart
+Step Description:
+User open checkout page
+Expected Result:
+Checkout page contains option to create subscription for product
+
+Step Description:
+User set necessary options for subscription
+Expected Result:
+1. Subscription was created
+2. Notification about new subscription sent
+3. Notification was added to feed
+Step Description:
+User set all necessary fields and create order
+Expected Result:
+Order was created
+Step Description:
+Open Email_1 inbox
+Expected Result:
+1. Inbox contains notification email
+2. Email contains Template_1","1. 
+2. 
+3. 
+4. 
+5.","1. Product was added to cart
+2. Checkout page contains option to create subscription for product
+
+3. 1. Subscription was created
+2. Notification about new subscription sent
+3. Notification was added to feed
+4. Order was created
+5. 1. Inbox contains notification email
+2. Email contains Template_1","1. User add prouct to cart
+2. User open checkout page
+3. User set necessary options for subscription
+4. User set all necessary fields and create order
+5. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C208253","Subscription cancelled","","","Grotem","4/16/2020 1:31 PM","","","","1. Store_1 Subscription cancelled notification set active
+![](index.php?/attachments/get/23830)
+
+2. Template_1 set for notification
+3. User_1 was created
+3. User_1 email is Email_1
+4. User_1 logged in store
+5. User_1 created Subscription_1
+5. Make sure that Store_1 > Settings > enable subscriptions > ON","Medium","","Account notification","2","","Step Description:
+User open account page
+Expected Result:
+Account page opened
+Step Description:
+User open subscriptions link
+Expected Result:
+1. Subscription page opened
+2. Subscriptions list contains Subscription_1
+Step Description:
+Cancel Subscription_1
+Expected Result:
+1. Subscription_1 was cancelled
+2. Notification about subscription cancellation sent
+3. Notification was added to feed
+Step Description:
+Open Email_1 inbox
+Expected Result:
+1. Inbox contains notification email
+2. Email contains Template_1","1. 
+2. 
+3. 
+4.","1. Account page opened
+2. 1. Subscription page opened
+2. Subscriptions list contains Subscription_1
+3. 1. Subscription_1 was cancelled
+2. Notification about subscription cancellation sent
+3. Notification was added to feed
+4. 1. Inbox contains notification email
+2. Email contains Template_1","1. User open account page
+2. User open subscriptions link
+3. Cancel Subscription_1
+4. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C340946","Email confirmation Notification","https://virtowayqa.testrail.io/index.php?/attachments/get/1000003710"," None","Elena Mutykova","5/16/2022 3:07 PM","","","","1. Store_1 > Email confirmation Template set active 
+
+![](index.php?/attachments/get/d2b40818-ea00-4506-bd66-5d8273ee662c) 
+
+2. Template_1 set for notification","Medium","","Account notification","2","","Step Description:
+User open store page
+Expected Result:
+Store opened
+Step Description:
+User click on """"Create account""""
+Expected Result:
+Registration form opened
+Step Description:
+User enter Email_1, other necessary fields and click """"Create""""
+Expected Result:
+1. User account was created
+2. Notification about email confirmation sent to Email_1
+3. Notification was added to feed
+Step Description:
+Open Email_1 inbox
+Expected Result:
+1. Inbox contains notification email
+2. Email contains Template_1","1. 
+2. 
+3. 
+4.","1. Store opened
+2. Registration form opened
+3. 1. User account was created
+2. Notification about email confirmation sent to Email_1
+3. Notification was added to feed
+4. 1. Inbox contains notification email
+2. Email contains Template_1","1. User open store page
+2. User click on """"Create account""""
+3. User enter Email_1, other necessary fields and click """"Create""""
+4. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C254245","Two factor authentication - email","","","Volha Baban","9/9/2020 1:25 PM","","1. Email with code sent to user_email 
+2. Form to enter user code shown","","1. User is on store login page
+2. User email is user_email
+3. Make sure the setting in Azure is set to Email
+![](index.php?/attachments/get/35114)
+","Medium","","Account notification","2","","","","","","V3 Notification","S1504","Other","0"
+"C210212","Send custom form from storefront","","","Grotem","4/17/2020 10:37 AM","","","","1. Store_1 > Notifications > Custom form notification set active
+![](index.php?/attachments/get/23916)
+
+2. Template_1 set for notification
+3. User_1 was created
+4. User_1 email is Email_1","Medium","","Account notification","2","","Step Description:
+User_1 logged in store
+Expected Result:
+User redirected to main page
+Step Description:
+User_1 open page that contains custom forms e.g. Contact us page
+Expected Result:
+Contact us page opened
+Step Description:
+User enter all necessary field in form and submit
+Expected Result:
+1. Form was submitted
+2. Notification was sent to Email_1
+3. Notification added to feed
+Step Description:
+Open Email_1 inbox
+Expected Result:
+Email inbox contains Template_1","1. 
+2. 
+3. 
+4.","1. User redirected to main page
+2. Contact us page opened
+3. 1. Form was submitted
+2. Notification was sent to Email_1
+3. Notification added to feed
+4. Email inbox contains Template_1","1. User_1 logged in store
+2. User_1 open page that contains custom forms e.g. Contact us page
+3. User enter all necessary field in form and submit
+4. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C340947","Organization Registration Email Notification","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002859"," None","Elena Mutykova","5/16/2022 3:11 PM","","","","1. Store_1 > Organization RegistrationEmailNotification Template set active 
+
+![](index.php?/attachments/get/9b0b9340-9351-4260-9ac3-16a2ad4f733d) 
+
+2. Template_1 set for notification","Medium","","Account notification","2","","Step Description:
+User open store page
+Expected Result:
+Store opened
+Step Description:
+The user clicks on """"organization registration""""
+Expected Result:
+Registration form opened
+Step Description:
+User enter Email_1, other necessary fields and click """"Create""""
+Expected Result:
+1. User account was created
+2. Notification about email confirmation sent to Email_1
+3. Notification was added to feed
+Step Description:
+Open Email_1 inbox
+Expected Result:
+1. Inbox contains notification email
+2. Email contains Template_1","1. 
+2. 
+3. 
+4.","1. Store opened
+2. Registration form opened
+3. 1. User account was created
+2. Notification about email confirmation sent to Email_1
+3. Notification was added to feed
+4. 1. Inbox contains notification email
+2. Email contains Template_1","1. User open store page
+2. The user clicks on """"organization registration""""
+3. User enter Email_1, other necessary fields and click """"Create""""
+4. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C394634","Global setting > Enable notifications about abandoned carts",""," None","Elena Mutykova","11/5/2024 7:43 AM","","","","","Medium","","Abandoned Cart Email Notification","2","","Step Description:
+Go to settings &gt; Cart&gt; Abandon cart reminder
+Check switcher
+Expected Result:
+The """"Enable notifications about abandoned carts"""" setting is set to False
+Step Description:
+Switch Enable notifications about abandoned carts = ON
+Go to {platformUrl}/hangfire
+
+
+Expected Result:
+The AbandonedCartReminderJob.Process appeared in hangfire jobs
+Step Description:
+Switch Enable notifications about abandoned carts = OFF
+Go to {platformUrl}/hangfire
+
+Expected Result:
+The AbandonedCartReminderJob.Process disappeared from hangfire jobs","1. 
+2. 
+3.","1. The """"Enable notifications about abandoned carts"""" setting is set to False
+2. The AbandonedCartReminderJob.Process appeared in hangfire jobs
+3. The AbandonedCartReminderJob.Process disappeared from hangfire jobs","1. Go to settings &gt; Cart&gt; Abandon cart reminder
+Check switcher
+2. Switch Enable notifications about abandoned carts = ON
+Go to {platformUrl}/hangfire
+
+
+3. Switch Enable notifications about abandoned carts = OFF
+Go to {platformUrl}/hangfire","V3 Notification","S1504","Other","0"
+"C394635","Global setting > Cron expression",""," None","Elena Mutykova","11/5/2024 7:44 AM","","","","","Medium","","Abandoned Cart Email Notification","2","","Step Description:
+Global settings &gt; Cart &gt; Abandon cart reminder&gt; Check default Cron expression 
+Expected Result:
+Cron expression is set to 9 AM UTC and """"Enable"""" is set to True.
+Step Description:
+Change Cron expression
+Set 0 2 * * *
+Check in Hangfire
+Expected Result:
+The expression is updated","1. 
+2.","1. Cron expression is set to 9 AM UTC and """"Enable"""" is set to True.
+2. The expression is updated","1. Global settings &gt; Cart &gt; Abandon cart reminder&gt; Check default Cron expression 
+2. Change Cron expression
+Set 0 2 * * *
+Check in Hangfire","V3 Notification","S1504","Other","0"
+"C394636","Store setting > Enable notifications about abandoned carts",""," None","Elena Mutykova","11/5/2024 7:44 AM","","","","Global setting > Enable notifications about abandoned carts= ON
+Store setting > Enable notifications about abandoned carts = OFF
+
+Number of hours after which the cart is considered abandoned = 1","Medium","","Abandoned Cart Email Notification","2","","Step Description:
+Add items to the cart and leave them abandoned.
+Wait for the configured reminder period.
+Check if any email is sent.
+Expected Result:
+No email is sent as the feature is disabled.","1","1. No email is sent as the feature is disabled.","1. Add items to the cart and leave them abandoned.
+Wait for the configured reminder period.
+Check if any email is sent.","V3 Notification","S1504","Other","0"
+"C394641","Store setting > Enable notifications about abandoned carts = ON","https://virtowayqa.testrail.io/index.php?/attachments/get/1000003401"," None","Elena Mutykova","11/5/2024 8:24 AM","","","","Global setting > Switch Enable notifications about abandoned carts = ON
+Cron expression by default 0 9***","Medium","","Abandoned Cart Email Notification","2","","Step Description:
+Go to store &gt; Specific store &gt; Settings
+Enable notifications about abandoned carts = ON
+Set Number of hours after which the cart is considered abandoned = 1
+Save
+Expected Result:
+All setting are saved
+Step Description:
+Add items to the cart and leave them abandoned.
+Wait until 9 AM UTC.
+Check if the email is sent at the specified time.
+Expected Result:
+The email is sent at 9 AM UTC, following the Cron expression schedule.
+Step Description:
+Open Store Notification logs
+Expected Result:
+The AbandonedCartEmailNotification is send
+
+
+ ![](index.php?/attachments/get/be88f06f-5681-47a2-aad8-c3fa2318b3b5)","1. 
+2. 
+3.","1. All setting are saved
+2. The email is sent at 9 AM UTC, following the Cron expression schedule.
+3. The AbandonedCartEmailNotification is send
+
+
+ ![](index.php?/attachments/get/be88f06f-5681-47a2-aad8-c3fa2318b3b5)","1. Go to store &gt; Specific store &gt; Settings
+Enable notifications about abandoned carts = ON
+Set Number of hours after which the cart is considered abandoned = 1
+Save
+2. Add items to the cart and leave them abandoned.
+Wait until 9 AM UTC.
+Check if the email is sent at the specified time.
+3. Open Store Notification logs","V3 Notification","S1504","Other","0"
+"C394637","Trigger abandoned cart email after default time (5 days)","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000639"," None","Elena Mutykova","11/5/2024 7:46 AM","","","","- Abandoned cart email feature is enabled
+- Customer added items to the cart and did not complete the purchase.
+- Store settings > Number of hours after which the cart is considered abandoned = 120","Medium","","Abandoned Cart Email Notification","2","","Step Description:
+Wait for the default 5-day (120-hour) period after items were added to the cart.
+Check the customer’s email inbox after 5 days.
+Expected Result:
+The email is sent
+
+---
+
+ ![](index.php?/attachments/get/220233f9-5880-4e5a-a32f-214c9810fac4)","1","1. The email is sent
+
+---
+
+ ![](index.php?/attachments/get/220233f9-5880-4e5a-a32f-214c9810fac4)","1. Wait for the default 5-day (120-hour) period after items were added to the cart.
+Check the customer’s email inbox after 5 days.","V3 Notification","S1504","Other","0"
+"C394638","Custom reminder time for abandoned cart email",""," None","Elena Mutykova","11/5/2024 7:47 AM","","","","""Remind about Abandoned cart after N hours"" is set to a custom time (e.g., 24 hours) in the Store settings.","Medium","","Abandoned Cart Email Notification","2","","Step Description:
+Add items to the cart, wait for the specified time (e.g., 24 hours).
+Check if an email was sent after 24 hours.
+Expected Result:
+The notification is send to email exactly 24 hours after the cart was abandoned.","1","1. The notification is send to email exactly 24 hours after the cart was abandoned.","1. Add items to the cart, wait for the specified time (e.g., 24 hours).
+Check if an email was sent after 24 hours.","V3 Notification","S1504","Other","0"
+"C394639","Resend abandoned cart email if cart is modified after the initial email",""," None","Elena Mutykova","11/5/2024 7:48 AM","","","","Customer has already received an abandoned cart email for the current cart state.","Medium","","Abandoned Cart Email Notification","2","","Step Description:
+Customer opens the site and modifies the cart (e.g., adds or removes items).
+Wait for the configured reminder period.
+Check if a new abandoned cart email is sent.
+Expected Result:
+A new abandoned cart email is sent due to the cart modification.","1","1. A new abandoned cart email is sent due to the cart modification.","1. Customer opens the site and modifies the cart (e.g., adds or removes items).
+Wait for the configured reminder period.
+Check if a new abandoned cart email is sent.","V3 Notification","S1504","Other","0"
+"C394640","Abandoned cart notification Template > Send to Email","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001351"," None","Elena Mutykova","11/5/2024 7:58 AM","","","","","Medium","","Abandoned Cart Email Notification","2","","Step Description:
+Go to Store settings
+Open Notifications
+Find Notification on abandoned carts
+Expected Result:
+Open Template widget &gt; Details
+Step Description:
+Check default template
+Preview &gt; Share &gt; Set your email
+Send
+Expected Result:
+The template was sent
+Step Description:
+Open email
+Check notification
+Expected Result:
+The email subject: Your Cart is Waiting for You! 
+
+
+Body:
+
+
+The email begins with a personalized greeting
+
+Hello [Customer’s First Name] 
+
+We noticed that you left some items in your cart. Don't miss out on these great products!
+
+Your shopping cart:
+
+
+The email contains a summary of abandoned items with product images, names, prices, and quantities.
+
+subTotal
+discount
+tax
+total
+
+
+The button Complete your Purchase
+
+---
+
+ ![](index.php?/attachments/get/499ee80a-f1c5-4069-a53a-b1feda5ca4f5)","1. 
+2. 
+3.","1. Open Template widget &gt; Details
+2. The template was sent
+3. The email subject: Your Cart is Waiting for You! 
+
+
+Body:
+
+
+The email begins with a personalized greeting
+
+Hello [Customer’s First Name] 
+
+We noticed that you left some items in your cart. Don't miss out on these great products!
+
+Your shopping cart:
+
+
+The email contains a summary of abandoned items with product images, names, prices, and quantities.
+
+subTotal
+discount
+tax
+total
+
+
+The button Complete your Purchase
+
+---
+
+ ![](index.php?/attachments/get/499ee80a-f1c5-4069-a53a-b1feda5ca4f5)","1. Go to Store settings
+Open Notifications
+Find Notification on abandoned carts
+2. Check default template
+Preview &gt; Share &gt; Set your email
+Send
+3. Open email
+Check notification","V3 Notification","S1504","Other","0"
+"C208255","Create order","","","Grotem","4/16/2020 1:51 PM","","","","1. Store_1 > Notification > Create order notification set active
+![](index.php?/attachments/get/23826) 
+
+2. Template_1 set for notification
+3. User_1 was created
+3. User_1 email is Email_1
+4. User_1 logged in store","Medium","","Orders","2","","Step Description:
+User add prouct to cart
+Expected Result:
+Product was added to cart
+Step Description:
+User open checkout page
+Expected Result:
+Checkout page opened
+Step Description:
+User set necessary options for order and proceed order
+Expected Result:
+1. Order_1 was created
+2. Notification about Create order sent
+3. Notification was added to feed
+Step Description:
+Open Email_1 inbox
+Expected Result:
+1. Inbox contains notification email
+2. Email contains Template_1","1. 
+2. 
+3. 
+4.","1. Product was added to cart
+2. Checkout page opened
+3. 1. Order_1 was created
+2. Notification about Create order sent
+3. Notification was added to feed
+4. 1. Inbox contains notification email
+2. Email contains Template_1","1. User add prouct to cart
+2. User open checkout page
+3. User set necessary options for order and proceed order
+4. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C208256","Cancel order","","","Grotem","4/16/2020 1:58 PM","","","","1. Store_1 > Notifications > Cancel order notification set active
+![](index.php?/attachments/get/23827)
+
+2. Template_1 set for notification
+3. User_1 was created
+4. User_1 email is Email_1
+5. User_1 created Order_1
+6. Admin logged on the backend","Medium","","Orders","2","","Step Description:
+Admin open orders page
+Expected Result:
+Orders list contains order Order_1
+Step Description:
+Admin open Order_1
+Expected Result:
+Order_1 details blade opened
+Step Description:
+Admin click on button """"Cancel document""""
+Expected Result:
+1. Order cancelled
+2. Notification about cancelled order sent
+3. Notification was added to feed
+Step Description:
+Open Email_1 inbox
+Expected Result:
+1. Inbox contains notification email
+2. Email contains Template_1","1. 
+2. 
+3. 
+4.","1. Orders list contains order Order_1
+2. Order_1 details blade opened
+3. 1. Order cancelled
+2. Notification about cancelled order sent
+3. Notification was added to feed
+4. 1. Inbox contains notification email
+2. Email contains Template_1","1. Admin open orders page
+2. Admin open Order_1
+3. Admin click on button """"Cancel document""""
+4. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C208257","New order status","","","Grotem","4/16/2020 2:01 PM","","","","1. Store_1 > Notifications > New order status notification set active
+![](index.php?/attachments/get/23822)
+
+2. Template_1 set for notification
+3. User_1 was created
+4. User_1 email is Email_1
+5. User_1 created Order_1
+6. Admin logged in store","Medium","","Orders","2","","Step Description:
+Admin open orders page
+Expected Result:
+Orders list contains order Order_1
+Step Description:
+Admin open Order_1
+Expected Result:
+Order_1 details blade opened
+Step Description:
+User set order to status """"Pending""""
+Expected Result:
+1. Order status changed to status """"Pending""""
+2. Notification about changed order status sent
+3. Notification was added to feed
+Step Description:
+Open Email_1 inbox
+Expected Result:
+1. Inbox contains notification email
+2. Email contains Template_1","1. 
+2. 
+3. 
+4.","1. Orders list contains order Order_1
+2. Order_1 details blade opened
+3. 1. Order status changed to status """"Pending""""
+2. Notification about changed order status sent
+3. Notification was added to feed
+4. 1. Inbox contains notification email
+2. Email contains Template_1","1. Admin open orders page
+2. Admin open Order_1
+3. User set order to status """"Pending""""
+4. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C208259","Order paid","","","Grotem","4/16/2020 2:14 PM","","","","1. Store_1 > New order status notification set active
+![](index.php?/attachments/get/23834)
+
+2. Template_1 set for notification
+3. User_1 was created
+4. User_1 email is Email_1
+5. User_1 created Order_1
+6. Admin logged on the backend","Medium","","Orders","2","","Step Description:
+Admin open orders page
+Expected Result:
+Orders list contains order Order_1
+Step Description:
+Admin open Order_1
+Expected Result:
+Order_1 details blade opened
+Step Description:
+Admin open Order_1 payment-in document 
+Expected Result:
+Payment-in document details blade opened
+Step Description:
+Admin set payment-in document status to """"Paid""""
+Expected Result:
+1. Order payment status changed to """"Paid""""
+2. Notification about paid order sent
+3. Notification was added to feed
+Step Description:
+Open Email_1 inbox
+Expected Result:
+1. Inbox contains notification email
+2. Email contains Template_1","1. 
+2. 
+3. 
+4. 
+5.","1. Orders list contains order Order_1
+2. Order_1 details blade opened
+3. Payment-in document details blade opened
+4. 1. Order payment status changed to """"Paid""""
+2. Notification about paid order sent
+3. Notification was added to feed
+5. 1. Inbox contains notification email
+2. Email contains Template_1","1. Admin open orders page
+2. Admin open Order_1
+3. Admin open Order_1 payment-in document 
+4. Admin set payment-in document status to """"Paid""""
+5. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C208260","Order sent","","","Grotem","4/16/2020 2:19 PM","","","","1. Store_1 > Order sent notification set active
+![](index.php?/attachments/get/23833)
+
+2. Template_1 set for notification
+3. User_1 was created
+4. User_1 email is Email_1
+5. User_1 created Order_1
+6. Admin logged in store","Medium","","Orders","2","","Step Description:
+Admin open orders page
+Expected Result:
+Orders list contains order Order_1
+Step Description:
+Admin open Order_1
+Expected Result:
+Order_1 details blade opened
+Step Description:
+Admin open Order_1 shipment document 
+Expected Result:
+Shipment document details blade opened
+Step Description:
+Admin set shipment document status to """"Sent""""
+Expected Result:
+1. Order shipment status changed to """"Sent""""
+2. Notification about sent order sent
+3. Notification was added to feed
+Step Description:
+Open Email_1 inbox
+Expected Result:
+1. Inbox contains notification email
+2. Email contains Template_1","1. 
+2. 
+3. 
+4. 
+5.","1. Orders list contains order Order_1
+2. Order_1 details blade opened
+3. Shipment document details blade opened
+4. 1. Order shipment status changed to """"Sent""""
+2. Notification about sent order sent
+3. Notification was added to feed
+5. 1. Inbox contains notification email
+2. Email contains Template_1","1. Admin open orders page
+2. Admin open Order_1
+3. Admin open Order_1 shipment document 
+4. Admin set shipment document status to """"Sent""""
+5. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C208262","The invoice for customer","","","Grotem","4/16/2020 2:52 PM","","","","1. Store_1 > Invoice for customer notificaton set active
+![](index.php?/attachments/get/23835)
+
+2. Template_1 set for notification
+3. User_1 was created
+3. User_1 email is Email_1
+4. User_1 logged in store
+","Medium","","Orders","2","","Step Description:
+User open account page
+Expected Result:
+Account page opened
+Step Description:
+User open orders link
+Expected Result:
+1. Orders page opened
+2. Orders list contains Order_1
+Step Description:
+Open Order_1
+Expected Result:
+Order_1 details opened
+Step Description:
+Click on button """"Get invoice""""
+Expected Result:
+1. PDF invoice loaded","1. 
+2. 
+3. 
+4.","1. Account page opened
+2. 1. Orders page opened
+2. Orders list contains Order_1
+3. Order_1 details opened
+4. 1. PDF invoice loaded","1. User open account page
+2. User open orders link
+3. Open Order_1
+4. Click on button """"Get invoice""""","V3 Notification","S1504","Other","0"
+"C357124","Notification on shipments status changed > Set template","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002690"," None","Elena Mutykova","2/28/2023 2:43 PM","","","","
+
+
+
+","Medium","","Orders","2","","Step Description:
+Go to Notifications
+Notifications list
+Find Notification on shipments status changed
+
+
+Expected Result:
+The Notification on shipments status change is displayed in the list
+
+
+
+  ![](index.php?/attachments/get/944a4be7-179c-4fd2-849d-8a0138c943b8) 
+Step Description:
+Click on Templates
+Expected Result:
+The blade with the default predefined template opened
+Step Description:
+Click Add
+Choose language
+Set Subject
+Set template:
+
+The status of your shipment {{shipment_number}}  has been changed from &lt;strong&gt;{{ old_status }}&lt;/strong&gt; to &lt;strong&gt;{{ new_status }}&lt;/strong&gt;.
+
+Click OK &gt; Save
+
+
+Expected Result:
+The new blade is opened
+The new template for language_1 was created and saved
+The number of templates is increased on the widget","1. 
+2. 
+3.","1. The Notification on shipments status change is displayed in the list
+
+
+
+  ![](index.php?/attachments/get/944a4be7-179c-4fd2-849d-8a0138c943b8) 
+2. The blade with the default predefined template opened
+3. The new blade is opened
+The new template for language_1 was created and saved
+The number of templates is increased on the widget","1. Go to Notifications
+Notifications list
+Find Notification on shipments status changed
+
+
+2. Click on Templates
+3. Click Add
+Choose language
+Set Subject
+Set template:
+
+The status of your shipment {{shipment_number}}  has been changed from &lt;strong&gt;{{ old_status }}&lt;/strong&gt; to &lt;strong&gt;{{ new_status }}&lt;/strong&gt;.
+
+Click OK &gt; Save","V3 Notification","S1504","Other","0"
+"C357125","Notification on payments status changed > Set template","https://virtowayqa.testrail.io/index.php?/attachments/get/1000003872"," None","Elena Mutykova","2/28/2023 2:44 PM","","","","","Medium","","Orders","2","","Step Description:
+Go to Notifications
+Notifications list
+Find Notification on payment status changed
+Expected Result:
+The Notification on payment status change is displayed in the list
+
+ ![](index.php?/attachments/get/d9bf2a97-2b14-4fe0-8710-ed268b8a3ea5) 
+
+Step Description:
+Click on Templates
+Expected Result:
+The blade with the default predefined template opened
+Step Description:
+Click Add
+Choose language
+Set Subject
+Set template:
+
+The status of your payment {{payment_number}}  has been changed from &lt;strong&gt;{{ old_status }}&lt;/strong&gt; to &lt;strong&gt;{{ new_status }}&lt;/strong&gt;.
+
+Click OK &gt; Save
+Expected Result:
+The new blade is opened
+The new template for language_1 was created and saved
+The number of templates is increased on the widget","1. 
+2. 
+3.","1. The Notification on payment status change is displayed in the list
+
+ ![](index.php?/attachments/get/d9bf2a97-2b14-4fe0-8710-ed268b8a3ea5) 
+
+2. The blade with the default predefined template opened
+3. The new blade is opened
+The new template for language_1 was created and saved
+The number of templates is increased on the widget","1. Go to Notifications
+Notifications list
+Find Notification on payment status changed
+2. Click on Templates
+3. Click Add
+Choose language
+Set Subject
+Set template:
+
+The status of your payment {{payment_number}}  has been changed from &lt;strong&gt;{{ old_status }}&lt;/strong&gt; to &lt;strong&gt;{{ new_status }}&lt;/strong&gt;.
+
+Click OK &gt; Save","V3 Notification","S1504","Other","0"
+"C357104","Status changed for Shipment document > PickPack","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001882, https://virtowayqa.testrail.io/index.php?/attachments/get/1000001465"," None","Elena Mutykova","2/27/2023 3:53 PM","","","","Store_1 > Notification on shipments status changed set active
+
+Template_1 set for Notification on shipments status changed
+
+User_1 email is Email_1
+
+User_1 created Order_1
+
+***Settings > Order/ Notifications***
+
+ Use payments/shipments status changed notifications = true
+
+
+","Medium","","Orders","2","","Step Description:
+Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Shipment document
+Change Shipment Document Status from New &gt; PickPack
+Save
+
+
+
+Expected Result:
+The Shipment status is set as pick pack
+Step Description:
+Go to Notifications &gt; Notification activity feed
+
+Review ShipmentStatusChangedEmailNotification log
+
+
+
+
+
+
+Expected Result:
+The notification is sent successfully
+
+ ![](index.php?/attachments/get/68053d9b-90f5-4c21-85e1-211ab1725301) 
+
+
+
+
+
+
+Step Description:
+Open Email_1 inbox
+Expected Result:
+The inbox contains a notification email
+The email contains Template_1 for language_1:
+
+The status of your shipment {{shipment_number}}  has been changed from New to PickPack.
+
+
+ ![](index.php?/attachments/get/503ece7d-3e47-445c-84ba-4980392b5b9d)","1. 
+2. 
+3.","1. The Shipment status is set as pick pack
+2. The notification is sent successfully
+
+ ![](index.php?/attachments/get/68053d9b-90f5-4c21-85e1-211ab1725301) 
+
+
+
+
+
+
+3. The inbox contains a notification email
+The email contains Template_1 for language_1:
+
+The status of your shipment {{shipment_number}}  has been changed from New to PickPack.
+
+
+ ![](index.php?/attachments/get/503ece7d-3e47-445c-84ba-4980392b5b9d)","1. Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Shipment document
+Change Shipment Document Status from New &gt; PickPack
+Save
+
+
+
+2. Go to Notifications &gt; Notification activity feed
+
+Review ShipmentStatusChangedEmailNotification log
+
+
+
+
+
+
+3. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C357106","Status changed for Shipment document > ReadyToSend","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002724"," None","Elena Mutykova","2/27/2023 4:17 PM","","","","Store_1 > The Notification on shipments status change set active
+
+Template_1 set for The Notification on shipments status change
+
+User_1 email is Email_1
+
+User_1 created Order_1
+
+***Settings Order/ Notifications***
+
+ Use payments/shipments status changed notifications = true
+
+
+","Medium","","Orders","2","","Step Description:
+Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Shipment document
+Change Shipment Document Status from PickPack &gt; ReadyToSend
+Save
+
+
+
+Expected Result:
+The Shipment status is set as ReadyToSend
+Step Description:
+Go to Notifications &gt; Notification activity feed
+
+Review ShipmentStatusChangedEmailNotification log
+Expected Result:
+The notification is sent successfully
+Step Description:
+Open Email_1 inbox
+Expected Result:
+The inbox contains a notification email
+The email contains Template_1 for language_1:
+
+The status of your shipment {{shipment_number}}  has been changed from PickPack to ReadyToSend.
+
+ ![](index.php?/attachments/get/95e4ccab-e555-4b05-82c2-c61ec3b4ff63)","1. 
+2. 
+3.","1. The Shipment status is set as ReadyToSend
+2. The notification is sent successfully
+3. The inbox contains a notification email
+The email contains Template_1 for language_1:
+
+The status of your shipment {{shipment_number}}  has been changed from PickPack to ReadyToSend.
+
+ ![](index.php?/attachments/get/95e4ccab-e555-4b05-82c2-c61ec3b4ff63)","1. Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Shipment document
+Change Shipment Document Status from PickPack &gt; ReadyToSend
+Save
+
+
+
+2. Go to Notifications &gt; Notification activity feed
+
+Review ShipmentStatusChangedEmailNotification log
+3. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C357107","Status changed for Shipment document > Send","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000267"," None","Elena Mutykova","2/27/2023 4:19 PM","","","","Store_1 > The Notification on shipments status change set active
+
+Template_1 set for the Notification on shipments status change
+
+User_1 email is Email_1
+
+User_1 created Order_1
+
+***Settings Order/ Notifications***
+
+ Use payments/shipments status changed notifications = true
+
+
+","Medium","","Orders","2","","Step Description:
+Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Shipment document
+Change Shipment Document Status from ReadyToSend &gt; Send
+Save
+
+
+
+Expected Result:
+The Shipment status is set as Send
+Step Description:
+Go to Notifications &gt; Notification activity feed
+
+Review ShipmentStatusChangedEmailNotification log
+Expected Result:
+The notification is sent successfully
+Step Description:
+Open Email_1 inbox
+Expected Result:
+The inbox contains a notification email
+The email contains Template_1 for language_1:
+
+The status of your shipment {{shipment_number}}  has been changed from ReadyToSend to Send.
+
+ ![](index.php?/attachments/get/0e30fea5-3f71-4b1e-a60b-dab5bed0dbd2)","1. 
+2. 
+3.","1. The Shipment status is set as Send
+2. The notification is sent successfully
+3. The inbox contains a notification email
+The email contains Template_1 for language_1:
+
+The status of your shipment {{shipment_number}}  has been changed from ReadyToSend to Send.
+
+ ![](index.php?/attachments/get/0e30fea5-3f71-4b1e-a60b-dab5bed0dbd2)","1. Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Shipment document
+Change Shipment Document Status from ReadyToSend &gt; Send
+Save
+
+
+
+2. Go to Notifications &gt; Notification activity feed
+
+Review ShipmentStatusChangedEmailNotification log
+3. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C357108","Status changed for Shipment document > Cancelled","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001474"," None","Elena Mutykova","2/27/2023 4:20 PM","","","","Store_1 > The Notification on shipments status change set active
+
+Template_1 set for the Notification on shipments status change
+
+User_1 email is Email_1
+
+User_1 created Order_1
+
+***Settings Order/ Notifications***
+
+ Use payments/shipments status changed notifications = true
+
+
+","Medium","","Orders","2","","Step Description:
+Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Shipment document
+Change Shipment Document Status from New &gt; Cancelled
+Save
+
+
+
+Expected Result:
+The Shipment status is set as Cancelled
+Step Description:
+Go to Notifications &gt; Notification activity feed
+
+Review ShipmentStatusChangedEmailNotification log
+Expected Result:
+The notification is sent successfully
+Step Description:
+Open Email_1 inbox
+Expected Result:
+The inbox contains a notification email
+The email contains Template_1 for language_1:
+
+The status of your shipment {{shipment_number}}  has been changed from New to Cancelled.
+
+ ![](index.php?/attachments/get/508d4bec-f47e-4b79-a5b3-b264b9d571db)","1. 
+2. 
+3.","1. The Shipment status is set as Cancelled
+2. The notification is sent successfully
+3. The inbox contains a notification email
+The email contains Template_1 for language_1:
+
+The status of your shipment {{shipment_number}}  has been changed from New to Cancelled.
+
+ ![](index.php?/attachments/get/508d4bec-f47e-4b79-a5b3-b264b9d571db)","1. Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Shipment document
+Change Shipment Document Status from New &gt; Cancelled
+Save
+
+
+
+2. Go to Notifications &gt; Notification activity feed
+
+Review ShipmentStatusChangedEmailNotification log
+3. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C357105","Status changed for Payment document > Pending","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001099, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002635"," None","Elena Mutykova","2/27/2023 3:53 PM","","","","Store_1 > The Notification on payments status change set active
+
+Template_1 set for the Notification on payments status change
+
+
+User_1 email is Email_1
+User_1 created Order_1
+
+***Settings > Order/ Notifications***
+
+ Use payments/shipments status changed notifications = true
+
+","Medium","","Orders","2","","Step Description:
+Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Payment document
+Change Payment Document Status from New &gt; Pending
+Save
+Expected Result:
+The Payment status is set as Pending
+Step Description:
+Go to Notifications &gt; Notification activity feed
+
+Review PaymentStatusChangedEmailNotification Log
+
+ ![](index.php?/attachments/get/923dee9b-1a6f-487b-b2e9-5ddb992ef96a) 
+
+
+
+Expected Result:
+The notification is sent successfully
+
+
+
+
+Step Description:
+Open Email_1 inbox
+Expected Result:
+The inbox contains a notification email
+The email contains Template_1 for language_1:
+
+The status of your payment {{payment number}} has been changed from New to Pending.
+
+ ![](index.php?/attachments/get/3cb4cd07-3efd-47b0-8d93-9c994c9ca054)","1. 
+2. 
+3.","1. The Payment status is set as Pending
+2. The notification is sent successfully
+
+
+
+
+3. The inbox contains a notification email
+The email contains Template_1 for language_1:
+
+The status of your payment {{payment number}} has been changed from New to Pending.
+
+ ![](index.php?/attachments/get/3cb4cd07-3efd-47b0-8d93-9c994c9ca054)","1. Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Payment document
+Change Payment Document Status from New &gt; Pending
+Save
+2. Go to Notifications &gt; Notification activity feed
+
+Review PaymentStatusChangedEmailNotification Log
+
+ ![](index.php?/attachments/get/923dee9b-1a6f-487b-b2e9-5ddb992ef96a) 
+
+
+
+3. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C357109","Status changed for Payment document > Refunded","https://virtowayqa.testrail.io/index.php?/attachments/get/1000003517"," None","Elena Mutykova","2/27/2023 4:23 PM","","","","Store_1 > The Notification on payments status change set active
+
+Template_1 set for the Notification on payments status change
+
+
+User_1 email is Email_1
+User_1 created Order_1
+
+***Settings > Order/ Notifications***
+
+ Use payments/shipments status changed notifications = true
+
+","Medium","","Orders","2","","Step Description:
+Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Payment document
+Change Payment Document Status from Pending &gt; Refunded
+Save
+Expected Result:
+The Payment status is set as Refunded
+Step Description:
+Go to Notifications &gt; Notification activity feed
+
+Review PaymentStatusChangedEmailNotification Log
+Expected Result:
+The notification is sent successfully
+Step Description:
+Open Email_1 inbox
+Expected Result:
+The inbox contains a notification email
+The email contains Template_1:
+
+The status of your payment {{payment number}} has been changed from Pending to Refunded.
+
+ ![](index.php?/attachments/get/c566e361-ba16-4ab9-9c8d-3e3f47950c4f)","1. 
+2. 
+3.","1. The Payment status is set as Refunded
+2. The notification is sent successfully
+3. The inbox contains a notification email
+The email contains Template_1:
+
+The status of your payment {{payment number}} has been changed from Pending to Refunded.
+
+ ![](index.php?/attachments/get/c566e361-ba16-4ab9-9c8d-3e3f47950c4f)","1. Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Payment document
+Change Payment Document Status from Pending &gt; Refunded
+Save
+2. Go to Notifications &gt; Notification activity feed
+
+Review PaymentStatusChangedEmailNotification Log
+3. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C357117","Status changed for Payment document > Partially refunded","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001717"," None","Elena Mutykova","2/28/2023 7:25 AM","","","","Store_1 > The Notification on payments status change set active
+Template_1 set for the Notification on payments status change
+
+User_1 email is Email_1
+User_1 created Order_1
+
+***Settings > Order/ Notifications***
+
+ Use payments/shipments status changed notifications = true
+
+","Medium","","Orders","2","","Step Description:
+Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Payment document
+Change Payment Document Status from Refunded &gt; Partially refunded
+Save
+Expected Result:
+The Payment status is set as Partially refunded
+Step Description:
+Go to Notifications &gt; Notification activity feed
+
+Review PaymentStatusChangedEmailNotification Log
+Expected Result:
+The notification is sent successfully
+Step Description:
+Open Email_1 inbox
+Expected Result:
+The inbox contains a notification email
+The email contains Template_1 for language_1:
+
+The status of your payment {{payment number}} has been changed from Refunded to PartiallyRefunded.
+
+
+ ![](index.php?/attachments/get/5e3ebe4a-4c65-4d7b-83ea-4cce36b2426f)","1. 
+2. 
+3.","1. The Payment status is set as Partially refunded
+2. The notification is sent successfully
+3. The inbox contains a notification email
+The email contains Template_1 for language_1:
+
+The status of your payment {{payment number}} has been changed from Refunded to PartiallyRefunded.
+
+
+ ![](index.php?/attachments/get/5e3ebe4a-4c65-4d7b-83ea-4cce36b2426f)","1. Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Payment document
+Change Payment Document Status from Refunded &gt; Partially refunded
+Save
+2. Go to Notifications &gt; Notification activity feed
+
+Review PaymentStatusChangedEmailNotification Log
+3. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C357116","Status changed for Payment document > Paid","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001921"," None","Elena Mutykova","2/28/2023 7:23 AM","","","","Store_1 > The Notification on payments status change set active
+Template_1 set for the Notification on payments status change
+
+User_1 email is Email_1
+User_1 created Order_1
+
+***Settings > Order/ Notifications***
+
+ Use payments/shipments status changed notifications = true
+
+","Medium","","Orders","2","","Step Description:
+Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Payment document
+Change Payment Document Status from PartiallyRefunded &gt; Paid
+Save
+Expected Result:
+The Payment status is set as Paid
+Step Description:
+Go to Notifications &gt; Notification activity feed
+
+Review PaymentStatusChangedEmailNotification Log
+Expected Result:
+The notification is sent successfully
+Step Description:
+Open Email_1 inbox
+Expected Result:
+The inbox contains a notification email
+The email contains Template_1 for language_1:
+
+The status of your payment {{payment number}} has been changed from PartiallyRefunded to Paid.
+
+ ![](index.php?/attachments/get/6e216565-f30c-4850-b45d-e65beb9f7199)","1. 
+2. 
+3.","1. The Payment status is set as Paid
+2. The notification is sent successfully
+3. The inbox contains a notification email
+The email contains Template_1 for language_1:
+
+The status of your payment {{payment number}} has been changed from PartiallyRefunded to Paid.
+
+ ![](index.php?/attachments/get/6e216565-f30c-4850-b45d-e65beb9f7199)","1. Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Payment document
+Change Payment Document Status from PartiallyRefunded &gt; Paid
+Save
+2. Go to Notifications &gt; Notification activity feed
+
+Review PaymentStatusChangedEmailNotification Log
+3. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C357115","Status changed for Payment document > Authorized","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002119"," None","Elena Mutykova","2/28/2023 7:23 AM","","","","Store_1 > The Notification on payments status change set active
+Template_1 set for the Notification on payments status change
+
+
+User_1 email is Email_1
+User_1 created Order_1
+
+***Settings > Order/ Notifications***
+
+ Use payments/shipments status changed notifications = true
+
+","Medium","","Orders","2","","Step Description:
+Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Payment document
+Change Payment Document Status from New &gt; Authorized
+Save
+Expected Result:
+The Payment status is set as Authorized
+Step Description:
+Go to Notifications &gt; Notification activity feed
+
+Review PaymentStatusChangedEmailNotification Log
+Expected Result:
+The notification is sent successfully
+Step Description:
+Open Email_1 inbox
+Expected Result:
+The inbox contains a notification email
+The email contains Template_1 for language_1:
+
+The status of your payment {{payment number}} has been changed from New to Authorized.
+
+ ![](index.php?/attachments/get/768d4878-ec28-4a50-9307-8efc31a5abca)","1. 
+2. 
+3.","1. The Payment status is set as Authorized
+2. The notification is sent successfully
+3. The inbox contains a notification email
+The email contains Template_1 for language_1:
+
+The status of your payment {{payment number}} has been changed from New to Authorized.
+
+ ![](index.php?/attachments/get/768d4878-ec28-4a50-9307-8efc31a5abca)","1. Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Payment document
+Change Payment Document Status from New &gt; Authorized
+Save
+2. Go to Notifications &gt; Notification activity feed
+
+Review PaymentStatusChangedEmailNotification Log
+3. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C357110","Status changed for Payment document > Cancelled","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000379"," None","Elena Mutykova","2/27/2023 4:24 PM","","","","Store_1 > The Notification on payments status change set active
+Template_1 set for the Notification on payments status change
+
+
+User_1 email is Email_1
+User_1 created Order_1
+
+***Settings > Order/ Notifications***
+
+ Use payments/shipments status changed notifications = true
+
+","Medium","","Orders","2","","Step Description:
+Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Payment document
+Change Payment Document Status from Authorized &gt; Cancelled
+Save
+Expected Result:
+The Payment status is set as Cancelled
+Step Description:
+Go to Notifications &gt; Notification activity feed
+
+Review PaymentStatusChangedEmailNotification Log
+Expected Result:
+The notification is sent successfully
+Step Description:
+Open Email_1 inbox
+Expected Result:
+The inbox contains a notification email
+The email contains Template_1 for language_1:
+
+The status of your payment {{payment number}} has been changed from Authorized to Cancelled.
+
+
+ ![](index.php?/attachments/get/14674a04-6403-4c47-8db1-971d0a38d97f)","1. 
+2. 
+3.","1. The Payment status is set as Cancelled
+2. The notification is sent successfully
+3. The inbox contains a notification email
+The email contains Template_1 for language_1:
+
+The status of your payment {{payment number}} has been changed from Authorized to Cancelled.
+
+
+ ![](index.php?/attachments/get/14674a04-6403-4c47-8db1-971d0a38d97f)","1. Go to admin &gt; Orders
+Find Order_1 &gt; Click on the Payment document
+Change Payment Document Status from Authorized &gt; Cancelled
+Save
+2. Go to Notifications &gt; Notification activity feed
+
+Review PaymentStatusChangedEmailNotification Log
+3. Open Email_1 inbox","V3 Notification","S1504","Other","0"
+"C357128","Change Status of Miltiple Shipment and Payments Documents",""," None","Elena Mutykova","2/28/2023 4:31 PM","","","","Store_1 > The Notification on payments status change set active
+Template_1 set for the Notification on payments status change
+Template_2 set for the Notification on shipments status change
+
+
+User_1 email is Email_1
+User_1 created Order_1
+
+***Settings > Order/ Notifications***
+
+Use payments/shipments status changed notifications = true","Medium","","Orders","2","","Step Description:
+Go to Orders &gt; Open Order1
+Click on New document &gt; Add Shipment
+Fill out the necessary fields
+Add shipping address and specify the email
+
+OK
+Expected Result:
+The new shipment document created
+Step Description:
+Go to Orders &gt; Open Order1
+Click on New document &gt; Add Payment
+Fill out the necessary fields
+Add billing address and specify the email
+
+OK
+Expected Result:
+The new payment document created
+Step Description:
+Change the status for several shipment and payment documents
+Expected Result:
+The statuses were changed
+Step Description:
+Go to Notifications &gt; Notification activity feed
+
+Review PaymentStatusChangedEmailNotification Log
+Expected Result:
+The notifications for each document were sent successfully
+Step Description:
+Check E-mail
+Expected Result:
+The inbox contains a notification email for each document and action","1. 
+2. 
+3. 
+4. 
+5.","1. The new shipment document created
+2. The new payment document created
+3. The statuses were changed
+4. The notifications for each document were sent successfully
+5. The inbox contains a notification email for each document and action","1. Go to Orders &gt; Open Order1
+Click on New document &gt; Add Shipment
+Fill out the necessary fields
+Add shipping address and specify the email
+
+OK
+2. Go to Orders &gt; Open Order1
+Click on New document &gt; Add Payment
+Fill out the necessary fields
+Add billing address and specify the email
+
+OK
+3. Change the status for several shipment and payment documents
+4. Go to Notifications &gt; Notification activity feed
+
+Review PaymentStatusChangedEmailNotification Log
+5. Check E-mail","V3 Notification","S1504","Other","0"
+"C345207","Share preview of Notification on cancelled order","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002811"," None","Anastasiia Fotinova","8/3/2022 2:57 PM","","","","1. Use several emails to make a comparison of templates
+2. Use steps from the test case [342212](https://virtowayqa.testrail.io/index.php?/cases/view/342212) to Share ""Notification on cancelled order""
+
+Check priority on Gmail, Outlook (desktop/mobile applications), browser mobile/desktop","Medium","","Share preview for orders notifications","3","","Step Description:
+Open mail and view the received email
+Expected Result:
+The email with """"Notification on cancelled order"""" is open:
+
+![](index.php?/attachments/get/9d46eb43-6fa9-4509-8290-bfb545ddaf61)  ","1","1. The email with """"Notification on cancelled order"""" is open:
+
+![](index.php?/attachments/get/9d46eb43-6fa9-4509-8290-bfb545ddaf61)  ","1. Open mail and view the received email","V3 Notification","S1504","Other","0"
+"C345209","Share preview of Notification on new order status","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000760, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002811"," None","Anastasiia Fotinova","8/3/2022 3:10 PM","","","","1. Use several emails to make a comparison of templates
+2. Use steps from the case [342212](https://virtowayqa.testrail.io/index.php?/cases/view/342212) to Share ""Notification on new order status""
+
+Check priority on Gmail, Outlook (desktop/mobile applications), browser mobile/desktop
+","Medium","","Share preview for orders notifications","3","","Step Description:
+Open mail and view the received email
+Expected Result:
+The email with """"Notification on new order status"""" is open:
+
+![](index.php?/attachments/get/288a553b-de69-4bb0-8715-ebd513f71a4e)  ","1","1. The email with """"Notification on new order status"""" is open:
+
+![](index.php?/attachments/get/288a553b-de69-4bb0-8715-ebd513f71a4e)  ","1. Open mail and view the received email","V3 Notification","S1504","Other","0"
+"C345210","Share preview of Notification on created order","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000760, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000851, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002811"," None","Anastasiia Fotinova","8/3/2022 3:12 PM","","","","1. Use several emails to make a comparison of templates
+2. Use steps from the case [342212](https://virtowayqa.testrail.io/index.php?/cases/view/342212) to Share ""Notification on created order""
+
+Check priority on Gmail, Outlook (desktop/mobile applications), browser mobile/desktop
+","Medium","","Share preview for orders notifications","3","","Step Description:
+Open mail and view the received email
+Expected Result:
+The email with """"Notification on created order"""" is open:
+![](index.php?/attachments/get/2d6db347-9de3-49c6-8b8a-16d244f7300c)   ","1","1. The email with """"Notification on created order"""" is open:
+![](index.php?/attachments/get/2d6db347-9de3-49c6-8b8a-16d244f7300c)   ","1. Open mail and view the received email","V3 Notification","S1504","Other","0"
+"C345211","Share preview of Notification on order payment","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002811, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000760, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000851"," None","Anastasiia Fotinova","8/3/2022 3:15 PM","","","","1. Use several emails to make a comparison of templates
+2. Use steps from the case [342212](https://virtowayqa.testrail.io/index.php?/cases/view/342212) to Share ""Notification on order payment""
+
+Check priority on Gmail, Outlook (desktop/mobile applications), browser mobile/desktop
+","Medium","","Share preview for orders notifications","3","","Step Description:
+Open mail and view the received email
+Expected Result:
+The email with """"Notification on order payment"""" is open:
+![](index.php?/attachments/get/2d6db347-9de3-49c6-8b8a-16d244f7300c)    ","1","1. The email with """"Notification on order payment"""" is open:
+![](index.php?/attachments/get/2d6db347-9de3-49c6-8b8a-16d244f7300c)    ","1. Open mail and view the received email","V3 Notification","S1504","Other","0"
+"C345212","Share preview of Notification on shipped order","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000851, https://virtowayqa.testrail.io/index.php?/attachments/get/1000002811, https://virtowayqa.testrail.io/index.php?/attachments/get/1000000760"," None","Anastasiia Fotinova","8/3/2022 3:16 PM","","","","1. Use several emails to make a comparison of templates
+2. Use steps from the case [342212](https://virtowayqa.testrail.io/index.php?/cases/view/342212) to Share ""Notification on shipped order""
+
+Check priority on Gmail, Outlook (desktop/mobile applications), browser mobile/desktop
+","Medium","","Share preview for orders notifications","3","","Step Description:
+Open mail and view the received email
+Expected Result:
+The email with """"Notification on shipped order"""" is open:
+![](index.php?/attachments/get/2d6db347-9de3-49c6-8b8a-16d244f7300c)     ","1","1. The email with """"Notification on shipped order"""" is open:
+![](index.php?/attachments/get/2d6db347-9de3-49c6-8b8a-16d244f7300c)     ","1. Open mail and view the received email","V3 Notification","S1504","Other","0"
+"C345350","Share preview of InvoiceEmailNotification","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004119"," None","Anastasiia Fotinova","8/5/2022 1:03 PM","","","","1. Use several emails to make a comparison of templates
+
+
+2. Use steps from the case [342212](https://virtowayqa.testrail.io/index.php?/cases/view/342212) to Share ""Notification on shipped order""
+
+
+
+Check priority on Gmail, Outlook (desktop/mobile applications), browser mobile/desktop","Medium","","Share preview for orders notifications","3","","Step Description:
+Open mail and view the received email
+Expected Result:
+The email with """"Invoice for customer order"""" is open:
+![](index.php?/attachments/get/e8ca74e6-c686-42a4-907b-c59a7f02d4ab)","1","1. The email with """"Invoice for customer order"""" is open:
+![](index.php?/attachments/get/e8ca74e6-c686-42a4-907b-c59a7f02d4ab)","1. Open mail and view the received email","V3 Notification","S1504","Other","0"
+"C278762","Email address verification","","","Volha Baban","2/26/2021 8:35 AM","","","","1. Store_1 > ""Email address verification"" notification is active
+2. Template_1 set for the notification
+3. The ""Enable email address verification"" feature is ON in the store Settings. 
+4. User_1 was created. 
+5. User_1 email is Email_1
+
+","Medium","","Email address verification","2","1. Notification template not used in verification functionallity
+https://virtocommerce.atlassian.net/browse/VP-6892?focusedCommentId=42513","Step Description:
+1. Login to the storefront as a user_1. 
+2. Go to the My Account > Profile page. 
+3. Change the Email_1 to Email_2. 
+4. Click """"Update"""". 
+
+Expected Result:
+A new email has been saved. 
+Step Description:
+1. Open Email_2 inbox. 
+
+Expected Result:
+Inbox contains address verification email.
+Step Description:
+1. Open the email.
+
+Expected Result:
+The email contains template_1. 
+Step Description:
+1. Click the link in the email.
+Expected Result:
+You are redirected to the email verification page.","1. 
+2. 
+3. 
+4.","1. A new email has been saved. 
+2. Inbox contains address verification email.
+3. The email contains template_1. 
+4. You are redirected to the email verification page.","1. 1. Login to the storefront as a user_1. 
+2. Go to the My Account > Profile page. 
+3. Change the Email_1 to Email_2. 
+4. Click """"Update"""". 
+
+2. 1. Open Email_2 inbox. 
+
+3. 1. Open the email.
+
+4. 1. Click the link in the email.","V3 Notification","S1504","Other","0"
+"C278763","Change template","","","Volha Baban","2/26/2021 9:25 AM","","","","1. Store_1 > ""Email address verification"" notification is active
+2. Template_1 set for the notification
+3. The ""Enable email address verification"" feature is ON in the store Settings. 
+4. User_1 was created. 
+5. User_1 email is Email_1","Medium","","Email address verification","2","1. Notification template not used in verification functionallity
+https://virtocommerce.atlassian.net/browse/VP-6892?focusedCommentId=42513","Step Description:
+1. Go to the """"Email address verification"""" notification. 
+2. Click the """"Template"""" widget. 
+3. Open the Template_1. 
+4. Make some changes in the template text. 
+5. Click """"Ok"""" and save. 
+6. Reopen the changed template. 
+
+Expected Result:
+Changes have been saved.
+Step Description:
+1. Login to the StoreFront as a user_1. 
+2. Go to My Account > Profile page. 
+3. Change the Email_1 to Email_2. 
+4. Go to the Email_2 inbox. 
+Expected Result:
+Inbox contains address verification email. 
+Step Description:
+1. Open the received email.
+Expected Result:
+Text of the email matches the changed template.","1. 
+2. 
+3.","1. Changes have been saved.
+2. Inbox contains address verification email. 
+3. Text of the email matches the changed template.","1. 1. Go to the """"Email address verification"""" notification. 
+2. Click the """"Template"""" widget. 
+3. Open the Template_1. 
+4. Make some changes in the template text. 
+5. Click """"Ok"""" and save. 
+6. Reopen the changed template. 
+
+2. 1. Login to the StoreFront as a user_1. 
+2. Go to My Account > Profile page. 
+3. Change the Email_1 to Email_2. 
+4. Go to the Email_2 inbox. 
+3. 1. Open the received email.","V3 Notification","S1504","Other","0"
+"C278764","Is Active = ON/OFF","","","Volha Baban","2/26/2021 9:55 AM","","","","1. Store_1 > ""Email address verification"" notification is active
+2. Template_1 set for the notification
+3. The ""Enable email address verification"" feature is ON in the store Settings.
+4. User_1 was created.
+5. User_1 email is Email_1
+","Medium","","Email address verification","2","1. Notification template not used in verification functionallity
+https://virtocommerce.atlassian.net/browse/VP-6892?focusedCommentId=42513","Step Description:
+1. Go to the """"Email address verification"""" notification. 
+2. Set the """"Is Active"""" toggle to off. 
+3. Save. 
+4. Login to the StoreFront as a User_1. 
+5. Go to the My Account > Profile page. 
+6. Change the Email_1 to Email_2. 
+7. Update. 
+8. Go to the Email_2 inbox. 
+Expected Result:
+There is no address verification email in the inbox. 
+Step Description:
+1. Go back to the admin panel. 
+2. Go to the """"Email address verification"""" notification. 
+3. Switch on the """"Is Active"""" toggle. 
+4. Go back to the StoreFront. 
+5. Change the Email_2 to Email_3. 
+6. Go to the Email_3 inbox. 
+
+Expected Result:
+There is the address verification email in the inbox.","1. 
+2.","1. There is no address verification email in the inbox. 
+2. There is the address verification email in the inbox.","1. 1. Go to the """"Email address verification"""" notification. 
+2. Set the """"Is Active"""" toggle to off. 
+3. Save. 
+4. Login to the StoreFront as a User_1. 
+5. Go to the My Account > Profile page. 
+6. Change the Email_1 to Email_2. 
+7. Update. 
+8. Go to the Email_2 inbox. 
+2. 1. Go back to the admin panel. 
+2. Go to the """"Email address verification"""" notification. 
+3. Switch on the """"Is Active"""" toggle. 
+4. Go back to the StoreFront. 
+5. Change the Email_2 to Email_3. 
+6. Go to the Email_3 inbox.","V3 Notification","S1504","Other","0"
+"C207563","Phone number change","","","Grotem","4/16/2020 9:56 AM","","1. SMS with notification sent to Phone_1
+","","1. User is on store page
+2. User is on profile page
+3. User did not set phone number","Medium","","SMS","1","The setting that switched between email and sms should be configured in Azure (or in config file) for storefront
+VirtoCommerce:TwoFactorAuthenticationNotificationGateway
+Phone - for sms
+Email - for emails
+
+VirtoCommerce:ResetPasswordNotificationGateway
+Phone - for sms
+Email - for emails","","","","","V3 Notification","S1504","Other","0"
+"C251791","Two factor authentication","","","Grotem","8/20/2020 2:07 PM","","1. SMS with code sent to Phone_1 
+2. Form to enter user code shown","","1. User is on store login page
+2. User phone number is Phone_1 number","Medium","","SMS","1","The setting that switched between email and sms should be configured in Azure (or in config file) for storefront
+VirtoCommerce:TwoFactorAuthenticationNotificationGateway
+Phone - for sms
+Email - for emails
+
+VirtoCommerce:ResetPasswordNotificationGateway
+Phone - for sms
+Email - for emails","","","","","V3 Notification","S1504","Other","0"
+"C251790","Password reset","","","Grotem","8/20/2020 2:05 PM","","1. SMS with notification sent to Phone_1
+","","1. User is on store page
+2. User phone is Phone_1","Medium","","SMS","1","The setting that switched between email and sms should be configured in Azure (or in config file) for storefront
+VirtoCommerce:TwoFactorAuthenticationNotificationGateway
+Phone - for sms
+Email - for emails
+
+VirtoCommerce:ResetPasswordNotificationGateway
+Phone - for sms
+Email - for emails","","","","","V3 Notification","S1504","Other","0"
+"C208264","Search","","","Grotem","4/16/2020 3:16 PM","","","","1. Admin logged in admin environment
+2. Admin open notifications list page
+3. Notifications list contains Notification_1","Medium","","Notifications list blade","1","","Step Description:
+Admin enter Notification_1 name in search field
+Expected Result:
+Only Notification_1 shown","1","1. Only Notification_1 shown","1. Admin enter Notification_1 name in search field","V3 Notification","S1504","Other","0"
+"C208268","Button """"Manage""""","","","Grotem","4/16/2020 3:17 PM","","","","1. Admin logged in admin environment
+2. Admin open notifications list page
+3. Notifications list contains Notification_1
+","Medium","","Notifications list blade","1","","Step Description:
+Click with right mouse button on Notification_1
+Expected Result:
+Context menu opened
+Step Description:
+Click on button """"Manage""""
+Expected Result:
+Blade with Notification_1 information opened","1. 
+2.","1. Context menu opened
+2. Blade with Notification_1 information opened","1. Click with right mouse button on Notification_1
+2. Click on button """"Manage""""","V3 Notification","S1504","Other","0"
+"C208273","Change amount of columns","","","Grotem","4/16/2020 3:30 PM","","","","1. Admin logged in admin environment
+2. Admin open notifications list page
+3. Notifications list contains Notification_1
+4. Column_1 and Column_2 set as active columns for notifications list
+","Medium","","View modification","2","","Step Description:
+Open menu to manage amount of columns
+![](index.php?/attachments/get/23836)
+Expected Result:
+Menu opened
+
+Step Description:
+Click on Column_2 in list
+Expected Result:
+Only Column_1 set as active in list","1. 
+2.","1. Menu opened
+
+2. Only Column_1 set as active in list","1. Open menu to manage amount of columns
+![](index.php?/attachments/get/23836)
+2. Click on Column_2 in list","V3 Notification","S1504","Other","0"
+"C208267","Change columns size","","","Grotem","4/16/2020 3:17 PM","","","","1. Admin logged in admin environment
+2. Admin open notifications list page
+3. Notifications list contains Notification_1","Medium","","View modification","2","","Step Description:
+Move mouse cursor to the edge of column
+![](index.php?/attachments/get/23837)
+
+Expected Result:
+Coursor changed view
+Step Description:
+Clcik with right mouse button and drag mouse to the left  or to the right
+Expected Result:
+Column changed size","1. 
+2.","1. Coursor changed view
+2. Column changed size","1. Move mouse cursor to the edge of column
+![](index.php?/attachments/get/23837)
+
+2. Clcik with right mouse button and drag mouse to the left  or to the right","V3 Notification","S1504","Other","0"
+"C208274","Save changes for Email","","","Grotem","4/16/2020 3:40 PM","","","","1. Admin logged in admin environment
+2. Admin open notifications list page
+3. Notifications list contains Notification_1 (Email) ","Medium","","Notification manipulation","2","","Step Description:
+Click on Notification_1
+Expected Result:
+Notification_1 blade opened
+Step Description:
+Enter valid values in fields of Notification_1
+Expected Result:
+1. Button """"Save"""" becomes active
+2. Button """"Undo"""" becomes active
+Step Description:
+Click on button """"Save""""
+Expected Result:
+All changes for Notification_1 saved
+Step Description:
+Click on Notification_1
+Expected Result:
+Changed values shown for Notification_1","1. 
+2. 
+3. 
+4.","1. Notification_1 blade opened
+2. 1. Button """"Save"""" becomes active
+2. Button """"Undo"""" becomes active
+3. All changes for Notification_1 saved
+4. Changed values shown for Notification_1","1. Click on Notification_1
+2. Enter valid values in fields of Notification_1
+3. Click on button """"Save""""
+4. Click on Notification_1","V3 Notification","S1504","Other","0"
+"C211027","Save changes for SMS","","","Grotem","4/20/2020 10:16 AM","","","","1. Admin logged in admin environment
+2. Admin open notifications list page
+3. Notifications list contains Notification_1 (SMS)","Medium","","Notification manipulation","2","","Step Description:
+Click on Notification_1
+Expected Result:
+Notification_1 blade opened
+Step Description:
+Enter valid values in fields of Notification_1
+Expected Result:
+1. Button """"Save"""" becomes active
+2. Button """"Undo"""" becomes active
+Step Description:
+Click on button """"Save""""
+Expected Result:
+All changes for Notification_1 saved
+Step Description:
+Click on Notification_1
+Expected Result:
+Changed values shown for Notification_1","1. 
+2. 
+3. 
+4.","1. Notification_1 blade opened
+2. 1. Button """"Save"""" becomes active
+2. Button """"Undo"""" becomes active
+3. All changes for Notification_1 saved
+4. Changed values shown for Notification_1","1. Click on Notification_1
+2. Enter valid values in fields of Notification_1
+3. Click on button """"Save""""
+4. Click on Notification_1","V3 Notification","S1504","Other","0"
+"C208277","Undo changes","","","Grotem","4/16/2020 3:45 PM","","","","1. Admin logged in admin environment
+2. Admin open notifications list page
+3. Notifications list contains Notification_1","Medium","","Notification manipulation","2","","Step Description:
+Click on Notification_1
+Expected Result:
+Notification_1 blade opened
+Step Description:
+Enter valid values in fields of Notification_1
+Expected Result:
+1. Button """"Save"""" becomes active
+2. Button """"Undo"""" becomes active
+Step Description:
+Click on button """"Undo""""
+Expected Result:
+All changes for Notification_1 was reset
+Step Description:
+Click on Notification_1
+Expected Result:
+Notification_1 shown in initial state without any changes","1. 
+2. 
+3. 
+4.","1. Notification_1 blade opened
+2. 1. Button """"Save"""" becomes active
+2. Button """"Undo"""" becomes active
+3. All changes for Notification_1 was reset
+4. Notification_1 shown in initial state without any changes","1. Click on Notification_1
+2. Enter valid values in fields of Notification_1
+3. Click on button """"Undo""""
+4. Click on Notification_1","V3 Notification","S1504","Other","0"
+"C211029","Validation of fields","","","Grotem","4/20/2020 10:58 AM","","","","1. Admin logged in admin environment
+2. Admin open notifications list page
+3. Notifications list contains Notification_1","Medium","","Notification manipulation","2","","Step Description:
+Click on Notification_1
+Expected Result:
+Notification_1 blade opened
+Step Description:
+Enter invalid values in fields of Notification_1
+Expected Result:
+Invalid fields is highlighted with red color","1. 
+2.","1. Notification_1 blade opened
+2. Invalid fields is highlighted with red color","1. Click on Notification_1
+2. Enter invalid values in fields of Notification_1","V3 Notification","S1504","Other","0"
+"C208280","Add new template","","","Grotem","4/16/2020 3:47 PM","","","","1. Admin logged in admin environment
+2. Admin open notifications list page
+3. Notifications list contains Notification_1
+4. Localization Localization_1 was created","Medium","","Templates blade","3","","Step Description:
+Click on Notification_1
+Expected Result:
+Notification_1 blade opened
+Step Description:
+Click on widget """"Templates""""
+Expected Result:
+1. Blade with templates for Notification_1 shown
+2. Button """"Add"""" shown in toolbar
+3. Button """"Add"""" is active
+Step Description:
+Click on button """"Add""""
+Expected Result:
+1. Blade to add template shown
+- Field subject is required
+Step Description:
+Select Localization_1 as language for template
+Expected Result:
+Localization_1 set as language
+Step Description:
+Enter subject Subject_1 for template
+Expected Result:
+Subject_1 set as subject
+Step Description:
+Enter value in body
+Expected Result:
+Data set
+Step Description:
+Click on button """"Ok""""
+Expected Result:
+Template for Localization_1 was saved","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7.","1. Notification_1 blade opened
+2. 1. Blade with templates for Notification_1 shown
+2. Button """"Add"""" shown in toolbar
+3. Button """"Add"""" is active
+3. 1. Blade to add template shown
+- Field subject is required
+4. Localization_1 set as language
+5. Subject_1 set as subject
+6. Data set
+7. Template for Localization_1 was saved","1. Click on Notification_1
+2. Click on widget """"Templates""""
+3. Click on button """"Add""""
+4. Select Localization_1 as language for template
+5. Enter subject Subject_1 for template
+6. Enter value in body
+7. Click on button """"Ok""""","V3 Notification","S1504","Other","0"
+"C208282","Add default template","","","Grotem","4/16/2020 3:50 PM","","","","1. Admin logged in admin environment
+2. Admin open notifications list page
+3. Notifications list contains Notification_1","Medium","","Templates blade","3","","Step Description:
+Click on Notification_1
+Expected Result:
+Notification_1 blade opened
+Step Description:
+Click on widget """"Templates""""
+Expected Result:
+1. Blade with templates for Notification_1 shown
+2. Button """"Add"""" shown in toolbar
+3. Button """"Add"""" is active
+Step Description:
+Click on button """"Add""""
+Expected Result:
+1. Blade to add template shown
+- Field subject is required
+Step Description:
+Do not set any localization for template
+Expected Result:
+No localization set for template
+Step Description:
+Enter subject Subject_1 for template
+Expected Result:
+Subject_1 set as subject
+Step Description:
+Enter value in body
+Expected Result:
+Data set
+Step Description:
+Click on button """"Ok""""
+Expected Result:
+Default template saved for notification","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7.","1. Notification_1 blade opened
+2. 1. Blade with templates for Notification_1 shown
+2. Button """"Add"""" shown in toolbar
+3. Button """"Add"""" is active
+3. 1. Blade to add template shown
+- Field subject is required
+4. No localization set for template
+5. Subject_1 set as subject
+6. Data set
+7. Default template saved for notification","1. Click on Notification_1
+2. Click on widget """"Templates""""
+3. Click on button """"Add""""
+4. Do not set any localization for template
+5. Enter subject Subject_1 for template
+6. Enter value in body
+7. Click on button """"Ok""""","V3 Notification","S1504","Other","0"
+"C208281","Cancel template creation","","","Grotem","4/16/2020 3:50 PM","","","","1. Admin logged in admin environment
+2. Admin open notifications list page
+3. Notifications list contains Notification_1
+4. Localization Localization_1 was created","Medium","","Templates blade","3","","Step Description:
+Click on Notification_1
+Expected Result:
+Notification_1 blade opened
+Step Description:
+Click on widget """"Templates""""
+Expected Result:
+1. Blade with templates for Notification_1 shown
+2. Button """"Add"""" shown in toolbar
+3. Button """"Add"""" is active
+Step Description:
+Click on button """"Add""""
+Expected Result:
+1. Blade to add template shown
+- Field subject is required
+Step Description:
+Select Localization_1 as language for template
+Expected Result:
+Localization_1 set as language
+Step Description:
+Enter subject Subject_1 for template
+Expected Result:
+Subject_1 set as subject
+Step Description:
+Enter value in body
+Expected Result:
+Data set
+Step Description:
+Click on button """"Cancel""""
+Expected Result:
+1. Template was not saved
+2. Blade closed","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7.","1. Notification_1 blade opened
+2. 1. Blade with templates for Notification_1 shown
+2. Button """"Add"""" shown in toolbar
+3. Button """"Add"""" is active
+3. 1. Blade to add template shown
+- Field subject is required
+4. Localization_1 set as language
+5. Subject_1 set as subject
+6. Data set
+7. 1. Template was not saved
+2. Blade closed","1. Click on Notification_1
+2. Click on widget """"Templates""""
+3. Click on button """"Add""""
+4. Select Localization_1 as language for template
+5. Enter subject Subject_1 for template
+6. Enter value in body
+7. Click on button """"Cancel""""","V3 Notification","S1504","Other","0"
+"C208283","Overwrite template with same localization","","","Grotem","4/16/2020 3:52 PM","","","","1. Admin logged in admin environment
+2. Admin open notifications list page
+3. Notifications list contains Notification_1
+4. Localization Localization_1 was created
+5. Template_1 with Localization_1 was already created
+- Template_1 subject is Subject_Old
+- Template_1 body is Data_Old","Medium","","Templates blade","3","","Step Description:
+Click on Notification_1
+Expected Result:
+Notification_1 blade opened
+Step Description:
+Click on widget """"Templates""""
+Expected Result:
+1. Blade with templates for Notification_1 shown
+2. Button """"Add"""" shown in toolbar
+3. Button """"Add"""" is active
+Step Description:
+Click on button """"Add""""
+Expected Result:
+1. Blade to add template shown
+- Field subject is required
+Step Description:
+Select Localization_1 as language for template
+Expected Result:
+Localization_1 set as language
+Step Description:
+Enter subject Subject_1 for template
+Expected Result:
+Subject_1 set as subject
+Step Description:
+Enter value in body
+Expected Result:
+Data_1 set as body of template
+Step Description:
+Click on button """"Ok""""
+Expected Result:
+1. Template_1 was overwritten
+2. Template_1 contains Subject_1
+3. Template_1 contains Data_1","1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7.","1. Notification_1 blade opened
+2. 1. Blade with templates for Notification_1 shown
+2. Button """"Add"""" shown in toolbar
+3. Button """"Add"""" is active
+3. 1. Blade to add template shown
+- Field subject is required
+4. Localization_1 set as language
+5. Subject_1 set as subject
+6. Data_1 set as body of template
+7. 1. Template_1 was overwritten
+2. Template_1 contains Subject_1
+3. Template_1 contains Data_1","1. Click on Notification_1
+2. Click on widget """"Templates""""
+3. Click on button """"Add""""
+4. Select Localization_1 as language for template
+5. Enter subject Subject_1 for template
+6. Enter value in body
+7. Click on button """"Ok""""","V3 Notification","S1504","Other","0"
+"C208285","Check list of notifications","","","Grotem","4/16/2020 3:57 PM","","","","1. Admin logged in admin environment
+2. Admin open notifications list page
+3. Notifications list contains Notification_1
+4. User sent several notifications Notification_1","Medium","","Send log blade","3","","Step Description:
+Click on Notification_1
+Expected Result:
+Notification_1 blade opened
+Step Description:
+Click on widget """"Send log""""
+Expected Result:
+1. Blade with list of sent Notification_1 shown
+2. Button """"Refresh"""" shown in toolbar
+3. Button """"Refresh"""" is active
+Step Description:
+User send another Notification_1
+Expected Result:
+1. Notification sent to user's email
+2. Notification added to log
+Step Description:
+Admin click on button """"Refresh""""
+Expected Result:
+1. List of Notification_1 refreshed
+2. New notification value shown","1. 
+2. 
+3. 
+4.","1. Notification_1 blade opened
+2. 1. Blade with list of sent Notification_1 shown
+2. Button """"Refresh"""" shown in toolbar
+3. Button """"Refresh"""" is active
+3. 1. Notification sent to user's email
+2. Notification added to log
+4. 1. List of Notification_1 refreshed
+2. New notification value shown","1. Click on Notification_1
+2. Click on widget """"Send log""""
+3. User send another Notification_1
+4. Admin click on button """"Refresh""""","V3 Notification","S1504","Other","0"
+"C208286","Refresh","","","Grotem","4/16/2020 4:01 PM","","","","1. Admin logged in admin environment
+2. Admin open notifications feed page
+3. Notifications list contains Notification_1
+4. User sent several notifications Notification_1","Medium","","Notification feed","1","","Step Description:
+Check notifications feed
+Expected Result:
+1. List of notifications sent to users shown
+2. Button """"Refresh"""" shown
+3. Button """"Refresh"""" is active
+Step Description:
+User send another Notification_1
+Expected Result:
+1. Notification sent to user's email
+2. Notification added to log
+Step Description:
+Admin click on button """"Refresh""""
+Expected Result:
+1. List of notifications refreshed
+2. New notification value shown","1. 
+2. 
+3.","1. 1. List of notifications sent to users shown
+2. Button """"Refresh"""" shown
+3. Button """"Refresh"""" is active
+2. 1. Notification sent to user's email
+2. Notification added to log
+3. 1. List of notifications refreshed
+2. New notification value shown","1. Check notifications feed
+2. User send another Notification_1
+3. Admin click on button """"Refresh""""","V3 Notification","S1504","Other","0"
+"C350200","Search by notification type",""," None","Elena Mutykova","11/1/2022 8:40 AM","","","","1. Admin logged in admin environment
+2. Admin open notifications activity feed page
+3. Notifications list contains SampleNotificationType1
+4. User sent several notifications SampleNotificationType1","Medium","","Notification feed","1","","Step Description:
+Enter SampleNotificationType1 (ex. OrderCreateEmailNotification) into the Search field
+
+
+
+Expected Result:
+The appropriate type is returned in the result 
+Step Description:
+Enter no existing sampleNotificationType1 into the Search field
+Expected Result:
+No result 
+Step Description:
+Clear the search field
+Click on X
+Expected Result:
+The Search field is clear. All notification types are returned","1. 
+2. 
+3.","1. The appropriate type is returned in the result 
+2. No result 
+3. The Search field is clear. All notification types are returned","1. Enter SampleNotificationType1 (ex. OrderCreateEmailNotification) into the Search field
+
+
+
+2. Enter no existing sampleNotificationType1 into the Search field
+3. Clear the search field
+Click on X","V3 Notification","S1504","Other","0"
+"C350201","Search by recipient",""," None","Elena Mutykova","11/1/2022 8:41 AM","","","","1. Admin logged in admin environment
+2. Admin open notifications activity feed page
+3. Notifications list contains SampleNotificationType1
+4. User sent several notifications SampleNotificationType1","Medium","","Notification feed","1","","Step Description:
+Enter the recipient email (ex. testerqa@mail.com) into the search field
+Expected Result:
+The appropriate result is returned 
+Step Description:
+Enter no existing email into the Search field
+Expected Result:
+No result
+Step Description:
+Clear the search field
+Click on X
+Expected Result:
+The Search field is clear. All notification types are returned","1. 
+2. 
+3.","1. The appropriate result is returned 
+2. No result
+3. The Search field is clear. All notification types are returned","1. Enter the recipient email (ex. testerqa@mail.com) into the search field
+2. Enter no existing email into the Search field
+3. Clear the search field
+Click on X","V3 Notification","S1504","Other","0"
+"C343727","Notification layout > List",""," None","Daria Ponamareva","7/13/2022 3:30 PM","","The list of layouts is displayed ","","Few layouts created","Medium","","Notification layout","1","","","","","","V3 Notification","S1504","Other","0"
+"C343733","Notification layout > Add",""," None","Daria Ponamareva","7/13/2022 3:33 PM","","","","","Medium","","Notification layout","1","","Step Description:
+1. Go to Admin &gt; Notifications &gt; Notification layouts
+2. Click on button """"Add""""
+
+Expected Result:
+1. The blade with the creation of the layout has opened
+2. Button """"Save"""" disabled
+3. """"Name"""" field is highlighted in red
+Step Description:
+Fill in the field """"Name"""" 
+Expected Result:
+Button """"Save"""" available
+Step Description:
+1. Fill in the field """"Template"""" 
+2. Click """"Save""""
+3. Reopen blade with layout
+Expected Result:
+Layout saved
+Step Description:
+1. Go to Notifications &gt; Notification List &gt; Any Notification
+2. Open Template &gt; Any template
+3. Check list of available layouts
+Expected Result:
+There is new layout","1. 
+2. 
+3. 
+4.","1. 1. The blade with the creation of the layout has opened
+2. Button """"Save"""" disabled
+3. """"Name"""" field is highlighted in red
+2. Button """"Save"""" available
+3. Layout saved
+4. There is new layout","1. 1. Go to Admin &gt; Notifications &gt; Notification layouts
+2. Click on button """"Add""""
+
+2. Fill in the field """"Name"""" 
+3. 1. Fill in the field """"Template"""" 
+2. Click """"Save""""
+3. Reopen blade with layout
+4. 1. Go to Notifications &gt; Notification List &gt; Any Notification
+2. Open Template &gt; Any template
+3. Check list of available layouts","V3 Notification","S1504","Other","0"
+"C343728","Notification layout   > Edit",""," None","Daria Ponamareva","7/13/2022 3:31 PM","","","","Layout **Layout_1** created ","Medium","","Notification layout","1","","Step Description:
+1. Go to Admin &gt; Notifications &gt; Notification layouts
+2. Left click on **Layout_1**
+3. Edit Name and Template
+Expected Result:
+Buttons """"Save"""" and """"Reset"""" are available
+Step Description:
+1. Click on """"Save""""
+2. Reopen blade
+Expected Result:
+Changes saved
+Step Description:
+1. Go to Notifications &gt; Notification List &gt; Any Notification
+2. Open Template &gt; Any template
+3. Check list of available layouts
+Expected Result:
+Name of edited layout is saved","1. 
+2. 
+3.","1. Buttons """"Save"""" and """"Reset"""" are available
+2. Changes saved
+3. Name of edited layout is saved","1. 1. Go to Admin &gt; Notifications &gt; Notification layouts
+2. Left click on **Layout_1**
+3. Edit Name and Template
+2. 1. Click on """"Save""""
+2. Reopen blade
+3. 1. Go to Notifications &gt; Notification List &gt; Any Notification
+2. Open Template &gt; Any template
+3. Check list of available layouts","V3 Notification","S1504","Other","0"
+"C344120","Notification layout > Reset",""," None","Daria Ponamareva","7/21/2022 7:36 AM","","Name and Template returned to initial state","","Layout **Layout_1** created 
+
+","Medium","","Notification layout","1","","","","","","V3 Notification","S1504","Other","0"
+"C343731","Notification layout   > Delete",""," None","Daria Ponamareva","7/13/2022 3:32 PM","","","","Few layouts created
+
+
+
+
+
+","Medium","","Notification layout","1","","Step Description:
+1. Go to Admin &gt; Notifications &gt; Notification layouts
+2. Select few layouts
+3. Click on """"Delete""""
+
+
+
+Expected Result:
+Specified layouts deleted
+Step Description:
+
+1. Go to Notifications &gt; Notification List &gt; Any Notification
+2. Open Template &gt; Any template
+3. Check list of available layouts
+Expected Result:
+Specified layouts removed from the list","1. 
+2.","1. Specified layouts deleted
+2. Specified layouts removed from the list","1. 1. Go to Admin &gt; Notifications &gt; Notification layouts
+2. Select few layouts
+3. Click on """"Delete""""
+
+
+
+2. 
+1. Go to Notifications &gt; Notification List &gt; Any Notification
+2. Open Template &gt; Any template
+3. Check list of available layouts","V3 Notification","S1504","Other","0"
+"C343742","Notification layout > Empty notification template","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004222"," None","Daria Ponamareva","7/15/2022 7:13 AM","","Only layout html is displayed on preview form 
+![](index.php?/attachments/get/ee8d0000-684b-42f4-a9fc-0778e88c3a3f)  
+","","1. Notification **Notification_1** with template **Template_1** created
+2. Layout **Layout_1** created with not empty template
+
+
+
+
+------------------------------------
+
+Example of layout template:
+------------------------------------
+<div><b>HEADER</b></div>
+
+{{ content }}
+
+<div>FOOTER</div>
+------------------------------------
+
+","Medium","","Notification layout","1","","","","","","V3 Notification","S1504","Other","0"
+"C344063","Notification layout > Empty layout template","https://virtowayqa.testrail.io/index.php?/attachments/get/1000001105"," None","Daria Ponamareva","7/20/2022 11:58 AM","","Preview form displayed by default logic 
+![](index.php?/attachments/get/3bacea4c-4f0d-46b1-b864-ba62e8c25ad9) 
+","","Notification **Notification_1** with template **Template_1** created
+Layout **Layout_1** created with empty template
+
+------------------------------------
+
+Example of notification template:
+
+------------------------------------
+
+<div>Renders the 888content by captured keyword.</div>
+
+<div>Can use template variables: <b>{{ customer_order.number }}</b></div>
+
+<div><b>{{customer_order.cancel_reason}}</b></div>
+------------------------------------
+
+Example of notification sample data:
+------------------------------------
+
+{
+ ""customerOrder"": {
+""number"": ""some number"",
+""cancelReason"": ""asd""
+}
+}
+------------------------------------
+
+","Medium","","Notification layout","1","","","","","","V3 Notification","S1504","Other","0"
+"C344064","Notification layout > Add notification template with layout",""," None","Daria Ponamareva","7/20/2022 12:09 PM","","New template with **Layout_1** saved","","Notification **Notification_1** created
+Layout **Layout_1** created with not empty template","Medium","","Notification layout","1","","","","","","V3 Notification","S1504","Other","0"
+"C344069","Notification layout > Delete layout in notification template",""," None","Daria Ponamareva","7/20/2022 12:50 PM","","Change saved","","Notification **Notification_1** with template created
+
+","Medium","","Notification layout","1","","","","","","V3 Notification","S1504","Other","0"
+"C344065","Notification layout > Edit  layout in notification template",""," None","Daria Ponamareva","7/20/2022 12:09 PM","","Change saved","","Notification **Notification_1** with template created
+
+","Medium","","Notification layout","1","","","","","","V3 Notification","S1504","Other","0"
+"C344066","Notification layout > Check layout in mail",""," None","Daria Ponamareva","7/20/2022 12:12 PM","","","","1. Created notification **Notification_1**
+2. Created template **Template_1** for Notification_1 with language **Language_1** and layout **Layout_1** (in Store_1)
+3. Created template **Template_2** for Notification_1 with language **Language_2** and layout **Layout_2** (in Store_1)
+
+Notification example: Notification on created order
+
+
+","Medium","","Notification layout","1","","Step Description:
+1. Go to storefront &gt; Choose **Language_1** &gt; Trigger Notification_1 
+For example, you can create order as registered user
+2. Check user email &gt; Check notification
+Expected Result:
+The received letter corresponds to the **Layout_1** and **Language_1**
+Step Description:
+1. Go to storefront &gt; Choose **Language_2** &gt; Trigger Notification_1 
+For example, you can create order as registered user
+2. Check user email &gt; Check notification
+Expected Result:
+The received letter corresponds to the **Layout_2** and **Language_2**","1. 
+2.","1. The received letter corresponds to the **Layout_1** and **Language_1**
+2. The received letter corresponds to the **Layout_2** and **Language_2**","1. 1. Go to storefront &gt; Choose **Language_1** &gt; Trigger Notification_1 
+For example, you can create order as registered user
+2. Check user email &gt; Check notification
+2. 1. Go to storefront &gt; Choose **Language_2** &gt; Trigger Notification_1 
+For example, you can create order as registered user
+2. Check user email &gt; Check notification","V3 Notification","S1504","Other","0"
+"C344067","Notification layout > Notification > Preview","https://virtowayqa.testrail.io/index.php?/attachments/get/1000002096"," None","Daria Ponamareva","7/20/2022 12:37 PM","","Preview displays layout and content properly
+![](index.php?/attachments/get/7494b165-484a-463c-88eb-7c473c338de4) 
+","","**Example notification template:**
+{% capture content %}
+
+<div>Renders the content by captured keyword.</div>
+
+<div>Can use template variables: <b>{{ customer_order.number }}</b></div>
+
+<div><b>{{customer_order.cancel_reason}}</b></div>
+
+
+**Example notification sample data:**
+{
+ ""customerOrder"": {
+""number"": ""some number"",
+""cancelReason"": ""asd"",
+""number1"": ""some number""
+}
+}
+
+
+**Example layout template:**
+
+<div><b>HEADER</b></div>
+
+
+{{ content }}
+
+<div>FOOTER</div>
+","Medium","","Notification layout","1","","","","","","V3 Notification","S1504","Other","0"
+"C344068","Notification layout > Layout > Preview","https://virtowayqa.testrail.io/index.php?/attachments/get/1000000086"," None","Daria Ponamareva","7/20/2022 12:43 PM","","Preview displays html layout
+![](index.php?/attachments/get/015c80da-eef4-4fbd-a2b8-89f7fe38265c) 
+","","Layout **Layout_1** created
+
+**Example layout template:**
+
+<div><b>HEADER</b></div>
+
+
+{{ content }}
+
+<div>FOOTER</div>
+","Medium","","Notification layout","1","","","","","","V3 Notification","S1504","Other","0"
+"C255753","Predefined notification > Restart platform","","","Alexandr Tzykin","10/2/2020 6:42 AM","","User see changed template","","","Medium","","Predefined notification","1","","","","","","V3 Notification","S1504","Other","0"
+"C255754","Predefined notification > Delivery on env","","","Alexandr Tzykin","10/2/2020 6:42 AM","","User see changed template","","","Medium","","Predefined notification","1","","","","","","V3 Notification","S1504","Other","0"
+"C255755","Predefined notification > Label predefined","https://virtowayqa.testrail.io/index.php?/attachments/get/36033","","Alexandr Tzykin","10/2/2020 6:43 AM","","Predefined notification has label predefined ![](index.php?/attachments/get/36033)
+","","","Medium","","Predefined notification","1","","","","","","V3 Notification","S1504","Other","0"
+"C255756","Predefined notification > Edit","https://virtowayqa.testrail.io/index.php?/attachments/get/36034","","Alexandr Tzykin","10/2/2020 6:43 AM","","User see label """"edited"""" ![](index.php?/attachments/get/36034). Template for notification create in database.
+","","","Medium","","Predefined notification","1","","","","","","V3 Notification","S1504","Other","0"
+"C255757","Predefined notification > Restore","","","Alexandr Tzykin","10/2/2020 6:44 AM","","Label Edited remove. Template reset to default value/ Template delete from database","","[C255756]","Medium","","Predefined notification","1","","","","","","V3 Notification","S1504","Other","0"
+"C255758","Predefined notification > Send Edited template","","","Alexandr Tzykin","10/2/2020 6:44 AM","","User see changes template","","[C255756]","Medium","","Predefined notification","1","","","","","","V3 Notification","S1504","Other","0"
+"C255759","Predefined notification > Send default template","","","Alexandr Tzykin","10/2/2020 6:44 AM","","User see default template","","[C255757]","Medium","","Predefined notification","1","","","","","","V3 Notification","S1504","Other","0"
+"C255760","Predefined notification > Click on Preview","","","Alexandr Tzykin","10/2/2020 6:45 AM","","Open Preview form blade with text","","Open any notification with label predefined","Medium","","Predefined notification","1","","","","","","V3 Notification","S1504","Other","0"
+"C241391","Access","","","Volha Baban","6/26/2020 2:24 PM","","","","1. Create Role_1.
+2. Add the following permissions to the Role_1:
+    notifications:access
+
+3. Role_1 assigned to User_1","Medium","","Permissions","1","","Step Description:
+1. Login to BackEnd as a User_1.
+2. Try to find the """"Notification"""" module in the Navigation. 
+
+Expected Result:
+There is the """"Notifications"""" module in the Navigation. 
+Step Description:
+Try to open the """"Notifications"""" blade. 
+Expected Result:
+The """"Notifications"""" blade is opened. There are two tabs in the """"Notifications"""" blade: Notifications list and Notifications activity feed
+Step Description:
+Try to open the """"Notifications list"""" tab. 
+Expected Result:
+The """"Notifications list"""" tab is opened. 
+Step Description:
+Try to open any notification. 
+Expected Result:
+It is unable for you to open the notification. Nothing happens while clicking. 
+Step Description:
+Try to open the """"Notifications activity"""" tab. 
+Expected Result:
+The tab is opened. 
+Step Description:
+Try to open any notification record. 
+Expected Result:
+It is unable for you to open the notification record. Nothing happens while clicking.","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. There is the """"Notifications"""" module in the Navigation. 
+2. The """"Notifications"""" blade is opened. There are two tabs in the """"Notifications"""" blade: Notifications list and Notifications activity feed
+3. The """"Notifications list"""" tab is opened. 
+4. It is unable for you to open the notification. Nothing happens while clicking. 
+5. The tab is opened. 
+6. It is unable for you to open the notification record. Nothing happens while clicking.","1. 1. Login to BackEnd as a User_1.
+2. Try to find the """"Notification"""" module in the Navigation. 
+
+2. Try to open the """"Notifications"""" blade. 
+3. Try to open the """"Notifications list"""" tab. 
+4. Try to open any notification. 
+5. Try to open the """"Notifications activity"""" tab. 
+6. Try to open any notification record.","V3 Notification","S1504","Other","0"
+"C241392","Read","","","Volha Baban","6/26/2020 2:33 PM","","","","1. Create Role_1.
+2. Add the following permissions to the Role_1:
+    notifications:access
+    notifications:read
+
+3. Role_1 assigned to User_1","Medium","","Permissions","1","","Step Description:
+1. Login to BackEnd as a User_1.
+2. Open """"Notifications"""" module.
+3. Open """"Notifications list"""" tab.
+4. Try to open any notification.
+Expected Result:
+The notification is opened. All data is visible.
+Step Description:
+1. Open """"Notifications activity feed"""" tab.
+2. Try to open any record.
+Expected Result:
+The record is opened. All data is visible.","1. 
+2.","1. The notification is opened. All data is visible.
+2. The record is opened. All data is visible.","1. 1. Login to BackEnd as a User_1.
+2. Open """"Notifications"""" module.
+3. Open """"Notifications list"""" tab.
+4. Try to open any notification.
+2. 1. Open """"Notifications activity feed"""" tab.
+2. Try to open any record.","V3 Notification","S1504","Other","0"
+"C241393","Update","","","Volha Baban","6/26/2020 2:33 PM","","","","1. Create Role_1.
+2. Add the following permissions to the Role_1:
+    notifications:access
+    notifications:read
+    notifications:update
+
+3. Role_1 assigned to User_1.","Medium","","Permissions","1","","Step Description:
+1. Login to BackEnd as a User_1.
+2. Open """"Notifications"""" module.
+3. Open """"Notifications list"""" tab.
+4. Open notification. 
+5. Change the content of """"CC recipients"""" and """"BCC"""" fields.
+6. Change the position of the """"Is Active"""" toggle. 
+6. Click """"Save"""". 
+Expected Result:
+All changes are saved.","1","1. All changes are saved.","1. 1. Login to BackEnd as a User_1.
+2. Open """"Notifications"""" module.
+3. Open """"Notifications list"""" tab.
+4. Open notification. 
+5. Change the content of """"CC recipients"""" and """"BCC"""" fields.
+6. Change the position of the """"Is Active"""" toggle. 
+6. Click """"Save"""".","V3 Notification","S1504","Other","0"
+"C241395","Template:Create","","","Volha Baban","6/26/2020 2:58 PM","","","","1. Create Role_1.
+2. Add the following permissions to the Role_1:
+    notifications:access
+    notifications:read
+    notifications:update
+    notifications:template:create
+    notifications:template:read
+
+3. Role_1 assigned to User_1","Medium","","Permissions","1","","Step Description:
+1. Login to BackEnd as a User_1.
+2. Open """"Notifications"""" module.
+3. Open """"Notifications list"""" tab.
+4. Open any notification. 
+5. Open the """"Templates"""" widget.
+6. Pay attention to the header of the blade.
+Expected Result:
+There is the """"Add"""" button on the header. It is clickable.
+Step Description:
+1. Click """"Add"""". 
+2. Fill in all fields with any values. 
+3. Click """"Ok"""". 
+Expected Result:
+The new template has been created.","1. 
+2.","1. There is the """"Add"""" button on the header. It is clickable.
+2. The new template has been created.","1. 1. Login to BackEnd as a User_1.
+2. Open """"Notifications"""" module.
+3. Open """"Notifications list"""" tab.
+4. Open any notification. 
+5. Open the """"Templates"""" widget.
+6. Pay attention to the header of the blade.
+2. 1. Click """"Add"""". 
+2. Fill in all fields with any values. 
+3. Click """"Ok"""".","V3 Notification","S1504","Other","0"
+"C241396","Template:Read","","","Volha Baban","6/26/2020 3:02 PM","","","","1. Create Role_1.
+2. Add the following permissions to the Role_1:
+    notifications:access
+    notifications:read
+    notifications:template:read
+
+3. Role_1 assigned to User_1","Medium","","Permissions","1","","Step Description:
+1. Login to BackEnd as a User_1.
+2. Open """"Notifications"""" module.
+3. Open """"Notifications list"""" tab.
+4. Open any notification.
+5. Look through the opened blade. 
+Expected Result:
+There is the """"Templates"""" widget on the opened blade. 
+Step Description:
+1. Click on the """"Templates"""" widget. 
+2. Open any template. 
+Expected Result:
+The template is opened. All information is available for the user.","1. 
+2.","1. There is the """"Templates"""" widget on the opened blade. 
+2. The template is opened. All information is available for the user.","1. 1. Login to BackEnd as a User_1.
+2. Open """"Notifications"""" module.
+3. Open """"Notifications list"""" tab.
+4. Open any notification.
+5. Look through the opened blade. 
+2. 1. Click on the """"Templates"""" widget. 
+2. Open any template.","V3 Notification","S1504","Other","0"
+"C242711","Settings > Languages","","","Aleksandra Mitricheva","7/12/2020 10:37 PM","","","","Logged user with role admin
+","Medium","","Settings","1","","Step Description:
+Open /workspace/settings > find Notifications > click General
+Expected Result:
+Setting values blade is opened
+
+there is Languages field with Edit icon, description """"Languages available in the Notifications"""", Save and Reset icons","1","1. Setting values blade is opened
+
+there is Languages field with Edit icon, description """"Languages available in the Notifications"""", Save and Reset icons","1. Open /workspace/settings > find Notifications > click General","V3 Notification","S1504","Other","0"
+"C242712","Settings > Languages > Manage dictionary values blade","","","Aleksandra Mitricheva","7/12/2020 10:53 PM","","","","Logged user with role admin
+Opened /workspace/settings > Notifications > General
+","Medium","","Settings","1","","Step Description:
+Click on Edit button
+Expected Result:
+Manage dictionary values blade opens
+Step Description:
+Check blade
+Expected Result:
+Add button is active, List with Current values, checkboxes unselected
+Delete icon is disabled","1. 
+2.","1. Manage dictionary values blade opens
+2. Add button is active, List with Current values, checkboxes unselected
+Delete icon is disabled","1. Click on Edit button
+2. Check blade","V3 Notification","S1504","Other","0"
+"C242713","Settings > Languages > Adding new language","","","Aleksandra Mitricheva","7/12/2020 10:55 PM","","","","Logged user with role Admin
+
+Opened /workspace/settings > Notifications > General","Medium","","Settings","1","","Step Description:
+Open General > Languages editing > put some value (language1) in input field
+Expected Result:
+Add button is active
+Step Description:
+click Add button > click Save
+Expected Result:
+value is added in list with values
+Languages blade is updated
+Step Description:
+check Languages editing blade > 
+Expected Result:
+last added value displays in current value list
+Step Description:
+Open /workspace/notifications > Notifications list > select some notification(for ex order creation) > click Manage > click Template > click ADD button > check Language field
+Expected Result:
+create template blade is opened
+
+language1 appears in selection list
+Step Description:
+Select language1 > create new template > save notification
+
+create new user in Storefront with language1> Create order > check emails
+Expected Result:
+all emails send with language1
+Step Description:
+Create order in another browser with anonumous
+Expected Result:
+emeil sent with default language","1. 
+2. 
+3. 
+4. 
+5. 
+6.","1. Add button is active
+2. value is added in list with values
+Languages blade is updated
+3. last added value displays in current value list
+4. create template blade is opened
+
+language1 appears in selection list
+5. all emails send with language1
+6. emeil sent with default language","1. Open General > Languages editing > put some value (language1) in input field
+2. click Add button > click Save
+3. check Languages editing blade > 
+4. Open /workspace/notifications > Notifications list > select some notification(for ex order creation) > click Manage > click Template > click ADD button > check Language field
+5. Select language1 > create new template > save notification
+
+create new user in Storefront with language1> Create order > check emails
+6. Create order in another browser with anonumous","V3 Notification","S1504","Other","0"
+"C242714","Settings > Languages > Delete language","","","Aleksandra Mitricheva","7/12/2020 10:55 PM","","","","Logged user with role Admin
+
+Opened /workspace/settings > Notifications > General","Medium","","Settings","1","","Step Description:
+Open General > Languages editing > delete language1 from list > save
+Expected Result:
+Notification settings saved
+Step Description:
+check Languages editing blade >
+
+
+Expected Result:
+there is no language1 in list
+Step Description:
+Open /workspace/notifications > Notifications list > select some notification(for ex order creation) > click Manage > click Template > click ADD button > check Language field
+Expected Result:
+there is no language1 in selector list
+Step Description:
+create new user in Storefront with language1> Create order > check emails
+Expected Result:
+all emails send with language1
+
+
+Step Description:
+Open /workspace/notifications > Notifications list > select some notification(for ex order creation) > click Manage > click Template > delete tempolates with language1 > save
+
+create new user in Storefront with language1> Create order > check emails
+Expected Result:
+email sent with default language","1. 
+2. 
+3. 
+4. 
+5.","1. Notification settings saved
+2. there is no language1 in list
+3. there is no language1 in selector list
+4. all emails send with language1
+
+
+5. email sent with default language","1. Open General > Languages editing > delete language1 from list > save
+2. check Languages editing blade >
+
+
+3. Open /workspace/notifications > Notifications list > select some notification(for ex order creation) > click Manage > click Template > click ADD button > check Language field
+4. create new user in Storefront with language1> Create order > check emails
+5. Open /workspace/notifications > Notifications list > select some notification(for ex order creation) > click Manage > click Template > delete tempolates with language1 > save
+
+create new user in Storefront with language1> Create order > check emails","V3 Notification","S1504","Other","0"
+"C338432","UI > Tool-tips","https://virtowayqa.testrail.io/index.php?/attachments/get/1000004012"," None","Elena Mutykova","4/20/2022 12:48 PM","","","","","Medium","","Settings","2","","Step Description:
+Open blade with Settings &gt; Pay attention to tooltips
+
+![](index.php?/attachments/get/e5609f38-2bdf-4fc1-a7fc-af0d24f86403)    
+
+
+
+
+
+Expected Result:
+All tooltips are folded
+
+Step Description:
+1. Click on blue question mark for field1
+2. Click on blue question mark for field2
+
+
+
+
+
+Expected Result:
+1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded.
+
+
+Step Description:
+Click on the Hide link
+
+Expected Result:
+All tooltips are folded","1. 
+2. 
+3.","1. All tooltips are folded
+
+2. 1. One tooltip for the field1 is unfolded
+2. The tooltip for field2 is unfolded.
+
+
+3. All tooltips are folded","1. Open blade with Settings &gt; Pay attention to tooltips
+
+![](index.php?/attachments/get/e5609f38-2bdf-4fc1-a7fc-af0d24f86403)    
+
+
+
+
+
+2. 1. Click on blue question mark for field1
+2. Click on blue question mark for field2
+
+
+
+
+
+3. Click on the Hide link","V3 Notification","S1504","Other","0"
+"C311917","Install NotificationsSample module","","","Elena Mutykova","9/7/2021 4:09 PM","","NotificationSample module is installed","","","Medium","","NotificationsSample module","0","","","","","","V3 Notification","S1504","Other","0"
+"C311918","Create a new template > Send notification","","","Elena Mutykova","9/7/2021 4:11 PM","","","","NotificationSample module is installed
+notification_1 is active and exists in system
+Only default template added ","Medium","","NotificationsSample module","0","","Step Description:
+Go to Store > Choose any store > Open Notification widget > Open notification_1 (ex. Create an order)
+Click on templates 
+Expected Result:
+Manage notification templates blade is opened
+Step Description:
+Add new template
+Select language (ex. en-EN) 
+Add subject and text of template > OK > Save
+Expected Result:
+The new template is added
+Step Description:
+Go to storefront > create order > check email
+Expected Result:
+Notification_1 with the new template was sent to the user email
+Step Description:
+Go to admin > Store > Notification log > Click on notification_1
+Expected Result:
+notification_1 is displayed in the Notification list
+notification_1 has lablel success ","1. 
+2. 
+3. 
+4.","1. Manage notification templates blade is opened
+2. The new template is added
+3. Notification_1 with the new template was sent to the user email
+4. notification_1 is displayed in the Notification list
+notification_1 has lablel success ","1. Go to Store > Choose any store > Open Notification widget > Open notification_1 (ex. Create an order)
+Click on templates 
+2. Add new template
+Select language (ex. en-EN) 
+Add subject and text of template > OK > Save
+3. Go to storefront > create order > check email
+4. Go to admin > Store > Notification log > Click on notification_1","V3 Notification","S1504","Other","0"
+"C311919","Update template > Send notification","","","Elena Mutykova","9/7/2021 4:12 PM","","","","NotificationSample module is installed
+notification_1 is active and exists in the system  
+Template_2 for Localization_2 was created. (e.g. For de-DE)
+Default template Template_1 for Notification_1 was created 
+User_1 email set as Email_1 
+
+","Medium","","NotificationsSample module","0","","Step Description:
+Go to storefront > set store localization_2 (ex. de-DE)
+Create an order 
+Expected Result:
+Order created
+Notification_1 sent to Email_1
+Notification_1 added to notifications log
+Step Description:
+Check email_1 and template_2
+Expected Result:
+Email_1 inbox contains Template_2
+Step Description:
+Change the text of template_2 in notification_1 > Save
+Expected Result:
+Changes saved
+Step Description:
+Go to storefront > Create an order > check email_1 with changed template_2
+Expected Result:
+Email_1 inbox contains Template2_changed","1. 
+2. 
+3. 
+4.","1. Order created
+Notification_1 sent to Email_1
+Notification_1 added to notifications log
+2. Email_1 inbox contains Template_2
+3. Changes saved
+4. Email_1 inbox contains Template2_changed","1. Go to storefront > set store localization_2 (ex. de-DE)
+Create an order 
+2. Check email_1 and template_2
+3. Change the text of template_2 in notification_1 > Save
+4. Go to storefront > Create an order > check email_1 with changed template_2","V3 Notification","S1504","Other","0"
+"C311920","Delete template","","","Elena Mutykova","9/7/2021 4:13 PM","","","","NotificationSample module is installed
+Notification_1 is active and exists in the system
+Template_2 for Localization_2 was created. (e.g. For de-DE)
+Default template Template_1 for Notification_1 was created
+User_1 email set as Email_1","Medium","","NotificationsSample module","0","","Step Description:
+Go to Store > Choose any store > Open Notification widget > Open notification_1 (ex. Create an order)
+Click on templates
+Expected Result:
+Manage notification templates blade is opened
+Step Description:
+Choose notification_1 and click on the """"Delete"""" button
+Expected Result:
+Notification_1 was deleted
+Step Description:
+Go to storefront > create order > check email
+Expected Result:
+Default template_1 was sent to the user email","1. 
+2. 
+3.","1. Manage notification templates blade is opened
+2. Notification_1 was deleted
+3. Default template_1 was sent to the user email","1. Go to Store > Choose any store > Open Notification widget > Open notification_1 (ex. Create an order)
+Click on templates
+2. Choose notification_1 and click on the """"Delete"""" button
+3. Go to storefront > create order > check email","V3 Notification","S1504","Other","0"
