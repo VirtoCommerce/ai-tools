@@ -24,6 +24,7 @@ npm run test:headed      # With visible browser
 npm run test:debug       # Debug mode
 npm run test:chrome      # Chrome only (--project=chromium)
 npm run test:report      # View HTML report
+npm run ci:regression    # Run CI regression via Claude Agent SDK (npx tsx ci/run-regression.ts)
 ```
 
 ## Environment Setup
@@ -33,7 +34,7 @@ Create a `.env` file with required variables (29 total). Run `npm run env:check`
 - **Credentials:** `ADMIN`, `ADMIN_PASSWORD`, `USER_EMAIL`, `USER_PASSWORD`, `USER2_*`, `USER_VIRTO`, `USER_VIRTO_PASSWORD`
 - **Store:** `STORE_ID`
 - **Payment processors:** Skyflow (`SKYFLOW_VISA`, `SKYFLOW_MASTERCARD`, `SKYFLOW_EXPIRY`, `SKYFLOW_CVV`), CyberSource, Authorize.Net, Datatrance (card/expiry/cvv + `DATATRANCE_OTP`)
-- **APIs:** `FIGMA_API_KEY`, `BROWSERSTACK_USERNAME`, `BROWSERSTACK_ACCESS_KEY`
+- **APIs:** `FIGMA_API_KEY`, `BROWSERSTACK_USERNAME`, `BROWSERSTACK_ACCESS_KEY`, `POSTMAN_API_KEY`
 - **Builder.io (optional):** `BUILDER_IO_URL`, `BUILDER_IO_EMAIL`, `BUILDER_IO_PASSWORD`, `BUILDER_IO_SPACE`
 
 Access via `config.js`: `import { env } from './config.js'`
@@ -47,76 +48,90 @@ Access via `config.js`: `import { env } from './config.js'`
 
 ```
 vc-mcp-testing-module/
-├── .claude/agents/          # Claude Code agent configurations (6 agents)
+├── .claude/agents/          # Claude Code agent configurations (7 agents)
 ├── .mcp.json                # MCP server configuration
-├── config/                  # Playwright MCP browser configs (chrome, webkit, firefox, edge)
-├── docs/
-│   ├── prompts/             # LLM prompt templates for QA automation
-│   └── guides/              # Testing guides (e.g., Storybook testing)
+├── config/                  # Playwright MCP browser configs + test-suites.json manifest
+├── docs/prompts/            # LLM prompt templates for QA automation
+├── docs/guides/             # Testing guides (e.g., Storybook testing)
 ├── storybook/               # Visual regression baselines (Atomic Design: atoms/molecules/organisms)
-├── regression/
-│   └── suites/
-│       ├── Frontend/        # 14 frontend regression test suites (325 test cases, CSV)
-│       └── Backend (admin site)/  # Backend/admin regression suites
+├── regression/suites/       # Regression test suites (Frontend + Backend, CSV format)
 ├── test-data/               # Test data (organizations, search queries, uploads)
-├── tests/VCST-XXXX-*/       # Test cases organized by JIRA ticket
-├── reports/
-│   ├── bugs/                # Bug reports with evidence
-│   └── regression/          # Regression test reports
+├── tests/                   # Test cases organized by sprint and JIRA ticket
+├── reports/                 # Bug reports and regression test reports
 ├── archive/sprints/         # Historical sprint test cases
 ├── ci/                      # CI regression testing (Docker + Claude Agent SDK)
-│   ├── run-regression.ts    # Orchestrator script
-│   ├── agents/              # CI-specific agent definitions (subset of 3)
-│   ├── config/              # Headless browser configs for CI
-│   └── Dockerfile
-├── docs/workshop/           # Workshop materials (presentation, setup, plan)
-├── config.js                # Environment configuration
-├── settings.json            # Claude Code teammate mode config
+├── config.js                # Environment configuration (loads .env)
 └── sitemap.md               # Site structure reference
 ```
+
+**Gitignored (not in repo):** `.claude/`, `settings.json`, `.env`, `test-results/`, `.serena/`, `.playwright-mcp/`
+
+**Tracked but local-specific:** `.mcp.json` and `config/` are tracked in git. After cloning, verify MCP configs match your local setup (Windows uses `cmd /c npx`, Linux/Mac uses `npx` directly).
+
+## Architecture: Two Testing Modes
+
+### 1. Interactive MCP-Driven Testing (Primary)
+Load a prompt template from `docs/prompts/`, execute via MCP browser tools with DevTools monitoring. After each flow: export HAR, capture console logs, take screenshots. Generate bug reports in `reports/bugs/`.
+
+### 2. CI Regression via Claude Agent SDK
+`ci/run-regression.ts` orchestrates headless regression using `@anthropic-ai/claude-agent-sdk`. It reads suite CSVs from `regression/suites/Frontend/`, injects them into prompts with agent instructions from `ci/agents/`, and runs them sequentially against a single headless Chrome MCP server.
+
+**Regression Orchestration Pipeline (interactive mode):**
+1. `regression-orchestrator` agent reads `config/test-suites.json` manifest
+2. Resolves suite selection (`smoke`, `critical`, `sprint`, `full`, or comma-separated IDs)
+3. Assigns suites to browser pool slots (3 slots: chrome, firefox, edge)
+4. Spawns sub-agents using `docs/prompts/test-runner-agent.md` template with substituted parameters
+5. Each sub-agent gets an isolated browser context, executes all test cases from its CSV, writes JSON results
+6. Orchestrator collects results, handles retries with browser fallback chain, produces consolidated report
+
+### Test Suite Manifest: `config/test-suites.json`
+Central configuration for regression orchestration. Defines:
+- **Browser pool**: 3 slots (playwright-chrome, playwright-firefox, playwright-edge) with fallback chain
+- **Suite definitions**: id, name, CSV file path, priority, test count, assigned agent type, tags
+- **Selection groups**: `smoke` (01), `critical` (01,06,08), `sprint` (01-06,08), `full` (all 12)
+- **Defaults**: max 3 parallel agents, 2 retries, 30s retry delay, HAR capture enabled
 
 ## MCP Servers (configured in .mcp.json)
 
 | Server | Purpose | Config File |
 |--------|---------|-------------|
-| **playwright-chrome** | Browser automation with Chrome | `config/mcp-playwright-chrome.config.json` |
-| **playwright-webkit** | Browser automation with WebKit (Safari) | `config/mcp-playwright-webkit.config.json` |
+| **playwright-chrome** | Browser automation with Chromium | `config/mcp-playwright-chrome.config.json` |
 | **playwright-firefox** | Browser automation with Firefox | `config/mcp-playwright-firefox.config.json` |
 | **playwright-edge** | Browser automation with Edge | `config/mcp-playwright-edge.config.json` |
 | **postman** | API testing - collections, environments, monitors | N/A (uses `--minimal` flag) |
 
 **Postman MCP** tools: `searchPostmanElements`, `getCollection`, `runCollection`, `getEnvironment`, `createCollection`
 
-Additional MCP servers (configured at user level):
+Additional MCP servers (configured at user level, not in `.mcp.json`):
 - **Chrome DevTools MCP** - Console logs, network requests, performance tracing, HAR export
 - **Atlassian MCP** - JIRA integration for test case management and bug reporting
 - **Figma MCP** - Visual comparison testing against design specs
 - **Serena** - Semantic code navigation and symbol-level editing
-
-**Note:** `.mcp.json`, `config/`, `.claude/`, and `CLAUDE.md` are gitignored. New clones must set up MCP configs and agent definitions locally.
 
 ## Browser Automation
 
 - Default to `chromium` (not `chrome`) for Playwright MCP browser launches. WebKit is NOT supported on Windows — fall back to Edge or Chrome immediately without attempting installation.
 - Always verify MCP server config uses correct browser engine names: `chromium`, `firefox`, `webkit` (not `chrome`, `edge`).
 - After any MCP config change, remind the user that a server restart is required before the new config takes effect.
+- Browser configs set viewport to 1920x1080, HAR capture enabled, video on failure, isolated contexts.
 
 ## Claude Code Specialized Agents
 
-Six agents in `.claude/agents/` for QA tasks:
+Seven agents in `.claude/agents/` for QA tasks:
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| **qa-lead** | sonnet | Orchestrates testing, delegates to specialists, manages JIRA workflow |
+| **qa-lead** (orchestrator) | sonnet | Orchestrates testing, delegates to specialists, manages JIRA workflow, makes go/no-go decisions |
 | **qa-backend-expert** | opus | Platform APIs, GraphQL xAPI, Modules, Admin SPA, background jobs |
 | **qa-frontend-expert** | opus | Customer-facing storefront, user journeys, checkout flows, mobile |
 | **qa-testing-expert** | opus | Interactive testing - UI verification, Figma comparison, debugging |
 | **test-management-specialist** | sonnet | Test planning, test case writing, coverage tracking, TestRail artifacts |
 | **ui-ux-expert** | sonnet | Storybook component testing, WCAG 2.1 AA accessibility, design system |
+| **regression-orchestrator** | sonnet | Parallel regression execution - reads test-suites.json, spawns sub-agents, manages retries, consolidates reports |
 
 Usage: `"Use the qa-frontend-expert to verify the checkout flow"` or `@qa-lead`
 
-**Agent Teams mode** is enabled via `settings.json` (`teammateMode: "in-process"`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`).
+**Agent Teams mode** is enabled via `settings.json` (`teammateMode: "in-process"`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`). The `settings.json` also configures a `post_edit` hook that runs TypeScript type-checking after edits.
 
 **Parallel execution:** When running multiple agents in parallel, each agent MUST use its own separate browser session via a different Playwright MCP server. Agents sharing a browser will interfere with each other (navigation, cookies, state). Assign one MCP server per agent:
 
@@ -125,31 +140,31 @@ Usage: `"Use the qa-frontend-expert to verify the checkout flow"` or `@qa-lead`
 | **qa-frontend-expert** | `playwright-chrome` | |
 | **qa-backend-expert** | `playwright-edge` | or `Chrome DevTools MCP` for Admin SPA |
 | **qa-testing-expert** | `playwright-firefox` | |
-| **ui-ux-expert** | `playwright-webkit` | or `Chrome DevTools MCP` |
+| **ui-ux-expert** | `Chrome DevTools MCP` | (no webkit on Windows) |
 | **test-management-specialist** | `playwright-chrome` (sequential, not parallel with frontend) | |
 
-If more than 4 agents need browsers simultaneously, run them in sequential batches.
+If more than 3 agents need browsers simultaneously, run them in sequential batches.
 
 ## Agent Delegation
 
 - When delegating to sub-agents/specialist agents, verify the agent has the required tool permissions BEFORE dispatching.
 - If a delegated agent fails with an internal error (e.g., classifyHandoffIfNeeded), immediately fall back to working directly rather than retrying the same broken delegation.
-- For multi-suite regression runs, plan for rate limits: batch in groups of 4-6 rather than launching all 14 simultaneously.
+- For multi-suite regression runs, plan for rate limits: batch in groups of 3 (matching browser pool slots) rather than launching all simultaneously.
 
-## Testing Environments (from .env)
+## Prompt Templates
 
-| Resource | Environment Variable |
-|----------|---------------------|
-| **Frontend** | `FRONT_URL` |
-| **Backend** | `BACK_URL` |
-| **Storybook QA** | `STORYBOOK_URL` |
-| **Storybook Dev** | `STORYBOOK_DEV_URL` |
-
-Theme presets: Default, Coffee
+Key prompt templates in `docs/prompts/`:
+- `full-regression-qa-agent.md` - Complete Admin + Frontend regression
+- `test-runner-agent.md` - Suite execution template with parameterized placeholders (`{{SUITE_ID}}`, `{{BROWSER_SERVER}}`, etc.) for regression orchestrator
+- `storybook-testing.md` - Component testing
+- `platform-tests.md` - Backend/API testing
+- `How to test Builder.io.md` - Builder.io, Virto Pages & vc-frontend testing
+- `setup.xml` - XML-structured regression prompt with execution steps
+- `story-testing.txt` - Story-level testing prompt
 
 ## Regression Test Suites
 
-14 test suites in `regression/suites/Frontend/` (325 test cases in suites 01-13, TestRail CSV format):
+14 CSV files in `regression/suites/Frontend/` (TestRail CSV format: ID, Title, Section, Type, Priority, Estimate, Preconditions, Steps, Expected Result, References, Automation Status):
 
 | Suite | Tests | Priority | Use Case |
 |-------|-------|----------|----------|
@@ -170,21 +185,6 @@ Theme presets: Default, Coffee
 
 **Execution strategies:** Daily (P0 only ~30min), Sprint Release (P0+P1 critical ~3-4hrs), Major Release (all suites ~24hrs)
 
-## LLM-Driven Testing Workflow
-
-1. Load prompt template from `docs/prompts/` (e.g., `full-regression-qa-agent.md`)
-2. Execute via MCP browser tools with DevTools monitoring enabled
-3. After each flow: export HAR, capture console logs, take screenshots
-4. Generate bug reports in `reports/bugs/` with evidence
-
-Key prompt templates:
-- `full-regression-qa-agent.md` - Complete Admin + Frontend regression
-- `storybook-testing.md` - Component testing
-- `platform-tests.md` - Backend/API testing
-- `How to test Builder.io.md` - Builder.io, Virto Pages & vc-frontend testing
-- `setup.xml` - XML-structured regression prompt with execution steps
-- `story-testing.txt` - Story-level testing prompt
-
 ## CI Regression Testing
 
 The `ci/` directory provides Docker-based CI regression using the Claude Agent SDK:
@@ -200,13 +200,24 @@ docker run --rm --shm-size=2gb --env-file .env \
   vc-regression
 ```
 
-Suite selection: `smoke` (01), `critical` (01,06,08), `sprint` (01-06,08), `full` (all 14), or comma-separated IDs (`01,04,06`). CI uses only 3 agents (qa-testing-expert, qa-frontend-expert, qa-backend-expert) with headless Chrome. Also available as a GitHub Actions workflow (`workflow_dispatch`).
+Suite selection: `smoke` (01), `critical` (01,06,08), `sprint` (01-06,08), `full` (all 14), or comma-separated IDs (`01,04,06`). CI uses only 3 agents (qa-testing-expert, qa-frontend-expert, qa-backend-expert) with headless Chrome. Reports are written to `reports/regression/ci-YYYY-MM-DD/` (markdown + JSON summary). Also available as a GitHub Actions workflow (`workflow_dispatch`).
 
 ## Testing Approach
 
 - For regression testing, NEVER use parallel agents sharing a single browser session. Each agent must have its own isolated browser context.
 - Always run deep/comprehensive tests unless explicitly told to run smoke tests. Do not default to smoke testing.
 - Always capture HAR files during browser test sessions as required by project guidelines.
+
+## Testing Environments (from .env)
+
+| Resource | Environment Variable |
+|----------|---------------------|
+| **Frontend** | `FRONT_URL` |
+| **Backend** | `BACK_URL` |
+| **Storybook QA** | `STORYBOOK_URL` |
+| **Storybook Dev** | `STORYBOOK_DEV_URL` |
+
+Theme presets: Default, Coffee
 
 ## Test Documentation Pattern
 
@@ -237,29 +248,7 @@ Reports in `reports/bugs/`:
 
 ## Storybook Visual Regression
 
-The `storybook/` directory stores visual regression baselines organized by Atomic Design tier:
-- **atoms/** - VcBadge, VcCheckbox, VcCheckboxGroup, VcDialog, VcIcon, VcInputDetails, VcLabel, VcRadioButton, VcSwitch, VcTypography
-- **molecules/** - VcAlert, VcButton, VcChip, VcInput, VcMenuItem, VcNavButton, VcRating, VcSelect, VcVariantPicker, VcWidget
-- **organisms/** - VcAddToCart, VcPagination, VcProductButton, VcProductCard, VcProductImage, VcQuantityStepper, VcTable
-- **design-system/** - Theme comparison (default vs coffee)
-
-Each component folder has a `baselines/` directory for screenshots. Naming convention: `{story-name}-{viewport}.png` (e.g., `basic-desktop.png`, `hover-state-tablet.png`).
-
-## Key Testing Domains
-
-- **Cart & Checkout:** Cart operations, shipping, checkout flow, order completion
-- **Catalog:** Category navigation, product listings, facets/filters, sorting
-- **Search:** Product search, suggestions, filters, special characters, history
-- **Payment:** Skyflow, CyberSource, Authorize.Net, Datatrance
-- **BOPIS:** Buy Online Pickup In Store (map, filters, location selection)
-- **B2B features:** Multi-org support, quotes, quick order, approval workflows, contract pricing
-- **Multilingual:** 13 languages (EN, DE, FR, ES, NO, SV, PL, IT, PT, JA, ZH, FI, RU)
-
-## Browser Matrix
-
-**Desktop (last 2 versions):** Chrome, Edge, WebKit, Firefox
-
-**Mobile:** iPhone 16/17/18 (Safari), Android last 3 models (Chrome)
+The `storybook/` directory stores visual regression baselines organized by Atomic Design tier: `atoms/`, `molecules/`, `organisms/`, `design-system/`. Each component folder has a `baselines/` directory for screenshots. Naming convention: `{story-name}-{viewport}.png` (e.g., `basic-desktop.png`, `hover-state-tablet.png`).
 
 ## Critical Revenue Flows
 
@@ -270,7 +259,15 @@ Must always pass before deployment:
 4. Search (global, category, history)
 5. Ship-to selector and address management
 6. Cart (quantity, save for later, pickup/delivery)
-7. Checkout and payment processing
+7. Checkout and payment processing (Skyflow, CyberSource, Authorize.Net, Datatrance)
 8. Order management and history
 9. Company members and multi-organization
 10. Google Analytics event tracking
+
+## Key Testing Domains
+
+- **B2B features:** Multi-org support, quotes, quick order, approval workflows, contract pricing
+- **BOPIS:** Buy Online Pickup In Store (map, filters, location selection)
+- **Multilingual:** 13 languages (EN, DE, FR, ES, NO, SV, PL, IT, PT, JA, ZH, FI, RU)
+- **Payment:** Skyflow, CyberSource, Authorize.Net, Datatrance
+- **Browser Matrix Desktop (last 2 versions):** Chrome, Edge, Firefox. **Mobile:** iPhone 16/17/18 (Safari), Android last 3 models (Chrome)

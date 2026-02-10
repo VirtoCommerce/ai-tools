@@ -11,17 +11,6 @@
         "config/mcp-playwright-chrome.config.json"
       ]
     },
-    "playwright-webkit": {
-      "type": "stdio",
-      "command": "cmd",
-      "args": [
-        "/c",
-        "npx",
-        "@playwright/mcp@latest",
-        "--config",
-        "config/mcp-playwright-webkit.config.json"
-      ]
-    },
     "playwright-firefox": {
       "type": "stdio",
       "command": "cmd",

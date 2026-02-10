@@ -1,0 +1,170 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "description": "Regression test suite manifest for parallel orchestration",
+    "generated": "2026-02-10",
+    "totalSuites": 12,
+    "csvFormat": "TestRail CSV (ID, Title, Section, Type, Priority, Estimate, Preconditions, Steps, Expected Result, References, Automation Status)"
+  },
+  "defaults": {
+    "preferredBrowser": "playwright-chrome",
+    "fallbackChain": ["playwright-chrome", "playwright-firefox", "playwright-edge"],
+    "maxRetries": 2,
+    "retryDelayMs": 30000,
+    "rateLimitDelayMs": 60000,
+    "harCapture": true,
+    "maxParallelAgents": 3,
+    "screenshotOnFailure": true
+  },
+  "browserPool": [
+    {
+      "slot": 1,
+      "serverName": "playwright-chrome",
+      "browserName": "chromium",
+      "channel": null,
+      "status": "available"
+    },
+    {
+      "slot": 2,
+      "serverName": "playwright-firefox",
+      "browserName": "firefox",
+      "channel": null,
+      "status": "available"
+    },
+    {
+      "slot": 3,
+      "serverName": "playwright-edge",
+      "browserName": "chromium",
+      "channel": "msedge",
+      "status": "available"
+    }
+  ],
+  "suites": [
+    {
+      "id": "01",
+      "name": "Smoke Tests",
+      "file": "regression/suites/Frontend/01-smoke-tests.csv",
+      "priority": "P0",
+      "testCount": 12,
+      "estimatedMinutes": 15,
+      "agent": "qa-testing-expert",
+      "tags": ["smoke", "daily", "pre-deploy"]
+    },
+    {
+      "id": "02",
+      "name": "Authentication Tests",
+      "file": "regression/suites/Frontend/02-authentication-tests.csv",
+      "priority": "P1",
+      "testCount": 28,
+      "estimatedMinutes": 30,
+      "agent": "qa-frontend-expert",
+      "tags": ["auth", "security", "sprint"]
+    },
+    {
+      "id": "03",
+      "name": "Catalog & Search Tests",
+      "file": "regression/suites/Frontend/03-catalog-search-tests.csv",
+      "priority": "P1",
+      "testCount": 23,
+      "estimatedMinutes": 25,
+      "agent": "qa-frontend-expert",
+      "tags": ["catalog", "search", "sprint"]
+    },
+    {
+      "id": "04",
+      "name": "Cart & Checkout Tests",
+      "file": "regression/suites/Frontend/04-cart-checkout-tests.csv",
+      "priority": "P1",
+      "testCount": 31,
+      "estimatedMinutes": 35,
+      "agent": "qa-frontend-expert",
+      "tags": ["cart", "checkout", "revenue-critical", "sprint"]
+    },
+    {
+      "id": "05",
+      "name": "BOPIS Pickup Tests",
+      "file": "regression/suites/Frontend/05-bopis-pickup-tests.csv",
+      "priority": "P1",
+      "testCount": 27,
+      "estimatedMinutes": 30,
+      "agent": "qa-frontend-expert",
+      "tags": ["bopis", "pickup", "sprint"]
+    },
+    {
+      "id": "06",
+      "name": "Payment Tests",
+      "file": "regression/suites/Frontend/06-payment-tests.csv",
+      "priority": "P0",
+      "testCount": 28,
+      "estimatedMinutes": 40,
+      "agent": "qa-testing-expert",
+      "tags": ["payment", "revenue-critical", "daily"]
+    },
+    {
+      "id": "07",
+      "name": "Google Analytics Tests",
+      "file": "regression/suites/Frontend/07-google-analytics-tests.csv",
+      "priority": "P2",
+      "testCount": 24,
+      "estimatedMinutes": 25,
+      "agent": "qa-testing-expert",
+      "tags": ["analytics", "ga4", "tracking"]
+    },
+    {
+      "id": "08",
+      "name": "Security Tests",
+      "file": "regression/suites/Frontend/08-security-tests.csv",
+      "priority": "P0",
+      "testCount": 18,
+      "estimatedMinutes": 20,
+      "agent": "qa-backend-expert",
+      "tags": ["security", "pci", "daily"]
+    },
+    {
+      "id": "09",
+      "name": "Accessibility Tests",
+      "file": "regression/suites/Frontend/09-accessibility-tests.csv",
+      "priority": "P1",
+      "testCount": 23,
+      "estimatedMinutes": 25,
+      "agent": "qa-testing-expert",
+      "tags": ["accessibility", "wcag", "a11y"]
+    },
+    {
+      "id": "10",
+      "name": "Localization Tests",
+      "file": "regression/suites/Frontend/10-localization-tests.csv",
+      "priority": "P2",
+      "testCount": 21,
+      "estimatedMinutes": 25,
+      "agent": "qa-testing-expert",
+      "tags": ["i18n", "localization", "languages"]
+    },
+    {
+      "id": "11",
+      "name": "Performance Tests",
+      "file": "regression/suites/Frontend/11-performance-tests.csv",
+      "priority": "P2",
+      "testCount": 20,
+      "estimatedMinutes": 20,
+      "agent": "qa-testing-expert",
+      "tags": ["performance", "core-web-vitals", "load-time"]
+    },
+    {
+      "id": "12",
+      "name": "Browser Compatibility Tests",
+      "file": "regression/suites/Frontend/12-browser-compatibility-tests.csv",
+      "priority": "P1",
+      "testCount": 21,
+      "estimatedMinutes": 30,
+      "agent": "qa-testing-expert",
+      "tags": ["cross-browser", "compatibility"]
+    }
+  ],
+  "selections": {
+    "smoke": ["01"],
+    "critical": ["01", "06", "08"],
+    "sprint": ["01", "02", "03", "04", "05", "06", "08"],
+    "full": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
+  }
+}
