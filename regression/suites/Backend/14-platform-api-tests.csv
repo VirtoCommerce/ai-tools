@@ -1,0 +1,190 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+API-001,Catalog API - Get Products List,API > Catalog,Functional,Critical,3m,"Admin credentials available, BACK_URL accessible","1. Navigate to BACK_URL/api/catalog/products
+2. Authenticate with admin credentials
+3. Send GET request with store ID parameter
+4. Verify response status and structure","- Response returns 200 OK
+- Response contains products array
+- Each product has id, name, code, imgSrc fields
+- Pagination metadata present (totalCount)",Platform API,Automated
+API-002,Catalog API - Get Product by ID,API > Catalog,Functional,Critical,3m,"At least one product exists in catalog","1. Get product list via API-001
+2. Extract first product ID
+3. Send GET /api/catalog/products/{id}
+4. Verify full product response","- Response returns 200 OK
+- Product contains all detail fields (descriptions, prices, images, variations)
+- SEO info populated
+- Category assignments present",Platform API,Automated
+API-003,Catalog API - Search Products,API > Catalog,Functional,Critical,3m,"Products exist in catalog index","1. Send GET /api/catalog/products with keyword=laptop
+2. Verify search results
+3. Send with keyword=nonexistent_xyz
+4. Verify empty results","- Keyword search returns matching products
+- Empty search returns empty array with totalCount=0
+- Response time under 500ms",Platform API,Automated
+API-004,Pricing API - Get Product Prices,API > Pricing,Functional,Critical,3m,"Products with prices configured","1. Send GET /api/pricing/evaluate with product IDs
+2. Verify price structure
+3. Check list price and sale price
+4. Verify currency code","- Prices returned for each product
+- ListPrice and SalePrice present
+- Currency matches store configuration
+- Price tiers included if configured",Platform API,Automated
+API-005,Pricing API - Price Calculation with Quantity,API > Pricing,Functional,High,5m,"Tier pricing configured for test products","1. Request price for quantity=1
+2. Request price for quantity=10
+3. Request price for quantity=100
+4. Compare prices across quantities","- Tier pricing applies correctly
+- Higher quantities get lower per-unit price
+- Price breakdown shows tier details",Platform API,Automated
+API-006,Inventory API - Check Product Availability,API > Inventory,Functional,Critical,3m,"Products with inventory configured","1. Send GET /api/inventory/products/{id}/availability
+2. Verify stock quantity
+3. Check fulfillment center data
+4. Verify in-stock status flags","- Response includes InStockQuantity
+- FulfillmentCenter information present
+- AllowPreorder/AllowBackorder flags set correctly
+- Response time under 300ms",Platform API,Automated
+API-007,Inventory API - Reserve Stock,API > Inventory,Functional,High,5m,"Product with available stock","1. Check current stock level
+2. Send POST to reserve stock (quantity=1)
+3. Verify reservation created
+4. Check stock level decreased
+5. Release reservation
+6. Verify stock restored","- Stock reservation succeeds
+- Available quantity decreases
+- Reservation can be released
+- Stock quantity restores after release",Platform API,Automated
+API-008,Orders API - Get Orders List,API > Orders,Functional,Critical,3m,"Orders exist in the system","1. Send GET /api/order/customerOrders with admin auth
+2. Verify response structure
+3. Check pagination
+4. Filter by status","- Returns list of orders
+- Each order has number, status, total, currency
+- Pagination works (skip/take)
+- Status filter returns correct subset",Platform API,Automated
+API-009,Orders API - Get Order by ID,API > Orders,Functional,Critical,3m,"At least one order exists","1. Get order list
+2. Extract first order ID
+3. Send GET /api/order/customerOrders/{id}
+4. Verify full order details","- Order contains line items
+- Shipping info present
+- Payment info present
+- Order total matches line items + shipping - discounts
+- Timestamps populated",Platform API,Automated
+API-010,Orders API - Create Order,API > Orders,Functional,Critical,8m,"Products available, user authenticated","1. Create a cart via API
+2. Add product to cart
+3. Set shipping address
+4. Set shipping method
+5. Set payment method
+6. Create order from cart
+7. Verify order created","- Cart created successfully
+- Product added to cart
+- Shipping and payment configured
+- Order created with status 'New'
+- Order number generated",Platform API,Automated
+API-011,Customer API - Get Customer Profile,API > Customer,Functional,High,3m,"Test user account exists","1. Authenticate as test user
+2. Send GET /api/members/{userId}
+3. Verify profile data
+4. Check contact and address info","- Profile returns user details
+- Email, name, phone populated
+- Addresses collection present
+- Organization membership shown (if B2B)",Platform API,Automated
+API-012,Customer API - Update Customer Profile,API > Customer,Functional,High,5m,"Test user account exists","1. Get current profile
+2. Update first name via PUT /api/members
+3. Verify update successful
+4. Restore original value","- Update returns 200/204
+- GET returns updated value
+- Other fields unchanged
+- Audit trail updated",Platform API,Automated
+API-013,Customer API - Create Organization,API > Customer,Functional,High,5m,"Admin credentials available","1. Send POST /api/members/organizations
+2. Provide name, description, addresses
+3. Verify organization created
+4. Check organization in list","- Organization created with 200/201
+- Org appears in GET /api/members/organizations
+- Org has generated ID
+- Members list initially contains creator",Platform API,Automated
+API-014,Authentication API - Login,API > Auth,Functional,Critical,3m,"Valid user credentials available","1. Send POST /connect/token with user credentials
+2. Verify token response
+3. Check token expiration
+4. Use token for authenticated request","- Access token returned
+- Token type is Bearer
+- Expiration > 0
+- Authenticated request succeeds with token",Platform API,Automated
+API-015,Authentication API - Invalid Credentials,API > Auth,Negative,Critical,3m,"Valid URL accessible","1. Send POST /connect/token with wrong password
+2. Verify error response
+3. Send with non-existent email
+4. Verify error response","- Returns 400 Bad Request
+- Error message does not reveal if user exists
+- No access token returned
+- Response does not contain stack traces",Platform API,Automated
+API-016,Authentication API - Token Refresh,API > Auth,Functional,High,5m,"Valid refresh token obtained from login","1. Login and obtain refresh token
+2. Wait briefly
+3. Send refresh token request
+4. Verify new access token","- New access token issued
+- New refresh token issued
+- Old access token may still work until expiry
+- Authenticated requests work with new token",Platform API,Automated
+API-017,Store API - Get Store Settings,API > Store,Functional,High,3m,"STORE_ID configured, admin auth","1. Send GET /api/stores/{STORE_ID}
+2. Verify store configuration
+3. Check currency settings
+4. Check language settings","- Store data returned
+- Default currency set
+- Available currencies listed
+- Default language and available languages present
+- SEO settings populated",Platform API,Automated
+API-018,Catalog API - Create Product,API > Catalog,Functional,High,5m,"Admin credentials, catalog exists","1. Send POST /api/catalog/products with product data
+2. Provide name, code, categoryId
+3. Verify product created
+4. Get product by new ID
+5. Clean up: delete product","- Product created with 200/201
+- Product has generated ID
+- Product retrievable by ID
+- Product appears in category
+- Cleanup deletion succeeds",Platform API,Automated
+API-019,Catalog API - Update Product,API > Catalog,Functional,High,5m,"Test product exists","1. Get test product
+2. Update name and description via PUT
+3. Verify changes saved
+4. Restore original values","- PUT returns success
+- GET returns updated values
+- Other fields unchanged
+- ModifiedDate updated",Platform API,Automated
+API-020,Cart API - Create and Manage Cart,API > Cart,Functional,Critical,8m,"Products available, user auth","1. Create new cart via POST
+2. Add item to cart
+3. Update item quantity
+4. Get cart totals
+5. Remove item
+6. Delete cart","- Cart created with ID
+- Item added with correct price
+- Quantity update reflected in totals
+- Totals calculate correctly (subtotal, tax, total)
+- Item removal works
+- Cart deletion succeeds",Platform API,Automated
+API-021,Cart API - Apply Coupon,API > Cart,Functional,High,5m,"Cart with items, valid coupon code","1. Create cart and add items
+2. Get totals before coupon
+3. Apply coupon via POST
+4. Get totals after coupon
+5. Remove coupon
+6. Verify totals restored","- Coupon applies successfully
+- Discount reflected in totals
+- Coupon removal works
+- Totals restore to pre-coupon values",Platform API,Automated
+API-022,Shipping API - Get Shipping Methods,API > Shipping,Functional,High,3m,"Cart with items and shipping address","1. Create cart with items
+2. Set shipping address
+3. Request available shipping methods
+4. Verify method details","- Shipping methods returned
+- Each method has name, price, estimated delivery
+- Ground shipping available
+- Express shipping available (if configured)",Platform API,Automated
+API-023,API Error Handling - 404 Not Found,API > Errors,Negative,High,3m,"API accessible","1. Send GET /api/catalog/products/nonexistent-id
+2. Send GET /api/order/customerOrders/nonexistent-id
+3. Send GET /api/nonexistent-endpoint","- Product 404 returns structured error
+- Order 404 returns structured error
+- Unknown endpoint returns 404
+- No stack traces in responses
+- Error messages are user-friendly",Platform API,Automated
+API-024,API Error Handling - Validation Errors,API > Errors,Negative,High,3m,"API accessible with admin auth","1. Send POST /api/catalog/products with empty body
+2. Send POST with missing required fields
+3. Send POST with invalid data types","- Returns 400 Bad Request
+- Validation errors list specific fields
+- Error messages are descriptive
+- No 500 errors for validation issues",Platform API,Automated
+API-025,API Rate Limiting and Headers,API > Security,Security,Critical,5m,"API accessible","1. Send 10 rapid requests to same endpoint
+2. Check response headers for rate limit info
+3. Check CORS headers
+4. Check security headers (X-Content-Type-Options, etc.)","- Rate limit headers present (if configured)
+- CORS allows expected origins only
+- X-Content-Type-Options: nosniff present
+- No server version disclosed in headers
+- Content-Type correctly set on all responses",Platform API,Automated

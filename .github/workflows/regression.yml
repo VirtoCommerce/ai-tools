@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       suite_selection:
-        description: 'Suites: smoke, full, critical, sprint, or comma-separated IDs (01,02,...)'
+        description: 'Suites: smoke, full, critical, sprint, frontend, backend, or comma-separated IDs (01,02,...)'
         required: true
         default: 'smoke'
         type: string
@@ -35,6 +35,14 @@ on:
         options:
           - claude-sonnet-4-5-20250929
           - claude-opus-4-6
+      max_parallel:
+        description: 'Max parallel suites (1-3)'
+        required: false
+        default: '3'
+        type: string
+  schedule:
+    - cron: '0 6 * * 1-5'  # Daily smoke: Mon-Fri at 6:00 AM UTC
+    - cron: '0 2 * * 0'     # Weekly full regression: Sunday at 2:00 AM UTC
 
 permissions:
   contents: read
@@ -44,9 +52,55 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 480
 
+    env:
+      # Resolve schedule-aware defaults
+      SUITE_SELECTION: >-
+        ${{
+          github.event_name == 'workflow_dispatch' && inputs.suite_selection ||
+          github.event.schedule == '0 6 * * 1-5' && 'smoke' ||
+          github.event.schedule == '0 2 * * 0' && 'full' ||
+          'smoke'
+        }}
+      TEST_ENVIRONMENT: >-
+        ${{
+          github.event_name == 'workflow_dispatch' && inputs.environment ||
+          'qa'
+        }}
+      MAX_BUDGET_USD: >-
+        ${{
+          github.event_name == 'workflow_dispatch' && inputs.max_budget ||
+          github.event.schedule == '0 2 * * 0' && '80.0' ||
+          '5.0'
+        }}
+      MAX_TURNS: >-
+        ${{
+          github.event_name == 'workflow_dispatch' && inputs.max_turns ||
+          '100'
+        }}
+      MODEL: >-
+        ${{
+          github.event_name == 'workflow_dispatch' && inputs.model ||
+          'claude-sonnet-4-5-20250929'
+        }}
+      MAX_PARALLEL: >-
+        ${{
+          github.event_name == 'workflow_dispatch' && inputs.max_parallel ||
+          '3'
+        }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Log run configuration
+        run: |
+          echo "Trigger: ${{ github.event_name }}"
+          echo "Suite Selection: ${{ env.SUITE_SELECTION }}"
+          echo "Environment: ${{ env.TEST_ENVIRONMENT }}"
+          echo "Max Budget: ${{ env.MAX_BUDGET_USD }}"
+          echo "Max Turns: ${{ env.MAX_TURNS }}"
+          echo "Model: ${{ env.MODEL }}"
+          echo "Max Parallel: ${{ env.MAX_PARALLEL }}"
 
       - name: Build Docker image
         run: docker build -t vc-regression -f ci/Dockerfile .
@@ -56,13 +110,14 @@ jobs:
           docker run --rm \
             --shm-size=2gb \
             -e ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }} \
-            -e SUITE_SELECTION=${{ inputs.suite_selection }} \
-            -e TEST_ENVIRONMENT=${{ inputs.environment }} \
-            -e MAX_BUDGET_USD=${{ inputs.max_budget }} \
-            -e MAX_TURNS=${{ inputs.max_turns }} \
-            -e MODEL=${{ inputs.model }} \
-            -e VCST_FRONT_URL=${{ secrets.VCST_FRONT_URL }} \
-            -e VCST_BACK_URL=${{ secrets.VCST_BACK_URL }} \
+            -e SUITE_SELECTION=${{ env.SUITE_SELECTION }} \
+            -e TEST_ENVIRONMENT=${{ env.TEST_ENVIRONMENT }} \
+            -e MAX_BUDGET_USD=${{ env.MAX_BUDGET_USD }} \
+            -e MAX_TURNS=${{ env.MAX_TURNS }} \
+            -e MODEL=${{ env.MODEL }} \
+            -e MAX_PARALLEL=${{ env.MAX_PARALLEL }} \
+            -e FRONT_URL=${{ secrets.VCST_FRONT_URL }} \
+            -e BACK_URL=${{ secrets.VCST_BACK_URL }} \
             -e VIRTO_START_FRONT=${{ secrets.VIRTO_START_FRONT }} \
             -e VIRTO_START_BACK=${{ secrets.VIRTO_START_BACK }} \
             -e ADMIN=${{ secrets.ADMIN }} \
@@ -96,8 +151,18 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: regression-${{ inputs.suite_selection }}-${{ github.run_number }}
+          name: regression-${{ env.SUITE_SELECTION }}-${{ github.run_number }}
           path: |
             test-results/
             reports/regression/
           retention-days: 30
+
+      - name: Send Teams notification
+        if: always()
+        run: |
+          npx tsx ci/notify-teams.ts
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          RUN_STATUS: ${{ job.status }}
+          GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TRIGGER: ${{ github.event_name }}

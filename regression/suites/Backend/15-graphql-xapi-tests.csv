@@ -1,0 +1,121 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+GQL-001,xCatalog - Search Products Query,GraphQL > xCatalog,Functional,Critical,3m,"GraphQL endpoint accessible at BACK_URL, products in catalog","1. Navigate to BACK_URL in browser
+2. Open GraphQL playground or use browser_evaluate to send query
+3. Execute: query { products(storeId: STORE_ID, keyword: ""laptop"") { totalCount items { id name code imgSrc } } }
+4. Verify response","- Response returns data.products
+- totalCount > 0 for valid keyword
+- Items contain id, name, code
+- No errors in response",xAPI,Automated
+GQL-002,xCatalog - Get Product Detail Query,GraphQL > xCatalog,Functional,Critical,3m,"Product ID known from GQL-001","1. Execute: query { product(storeId: STORE_ID, id: ""PRODUCT_ID"") { id name descriptions { content } prices { list { amount } sale { amount } } } }
+2. Verify all fields populated","- Product detail returned
+- Descriptions present
+- Prices include list and sale amounts
+- Images array populated",xAPI,Automated
+GQL-003,xCatalog - Category Tree Query,GraphQL > xCatalog,Functional,High,3m,"Categories configured in store","1. Execute: query { categories(storeId: STORE_ID) { totalCount items { id name slug childCategories { id name } } } }
+2. Verify category hierarchy","- Root categories returned
+- Child categories nested correctly
+- Each category has slug for URL
+- totalCount matches actual count",xAPI,Automated
+GQL-004,xCatalog - Product Facets/Filters Query,GraphQL > xCatalog,Functional,High,5m,"Products with properties configured","1. Execute products query with facet parameter
+2. Verify aggregations in response
+3. Apply filter and re-query
+4. Verify filtered results","- Facets/aggregations returned (brand, price range, etc.)
+- Filter narrows results correctly
+- facetValues contain count per value
+- Combining filters works (AND logic)",xAPI,Automated
+GQL-005,xCart - Create Cart Mutation,GraphQL > xCart,Functional,Critical,3m,"User authenticated, store configured","1. Execute: mutation { createCart(storeId: STORE_ID, userId: USER_ID, currencyCode: ""USD"", cultureName: ""en-US"") { id } }
+2. Verify cart created","- Cart created with ID
+- No errors in response
+- Cart retrievable by ID",xAPI,Automated
+GQL-006,xCart - Add Item to Cart Mutation,GraphQL > xCart,Functional,Critical,5m,"Cart created from GQL-005, product ID known","1. Execute: mutation { addItem(cartId: CART_ID, productId: PRODUCT_ID, quantity: 2) { id itemsCount items { id productId quantity listPrice { amount } } } }
+2. Verify item added","- Item added to cart
+- itemsCount incremented
+- Quantity set to 2
+- listPrice populated with correct amount",xAPI,Automated
+GQL-007,xCart - Update Cart Item Quantity,GraphQL > xCart,Functional,High,3m,"Cart with items from GQL-006","1. Execute: mutation { changeCartItemQuantity(cartId: CART_ID, lineItemId: LINE_ITEM_ID, quantity: 5) { id items { id quantity } totals { subTotal { amount } } } }
+2. Verify quantity updated","- Quantity changed to 5
+- Subtotal recalculated
+- No errors",xAPI,Automated
+GQL-008,xCart - Remove Item from Cart,GraphQL > xCart,Functional,High,3m,"Cart with items","1. Execute: mutation { removeCartItem(cartId: CART_ID, lineItemId: LINE_ITEM_ID) { id itemsCount items { id } } }
+2. Verify item removed","- Item removed from cart
+- itemsCount decremented
+- Totals recalculated
+- Cart still valid",xAPI,Automated
+GQL-009,xCart - Set Shipping Address,GraphQL > xCart,Functional,Critical,5m,"Cart with items, valid address","1. Execute addOrUpdateCartShipment mutation with address
+2. Verify address set on cart
+3. Query cart to confirm shipping info","- Shipping address saved
+- City, state, zip, country populated
+- No validation errors
+- Cart ready for shipping method selection",xAPI,Automated
+GQL-010,xCart - Apply Coupon Mutation,GraphQL > xCart,Functional,High,5m,"Cart with items, valid coupon code","1. Execute: mutation { addCoupon(cartId: CART_ID, couponCode: ""TESTCOUPON"") { id coupons { code isAppliedSuccessfully } totals { discountTotal { amount } } } }
+2. Verify coupon applied","- Coupon appears in coupons array
+- isAppliedSuccessfully = true
+- discountTotal shows discount amount
+- Invalid coupon returns appropriate error",xAPI,Automated
+GQL-011,xOrder - Get Orders Query,GraphQL > xOrder,Functional,Critical,3m,"User authenticated, orders exist","1. Execute: query { orders(filter: """", sort: ""createdDate:desc"") { totalCount items { id number status createdDate total { amount } } } }
+2. Verify order list","- Orders returned sorted by date
+- Each order has number, status, total
+- totalCount matches
+- Pagination works (first/after)",xAPI,Automated
+GQL-012,xOrder - Get Order Detail Query,GraphQL > xOrder,Functional,Critical,3m,"Order exists from GQL-011","1. Execute order query by ID/number
+2. Verify full order detail
+3. Check line items, addresses, payments","- Full order detail returned
+- Line items with product info
+- Shipping address populated
+- Payment info present
+- Order totals correct",xAPI,Automated
+GQL-013,xOrder - Create Order from Cart,GraphQL > xOrder,Functional,Critical,8m,"Cart with items, shipping, payment configured","1. Prepare cart (add item, set address, set shipment, set payment)
+2. Execute: mutation { createOrderFromCart(cartId: CART_ID) { id number status } }
+3. Verify order created","- Order created successfully
+- Order number generated
+- Status is 'New' or 'Processing'
+- Cart cleared after order creation",xAPI,Automated
+GQL-014,xCMS - Get Page Content Query,GraphQL > xCMS,Functional,High,3m,"CMS pages configured in store","1. Execute: query { pages(storeId: STORE_ID) { totalCount items { id name relativeUrl content } } }
+2. Verify page content","- Pages returned
+- Content populated
+- RelativeUrl set
+- No HTML injection in content",xAPI,Automated
+GQL-015,GraphQL Error Handling - Invalid Query,GraphQL > Errors,Negative,High,3m,"GraphQL endpoint accessible","1. Send malformed query syntax
+2. Send query for non-existent field
+3. Send mutation with missing required args","- Syntax error returns clear error message
+- Unknown field returns specific field error
+- Missing args returns validation error
+- No 500 errors, all return structured GraphQL errors",xAPI,Automated
+GQL-016,GraphQL Authentication - Unauthenticated Access,GraphQL > Auth,Security,Critical,3m,"GraphQL endpoint accessible without auth","1. Query products without auth token (should work - public)
+2. Query orders without auth token (should fail)
+3. Execute cart mutation without auth (should fail)","- Public queries work without auth
+- Protected queries return authentication error
+- Mutations require valid token
+- Error messages don't leak sensitive info",xAPI,Automated
+GQL-017,xCart - Full Checkout Flow via GraphQL,GraphQL > xCart,Functional,Critical,10m,"User auth, products available, payment configured","1. Create cart
+2. Add multiple items
+3. Set shipping address
+4. Get available shipping methods
+5. Set shipping method
+6. Set payment method
+7. Validate cart
+8. Create order","- Each step succeeds
+- Cart totals update correctly at each stage
+- Shipping rates calculated
+- Order created with all details
+- End-to-end flow completes in < 30 seconds",xAPI,Automated
+GQL-018,GraphQL Query Performance,GraphQL > Performance,Performance,High,5m,"GraphQL endpoint under normal load","1. Execute products search query - measure response time
+2. Execute complex nested query (product with variants, prices, images)
+3. Execute orders list query
+4. Check for N+1 query patterns in response times","- Product search < 500ms
+- Nested product query < 1000ms
+- Orders list < 500ms
+- No obvious N+1 patterns (nested queries don't multiply response time)",xAPI,Automated
+GQL-019,xCatalog - Product Variations Query,GraphQL > xCatalog,Functional,High,5m,"Configurable products with variations exist","1. Query product with variations
+2. Verify variation properties (size, color, etc.)
+3. Check availability per variation
+4. Verify pricing per variation","- Variations array populated
+- Each variation has distinct properties
+- Availability differs per variation (if configured)
+- Prices may differ per variation",xAPI,Automated
+GQL-020,GraphQL Introspection Security,GraphQL > Security,Security,High,3m,"GraphQL endpoint accessible","1. Send introspection query: { __schema { types { name } } }
+2. Check if introspection is enabled/disabled
+3. If enabled, verify no sensitive internal types exposed","- Introspection either disabled (production best practice) or limited
+- No internal/debug types exposed
+- Schema does not reveal implementation details
+- Rate limiting applies to introspection queries",xAPI,Automated

@@ -4,13 +4,14 @@
   "description": "",
   "main": "config.js",
   "scripts": {
-    "test": "playwright test",
-    "test:headed": "playwright test --headed",
-    "test:debug": "playwright test --debug",
-    "test:chrome": "playwright test --project=chromium",
-    "test:report": "playwright show-report",
     "env:check": "node get_variables_env.js",
-    "ci:regression": "npx tsx ci/run-regression.ts"
+    "ci:regression": "npx tsx ci/run-regression.ts",
+    "ci:smoke": "SUITE_SELECTION=smoke npx tsx ci/run-regression.ts",
+    "ci:critical": "SUITE_SELECTION=critical npx tsx ci/run-regression.ts",
+    "ci:backend": "SUITE_SELECTION=backend npx tsx ci/run-regression.ts",
+    "ci:frontend": "SUITE_SELECTION=frontend npx tsx ci/run-regression.ts",
+    "ci:full": "SUITE_SELECTION=full MAX_BUDGET_USD=80 npx tsx ci/run-regression.ts",
+    "ci:notify": "npx tsx ci/notify-teams.ts"
   },
   "repository": {
     "type": "git",

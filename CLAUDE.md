@@ -19,12 +19,13 @@ This is a **QA testing documentation and MCP-driven testing repository** for the
 ```bash
 npm install              # Install dependencies
 npm run env:check        # Verify all required env vars (29 total) via get_variables_env.js
-npm test                 # Run Playwright tests
-npm run test:headed      # With visible browser
-npm run test:debug       # Debug mode
-npm run test:chrome      # Chrome only (--project=chromium)
-npm run test:report      # View HTML report
 npm run ci:regression    # Run CI regression via Claude Agent SDK (npx tsx ci/run-regression.ts)
+npm run ci:smoke         # Run smoke tests only (suite 01)
+npm run ci:critical      # Run critical P0 suites (01, 06, 08, 14)
+npm run ci:frontend      # Run all frontend suites (01-13)
+npm run ci:backend       # Run all backend suites (14-17)
+npm run ci:full          # Run full regression (all 17 suites, $80 budget)
+npm run ci:notify        # Send Teams notification (requires TEAMS_WEBHOOK_URL)
 ```
 
 ## Environment Setup
@@ -74,7 +75,7 @@ vc-mcp-testing-module/
 Load a prompt template from `docs/prompts/`, execute via MCP browser tools with DevTools monitoring. After each flow: export HAR, capture console logs, take screenshots. Generate bug reports in `reports/bugs/`.
 
 ### 2. CI Regression via Claude Agent SDK
-`ci/run-regression.ts` orchestrates headless regression using `@anthropic-ai/claude-agent-sdk`. It reads suite CSVs from `regression/suites/Frontend/`, injects them into prompts with agent instructions from `ci/agents/`, and runs them sequentially against a single headless Chrome MCP server.
+`ci/run-regression.ts` orchestrates headless regression using `@anthropic-ai/claude-agent-sdk`. It reads suite CSVs from `regression/suites/Frontend/` and `regression/suites/Backend/`, injects them into prompts with agent instructions from `ci/agents/`, and runs them in parallel batches (up to 3 concurrent) against headless Chrome MCP server. Results are tracked in `reports/regression/history.json` for trend analysis. Teams notifications are sent via `ci/notify-teams.ts`.
 
 **Regression Orchestration Pipeline (interactive mode):**
 1. `regression-orchestrator` agent reads `config/test-suites.json` manifest
@@ -87,8 +88,8 @@ Load a prompt template from `docs/prompts/`, execute via MCP browser tools with 
 ### Test Suite Manifest: `config/test-suites.json`
 Central configuration for regression orchestration. Defines:
 - **Browser pool**: 3 slots (playwright-chrome, playwright-firefox, playwright-edge) with fallback chain
-- **Suite definitions**: id, name, CSV file path, priority, test count, assigned agent type, tags
-- **Selection groups**: `smoke` (01), `critical` (01,06,08), `sprint` (01-06,08), `full` (all 12)
+- **Suite definitions**: id, name, CSV file path, priority, test count, assigned agent type, tags (17 suites: 13 frontend + 4 backend)
+- **Selection groups**: `smoke` (01), `critical` (01,06,08,14), `sprint` (01-06,08,14,16), `full` (all 17), `frontend` (01-13), `backend` (14-17)
 - **Defaults**: max 3 parallel agents, 2 retries, 30s retry delay, HAR capture enabled
 
 ## MCP Servers (configured in .mcp.json)
@@ -164,7 +165,9 @@ Key prompt templates in `docs/prompts/`:
 
 ## Regression Test Suites
 
-14 CSV files in `regression/suites/Frontend/` (TestRail CSV format: ID, Title, Section, Type, Priority, Estimate, Preconditions, Steps, Expected Result, References, Automation Status):
+### Frontend Suites (regression/suites/Frontend/)
+
+14 CSV files in TestRail CSV format:
 
 | Suite | Tests | Priority | Use Case |
 |-------|-------|----------|----------|
@@ -183,7 +186,18 @@ Key prompt templates in `docs/prompts/`:
 | 12-browser-compatibility-tests | 21 | P1 | Cross-browser matrix |
 | 13-b2c-features-tests | 49 | P1 | B2C variations, wishlists, compare, reviews |
 
-**Execution strategies:** Daily (P0 only ~30min), Sprint Release (P0+P1 critical ~3-4hrs), Major Release (all suites ~24hrs)
+### Backend Suites (regression/suites/Backend/)
+
+4 CSV files covering platform APIs, GraphQL, Admin SPA, and module configuration:
+
+| Suite | Tests | Priority | Use Case |
+|-------|-------|----------|----------|
+| 14-platform-api-tests | 25 | P0 | REST API: Catalog, Pricing, Inventory, Orders, Customer CRUD |
+| 15-graphql-xapi-tests | 20 | P1 | GraphQL xAPI: xCart, xCatalog, xOrder, xCMS queries/mutations |
+| 16-admin-spa-tests | 25 | P1 | Admin SPA: Login, Catalog CRUD, Order management, Settings |
+| 17-module-config-tests | 15 | P2 | Module management, Cache, Search index, Import/Export |
+
+**Execution strategies:** Daily smoke (suite 01, ~30min), Critical P0 (01+06+08+14, ~2hrs), Sprint (01-06+08+14+16, ~4hrs), Full regression (all 17 suites, ~8hrs with parallelism)
 
 ## CI Regression Testing
 
@@ -200,7 +214,14 @@ docker run --rm --shm-size=2gb --env-file .env \
   vc-regression
 ```
 
-Suite selection: `smoke` (01), `critical` (01,06,08), `sprint` (01-06,08), `full` (all 14), or comma-separated IDs (`01,04,06`). CI uses only 3 agents (qa-testing-expert, qa-frontend-expert, qa-backend-expert) with headless Chrome. Reports are written to `reports/regression/ci-YYYY-MM-DD/` (markdown + JSON summary). Also available as a GitHub Actions workflow (`workflow_dispatch`).
+Suite selection: `smoke` (01), `critical` (01,06,08,14), `sprint` (01-06,08,14,16), `full` (all 17), `frontend` (01-13), `backend` (14-17), or comma-separated IDs (`01,04,06`). CI runs up to 3 suites in parallel (configurable via `MAX_PARALLEL`). Reports are written to `reports/regression/ci-YYYY-MM-DD/` (markdown + JSON summary). Result history tracked in `reports/regression/history.json` (90-day rolling window).
+
+**Scheduled Pipeline (GitHub Actions):**
+- **Daily smoke**: Mon-Fri at 6:00 AM UTC — runs suite 01 ($5 budget)
+- **Weekly full regression**: Sunday at 2:00 AM UTC — runs all 17 suites ($80 budget)
+- **Manual trigger**: Any selection, any environment, any budget via `workflow_dispatch`
+
+**Teams Notifications:** After each pipeline run, `ci/notify-teams.ts` sends an Adaptive Card to the configured Teams webhook with pass/fail summary, cost, duration, and a link to the GitHub Actions run. Requires `TEAMS_WEBHOOK_URL` secret.
 
 ## Testing Approach
 

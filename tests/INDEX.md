@@ -44,8 +44,9 @@ Active test cases organized by VCST ticket number. Each directory contains test 
 ### Admin & Storybook
 | Ticket | Description | Status |
 |--------|-------------|--------|
-| [VCST-4256-improve-page-builder-admin](VCST-4256-improve-page-builder-admin/) | Admin page builder tests | Active |
-| [VCST-4351](VCST-4351/) | Storybook component testing (12 reports) | Active |
+| [VCST-4256-improve-page-builder-admin](Sprint26-02/VCST-4256-improve-page-builder-admin/) | Admin page builder tests | Active |
+| [VCST-4351](Sprint26-02/VCST-4351/) | Storybook component testing (12 reports) | Active |
+| [VCST-4233-storybook-migration-part7](Sprint26-03/VCST-4233-storybook-migration-part7/) | Storybook StoryFn to StoryObj migration (Part 7) - 5 components, 68 stories | ✅ Completed |
 
 ### Regression & Retests
 | Ticket | Description | Status |

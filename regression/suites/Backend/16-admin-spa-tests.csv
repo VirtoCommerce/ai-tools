@@ -1,0 +1,223 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+ADM-001,Admin Login - Valid Credentials,Admin > Auth,Functional,Critical,3m,"Admin URL accessible, valid admin credentials","1. Navigate to BACK_URL
+2. Enter admin email and password
+3. Click Sign In
+4. Verify dashboard loads","- Login form accepts credentials
+- Redirected to admin dashboard
+- User name displayed
+- No console errors",Admin SPA,Automated
+ADM-002,Admin Login - Invalid Credentials,Admin > Auth,Negative,Critical,3m,"Admin URL accessible","1. Navigate to BACK_URL
+2. Enter invalid email/password
+3. Click Sign In
+4. Verify error message","- Error message displayed
+- No redirect to dashboard
+- No sensitive info in error
+- Login form still functional",Admin SPA,Automated
+ADM-003,Admin Dashboard - Overview Load,Admin > Dashboard,Functional,High,3m,"Admin logged in","1. Verify dashboard page loads
+2. Check key metrics/widgets display
+3. Check navigation menu items
+4. Verify no console errors","- Dashboard renders completely
+- Navigation menu shows: Catalog, Orders, Customers, Marketing, Content, Settings
+- No JavaScript errors in console
+- Page loads within 3 seconds",Admin SPA,Automated
+ADM-004,Admin Catalog - Product List,Admin > Catalog,Functional,Critical,5m,"Admin logged in, products exist","1. Navigate to Catalog > Products
+2. Verify product list loads
+3. Use search to find a product
+4. Apply filters (category, status)
+5. Sort by name/date","- Product list displays with grid/table
+- Search returns matching products
+- Filters narrow results correctly
+- Sort changes product order
+- Pagination works",Admin SPA,Automated
+ADM-005,Admin Catalog - Create Product,Admin > Catalog,Functional,Critical,8m,"Admin logged in with catalog permissions","1. Navigate to Catalog > Products
+2. Click 'Add Product'
+3. Fill required fields: Name, SKU, Category
+4. Set price
+5. Upload product image
+6. Save product
+7. Verify product in list","- Product creation form opens
+- Required field validation works
+- Image upload succeeds
+- Product saves without errors
+- Product appears in product list
+- Product visible on frontend after index",Admin SPA,Automated
+ADM-006,Admin Catalog - Edit Product,Admin > Catalog,Functional,Critical,5m,"Admin logged in, test product exists","1. Navigate to product list
+2. Open test product for editing
+3. Change product name
+4. Update description
+5. Modify price
+6. Save changes
+7. Verify changes saved","- Edit blade opens with product data
+- Fields are editable
+- Save succeeds
+- Changes reflected in product list
+- Changes visible on frontend after refresh",Admin SPA,Automated
+ADM-007,Admin Catalog - Manage Categories,Admin > Catalog,Functional,High,5m,"Admin logged in, categories exist","1. Navigate to Catalog > Categories
+2. Expand category tree
+3. Select a category
+4. View assigned products
+5. Check category properties","- Category tree renders
+- Expand/collapse works
+- Category details blade opens
+- Assigned products listed
+- Properties (SEO, images) accessible",Admin SPA,Automated
+ADM-008,Admin Orders - Order List,Admin > Orders,Functional,Critical,5m,"Admin logged in, orders exist","1. Navigate to Orders
+2. Verify order list displays
+3. Search by order number
+4. Filter by status
+5. Filter by date range","- Order list loads with columns (Number, Status, Total, Date)
+- Search finds specific order
+- Status filter works
+- Date range filter works
+- Click opens order detail",Admin SPA,Automated
+ADM-009,Admin Orders - View Order Detail,Admin > Orders,Functional,Critical,5m,"Admin logged in, order exists","1. Open order from list
+2. Verify order header (number, status, date)
+3. Check line items section
+4. Check shipping information
+5. Check payment information
+6. Verify totals","- Order detail blade opens
+- Line items show product, qty, price
+- Shipping address and method displayed
+- Payment status shown
+- Totals match (subtotal + shipping + tax - discounts = total)",Admin SPA,Automated
+ADM-010,Admin Orders - Change Order Status,Admin > Orders,Functional,Critical,5m,"Admin logged in, order in 'New' status","1. Open order in 'New' status
+2. Change status to 'Processing'
+3. Save changes
+4. Verify status updated
+5. Check status change in order history","- Status dropdown shows valid transitions
+- Status changes to 'Processing'
+- Save succeeds
+- Status change recorded in history
+- Invalid transitions not available",Admin SPA,Automated
+ADM-011,Admin Customers - Customer List,Admin > Customers,Functional,High,3m,"Admin logged in, customers exist","1. Navigate to Customers > Contacts
+2. Verify customer list loads
+3. Search by name or email
+4. Sort by registration date","- Customer list displays
+- Search returns matching customers
+- Sort works correctly
+- Click opens customer detail",Admin SPA,Automated
+ADM-012,Admin Customers - View Customer Detail,Admin > Customers,Functional,High,3m,"Admin logged in, customer exists","1. Open customer from list
+2. Verify contact information
+3. Check addresses
+4. View order history
+5. Check organization membership","- Customer blade opens
+- Name, email, phone displayed
+- Addresses listed
+- Order history accessible
+- Organization shown (if B2B)",Admin SPA,Automated
+ADM-013,Admin Customers - Create Customer,Admin > Customers,Functional,High,5m,"Admin logged in with customer management permissions","1. Navigate to Customers
+2. Click 'Add Contact'
+3. Fill required fields (First Name, Last Name, Email)
+4. Set password
+5. Save customer
+6. Verify in customer list","- Create form opens
+- Required field validation works
+- Email uniqueness checked
+- Customer saves successfully
+- Appears in customer list",Admin SPA,Automated
+ADM-014,Admin Marketing - Promotions List,Admin > Marketing,Functional,High,5m,"Admin logged in, promotions exist","1. Navigate to Marketing > Promotions
+2. Verify promotion list loads
+3. Check active/inactive filter
+4. Open a promotion for detail","- Promotion list displays
+- Active/inactive status shown
+- Filter works
+- Promotion detail blade opens with conditions and rewards",Admin SPA,Automated
+ADM-015,Admin Marketing - Create Promotion,Admin > Marketing,Functional,High,8m,"Admin logged in with marketing permissions","1. Navigate to Marketing > Promotions
+2. Click 'Add Promotion'
+3. Set name and description
+4. Configure condition (e.g., cart total > $100)
+5. Configure reward (e.g., 10% discount)
+6. Set active dates
+7. Save and activate","- Promotion form opens
+- Conditions builder works
+- Reward configuration works
+- Date range set correctly
+- Promotion saves and activates
+- Discount applies on frontend",Admin SPA,Automated
+ADM-016,Admin Settings - Store Settings,Admin > Settings,Functional,High,5m,"Admin logged in with settings permissions","1. Navigate to Settings
+2. Open Store settings
+3. Verify current configuration
+4. Check currency settings
+5. Check language settings","- Settings blade opens
+- Store name and URL displayed
+- Default currency shown
+- Available languages listed
+- Changes can be saved",Admin SPA,Automated
+ADM-017,Admin Catalog - Inventory Management,Admin > Catalog,Functional,High,5m,"Admin logged in, products with inventory","1. Navigate to product detail
+2. Open Inventory section
+3. Check stock levels per fulfillment center
+4. Update stock quantity
+5. Save changes","- Inventory section shows per-FC stock
+- Quantities editable
+- Low stock indicators work
+- Save updates stock levels
+- Changes reflect in API/frontend",Admin SPA,Automated
+ADM-018,Admin - User Roles and Permissions,Admin > Security,Security,Critical,5m,"Admin logged in with user management permissions","1. Navigate to Settings > Security > Roles
+2. Verify predefined roles exist
+3. Open a role to check permissions
+4. Create a test role with limited permissions
+5. Verify permission restrictions work","- Roles list shows predefined roles
+- Each role has assigned permissions
+- New role creation works
+- Permission checkboxes functional
+- Users with limited roles cannot access restricted sections",Admin SPA,Automated
+ADM-019,Admin - Blade Navigation System,Admin > UX,Functional,High,5m,"Admin logged in","1. Open multiple items (product, order, customer)
+2. Verify blades stack correctly
+3. Navigate between blades
+4. Close blades
+5. Verify breadcrumb navigation","- Blades open and stack left-to-right
+- Each blade has close button
+- Navigation between blades works
+- Closing a blade reveals previous
+- No orphaned blades remain",Admin SPA,Automated
+ADM-020,Admin - Search Global,Admin > UX,Functional,High,3m,"Admin logged in, data exists","1. Use global search bar
+2. Search for a product name
+3. Search for an order number
+4. Search for a customer email
+5. Verify results categorized","- Search bar accepts input
+- Results appear quickly (<2s)
+- Results categorized by type (Products, Orders, Customers)
+- Clicking result opens correct blade",Admin SPA,Automated
+ADM-021,Admin - Data Export,Admin > Data,Functional,High,5m,"Admin logged in, products exist","1. Navigate to Catalog > Products
+2. Select multiple products
+3. Click Export
+4. Choose export format (CSV/JSON)
+5. Verify export file generated","- Export option available
+- Format selection works
+- File downloads successfully
+- File contains selected products
+- Data is accurate and complete",Admin SPA,Automated
+ADM-022,Admin - Data Import,Admin > Data,Functional,High,8m,"Admin logged in, import file prepared","1. Navigate to Catalog > Import
+2. Upload CSV/JSON file
+3. Map columns if required
+4. Start import
+5. Monitor progress
+6. Verify imported data","- File upload works
+- Column mapping interface functional
+- Import starts and shows progress
+- Data imported correctly
+- Errors reported clearly for invalid rows",Admin SPA,Automated
+ADM-023,Admin Console - No JavaScript Errors,Admin > Quality,Quality,High,5m,"Admin logged in","1. Navigate through main sections: Dashboard, Catalog, Orders, Customers, Marketing, Settings
+2. Check browser console at each section
+3. Note any errors or warnings","- No JavaScript errors on any main section
+- No failed network requests (4xx/5xx)
+- Warnings triaged (no critical warnings)
+- All sections load without exceptions",Admin SPA,Automated
+ADM-024,Admin - Session Timeout,Admin > Security,Security,High,5m,"Admin logged in","1. Log in to admin
+2. Note session duration settings
+3. Leave session idle
+4. Attempt action after timeout
+5. Verify redirect to login","- Session has configured timeout
+- After timeout, actions redirect to login
+- No data loss on timeout
+- Session token invalidated
+- Re-login required",Admin SPA,Automated
+ADM-025,Admin - Responsive Layout,Admin > UX,Functional,Medium,5m,"Admin logged in, various viewport sizes","1. View admin at 1920x1080
+2. Resize to 1366x768
+3. Resize to 1024x768
+4. Check blade layout at each size
+5. Verify no overflow or broken layout","- Layout adapts to viewport
+- Blades resize appropriately
+- Navigation menu collapses if needed
+- No horizontal scroll at standard sizes
+- Content readable at all tested sizes",Admin SPA,Automated

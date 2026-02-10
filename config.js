@@ -9,6 +9,8 @@ const requiredVars = [
     'BACK_URL',
     'VIRTO_START_FRONT',
     'VIRTO_START_BACK',
+    'STORYBOOK_URL',
+    'STORYBOOK_DEV_URL',
     'ADMIN',
     'ADMIN_PASSWORD',   
     'USER_EMAIL',
@@ -62,6 +64,8 @@ export const env = {
     BACK_URL: getEnvVar('BACK_URL'),
     VIRTO_START_FRONT: getEnvVar('VIRTO_START_FRONT'),
     VIRTO_START_BACK: getEnvVar('VIRTO_START_BACK'),
+    STORYBOOK_URL: getEnvVar('STORYBOOK_URL'),
+    STORYBOOK_DEV_URL: getEnvVar('STORYBOOK_DEV_URL'),
     
     // Admin credentials
     ADMIN: getEnvVar('ADMIN'),

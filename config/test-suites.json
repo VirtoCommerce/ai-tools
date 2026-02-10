@@ -1,9 +1,9 @@
 {
   "_meta": {
-    "version": "1.0",
-    "description": "Regression test suite manifest for parallel orchestration",
+    "version": "2.0",
+    "description": "Regression test suite manifest for parallel orchestration (Frontend + Backend)",
     "generated": "2026-02-10",
-    "totalSuites": 12,
+    "totalSuites": 17,
     "csvFormat": "TestRail CSV (ID, Title, Section, Type, Priority, Estimate, Preconditions, Steps, Expected Result, References, Automation Status)"
   },
   "defaults": {
@@ -159,12 +159,64 @@
       "estimatedMinutes": 30,
       "agent": "qa-testing-expert",
       "tags": ["cross-browser", "compatibility"]
+    },
+    {
+      "id": "13",
+      "name": "B2C Features Tests",
+      "file": "regression/suites/Frontend/13-b2c-features-tests.csv",
+      "priority": "P1",
+      "testCount": 49,
+      "estimatedMinutes": 60,
+      "agent": "qa-frontend-expert",
+      "tags": ["b2c", "variations", "wishlists", "ship-to", "configurations"]
+    },
+    {
+      "id": "14",
+      "name": "Platform API Tests",
+      "file": "regression/suites/Backend/14-platform-api-tests.csv",
+      "priority": "P0",
+      "testCount": 25,
+      "estimatedMinutes": 30,
+      "agent": "qa-backend-expert",
+      "tags": ["api", "rest", "backend", "daily"]
+    },
+    {
+      "id": "15",
+      "name": "GraphQL xAPI Tests",
+      "file": "regression/suites/Backend/15-graphql-xapi-tests.csv",
+      "priority": "P1",
+      "testCount": 20,
+      "estimatedMinutes": 25,
+      "agent": "qa-backend-expert",
+      "tags": ["graphql", "xapi", "backend", "sprint"]
+    },
+    {
+      "id": "16",
+      "name": "Admin SPA Tests",
+      "file": "regression/suites/Backend/16-admin-spa-tests.csv",
+      "priority": "P1",
+      "testCount": 25,
+      "estimatedMinutes": 35,
+      "agent": "qa-backend-expert",
+      "tags": ["admin", "spa", "backend", "sprint"]
+    },
+    {
+      "id": "17",
+      "name": "Module & Config Tests",
+      "file": "regression/suites/Backend/17-module-config-tests.csv",
+      "priority": "P2",
+      "testCount": 15,
+      "estimatedMinutes": 20,
+      "agent": "qa-backend-expert",
+      "tags": ["modules", "config", "backend", "import-export"]
     }
   ],
   "selections": {
     "smoke": ["01"],
-    "critical": ["01", "06", "08"],
-    "sprint": ["01", "02", "03", "04", "05", "06", "08"],
-    "full": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
+    "critical": ["01", "06", "08", "14"],
+    "sprint": ["01", "02", "03", "04", "05", "06", "08", "14", "16"],
+    "full": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17"],
+    "frontend": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13"],
+    "backend": ["14", "15", "16", "17"]
   }
 }

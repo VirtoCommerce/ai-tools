@@ -32,20 +32,24 @@ interface SuiteConfig {
 }
 
 const SUITE_MAP: Record<string, SuiteConfig> = {
-  "00": { file: "00-full-regression-release.csv", agent: "qa-frontend-expert", description: "Full Regression Release" },
-  "01": { file: "01-smoke-tests.csv", agent: "qa-testing-expert", description: "Smoke Tests" },
-  "02": { file: "02-authentication-tests.csv", agent: "qa-frontend-expert", description: "Authentication Tests" },
-  "03": { file: "03-catalog-search-tests.csv", agent: "qa-frontend-expert", description: "Catalog & Search Tests" },
-  "04": { file: "04-cart-checkout-tests.csv", agent: "qa-frontend-expert", description: "Cart & Checkout Tests" },
-  "05": { file: "05-bopis-pickup-tests.csv", agent: "qa-frontend-expert", description: "BOPIS Pickup Tests" },
-  "06": { file: "06-payment-tests.csv", agent: "qa-testing-expert", description: "Payment Tests" },
-  "07": { file: "07-google-analytics-tests.csv", agent: "qa-testing-expert", description: "Google Analytics Tests" },
-  "08": { file: "08-security-tests.csv", agent: "qa-backend-expert", description: "Security Tests" },
-  "09": { file: "09-accessibility-tests.csv", agent: "qa-testing-expert", description: "Accessibility Tests" },
-  "10": { file: "10-localization-tests.csv", agent: "qa-testing-expert", description: "Localization Tests" },
-  "11": { file: "11-performance-tests.csv", agent: "qa-testing-expert", description: "Performance Tests" },
-  "12": { file: "12-browser-compatibility-tests.csv", agent: "qa-testing-expert", description: "Browser Compatibility Tests" },
-  "13": { file: "13-b2c-features-tests.csv", agent: "qa-frontend-expert", description: "B2C Features Tests" },
+  "00": { file: "Frontend/00-full-regression-release.csv", agent: "qa-frontend-expert", description: "Full Regression Release" },
+  "01": { file: "Frontend/01-smoke-tests.csv", agent: "qa-testing-expert", description: "Smoke Tests" },
+  "02": { file: "Frontend/02-authentication-tests.csv", agent: "qa-frontend-expert", description: "Authentication Tests" },
+  "03": { file: "Frontend/03-catalog-search-tests.csv", agent: "qa-frontend-expert", description: "Catalog & Search Tests" },
+  "04": { file: "Frontend/04-cart-checkout-tests.csv", agent: "qa-frontend-expert", description: "Cart & Checkout Tests" },
+  "05": { file: "Frontend/05-bopis-pickup-tests.csv", agent: "qa-frontend-expert", description: "BOPIS Pickup Tests" },
+  "06": { file: "Frontend/06-payment-tests.csv", agent: "qa-testing-expert", description: "Payment Tests" },
+  "07": { file: "Frontend/07-google-analytics-tests.csv", agent: "qa-testing-expert", description: "Google Analytics Tests" },
+  "08": { file: "Frontend/08-security-tests.csv", agent: "qa-backend-expert", description: "Security Tests" },
+  "09": { file: "Frontend/09-accessibility-tests.csv", agent: "qa-testing-expert", description: "Accessibility Tests" },
+  "10": { file: "Frontend/10-localization-tests.csv", agent: "qa-testing-expert", description: "Localization Tests" },
+  "11": { file: "Frontend/11-performance-tests.csv", agent: "qa-testing-expert", description: "Performance Tests" },
+  "12": { file: "Frontend/12-browser-compatibility-tests.csv", agent: "qa-testing-expert", description: "Browser Compatibility Tests" },
+  "13": { file: "Frontend/13-b2c-features-tests.csv", agent: "qa-frontend-expert", description: "B2C Features Tests" },
+  "14": { file: "Backend/14-platform-api-tests.csv", agent: "qa-backend-expert", description: "Platform API Tests" },
+  "15": { file: "Backend/15-graphql-xapi-tests.csv", agent: "qa-backend-expert", description: "GraphQL xAPI Tests" },
+  "16": { file: "Backend/16-admin-spa-tests.csv", agent: "qa-backend-expert", description: "Admin SPA Tests" },
+  "17": { file: "Backend/17-module-config-tests.csv", agent: "qa-backend-expert", description: "Module & Config Tests" },
 };
 
 // --- MCP server configuration (Linux/Docker compatible) ---
@@ -70,9 +74,13 @@ function resolveSuites(selection: string): string[] {
     case "full":
       return Object.keys(SUITE_MAP);
     case "critical":
-      return ["01", "06", "08"]; // P0 suites
+      return ["01", "06", "08", "14"]; // P0 suites (frontend + backend)
     case "sprint":
-      return ["01", "02", "03", "04", "05", "06", "08"];
+      return ["01", "02", "03", "04", "05", "06", "08", "14", "16"];
+    case "frontend":
+      return ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13"];
+    case "backend":
+      return ["14", "15", "16", "17"];
     default:
       // Comma-separated IDs like "01,02,03"
       return selection.split(",").map((s) => s.trim().padStart(2, "0"));
@@ -360,6 +368,81 @@ function generateReport(results: SuiteResult[]): string {
   return report;
 }
 
+// --- Parallel execution configuration ---
+
+const MAX_PARALLEL = parseInt(process.env.MAX_PARALLEL || "3", 10);
+
+// --- Result history tracking ---
+
+interface HistoryEntry {
+  date: string;
+  runId: string;
+  selection: string;
+  environment: string;
+  model: string;
+  totalSuites: number;
+  passed: number;
+  failed: number;
+  totalCostUsd: number;
+  totalDurationMs: number;
+  suites: Array<{ id: string; status: string; costUsd: number; durationMs: number }>;
+}
+
+function appendToHistory(results: SuiteResult[]): void {
+  const historyPath = join("reports", "regression", "history.json");
+  const date = new Date().toISOString().slice(0, 10);
+
+  let history: HistoryEntry[] = [];
+  if (existsSync(historyPath)) {
+    try {
+      history = JSON.parse(readFileSync(historyPath, "utf-8"));
+    } catch {
+      history = [];
+    }
+  }
+
+  const entry: HistoryEntry = {
+    date,
+    runId: `CI-${date}-${SUITE_SELECTION}`,
+    selection: SUITE_SELECTION,
+    environment: TEST_ENVIRONMENT,
+    model: MODEL,
+    totalSuites: results.length,
+    passed: results.filter((r) => r.status === "success").length,
+    failed: results.filter((r) => r.status !== "success").length,
+    totalCostUsd: results.reduce((sum, r) => sum + r.costUsd, 0),
+    totalDurationMs: results.reduce((sum, r) => sum + r.durationMs, 0),
+    suites: results.map((r) => ({
+      id: r.suiteId,
+      status: r.status,
+      costUsd: r.costUsd,
+      durationMs: r.durationMs,
+    })),
+  };
+
+  history.push(entry);
+
+  // Keep last 90 days
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 90);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+  history = history.filter((h) => h.date >= cutoffStr);
+
+  mkdirSync(join("reports", "regression"), { recursive: true });
+  writeFileSync(historyPath, JSON.stringify(history, null, 2), "utf-8");
+  console.log(`History updated: ${historyPath} (${history.length} entries)`);
+}
+
+// --- Batch helper for parallel execution ---
+
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+}
+
 // --- Main entry point ---
 
 async function main() {
@@ -369,13 +452,15 @@ async function main() {
   console.log(`Model: ${MODEL}`);
   console.log(`Max Budget: $${MAX_BUDGET_USD}`);
   console.log(`Max Turns/Suite: ${MAX_TURNS}`);
+  console.log(`Max Parallel: ${MAX_PARALLEL}`);
   console.log("");
 
   const suiteIds = resolveSuites(SUITE_SELECTION);
   console.log(`Resolved suites: ${suiteIds.join(", ")}`);
 
+  // Validate suite IDs and prepare run queue
+  const validSuites: Array<{ id: string; config: SuiteConfig }> = [];
   const results: SuiteResult[] = [];
-  let totalCost = 0;
 
   for (const suiteId of suiteIds) {
     const config = SUITE_MAP[suiteId];
@@ -390,28 +475,71 @@ async function main() {
         numTurns: 0,
         errors: [`Unknown suite ID: ${suiteId}`],
       });
+    } else {
+      validSuites.push({ id: suiteId, config });
+    }
+  }
+
+  // Execute in parallel batches
+  const batches = chunkArray(validSuites, MAX_PARALLEL);
+  let totalCost = 0;
+  let budgetExhausted = false;
+
+  for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
+    const batch = batches[batchIdx];
+
+    if (budgetExhausted) {
+      // Mark remaining suites as budget_exceeded
+      for (const suite of batch) {
+        results.push({
+          suiteId: suite.id,
+          description: suite.config.description,
+          status: "budget_exceeded",
+          costUsd: 0,
+          durationMs: 0,
+          numTurns: 0,
+          errors: ["Global budget exhausted"],
+        });
+      }
       continue;
     }
 
-    // Check remaining budget
     const remainingBudget = MAX_BUDGET_USD - totalCost;
     if (remainingBudget <= 0.5) {
       console.log(`\nBudget nearly exhausted ($${totalCost.toFixed(2)}/$${MAX_BUDGET_USD}). Stopping.`);
-      results.push({
-        suiteId,
-        description: config.description,
-        status: "budget_exceeded",
-        costUsd: 0,
-        durationMs: 0,
-        numTurns: 0,
-        errors: ["Global budget exhausted"],
-      });
-      break;
+      budgetExhausted = true;
+      for (const suite of batch) {
+        results.push({
+          suiteId: suite.id,
+          description: suite.config.description,
+          status: "budget_exceeded",
+          costUsd: 0,
+          durationMs: 0,
+          numTurns: 0,
+          errors: ["Global budget exhausted"],
+        });
+      }
+      continue;
     }
 
-    const result = await runSuite(suiteId, config, remainingBudget);
-    results.push(result);
-    totalCost += result.costUsd;
+    console.log(`\n>>> Batch ${batchIdx + 1}/${batches.length}: Running ${batch.map((s) => s.id).join(", ")} in parallel`);
+
+    // Per-suite budget = remaining / suites left (with minimum floor)
+    const suitesRemaining = validSuites.length - results.filter((r) => r.suiteId !== "Unknown").length;
+    const perSuiteBudget = Math.max(remainingBudget / Math.max(suitesRemaining, 1), 2.0);
+
+    const batchPromises = batch.map((suite) =>
+      runSuite(suite.id, suite.config, perSuiteBudget),
+    );
+
+    const batchResults = await Promise.all(batchPromises);
+
+    for (const result of batchResults) {
+      results.push(result);
+      totalCost += result.costUsd;
+    }
+
+    console.log(`\n<<< Batch ${batchIdx + 1} complete. Running cost: $${totalCost.toFixed(4)}`);
   }
 
   // Generate and save report
@@ -424,33 +552,34 @@ async function main() {
   writeFileSync(reportPath, report, "utf-8");
   console.log(`\nReport saved to: ${reportPath}`);
 
-  // Also write a JSON summary for programmatic consumption
+  // Write JSON summary for programmatic consumption
   const jsonPath = join(reportDir, "summary.json");
-  writeFileSync(
-    jsonPath,
-    JSON.stringify(
-      {
-        date,
-        environment: TEST_ENVIRONMENT,
-        model: MODEL,
-        suiteSelection: SUITE_SELECTION,
-        totalCostUsd: totalCost,
-        results: results.map((r) => ({
-          suiteId: r.suiteId,
-          description: r.description,
-          status: r.status,
-          costUsd: r.costUsd,
-          durationMs: r.durationMs,
-          numTurns: r.numTurns,
-          errors: r.errors,
-        })),
-      },
-      null,
-      2,
-    ),
-    "utf-8",
-  );
+  const summary = {
+    date,
+    environment: TEST_ENVIRONMENT,
+    model: MODEL,
+    suiteSelection: SUITE_SELECTION,
+    maxParallel: MAX_PARALLEL,
+    totalCostUsd: totalCost,
+    totalDurationMs: results.reduce((sum, r) => sum + r.durationMs, 0),
+    totalSuites: results.length,
+    passed: results.filter((r) => r.status === "success").length,
+    failed: results.filter((r) => r.status !== "success").length,
+    results: results.map((r) => ({
+      suiteId: r.suiteId,
+      description: r.description,
+      status: r.status,
+      costUsd: r.costUsd,
+      durationMs: r.durationMs,
+      numTurns: r.numTurns,
+      errors: r.errors,
+    })),
+  };
+  writeFileSync(jsonPath, JSON.stringify(summary, null, 2), "utf-8");
   console.log(`JSON summary saved to: ${jsonPath}`);
+
+  // Append to result history
+  appendToHistory(results);
 
   // Print final summary
   console.log("\n=== Final Summary ===");

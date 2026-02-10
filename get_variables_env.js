@@ -4,6 +4,8 @@ console.log('FRONT_URL:', env.FRONT_URL);
 console.log('BACK_URL:', env.BACK_URL);
 console.log('VIRTO_START_FRONT:', env.VIRTO_START_FRONT);
 console.log('VIRTO_START_BACK:', env.VIRTO_START_BACK);
+console.log('STORYBOOK_URL:', env.STORYBOOK_URL);
+console.log('STORYBOOK_DEV_URL:', env.STORYBOOK_DEV_URL);
 console.log('ADMIN:', env.ADMIN);
 console.log('ADMIN_PASSWORD:', env.ADMIN_PASSWORD);
 console.log('USER2_EMAIL:', env.USER2_EMAIL);

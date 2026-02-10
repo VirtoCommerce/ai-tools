@@ -25,7 +25,16 @@
 | 12 | [12-browser-compatibility-tests.csv](12-browser-compatibility-tests.csv) | 22 | P1 High | 4 hrs |
 | 13 | [13-b2c-features-tests.csv](13-b2c-features-tests.csv) | 64 | P1 Critical | 5 hrs |
 
-**Total Test Cases:** 455 (347 modular + 108 full regression)
+### Backend Suites
+
+| # | File | Test Cases | Priority | Est. Time |
+|---|------|------------|----------|-----------|
+| 14 | [14-platform-api-tests.csv](Backend/14-platform-api-tests.csv) | 25 | P0 Critical | 30 min |
+| 15 | [15-graphql-xapi-tests.csv](Backend/15-graphql-xapi-tests.csv) | 20 | P1 High | 25 min |
+| 16 | [16-admin-spa-tests.csv](Backend/16-admin-spa-tests.csv) | 25 | P1 High | 35 min |
+| 17 | [17-module-config-tests.csv](Backend/17-module-config-tests.csv) | 15 | P2 Medium | 20 min |
+
+**Total Test Cases:** 540 (347 frontend modular + 108 full regression + 85 backend)
 
 ---
 
@@ -87,6 +96,23 @@ All 12 modular suites (01-12)
 **Time:** ~24+ hours (can be parallelized)
 **Purpose:** Granular coverage with specialized focus areas
 **When:** Deep-dive testing, specialized area validation
+
+### Backend Daily Smoke
+```
+14-platform-api-tests.csv
+```
+**Time:** ~30 minutes
+**Purpose:** Validate REST API health alongside frontend smoke
+
+### Backend Full Regression
+```
+14-platform-api-tests.csv
+15-graphql-xapi-tests.csv
+16-admin-spa-tests.csv
+17-module-config-tests.csv
+```
+**Time:** ~2 hours
+**CI command:** `npm run ci:backend` or `SUITE_SELECTION=backend`
 
 ### Quarterly Specialized Testing
 ```
@@ -167,6 +193,18 @@ Cross-browser testing - Chrome, Safari, Firefox, Edge on desktop and mobile.
 
 ### 13 - B2C Features Tests
 B2C-specific features - Product Variations (size, color), Wishlists/Lists (create, share, manage), Ship To address management, and Product Configurations (custom options, bundles, text input).
+
+### 14 - Platform API Tests
+REST API regression for core platform endpoints - Catalog, Pricing, Inventory, Orders, Customer CRUD, Authentication, and error handling.
+
+### 15 - GraphQL xAPI Tests
+GraphQL experience API testing - xCatalog (product search, detail, categories), xCart (create, add, checkout), xOrder (list, detail, create), xCMS, authentication, and query performance.
+
+### 16 - Admin SPA Tests
+Admin panel functional testing - Login, Dashboard, Catalog CRUD, Order management, Customer management, Marketing/Promotions, Settings, blade navigation, and console error monitoring.
+
+### 17 - Module & Config Tests
+Platform module configuration testing - Module list, Catalog/Pricing/Order/Payment module settings, cache management, search index rebuild, data import/export, and system health diagnostics.
 
 ---
 
