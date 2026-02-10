@@ -1,1 +1,0 @@
-## VCST-4538 Storybook Story Migration Testing\n\n**Date:** Tue, 10 Feb, 2026 13:22:22\n**Tester:** ui-ux-expert\n**PR:** https://github.com/VirtoCommerce/vc-frontend/pull/2151\n**Storybook URL:** https://vcst-qa-storybook.govirto.com\n\n---\n

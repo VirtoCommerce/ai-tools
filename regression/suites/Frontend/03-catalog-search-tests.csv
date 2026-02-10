@@ -81,6 +81,102 @@ CAT-013,Product - Related Products,Catalog > Product,Functional,Low,3m,"Product 
 3. Verify recommendations display","- Related products section visible
 - Products are relevant
 - Can navigate to related",regression-qa-theme-26.csv,Automated
+CAT-014,Filter Chips - Facet Filter Chip Display,Catalog > Filters > Chips,Functional,High,5m,"Category with faceted products","1. Navigate to category
+2. Apply a facet filter (e.g., Brand)
+3. Verify chip appears with filter name
+4. Verify close (×) button on chip
+5. Verify product count updates","- Chip displays with correct label
+- Close button functional
+- Product count accurate
+- Chip removal updates URL",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-015,Filter Chips - Checkbox Control Chips (Show in stock),Catalog > Filters > Chips,Functional,High,3m,"Category page with stock filter","1. Toggle 'Show in stock' checkbox
+2. Verify chip appears labeled 'Show in stock'
+3. Verify close button removes only this filter
+4. Verify product count updates","- Chip appears/disappears with checkbox toggle
+- Individual close button works
+- Only this filter removed
+- Other filters preserved",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-016,Filter Chips - Checkbox Control Chips (Purchased before),Catalog > Filters > Chips,Functional,High,3m,"Category page, user has purchase history","1. Toggle 'Purchased before' checkbox
+2. Verify chip appears
+3. Verify close button removes filter
+4. Verify product count updates","- Chip appears for purchased before filter
+- Removable via close button
+- Filter state syncs with checkbox
+- Product count accurate",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-017,Filter Chips - Checkbox Control Chips (Available at branches),Catalog > Filters > Chips,Functional,High,3m,"Category page with branch selection enabled","1. Select branches in 'Available at branches'
+2. Verify chip appears with branch count
+3. Verify close button removes filter
+4. Verify product count updates","- Chip shows branch count
+- Removable via close button
+- All selected branches cleared
+- Product count accurate",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-018,Reset Filters - Combined Facet + Checkbox Reset,Catalog > Filters > Reset,Functional,Critical,5m,"Category page with multiple filter types","1. Apply facet filter (e.g., Brand)
+2. Toggle 'Show in stock' checkbox
+3. Verify multiple chips appear
+4. Click 'Reset filters' button
+5. Verify ALL filters cleared","- All chips removed
+- All checkboxes unchecked
+- URL cleaned (no filter params)
+- Full product list restored
+- Reset button disappears when no filters",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-019,Reset Filters - Zero Results State,Catalog > Filters > Reset,Functional,Critical,3m,"Category page with filters available","1. Apply filters until 0 products shown
+2. Verify 'No results' message displays
+3. Verify 'Reset filters' button appears prominently
+4. Click reset button
+5. Verify product list restored","- Reset button visible below no-results message
+- Button prominently displayed
+- Clicking restores full product list
+- All filters cleared",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-020,Reset Filters - Category Page Context Preserved,Catalog > Filters > Reset,Functional,High,3m,"On category page (/printers)","1. Navigate to category page (e.g., /printers)
+2. Apply multiple filters
+3. Click 'Reset filters' button
+4. Verify still on same category page
+5. Verify category products restored","- Stays on same category page (NOT redirected to /catalog)
+- Category context preserved
+- Category products restored
+- URL shows category path",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-021,Reset Filters - Search Results Preserve Search Term,Search > Filters > Reset,Functional,High,3m,"Search executed with term 'printer'","1. Search for 'printer'
+2. Apply filters on search results
+3. Click 'Reset filters' button
+4. Verify search term preserved
+5. Verify filters cleared","- Filters cleared
+- Search term remains in search bar
+- Search results restored (without filters)
+- URL shows search term, no filter params",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-022,Filter Chips - Individual Close vs Reset All,Catalog > Filters > Chips,Functional,High,5m,"Category page with multiple filters","1. Apply 3+ filters (mix facet + checkbox)
+2. Close ONE chip via × button
+3. Verify only that filter removed
+4. Close another chip
+5. Use Reset button for remaining filters","- Individual close removes single filter only
+- Other filters preserved after single close
+- Reset button clears all remaining filters
+- Product count updates after each action",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-023,Filters - Browser Back/Forward Navigation,Catalog > Filters > Navigation,Functional,Medium,5m,"Category page with filters","1. Apply filter A
+2. Apply filter B
+3. Press browser Back button
+4. Verify filter B removed
+5. Press browser Forward button
+6. Verify filter B restored","- Browser history correctly tracks facet filter URL params
+- Back button removes last filter
+- Forward button restores filter
+- Chips sync with browser navigation",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-024,Filters - Page Refresh Preserves State,Catalog > Filters > Navigation,Functional,Medium,3m,"Category page with filters applied","1. Apply multiple filters
+2. Refresh page (F5 or Ctrl+R)
+3. Verify filters preserved from URL
+4. Verify chips render correctly
+5. Verify reset button works","- Filter state persisted via URL params
+- Chips render after refresh
+- Checkboxes checked correctly
+- Reset button functional after refresh",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-025,Filters - Multi-select Within Facet Group,Catalog > Filters,Functional,High,5m,"Category with multi-value facets","1. Select 2+ values in same facet (e.g., Brand: HP + Epson)
+2. Verify separate chips for each value
+3. Verify facet header shows count
+4. Close one chip via × button
+5. Verify only that value removed","- Individual chips per facet value
+- Facet header shows selected count (e.g., Brand (2))
+- Individual chip removal works
+- Other values in same facet preserved
+- Product count updates",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
 SRCH-001,Search - Basic Query,Search > Basic,Functional,High,3m,"Catalog has searchable products","1. Click search bar
 2. Enter product name 'laptop'
 3. Press Enter
