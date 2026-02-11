@@ -1,0 +1,254 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+CUST-001,Add organization,Customer > Contact Management,Functional,Critical,5min,Admin logged in to Backend,"1. Go to Contacts tab
+2. Click 'Add' > Select 'Organization'
+3. Select user group, enter business category and description
+4. Verify 'Create' button inactive (Name required)
+5. Fill in Name field
+6. Click 'Create'","1. Create button inactive without Name
+2. Organization created and found in contacts list",C169774,Katalon
+CUST-002,Add employee,Customer > Contact Management,Functional,Critical,5min,Admin logged in to Backend,"1. Go to Contacts tab
+2. Click 'Add' > Select 'Employee'
+3. Fill in required fields
+4. Click 'Create'","New employee created and found in contacts list",C169775,Katalon
+CUST-003,Add customer (contact),Customer > Contact Management,Functional,Critical,5min,Admin logged in to Backend,"1. Go to Contacts tab
+2. Click 'Add' > Select 'Customer'
+3. Fill in required fields
+4. Click 'Create'","New customer created and found in contacts list",C169776,Katalon
+CUST-004,Add vendor,Customer > Contact Management,Functional,Critical,5min,Admin logged in to Backend,"1. Go to Contacts tab
+2. Click 'Add' > Select 'Vendor'
+3. Fill in required fields
+4. Click 'Create'","New vendor created and found in contacts list",C169777,Katalon
+CUST-005,Add contact to organization,Customer > Contact Management,Functional,High,5min,"Admin logged in to Backend
+Organization created [CUST-001]","1. Go to organization from CUST-001
+2. Click 'Add' > Verify all contact types except Vendor available
+3. Choose any type > Fill required fields > Click 'Create'
+4. Try to find contact in general contacts list","1. New contact appears inside organization
+2. Contact NOT in general contact list — contained inside organization only",C169780,Katalon
+CUST-006,Edit contact,Customer > Contact Management,Functional,High,3min,"Admin logged in to Backend
+Contact exists","1. Open existing contact
+2. Modify fields
+3. Click 'Save'","All changes are saved",C169789,Katalon
+CUST-007,Delete contact,Customer > Contact Management,Functional,High,3min,"Admin logged in to Backend
+Contact exists","1. Select contact to delete
+2. Click 'Delete'
+3. Confirm deletion","Contact deleted from contacts list",C169797,Katalon
+CUST-008,Delete contact from organization,Customer > Contact Management,Functional,High,3min,"Admin logged in to Backend
+Contact inside organization [CUST-005]","1. Go to organization
+2. Select contact (customer or employee)
+3. Delete from organization","Contact removed from organization",C169782,Katalon (generic)
+CUST-009,Add account to customer or employee,Customer > Account Management,Functional,High,5min,"Admin logged in to Backend
+Employee [CUST-002] or Customer [CUST-003] exists","1. Open contact > Go to Accounts section
+2. Click 'Add'
+3. Select store for account association
+4. Enter login
+5. Start entering password > Verify security rules appear
+6. Enter valid password > Verify rules disappear
+7. Enter mismatched repeat password > Verify error
+8. Enter matching password > Create account","Account created with store association. Password rules enforced correctly.",C169793,None
+CUST-010,Change account password,Customer > Account Management,Functional,High,3min,"Admin logged in to Backend
+Account exists [CUST-009]","1. Open contact > Accounts section
+2. Select account
+3. Change password
+4. Save","Password changed successfully",C169794,None
+CUST-011,Delete account,Customer > Account Management,Functional,High,3min,"Admin logged in to Backend
+Account exists [CUST-009]","1. Open contact > Accounts section
+2. Select account > Delete
+3. Confirm deletion","Account deleted",C169795,Katalon
+CUST-012,Add address to contact,Customer > Contact Details,Functional,High,3min,"Admin logged in to Backend
+Contact exists","1. Open contact
+2. Click on Address section
+3. Add new address with all fields
+4. Save","Address added to contact",C169790,Katalon (generic)
+CUST-013,Add email to contact,Customer > Contact Details,Functional,High,3min,"Admin logged in to Backend
+Contact exists","1. Open contact
+2. Add email address
+3. Save","Email added to contact",C169791,Katalon (generic)
+CUST-014,Add phone number and URL to contact,Customer > Contact Details,Functional,Medium,3min,"Admin logged in to Backend
+Contact exists","1. Open contact
+2. Add phone number > Save
+3. Add URL > Save","Phone number and URL added to contact",C169792 C169796,Katalon (generic)
+CUST-015,Contact user groups and organization membership,Customer > Contact Details,Functional,Medium,5min,"Admin logged in to Backend
+Contact and Organization exist","1. Open contact > Verify user groups field
+2. Verify member of organization field
+3. Verify associated organization field
+4. Verify time zone field
+5. Verify full name optional field","All fields accessible and editable",C261115 C261116 C261124 C261122 C261720,None
+CUST-016,About field CRUD on contact,Customer > About Field,Functional,Medium,5min,"Admin logged in to Backend
+Contact exists","1. Open contact > Add About field with text
+2. Save > Reopen > Verify saved
+3. Create new contact with About field
+4. Update About field information
+5. Save with empty About field > Verify allowed
+6. Enter characters and verify limits
+7. Query via xAPI > Verify About field returned","About field saves, updates, clears, and returns via xAPI correctly",C343606 C343690 C343689 C343693 C343694 C343734 C343735 C343726,Modified
+CUST-017,Upload customer profile photo,Customer > Profile Photo,Functional,Medium,5min,"Admin logged in to Backend
+Contact exists","1. Verify current photo display in customer list
+2. Verify default logo when no photo uploaded
+3. Open upload photo window
+4. Upload new photo > Verify in list
+5. Try unsupported format > Verify error
+6. Cancel upload > Verify no change
+7. Logout and re-login > Verify photo persists","Photo uploads, displays in list, persists across sessions. Unsupported formats rejected.",C398728-C398738,None
+CUST-018,Contact and Organization icon upload,Customer > Profile Photo,Functional,Medium,5min,"Admin logged in to Backend
+Contact and Organization exist","1. Contact > Download picture by URL > Verify
+2. Contact > Download picture using drag-n-drop > Verify
+3. Verify icon size constraints
+4. Organization > Download picture by URL > Verify
+5. Organization > Download picture using drag-n-drop > Verify","Icons uploaded via URL and drag-n-drop for both Contact and Organization. Size constraints enforced.",C343700 C343708 C343709 C343707 C343703 C343711,Modified
+CUST-019,Address type and country (Contact/Organization/Employee),Customer > Address Management,Functional,Medium,5min,"Admin logged in to Backend
+Contact, Organization, Employee exist","1. Open Contact > Address > Verify address type options
+2. Verify country dropdown
+3. Repeat for Organization
+4. Repeat for Employee","Address type and country fields work correctly for all entity types",C261129-C261136,None
+CUST-020,Address with description (all entity types),Customer > Address Management,Functional,Medium,5min,"Admin logged in to Backend
+Contact, Company, Vendor, Employee exist","1. Open Contact > Add address with description > Save
+2. Repeat for Company
+3. Repeat for Vendor
+4. Repeat for Employee","Address with description saved for all entity types",C345040-C345043,Recently added
+CUST-021,Address with OuterId (Add/Update/Delete across entities),Customer > Address Management,Functional,Medium,8min,"Admin logged in to Backend
+All entity types exist","1. Employee: Add Address with OuterId > Update OuterId > Delete address
+2. Contact: Add Address with OuterId > Update OuterId > Delete address
+3. Vendor: Add Address with OuterId > Update OuterId > Delete address
+4. Organization: Add Address with OuterId > Update OuterId > Delete address","OuterId operations succeed for all entity types",C312145-C312156,None
+CUST-022,Default address (first of shipping/billing type),Customer > Address Management,Functional,Medium,5min,"Admin logged in to Backend
+Entity with addresses","1. Add first address of Shipping type > Verify becomes default
+2. Add first address of Billing type > Verify becomes default
+3. Verify default address by entity type (Organization, Employee, Contact, Vendor)","First address of each type automatically set as default for all entity types",C315409 C315401-C315411,Katalon (generic)
+CUST-023,Change default address and Billing&Shipping,Customer > Address Management,Functional,Medium,5min,"Admin logged in to Backend
+Entity with multiple addresses","1. Change default address > Verify only one default Billing
+2. Change default address > Verify only one default Shipping
+3. Delete default address > Verify next address becomes default
+4. Update address type > Verify default updates
+5. Add Billing&Shipping address > Verify default behavior","Only one default per type. Default transfers on delete. Billing&Shipping addresses handled correctly.",C315407 C315408 C315466 C315467 C315424 C315405,Katalon (generic)
+CUST-024,Dynamic properties value types,Customer > Dynamic Properties,Functional,Medium,5min,"Admin logged in to Backend
+Contact, Organization, Employee exist","1. Open Contact > Dynamic properties > Verify value types
+2. Repeat for Organization
+3. Repeat for Employee","Value types display correctly for all entity types",C261138 C261139 C261140,None
+CUST-025,Dynamic properties hide empty values and fields,Customer > Dynamic Properties,Functional,Medium,5min,"Admin logged in to Backend
+Dynamic properties configured","1. Click 'Hide empty values' > Verify empty values hidden
+2. Verify required fields always shown
+3. Verify switcher fields always shown","Hide empty values works. Required and switcher fields remain visible.",C289520-C289524,None
+CUST-026,Status management rules,Customer > Status Management,Functional,Medium,5min,"Admin logged in to Backend
+Multiple entity types exist","1. Verify statuses separated between entities (Contact, Employee, Vendor, Organization, Account)
+2. Verify status count can be up to 20 values
+3. Verify entity can be found by full-text search using status","Statuses are entity-specific, limited to 20, and searchable",C273060 C273072 C273103,None
+CUST-027,Default status values and on creation (all entities),Customer > Status Management,Functional,Medium,5min,"Admin logged in to Backend","1. Verify Contact default status values > Create contact > Verify default status
+2. Repeat for Employee
+3. Repeat for Vendor
+4. Repeat for Organization
+5. Repeat for Account
+6. Verify Contact doesn't inherit organization status","Each entity type has correct default values. New entities get default status. Contact independent from organization.",C273053-C273059 C273100-C273102 C273349,None
+CUST-028,Add/delete status in settings and entity (all types),Customer > Status Management,Functional,Medium,8min,"Admin logged in to Backend","1. Contact: View statuses > Set new > Add in settings > Add in entity > Delete in settings > Delete in entity
+2. Employee: Same flow
+3. Vendor: Same flow
+4. Organization: Same flow
+5. Account: Same flow","Status CRUD works correctly for all entity types in both settings and entity level",C273063-C273108,None
+CUST-029,Email verification on account creation,Customer > Email Verification,Functional,Medium,5min,"Admin logged in to Backend and Storefront","1. Create account via Security blade > Verify email sent
+2. Create account via Contacts blade > Verify email sent
+3. Create account via Storefront > Verify email sent","Email verification sent on account creation from all entry points",C278784 C278781 C278785,None
+CUST-030,Email verification on email change,Customer > Email Verification,Functional,Medium,5min,"Admin logged in to Backend and Storefront
+Account exists","1. Change email via Security blade > Verify email sent
+2. Change email via Contacts blade > Verify email sent
+3. Change email via Store > Verify email sent","Email verification sent on email change from all entry points",C278786 C278787 C278792,None
+CUST-031,Admin verification toggle and send link,Customer > Email Verification,Functional,Medium,5min,Admin logged in to Backend,"1. Toggle verification via Security blade > Verify
+2. Toggle verification via Contact blade > Verify
+3. Send link via Security blade > Verify
+4. Send link via Contact blade > Verify
+5. Test via API: Send verification email
+6. Test via API: Change toggle state","Admin can toggle verification and send links from all entry points",C278794-C278812,None
+CUST-032,User permission for email verification (with/without),Customer > Email Verification,Security,Medium,8min,"Admin logged in to Backend
+User_1 with verification permission
+User_2 without verification permission","1. User with permission: Toggle via Security/Contact blade > Verify allowed
+2. User with permission: Send link > Verify allowed
+3. User with permission: API operations > Verify allowed
+4. User without permission: Toggle > Verify restricted
+5. User without permission: Send link > Verify restricted
+6. User without permission: API operations > Verify restricted","Users with permission can toggle/send. Users without permission are restricted.",C278796-C278816,None
+CUST-033,Verification UI design (toggle and resend link),Customer > Email Verification,Functional,Medium,5min,"Admin logged in to Backend","1. Verify toggle UI on Security blade
+2. Verify toggle UI on Contact blade
+3. Verify resend link title on Security blade
+4. Verify resend link title on Contact blade
+5. Change email but don't save > Verify resend link not shown","Toggle and resend link UI correct. Resend hidden when email changed but unsaved.",C278789-C278834 C278825 C278826,None
+CUST-034,Add/edit/delete filter in Contacts,Customer > Filters & Search,Functional,High,5min,"Admin logged in to Backend
+Multiple contacts exist","1. Click 'Select filter' > 'Add new filter'
+2. Configure filter criteria > Save
+3. Verify filter applied
+4. Edit filter > Save > Verify
+5. Delete filter > Verify
+6. Verify Filters UI","Filter CRUD works. UI displays correctly.",C223623-C223626 C346120,None
+CUST-035,Search with indexed fields and multiple criteria,Customer > Filters & Search,Functional,Medium,5min,"Admin logged in to Backend
+Contacts with indexed data","1. Search by indexed fields
+2. Search with multiple criteria in one query
+3. Verify results match criteria","Search returns correct results for indexed fields and compound queries",C261101 C223626,None
+CUST-036,Search operators and indexed property rules,Customer > Filters & Search,Functional,Medium,8min,"Admin logged in to Backend
+Contacts with indexed data","1. Use wildcard (*) > Verify matching contacts
+2. Use NOT (!) operator > Verify exclusion
+3. Search single word > Verify contains match
+4. Search with space delimiter > Verify results
+5. Use firstName: rule > Verify first name search
+6. Use memberType: rule > Verify type filter
+7. Use createddate:[start TO end] > Verify date range (inclusive)
+8. Use createddate:(start TO end) > Verify date range (exclusive)
+9. Use modifieddate:[start TO] > Verify single-bound range","All search operators and indexed property rules work correctly",C261091-C261097 C261103 C261102 C261092 C261094,None
+CUST-037,Contact index widget and role indexation,Customer > Filters & Search,Functional,Medium,5min,"Admin logged in to Backend
+Contact with account roles","1. Open contact > Index widget > Copy to clipboard
+2. Verify role name in index
+3. Verify roleId in index
+4. Search by role name > Verify results
+5. Search by roleId > Verify results","Index widget works. Role name and roleId indexed and searchable.",C261185 C347478-C347481,None
+CUST-038,OuterID column for all entity types,Customer > OuterID,Functional,Medium,5min,"Admin logged in to Backend
+Multiple entity types exist","1. Verify OuterID column for Customer
+2. Verify for Organization
+3. Verify for Vendor
+4. Verify for Employee
+5. Create contact manually > Verify OuterID empty
+6. Create contact via API > Verify OuterID populated","OuterID displays for all types. Manual creation: empty. API creation: populated.",C290341-C290352,None
+CUST-039,Employee organization association,Customer > Employee Details,Functional,Medium,3min,"Admin logged in to Backend
+Employee and Organization exist","1. Open Employee > Verify Organization field
+2. Set/change organization association
+3. Save","Employee organization association saved correctly",C261126,None
+CUST-040,Organization user groups,Customer > Organization Details,Functional,Medium,3min,"Admin logged in to Backend
+Organization exists","1. Open Organization > Verify user groups field
+2. Assign user group
+3. Save","Organization user groups managed correctly",C261125,None
+CUST-041,Permission > Access,Customer > Permissions,Security,High,5min,"Role_1 with customer:access
+Role_1 assigned to User_1","1. Login as User_1
+2. Open Customer module","Customer module accessible",C239996,None
+CUST-042,Permission > Read,Customer > Permissions,Security,High,5min,"Role_1 with customer:read, customer:access
+Role_1 assigned to User_1","1. Login as User_1
+2. Open Customer > View contacts","Contacts list and details visible",C239995,None
+CUST-043,Permission > Create,Customer > Permissions,Security,High,5min,"Role_1 with customer:create, customer:read, customer:access
+Role_1 assigned to User_1","1. Login as User_1
+2. Create new contact","Contact created successfully",C239997,None
+CUST-044,Permission > Update,Customer > Permissions,Security,High,5min,"Role_1 with customer:update, customer:read, customer:access
+Role_1 assigned to User_1","1. Login as User_1
+2. Edit existing contact > Save","Contact changes saved",C239998,None
+CUST-045,Permission > Delete,Customer > Permissions,Security,High,5min,"Role_1 with customer:delete, customer:read, customer:access
+Role_1 assigned to User_1","1. Login as User_1
+2. Delete contact","Contact deleted",C239999,None
+CUST-046,Permission added in platform,Customer > Permissions,Security,Medium,3min,Admin logged in to Backend,"1. Verify customer module permissions available in platform
+2. Verify permissions can be assigned to roles","Customer module permissions present and assignable",C278810,None
+CUST-047,Settings > Member groups dictionary,Customer > Settings,Functional,Medium,5min,Admin logged in to Backend,"1. Open Settings > Customer
+2. Configure Member groups dictionary
+3. Save","Member groups dictionary configured and saved",C241844,None
+CUST-048,Settings > Export/Import page size,Customer > Settings,Functional,Medium,5min,Admin logged in to Backend,"1. Open Settings > Customer
+2. Change 'The page size being used for Export/Import'
+3. Save > Verify","Page size setting saved",C241846,None
+CUST-049,Settings > Member indexation date and time,Customer > Settings,Functional,Medium,5min,Admin logged in to Backend,"1. Open Settings > Customer
+2. Verify Member indexation date and time field
+3. Trigger reindex
+4. Verify timestamp updates","Indexation timestamp displays and updates after reindex",C241847,None
+CUST-050,Settings > Enable/Disable event-based indexation,Customer > Settings,Functional,Medium,8min,Admin logged in to Backend,"1. Enable 'Enable event-based indexation for customer entities' > Save
+2. Modify contact > Save > Verify reindexed
+3. Disable setting > Save
+4. Modify contact > Save > Verify NOT reindexed","Enable: system reindexes on change. Disable: no reindex on change.",C241848 C241849,None
+CUST-051,Settings > Tooltips,Customer > Settings,Functional,Medium,3min,Admin logged in to Backend,"1. Open Settings > Customer blade
+2. Verify all tooltips folded
+3. Click tooltip for field1 > Verify unfolds
+4. Click tooltip for field2 > Verify field2 unfolds, field1 folds
+5. Click Hide > Verify all fold","Tooltips behave correctly",C338425,None
+CUST-052,CustomerSample module CRUD,Customer > Extensions,Functional,Medium,8min,Admin logged in to Backend,"1. Install CustomerSample module
+2. Create new contact via module
+3. Read contact > Verify data
+4. Update contact > Verify changes
+5. Delete contact > Verify removed","Module installs. Full CRUD cycle works.",C311901-C311904,None

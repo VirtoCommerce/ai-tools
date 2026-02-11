@@ -1,0 +1,578 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+PLAT-001,Add New User,Platform > User Management,CRUD,Critical,5m,"Admin logged into backend (${BACK_URL})","1. Navigate to Security module
+2. Click Add User
+3. Enter user details (username, email, password)
+4. Select account type
+5. Click Save","- User is created successfully
+- User appears in user list
+- Account type is set correctly","C172798",Katalon
+PLAT-002,Add User with Already Existing Login,Platform > User Management,Negative,High,3m,"Admin logged into backend, at least one user exists","1. Navigate to Security module
+2. Click Add User
+3. Enter username that already exists
+4. Enter other required fields
+5. Click Save","- User is NOT created
+- Error message displayed: 'Login already exists'
+- User does not appear in list","C172819",Katalon
+PLAT-003,Edit User - Login,Platform > User Management,CRUD,High,3m,"Admin logged into backend, test user exists (C172798)","1. Navigate to Security > Users
+2. Open existing user
+3. Change Login field
+4. Click Save","- Login is updated successfully
+- User can login with new username","C172820",Katalon
+PLAT-004,Edit User - Email,Platform > User Management,CRUD,High,3m,"Admin logged into backend, test user exists (C172798)","1. Navigate to Security > Users
+2. Open existing user
+3. Change Email field
+4. Click Save","- Email is updated successfully
+- Email change reflected in user profile","C172821",Katalon
+PLAT-005,Edit User - StoreId,Platform > User Management,CRUD,Medium,3m,"Admin logged into backend, test user exists (C172798)","1. Navigate to Security > Users
+2. Open existing user
+3. Change StoreId field
+4. Click Save","- StoreId is updated successfully
+- User assigned to correct store","C344934",Katalon
+PLAT-006,Edit User - Account Type,Platform > User Management,CRUD,High,3m,"Admin logged into backend, test user exists (C172798)","1. Navigate to Security > Users
+2. Open existing user
+3. Change Account Type (e.g., Manager to Administrator)
+4. Click Save","- Account type is updated successfully
+- User permissions reflect new account type","C172799",Katalon
+PLAT-007,Search User in List View,Platform > User Management,Functional,Medium,3m,"Admin logged into backend, multiple users exist including 'user_1'","1. Navigate to Security > Users
+2. Enter search term 'user_1' in search field
+3. Verify results","- Only users matching 'user_1' are shown in list
+- Search filters correctly","C172823",Katalon
+PLAT-008,Delete User,Platform > User Management,CRUD,High,3m,"Admin logged into backend, test user 'user_1' exists (C172798)","1. Navigate to Security > Users
+2. Select user 'user_1'
+3. Click Delete
+4. Confirm deletion","- User is deleted successfully
+- User disappears from user list
+- User cannot login","C172800",Katalon
+PLAT-009,Lock User Account,Platform > User Management,Security,High,5m,"Admin logged into backend, test user 'user_1' exists (C172798)","1. Navigate to Security > Users
+2. Open user 'user_1'
+3. Click 'Lock Account' button
+4. Save changes
+5. Attempt to login as locked user at storefront","- Account status changed to 'Locked'
+- Login attempt displays: 'This account has been locked out, please try again later.'","C179518",Katalon
+PLAT-010,Unlock User Account,Platform > User Management,Security,High,5m,"Locked user account exists (C179518)","1. Navigate to Backend > Security
+2. Find locked user from preconditions
+3. Click 'Unlock account'
+4. Save changes
+5. Go to storefront and login as the user","- Account status changed from 'Locked' to 'Unlocked'
+- User can successfully login at storefront","C179519",Katalon
+PLAT-011,Add API Key,Platform > API Keys,CRUD,Critical,5m,"Admin logged into backend, user account exists","1. Navigate to Security > Users
+2. Open user account
+3. Navigate to API Keys widget
+4. Click Add API Key
+5. Enter key name
+6. Click Generate","- API key is generated successfully
+- API key displayed with secret
+- Key appears in API Keys list","C184235",Katalon
+PLAT-012,Reset API Key,Platform > API Keys,CRUD,High,3m,"Admin logged into backend, API key 'apikey_2' exists (C184235)","1. Navigate to Security > Users
+2. Open user with API key
+3. Navigate to API Keys widget
+4. Select 'apikey_2'
+5. Click Reset
+6. Confirm reset","- API key 'apikey_2' is reset with new secret
+- Old secret no longer valid
+- New secret displayed","C184239",Katalon
+PLAT-013,Delete API Key,Platform > API Keys,CRUD,High,3m,"Admin logged into backend, API key 'apikey_1' exists (C184235)","1. Navigate to Security > Users
+2. Open user with API key
+3. Navigate to API Keys widget
+4. Select 'apikey_1'
+5. Click Delete
+6. Confirm deletion","- API key 'apikey_1' is deleted
+- Key no longer appears in list
+- Key cannot be used for API calls","C184245",Katalon
+PLAT-014,API Key Active TRUE - Unlocked Account Returns Results,Platform > API Keys,Functional,Critical,5m,"User account unlocked, API key exists with Active=TRUE (C172798, C184235)","1. Open browser
+2. Enter API endpoint URL with valid api_key parameter
+3. Execute API request (e.g., /api/platform/security/users)
+4. Observe response","- JSON response is returned successfully
+- Data is displayed in browser window
+- No authentication errors","C184249",Katalon
+PLAT-015,API Key Active FALSE - Unlocked Account Returns No Results,Platform > API Keys,Negative,High,5m,"User account unlocked, API key exists with Active=FALSE","1. Set API key Active flag to FALSE in backend
+2. Open browser
+3. Enter API endpoint URL with api_key parameter
+4. Execute API request
+5. Observe response","- JSON response is NOT returned
+- Authentication error displayed
+- Access denied","C184253",Katalon
+PLAT-016,API Key Active TRUE - Locked Account Returns No Results,Platform > API Keys,Security,High,5m,"User account locked (C179518), API key exists with Active=TRUE","1. Verify account is locked in backend
+2. Open browser
+3. Enter API endpoint URL with api_key parameter
+4. Execute API request
+5. Observe response","- JSON response is NOT returned
+- Authentication error displayed
+- Account locked message","C184250",Katalon
+PLAT-017,API Key Active FALSE - Locked Account Returns No Results,Platform > API Keys,Security,High,5m,"User account locked (C179518), API key exists with Active=FALSE","1. Verify account is locked and API key inactive
+2. Open browser
+3. Enter API endpoint URL with api_key parameter
+4. Execute API request
+5. Observe response","- JSON response is NOT returned
+- Authentication error displayed
+- Access denied","C184251",Katalon
+PLAT-018,Delete Account with API Key - Key Invalidated,Platform > API Keys,Security,Critical,5m,"User account exists with active API key (C172798, C184235)","1. Note API key secret for later test
+2. Navigate to Security > Users
+3. Delete user account with API key
+4. Confirm deletion
+5. Attempt API request with previous api_key","- User account deleted successfully
+- API key no longer exists in system
+- API request with previous key returns authentication error
+- No results returned","C184254",Katalon
+PLAT-019,Add New Role,Platform > Roles & Permissions,CRUD,Critical,5m,"Admin logged into backend","1. Navigate to Security > Roles
+2. Click Add Role
+3. Enter role name (e.g., 'ContentEditor')
+4. Enter description
+5. Click Save","- Role is added successfully
+- Role appears in roles list
+- Role available for assignment","C172925",Katalon
+PLAT-020,Edit Role,Platform > Roles & Permissions,CRUD,High,3m,"Admin logged into backend, test role exists (C172925)","1. Navigate to Security > Roles
+2. Open existing role
+3. Modify role name and/or description
+4. Click Save","- Role is updated successfully
+- Changes reflected in roles list","C172929",Katalon
+PLAT-021,Delete Role,Platform > Roles & Permissions,CRUD,High,3m,"Admin logged into backend, test role exists (C172925)","1. Navigate to Security > Roles
+2. Select role to delete
+3. Click Delete
+4. Confirm deletion","- Role is deleted successfully
+- Role disappears from roles list
+- Role no longer available for assignment","C172927",Katalon
+PLAT-022,Assign Permission to Role,Platform > Roles & Permissions,Functional,Critical,5m,"Admin logged into backend, role exists (C172925)","1. Navigate to Security > Roles
+2. Open role
+3. Navigate to Permissions widget
+4. Select permission (e.g., 'catalog:read')
+5. Click Assign
+6. Click Save","- Permission is assigned to role successfully
+- Permission appears in role's permission list
+- Users with this role inherit permission","C172930",Katalon
+PLAT-023,Remove Permission from Role,Platform > Roles & Permissions,Functional,High,5m,"Admin logged into backend, role with permissions exists (C172930)","1. Navigate to Security > Roles
+2. Open role with assigned permissions
+3. Navigate to Permissions widget
+4. Select permission to remove
+5. Click Remove
+6. Click Save","- Permission is removed from role successfully
+- Permission no longer appears in role's permission list
+- Users with this role no longer have permission","C172931",Katalon
+PLAT-024,Assign Role to User,Platform > Roles & Permissions,Functional,Critical,5m,"Admin logged into backend, user and role exist (C172798, C172925)","1. Navigate to Security > Users
+2. Open user account
+3. Navigate to Roles widget
+4. Click Assign Role
+5. Select role from dropdown
+6. Click Save","- Role is assigned to user successfully
+- Roles widget shows updated count
+- User inherits role permissions","C184070",Katalon
+PLAT-025,Edit Role Assignment for User,Platform > Roles & Permissions,Functional,High,5m,"Admin logged into backend, user with assigned roles exists (C184070)","1. Navigate to Security > Users
+2. Open user account
+3. Navigate to Roles widget
+4. Change assigned roles (add/remove)
+5. Click Save","- Role assignment updated successfully
+- Roles widget shows updated count
+- User permissions updated accordingly","C184071",Katalon
+PLAT-026,Delete Roles from User,Platform > Roles & Permissions,Functional,High,3m,"Admin logged into backend, user with assigned roles exists (C184070)","1. Navigate to Security > Users
+2. Open user account
+3. Navigate to Roles widget
+4. Select role to remove
+5. Click Remove
+6. Click Save","- Roles removed from user successfully
+- Roles widget shows updated count (decreased)
+- User no longer has removed role permissions","C184072",Katalon
+PLAT-027,Add Dynamic Property for Store - From Module,Platform > Dynamic Properties > Store,CRUD,High,5m,"Admin logged into backend","1. Navigate to More > Dynamic Properties
+2. Select type 'VirtoCommerce.StoreModule.Core.Model.Store'
+3. Click Add Property
+4. Enter property name (e.g., 'StoreProperty1')
+5. Select value type (Short text)
+6. Click Save
+7. Navigate to Stores module
+8. Open any store
+9. Navigate to Dynamic Properties widget
+10. Verify property appears","- Property created in Dynamic Properties module
+- Property automatically appears in Store's Dynamic Properties widget
+- Property available for value assignment","C173016",Katalon
+PLAT-028,Add Dynamic Property for Store - From Store,Platform > Dynamic Properties > Store,CRUD,High,5m,"Admin logged into backend","1. Navigate to Stores module
+2. Open any store
+3. Navigate to Dynamic Properties widget
+4. Click Manage Type Properties
+5. Click Add Property
+6. Enter property name (e.g., 'StoreProperty2')
+7. Select value type (Short text)
+8. Click Save
+9. Navigate to More > Dynamic Properties
+10. Select type 'VirtoCommerce.StoreModule.Core.Model.Store'
+11. Verify property appears","- Property created from Store
+- Property automatically appears in Dynamic Properties module
+- Bidirectional sync working","C173017",Katalon
+PLAT-029,Edit Dynamic Property for Store - From Module,Platform > Dynamic Properties > Store,CRUD,Medium,5m,"Admin logged into backend, Store dynamic property exists (C173016)","1. Navigate to More > Dynamic Properties
+2. Select type 'VirtoCommerce.StoreModule.Core.Model.Store'
+3. Open property 'StoreProperty1'
+4. Modify property (e.g., rename, change value type)
+5. Click Save
+6. Navigate to Stores module
+7. Open any store
+8. Navigate to Dynamic Properties widget
+9. Verify changes reflected","- Property updated in Dynamic Properties module
+- Changes automatically reflected in Store's Dynamic Properties widget
+- Bidirectional sync working","C173392",Katalon
+PLAT-030,Edit Dynamic Property for Store - From Store,Platform > Dynamic Properties > Store,CRUD,Medium,5m,"Admin logged into backend, Store dynamic property exists (C173017)","1. Navigate to Stores module
+2. Open any store
+3. Navigate to Dynamic Properties widget
+4. Click Manage Type Properties
+5. Open property 'StoreProperty2'
+6. Modify property
+7. Click Save
+8. Navigate to More > Dynamic Properties
+9. Verify changes reflected","- Property updated from Store
+- Changes automatically reflected in Dynamic Properties module
+- Bidirectional sync working","C173393",Katalon
+PLAT-031,Delete Dynamic Property for Store - From Module,Platform > Dynamic Properties > Store,CRUD,Medium,3m,"Admin logged into backend, Store dynamic property exists (C173016)","1. Navigate to More > Dynamic Properties
+2. Select type 'VirtoCommerce.StoreModule.Core.Model.Store'
+3. Select property 'StoreProperty1'
+4. Click Delete
+5. Confirm deletion
+6. Navigate to Stores module
+7. Open any store
+8. Navigate to Dynamic Properties widget
+9. Verify property removed","- Property deleted from Dynamic Properties module
+- Property automatically removed from Store's Dynamic Properties widget
+- Bidirectional sync working","C173394",Katalon
+PLAT-032,Delete Dynamic Property for Store - From Store,Platform > Dynamic Properties > Store,CRUD,Medium,3m,"Admin logged into backend, Store dynamic property exists (C173017)","1. Navigate to Stores module
+2. Open any store
+3. Navigate to Dynamic Properties widget
+4. Click Manage Type Properties
+5. Select property 'StoreProperty2'
+6. Click Delete
+7. Confirm deletion
+8. Navigate to More > Dynamic Properties
+9. Verify property removed","- Property deleted from Store
+- Property automatically removed from Dynamic Properties module
+- Bidirectional sync working","C173395",Katalon
+PLAT-033,Set Dynamic Property Value in Store,Platform > Dynamic Properties > Store,Functional,Medium,5m,"Admin logged into backend, Store dynamic property exists (C173016)","1. Navigate to Stores module
+2. Open any store
+3. Navigate to Dynamic Properties widget
+4. Find property 'StoreProperty1'
+5. Enter value (e.g., 'TestValue123')
+6. Click Save
+7. Reopen store
+8. Verify value persisted","- Property value set successfully
+- Value persists after save
+- Value displayed correctly when store reopened","C173396",Katalon (generic)
+PLAT-034,Add Dynamic Property for Order Shipment - Bidirectional,Platform > Dynamic Properties > Orders,CRUD,High,8m,"Admin logged into backend","1. Navigate to More > Dynamic Properties
+2. Select type 'VirtoCommerce.OrdersModule.Core.Model.Shipment'
+3. Click Add Property (name: 'ShipmentProperty1')
+4. Save and verify property appears
+5. Navigate to Orders > Open order > Shipments
+6. Verify property appears in Shipment Dynamic Properties
+7. Add another property from Shipment side
+8. Verify bidirectional sync","- Property created from both directions
+- Properties sync bidirectionally between module and Shipment
+- Both properties available for value assignment","C175719, C175720",Katalon
+PLAT-035,Edit/Delete Dynamic Property for Order Shipment - Bidirectional,Platform > Dynamic Properties > Orders,CRUD,Medium,8m,"Admin logged into backend, Shipment dynamic properties exist (C175719)","1. Edit property from Dynamic Properties module
+2. Verify changes reflected in Orders > Shipment
+3. Edit property from Orders > Shipment side
+4. Verify changes reflected in Dynamic Properties module
+5. Delete property from Dynamic Properties module
+6. Verify property removed from Shipment
+7. Create new property from Shipment, then delete from Shipment
+8. Verify property removed from module","- Edit operations sync bidirectionally
+- Delete operations sync bidirectionally
+- Data consistency maintained","C175721, C175722, C175723, C175724",Katalon
+PLAT-036,Add Dynamic Property for Order Payment - Bidirectional,Platform > Dynamic Properties > Orders,CRUD,High,8m,"Admin logged into backend","1. Navigate to More > Dynamic Properties
+2. Select type 'VirtoCommerce.OrdersModule.Core.Model.PaymentIn'
+3. Click Add Property (name: 'PaymentProperty1')
+4. Save and verify property appears
+5. Navigate to Orders > Open order > Payments
+6. Verify property appears in Payment Dynamic Properties
+7. Add another property from Payment side
+8. Verify bidirectional sync","- Property created from both directions
+- Properties sync bidirectionally between module and Payment
+- Both properties available for value assignment","C175726, C175727",Katalon
+PLAT-037,Edit/Delete Dynamic Property for Order Payment - Bidirectional,Platform > Dynamic Properties > Orders,CRUD,Medium,8m,"Admin logged into backend, Payment dynamic properties exist (C175726)","1. Edit property from Dynamic Properties module
+2. Verify changes reflected in Orders > Payment
+3. Edit property from Orders > Payment side
+4. Verify changes reflected in Dynamic Properties module
+5. Delete property from Dynamic Properties module
+6. Verify property removed from Payment
+7. Create new property from Payment, then delete from Payment
+8. Verify property removed from module","- Edit operations sync bidirectionally
+- Delete operations sync bidirectionally
+- Data consistency maintained","C175728, C175729, C175730, C175731",Katalon
+PLAT-038,Add Dynamic Property for Order LineItem - Bidirectional,Platform > Dynamic Properties > Orders,CRUD,High,8m,"Admin logged into backend","1. Navigate to More > Dynamic Properties
+2. Select type 'VirtoCommerce.OrdersModule.Core.Model.LineItem'
+3. Click Add Property (name: 'LineItemProperty1')
+4. Save and verify property appears
+5. Navigate to Orders > Open order > Line Items
+6. Verify property appears in LineItem Dynamic Properties
+7. Add another property from LineItem side
+8. Verify bidirectional sync","- Property created from both directions
+- Properties sync bidirectionally between module and LineItem
+- Both properties available for value assignment","C175733, C175734",Katalon
+PLAT-039,Edit/Delete Dynamic Property for Order LineItem - Bidirectional,Platform > Dynamic Properties > Orders,CRUD,Medium,8m,"Admin logged into backend, LineItem dynamic properties exist (C175733)","1. Edit property from Dynamic Properties module
+2. Verify changes reflected in Orders > LineItem
+3. Edit property from Orders > LineItem side
+4. Verify changes reflected in Dynamic Properties module
+5. Delete property from Dynamic Properties module
+6. Verify property removed from LineItem
+7. Create new property from LineItem, then delete from LineItem
+8. Verify property removed from module","- Edit operations sync bidirectionally
+- Delete operations sync bidirectionally
+- Data consistency maintained","C175735, C175736, C175737, C175738",Katalon
+PLAT-040,Add Dynamic Property for Order - Bidirectional,Platform > Dynamic Properties > Orders,CRUD,High,8m,"Admin logged into backend","1. Navigate to More > Dynamic Properties
+2. Select type 'VirtoCommerce.OrdersModule.Core.Model.CustomerOrder'
+3. Click Add Property (name: 'OrderProperty1')
+4. Save and verify property appears
+5. Navigate to Orders > Open any order
+6. Verify property appears in Order Dynamic Properties
+7. Add another property from Order side
+8. Verify bidirectional sync","- Property created from both directions
+- Properties sync bidirectionally between module and Order
+- Both properties available for value assignment","C175740, C175741",Katalon
+PLAT-041,Edit/Delete Dynamic Property for Order - Bidirectional,Platform > Dynamic Properties > Orders,CRUD,Medium,8m,"Admin logged into backend, Order dynamic properties exist (C175740)","1. Edit property from Dynamic Properties module
+2. Verify changes reflected in Orders
+3. Edit property from Orders side
+4. Verify changes reflected in Dynamic Properties module
+5. Delete property from Dynamic Properties module
+6. Verify property removed from Order
+7. Create new property from Order, then delete from Order
+8. Verify property removed from module","- Edit operations sync bidirectionally
+- Delete operations sync bidirectionally
+- Data consistency maintained","C175742, C175743, C175744, C175745",Katalon
+PLAT-042,Add Dynamic Property for Marketing Content Item - Bidirectional,Platform > Dynamic Properties > Marketing,CRUD,High,8m,"Admin logged into backend","1. Navigate to More > Dynamic Properties
+2. Select type 'VirtoCommerce.MarketingModule.Core.Model.DynamicContentItem'
+3. Click Add Property (name: 'ContentProperty1')
+4. Save and verify property appears
+5. Navigate to Marketing > Dynamic Content > Content Items
+6. Open content item > Manage type properties
+7. Verify property appears
+8. Add another property from Content Item side
+9. Verify bidirectional sync","- Property created from both directions
+- Properties sync bidirectionally between module and Content Item
+- Both properties available for value assignment","C175993, C175994",Katalon
+PLAT-043,Edit/Delete Dynamic Property for Marketing Content Item - Bidirectional,Platform > Dynamic Properties > Marketing,CRUD,Medium,8m,"Admin logged into backend, Content Item dynamic properties exist (C175993)","1. Edit property from Dynamic Properties module
+2. Verify changes reflected in Marketing > Content Item
+3. Edit property from Content Item side
+4. Verify changes reflected in Dynamic Properties module
+5. Delete property from Dynamic Properties module
+6. Verify property removed from Content Item
+7. Create new property from Content Item, then delete
+8. Verify property removed from module","- Edit operations sync bidirectionally
+- Delete operations sync bidirectionally
+- Data consistency maintained","C175995, C175996, C175997, C175998",Katalon
+PLAT-044,Add Dynamic Property for Contracts - Bidirectional,Platform > Dynamic Properties > Contracts,CRUD,High,8m,"Admin logged into backend, Contracts module installed","1. Navigate to More > Dynamic Properties
+2. Select type 'VirtoCommerce.Contracts.Core.Models.Contract'
+3. Click Add Property (name: 'ContractProperty1')
+4. Save and verify property appears
+5. Navigate to Contracts > Open any contract
+6. Verify property appears in Contract Dynamic Properties
+7. Add another property from Contract side
+8. Verify bidirectional sync","- Property created from both directions
+- Properties sync bidirectionally between module and Contract
+- Both properties available for value assignment","C349442, C349443",Katalon
+PLAT-045,Edit/Delete Dynamic Property for Contracts - Bidirectional,Platform > Dynamic Properties > Contracts,CRUD,Medium,8m,"Admin logged into backend, Contract dynamic properties exist (C349442)","1. Edit property from Dynamic Properties module
+2. Verify changes reflected in Contracts
+3. Edit property from Contracts side
+4. Verify changes reflected in Dynamic Properties module
+5. Delete property from Dynamic Properties module
+6. Verify property removed from Contract
+7. Create new property from Contract, then delete
+8. Verify property removed from module","- Edit operations sync bidirectionally
+- Delete operations sync bidirectionally
+- Data consistency maintained","C349444, C349445, C349446, C349447",Katalon
+PLAT-046,Add Dynamic Property for Vendor - Bidirectional,Platform > Dynamic Properties > Contacts,CRUD,High,8m,"Admin logged into backend","1. Navigate to More > Dynamic Properties
+2. Select type 'VirtoCommerce.CustomerModule.Core.Model.Vendor'
+3. Click Add Property (name: 'VendorProperty1')
+4. Save and verify property appears
+5. Navigate to Contacts > Vendor > Manage > Dynamic Property
+6. Verify property appears
+7. Add another property from Vendor side
+8. Set property value in Vendor
+9. Verify bidirectional sync","- Property created from both directions
+- Properties sync bidirectionally
+- Property values can be set
+- Data consistency maintained","C175780, C175781, C175786",Katalon
+PLAT-047,Edit/Delete Dynamic Property for Vendor - Bidirectional,Platform > Dynamic Properties > Contacts,CRUD,Medium,8m,"Admin logged into backend, Vendor dynamic properties exist (C175780)","1. Edit property from Dynamic Properties module
+2. Verify changes reflected in Vendor
+3. Edit property from Vendor side
+4. Verify changes reflected in module
+5. Delete property from module
+6. Verify property removed from Vendor
+7. Create new property from Vendor, then delete
+8. Verify property removed from module","- Edit operations sync bidirectionally
+- Delete operations sync bidirectionally
+- Data consistency maintained","C175782, C175783, C175784, C175785",Katalon
+PLAT-048,Vendor Dynamic Property - Value Types Validation,Platform > Dynamic Properties > Contacts,Functional,Medium,10m,"Admin logged into backend, Vendor exists","1. Create Short Text property (Required): Verify required validation
+2. Create Short Text property (Multivalue): Add multiple values
+3. Create Short Text property (Multilingual): Add translations (EN, DE, FR)
+4. Create Short Text property (Dictionary): Add dictionary values, select
+5. Create Long Text property (Required + Multilingual): Test validation
+6. Create Integer property (Required): Enter integer, test validation
+7. Create Integer property (Multivalue): Add multiple integers
+8. Test large integer value (boundary)","- Short Text properties validate correctly (required, multivalue, multilingual, dictionary)
+- Long Text properties support required + multilingual
+- Integer properties validate type and boundaries
+- Display order affects property order in UI
+- Localization working for multilingual properties","C274684, C274685, C274688, C279182-279187, C274681-274683, C274690-274692, C274695, C279214-279218, C279235",Katalon (generic)
+PLAT-049,Add Dynamic Property for Organization - Bidirectional,Platform > Dynamic Properties > Contacts,CRUD,High,8m,"Admin logged into backend","1. Navigate to More > Dynamic Properties
+2. Select type 'VirtoCommerce.CustomerModule.Core.Model.Organization'
+3. Click Add Property (name: 'OrgProperty1')
+4. Save and verify property appears
+5. Navigate to Contacts > Organization > Manage > Dynamic Property
+6. Verify property appears
+7. Add another property from Organization side
+8. Set property value in Organization
+9. Verify bidirectional sync","- Property created from both directions
+- Properties sync bidirectionally
+- Property values can be set
+- Data consistency maintained","C176000, C176001, C176006",Katalon
+PLAT-050,Edit/Delete Dynamic Property for Organization - Bidirectional,Platform > Dynamic Properties > Contacts,CRUD,Medium,8m,"Admin logged into backend, Organization dynamic properties exist (C176000)","1. Edit property from Dynamic Properties module
+2. Verify changes reflected in Organization
+3. Edit property from Organization side
+4. Verify changes reflected in module
+5. Delete property from module
+6. Verify property removed from Organization
+7. Create new property from Organization, then delete
+8. Verify property removed from module","- Edit operations sync bidirectionally
+- Delete operations sync bidirectionally
+- Data consistency maintained","C176002, C176003, C176004, C176005",Katalon
+PLAT-051,Organization Dynamic Property - Value Types Validation,Platform > Dynamic Properties > Contacts,Functional,Medium,10m,"Admin logged into backend, Organization exists","1. Create Short Text property (Required, Dictionary, Multivalue, Multilingual)
+2. Create Short Text combinations (Multilingual + Required, Multivalue + Multilingual, Multivalue + Required)
+3. Create Long Text property (Required, Multivalue, Multilingual, Required + Multilingual)
+4. Create Integer property (Required, Multivalue, Required + Multivalue, Multilingual)
+5. Test display order, description, localization
+6. Test large integer value","- Short Text properties validate correctly with all flag combinations
+- Long Text properties support required + multilingual
+- Integer properties validate type and boundaries
+- Display order affects property order
+- Localization working for multilingual properties","C274628-274629, C274632, C279189-279191, C279193, C274624-274627, C274670-274672, C279268-279274",Katalon (generic)
+PLAT-052,Add Dynamic Property for Employee - Bidirectional,Platform > Dynamic Properties > Contacts,CRUD,High,8m,"Admin logged into backend","1. Navigate to More > Dynamic Properties
+2. Select type 'VirtoCommerce.CustomerModule.Core.Model.Employee'
+3. Click Add Property (name: 'EmpProperty1')
+4. Save and verify property appears
+5. Navigate to Contacts > Employee > Manage > Dynamic Property
+6. Verify property appears
+7. Add another property from Employee side
+8. Set property value in Employee
+9. Verify bidirectional sync","- Property created from both directions
+- Properties sync bidirectionally
+- Property values can be set
+- Data consistency maintained","C176007, C176008, C176013",Katalon
+PLAT-053,Edit/Delete Dynamic Property for Employee - Bidirectional,Platform > Dynamic Properties > Contacts,CRUD,Medium,8m,"Admin logged into backend, Employee dynamic properties exist (C176007)","1. Edit property from Dynamic Properties module
+2. Verify changes reflected in Employee
+3. Edit property from Employee side
+4. Verify changes reflected in module
+5. Delete property from module
+6. Verify property removed from Employee
+7. Create new property from Employee, then delete
+8. Verify property removed from module","- Edit operations sync bidirectionally
+- Delete operations sync bidirectionally
+- Data consistency maintained","C176009, C176010, C176011, C176012",Katalon
+PLAT-054,Employee Dynamic Property - Value Types Validation,Platform > Dynamic Properties > Contacts,Functional,Medium,10m,"Admin logged into backend, Employee exists","1. Create Short Text property (Required, Multilingual, Dictionary, Multivalue)
+2. Create Short Text combinations (Multilingual + Required, Multivalue + Multilingual, Multivalue + Required, Multivalue + Multilingual + Dictionary, Multivalue + Required + Dictionary)
+3. Create Long Text property (Required, Multilingual, Multivalue, Required + Multilingual)
+4. Create Integer property (Required, Multivalue, Required + Multivalue, Multilingual)
+5. Test display order, description, localization
+6. Test large integer value","- Short Text properties validate correctly with all flag combinations
+- Long Text properties support required + multilingual
+- Integer properties validate type and boundaries
+- Display order affects property order
+- Dictionary + Multilingual + Required combinations work
+- Localization working for multilingual properties","C274708-274709, C274712, C279194-279198, C274704-274707, C274713, C274743-274747, C279285-279288",Katalon (generic)
+PLAT-055,Add Dynamic Property for Customer/Contact - Bidirectional,Platform > Dynamic Properties > Contacts,CRUD,High,8m,"Admin logged into backend","1. Navigate to More > Dynamic Properties
+2. Select type 'VirtoCommerce.CustomerModule.Core.Model.Contact'
+3. Click Add Property (name: 'ContactProperty1')
+4. Save and verify property appears
+5. Navigate to Contacts > Customer > Manage > Dynamic Property
+6. Verify property appears
+7. Add another property from Customer side
+8. Verify bidirectional sync","- Property created from both directions
+- Properties sync bidirectionally
+- Property values can be set
+- Data consistency maintained","C176014, C176015",Katalon
+PLAT-056,Edit/Delete Dynamic Property for Customer/Contact - Bidirectional,Platform > Dynamic Properties > Contacts,CRUD,Medium,8m,"Admin logged into backend, Contact dynamic properties exist (C176014)","1. Edit property from Dynamic Properties module
+2. Verify changes reflected in Customer/Contact
+3. Edit property from Contact side
+4. Verify changes reflected in module
+5. Delete property from module
+6. Verify property removed from Contact
+7. Create new property from Contact, then delete
+8. Verify property removed from module","- Edit operations sync bidirectionally
+- Delete operations sync bidirectionally
+- Data consistency maintained","C176016, C176017, C176018, C176019",Katalon
+PLAT-057,Contact Dynamic Property - Value Types Validation,Platform > Dynamic Properties > Contacts,Functional,Medium,10m,"Admin logged into backend, Contact exists","1. Create Short Text property (Required, Dictionary, Multivalue, Multilingual)
+2. Create Short Text combinations (Multivalue + Multilingual, Required + Multilingual, Multivalue + Required, Multivalue + Multilingual + Dictionary, Multivalue + Required + Dictionary, Dictionary + Multilingual + Required)
+3. Create Long Text property (Required, Multivalue, Multilingual, Required + Multilingual)
+4. Create Integer property (Required, Multivalue, Required + Multivalue, Multilingual)
+5. Test display order, description, FR localization
+6. Test large integer value","- Short Text properties validate correctly with all complex combinations
+- Long Text properties support required + multilingual
+- Integer properties validate type and boundaries
+- Display order affects property order
+- Dictionary + Multilingual + Required combinations work
+- Localization working (FR tested)","C274760-274761, C274764, C279199-279203, C274749-274759, C279291-279295",Katalon (generic)
+PLAT-058,Add Dynamic Property for Content Pages (.md) - Bidirectional,Platform > Dynamic Properties > Content,CRUD,High,8m,"Admin logged into backend, Content module active","1. Navigate to More > Dynamic Properties
+2. Select type 'VirtoCommerce.ContentModule.Core.Model.FrontMatterHeaders'
+3. Click Add Property (name: 'PageProperty1')
+4. Save and verify property appears
+5. Navigate to Content > Pages > Open .md file > Metadata
+6. Click Manage metadata properties
+7. Verify property appears
+8. Add another property from .md file side
+9. Verify bidirectional sync","- Property created from both directions
+- Properties sync bidirectionally between module and .md file metadata
+- Both properties available for value assignment","C176021, C176022",Katalon
+PLAT-059,Edit/Delete Dynamic Property for Content Pages (.md) - Bidirectional,Platform > Dynamic Properties > Content,CRUD,Medium,8m,"Admin logged into backend, Content Pages dynamic properties exist (C176021)","1. Edit property from Dynamic Properties module
+2. Verify changes reflected in Content > Pages > .md file
+3. Edit property from .md file metadata side
+4. Verify changes reflected in module
+5. Delete property from module
+6. Verify property removed from .md file
+7. Create new property from .md file, then delete
+8. Verify property removed from module","- Edit operations sync bidirectionally
+- Delete operations sync bidirectionally
+- Data consistency maintained","C176023, C176024, C176025, C176026",Katalon
+PLAT-060,Set Dynamic Property Value in Content Pages (.md),Platform > Dynamic Properties > Content,Functional,Medium,5m,"Admin logged into backend, Content Pages dynamic property exists (C176021)","1. Navigate to Content > Pages
+2. Open .md file
+3. Navigate to Metadata section
+4. Find property 'PageProperty1'
+5. Enter value (e.g., 'author: John Doe')
+6. Click Save
+7. Reopen .md file
+8. Verify value persisted in metadata","- Property value set successfully in .md file metadata
+- Value persists after save
+- Value displayed correctly when .md file reopened
+- Front matter headers updated","C176027",Katalon (generic)
+PLAT-061,Platform Settings - User Types Configuration,Platform > Settings,Configuration,Medium,5m,"Admin logged into backend","1. Navigate to Settings > Platform > User types
+2. Review available user types (Manager, Administrator, Customer, etc.)
+3. Add new user type (if applicable)
+4. Modify user type settings
+5. Verify settings persisted
+6. Create user with new user type
+7. Verify user created with correct type","- User types displayed correctly in Settings
+- User types configurable
+- Settings persist after save
+- New user types can be assigned to users","C242701",Katalon (generic)
+PLAT-062,Healthcheck - No Problems (Modules),Platform > Healthcheck,Monitoring,Critical,3m,"Admin logged into backend, all modules healthy","1. Navigate to More > Healthcheck (or /health endpoint)
+2. Review overall system status
+3. Review modules section
+4. Verify all modules listed
+5. Verify module health status","- Status: Healthy
+- All modules showing green/healthy status
+- No errors or warnings displayed
+- System operational","C343386",Katalon
+PLAT-063,Healthcheck - With Module Problems,Platform > Healthcheck,Monitoring,High,5m,"Admin logged into backend, at least one module with broken dependency installed","1. Install module with broken dependency
+2. Navigate to More > Healthcheck (or /health endpoint)
+3. Review overall system status
+4. Review modules section
+5. Verify problematic module highlighted","- Status: Degraded
+- Problematic module(s) highlighted with errors
+- Error details displayed
+- Other healthy modules still shown as healthy","C343387",Katalon
+PLAT-064,Healthcheck - No Problems (Cache),Platform > Healthcheck,Monitoring,Critical,3m,"Admin logged into backend, Redis cache operational","1. Navigate to More > Healthcheck (or /health endpoint)
+2. Review overall system status
+3. Review cache section
+4. Verify cache status (Redis)
+5. Verify cache connectivity","- Status: Healthy
+- Cache showing green/healthy status
+- Redis connection successful
+- No cache errors","C343389",Katalon
+PLAT-065,Healthcheck - With Cache Problems,Platform > Healthcheck,Monitoring,High,5m,"Admin logged into backend, cache unavailable or misconfigured","1. Stop Redis service or break cache connection
+2. Navigate to More > Healthcheck (or /health endpoint)
+3. Review overall system status
+4. Review cache section
+5. Verify cache error displayed","- Status: Degraded or Unhealthy
+- Cache showing red/error status
+- Error description displayed (e.g., 'Redis connection failed')
+- System still partially operational","C343388",Katalon

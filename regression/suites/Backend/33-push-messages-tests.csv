@@ -1,0 +1,37 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+PUSH-001,Save push message as draft,Draft Management,Functional,Critical,3m,Push Messages module installed,"1. Navigate to Push Messages
+2. Create new message
+3. Fill in content
+4. Save as Draft","Push message saved as draft; confirmation popup for unsaved changes works",C385358 C385359,Not Automated
+PUSH-002,Draft validation - empty fields,Draft Management,Negative,Medium,2m,Push message creation form open,"1. Leave all fields empty
+2. Click Save","Validation error shown; save prevented for empty fields",C385366,Not Automated
+PUSH-003,Save draft with schedule date,Draft Management,Functional,Medium,2m,Push message creation form open,"1. Fill in content
+2. Set schedule date
+3. Save as Draft","Draft saved with scheduled date",C385368,Not Automated
+PUSH-004,Edit draft message,Draft Management,Functional,High,2m,Draft push message exists,"1. Open draft message
+2. Edit content
+3. Save","Draft message updated successfully",C385360,Not Automated
+PUSH-005,Delete draft message,Draft Management,Functional,High,2m,Draft push message exists,"1. Select draft message
+2. Click Delete
+3. Confirm","Draft deleted from list",C385363,Not Automated
+PUSH-006,Search messages by status,Message List,Functional,Medium,2m,Messages in various statuses exist,"1. Use status filter/search
+2. Verify filtered results","Messages filtered by selected status",C385361,Not Automated
+PUSH-007,Publish message with schedule date,Publishing,Functional,Critical,3m,Draft message exists,"1. Open draft message
+2. Set schedule date
+3. Click Publish","Message scheduled for publication at specified date",C385367,Not Automated
+PUSH-008,Check created date in store,Publishing,Functional,Medium,2m,Published scheduled message exists,"1. Navigate to store context
+2. Verify created date of published message","Created date matches expected publish schedule",C385362,Not Automated
+PUSH-009,Track new recipients - enabled,Recipient Tracking,Functional,Medium,3m,Message published,"1. Create message with Track New Recipients ON
+2. Verify new recipients receive message","New recipients automatically receive the message",C385364,Not Automated
+PUSH-010,Track new recipients - disabled,Recipient Tracking,Functional,Medium,2m,Message published with tracking ON,"1. Set Track New Recipients OFF
+2. Add new users
+3. Verify they do not receive message","New recipients do NOT receive message when tracking disabled",C385365,Not Automated
+PUSH-011,API - retrieve unread messages,Push Messages API,Functional,High,3m,Published push messages exist; user authenticated,"1. Call API to get unread push messages
+2. Verify response contains unread messages","Unread messages returned with correct data",C397014,Not Automated
+PUSH-012,API - mark single message as read,Push Messages API,Functional,High,2m,Unread push message exists,"1. Call mark as read API for single message
+2. Verify message status","Message marked as read",C397021,Not Automated
+PUSH-013,API - mark single message as unread,Push Messages API,Functional,Medium,2m,Read push message exists,"1. Call mark as unread API for single message
+2. Verify message status","Message marked as unread",C397022,Not Automated
+PUSH-014,API - mark all messages as read,Push Messages API,Functional,High,2m,Multiple unread messages exist,"1. Call mark all as read API","All messages marked as read",C397019,Not Automated
+PUSH-015,API - mark all messages as unread,Push Messages API,Functional,Medium,2m,All messages are read,"1. Call mark all as unread API","All messages marked as unread",C397020,Not Automated
+PUSH-016,API - clear all push messages,Push Messages API,Functional,Medium,2m,Push messages exist for user,"1. Call clear all push messages API","All push messages cleared for user",C397018,Not Automated

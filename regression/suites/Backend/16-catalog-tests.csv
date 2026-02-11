@@ -1,0 +1,345 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+CAT-001,Add New Catalog,Catalog > Common Catalogs,CRUD,Critical,5m,"Admin logged in, Catalog module accessible","1. Open Catalog module > Add > Click Catalog
+2. Verify screen displays with required fields
+3. Fill Catalog name field (required)
+4. Configure Language block if needed
+5. Click Create","- System displays new catalog screen
+- Catalog name field marked as required
+- Language block visible and functional
+- System saves new catalog successfully
+- New catalog appears in catalog list","VP-660, C122780",Katalon
+CAT-002,Edit Existing Catalog,Catalog > Common Catalogs,CRUD,High,5m,"Admin logged in, at least one catalog exists","1. Right-click on existing catalog > Manage
+2. Verify edit screen displays
+3. Review blocks: Name (required), Language, Property
+4. Modify catalog name
+5. Change language settings
+6. Modify property settings
+7. Click Save","- Edit screen displays with catalog data
+- Name field is required
+- Language block shows current selection
+- Property block displays correctly
+- System saves all changes
+- Updated catalog reflects changes","VP-660, C122781",Katalon
+CAT-003,Delete Catalog - Cancel,Catalog > Common Catalogs,Negative,High,3m,"Admin logged in, multiple catalogs exist","1. Right-click on any catalog > Delete
+2. Verify confirmation dialog appears
+3. Click Cancel","- Confirmation dialog displays
+- System does not delete catalog
+- Catalog remains in list
+- No data loss","VP-660, C122782",Katalon
+CAT-004,Delete Catalog - Confirm,Catalog > Common Catalogs,CRUD,High,3m,"Admin logged in, test catalog exists","1. Right-click on test catalog > Delete
+2. Verify confirmation dialog
+3. Type 'Yes' in confirmation field
+4. Click Confirm","- Confirmation dialog requires typing 'Yes'
+- System deletes catalog after confirmation
+- Catalog removed from list
+- Related data handled appropriately","VP-660, C122782",Katalon
+CAT-005,Add Catalog with Multiple Languages,Catalog > Common Catalogs,Functional,Medium,5m,"Admin logged in, Catalog module accessible","1. Open Catalog module > Click Catalog
+2. Click Language selector
+3. Select default language
+4. Add additional languages
+5. Click OK > Create","- Language selector displays available languages
+- Can select one default language
+- Can add multiple additional languages
+- System saves catalog with selected languages
+- All languages available in catalog","VP-660, C122783",Katalon (generic)
+CAT-006,Add New Language Value to Catalog,Catalog > Common Catalogs,Functional,High,5m,"Admin logged in, at least one catalog exists","1. Go to Catalog module
+2. Right-click on any catalog > Manage
+3. Click on Languages widget
+4. Click Edit button next to Default language title
+5. Enter new language value in input field
+6. Click Add
+7. Click Save","- Manage dictionary values screen displays
+- New language value added to list
+- Changes saved successfully
+- New language available for selection as default or additional","C180483",Katalon (generic)
+CAT-007,Delete Language Value from Catalog,Catalog > Common Catalogs,CRUD,Medium,3m,"Admin logged in, language value added via C180483","1. Navigate to catalog Languages widget
+2. Click Edit button
+3. Select language value to delete
+4. Click Delete
+5. Confirm deletion","- Language value selection works
+- Delete confirmation appears
+- Selected language deleted from list
+- Changes saved successfully","C180484",Katalon (generic)
+CAT-008,Add New Category,Catalog > Categories,CRUD,Critical,5m,"Admin logged in, at least one catalog exists","1. Open Catalog module > Click on any catalog
+2. Click Add > Category
+3. Verify new category screen displays
+4. Review required fields: Category name, Code
+5. Fill all required fields
+6. Add optional data (description, images)
+7. Click Save","- New category screen displays
+- Category name field marked as required
+- Code field marked as required
+- Optional fields available
+- System saves new category
+- Category appears in catalog tree","VP-660, C123087",Katalon
+CAT-009,Edit Existing Category,Catalog > Categories,CRUD,High,5m,"Admin logged in, test category exists","1. Right-click on category > Manage
+2. Verify edit screen displays with blocks:
+   - Name (required)
+   - Priority
+   - Visible toggle
+   - Code (required)
+   - Property block
+   - Image
+   - Tax type
+   - Tags
+   - SEO block
+   - Search index block
+   - Description
+3. Modify any fields
+4. Click Save","- Edit screen displays with all data blocks
+- Required fields enforced
+- All widgets functional
+- System saves changes successfully
+- Updated category reflects changes","VP-660, C123088",Katalon
+CAT-010,Delete Category - Cancel,Catalog > Categories,Negative,High,3m,"Admin logged in, categories exist","1. Right-click on category > Delete
+2. Verify confirmation dialog
+3. Click Cancel","- Confirmation dialog displays
+- System does not delete category
+- Category remains in catalog tree","VP-660, C123089",Katalon
+CAT-011,Delete Category - Confirm,Catalog > Categories,CRUD,High,4m,"Admin logged in, test category exists","1. Right-click on test category > Delete
+2. Verify confirmation dialog
+3. Type 'Yes'
+4. Click Confirm
+5. Verify category removed","- Confirmation requires typing 'Yes'
+- System deletes category
+- Subcategories handled appropriately
+- Products in category handled per rules","VP-660, C123089",Katalon
+CAT-012,Add Tax Type to Category,Catalog > Categories,Functional,High,5m,"Admin logged in, category exists","1. Go to Catalog module > Any catalog
+2. Right-click on category > Manage
+3. Click Edit button next to Tax type
+4. Enter new tax type name
+5. Click Add
+6. Click Save
+7. Verify in Tax type dropdown","- Manage dictionary values (Tax types) screen displays
+- New tax type name added to Current values list
+- System saves new values
+- New tax type appears in dropdown","C180485",Katalon (generic)
+CAT-013,Delete Tax Type from Category,Catalog > Categories,CRUD,Medium,3m,"Admin logged in, tax type exists","1. Navigate to category > Manage
+2. Click Edit next to Tax type
+3. Select checkbox opposite one tax type value
+4. Click Delete button
+5. Click Save
+6. Verify tax type removed from list","- Manage dictionary values screen displays
+- Checkbox selection works
+- Tax deleted from list
+- Save button becomes active
+- Changes saved successfully","C345251",Katalon (generic)
+CAT-014,Add New Image to Category,Catalog > Categories,Functional,High,5m,"Admin logged in, category exists, image file ready","1. Go to Catalog module > Any catalog
+2. Right-click on category > Manage
+3. Click on Images widget
+4. Click Add button
+5. Specify image category and language
+6. Drag and drop image to upload zone
+7. Click OK on Upload Images screen
+8. Click OK on Manage images screen
+9. Click Save on category details
+10. Verify image in category images list","- Manage images screen displays
+- Upload Images screen allows drag-drop
+- Image category and language selectable
+- Image uploaded successfully
+- Image added to category
+- Uploaded image findable in images list","C180491",Katalon (generic)
+CAT-015,Add New SEO to Category,Catalog > Categories,Functional,High,5m,"Admin logged in, category exists","1. Go to Catalog module > Any catalog
+2. Right-click on category > Manage
+3. Click on SEO widget
+4. Click Add
+5. Fill in all SEO fields (URL, Title, Meta Description, Keywords)
+6. Click OK
+7. Click Save on category details","- New SEO screen opens with empty fields
+- All SEO fields available: URL, Title, Meta Description, Keywords, Language
+- SEO added to SEOs list
+- Changes saved successfully
+- SEO data applied to category","C180492",Katalon (generic)
+CAT-016,Add QuickReview Description to Category,Catalog > Categories,Functional,High,5m,"Admin logged in, catalog with category_1 created","1. Open Catalog > Select category_1
+2. Click Description widget
+3. Click Add > Choose QuickReview type
+4. Choose language (e.g., EN-en)
+5. Add description content
+6. Click Save
+7. Verify widget counter increases
+8. Go to Storefront > Open category_1
+9. Verify description displays via Liquid","- Description widget opens
+- QuickReview type selectable
+- Language selector works
+- Description saved successfully
+- Widget shows count increase
+- Description visible on storefront (via Liquid template)","C315282",Katalon (generic)
+CAT-017,Add FullReview Description to Category,Catalog > Categories,Functional,Medium,5m,"Admin logged in, catalog with category_1 created","1. Open Catalog > Select category_1
+2. Click Description widget
+3. Click Add > Choose FullReview type
+4. Choose language (e.g., DE-de)
+5. Add description content
+6. Click Save
+7. Verify widget counter increases
+8. Go to Storefront > Change store language (Deutsch DE-de)
+9. Open category_1
+10. Verify localized description displays","- FullReview type selectable
+- Language selector works (multiple languages)
+- Description saved successfully
+- Widget count updates
+- Localized content displays on storefront
+- Language switching works correctly","C315289",Katalon (generic)
+CAT-018,Delete Category with Descriptions,Catalog > Categories,CRUD,High,4m,"Catalog with category_1 created, description_1 added to category_1","1. Open Catalog > Locate category_1 with description_1
+2. Right-click > Delete category_1
+3. Confirm deletion
+4. Check on storefront
+5. Verify category and descriptions removed","- Category removed with all content
+- Descriptions deleted along with category
+- Category no longer on storefront
+- No orphaned description data
+- Deletion properly cascades","C315283",Katalon (generic)
+CAT-019,Add New Physical Product,Catalog > Products,CRUD,Critical,7m,"Admin logged in, category exists","1. Open Catalog module > Click on any category
+2. Click Add > Physical product
+3. Verify product details screen displays
+4. Review required fields: SKU, Name
+5. Review available blocks: Property, Image, Description, SEO
+6. Fill required fields
+7. Add optional data (images, description, SEO)
+8. Click Save
+9. Verify product in list","- Physical product creation screen displays
+- SKU field required
+- Name field required
+- Property, Image, Description, SEO blocks available
+- System saves new product
+- Product appears in product list
+- Product indexed and searchable","VP-660, C123091",Katalon
+CAT-020,Add New Digital Product,Catalog > Products,CRUD,High,5m,"Admin logged in, catalog exists","1. Go to Catalog module > Any catalog
+2. Click Add
+3. Choose Digital Product from New category item blade
+4. Verify SKU generated automatically
+5. Enter product name
+6. Click Create
+7. Verify product in list","- New product screen displays
+- Digital Product option available
+- SKU auto-generated
+- Product name field available
+- New digital product added to list
+- Digital product type persisted","C180504",Katalon (generic)
+CAT-021,Edit Existing Product,Catalog > Products,CRUD,High,5m,"Admin logged in, test product exists","1. Right-click on product > Manage
+2. Verify edit screen loads with product data
+3. Change product name
+4. Update description
+5. Modify properties
+6. Click Save
+7. Verify changes persisted","- Edit screen displays with all product data
+- All fields editable
+- Changes saved successfully
+- Updated product reflects changes
+- No data loss on edit","VP-660, C123092",Katalon
+CAT-022,Delete Product - Cancel,Catalog > Products,Negative,High,3m,"Admin logged in, products exist","1. Right-click on product > Delete
+2. Verify confirmation dialog
+3. Click Cancel","- Confirmation dialog displays
+- System does not delete product
+- Product remains in list","VP-660, C123093",Katalon
+CAT-023,Delete Product - Confirm,Catalog > Products,CRUD,High,3m,"Admin logged in, test product exists","1. Right-click on test product > Delete
+2. Verify confirmation dialog
+3. Type 'Yes'
+4. Click Confirm
+5. Verify product removed from list","- Confirmation requires typing 'Yes'
+- System deletes product
+- Product removed from list
+- Related data (inventory, pricing) handled","VP-660, C123093",Katalon
+CAT-024,Add Description to Product,Catalog > Products,Functional,High,4m,"Admin logged in, product exists","1. Go to product details
+2. Click on Descriptions widget
+3. Click Add
+4. Select description type and language
+5. Enter description content
+6. Close screen
+7. Verify description in list","- Item description screen displays
+- Type and language selectable
+- Content editor available
+- New description added to descriptions list
+- Description saved with product","C180500",Katalon (generic)
+CAT-025,Add Product Dimensions,Catalog > Products,Functional,Medium,3m,"Admin logged in, product exists","1. Go to product details
+2. Click on Item dimensions widget
+3. Fill in dimension fields (Length, Width, Height, Weight)
+4. Click OK
+5. Verify data displayed on widget","- Item dimensions widget opens
+- Dimension fields available
+- Entered data saved
+- Data displayed on widget
+- Dimensions used in shipping calculations","C180501",Katalon (generic)
+CAT-026,Clone Product,Catalog > Products,Functional,High,4m,"Admin logged in, at least one product exists","1. Navigate to existing product
+2. Click Clone button
+3. Review cloned product data
+4. Click Create
+5. Verify new product in list
+6. Verify SKU is different from original","- Clone function creates copy of product
+- All product data copied (name, properties, images, descriptions)
+- SKU auto-generated (different from original)
+- Cloned product appears in list
+- Original product unchanged","C180619",Katalon
+CAT-027,Add Vendor to Product,Catalog > Products,Functional,High,5m,"Admin logged in, product exists","1. Go to catalog > Open product details
+2. Click blue pencil near Vendor field
+3. Click Add > Choose Vendor
+4. Create vendors (Vendor_1, Vendor_2)
+5. Select Vendor_1 from dropdown
+6. Save
+7. Reopen product > Verify vendor persisted
+8. Change to Vendor_2
+9. Save and verify","- Vendor management screen accessible
+- Can add new vendors
+- Vendors added to Companies and Contacts list
+- Vendor selection saved with product
+- Vendor value persisted on reopen
+- Can change vendor","C340856",Katalon (generic)
+CAT-028,Add Tax Type to Product,Catalog > Products,Functional,Medium,5m,"Admin logged in, product exists","1. Go to Catalog > Open product details
+2. Click blue pencil near Tax field
+3. Click Add > Create tax types (Tax_1, Tax_2)
+4. Save
+5. Select Tax_1 from dropdown > Save
+6. Reopen product > Verify Tax_1 displayed
+7. Change to Tax_2 > Save and verify","- Tax management accessible from product
+- Can add new tax types
+- Tax types added to list
+- Tax selection saved with product
+- Tax value persisted on reopen
+- Can change tax type","C340857",Katalon (generic)
+CAT-029,Add New Product Description Type,Catalog > Products,Functional,Medium,4m,"Admin logged in, product description types configurable","1. Navigate to description type management
+2. Create new description type
+3. Enter type name and properties
+4. Save
+5. Go to product > Descriptions widget
+6. Verify new type in dropdown","- Description type creation available
+- New type saved successfully
+- New type appears in types dropdown
+- Type selectable when adding descriptions","C200442",Katalon
+CAT-030,Edit Product Description Type,Catalog > Products,Functional,Medium,3m,"Admin logged in, description type exists","1. Navigate to description type management
+2. Select existing type
+3. Modify type properties
+4. Save
+5. Verify changes in types dropdown","- Description type editing available
+- Type properties updatable
+- Changes saved successfully
+- Updated type reflected in dropdown","C200443",Katalon
+CAT-031,Delete Product Description Type,Catalog > Products,CRUD,Medium,3m,"Admin logged in, description type C200442 exists","1. Navigate to description type management
+2. Select type to delete
+3. Click Delete
+4. Confirm deletion
+5. Verify type removed from dropdown","- Description type deletion available
+- Deletion confirmation required
+- Type deleted from system
+- Type removed from dropdown
+- Existing descriptions using type handled","C200444",Katalon
+CAT-032,Add New Image to Product with Alt Text,Catalog > Products,Functional,High,5m,"Admin logged in, product exists, image file ready","1. Open product to edit
+2. Click on Image blade > Add button
+3. Upload image via drag-drop or file picker
+4. Fill all fields: Name, Image category, Language, Alt text, Meta description
+5. Click OK
+6. Verify image in image list","- Upload images blade opens
+- Image upload methods available
+- All image metadata fields present
+- Alt text field available (accessibility)
+- Meta description available (SEO)
+- New image appears in list","C261112",Katalon
+CAT-033,Edit Product Image Alt Text,Catalog > Products,Functional,Medium,4m,"Admin logged in, product with image exists","1. Open product to edit
+2. Click on Image blade
+3. Select image > Right-click > Edit
+4. Verify edit blade with fields: Name, Image category, Language, Alt text, Meta description
+5. Modify fields
+6. Click OK
+7. Reopen image to verify changes","- Image edit blade opens
+- All metadata fields displayed
+- Fields editable
+- Changes saved successfully
+- Updated values persist on reopen","C261113",Katalon

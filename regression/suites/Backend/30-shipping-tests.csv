@@ -1,0 +1,54 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+SHIP-001,Activate shipping method,Shipping Methods,Functional,Critical,3m,Shipping module installed; store configured,"1. Navigate to Store > Shipping Methods
+2. Select a shipping method
+3. Activate it
+4. Save","Shipping method activated and available for checkout",C229325,Not Automated
+SHIP-002,Deactivate shipping method,Shipping Methods,Functional,High,2m,Shipping method is active,"1. Select active shipping method
+2. Deactivate
+3. Save","Shipping method deactivated; not available for checkout",C229329,Not Automated
+SHIP-003,Configure ground and air shipping rates,Shipping Rates,Functional,High,3m,Shipping method active,"1. Open shipping method settings
+2. Set Ground shipping rate
+3. Set Air shipping rate
+4. Save","Shipping rates saved; applied correctly to orders",C229330 C229331,Not Automated
+SHIP-004,Save and reset shipping rate changes,Shipping Rates,Functional,Medium,2m,Shipping rates configured,"1. Modify shipping rate
+2. Click Save
+3. Modify again
+4. Click Reset","Save persists changes; Reset reverts to last saved state",C229337 C229338,Not Automated
+SHIP-005,Shipping tax type configuration,Tax Configuration,Functional,Medium,3m,Tax types configured,"1. Set Tax type to FR020100
+2. Verify taxes calculated without shipping value
+3. Remove tax type
+4. Verify taxes calculated with shipping value","Tax calculations respect shipping tax type configuration",C229332 C229333,Not Automated
+SHIP-006,Enable BOPIS shipping method for store,BOPIS,Functional,High,3m,BOPIS module installed,"1. Navigate to Store > Shipping
+2. Enable BuyOnlinePickupInStore method
+3. Save","BOPIS shipping method enabled for the store",C398841,Not Automated
+SHIP-007,Add new pickup location,BOPIS,Functional,Critical,3m,BOPIS enabled,"1. Navigate to BOPIS settings
+2. Click Add Pickup Location
+3. Fill in name and address details
+4. Transfer fulfillment centers
+5. Save","New pickup location created with FFC assignment",C398842,Not Automated
+SHIP-008,Edit pickup location,BOPIS,Functional,High,3m,Pickup location exists,"1. Open existing pickup location
+2. Edit fields
+3. Save","Pickup location updated successfully",C398843 C398850,Not Automated
+SHIP-009,Delete pickup location,BOPIS,Functional,High,2m,Pickup location exists,"1. Select pickup location
+2. Click Delete
+3. Confirm","Pickup location deleted",C398844,Not Automated
+SHIP-010,Validate pickup location empty name,BOPIS,Negative,Medium,2m,BOPIS settings open,"1. Add new pickup location
+2. Leave Name field empty
+3. Attempt to save","Validation error shown; save prevented",C398846,Not Automated
+SHIP-011,Multiple selection in transfer fulfillment centers,BOPIS,Functional,Medium,2m,Multiple FFCs available,"1. Open pickup location
+2. Select multiple fulfillment centers
+3. Transfer","Multiple FFCs transferred to pickup location",C398848,Not Automated
+SHIP-012,Delete multiple fulfillment centers from pickup location,BOPIS,Functional,Medium,2m,Pickup location with multiple FFCs,"1. Select multiple transferred FFCs
+2. Delete selection","Selected FFCs removed from pickup location",C398851,Not Automated
+SHIP-013,Enable/disable pickup location active status,BOPIS,Functional,Medium,2m,Pickup location exists,"1. Toggle Active status OFF
+2. Save
+3. Toggle Active status ON
+4. Save","Active status toggles correctly; affects frontend availability",C398852 C398849,Not Automated
+SHIP-014,Search pickup locations,BOPIS,Functional,Medium,3m,Multiple pickup locations exist,"1. Search by valid input
+2. Search by partial input
+3. Search with special characters
+4. Search non-existing location
+5. Verify case insensitivity","Search works with all input types; case insensitive",C398853 C398854 C398855 C398856 C398857,Not Automated
+SHIP-015,Verify pickup locations on frontend,BOPIS Storefront,E2E,High,3m,Active pickup locations configured,"1. Navigate to storefront checkout
+2. Select BOPIS shipping
+3. Verify pickup locations displayed","Active pickup locations appear on storefront for selection",C398845,Not Automated

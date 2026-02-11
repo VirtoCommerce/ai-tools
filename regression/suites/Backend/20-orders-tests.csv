@@ -1,0 +1,304 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+ORD-001,Create new order,Orders > Order Management,Functional,Critical,5min,Admin logged in to Backend,"1. Navigate to Orders module
+2. Click 'Add' or create new order
+3. Fill in order details (customer, store, items)
+4. Click 'Create'
+5. Verify order in list","New order is displayed on Customer orders blade with correct details",C169605,None
+ORD-002,View and edit order details,Orders > Order Management,Functional,High,5min,"Admin logged in to Backend
+Order exists [ORD-001]","1. Navigate to Orders module
+2. Select and click on existing order
+3. Verify order details blade opens in editable format
+4. Change any fields
+5. Click 'Save'
+6. Reopen blade with Order details","1. Order details blade displays all fields in editable format
+2. Changes saved and persisted",C169801,None
+ORD-003,Delete order,Orders > Order Management,Functional,High,3min,"Admin logged in to Backend
+Order exists [ORD-001]","1. Navigate to Orders module
+2. Select order to delete
+3. Click 'Delete'
+4. Confirm deletion","Order is deleted and no longer exists in the system",C169823,None
+ORD-004,Line items widget,Orders > Order Widgets,Functional,High,5min,"Admin logged in to Backend
+Order exists with line items","1. Open order details
+2. Click on Line items widget
+3. Verify line item details display","System displays Line items details with product info, quantities, and prices",C169805,None
+ORD-005,Addresses widget,Orders > Order Widgets,Functional,High,3min,"Admin logged in to Backend
+Order exists","1. Open order details
+2. Click on Addresses widget
+3. Verify shipping and billing addresses","Addresses widget displays correct shipping and billing address information",C169807,None
+ORD-006,Comments widget,Orders > Order Widgets,Functional,Medium,3min,"Admin logged in to Backend
+Order exists","1. Open order details
+2. Click on Comments widget
+3. Add a comment
+4. Save","Comment is added and saved successfully",C169808,None
+ORD-007,Dynamic properties widget,Orders > Order Widgets,Functional,Medium,5min,"Admin logged in to Backend
+Order exists","1. Open order details
+2. Click on Dynamic properties widget
+3. Verify 'Manage dynamic properties' blade opens
+4. Modify a property value
+5. Save","Dynamic properties blade opens with ability to manage properties. Changes saved.",C169809,None
+ORD-008,Changes widget,Orders > Order Widgets,Functional,Medium,3min,"Admin logged in to Backend
+Order exists with modifications","1. Open order details
+2. Click on Changes widget
+3. Verify change history","Changes widget displays history of modifications to the order",C169806,None
+ORD-009,Get invoice,Orders > Order Management,Functional,Medium,3min,"Admin logged in to Backend
+Order exists","1. Open order details
+2. Click 'Get Invoice'
+3. Verify PDF generation","System generates invoice in PDF format. Invoice can be downloaded.",C169824,None
+ORD-010,Create new document,Orders > Order Management,Functional,High,5min,"Admin logged in to Backend
+Order exists","1. Open order details
+2. Click 'Create new document'
+3. Select document type
+4. Fill in details
+5. Save","New document created for the order",C169822,None
+ORD-011,Create order with configuration items,Orders > Configurable Products,Functional,High,8min,"Admin logged in to Backend
+Configurable products exist","1. Create an order with configuration items
+2. Verify order created
+3. Open line item details blade
+4. Verify View, Configuration, Discounts, Dynamic properties tabs","1. Order created with configurable items
+2. Line item details show Configuration section with correct configuration data
+3. Discounts and Dynamic properties accessible",C396953 C396954 C396955 C396956 C396957,None
+ORD-012,View payment documents,Orders > Payment Documents,Functional,High,5min,"Admin logged in to Backend
+Order with payment exists","1. Open order > Documents section
+2. Verify payment document is listed
+3. Open payment document details","Payment document details displayed with status, address, price, and transactions blocks",C232798,None
+ORD-013,Payment document status changes,Orders > Payment Documents,Functional,High,5min,"Admin logged in to Backend
+Payment document exists","1. Open payment document
+2. Change payment status through available transitions
+3. Verify each status change","Payment status changes correctly through workflow transitions",C232799,None
+ORD-014,Cancel payment document,Orders > Payment Documents,Functional,High,3min,"Admin logged in to Backend
+Payment document exists","1. Open payment document
+2. Click 'Cancel'
+3. Confirm cancellation","Payment document cancelled successfully",C232800,None
+ORD-015,Payment document details (address and price blocks),Orders > Payment Documents,Functional,Medium,5min,"Admin logged in to Backend
+Order with payment and shipping","1. Open payment document
+2. Verify Payment address block with 'Same as shipping address' checkbox
+3. Verify Payment price block
+4. Verify Transactions block","1. Payment address block shows checkbox for same as shipping
+2. Payment price block displays correct amounts
+3. Transactions block shows transaction history",C232802 C232803 C232804,None
+ORD-016,Payment document with new order,Orders > Payment Documents,Functional,Medium,5min,"Admin logged in to Backend
+New order created","1. Create new order
+2. Open payment document
+3. Verify initial state","Payment document created with correct initial status and data for new order",C232801,None
+ORD-017,Capture authorized payment (manual method),Orders > Capture,Functional,High,5min,"Admin logged in to Backend
+Payment in status 'Authorized' with manual payment method","1. Open order with authorized payment
+2. Click 'Capture' on payment document
+3. Verify capture result","Capture succeeds. Payment status changes to 'Paid'",C358190,None
+ORD-018,Capture authorized payment (authorize.net and native) fails,Orders > Capture,Negative,Medium,5min,"Admin logged in to Backend
+Payment in status 'Authorized' with authorize.net or native payment method","1. Open order with authorized payment (authorize.net)
+2. Try to capture
+3. Repeat with native payment method","Capture fails for both authorize.net and native payment methods",C358191 C358192,None
+ORD-019,Capture non-authorized payment fails,Orders > Capture,Negative,Medium,3min,"Admin logged in to Backend
+Payment NOT in status 'Authorized'","1. Open order with non-authorized payment
+2. Try to capture","Capture fails — payment must be in 'Authorized' status",C358193,None
+ORD-020,Refund paid payment,Orders > Refund,Functional,High,5min,"Admin logged in to Backend
+Payment in status 'Paid'","1. Open order with paid payment
+2. Click 'Refund'
+3. Verify refund result","Refund succeeds for payment in Paid status",C358194,None
+ORD-021,Refund non-paid payment fails,Orders > Refund,Negative,Medium,3min,"Admin logged in to Backend
+Payment NOT in status 'Paid'","1. Open order with non-paid payment
+2. Try to refund","Refund fails — payment must be in 'Paid' status",C358195,None
+ORD-022,Refund document management,Orders > Refund,Functional,Medium,5min,"Admin logged in to Backend
+Refund document exists","1. Verify refund document number template
+2. Try to remove refund document
+3. Verify dynamic property on refund document","1. Refund number follows template
+2. Refund document can be removed
+3. Dynamic property accessible on refund",C358196 C358197 C358198,None
+ORD-023,View shipment documents,Orders > Shipment Documents,Functional,High,5min,"Admin logged in to Backend
+Order with shipment exists","1. Open order > Documents section
+2. Verify shipment document is listed
+3. Open shipment document details","Shipment document details displayed with status, address, and price blocks",C237967,None
+ORD-024,Shipment document status changes,Orders > Shipment Documents,Functional,High,5min,"Admin logged in to Backend
+Shipment document exists","1. Open shipment document
+2. Change shipment status through available transitions
+3. Verify each status change","Shipment status changes correctly through workflow transitions",C237963,None
+ORD-025,Shipment address and price blocks,Orders > Shipment Documents,Functional,Medium,5min,"Admin logged in to Backend
+Shipment document exists","1. Open shipment document
+2. Verify Shipment address block
+3. Verify Shipment price block","Shipment address and price blocks display correct data",C237964 C237965,None
+ORD-026,Add new line item to shipment,Orders > Shipment Documents,Functional,Medium,5min,"Admin logged in to Backend
+Shipment document exists","1. Open shipment document
+2. Click 'Add' to add line item
+3. Select product
+4. Save","New line item added to shipment successfully",C238704,None
+ORD-027,Shipment document with new order,Orders > Shipment Documents,Functional,Medium,5min,"Admin logged in to Backend
+New order created","1. Create new order
+2. Open shipment document
+3. Verify initial state","Shipment document created with correct initial data for new order",C237966,None
+ORD-028,Cancel order > adjust stock for single product FFC,Orders > Inventory Adjustment,Integration,High,8min,"Admin logged in to Backend
+Order exists with product from Default FFC
+'Adjust inventory for orders' enabled
+Track inventory = TRUE","1. Note current 'In stock' qty for product in Default FFC
+2. Cancel the order
+3. Verify stock inventory adjusts","Stock inventory increased by cancelled order quantity for product in Default FFC",C357118,None
+ORD-029,Cancel order > adjust stock for available FFC and multiple products,Orders > Inventory Adjustment,Integration,High,8min,"Admin logged in to Backend
+Order exists with products from different FFCs
+'Adjust inventory for orders' enabled","1. Note current stock for products in different FFCs
+2. Cancel the order
+3. Verify stock adjusts for each product/FFC","Stock inventory adjusts correctly for each product in respective FFC",C357121 C357119 C385328,None
+ORD-030,Non-cancelled status > stock doesn't change,Orders > Inventory Adjustment,Integration,Medium,5min,"Admin logged in to Backend
+Order exists","1. Set Payment status = Cancelled (not order)
+2. Verify stock doesn't change
+3. Set Shipment status = Cancelled (not order)
+4. Verify stock doesn't change","Stock inventory does not change when only payment or shipment status is cancelled",C357120 C357122 C357123,None
+ORD-031,Create organization and Order Manager role,Orders > Employee Assignment,Functional,High,8min,"Admin logged in to Backend","1. Create Organization1 with sub-organization
+2. Add employees to both organizations
+3. Create role 'Order Manager' with order permissions
+4. Assign role to employees","Organizations created with employees. Order Manager role assigned.",C358272 C358243,None
+ORD-032,Assign employee from root organization as order responsible,Orders > Employee Assignment,Functional,High,5min,"Admin logged in to Backend
+Organization with employees [ORD-031]","1. Open order details
+2. Assign employee1 from root Organization as order responsible
+3. Login as employee1
+4. Verify employee sees only assigned orders","Employee assigned. Employee from root organization can see only assigned orders.",C358248 C358244,None
+ORD-033,Assign employee from sub-organization as order responsible,Orders > Employee Assignment,Functional,High,5min,"Admin logged in to Backend
+Organization with sub-org and employees [ORD-031]","1. Open order details
+2. Assign employee1 from sub-organization as order responsible
+3. Login as employee1
+4. Verify employee sees only assigned orders","Employee assigned. Employee from sub-organization can see only assigned orders.",C358250 C358268,None
+ORD-034,Update order assignment to different employee,Orders > Employee Assignment,Functional,Medium,5min,"Admin logged in to Backend
+Order assigned to employee [ORD-032]","1. Open order details
+2. Change assignment to employee2 from root organization
+3. Verify assignment updated
+4. Change assignment to employee2 from sub-organization
+5. Verify assignment updated","Order assignment updated successfully to new employee",C358251 C358252,None
+ORD-035,Assign order to employee without order permission,Orders > Employee Assignment,Negative,Medium,5min,"Admin logged in to Backend
+Employee without order permissions exists","1. Open order details
+2. Assign order to employee without permissions
+3. Verify behavior","Employee without order permission cannot access assigned orders properly",C358275,None
+ORD-036,Shipment assigned employee,Orders > Employee Assignment,Functional,Medium,5min,"Admin logged in to Backend
+Employee assignments configured [ORD-031]","1. Open shipment document
+2. Assign employee from root organization
+3. Assign employee from sub-organization
+4. Verify assignments","Shipment document correctly shows assigned employee from both organization levels",C358256 C358257,None
+ORD-037,Filter orders by assigned employee,Orders > Employee Assignment,Functional,Medium,5min,"Admin logged in to Backend
+Orders assigned to employees","1. Open Orders module
+2. Add filter > 'Assigned to'
+3. Filter by employee from root organization
+4. Verify filtered results
+5. Filter by employee from sub-organization
+6. Verify filtered results","Orders filtered correctly by assigned employee at both organization levels",C358254 C358255,None
+ORD-038,Validate order fields,Orders > Validation,Negative,Medium,10min,Admin logged in to Backend (API/Swagger),"1. Test order validation for fields: Number, CustomerId, CustomerName, StoreId, StoreName, ChannelId, OrganizationId, OrganizationName, EmployeeId, EmployeeName, SubscriptionId, SubscriptionNumber, LanguageCode, ShoppingCardId, PurchaseOrderNumber
+2. Submit invalid values for each field
+3. Verify validation errors","Each field returns appropriate validation error for invalid data",C301875-C301889 C295632 C301874,None
+ORD-039,Validate payment fields,Orders > Validation,Negative,Medium,8min,Admin logged in to Backend (API/Swagger),"1. Test payment validation for fields: OrganizationId, OrganizationName, CustomerId, CustomerName, Purpose, GatewayCode, TaxType
+2. Submit invalid values for each field
+3. Verify validation errors","Each payment field returns appropriate validation error for invalid data",C301890-C301896,None
+ORD-040,Search by keyword and term,Orders > Search,Functional,Medium,5min,"Admin logged in to Backend
+Multiple orders exist
+Order indexing enabled","1. Navigate to Orders module
+2. Search by keyword
+3. Verify results
+4. Search by term
+5. Verify results","Search returns matching orders for both keyword and term searches",C293761 C293762,None
+ORD-041,Search by date/time range,Orders > Search,Functional,Medium,5min,"Admin logged in to Backend
+Multiple orders exist","1. Navigate to Orders module
+2. Set date/time range filter
+3. Verify filtered results","Orders filtered correctly by date/time range",C293764,None
+ORD-042,Order index widget and reindex,Orders > Search,Functional,Medium,5min,"Admin logged in to Backend
+Order indexing enabled","1. Open order details
+2. Verify Index widget is visible
+3. Trigger reindex
+4. Verify reindex completes","Index widget shown. Reindex completes successfully.",C293763 C293760,None
+ORD-043,Enable/Disable order index setting,Orders > Search,Functional,Medium,5min,Admin logged in to Backend,"1. Open Settings > Orders
+2. Disable 'Order Index' > Save
+3. Open order > Verify Index widget hidden
+4. Enable 'Order Index' > Save
+5. Open order > Verify Index widget shown","Disabled: Index widget hidden. Enabled: Index widget shown and user can index orders.",C293162 C293163,None
+ORD-044,Number template with datetime {0},Orders > Number Generation,Functional,Medium,5min,Admin logged in to Backend,"1. Open Settings > Orders > Order number template
+2. Set template: {0}
+3. Create new order
+4. Verify order number","Order number created with datetime UTC data",C380814,None
+ORD-045,Number template with sequential {1} and padded CO{1:D5},Orders > Number Generation,Functional,Medium,5min,Admin logged in to Backend,"1. Set template: {1} > Create two orders > Verify sequential numbers (1, 2)
+2. Set template: CO{1:D5} > Create two orders > Verify padded numbers (CO00001, CO00002)","Orders have sequential numbers. Padded format works correctly.",C380815 C380816,None
+ORD-046,Number template with date+padded and weekly reset,Orders > Number Generation,Functional,Medium,8min,Admin logged in to Backend,"1. Set template: CO-{0:yyMMdd}-{1:D5} > Create orders > Verify format
+2. Set template: PO{0:yyMMdd}-{1:D5}@Weekly:1:10 > Create orders > Verify weekly reset","1. Format: CO-240131-00001, CO-240131-00002
+2. Weekly reset: counter resets after 1 week starting from 10",C380817 C380818,None
+ORD-047,Notifications widget (view and refresh and resend),Orders > Notifications,Functional,Medium,5min,"Admin logged in to Backend
+Order with notifications exists","1. Open order details
+2. Click Notifications widget > Verify notifications display
+3. Click Refresh > Verify updated state
+4. Click Resend on a notification > Verify new email sent","1. Notifications widget shows notifications
+2. Refresh shows actual state
+3. Resend sends new email notification",C292301 C292302 C292303,None
+ORD-048,Order paid/sent notification settings,Orders > Notifications,Functional,Medium,5min,Admin logged in to Backend,"1. Enable 'Use order paid and order sent notifications'
+2. Process order through paid > sent workflow
+3. Verify notifications generated","Notifications sent for order paid and order sent events",C357126,None
+ORD-049,Payment/shipment status changed notification settings,Orders > Notifications,Functional,Medium,5min,Admin logged in to Backend,"1. Disable 'Use payments/shipments status changed notifications' > Change status > Verify no notification
+2. Enable setting > Change status > Verify notification sent","Disabled: no notification sent. Enabled: notification sent on status change.",C357127 C357150,None
+ORD-050,Add role with order permissions,Orders > Roles & Permissions,Functional,High,5min,"Admin with permissions to create roles","1. Navigate to Security > Roles
+2. Click 'Add'
+3. Fill form and assign order-related permissions
+4. Click 'Create'","New role created with order permissions",C169802,None
+ORD-051,Assign order role to user,Orders > Roles & Permissions,Functional,High,5min,"Admin with permissions to manage users
+Role with order permissions [ORD-050]","1. Navigate to Security > Users
+2. Select user
+3. Open Roles widget
+4. Click 'Assign' > Select role > Confirm","Role assigned to user successfully",C169803,None
+ORD-052,Permission > Access,Orders > Permissions,Security,High,5min,"Role_1 with orders:access permission
+Role_1 assigned to User_1","1. Login as User_1
+2. Verify Orders blade link shown
+3. Open Orders blade","Orders blade link shown. Orders list accessible.",C241270,None
+ORD-053,Permission > Read,Orders > Permissions,Security,High,5min,"Role_1 with orders:read permission
+Role_1 assigned to User_1","1. Login as User_1
+2. Open Orders blade
+3. View order list","Orders blade opens. List of orders shown.",C241273,None
+ORD-054,Permission > Create,Orders > Permissions,Security,High,5min,"Role_1 with orders:create permission
+Role_1 assigned to User_1","1. Login as User_1
+2. Create new document for order","New document created for Order_1",C241274,None
+ORD-055,Permission > Update,Orders > Permissions,Security,High,5min,"Role_1 with orders:update permission
+Role_1 assigned to User_1","1. Login as User_1
+2. Open order > Make changes > Save","Order changes saved",C241277,None
+ORD-056,Permission > Delete,Orders > Permissions,Security,High,5min,"Role_1 with orders:delete permission
+Role_1 assigned to User_1","1. Login as User_1
+2. Select order > Delete","Order deleted and removed from list",C241276,None
+ORD-057,Permission > Read prices and Update shipments,Orders > Permissions,Security,High,5min,"Role_1 with orders:read_prices and orders:update_shipments permissions
+Role_1 assigned to User_1","1. Login as User_1
+2. Verify prices for line items shown
+3. Verify shipment can be updated","Prices visible. Shipments can be updated.",C241278 C358274,None
+ORD-058,Permission > API delete order (assigned/unassigned),Orders > Permissions,Security,Medium,8min,"Employee1 with order permissions
+Order1 assigned to Employee1
+Order2 assigned to another employee
+Order3 does not exist","1. Delete Order1 (assigned to self) > Verify success
+2. Delete Order2 (assigned to another) > Verify behavior
+3. Delete Order3 (non-existent) > Verify error
+4. Delete combinations: Order1+2, Order2+3, Order1+2+3","Assigned orders can be deleted. Proper error handling for unassigned/non-existent orders.",C360517-C360522,None
+ORD-059,Settings > Order/Shipment/Payment statuses,Orders > Settings,Functional,Medium,5min,Admin logged in to Backend,"1. Open Settings > Orders
+2. Configure Customer order statuses
+3. Configure Shipment statuses
+4. Configure Payment statuses
+5. Save each","All status configurations saved",C242170 C242171 C242172,None
+ORD-060,Settings > Number templates,Orders > Settings,Functional,Medium,5min,Admin logged in to Backend,"1. Open Settings > Orders
+2. Configure Order number template
+3. Configure Order shipment number template
+4. Configure Order payment number template
+5. Save","All number templates saved",C242173 C242667 C242668,None
+ORD-061,Settings > Enable/Disable notifications for orders,Orders > Settings,Functional,Medium,5min,Admin logged in to Backend,"1. Open Settings > Orders
+2. Enable 'Enable notifications for orders' > Save
+3. Verify notifications sent on order events
+4. Disable setting > Save
+5. Verify no notifications sent","Enable: notifications sent. Disable: notifications not sent.",C242176 C242180,None
+ORD-062,Settings > Enable/Disable adjust inventory for orders,Orders > Settings,Functional,Medium,5min,Admin logged in to Backend,"1. Open Settings > Orders
+2. Enable 'Adjust inventory for orders' > Save
+3. Cancel order > Verify stock adjusts
+4. Disable setting > Save
+5. Cancel order > Verify stock doesn't adjust","Enable: stock adjusts on cancellation. Disable: stock unchanged.",C242178 C242181,None
+ORD-063,Settings > Tooltips,Orders > Settings,Functional,Medium,3min,Admin logged in to Backend,"1. Open Settings > Orders blade
+2. Verify all tooltips folded
+3. Click tooltip for field1 > Verify unfolds
+4. Click tooltip for field2 > Verify field2 unfolds and field1 folds
+5. Click 'Hide' > Verify all fold","Tooltips behave correctly: one at a time, proper fold/unfold behavior",C338423,None
+ORD-064,Address with OuterId (Add/Update/Delete),Orders > API,Functional,Medium,5min,"Admin logged in to Backend
+Order with addresses exists","1. Add address with OuterId property > Verify saved
+2. Update address with new OuterId > Verify updated
+3. Delete address > Verify deleted","Address and OuterId operations succeed",C312160 C312161 C312162,None
+ORD-065,OrganizationOrder API,Orders > API,Functional,Medium,5min,"GraphQL/API access
+Organization with orders exists","1. Get orders with correct token and correct organizationId > Verify order list
+2. Get orders with incorrect organizationId > Verify empty list
+3. Get orders with incorrect token > Verify access denied","1. Returns orders for organization
+2. Returns empty list
+3. Returns access denied error",C361429 C361430 C361431,None
+ORD-066,Order2Sample module CRUD,Orders > Extensions,Functional,Medium,10min,Admin logged in to Backend,"1. Install Order2Sample module
+2. Create a new order via Order2Sample
+3. Read order > Verify data
+4. Update order > Verify changes saved
+5. Delete order > Verify removed","Module installs. Full CRUD cycle works correctly.",C311912-C311916,None

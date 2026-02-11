@@ -1,0 +1,140 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+NOTIF-001,Send default notification template,Notification Send,Functional,Critical,3m,Admin logged in; notification module installed,"1. Navigate to Notifications
+2. Select a notification type
+3. Open default template
+4. Click Send to test email","Notification email sent successfully using default template",C207375,Not Automated
+NOTIF-002,Send template for concrete localization,Notification Send,Functional,Medium,3m,Multiple language templates configured,"1. Navigate to Notifications
+2. Select notification with multiple language templates
+3. Choose a specific localization
+4. Send to test email","Email sent using the selected language template",C207581,Not Automated
+NOTIF-003,Disable notification,Notification Send,Functional,High,2m,Notification type enabled,"1. Navigate to Notifications
+2. Select a notification type
+3. Toggle Active = OFF
+4. Trigger the notification event","Notification is not sent when disabled",C207583,Not Automated
+NOTIF-004,Add default recipient for notification,Notification Recipients,Functional,High,2m,Admin logged in,"1. Navigate to Notifications
+2. Select a notification type
+3. Add default recipient email
+4. Save","Default recipient saved and receives notifications",C207584,Not Automated
+NOTIF-005,Notification added to feed,Notification Feed,Functional,High,3m,Notification feed enabled,"1. Trigger a notification event (e.g. new order)
+2. Navigate to Notification feed","Notification appears in the feed with correct details",C207585,Not Automated
+NOTIF-006,Unregistered notifications handling,Notification Validation,Functional,Medium,2m,Admin logged in,"1. Navigate to Notifications
+2. Check for unregistered notification types","Unregistered notifications are displayed with appropriate warning",C387780,Not Automated
+NOTIF-007,Create template with sample data preview,Preview,Functional,High,3m,Notification template exists,"1. Navigate to Notifications
+2. Select a notification type
+3. Click Preview
+4. Enter sample data
+5. Click Preview button","Template rendered correctly with sample data",C342249,Not Automated
+NOTIF-008,Edit sample data in preview,Preview,Functional,Medium,2m,Preview is open with sample data,"1. Edit sample data JSON fields
+2. Click Preview","Preview updates to reflect edited sample data",C342250,Not Automated
+NOTIF-009,Share preview - send email with preview,Preview Share,Functional,High,3m,Preview rendered successfully,"1. Click Share in preview
+2. Enter valid email address
+3. Click Send","Preview email sent to specified address",C342212,Not Automated
+NOTIF-010,Share preview - invalid email validation,Preview Share,Negative,Medium,2m,Preview is open,"1. Click Share
+2. Enter invalid email format
+3. Attempt to send","Validation error shown; email not sent",C342246,Not Automated
+NOTIF-011,Registration notification template,Account Notifications,Functional,Critical,3m,Platform configured with registration notification,"1. Register a new user on storefront
+2. Check email inbox","Registration confirmation email received with correct template",C207386,Not Automated
+NOTIF-012,Registration invitation notification,Account Notifications,Functional,High,3m,Invitation feature enabled,"1. Send registration invitation from Admin
+2. Check recipient email inbox","Invitation email received with registration link",C207600,Not Automated
+NOTIF-013,Password reset notification,Account Notifications,Functional,High,3m,User account exists,"1. Request password reset on storefront
+2. Check email inbox","Password reset email received with valid reset link",C207610,Not Automated
+NOTIF-014,Password reset limit enforcement,Account Notifications,Functional,High,3m,User account exists,"1. Request password reset multiple times exceeding limit
+2. Attempt another reset","Reset request blocked; limit exceeded message shown",C307517,Not Automated
+NOTIF-015,Email confirmation notification,Account Notifications,Functional,High,2m,Email verification enabled,"1. Register new user or change email
+2. Check inbox for confirmation email","Email confirmation notification received with verification link",C340946,Not Automated
+NOTIF-016,Two-factor authentication email,Account Notifications,Functional,High,3m,2FA via email configured,"1. Login with 2FA-enabled account
+2. Check email for verification code","2FA code email received with valid code",C254245,Not Automated
+NOTIF-017,Organization registration notification,Account Notifications,Functional,High,3m,Organization registration enabled,"1. Register a new organization on storefront
+2. Check admin/email notifications","Organization registration email notification sent",C340947,Not Automated
+NOTIF-018,Enable abandoned cart notifications (global),Abandoned Cart,Functional,High,3m,Admin logged in; notifications module,"1. Navigate to Settings > Notifications
+2. Enable abandoned cart notifications globally
+3. Save","Global abandoned cart notification setting enabled",C394634,Not Automated
+NOTIF-019,Trigger abandoned cart email after default time,Abandoned Cart,Functional,High,5m,Abandoned cart notifications enabled; cart exists,"1. Create a cart with items
+2. Wait for default reminder time (5 days or configured)
+3. Check email","Abandoned cart reminder email sent after configured time",C394637,Not Automated
+NOTIF-020,Custom reminder time for abandoned cart,Abandoned Cart,Functional,Medium,3m,Admin logged in,"1. Navigate to abandoned cart settings
+2. Set custom reminder time
+3. Save and trigger","Abandoned cart email sent at custom time interval",C394638,Not Automated
+NOTIF-021,Create order notification,Order Notifications,Functional,Critical,3m,Order notification template configured,"1. Create a new order
+2. Check email for order confirmation","Order creation notification email received",C208255,Not Automated
+NOTIF-022,Cancel order notification,Order Notifications,Functional,High,3m,Order exists; cancellation template configured,"1. Cancel an existing order
+2. Check email for cancellation notification","Order cancellation notification email sent",C208256,Not Automated
+NOTIF-023,Order paid notification,Order Notifications,Functional,High,3m,Payment notification template configured,"1. Mark order payment as Paid
+2. Check email","Order paid notification email received",C208259,Not Automated
+NOTIF-024,Order sent notification,Order Notifications,Functional,High,3m,Shipment notification template configured,"1. Change shipment status to Sent
+2. Check email","Order shipped notification email received",C208260,Not Automated
+NOTIF-025,Invoice notification for customer,Order Notifications,Functional,High,3m,Invoice template configured,"1. Generate invoice for an order
+2. Check customer email","Invoice email received with order details",C208262,Not Automated
+NOTIF-026,Shipment status change notification - PickPack,Order Status Notifications,Functional,Medium,3m,Shipment status notification template set,"1. Change shipment document status to PickPack
+2. Check notification","Notification sent for PickPack status change",C357104,Not Automated
+NOTIF-027,Shipment status change notification - Sent,Order Status Notifications,Functional,Medium,3m,Shipment status notification template set,"1. Change shipment document status to Sent
+2. Check notification","Notification sent for Sent status change",C357107,Not Automated
+NOTIF-028,Payment status change notification - Paid,Order Status Notifications,Functional,Medium,3m,Payment status notification template set,"1. Change payment document status to Paid
+2. Check notification","Notification sent for Paid status change",C357116,Not Automated
+NOTIF-029,Payment status change notification - Refunded,Order Status Notifications,Functional,Medium,3m,Payment status notification template set,"1. Change payment document status to Refunded
+2. Check notification","Notification sent for Refunded status change",C357109,Not Automated
+NOTIF-030,SMS notification - phone number change,SMS Notifications,Functional,High,3m,SMS gateway configured,"1. Configure SMS notification gateway
+2. Trigger phone number change event
+3. Check SMS delivery","SMS notification sent for phone number change",C207563,Not Automated
+NOTIF-031,SMS notification - two-factor authentication,SMS Notifications,Functional,High,3m,SMS 2FA configured,"1. Configure SMS as 2FA method
+2. Login with 2FA-enabled account
+3. Check SMS","2FA code received via SMS",C251791,Not Automated
+NOTIF-032,Search notifications list,Notification List,Functional,High,2m,Multiple notifications exist,"1. Navigate to Notifications list
+2. Enter search term in search field","Notifications filtered by search term",C208264,Not Automated
+NOTIF-033,Search by notification type,Notification List,Functional,Medium,2m,Multiple notification types exist,"1. Navigate to Notifications list
+2. Search by notification type name","List filtered to show matching notification types",C350200,Not Automated
+NOTIF-034,Add new notification template,Template Management,Functional,Critical,3m,Admin logged in,"1. Navigate to Notifications
+2. Select notification type
+3. Click Add Template
+4. Select language
+5. Enter template content
+6. Save","New template created and saved for selected language",C208280,Not Automated
+NOTIF-035,Add default template,Template Management,Functional,High,3m,Admin logged in,"1. Select notification type
+2. Click Add Template
+3. Select Default language
+4. Enter content and Save","Default template created successfully",C208282,Not Automated
+NOTIF-036,Overwrite template with same localization,Template Management,Negative,Medium,3m,Template exists for a language,"1. Add new template for same localization
+2. Confirm overwrite","Existing template overwritten with new content",C208283,Not Automated
+NOTIF-037,Save changes for email template,Template Management,Functional,High,2m,Template is open for editing,"1. Edit email template content
+2. Click Save","Changes saved successfully for email template",C208274,Not Automated
+NOTIF-038,Save changes for SMS template,Template Management,Functional,High,2m,SMS template editing supported,"1. Edit SMS template content
+2. Click Save","Changes saved successfully for SMS template",C211027,Not Automated
+NOTIF-039,Undo template changes,Template Management,Functional,Medium,2m,Template has unsaved changes,"1. Make changes to template
+2. Click Undo/Reset","Template reverted to last saved state",C208277,Not Automated
+NOTIF-040,Add notification layout,Notification Layout,Functional,Critical,3m,Admin logged in,"1. Navigate to Notification layouts
+2. Click Add
+3. Enter layout name and template
+4. Save","New notification layout created and saved",C343733,Not Automated
+NOTIF-041,Edit notification layout,Notification Layout,Functional,High,3m,Layout exists,"1. Open existing layout
+2. Edit template content
+3. Save","Layout updated successfully",C343728,Not Automated
+NOTIF-042,Delete notification layout,Notification Layout,Functional,High,2m,Layout exists,"1. Select layout
+2. Click Delete
+3. Confirm","Layout deleted successfully",C343731,Not Automated
+NOTIF-043,Reset notification layout,Notification Layout,Functional,Medium,2m,Layout has been modified,"1. Open modified layout
+2. Click Reset","Layout restored to default state",C344120,Not Automated
+NOTIF-044,Add notification template with layout,Notification Layout,Functional,High,3m,Layout exists,"1. Open notification template
+2. Assign layout
+3. Preview and save","Template rendered with layout wrapper",C344064,Not Automated
+NOTIF-045,Check layout in sent mail,Notification Layout,Functional,High,3m,Template with layout assigned,"1. Send notification with layout-assigned template
+2. Check email","Email contains layout wrapper around notification content",C344066,Not Automated
+NOTIF-046,Predefined notification - edit and restore,Predefined Notifications,Functional,High,3m,Predefined notification template exists,"1. Open predefined notification
+2. Edit template content
+3. Save
+4. Click Restore","Predefined template editable; restore returns to original",C255756 C255757,Not Automated
+NOTIF-047,Send edited predefined template,Predefined Notifications,Functional,Medium,3m,Predefined template has been edited,"1. Edit predefined template
+2. Send to test email","Edited predefined template content sent in email",C255758,Not Automated
+NOTIF-048,Access permission - notifications,Permissions,Functional,High,2m,Role with notification:access permission,"1. Login as user with notification:access
+2. Navigate to Notifications","Notifications module accessible",C241391,Not Automated
+NOTIF-049,Template create permission,Permissions,Functional,High,2m,Role with template:create permission,"1. Login as user with template:create
+2. Add a new template","Template creation allowed for authorized user",C241395,Not Automated
+NOTIF-050,Settings - manage notification languages,Settings,Functional,Medium,3m,Admin logged in,"1. Navigate to Settings > Notifications > Languages
+2. Add a new language
+3. Save","New language added to notification language list",C242713,Not Automated
+NOTIF-051,Settings - delete notification language,Settings,Functional,Medium,2m,Additional language exists,"1. Navigate to Settings > Notifications > Languages
+2. Select language and delete","Language removed from notification languages",C242714,Not Automated
+NOTIF-052,NotificationsSample module - install and test,Extensions,Functional,Low,5m,NotificationsSample module available,"1. Install NotificationsSample module
+2. Create a new template
+3. Send notification
+4. Update template and resend
+5. Delete template","Module installs correctly; CRUD operations on sample notifications work",C311917 C311918 C311919 C311920,Not Automated

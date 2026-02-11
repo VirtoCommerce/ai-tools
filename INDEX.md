@@ -1,105 +1,183 @@
 # VC MCP Testing Module - Repository Index
 
-This repository contains QA testing documentation and MCP-driven testing for the Virto Commerce B2B e-commerce platform.
+This repository contains QA testing documentation and MCP-driven testing for the Virto Commerce B2B e-commerce platform. Tests are executed through natural language prompts via MCP servers (Playwright, Chrome DevTools, Atlassian) enabling LLM-powered browser automation.
 
 ## Quick Navigation
 
 | Directory | Purpose |
 |-----------|---------|
-| [tests/](tests/) | Active test cases organized by VCST ticket |
-| [regression/](regression/) | Regression test suites (12 suites, 283 test cases) |
-| [test-data/](test-data/) | Test fixtures and sample data |
-| [reports/](reports/) | Bug reports and test execution results |
-| [docs/](docs/) | Testing documentation and LLM prompts |
-| [config/](config/) | MCP and Playwright configuration files |
+| [tests/](tests/) | Active test cases organized by sprint and VCST ticket |
+| [regression/](regression/) | Regression test suites (14 frontend + 20 backend CSV files) |
+| [test-data/](test-data/) | Test fixtures, sample data, and test cards |
+| [reports/](reports/) | Bug reports and regression test results |
+| [docs/](docs/) | LLM prompt templates and testing guides |
+| [config/](config/) | MCP browser configs and test-suites.json manifest |
+| [ci/](ci/) | CI regression via Claude Agent SDK (Docker + GitHub Actions) |
+| [storybook/](storybook/) | Visual regression baselines (Atomic Design tiers) |
+| [scripts/](scripts/) | Utility scripts (Katalon test extraction) |
 | [archive/](archive/) | Historical sprint test documentation |
 
 ## Directory Structure
 
 ```
 vc-mcp-testing-module/
-├── config/                    # MCP browser configurations
+├── .claude/agents/            # Claude Code agent configurations (7 agents)
+├── .github/workflows/         # GitHub Actions (regression.yml)
+│
+├── config/                    # MCP browser configurations + suite manifest
 │   ├── mcp-playwright-chrome.config.json
 │   ├── mcp-playwright-edge.config.json
 │   ├── mcp-playwright-firefox.config.json
-│   └── mcp-playwright-webkit.config.json
+│   └── test-suites.json       # Regression orchestration manifest
+│
+├── ci/                        # CI regression via Claude Agent SDK
+│   ├── agents/                # CI-specific agent prompts
+│   ├── Dockerfile
+│   ├── run-regression.ts      # Orchestrator entry point
+│   └── notify-teams.ts        # Teams webhook notifications
 │
 ├── docs/
-│   ├── prompts/              # LLM testing prompt templates
-│   └── guides/               # How-to guides
+│   ├── prompts/               # LLM testing prompt templates
+│   └── guides/                # How-to guides
 │
-├── tests/                    # Active test cases by ticket
-│   └── VCST-XXXX-*/          # Individual test directories
+├── tests/                     # Active test cases by sprint
+│   ├── Sprint26-02/           # Sprint directories with VCST-XXXX tickets
+│   └── Sprint26-03/
 │
 ├── regression/
-│   └── suites/               # 12 CSV test suites (TestRail format)
+│   └── suites/
+│       ├── Frontend/          # 14 CSV suites (00-13)
+│       └── Backend/           # 20 CSV suites (14-15, 18-36)
+│
+├── storybook/                 # Visual regression baselines
+│   ├── atoms/                 # Badge, Checkbox, Dialog, Icon, etc.
+│   ├── molecules/             # Alert, Button, Chip, Input, etc.
+│   ├── organisms/             # AddToCart, ProductCard, Table, etc.
+│   └── design-system/         # Theme comparison (default, coffee)
 │
 ├── test-data/
-│   ├── inventory/            # Product inventory data
-│   ├── organizations/        # Organization test data
-│   ├── search-queries/       # Search test queries
-│   └── uploads/              # File upload test assets
+│   ├── addresses/             # US address test data
+│   ├── bopis/                 # Pickup location data
+│   ├── localization/          # Language test data
+│   ├── organizations/         # Organization test data
+│   ├── payment/               # Payment processor configs and test cards
+│   ├── products/              # Product test data (configurable, standard)
+│   ├── search-queries/        # Search test queries
+│   ├── uploads/               # File upload test assets
+│   └── users/                 # Test user accounts
 │
 ├── reports/
-│   ├── bugs/                 # Bug reports with evidence
-│   └── regression/           # Regression test results
+│   ├── bugs/                  # Bug reports with evidence
+│   └── regression/            # Regression test results + history.json
 │
-├── test-results/             # Playwright execution artifacts
+├── scripts/                   # Utility scripts
 │
-└── archive/sprints/          # Historical sprint documentation
+└── archive/sprints/           # Historical sprint documentation
 ```
 
 ## Testing Environments
 
-| Environment | Frontend | Backend |
-|-------------|----------|---------|
-| **Dev** | https://vcst-dev-storefront.govirto.com | https://vcst-dev.govirto.com |
-| **QA** | https://vcst-qa-storefront.govirto.com | https://vcst-qa.govirto.com |
-| **Staging** | https://virtostart-demo-store.govirto.com | https://virtostart-demo-admin.govirto.com |
+Configured via environment variables in `.env` (run `npm run env:check` to validate):
 
-**Storybook:** https://vcst-qa-storybook.govirto.com (theme: `coffee`)
+| Resource | Environment Variable |
+|----------|---------------------|
+| **Frontend** | `FRONT_URL` |
+| **Backend** | `BACK_URL` |
+| **Storybook QA** | `STORYBOOK_URL` |
+| **Storybook Dev** | `STORYBOOK_DEV_URL` |
+
+Default environment is **QA**. Theme presets: Default, Coffee.
 
 ## Test Domains
 
-| Domain | Description | Related Tests |
-|--------|-------------|---------------|
-| **Authentication** | Login, SSO, password management | [02-authentication-tests](regression/suites/02-authentication-tests.csv) |
-| **Catalog & Search** | Browsing, filters, product search | [03-catalog-search-tests](regression/suites/03-catalog-search-tests.csv) |
-| **Cart & Checkout** | Cart operations, checkout flow | [04-cart-checkout-tests](regression/suites/04-cart-checkout-tests.csv) |
-| **BOPIS** | Buy Online Pickup In Store | [05-bopis-pickup-tests](regression/suites/05-bopis-pickup-tests.csv) |
-| **Payment** | Skyflow, CyberSource, Authorize.Net, Datatrance | [06-payment-tests](regression/suites/06-payment-tests.csv) |
-| **Analytics** | GA4 event tracking | [07-google-analytics-tests](regression/suites/07-google-analytics-tests.csv) |
-| **Security** | PCI compliance, auth security | [08-security-tests](regression/suites/08-security-tests.csv) |
-| **Accessibility** | WCAG 2.1 AA compliance | [09-accessibility-tests](regression/suites/09-accessibility-tests.csv) |
-| **Localization** | 13 languages support | [10-localization-tests](regression/suites/10-localization-tests.csv) |
-| **Performance** | Load times, Core Web Vitals | [11-performance-tests](regression/suites/11-performance-tests.csv) |
-| **Browser Compatibility** | Cross-browser testing | [12-browser-compatibility-tests](regression/suites/12-browser-compatibility-tests.csv) |
+### Frontend Suites (regression/suites/Frontend/)
+
+| Domain | Description | Suite |
+|--------|-------------|-------|
+| **Full Regression** | Composite suite for release regression | [00-full-regression-release](regression/suites/Frontend/00-full-regression-release.csv) |
+| **Smoke** | Daily validation before deployment | [01-smoke-tests](regression/suites/Frontend/01-smoke-tests.csv) |
+| **Authentication** | Login, SSO, password management | [02-authentication-tests](regression/suites/Frontend/02-authentication-tests.csv) |
+| **Catalog & Search** | Browsing, filters, product search | [03-catalog-search-tests](regression/suites/Frontend/03-catalog-search-tests.csv) |
+| **Cart & Checkout** | Cart operations, checkout flow | [04-cart-checkout-tests](regression/suites/Frontend/04-cart-checkout-tests.csv) |
+| **BOPIS** | Buy Online Pickup In Store | [05-bopis-pickup-tests](regression/suites/Frontend/05-bopis-pickup-tests.csv) |
+| **Payment** | Skyflow, CyberSource, Authorize.Net, Datatrance | [06-payment-tests](regression/suites/Frontend/06-payment-tests.csv) |
+| **Analytics** | GA4 event tracking | [07-google-analytics-tests](regression/suites/Frontend/07-google-analytics-tests.csv) |
+| **Security** | PCI compliance, auth security | [08-security-tests](regression/suites/Frontend/08-security-tests.csv) |
+| **Accessibility** | WCAG 2.1 AA compliance | [09-accessibility-tests](regression/suites/Frontend/09-accessibility-tests.csv) |
+| **Localization** | 13 languages support | [10-localization-tests](regression/suites/Frontend/10-localization-tests.csv) |
+| **Performance** | Load times, Core Web Vitals | [11-performance-tests](regression/suites/Frontend/11-performance-tests.csv) |
+| **Browser Compatibility** | Cross-browser testing | [12-browser-compatibility-tests](regression/suites/Frontend/12-browser-compatibility-tests.csv) |
+| **B2C Features** | Wishlists, compare, reviews, variations | [13-b2c-features-tests](regression/suites/Frontend/13-b2c-features-tests.csv) |
+
+### Backend Suites (regression/suites/Backend/)
+
+| Domain | Description | Suite |
+|--------|-------------|-------|
+| **Platform API** | REST API: Catalog, Pricing, Inventory, Orders | [14-platform-api-tests](regression/suites/Backend/14-platform-api-tests.csv) |
+| **GraphQL xAPI** | xCart, xCatalog, xOrder, xCMS queries/mutations | [15-graphql-xapi-tests](regression/suites/Backend/15-graphql-xapi-tests.csv) |
+| **Catalog** | Catalog management CRUD | [18-catalog-tests](regression/suites/Backend/18-catalog-tests.csv) |
+| **Platform Core** | Core platform operations | [19-platform-core-tests](regression/suites/Backend/19-platform-core-tests.csv) |
+| **Store** | Store configuration and management | [20-store-tests](regression/suites/Backend/20-store-tests.csv) |
+| **Pricing** | Pricing rules and price lists | [21-pricing-tests](regression/suites/Backend/21-pricing-tests.csv) |
+| **Orders** | Order processing and management | [22-orders-tests](regression/suites/Backend/22-orders-tests.csv) |
+| **Customer** | Customer accounts and profiles | [23-customer-tests](regression/suites/Backend/23-customer-tests.csv) |
+| **Inventory** | Inventory and fulfillment centers | [24-inventory-tests](regression/suites/Backend/24-inventory-tests.csv) |
+| **Marketing** | Promotions, coupons, dynamic content | [25-marketing-tests](regression/suites/Backend/25-marketing-tests.csv) |
+| **Notifications** | Notification templates and delivery | [26-notifications-tests](regression/suites/Backend/26-notifications-tests.csv) |
+| **CMS / Page Builder** | Content management and page builder | [27-cms-pagebuilder-tests](regression/suites/Backend/27-cms-pagebuilder-tests.csv) |
+| **Search & Indexing** | Search index configuration | [28-search-indexing-tests](regression/suites/Backend/28-search-indexing-tests.csv) |
+| **Assets** | Digital asset management | [29-assets-tests](regression/suites/Backend/29-assets-tests.csv) |
+| **Core Settings** | Platform settings and configuration | [30-core-settings-tests](regression/suites/Backend/30-core-settings-tests.csv) |
+| **CSV Export/Import** | Bulk data operations | [31-csv-export-import-tests](regression/suites/Backend/31-csv-export-import-tests.csv) |
+| **Shipping** | Shipping methods and rates | [32-shipping-tests](regression/suites/Backend/32-shipping-tests.csv) |
+| **SEO** | SEO settings and metadata | [33-seo-tests](regression/suites/Backend/33-seo-tests.csv) |
+| **Whitelabeling** | Theme and branding customization | [34-whitelabeling-tests](regression/suites/Backend/34-whitelabeling-tests.csv) |
+| **Push Messages** | Push notification management | [35-push-messages-tests](regression/suites/Backend/35-push-messages-tests.csv) |
+| **Image Tools** | Image processing and optimization | [36-image-tools-tests](regression/suites/Backend/36-image-tools-tests.csv) |
 
 ## Commands
 
 ```bash
-npm run env:check      # Verify environment variables
-npm test               # Run Playwright tests
-npm run test:headed    # With visible browser
-npm run test:chrome    # Chrome only
-npm run test:report    # View HTML report
+npm install              # Install dependencies
+npm run env:check        # Verify all required env vars (29 total)
+npm run ci:regression    # Run CI regression via Claude Agent SDK
+npm run ci:smoke         # Run smoke tests only (suite 01)
+npm run ci:critical      # Run critical P0 suites (01, 06, 08, 14)
+npm run ci:frontend      # Run all frontend suites (01-13)
+npm run ci:backend       # Run all backend suites (14+)
+npm run ci:full          # Run full regression (all suites)
+npm run ci:notify        # Send Teams notification
 ```
 
 ## Claude Code Agents
 
-| Agent | Purpose |
-|-------|---------|
-| **qa-lead** | Orchestrates testing, delegates to specialists |
-| **qa-backend-expert** | Platform APIs, GraphQL, Admin SPA |
-| **qa-frontend-expert** | Customer storefront, checkout, mobile |
-| **qa-testing-expert** | Interactive UI testing, debugging |
-| **test-management-specialist** | Test planning, coverage tracking |
-| **ui-ux-expert** | Storybook, accessibility, design system |
+| Agent | Model | Purpose |
+|-------|-------|---------|
+| **qa-lead** | sonnet | Orchestrates testing, delegates to specialists, JIRA workflow |
+| **qa-backend-expert** | opus | Platform APIs, GraphQL xAPI, Admin SPA, background jobs |
+| **qa-frontend-expert** | opus | Customer storefront, checkout, mobile |
+| **qa-testing-expert** | opus | Interactive UI testing, Figma comparison, debugging |
+| **test-management-specialist** | sonnet | Test planning, coverage tracking, TestRail artifacts |
+| **ui-ux-expert** | sonnet | Storybook, WCAG 2.1 AA accessibility, design system |
+| **regression-orchestrator** | sonnet | Parallel regression execution, retries, consolidated reports |
+
+## MCP Servers
+
+| Server | Purpose |
+|--------|---------|
+| **playwright-chrome** | Browser automation with Chromium |
+| **playwright-firefox** | Browser automation with Firefox |
+| **playwright-edge** | Browser automation with Edge |
+| **postman** | API testing - collections, environments, monitors |
+| **Chrome DevTools** | Console logs, network requests, HAR export |
+| **Atlassian** | JIRA integration for test/bug management |
 
 ## Key Files
 
 - [CLAUDE.md](CLAUDE.md) - Project guidance for Claude Code
 - [README.md](README.md) - Quick start guide
 - [sitemap.md](sitemap.md) - B2B storefront structure
+- [config/test-suites.json](config/test-suites.json) - Regression orchestration manifest
 - [tests/INDEX.md](tests/INDEX.md) - Test directory index
-- [regression/mapping.md](regression/mapping.md) - Suite to test mapping
+- [ci/README.md](ci/README.md) - CI regression documentation
+- [test-data/README.md](test-data/README.md) - Test data catalog

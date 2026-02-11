@@ -1,0 +1,236 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+MKT-001,Add content item,Marketing > Content Items,Functional,Critical,5min,Admin logged in to Backend,"1. Navigate to Marketing > Dynamic Content > Content Items
+2. Click 'Add'
+3. Fill in content item details (name, type, HTML)
+4. Click 'Create'","Content item created and displayed in list",C183314,Katalon
+MKT-002,Edit content item (name/description/type/HTML),Marketing > Content Items,Functional,High,5min,"Admin logged in to Backend
+Content item exists [MKT-001]","1. Open content item > Update name > Save
+2. Update description > Save
+3. Add new content type > Save
+4. Update HTML > Save","All changes saved and persisted",C183317 C183321 C183320 C183322,Katalon
+MKT-003,Delete content item and bulk delete,Marketing > Content Items,Functional,High,3min,"Admin logged in to Backend
+Content items exist","1. Delete single content item > Confirm
+2. Select multiple items > Bulk delete > Confirm","Items deleted individually and in bulk",C183316 C183315,Katalon
+MKT-004,Search content items,Marketing > Content Items,Functional,Medium,3min,"Admin logged in to Backend
+Multiple content items exist","1. Enter search term in list view
+2. Verify matching results","Search returns matching content items",C183348,Katalon
+MKT-005,Add/edit/delete content folder,Marketing > Content Folders,Functional,High,5min,Admin logged in to Backend,"1. Add content folder > Fill name and description > Create
+2. Edit folder name > Save
+3. Edit folder description > Save
+4. Delete folder","Folder CRUD operations work correctly",C183502 C183318 C183503 C183504,Katalon
+MKT-006,Add placeholder,Marketing > Placeholders,Functional,Critical,5min,Admin logged in to Backend,"1. Navigate to Marketing > Dynamic Content > Placeholders
+2. Click 'Add'
+3. Fill in placeholder details
+4. Click 'Create'","Placeholder created and displayed in list",C183505,Katalon
+MKT-007,Add/update image to placeholder (drag&drop and upload),Marketing > Placeholders,Functional,High,5min,"Admin logged in to Backend
+Placeholder exists [MKT-006]","1. Add image via drag&drop > Verify
+2. Add image via upload file > Verify
+3. Update image via drag&drop > Verify
+4. Update image via upload > Verify","Images added and updated via both methods",C183332 C183333 C183342 C183343,Katalon
+MKT-008,Edit/delete placeholder and search,Marketing > Placeholders,Functional,High,5min,"Admin logged in to Backend
+Placeholders exist","1. Edit placeholder name > Save
+2. Edit placeholder description > Save
+3. Delete via right-click context menu
+4. Delete via bulk delete
+5. Search placeholders in list","All operations succeed. Search returns matching results.",C183340 C183341 C183338 C183339 C183350,Katalon
+MKT-009,Add/edit/delete placeholder folder,Marketing > Placeholder Folders,Functional,High,5min,Admin logged in to Backend,"1. Add placeholder folder > Fill name and description > Create
+2. Edit folder name > Save
+3. Edit folder description > Save
+4. Delete folder","Folder CRUD operations work correctly",C183334-C183337,Katalon
+MKT-010,Add content publishing,Marketing > Content Publishing,Functional,Critical,5min,Admin logged in to Backend,"1. Navigate to Marketing > Dynamic Content > Content Publishing
+2. Click 'Add'
+3. Fill in publishing details
+4. Click 'Create'","Content publishing created",C184664,None
+MKT-011,Edit content publishing (name/description/store/dates),Marketing > Content Publishing,Functional,High,8min,"Admin logged in to Backend
+Content publishing exists [MKT-010]","1. Edit name > Save
+2. Edit description > Save
+3. Edit store > Save
+4. Edit start date > Save
+5. Edit end date > Save","All changes saved and persisted",C198278-C199250,None
+MKT-012,Add placeholder and content item to publishing,Marketing > Content Publishing,Functional,High,5min,"Admin logged in to Backend
+Content publishing exists [MKT-010]
+Placeholder and content item exist","1. Add placeholder to content publishing
+2. Add content item to content publishing
+3. Save","Placeholder and content item linked to publishing",C183327 C183747,None
+MKT-013,Content publishing Is Active toggle and search,Marketing > Content Publishing,Functional,High,5min,"Admin logged in to Backend
+Content publishing exists [MKT-010]","1. Set Is Active = FALSE > Save > Verify on storefront
+2. Set Is Active = TRUE > Save > Verify on storefront
+3. Search in list view","Is Active toggle controls storefront visibility. Search works.",C183329 C183330 C183352,None
+MKT-014,Delete content publishing,Marketing > Content Publishing,Functional,High,3min,"Admin logged in to Backend
+Content publishings exist","1. Delete via bulk delete > Confirm
+2. Delete on details blade > Confirm","Content publishing deleted via both methods",C198276 C198277,None
+MKT-015,Publishing conditions (add/edit/delete and apply types),Marketing > Publishing Conditions,Functional,High,5min,"Admin logged in to Backend
+Content publishing exists","1. Add publishing condition > Configure > Save
+2. Edit condition > Save
+3. Verify type of applying: 'all' (all conditions must match)
+4. Verify type of applying: 'any' (any condition can match)
+5. Delete condition","Conditions managed correctly. All/Any logic works as expected.",C184654-C184656 C184649 C184650,None
+MKT-016,Geo location and browse behavior conditions,Marketing > Publishing Conditions,Functional,Medium,8min,"Admin logged in to Backend
+Content publishing with conditions","1. Set condition: Browsing from timezone offset > Verify
+2. Set condition: Browsing from zip/postal code > Verify
+3. Set condition: Browsing from city/country/state > Verify
+4. Set condition: Shopper searched for phrase > Verify
+5. Set condition: Current language > Verify","All geo location and browse behavior conditions work correctly",C184651-C184658 C184665 C184666,None
+MKT-017,Shopper profile and catalog conditions,Marketing > Publishing Conditions,Functional,Medium,5min,"Admin logged in to Backend
+Content publishing with conditions","1. Set condition: Shopper age > Verify
+2. Set condition: Shopper gender > Verify
+3. Set condition: User groups > Verify
+4. Set condition: Category > Verify
+5. Set condition: Product > Verify","All shopper profile and catalog conditions work correctly",C184667-C184669 C295625 C295626,None
+MKT-018,xAPI: Published content queries,Marketing > xAPI Dynamic Content,Integration,High,8min,"Admin logged in to Backend
+xAPI endpoint accessible","1. Add published content in admin > Check xAPI query returns data
+2. Add Content Items to publishing > Check query
+3. Set Is Active = False > Check query returns empty
+4. Set Is Active = True > Check query returns data","xAPI queries correctly reflect published content state",C352334-C352337,None
+MKT-019,xAPI: Store/placeholder/content/date changes,Marketing > xAPI Dynamic Content,Integration,Medium,8min,"Admin logged in to Backend
+Published content exists","1. Change StoreId > Check xAPI query
+2. Change Placeholder > Check query
+3. Change Content item > Check query
+4. Set Start Date > Check query
+5. Set End Date > Check query","xAPI queries correctly reflect all configuration changes",C352338-C352345,None
+MKT-020,xAPI: Publishing conditions (category/product/user groups/tags),Marketing > xAPI Dynamic Content,Integration,Medium,8min,"Admin logged in to Backend
+Published content exists","1. Set Category condition > Check xAPI query
+2. Set Product condition > Check query
+3. Set User groups condition > Check query
+4. Assign tag on category > Set for publish content > Check query","xAPI queries correctly filter by conditions and tags",C352341-C352346,None
+MKT-021,Add promotion (name required),Marketing > Promotions,Functional,Critical,5min,Admin logged in to Backend,"1. Navigate to Marketing > Promotions
+2. Click 'Add'
+3. Try to create without name > Verify required validation
+4. Enter name > Create","Name is required. Promotion created with name.",C183346,Katalon
+MKT-022,Edit promotion (name/description),Marketing > Promotions,Functional,High,3min,"Admin logged in to Backend
+Promotion exists [MKT-021]","1. Edit promotion name > Save
+2. Edit promotion description > Save","Changes saved and persisted",C183353 C183354,Katalon
+MKT-023,Delete promotion,Marketing > Promotions,Functional,High,3min,"Admin logged in to Backend
+Promotion exists","1. Select promotion
+2. Delete > Confirm","Promotion deleted",C183347,Katalon
+MKT-024,Promotion Is Active toggle and storefront visibility,Marketing > Promotions,Functional,High,5min,"Admin logged in to Backend and Storefront
+Promotion exists with conditions","1. Set Is Active = TRUE > Check storefront > Promotion visible
+2. Set Is Active = FALSE > Check storefront > Promotion not visible","Active: promotion applied on storefront. Inactive: not applied.",C183355 C183356,Out of priority
+MKT-025,Promotion start/expiration date validation,Marketing > Promotions,Functional,Medium,5min,"Admin logged in to Backend and Storefront
+Promotion exists","1. Set start date in future > Check storefront > Not applied
+2. Set start date in past > Check storefront > Applied
+3. Set expiration in past > Check storefront > Not applied
+4. Set expiration in future > Check storefront > Applied","Start/expiration dates correctly control promotion availability",C183357-C183360,Out of priority
+MKT-026,Promotion store scope,Marketing > Promotions,Functional,Medium,5min,"Admin logged in to Backend
+Promotion exists
+Multiple stores available","1. Set promotion store to non-current store > Verify not visible
+2. Set promotion store to current store > Verify visible","Promotion only visible in assigned store",C183361 C183362,Out of priority
+MKT-027,Visitor targeting (everyone/registered/first-time/user groups),Marketing > Visitor Targeting,Functional,Medium,5min,"Admin logged in to Backend
+Promotion exists","1. Set target: Everyone > Verify all users see promotion
+2. Set target: Registered user > Verify
+3. Set target: First time buyer > Verify
+4. Set target: User groups > Verify","Each visitor targeting condition works correctly",C183365-C183367 C183364,Katalon
+MKT-028,Catalog conditions (category/product/currency),Marketing > Catalog Conditions,Functional,Medium,8min,"Admin logged in to Backend and Storefront
+Promotion exists","1. Set Category condition (fully, without subcategory, without items) > Verify
+2. Set Product condition (SKU, name, full price) > Verify
+3. Set Currency = USD with storefront EUR > Verify not applied
+4. Set Currency = USD with storefront USD > Verify applied","Category, product, and currency conditions filter correctly",C183368-C183373 C184212 C216972,None
+MKT-029,Catalog conditions (InStock and Cart subtotal quantities),Marketing > Catalog Conditions,Functional,Medium,8min,"Admin logged in to Backend and Storefront
+Promotion exists","1. InStock quantity: at least > Verify
+2. InStock quantity: exactly > Verify
+3. InStock quantity: less than or equals > Verify
+4. InStock quantity: between > Verify
+5. Cart subtotal: at least/exactly/less than/between > Verify","All quantity and subtotal conditions work correctly",C183374-C183385,None
+MKT-030,Cart conditions (items/category/entry/payment/shipping),Marketing > Cart Conditions,Functional,Medium,8min,"Admin logged in to Backend and Storefront
+Promotion exists","1. Cart items: at least/exactly/less than/between > Verify
+2. Cart items with excluding items > Verify
+3. Cart items of category > Verify
+4. Cart items of entry > Verify
+5. Payment type condition > Verify
+6. Shipping type condition > Verify","All cart conditions work correctly",C183378-C183381 C184273-C184275 C380806 C380807,None
+MKT-031,Effects: Cart subtotal discounts,Marketing > Effects,Functional,High,5min,"Admin logged in to Backend and Storefront
+Promotion with conditions exists","1. Get $X off cart subtotal > Verify discount
+2. Get X% off cart subtotal not to exceed $Y > Verify discount and cap","Cart subtotal effects applied correctly with caps",C183363 C183386,None
+MKT-032,Effects: Entry and free item discounts,Marketing > Effects,Functional,Medium,8min,"Admin logged in to Backend and Storefront
+Promotion with product conditions exists","1. Get $X off > Verify
+2. Get $X off Y items of entry > Verify
+3. Get X% off not to exceed $Y > Verify
+4. Get X% off for Y items not to exceed $Z > Verify
+5. Get X free items of product > Verify
+6. Complex: For X in every Y items get Z% off > Verify","All entry-level and free item effects work correctly",C183387-C183399,None
+MKT-033,Effects: Shipping and payment method discounts,Marketing > Effects,Functional,Medium,5min,"Admin logged in to Backend and Storefront
+Promotion with shipping/payment conditions","1. Get $X off shipping > Verify
+2. Get X% off shipping not to exceed $Y > Verify
+3. Get $X off payment method > Verify
+4. Get X% off payment method not to exceed $Y > Verify","Shipping and payment method effects applied correctly",C183394-C183397,None
+MKT-034,Stackable Combination Policy,Marketing > Promotion Policies,Functional,Medium,8min,"Admin logged in to Backend
+Two promotions configured","1. Switch to CombineStackable policy (Settings)
+2. Both promos 'Can be combined' > Verify both applied
+3. Promo A combinable + Promo B exclusive > Verify only B
+4. Promo A exclusive + Promo B combinable > Verify only A
+5. Both exclusive > Verify higher priority wins","Stackable combination rules work correctly",C184642-C184647,None
+MKT-035,Best Reward Policy,Marketing > Promotion Policies,Functional,Medium,5min,"Admin logged in to Backend
+Two promotions with different discounts","1. Switch to BestReward policy (Settings)
+2. Apply both promos to cart
+3. Verify promo with biggest discount is applied","Promo with biggest discount applied under Best Reward policy",C184643 C184648,None
+MKT-036,Promotion priority comparison,Marketing > Promotion Policies,Functional,Medium,8min,"Admin logged in to Backend and Storefront
+Two promotions with different priorities","1. Equal priority: Regular user + cart subtotal > X > Verify free shipping
+2. Equal priority: Regular user + cart subtotal < X > Verify no free shipping
+3. Equal priority: First time buyer + cart subtotal > X > Verify discount + free shipping
+4. Priority 1 > Priority 2: First time buyer scenarios > Verify higher priority applied first
+5. Higher priority: Regular user scenarios","Priority ordering correctly determines promotion application order",C204277-C204288,None
+MKT-037,Add coupon with validation,Marketing > Coupons,Functional,Critical,5min,Admin logged in to Backend,"1. Navigate to Marketing > Promotions > Coupon management
+2. Click 'Add'
+3. Try to create without required fields > Verify validation
+4. Fill all fields (code, max uses, max per user)
+5. Click 'Create'","Required field validation works. Coupon created.",C184605 C184622,Katalon
+MKT-038,Edit coupon (code/max uses/max per user),Marketing > Coupons,Functional,High,5min,"Admin logged in to Backend
+Coupon exists [MKT-037]","1. Edit coupon code > Save
+2. Edit 'Maximum uses number' > Save
+3. Edit 'Maximum uses per user' > Save","All changes saved",C184606 C184624 C184625,Katalon
+MKT-039,Delete coupon and search,Marketing > Coupons,Functional,High,3min,"Admin logged in to Backend
+Coupons exist","1. Delete via bulk delete > Confirm
+2. Search for coupon by code","Delete works. Search returns matching coupons.",C184626 C184627,Katalon
+MKT-040,Import coupons (valid and invalid files),Marketing > Coupons,Functional,Medium,8min,"Admin logged in to Backend
+CSV files prepared","1. Import valid file > Add new coupons > Verify created
+2. Import valid file > Update existing coupons > Verify updated
+3. Import invalid: missing coupon_code column > Verify error
+4. Import invalid: missing max_uses_number column > Verify error
+5. Import invalid: wrong delimiter > Verify error
+6. Import invalid: text in max_uses_number > Verify error","Valid imports succeed. Invalid imports show appropriate errors.",C184628-C184633,None
+MKT-041,Personal coupon assignment (organization/user/anonymous),Marketing > Coupons,Functional,High,10min,"Admin logged in to Backend and Storefront
+Personal coupon exists
+Organization with members exists","1. Assign coupon to organization > Check via org member > Verify works
+2. Assign to organization > Check via anonymous > Verify not applied
+3. Assign to organization > Check via non-member > Verify not applied
+4. Assign to user > Check via that user > Verify works
+5. Assign to user > Check via another user > Verify not applied
+6. No assignment > Check via various users > Verify behavior","Personal coupons correctly restricted to assigned organizations/users",C359150-C359158,None
+MKT-042,Coupon applied in storefront,Marketing > Coupon Logic,Integration,High,5min,"Admin logged in to Backend and Storefront
+Coupon with promotion exists","1. Add coupon code in storefront cart
+2. Verify promotion is applied","Coupon activates promotion on storefront",C184635,None
+MKT-043,Coupon expiration and usage limits,Marketing > Coupon Logic,Integration,Medium,8min,"Admin logged in to Backend and Storefront
+Coupon exists","1. Set expiration in past > Try on storefront > Verify not applied
+2. Set expiration in future > Verify applied
+3. Set uses < max uses > Verify applied
+4. Set uses >= max uses > Verify not applied
+5. Set uses per user > max per user > Verify not applied
+6. Set uses per user < max per user > Verify applied","Expiration and usage limits correctly control coupon availability",C184636-C184641,None
+MKT-044,Multi-store promotion selection and access,Marketing > Multi-Store,Functional,Medium,5min,"Admin logged in to Backend
+Multiple stores exist","1. Select 2 stores for promotion > Verify
+2. Change promo with access to 1 store > Verify restrictions
+3. Change promo with access to both stores > Verify full access","Multi-store promotion access controlled correctly",C380797-C380799,None
+MKT-045,Gift availability rules,Marketing > Gifts,Functional,Medium,5min,"Admin logged in to Backend and Storefront
+Gift promotion configured","1. Set gift product out of stock > Verify gift not available
+2. Set Can be purchased = false > Verify gift not available
+3. Set Visible = false > Verify gift not available","Gift availability respects stock, purchasability, and visibility flags",C328341-C328343,None
+MKT-046,Permission > Access,Marketing > Permissions,Security,High,5min,"Role_1 with marketing:access
+Role_1 assigned to User_1","1. Login as User_1
+2. Open Marketing module","Marketing module accessible",C241402,None
+MKT-047,Permission > Read,Marketing > Permissions,Security,High,5min,"Role_1 with marketing:read, marketing:access
+Role_1 assigned to User_1","1. Login as User_1
+2. View marketing entities","Marketing entities visible",C241407,None
+MKT-048,Permission > Create,Marketing > Permissions,Security,High,5min,"Role_1 with marketing:create, marketing:read, marketing:access
+Role_1 assigned to User_1","1. Login as User_1
+2. Create new promotion/content","Entity created successfully",C241408,None
+MKT-049,Permission > Update,Marketing > Permissions,Security,High,5min,"Role_1 with marketing:update, marketing:read, marketing:access
+Role_1 assigned to User_1","1. Login as User_1
+2. Edit existing entity > Save","Changes saved",C241409,None
+MKT-050,Permission > Delete,Marketing > Permissions,Security,High,5min,"Role_1 with marketing:delete, marketing:read, marketing:access
+Role_1 assigned to User_1","1. Login as User_1
+2. Delete marketing entity","Entity deleted",C241410,None
+MKT-051,Settings tooltips,Marketing > Settings,Functional,Medium,3min,Admin logged in to Backend,"1. Open Settings > Marketing blade
+2. Verify all tooltips folded
+3. Click tooltip for field1 > Verify unfolds
+4. Click tooltip for field2 > Verify field2 unfolds, field1 folds
+5. Click Hide > Verify all fold","Tooltips behave correctly",C338431,None

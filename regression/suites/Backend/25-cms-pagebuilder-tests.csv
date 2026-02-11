@@ -1,0 +1,146 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+CMS-001,Create new page in Page Builder,Page Management,Functional,Critical,3m,Admin logged in; CMS module installed,"1. Navigate to Content > Pages
+2. Click Add button
+3. Enter page name and permalink
+4. Select language
+5. Click Save","New page created with Draft status; appears in page list",C415417 C221162,Not Automated
+CMS-002,Edit created page,Page Management,Functional,High,3m,Page exists in Draft status,"1. Open existing page from list
+2. Edit Name and Permalink fields
+3. Click Save","Page updated successfully with new values",C257813,Not Automated
+CMS-003,Preview page,Page Management,Functional,High,3m,Page exists with content,"1. Open page
+2. Click Preview","Page preview displayed correctly",C221163,Not Automated
+CMS-004,Open page in designer (Builder),Page Management,Functional,High,3m,Page exists; Builder configured,"1. Open page
+2. Click Open Designer button","Builder/Designer opens for page editing",C221164 C415406,Not Automated
+CMS-005,Archive page,Page Management,Functional,High,2m,Page exists in Draft or Published status,"1. Open page
+2. Click Archive button
+3. Confirm","Page status changes to Archived",C415418,Not Automated
+CMS-006,Publish draft page,Status Transitions,Functional,Critical,3m,Page exists in Draft status,"1. Open draft page
+2. Click Publish button","Page status transitions from Draft to Published",C415431 C415434,Not Automated
+CMS-007,Publish to Archive transition,Status Transitions,Functional,High,2m,Page is Published,"1. Open published page
+2. Click Archive","Page status transitions from Published to Archived",C415432,Not Automated
+CMS-008,Draft to Archive transition,Status Transitions,Functional,Medium,2m,Page is in Draft status,"1. Open draft page
+2. Click Archive","Page status transitions from Draft to Archived",C415433,Not Automated
+CMS-009,Verify Draft status badge in grid,Grid View,Functional,Medium,2m,Draft page exists,"1. Navigate to Pages list
+2. Locate draft page in grid","Draft badge displayed with correct color styling",C415407 C415436,Not Automated
+CMS-010,Verify Published status badge in grid,Grid View,Functional,Medium,2m,Published page exists,"1. Navigate to Pages list
+2. Locate published page","Published badge displayed with correct color styling",C415408 C415437,Not Automated
+CMS-011,Verify Archived status badge in grid,Grid View,Functional,Medium,2m,Archived page exists,"1. Navigate to Pages list
+2. Locate archived page","Archived badge displayed with correct color styling",C415409 C415438,Not Automated
+CMS-012,Verify Scheduled badge in grid,Grid View,Functional,Medium,2m,Page with scheduled dates exists,"1. Navigate to Pages list
+2. Locate scheduled page","Scheduled badge displayed alongside status badge",C415410 C415456,Not Automated
+CMS-013,Verify Personalized badge in grid,Grid View,Functional,Medium,2m,Page with visibility/user group restrictions exists,"1. Navigate to Pages list
+2. Locate personalized page","Personalized badge displayed alongside status badge",C415411 C415457,Not Automated
+CMS-014,Grid columns display correctly,Grid View,Functional,Medium,2m,Multiple pages exist,"1. Navigate to Pages list
+2. Verify all columns visible","Grid displays name, status, badges, dates correctly",C415412,Not Automated
+CMS-015,Checkbox selection and bulk selection,Grid View,Functional,Medium,2m,Multiple pages exist,"1. Select individual page checkboxes
+2. Use bulk select checkbox","Individual and bulk selection works; totals counter updates",C415414 C415415 C415416,Not Automated
+CMS-016,Search functionality in page list,Grid View,Functional,High,2m,Multiple pages exist,"1. Enter search term in search field
+2. Verify results","Page list filtered by search term",C415420,Not Automated
+CMS-017,Status filter - Draft pages only,Status Filters,Functional,High,2m,Pages in various statuses exist,"1. Click Draft filter in navigation
+2. Verify counter and list","Only draft pages shown; counter matches list count",C415379 C415385,Not Automated
+CMS-018,Status filter - Active (Published) pages only,Status Filters,Functional,High,2m,Published pages exist,"1. Click Active filter in navigation
+2. Verify counter and list","Only published/active pages shown; counter matches",C415381 C415387,Not Automated
+CMS-019,Status filter - Pending (Scheduled) pages only,Status Filters,Functional,Medium,2m,Scheduled pages exist,"1. Click Pending filter in navigation","Only scheduled pages shown; counter matches",C415380 C415386,Not Automated
+CMS-020,Status filter - Archived pages only,Status Filters,Functional,Medium,2m,Archived pages exist,"1. Click Archived filter in navigation","Only archived pages shown; counter matches",C415382 C415388,Not Automated
+CMS-021,Counters update when page status changes,Status Filters,Functional,Medium,3m,Draft page exists,"1. Note current counter values
+2. Publish a draft page
+3. Check counters","Draft counter decrements; Active counter increments",C415384,Not Automated
+CMS-022,Page blade - Basic information fields,Page Configuration,Functional,High,2m,Page blade is open,"1. Open a page
+2. Verify Basic information section","Name, Permalink (with read-only domain), Language dropdown visible",C415391 C415392 C415393 C415394,Not Automated
+CMS-023,Scheduling section - set start and end dates,Page Configuration,Functional,High,3m,Page exists,"1. Open page
+2. Expand Scheduling section
+3. Set Start date via datepicker
+4. Set End date via datepicker
+5. Save","Scheduling dates saved; Scheduled badge appears",C415395 C415396 C415397 C415398,Not Automated
+CMS-024,Personalization - visibility toggle,Page Configuration,Functional,High,3m,Page exists,"1. Open page
+2. Expand Personalization section
+3. Toggle Visibility OFF
+4. Save","Visibility setting saved; page restricted to registered users only",C415399 C415401,Not Automated
+CMS-025,Personalization - User groups restriction,Page Configuration,Functional,High,3m,User groups exist; page exists,"1. Open page
+2. Expand Personalization section
+3. Select User groups from dropdown
+4. Save","User group restriction saved; Personalized badge appears",C415402 C415493 C415494,Not Automated
+CMS-026,Personalization - Organization restriction,Page Configuration,Functional,High,3m,Organizations exist; page exists,"1. Open page
+2. Expand Personalization section
+3. Select Organization from dropdown
+4. Save","Organization restriction saved; page accessible only to authorized org users",C415403 C415465 C415466,Not Automated
+CMS-027,Published page accessible on frontend (correct language),Storefront Verification,E2E,Critical,5m,Page published with English content,"1. Navigate to frontend URL with correct language prefix
+2. Access page by permalink","Page content displayed correctly on frontend",C415460,Not Automated
+CMS-028,Published page 404 on frontend - wrong language,Storefront Verification,E2E,Medium,3m,Page published in English only,"1. Navigate to frontend with different language prefix
+2. Access page by permalink","404 page returned for wrong language",C415461,Not Automated
+CMS-029,Draft page NOT accessible on frontend,Storefront Verification,E2E,High,3m,Page in Draft status,"1. Navigate to frontend
+2. Attempt to access draft page URL","Page not accessible; 404 or redirect returned",C415474,Not Automated
+CMS-030,Archived page NOT accessible on frontend,Storefront Verification,E2E,High,3m,Page in Archived status,"1. Navigate to frontend
+2. Attempt to access archived page URL","Page not accessible; 404 or redirect returned",C415476,Not Automated
+CMS-031,Published page appears in search,Storefront Verification,E2E,High,3m,Published page exists,"1. Navigate to frontend
+2. Search for page title","Published page appears in search results under PAGES section",C415473 C415497,Not Automated
+CMS-032,Draft page NOT in search results,Storefront Verification,E2E,Medium,3m,Draft page exists,"1. Search for draft page title on frontend","Draft page does not appear in search results",C415475,Not Automated
+CMS-033,Scheduled page with future start date - not accessible,Storefront Verification,E2E,Medium,3m,Page scheduled with future start date,"1. Navigate to frontend
+2. Attempt to access scheduled page URL","Page not accessible before start date",C415490,Not Automated
+CMS-034,Scheduled page within valid date range - accessible,Storefront Verification,E2E,Medium,3m,Page scheduled with current date in range,"1. Navigate to frontend
+2. Access scheduled page URL","Page accessible within valid date range",C415492,Not Automated
+CMS-035,Search returns only current language pages,Storefront Verification,E2E,Medium,3m,Pages in multiple languages exist,"1. Search on frontend in specific language context","Only pages matching current language returned",C415463 C415464,Not Automated
+CMS-036,Add section to page,Designer Sections,Functional,Critical,3m,Page open in designer/builder,"1. Open page designer
+2. Click Add Section
+3. Select section type
+4. Configure content
+5. Save","Section added to page successfully",C221165,Not Automated
+CMS-037,Copy section in page,Designer Sections,Functional,Medium,2m,Page has at least one section,"1. Open page designer
+2. Click Copy on existing section","Section duplicated in page",C221166,Not Automated
+CMS-038,Remove section from page,Designer Sections,Functional,High,2m,Page has at least one section,"1. Open page designer
+2. Click Remove on section
+3. Confirm","Section removed from page",C221167,Not Automated
+CMS-039,Simple text block - add and preview,Content Blocks,Functional,High,3m,Page open in designer,"1. Add Simple Text section
+2. Enter text content in General tab
+3. Configure Settings tab
+4. Preview","Simple text block rendered correctly with configured settings",C221889 C221890 C221056,Not Automated
+CMS-040,Simple image block - add and preview,Content Blocks,Functional,High,3m,Page open in designer,"1. Add Simple Image section
+2. Upload image in General tab
+3. Configure Settings tab
+4. Preview","Simple image block rendered correctly",C221968 C221969 C221060,Not Automated
+CMS-041,Text over image block - add and preview,Content Blocks,Functional,High,3m,Page open in designer,"1. Add Text Over Image section
+2. Configure text and image
+3. Preview","Text over image block rendered correctly",C221970 C221971 C221054,Not Automated
+CMS-042,Cards list block - add and preview,Content Blocks,Functional,Medium,3m,Page open in designer,"1. Add Cards List section
+2. Add card items
+3. Preview","Cards list block rendered with all items",C221972 C221973 C221094,Not Automated
+CMS-043,Two columns list block - add and preview,Content Blocks,Functional,Medium,3m,Page open in designer,"1. Add Two Columns section
+2. Configure both columns
+3. Preview","Two columns layout rendered correctly",C221974 C221975 C221057,Not Automated
+CMS-044,Video and text block - add and preview,Content Blocks,Functional,Medium,3m,Page open in designer,"1. Add Video and Text section
+2. Configure video URL and text
+3. Preview","Video and text block rendered correctly",C221976 C221977,Not Automated
+CMS-045,Page builder field types - text and rich text,Field Types,Functional,High,3m,Section editing open,"1. Use text field to enter content
+2. Use rich text editor with formatting
+3. Use image upload field
+4. Use select/dropdown field","All field types function correctly in page builder",C221068 C221069 C221070 C221072,Not Automated
+CMS-046,Color preset - Blue theme,Design Presets,Functional,Medium,2m,CMS designer open,"1. Select Blue preset
+2. Preview page","Blue color preset applied to page elements",C221107,Not Automated
+CMS-047,Color preset - Dark theme,Design Presets,Functional,Medium,2m,CMS designer open,"1. Select Dark preset
+2. Preview page","Dark color preset applied to page elements",C221108,Not Automated
+CMS-048,Custom colors - background and text,Design Presets,Functional,Medium,3m,CMS designer open,"1. Navigate to Colors > General
+2. Set custom Background color
+3. Set custom Text color
+4. Set custom Headings color
+5. Preview","Custom colors applied to page elements",C221110 C221111 C221112,Not Automated
+CMS-049,Custom colors - links buttons and borders,Design Presets,Functional,Medium,3m,CMS designer open,"1. Set custom Links color
+2. Set custom Button color
+3. Set custom Button text color
+4. Set custom Borders color
+5. Preview","Custom link/button/border colors applied correctly",C221113 C221114 C221115 C221117,Not Automated
+CMS-050,Section settings - Image with text,Section Settings,Functional,Medium,3m,Image with text section exists,"1. Open Image with text section
+2. Configure all settings options
+3. Preview","Image with text section renders with configured settings",C221075 C221053 C221092,Not Automated
+CMS-051,Multiple badge combinations,Badge Display,Functional,Medium,3m,Pages with various status/configuration combinations,"1. Create pages with: Published+Scheduled, Published+Personalized, Published+Scheduled+Personalized
+2. Check grid view","Multiple badges display correctly in combination",C415441 C415442 C415443 C415444,Not Automated
+CMS-052,Partial search match and case-insensitive search,Search,Functional,Medium,3m,Multiple pages exist,"1. Search with partial page name
+2. Search with different case
+3. Search with special characters","Partial match returns results; search is case-insensitive",C415488 C415489 C415487,Not Automated
+CMS-053,Page Builder Admin shows correct frontend URL,Admin Integration,Functional,Medium,2m,Published page exists,"1. Open page in admin
+2. Check frontend URL display","Frontend URL displayed correctly in admin matches actual page URL",C415499,Not Automated
+CMS-054,Cross-browser compatibility - Chrome and Edge,Cross-Browser,Compatibility,Medium,5m,CMS module accessible,"1. Open CMS page management in Chrome
+2. Verify all features work
+3. Repeat in Edge","All CMS features functional in Chrome and Edge browsers",C415427 C415428,Not Automated
+CMS-055,Login and user profile in Page Builder admin,Authentication,Functional,Medium,3m,User credentials available,"1. Login to Page Builder admin with valid credentials
+2. Verify user profile display
+3. Check logo display","Login successful; user profile and logo displayed correctly",C415421 C415425 C415426,Not Automated

@@ -1,0 +1,92 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+SRCH-001,Search by full product name (Elastic),Elastic Search,Functional,Critical,3m,Elastic search configured; products indexed,"1. Navigate to Admin > Search
+2. Search by full product name","Product found and displayed in results",C139043,Not Automated
+SRCH-002,Search by partial input (few symbols),Elastic Search,Functional,High,2m,Elastic search configured; products indexed,"1. Search by first few characters of product name","Matching products returned in results",C139044,Not Automated
+SRCH-003,Search by multiple words,Elastic Search,Functional,High,2m,Products indexed,"1. Search using multiple words from product name/description","Products matching multi-word query returned",C139046,Not Automated
+SRCH-004,Search with incorrect value - no results,Elastic Search,Negative,Medium,2m,Products indexed,"1. Search with random/incorrect text","No results returned; appropriate empty state shown",C139045,Not Automated
+SRCH-005,Lucene search by full product name,Lucene Search,Functional,Medium,3m,Lucene search provider configured,"1. Configure Lucene search provider
+2. Search by full product name","Product found using Lucene search",C180636,Not Automated
+SRCH-006,Lucene search by partial input,Lucene Search,Functional,Medium,2m,Lucene search configured,"1. Search by first few characters","Matching products returned via Lucene",C180637,Not Automated
+SRCH-007,Run index build,Index Management,Functional,Critical,5m,Search module installed; products exist,"1. Navigate to Search > Index
+2. Click Build/Run Index
+3. Wait for completion","Index built successfully; status shows completed",C327396,Katalon
+SRCH-008,Rebuild index - both indices built,Index Management,Functional,High,5m,Blue-green indexing enabled,"1. Navigate to Search Index
+2. Click Rebuild
+3. Verify both active and inactive indices built","Both indices built successfully; statuses updated",C327397,Not Automated
+SRCH-009,Rebuild index - only active index built,Index Management,Functional,Medium,3m,Blue-green indexing enabled,"1. Build only the active index
+2. Verify status","Active index built; inactive index remains unchanged",C329242,Not Automated
+SRCH-010,Swap indexes (blue-green),Index Management,Functional,High,3m,Both indices built,"1. Navigate to Search Index
+2. Click Swap Indexes
+3. Verify swap completed","Active and inactive indices swapped successfully",C327398,Not Automated
+SRCH-011,Cancel index build,Index Management,Functional,Medium,3m,Index build in progress,"1. Start index build
+2. Click Cancel","Index build cancelled; partial state handled gracefully",C329028,Not Automated
+SRCH-012,Backup indices - select all,Index Management,Functional,Medium,3m,Multiple indices exist,"1. Navigate to Search Index
+2. Select All indices
+3. Click Backup","All selected indices backed up successfully",C329230,Not Automated
+SRCH-013,Backup indices - select one,Index Management,Functional,Medium,2m,Multiple indices exist,"1. Select single index
+2. Click Backup","Selected index backed up successfully",C329231,Not Automated
+SRCH-014,Refresh search index blade after build,Index Management,Functional,Medium,2m,Index build completed,"1. Build index
+2. Click Refresh","Index blade refreshed showing updated status and counts",C338456,Not Automated
+SRCH-015,Create product then refresh index,Index Management,Functional,High,3m,Products module available,"1. Create new product
+2. Navigate to Search Index
+3. Refresh","New product reflected in index after rebuild/refresh",C338458,Not Automated
+SRCH-016,Delete product then rebuild index,Index Management,Functional,High,3m,Product exists and is indexed,"1. Delete a product
+2. Rebuild index
+3. Search for deleted product","Deleted product no longer appears in search results",C338460,Not Automated
+SRCH-017,Cancel indexation task in progress,Index Management,Functional,Medium,3m,Index build in progress,"1. Start full indexation
+2. Click Cancel task","Indexation cancelled; system stable",C338459,Not Automated
+SRCH-018,Swap indexes then build and refresh,Index Management,Functional,Medium,5m,Blue-green indices available,"1. Swap indexes
+2. Build index
+3. Refresh blade","Index swap and rebuild completes correctly; blade shows updated state",C338467,Not Automated
+SRCH-019,Full indexation (Elastic Search module),Elastic Search Module,Functional,Critical,5m,Elastic Search module installed,"1. Navigate to Search > Elastic Search
+2. Run full indexation
+3. Verify completion","Full indexation completed; all entities indexed",C217134,Not Automated
+SRCH-020,Index concrete entity,Elastic Search Module,Functional,High,3m,Elastic Search module installed; specific entity exists,"1. Select specific entity type (e.g. Product)
+2. Run indexation for that entity","Only selected entity type indexed",C217147,Not Automated
+SRCH-021,Index update on entity changes,Elastic Search Module,Functional,High,3m,Entities indexed; changes pending,"1. Modify an entity (e.g. update product)
+2. Run incremental index update","Changed entities re-indexed correctly",C217148,Not Automated
+SRCH-022,Build index in Elastic Search module,Elastic Search Module,Functional,High,3m,Elastic Search configured,"1. Navigate to Elastic Search
+2. Click Build","Index built successfully",C217785,Not Automated
+SRCH-023,Delete and rebuild index,Elastic Search Module,Functional,High,3m,Index exists,"1. Click Delete + Build
+2. Wait for completion","Old index deleted; new index built from scratch",C217786,Not Automated
+SRCH-024,Cancel Elastic Search build,Elastic Search Module,Functional,Medium,2m,Build in progress,"1. Start build
+2. Click Cancel","Build cancelled gracefully",C217787,Not Automated
+SRCH-025,Index product and search,Elastic Search Module,Functional,High,3m,Products exist,"1. Index products
+2. Search for a specific product by name","Product found in search results after indexation",C217788 C217793,Not Automated
+SRCH-026,Filtered search for products,Elastic Search Module,Functional,High,3m,Products indexed with various attributes,"1. Index products
+2. Perform filtered search (e.g. by category or attribute)","Products matching filter criteria returned",C217794,Not Automated
+SRCH-027,Index and search contacts,Elastic Search Module,Functional,Medium,3m,Contacts exist in system,"1. Index contacts
+2. Search for a specific contact","Contact found in search results",C217795 C217796,Not Automated
+SRCH-028,Apply single TermFilter,Search Filters API,Functional,High,3m,Products indexed; API accessible,"1. Execute search with single TermFilter parameter
+2. Verify results","Results filtered by single term correctly",C406817,Not Automated
+SRCH-029,Apply multiple TermFilters (AND logic),Search Filters API,Functional,High,3m,Products indexed with multiple attributes,"1. Execute search with multiple TermFilter parameters
+2. Verify AND logic applied","Only products matching ALL term filters returned",C406818,Not Automated
+SRCH-030,Apply OrFilter,Search Filters API,Functional,Medium,3m,Products indexed,"1. Execute search with OrFilter
+2. Verify results","Products matching ANY of the OR conditions returned",C406819,Not Automated
+SRCH-031,Apply AndFilter with nested OrFilter,Search Filters API,Functional,Medium,3m,Products indexed,"1. Execute search with AndFilter containing nested OrFilter
+2. Verify results","Complex filter logic applied correctly",C406820,Not Automated
+SRCH-032,Apply NotFilter,Search Filters API,Functional,Medium,3m,Products indexed,"1. Execute search with NotFilter
+2. Verify results","Products NOT matching the filter criteria returned",C406821,Not Automated
+SRCH-033,Apply RangeFilter (greater than),Search Filters API,Functional,Medium,3m,Products with numeric properties indexed,"1. Execute search with RangeFilter (greater than value)
+2. Verify results","Only products with property value greater than threshold returned",C406822,Not Automated
+SRCH-034,Apply RangeFilter (between),Search Filters API,Functional,Medium,3m,Products with numeric properties indexed,"1. Execute search with RangeFilter (lower and upper bounds)
+2. Verify results","Only products with property value within range returned",C406823,Not Automated
+SRCH-035,Filter on nested property,Search Filters API,Functional,Medium,3m,Products with nested properties indexed,"1. Execute search filtering on nested property path
+2. Verify results","Filter applied correctly on nested property",C406824,Not Automated
+SRCH-036,Settings - token filter and gram configuration,Settings,Functional,Medium,3m,Admin logged in,"1. Navigate to Settings > Search
+2. Configure Token Filter
+3. Set Min Gram and Max Gram values
+4. Save","Search settings saved; tokenization uses configured gram values",C242224 C242225 C242226,Not Automated
+SRCH-037,Settings - maximum fields in index,Settings,Functional,Medium,2m,Admin logged in,"1. Navigate to Settings > Search
+2. Set maximum number of fields in an index
+3. Save","Setting saved; index respects field limit",C242231,Not Automated
+SRCH-038,Settings - schedule indexing jobs,Settings,Functional,Medium,3m,Admin logged in,"1. Navigate to Settings > Search
+2. Enable Schedule Indexing Jobs
+3. Set cron expression
+4. Save","Indexing job scheduled with configured cron expression",C242232 C242234,Not Automated
+SRCH-039,Settings - enable scale-out indexing,Settings,Functional,Medium,3m,Admin logged in; multi-instance capable,"1. Enable scale-out indexing
+2. Set maximum queued indexing jobs
+3. Save","Scale-out indexing enabled with configured job limit",C242235 C242236,Not Automated
+SRCH-040,Scalable indexation verification,Scalable Indexation,Performance,Low,10m,Multi-instance configuration; large dataset,"1. Configure scalable indexation partitions
+2. Run indexation with x2 scaling
+3. Verify product schema and partitioning","Scalable indexation completes correctly; products searchable across partitions",C356720 C356721 C356722,Not Automated

@@ -1,0 +1,607 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+STORE-001,View Store Details,Store > Management,CRUD,High,3m,"Admin logged in, Store exists in system","1. Navigate to More > Stores
+2. Select existing store and click on it","- System displays Store details blade in editable format
+- All widgets visible (Settings, Aggregation properties, Assets, SEO, etc.)
+- Store information displayed correctly",C169626,None
+STORE-002,Add New Store,Store > Management,CRUD,Critical,5m,"Admin logged in, Stores Module installed, At least one catalog exists","1. Navigate to More > Stores
+2. Click Add button
+3. Fill required fields: Code (alphanumeric no spaces), Name, Select Catalog from dropdown, Select Default language, Select Default currency, Select State
+4. Click Create","- System opens Stores module with active Add button
+- New Store blade displays with disabled Create button initially
+- Code field validates alphanumeric without spaces
+- Name field is required
+- All dropdowns populated correctly
+- Create button becomes active after required fields filled
+- New store created and displayed in Stores list
+- Store details displayed in editable format",C169627,None
+STORE-003,Edit Store Details - Basic Fields,Store > Management,CRUD,High,10m,"Admin logged in, Store exists in system","1. Go to More > Stores > Select store and click
+2. Edit Store name (alphanumeric validation)
+3. Edit Catalog from dropdown
+4. Edit State from dropdown
+5. Enter Store URL (optional field)
+6. Edit Default language from dropdown
+7. Click Save","- System opens Store details in editable format
+- Code is label (not editable)
+- Store name accepts alphanumeric only
+- Catalog dropdown shows available catalogs
+- State dropdown shows available states
+- Store URL field accepts valid URLs
+- Default language updates correctly
+- All changes saved successfully",C169631,None
+STORE-004,Edit Store Details - Languages,Store > Management,CRUD,High,8m,"Admin logged in, Store exists in system","1. Open Store details
+2. Add new language (follow Add new state process)
+3. Edit Additional language - select from dropdown
+4. Select multiple additional languages
+5. Delete languages using X icon
+6. Save changes","- New language added to list and dropdown
+- Additional language selected and displayed
+- Multiple languages can be selected
+- Languages deleted successfully and removed from field
+- All changes persist after save",C169631,None
+STORE-005,Edit Store Details - Currencies,Store > Management,CRUD,High,10m,"Admin logged in, Store exists in system","1. Open Store details
+2. Edit Default currency from dropdown
+3. Click Edit icon next to Default currency
+4. Edit currency details (Code, Name, Exchange rate, Symbol, Custom formatting)
+5. Save currency changes
+6. Add new Default currency: Click Edit icon > Add > Fill form (Code required, Name required, Is primary disabled) > Create
+7. Edit Additional currency - select from dropdown (multiple selection possible)
+8. Add new additional currency","- Default currency updates correctly
+- Currency details blade opens with all fields
+- Currency Code and Name are required
+- Is primary disabled by default
+- Exchange rate, Symbol, Custom formatting are optional
+- New currency created and available for selection
+- Multiple additional currencies can be selected
+- New currencies saved and displayed correctly",C169631,None
+STORE-006,Edit Store Details - Linked Stores,Store > Management,CRUD,Medium,5m,"Admin logged in, Multiple stores exist in system","1. Open Store details
+2. Click Linked stores field
+3. Select one or more stores from dropdown
+4. Click Delete icon to remove linked stores
+5. Save changes","- Linked stores field displays dropdown with available stores
+- Multiple stores can be selected
+- Selected stores displayed in field
+- Delete icon removes linked store from field
+- Changes saved successfully",C169631,None
+STORE-007,Delete Store,Store > Toolbar,CRUD,Critical,3m,"Admin logged in, Store_1 created","1. Navigate to More > Stores
+2. Select Store_1
+3. Click Delete button
+4. Confirm deletion","- Delete button visible and active
+- Confirmation dialog appears
+- Store_1 deleted after confirmation
+- Store removed from list",C237895,None
+STORE-008,Open Store in Browser,Store > Toolbar,Functional,Medium,2m,"Admin logged in, Admin on Store blade, Store_1 created","1. Open Store details for Store_1
+2. Click Open in Browser button","- Admin redirected to Store_1 storefront page in new browser tab
+- Store displays correctly",C237773,None
+STORE-009,Save Store Changes,Store > Toolbar,CRUD,High,2m,"Admin logged in, Admin on Store blade, Store_1 created","1. Open Store_1 details
+2. Make changes to store settings
+3. Click Save button","- Save button becomes active after changes
+- Changes in Store_1 saved successfully
+- Updated data displayed correctly",C237892,None
+STORE-010,Reset Store Changes,Store > Toolbar,Functional,Medium,2m,"Admin logged in, Admin on Store blade, Store_1 created","1. Open Store_1 details
+2. Make changes to store settings
+3. Click Reset button","- Reset button visible and active
+- Changes not saved after reset
+- Initial data restored and displayed",C237894,None
+STORE-011,Edit Aggregation Properties - Add/Remove Properties,Store > Aggregation Properties,Configuration,High,8m,"Admin logged in, Store exists in system","1. Open Store details > Click Aggregation properties widget
+2. Select property from left list and click to add
+3. Click X icon on Selected properties to remove
+4. Click OK to save","- Filtering properties blade opens with Available and Selected properties lists
+- Selected property moves to Selected properties list
+- Property removed from Selected list when deleted
+- Changes saved successfully",C169669,None
+STORE-012,Edit Aggregation Properties - Property Details,Store > Aggregation Properties,Configuration,High,10m,"Admin logged in, Store exists, Aggregation properties configured","1. Open Aggregation properties
+2. Select property from Selected properties list
+3. Review property details: Name (label), Aggregation type dropdown (Attribute/Range), Aggregation size (Attribute only), Allowed values
+4. Enter new value in Allowed values > Click blue field
+5. Delete existing values using X icon
+6. Click OK to save
+7. Make changes and click Cancel > Confirm cancellation","- Property details blade opens in editable format
+- Property name is label (not editable)
+- Aggregation type dropdown shows Attribute and Range
+- Aggregation size visible only for Attribute type
+- Allowed values editable (add/remove)
+- New value added successfully
+- Existing values deleted
+- Changes saved on OK
+- Cancel shows warning message
+- Changes not saved on Cancel confirmation",C169669,None
+STORE-013,Edit Aggregation Properties - Edit Attribute with Dictionary,Store > Aggregation Properties,Configuration,High,8m,"Admin logged in, Brand property exists with dictionary values","1. Go to Store > Aggregation properties > Select Brand > Edit icon
+2. Click Add button in Allowed values > Select value_1 from dropdown
+3. Remove value_1 using X icon
+4. Click Add > Check value_1 in dictionary
+5. Add all values from dictionary
+6. Remove one value
+7. Remove all values > Save","- Property details blade opens with Aggregation type Attribute
+- Allowed values shows Add button
+- Value_1 added from dictionary dropdown
+- Value_1 removed from field
+- Value_1 available in dictionary
+- All dictionary values can be added
+- Add button disappears when all values added
+- Add button reappears after removing value
+- All values removed successfully",C342153,None
+STORE-014,Edit Aggregation Properties - Edit PriceRange,Store > Aggregation Properties,Configuration,High,8m,"Admin logged in, Store exists, Price property exists","1. Go to Store > Aggregation properties > Select Price property > Edit icon
+2. Click Add button in Price range bounds > Select value from dropdown
+3. Remove value_1 using X icon > Click OK
+4. Remove all values > Save","- Property details blade opens with Aggregation type Range
+- Price range bounds field editable
+- Add button displays dropdown with available values
+- New value added to field
+- Value_1 removed from field
+- All changes saved
+- All values removed successfully
+- Add button displayed after deleting all values",C342152,None
+STORE-015,Edit Aggregation Properties - Value Mapping,Store > Aggregation Properties,Configuration,Medium,5m,"Admin logged in, Store exists","1. Open Aggregation properties
+2. Navigate to Value mapping section
+3. Configure value mappings as needed","- Value mapping section accessible
+- Mapping configuration functional
+- Changes saved correctly",C398720,None
+STORE-016,Edit Assets - Upload and Manage,Store > Assets,Functional,Medium,8m,"Admin logged in, Store created","1. Go to More > Stores > Select store
+2. Click Assets widget
+3. Click Upload button
+4. Drag and drop file into upload area
+5. Browse and upload file using Upload icon
+6. Enter file URL in field and click + button
+7. Select asset and click Delete > Confirm deletion","- Asset Management blade displays
+- Refresh, New folder, Upload buttons active
+- Delete button disabled until asset selected
+- Existing assets displayed if available
+- Asset upload blade opens with drag-drop, browse, URL options
+- Dragged file added to asset list
+- Browsed file uploaded and added to list
+- URL file added to asset list
+- Delete confirmation message appears
+- Asset removed from list after confirmation",C169670,None
+STORE-017,Edit SEO - View and Manage SEOs,Store > SEO,Configuration,High,10m,"Admin logged in, Store created","1. Go to More > Stores > Select store
+2. Click SEO widget
+3. Click on SEO from list to view details
+4. Edit SEO details and click OK
+5. Click Add button
+6. Fill form: Is Active (on by default), Language (dropdown), URL keyword (required), Page title (optional), Meta description (optional), Image alt text (optional)
+7. Click OK to create
+8. Select SEO and click Delete > Confirm deletion","- Manage SEOs blade opens with SEO list
+- Add button active, Delete disabled by default
+- SEO details blade opens in editable format
+- Cancel active, OK disabled by default
+- SEO details updated successfully
+- New SEO blade displays with all fields
+- Is Active switched on by default
+- Language selectable from dropdown
+- URL keyword required field
+- Optional fields available
+- New SEO created and added to list
+- Delete confirmation message displays
+- SEO deleted and removed from list",C169671,None
+STORE-018,Edit Advanced Properties,Store > Advanced Properties,Configuration,Medium,5m,"Admin logged in, Store exists","1. Go to More > Stores > Select store > Open Store details
+2. Click Advanced properties widget
+3. Edit any field and click OK
+4. Verify Save and Reset buttons become available
+5. Click Reset button
+6. Edit field again and click OK
+7. Click Save button","- Advanced properties widget displays
+- All fields editable and optional
+- Save and Reset buttons become available after changes
+- Properties returned to initial form after Reset
+- All changes saved successfully after Save",C169672,None
+STORE-019,Edit Fulfillment Center,Store > Fulfillment Centers,Configuration,High,10m,"Admin logged in, Store exists, Fulfillment centers configured","1. Go to More > Stores > Select store
+2. Edit default fulfillment center from dropdown
+3. Click three dots on fulfillment center > Select Manage
+4. Make changes to fulfillment center details and Save
+5. Select fulfillment center > Three dots > Delete > Confirm
+6. Add new fulfillment center: Click Edit icon > Click Add on Manage blade > Fill form (name, address) > Save","- Store details blade displays with Fulfillment widget
+- Selected fulfillment center displayed in field
+- Edit fulfillment center blade opens with editable details
+- Changes saved and details updated
+- Delete confirmation message displays
+- Fulfillment center deleted and removed from list
+- New fulfillment center added to list and available for selection",C237961,None
+STORE-020,Edit Dynamic Properties,Store > Dynamic Properties,Configuration,High,10m,"Admin logged in, Store exists","1. Go to More > Stores > Select store
+2. Click Dynamic properties widget
+3. Click Manage type properties button
+4. Select property from list
+5. Click Add new property button
+6. Fill form: Property name, Value type (dropdown), Order (dropdown), Description, Display name per language
+7. Click Create
+8. Select property and click Delete > Confirm","- Edit properties values blade displays
+- Fields editable, Cancel and OK active
+- Manage type properties button active
+- Manage dynamic properties blade displays
+- Manage property blade displays
+- New property blade displays with all fields
+- New property created and displayed in list
+- Property has specified value type and order
+- Delete confirmation message displays
+- Property deleted and removed from list",C169747,None
+STORE-021,Manage Settings - Quotes,Store > Settings,Configuration,High,5m,"Admin logged in, Store created","1. Go to More > Stores > Select Store > Click Settings widget
+2. Enable Quotes (switch on) and click OK
+3. Open Store on Storefront and verify Quotes functionality available
+4. Disable Quotes (switch off) and click OK
+5. Open Storefront and verify Quotes not available","- Settings blade opens
+- Quotes toggle switched on
+- Changes saved
+- Quotes functionality enabled on Storefront
+- Quotes toggle switched off
+- Quotes function not available on Storefront",C169756,None
+STORE-022,Manage Settings - Anonymous Users,Store > Settings,Configuration,High,5m,"Admin logged in, Store created","1. Go to Store > Settings
+2. Switch on Allow anonymous users for store > Click OK
+3. Go to Storefront and create order as anonymous user
+4. Switch off Allow anonymous users for store > Click OK
+5. Go to Storefront and try to create order as anonymous","- Anonymous users toggle switched on
+- System enables order creation for anonymous users
+- Order created successfully
+- Anonymous users toggle switched off
+- System prevents access to store for anonymous users",C169756,None
+STORE-023,Manage Settings - Tax Calculation,Store > Settings,Configuration,High,5m,"Admin logged in, Store created","1. Go to Store > Settings
+2. Switch on Enable tax calculation > Click OK
+3. Go to Storefront and create order
+4. Verify taxes calculated automatically
+5. Switch off Enable tax calculation > Click OK
+6. Go to Storefront and create order
+7. Verify taxes not calculated","- Tax calculation toggle switched on
+- Taxes calculated automatically during checkout
+- Tax calculation toggle switched off
+- Taxes not calculated in order",C169756,None
+STORE-024,Manage Settings - Subscriptions,Store > Settings,Configuration,Medium,5m,"Admin logged in, Store created","1. Go to Store > Settings
+2. Switch on Enable subscriptions > Click OK
+3. Go to Storefront and create order
+4. Verify subscription available
+5. Switch off Enable subscriptions > Click OK
+6. Go to Storefront and create order
+7. Verify subscription not available","- Subscriptions toggle switched on
+- Subscription functionality available on Storefront
+- Subscriptions toggle switched off
+- Subscription not allowed on Storefront",C169756,None
+STORE-025,Manage Settings - Google Analytics 4,Store > Settings,Configuration,High,8m,"Admin logged in, Store created","1. Go to Store > Settings
+2. Scroll to Google Analytics 4
+3. Toggle Enable = True
+4. Enter Measurement ID (e.g., G-S2KXT3KTJZ)
+5. Save
+6. Go to Storefront > Open Dev tools (F12) > Elements > Click head tag
+7. Verify Google tag script with Measurement ID
+8. Return to Admin > Store > Settings
+9. Toggle Enable = False > Save
+10. Go to Storefront > Dev tools > Elements > head tag
+11. Verify Google tag script disabled","- GA4 Enable toggle switched on
+- Measurement ID field accepts value
+- Changes saved
+- Google tag script activated in storefront head
+- Measurement ID shown in script
+- GA4 toggle switched off
+- Changes saved
+- Google tag script disabled in storefront",C169756,None
+STORE-026,Manage Payment Methods,Store > Payment & Shipping,Configuration,Medium,5m,"Admin logged in, Store exists, At least one payment method created and selected","1. Go to Store details
+2. Navigate to Payment methods section
+3. Configure payment method availability","- Payment method configuration accessible
+- Payment methods available for checkout
+- Changes saved successfully",C169758,None
+STORE-027,Manage Shipping Methods,Store > Payment & Shipping,Configuration,Medium,5m,"Admin logged in, Store exists, At least one shipping method added","1. Go to Store details
+2. Navigate to Shipping methods section
+3. Configure shipping method visibility","- Shipping method configuration accessible
+- Shipping methods visible in shopping cart
+- Changes saved successfully",C169759,None
+STORE-028,Add Store URL,Store > Store URL,Configuration,Medium,3m,"Admin logged in, Store exists","1. Go to Store details
+2. Enter Store URL in field
+3. Save changes
+4. Click Open in Browser button","- Store URL field accepts valid URLs
+- Store URL saved successfully
+- Store opens in separate browser tab with configured URL",C184229,None
+STORE-029,Set Attributes - Change Order and Verify Storefront,Store > Attributes & Filters,Configuration,Medium,8m,"Admin logged in, Store exists, FilterBrowsing configured","1. Go to Store > Dynamic properties > FilterBrowsing
+2. Change attribute order
+3. Save
+4. Go to Admin > Store > Aggregation properties
+5. Go to Storefront > Products > Check filters","- Attribute order can be modified
+- Changes saved in Admin
+- Attribute order updated on Storefront filters
+- Filters display in new order",C341063,None
+STORE-030,Set Attributes - Add/Delete Attributes and Verify,Store > Attributes & Filters,Configuration,High,10m,"Admin logged in, Store exists","1. Go to Admin > Stores > Store > Dynamic properties > FilterBrowsing
+2. Add new attribute
+3. Save
+4. Go to Store > Aggregation properties > Verify attribute
+5. Go to Storefront > Products > Check filters
+6. Return to Admin > Dynamic properties > FilterBrowsing
+7. Delete attribute
+8. Save
+9. Verify in Aggregation properties
+10. Verify on Storefront filters","- New attribute added successfully
+- Attribute visible in Aggregation properties
+- New attribute displayed on Storefront filters
+- Attribute deleted successfully
+- Deleted attribute removed from Aggregation properties
+- Deleted attribute removed from Storefront filters",C341066,None
+STORE-031,Set Price Ranges - Include Endpoints and Verify Storefront,Store > Attributes & Filters,Configuration,Medium,5m,"Admin logged in, Store exists, FilterBrowsing configured with price ranges","1. Go to Store > Dynamic properties > FilterBrowsing
+2. Review price range JSON configuration
+3. Verify inclusion/non-inclusion of range endpoints
+4. Go to Storefront > Products > Check price filters","- Price range JSON configuration visible
+- Inclusions and non-inclusions match JSON configuration
+- Storefront price filters display correct ranges
+- Range endpoints handled correctly per JSON config",C341064,None
+STORE-032,Set Price Ranges - Add/Edit/Delete Ranges and Verify,Store > Attributes & Filters,Configuration,High,12m,"Admin logged in, Store exists","1. Go to Admin > Store > Dynamic properties > FilterBrowsing
+2. Add new range
+3. Save
+4. Verify in Store > Aggregation properties
+5. Verify on Storefront > Products filters
+6. Edit range in FilterBrowsing
+7. Save and verify in Admin and Storefront
+8. Delete range from FilterBrowsing
+9. Save
+10. Verify in Aggregation properties
+11. Verify on Storefront filters","- New range added successfully
+- Range visible in Aggregation properties
+- New range displayed on Storefront filters
+- Range edited and updated in Admin
+- Updated range reflected on Storefront
+- Range deleted successfully
+- Deleted range removed from Aggregation properties
+- Deleted range removed from Storefront filters",C341065,None
+STORE-033,Store Access Permission,Store > Permissions,Security,High,3m,"Admin logged in, User_1 created, Role_1 created with store:access permission, Role_1 assigned to User_1, Store_1 created","1. Login as User_1
+2. Navigate to More > Stores","- User_1 can see Store blade
+- Store module accessible with access permission",C237734,None
+STORE-034,Store Read Permission,Store > Permissions,Security,High,5m,"Admin logged in, User_1 created, Role_1 with permissions: store:access, store:read, platform:dynamic_properties (access/update/read), catalog:read, Role_1 assigned to User_1","1. Login as User_1
+2. Open Stores > Select Store_1
+3. Attempt to modify settings
+4. Verify Save and Reset buttons hidden","- User_1 can view Store settings
+- User_1 cannot modify settings
+- Save button hidden
+- Reset button hidden",C237741,None
+STORE-035,Store Update Permission,Store > Permissions,Security,High,5m,"Admin logged in, User_1 created, Role_1 with permissions: store:access, store:read, store:update, platform:dynamic_properties (access/update/read), catalog:read, Role_1 assigned to User_1","1. Login as User_1
+2. Open Stores > Select Store_1
+3. Make changes to store settings","- Store blade opened
+- Save button visible and active
+- Reset button visible and active
+- User_1 can modify and save changes",C237732,None
+STORE-036,Store Create Permission,Store > Permissions,Security,High,5m,"Admin logged in, User_1 created, Role_1 with permissions: store:access, store:read, store:create, catalog:read, Role_1 assigned to User_1","1. Login as User_1
+2. Navigate to Stores module
+3. Verify Add button visible
+4. Click Add and create new store","- Add button shown in Stores module
+- User_1 can create new store
+- New store saved successfully",C237742,None
+STORE-037,Store Delete Permission,Store > Permissions,Security,High,5m,"Admin logged in, User_1 created, Role_1 with permissions: store:access, store:read, store:delete, Role_1 assigned to User_1, Store_1 created","1. Login as User_1
+2. Open Stores module
+3. Select Store_1
+4. Verify Delete button visible
+5. Click Delete and confirm","- Delete button shown
+- User_1 can select and delete store
+- Store deleted successfully after confirmation",C237743,None
+STORE-038,Store Login on Behalf Permission,Store > Permissions,Security,Medium,3m,"Admin logged in, User_1 created, Role_1 with store:loginOnBehalf permission, Role_1 assigned to User_1","1. Login as Admin
+2. Navigate to Security > Users > User_1
+3. Click Login on Behalf
+4. Verify logged in as User_1 on Storefront","- Admin logged on behalf of User_1
+- User_1 information shown in store
+- Session active with User_1 credentials",C237744,None
+STORE-039,UI Tooltips - Display and Hide,Store > General,UI/UX,Low,3m,"Admin logged in, Store exists","1. Open Store blade > Settings
+2. Observe tooltips (should be folded)
+3. Click blue question mark for field1
+4. Click blue question mark for field2
+5. Click Hide link","- All tooltips initially folded
+- Tooltip for field1 unfolded after click
+- Tooltip for field2 unfolded (field1 remains open)
+- All tooltips folded after clicking Hide link",C338428,None
+STORE-040,Enable Tax Calculation Setting,Store > Tax Calculation,Configuration,High,5m,"Admin logged in, Store_1 created, User_1 created for Store_1, Tax Provider configured","1. Login as Admin
+2. Go to Store_1 > Settings panel
+3. Switch on Enable tax calculation
+4. Save
+5. Create order on Storefront as User_1","- Tax calculation toggle switched on
+- Setting saved successfully
+- Taxes calculated according to Tax Provider during checkout",C237748,None
+STORE-041,Disable Tax Calculation Setting,Store > Tax Calculation,Configuration,High,5m,"Admin logged in, Store_1 created, User_1 created for Store_1","1. Login as Admin
+2. Go to Store_1 > Settings panel
+3. Switch off Enable tax calculation
+4. Save
+5. Clear cache
+6. Create order on Storefront as User_1","- Tax calculation toggle switched off
+- Setting saved successfully
+- Taxes not calculated during checkout",C237749,None
+STORE-042,Allow Anonymous User Setting,Store > Anonymous User,Configuration,High,5m,"Admin logged in, Store_1 created, User_1 created but not logged in","1. Login as Admin
+2. Go to Store_1 > Settings panel
+3. Switch on Allow anonymous user for store
+4. Save
+5. Go to Storefront as User_1 (not logged in)
+6. Add product and create order","- Anonymous user toggle switched on
+- Setting saved
+- Catalog opened for anonymous user
+- User_1 can add product and create order without login",C237750,None
+STORE-043,Disallow Anonymous User Setting,Store > Anonymous User,Configuration,High,5m,"Admin logged in, Store_1 created, User_1 created but not logged in","1. Login as Admin
+2. Go to Store_1 > Settings panel
+3. Switch off Allow anonymous user for store
+4. Save
+5. Go to Storefront as User_1 (not logged in)
+6. Attempt to complete checkout","- Anonymous user toggle switched off
+- Setting saved
+- User_1 not allowed to finish checkout without login
+- Login required message displayed",C237754,None
+STORE-044,Enable SPA Setting,Store > SPA,Configuration,Medium,3m,"Admin logged in, Store_1 created, User_1 created","1. Login as Admin
+2. Go to Store_1 > Settings panel
+3. Switch on Is SPA
+4. Save
+5. Navigate Storefront as User_1","- Is SPA toggle switched on
+- Setting saved
+- Store now operates as Single Page Application
+- Navigation without full page reloads",C237757,None
+STORE-045,Disable SPA Setting,Store > SPA,Configuration,Medium,3m,"Admin logged in, Store_1 created, User_1 created","1. Login as Admin
+2. Go to Store_1 > Settings panel
+3. Switch off Is SPA
+4. Save
+5. Navigate Storefront as User_1","- Is SPA toggle switched off
+- Setting saved
+- Store is not Single Page Application
+- Traditional page loads on navigation",C237760,None
+STORE-046,Allow Anonymous Users to Create Orders (XAPI) - On,Store > Allow Anonymous Order,Configuration,High,8m,"Admin logged in, Store exists","1. Go to Store > Settings
+2. Verify Allow anonymous users to create orders (XAPI) setting
+3. Confirm default is True
+4. Go to Storefront as Anonymous
+5. Add products to cart and create order
+6. Open Playground and create order by Anonymous via API","- Setting Allow anonymous users to create orders (XAPI) is True by default
+- Anonymous user can create order on Storefront
+- Order created successfully
+- Order created via Playground API successfully",C369081,None
+STORE-047,Allow Anonymous Users to Create Orders (XAPI) - Off,Store > Allow Anonymous Order,Configuration,High,8m,"Admin logged in, Store exists","1. Go to Store > Settings
+2. Switch off Allow anonymous users to create orders (XAPI)
+3. Save
+4. Go to Storefront as Anonymous
+5. Add products to cart
+6. Attempt to create order
+7. Open Playground and attempt to create order by Anonymous via API","- Setting switched off successfully
+- Anonymous user cannot create order on Storefront
+- Order creation blocked
+- Playground API returns error_code: Unauthorized
+- Anonymous order creation prevented",C369082,None
+STORE-048,SEO Link Type - None,Store > Link Type,Configuration,Medium,3m,"Admin logged in, Store_1 created, User_1 logged in","1. Go to Store_1 > Settings panel
+2. Set SEO Link type to None
+3. Save
+4. Navigate to product on Storefront as User_1
+5. Check URL format","- Link type set to None
+- Setting saved
+- URL address format: /product/123 (numeric ID)
+- Short URL not used",C237768,None
+STORE-049,SEO Link Type - Short,Store > Link Type,Configuration,Medium,3m,"Admin logged in, Store_1 created, User_1 logged in","1. Go to Store_1 > Settings panel
+2. Set SEO Link type to Short
+3. Save
+4. Navigate to product on Storefront as User_1
+5. Check URL format","- Link type set to Short
+- Setting saved
+- URL address format: /my-cool-product (slug only)
+- SEO-friendly short URLs",C237769,None
+STORE-050,SEO Link Type - Collapsed,Store > Link Type,Configuration,Medium,3m,"Admin logged in, Store_1 created, User_1 logged in","1. Go to Store_1 > Settings panel
+2. Set SEO Link type to Collapsed
+3. Save
+4. Navigate to product on Storefront as User_1
+5. Check URL format","- Link type set to Collapsed
+- Setting saved
+- URL format: /virtual-parent-category/my-cool-category/my-cool-product
+- Virtual parent hierarchy shown",C237770,None
+STORE-051,SEO Link Type - Long,Store > Link Type,Configuration,Medium,3m,"Admin logged in, Store_1 created, User_1 logged in","1. Go to Store_1 > Settings panel
+2. Set SEO Link type to Long
+3. Save
+4. Navigate to product on Storefront as User_1
+5. Check URL format","- Link type set to Long
+- Setting saved
+- URL format: /virtual-parent-category/physical-parent-category/my-cool-category/my-cool-product
+- Full category hierarchy in URL",C237771,None
+STORE-052,Email Address Verification Setting Available,Store > Email Verification,Configuration,Medium,2m,"Admin logged in, Store exists","1. Go to Store module
+2. Open any store
+3. Click Settings widget
+4. Scroll through settings list","- Email address verification toggle visible in settings list
+- Toggle accessible and functional",C278771,None
+STORE-053,Enable Email Verification,Store > Email Verification,Configuration,High,10m,"Admin logged in, Email confirmation notification active, Template_1 set for notification, User_1 created in Store_1 with Email_1","1. Go to Stores module > Open Store_1
+2. Open Settings blade
+3. Switch on Enable email address verification toggle
+4. Click OK and Save
+5. Reopen Settings blade and verify toggle state
+6. Login to Storefront as User_1
+7. Go to My Account > Profile
+8. Change Email_1 to Email_2
+9. Check Email_2 inbox
+10. Open verification email
+11. Click verification link","- Enable email address verification toggle switched on
+- Setting saved in ON position
+- Toggle persists in ON position after reopen
+- Email address verification notification sent to Email_2 inbox
+- Email received with verification link
+- User redirected to email verification page after clicking link
+- Email verification process completed",C278768,None
+STORE-054,Disable Email Verification,Store > Email Verification,Configuration,High,8m,"Admin logged in, Email confirmation notification active, Template_1 set, User_1 created in Store_1 with Email_1","1. Go to Stores module > Open Store_1
+2. Open Settings blade
+3. Switch off Enable email address verification toggle
+4. Click OK and Save
+5. Reopen Settings blade and verify toggle state
+6. Login to Storefront as User_1
+7. Go to My Account > Profile
+8. Change Email_1 to Email_2
+9. Check Email_2 inbox","- Enable email address verification toggle switched off
+- Setting saved in OFF position
+- Toggle persists in OFF position after reopen
+- No verification email sent to Email_2 inbox
+- Email address changed without verification",C278769,None
+STORE-055,Disable Email Verification - Statuses Unchanged,Store > Email Verification,Negative,Medium,3m,"Admin on Store page, Verification_link sent to User_1, User_1 assigned to Store_1, Enable email address verification set to TRUE","1. Send verification link to User_1
+2. Before User_1 verifies, disable Enable email address verification in Store settings
+3. Save
+4. User_1 clicks verification link","- Email not verified
+- Error message shown
+- Disabling feature does not change existing verification statuses
+- Sent links remain valid or become invalid (verify expected behavior)",C278770,None
+STORE-056,Resend Verification Link - Email Verification ON,Store > Email Verification,Functional,High,5m,"Admin logged in, Email confirmation notification active, Template_1 set, User_1 created in Store_1 with Email_1, Enable email address verification enabled","1. Login to Backend as Admin
+2. Go to Security > Users > Open User_1 blade
+3. Click Resend link button
+4. Go to Email_1 inbox
+5. Open received email","- Resend link button visible
+- Confirmation email sent to Email_1 inbox
+- Email received successfully
+- Email content matches Template_1",C279038,None
+STORE-057,Resend Verification Link - Email Verification OFF,Store > Email Verification,Negative,Medium,5m,"Admin logged in, Email confirmation notification active, Template_1 set, User_1 created with Email_1, Enable email address verification disabled","1. Login to Backend as Admin
+2. Go to Security > Users > Open User_1 blade
+3. Click Resend link button
+4. Go to Email_1 inbox","- Resend link button visible
+- No confirmation email sent to Email_1 inbox
+- Email verification disabled prevents email sending",C279040,None
+STORE-058,Currency Rounding 001 & Away From Zero,Store > Rounding Policy,Configuration,Medium,8m,"Admin logged in, Store currency configured with Midpoint Rounding = Away from zero, RoundingType = Rounding001, Product_1 created with price $26.25","1. Go to Store > Edit default currency > Set RoundingType = Rounding001, Midpoint Rounding = Away from zero
+2. Save
+3. Add Product_1 (price $26.25) to cart
+4. Set quantity to 3
+5. Verify pricing","- Rounding settings saved
+- System displays rounded price = 24.94
+- Total = 24.9375 * 3 = 74.81
+- Rounding policy applied correctly",C307018,None
+STORE-059,Currency Rounding 001 & To Zero,Store > Rounding Policy,Configuration,Medium,8m,"Admin logged in, Store currency configured, Product_1 created with price $26.25","1. Go to Store > Edit default currency > Set RoundingType = Rounding001, Midpoint Rounding = ToZero
+2. Save
+3. Add Product_1 (price $26.25) to cart
+4. Set quantity to 3
+5. Verify pricing","- Rounding settings saved
+- System displays rounded price = 24.94
+- Total = 24.94 * 3 = 74.82
+- Rounding policy applied correctly",C307019,None
+STORE-060,Deploy Rounding Policy,Store > Rounding Policy,Configuration,Medium,5m,"Admin logged in, Product_1 created with price $26.25","1. Create Product_1 with price $26.25
+2. Go to Store > Edit currency > Configure rounding settings
+3. Save
+4. Add product to cart and verify rounding applied","- Rounding settings configured
+- System displays rounded price = 24.94
+- Total = 24.9375 * 3 = 74.81
+- Rounding policy deployed successfully",C307435,None
+STORE-061,Rounding Settings Per Currency,Store > Rounding Policy,Configuration,Medium,5m,"Admin logged in, Store with multiple currencies","1. Go to any Store > Edit Currency
+2. Set Midpoint Rounding = ToZero, RoundingType = Rounding1 for selected currency only
+3. Save
+4. Verify settings applied to selected currency only","- Rounding settings configurable per currency
+- Settings applied only to chosen currency
+- Other currencies unaffected",C307436,None
+STORE-062,Midpoint Rounding - To Even,Store > Midpoint Rounding,Configuration,Medium,15m,"Admin logged in, Store currency with Midpoint Rounding = ToEven, RoundingType = Rounding001, Products created: Product_1 ($26.25), Product_2 ($26.48), Product_3 ($26.12), Coupon_1 (5% discount)","1. Set Midpoint Rounding = ToEven, RoundingType = Rounding001
+2. Add Product_1 (qty 2) to cart > Verify Subtotal = $52.50
+3. Add Product_2 (qty 2) > Verify Subtotal = $105.46
+4. Add Product_3 (qty 2) > Verify Subtotal = $157.70
+5. Apply Coupon_1 (5%) to Product_1 > Verify Subtotal = $155.70, Total = $155.08, Discount = $2.62
+6. Checkout > Go to Orders on Storefront > Verify order details
+7. Go to Admin > Orders > Find order > Verify Order and Payment details","- Rounding settings saved
+- Product subtotals calculated correctly with ToEven rounding
+- Discount applied with correct rounding
+- Order totals match in Storefront orders
+- Admin order details match calculated values",C306961,None
+STORE-063,Midpoint Rounding - Away From Zero,Store > Midpoint Rounding,Configuration,Medium,15m,"Admin logged in, Store currency with AwayFromZero rounding, Products and Coupon_1 created","1. Set Midpoint Rounding = AwayFromZero, RoundingType = Rounding001
+2. Add Product_1 (qty 2) > Verify Subtotal = $52.50
+3. Add Product_2 (qty 2) > Verify Subtotal = $105.46
+4. Add Product_3 (qty 2) > Verify Subtotal = $157.70
+5. Apply Coupon_1 (5%) > Verify Subtotal = $155.70, Total = $155.07, Discount = $2.63
+6. Checkout > Verify Storefront order details
+7. Verify Admin order details","- Rounding settings saved
+- Subtotals calculated with AwayFromZero rounding
+- Discount = $2.63 (rounds away from zero)
+- Order details consistent across Storefront and Admin",C306962,None
+STORE-064,Midpoint Rounding - ToZero,Store > Midpoint Rounding,Configuration,Medium,15m,"Admin logged in, Store currency with ToZero rounding, Products and Coupons created","1. Set Midpoint Rounding = ToZero, RoundingType = Rounding001
+2. Add Product_1 (qty 2) > Verify Subtotal = $52.50
+3. Add Product_2 (qty 2) > Verify Subtotal = $105.46
+4. Add Product_3 (qty 2) > Verify Subtotal = $155.70
+5. Apply Coupon_2 (5%) to Product_1 > Verify Subtotal = $155.70, Total = $155.08, Discount = $2.62
+6. Remove coupon > Verify Subtotal = $157.50, SubtotalDiscount = $0
+7. Apply coupon for total cart 55% > Verify Subtotal = $157.70, Total = $70.96, Discount = $86.74","- Rounding settings saved
+- Subtotals calculated with ToZero rounding
+- Discount calculations rounded toward zero
+- Coupon removal resets discount
+- Large percentage discount calculated correctly",C306963,None
+STORE-065,Midpoint Rounding - To Negative Infinity,Store > Midpoint Rounding,Configuration,Medium,15m,"Admin logged in, Store currency with To Negative Infinity rounding, Products and Coupons created","1. Set Midpoint Rounding = To Negative Infinity, RoundingType = Rounding001
+2. Add Product_1 (qty 2) > Verify Subtotal = $52.50
+3. Add Product_2 (qty 2) > Verify Subtotal = $105.46
+4. Add Product_3 (qty 2) > Verify Subtotal = $155.70
+5. Apply Coupon_2 (5%) > Verify Subtotal = $155.70, Total = $155.08, Discount = $2.62
+6. Remove coupon > Verify Subtotal = $157.50, SubtotalDiscount = $0
+7. Apply coupon 55% to total cart > Verify Subtotal = $157.70, Total = $70.96, Discount = $86.74","- Rounding settings saved
+- Subtotals calculated with To Negative Infinity rounding
+- Discount rounds toward negative infinity
+- Coupon operations function correctly
+- Large discounts calculated accurately",C306964,None

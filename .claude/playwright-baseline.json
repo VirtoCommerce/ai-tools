@@ -1,0 +1,59 @@
+{
+  "_meta": {
+    "description": "Validated Playwright MCP baseline config — Windows-safe browsers only",
+    "generated": "2026-02-10",
+    "excludedBrowsers": {
+      "webkit": "Not supported on Windows. Falls back to Edge or Chrome."
+    }
+  },
+  "confirmedWorking": [
+    {
+      "serverName": "playwright-chrome",
+      "browserName": "chromium",
+      "channel": null,
+      "configFile": "config/mcp-playwright-chrome.config.json",
+      "status": "valid",
+      "agentAssignment": "qa-frontend-expert"
+    },
+    {
+      "serverName": "playwright-firefox",
+      "browserName": "firefox",
+      "channel": null,
+      "configFile": "config/mcp-playwright-firefox.config.json",
+      "status": "valid",
+      "agentAssignment": "qa-testing-expert"
+    },
+    {
+      "serverName": "playwright-edge",
+      "browserName": "chromium",
+      "channel": "msedge",
+      "configFile": "config/mcp-playwright-edge.config.json",
+      "status": "valid",
+      "agentAssignment": "qa-backend-expert"
+    }
+  ],
+  "excluded": [
+    {
+      "serverName": "playwright-webkit",
+      "browserName": "webkit",
+      "configFile": "config/mcp-playwright-webkit.config.json",
+      "status": "excluded",
+      "reason": "WebKit is not supported on Windows",
+      "fallback": "playwright-edge"
+    }
+  ],
+  "sharedSettings": {
+    "viewport": { "width": 1920, "height": 1080 },
+    "isolated": true,
+    "screenshot": "only-on-failure",
+    "recordVideo": "on-failure",
+    "recordHar": true,
+    "harOmitContent": true
+  },
+  "maxParallelBrowsers": 3,
+  "notes": [
+    "Max 3 parallel agents on Windows (chromium, firefox, edge)",
+    "ui-ux-expert should use Chrome DevTools MCP instead of WebKit",
+    "For 4+ parallel agents, run in sequential batches"
+  ]
+}

@@ -9,14 +9,6 @@
         "width": 1920,
         "height": 1080
       },
-      "recordVideo": {
-        "dir": "./test-results/chrome/videos",
-        "video": "on-failure",
-        "size": {
-          "width": 1920,
-          "height": 1080
-        }
-      },
       "recordHar": {
         "path": "./test-results/chrome/har",
         "omitContent": true

@@ -2,8 +2,8 @@
   "_meta": {
     "version": "2.0",
     "description": "Regression test suite manifest for parallel orchestration (Frontend + Backend)",
-    "generated": "2026-02-10",
-    "totalSuites": 17,
+    "generated": "2026-02-11",
+    "totalSuites": 34,
     "csvFormat": "TestRail CSV (ID, Title, Section, Type, Priority, Estimate, Preconditions, Steps, Expected Result, References, Automation Status)"
   },
   "defaults": {
@@ -65,7 +65,7 @@
       "name": "Catalog & Search Tests",
       "file": "regression/suites/Frontend/03-catalog-search-tests.csv",
       "priority": "P1",
-      "testCount": 23,
+      "testCount": 35,
       "estimatedMinutes": 25,
       "agent": "qa-frontend-expert",
       "tags": ["catalog", "search", "sprint"]
@@ -192,31 +192,201 @@
     },
     {
       "id": "16",
-      "name": "Admin SPA Tests",
-      "file": "regression/suites/Backend/16-admin-spa-tests.csv",
+      "name": "Catalog Admin Tests",
+      "file": "regression/suites/Backend/16-catalog-tests.csv",
       "priority": "P1",
-      "testCount": 25,
-      "estimatedMinutes": 35,
+      "testCount": 33,
+      "estimatedMinutes": 45,
       "agent": "qa-backend-expert",
-      "tags": ["admin", "spa", "backend", "sprint"]
+      "tags": ["backend", "catalog", "admin", "crud"]
     },
     {
       "id": "17",
-      "name": "Module & Config Tests",
-      "file": "regression/suites/Backend/17-module-config-tests.csv",
+      "name": "Platform Core Tests",
+      "file": "regression/suites/Backend/17-platform-core-tests.csv",
+      "priority": "P1",
+      "testCount": 65,
+      "estimatedMinutes": 90,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "platform", "core", "users", "roles", "dynamic-properties", "healthcheck"]
+    },
+    {
+      "id": "18",
+      "name": "Store Admin Tests",
+      "file": "regression/suites/Backend/18-store-tests.csv",
+      "priority": "P1",
+      "testCount": 65,
+      "estimatedMinutes": 90,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "store", "admin", "crud", "configuration"]
+    },
+    {
+      "id": "19",
+      "name": "Pricing Admin Tests",
+      "file": "regression/suites/Backend/19-pricing-tests.csv",
+      "priority": "P1",
+      "testCount": 58,
+      "estimatedMinutes": 95,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "pricing", "admin", "crud", "pricelists"]
+    },
+    {
+      "id": "20",
+      "name": "Orders Admin Tests",
+      "file": "regression/suites/Backend/20-orders-tests.csv",
+      "priority": "P1",
+      "testCount": 66,
+      "estimatedMinutes": 90,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "orders", "admin", "crud", "payments", "shipments"]
+    },
+    {
+      "id": "21",
+      "name": "Customer Admin Tests",
+      "file": "regression/suites/Backend/21-customer-tests.csv",
+      "priority": "P1",
+      "testCount": 52,
+      "estimatedMinutes": 75,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "customer", "admin", "crud", "contacts", "organizations"]
+    },
+    {
+      "id": "22",
+      "name": "Inventory Admin Tests",
+      "file": "regression/suites/Backend/22-inventory-tests.csv",
+      "priority": "P1",
+      "testCount": 43,
+      "estimatedMinutes": 60,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "inventory", "admin", "crud", "fulfillment"]
+    },
+    {
+      "id": "23",
+      "name": "Marketing Admin Tests",
+      "file": "regression/suites/Backend/23-marketing-tests.csv",
+      "priority": "P1",
+      "testCount": 51,
+      "estimatedMinutes": 80,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "marketing", "admin", "crud", "promotions", "coupons", "content"]
+    },
+    {
+      "id": "24",
+      "name": "Notifications Admin Tests",
+      "file": "regression/suites/Backend/24-notifications-tests.csv",
+      "priority": "P1",
+      "testCount": 52,
+      "estimatedMinutes": 75,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "notifications", "admin", "email", "sms", "templates"]
+    },
+    {
+      "id": "25",
+      "name": "CMS & Page Builder Tests",
+      "file": "regression/suites/Backend/25-cms-pagebuilder-tests.csv",
+      "priority": "P1",
+      "testCount": 55,
+      "estimatedMinutes": 80,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "cms", "pagebuilder", "admin", "content", "storefront"]
+    },
+    {
+      "id": "26",
+      "name": "Search & Indexing Tests",
+      "file": "regression/suites/Backend/26-search-indexing-tests.csv",
+      "priority": "P1",
+      "testCount": 40,
+      "estimatedMinutes": 60,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "search", "indexing", "elastic", "lucene", "filters"]
+    },
+    {
+      "id": "27",
+      "name": "Assets Module Tests",
+      "file": "regression/suites/Backend/27-assets-tests.csv",
+      "priority": "P1",
+      "testCount": 24,
+      "estimatedMinutes": 35,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "assets", "upload", "download", "blob-storage", "folders"]
+    },
+    {
+      "id": "28",
+      "name": "Core Settings Tests",
+      "file": "regression/suites/Backend/28-core-settings-tests.csv",
       "priority": "P2",
-      "testCount": 15,
+      "testCount": 14,
       "estimatedMinutes": 20,
       "agent": "qa-backend-expert",
-      "tags": ["modules", "config", "backend", "import-export"]
+      "tags": ["backend", "core", "settings", "mass-units", "length-units", "languages", "permissions"]
+    },
+    {
+      "id": "29",
+      "name": "CSV Export Import Tests",
+      "file": "regression/suites/Backend/29-csv-export-import-tests.csv",
+      "priority": "P1",
+      "testCount": 18,
+      "estimatedMinutes": 30,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "csv", "import", "export", "catalog"]
+    },
+    {
+      "id": "30",
+      "name": "Shipping Module Tests",
+      "file": "regression/suites/Backend/30-shipping-tests.csv",
+      "priority": "P1",
+      "testCount": 15,
+      "estimatedMinutes": 25,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "shipping", "bopis", "pickup", "rates"]
+    },
+    {
+      "id": "31",
+      "name": "SEO Module Tests",
+      "file": "regression/suites/Backend/31-seo-tests.csv",
+      "priority": "P1",
+      "testCount": 20,
+      "estimatedMinutes": 30,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "seo", "broken-pages", "redirects", "slug"]
+    },
+    {
+      "id": "32",
+      "name": "White Labeling Tests",
+      "file": "regression/suites/Backend/32-whitelabeling-tests.csv",
+      "priority": "P2",
+      "testCount": 15,
+      "estimatedMinutes": 25,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "whitelabeling", "branding", "logo", "favicon", "organization"]
+    },
+    {
+      "id": "33",
+      "name": "Push Messages Tests",
+      "file": "regression/suites/Backend/33-push-messages-tests.csv",
+      "priority": "P2",
+      "testCount": 16,
+      "estimatedMinutes": 20,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "push-messages", "notifications", "api", "drafts"]
+    },
+    {
+      "id": "34",
+      "name": "Image Tools Tests",
+      "file": "regression/suites/Backend/34-image-tools-tests.csv",
+      "priority": "P2",
+      "testCount": 20,
+      "estimatedMinutes": 30,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "image-tools", "thumbnails", "resize", "processing"]
     }
   ],
   "selections": {
     "smoke": ["01"],
     "critical": ["01", "06", "08", "14"],
-    "sprint": ["01", "02", "03", "04", "05", "06", "08", "14", "16"],
-    "full": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17"],
+    "sprint": ["01", "02", "03", "04", "05", "06", "08", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "29", "30", "31"],
+    "full": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34"],
     "frontend": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13"],
-    "backend": ["14", "15", "16", "17"]
+    "backend": ["14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34"]
   }
 }

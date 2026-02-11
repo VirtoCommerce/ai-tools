@@ -5,6 +5,9 @@ node_modules
 .vscode/
 .serena/
 settings.json
+ci
+.github/
 test-results/
-.claude/
+.claude/settings.local.json
+
 

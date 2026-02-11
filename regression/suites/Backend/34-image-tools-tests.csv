@@ -1,0 +1,68 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+IMGTL-001,Add thumbnail task,Task Management,Functional,Critical,3m,Image Tools module installed,"1. Navigate to Image Tools > Thumbnails
+2. Click Add Task
+3. Configure task name and settings
+4. Save","New thumbnail task created",C205968,Not Automated
+IMGTL-002,Run thumbnail task,Task Management,Functional,High,3m,Thumbnail task exists,"1. Select thumbnail task
+2. Click Run
+3. Wait for completion","Thumbnail task executed; thumbnails generated",C205971,Not Automated
+IMGTL-003,Delete thumbnail task,Task Management,Functional,High,2m,Thumbnail task exists,"1. Select thumbnail task
+2. Click Delete
+3. Confirm deletion","Thumbnail task deleted; confirm dialog shown",C205981 C205992,Not Automated
+IMGTL-004,Save and reset task changes,Task Management,Functional,Medium,3m,Thumbnail task open for editing,"1. Make changes to task
+2. Click Save
+3. Make more changes
+4. Click Reset","Save persists changes; Reset reverts to last saved state",C205978 C205979,Not Automated
+IMGTL-005,Thumbnail settings - background color,Thumbnail Settings,Functional,Medium,3m,Thumbnail task exists,"1. Open thumbnail task
+2. Navigate to Thumbnail Settings
+3. Set Background Color
+4. Save","Background color setting saved for thumbnails",C346101,Not Automated
+IMGTL-006,Thumbnail settings - anchor position,Thumbnail Settings,Functional,Medium,2m,Thumbnail task exists,"1. Open thumbnail settings
+2. Set Anchor Position
+3. Save","Anchor position saved; thumbnails use configured position",C346102,Not Automated
+IMGTL-007,Thumbnail settings - JPEG quality (low and very high),Thumbnail Settings,Functional,Medium,3m,Thumbnail task exists,"1. Set JPEG quality to Low; generate thumbnail
+2. Set JPEG quality to Very High; generate thumbnail
+3. Compare file sizes","Low quality produces smaller files; Very High produces larger/sharper files",C346103 C346116,Not Automated
+IMGTL-008,Thumbnail resize method - FixedSize,Resize Methods,Functional,Medium,3m,Thumbnail task with image,"1. Set resize method to FixedSize
+2. Set width and height
+3. Run task and verify output","Thumbnails generated at exact specified dimensions",C346114,Not Automated
+IMGTL-009,Thumbnail resize method - FixedWidth and FixedHeight,Resize Methods,Functional,Medium,3m,Thumbnail task with image,"1. Set resize method to FixedWidth; run task
+2. Set resize method to FixedHeight; run task
+3. Verify dimensions","Width-fixed maintains aspect ratio; Height-fixed maintains aspect ratio",C346117 C346118,Not Automated
+IMGTL-010,Thumbnail resize method - Crop,Resize Methods,Functional,Medium,3m,Thumbnail task with image,"1. Set resize method to Crop
+2. Set dimensions
+3. Run task and verify","Thumbnail cropped to exact dimensions",C346119,Not Automated
+IMGTL-011,Add and manage task settings,Task Configuration,Functional,High,3m,Thumbnail task exists,"1. Open task
+2. Add settings (paths and configurations)
+3. Save changes
+4. Reset changes to verify","Settings added; save persists; reset reverts to previous state",C205983 C205988 C205987,Not Automated
+IMGTL-012,Enter path manually and select multiple paths,Task Configuration,Functional,Medium,3m,Thumbnail task with settings,"1. Enter image path manually
+2. Select several paths from list
+3. Verify all paths included","Manual and list-selected paths all included in task",C206228 C206229,Not Automated
+IMGTL-013,Manage multiple settings in task,Task Configuration,Functional,Medium,3m,Task with multiple settings,"1. Add several settings entries
+2. Remove settings from list
+3. Save","Multiple settings managed correctly; removal works",C206230 C206231,Not Automated
+IMGTL-014,Process changes vs Regenerate thumbnails,Processing,Functional,High,3m,Thumbnail task exists with images,"1. Run task with Process Changes option
+2. Run task with Regenerate option
+3. Compare behavior","Process Changes updates only changed images; Regenerate rebuilds all",C205989 C206214,Not Automated
+IMGTL-015,Process several tasks,Processing,Functional,Medium,3m,Multiple thumbnail tasks exist,"1. Select multiple tasks
+2. Process all","All selected tasks processed successfully",C206233,Not Automated
+IMGTL-016,Image Tools permissions - CRUD,Permissions,Functional,High,3m,Roles with image tools permissions,"1. Test Access permission
+2. Test Read permission
+3. Test Create permission
+4. Test Update permission
+5. Test Delete permission","Each permission level grants appropriate access",C239981 C239986 C239987 C239988 C239989,Not Automated
+IMGTL-017,Enable image processing job,Settings,Functional,Medium,3m,Admin logged in,"1. Navigate to Settings > Image Tools
+2. Toggle Enable Image Processing Job ON
+3. Set cron expression
+4. Set partition size
+5. Save","Image processing job scheduled with configured settings",C242716 C242721 C242722,Not Automated
+IMGTL-018,Disable image processing job,Settings,Functional,Medium,2m,Image processing job enabled,"1. Toggle Enable Image Processing Job OFF
+2. Save","Image processing job disabled; no automatic processing",C242720,Not Automated
+IMGTL-019,Refresh tasks list and UI operations,UI Operations,Functional,Medium,2m,Thumbnail tasks exist,"1. Click Refresh on tasks list
+2. Add/remove columns
+3. Change column size
+4. Toggle full screen","UI operations work correctly; list refreshes",C205967 C206242 C206243 C206244 C206245,Not Automated
+IMGTL-020,Thumbnail background work setup,Background Jobs,Functional,Medium,3m,Image Tools installed,"1. Navigate to Thumbnails
+2. Set up background work configuration
+3. Verify RUN general view","Background work configured; run view shows task status",C346096 C346097,Not Automated
