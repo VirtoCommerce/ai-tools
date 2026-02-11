@@ -1,0 +1,5 @@
+Total messages: 8 (Errors: 2, Warnings: 0)
+Returning 2 messages for level "error"
+
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/iphone-17-finish-select-202509-lavender_GEO_EMEA?wid=5120&hei=2880&fmt=webp&qlt=90&_md.v=WGdCRlQ0YVlqbTdXTEkxRnVQb0oxbGoraU1aeXdWbEh0SUtyMmtxWGg5dXdPVU4zTkFIWDYzNXNHVU44cTk4ajhLcXQxZ1h0QThIT2dnUm5qbGk5OUJkSERIUjY1Wk1Od3FtNjF6NFZLVXNYajN1aGR4R3ZYZVBDQm8zSlNqanBycDg5NlprcjhNSkY3UURyM0Y2UGJn&traceId=1:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://images.netdirector.co.uk/gforces-auto/image/upload/w_575,h_383,q_auto,c_fill,f_auto,fl_lossy/auto-client/f42177d67f37e56bcfafba5fcf7d2d10/475635_25ym_honda_crf450rx_1__md.jpg:0
