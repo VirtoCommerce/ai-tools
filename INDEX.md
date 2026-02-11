@@ -7,7 +7,7 @@ This repository contains QA testing documentation and MCP-driven testing for the
 | Directory | Purpose |
 |-----------|---------|
 | [tests/](tests/) | Active test cases organized by sprint and VCST ticket |
-| [regression/](regression/) | Regression test suites (14 frontend + 20 backend CSV files) |
+| [regression/](regression/) | Regression test suites (14 frontend + 21 backend CSV files) |
 | [test-data/](test-data/) | Test fixtures, sample data, and test cards |
 | [reports/](reports/) | Bug reports and regression test results |
 | [docs/](docs/) | LLM prompt templates and testing guides |
@@ -47,7 +47,7 @@ vc-mcp-testing-module/
 ├── regression/
 │   └── suites/
 │       ├── Frontend/          # 14 CSV suites (00-13)
-│       └── Backend/           # 20 CSV suites (14-15, 18-36)
+│       └── Backend/           # 21 CSV suites (14-34)
 │
 ├── storybook/                 # Visual regression baselines
 │   ├── atoms/                 # Badge, Checkbox, Dialog, Icon, etc.
@@ -115,25 +115,25 @@ Default environment is **QA**. Theme presets: Default, Coffee.
 |--------|-------------|-------|
 | **Platform API** | REST API: Catalog, Pricing, Inventory, Orders | [14-platform-api-tests](regression/suites/Backend/14-platform-api-tests.csv) |
 | **GraphQL xAPI** | xCart, xCatalog, xOrder, xCMS queries/mutations | [15-graphql-xapi-tests](regression/suites/Backend/15-graphql-xapi-tests.csv) |
-| **Catalog** | Catalog management CRUD | [18-catalog-tests](regression/suites/Backend/18-catalog-tests.csv) |
-| **Platform Core** | Core platform operations | [19-platform-core-tests](regression/suites/Backend/19-platform-core-tests.csv) |
-| **Store** | Store configuration and management | [20-store-tests](regression/suites/Backend/20-store-tests.csv) |
-| **Pricing** | Pricing rules and price lists | [21-pricing-tests](regression/suites/Backend/21-pricing-tests.csv) |
-| **Orders** | Order processing and management | [22-orders-tests](regression/suites/Backend/22-orders-tests.csv) |
-| **Customer** | Customer accounts and profiles | [23-customer-tests](regression/suites/Backend/23-customer-tests.csv) |
-| **Inventory** | Inventory and fulfillment centers | [24-inventory-tests](regression/suites/Backend/24-inventory-tests.csv) |
-| **Marketing** | Promotions, coupons, dynamic content | [25-marketing-tests](regression/suites/Backend/25-marketing-tests.csv) |
-| **Notifications** | Notification templates and delivery | [26-notifications-tests](regression/suites/Backend/26-notifications-tests.csv) |
-| **CMS / Page Builder** | Content management and page builder | [27-cms-pagebuilder-tests](regression/suites/Backend/27-cms-pagebuilder-tests.csv) |
-| **Search & Indexing** | Search index configuration | [28-search-indexing-tests](regression/suites/Backend/28-search-indexing-tests.csv) |
-| **Assets** | Digital asset management | [29-assets-tests](regression/suites/Backend/29-assets-tests.csv) |
-| **Core Settings** | Platform settings and configuration | [30-core-settings-tests](regression/suites/Backend/30-core-settings-tests.csv) |
-| **CSV Export/Import** | Bulk data operations | [31-csv-export-import-tests](regression/suites/Backend/31-csv-export-import-tests.csv) |
-| **Shipping** | Shipping methods and rates | [32-shipping-tests](regression/suites/Backend/32-shipping-tests.csv) |
-| **SEO** | SEO settings and metadata | [33-seo-tests](regression/suites/Backend/33-seo-tests.csv) |
-| **Whitelabeling** | Theme and branding customization | [34-whitelabeling-tests](regression/suites/Backend/34-whitelabeling-tests.csv) |
-| **Push Messages** | Push notification management | [35-push-messages-tests](regression/suites/Backend/35-push-messages-tests.csv) |
-| **Image Tools** | Image processing and optimization | [36-image-tools-tests](regression/suites/Backend/36-image-tools-tests.csv) |
+| **Catalog** | Catalog management CRUD | [16-catalog-tests](regression/suites/Backend/16-catalog-tests.csv) |
+| **Platform Core** | Core platform operations | [17-platform-core-tests](regression/suites/Backend/17-platform-core-tests.csv) |
+| **Store** | Store configuration and management | [18-store-tests](regression/suites/Backend/18-store-tests.csv) |
+| **Pricing** | Pricing rules and price lists | [19-pricing-tests](regression/suites/Backend/19-pricing-tests.csv) |
+| **Orders** | Order processing and management | [20-orders-tests](regression/suites/Backend/20-orders-tests.csv) |
+| **Customer** | Customer accounts and profiles | [21-customer-tests](regression/suites/Backend/21-customer-tests.csv) |
+| **Inventory** | Inventory and fulfillment centers | [22-inventory-tests](regression/suites/Backend/22-inventory-tests.csv) |
+| **Marketing** | Promotions, coupons, dynamic content | [23-marketing-tests](regression/suites/Backend/23-marketing-tests.csv) |
+| **Notifications** | Notification templates and delivery | [24-notifications-tests](regression/suites/Backend/24-notifications-tests.csv) |
+| **CMS / Page Builder** | Content management and page builder | [25-cms-pagebuilder-tests](regression/suites/Backend/25-cms-pagebuilder-tests.csv) |
+| **Search & Indexing** | Search index configuration | [26-search-indexing-tests](regression/suites/Backend/26-search-indexing-tests.csv) |
+| **Assets** | Digital asset management | [27-assets-tests](regression/suites/Backend/27-assets-tests.csv) |
+| **Core Settings** | Platform settings and configuration | [28-core-settings-tests](regression/suites/Backend/28-core-settings-tests.csv) |
+| **CSV Export/Import** | Bulk data operations | [29-csv-export-import-tests](regression/suites/Backend/29-csv-export-import-tests.csv) |
+| **Shipping** | Shipping methods and rates | [30-shipping-tests](regression/suites/Backend/30-shipping-tests.csv) |
+| **SEO** | SEO settings and metadata | [31-seo-tests](regression/suites/Backend/31-seo-tests.csv) |
+| **Whitelabeling** | Theme and branding customization | [32-whitelabeling-tests](regression/suites/Backend/32-whitelabeling-tests.csv) |
+| **Push Messages** | Push notification management | [33-push-messages-tests](regression/suites/Backend/33-push-messages-tests.csv) |
+| **Image Tools** | Image processing and optimization | [34-image-tools-tests](regression/suites/Backend/34-image-tools-tests.csv) |
 
 ## Commands
 
