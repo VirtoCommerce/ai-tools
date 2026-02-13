@@ -27,6 +27,32 @@ Ensure the quality and reliability of Virto Commerce platform backend, including
 ✅ **Integrations** (Search)
 ✅ **Database operations** (data integrity, migrations)
 
+### Backend Regression Suites (21 suites):
+
+| Suite | ID | Tests | Priority | Description |
+|-------|-----|-------|----------|-------------|
+| Platform API | 14 | 25 | P0 | REST API: Auth, Catalog, Pricing, Inventory, Orders, Customer CRUD |
+| GraphQL xAPI | 15 | 20 | P1 | xCart, xCatalog, xOrder, xCMS queries/mutations |
+| Catalog Admin | 16 | 33+ | P1 | Catalog/Category/Product CRUD, Properties, Images, SEO |
+| Platform Core | 17 | 15+ | P2 | Platform settings, security, dynamic properties |
+| Store | 18 | varies | P1 | Store settings, currencies, languages, FFC config |
+| Pricing | 19 | 58 | P1 | Pricelists, assignments, tier pricing, permissions |
+| Orders | 20 | 66 | P0 | Order CRUD, payments, shipments, capture/refund, permissions |
+| Customer | 21 | varies | P1 | Contacts, organizations, member management |
+| Inventory | 22 | 43 | P1 | Fulfillment centers, stock management, track inventory |
+| Marketing | 23 | varies | P2 | Promotions, dynamic content, coupons |
+| Notifications | 24 | varies | P2 | Email/SMS templates, notification events |
+| CMS/PageBuilder | 25 | varies | P2 | Content pages, menus, builder.io integration |
+| Search Indexing | 26 | 40 | P1 | Elastic/Lucene search, index build/rebuild/swap, filters |
+| Assets | 27 | varies | P2 | File assets, blob storage management |
+| Core Settings | 28 | varies | P2 | Platform-level settings management |
+| CSV Export/Import | 29 | varies | P1 | Product/price/inventory CSV import/export |
+| Shipping | 30 | varies | P1 | Shipping methods, rate calculation |
+| SEO | 31 | varies | P2 | URL slugs, meta tags, sitemap generation |
+| Whitelabeling | 32 | varies | P2 | Theme/branding customization |
+| Push Messages | 33 | varies | P2 | Push notification management |
+| Image Tools | 34 | varies | P2 | Image resize, thumbnail generation |
+
 ### Modules in Regression Scope (Stable Bundle v10 - latest):
 
 **Platform:** VirtoCommerce Platform
@@ -188,8 +214,8 @@ Ensure the quality and reliability of Virto Commerce platform backend, including
 | Endpoint | URL |
 |----------|-----|
 | Platform API | `${BACK_URL}/api` |
-| GraphQL | `${BACK_URL}/graphql` |
 | Swagger/OpenAPI | `${BACK_URL}/docs/index.html` |
+| Graphiql | `${BACK_URL}/ui/graphiql` |
 
 **Regression Suites:** `regression/suites/`
 
@@ -236,7 +262,7 @@ Ensure the quality and reliability of Virto Commerce platform backend, including
 └──────────────────────────────────────────┘
 ```
 
-## TESTING RESPONSIBILITIES (Example)
+## TESTING RESPONSIBILITIES (Real Examples from Regression Suites)
 
 ### 1. ADMIN SPA TESTING
 
@@ -247,87 +273,108 @@ Login with test credentials
 Navigate to module-specific blades (modal panels)
 ```
 
-**Admin Features to Test:**
-
-**A. Module Management:**
+**A. Catalog CRUD (Suite 16 - 33+ tests):**
 ```markdown
-Location: Configuration → Modules
+Location: Catalog → Catalogs, Categories, Products
 
-Test Cases:
-□ View installed modules list
-□ View module details (version, dependencies, status)
-□ Install new module from marketplace
-□ Install module from file upload
-□ Uninstall module
-□ Update module to newer version
-□ Enable/disable module
-□ Configure module settings
-□ View module dependencies
-□ Restart platform after module changes
-□ Verify module permissions apply correctly
+Key Test Cases (from 16-catalog-tests.csv):
+□ CAT-001: Add New Catalog - Fill name, configure languages, click Create
+□ CAT-002: Edit Existing Catalog - Right-click > Manage, modify name/language/property, Save
+□ CAT-003: Delete Catalog - Cancel confirmation (negative test)
+□ CAT-004: Delete Catalog - Type 'Yes' in confirmation, verify deletion cascades
+□ CAT-008: Add New Category - Fill required fields (Name, Code), add description/images/SEO
+□ CAT-012: Add Tax Type to Category - Edit dictionary values, add new tax type
+□ CAT-014: Add New Image to Category - Drag-drop upload, specify category/language/alt text
+□ CAT-015: Add New SEO to Category - Fill URL, Title, Meta Description, Keywords
+□ CAT-019: Add New Physical Product - Fill required (SKU, Name), add Property/Image/Description/SEO blocks
+□ CAT-020: Add New Digital Product - Verify SKU auto-generated, digital type persisted
+□ CAT-026: Clone Product - Verify all data copied, SKU auto-generated different from original
+□ CAT-027: Add Vendor to Product - Create vendors, assign, verify persistence on reopen
+□ CAT-032: Add Image with Alt Text - Upload image, fill Name/Category/Language/Alt/Meta fields
 ```
 
-**B. Security & Permissions:**
-```markdown
-Location: Security → Users, Roles, Permissions
-
-Test Cases:
-□ Create user with specific role
-□ Assign permissions to role
-□ Verify role-based access (UI elements hide/show)
-□ Verify API permissions (403 for unauthorized calls)
-□ Test module-specific permissions
-□ Test password policy enforcement
-□ Test account lockout after failed attempts
-□ Test two-factor authentication (if enabled)
-```
-
-**C. Settings Management:**
-```markdown
-Location: Configuration → Settings
-
-Test Cases:
-□ View platform-level settings
-□ View module-specific settings
-□ Update settings and verify applied
-□ Test settings validation (reject invalid values)
-□ Test settings inheritance (store-specific overrides)
-□ Test settings require platform restart (if applicable)
-```
-
-**D. Catalog Management (Admin):**
-```markdown
-Location: Catalog → Products, Categories, Properties
-
-Test Cases:
-□ Create product via Admin UI
-□ Edit product properties
-□ Delete product
-□ Assign product to categories
-□ Set product pricing
-□ Manage product inventory
-□ Upload product images
-□ Create product variations/SKUs
-□ Manage product properties (custom attributes)
-□ Bulk import products (CSV)
-□ Bulk export products
-```
-
-**E. Order Management (Admin):**
+**B. Order Management (Suite 20 - 66 tests):**
 ```markdown
 Location: Orders → All Orders
 
-Test Cases:
-□ View orders list with filters
-□ Search orders by number, customer, date
-□ View order details
-□ Edit order status
-□ Process refund
-□ Create manual order
-□ Add notes to order
-□ Export orders to CSV
-□ Cancel order
-□ Track order fulfillment
+Key Test Cases (from 20-orders-tests.csv):
+□ ORD-001: Create new order - Fill customer, store, items → verify in list
+□ ORD-002: View and edit order details - Open blade, verify editable format, save changes
+□ ORD-004: Line items widget - Verify product info, quantities, prices
+□ ORD-009: Get invoice - Click 'Get Invoice', verify PDF generation and download
+□ ORD-011: Create order with configuration items - Verify View/Configuration/Discounts/DynProps tabs
+□ ORD-013: Payment document status changes - Change through available transitions
+□ ORD-017: Capture authorized payment (manual) - Capture → status changes to 'Paid'
+□ ORD-018: Capture fails for authorize.net/native methods (negative)
+□ ORD-020: Refund paid payment - Refund succeeds for 'Paid' status
+□ ORD-021: Refund non-paid payment fails (negative)
+□ ORD-028: Cancel order → adjust stock for single product FFC
+□ ORD-032: Assign employee from root org as order responsible → verify scoped access
+□ ORD-038: Validate order fields via API/Swagger (15+ fields)
+□ ORD-045: Number template with sequential {1} and padded CO{1:D5}
+□ ORD-052: Permission > Access - Verify orders:access shows Orders blade
+□ ORD-058: API delete order - assigned/unassigned/non-existent combinations
+```
+
+**C. Pricing Management (Suite 19 - 58 tests):**
+```markdown
+Location: Pricing → Price Lists, Assignments
+
+Key Test Cases (from 19-pricing-tests.csv):
+□ PRICE-001: Create new price list - Enter name, select currency, click Create
+□ PRICE-005: Add products to price list - Select products, verify Prices widget count
+□ PRICE-006: Add prices (List/Sale/MinQty) - Add price tiers with different min quantities
+□ PRICE-009: Change price on Backend → verify updated on Storefront (integration)
+□ PRICE-010: Remove price → $0 shown, 'Unavailable' label, cannot add to cart
+□ PRICE-011: Price with highest priority shown on Storefront
+□ PRICE-013: Price changed when switching currency (USD/EUR) on Storefront
+□ PRICE-019: Verify pricelist assignment via GraphQL xAPI query
+□ PRICE-020: Validate description field length > 512 chars (negative, API)
+□ PRICE-021: Delete last price with min qty=1 → must keep at least one
+□ PRICE-024: Tiered pricing in cart - qty=1 (349/210), qty=4 (100), qty=10 (88/69)
+□ PRICE-027: Add new assignment - Select catalog + price list, no conditions
+□ PRICE-030: Assignments with rules and conditions - Eligible Shoppers section
+□ PRICE-053 to 058: Permission tests (Access, Read, Export, Create, Update, Delete)
+```
+
+**D. Inventory Management (Suite 22 - 43 tests):**
+```markdown
+Location: More → Inventory → Fulfillment Centers
+
+Key Test Cases (from 22-inventory-tests.csv):
+□ INV-002: Add new fulfillment center - Fill Name/Location/OuterId/Address, Save
+□ INV-006: Edit FFC short description with Markdown and HTML table
+□ INV-010: Add address to FFC - Country (required), State, City, Address, Zip, Email, Phone
+□ INV-014: Add dynamic property - Choose type (Multivalue/Multilanguage/Dictionary)
+□ INV-018: Edit in stock quantity via Catalog > Product > Fulfillment centers widget
+□ INV-019: Order product → stock qty decreased (integration, Track inventory = TRUE)
+□ INV-020: Order more items than available → warning message
+□ INV-021: Available items from multiple FFCs → combined availability
+□ INV-022: In stock = 0 → 'Add to cart' inactive, 'Sold out' label shown
+□ INV-023: Add to cart → update inventory to 0 on backend → create order fails validation
+□ INV-024: Track inventory = FALSE → stock unchanged after order, no qty warnings
+□ INV-029: Add FFC with outerId via API (POST /api/inventory/fulfillmentcenters/batch)
+□ INV-031 to 037: Permission tests (Access, Read, Create, Update, Delete, FFC Edit/Delete via Store)
+□ INV-042/043: Event-based indexation enable/disable for inventory entities
+```
+
+**E. Search Indexing (Suite 26 - 40 tests):**
+```markdown
+Location: Search → Index Management
+
+Key Test Cases (from 26-search-indexing-tests.csv):
+□ SRCH-001: Search by full product name (Elastic) → product found
+□ SRCH-004: Search with incorrect value → no results, appropriate empty state
+□ SRCH-007: Run index build → status shows completed
+□ SRCH-008: Rebuild index (blue-green) → both active and inactive indices built
+□ SRCH-010: Swap indexes → active/inactive indices swapped successfully
+□ SRCH-015: Create product then refresh index → new product reflected
+□ SRCH-016: Delete product then rebuild → deleted product no longer in results
+□ SRCH-023: Delete and rebuild index → old index deleted, new built from scratch
+□ SRCH-028 to 035: Search Filters API → TermFilter, OrFilter, AndFilter, NotFilter, RangeFilter
+□ SRCH-036: Settings - token filter and gram configuration
+□ SRCH-038: Settings - schedule indexing jobs with cron expression
+□ SRCH-040: Scalable indexation verification - multi-instance partitioning
 ```
 
 **Admin SPA Blade System:**
@@ -346,510 +393,424 @@ Test:
 □ Verify no memory leaks (blades clean up on close)
 ```
 
-### 2. PLATFORM REST API TESTING
+### 2. PLATFORM REST API TESTING (Suite 14 - 25 tests)
 
-**Using Postman MCP:**
+**Using Postman MCP or browser_evaluate for API calls:**
 
-**A. Authentication:**
+**A. Authentication (API-014 to API-016):**
 ```javascript
-// Test: Get authentication token
-POST {{baseUrl}}/connect/token
+// API-014: Login - Get authentication token
+POST ${BACK_URL}/connect/token
 Content-Type: application/x-www-form-urlencoded
 
 Body:
-grant_type=password
-username=admin
-password={{adminPassword}}
-scope=openid offline_access
+grant_type=password&username=${ADMIN}&password=${ADMIN_PASSWORD}&scope=openid offline_access
 
 Expected: 200 OK
-Response: {
-  "access_token": "eyJhbG...",
-  "token_type": "Bearer",
-  "expires_in": 3600
-}
+Validations:
+✅ Access token returned (valid JWT)
+✅ Token type is Bearer
+✅ Expiration > 0
+✅ Authenticated request succeeds with token
 
-Validation:
-✅ Token received
-✅ Token is valid JWT
-✅ Token contains correct claims
+// API-015: Invalid Credentials (negative)
+POST ${BACK_URL}/connect/token (wrong password)
+✅ Returns 400 Bad Request
+✅ Error message does NOT reveal if user exists
+✅ No access token returned
+✅ No stack traces in response
+
+// API-016: Token Refresh
+POST ${BACK_URL}/connect/token (grant_type=refresh_token)
+✅ New access token issued
+✅ New refresh token issued
+✅ Authenticated requests work with new token
 ```
 
-**B. Catalog APIs:**
+**B. Catalog APIs (API-001 to API-003, API-018, API-019):**
 ```javascript
-// TC_API_CATALOG_001: Get product by ID
-GET {{baseUrl}}/api/catalog/products/{{productId}}
+// API-001: Get Products List
+GET ${BACK_URL}/api/catalog/products?storeId=${STORE_ID}
 Authorization: Bearer {{token}}
 
-Expected: 200 OK
-Response: {
-  "id": "{{productId}}",
-  "code": "PROD-001",
-  "name": "Test Product",
-  "catalogId": "test-catalog",
-  "categoryId": "test-category",
-  "isActive": true,
-  ...
-}
-
 Validations:
-✅ Status 200
-✅ Product ID matches request
-✅ All required fields present
-✅ Data types correct
+✅ Response 200 OK
+✅ Products array returned with id, name, code, imgSrc
+✅ Pagination metadata present (totalCount)
 
-// TC_API_CATALOG_002: Create product
-POST {{baseUrl}}/api/catalog/products
-Authorization: Bearer {{token}}
-Content-Type: application/json
+// API-002: Get Product by ID
+GET ${BACK_URL}/api/catalog/products/{id}
+✅ Full product detail (descriptions, prices, images, variations)
+✅ SEO info populated
+✅ Category assignments present
 
-Body:
-{
-  "code": "NEW-PRODUCT-001",
-  "name": "New Test Product",
-  "catalogId": "test-catalog",
-  "categoryId": "test-category",
-  "productType": "Physical",
-  "isActive": true
-}
+// API-003: Search Products
+GET ${BACK_URL}/api/catalog/products?keyword=laptop
+✅ Matching products returned
+GET ${BACK_URL}/api/catalog/products?keyword=nonexistent_xyz
+✅ Empty results with totalCount=0
+✅ Response time under 500ms
 
-Expected: 200 OK
-Response: {
-  "id": "newly-generated-id",
-  "code": "NEW-PRODUCT-001",
-  ...
-}
+// API-018: Create Product
+POST ${BACK_URL}/api/catalog/products
+Body: { "code": "QA-TEST-001", "name": "Test Product", "categoryId": "..." }
+✅ Product created with 200/201
+✅ Product retrievable by ID
+✅ Product appears in category
+✅ Cleanup deletion succeeds
 
-Validations:
-✅ Product created (ID returned)
-✅ Product retrievable via GET
-✅ Product searchable
-✅ Product indexed in Elasticsearch
-
-// TC_API_CATALOG_003: Create product - missing required field
-POST {{baseUrl}}/api/catalog/products
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-Body:
-{
-  "name": "Invalid Product"
-  // Missing: code, catalogId (required)
-}
-
-Expected: 400 Bad Request
-Response: {
-  "message": "Validation failed",
-  "errors": {
-    "code": ["The code field is required"],
-    "catalogId": ["The catalogId field is required"]
-  }
-}
-
-Validations:
-✅ Status 400
-✅ Error message clear
-✅ Required fields identified
-
-// TC_API_CATALOG_004: Unauthorized access
-GET {{baseUrl}}/api/catalog/products/{{productId}}
-// No Authorization header
-
-Expected: 401 Unauthorized
-
-Validations:
-✅ Status 401
-✅ Access denied
+// API-019: Update Product
+PUT ${BACK_URL}/api/catalog/products/{id}
+✅ Updated name/description saved
+✅ Other fields unchanged
+✅ ModifiedDate updated
 ```
 
-**C. Pricing APIs:**
+**C. Pricing APIs (API-004, API-005):**
 ```javascript
-// TC_API_PRICING_001: Get product prices
-GET {{baseUrl}}/api/pricing/products/{{productId}}/prices
-Authorization: Bearer {{token}}
+// API-004: Get Product Prices (price evaluation)
+GET ${BACK_URL}/api/pricing/evaluate
+Body: { productIds: ["prod-id"], quantity: 1 }
+✅ ListPrice and SalePrice present
+✅ Currency matches store configuration
+✅ Price tiers included if configured
 
-Expected: 200 OK
-Response: [
-  {
-    "productId": "{{productId}}",
-    "pricelistId": "default-pricelist",
-    "currency": "USD",
-    "list": 100.00,
-    "sale": 89.99,
-    "minQuantity": 1
-  }
-]
-
-Validations:
-✅ Prices returned
-✅ Currency correct
-✅ List price >= Sale price
-✅ minQuantity > 0
+// API-005: Price Calculation with Quantity (tier pricing)
+Request price for quantity=1  → base price
+Request price for quantity=10 → tier 1 discount
+Request price for quantity=100 → tier 2 discount
+✅ Higher quantities get lower per-unit price
+✅ Price breakdown shows tier details
 ```
 
-**D. Order APIs:**
+**D. Inventory APIs (API-006, API-007):**
 ```javascript
-// TC_API_ORDER_001: Create customer order
-POST {{baseUrl}}/api/order/customerOrders
-Authorization: Bearer {{token}}
-Content-Type: application/json
+// API-006: Check Product Availability
+GET ${BACK_URL}/api/inventory/products/{id}/availability
+✅ InStockQuantity present
+✅ FulfillmentCenter information present
+✅ AllowPreorder/AllowBackorder flags set correctly
+✅ Response time under 300ms
 
-Body:
-{
-  "customerId": "test-customer-id",
-  "storeId": "test-store",
-  "currency": "USD",
-  "items": [
-    {
-      "productId": "prod-001",
-      "quantity": 2,
-      "price": 50.00
-    }
-  ],
-  "addresses": [
-    {
-      "addressType": "Shipping",
-      "firstName": "John",
-      "lastName": "Doe",
-      "line1": "123 Test St",
-      "city": "Test City",
-      "countryCode": "US",
-      "postalCode": "12345"
-    }
-  ]
-}
-
-Expected: 200 OK
-Response: {
-  "id": "order-id",
-  "number": "CO-000123",
-  "status": "New",
-  "total": 100.00,
-  ...
-}
-
-Validations:
-✅ Order created with unique number
-✅ Order total calculated correctly
-✅ Order retrievable via GET
-✅ Order visible in Admin
+// API-007: Reserve Stock
+POST reserve → verify stock decreased
+POST release → verify stock restored
+✅ Available quantity decreases on reserve
+✅ Stock quantity restores after release
 ```
 
-### 3. GRAPHQL xAPI TESTING
+**E. Order APIs (API-008 to API-010):**
+```javascript
+// API-008: Get Orders List
+GET ${BACK_URL}/api/order/customerOrders
+✅ Each order has number, status, total, currency
+✅ Pagination works (skip/take)
+✅ Status filter returns correct subset
 
-**Using Postman for GraphQL:**
+// API-009: Get Order by ID
+GET ${BACK_URL}/api/order/customerOrders/{id}
+✅ Line items with product info
+✅ Shipping and payment info present
+✅ Order total matches line items + shipping - discounts
 
-**A. xCatalog Queries:**
-```graphql
-# TC_XAPI_CATALOG_001: Get product
-query GetProduct($id: String!) {
-  product(id: $id) {
-    id
-    code
-    name
-    slug
-    description {
-      content
-    }
-    images {
-      url
-    }
-    price {
-      actual {
-        amount
-        formattedAmount
-      }
-      list {
-        amount
-      }
-    }
-    availabilityData {
-      isAvailable
-      availableQuantity
-    }
-  }
-}
-
-Variables:
-{
-  "id": "test-product-123"
-}
-
-Expected Response:
-{
-  "data": {
-    "product": {
-      "id": "test-product-123",
-      "code": "PROD-001",
-      "name": "Test Product",
-      "price": {
-        "actual": { "amount": 89.99 },
-        "list": { "amount": 100.00 }
-      },
-      "availabilityData": {
-        "isAvailable": true,
-        "availableQuantity": 50
-      }
-    }
-  }
-}
-
-Validations:
-✅ No errors in response
-✅ Product data complete
-✅ Price structure correct
-✅ Availability data accurate
-```
-
-**B. xCart Mutations:**
-```graphql
-# TC_XAPI_CART_001: Add item to cart
-mutation AddItem($command: InputAddItemType!) {
-  addItem(command: $command) {
-    id
-    itemsCount
-    items {
-      id
-      productId
-      quantity
-      extendedPrice {
-        amount
-      }
-    }
-    total {
-      amount
-    }
-  }
-}
-
-Variables:
-{
-  "command": {
-    "cartId": "cart-123",
-    "productId": "product-456",
-    "quantity": 2
-  }
-}
-
-Expected Response:
-{
-  "data": {
-    "addItem": {
-      "id": "cart-123",
-      "itemsCount": 2,
-      "items": [
-        {
-          "productId": "product-456",
-          "quantity": 2,
-          "extendedPrice": { "amount": 179.98 }
-        }
-      ],
-      "total": { "amount": 179.98 }
-    }
-  }
-}
-
-Validations:
-✅ Item added to cart
-✅ ItemsCount incremented
-✅ Extended price = unit price × quantity
-✅ Total updated correctly
-```
-
-**C. xOrder Mutations:**
-```graphql
-# TC_XAPI_ORDER_001: Create order from cart
-mutation CreateOrderFromCart($command: InputCreateOrderFromCartType!) {
-  createOrderFromCart(command: $command) {
-    id
-    number
-    status
-    total {
-      amount
-    }
-    items {
-      productId
-      quantity
-    }
-  }
-}
-
-Variables:
-{
-  "command": {
-    "cartId": "cart-123"
-  }
-}
-
-Expected Response:
-{
-  "data": {
-    "createOrderFromCart": {
-      "id": "order-789",
-      "number": "CO-000124",
-      "status": "New",
-      "total": { "amount": 179.98 },
-      "items": [
-        {
-          "productId": "product-456",
-          "quantity": 2
-        }
-      ]
-    }
-  }
-}
-
-Validations:
-✅ Order created from cart
+// API-010: Create Order (full flow)
+1. Create cart via API
+2. Add product → set address → set shipping → set payment
+3. Create order from cart
+✅ Order created with status 'New'
 ✅ Order number generated
-✅ Order total matches cart total
-✅ Order items match cart items
+```
+
+**F. Customer APIs (API-011 to API-013):**
+```javascript
+// API-011: Get Customer Profile
+GET ${BACK_URL}/api/members/{userId}
+✅ Email, name, phone populated
+✅ Addresses collection present
+✅ Organization membership shown (if B2B)
+
+// API-013: Create Organization
+POST ${BACK_URL}/api/members/organizations
+Body: { "name": "Test Org QA", "description": "...", "addresses": [...] }
+✅ Organization created with 200/201
+✅ Org has generated ID
+✅ Members list initially contains creator
+```
+
+**G. Error Handling & Security (API-023 to API-025):**
+```javascript
+// API-023: 404 Not Found
+GET ${BACK_URL}/api/catalog/products/nonexistent-id  → structured 404 error
+GET ${BACK_URL}/api/nonexistent-endpoint              → 404, no stack traces
+
+// API-024: Validation Errors
+POST ${BACK_URL}/api/catalog/products with empty body → 400 with field-level errors
+POST with invalid data types → descriptive validation messages
+
+// API-025: Security Headers
+✅ CORS allows expected origins only
+✅ X-Content-Type-Options: nosniff present
+✅ No server version disclosed in headers
+✅ Content-Type correctly set on all responses
+```
+
+### 3. GRAPHQL xAPI TESTING (Suite 15 - 20 tests)
+
+**GraphQL endpoint: ${BACK_URL}/graphql or via Graphiql: ${BACK_URL}/ui/graphiql**
+
+**Reference docs:** https://docs.virtocommerce.org/platform/developer-guide/GraphQL-Storefront-API-Reference-xAPI/
+
+**A. xCatalog Queries (GQL-001 to GQL-004, GQL-019):**
+```graphql
+# GQL-001: Search Products Query
+query {
+  products(storeId: "${STORE_ID}", keyword: "laptop") {
+    totalCount
+    items { id name code imgSrc }
+  }
+}
+✅ totalCount > 0 for valid keyword
+✅ Items contain id, name, code
+✅ No errors in response
+
+# GQL-002: Get Product Detail
+query {
+  product(storeId: "${STORE_ID}", id: "PRODUCT_ID") {
+    id name
+    descriptions { content }
+    prices { list { amount } sale { amount } }
+  }
+}
+✅ Descriptions present
+✅ Prices include list and sale amounts
+✅ Images array populated
+
+# GQL-003: Category Tree
+query {
+  categories(storeId: "${STORE_ID}") {
+    totalCount
+    items { id name slug childCategories { id name } }
+  }
+}
+✅ Root categories returned
+✅ Child categories nested correctly
+✅ Each category has slug for URL
+
+# GQL-004: Product Facets/Filters
+query products with facet parameter → verify aggregations
+Apply filter and re-query → verify filtered results
+✅ Facets returned (brand, price range, etc.)
+✅ Combining filters works (AND logic)
+
+# GQL-019: Product Variations
+query product with variations → verify variation properties (size, color)
+✅ Variations array populated
+✅ Each variation has distinct properties
+✅ Availability/pricing differs per variation
+```
+
+**B. xCart Mutations (GQL-005 to GQL-010, GQL-017):**
+```graphql
+# GQL-005: Create Cart
+mutation {
+  createCart(
+    storeId: "${STORE_ID}"
+    userId: "USER_ID"
+    currencyCode: "USD"
+    cultureName: "en-US"
+  ) { id }
+}
+✅ Cart created with ID
+✅ Cart retrievable by ID
+
+# GQL-006: Add Item to Cart
+mutation {
+  addItem(cartId: "CART_ID", productId: "PRODUCT_ID", quantity: 2) {
+    id itemsCount
+    items { id productId quantity listPrice { amount } }
+  }
+}
+✅ itemsCount incremented
+✅ Quantity set to 2
+✅ listPrice populated with correct amount
+
+# GQL-007: Update Cart Item Quantity
+mutation {
+  changeCartItemQuantity(cartId: "CART_ID", lineItemId: "LINE_ITEM_ID", quantity: 5) {
+    id items { id quantity } totals { subTotal { amount } }
+  }
+}
+✅ Quantity changed to 5
+✅ Subtotal recalculated
+
+# GQL-008: Remove Item from Cart
+mutation {
+  removeCartItem(cartId: "CART_ID", lineItemId: "LINE_ITEM_ID") {
+    id itemsCount items { id }
+  }
+}
+✅ itemsCount decremented, totals recalculated
+
+# GQL-009: Set Shipping Address
+mutation addOrUpdateCartShipment with address → verify address set on cart
+✅ City, state, zip, country populated
+✅ Cart ready for shipping method selection
+
+# GQL-010: Apply Coupon
+mutation {
+  addCoupon(cartId: "CART_ID", couponCode: "TESTCOUPON") {
+    id
+    coupons { code isAppliedSuccessfully }
+    totals { discountTotal { amount } }
+  }
+}
+✅ isAppliedSuccessfully = true
+✅ discountTotal shows discount amount
+✅ Invalid coupon returns appropriate error
+
+# GQL-017: Full Checkout Flow via GraphQL (end-to-end, ~10min)
+1. Create cart → 2. Add multiple items → 3. Set shipping address
+4. Get available shipping methods → 5. Set shipping method
+6. Set payment method → 7. Validate cart → 8. Create order
+✅ Cart totals update correctly at each stage
+✅ Shipping rates calculated
+✅ Order created with all details
+✅ End-to-end flow completes in < 30 seconds
+```
+
+**C. xOrder Queries & Mutations (GQL-011 to GQL-013):**
+```graphql
+# GQL-011: Get Orders Query
+query {
+  orders(filter: "", sort: "createdDate:desc") {
+    totalCount
+    items { id number status createdDate total { amount } }
+  }
+}
+✅ Orders sorted by date
+✅ Pagination works (first/after)
+
+# GQL-012: Get Order Detail
+query order by ID/number → verify line items, addresses, payments
+✅ Full order detail returned
+✅ Order totals correct
+
+# GQL-013: Create Order from Cart
+mutation {
+  createOrderFromCart(cartId: "CART_ID") {
+    id number status
+  }
+}
+✅ Order number generated
+✅ Status is 'New' or 'Processing'
 ✅ Cart cleared after order creation
 ```
 
-### 4. MODULE TESTING
+**D. xCMS & Security (GQL-014 to GQL-016, GQL-018, GQL-020):**
+```graphql
+# GQL-014: CMS Page Content
+query {
+  pages(storeId: "${STORE_ID}") {
+    totalCount items { id name relativeUrl content }
+  }
+}
+✅ Pages returned with content populated
+✅ No HTML injection in content
 
-**Module Installation Testing:**
+# GQL-015: Error Handling
+Send malformed query → clear syntax error message
+Query non-existent field → specific field error
+Mutation with missing required args → validation error
+✅ No 500 errors — all return structured GraphQL errors
+
+# GQL-016: Authentication - Unauthenticated Access
+Products query without auth → should work (public)
+Orders query without auth → should fail
+Cart mutation without auth → should fail
+✅ Error messages don't leak sensitive info
+
+# GQL-018: Query Performance
+Product search < 500ms
+Nested product query (variants, prices, images) < 1000ms
+Orders list < 500ms
+✅ No obvious N+1 query patterns
+
+# GQL-020: Introspection Security
+Send { __schema { types { name } } }
+✅ No internal/debug types exposed
+✅ Schema does not reveal implementation details
+✅ Rate limiting applies to introspection queries
+```
+
+### 4. MODULE TESTING (Suite 17 - Platform Core)
+
+**QA Environment runs Edge/Alpha versions of modules, not Stable releases.**
+Always check `${BACK_URL}/#!/workspace/systeminfo` for the actual deployed versions before testing.
+
+**Module Installation & System Info:**
 ```markdown
-Test Case: TC_MODULE_INSTALL_001
-
-Title: Install custom module via Admin
-
-Environment: QA
-Module: YourCompany.CustomPricing v1.0.0
-
-Prerequisites:
-- Module package available (.zip or repository)
-- Admin access
-- Platform has dependencies (VirtoCommerce.Pricing >= 3.800.0)
-
 Steps:
 1. Login to Admin: ${BACK_URL} (from .env)
-2. Navigate to ${BACK_URL}/#!/workspace/systeminfo
-3. Check Installed modules in Modules ${BACK_URL}/#!/workspace/modules
+2. Navigate to ${BACK_URL}/#!/workspace/systeminfo → verify platform version
+3. Navigate to ${BACK_URL}/#!/workspace/modules → check installed modules
+4. Navigate to ${BACK_URL}/#!/workspace/developer-tools → check Hangfire/diagnostics
 
-Expected Results:
-✅ Module installs without errors
-✅ Module appears in installed modules list
-✅ Module status: "Active"
-✅ No errors in application logs
+Key Checks:
+✅ All expected modules listed — note Edge/Alpha version numbers
+✅ Module status: "Active" for each (watch for "Error" or "Disabled" on Edge builds)
+✅ No errors in application logs after module install
+✅ Module dependencies resolved (Edge modules may have newer dependency requirements)
+✅ Module APIs accessible via Swagger at ${BACK_URL}/docs/index.html
+✅ GraphQL schema includes new types/mutations from Edge modules
 
-Validation Steps:
-4. Check module appears in list
-   Expected: YourCompany.CustomPricing v1.0.0, Status: Active
-
-5. Navigate to Configuration → Settings → CustomPricing
-   Expected: Module settings accessible
-
-6. Test module API endpoint
-   GET /api/custompricing/test
-   Expected: 200 OK (endpoint accessible)
-
-Postconditions:
-- Module installed and active
-- Module APIs accessible
-- Module settings configurable
+Edge/Alpha-Specific Validation:
+□ Compare module version against previous QA deployment — note what changed
+□ Check for breaking API changes (new required fields, renamed endpoints)
+□ Verify backward compatibility with existing test data
+□ Watch for deprecation warnings in logs
+□ Test new features introduced in Edge version
 ```
 
-**Module Configuration Testing:**
+**Module Settings Testing (real pattern from regression suites):**
 ```markdown
-Test Case: TC_MODULE_CONFIG_001
+Pattern observed across all modules (Pricing, Inventory, Orders, etc.):
 
-Title: Configure module settings
+Common Setting Tests:
+□ Enable/disable feature toggle → verify behavior changes
+□ Tooltip show/hide behavior → one tooltip unfolded at a time, folds on switch
+□ Export/Import page size → change value, verify progress bar uses it
+□ Event-based indexation enable/disable → verify reindex triggers (or not)
+□ Log changes enable/disable → verify PlatformOperationLog rows added (or not)
+□ Number template configuration → {0} datetime, {1} sequential, CO{1:D5} padded
 
-Module: YourCompany.CustomPricing
-Location: Configuration → Settings → CustomPricing
-
-Settings to Test:
-1. EnableVolumeDiscounts (Boolean)
-2. DefaultDiscountPercentage (Decimal, range: 0-100)
-3. MaxDiscountTiers (Integer, min: 1)
-
-Test Steps:
-1. Set EnableVolumeDiscounts: true
-   Expected: Setting saves, no errors
-   
-2. Set DefaultDiscountPercentage: 10.5
-   Expected: Setting saves, accepts decimal
-   
-3. Set MaxDiscountTiers: 5
-   Expected: Setting saves
-
-4. Click: Save
-   Expected: "Settings saved successfully"
-
-5. Refresh page
-   Expected: Settings persisted (still show 10.5, etc.)
-
-Negative Tests:
-6. Set DefaultDiscountPercentage: -5
-   Expected: Validation error "Must be >= 0"
-   
-7. Set DefaultDiscountPercentage: 150
-   Expected: Validation error "Must be <= 100"
-   
-8. Set MaxDiscountTiers: 0
-   Expected: Validation error "Must be >= 1"
-
-API Validation:
-9. GET /api/settings/CustomPricing.EnableVolumeDiscounts
-   Expected: Returns true
-   
-10. Verify setting applies in module functionality
-    Expected: Volume discounts actually work when enabled
+Real Examples:
+• PRICE-043/044: Enable/disable event-based indexation for pricing entities
+• PRICE-045/046: Enable/disable log pricing changes → check PlatformOperationLog
+• INV-042/043: Enable/disable event-based indexation for inventory entities
+• INV-040/041: Enable/disable log inventory changes
+• ORD-044/045/046: Order number template with datetime/sequential/padded/weekly reset
+• ORD-061: Enable/disable notifications for orders
+• ORD-062: Enable/disable adjust inventory for orders (stock on cancel)
 ```
 
-**Module API Testing:**
+**Module Permission Testing Pattern (RBAC):**
 ```markdown
-Test Case: TC_MODULE_API_001
+Every module follows the same permission matrix test pattern:
 
-Title: Test custom module API endpoints
+| Permission | Effect |
+|-----------|--------|
+| module:access | Module visible in navigation, blade opens |
+| module:read | Can open entities, view details (read-only) |
+| module:create | Add button visible and clickable |
+| module:update | Save button works on existing entities |
+| module:delete | Delete button visible, deletion succeeds |
+| module:export | Export button visible, file download works |
 
-Module: YourCompany.CustomPricing
-Endpoint: POST /api/custompricing/calculate
-
-Test: Calculate custom price with volume discount
-
-Request:
-POST {{baseUrl}}/api/custompricing/calculate
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-Body:
-{
-  "productId": "test-product-123",
-  "quantity": 15,
-  "customerGroupId": "vip-customers"
-}
-
-Expected Response: 200 OK
-{
-  "productId": "test-product-123",
-  "basePrice": 100.00,
-  "customPrice": 85.00,
-  "discountPercentage": 15.00,
-  "discountReason": "Volume discount (10-49 units)",
-  "tierPricing": [
-    { "quantity": 10, "price": 85.00 },
-    { "quantity": 50, "price": 80.00 },
-    { "quantity": 100, "price": 75.00 }
-  ]
-}
-
-Validations:
-✅ Status 200
-✅ Custom price calculated correctly
-✅ Discount applied for quantity 15 (tier 1: 10-49)
-✅ Tier pricing structure returned
-✅ Base price vs custom price delta matches discount percentage
-
-Edge Cases to Test:
-- Quantity: 1 (below first tier) → Should return base price
-- Quantity: 10 (exactly at tier boundary) → Should apply tier discount
-- Quantity: 9 (just below tier) → Should not apply tier discount
-- Quantity: 1000 (very large) → Should apply highest tier
-- Invalid productId → Should return 404
-- Invalid customerGroupId → Should return 404 or default pricing
+Real Examples:
+• PRICE-053 to 058: Pricing permissions (access/read/export/create/update/delete)
+• INV-031 to 037: Inventory permissions (access/read/create/update/delete/FFC edit/delete via Store)
+• ORD-050 to 058: Order permissions (access/read/create/update/delete/read_prices/update_shipments)
+• ORD-058: API delete with assigned/unassigned/non-existent order combinations
 ```
 
 ### 5. BACKGROUND JOBS TESTING
@@ -860,222 +821,310 @@ Access: Configuration → Hangfire
 URL: ${BACK_URL}/hangfire
 DevTools: ${BACK_URL}/#!/workspace/developer-tools
 
-Common Background Jobs to Test:
+Key Background Jobs to Test (referenced in regression suites):
 
-1. Search Indexing Job
-   Job: "Rebuild Search Index"
-   Frequency: Manual or scheduled
-   
-   Test:
-   □ Trigger job manually
-   □ Monitor job status (Processing → Succeeded)
-   □ Check job duration (should complete in reasonable time)
-   □ Verify products searchable after job
-   □ Check for errors in job logs
+1. Search Indexing Jobs (SRCH-007, SRCH-019, PRICE-048)
+   Job: "IndexingJobs.IndexChangesJob"
+   Access: Search > Index page > Build Index
 
-2. Cache Refresh Job
-   Job: "Refresh Platform Cache"
-   Frequency: Hourly or on-demand
-   
    Test:
-   □ Update product price in database
-   □ Verify cache shows old price (cached)
-   □ Trigger cache refresh job
-   □ Verify cache shows new price (refreshed)
+   □ Trigger manual build → status shows completed (SRCH-007)
+   □ Full indexation via Elastic Search module (SRCH-019)
+   □ Cancel indexation task in progress (SRCH-011, SRCH-017)
+   □ Blue-green: rebuild both indices, swap, verify (SRCH-008, SRCH-010)
+   □ Verify "Pricing indexation date and time" field updates (PRICE-048)
+   □ Event-based indexation: price change triggers reindex (PRICE-043)
+   □ Event-based indexation: inventory change triggers reindex (INV-042)
+   □ Schedule indexing jobs with cron expression (SRCH-038)
 
-3. Export Job
-   Job: "Export Products to CSV"
-   
-   Test:
-   □ Trigger export job with filters
-   □ Monitor job progress
-   □ Download exported file when complete
-   □ Validate file content (all products, correct columns)
-   □ Check for data accuracy
+2. Export Jobs (PRICE-008, PRICE-031, PRICE-042, INV-039)
+   Job: Export to CSV/JSON
 
-4. Data Sync Job (ERP Integration)
-   Job: "Sync Inventory from ERP"
-   
    Test:
-   □ Job runs on schedule
-   □ Job completes successfully
-   □ Inventory updated in platform
-   □ Failed syncs logged and retried
-   □ Error notifications sent (if configured)
+   □ Export price lists → download file, verify content (PRICE-008)
+   □ Export price list assignments → download, verify (PRICE-031)
+   □ Export/Import page size setting → progress bar respects value (PRICE-042, INV-039)
+   □ Monitor job progress in Hangfire dashboard
+   □ Validate exported data accuracy
+
+3. Notification Jobs (ORD-047 to ORD-049)
+   Job: Email/notification dispatch
+
+   Test:
+   □ Order paid/sent notification triggers (ORD-048)
+   □ Payment/shipment status change notification (ORD-049)
+   □ Resend notification from Notifications widget (ORD-047)
+   □ Disabled notification setting → no notification sent
+
+4. Inventory Adjustment Jobs (ORD-028, ORD-062)
+   Job: Stock adjustment on order cancellation
+
+   Test:
+   □ Cancel order → stock increases (when 'Adjust inventory' enabled)
+   □ Cancel order → stock unchanged (when setting disabled)
+   □ Multiple FFCs stock adjusted correctly (ORD-029)
 ```
 
-### 6. DATA IMPORT/EXPORT
+### 6. DATA IMPORT/EXPORT (from 29-csv-export-import-tests.csv — 18 tests)
 
-**Import Testing:**
+**CSV Import Testing (CSVIO-001 to CSVIO-012):**
 ```markdown
-Test Case: TC_IMPORT_001
+# CSVIO-001: Import catalog — categories and items (general)
+1. Navigate to Catalog > Import
+2. Upload CSV file with categories and items
+3. Start import → wait for completion
+4. Verify imported data in catalog
+✅ Categories and items imported correctly from CSV
 
-Title: Import products via CSV
+# CSVIO-002: Import catalog — creation of new items
+1. Upload CSV with new product items (SKUs not in system)
+2. Start import
+3. Verify new items created in catalog with correct properties
+✅ New items created matching CSV data
 
-Location: Catalog → Import
+# CSVIO-003: Import subcategories (single and multiple levels)
+1. Upload CSV with 1 subcategory level → verify hierarchy
+2. Upload CSV with multiple subcategory levels → verify deep hierarchy
+✅ Subcategory hierarchies imported correctly at all levels
 
-Test Data: products_import.csv
-100 rows, 20 columns (code, name, price, category, etc.)
+# CSVIO-004: Import catalog — update existing items
+1. Upload CSV with updated values for existing products
+2. Start import
+3. Verify existing items updated (names, prices, descriptions changed)
+✅ Existing items updated with new values from CSV
 
-Steps:
-1. Navigate to Catalog → Import
-2. Upload CSV file
-3. Map columns:
-   - Column "SKU" → Product Code
-   - Column "Product Name" → Name
-   - Column "Price" → List Price
-   - etc.
-4. Select import mode: "Create new and update existing"
-5. Click "Start Import"
-6. Monitor progress (progress bar shows %)
-7. Wait for completion
-8. Review import summary
+# CSVIO-005: Import multiple product images via CSV
+1. Upload CSV with multiple image URLs per product
+2. Import → verify images attached to products in Admin
+✅ Multiple product images imported and attached correctly
 
-Expected:
-✅ Import completes without errors
-✅ Summary shows: 100 processed, 95 created, 5 updated, 0 failed
-✅ Failed rows logged with reasons (if any)
+# CSVIO-006: Import multilanguage product descriptions
+1. Upload CSV with product descriptions in EN, DE, FR, etc.
+2. Import → switch language in Admin → verify all locales
+✅ Product descriptions imported for all specified languages
 
-Validation:
-9. Query products API
-   GET /api/catalog/products?codes=SKU001,SKU002,SKU003
-   Expected: Products exist with correct data
+# CSVIO-007: Full round-trip — export products then reimport
+1. Export products to CSV
+2. Modify some values in exported CSV
+3. Reimport modified CSV
+4. Verify changes applied correctly
+✅ Full round-trip export/import works without data loss
 
-10. Check product in Admin
-    Expected: Product details match CSV data
+# CSVIO-008: Import with different column delimiters
+1. Import with Vertical bar (|) delimiter
+2. Import with Comma (,) delimiter
+3. Import with Tab delimiter
+4. Import with Semicolon (;) delimiter
+✅ All delimiter types parsed and imported correctly
 
-11. Verify search index updated
-    Search for product by name
-    Expected: Product found in search results
+# CSVIO-009: Import user permissions (RBAC)
+1. Login as user WITH import permission → attempt import → allowed
+2. Login as user WITHOUT import permission → attempt import → denied
+✅ Import access controlled by user permissions
 
-Edge Cases:
-- Import with invalid CSV (missing required columns) → Should reject
-- Import with duplicate codes → Should update existing (if mode allows)
-- Import with invalid data (negative price) → Should log error, skip row
-- Import with special characters → Should handle encoding correctly
-- Import very large file (10k+ rows) → Should process without timeout
+# CSVIO-010: Import SEO properties (creation and update)
+1. Import CSV with SEO slug, meta title, meta description for new items
+2. Import CSV updating SEO for existing items
+✅ SEO properties created and updated via CSV import
+
+# CSVIO-011: Import common properties (updating and creating)
+1. Import CSV with common (shared) properties for items
+2. Verify properties created/updated on products
+✅ Common properties imported correctly
+
+# CSVIO-012: Import multilanguage property values
+1. Import CSV with multilanguage property values
+2. Switch Admin to each language → verify property values per locale
+✅ Multilanguage property values imported for all locales
 ```
 
-**Export Testing:**
+**CSV Export Testing (CSVIO-013 to CSVIO-018):**
 ```markdown
-Test Case: TC_EXPORT_001
+# CSVIO-013: Export catalog — general (Critical)
+1. Navigate to Catalog > select products/categories
+2. Click Export → choose CSV format
+3. Download exported file
+4. Open CSV → verify correct product data, columns, encoding
+✅ CSV export file generated with correct product data
 
-Title: Export orders to CSV
+# CSVIO-014: Export from category and subcategory
+1. Export from top-level category → verify CSV contains only its products
+2. Export from subcategory → verify CSV contains only subcategory products
+✅ Category-level exports contain correct product scope
 
-Location: Orders → Export
+# CSVIO-015: Export single physical product
+1. Select one physical product → Export to CSV
+2. Verify all properties present (name, SKU, price, weight, dimensions, images)
+✅ Single product exported with all properties
 
-Steps:
-1. Navigate to Orders → All Orders
-2. Apply filters:
-   - Date range: Last 30 days
-   - Status: Completed
-3. Click "Export"
-4. Select format: CSV
-5. Wait for export job to complete (check Hangfire)
-6. Download exported file
+# CSVIO-016: Export digital and BOM products
+1. Export a digital product → verify CSV format for digital type
+2. Export a BOM (Bill of Materials) product → verify components listed
+✅ Digital and BOM product types exported correctly
 
-Expected:
-✅ Export job succeeds
-✅ File downloads correctly
-✅ File size reasonable
+# CSVIO-017: Export with fulfillment center and pricelist selection
+1. Select products → choose specific Fulfillment Center and PriceList in export options
+2. Export → verify CSV includes only selected FFC inventory and pricelist prices
+✅ Export respects FFC and pricelist selection
 
-Validation:
-7. Open CSV in Excel/LibreOffice
-   Expected: Data displays correctly, no corruption
+# CSVIO-018: Export 10 products bulk
+1. Select 10 products in catalog
+2. Export to CSV
+3. Verify all 10 products present in export with complete data
+✅ All selected products exported correctly
+```
 
-8. Check columns:
-   Expected: Order Number, Date, Customer, Total, Status, etc.
+**Cross-Module Export Tests (from Pricing, Inventory, Orders suites):**
+```markdown
+# PRICE-008: Export pricelist to CSV
+1. Pricing > Pricelists > select pricelist > Export
+2. Download CSV → verify price entries match Admin data
+✅ Pricelist exported with correct price entries
 
-9. Verify data accuracy:
-   - Pick random order from CSV
-   - Find same order in Admin
-   - Compare: Order number, total, items
-   Expected: Data matches exactly
+# PRICE-031: Export products from Prices blade
+1. Catalog > Product > Prices widget > Export
+2. Verify CSV contains all price tiers and currencies for that product
+✅ Per-product price export includes tiers and currency variants
 
-10. Check special characters:
-    - Customer names with accents
-    - Product names with quotes
-    Expected: Special characters handled, no broken formatting
+# PRICE-042: Export pricelist assignment details
+1. Pricelists > Assignment > Export
+2. Verify catalog, currency, priority, conditions in export
+✅ Assignment rules exported correctly
 
-11. Check date format:
-    Expected: Dates in consistent format (YYYY-MM-DD or locale-specific)
+# INV-039: Export inventory from FFC
+1. Inventory > Fulfillment Center > Inventory tab > Export
+2. Verify stock quantities, reserved, reorder points in CSV
+✅ Inventory data exported per FFC
 
-12. Check currency format:
-    Expected: Currency symbols correct, decimal places consistent
+# ORD-064: Export orders (if available)
+1. Orders > select orders > Export
+2. Verify order data: number, customer, items, totals, status
+✅ Order export contains complete order details
 ```
 
 ### 7. INTEGRATION TESTING
 
-**Elasticsearch Integration:**
+**Pricing ↔ Storefront Integration (from 19-pricing-tests.csv):**
 ```markdown
-Test: Product Search Index Integration
+# PRICE-009: Change price on Backend → Price updated on Storefront
+1. Backend: Catalog > Product > Price widget → change price value → Save
+2. Rebuild search index
+3. Storefront: Open same product → verify price matches backend change
+✅ Price updated on storefront
 
-Steps:
-1. Create new product via API:
-   POST /api/catalog/products
-   Body: { "code": "SEARCH-TEST-001", "name": "Test Product for Search" }
+# PRICE-010: Remove price → Storefront shows $0 and Unavailable
+1. Backend: Delete all prices from product → Save
+2. Rebuild search index
+3. Storefront: Price = 0, 'Unavailable' label shown, cannot add to cart
+✅ Product correctly marked unavailable
 
-2. Wait for indexing (or trigger manually)
-   Background job: "Index Product"
+# PRICE-011: Price with highest priority shown on Storefront
+1. Set priority of priceList_1 higher than priceList_2 → storefront shows priceList_1 price
+2. Swap priorities → storefront shows priceList_2 price
+✅ Priority controls which price is displayed
 
-3. Search via API:
-   POST /api/catalog/search/products
-   Body: { "keyword": "Test Product for Search" }
+# PRICE-013: Price changed when switching currency (USD/EUR)
+1. USD selected → product shows USD price from USD pricelist
+2. Switch to EUR → product shows EUR price from EUR pricelist
+✅ Currency-specific pricelists work correctly
 
-Expected:
-✅ Product appears in search results
-✅ Search relevance correct (keyword match)
+# PRICE-019: Verify pricelist assignment via GraphQL xAPI
+query { products(storeId: "mystore1", productIds: "<id>") {
+  items { name prices { list { formattedAmountWithoutPoint } pricelistId } }
+}}
+✅ Response contains correct price from assigned pricelist
 
-4. Update product name:
-   PUT /api/catalog/products/SEARCH-TEST-001
-   Body: { "name": "Updated Search Test Product" }
-
-5. Trigger re-index (if not automatic)
-
-6. Search for new name:
-   POST /api/catalog/search/products
-   Body: { "keyword": "Updated Search Test" }
-
-Expected:
-✅ Updated product found
-✅ Old name no longer matches
-
-7. Delete product:
-   DELETE /api/catalog/products/SEARCH-TEST-001
-
-8. Search for deleted product:
-   Expected: Product NOT in search results ✅
+# PRICE-024: Tiered pricing in cart (complex integration)
+Product with tiers: qty=1 ($349/$210), qty=4 ($100), qty=10 ($88/$69)
+- Cart qty=1 → list/sale = 349/210
+- Cart qty=4 → new price 100, discount = (349-100)×4
+- Cart qty=10 → new price 69, discount = (349-69)×10
+✅ Discount recalculates correctly per tier at each quantity
 ```
 
-**Redis Cache Integration:**
+**Inventory ↔ Storefront Integration (from 22-inventory-tests.csv):**
 ```markdown
-Test: Price Caching
+# INV-019: Order product → stock qty decreased
+1. Backend: Note 'In stock' qty = X
+2. Storefront: Order product (qty=1)
+3. Backend: 'In stock' = X-1
+✅ Stock decremented after order (Track inventory = TRUE)
 
-Steps:
-1. Get product price (first call):
-   GET /api/pricing/products/test-prod-123/prices
-   
-   Check Redis:
-   - Key: pricing:test-prod-123
-   - Expected: Cache miss → fetched from DB → cached
+# INV-020: Order more items than available → warning
+1. Backend: Set 'In stock' = X
+2. Storefront: Add product, set qty = X+1
+3. Warning: "Product quantity exceeded! Available quantity is: X"
+✅ Validation prevents over-ordering
 
-2. Get same product price (second call):
-   GET /api/pricing/products/test-prod-123/prices
-   
-   Check Redis:
-   - Expected: Cache hit → returned from cache (faster response)
+# INV-021: Available items from multiple FFCs
+1. Default FFC stock = X, Available FFC stock = Y
+2. Storefront: qty = X+Y → no warning (combined inventory)
+3. qty = X+Y+1 → warning shown
+✅ Multiple fulfillment center stock aggregated
 
-3. Update product price in database:
-   PUT /api/pricing/products/test-prod-123/prices
-   Body: { "sale": 79.99 }
+# INV-022: In stock = 0 → item unavailable
+1. 'Add to cart' button inactive in details view
+2. No 'Add to cart' button in list view
+3. 'Sold out' label on item image
+✅ Zero-stock items properly blocked
 
-4. Check cache invalidation:
-   Expected: Cache key deleted or updated
+# INV-023: Add to cart → Backend reduces stock to 0 → Create order fails
+1. Storefront: Add product to cart
+2. Backend: Update inventory to 0
+3. Storefront: Try to create order → validation error
+✅ Real-time inventory validation at checkout
+```
 
-5. Get product price again:
-   GET /api/pricing/products/test-prod-123/prices
-   
-   Expected: Returns new price (79.99) ✅
+**Order ↔ Inventory Integration (from 20-orders-tests.csv):**
+```markdown
+# ORD-028: Cancel order → adjust stock for single product FFC
+Preconditions: 'Adjust inventory for orders' enabled, Track inventory = TRUE
+1. Note current 'In stock' qty for product in Default FFC
+2. Cancel the order
+3. Verify stock increased by cancelled order quantity
+✅ Stock restored on cancellation
+
+# ORD-029: Cancel order → adjust stock for multiple FFCs and products
+1. Order has products from different FFCs
+2. Cancel → verify stock adjusts for each product in respective FFC
+✅ Multi-FFC stock adjustment works
+
+# ORD-030: Non-cancelled status → stock doesn't change
+1. Set Payment status = Cancelled (not order) → stock unchanged
+2. Set Shipment status = Cancelled (not order) → stock unchanged
+✅ Only full order cancellation triggers stock adjustment
+```
+
+**Search Index Integration (from 26-search-indexing-tests.csv):**
+```markdown
+# SRCH-015: Create product then refresh index
+1. Create new product
+2. Navigate to Search Index → Refresh
+✅ New product reflected in index after rebuild
+
+# SRCH-016: Delete product then rebuild index
+1. Delete a product
+2. Rebuild index
+3. Search for deleted product
+✅ Deleted product no longer appears in search results
+
+# SRCH-008: Rebuild index (blue-green)
+1. Navigate to Search Index → Click Rebuild
+2. Verify both active and inactive indices built
+✅ Both indices updated successfully
+
+# SRCH-010: Swap indexes (blue-green deployment)
+1. Click Swap Indexes
+✅ Active and inactive indices swapped successfully
+
+# SRCH-028 to 035: Search Filters API
+□ SRCH-028: Single TermFilter → results filtered by single term
+□ SRCH-029: Multiple TermFilters → AND logic applied
+□ SRCH-030: OrFilter → products matching ANY condition returned
+□ SRCH-031: AndFilter with nested OrFilter → complex logic correct
+□ SRCH-032: NotFilter → excluded products not returned
+□ SRCH-033/034: RangeFilter (greater than / between) → numeric filtering works
+□ SRCH-035: Filter on nested property → nested path filtering works
 ```
 
 ## TEST ARTIFACT OUTPUT PATHS
@@ -1471,9 +1520,18 @@ Assignee: @developer-name
 - Module APIs return 404 → Routing not configured correctly
 - Module conflicts with other modules → Dependency version mismatch
 
-**Platform Versioning:**
-- Alfa: Bleeding edge, breaking changes expected
-- Edge: Preview features, mostly stable
+**Platform Versioning (QA uses Edge/Alpha):**
+- Alpha: Bleeding edge, breaking changes expected — watch for new/renamed API fields
+- Edge: Preview features, mostly stable — primary QA testing target
+- Stable: Production releases — regression baselines reference Stable Bundle v10
+
+**When testing Edge/Alpha on QA:**
+- Always check ${BACK_URL}/#!/workspace/systeminfo for actual deployed versions
+- Compare module versions against previous deployment to identify what changed
+- Look for new GraphQL types/mutations via introspection
+- Check Swagger for new or modified REST API endpoints
+- Verify backward compatibility with existing test data
+- Document any breaking changes or deprecations found
 
 ### API Authentication:
 

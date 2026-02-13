@@ -388,14 +388,6 @@ Deep debugging and performance analysis:
 - Tools: `runCollection`, `getCollection`, `getEnvironment`
 - Use for: API testing, debugging backend issues
 
-**7. serena (Semantic Code Exploration)**
-- Use for: Explore codebase, understand test implementations, find related code
-- When to use: Investigating test failures, understanding component implementations
-- Key tools:
-  - `get_symbols_overview` - View code structure
-  - `find_symbol` - Locate specific implementations
-  - `search_for_pattern` - Find code patterns
-
 ### Tool Selection Guide
 
 | Task | Primary Tool | Alternative |

@@ -100,13 +100,6 @@ Ensure comprehensive test coverage through systematic test planning, detailed te
   - `getCollectionRequest` - Review request structures
   - `getSpec` - Review API specifications
 
-**7. serena (Semantic Code Exploration)**
-- Use for: Explore codebase structure, find symbols, understand code relationships
-- When to use: Understanding implementation details when writing test cases, analyzing technical scope, finding related components
-- Key tools:
-  - `get_symbols_overview` - Understand code structure
-  - `find_symbol` - Locate specific implementations
-  - `find_referencing_symbols` - Trace dependencies for impact analysis
 
 ### Cross-Browser Test Planning
 

@@ -107,7 +107,7 @@ Additional MCP servers (configured at user level, not in `.mcp.json`):
 - **Chrome DevTools MCP** - Console logs, network requests, performance tracing, HAR export
 - **Atlassian MCP** - JIRA integration for test case management and bug reporting
 - **Figma MCP** - Visual comparison testing against design specs
-- **Serena** - Semantic code navigation and symbol-level editing
+- **Context7** - Up-to-date library documentation lookup (resolve-library-id, query-docs)
 
 ## Browser Automation
 
@@ -284,6 +284,48 @@ Must always pass before deployment:
 8. Order management and history
 9. Company members and multi-organization
 10. Google Analytics event tracking
+
+## Virto Commerce Platform Reference (via Context7)
+
+Context7 library ID: `/virtocommerce/vc-docs` (6,033 code snippets, High reputation)
+
+Use `resolve-library-id` then `query-docs` to fetch up-to-date Virto Commerce documentation during testing and development tasks.
+
+### Platform Architecture
+- **Framework:** Enterprise-level, open-source, .NET-based e-commerce platform
+- **Architecture:** Modular, headless commerce — business logic exposed via APIs
+- **Capabilities:** Multi-store, multi-currency, multi-language deployments
+
+### API Layers
+| API | Purpose | Used By |
+|-----|---------|---------|
+| **REST API** | CRUD operations, integrations, admin tools | Backend agents, Postman collections |
+| **GraphQL xAPI** | Frontend-optimized storefront queries (xCart, xCatalog, xOrder, xCMS) | Storefront, frontend agents |
+
+The xAPI architecture was revamped in July 2024 — the monolithic `ExperienceApi` module was replaced with specialized modules (archived for Stable 8/9).
+
+### Tech Stack
+- **Database:** SQL Server, PostgreSQL, MySQL
+- **Search:** Elasticsearch, Azure Cognitive Search, Algolia
+- **Frontend:** Vue.js storefront (themes), VC-Shell admin SPA (Angular)
+- **Deployment:** On-prem (Windows/Linux), Docker, Azure App Services, Virto Cloud
+
+### Documentation Areas
+- **Platform** — backend admin, developer guides, cloud deployment
+- **Storefront** — Vue.js frontend, theme customization
+- **Marketplace** — multi-vendor operator & vendor portals
+
+### Common Context7 Queries
+```
+# Resolve the library first
+resolve-library-id("VirtoCommerce", "Virto Commerce platform docs")
+# Then query specific topics
+query-docs("/virtocommerce/vc-docs", "GraphQL xAPI cart mutations addItem removeItem")
+query-docs("/virtocommerce/vc-docs", "custom module development tutorial")
+query-docs("/virtocommerce/vc-docs", "payment provider integration")
+query-docs("/virtocommerce/vc-docs", "VC-Shell admin SPA blade system")
+query-docs("/virtocommerce/vc-docs", "Elasticsearch search indexing configuration")
+```
 
 ## Key Testing Domains
 
