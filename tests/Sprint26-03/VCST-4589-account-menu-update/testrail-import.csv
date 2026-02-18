@@ -1,0 +1,307 @@
+ID,Title,Section,Priority,Type,Preconditions,Steps,Expected Result
+TC-VCST-4589-001,Verify "Purchasing" group exists and displays correctly,1. Menu Structure,Critical,Functional,"1. QA environment is accessible at ${FRONT_URL} (from .env)
+2. Test user logged in: ${USER_EMAIL} / ${USER_PASSWORD} (from .env)
+3. User navigates to Account area","1. Navigate to ${FRONT_URL}
+2. Log in with test user credentials
+3. Click on Account icon/link in header
+4. Inspect left rail menu
+5. Locate ""Purchasing"" group in menu
+6. Verify ""Purchasing"" group position","Expected: ""Purchasing"" menu group exists with correct title and positioning. Group displays with title ""Purchasing"" or translated key, positioned as first menu group (above User, Marketing, Corporate)."
+TC-VCST-4589-002,Verify "Purchasing" group contains correct menu items,1. Menu Structure,Critical,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. ""Purchasing"" group visible in left rail menu","1. Expand ""Purchasing"" group (if collapsed)
+2. Count menu items in ""Purchasing"" group
+3. Verify item 1: Dashboard (icon: dashboard-2, priority: 10)
+4. Verify item 2: Orders (icon: clipboard-list, priority: 20)
+5. Verify item 3: Lists (icon: list-v2, priority: 30)
+6. Verify item 4: Saved for Later (icon: bookmark-solid, priority: 60)
+7. Verify menu item ordering","Expected: ""Purchasing"" group contains exactly 4 items (Dashboard, Orders, Lists, Saved for Later) in correct order with correct labels and icons."
+TC-VCST-4589-003,Verify "User" group exists and contains correct menu items,1. Menu Structure,Critical,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Left rail menu visible","1. Locate ""User"" group in left rail menu
+2. Expand ""User"" group (if collapsed)
+3. Count menu items in ""User"" group
+4. Verify item 1: Profile (icon: profile, priority: 10)
+5. Verify item 2: Addresses (icon: source-environment, priority: 20)
+6. Verify item 3: Change Password (icon: pass, priority: 30)
+7. Verify item 4: Saved Credit Cards (icon: credit-card, priority: 40)
+8. Verify menu item ordering","Expected: ""User"" group exists with correct title, contains exactly 4 items (Profile, Addresses, Change Password, Saved Credit Cards) in correct order with correct labels and icons."
+TC-VCST-4589-004,Verify "Marketing" group exists as empty placeholder,1. Menu Structure,High,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Left rail menu visible","1. Locate ""Marketing"" group in left rail menu
+2. Check ""Marketing"" group children array
+3. Verify ""Marketing"" group is collapsible/non-interactive","Expected: ""Marketing"" group exists as placeholder with correct title, positioned between ""Purchasing"" and ""User"" groups. Group has no child menu items (empty array). This is expected as placeholder for VCST-4590."
+TC-VCST-4589-005,Verify "Corporate" group remains unchanged,1. Menu Structure,High,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Left rail menu visible
+4. Test user belongs to an organization (for Corporate menu to be visible)","1. Locate ""Corporate"" group in left rail menu
+2. Expand ""Corporate"" group (if collapsed)
+3. Count menu items in ""Corporate"" group
+4. Verify item 1: Company Info (icon: case)
+5. Verify item 2: Company Members (icon: user-group)
+6. Compare with baseline","Expected: ""Corporate"" group exists with original structure. Contains 2 items: Company Info, Company Members. Icons and labels unchanged. No regressions introduced."
+TC-VCST-4589-006,Verify menu item count and distribution across groups,1. Menu Structure,High,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. All menu groups visible in left rail","1. Count total menu items in ""Purchasing"" group
+2. Count total menu items in ""Marketing"" group
+3. Count total menu items in ""User"" group
+4. Count total menu items in ""Corporate"" group
+5. Calculate total menu items (excluding Corporate)
+6. Compare with baseline
+7. Verify no menu items were removed","Expected: Total menu items: 8 (same as baseline). Distribution: Purchasing (4) + Marketing (0) + User (4) = 8. No menu items removed or added (only reorganized). All original items present in new grouped structure."
+TC-VCST-4589-007,Verify menu group hierarchy and nesting,1. Menu Structure,Medium,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Left rail menu visible","1. Inspect menu DOM structure
+2. Verify ""Purchasing"" group nesting
+3. Verify ""Marketing"" group nesting
+4. Verify ""User"" group nesting
+5. Verify ""Corporate"" group nesting
+6. Verify no deeply nested groups
+7. Verify group indentation/visual hierarchy","Expected: Menu uses proper parent-child hierarchy. Groups are parent nodes. Menu items are child nodes (no deeper nesting). Visual hierarchy clear (indentation, spacing)."
+TC-VCST-4589-008,Navigate to Dashboard from Purchasing group,2. Navigation Functionality,Critical,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. ""Purchasing"" group expanded (if collapsible)","1. Click on ""Dashboard"" menu item in ""Purchasing"" group
+2. Verify page content
+3. Verify menu state
+4. Verify breadcrumb (if present)","Expected: Dashboard page loads successfully. URL: ${FRONT_URL}/account or /dashboard. ""Dashboard"" menu item highlighted/active. Page content renders without errors."
+TC-VCST-4589-009,Navigate to Orders from Purchasing group,2. Navigation Functionality,Critical,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. ""Purchasing"" group expanded","1. Click on ""Orders"" menu item in ""Purchasing"" group
+2. Verify page content
+3. Verify menu state
+4. Verify breadcrumb (if present)","Expected: Orders page loads successfully. URL: ${FRONT_URL}/account/orders. ""Orders"" menu item highlighted/active. Order list displays (empty or populated)."
+TC-VCST-4589-010,Navigate to Lists from Purchasing group,2. Navigation Functionality,Critical,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. ""Purchasing"" group expanded","1. Click on ""Lists"" menu item in ""Purchasing"" group
+2. Verify page content
+3. Verify menu state
+4. Verify breadcrumb (if present)","Expected: Lists page loads successfully. URL: ${FRONT_URL}/account/lists or /lists. ""Lists"" menu item highlighted/active. Lists display (empty or populated)."
+TC-VCST-4589-011,Navigate to Saved for Later from Purchasing group,2. Navigation Functionality,Critical,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. ""Purchasing"" group expanded","1. Click on ""Saved for Later"" menu item in ""Purchasing"" group
+2. Verify page content
+3. Verify menu state
+4. Verify breadcrumb (if present)","Expected: Saved for Later page loads successfully. URL: ${FRONT_URL}/account/saved-for-later. ""Saved for Later"" menu item highlighted/active. Saved items display (empty or populated)."
+TC-VCST-4589-012,Navigate to Profile from User group,2. Navigation Functionality,Critical,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. ""User"" group expanded","1. Click on ""Profile"" menu item in ""User"" group
+2. Verify page content
+3. Verify menu state
+4. Verify breadcrumb (if present)","Expected: Profile page loads successfully. URL: ${FRONT_URL}/account/profile. User information displays correctly. ""Profile"" menu item highlighted/active."
+TC-VCST-4589-013,Navigate to Addresses from User group,2. Navigation Functionality,Critical,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. ""User"" group expanded","1. Click on ""Addresses"" menu item in ""User"" group
+2. Verify page content
+3. Verify menu state
+4. Verify breadcrumb (if present)","Expected: Addresses page loads successfully. URL: ${FRONT_URL}/account/addresses. Saved addresses display (empty or populated). ""Addresses"" menu item highlighted/active."
+TC-VCST-4589-014,Navigate to Change Password from User group,2. Navigation Functionality,Critical,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. ""User"" group expanded","1. Click on ""Change Password"" menu item in ""User"" group
+2. Verify page content
+3. Verify menu state
+4. Verify breadcrumb (if present)","Expected: Change Password page loads successfully. URL: ${FRONT_URL}/account/change-password. Password change form displays correctly. ""Change Password"" menu item highlighted/active."
+TC-VCST-4589-015,Navigate to Saved Credit Cards from User group,2. Navigation Functionality,Critical,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. ""User"" group expanded","1. Click on ""Saved Credit Cards"" menu item in ""User"" group
+2. Verify page content
+3. Verify menu state
+4. Verify breadcrumb (if present)","Expected: Saved Credit Cards page loads successfully. URL: ${FRONT_URL}/account/saved-credit-cards. Payment methods display (empty or populated). ""Saved Credit Cards"" menu item highlighted/active."
+TC-VCST-4589-016,Navigate to Company Info from Corporate group,2. Navigation Functionality,High,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Test user belongs to an organization
+4. ""Corporate"" group expanded","1. Click on ""Company Info"" menu item in ""Corporate"" group
+2. Verify page content
+3. Verify menu state
+4. Verify breadcrumb (if present)","Expected: Company Info page loads successfully. URL: ${FRONT_URL}/company or /account/company-info. Organization details display correctly. ""Company Info"" menu item highlighted/active."
+TC-VCST-4589-017,Navigate to Company Members from Corporate group,2. Navigation Functionality,High,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Test user belongs to an organization
+4. ""Corporate"" group expanded","1. Click on ""Company Members"" menu item in ""Corporate"" group
+2. Verify page content
+3. Verify menu state
+4. Verify breadcrumb (if present)","Expected: Company Members page loads successfully. URL: ${FRONT_URL}/company/members or /account/company-members. Members list displays correctly. ""Company Members"" menu item highlighted/active."
+TC-VCST-4589-018,Verify active menu item state persists across page navigation,2. Navigation Functionality,High,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page","1. Click ""Dashboard"" menu item
+2. Click ""Orders"" menu item
+3. Click ""Profile"" menu item
+4. Click ""Addresses"" menu item
+5. Refresh page on Addresses
+6. Navigate back to Dashboard","Expected: Only one menu item active at a time. Active state updates correctly on navigation. Active state persists after page refresh. No multiple items highlighted simultaneously."
+TC-VCST-4589-019,Verify menu item clickability and hover states,2. Navigation Functionality,Medium,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page","1. Hover over ""Dashboard"" menu item
+2. Hover over each menu item in ""Purchasing"" group
+3. Hover over each menu item in ""User"" group
+4. Hover over each menu item in ""Corporate"" group
+5. Click each hovered item
+6. Verify disabled states (if any)","Expected: All menu items have visible hover state. Hover state provides visual feedback. Cursor changes to pointer on hover. Disabled items (if any) not interactive."
+TC-VCST-4589-020,Test group expand/collapse functionality (if applicable),2. Navigation Functionality,Medium,Functional,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Menu groups have expand/collapse functionality (verify in design)","1. Verify initial state of ""Purchasing"" group
+2. Click ""Purchasing"" group header
+3. Verify expand/collapse icon
+4. Click ""User"" group header
+5. Collapse all groups
+6. Expand all groups
+7. Refresh page","Expected: Groups can be expanded/collapsed independently. Expand/collapse icons update correctly. Child items show/hide smoothly. State persistence matches design intent. If design specifies always-expanded, mark N/A."
+TC-VCST-4589-021,Verify deep linking to account pages,2. Navigation Functionality,Medium,Functional,"1. QA environment accessible
+2. Test user logged in","1. Navigate directly to ${FRONT_URL}/account/orders
+2. Navigate directly to ${FRONT_URL}/account/profile
+3. Navigate directly to ${FRONT_URL}/account/addresses
+4. Navigate directly to ${FRONT_URL}/account/saved-credit-cards
+5. Navigate directly to ${FRONT_URL}/account/lists
+6. Verify menu consistency","Expected: Deep links to account pages work correctly. Correct menu item highlighted based on URL. Menu structure consistent across all pages."
+TC-VCST-4589-022,Verify menu icons match Figma design,3. Visual Design,High,Visual,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Figma design accessible: https://www.figma.com/design/ryT9jc1XQ2MxZOD9FLycJc/","1. Open Figma design at specified node ID
+2. Compare ""Dashboard"" icon
+3. Compare ""Orders"" icon
+4. Compare ""Lists"" icon
+5. Compare ""Saved for Later"" icon
+6. Compare ""Profile"" icon
+7. Compare ""Addresses"" icon
+8. Compare ""Change Password"" icon
+9. Compare ""Saved Credit Cards"" icon
+10. Take screenshots of all icons","Expected: All menu item icons match Figma design. Icons consistent in size, color, and style. Icons render clearly without distortion."
+TC-VCST-4589-023,Verify menu typography and text styling,3. Visual Design,High,Visual,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Figma design accessible","1. Open Figma design
+2. Compare group header typography
+3. Compare menu item typography
+4. Verify text case
+5. Verify text alignment
+6. Check line height and letter spacing
+7. Verify text color contrast","Expected: Group headers and menu items use correct typography. Font sizes, weights, and colors match Figma. Text case and alignment correct. Good readability and contrast."
+TC-VCST-4589-024,Verify menu spacing and layout,3. Visual Design,High,Visual,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Figma design accessible","1. Open Figma design
+2. Measure spacing between group headers
+3. Measure spacing between menu items
+4. Measure padding around menu items
+5. Measure indentation of child items
+6. Verify overall menu width
+7. Check alignment of icons and text","Expected: Spacing between elements matches Figma. Padding consistent across menu items. Child items indented correctly. Icons and text properly aligned. Tolerance: 2-4px variance acceptable."
+TC-VCST-4589-025,Verify menu color scheme and theme,3. Visual Design,High,Visual,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Figma design accessible
+4. Test on default theme (if multiple themes available)","1. Open Figma design
+2. Compare menu background color
+3. Compare group header text color
+4. Compare menu item text color (normal state)
+5. Compare menu item text color (hover state)
+6. Compare menu item text color (active state)
+7. Compare menu item background color (active state)
+8. Compare icon colors
+9. Check color consistency","Expected: All colors match Figma specifications. Color consistency across menu. Sufficient contrast for readability."
+TC-VCST-4589-026,Verify hover state styling,3. Visual Design,Medium,Visual,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Figma design accessible with hover state specs","1. Hover over ""Dashboard"" menu item
+2. Compare with Figma hover state
+3. Hover over group header (if interactive)
+4. Verify hover state for all menu items
+5. Check hover transition timing
+6. Verify hover state doesn't affect layout","Expected: Hover states match Figma design. Consistent hover styling across menu. Smooth transitions. No layout shift on hover."
+TC-VCST-4589-027,Verify active/selected state styling,3. Visual Design,High,Visual,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Figma design accessible with active state specs","1. Navigate to ""Dashboard""
+2. Compare with Figma active state
+3. Navigate to ""Orders""
+4. Verify active state for all pages
+5. Check active state visibility
+6. Verify only one item active at a time","Expected: Active state matches Figma design. Active state clearly visible and distinguishable. Only one item active at a time. Active state updates correctly on navigation."
+TC-VCST-4589-028,Verify menu dividers and separators (if applicable),3. Visual Design,Medium,Visual,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Figma design accessible","1. Open Figma design
+2. Inspect menu groups in implementation
+3. Check divider styling
+4. Verify divider spacing","Expected: Dividers present as specified in Figma. Divider styling (color, thickness) matches. Spacing around dividers correct. If Figma has no dividers, implementation should also have none."
+TC-VCST-4589-029,Verify menu responsive behavior (if applicable),3. Visual Design,Medium,Visual,"1. QA environment accessible
+2. Test user logged in and on Account page","1. View menu at desktop viewport (1920x1080)
+2. Resize browser to tablet viewport (768px width)
+3. Resize browser to mobile viewport (375px width)
+4. Verify text truncation or wrapping
+5. Test menu usability at smaller viewports","Expected: Menu responsive across viewport sizes. Layout adapts gracefully. Functionality maintained on smaller screens. Note: Desktop focus, mobile testing out of scope unless specified."
+TC-VCST-4589-030,Verify menu z-index and layering,3. Visual Design,Low,Visual,"1. QA environment accessible
+2. Test user logged in and on Account page","1. Scroll page content (if page has scroll)
+2. Open a modal or overlay (if applicable on account pages)
+3. Verify menu doesn't obscure page content
+4. Check z-index values in DevTools","Expected: Menu positioned correctly relative to page content. Modals/overlays display above menu. No z-index conflicts causing visual issues."
+TC-VCST-4589-031,Verify keyboard navigation through menu,4. Accessibility,Critical,Accessibility,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Mouse disconnected or not used for this test","1. Press Tab key repeatedly
+2. Verify focus indicator visibility
+3. Press Enter on focused menu item
+4. Test Shift+Tab (reverse navigation)
+5. Test Arrow keys (if supported)
+6. Verify focus trap (if menu is modal/overlay)","Expected: All menu items reachable via keyboard. Logical tab order (top to bottom). Visible focus indicator on all items. Enter key activates menu items. Arrow keys work for menu navigation (if applicable)."
+TC-VCST-4589-032,Verify screen reader compatibility,4. Accessibility,High,Accessibility,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Screen reader installed and active (NVDA on Windows, JAWS, or VoiceOver on macOS)","1. Activate screen reader
+2. Navigate to left rail menu
+3. Navigate through ""Purchasing"" group
+4. Navigate through ""User"" group
+5. Verify active item announcement
+6. Verify icon descriptions
+7. Test group expand/collapse (if applicable)","Expected: Screen reader announces all menu elements correctly. Group names announced. Menu items announced with clear labels. Active state announced. Icons have appropriate labels (if meaningful)."
+TC-VCST-4589-033,Verify ARIA attributes and semantic HTML,4. Accessibility,High,Accessibility,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Browser DevTools available","1. Inspect menu HTML structure
+2. Check ARIA roles
+3. Check ARIA labels
+4. Check ARIA expanded (if groups are collapsible)
+5. Check ARIA hidden (if applicable)
+6. Verify no ARIA misuse
+7. Run accessibility validator","Expected: Semantic HTML used appropriately. ARIA roles correct and not redundant. ARIA labels present where needed. ARIA states (expanded, current) set correctly. No ARIA errors in validator (axe DevTools or WAVE)."
+TC-VCST-4589-034,Verify color contrast compliance (WCAG 2.1 AA),4. Accessibility,High,Accessibility,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Color contrast checker tool available (e.g., WebAIM Contrast Checker, browser extensions)","1. Check group header text contrast
+2. Check menu item text contrast (normal state)
+3. Check menu item text contrast (hover state)
+4. Check menu item text contrast (active state)
+5. Check icon contrast (if icons are monochrome)
+6. Run automated contrast checker","Expected: All text meets WCAG 2.1 AA contrast requirements (4.5:1 for normal text, 3:1 for large text). Icons meet contrast requirements (3:1). No contrast violations in automated checker."
+TC-VCST-4589-035,Verify focus indicator visibility and styling,4. Accessibility,High,Accessibility,"1. QA environment accessible
+2. Test user logged in and on Account page
+3. Keyboard available for navigation","1. Press Tab to focus first menu item
+2. Tab through all menu items
+3. Check focus indicator contrast
+4. Verify focus not obscured
+5. Check focus indicator customization
+6. Verify focus indicator on group headers (if interactive)","Expected: Focus indicator clearly visible on all menu items. Focus indicator meets contrast requirements (3:1). Focus indicator not obscured or clipped. Consistent focus styling across menu."
+TC-VCST-4589-036,Verify menu functionality and appearance on Chrome,5. Cross-Browser,Critical,Cross-Browser,"1. QA environment accessible
+2. Google Chrome browser (latest version) installed
+3. Test user credentials available","1. Open Chrome browser
+2. Navigate to ${FRONT_URL}
+3. Log in with test user
+4. Navigate to Account area
+5. Verify menu structure
+6. Test navigation on Chrome
+7. Verify visual appearance
+8. Test hover and active states
+9. Test keyboard navigation
+10. Take screenshots","Expected: Full menu functionality on Chrome. All visual elements render correctly. No browser-specific bugs. Consistent with design specifications."
+TC-VCST-4589-037,Verify menu functionality and appearance on Firefox,5. Cross-Browser,High,Cross-Browser,"1. QA environment accessible
+2. Mozilla Firefox browser (latest version) installed
+3. Test user credentials available","1. Open Firefox browser
+2. Navigate to ${FRONT_URL}
+3. Log in with test user
+4. Navigate to Account area
+5. Verify menu structure
+6. Test navigation on Firefox
+7. Verify visual appearance
+8. Test hover and active states
+9. Test keyboard navigation
+10. Compare with Chrome
+11. Take screenshots","Expected: Full menu functionality on Firefox. Visual appearance consistent with Chrome and design. No Firefox-specific bugs."
+TC-VCST-4589-038,Verify menu functionality and appearance on Edge,5. Cross-Browser,High,Cross-Browser,"1. QA environment accessible
+2. Microsoft Edge browser (latest version) installed
+3. Test user credentials available","1. Open Edge browser
+2. Navigate to ${FRONT_URL}
+3. Log in with test user
+4. Navigate to Account area
+5. Verify menu structure
+6. Test navigation on Edge
+7. Verify visual appearance
+8. Test hover and active states
+9. Test keyboard navigation
+10. Compare with Chrome and Firefox
+11. Take screenshots","Expected: Full menu functionality on Edge. Visual appearance consistent with Chrome, Firefox, and design. No Edge-specific bugs."
