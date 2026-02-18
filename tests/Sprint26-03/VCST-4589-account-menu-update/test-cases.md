@@ -6,7 +6,7 @@
 |-------|-------|
 | **JIRA Ticket** | [VCST-4589](https://virtocommerce.atlassian.net/browse/VCST-4589) |
 | **GitHub PR** | [#2179](https://github.com/VirtoCommerce/vc-frontend/pull/2179) |
-| **Total Test Cases** | 37 |
+| **Total Test Cases** | 44 |
 | **Created By** | test-management-specialist |
 | **Date** | 2026-02-18 |
 
@@ -1144,8 +1144,8 @@ Corporate (existing, unchanged)
 - **FAIL:** Menu breaks, layout issues, or unusable on smaller screens
 
 **Notes:**
-- Test scope is desktop browsers; mobile testing is out of scope unless specified
 - This test case checks responsive window resizing on desktop
+- Dedicated mobile menu testing covered in Section 6 (TC-039 through TC-044)
 
 **Test Data:**
 - Browser window resizing
@@ -1525,6 +1525,220 @@ Corporate (existing, unchanged)
 
 ---
 
+## Section 6: Mobile Menu (6 test cases)
+
+---
+
+### TC-VCST-4589-039: Verify mobile menu trigger and visibility
+
+**Priority:** P0 (Critical)
+**Type:** Functional / Mobile
+**Assigned To:** qa-frontend-expert
+
+**Preconditions:**
+1. QA environment accessible at `${FRONT_URL}`
+2. Test user logged in
+3. Browser viewport set to mobile (375px width) or actual mobile device
+
+**Test Steps:**
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Set viewport to 375px width (iPhone) | Page renders in mobile layout |
+| 2 | Navigate to Account area | Account page loads in mobile layout |
+| 3 | Locate the account menu trigger | Hamburger icon, "Menu" button, or similar mobile menu trigger is visible |
+| 4 | Tap/click the menu trigger | Account menu opens (slide-out panel, dropdown, or full-screen overlay) |
+| 5 | Verify all menu groups visible | Purchasing, User, Corporate groups displayed (Marketing hidden if empty) |
+| 6 | Close the mobile menu | Menu closes, page content visible again |
+
+**Expected Result:**
+- Mobile menu trigger clearly visible and accessible
+- Menu opens/closes smoothly with animation
+- All menu groups and items accessible in mobile view
+- Menu does not obscure critical page elements when closed
+
+**Pass/Fail Criteria:**
+- **PASS:** Menu trigger visible, opens/closes correctly, all items accessible
+- **FAIL:** Menu trigger missing, menu doesn't open, items missing, or broken layout
+
+---
+
+### TC-VCST-4589-040: Verify mobile menu structure matches desktop groups
+
+**Priority:** P0 (Critical)
+**Type:** Functional / Mobile
+**Assigned To:** qa-frontend-expert
+
+**Preconditions:**
+1. QA environment accessible
+2. Test user logged in
+3. Mobile viewport (375px) or mobile device
+4. Mobile account menu opened
+
+**Test Steps:**
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Open mobile account menu | Menu displays |
+| 2 | Verify "Purchasing" group items | Contains: Dashboard, Orders, Lists, Saved for Later (same as desktop) |
+| 3 | Verify "User" group items | Contains: Profile, Addresses, Change Password, Saved Credit Cards (same as desktop) |
+| 4 | Verify "Corporate" group items | Contains: Company Info, Company Members (same as desktop) |
+| 5 | Verify menu item count | Total 8 menu items + Corporate (same as desktop) |
+| 6 | Verify item ordering within groups | Same priority ordering as desktop menu |
+
+**Expected Result:**
+- Mobile menu structure mirrors desktop grouped structure
+- Same items, same groups, same ordering
+- No items missing or duplicated compared to desktop
+
+**Pass/Fail Criteria:**
+- **PASS:** Mobile menu matches desktop structure exactly
+- **FAIL:** Missing groups, missing items, or different ordering
+
+---
+
+### TC-VCST-4589-041: Verify mobile menu navigation routes
+
+**Priority:** P0 (Critical)
+**Type:** Functional / Mobile
+**Assigned To:** qa-frontend-expert
+
+**Preconditions:**
+1. QA environment accessible
+2. Test user logged in
+3. Mobile viewport (375px)
+4. Mobile account menu opened
+
+**Test Steps:**
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Tap "Dashboard" in mobile menu | Dashboard page loads, menu closes (or stays), correct URL |
+| 2 | Re-open menu, tap "Orders" | Orders page loads, correct URL, no console errors |
+| 3 | Re-open menu, tap "Lists" | Lists page loads, correct URL |
+| 4 | Re-open menu, tap "Saved for Later" | Saved for Later page loads, correct URL |
+| 5 | Re-open menu, tap "Profile" | Profile page loads, correct URL |
+| 6 | Re-open menu, tap "Addresses" | Addresses page loads, correct URL |
+| 7 | Re-open menu, tap "Change Password" | Change Password page loads, correct URL |
+| 8 | Re-open menu, tap "Saved Credit Cards" | Saved Credit Cards page loads, correct URL |
+| 9 | Verify no console errors after all navigations | Console clean, no JavaScript errors |
+
+**Expected Result:**
+- All 8 menu items navigate to correct pages on mobile
+- Pages load correctly in mobile layout
+- Menu behavior after navigation is consistent (auto-close or stay open per design)
+- No console errors
+
+**Pass/Fail Criteria:**
+- **PASS:** All navigation routes work on mobile, pages load correctly
+- **FAIL:** Any route fails, page doesn't load, or console errors
+
+---
+
+### TC-VCST-4589-042: Verify mobile menu touch interactions
+
+**Priority:** P1 (High)
+**Type:** Functional / Mobile
+**Assigned To:** qa-frontend-expert
+
+**Preconditions:**
+1. QA environment accessible
+2. Test user logged in
+3. Mobile viewport (375px) or actual touch device
+4. Mobile account menu opened
+
+**Test Steps:**
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Tap a menu item | Item responds to tap with visual feedback (highlight/ripple) |
+| 2 | Verify touch target size | All menu items have minimum 44x44px touch target (WCAG) |
+| 3 | Test swipe to close (if applicable) | Swipe gesture closes the menu (if slide-out panel) |
+| 4 | Test tap outside menu to close | Tapping outside the menu area closes it |
+| 5 | Test scroll within menu (if items overflow) | Menu scrolls smoothly if content exceeds viewport height |
+| 6 | Verify no accidental taps | Sufficient spacing between items prevents accidental navigation |
+
+**Expected Result:**
+- Touch targets meet 44x44px minimum
+- Tap feedback visible
+- Menu dismissal gestures work (tap outside, swipe)
+- Scrolling works if menu content overflows
+- No accidental taps due to tight spacing
+
+**Pass/Fail Criteria:**
+- **PASS:** Touch targets adequate, gestures work, smooth scrolling
+- **FAIL:** Touch targets too small, gestures broken, or accidental taps
+
+---
+
+### TC-VCST-4589-043: Verify mobile menu across viewports (iPhone, Android)
+
+**Priority:** P1 (High)
+**Type:** Cross-Browser / Mobile
+**Assigned To:** qa-frontend-expert
+
+**Preconditions:**
+1. QA environment accessible
+2. Test user logged in
+
+**Test Steps:**
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Test at 375px width (iPhone SE/Mini) | Menu displays correctly, no overflow, all items accessible |
+| 2 | Test at 390px width (iPhone 14/15/16) | Menu displays correctly |
+| 3 | Test at 428px width (iPhone 14/15/16 Pro Max) | Menu displays correctly |
+| 4 | Test at 360px width (Android small) | Menu displays correctly |
+| 5 | Test at 412px width (Android Pixel/Samsung) | Menu displays correctly |
+| 6 | Test at 768px width (iPad / tablet portrait) | Menu transitions between mobile and desktop layout correctly |
+| 7 | Verify landscape orientation (667px height at 375px width) | Menu adapts to landscape, scrollable if needed |
+
+**Expected Result:**
+- Mobile menu renders correctly across all common mobile viewports
+- No horizontal overflow or cut-off content
+- Text readable without zooming
+- Layout adapts properly at tablet breakpoint
+
+**Pass/Fail Criteria:**
+- **PASS:** Menu renders correctly at all viewports, no layout breaks
+- **FAIL:** Layout broken, content cut off, or unusable at any viewport
+
+---
+
+### TC-VCST-4589-044: Verify mobile menu active state and current page indicator
+
+**Priority:** P1 (High)
+**Type:** Functional / Mobile
+**Assigned To:** qa-frontend-expert
+
+**Preconditions:**
+1. QA environment accessible
+2. Test user logged in
+3. Mobile viewport (375px)
+
+**Test Steps:**
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Navigate to Orders page on mobile | Orders page loads |
+| 2 | Open mobile menu | "Orders" item shows active/selected state (highlight, bold, icon) |
+| 3 | Navigate to Profile page | Profile page loads |
+| 4 | Open mobile menu | "Profile" item shows active state, "Orders" no longer active |
+| 5 | Deep link to `${FRONT_URL}/account/addresses` on mobile | Addresses page loads |
+| 6 | Open mobile menu | "Addresses" item shows active state |
+
+**Expected Result:**
+- Active menu item clearly indicated in mobile menu
+- Only one item active at a time
+- Active state updates correctly after navigation
+- Deep links also trigger correct active state
+
+**Pass/Fail Criteria:**
+- **PASS:** Active state works correctly on mobile, matches current page
+- **FAIL:** No active indicator, multiple active items, or incorrect state
+
+---
+
 ## Test Execution Summary
 
 | Section | Test Cases | P0 | P1 | P2 | P3 |
@@ -1534,7 +1748,8 @@ Corporate (existing, unchanged)
 | **3. Visual Design** | 9 | 0 | 5 | 3 | 1 |
 | **4. Accessibility** | 5 | 1 | 4 | 0 | 0 |
 | **5. Cross-Browser** | 3 | 1 | 2 | 0 | 0 |
-| **TOTAL** | **38** | **13** | **18** | **6** | **1** |
+| **6. Mobile Menu** | 6 | 3 | 3 | 0 | 0 |
+| **TOTAL** | **44** | **16** | **21** | **6** | **1** |
 
 ---
 
@@ -1543,7 +1758,7 @@ Corporate (existing, unchanged)
 | Acceptance Criterion | Test Cases | Coverage |
 |----------------------|------------|----------|
 | **AC1: Menu displays organized view with clear categorization** | TC-001, TC-002, TC-003, TC-004, TC-005, TC-006, TC-007 | ✅ 100% |
-| **AC2: Users can easily identify and navigate to account sections** | TC-008 through TC-021, TC-031, TC-032 | ✅ 100% |
+| **AC2: Users can easily identify and navigate to account sections** | TC-008 through TC-021, TC-031, TC-032, TC-039 through TC-044 | ✅ 100% |
 | **AC3: Coupons and promotions excluded (moved to VCST-4590)** | TC-004 (verifies Marketing group empty) | ✅ 100% |
 
 **Overall Test Coverage: 100%**

@@ -1,0 +1,85 @@
+ID,Title,Section,Priority,Type,Preconditions,Steps,Expected Result
+TC-VCST-4589-039,Verify mobile menu trigger and visibility,Section 6: Mobile Menu,Critical,Functional / Mobile,"1. QA environment accessible at ${FRONT_URL} (from .env)
+2. Test user logged in
+3. Browser viewport set to mobile (375px width) or actual mobile device","Step 1 - Set viewport to 375px width (iPhone): Page renders in mobile layout
+Step 2 - Navigate to Account area: Account page loads in mobile layout
+Step 3 - Locate the account menu trigger: Hamburger icon, ""Menu"" button, or similar mobile menu trigger is visible
+Step 4 - Tap/click the menu trigger: Account menu opens (slide-out panel, dropdown, or full-screen overlay)
+Step 5 - Verify all menu groups visible: Purchasing, User, Corporate groups displayed (Marketing hidden if empty)
+Step 6 - Close the mobile menu: Menu closes, page content visible again","- Mobile menu trigger clearly visible and accessible
+- Menu opens/closes smoothly with animation
+- All menu groups and items accessible in mobile view
+- Menu does not obscure critical page elements when closed
+PASS: Menu trigger visible, opens/closes correctly, all items accessible
+FAIL: Menu trigger missing, menu doesn't open, items missing, or broken layout"
+TC-VCST-4589-040,Verify mobile menu structure matches desktop groups,Section 6: Mobile Menu,Critical,Functional / Mobile,"1. QA environment accessible
+2. Test user logged in
+3. Mobile viewport (375px) or mobile device
+4. Mobile account menu opened","Step 1 - Open mobile account menu: Menu displays
+Step 2 - Verify ""Purchasing"" group items: Contains: Dashboard, Orders, Lists, Saved for Later (same as desktop)
+Step 3 - Verify ""User"" group items: Contains: Profile, Addresses, Change Password, Saved Credit Cards (same as desktop)
+Step 4 - Verify ""Corporate"" group items: Contains: Company Info, Company Members (same as desktop)
+Step 5 - Verify menu item count: Total 8 menu items + Corporate (same as desktop)
+Step 6 - Verify item ordering within groups: Same priority ordering as desktop menu","- Mobile menu structure mirrors desktop grouped structure
+- Same items, same groups, same ordering
+- No items missing or duplicated compared to desktop
+PASS: Mobile menu matches desktop structure exactly
+FAIL: Missing groups, missing items, or different ordering"
+TC-VCST-4589-041,Verify mobile menu navigation routes,Section 6: Mobile Menu,Critical,Functional / Mobile,"1. QA environment accessible
+2. Test user logged in
+3. Mobile viewport (375px)
+4. Mobile account menu opened","Step 1 - Tap ""Dashboard"" in mobile menu: Dashboard page loads, menu closes (or stays), correct URL
+Step 2 - Re-open menu, tap ""Orders"": Orders page loads, correct URL, no console errors
+Step 3 - Re-open menu, tap ""Lists"": Lists page loads, correct URL
+Step 4 - Re-open menu, tap ""Saved for Later"": Saved for Later page loads, correct URL
+Step 5 - Re-open menu, tap ""Profile"": Profile page loads, correct URL
+Step 6 - Re-open menu, tap ""Addresses"": Addresses page loads, correct URL
+Step 7 - Re-open menu, tap ""Change Password"": Change Password page loads, correct URL
+Step 8 - Re-open menu, tap ""Saved Credit Cards"": Saved Credit Cards page loads, correct URL
+Step 9 - Verify no console errors after all navigations: Console clean, no JavaScript errors","- All 8 menu items navigate to correct pages on mobile
+- Pages load correctly in mobile layout
+- Menu behavior after navigation is consistent (auto-close or stay open per design)
+- No console errors
+PASS: All navigation routes work on mobile, pages load correctly
+FAIL: Any route fails, page doesn't load, or console errors"
+TC-VCST-4589-042,Verify mobile menu touch interactions,Section 6: Mobile Menu,High,Functional / Mobile,"1. QA environment accessible
+2. Test user logged in
+3. Mobile viewport (375px) or actual touch device
+4. Mobile account menu opened","Step 1 - Tap a menu item: Item responds to tap with visual feedback (highlight/ripple)
+Step 2 - Verify touch target size: All menu items have minimum 44x44px touch target (WCAG)
+Step 3 - Test swipe to close (if applicable): Swipe gesture closes the menu (if slide-out panel)
+Step 4 - Test tap outside menu to close: Tapping outside the menu area closes it
+Step 5 - Test scroll within menu (if items overflow): Menu scrolls smoothly if content exceeds viewport height
+Step 6 - Verify no accidental taps: Sufficient spacing between items prevents accidental navigation","- Touch targets meet 44x44px minimum
+- Tap feedback visible
+- Menu dismissal gestures work (tap outside, swipe)
+- Scrolling works if menu content overflows
+- No accidental taps due to tight spacing
+PASS: Touch targets adequate, gestures work, smooth scrolling
+FAIL: Touch targets too small, gestures broken, or accidental taps"
+TC-VCST-4589-043,Verify mobile menu across viewports (iPhone and Android),Section 6: Mobile Menu,High,Cross-Browser / Mobile,"1. QA environment accessible
+2. Test user logged in","Step 1 - Test at 375px width (iPhone SE/Mini): Menu displays correctly, no overflow, all items accessible
+Step 2 - Test at 390px width (iPhone 14/15/16): Menu displays correctly
+Step 3 - Test at 428px width (iPhone 14/15/16 Pro Max): Menu displays correctly
+Step 4 - Test at 360px width (Android small): Menu displays correctly
+Step 5 - Test at 412px width (Android Pixel/Samsung): Menu displays correctly
+Step 6 - Test at 768px width (iPad / tablet portrait): Menu transitions between mobile and desktop layout correctly
+Step 7 - Verify landscape orientation (667px height at 375px width): Menu adapts to landscape, scrollable if needed","- Mobile menu renders correctly across all common mobile viewports
+- No horizontal overflow or cut-off content
+- Text readable without zooming
+- Layout adapts properly at tablet breakpoint
+PASS: Menu renders correctly at all viewports, no layout breaks
+FAIL: Layout broken, content cut off, or unusable at any viewport"
+TC-VCST-4589-044,Verify mobile menu active state and current page indicator,Section 6: Mobile Menu,High,Functional / Mobile,"1. QA environment accessible
+2. Test user logged in
+3. Mobile viewport (375px)","Step 1 - Navigate to Orders page on mobile: Orders page loads
+Step 2 - Open mobile menu: ""Orders"" item shows active/selected state (highlight, bold, icon)
+Step 3 - Navigate to Profile page: Profile page loads
+Step 4 - Open mobile menu: ""Profile"" item shows active state, ""Orders"" no longer active
+Step 5 - Deep link to ${FRONT_URL}/account/addresses on mobile: Addresses page loads
+Step 6 - Open mobile menu: ""Addresses"" item shows active state","- Active menu item clearly indicated in mobile menu
+- Only one item active at a time
+- Active state updates correctly after navigation
+- Deep links also trigger correct active state
+PASS: Active state works correctly on mobile, matches current page
+FAIL: No active indicator, multiple active items, or incorrect state"
