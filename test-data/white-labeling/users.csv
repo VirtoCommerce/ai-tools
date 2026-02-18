@@ -1,0 +1,7 @@
+user_id,email,password,first_name,last_name,organization,role,test_purpose
+WL-USER-01,wl-electronics@virtocommerce.com,Test123!,Alex,Electronics,Electronics Store,Member,Test storefront as Electronics org user
+WL-USER-02,wl-fashion@virtocommerce.com,Test123!,Beth,Fashion,Fashion Boutique,Member,Test storefront as Fashion org user
+WL-USER-03,wl-default@virtocommerce.com,Test123!,Chris,Default,Default Company,Member,Test fallback behavior (no WL config)
+WL-USER-04,wl-multi@virtocommerce.com,Test123!,Diana,Multi,Electronics Store + Fashion Boutique,Member (both),Test org switching - member of 2 orgs
+WL-USER-05,wl-menuonly@virtocommerce.com,Test123!,Edward,MenuOnly,Menu Only Corp,Member,Test partial config (menu only)
+WL-USER-06,wl-footeronly@virtocommerce.com,Test123!,Fiona,FooterOnly,Footer Only Corp,Member,Test partial config (footer only)

@@ -51,10 +51,16 @@ test-data/
 │   └── videos/                     # Video uploads
 ├── analytics/                       # Google Analytics test data
 │   └── ga-events.csv               # Expected GA4 events
-└── security/                        # Security testing data
-    ├── sql-injection-payloads.csv  # SQL injection tests
-    ├── xss-payloads.csv            # XSS attack vectors
-    └── invalid-inputs.csv          # Boundary/negative tests
+├── security/                        # Security testing data
+│   ├── sql-injection-payloads.csv  # SQL injection tests
+│   ├── xss-payloads.csv            # XSS attack vectors
+│   └── invalid-inputs.csv          # Boundary/negative tests
+└── white-labeling/                  # White labeling test data (VCST-4637)
+    ├── organizations.csv           # Org configs (5 orgs, different WL setups)
+    ├── link-lists.csv              # Menu/footer link list items (22 links)
+    ├── users.csv                   # Test users per org (6 users)
+    ├── graphql-queries.md          # GraphQL queries for verification
+    └── setup-guide.md              # Step-by-step data setup instructions
 ```
 
 ---
@@ -149,6 +155,7 @@ Each test should:
 | 11-performance-tests | products/, users/ |
 | 12-browser-compatibility-tests | (uses all data types) |
 | 13-b2c-features-tests | products/, users/, addresses/ |
+| 32-whitelabeling-tests | white-labeling/ |
 
 ---
 

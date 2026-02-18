@@ -1,0 +1,6 @@
+org_id,org_name,main_menu_link_list_name,footer_link_list_name,logo_url,favicon_url,theme_preset,test_purpose
+WL-ORG-A,Electronics Store,main-menu-electronics,footer-electronics,,,,Test custom main menu + custom footer (fully configured)
+WL-ORG-B,Fashion Boutique,main-menu-fashion,footer-fashion,,,,Test different custom main menu + different footer (org switching)
+WL-ORG-C,Default Company,,,,,,Test fallback behavior (no menu/footer configured)
+WL-ORG-D,Menu Only Corp,main-menu-electronics,,,,,Test main menu configured but no footer (partial config)
+WL-ORG-E,Footer Only Corp,,footer-electronics,,,,Test footer configured but no main menu (partial config)
