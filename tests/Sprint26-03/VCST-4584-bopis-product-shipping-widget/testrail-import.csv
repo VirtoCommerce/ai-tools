@@ -1,0 +1,400 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+TC-4584-01,Widget visible with correct structure on BOPIS-eligible product page,Product Page Widget,Functional,Critical,5m,"- Logged in as test user (USER_EMAIL / USER_PASSWORD)
+- BOPIS module enabled (xPickupEnabled = true)
+- Product with at least 1 pickup location configured
+- Desktop viewport (1920x1080 or 1440x900)","1. Navigate to the storefront (FRONT_URL)
+2. Open a BOPIS-eligible product details page
+3. Scroll to the 'Shipment options' section below the Add to Cart button
+4. Observe the widget structure carefully","- 'Shipment options' section heading is visible
+- Widget contains a store/pickup icon image (in-store-pickup.svg)
+- Widget contains a text link labeled exactly 'Check pickup locations' with a right-arrow icon
+- Old static list of store names with inline availability is NOT present anywhere on the page
+- No loading spinner shown on initial page load
+- Page layout is not broken around the widget area",VCST-4584,Manual
+TC-4584-02,Widget hidden when product has no pickup locations,Product Page Widget,Functional,High,5m,"- Logged in as test user
+- Product with no configured pickup locations available","1. Navigate to storefront
+2. Open product details page for a product with no pickup locations
+3. Scroll through entire page looking at shipping/delivery options area
+4. Inspect DOM if needed to confirm widget is not rendered","- No 'Shipment options' widget is rendered
+- No empty container, collapsed widget, or broken placeholder visible
+- No gap or whitespace where widget would have been
+- Rest of product page (Add to Cart, description, related products) loads normally",VCST-4584,Manual
+TC-4584-03,Widget hidden when BOPIS module is globally disabled,Product Page Widget,Functional,High,5m,"- BOPIS feature flag xPickupEnabled=false in store configuration (use store where BOPIS is disabled)","1. Open a product details page in a store where BOPIS is disabled
+2. Scroll to shipping options area
+3. Observe whether the Shipment options widget appears","- 'Shipment options' widget is NOT rendered
+- No broken element, empty div, or JavaScript error related to pickup locations
+- Product page loads normally otherwise",VCST-4584,Manual
+TC-4584-04,Clicking CTA triggers loading overlay then opens modal,Product Page Widget,Functional,Critical,8m,"- Logged in as test user
+- On product details page with BOPIS-eligible product (TC-4584-01 passed)
+- Browser DevTools open, Network tab active, filter set to Fetch/XHR or search 'graphql'","1. Locate 'Check pickup locations' link in Shipment options widget
+2. Click the link
+3. Immediately observe the widget area before modal opens (look for loading overlay)
+4. Wait for modal to fully open (up to 5 seconds)
+5. In Network tab find request with operation name GetProductPickupLocations
+6. Inspect Request Payload to review GraphQL variables","- Loading overlay (VcLoaderOverlay) appears over the Shipment options widget immediately after click
+- GraphQL POST request made to /graphql with operation name GetProductPickupLocations
+- Request variables include correct productId and first: 50
+- SelectAddressMapModal opens after request completes
+- Loading overlay disappears when modal opens
+- No console errors during the process
+- CTA does not navigate away from product page",VCST-4584,Manual
+TC-4584-05,Modal opens in view-only mode - no Select button visible anywhere,Product Page Widget,Functional,Critical,8m,"- On product details page with BOPIS-eligible product
+- Map modal already opened by clicking CTA
+- Multiple pickup locations loaded in modal","1. Click on any pickup location item in the left-side list panel
+2. Wait for location info card to slide in from right (desktop) or appear at bottom (mobile)
+3. Examine all buttons and interactive elements in the info card
+4. Look specifically in card footer for any 'Select', 'Select this pickup location', or 'Choose' button
+5. Check list items for radio-button selection indicators or Select links","- Info card slides in showing location details (name, address, hours)
+- Card footer with 'Select this pickup location' button is completely absent (not hidden, not disabled - not rendered)
+- No radio button selection circles visible next to list items
+- No Select/Choose button appears anywhere in the modal
+- Only available actions are: close info card (X icon) and close modal (modal X button)
+- Modal is clearly for browsing only",VCST-4584,Manual
+TC-4584-06,Radio button indicators hidden in location list (noIndicator prop),Product Page Widget,Functional,High,5m,"- Map modal open from product page (view-only mode)","1. Look at the location list panel on the left side of the modal
+2. Examine visual appearance of each row
+3. Compare to cart BOPIS modal which has radio circles
+4. Hover over one list item without clicking it","- No circular radio button input elements visible next to any list item (noIndicator=true applied)
+- Each list item shows: location name, address line, availability chip - without a radio circle
+- No empty space or gap on the left where a radio circle would normally be
+- On hover: row shows subtle background color change (secondary-50 tint) indicating it is clickable",VCST-4584,Manual
+TC-4584-07,Keyword search filters pickup locations within product modal,Product Page Widget,Functional,High,8m,"- Map modal open from product page
+- At least 3 pickup locations loaded
+- Note exact name of at least one location before searching","1. Locate search input field in modal (magnifying glass icon or 'Search' label)
+2. Type partial name of a known pickup location (first 3-4 characters)
+3. Click search button or press Enter
+4. Observe both list panel and map panel
+5. Click X button inside search field to clear
+6. Observe list and map after clearing","- After search: list shows only locations matching keyword
+- After search: map markers update to show only matching locations
+- After search: map re-zooms to fit filtered markers
+- After clearing: all locations restored in list and on map
+- If no match: empty state message shown in list (no crash)
+- Search input accepts input normally (not disabled during browsing)",VCST-4584,Manual
+TC-4584-08,Facet filters NOT shown in product modal context,Product Page Widget,Functional,High,5m,"- Map modal open from product page","1. Carefully examine the filter/search area near top of list panel
+2. Look for dropdown filters or select controls labeled Country, Region, City
+3. Compare to cart BOPIS modal filter area","- No Country, Region, or City dropdown filters displayed
+- Filter area contains only the keyword search text input
+- No empty dropdown containers or placeholder text where filters would appear
+- This is correct: createProductFilterContext() returns empty facets so hasFacetFilters=false hides filter row",VCST-4584,Manual
+TC-4584-09,Map marker click highlights list item and opens info card,Product Page Widget,Functional,High,8m,"- Map modal open from product page on desktop
+- Google Maps fully loaded with pins visible
+- At least 2 location markers visible on map","1. Click directly on a map marker pin (click center of pin icon)
+2. Observe both info card panel and location list simultaneously
+3. Check all visible elements and buttons in info card
+4. Click X button on info card to close it","- Clicking map marker opens info card (slides in from right on desktop)
+- Info card displays: location name, full address, working hours (if configured), availability chip
+- Corresponding list item in left panel gets highlighted/selected visual state
+- Info card footer does NOT contain 'Select this pickup location' button (view-only mode)
+- Info card can be closed using X icon button
+- After closing info card: list returns to normal unhighlighted state
+- No console errors during interaction",VCST-4584,Manual
+TC-4584-10,Close modal returns cleanly to product page with CTA still functional,Product Page Widget,Functional,High,5m,"- Map modal open from product page","1. Click X close button in modal header
+2. Observe product page state immediately after modal closes
+3. Wait 2 seconds and check DevTools console for delayed errors
+4. Click 'Check pickup locations' CTA again to verify it is functional","- Modal closes smoothly without animation glitches or freezing
+- Product page fully intact: all sections visible, no layout shift, no missing elements
+- 'Check pickup locations' CTA is visible, correctly styled, and clickable
+- Clicking CTA a second time triggers fetch and opens modal again (loading overlay appears)
+- No console errors appear after closing
+- Page scroll position is preserved",VCST-4584,Manual
+TC-4584-11,Re-opening modal fetches fresh data and shows no stale filter state,Product Page Widget,Functional,Medium,8m,"- On product page with BOPIS-eligible product","1. Click 'Check pickup locations' to open modal for first time
+2. In search input type a keyword (e.g. 'Main') and press Enter
+3. Note which locations are shown
+4. Close modal using X button
+5. Click 'Check pickup locations' again to re-open
+6. Observe modal state on re-open: search field content, locations, loading state","- On re-open: loading overlay appears again (fresh fetch triggered, not cached display)
+- On re-open: search keyword field is empty (filterContext.clearFilter() called on close)
+- On re-open: full list of all pickup locations shown (no previous filter applied)
+- On re-open: map shows all location markers
+- No stale state from previous session persists",VCST-4584,Manual
+TC-4584-12,Modal shows up to 50 locations with no pagination control,Product Page Widget,Functional,Medium,5m,"- Map modal open from product page
+- Backend configured with multiple pickup locations (ideally more than 10)","1. Open map modal from product page
+2. Count number of locations shown in list (or scroll to bottom)
+3. Look for 'Load more' button, pagination controls, or infinite scroll at bottom of list","- Modal loads up to 50 pickup locations in a single request (first: 50 in GraphQL query)
+- No 'Load more' / pagination control shown at bottom of list in product page modal
+- If fewer than 50 locations exist, all are shown
+- Total count (if displayed) matches number of items in list",VCST-4584,Manual
+TC-4584-13,GraphQL response includes all new fields (description, geoLocation, address),Product Page Widget,API,Critical,10m,"- Browser DevTools open with Network tab active (filter: Fetch/XHR or search 'graphql')
+- On product page with BOPIS-eligible product
+- At least one pickup location has description, contactEmail, contactPhone, workingHours, geoLocation configured in backend","1. Click 'Check pickup locations' on product page
+2. In Network tab locate POST request with operation name GetProductPickupLocations
+3. Open Response or Preview tab
+4. Expand response JSON: data > productPickupLocations > items > first item
+5. Check each field listed in expected result","- Response JSON contains items array with at least one pickup location object
+- Each item includes: description (string or null), contactEmail (string or null), contactPhone (string or null), workingHours (string or null), geoLocation (object with lat/lng or string), address block with line1/city/countryName/postalCode/countryCode
+- Request variables show: productId matching current product's ID and first: 50
+- No errors array in response (or empty errors: [])
+- HTTP 200 returned with no schema validation errors",VCST-4584,Manual
+TC-4584-14,Cart BOPIS modal opens in fully selectable mode (critical regression),BOPIS Checkout Regression,Functional,Critical,8m,"- Logged in as test user
+- At least one product added to cart
+- BOPIS/Pickup shipping method available and not yet selected","1. Navigate to cart page (FRONT_URL/cart or via cart icon)
+2. In shipping method section select 'Pickup' or 'In-Store Pickup'
+3. Once BOPIS shipping selected find and click 'Select pickup location' button
+4. Observe modal that opens carefully, comparing to product page modal behavior","- SelectAddressMapModal opens successfully
+- Radio button circle indicators ARE visible and rendered next to each location list item (selectable=true in cart context)
+- Each location info card (when clicked) shows 'Select this pickup location' button in card footer
+- Country, Region, City facet filter dropdowns ARE visible in filter area (createCartFilterContext provides facet options)
+- No console errors or inject() warnings in DevTools",VCST-4584,Manual
+TC-4584-15,Selecting a location in cart BOPIS modal saves correctly and closes modal,BOPIS Checkout Regression,Functional,Critical,10m,"- Cart BOPIS modal open (TC-4584-14 passed)
+- Multiple pickup locations available in list","1. Click on any pickup location in list to open its info card
+2. In info card footer click 'Select this pickup location' button
+3. Observe modal behavior immediately after clicking
+4. Observe cart page after modal closes","- After clicking: modal closes automatically
+- On cart page: selected pickup location name and address displayed in shipping section
+- Cart shows BOPIS shipment with chosen store details
+- Selected location persists (refresh page should still show selected store)
+- No console errors during or after selection",VCST-4584,Manual
+TC-4584-16,Cart BOPIS - facet filters visible and functional,BOPIS Checkout Regression,Functional,High,8m,"- Cart BOPIS modal open
+- Backend has pickup locations in at least 2 different countries or regions","1. Look at filter bar above search input in cart BOPIS modal
+2. Verify presence of Country, Region, City filter dropdowns or chips
+3. Click Country filter and select a specific country
+4. Observe list and map after applying filter
+5. Look for active filter chip showing applied filter
+6. Click filter chip or 'Reset filters' to remove filter
+7. Verify list restores all locations","- Country, Region, and City filter dropdowns (or equivalent filter chips) visible in filter bar
+- Selecting Country filter reduces list to only locations in that country
+- Active filter chips appear below filter row showing applied filters
+- Clicking 'Reset filters' removes all active filters and restores full list
+- Map updates in sync with each filter change",VCST-4584,Manual
+TC-4584-17,Cart BOPIS - keyword search still works correctly,BOPIS Checkout Regression,Functional,High,5m,"- Cart BOPIS modal open","1. Type a known keyword in search input (partial name of a location)
+2. Submit search (press Enter or click search button)
+3. Verify results
+4. Clear search and verify all locations return","- Keyword search filters results correctly by location name or address
+- Behavior identical to before this PR was merged
+- Map and list both update on search
+- Clearing search restores all locations
+- No regression introduced by usePickupFilterContext refactor",VCST-4584,Manual
+TC-4584-18,Cart BOPIS - reset filter closes info card then refreshes list (behavior change verification),BOPIS Checkout Regression,Functional,High,8m,"- Cart BOPIS modal open
+- At least 2 pickup locations visible","1. In cart BOPIS modal apply a keyword filter and submit
+2. Click on one of the visible filtered locations to open its info card
+3. Confirm both filter is active AND info card is open simultaneously
+4. Click 'Reset filters' chip or clear-all button
+5. Observe sequence carefully: does info card close? Does list refresh?","- Info card closes first (immediately) - new behavior: closeInfoCard() called before onFilterChange()
+- Filter clears: search term removed from input
+- List refreshes: all locations shown again via onFilterChange()
+- Map updates: all location markers visible
+- Both happen nearly simultaneously (info card close then list refresh)
+- No console errors
+- Confirms new closeInfoCard() + onFilterChange() logic works correctly",VCST-4584,Manual
+TC-4584-19,Cart BOPIS - load more pagination works for large location sets,BOPIS Checkout Regression,Functional,Medium,8m,"- Cart BOPIS modal open
+- Backend has more pickup locations than default page size (typically 10-20 per page)","1. Scroll to very bottom of location list in cart BOPIS modal
+2. Look for 'Load more' button, 'Show more locations' link, or infinite scroll
+3. If 'Load more' exists: click it and observe additional locations loading
+4. Check total count indicator before and after loading more","- 'Load more' button or infinite scroll present when more locations exist
+- Clicking 'Load more' triggers additional GraphQL request
+- Additional locations appear below previously loaded ones
+- Total count (if shown) reflects full count across all pages
+- onPageChange callback works correctly (no regression from filter context refactor)
+- Pagination behavior identical to before this PR",VCST-4584,Manual
+TC-4584-20,Full BOPIS checkout E2E - add to cart through order confirmation,BOPIS Checkout Regression,Functional,Critical,15m,"- Logged in as test user
+- Cart is empty at start
+- BOPIS-eligible product available in catalog
+- At least one pickup location configured","1. Navigate to BOPIS-eligible product page
+2. Click 'Add to Cart'
+3. Navigate to cart page
+4. In shipping method select 'Pickup' / BOPIS option
+5. Click pickup location selector button
+6. In modal (selectable mode) select a pickup location
+7. Verify location saved in cart
+8. Proceed to checkout
+9. On checkout page verify selected BOPIS location shown in shipping section
+10. Complete checkout or proceed to payment step to verify no BOPIS regression","- Entire BOPIS cart-through-checkout flow works without errors
+- At no point does modal open in view-only mode during checkout (only selectable mode)
+- Selected pickup location persists from cart to checkout
+- No inject() errors or Vue warnings in console throughout flow
+- Checkout can be completed with BOPIS shipment selected",VCST-4584,Manual
+TC-4584-21,Info card displays all available location details from new GraphQL fields,Location Info Card Details,Functional,Critical,8m,"- Map modal open from product page (view-only mode)
+- At least one pickup location has description, contactEmail, contactPhone, workingHours configured in backend","1. Open map modal from product page
+2. Click on a pickup location that has detailed information in backend
+3. Wait for info card to appear
+4. Carefully read all sections of info card","- Location name shown prominently at top
+- Full address displayed (line1, city, countryName, postalCode)
+- Working hours section visible if workingHours data exists
+- Contact info shown if configured (email and/or phone)
+- Location description shown if configured
+- Availability chip shown
+- Footer area absent (no Select button - view-only mode)
+- All text readable, not unexpectedly truncated",VCST-4584,Manual
+TC-4584-22,Cart info card shows Select button in footer (selectable mode),Location Info Card Details,Functional,High,5m,"- Cart BOPIS modal open in selectable mode","1. In cart BOPIS modal click on any pickup location in list
+2. Observe info card that opens
+3. Look at card footer area","- Card footer IS visible and contains 'Select this pickup location' button (or equivalent)
+- Button is enabled and styled correctly (primary color button)
+- This confirms selectable=false hides footer in product context and selectable=true shows it in cart context",VCST-4584,Manual
+TC-4584-23,Map marker pins use geoLocation data for correct geographic placement,Location Info Card Details,Functional,High,5m,"- Map modal open from product page
+- Google Maps loaded with location pins visible
+- At least one location has geoLocation (lat/lng) configured in backend","1. Open map modal from product page and wait for map to fully load
+2. Observe positions of map marker pins on map
+3. Click on a map marker and note location name/address shown
+4. Verify pin location makes geographic sense relative to address shown","- Map marker pins appear at geographically correct positions based on geoLocation data
+- Clicking a marker displays correct location's info card matching name/address in list
+- If a location has no geoLocation data: it either does not show on map or shows at default position (no crash)
+- Multiple pins for multiple locations all visible and individually clickable",VCST-4584,Manual
+TC-4584-24,Network failure during CTA click shows appropriate error state,Edge Cases,Functional,High,10m,"- On product page with BOPIS-eligible product
+- Browser DevTools open","1. Open DevTools > Network tab
+2. Set Network to 'Offline' mode using DevTools Network conditions
+3. Click 'Check pickup locations' on product page
+4. Observe widget behavior when GraphQL request fails
+5. Restore Network to 'Online'
+6. Click 'Check pickup locations' again","- When offline: loading overlay disappears after request fails/times out
+- Error message or empty state shown (toast, inline error, or modal with error message)
+- Page does not freeze, crash, or show white screen
+- No unhandled JavaScript exceptions in console (handled error state only)
+- After restoring network: clicking CTA again successfully loads locations (component recovers cleanly)",VCST-4584,Manual
+TC-4584-25,Modal with zero results from keyword search shows empty state,Edge Cases,Functional,High,5m,"- Map modal open from product page with locations loaded","1. In search input type a term that will match no locations (e.g. 'ZZZNOMATCH999')
+2. Submit search","- List panel shows empty state message (e.g. 'No pickup locations found')
+- Message is well-formatted, not a blank white area or broken layout
+- Map panel shows no markers (or zoomed-out world view)
+- No JavaScript console errors
+- Clear search / X button available to reset back to all locations",VCST-4584,Manual
+TC-4584-26,Rapid double-click on CTA does not trigger duplicate GraphQL requests,Edge Cases,Functional,Medium,5m,"- On product page with BOPIS-eligible product
+- DevTools Network tab open","1. Click 'Check pickup locations' quickly twice in succession (double-click)
+2. Observe Network tab for duplicate GetProductPickupLocations requests
+3. Observe UI for duplicate modals","- Only one GraphQL request for GetProductPickupLocations is made (not two)
+- Only one modal opens (no duplicate modal on top of another)
+- CTA is visually disabled or non-interactive while loading overlay is showing (preventing second click)",VCST-4584,Manual
+TC-4584-27,Back/forward browser navigation does not break product page after modal interaction,Edge Cases,Functional,Medium,5m,"- On product page with BOPIS-eligible product","1. Open product page with BOPIS widget visible
+2. Click 'Check pickup locations' and open modal
+3. Close modal
+4. Click browser Back button
+5. Click browser Forward button to return to product page
+6. Click 'Check pickup locations' again","- Browser Back navigation works normally
+- Browser Forward returns to product page correctly
+- After returning: Shipment options widget visible and functional
+- Clicking CTA after Back/Forward navigation works (triggers fetch, opens modal)
+- No Vue router errors or blank page state",VCST-4584,Manual
+TC-4584-28,VcRadioButton noIndicator=true hides radio circle element,UI Kit Components,Component,High,5m,"- QA Storybook accessible (STORYBOOK_URL) OR product page BOPIS modal accessible","Steps via Storybook:
+1. Navigate to QA Storybook
+2. Find RadioButton component in Atoms category
+3. In Controls panel enable noIndicator prop (set to true)
+4. Observe rendered component
+
+Steps via live environment:
+1. Open product page BOPIS modal (view-only mode)
+2. Use DevTools Element Inspector on a location list item
+3. Look for input[type=radio] element within each list row","Storybook result:
+- With noIndicator=true: circular radio input element has display: none applied
+- Label text and content remain fully visible and readable
+- Component width/layout does not collapse (no missing space or layout shift)
+- gap-2 class correctly spaces content without the circle
+
+Live environment result:
+- DevTools Inspector shows radio input with display: none style
+- Visually: no circle appears in location list rows
+- List item height and spacing are consistent",VCST-4584,Manual
+TC-4584-29,VcRadioButton default (noIndicator=false) shows radio circle and works correctly,UI Kit Components,Component,High,5m,"- Cart BOPIS modal open in selectable mode","1. Open cart BOPIS modal
+2. Observe location list rows for radio button circles on left of each row
+3. Click one of the location items to observe visual state
+4. Click a different location item and observe state change","- Radio button circles ARE clearly visible next to each location row (default noIndicator=false)
+- When location is selected: radio circle shows filled/checked state with theme's primary color border or fill
+- When different location is clicked: previously selected radio deselects and new one selects
+- No visual regression from gap-2 class addition (was me-2/ms-2 on label - visually equivalent spacing)
+- Layout looks correct and matches pre-PR visual appearance",VCST-4584,Manual
+TC-4584-30,VcPopover content does not overflow horizontally in constrained containers,UI Kit Components,Visual,Medium,5m,"- Any page that uses VcPopover in a narrow or constrained container","1. Identify UI area using VcPopover (e.g. filter dropdown, informational popover, or hover popover in storefront)
+2. Trigger popover to open (click or hover as appropriate)
+3. Observe popover content area in narrow sidebar or constrained column
+4. Check for horizontal scrollbar at page level or popover level
+5. Resize browser window to narrower viewport (1024px) and repeat","- Popover content respects max-w-full constraint and does not overflow beyond parent container
+- No horizontal scrollbar appears on page when popover is open
+- Popover content is readable (text wraps if container is narrow)
+- Fix does not break popovers in wide containers (content still displays normally in full-width contexts)",VCST-4584,Manual
+TC-4584-31,VcRadioButton changes do not regress other radio button usages site-wide,UI Kit Components,Component,Medium,8m,"- Access to checkout shipping method selection and payment method selection pages","1. Navigate to checkout shipping method selection step
+2. Observe radio buttons for shipping method selection (Ground/Air/etc.)
+3. Navigate to checkout payment method selection step
+4. Observe radio buttons for payment method selection","- Shipping method radio buttons appear and work normally (no regression)
+- Payment method radio buttons appear and work normally
+- All radio buttons in these contexts show their indicator circle (noIndicator defaults to false)
+- No layout changes or visual regressions across any other radio button usage",VCST-4584,Manual
+TC-4584-32,Availability chip tooltip shows full description text on hover in product modal,VCST-4613 Availability Tooltip,Functional,High,5m,"- Map modal open from product page (view-only mode)
+- At least one pickup location has availabilityNote text longer than ~30 characters configured in backend","1. Open product page BOPIS modal
+2. In location list look for availability chips (truck icon with short text snippet)
+3. Hover mouse directly over availability chip of a location with a long note
+4. Hold hover for 1-2 seconds to allow tooltip to appear","- Tooltip appears (below or above chip, positioned by VcTooltip)
+- Tooltip text contains full untruncated availabilityNote text
+- Chip itself still shows truncated text (CSS truncate class clips overflow)
+- Tooltip disappears cleanly when mouse leaves availability chip
+- No layout shift or page jump when tooltip appears/disappears",VCST-4613,Manual
+TC-4584-33,Availability chip tooltip also works in cart BOPIS modal,VCST-4613 Availability Tooltip,Functional,High,5m,"- Cart BOPIS modal open
+- At least one pickup location has long availability note (same as TC-4584-32 precondition)","1. Open cart BOPIS modal
+2. Find a location with availability chip that has truncated text
+3. Hover over the availability chip for 1-2 seconds","- Tooltip appears showing full availabilityNote text (same behavior as product page modal)
+- pickup-availability-info.vue wrapped in VcTooltip works in both product and cart modal contexts
+- Tooltip is positioned correctly relative to chip (not clipped by modal boundary)
+- VCST-4613 fix applies universally wherever pickup-availability-info.vue is rendered",VCST-4613,Manual
+TC-4584-34,EN locale - 'Check pickup locations' text displays correctly,Localization,Localization,High,3m,"- Storefront language set to English (EN) - default
+- Product page with BOPIS locations accessible","1. Ensure storefront is displaying in English (EN)
+2. Navigate to product details page with BOPIS-eligible product
+3. Scroll to Shipment options widget","- CTA link text reads exactly 'Check pickup locations' (new text from renamed key check_pickup_locations)
+- Old text 'In-Store Pickup' (from old in_store key) does NOT appear
+- No raw translation key string visible (e.g. no shared.catalog.shipment_options.check_pickup_locations shown as literal text)",VCST-4584,Manual
+TC-4584-35,DE locale - German translation correct,Localization,Localization,Medium,3m,"- Storefront language switcher accessible
+- Product page with BOPIS locations accessible","1. Switch storefront language to German (DE) using language switcher
+2. Navigate to product details page (or refresh)
+3. Observe Shipment options widget text","- CTA text reads 'Abholstandorte prüfen' (new German translation for check_pickup_locations)
+- Old text 'Abholung im Geschäft' (old in_store key) does NOT appear
+- German special characters (ü, ä, ö) render correctly without encoding artifacts",VCST-4584,Manual
+TC-4584-36,FR and ES locale spot-check,Localization,Localization,Medium,5m,"- Language switcher accessible
+- Product page with BOPIS locations accessible","1. Switch storefront language to French (FR)
+2. Navigate to product page with BOPIS product
+3. Observe Shipment options widget - expected: 'Vérifier les points de retrait'
+4. Switch language to Spanish (ES)
+5. Navigate to product page (or refresh)
+6. Observe Shipment options widget","- French locale: displays 'Vérifier les points de retrait' (accented characters render correctly)
+- Spanish locale: displays correct Spanish translation for 'Check pickup locations'
+- Neither locale falls back to English or shows raw locale key string",VCST-4584,Manual
+TC-4584-37,RU and JA locale spot-check,Localization,Localization,Medium,5m,"- Language switcher accessible
+- Product page with BOPIS locations accessible","1. Switch storefront language to Russian (RU)
+2. Navigate to product page with BOPIS product
+3. Observe Shipment options widget - expected: 'Проверить пункты самовывоза'
+4. Switch language to Japanese (JA)
+5. Navigate to product page
+6. Observe Shipment options widget","- Russian locale: displays 'Проверить пункты самовывоза' with correct Cyrillic characters
+- Japanese locale: displays correct Japanese translation (kanji/hiragana rendered correctly, no encoding issues)
+- Both locales confirm key rename from in_store to check_pickup_locations applied in all 13 language files",VCST-4584,Manual
+TC-4584-38,Remaining 7 locales spot-check (FI IT NO PL PT SV ZH),Localization,Localization,Low,10m,"- Language switcher accessible
+- Product page with BOPIS locations accessible","For each language: Finnish (FI), Italian (IT), Norwegian (NO), Polish (PL), Portuguese (PT), Swedish (SV), Chinese (ZH):
+1. Switch storefront language to that locale
+2. Navigate to product page with BOPIS product
+3. Observe the Shipment options widget","- All 7 locales display a translated string for 'Check pickup locations' (not old value, not English, not raw key)
+- No locale shows missing translation indicator or falls back to English unexpectedly
+- Language-specific characters (Scandinavian: ø å; Chinese characters for ZH) render without encoding issues
+- Covers all 13 locales where in_store was renamed to check_pickup_locations",VCST-4584,Manual
+TC-4584-39,Mobile 375px - widget CTA layout and tap works correctly,Mobile,Responsive,High,5m,"- Browser viewport set to 375px width x 812px height (use DevTools Device Toolbar)
+- On product page with BOPIS-eligible product","1. Set browser to 375px viewport (mobile simulation)
+2. Navigate to product details page
+3. Scroll to Shipment options widget
+4. Observe widget layout at mobile viewport
+5. Tap / click 'Check pickup locations' CTA link","- Widget fully visible without horizontal scrolling or overflow at 375px
+- Store pickup icon and 'Check pickup locations' text on same row (no awkward line wrap)
+- CTA link tap target is at least 44x44 CSS pixels
+- Tapping CTA triggers loading overlay over widget
+- Map modal opens in mobile layout (full-screen or near-full-screen, list/map via toggle)",VCST-4584,Manual
+TC-4584-40,Mobile 375px - view-only modal correct layout and no Select button,Mobile,Responsive,High,8m,"- Map modal opened from product page at 375px viewport (TC-4584-39 completed)","1. With mobile map modal open observe initial view (expect list view as default)
+2. If list/map toggle exists tap it to switch to map view
+3. Tap on a map marker on mobile map
+4. Observe info card that appears (should slide up from bottom on mobile)
+5. Inspect info card for any Select button
+6. Tap X to close info card
+7. Tap modal close button to return to product page","- Mobile modal shows list or map view with visible toggle between them
+- Info card on mobile appears at bottom of screen (drawer-style) when location/marker is tapped
+- Mobile info card footer does NOT contain 'Select this pickup location' button (view-only mode applies on mobile too)
+- Info card can be dismissed with X / close button or by tapping outside
+- Closing full modal returns to product page without layout issues at 375px",VCST-4584,Manual
+TC-4584-41,Mobile 375px - cart BOPIS modal still selectable on mobile,Mobile,Responsive,High,8m,"- Mobile viewport at 375px
+- Cart has products with BOPIS shipping method selected","1. Navigate to cart page on mobile viewport (375px)
+2. Select BOPIS/Pickup shipping method
+3. Tap pickup location selector button
+4. In mobile cart BOPIS modal tap a location from list
+5. Look for and tap 'Select this pickup location' button in info card footer
+6. Verify selection is saved","- Cart BOPIS modal opens on mobile with 'Select this pickup location' button visible in info card footers
+- selectable=true prop correctly passed and button rendered on mobile
+- Selection succeeds and selected location shown in cart on mobile viewport
+- No regression from selectable prop changes in select-address-map-mobile.vue",VCST-4584,Manual
+TC-4584-42,Tablet 768px - widget and modal display correctly,Mobile,Responsive,Medium,8m,"- Browser viewport set to 768px width x 1024px height","1. Set viewport to 768px wide
+2. Navigate to product page with BOPIS product
+3. Observe Shipment options widget layout at this breakpoint
+4. Click 'Check pickup locations' and observe modal
+5. Determine whether desktop or mobile modal layout is used","- At 768px: widget fully visible and not overflowing
+- CTA link has adequate touch target size
+- Modal at 768px uses either desktop layout (split list + map) or mobile layout (toggle) - either acceptable if usable and accessible
+- No horizontal scroll on product page or within modal at 768px
+- List of locations readable and scrollable",VCST-4584,Manual
