@@ -1,0 +1,466 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+CFG-PDP-001,Configurable Product PDP Renders Configuration Widget Correctly,Configurable Products > PDP Rendering,Functional,Critical,5m,"Storefront accessible at ${FRONT_URL}. Product Bike with options (SKU: CVQ-54616437) exists at /products-with-options/configurations/build-the-bike-of-your-dreams/bike-with-options","1. Navigate to ${FRONT_URL}/products-with-options/configurations/build-the-bike-of-your-dreams/bike-with-options
+2. Wait for page to fully render (wait for ""Configure"" text to appear)
+3. Observe the product name at top of page
+4. Observe the base product price
+5. Observe the Configure the parameters widget
+6. Observe the accordion section label Select one
+7. Observe the subtitle Personalize your selection further (optional)
+8. Observe the accordion is open (expanded) by default
+9. Verify 5 radio options are visible: Rear wheel 26 double-wall rim motorized; 200CC 250CC 4-Stroke Engine Motor; Seat; Pedals; None
+10. Verify None is selected by default
+11. Verify quantity stepper shows 0
+12. Verify Add to cart button is disabled when qty = 0","- Product name Bike with options visible
+- Base price $350.00 displayed
+- Configure the parameters widget header visible
+- Accordion label reads Select one with subtitle Personalize your selection further (optional)
+- All 5 radio options present with None selected by default
+- Quantity stepper starts at 0
+- Add to cart button disabled at qty 0
+- In stock badge visible",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-PDP-002,Selecting Radio Option Updates Total Price Immediately,Configurable Products > Option Selection,Functional,Critical,8m,"Storefront accessible. Bike with options PDP loaded. None selected by default. Base price $350.00 visible.","1. Note base price: $350.00 (None selected)
+2. Click radio button for Seat option
+3. Observe total price update
+4. Click radio button for Pedals option
+5. Observe total price update
+6. Click radio button for 200CC 250CC 4-Stroke Engine Motor option
+7. Observe total price update
+8. Click radio button for Rear wheel 26 double-wall rim motorized option
+9. Observe total price update
+10. Click None radio button
+11. Observe total price returns to base","- Selecting Seat: total = $365.00 ($350 + $15 x 1)
+- Selecting Pedals: total = $364.00 ($350 + $14 x 1)
+- Selecting Engine: total = $575.00 ($350 + $225 x 1)
+- Selecting Rear wheel: total = $526.00 ($350 + $88 x 2 = $350 + $176)
+- Selecting None: total returns to $350.00
+- Only one radio selectable at a time
+- Price updates are immediate (no page reload required)
+- Accordion subtitle updates to show selected option name",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-PDP-003,Each Option Row Displays Unit Price Quantity and Extended Price,Configurable Products > Price Display,Functional,High,5m,"Bike with options PDP loaded. Accordion open showing all option rows.","1. Navigate to Bike with options PDP and wait for Configure text
+2. Observe Rear wheel 26 double-wall rim motorized row: read unit price, quantity, and extended price
+3. Observe 200CC 250CC 4-Stroke Engine Motor row: read unit price, quantity, and extended price
+4. Observe Seat row: read unit price, quantity, and extended price
+5. Observe Pedals row: read unit price, quantity, and extended price
+6. Observe None row: verify no price shown
+7. Verify extended price = unit price x quantity for each option","- Rear wheel: unit $88.00 (salePrice) with $126.00 strikethrough (listPrice), qty 2, extended $176.00
+- Engine: unit $225.00, qty 1, extended $225.00
+- Seat: unit $15.00, qty 1, extended $15.00
+- Pedals: unit $14.00, qty 1, extended $14.00
+- None: no price shown
+- Extended price = unit price x quantity for all options with prices",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-PDP-004,Sale Price Shown as Primary Price with List Price Strikethrough,Configurable Products > Price Display,Functional,High,5m,"Bike with options PDP loaded. Rear wheel option has salePrice $88.00 and listPrice $126.00.","1. Navigate to Bike with options PDP
+2. Locate Rear wheel 26 double-wall rim motorized option row
+3. Observe the price display on that option row
+4. Click the Rear wheel radio button
+5. Observe the total product price update","- Rear wheel option shows $88.00 as the primary/sale price
+- $126.00 appears with strikethrough formatting as the list price
+- Selecting Rear wheel: total updates to $526.00 (base $350 + extended $176 using salePrice)
+- List price $126.00 is NOT used in price calculations
+- Visual hierarchy: sale price prominent, list price secondary",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-PDP-005,Quantity Stepper Starts at Zero and Controls Add to Cart Enable State,Configurable Products > Quantity and Cart,Functional,Critical,5m,"Bike with options PDP loaded. Page in fresh state.","1. Observe quantity stepper initial value
+2. Observe Add to cart button state at qty 0
+3. Attempt to click Add to cart while qty = 0
+4. Click the + button to increment quantity to 1
+5. Observe Add to cart button state
+6. Click + again to increase to 2
+7. Click - to decrease to 1
+8. Click - again to decrease to 0
+9. Observe Add to cart button state
+10. Attempt to enter negative quantity in field if editable","- Quantity stepper initializes at 0 on page load
+- Add to cart disabled (greyed out or not clickable) at qty 0
+- Clicking Add to cart at qty 0 has no effect
+- At qty 1: Add to cart button becomes enabled
+- At qty 2: button remains enabled
+- Decrement to 1: button remains enabled
+- Decrement to 0: Add to cart disabled again
+- Negative quantities not accepted",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-PDP-006,Add Configured Product to Cart with Option Selected (Happy Path),Configurable Products > Add to Cart,Functional,Critical,10m,"Bike with options PDP loaded. User is authenticated (logged in as ${USER_EMAIL}). Cart is empty.","1. Click radio button for Seat option ($15.00, qty 1)
+2. Verify total price = $365.00
+3. Click + on quantity stepper to set qty to 1
+4. Verify Add to cart button is enabled
+5. Click Add to cart
+6. Observe success notification
+7. Observe cart icon update in header
+8. Navigate to cart page at ${FRONT_URL}/cart
+9. Locate Bike with options in cart
+10. Observe configuration detail in cart line item
+11. Observe cart item price
+12. Observe cart subtotal","- Seat radio selected; total price = $365.00
+- Add to cart button enabled at qty 1
+- Click Add to cart: success notification shown (e.g. Product added to cart)
+- Cart icon updates to show 1 item
+- Cart page shows Bike with options as a line item
+- Cart line item shows Seat as the selected configuration option
+- Cart item price = $365.00
+- Cart subtotal = $365.00",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-PDP-007,Add Configured Product to Cart with None Selected (Optional Section),Configurable Products > Add to Cart,Functional,High,8m,"Bike with options PDP loaded. None selected by default. User authenticated.","1. Verify None radio is selected by default
+2. Verify accordion subtitle reads Personalize your selection further (optional)
+3. Click + to set quantity to 1
+4. Observe Add to cart button is enabled
+5. Click Add to cart
+6. Verify no validation error about unselected required option
+7. Navigate to cart
+8. Verify Bike with options appears at base price $350.00
+9. Verify no configuration error state shown","- Optional section allows add-to-cart with None selected
+- No blocking validation error shown
+- Success notification appears
+- Cart shows Bike with options at base price $350.00
+- Cart may show None or no configuration detail without error",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-PDP-008,Accordion Expands and Collapses Correctly,Configurable Products > UI Interaction,Functional,Medium,5m,"Bike with options PDP loaded. Accordion is open by default.","1. Verify accordion starts expanded (all 5 radio options visible)
+2. Click the accordion header Select one to collapse
+3. Verify radio options hidden; header still visible
+4. Click accordion header again to expand
+5. Verify radio options visible again
+6. Select Seat option
+7. Collapse accordion
+8. Observe accordion subtitle when collapsed with Seat selected
+9. Expand accordion
+10. Verify Seat is still selected","- Accordion starts in open/expanded state
+- Clicking header collapses and hides radio options
+- Clicking header again expands and shows radio options
+- When collapsed with Seat selected: subtitle updates to show Seat
+- Re-expanding: Seat remains selected
+- Selection state preserved through collapse/expand cycles",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-PDP-009,Accordion Subtitle Updates to Show Selected Option Name,Configurable Products > UI Interaction,Functional,High,5m,"Bike with options PDP loaded. Accordion open. None selected.","1. Observe initial accordion subtitle: Personalize your selection further (optional)
+2. Click Seat radio button
+3. Observe accordion subtitle
+4. Click Pedals radio button
+5. Observe accordion subtitle
+6. Click 200CC 250CC 4-Stroke Engine Motor option
+7. Observe accordion subtitle
+8. Click None radio button
+9. Observe accordion subtitle","- Initial subtitle: Personalize your selection further (optional)
+- After selecting Seat: subtitle updates to Seat
+- After selecting Pedals: subtitle updates to Pedals
+- After selecting Engine: subtitle updates to engine name (full or truncated)
+- After selecting None: subtitle reverts to Personalize your selection further (optional)",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-PDP-010,No Auto-Scroll on Radio Button Click (VCST-4612 Regression),Configurable Products > UI Interaction,Functional,High,8m,"Bike with options PDP loaded. Scroll position at the Configure the parameters widget. None selected.","1. Scroll to configure widget; note current scroll position (scrollY)
+2. Click radio for 200CC 250CC 4-Stroke Engine Motor (very long name causing 2-line subtitle)
+3. Verify scroll position unchanged (no page jump)
+4. Click radio for Seat (short name, 1-line subtitle)
+5. Verify scroll position unchanged
+6. Click radio for Pedals
+7. Verify scroll position unchanged
+8. Alternate between Engine and Seat several times
+9. Verify no scroll occurs on any radio click","- Clicking any radio button does NOT change page scroll position
+- scrollY remains constant across all radio button transitions
+- No auto-scroll on subtitle line count change (2 lines to 1 line or vice versa)
+- Regression check for VCST-4612 fix in Sprint 26-03",TP_CONFIGURABLE_PRODUCTS_001 VCST-4612,Manual
+CFG-PDP-011,Cart Shows Configured Product with Option Details and Correct Prices,Configurable Products > Cart,Functional,High,10m,"Bike with options PDP loaded. User authenticated. Cart empty.","1. Select Engine option (total = $575.00); set qty to 1; click Add to cart
+2. Navigate to cart page
+3. Observe Bike with options cart line item
+4. Observe configuration detail displayed in cart
+5. Observe cart item unit price
+6. Observe cart item quantity
+7. Observe cart subtotal
+8. Increase cart quantity to 2
+9. Observe subtotal update","- Cart shows Bike with options as line item
+- Engine option name visible as configuration detail in cart
+- Cart item price = $575.00 (base $350 + engine $225)
+- Quantity = 1
+- Subtotal = $575.00
+- After increasing qty to 2: subtotal = $1,150.00 (2 x $575)
+- Configuration detail (Engine) still shown after quantity change",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-PDP-012,Checkout Completes Successfully with Configured Product,Configurable Products > Checkout,Functional,High,15m,"Configured product Bike with options with Seat option in cart (from CFG-PDP-006). User authenticated with valid shipping address. Payment method available.","1. Navigate to cart page; verify Bike with options with Seat option at $365.00
+2. Click Proceed to checkout or equivalent
+3. Observe configured product in checkout order summary
+4. Complete shipping address step
+5. Select a shipping method
+6. Enter payment details (use test credentials from .env)
+7. Review order summary: verify Bike with options with Seat at $365.00
+8. Click Place order
+9. Observe order confirmation page","- Cart shows configured product correctly before checkout
+- Checkout order summary shows Bike with options with Seat option at $365.00
+- All checkout steps complete without errors
+- Order placed successfully
+- Order confirmation page shows order number
+- Confirmation lists Bike with options with Seat configuration detail
+- Correct total shown on confirmation page",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-PDP-013,Order History Displays Configured Product with Option Details,Configurable Products > Orders,Functional,High,8m,"An order with configured Bike with options (Seat option) has been placed (from CFG-PDP-012). User authenticated.","1. Navigate to ${FRONT_URL}/account/orders or equivalent order history page
+2. Locate the most recent order from CFG-PDP-012
+3. Click to open order detail page
+4. Locate Bike with options in line items
+5. Observe configuration detail (Seat option)
+6. Verify item price ($365.00)
+7. Verify order total consistent with checkout","- Order appears in order history list
+- Order detail page shows Bike with options in line items
+- Seat configuration option is visible as sub-item or detail
+- Item price = $365.00
+- Order total consistent with what was placed
+- Configuration details readable and accurate",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-PDP-014,Price Calculation Accuracy for All Five Option Combinations,Configurable Products > Price Calculation,Functional,High,8m,"Bike with options PDP loaded. Base price $350.00. Option prices: Rear wheel $88.00 x2=$176; Engine $225.00 x1; Seat $15.00 x1; Pedals $14.00 x1.","1. Record base price with None selected: $350.00
+2. Select Seat; verify total = $365.00 ($350 + $15)
+3. Select Pedals; verify total = $364.00 ($350 + $14)
+4. Select Engine; verify total = $575.00 ($350 + $225)
+5. Select Rear wheel; verify total = $526.00 ($350 + $88 x 2)
+6. Select None; verify total = $350.00
+7. Repeat the full cycle once more to check for stale state","- None: $350.00
+- Seat: $365.00 ($350 + $15 x 1)
+- Pedals: $364.00 ($350 + $14 x 1)
+- Engine: $575.00 ($350 + $225 x 1)
+- Rear wheel: $526.00 ($350 + $88 x 2)
+- None again: $350.00
+- All prices correct on second cycle (no stale state)",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-PDP-015,Cross-Browser: Configuration Widget on Firefox,Configurable Products > Cross-Browser,Compatibility,High,8m,"Firefox browser available. Bike with options PDP URL accessible.","1. Open Bike with options PDP URL in Firefox browser
+2. Wait for Configure text to appear
+3. Observe widget renders with correct layout
+4. Observe radio buttons display correctly
+5. Click radio options; verify price updates correctly
+6. Set quantity to 1
+7. Click Add to cart
+8. Verify cart add succeeds
+9. Check browser console for Firefox-specific errors","- Widget renders with correct layout in Firefox
+- Radio buttons display correctly (no broken styling)
+- Price updates correctly on option selection
+- Add to cart succeeds
+- Cart shows configured product with correct details
+- No Firefox-specific JavaScript errors in console",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-PDP-016,Out-of-Stock Option Indicated and Non-Selectable,Configurable Products > Edge Cases,Functional,Medium,8m,"A configurable product exists with at least one out-of-stock option (qty = 0). Navigate to that product PDP.","1. Navigate to PDP of a configurable product with an out-of-stock option
+2. Wait for configuration widget to load
+3. Locate the out-of-stock option row
+4. Observe its visual state (greyed out, disabled, Out of Stock label)
+5. Attempt to click the out-of-stock option
+6. Verify selection is prevented or a warning shown
+7. Verify in-stock options remain selectable
+8. Select an in-stock option and add to cart","- Out-of-stock options visually differentiated (greyed out or labeled Out of Stock)
+- Clicking out-of-stock option is prevented or shows a warning
+- In-stock options remain fully selectable
+- Product addable to cart using an in-stock option",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-001,E2E: Create Bike Product with Single Optional Radio Section in Admin and Verify on Storefront,Configurable Products > E2E Scenario 1,Functional,Critical,15m,"Admin logged in at ${BACK_URL} with ${ADMIN} / ${ADMIN_PASSWORD}. Catalog module accessible. Storefront accessible at ${FRONT_URL}.","ADMIN STEPS:
+1. Navigate to ${BACK_URL} and log in
+2. Go to Catalog > Products > Add new product
+3. Name: Test Config Bike [YYYYMMDD]; SKU: BIKE-CFG-[YYYYMMDD]
+4. Set base List Price: $200.00. Set inventory: 20
+5. Navigate to configurable/configuration tab
+6. Add section: name=Choose Upgrade; type=Radio; set as Optional
+7. Add option: None; $0; qty 20
+8. Add option: Basic Seat; $15; qty 10
+9. Add option: Premium Seat; $45; qty 5
+10. Add option: Racing Seat; $95; qty 2
+11. Publish and save product
+FRONTEND STEPS:
+12. Navigate to ${FRONT_URL} and open PDP for Test Config Bike [YYYYMMDD]
+13. Verify Configure the parameters widget is visible
+14. Verify section Choose Upgrade shows all 4 options as radio buttons
+15. Verify None is selected by default; price = $200.00
+16. Select Basic Seat; verify price = $215.00 ($200 + $15)
+17. Select Premium Seat; verify price = $245.00 ($200 + $45)
+18. Select Racing Seat; verify price = $295.00 ($200 + $95)
+19. Return to None; verify price = $200.00","- Product created in Admin with 4 options under one optional radio section
+- Storefront shows Configure the parameters widget with Choose Upgrade section
+- All 4 options present and selectable as radio buttons
+- Price updates correctly: None=$200 / Basic Seat=$215 / Premium Seat=$245 / Racing Seat=$295
+- Default selection is None at $200.00",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-002,E2E: Optional Section Allows Add-to-Cart Without Upgrade Selected,Configurable Products > E2E Scenario 1,Functional,Critical,8m,"CFG-E2E-001 completed. Product Test Config Bike [YYYYMMDD] published at ${FRONT_URL}.","ADMIN STEPS: None required.
+FRONTEND STEPS:
+1. Navigate to PDP for Test Config Bike [YYYYMMDD] on ${FRONT_URL}
+2. Confirm None is selected by default in Choose Upgrade
+3. Do not change selection
+4. Set quantity to 1
+5. Click Add to Cart
+6. Verify cart adds item with no validation error
+7. Open cart; verify item name and price $200.00
+8. Verify configuration shown as None or no option","- Optional section allows add-to-cart with None selected
+- No blocking validation error shown
+- Cart shows product at $200.00 with None option noted",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-003,E2E: Selected Upgrade Option Reflected in Cart Line Item,Configurable Products > E2E Scenario 1,Functional,Critical,8m,"CFG-E2E-001 completed. Product Test Config Bike [YYYYMMDD] published at ${FRONT_URL}.","ADMIN STEPS: None required.
+FRONTEND STEPS:
+1. Navigate to PDP for Test Config Bike [YYYYMMDD] on ${FRONT_URL}
+2. Select Racing Seat in Choose Upgrade section
+3. Verify price = $295.00
+4. Set quantity to 1
+5. Click Add to Cart
+6. Navigate to cart
+7. Verify item name Test Config Bike [YYYYMMDD] at $295.00
+8. Verify configuration shows Racing Seat","- Racing Seat selection preserved in cart
+- Cart shows price $295.00 ($200 base + $95 option)
+- Configuration label Racing Seat visible in cart line item",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-004,E2E: Create Laptop with Two Required Sections and Verify Multi-Section Price Math,Configurable Products > E2E Scenario 2,Functional,Critical,18m,"Admin logged in at ${BACK_URL}. Storefront accessible at ${FRONT_URL}.","ADMIN STEPS:
+1. Go to Catalog > Products > Add new product
+2. Name: Test Config Laptop [YYYYMMDD]; SKU: LAPTOP-CFG-[YYYYMMDD]
+3. Base price: $999.00; inventory: 50
+4. Add section: RAM; Radio; Required. Options: 8GB $0 qty 50; 16GB $100 qty 30; 32GB $250 qty 10
+5. Add section: Storage; Radio; Required. Options: 256GB SSD $0 qty 50; 512GB SSD $75 qty 25; 1TB SSD $150 qty 15
+6. Publish and save
+FRONTEND STEPS:
+7. Open PDP for Test Config Laptop [YYYYMMDD]
+8. Verify both RAM and Storage sections visible and marked Required
+9. Select RAM=16GB; verify price = $1,099.00 ($999+$100)
+10. Select Storage=512GB SSD; verify price = $1,174.00 ($999+$100+$75)
+11. Change RAM=32GB; verify price = $1,324.00 ($999+$250+$75)
+12. Change Storage=1TB SSD; verify price = $1,399.00 ($999+$250+$150)","- Both required sections visible with all options
+- Price math correct: base $999 + selected RAM option + selected Storage option
+- 16GB + 512GB SSD = $1,174; 32GB + 512GB SSD = $1,324; 32GB + 1TB SSD = $1,399",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-005,E2E: Required Sections Block Add-to-Cart When Unselected,Configurable Products > E2E Scenario 2,Functional,Critical,8m,"CFG-E2E-004 completed. Product Test Config Laptop [YYYYMMDD] published at ${FRONT_URL}.","ADMIN STEPS: None required.
+FRONTEND STEPS:
+1. Open PDP for Test Config Laptop [YYYYMMDD]
+2. Do not select any option in RAM or Storage
+3. Set quantity to 1; click Add to Cart
+4. Verify validation error shown; item NOT added
+5. Select RAM=8GB only; click Add to Cart
+6. Verify still blocked (Storage unselected)
+7. Select Storage=256GB SSD
+8. Click Add to Cart
+9. Verify item added to cart successfully","- With no selections: validation error shown; item not added to cart
+- With only RAM selected: still blocked (Storage required but not selected)
+- With both sections selected: item added to cart successfully
+- Validation messages reference required sections",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-006,E2E: Price Math for All 9 Multi-Section Combinations Is Correct,Configurable Products > E2E Scenario 2,Functional,High,10m,"CFG-E2E-004 completed. Product Test Config Laptop [YYYYMMDD] visible at ${FRONT_URL}.","ADMIN STEPS: Verify prices in admin: RAM 8GB=$0; 16GB=$100; 32GB=$250. Storage 256GB=$0; 512GB=$75; 1TB=$150.
+FRONTEND STEPS: Test all 9 RAM x Storage combinations:
+1. 8GB + 256GB SSD: verify $999.00
+2. 8GB + 512GB SSD: verify $1,074.00
+3. 8GB + 1TB SSD: verify $1,149.00
+4. 16GB + 256GB SSD: verify $1,099.00
+5. 16GB + 512GB SSD: verify $1,174.00
+6. 16GB + 1TB SSD: verify $1,249.00
+7. 32GB + 256GB SSD: verify $1,249.00
+8. 32GB + 512GB SSD: verify $1,324.00
+9. 32GB + 1TB SSD: verify $1,399.00","- All 9 combinations show the correct calculated price
+- Formula: base $999 + RAM option price + Storage option price
+- No combination shows an incorrect total",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-007,E2E: Multi-Section Configuration Preserved in Cart,Configurable Products > E2E Scenario 2,Functional,High,8m,"CFG-E2E-004 completed. Product visible at ${FRONT_URL}.","ADMIN STEPS: None required.
+FRONTEND STEPS:
+1. Open PDP for Test Config Laptop [YYYYMMDD]
+2. Select RAM=32GB and Storage=1TB SSD
+3. Verify price = $1,399.00
+4. Set qty to 1; click Add to Cart
+5. Navigate to cart
+6. Verify laptop price = $1,399.00
+7. Verify both selections shown: RAM=32GB and Storage=1TB SSD","- Both options (32GB RAM + 1TB SSD) preserved in cart
+- Cart price = $1,399.00
+- Both configuration details visible in cart line item",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-008,E2E: Sale Price and Strikethrough List Price on Configurable Product,Configurable Products > E2E Scenario 3,Functional,High,15m,"Admin logged in at ${BACK_URL}. Storefront accessible at ${FRONT_URL}.","ADMIN STEPS:
+1. Create product: Test Config Sale Bike [YYYYMMDD]; SKU: BIKE-SALE-CFG-[YYYYMMDD]
+2. Base list price: $300.00; base sale price: $250.00; inventory: 30
+3. Add section: Handlebars; Radio; Optional
+4. Add option: Standard; list=$50; sale=$40; qty=30
+5. Add option: Drop Bar; list=$100; sale=$80; qty=20
+6. Add option: None; list=$0; sale=$0; qty=30
+7. Publish and save
+FRONTEND STEPS:
+8. Open PDP for Test Config Sale Bike [YYYYMMDD]
+9. Verify base: list $300 struck through; sale $250 shown prominently
+10. Select Standard Handlebars
+11. Verify: sale=$290 ($250+$40); list=$350 struck through ($300+$50)
+12. Select Drop Bar
+13. Verify: sale=$330 ($250+$80); list=$400 struck through ($300+$100)","- List price shown with strikethrough; sale price shown as active price
+- Selecting Standard: sale=$290; list=$350 struck through
+- Selecting Drop Bar: sale=$330; list=$400 struck through
+- Price math uses sale prices (not list prices) for active total",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-009,E2E: Out-of-Stock Option Disabled and Required Section Blocks Purchase When All Options OOS,Configurable Products > E2E Scenario 4,Functional,High,15m,"Admin logged in at ${BACK_URL}. Storefront accessible at ${FRONT_URL}.","ADMIN STEPS:
+1. Create product: Test Config OOS Bike [YYYYMMDD]; SKU: BIKE-OOS-CFG-[YYYYMMDD]; base $500; inventory 50
+2. Add section: Frame Color; Radio; Required
+3. Options: Red $0 qty=10; Blue $0 qty=5; Limited Edition Black $50 qty=0 (OOS); Silver $25 qty=8
+4. Publish and save
+FRONTEND STEPS:
+5. Open PDP for Test Config OOS Bike [YYYYMMDD]
+6. Verify all 4 options shown in Frame Color section
+7. Verify Red Blue Silver are selectable
+8. Verify Limited Edition Black is disabled/greyed out and cannot be selected
+9. Select Silver; verify price = $525.00 ($500+$25)
+10. Click Add to Cart; verify success","- Out-of-stock option (qty=0) visible but not selectable
+- In-stock options (Red Blue Silver) remain fully selectable
+- Selecting Silver and adding to cart succeeds
+- Limited Edition Black cannot be selected",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-010,E2E: Full Purchase Flow with Configurable Product — Admin Create to Order History,Configurable Products > E2E Scenario 5,Functional,Critical,25m,"Admin logged in at ${BACK_URL}. Registered customer account exists at ${FRONT_URL} with ${USER_EMAIL} / ${USER_PASSWORD}. Checkout and payment configured in QA environment.","ADMIN STEPS:
+1. Create product: Test Config Checkout Bike [YYYYMMDD]; SKU: BIKE-CHK-CFG-[YYYYMMDD]; base $150; inventory 25
+2. Add section: Wheels; Radio; Required. Options: Standard Wheels $0 qty 25; Sport Wheels $50 qty 10
+3. Publish and save
+FRONTEND STEPS:
+4. Sign in at ${FRONT_URL} as ${USER_EMAIL}
+5. Open PDP for Test Config Checkout Bike [YYYYMMDD]
+6. Select Sport Wheels; verify price = $200.00 ($150+$50)
+7. Set qty to 1; click Add to Cart
+8. Navigate to cart; verify item at $200.00 with Sport Wheels
+9. Proceed to checkout; verify Sport Wheels shown at $200.00 in order summary
+10. Complete checkout with test payment method
+11. Verify order confirmation page with order number
+12. Navigate to Account > Order History
+13. Open the order; verify Test Config Checkout Bike [YYYYMMDD] with Sport Wheels at $200.00","- Full purchase flow works end-to-end for configurable product
+- Sport Wheels selection preserved from PDP through cart checkout and order history
+- Order total = $200.00 (base $150 + Sport Wheels $50)
+- Both admin and customer order history show configured option with product",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-011,E2E: Multiple Configurable Products in One Checkout,Configurable Products > E2E Scenario 5,Functional,High,20m,"CFG-E2E-001 (Bike) and CFG-E2E-004 (Laptop) completed. Both products visible at ${FRONT_URL}. User authenticated.","ADMIN STEPS: None required.
+FRONTEND STEPS:
+1. Sign in at ${FRONT_URL}
+2. Open PDP for Test Config Bike [YYYYMMDD]; select Premium Seat; set qty 1; add to cart
+3. Open PDP for Test Config Laptop [YYYYMMDD]; select RAM=16GB and Storage=512GB SSD; set qty 1; add to cart
+4. Navigate to cart; verify:
+   - Bike at $245.00 (Premium Seat selected)
+   - Laptop at $1,174.00 (16GB RAM + 512GB SSD selected)
+   - Subtotal = $1,419.00
+5. Proceed through checkout and place order
+6. Verify order confirmation shows both items with their configurations and prices","- Multiple configurable products checkout successfully in one order
+- Each product configuration preserved independently
+- Cart totals correct: Bike $245 + Laptop $1,174 = $1,419 subtotal
+- Order confirmation shows both products with correct configuration details",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-012,E2E: Cart Quantity Update Recalculates Line Total and Preserves Configuration,Configurable Products > E2E Scenario 5,Functional,High,8m,"CFG-E2E-001 completed. Product Test Config Bike [YYYYMMDD] visible at ${FRONT_URL}.","ADMIN STEPS: None required.
+FRONTEND STEPS:
+1. Open PDP for Test Config Bike [YYYYMMDD]
+2. Select Basic Seat; verify price = $215.00
+3. Set qty to 3; click Add to Cart
+4. Navigate to cart; verify: qty=3; config=Basic Seat; line total=$645.00 (3 x $215)
+5. Update cart qty to 2
+6. Verify line total = $430.00 (2 x $215)
+7. Verify Basic Seat still shown in line item configuration","- Qty 3 in cart: line total = $645.00
+- After updating qty to 2: line total = $430.00
+- Configuration (Basic Seat) remains associated after quantity change",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-013,E2E: Edit Option Price in Admin and Verify Updated Price on Storefront,Configurable Products > E2E Scenario 6,Functional,High,15m,"CFG-E2E-001 completed. Product Test Config Bike [YYYYMMDD] exists. Admin logged in at ${BACK_URL}.","ADMIN STEPS:
+1. Open Test Config Bike [YYYYMMDD] in Catalog > Products
+2. Navigate to configurable/configuration tab
+3. Find Premium Seat option in Choose Upgrade section
+4. Edit price: change from $45.00 to $60.00; save option
+5. Save product
+FRONTEND STEPS:
+6. Open PDP for Test Config Bike [YYYYMMDD] on ${FRONT_URL}; hard reload (Ctrl+Shift+R)
+7. Select Premium Seat; verify price = $260.00 ($200+$60), NOT old $245.00
+8. Select Basic Seat; verify price = $215.00 (unchanged)
+9. Select Racing Seat; verify price = $295.00 (unchanged)","- After admin price update: Premium Seat shows new price $60.00
+- Total with Premium Seat = $260.00 instead of old $245.00
+- Other options (Basic Seat $215; Racing Seat $295) unaffected",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-014,E2E: Delete Option in Admin and Verify It Disappears from Storefront,Configurable Products > E2E Scenario 7,Functional,High,12m,"CFG-E2E-001 completed. Product Test Config Bike [YYYYMMDD] has 4 options. Admin logged in at ${BACK_URL}.","ADMIN STEPS:
+1. Open Test Config Bike [YYYYMMDD] in Catalog > Products
+2. Navigate to configurable/configuration tab
+3. Find Racing Seat option; click delete/remove; confirm deletion
+4. Verify section shows 3 options: None; Basic/Standard Seat; Premium Seat
+5. Save product
+FRONTEND STEPS:
+6. Open PDP for Test Config Bike [YYYYMMDD]; hard reload
+7. Verify only 3 options shown in Choose Upgrade
+8. Verify Racing Seat NOT present
+9. Verify remaining options (None; Basic/Standard Seat; Premium Seat) still present
+10. Select Premium Seat; verify price is correct","- Deleted option Racing Seat no longer appears on storefront
+- Remaining 3 options still present and functional
+- Price calculation works correctly with remaining options",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-015,E2E: Delete Entire Configuration Section in Admin and Verify Widget Updates on Storefront,Configurable Products > E2E Scenario 7,Functional,High,15m,"CFG-E2E-004 completed. Product Test Config Laptop [YYYYMMDD] has two sections: RAM and Storage. Admin logged in at ${BACK_URL}.","ADMIN STEPS:
+1. Open Test Config Laptop [YYYYMMDD] in Catalog > Products
+2. Navigate to configurable/configuration tab
+3. Find Storage section; click delete entire section; confirm deletion
+4. Verify only RAM section remains
+5. Save product
+FRONTEND STEPS:
+6. Open PDP for Test Config Laptop [YYYYMMDD]; hard reload
+7. Verify widget shows only one section: RAM
+8. Verify Storage section completely gone
+9. Verify RAM options (8GB; 16GB; 32GB) present
+10. Select 32GB RAM; verify price = $1,249.00 ($999+$250) with no Storage component
+11. Select 8GB RAM; add to cart at $999.00; verify success","- Storage section removed from frontend widget
+- Only RAM section remains
+- Price recalculated without Storage component
+- $999 + $250 = $1,249.00 for 32GB (correct, no Storage)
+- Product addable to cart with RAM section only",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-016,E2E: Deleting Last Section Removes Configuration Widget from PDP Entirely,Configurable Products > E2E Scenario 7,Functional,High,12m,"CFG-E2E-015 completed. Laptop product now has only RAM section remaining. Admin logged in at ${BACK_URL}.","ADMIN STEPS:
+1. Open Test Config Laptop [YYYYMMDD] in Catalog > Products
+2. Navigate to configurable/configuration tab
+3. Find RAM section; delete it entirely; confirm deletion
+4. Verify no sections remain
+5. Save product
+FRONTEND STEPS:
+6. Open PDP for Test Config Laptop [YYYYMMDD]; hard reload
+7. Verify Configure the parameters widget is NOT visible
+8. Verify product treated as standard non-configurable product
+9. Verify base price $999.00 shown without configuration options
+10. Verify Add to Cart accessible without any configuration required","- When all sections deleted: configuration widget removed from PDP entirely
+- Product behaves as standard product with no configuration required
+- Base price $999.00 shown
+- Add to cart available without needing to configure anything",TP_CONFIGURABLE_PRODUCTS_001,Manual

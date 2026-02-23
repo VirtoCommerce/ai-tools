@@ -343,3 +343,189 @@ CAT-033,Edit Product Image Alt Text,Catalog > Products,Functional,Medium,4m,"Adm
 - Fields editable
 - Changes saved successfully
 - Updated values persist on reopen","C261113",Katalon
+CFG-CA-001,Create New Configurable Product in Admin Catalog,Catalog > Configurable Products > Create,Functional,Critical,15m,"Admin SPA accessible at ${BACK_URL}. Logged in as ${ADMIN} with catalog edit permissions. Products with Options > Configurations category exists.","1. Navigate to ${BACK_URL} and log in as admin
+2. Navigate to Catalog module
+3. Navigate to the Products with Options category or equivalent test category
+4. Click Add item or Add product
+5. Select product type Configurable (or type that supports configurations)
+6. Enter product name: QA Test Configurable Product
+7. Enter product SKU: QA-CONFIG-TEST-001
+8. Set product price to $100.00
+9. Save the product (click Save or OK)
+10. Verify product appears in category list","- Admin SPA loads and dashboard is visible
+- Catalog module opens
+- Configurable product form displayed
+- Name and SKU fields populated
+- Product saved successfully with no error messages
+- QA Test Configurable Product visible in category list","TP_CONFIGURABLE_PRODUCTS_001",Manual
+CFG-CA-002,Add Configuration Section to Configurable Product,Catalog > Configurable Products > Configuration Sections,Functional,Critical,10m,"QA Test Configurable Product created (CFG-CA-001). Admin logged in.","1. Open QA Test Configurable Product in Admin
+2. Find the Configurations tab or section
+3. Click Add configuration section or Add group
+4. Enter section name: QA Test Options
+5. Set the section as optional (not required)
+6. Save the configuration section
+7. Verify section appears in the product configurations list","- Product detail blade opens
+- Configurations section is visible
+- Configuration section form opens
+- Name field populated with QA Test Options
+- Optional flag is set
+- Section saved without error
+- QA Test Options visible in configurations","TP_CONFIGURABLE_PRODUCTS_001",Manual
+CFG-CA-003,Add Option Products to Configuration Section,Catalog > Configurable Products > Option Products,Functional,Critical,15m,"QA Test Options section created (CFG-CA-002). Existing simple products available in catalog to add as options.","1. Open the QA Test Options configuration section
+2. Click Add option or Add product to the section
+3. Search for an existing product to add as option (e.g. Seat)
+4. Select the product
+5. Set the option quantity to 1
+6. Set the option price or verify it inherits from product
+7. Save the option
+8. Add a second option product (e.g. Pedals) with qty 1
+9. Save all changes
+10. Verify both options appear in the section","- Section management blade opens
+- Product search/selector opens
+- Product found in search results
+- Product added as option
+- Quantity and price set correctly
+- First option saved without error
+- Second option added successfully
+- Both options visible in the configuration section","TP_CONFIGURABLE_PRODUCTS_001",Manual
+CFG-CA-004,Set and Update Option Price and Quantity,Catalog > Configurable Products > Option Products,Functional,High,10m,"Options added to QA Test Options section (CFG-CA-003). Admin logged in.","1. Open the first option in the configuration section
+2. Update the quantity to 3
+3. Update the price to $25.00
+4. Save the option
+5. Verify the option now shows qty 3 and price $25.00
+6. Verify extended price = $25.00 x 3 = $75.00 (if displayed in Admin)","- Option edit form opens
+- Quantity field updated to 3
+- Price field updated to $25.00
+- Saved without error
+- Updated values displayed
+- Extended price calculation is correct","TP_CONFIGURABLE_PRODUCTS_001",Manual
+CFG-CA-005,Mark Configuration Section as Required and Verify Storefront Enforcement,Catalog > Configurable Products > Required Options,Functional,High,15m,"QA Test Configurable Product with configuration section exists. Admin logged in. Product published and accessible on storefront.","1. Open the QA Test Options configuration section in Admin
+2. Change the required flag to true/on
+3. Save the section
+4. Navigate to the configurable product on storefront
+5. Observe the accordion label
+6. Set quantity to 1 without selecting any option (with None selected)
+7. Attempt to click Add to cart
+8. Select an option from the section
+9. Click Add to cart","- Section edit opens
+- Required flag enabled
+- Saved without error
+- Product PDP loads
+- Accordion subtitle no longer says (optional) or shows (required)
+- Quantity set to 1
+- Validation error: Please select a required option or similar; item NOT added to cart
+- Option selected
+- Item successfully added to cart","TP_CONFIGURABLE_PRODUCTS_001, CONFIG-002",Manual
+CFG-CA-006,Edit Existing Configuration Option Price and Verify on Storefront,Catalog > Configurable Products > Edit,Functional,High,15m,"QA Test Configurable Product exists with options. Admin logged in. Note current price of first option ($25.00).","1. Open first option in Admin
+2. Change price from $25.00 to $30.00
+3. Save changes
+4. Navigate to the product PDP on storefront
+5. Observe the updated option price
+6. Verify price calculation uses updated value","- Option edit form opens
+- Price field updated to $30.00
+- Saved without error
+- Product PDP loads
+- Option now shows $30.00 (updated immediately or after cache clear)
+- Total = base price + $30.00 x qty","TP_CONFIGURABLE_PRODUCTS_001",Manual
+CFG-CA-007,Add Second Configuration Section to Existing Configurable Product,Catalog > Configurable Products > Configuration Sections,Functional,High,10m,"QA Test Configurable Product has one section (QA Test Options). Admin logged in.","1. Open QA Test Configurable Product in Admin
+2. Add a second configuration section: QA Color Options
+3. Add 2 option products to QA Color Options
+4. Save all changes
+5. Navigate to storefront PDP
+6. Observe Configure the parameters widget
+7. Verify each accordion independently collapses/expands
+8. Select an option in each section","- Product opens in Admin
+- Second section QA Color Options added
+- Two options added to QA Color Options
+- All changes saved
+- Product PDP loads
+- Widget now shows TWO accordions (QA Test Options and QA Color Options)
+- Both accordions function independently
+- Each section tracks its own selection","TP_CONFIGURABLE_PRODUCTS_001",Manual
+CFG-CA-008,Remove Option Product from Configuration Section,Catalog > Configurable Products > Delete Option,Functional,Medium,10m,"QA Test Configurable Product has section with 2 options. Admin logged in.","1. Open the option list for QA Test Options
+2. Select/click the second option to edit or delete
+3. Click Delete or Remove for the second option
+4. Confirm deletion
+5. Verify only one option remains in section
+6. Navigate to storefront PDP
+7. Verify accordion shows only 2 radio options (1 option + None)","- Options listed in section
+- Option detail or delete action available
+- Confirmation dialog appears
+- Option removed from section
+- Section now shows only 1 option
+- Product PDP loads
+- Deleted option no longer appears in accordion","TP_CONFIGURABLE_PRODUCTS_001",Manual
+CFG-CA-009,Delete Entire Configuration Section from Configurable Product,Catalog > Configurable Products > Delete Section,Functional,Medium,10m,"QA Test Configurable Product has 2 sections (from CFG-CA-007). Admin logged in.","1. Open QA Test Configurable Product in Admin
+2. Select QA Color Options section for deletion
+3. Click Delete section
+4. Confirm deletion
+5. Verify only QA Test Options section remains
+6. Navigate to storefront PDP
+7. Observe Configure the parameters widget","- Product opens in Admin
+- Section selected
+- Confirmation dialog shown
+- QA Color Options deleted
+- Product shows 1 remaining section
+- Product PDP loads
+- Only one accordion (QA Test Options) shown in widget","TP_CONFIGURABLE_PRODUCTS_001",Manual
+CFG-CA-010,Publish and Activate Configurable Product — Verify Storefront Visibility,Catalog > Configurable Products > Publish,Functional,Critical,10m,"QA Test Configurable Product exists but is NOT published/inactive. Admin logged in.","1. Open QA Test Configurable Product in Admin
+2. Verify current state is draft/unpublished
+3. Attempt to find the product on storefront (direct URL or catalog browse)
+4. Return to Admin, click Publish or change status to Active
+5. Save the product
+6. Navigate to storefront and search or browse for the product
+7. Open the product PDP","- Product opens in Admin
+- Published = false or Status = Draft
+- Product NOT visible on storefront (404 or not in catalog)
+- Published flag enabled
+- Product saved as published
+- Product appears in catalog or accessible by direct URL
+- Configure the parameters widget is visible on PDP","TP_CONFIGURABLE_PRODUCTS_001",Manual
+CFG-CA-011,Validation Error When Creating Configuration Section with Empty Name,Catalog > Configurable Products > Validation,Negative,Medium,8m,"Configurable product open in Admin. Admin logged in.","1. Initiate Add configuration section
+2. Leave section name EMPTY
+3. Click Save
+4. Enter a valid section name
+5. Click Save","- Configuration section form opens
+- Name field is blank
+- Validation error: Section name is required or similar message; section NOT saved
+- Name entered
+- Section saved successfully","TP_CONFIGURABLE_PRODUCTS_001",Manual
+CFG-CA-012,Duplicate Configuration Section Name Behavior,Catalog > Configurable Products > Validation,Negative,Medium,5m,"QA Test Configurable Product has section QA Test Options. Admin logged in.","1. Attempt to add a second section with the same name QA Test Options
+2. Click Save
+3. If allowed: verify storefront shows two sections with same name","- Section form shown with duplicate name
+- Either: validation error Section name already exists is shown
+- OR: system allows it (note behavior)
+- If duplicates allowed: storefront behavior is documented and no crash occurs","TP_CONFIGURABLE_PRODUCTS_001",Manual
+CFG-CA-013,Edit Configurable Product Name and Verify Update on Storefront,Catalog > Configurable Products > Edit,Functional,High,10m,"QA Test Configurable Product is published and visible on storefront. Admin logged in.","1. Open QA Test Configurable Product in Admin
+2. Change product name to QA Updated Configurable Product
+3. Save the product
+4. Navigate to the product on storefront (direct URL or search)
+5. Observe the product name on storefront","- Product opens in Admin
+- Name field updated to QA Updated Configurable Product
+- Saved without error
+- Product PDP loads
+- Name now shows QA Updated Configurable Product on storefront","TP_CONFIGURABLE_PRODUCTS_001",Manual
+CFG-CA-014,View Configured Orders in Admin Order Management,Admin > Orders > Configured Orders,Functional,High,10m,"A configured product order has been placed on storefront. Admin logged in.","1. Navigate to Orders module in Admin
+2. Find the order placed with the configured product
+3. Open the order
+4. Observe line items
+5. Observe configuration details in order
+6. Verify order total
+7. Verify order status can be updated (change to Processing)","- Orders list loads
+- Order appears in list
+- Order detail blade opens
+- Configured product appears as a line item
+- Selected option (e.g. Seat) visible as sub-item or configuration attribute
+- Order total matches what customer paid
+- Status change to Processing saves without error","TP_CONFIGURABLE_PRODUCTS_001",Manual
+CFG-CA-015,Delete Configurable Product from Admin and Verify Storefront Removal,Catalog > Configurable Products > Delete,Functional,Medium,10m,"QA Updated Configurable Product exists and is published. Admin logged in. Note the direct storefront URL for this product.","1. Open QA Updated Configurable Product in Admin
+2. Click Delete
+3. Confirm deletion
+4. Verify product no longer in category list
+5. Navigate to product's direct URL on storefront
+6. Search for the product on storefront","- Product opens in Admin
+- Confirmation dialog appears
+- Product deleted from Admin catalog
+- Product absent from category list
+- 404 page or Product not found message shown for direct URL
+- Product does not appear in search results","TP_CONFIGURABLE_PRODUCTS_001",Manual
