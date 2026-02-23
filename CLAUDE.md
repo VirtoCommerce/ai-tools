@@ -238,7 +238,7 @@ Suite selection: `smoke` (01), `critical` (01,06,08,14), `sprint` (01-06,08,14,1
 | **Storybook QA** | `STORYBOOK_URL` |
 | **Storybook Dev** | `STORYBOOK_DEV_URL` |
 
-Theme presets: Default, Coffee
+Theme presets: Coffee
 
 ## Test Documentation Pattern
 

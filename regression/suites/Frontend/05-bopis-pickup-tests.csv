@@ -216,3 +216,90 @@ BOPIS-027,Integration - Switch Delivery Methods,BOPIS > Integration,Integration,
 6. Verify can reselect","- Can switch methods
 - Pickup clears on switch
 - Can reselect location",VCST-4499 TC-015,Automated
+BOPIS-028,Product Page BOPIS Widget - View-Only Modal Opens,BOPIS > Product Page,Functional,Critical,5m,"- Product detail page for BOPIS-eligible product
+- Pickup locations configured","1. Navigate to product detail page for a BOPIS-eligible product
+2. Locate the BOPIS shipping widget in the shipping section
+3. Verify the widget shows a CTA (e.g. 'Check availability at nearby locations')
+4. Click the CTA button
+5. Verify the pickup location modal opens","- BOPIS CTA button visible in product page shipping section
+- Clicking CTA opens pickup location modal
+- Modal opens without errors
+- Map renders with location markers
+- Location list populates",VCST-4584,Manual
+BOPIS-029,Product Page BOPIS Widget - No Select Button (View Only),BOPIS > Product Page,Functional,Critical,5m,"- BOPIS modal opened from product detail page","1. Open BOPIS modal from product detail page
+2. Scroll through location list
+3. Click on a location in the list
+4. Inspect the location info card and map info window
+5. Confirm no 'Select' button is present","- No 'Select' or 'Choose this location' button visible in the modal
+- Modal is informational/view-only
+- Location can be viewed but not selected from product page
+- Contrast: Cart BOPIS modal (BOPIS-034) still shows 'Select' button",VCST-4584,Manual
+BOPIS-030,Product Page BOPIS Widget - Map and Location List Display,BOPIS > Product Page,Functional,High,5m,"- BOPIS modal opened from product detail page","1. Open BOPIS modal from product detail page
+2. Verify map renders with markers
+3. Verify location list displays below or beside map
+4. Verify each location entry shows: name, address, distance (if available)
+5. Scroll through location list","- Map loads with markers for pickup locations
+- Location list displays all available locations
+- Each entry shows location name, address
+- Map and list are synchronized
+- Modal dimensions stable, no layout shift",VCST-4584,Manual
+BOPIS-031,Product Page BOPIS Widget - Close Modal Returns to Product Page,BOPIS > Product Page,Functional,High,3m,"- BOPIS modal opened from product detail page","1. Open BOPIS modal from product detail page
+2. Interact with modal (scroll list, view a location)
+3. Click X (close) button or press Escape
+4. Verify modal closes
+5. Verify product detail page is unchanged","- Modal closes cleanly
+- No navigation occurs (user stays on product page)
+- Product page state is unchanged (scroll position preserved)
+- Product cart widget still visible and functional
+- No console errors on close",VCST-4584,Manual
+BOPIS-032,Product Page BOPIS Widget - Radio Button Has No Indicator,BOPIS > Product Page,Functional,High,3m,"- BOPIS modal opened from product detail page","1. Open BOPIS modal from product detail page
+2. Locate radio buttons in location list (if present)
+3. Inspect radio button visual style
+4. Verify no circular radio indicator is shown","- Radio button circles (filled circle indicator) are NOT visible in product page modal
+- Location highlighting uses a different visual (e.g. border or background)
+- This is the noIndicator prop behaviour
+- Compare: Cart BOPIS modal still shows standard radio indicators",VCST-4584,Manual
+BOPIS-033,Location Info Card - New Fields Display (Email Phone Hours),BOPIS > Location Info,Functional,High,5m,"- Pickup locations configured with contactEmail, contactPhone, workingHours, description fields","1. Open BOPIS modal (from cart or product page)
+2. Click on a location that has all new fields populated
+3. Verify info card displays: Contact email, Contact phone, Working hours, Description
+4. Verify fields are absent if not populated (no empty labels)","- Contact email displays when populated
+- Contact phone displays when populated
+- Working hours display when populated
+- Description text displays when populated
+- Fields absent when not configured (no empty placeholders)
+- Layout is not broken by additional fields",VCST-4584,Manual
+BOPIS-034,Cart BOPIS Modal - Select Button Still Present (Regression),BOPIS > Cart > Regression,Functional,Critical,5m,"- Items in cart
+- BOPIS modal opened from cart/checkout","1. Add a BOPIS-eligible product to cart
+2. Navigate to cart
+3. Select Pickup delivery option
+4. Click 'Select pickup location'
+5. Open BOPIS modal
+6. Click on a location
+7. Verify 'Select' button is present","- 'Select' button visible in location info card in the cart BOPIS modal
+- Clicking 'Select' chooses the location and closes modal
+- Selected location shown in cart/checkout
+- Cart BOPIS modal is NOT broken by the VCST-4584 product page changes",VCST-4584,Manual
+BOPIS-035,VCST-4613 Availability Tooltip on Product Page,BOPIS > Product Page,Functional,Medium,4m,"- Product detail page with BOPIS widget
+- Pickup locations with varying availability","1. Navigate to product detail page
+2. Locate the BOPIS widget availability indicator
+3. Hover over or click the availability tooltip trigger
+4. Verify tooltip shows location count or availability status
+5. Verify tooltip content is accurate","- Availability tooltip triggers on hover or click
+- Tooltip shows correct count of available pickup locations
+- Content reflects actual stock at nearby locations
+- Tooltip closes on mouseout or click outside
+- No console errors",VCST-4613,Manual
+BOPIS-036,Product Page BOPIS Widget - Mobile Responsive (375x667),BOPIS > Product Page > Mobile,Functional,High,5m,"- Mobile viewport (375x667)
+- Product detail page with BOPIS widget","1. Set viewport to 375x667 (mobile)
+2. Navigate to product detail page
+3. Verify BOPIS widget renders correctly (no overflow or cut-off)
+4. Tap the BOPIS CTA button
+5. Verify modal opens and is mobile-optimized
+6. Verify map and list are accessible on mobile
+7. Verify close button is tappable (44x44px minimum)","- BOPIS widget visible and not overflowing on mobile
+- CTA button tap target adequate
+- Modal opens in mobile-friendly layout
+- Map renders (may be smaller or below list)
+- Touch interactions work (tap, pinch zoom on map)
+- Close button accessible
+- No horizontal scrolling required",VCST-4584,Manual

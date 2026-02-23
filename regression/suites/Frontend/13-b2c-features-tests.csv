@@ -647,3 +647,54 @@ B2C-CONFIG-012,Product Configuration - Accessibility,B2C Features > Configuratio
 - ARIA labels present
 - Error messages announced
 - WCAG 2.1 AA compliant",VCST-4547,Manual
+B2C-CONFIG-013,Configurable Product - Discount Scales Correctly with Quantity,B2C Features > Configurations > Pricing,Functional,Critical,6m,"Configurable product with discounted options, quantity > 1","1. Navigate to configurable product page (e.g. bike builder)
+2. Select a configuration option that has a discount (list price > sale price)
+3. Set quantity to 2 or more
+4. Observe the subtotal in the configuration section
+5. Verify in cart: subtotal = salePrice x quantity (not listPrice x quantity)
+6. Verify cart discount amount = (listPrice - salePrice) x quantity","- Sale price is used for subtotal calculation (not list price)
+- Discount amount is multiplied by quantity: discountAmount * qty = correct total discount
+- Cart subtotal is mathematically correct: salePrice x qty
+- No pricing discrepancy between product page and cart
+- VCST-4586 regression case",VCST-4586,Manual
+B2C-CONFIG-014,Configurable Product - Sale Price Displayed as Primary Price,B2C Features > Configurations > Pricing,Functional,Critical,4m,"Configurable product with discounted options (list price != sale price)","1. Navigate to configurable product
+2. Select an option with a discount applied
+3. Observe the price display in the configuration section
+4. Verify which price is shown prominently","- Sale price (salePrice) is displayed prominently (bold, dark colour)
+- List price (listPrice) is shown with strikethrough formatting
+- Visual presentation: salePrice = primary, listPrice = secondary/crossed out
+- Price math is clear (e.g. $88.00 sale with $126.00 crossed out)",VCST-4586,Manual
+B2C-CONFIG-015,Configurable Product - Mobile Sale Price Display,B2C Features > Configurations > Pricing > Mobile,Functional,High,4m,"Mobile viewport (375x667), configurable product with discounted options","1. Set viewport to 375x667
+2. Navigate to configurable product
+3. Select an option with a discount
+4. Observe price display in configuration section on mobile","- Mobile fallback price component shows sale price (not list price)
+- Sale price visible in mobile configuration section
+- Regression check: list price should NOT be shown as the primary price on mobile
+- Testing fix for mobile bug found in VCST-4586",VCST-4586,Manual
+B2C-CONFIG-016,Configurable Product - No Auto-Scroll on First Collapsed Section Click,B2C Features > Configurations > Interaction,Functional,High,5m,"Fresh page load of configurable product with multiple accordion sections (some collapsed by default)","1. Navigate to configurable product page (fresh load - no cached state)
+2. Wait for page to fully load
+3. Locate a configuration accordion section that is COLLAPSED by default
+4. Click the accordion header to expand it
+5. Immediately click a radio button option inside the newly expanded section
+6. Verify page scroll position","- Page does NOT auto-scroll after the first radio button click
+- Radio button selection STICKS (does not revert to 'None' or default)
+- Scroll position remains where user was before click
+- Selected option is confirmed as checked
+- VCST-4612 regression case",VCST-4612,Manual
+B2C-CONFIG-017,Configurable Product - First Click Radio Selection Sticks (No Revert),B2C Features > Configurations > Interaction,Functional,High,4m,"Fresh page load, configurable product with collapsed accordion sections","1. Fresh page load of configurable product
+2. Expand a collapsed accordion section
+3. Click a radio button option (first option in the newly expanded section)
+4. Observe the radio button state after 1-2 seconds
+5. Verify the selection has not reverted","- Radio button remains selected after first click
+- The selection does NOT revert to 'None' or the default value
+- Price updates to reflect the selected option
+- Section header updates to show selected option name
+- VCST-4612 regression case (selection revert bug)",VCST-4612,Manual
+B2C-VAR-011,VcVariantPickerGroup - All Variant Options Render Correctly,B2C Features > Variations > UI,Functional,High,4m,"Product with multiple variation options (size, colour), Storybook changes deployed","1. Navigate to product with size and colour variants
+2. Observe the variant picker UI (colour swatches, size buttons)
+3. Click various options
+4. Verify visual feedback for selected, unselected, and disabled states","- All variant options render (no blank spaces or broken swatches)
+- Selected state visually distinct (border, checkmark, fill)
+- Unselected state clearly different from selected
+- Disabled/out-of-stock variant shown differently (grayed)
+- No visual regression from Storybook StoryFn to StoryObj migration",VCST-4233,Manual

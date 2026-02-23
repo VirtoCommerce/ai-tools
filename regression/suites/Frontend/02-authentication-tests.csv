@@ -156,3 +156,55 @@ AUTH-028,Login on Behalf - Org Maintainer,Login > Admin,Functional,Medium,5m,"Or
 3. Select employee
 4. Login on behalf","- Maintainer can impersonate employees
 - Limited to own organization",regression-qa-theme-26.csv,Other
+AUTH-029,Account Menu - Purchasing Group Structure,Authentication > Account Menu,Functional,Critical,3m,"User logged in with account access","1. Log in to storefront
+2. Navigate to account section (e.g. via user icon or My Account link)
+3. Locate the left rail navigation menu
+4. Verify 'Purchasing' group header is visible
+5. Verify the following items appear under Purchasing: Dashboard, Orders, Lists, Saved for Later","- 'Purchasing' group label visible in left rail
+- Dashboard link present under Purchasing
+- Orders link present under Purchasing
+- Lists link present under Purchasing
+- Saved for Later link present under Purchasing
+- Items are in correct order",VCST-4589,Manual
+AUTH-030,Account Menu - User Group Structure,Authentication > Account Menu,Functional,Critical,3m,"User logged in","1. Navigate to account left rail menu
+2. Locate 'User' group header
+3. Verify the following items appear under User: Profile, Addresses, Change Password, Saved Credit Cards","- 'User' group label visible
+- Profile link under User
+- Addresses link under User
+- Change Password link under User
+- Saved Credit Cards link under User",VCST-4589,Manual
+AUTH-031,Account Menu - Group Headers Are Non-Clickable Labels,Authentication > Account Menu,Functional,High,3m,"User logged in, account menu visible","1. Navigate to account left rail menu
+2. Click on the 'Purchasing' group header
+3. Verify no navigation occurs
+4. Click on the 'User' group header
+5. Verify no navigation occurs","- Group headers ('Purchasing', 'User', 'Marketing', 'Corporate') are not links
+- Clicking a group header does not navigate anywhere
+- Cursor style indicates non-interactive (default, not pointer)
+- Headers serve as visual section labels only",VCST-4589,Manual
+AUTH-032,Account Menu - All Navigation Items Route Correctly,Authentication > Account Menu,Functional,High,8m,"User logged in, account menu visible","1. Click 'Dashboard' in Purchasing group, verify correct page
+2. Click 'Orders' in Purchasing group, verify Order History page
+3. Click 'Lists' in Purchasing group, verify Lists page
+4. Click 'Saved for Later' in Purchasing group, verify Saved for Later page
+5. Click 'Profile' in User group, verify Profile page
+6. Click 'Addresses' in User group, verify Addresses page
+7. Click 'Change Password' in User group, verify Change Password page
+8. Click 'Saved Credit Cards' in User group, verify Saved Credit Cards page","- Each menu item navigates to the correct page
+- Page title or heading confirms correct destination
+- Left rail remains visible after navigation
+- Active menu item is highlighted",VCST-4589,Manual
+AUTH-033,Account Menu - Active State Highlighting,Authentication > Account Menu,Functional,Medium,4m,"User logged in, navigating between account pages","1. Navigate to Orders page via menu
+2. Verify 'Orders' item is highlighted/active in left rail
+3. Navigate to Profile page via menu
+4. Verify 'Profile' is now highlighted and 'Orders' is no longer active","- Currently viewed page item is visually highlighted (bold, border, or background)
+- Only one item active at a time
+- Active state updates correctly on navigation",VCST-4589,Manual
+AUTH-034,Account Menu - Mobile Responsive Layout,Authentication > Account Menu > Mobile,Functional,High,5m,"Mobile viewport (375x667), user logged in","1. Set viewport to 375x667
+2. Navigate to account section
+3. Verify left rail menu adapts for mobile (hamburger, drawer, or tabs)
+4. Open mobile menu
+5. Verify grouped structure visible on mobile
+6. Navigate to Orders via mobile menu","- Account menu accessible on mobile
+- Grouped structure maintained (Purchasing, User groups visible)
+- Touch targets adequate (44x44px minimum)
+- Menu opens/closes correctly
+- Navigation from mobile menu works",VCST-4589,Manual
