@@ -177,6 +177,31 @@ CAT-025,Filters - Multi-select Within Facet Group,Catalog > Filters,Functional,H
 - Individual chip removal works
 - Other values in same facet preserved
 - Product count updates",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-026,Facet Filter Badge - Size xs Renders Legibly,Catalog > Filters > Badge,Visual,High,3m,"Category with faceted filters, products available","1. Navigate to category page with facets
+2. Apply a facet filter (e.g. Brand)
+3. Locate the filter chip that appears
+4. Observe the badge element showing the count or filter indicator
+5. Verify the badge is readable and clearly visible","- Badge renders at xs size (smaller than previous sm)
+- Badge text is legible (not clipped or overflowing)
+- Badge has sufficient visual contrast against background
+- Badge shape and padding are correct",VCST-4623,Manual
+CAT-027,Facet Filter Badge - Double-Digit Count Uses Correct Padding,Catalog > Filters > Badge,Functional,High,3m,"Category with many filter values available","1. Navigate to category with many filterable values
+2. Apply 10 or more values from the same facet group
+3. Observe the facet header badge showing the count","- Badge shows double-digit count (e.g. '10', '12')
+- Badge width expands to fit double-digit count (px-1 dynamic padding)
+- Count not clipped or truncated
+- Badge remains proportionally correct",VCST-4623,Manual
+CAT-028,Category Selector Badge - Size xs Renders Correctly,Catalog > Category Selector > Badge,Visual,High,3m,"Category selector component visible (category navigation)","1. Navigate to a top-level category page that shows subcategory navigation
+2. Locate the category selector component
+3. Observe count badges on category items","- Category item count badges render at xs size
+- Badge count is readable
+- No layout overflow from smaller badge
+- Badge consistent in appearance across different category items",VCST-4623,Manual
+CAT-029,Facet Filter Badge - WCAG Contrast at xs Size,Catalog > Filters > Badge > Accessibility,Accessibility,High,5m,"Category with facets, browser contrast checker or DevTools","1. Navigate to category page with facets
+2. Apply a filter to show filter chip with badge
+3. Use browser DevTools or accessibility checker to measure badge text contrast ratio","- Badge text contrast ratio >= 4.5:1 against badge background (WCAG AA for normal text)
+- Contrast maintained despite xs size reduction
+- Badge meets WCAG 2.1 Level AA",VCST-4623,Manual
 SRCH-001,Search - Basic Query,Search > Basic,Functional,High,3m,"Catalog has searchable products","1. Click search bar
 2. Enter product name 'laptop'
 3. Press Enter

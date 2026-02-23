@@ -55,7 +55,7 @@
       "name": "Authentication Tests",
       "file": "regression/suites/Frontend/02-authentication-tests.csv",
       "priority": "P1",
-      "testCount": 28,
+      "testCount": 34,
       "estimatedMinutes": 30,
       "agent": "qa-frontend-expert",
       "tags": ["auth", "security", "sprint"]
@@ -65,7 +65,7 @@
       "name": "Catalog & Search Tests",
       "file": "regression/suites/Frontend/03-catalog-search-tests.csv",
       "priority": "P1",
-      "testCount": 35,
+      "testCount": 39,
       "estimatedMinutes": 25,
       "agent": "qa-frontend-expert",
       "tags": ["catalog", "search", "sprint"]
@@ -85,7 +85,7 @@
       "name": "BOPIS Pickup Tests",
       "file": "regression/suites/Frontend/05-bopis-pickup-tests.csv",
       "priority": "P1",
-      "testCount": 27,
+      "testCount": 36,
       "estimatedMinutes": 30,
       "agent": "qa-frontend-expert",
       "tags": ["bopis", "pickup", "sprint"]
@@ -165,7 +165,7 @@
       "name": "B2C Features Tests",
       "file": "regression/suites/Frontend/13-b2c-features-tests.csv",
       "priority": "P1",
-      "testCount": 49,
+      "testCount": 55,
       "estimatedMinutes": 60,
       "agent": "qa-frontend-expert",
       "tags": ["b2c", "variations", "wishlists", "ship-to", "configurations"]
