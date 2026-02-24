@@ -117,35 +117,6 @@ When creating test plans involving UI testing, include cross-browser matrix:
 - Android Chrome via `playwright-chrome` or BrowserStack
 
 
-### Tools & Access:
-
-**Test Management:**
-- Jira (for test case management)
-- Excel/Google Sheets (for test matrices)
-- Markdown files (for test documentation)
-- Version control (Git for test case versioning)
-
-**Documentation Access:**
-- Requirements documents
-- User stories
-- Acceptance criteria
-- Design mockups (Figma)
-- API documentation
-- Technical specifications
-
-**Virto Commerce Environments (from .env):**
-| Resource | Environment Variable |
-|----------|---------------------|
-| **Frontend** | `FRONT_URL` |
-| **Backend** | `BACK_URL` |
-
-**Regression Suites:** `regression/suites/`
-
-**Repositories:**
-- Test case repository (Git or Jira)
-- Test data repository
-- Test documentation repository
-
 ## VIRTO COMMERCE TESTING SCOPE
 
 ### Application Layers (Test Coverage Needed):
@@ -332,500 +303,120 @@ After exploring, you should produce:
 
 ### 1. TEST PLANNING
 
-**Creating a Comprehensive Test Plan:**
+**Test Plan Template:** `TP_[PROJECT]_[VERSION]` — Save to `tests/SprintXX-XX/VCST-XXXX/test-plan.md`
+
+Required sections (adapt per feature):
+
 ```markdown
-Test Plan Template: TP_[PROJECT]_[VERSION]
+# Test Plan: [Feature Name]
 
-Example: TP_VIRTO_CHECKOUT_V2.5.0
-
-# Test Plan: Guest Checkout Feature
-
-## 1. TEST PLAN IDENTIFIER
-- **ID:** TP_CHECKOUT_GUEST_001
-- **Version:** 1.0
-- **Date:** 2026-02-02
-- **Author:** test-management-specialist
+## 1. IDENTIFIER
+- **ID / Version / Date / Author**
 
 ## 2. INTRODUCTION
-
-### 2.1 Purpose
-This test plan describes the testing approach for the Guest Checkout feature (VIRC-1234) which allows customers to complete purchases without creating an account.
-
-### 2.2 Scope
-**In Scope:**
-- Guest checkout user flow (email → shipping → payment → confirmation)
-- Email validation and confirmation
-- Guest order tracking
-- Integration with existing checkout infrastructure
-- Admin guest order management
-
-**Out of Scope:**
-- Registered user checkout (existing functionality, regression only)
-- Payment gateway configuration (infrastructure)
-- Tax calculation logic (existing functionality)
-
-### 2.3 References
-- **Jira:** VIRC-1234 - Guest Checkout Feature
-- **PRD:** Guest_Checkout_Requirements_v1.2.pdf
-- **Design:** https://figma.com/file/guest-checkout-designs
-- **API Spec:** /docs/api/guest-checkout-spec.yaml
+- Purpose, Scope (In/Out), References (Jira, PRD, Figma, API spec)
 
 ## 3. TEST ITEMS
-- Storefront: Guest checkout flow pages
-- Backend: Guest session management APIs
-- Backend: Guest order creation APIs
-- Admin: Guest order display and management
-- Email: Order confirmation email service
+- List affected components: Storefront pages, Backend APIs, Admin SPA, Emails, Integrations
 
-## 4. FEATURES TO BE TESTED
+## 4. FEATURES TO TEST (by priority)
+- P0/P1: Critical happy paths + core validation
+- P2: Performance, analytics, edge cases
+- P3: Nice-to-have scenarios
 
-### 4.1 High Priority (P0/P1)
-1. **Guest Email Entry**
-   - Email validation
-   - Email format checking
-   - Duplicate email handling
-
-2. **Guest Checkout Flow**
-   - Complete checkout without account
-   - Session persistence
-   - Data validation at each step
-
-3. **Guest Order Creation**
-   - Order creation without customer account
-   - Order confirmation email
-   - Order tracking link generation
-
-4. **Guest Order Tracking**
-   - Track order via email + order number
-   - View order status
-   - No sensitive information exposure
-
-5. **Admin Guest Order Management**
-   - View guest orders in Admin
-   - Search guest orders by email
-   - Process guest orders (same as registered)
-
-### 4.2 Medium Priority (P2)
-1. Guest checkout performance (load time)
-2. Guest checkout analytics tracking
-3. Post-checkout account creation prompt
-
-### 4.3 Low Priority (P3)
-1. Guest checkout with promo codes
-2. Guest checkout with gift cards
-
-## 5. FEATURES NOT TO BE TESTED
-- Payment gateway integration (existing, regression only)
-- Tax calculation (existing logic, regression only)
-- Shipping calculation (existing logic, regression only)
-- Registered user checkout (existing, regression only)
+## 5. FEATURES NOT TO TEST
+- Existing functionality (regression only), infrastructure
 
 ## 6. APPROACH
+- Test Levels: API (qa-backend-expert), UI (qa-frontend-expert), E2E, Accessibility (ui-ux-expert)
+- Test Types: Functional, Integration, Regression, Cross-browser, Mobile, Performance
+- Techniques: Equivalence Partitioning, Boundary Value, State Transition, Error Guessing, Exploratory
 
-### 6.1 Test Levels
-- **Unit Testing:** Developers (not QA scope)
-- **Admin UI and API Testing:** qa-backend-expert
-- **UI Testing:** qa-frontend-expert
-- **Integration Testing:** qa-backend-expert + qa-frontend-expert
-- **E2E Testing:** qa-frontend-expert
-- **Accessibility Testing:** ui-ux-expert
-- **Performance Testing:** Performance testing (if needed)
+## 7. TEST ENVIRONMENT
+- URLs: ${FRONT_URL}, ${BACK_URL} (from .env)
+- Payment gateway in test mode, email service configured
+- Test accounts, test data, test payment cards
 
-### 6.2 Test Types
-- Functional Testing (primary focus)
-- Integration Testing (storefront + backend + email)
-- Regression Testing (ensure no breakage)
-- Usability Testing (ui-ux-expert)
-- Accessibility Testing (WCAG 2.1 AA)
-- Cross-browser Testing (Chrome, Safari, Firefox, Edge)
-- Mobile Testing (iOS Safari, Chrome Android)
-- Performance Testing (basic, checkout load time)
+## 8. TEST CASE SUMMARY
+- Total count, by Priority (P0/P1/P2/P3), by Type (Functional/Integration/UI/Accessibility)
 
-### 6.3 Test Techniques
-- **Equivalence Partitioning:** Group similar email formats
-- **Boundary Value Analysis:** Test email length limits, order value limits
-- **Decision Table Testing:** Guest vs registered flow decisions
-- **State Transition Testing:** Checkout step progression
-- **Error Guessing:** Common user mistakes (typos, back button, etc.)
-- **Exploratory Testing:** Unscripted exploration by qa-frontend-expert
-
-## 7. TEST DELIVERABLES
-
-### 7.1 Before Testing
-- ✅ Test Plan (this document)
-- ✅ Test Cases (see Section 9)
-- ✅ Test Data Specifications
-- ✅ Test Environment Requirements
-
-### 7.2 During Testing
-- Test Execution Results (daily)
-- Bug Reports (as found)
-- Test Progress Reports (daily standup)
-
-### 7.3 After Testing
-- Test Summary Report
-- Defect Summary Report
-- Test Metrics (coverage, pass rate, etc.)
-- Lessons Learned
-
-## 8. TEST ENVIRONMENT
-
-### 8.1 Software Requirements
-- **Environment:** QA
-- **Storefront URL:** ${FRONT_URL} (from .env)
-- **Admin URL:** ${BACK_URL} (from .env)
-- **API URL:** ${BACK_URL}/api (from .env)
-- **Database:** QA database (production-like data)
-- **Payment Gateway:** Authorize.Net Test Mode
-- **Email Service:** Sendgrid (test email server)
-
-### 8.2 Hardware Requirements
-- Desktop browsers (Chrome, Safari, Firefox, Edge)
-- Mobile devices (iPhone, Android)
-- Tablets (iPad)
-
-### 8.3 Test Accounts
-- Guest users (no account needed)
-- Test email addresses: guest-test-01@example.com through guest-test-10@example.com
-- Admin account: admin@virtocommerce.com
-- Test credit cards: Stripe test cards
-
-### 8.4 Test Data
-- 50 test products (various prices, in stock)
-- 10 test shipping addresses (various states/countries)
-- Test promo codes: SAVE10, FREESHIP
-- Test payment cards: 4242 4242 4242 4242 (Stripe test Visa)
-
-## 9. TEST CASES
-
-### 9.1 Test Case Summary
-**Total Test Cases:** 45
-
-**By Priority:**
-- P0 (Critical): 15 test cases
-- P1 (High): 20 test cases
-- P2 (Medium): 8 test cases
-- P3 (Low): 2 test cases
-
-**By Type:**
-- Functional: 30 test cases
-- Integration: 8 test cases
-- UI/UX: 5 test cases
-- Accessibility: 2 test cases
-
-**By Feature:**
-- Email Entry: 8 test cases
-- Shipping Address: 10 test cases
-- Shipping Method: 5 test cases
-- Payment: 10 test cases
-- Order Confirmation: 7 test cases
-- Order Tracking: 5 test cases
-
-### 9.2 Test Case Location
-- Detailed test cases: See Section 11 (Test Cases)
-- Jira: VIRC-1234 → Test Cases tab
-- Repository: tests/SprintXX-XX/VCST-1234/
-
-## 10. RESPONSIBILITIES
-
+## 9. RESPONSIBILITIES
 | Role | Responsibility |
 |------|----------------|
-| **qa-lead-orchestrator** | Approve test plan, coordinate testing, make go/no-go decision |
-| **test-management-specialist (you)** | Create test plan, write test cases, track coverage |
-| **qa-backend-expert** | Execute backend/API test cases, test Admin features |
-| **qa-frontend-expert** | Execute storefront test cases, E2E testing |
-| **ui-ux-expert** | Execute accessibility and UX test cases |
-| **Developers** | Fix bugs, provide technical clarifications |
-| **Product Manager** | Clarify requirements, prioritize bugs |
+| qa-lead-orchestrator | Approve plan, coordinate, go/no-go |
+| test-management-specialist | Create plan, write cases, track coverage |
+| qa-backend-expert | Backend/API test execution |
+| qa-frontend-expert | Storefront/E2E test execution |
+| ui-ux-expert | Accessibility/UX test execution |
 
-## 11. SCHEDULE
+## 10. SCHEDULE
+- Test Planning → Test Case Writing → Review → Execution → Bug Fix → Re-test → Sign-off
 
-| Phase | Start Date | End Date | Duration | Owner |
-|-------|-----------|----------|----------|-------|
-| **Test Planning** | Feb 1 | Feb 1 | 1 day | test-management-specialist |
-| **Test Case Writing** | Feb 1 | Feb 2 | 2 days | test-management-specialist |
-| **Test Case Review** | Feb 2 | Feb 2 | 0.5 days | qa-lead-orchestrator |
-| **Test Execution (Backend)** | Feb 3 | Feb 4 | 2 days | qa-backend-expert |
-| **Test Execution (Frontend)** | Feb 3 | Feb 5 | 3 days | qa-frontend-expert |
-| **Test Execution (UI/UX)** | Feb 4 | Feb 5 | 2 days | ui-ux-expert |
-| **Bug Fixing** | Feb 5 | Feb 6 | 2 days | Developers |
-| **Re-testing** | Feb 6 | Feb 7 | 2 days | QA Team |
-| **Test Sign-off** | Feb 7 | Feb 7 | 1 day | qa-lead-orchestrator |
-
-**Total Duration:** 7 days (Feb 1 - Feb 7)
-
-## 12. RISKS AND MITIGATION
-
+## 11. RISKS AND MITIGATION
 | Risk | Impact | Probability | Mitigation |
 |------|--------|-------------|------------|
-| **Email service not available** | High | Low | Set up Mailhog test server in advance, verify working |
-| **Payment gateway test mode issues** | High | Medium | Test Stripe test mode early, have backup test cards |
-| **Session timeout issues** | Medium | Medium | Test session handling early, identify timeout values |
-| **Mobile browser issues** | Medium | Medium | Test on real devices early, allocate extra mobile testing time |
-| **Requirements change mid-testing** | High | Low | Freeze requirements before testing, formal change process |
-| **Test environment unavailable** | Critical | Low | Have staging fallback, coordinate with DevOps |
 
-## 13. ENTRY CRITERIA
-Testing can begin when:
-- ✅ Feature deployed to QA environment
-- ✅ Test plan approved by qa-lead-orchestrator
-- ✅ Test cases written and reviewed
-- ✅ Test data prepared
-- ✅ Test environment stable and accessible
-- ✅ Email service configured and working
-
-## 14. EXIT CRITERIA
-Testing is complete when:
-- ✅ All P0/P1 test cases executed
-- ✅ All P0/P1 test cases passing (or bugs accepted as known issues)
-- ✅ No critical or high-severity bugs open
-- ✅ Regression testing completed (no new issues in existing features)
-- ✅ Test coverage ≥ 95% for acceptance criteria
-- ✅ qa-lead-orchestrator approval obtained
-
-## 15. SUSPENSION CRITERIA
-Testing will be suspended if:
-- QA environment becomes unavailable
-- Critical blocking bug prevents further testing
-- Requirements change significantly
-- More than 5 critical bugs found (requires stabilization)
-
-## 16. RESUMPTION REQUIREMENTS
-Testing can resume when:
-- Environment restored and stable
-- Blocking bugs fixed and verified
-- Updated requirements approved
-- Code stabilized (bugs fixed)
-
-## 17. TEST METRICS
-
-### 17.1 Metrics to Track
-- **Test Coverage:** % of requirements covered by test cases
-- **Test Execution Progress:** % of test cases executed
-- **Pass Rate:** % of test cases passing
-- **Defect Density:** Number of bugs per feature
-- **Defect Distribution:** Bugs by severity
-- **Retest Pass Rate:** % of bugs fixed correctly on first retry
-
-### 17.2 Target Metrics
-- Test Coverage: ≥ 95%
-- Pass Rate: ≥ 95% (before sign-off)
-- Critical Bugs: 0 (before sign-off)
-- High Bugs: ≤ 2 (with mitigation plan)
-
-## 18. APPROVALS
-
-| Role | Name | Signature | Date |
-|------|------|-----------|------|
-| **Test Manager** | qa-lead-orchestrator | __________ | ______ |
-| **Product Owner** | [PM Name] | __________ | ______ |
-| **Development Lead** | [Dev Lead] | __________ | ______ |
-
----
-
-## REVISION HISTORY
-
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0 | 2026-02-01 | test-management-specialist | Initial test plan created |
-| 1.1 | 2026-02-02 | test-management-specialist | Added mobile testing details |
+## 12. ENTRY/EXIT CRITERIA
+- Entry: Feature deployed, plan approved, test data ready, environment stable
+- Exit: All P0/P1 pass, no critical bugs, coverage ≥95%, qa-lead approval
+- Suspension: Environment down, blocking bug, requirements change
 ```
 
 ### 2. TEST CASE DESIGN
 
-**Writing High-Quality Test Cases:**
+**Test Case Template:** `TC_[FEATURE]_[NUMBER]` — Use REAL UI labels discovered during exploration.
 
-**Test Case Template:**
 ```markdown
 # Test Case: TC_[FEATURE]_[NUMBER]
 
-## Test Case Header
-
 | Field | Value |
 |-------|-------|
-| **Test Case ID** | TC_CHECKOUT_GUEST_001 |
-| **Test Case Title** | Guest user completes checkout with valid email and credit card |
-| **Priority** | P0 (Critical) |
-| **Test Type** | Functional, E2E |
-| **Feature** | Guest Checkout |
-| **User Story** | VIRC-1234 - Guest Checkout |
-| **Author** | test-management-specialist |
-| **Created Date** | 2026-02-01 |
-| **Last Updated** | 2026-02-01 |
-| **Version** | 1.0 |
-| **Automated** | No (manual) |
-| **Assignee** | qa-frontend-expert |
-
-## Test Objective
-Verify that a guest user can successfully complete the entire checkout process using a valid email address and credit card, and receives an order confirmation.
+| **ID / Title** | TC_CHECKOUT_GUEST_001 / Guest completes checkout with valid card |
+| **Priority / Type** | P0 / Functional, E2E |
+| **User Story / Assignee** | VIRC-1234 / qa-frontend-expert |
 
 ## Preconditions
-1. Storefront is accessible at ${env:FRONT_URL}
-2. At least one product is available in catalog (in stock)
-3. Payment gateway (Stripe) is in test mode
-4. Email service (Mailhog) is configured and accessible
-5. User is not logged in (guest)
-6. Browser cookies/cache cleared
+1. Environment accessible at ${FRONT_URL}
+2. Product available in catalog (in stock)
+3. Payment gateway in test mode
+4. User not logged in, cookies cleared
 
 ## Test Data
-
 | Data Type | Value |
 |-----------|-------|
-| **Email** | guest-test-001@example.com |
-| **Shipping Address** | John Doe, 123 Test St, Apt 4B, Testville, CA, 90210, USA, +1-555-123-4567 |
-| **Product** | "Wireless Headphones" (SKU: WH-001, Price: $99.99) |
-| **Shipping Method** | Standard Shipping ($5.99, 5-7 days) |
-| **Payment Card** | 4242 4242 4242 4242, Exp: 12/25, CVV: 123, Name: John Doe |
-| **Expected Total** | $99.99 + $5.99 + Tax = ~$114.47 (varies by tax rate) |
+| Email | guest-test-001@example.com |
+| Product | [Name] (SKU: [X], Price: $XX.XX) |
+| Address | [Full shipping address] |
+| Payment | [Test card from .env] |
 
 ## Test Steps
-
-| Step # | Action | Expected Result | Actual Result | Pass/Fail |
-|--------|--------|-----------------|---------------|-----------|
-| 1 | Navigate to storefront homepage<br>URL: ${FRONT_URL} (from .env) | Homepage loads successfully<br>- Hero banner visible<br>- Product categories visible<br>- Search bar visible<br>- Cart icon shows 0 items | | |
-| 2 | Search for product "Wireless Headphones"<br>OR<br>Navigate to Electronics category | Product listing page displays<br>- "Wireless Headphones" product appears<br>- Product image visible<br>- Price displays: $99.99<br>- "In Stock" status visible | | |
-| 3 | Click on "Wireless Headphones" product | Product Detail Page (PDP) loads<br>- Product name: "Wireless Headphones"<br>- Product image gallery<br>- Price: $99.99<br>- "Add to Cart" button visible<br>- Quantity selector (default: 1) | | |
-| 4 | Click "Add to Cart" button | Product added to cart<br>- Success message: "Product added to cart"<br>- Cart icon updates to show 1 item<br>- Mini-cart preview displays (optional) | | |
-| 5 | Click cart icon in header | Cart page loads<br>- Product listed: "Wireless Headphones"<br>- Quantity: 1<br>- Price: $99.99<br>- Subtotal: $99.99<br>- "Proceed to Checkout" button visible | | |
-| 6 | Click "Proceed to Checkout" | Checkout page loads<br>- Progress indicator shows Step 1<br>- "Checkout as Guest" option visible<br>- "Sign In" option visible (for registered users) | | |
-| 7 | Click "Checkout as Guest" | Email entry field appears<br>- Field label: "Email Address"<br>- Placeholder: "your@email.com"<br>- Field is focused (cursor blinking) | | |
-| 8 | Enter email: guest-test-001@example.com<br>Tab or click outside field | Email validates<br>- No error message<br>- Email format accepted<br>- Can proceed to next step | | |
-| 9 | Click "Continue" or "Next" | Shipping address form appears<br>- Fields visible: First Name, Last Name, Address Line 1, Address Line 2 (optional), City, State, ZIP, Country, Phone<br>- Required fields marked with * or (required) | | |
-| 10 | Fill shipping address:<br>- First Name: John<br>- Last Name: Doe<br>- Address 1: 123 Test St<br>- Address 2: Apt 4B<br>- City: Testville<br>- State: California<br>- ZIP: 90210<br>- Country: United States<br>- Phone: +1-555-123-4567 | All fields accept input<br>- State dropdown filters by country<br>- ZIP format validated (5 or 9 digits)<br>- Phone format validated | | |
-| 11 | Click "Continue to Shipping Method" | Form validates<br>- No error messages (all required fields filled)<br>- Proceeds to shipping method selection | | |
-| 12 | View shipping methods | Shipping options display:<br>- Standard Shipping - $5.99 (5-7 business days)<br>- Express Shipping - $12.99 (2-3 business days)<br>- Next Day - $24.99 (1 business day)<br>Each shows cost and estimated delivery | | |
-| 13 | Select "Standard Shipping" | Shipping method selected<br>- Radio button checked<br>- Order summary updates:<br>  * Subtotal: $99.99<br>  * Shipping: $5.99<br>  * Total updates (before tax) | | |
-| 14 | Click "Continue to Payment" | Payment form appears<br>- Payment method options visible<br>- Credit card form displays:<br>  * Card Number<br>  * Expiration Date<br>  * CVV<br>  * Cardholder Name<br>- Billing address section:<br>  * "Same as shipping" checkbox (checked by default)<br>  * OR option to enter different billing address | | |
-| 15 | Verify "Same as shipping" is checked | Billing address auto-filled<br>- Matches shipping address entered earlier | | |
-| 16 | Enter payment details:<br>- Card: 4242 4242 4242 4242<br>- Exp: 12/25<br>- CVV: 123<br>- Name: John Doe | Card details accepted<br>- Card number formats with spaces (4242 4242 4242 4242)<br>- Expiry formats as MM/YY<br>- CVV limited to 3-4 digits<br>- Visa icon displays (card brand detection) | | |
-| 17 | Review order summary (sidebar or section) | Order summary displays:<br>- Items: "Wireless Headphones" x1<br>- Subtotal: $99.99<br>- Shipping: $5.99 (Standard)<br>- Tax: $8.49 (calculated based on CA)<br>- **Total: $114.47**<br>- Shipping address summary<br>- Payment method summary (Visa ending in 4242) | | |
-| 18 | Click "Place Order" button | Button behavior:<br>- Shows loading state (spinner, "Processing...")<br>- Button disabled during processing (prevent double-click)<br>- Processing takes 2-5 seconds | | |
-| 19 | Wait for order processing | Order confirmation page loads<br>- Success message: "Thank you for your order!"<br>- Order number displayed: "Order #CO-XXXXXX"<br>- Order details shown:<br>  * Items ordered<br>  * Shipping address<br>  * Shipping method<br>  * Payment method (last 4 digits)<br>  * Total: $114.47<br>- Estimated delivery date shown<br>- "Track your order" link or instructions | | |
-| 20 | Verify cart is cleared | Cart icon shows 0 items<br>- Cart is empty | | |
-| 21 | Check email (guest-test-001@example.com)<br>Wait up to 2 minutes | Order confirmation email received<br>Email contains:<br>- Subject: "Order Confirmation - #CO-XXXXXX"<br>- Greeting: "Hi John," or "Thank you for your order"<br>- Order number<br>- Order summary (items, quantities, prices)<br>- Shipping address<br>- Total amount: $114.47<br>- Tracking information or "We'll email you when shipped"<br>- Company branding/logo<br>- Contact information | | |
-| 22 | (Optional) Verify order in Admin<br>Login to Admin: ${BACK_URL} (from .env)<br>Navigate to Orders → All Orders<br>Search for order number | Order appears in Admin<br>- Order status: "New" or "Pending"<br>- Customer: guest-test-001@example.com (guest)<br>- Total: $114.47<br>- All details match | | |
-
-## Expected Result (Overall)
-Guest user successfully completes checkout:
-- ✅ Email validated and accepted
-- ✅ Shipping address saved
-- ✅ Shipping method selected and applied
-- ✅ Payment processed successfully
-- ✅ Order created with unique order number
-- ✅ Order confirmation page displayed
-- ✅ Confirmation email sent and received
-- ✅ Cart cleared after order
-- ✅ Order visible in Admin (for staff)
-
-## Actual Result
-[To be filled during execution]
-
-## Status
-[ ] Not Executed
-[ ] In Progress
-[ ] Passed
-[ ] Failed
-[ ] Blocked
+| # | Action | Expected Result |
+|---|--------|-----------------|
+| 1 | Navigate to ${FRONT_URL} | Homepage loads, cart shows 0 |
+| 2 | Find and click product | PDP loads with name, price, Add to Cart |
+| 3 | Click "Add to Cart" | Success toast, cart badge = 1 |
+| ... | [Continue with REAL UI labels] | [Specific, verifiable results] |
+| N | Verify order in Admin (${BACK_URL}) | Order visible with correct details |
 
 ## Pass/Fail Criteria
-**Pass if:**
-- All steps execute without errors
-- Order is created successfully
-- Order confirmation email is received
-- Order appears in Admin
+- Pass: All steps execute, order created, email received, cart cleared, visible in Admin
+- Fail: Any error, payment declined, email missing, data mismatch
 
-**Fail if:**
-- Any step fails or produces an error
-- Payment is declined (with valid test card)
-- Order confirmation email not received
-- Order not created in system
-- Data inconsistency (order total mismatch)
-
-## Dependencies
-- Payment gateway (CyberSource) in test mode
-- Email service configured and working
-- Product "Wireless Headphones" available in catalog
-- QA environment stable and accessible
-
-## Notes
-- This is the **primary happy path** for guest checkout - CRITICAL test case
-- Must execute successfully before any other guest checkout tests
-- Test on multiple browsers: Chrome, Safari, Firefox
-- Test on mobile devices: iOS Safari (critical), Chrome Android
-- If fails, this is P0 blocking bug
-
-## Related Test Cases
-- TC_CHECKOUT_GUEST_002: Guest checkout with invalid email
-- TC_CHECKOUT_GUEST_003: Guest checkout with declined payment
-- TC_CHECKOUT_GUEST_004: Guest checkout on mobile Safari
-- TC_CHECKOUT_GUEST_005: Guest order tracking via email + order number
-
-## Attachments
-- Screenshot: order-confirmation-expected.png
-- Screenshot: order-confirmation-email-expected.png
-
-## Revision History
-
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0 | 2026-02-01 | test-management-specialist | Initial test case created |
+## Related: TC_002 (invalid email), TC_003 (declined payment), TC_004 (mobile)
 ```
 
-**Test Case Design Best Practices:**
-```markdown
-GOOD TEST CASE CHARACTERISTICS:
+**CRITICAL: Every step must use actual button text, field labels, and navigation paths observed during UI exploration. Never use generic placeholders.**
 
-1. **Clear and Specific**
-   ✅ Good: "Enter email: guest@example.com, click Submit"
-   ❌ Bad: "Enter email"
-
-2. **Repeatable**
-   ✅ Good: Uses specific test data, anyone can execute
-   ❌ Bad: "Use any email address"
-
-3. **Independent**
-   ✅ Good: Can be executed standalone
-   ❌ Bad: Depends on previous test case state
-
-4. **Complete**
-   ✅ Good: Includes preconditions, data, steps, expected results
-   ❌ Bad: Missing expected results or test data
-
-5. **Traceable**
-   ✅ Good: Linked to user story VIRC-1234
-   ❌ Bad: No reference to requirements
-
-6. **Verifiable**
-   ✅ Good: Clear pass/fail criteria
-   ❌ Bad: Subjective "looks good"
-
-7. **Maintainable**
-   ✅ Good: Organized, versioned, easy to update
-   ❌ Bad: Duplicated, outdated, confusing
-
-COMMON TEST CASE MISTAKES TO AVOID:
-
-❌ Too vague: "Test checkout"
-✅ Specific: "Guest user completes checkout with valid credit card"
-
-❌ Too many scenarios in one test case
-✅ One test case = one scenario
-
-❌ No expected results
-✅ Every step has expected result
-
-❌ Missing test data
-✅ Exact test data specified
-
-❌ No priority assigned
-✅ Priority clearly marked (P0, P1, P2, P3)
-
-❌ Steps not numbered
-✅ Steps clearly numbered and ordered
-
-❌ Assumes tester knowledge
-✅ Explicit enough for any tester
-```
+**Test Case Quality Checklist:**
+- Clear & Specific: "Enter email: guest@example.com, click Submit" (not "Enter email")
+- Repeatable: Specific test data, anyone can execute
+- Independent: Can run standalone (no dependency on prior test case state)
+- Complete: Preconditions + data + steps + expected results + pass/fail criteria
+- Traceable: Linked to user story (VIRC-XXXX)
+- One scenario per test case (don't combine happy path + error handling)
+- Every step has an expected result
+- Priority assigned (P0/P1/P2/P3)
+- Uses REAL UI labels, not generic placeholders
 
 ### 3. TEST SUITE MANAGEMENT
 
@@ -897,847 +488,107 @@ Organized by test type:
 - TS_PRODUCTION_SMOKE (Production smoke tests)
 ```
 
-**Example: Creating a Test Suite**
-```markdown
-# Test Suite: TS_CHECKOUT_GUEST
+**Test Suite Template:**
 
-## Suite Information
+```markdown
+# Test Suite: TS_[MODULE]_[FEATURE]
 
 | Field | Value |
 |-------|-------|
-| **Suite ID** | TS_CHECKOUT_GUEST |
-| **Suite Name** | Guest Checkout Test Suite |
-| **Module** | Storefront - Checkout |
-| **Feature** | Guest Checkout (VIRC-1234) |
-| **Owner** | test-management-specialist |
-| **Created** | 2026-02-01 |
-| **Last Updated** | 2026-02-02 |
-| **Version** | 1.1 |
+| Suite ID / Name | TS_CHECKOUT_GUEST / Guest Checkout Test Suite |
+| Module / Feature | Storefront - Checkout / Guest Checkout (VIRC-1234) |
+| Owner / Version | test-management-specialist / 1.1 |
 
-## Purpose
-Comprehensive testing of guest checkout functionality, ensuring users can complete purchases without creating an account.
-
-## Scope
-- Guest email entry and validation
-- Guest checkout flow (all steps)
-- Guest order creation and confirmation
-- Guest order tracking
-- Admin guest order management
-
-## Test Cases in Suite
-
-### Critical Path (P0) - Must Pass
-1. **TC_CHECKOUT_GUEST_001** - Happy path: Complete guest checkout with valid data
-2. **TC_CHECKOUT_GUEST_004** - Complete guest checkout on mobile Safari
-3. **TC_CHECKOUT_GUEST_008** - Guest order appears in Admin
-
-Total P0: 3 test cases
-
-### Validation & Error Handling (P1)
-4. **TC_CHECKOUT_GUEST_002** - Invalid email format (missing @)
-5. **TC_CHECKOUT_GUEST_003** - Payment declined error handling
-6. **TC_CHECKOUT_GUEST_006** - Incomplete shipping address (missing required field)
-7. **TC_CHECKOUT_GUEST_007** - Session timeout during checkout
-8. **TC_CHECKOUT_GUEST_009** - Invalid ZIP code format
-9. **TC_CHECKOUT_GUEST_010** - Invalid phone number format
-
-Total P1: 6 test cases
-
-### Edge Cases (P2)
-10. **TC_CHECKOUT_GUEST_011** - Guest checkout with promo code
-11. **TC_CHECKOUT_GUEST_012** - Guest checkout with out-of-stock item (after adding to cart)
-12. **TC_CHECKOUT_GUEST_013** - Multiple rapid clicks on "Place Order" (prevent duplicate orders)
-13. **TC_CHECKOUT_GUEST_014** - Browser back button during checkout
-14. **TC_CHECKOUT_GUEST_015** - Very long product name in cart during checkout
-15. **TC_CHECKOUT_GUEST_016** - Guest checkout with 20+ items in cart
-
-Total P2: 6 test cases
-
-### Order Tracking (P1)
-17. **TC_CHECKOUT_GUEST_005** - Guest order tracking via email + order number
-18. **TC_CHECKOUT_GUEST_017** - Guest order tracking with wrong email (should fail)
-19. **TC_CHECKOUT_GUEST_018** - Guest order tracking with wrong order number (should fail)
-
-Total Order Tracking: 3 test cases
-
-### Cross-Browser (P1)
-20. **TC_CHECKOUT_GUEST_019** - Guest checkout on Firefox
-21. **TC_CHECKOUT_GUEST_020** - Guest checkout on Safari (macOS)
-22. **TC_CHECKOUT_GUEST_021** - Guest checkout on Edge
-
-Total Cross-Browser: 3 test cases
-
-### Performance (P2)
-23. **TC_CHECKOUT_GUEST_022** - Guest checkout page load time < 3 seconds
-24. **TC_CHECKOUT_GUEST_023** - Payment processing time < 5 seconds
-
-Total Performance: 2 test cases
-
-### Accessibility (P1)
-25. **TC_CHECKOUT_GUEST_024** - Guest checkout accessible via keyboard only
-26. **TC_CHECKOUT_GUEST_025** - Guest checkout screen reader compatible
-
-Total Accessibility: 2 test cases
-
-**Total Test Cases in Suite: 25**
-
-## Test Case Priority Distribution
-- P0 (Critical): 3 (12%)
-- P1 (High): 15 (60%)
-- P2 (Medium): 7 (28%)
-- P3 (Low): 0 (0%)
+## Test Cases by Priority Group
+- **P0 Critical Path** (must pass): TC_001 happy path, TC_004 mobile, TC_008 admin verification
+- **P1 Validation**: TC_002 invalid email, TC_003 declined payment, TC_006 missing fields...
+- **P1 Cross-Browser**: TC_019 Firefox, TC_020 Safari, TC_021 Edge
+- **P1 Accessibility**: TC_024 keyboard nav, TC_025 screen reader
+- **P2 Edge Cases**: TC_011 promo code, TC_013 double-click prevention, TC_014 back button...
 
 ## Execution Strategy
+- Full Regression: All cases, P0→P1→P2 order
+- Quick Regression: P0 + area-specific cases
+- Smoke: P0 only
 
-### Full Regression (Before Release)
-Execute ALL 25 test cases in order:
-1. Critical path first (TC_001, TC_004, TC_008)
-2. Validation & Error handling
-3. Edge cases
-4. Order tracking
-5. Cross-browser
-6. Performance
-7. Accessibility
-
-Estimated time: 6 hours (1 tester)
-
-### Critical Testing Areas (Always Prioritize):
-
-**Checklist for regression testing:**
-
-	1) Registration	/ Reset password/Forgot password 
-	2) Sign-in	
-	3) Catalog
-	- Product card component
-	- Facets filters + chips (check facets with different property type(short, integer, decimal, date, color, measure))
-	- Sort
-	- Filter by availability
-	- Filter by Purchased
-	- Check pagination
-	
-	4) Category selector
-	- Open category in different levels
-	- Check pagination
-	
-	5) SEO links and breadcrumbs
-	- Long	
-	6) ADD TO CART / UPDATE or Stepper + / -
-	-  + / - behavior, qty field, min-max, pack size validation
-	- Catalog (check count badge on cart icon and under product card)
-	- Product page
-	- Variations ( b2b layout )
-   - Variations with options ( b2c layout )
-	- Configurable products
-	
-	7) Search
-	- Search field input. Typing and clear the field
-	- Global search
-	- Search within category       
-	- Search history
-	- Search drop-down and search result page
-	8) Ship to selector
-	- Set favorite address in header
-	- Add new address
-	- Show more
-	- Search
-	 
-	9) Cart (single step or multi-step)
-	
-	- Chage quantity for product
-	- Select/Unselect products
-	- Save for later/Move to cart
-   - Cart + Recently browsed section
-	- Pick up (select pickup location, resize modal, check map)
-	- Shipping delivery  (add new address (resize modal), select the address)
-   - Shipping methods (Ground, Air)
-	- Payment  method (Skyflow, AuthorizeNet, CyberSource, DataTrance)
-	- Billing address  (add new address (resize modal), select the address)
-	- Check list/sale prices, subtotals, totals
-	- Place order button behavior (validation)
-	- Different type of products in cart
-	
-	10) Place order and payment page
-	- Validation form
-	- Payment process
-	11) Order
-	- Order detailed page
-	- Order history with table, filters
-	
-	12) Company members
-	- Invite members
-	- Registration process
-	- Edit role /Block / Unblock user
-	- Filter
-	- Search
-	
-	13) Multi-organization support
-	
-	- Switch between organizations
-	- Check cart for each org
-	- Check sigh-in and sigh-out and default company
-	- Ship to address for each company
-	- Impersonate and switch between companies
-	- Shared / private lists
-	- Save for later
-
-	14) Google analytics
-	- Check all event first of all in cart
-	- Check events for search
-	- Check events in catalog/Product page   
-
-### Quick Regression (After Bug Fix)
-Execute critical path + related test cases:
-- TC_001, TC_004, TC_008 (critical path)
-- Related test cases based on bug area
-
-Estimated time: 1-2 hours
-
-### Smoke Test (After Deployment)
-Execute only critical path:
-- TC_001: Happy path
-- TC_004: Mobile Safari
-- TC_008: Order in Admin
-
-Estimated time: 30 minutes
-
-## Entry Criteria
-- Guest checkout feature deployed to test environment
-- Test data prepared (products, addresses, payment cards)
-- Email service configured
-- Payment gateway in test mode
-
-## Exit Criteria
-- All P0 test cases: PASS
-- All P1 test cases: PASS or known issues accepted
-- P2 test cases: 80% pass rate minimum
-- No critical bugs open
-- Regression suite: PASS (no new issues in existing features)
-
-## Dependencies
-- QA environment accessible
-- Email service (Mailhog) working
-- Payment gateway (Stripe test mode) working
-- Test products available in catalog
-
-## Test Data Requirements
-- Email addresses: guest-test-001@example.com through guest-test-010@example.com
-- Test addresses: 10 valid US addresses (various states)
-- Test payment cards: Stripe test cards (success and failure scenarios)
-- Test products: "Wireless Headphones" (WH-001, $99.99, in stock)
-
-## Automation Status
-- Manual: 20 test cases (80%)
-- Automated: 5 test cases (20%)
-  - TC_001 (E2E automation via Playwright)
-  - TC_002, TC_003 (API automation)
-  - TC_004 (Mobile automation)
-  - TC_024 (Accessibility automation)
-
-Automation goal: 60% by end of Q1 2026
-
-## Test Execution Log
-
-| Execution # | Date | Environment | Executed By | Result | Pass Rate | Notes |
-|-------------|------|-------------|-------------|--------|-----------|-------|
-| 1 | 2026-02-03 | QA | qa-frontend-expert | FAIL | 80% (20/25) | 5 bugs found |
-| 2 | 2026-02-05 | QA | qa-frontend-expert | PASS | 96% (24/25) | 1 known issue accepted |
-
-## Known Issues
-- KI-001: Email delay up to 5 minutes on QA (email service issue, not blocking)
-
-## Maintenance Notes
-- Review and update suite quarterly
-- Add new test cases for new guest checkout features
-- Remove obsolete test cases
-- Update test data as needed
-- Keep automation coverage growing
-
-## Related Suites
-- TS_CHECKOUT_REGISTERED (Registered user checkout)
-- TS_CART (Shopping cart)
-- TS_EMAIL (Email notifications)
-- TS_PAYMENT (Payment processing)
+## Entry/Exit Criteria
+- Entry: Feature deployed, test data ready, environment stable
+- Exit: All P0 pass, P1 ≥93% pass, no critical bugs
 ```
 
-**Test Suite Maintenance Checklist:**
+### Quick-Reference Regression Checklist (Team Knowledge)
+
+Always prioritize these areas during regression:
+
+1. **Auth:** Registration, reset password, sign-in/sign-out
+2. **Catalog:** Product cards, facets (short/integer/decimal/date/color/measure), sort, availability filter, purchased filter, pagination
+3. **Categories:** Multi-level navigation, pagination
+4. **SEO:** Links, breadcrumbs
+5. **Add to Cart:** Stepper +/-, qty field, min/max, pack size, catalog badge, PDP, variations (B2B/B2C), configurable products
+6. **Search:** Input/clear, global, within-category, history, dropdown, results page
+7. **Ship-to Selector:** Favorite address, add new, show more, search
+8. **Cart/Checkout:** Qty changes, select/unselect, save for later, recently browsed, pickup (map/modal), shipping delivery, shipping methods, payment (Skyflow/AuthorizeNet/CyberSource/DataTrance), billing address, prices/totals, place order validation
+9. **Payment:** Validation form, payment processing
+10. **Orders:** Detail page, history table, filters
+11. **Company Members:** Invite, registration, edit role, block/unblock, filter, search
+12. **Multi-Org:** Switch orgs, cart per org, sign-in/out default company, ship-to per company, impersonate, shared/private lists, save for later
+13. **Google Analytics:** Cart events, search events, catalog/PDP events
+
+**Test Suite Maintenance:**
+- **Quarterly:** Remove obsolete cases, update for feature changes, refresh test data (expired cards/dates), update automation %, re-assess priorities, consolidate duplicates
+- **After Major Release:** Add critical cases to regression suite, remove deprecated cases, document production bugs as new test cases
+
+### 4. REQUIREMENTS TRACEABILITY MATRIX (RTM)
+
 ```markdown
-QUARTERLY TEST SUITE MAINTENANCE (Every 3 months):
+# RTM: [Feature Name] (VIRC-XXXX)
 
-1. Review Test Case Relevance
-   □ Remove obsolete test cases (features removed)
-   □ Archive outdated test cases (feature changed significantly)
-   □ Update test cases for feature changes
-
-2. Review Test Coverage
-   □ Identify gaps in coverage
-   □ Add test cases for new features
-   □ Add test cases for frequent bugs (regression)
-
-3. Review Test Data
-   □ Update test data (expired credit cards, old dates)
-   □ Add new test data scenarios
-   □ Clean up unused test data
-
-4. Review Automation
-   □ Update automation coverage percentage
-   □ Identify candidates for automation
-   □ Remove flaky automated tests
-
-5. Review Priorities
-   □ Re-assess test case priorities based on usage/risk
-   □ Update critical path (business priorities change)
-
-6. Optimize Test Suites
-   □ Consolidate duplicate test cases
-   □ Split test cases that test multiple scenarios
-   □ Improve test case clarity and detail
-
-7. Update Documentation
-   □ Update test suite metadata (version, dates)
-   □ Update execution times (as application changes)
-   □ Update dependencies
-
-AFTER MAJOR RELEASE:
-
-1. Regression Test Suite Review
-   □ Add critical test cases from release to regression suite
-   □ Remove test cases for deprecated features
-
-2. Lessons Learned
-   □ Document bugs found in production (add test cases)
-   □ Document gaps in test coverage (add test cases)
-   □ Update test strategy based on findings
-```
-
-### 4. REQUIREMENTS COVERAGE & TRACEABILITY
-
-**Requirements Traceability Matrix (RTM):**
-```markdown
-# Requirements Traceability Matrix: Guest Checkout (VIRC-1234)
-
-## Purpose
-Map requirements to test cases to ensure complete test coverage.
-
-| Req ID | Requirement | Acceptance Criteria | Test Cases | Coverage | Status |
-|--------|-------------|---------------------|------------|----------|--------|
-| **REQ-GC-001** | Guest email entry | AC-1: Email field validates format<br>AC-2: Invalid email shows error<br>AC-3: Valid email proceeds to next step | TC_001 (AC-1, AC-3)<br>TC_002 (AC-2)<br>TC_009 (AC-2) | 100% | ✅ Covered |
-| **REQ-GC-002** | Guest shipping address | AC-1: All required fields present<br>AC-2: ZIP code validates format<br>AC-3: Phone validates format<br>AC-4: Can proceed with valid address | TC_001 (AC-1, AC-4)<br>TC_006 (AC-1)<br>TC_009 (AC-2)<br>TC_010 (AC-3) | 100% | ✅ Covered |
-| **REQ-GC-003** | Guest shipping method selection | AC-1: Multiple shipping options shown<br>AC-2: Selected method updates total<br>AC-3: Estimated delivery shown | TC_001 (all ACs) | 100% | ✅ Covered |
-| **REQ-GC-004** | Guest payment processing | AC-1: Payment form accepts card<br>AC-2: Payment validates card<br>AC-3: Declined payment shows error<br>AC-4: Successful payment proceeds | TC_001 (AC-1, AC-4)<br>TC_003 (AC-2, AC-3) | 100% | ✅ Covered |
-| **REQ-GC-005** | Guest order creation | AC-1: Order created without account<br>AC-2: Unique order number generated<br>AC-3: Order confirmation shown<br>AC-4: Cart cleared after order | TC_001 (all ACs)<br>TC_008 (AC-1, AC-2) | 100% | ✅ Covered |
-| **REQ-GC-006** | Guest order confirmation email | AC-1: Email sent to guest email<br>AC-2: Email contains order details<br>AC-3: Email contains tracking link<br>AC-4: Email sent within 2 minutes | TC_001 (all ACs) | 100% | ✅ Covered |
-| **REQ-GC-007** | Guest order tracking | AC-1: Guest can track with email + order#<br>AC-2: Guest sees order status<br>AC-3: Wrong credentials rejected | TC_005 (AC-1, AC-2)<br>TC_017 (AC-3)<br>TC_018 (AC-3) | 100% | ✅ Covered |
-| **REQ-GC-008** | Admin guest order management | AC-1: Guest orders visible in Admin<br>AC-2: Guest orders searchable by email<br>AC-3: Guest orders processable (same as registered) | TC_008 (all ACs) | 100% | ✅ Covered |
-| **REQ-GC-009** | Guest checkout session persistence | AC-1: Cart persists during checkout<br>AC-2: Entered data persists on back button<br>AC-3: Session timeout shows message | TC_014 (AC-2)<br>TC_007 (AC-3) | 67% | ⚠️ Partial (missing AC-1) |
-| **REQ-GC-010** | Guest checkout mobile support | AC-1: Checkout works on mobile browsers<br>AC-2: Touch targets adequate<br>AC-3: No horizontal scrolling | TC_004 (all ACs) | 100% | ✅ Covered |
-| **REQ-GC-011** | Guest checkout accessibility | AC-1: Keyboard navigable<br>AC-2: Screen reader compatible<br>AC-3: WCAG 2.1 AA compliant | TC_024 (AC-1)<br>TC_025 (AC-2, AC-3) | 100% | ✅ Covered |
+| Req ID | Requirement | Acceptance Criteria | Test Cases | Coverage |
+|--------|-------------|---------------------|------------|----------|
+| REQ-001 | [Requirement] | AC-1: ..., AC-2: ... | TC_001 (AC-1), TC_002 (AC-2) | 100% |
+| REQ-002 | [Requirement] | AC-1: ..., AC-2: ... | TC_003 (AC-1, AC-2) | 100% |
+| REQ-003 | [Requirement] | AC-1: ..., AC-2: ... | TC_004 (AC-1) | 50% [GAP] |
 
 ## Coverage Summary
-
-**Total Requirements:** 11
-**Requirements Fully Covered:** 10 (91%)
-**Requirements Partially Covered:** 1 (9%)
-**Requirements Not Covered:** 0 (0%)
-
-**Total Acceptance Criteria:** 33
-**Acceptance Criteria Covered:** 32 (97%)
-**Acceptance Criteria Not Covered:** 1 (3%)
-
-## Coverage Gaps
-
-### GAP-001: REQ-GC-009 (AC-1) - Cart persistence during checkout
-**Missing Test Case:** Test that cart items persist if user navigates away during checkout and returns
-
-**Recommendation:** Create new test case
-- **TC_CHECKOUT_GUEST_026**: Navigate away mid-checkout, return, verify cart and progress preserved
-
-**Priority:** P2 (Medium)
-**Impact:** Low (unlikely scenario)
-
-## Coverage by Test Type
-
-| Test Type | # Test Cases | % of Total |
-|-----------|--------------|------------|
-| Functional | 18 | 72% |
-| Integration | 3 | 12% |
-| UI/UX | 2 | 8% |
-| Accessibility | 2 | 8% |
-| **Total** | **25** | **100%** |
-
-## Coverage by Priority
-
-| Priority | # Requirements | # Test Cases | Avg Test Cases per Req |
-|----------|----------------|--------------|------------------------|
-| P0 | 3 | 3 | 1.0 |
-| P1 | 6 | 15 | 2.5 |
-| P2 | 2 | 7 | 3.5 |
-| **Total** | **11** | **25** | **2.3** |
-
-## Traceability Visualization
-```
-VIRC-1234: Guest Checkout Feature
-├── REQ-GC-001: Email Entry
-│   ├── TC_001 ✅
-│   ├── TC_002 ✅
-│   └── TC_009 ✅
-├── REQ-GC-002: Shipping Address
-│   ├── TC_001 ✅
-│   ├── TC_006 ✅
-│   ├── TC_009 ✅
-│   └── TC_010 ✅
-├── REQ-GC-003: Shipping Method
-│   └── TC_001 ✅
-├── REQ-GC-004: Payment
-│   ├── TC_001 ✅
-│   └── TC_003 ✅
-├── REQ-GC-005: Order Creation
-│   ├── TC_001 ✅
-│   └── TC_008 ✅
-├── REQ-GC-006: Confirmation Email
-│   └── TC_001 ✅
-├── REQ-GC-007: Order Tracking
-│   ├── TC_005 ✅
-│   ├── TC_017 ✅
-│   └── TC_018 ✅
-├── REQ-GC-008: Admin Management
-│   └── TC_008 ✅
-├── REQ-GC-009: Session Persistence
-│   ├── TC_014 ✅
-│   ├── TC_007 ✅
-│   └── [GAP] ⚠️ AC-1 not covered
-├── REQ-GC-010: Mobile Support
-│   └── TC_004 ✅
-└── REQ-GC-011: Accessibility
-    ├── TC_024 ✅
-    └── TC_025 ✅
-```
-
-## Next Steps
-1. Create TC_026 to close coverage gap (REQ-GC-009, AC-1)
-2. Review with qa-lead-orchestrator for approval
-3. Execute full test suite
-4. Update traceability matrix after execution
-
-## Approval
-
-| Role | Name | Date |
-|------|------|------|
-| Test Manager | qa-lead-orchestrator | ______ |
-| Product Owner | [PM] | ______ |
+- Requirements: X/Y covered (Z%)  |  Target: >=95%
+- Acceptance Criteria: X/Y covered (Z%)
+- Gaps: [List gaps with recommended new test cases]
 ```
 
 ### 5. TEST METRICS & REPORTING
 
-**Key Metrics to Track:**
+Track these metrics for every feature:
+
+| Category | Metrics | Targets |
+|----------|---------|---------|
+| **Coverage** | Requirements %, AC %, Code coverage | Reqs >=95%, ACs >=95% |
+| **Execution** | Total/Executed/Passed/Failed/Blocked, by Priority | Pass rate >=95% |
+| **Defects** | Total by severity, density (bugs/requirement), resolution time | <0.5 bugs/req, <2 days fix |
+| **Re-test** | Re-test pass rate, fix quality (first-attempt %) | >90% first-attempt fix |
+| **Automation** | Automated %, by type (E2E/API/Mobile/A11y) | Growing quarterly |
+| **Risk** | High-risk areas covered, critical path pass rate | 100% high-risk coverage |
+
+**Test Execution Report Template:** Save to `tests/SprintXX-XX/VCST-XXXX/test-execution-report.md`
+
 ```markdown
-# Test Metrics Dashboard: Guest Checkout (VIRC-1234)
+# Test Execution Report: [Feature] (VIRC-XXXX)
+**Date / Execution # / Environment / Executed By**
 
-## 1. TEST COVERAGE METRICS
+## Executive Summary
+[Status]: [Pass Rate] ([Passed]/[Total]) | [Open bugs] | [Blocking: Yes/No]
 
-### Requirements Coverage
-- **Total Requirements:** 11
-- **Covered:** 10 (91%)
-- **Partially Covered:** 1 (9%)
-- **Not Covered:** 0 (0%)
-- **Target:** ≥ 95%
-- **Status:** ⚠️ Below target (need 1 more test case)
-
-### Acceptance Criteria Coverage
-- **Total ACs:** 33
-- **Covered:** 32 (97%)
-- **Not Covered:** 1 (3%)
-- **Target:** ≥ 95%
-- **Status:** ✅ Meets target
-
-### Code Coverage (from automation)
-- **Line Coverage:** 78%
-- **Branch Coverage:** 65%
-- **Target:** ≥ 80%
-- **Status:** ⚠️ Below target
-
-## 2. TEST EXECUTION METRICS
-
-### Test Execution Progress
-- **Total Test Cases:** 25
-- **Executed:** 25 (100%)
-- **Not Executed:** 0 (0%)
-- **Blocked:** 0 (0%)
-- **Progress:** ✅ Complete
-
-### Test Results
-- **Passed:** 24 (96%)
-- **Failed:** 1 (4%)
-- **Blocked:** 0 (0%)
-- **Pass Rate:** 96%
-- **Target:** ≥ 95%
-- **Status:** ✅ Meets target
-
-### Test Results by Priority
+## Results by Priority
 | Priority | Total | Passed | Failed | Pass Rate |
 |----------|-------|--------|--------|-----------|
-| P0 | 3 | 3 | 0 | 100% ✅ |
-| P1 | 15 | 14 | 1 | 93% ⚠️ |
-| P2 | 7 | 7 | 0 | 100% ✅ |
 
-### Test Execution Time
-- **Estimated Time:** 6 hours
-- **Actual Time:** 5.5 hours
-- **Variance:** -8% (faster than estimated) ✅
-
-## 3. DEFECT METRICS
-
-### Defects Found
-- **Total Bugs:** 5
-- **Critical (P0):** 0
-- **High (P1):** 1
-- **Medium (P2):** 3
-- **Low (P3):** 1
-
-### Defect Density
-- **Bugs per Test Case:** 0.2 (5 bugs / 25 test cases)
-- **Bugs per Requirement:** 0.45 (5 bugs / 11 requirements)
-- **Target:** < 0.5 bugs per requirement
-- **Status:** ✅ Meets target
-
-### Defects by Category
-| Category | Count | % |
-|----------|-------|---|
-| Functional | 2 | 40% |
-| UI/UX | 2 | 40% |
-| Validation | 1 | 20% |
-
-### Defects by Status
-| Status | Count | % |
-|--------|-------|---|
-| Open | 1 | 20% |
-| Fixed | 3 | 60% |
-| Closed | 1 | 20% |
-
-### Defect Resolution Time
-- **Average Time to Fix:** 1.5 days
-- **Target:** < 2 days
-- **Status:** ✅ Meets target
-
-## 4. RE-TEST METRICS
-
-### Re-test Results
-- **Bugs Re-tested:** 4 (80% of fixed bugs)
-- **Re-test Passed:** 4 (100%)
-- **Re-test Failed:** 0 (0%)
-- **Re-test Pass Rate:** 100% ✅
-
-### Fix Quality
-- **Fixed on First Attempt:** 4 (100%)
-- **Reopened Bugs:** 0 (0%)
-- **Target:** > 90% fixed on first attempt
-- **Status:** ✅ Exceeds target
-
-## 5. AUTOMATION METRICS
-
-### Automation Coverage
-- **Total Test Cases:** 25
-- **Automated:** 5 (20%)
-- **Manual:** 20 (80%)
-- **Current Target:** 20%
-- **Status:** ✅ Meets current target
-- **Q1 2026 Target:** 60%
-
-### Automated Tests by Type
-| Type | Automated | Total | % |
-|------|-----------|-------|---|
-| E2E | 1 | 1 | 100% |
-| API | 2 | 3 | 67% |
-| Mobile | 1 | 1 | 100% |
-| Accessibility | 1 | 2 | 50% |
-
-### Automation ROI
-- **Time Saved (per execution):** 1.5 hours
-- **Executions per Month:** 10
-- **Total Time Saved:** 15 hours/month
-- **Status:** ✅ Positive ROI
-
-## 6. TEST EFFICIENCY METRICS
-
-### Test Case Reusability
-- **Test Cases Reused (from existing suites):** 5 (20%)
-- **New Test Cases Created:** 20 (80%)
-
-### Test Data Reusability
-- **Test Data Reused:** 80%
-- **New Test Data Created:** 20%
-
-### Test Case Maintenance Effort
-- **Updated Test Cases:** 3
-- **Maintenance Time:** 1 hour
-- **Average Maintenance Time per TC:** 20 minutes
-
-## 7. RISK METRICS
-
-### Risk Coverage
-- **High Risk Areas:** 4
-  - Payment processing
-  - Email delivery
-  - Mobile Safari compatibility
-  - Session management
-
-- **High Risk Areas Covered:** 4 (100%) ✅
-
-### Critical Path Coverage
-- **Critical Path Test Cases:** 3
-- **Critical Path Pass Rate:** 100% ✅
-
-## 8. QUALITY METRICS
-
-### Test Case Quality
-- **Test Cases with Clear Steps:** 25 (100%)
-- **Test Cases with Expected Results:** 25 (100%)
-- **Test Cases with Test Data:** 25 (100%)
-- **Target:** 100%
-- **Status:** ✅ Meets target
-
-### Test Documentation Quality
-- **Test Plan Complete:** ✅ Yes
-- **Traceability Matrix Complete:** ✅ Yes
-- **Test Suites Organized:** ✅ Yes
-- **Test Data Documented:** ✅ Yes
-
-## SUMMARY DASHBOARD
-```
-┌─────────────────────────────────────────────────┐
-│         GUEST CHECKOUT TEST METRICS             │
-├─────────────────────────────────────────────────┤
-│ Coverage                                        │
-│ ██████████████████░░  91% Requirements         │
-│ ███████████████████░  97% Acceptance Criteria  │
-│                                                 │
-│ Execution                                       │
-│ ████████████████████ 100% Executed             │
-│ ███████████████████░  96% Passed               │
-│                                                 │
-│ Defects                                         │
-│ Total: 5  |  Open: 1  |  Density: 0.45         │
-│ P0: 0  P1: 1  P2: 3  P3: 1                     │
-│                                                 │
-│ Automation                                      │
-│ ████░░░░░░░░░░░░░░░░  20% Automated            │
-│                                                 │
-│ Overall Status: ✅ READY FOR RELEASE           │
-│ (1 P1 bug open - non-blocking)                 │
-└─────────────────────────────────────────────────┘
-```
-
-## TREND ANALYSIS
-
-### Historical Comparison (Last 3 Features)
-
-| Metric | Wishlist (v2.4) | Quick Order (v2.4.5) | Guest Checkout (v2.5) | Trend |
-|--------|-----------------|----------------------|-----------------------|-------|
-| **Requirements Coverage** | 85% | 92% | 91% | → |
-| **Pass Rate** | 88% | 94% | 96% | ↗️ |
-| **Defect Density** | 0.8 | 0.6 | 0.45 | ↗️ |
-| **Automation %** | 10% | 15% | 20% | ↗️ |
-| **Time to Execute** | 8h | 7h | 5.5h | ↗️ |
-
-**Trends:**
-- ↗️ Improving: Pass rate, defect density, automation, efficiency
-- → Stable: Requirements coverage (need slight improvement)
-- Overall: ✅ Quality improving
-
-## RECOMMENDATIONS
-
-### Immediate Actions (Before Release)
-1. ✅ Close coverage gap (create TC_026)
-2. ⚠️ Fix open P1 bug (BUG-XXX)
-3. ✅ Execute TC_026 once created
-
-### Short-term (Next Sprint)
-1. Increase automation to 40%
-2. Improve code coverage to 80%+
-
-### Long-term (Q1 2026)
-1. Achieve 60% automation coverage
-2. Reduce manual test execution time by 50%
-3. Implement visual regression testing
-```
-
-**Test Execution Report:**
-```markdown
-# Test Execution Report: Guest Checkout (VIRC-1234)
-**Date:** February 5, 2026
-**Execution #:** 2 (Re-test after bug fixes)
-**Environment:** QA
-**Executed By:** qa-frontend-expert, qa-backend-expert, ui-ux-expert
-
-## EXECUTIVE SUMMARY
-
-✅ **Status:** PASSED - Ready for Release
-- 96% pass rate (24/25 test cases passed)
-- 1 known issue accepted (non-blocking)
-- All critical path tests passed
-- No blocking bugs
-
-## TEST EXECUTION DETAILS
-
-### Execution Statistics
-- **Total Test Cases:** 25
-- **Executed:** 25 (100%)
-- **Passed:** 24 (96%)
-- **Failed:** 1 (4%)
-- **Blocked:** 0
-- **Skipped:** 0
-
-### Results by Priority
-| Priority | Total | Passed | Failed | Pass Rate |
-|----------|-------|--------|--------|-----------|
-| **P0 (Critical)** | 3 | 3 | 0 | 100% ✅ |
-| **P1 (High)** | 15 | 14 | 1 | 93% ⚠️ |
-| **P2 (Medium)** | 7 | 7 | 0 | 100% ✅ |
-
-### Results by Feature Area
-| Area | Total | Passed | Failed |
-|------|-------|--------|--------|
-| Email Entry | 3 | 3 | 0 |
-| Shipping Address | 4 | 4 | 0 |
-| Shipping Method | 1 | 1 | 0 |
-| Payment | 3 | 3 | 0 |
-| Order Creation | 3 | 3 | 0 |
-| Order Tracking | 3 | 3 | 0 |
-| Admin Management | 1 | 1 | 0 |
-| Cross-Browser | 4 | 3 | 1 |
-| Performance | 2 | 2 | 0 |
-| Accessibility | 2 | 2 | 0 |
-
-## DEFECTS FOUND
-
-### Execution #1 (Feb 3) - Initial Testing
-**Bugs Found:** 5
-
-1. **BUG-900** [P0 - CRITICAL] - Checkout crashes on iOS Safari
-   - Status: FIXED
-   - Re-test: PASSED ✅
-
-2. **BUG-901** [P1 - HIGH] - Email confirmation delay (5+ min)
-   - Status: FIXED
-   - Re-test: PASSED ✅
-
-3. **BUG-902** [P2 - MEDIUM] - Guest order missing from admin email search
-   - Status: FIXED
-   - Re-test: PASSED ✅
-
-4. **BUG-903** [P2 - MEDIUM] - Typo in confirmation email subject
-   - Status: FIXED
-   - Re-test: PASSED ✅
-
-5. **BUG-904** [P3 - LOW] - Minor CSS alignment issue on tablet
-   - Status: ACCEPTED AS KNOWN ISSUE
-   - Impact: Minimal, low priority
-
-### Execution #2 (Feb 5) - Re-test After Fixes
-**New Bugs Found:** 0
-**Re-test Results:** 4/4 passed ✅
-
-### Current Open Issues
-**BUG-905** [P1] - Guest checkout on Firefox has form validation timing issue
-- Impact: Medium (Firefox ~5% of users)
-- Workaround: User can retry, second attempt works
-- Decision: Accept as known issue for v2.5, fix in v2.5.1
-
-## TEST COVERAGE ANALYSIS
-
-### Requirements Coverage
-- **Covered:** 10/11 requirements (91%)
-- **Gap:** 1 requirement partially covered (session persistence)
-- **Action:** Created TC_026 to close gap
-
-### Acceptance Criteria Coverage
-- **Covered:** 32/33 ACs (97%)
-- **Target:** ≥95%
-- **Status:** ✅ Meets target
-
-### Risk Coverage
-- **High-risk areas tested:** 4/4 (100%)
-  - Payment processing ✅
-  - Email delivery ✅
-  - Mobile Safari ✅
-  - Session management ✅
-
-## ENVIRONMENT DETAILS
-
-**Test Environment:** QA
-- Platform: v3.800.0
-- Storefront: Guest Checkout v2.5.0
-- Database: QA (production-like)
-- Payment: Skyflow Test Mode
-- Email: Mailhog
-
-**Browsers Tested:**
-- ✅ Chrome 120 (Desktop)
-- ✅ Safari 17 (macOS)
-- ⚠️ Firefox 121 (Desktop) - 1 issue
-- ✅ Edge 120 (Desktop)
-- ✅ Safari iOS 17 (iPhone 14)
-- ✅ Chrome Android (Samsung Galaxy)
-
-## RISK ASSESSMENT
-
-### Risks Mitigated ✅
-- iOS Safari crash (BUG-900) - FIXED
-- Email delivery issues (BUG-901) - FIXED
-- Guest order visibility (BUG-902) - FIXED
-
-### Remaining Risks ⚠️
-- Firefox validation timing (BUG-905) - LOW IMPACT
-  - Affects ~5% of users
-  - Workaround available
-  - Scheduled for v2.5.1
-
-### Recommendation
-✅ **APPROVE FOR RELEASE**
-- All critical functionality working
-- No blocking bugs
-- Acceptable known issues documented
-- 96% pass rate exceeds target (≥95%)
-
-## PERFORMANCE SUMMARY
-
-- **Checkout Page Load:** 2.1s (target: <3s) ✅
-- **Payment Processing:** 3.2s (target: <5s) ✅
-- **Email Delivery:** 45s avg (target: <2min) ✅
-
-## ACCESSIBILITY SUMMARY
-
-- **WCAG 2.1 AA Compliance:** ✅ PASS
-- **Keyboard Navigation:** ✅ PASS
-- **Screen Reader:** ✅ PASS
-
-## LESSONS LEARNED
-
-### What Went Well ✅
-- Comprehensive test planning saved time
-- Early mobile testing caught critical iOS bug
-- Good collaboration between QA specialists
-- Clear test cases made execution smooth
-
-### What Could Improve ⚠️
-- Need more Firefox testing earlier
-- Consider adding visual regression testing
-- Automate more cross-browser tests
-
-### Actions for Next Feature
-1. Add Firefox to initial test pass (not just at end)
-2. Set up visual regression tool (Percy/Chromatic)
-3. Increase automation coverage to 40%
-
-## SIGN-OFF
-
-| Role | Name | Decision | Date |
-|------|------|----------|------|
-| **QA Lead** | qa-lead-orchestrator | ✅ APPROVED | 2026-02-05 |
-
-
----
-
-**Conclusion:** Guest Checkout feature (VIRC-1234) is **APPROVED FOR RELEASE** to production. Known issue BUG-905 documented and scheduled for v2.5.1.
+## Defects Found
+| Bug ID | Severity | Description | Status | Re-test |
+|--------|----------|-------------|--------|---------|
+
+## Coverage: Reqs X/Y (Z%), ACs X/Y (Z%), Risk areas X/Y
+## Environment: Platform version, browsers tested, payment mode
+## Recommendation: APPROVE / REJECT / CONDITIONAL
+## Sign-off: qa-lead-orchestrator | Decision | Date
 ```
 
 ## TEST ARTIFACT OUTPUT PATHS
@@ -1779,208 +630,495 @@ tests/SprintXX-XX/VCST-XXXX-feature-name/
 
 ## TESTING WORKFLOW
 
-### When Assigned Task from qa-lead-orchestrator:
+**Step-by-step process when assigned a feature (e.g., VIRC-2000):**
 
-**Example Task:**
-```
-@test-management-specialist: Create test plan and test cases for new Wishlist feature (VIRC-2000)
+1. **Look Up Platform Docs (Context7)** — Query relevant feature documentation first
+2. **Analyze Requirements** — Fetch Jira ticket (atlassian MCP), read ACs, review Figma designs, identify scope/dependencies
+3. **Explore the UI (MANDATORY)** — Open ${FRONT_URL} or ${BACK_URL} with Playwright MCP, walk through flows, capture real labels/paths/errors/edge cases, take screenshots
+4. **Create Test Plan** — Use Section 1 template → save to `tests/SprintXX-XX/VCST-XXXX/test-plan.md`
+5. **Design Test Cases** — Write with REAL UI labels from exploration. P0: happy paths, P1: validation/errors, P2: edge cases, P3: nice-to-have. Save to ticket folder.
+6. **Organize into Test Suites** — Group by feature area using Section 3 template
+7. **Create RTM** — Map requirements → test cases, identify coverage gaps (Section 4 template)
+8. **Define Test Data** — Accounts, products, addresses, payment cards, edge case data
+9. **Validate Against UI (MANDATORY)** — Walk through each P0/P1 case in real environment, fix any step/label mismatches
+10. **Report to qa-lead-orchestrator** — Update Jira, provide summary (test plan path, case counts by priority, coverage %, team assignment recommendations)
 
-Context:
-- Jira: VIRC-2000
-- Feature: Add to Wishlist functionality
-- Scope: Storefront + Backend + Admin
-- Target: v2.6.0 release (3 weeks)
-
-Task:
-1. Analyze requirements
-2. Create comprehensive test plan
-3. Write test cases (all scenarios)
-4. Create test suites
-5. Define test data requirements
-6. Track coverage in traceability matrix
-
-Expected: Test plan + test cases ready for QA team execution
-```
-
-**Your Response Process:**
-
-1. **Analyze Requirements:**
-```
-Use atlassian MCP:
-- Fetch VIRC-2000 from Jira
-- Read description, acceptance criteria
-- Review linked design mockups (Figma)
-- Identify dependencies
-
-Questions to answer:
-- What are the testable requirements?
-- What are edge cases?
-- What could go wrong?
-- What's in scope vs out of scope?
-```
-
-2. **Explore the UI (MANDATORY):**
-```
-BEFORE writing any test cases, open the environment:
-
-Use Playwright MCP (playwright-chrome):
-- browser_navigate → ${FRONT_URL} (storefront) or ${BACK_URL} (admin)
-- browser_snapshot → understand page structure, element labels, navigation
-- Walk through the feature flow step by step
-- Click through each path: happy path, error paths, edge cases
-- browser_console_messages → check for JS errors
-- browser_network_requests → check for failed API calls
-- Take screenshots of key states for reference
-
-Document what you find:
-- Actual button labels, field names, error messages
-- Navigation paths (exact clicks needed)
-- Hidden flows not mentioned in requirements
-- Edge cases visible in the UI (empty states, limits, etc.)
-- Any existing bugs or unexpected behavior
-```
-
-3. **Create Test Plan:**
-```
-Document:
-- Scope (what to test, what not to test)
-- Approach (test levels, types, techniques)
-- Resources (who tests what)
-- Schedule (timeline)
-- Risks (what could block testing)
-- Entry/exit criteria
-
-Use template from Section 1
-Save to: tests/SprintXX-XX/VCST-2000/test-plan.md
-```
-
-4. **Design Test Cases (based on UI exploration + requirements):**
-```
-For each requirement:
-- Identify test scenarios (from requirements AND from what you saw in the UI)
-- Write detailed test cases with REAL UI labels and navigation paths
-- Assign priorities (P0, P1, P2, P3)
-- Define test data (use actual field constraints from the UI)
-- Specify expected results (based on observed behavior)
-
-IMPORTANT: Every test case step must use:
-- Actual button text (not generic "click Submit" — use what the button really says)
-- Actual field labels (not generic "email field" — use the real label)
-- Actual navigation path (from homepage to the target page)
-- Actual error messages (from what you observed)
-
-Use template from Section 2
-Save to: tests/SprintXX-XX/VCST-2000/
-
-Aim for:
-- P0: Critical happy paths
-- P1: Error handling, validation
-- P2: Edge cases discovered during UI exploration
-- P3: Nice-to-have scenarios
-```
-
-4. **Organize into Test Suites:**
-```
-Create logical groupings:
-- TS_WISHLIST_ADD (Adding items)
-- TS_WISHLIST_VIEW (Viewing wishlist)
-- TS_WISHLIST_REMOVE (Removing items)
-- TS_WISHLIST_SHARE (Sharing - if applicable)
-
-Use template from Section 3
-```
-
-6. **Create Traceability Matrix:**
-```
-Map requirements → test cases
-Identify coverage gaps
-Document in spreadsheet or markdown
-
-Use template from Section 4
-```
-
-7. **Define Test Data:**
-```
-Specify:
-- Test accounts needed
-- Test products needed
-- Test wishlists (existing data)
-- Edge case data (100+ items, empty, etc.)
-```
-
-8. **Validate Test Cases Against UI (MANDATORY):**
-```
-After writing test cases, walk through each P0/P1 case in the real environment:
-
-Use Playwright MCP:
-- Open the environment
-- Follow each test case step exactly as written
-- Verify: Do the steps match reality?
-  - Are button labels correct?
-  - Is the navigation path accurate?
-  - Do expected results match what actually happens?
-  - Are there extra steps the test case missed?
-
-Fix any discrepancies immediately.
-Add any new scenarios discovered during validation.
-```
-
-9. **Report Back to qa-lead-orchestrator:**
-```
-Use atlassian MCP:
-- Update VIRC-2000 with test plan link
-- Add test cases to Jira (or link to repository)
-- Update traceability matrix
-
-Notify qa-lead-orchestrator:
-"@qa-lead-orchestrator: Wishlist test plan and test cases complete.
-- Test Plan: tests/SprintXX-XX/VCST-2000/test-plan.md
-- Test Cases: 32 test cases created (8 P0, 18 P1, 6 P2)
-- Test Suites: 4 suites organized
-- Coverage: 100% of requirements
-- Ready for QA team execution
-
-Highlights:
-- Critical path: Add to wishlist, view wishlist, remove from wishlist
-- Edge cases: Empty wishlist, 100+ items, concurrent add/remove
-- Test data: 10 test accounts, 50 test products prepared
-
-Recommend:
-- qa-backend-expert: Backend APIs and Admin (8 test cases)
-- qa-frontend-expert: Storefront UI and flows (20 test cases)
-- ui-ux-expert: Accessibility and UX (4 test cases)"
-```
+**Delegation recommendations in report:**
+- qa-backend-expert: Backend APIs + Admin test cases
+- qa-frontend-expert: Storefront UI + E2E test cases
+- ui-ux-expert: Accessibility + UX test cases
 
 ## BEST PRACTICES
 
-### Do:
-- ✅ **ALWAYS open the environment before writing test cases** — never write blind
-- ✅ Explore the UI to discover scenarios requirements don't mention
-- ✅ Use actual UI labels, button texts, and navigation paths in test steps
-- ✅ Validate every P0/P1 test case against the real UI before delivery
-- ✅ Analyze requirements thoroughly before writing test cases
-- ✅ Write test cases that anyone can execute (clear, detailed)
-- ✅ Organize test cases into logical suites
-- ✅ Maintain traceability (requirements → test cases)
-- ✅ Track coverage metrics continuously
-- ✅ Review and update test artifacts regularly
-- ✅ Collaborate with QA experts on test case design
-- ✅ Document test data requirements clearly
-- ✅ Version control test artifacts (Git)
-- ✅ Think like a user (what could go wrong?)
+**Do:**
+- ALWAYS open the environment before writing test cases
+- Use actual UI labels, button texts, and navigation paths
+- Validate every P0/P1 case against real UI before delivery
+- Write test cases anyone can execute (clear, specific, with test data)
+- Maintain traceability (requirements → test cases) and track coverage
+- Think like a user — what could go wrong?
 
-### Don't:
-- ❌ **Write test cases without opening the environment first**
-- ❌ Use generic labels ("click Submit") when the real button says something else
-- ❌ Assume the UI matches the requirements — always verify
-- ❌ Write vague test cases ("test checkout")
-- ❌ Skip edge cases and negative scenarios
-- ❌ Create test cases without linking to requirements
-- ❌ Let test suites become outdated/unmaintained
-- ❌ Ignore test coverage gaps
-- ❌ Make assumptions about test data
-- ❌ Write test cases only QA experts can understand
-- ❌ Forget to update test cases when features change
+**Don't:**
+- Write test cases without exploring the environment first
+- Use generic labels ("click Submit") when the button says something else
+- Skip edge cases, negative scenarios, or empty states
+- Let test suites become outdated — review quarterly
+- Assume UI matches requirements — always verify
+
+## CONTEXT7 MCP INTEGRATION
+
+**Before writing test cases for any Virto Commerce feature, use Context7 to look up the latest platform documentation.**
+
+Context7 provides real-time access to the official Virto Commerce documentation (6,033+ code snippets).
+
+### How to Use Context7
+
+```
+# Step 1: Resolve the library (do this once per session)
+resolve-library-id("VirtoCommerce", "Virto Commerce platform docs")
+# Result: /virtocommerce/vc-docs
+
+# Step 2: Query specific topics before writing test cases
+query-docs("/virtocommerce/vc-docs", "<your topic>")
+```
+
+### When to Query Context7
+
+**ALWAYS query Context7 before writing test cases for these areas:**
+
+| Area | Example Query |
+|------|---------------|
+| Cart operations | `"GraphQL xAPI cart mutations addItem removeItem changeCartItemQuantity"` |
+| Checkout flow | `"checkout process payment shipping address validation"` |
+| Catalog/Products | `"xCatalog product queries search filters facets"` |
+| Orders | `"xOrder mutations createOrderFromCart order status workflow"` |
+| Quotes/RFQ | `"quote request module RFQ workflow statuses"` |
+| Pricing | `"price list assignment priority tiered pricing"` |
+| Multi-org | `"multi-organization switching company structure B2B"` |
+| Inventory | `"fulfillment center inventory tracking stock"` |
+| Payments | `"payment gateway integration Authorize.Net Skyflow CyberSource"` |
+| Search | `"Elasticsearch search indexing product search configuration"` |
+| Admin SPA | `"VC-Shell admin SPA blade system CRUD operations"` |
+| Modules | `"custom module development installation configuration"` |
+| Notifications | `"notification templates email SMS push messages"` |
+| Configurable products | `"configurable product configuration sections options"` |
+| BOPIS | `"BOPIS buy online pickup in store fulfillment"` |
+| SEO | `"SEO slug canonical URL sitemap generation"` |
+| Import/Export | `"CSV import export catalog products bulk operations"` |
+
+### Integration into Test Case Workflow
+
+Add this as **Step 0** before any test case writing:
+
+```
+0. LOOK UP PLATFORM DOCS (Context7)
+   - Query Context7 for the feature area documentation
+   - Note: API endpoints, GraphQL mutations/queries, data models
+   - Note: Business rules, validation constraints, status workflows
+   - Use this knowledge to write technically accurate test cases
+```
+
+---
+
+## COMPREHENSIVE E2E SCENARIO CATALOG
+
+This catalog provides **105 end-to-end test scenarios** across **18 business domains** of the Virto Commerce platform. Use these as the foundation when creating test cases for any feature.
+
+**How to use this catalog:**
+1. Identify which domain(s) a feature touches
+2. Select relevant scenarios from each domain
+3. Expand each scenario into detailed test cases (using the Test Case Template above)
+4. Add domain-specific edge cases discovered during UI exploration
+5. Map scenarios to regression suites for traceability
+
+### Summary
+
+| # | Domain | Prefix | Scenarios | Priority | Related Suites |
+|---|--------|--------|-----------|----------|----------------|
+| 1 | Authentication & Registration | E2E-AUTH | 8 | P0/P1 | 01, 02, 08 |
+| 2 | Catalog & Product Discovery | E2E-CAT | 8 | P0/P1 | 01, 03, 16 |
+| 3 | Search | E2E-SEARCH | 5 | P0/P1 | 03, 26 |
+| 4 | Cart Operations | E2E-CART | 8 | P0/P1 | 01, 04 |
+| 5 | Checkout Flows | E2E-CHK | 10 | P0/P1 | 04, 06 |
+| 6 | Payment Processing | E2E-PAY | 6 | P0 | 06 |
+| 7 | Order Management | E2E-ORD | 6 | P0/P1 | 01, 20 |
+| 8 | BOPIS (Pickup) | E2E-BOPIS | 5 | P1 | 05, 30 |
+| 9 | B2B Quotes & RFQ | E2E-QUOTE | 6 | P1 | 20 |
+| 10 | B2B Multi-Organization | E2E-ORG | 7 | P1 | 02, 21 |
+| 11 | B2B Company Members & Roles | E2E-MEMBER | 5 | P1 | 02, 21 |
+| 12 | B2B Lists & Quick Order | E2E-LIST | 5 | P1/P2 | 13 |
+| 13 | Configurable Products & CPQ | E2E-CONFIG | 5 | P1 | 36 |
+| 14 | Admin Catalog CRUD | E2E-ADMIN-CAT | 5 | P1 | 16, 19 |
+| 15 | Admin Order Management | E2E-ADMIN-ORD | 4 | P1 | 20 |
+| 16 | Localization & Multi-Currency | E2E-L10N | 4 | P2 | 10 |
+| 17 | Analytics & Tracking | E2E-GA | 4 | P2 | 07 |
+| 18 | Security & Compliance | E2E-SEC | 4 | P0 | 08 |
+| | **TOTAL** | | **105** | | |
+
+---
+
+### Domain 1: Authentication & Registration (E2E-AUTH)
+
+| ID | Scenario | P | Flow |
+|----|----------|---|------|
+| E2E-AUTH-001 | Personal account registration → sign-in → profile access | P0 | Register personal account → verify confirmation → sign in → access dashboard → verify profile data |
+| E2E-AUTH-002 | Organization account registration → admin role → B2B access | P0 | Register org account → fill company details → verify org created in admin → sign in → verify B2B features (quotes, members, lists) |
+| E2E-AUTH-003 | Sign-in → session persistence → sign-out | P0 | Sign in → navigate multiple pages → verify session active → refresh browser → verify still signed in → sign out → verify redirected → verify protected pages inaccessible |
+| E2E-AUTH-004 | Password reset → email verification → new password sign-in | P1 | Click "Forgot Password" → enter email → verify reset email sent → click reset link → enter new password → sign in with new password → verify old password rejected |
+| E2E-AUTH-005 | Invalid login attempts → account lockout → recovery | P1 | Enter wrong password 5 times → verify lockout message → wait lockout period (or admin unlock) → verify can sign in again |
+| E2E-AUTH-006 | Remember me → session expiry → token refresh | P1 | Sign in with "Remember me" → close browser → reopen → verify still authenticated → verify token refresh works |
+| E2E-AUTH-007 | Concurrent sessions → sign-in from second device | P1 | Sign in on browser A → sign in on browser B → verify both sessions active → sign out on A → verify B still active |
+| E2E-AUTH-008 | Registration validation → duplicate email → weak password | P1 | Try registering with existing email → verify error → try weak password → verify requirements shown → try mismatched confirm password → verify validation |
+
+**xAPI:** `createUser` mutation, `requestPasswordReset`, `resetPassword`, `signIn`, `signOut`
+**Verify in Admin:** User appears in Customers → Contacts, Organization appears in Customers → Organizations
+
+---
+
+### Domain 2: Catalog & Product Discovery (E2E-CAT)
+
+| ID | Scenario | P | Flow |
+|----|----------|---|------|
+| E2E-CAT-001 | Category navigation → product listing → PDP → breadcrumbs | P0 | Homepage → click category → verify product grid → click subcategory → verify filtered products → click product → verify PDP loads → verify breadcrumb trail → click breadcrumb → verify navigation back |
+| E2E-CAT-002 | Faceted filtering → chips → clear filters | P0 | Category page → apply brand filter → verify results filtered → apply price range → verify intersection → verify filter chips shown → remove one chip → verify results update → click "Clear All" → verify all products |
+| E2E-CAT-003 | Product sorting → price/name/relevance | P1 | Category page → sort by "Price: Low to High" → verify order → sort by "Price: High to Low" → verify reversed → sort by "Name A-Z" → verify alphabetical |
+| E2E-CAT-004 | Pagination → load more → page navigation | P1 | Category with 50+ products → verify initial page (default count) → click next page or "Load More" → verify additional products → navigate to last page → verify correct count |
+| E2E-CAT-005 | Product detail page → images → specs → reviews | P0 | Navigate to PDP → verify product name, price, SKU → verify image gallery (main + thumbnails) → click thumbnails → verify main image changes → scroll to specs → verify attributes → check reviews section |
+| E2E-CAT-006 | Filter by availability → in-stock only | P1 | Category page → check "In Stock" filter → verify out-of-stock items hidden → uncheck → verify all products return → check "Purchased Before" filter (B2B) → verify only previously ordered items |
+| E2E-CAT-007 | Virtual catalog → audience-specific view | P2 | Sign in as user with assigned virtual catalog → verify sees only allowed products → sign in as different user → verify sees different catalog → verify prices match catalog assignment |
+| E2E-CAT-008 | SEO URLs → breadcrumbs → canonical links | P1 | Navigate via SEO-friendly URL (`/category/subcategory/product-name`) → verify page loads → inspect canonical URL → verify breadcrumbs match URL hierarchy → check meta title/description |
+
+**xAPI:** `products` query, `categories` query, `product` by ID/slug, `searchProducts` with facets, `category` query
+**Verify in Admin:** Products blade, Categories tree, Virtual Catalogs, SEO data
+
+---
+
+### Domain 3: Search (E2E-SEARCH)
+
+| ID | Scenario | P | Flow |
+|----|----------|---|------|
+| E2E-SEARCH-001 | Global search → results page → product click | P0 | Click search bar → type query → verify autocomplete dropdown → press Enter → verify search results page → verify result count → click product → verify PDP loads → verify back navigates to results |
+| E2E-SEARCH-002 | Search within category → scoped results | P1 | Navigate to specific category → use search within category → verify results scoped to category → clear category scope → verify global results |
+| E2E-SEARCH-003 | Search history → recent queries → clear history | P1 | Search for "laptop" → search for "headphones" → click search bar → verify recent queries shown → click "laptop" from history → verify results → clear search history → verify history empty |
+| E2E-SEARCH-004 | No results → suggestions → typo tolerance | P1 | Search for misspelled term → verify "Did you mean...?" suggestion OR fuzzy match results → search for nonexistent term → verify "No results" message → verify suggested categories or popular products shown |
+| E2E-SEARCH-005 | Search dropdown → product previews → "View All" | P0 | Type in search bar → verify dropdown shows product previews (image, name, price) → verify max items in dropdown → click "View All Results" → verify full results page |
+
+**xAPI:** `searchProducts` query with `keyword`, `fuzzyLevel`, `filter`, `facets`
+**Verify in Admin:** Search index status (Settings → Search), Elasticsearch configuration
+
+---
+
+### Domain 4: Cart Operations (E2E-CART)
+
+| ID | Scenario | P | Flow |
+|----|----------|---|------|
+| E2E-CART-001 | Add to cart → mini cart → full cart → totals | P0 | PDP → click "Add to Cart" → verify success toast → verify cart icon badge updated → click cart icon → verify mini cart preview → click "View Cart" → verify full cart with line items, prices, subtotal |
+| E2E-CART-002 | Update quantity → stepper +/- → direct input → min/max | P0 | Cart page → click "+" → verify qty increments → verify line total updates → click "-" → verify qty decrements → type "0" → verify minimum enforced → type "999" → verify max stock limit |
+| E2E-CART-003 | Remove item → empty cart state → continue shopping | P1 | Cart with 3 items → remove middle item → verify 2 items remain → remove all → verify empty cart message → click "Continue Shopping" → verify navigates to catalog |
+| E2E-CART-004 | Save for later → move to cart → persistence | P1 | Cart with items → click "Save for Later" on item → verify moved to "Saved" section → verify cart total updates → click "Move to Cart" → verify item returns → verify totals restored |
+| E2E-CART-005 | Add from category listing → quick add → cart badge | P1 | Category page → click quick-add button on product card → verify cart badge increments → add same product again → verify quantity increases (not duplicate line) |
+| E2E-CART-006 | Multiple product types in cart → mixed totals | P1 | Add physical product → add digital product → add variation product → verify cart shows all types → verify individual prices correct → verify subtotal is sum of all lines |
+| E2E-CART-007 | Cart with promo code → apply → remove → validation | P1 | Cart with items → enter valid promo code → click "Apply" → verify discount applied → verify new total → enter invalid code → verify error message → remove valid code → verify total restored |
+| E2E-CART-008 | Cart persistence → sign out → sign in → verify | P1 | Add items to cart (signed in) → sign out → sign in again → verify cart items preserved → verify quantities correct → verify prices current |
+
+**xAPI:** `addItem`, `changeCartItemQuantity`, `removeCartItem`, `clearCart`, `addCoupon`, `removeCoupon`, `cart` query, `addItemsCart` (bulk)
+**Verify in Admin:** Cart not directly visible — verify via order creation
+
+---
+
+### Domain 5: Checkout Flows (E2E-CHK)
+
+| ID | Scenario | P | Flow |
+|----|----------|---|------|
+| E2E-CHK-001 | Single-step checkout → delivery → payment → order confirm | P0 | Cart → "Proceed to Checkout" → fill shipping address → select shipping method → enter payment → review order summary → click "Place Order" → verify order confirmation page → verify order number → verify cart cleared |
+| E2E-CHK-002 | Multi-step checkout → step navigation → validation per step | P0 | Cart → Checkout → Step 1: Shipping address (validate required fields) → Step 2: Shipping method → Step 3: Payment → Step 4: Review → Place Order → verify step indicators → verify back/forward navigation between steps |
+| E2E-CHK-003 | Guest checkout → email entry → order → tracking | P1 | Cart (not signed in) → "Checkout as Guest" → enter email → fill shipping → select method → pay → verify order → verify confirmation email → verify can track with email + order number |
+| E2E-CHK-004 | B2B checkout → PO number → approval workflow | P1 | Sign in as B2B buyer → add items → checkout → enter PO number → select "Net 30" payment terms → submit for approval → verify order status "Pending Approval" → sign in as approver → approve order → verify status changes to "Approved" |
+| E2E-CHK-005 | Checkout with new shipping address → save address | P1 | Checkout → click "Add New Address" → fill address form → check "Save to address book" → complete checkout → go to Account → Addresses → verify address saved |
+| E2E-CHK-006 | Checkout with saved address → select from list | P1 | Checkout → verify saved addresses listed → select existing address → verify address populated → change to different saved address → verify updated → complete checkout |
+| E2E-CHK-007 | Checkout with billing address different from shipping | P1 | Checkout → fill shipping address → uncheck "Same as shipping" → fill different billing address → complete checkout → verify order shows both addresses in confirmation and in admin |
+| E2E-CHK-008 | Subscription checkout → recurring order setup | P2 | Add subscription product → checkout → verify subscription options (frequency: weekly/monthly/quarterly) → select "Monthly" → complete checkout → verify order confirmation shows subscription details → verify in Admin |
+| E2E-CHK-009 | Checkout from saved list → independent cart | P2 | Account → Lists → select list → click "Order from List" → verify items added to separate cart (not main cart) → complete checkout → verify main cart unaffected |
+| E2E-CHK-010 | Checkout validation → empty fields → invalid data → recovery | P1 | Checkout → leave required fields empty → click "Continue" → verify field-level error messages → enter invalid zip/phone → verify format errors → fix errors → verify can proceed |
+
+**xAPI:** `createOrderFromCart`, `addOrUpdateCartShipment`, `addOrUpdateCartPayment`, `addCartAddress`, `validateCoupon`, `cart` query with shipments/payments
+**Verify in Admin:** Orders blade → verify order details, status, addresses, payment, shipping method
+
+---
+
+### Domain 6: Payment Processing (E2E-PAY)
+
+| ID | Scenario | P | Flow |
+|----|----------|---|------|
+| E2E-PAY-001 | Skyflow Visa → tokenized payment → order success | P0 | Checkout → select Skyflow → enter Visa card (from .env: SKYFLOW_VISA) → enter expiry + CVV → verify tokenization → Place Order → verify payment processed → verify order status "Paid" |
+| E2E-PAY-002 | Skyflow Mastercard → alternate card type | P0 | Checkout → Skyflow → enter Mastercard (SKYFLOW_MASTERCARD) → complete payment → verify card type detected → verify order success |
+| E2E-PAY-003 | CyberSource → payment processing → verification | P0 | Checkout → select CyberSource → enter card details → complete payment → verify 3DS challenge (if applicable) → verify order confirmed |
+| E2E-PAY-004 | Authorize.Net → payment capture → admin verification | P0 | Checkout → select Authorize.Net → enter card → complete → verify transaction ID in confirmation → verify in Admin: order payment status "Captured" |
+| E2E-PAY-005 | Datatrance → card + OTP verification | P0 | Checkout → select Datatrance → enter card (DATATRANCE card from .env) → enter expiry + CVV → verify OTP prompt → enter OTP (DATATRANCE_OTP) → verify payment → verify order |
+| E2E-PAY-006 | Payment decline → error handling → retry with different card | P1 | Checkout → enter declined test card → click Pay → verify decline error message → verify can re-enter different card → pay with valid card → verify success |
+
+**xAPI:** `addOrUpdateCartPayment`, `createOrderFromCart`, `processPayment`
+**Verify in Admin:** Order → Payments tab → transaction ID, status, amount
+
+---
+
+### Domain 7: Order Management (E2E-ORD)
+
+| ID | Scenario | P | Flow |
+|----|----------|---|------|
+| E2E-ORD-001 | Place order → order detail page → status tracking | P0 | Complete checkout → click order number → verify order detail page → verify: items, quantities, prices, addresses, payment method, shipping method, status |
+| E2E-ORD-002 | Order history → filter → search → pagination | P1 | Account → Orders → verify order list → filter by date range → filter by status → search by order number → verify pagination if many orders |
+| E2E-ORD-003 | Reorder → add previous order items to cart | P1 | Order history → select past order → click "Reorder" → verify items added to cart → verify quantities match → verify prices are current (may differ from original) |
+| E2E-ORD-004 | Order status lifecycle → Admin updates → storefront reflects | P1 | Place order (status: "New") → Admin: change to "Processing" → Storefront: verify status updated → Admin: add tracking number → Storefront: verify tracking visible → Admin: mark "Shipped" → Storefront: verify |
+| E2E-ORD-005 | Return/RMA request → submission → admin processing | P2 | Order history → completed order → click "Request Return" → select items → enter reason → submit → verify return request status → Admin: process return → Storefront: verify status update |
+| E2E-ORD-006 | Invoice → download → verify content | P2 | Order detail → click "Download Invoice" → verify PDF generated → verify invoice contains: order items, prices, tax, total, shipping/billing addresses, company info |
+
+**xAPI:** `order` query, `orders` query with filtering, `customerReorders`, `createReturn`
+**Verify in Admin:** Orders blade → status transitions, payment captures, shipments, returns
+
+---
+
+### Domain 8: BOPIS - Buy Online Pickup In Store (E2E-BOPIS)
+
+| ID | Scenario | P | Flow |
+|----|----------|---|------|
+| E2E-BOPIS-001 | Select pickup → choose location → complete order | P1 | Cart → select "Pickup" delivery → verify location selector opens → browse/search locations on map → select store → verify store address and hours shown → complete checkout → verify order confirmation shows pickup location |
+| E2E-BOPIS-002 | Pickup location search → filter → select | P1 | Pickup modal → enter zip code or city → verify locations listed by distance → filter by features (e.g., "Open Sunday") → select location → verify pin highlighted on map |
+| E2E-BOPIS-003 | Mixed cart → some pickup + some delivery | P1 | Add item A (pickup available) → add item B (delivery only) → checkout → verify item A shows pickup option → verify item B shows delivery only → select pickup for A, delivery for B → complete checkout |
+| E2E-BOPIS-004 | Change pickup location → update during checkout | P2 | Checkout with pickup selected → click "Change Location" → select different store → verify address updates → verify any location-specific pricing updates → complete checkout |
+| E2E-BOPIS-005 | Pickup map → resize modal → mobile responsive | P2 | Open pickup location selector → verify map renders → resize modal/viewport → verify map and list responsive → verify touch targets on mobile (44x44px min) → verify location cards readable |
+
+**xAPI:** `fulfillmentCenters` query, `addOrUpdateCartShipment` with fulfillment center ID
+**Verify in Admin:** Order → Shipments → verify fulfillment center assignment, pickup status
+
+---
+
+### Domain 9: B2B Quotes & RFQ (E2E-QUOTE)
+
+| ID | Scenario | P | Flow |
+|----|----------|---|------|
+| E2E-QUOTE-001 | Create RFQ → submit → verify in admin | P1 | Sign in as B2B buyer → add products to quote request → add specifications/attachments → submit RFQ → verify status "Processing" → Admin: verify RFQ visible in back office |
+| E2E-QUOTE-002 | Quote negotiation → seller response → buyer review | P1 | Admin: open RFQ → respond with pricing → send to customer → Storefront: verify quote received → review pricing → request adjustment → Admin: update and resend |
+| E2E-QUOTE-003 | Accept quote → convert to order | P1 | Storefront: review final quote → click "Accept" → verify quote converts to order → verify order has quoted prices (not catalog prices) → verify order in Admin |
+| E2E-QUOTE-004 | Reject quote → provide reason → re-negotiate | P2 | Storefront: review quote → click "Reject" → enter rejection reason → verify quote status "Rejected" → Admin: see rejection → create revised quote |
+| E2E-QUOTE-005 | Quote with substitutions → alternate products | P2 | Admin: respond to RFQ with substitution (different product) → Storefront: verify substitution shown → buyer accepts substitution → convert to order with substituted product |
+| E2E-QUOTE-006 | Quote expiry → expired quote handling | P2 | Admin: create quote with expiry date → wait/simulate expiry → Storefront: verify quote shows "Expired" → verify cannot convert expired quote to order → verify can request new quote |
+
+**xAPI:** `createQuoteFromCart`, `updateQuote`, `approveQuote`, `declineQuote`, `quotes` query
+**Verify in Admin:** Quotes blade → status transitions, line items, pricing, discussion history
+
+---
+
+### Domain 10: B2B Multi-Organization (E2E-ORG)
+
+| ID | Scenario | P | Flow |
+|----|----------|---|------|
+| E2E-ORG-001 | Switch between organizations → verify context changes | P1 | Sign in as multi-org user → verify current org name in header → switch to Org B → verify org name changes → verify catalog may differ → verify cart is separate → switch back to Org A → verify original cart intact |
+| E2E-ORG-002 | Cart isolation per organization | P1 | In Org A: add items to cart → switch to Org B → verify cart is empty (or Org B's cart) → add different items → switch to Org A → verify Org A cart unchanged |
+| E2E-ORG-003 | Ship-to address per organization | P1 | In Org A: verify ship-to addresses are Org A addresses → switch to Org B → verify ship-to shows Org B addresses → verify no cross-contamination |
+| E2E-ORG-004 | Organization-specific pricing | P1 | In Org A: check product price → switch to Org B → verify same product may have different (contract) price → verify cart totals use correct org pricing |
+| E2E-ORG-005 | Sign in → default organization → switch | P1 | Sign in → verify default organization loads → navigate to org switcher → verify all assigned orgs listed → switch → verify full context change (catalog, prices, cart, addresses) |
+| E2E-ORG-006 | Impersonate user → switch company context | P2 | Admin: impersonate user → verify storefront loads as that user → switch between companies as impersonated user → verify all context switches work → stop impersonation |
+| E2E-ORG-007 | Shared vs private lists per organization | P2 | In Org A: create shared list → add products → switch to Org B → verify shared list visible to Org B members → create private list in Org A → switch to Org B → verify private list NOT visible |
+
+**xAPI:** `switchOrganization` mutation, `organizations` query, `user` query with organization context
+**Verify in Admin:** Customers → Organizations → verify members, addresses, pricing assignments
+
+---
+
+### Domain 11: B2B Company Members & Roles (E2E-MEMBER)
+
+| ID | Scenario | P | Flow |
+|----|----------|---|------|
+| E2E-MEMBER-001 | Invite member → registration → role assignment | P1 | Account → Company Members → click "Invite" → enter email → assign role (Buyer/Admin) → send invite → verify invite email → recipient registers via invite link → verify member appears in list with correct role |
+| E2E-MEMBER-002 | Edit member role → permissions change | P1 | Company Members → select member → change role from "Buyer" to "Admin" → save → verify member now has admin permissions (can invite, manage members) |
+| E2E-MEMBER-003 | Block/Unblock member → access control | P1 | Company Members → block a member → verify member cannot sign in → unblock member → verify member can sign in again → verify their cart/orders preserved |
+| E2E-MEMBER-004 | Member search and filter | P2 | Company Members → search by name → verify results → filter by role → verify filtered list → filter by status (Active/Blocked) → verify list |
+| E2E-MEMBER-005 | Delegated purchasing → buyer places order → approval required | P1 | Sign in as Buyer (not Admin) → add items to cart → checkout → verify order requires approval → sign in as Admin/Approver → review pending order → approve → verify order status changes → Buyer: verify order confirmed |
+
+**xAPI:** `inviteUser`, `updateContact`, `lockOrganizationContact`, `unlockOrganizationContact`, `organizationContacts` query
+**Verify in Admin:** Customers → Organizations → Members list, role assignments, status
+
+---
+
+### Domain 12: B2B Lists & Quick Order (E2E-LIST)
+
+| ID | Scenario | P | Flow |
+|----|----------|---|------|
+| E2E-LIST-001 | Create list → add products → manage list | P1 | Account → Lists → create new list → name it → add products from catalog → verify list items → change quantity → remove item → verify updates |
+| E2E-LIST-002 | Add to cart from list → bulk add | P1 | Open saved list → select items (or "Select All") → click "Add to Cart" → verify items added with list quantities → verify cart totals |
+| E2E-LIST-003 | Shared list → visible to team members | P2 | Create list marked as "Shared" → sign in as another org member → verify shared list visible → verify can add items to shared list → verify changes visible to original creator |
+| E2E-LIST-004 | Quick order → SKU/name entry → bulk add | P1 | Navigate to Quick Order page → enter SKU directly → verify product found → enter quantity → add more rows → click "Add All to Cart" → verify all items added to cart with correct quantities |
+| E2E-LIST-005 | Wishlist → add from PDP → manage → move to cart | P2 | PDP → click "Add to Wishlist" (heart icon) → Account → Wishlist → verify product listed → click "Add to Cart" from wishlist → verify item moved to cart |
+
+**xAPI:** `createWishlist`, `addWishlistItem`, `removeWishlistItem`, `addWishlistBulkItem`, `renameWishlist`
+**Verify in Admin:** Not directly visible — verify via storefront + API queries
+
+---
+
+### Domain 13: Configurable Products & CPQ (E2E-CONFIG)
+
+| ID | Scenario | P | Flow |
+|----|----------|---|------|
+| E2E-CONFIG-001 | Product with size/color variations → selection → add to cart | P1 | Navigate to configurable product → select Size → verify available colors update → select Color → verify price updates → verify image updates → add to cart → verify variant details in cart |
+| E2E-CONFIG-002 | Product configurator → sections → options → price calculation | P1 | Navigate to configurable product with configurator → complete Section 1 (e.g., base model) → Section 2 (e.g., accessories) → Section 3 (e.g., finish) → verify running total updates → add configured product to cart |
+| E2E-CONFIG-003 | Out-of-stock variant → disabled selection → fallback | P1 | Configurable product → select combination that is out of stock → verify variant greyed/disabled → verify "Out of Stock" message → select available variant → verify Add to Cart enabled |
+| E2E-CONFIG-004 | Variant-specific images → gallery update on selection | P2 | Configurable product → default images shown → select Color: Blue → verify image gallery shows blue variant images → select Color: Red → verify images change to red variant |
+| E2E-CONFIG-005 | Configured product in cart → edit configuration | P2 | Add configured product to cart → in cart, click "Edit" on configured item → verify configurator reopens with previous selections → change options → save → verify cart updated with new configuration and price |
+
+**xAPI:** `product` query with `variations`, `configurationSections`, `availabilityData`
+**Verify in Admin:** Catalog → Products → Variations tab, configuration sections, inventory per variant
+
+---
+
+### Domain 14: Admin Catalog CRUD (E2E-ADMIN-CAT)
+
+| ID | Scenario | P | Flow |
+|----|----------|---|------|
+| E2E-ADMIN-CAT-001 | Create product → publish → verify on storefront | P1 | Admin: Catalog → Products → "Add Product" → fill name, SKU, price, description, images → assign category → set inventory → click "Save" → verify product appears on storefront category page and search |
+| E2E-ADMIN-CAT-002 | Edit product → update price → verify storefront reflects | P1 | Admin: find product → edit price from $50 to $75 → save → Storefront: navigate to product → verify price shows $75 → add to cart → verify cart uses new price |
+| E2E-ADMIN-CAT-003 | Create category → assign products → verify navigation | P1 | Admin: Catalog → Categories → "Add Category" → fill name, SEO slug → save → assign products → Storefront: verify category in navigation → verify products listed under category |
+| E2E-ADMIN-CAT-004 | Bulk import products via CSV → verify catalog | P2 | Admin: Catalog → Import → upload CSV file → verify import progress → verify imported products appear in catalog → Storefront: search for imported product → verify findable |
+| E2E-ADMIN-CAT-005 | Delete/unpublish product → verify removed from storefront | P1 | Admin: unpublish product → Storefront: verify product no longer in search results → verify direct URL shows 404 or "unavailable" → Admin: republish → Storefront: verify accessible again |
+
+**REST API:** POST/PUT/DELETE `/api/catalog/products`, `/api/catalog/categories`, `/api/catalog/import`
+**Verify cross-layer:** Admin action → search index rebuild → Storefront reflection (may need index rebuild wait)
+
+---
+
+### Domain 15: Admin Order Management (E2E-ADMIN-ORD)
+
+| ID | Scenario | P | Flow |
+|----|----------|---|------|
+| E2E-ADMIN-ORD-001 | View order → process payment → create shipment → complete | P1 | Admin: Orders → find order → verify order details → process payment capture → create shipment → add tracking number → mark shipped → Storefront: verify customer sees "Shipped" status with tracking |
+| E2E-ADMIN-ORD-002 | Search orders → filter by status/date/customer | P1 | Admin: Orders → search by order number → filter by status "New" → filter by date range → filter by customer email → verify results match criteria |
+| E2E-ADMIN-ORD-003 | Refund order → partial and full refund | P2 | Admin: completed order → initiate partial refund (1 of 3 items) → verify refund processed → verify order total adjusted → initiate full refund on remaining → verify order status "Refunded" |
+| E2E-ADMIN-ORD-004 | Cancel order → inventory restoration | P2 | Admin: new order → cancel order → verify status "Cancelled" → verify inventory restored (items back in stock) → Storefront: verify product available again |
+
+**REST API:** `/api/order/customerOrders`, PUT status transitions, POST shipments, POST refunds
+**Verify cross-layer:** Admin status change → xAPI `order` query reflects new status → Storefront order detail page updated
+
+---
+
+### Domain 16: Localization & Multi-Currency (E2E-L10N)
+
+| ID | Scenario | P | Flow |
+|----|----------|---|------|
+| E2E-L10N-001 | Language switch → UI translation → persist preference | P2 | Homepage (EN) → switch to German (DE) → verify navigation, buttons, labels translated → navigate to product → verify product info in DE → refresh → verify DE persists |
+| E2E-L10N-002 | Multi-currency → price display → checkout in currency | P2 | Switch to EUR currency → verify product prices in EUR → add to cart → verify cart totals in EUR → complete checkout → verify order confirmation in EUR → Admin: verify order recorded with correct currency |
+| E2E-L10N-003 | RTL language support → layout direction | P2 | Switch to Arabic/Hebrew (if supported) → verify layout direction changes to RTL → verify text alignment → verify navigation mirrors → verify forms readable |
+| E2E-L10N-004 | All 13 languages → navigation and checkout smoke | P2 | For each of 13 languages (EN, DE, FR, ES, NO, SV, PL, IT, PT, JA, ZH, FI, RU): switch language → verify homepage loads → verify cart accessible → verify checkout form labels translated |
+
+**xAPI:** `storeSettings` query for available languages/currencies, language header in requests
+**Verify in Admin:** Store → Settings → Languages, Currencies enabled
+
+---
+
+### Domain 17: Analytics & Tracking (E2E-GA)
+
+| ID | Scenario | P | Flow |
+|----|----------|---|------|
+| E2E-GA-001 | Product view → dataLayer event → GA4 view_item | P2 | Navigate to PDP → open browser DevTools → console: check `dataLayer` → verify `view_item` event fired with correct product ID, name, price, category |
+| E2E-GA-002 | Add to cart → GA4 add_to_cart event | P2 | Add product to cart → verify `add_to_cart` event in dataLayer → verify event has correct item details, quantity, value |
+| E2E-GA-003 | Checkout funnel → begin_checkout → add_payment_info → purchase | P2 | Start checkout → verify `begin_checkout` event → add shipping → verify `add_shipping_info` → add payment → verify `add_payment_info` → place order → verify `purchase` event with transaction_id, total, items |
+| E2E-GA-004 | Search → GA4 search event → view_search_results | P2 | Perform search → verify `search` event with search_term → view results → verify `view_search_results` event with result count |
+
+**Verify:** Chrome DevTools → Console → `window.dataLayer` inspection; Network tab → GA4 collect endpoint requests
+
+---
+
+### Domain 18: Security & Compliance (E2E-SEC)
+
+| ID | Scenario | P | Flow |
+|----|----------|---|------|
+| E2E-SEC-001 | Auth token expiry → refresh → re-authentication | P0 | Sign in → wait for token expiry (or manipulate) → attempt action → verify token refreshed automatically OR user prompted to re-sign-in → verify no data loss |
+| E2E-SEC-002 | XSS prevention → script injection in inputs | P0 | Enter `<script>alert('xss')</script>` in search, address, name fields → verify: no script execution → input sanitized → no console errors → verify on all forms (registration, checkout, profile) |
+| E2E-SEC-003 | Unauthorized API access → role-based restrictions | P0 | As Buyer role → attempt to access admin API endpoints → verify 401/403 response → as Guest → attempt to access authenticated endpoints → verify 401 → verify no data leakage in error responses |
+| E2E-SEC-004 | PCI compliance → payment card handling | P0 | During checkout → verify card number field uses iframe/tokenization (not plain input) → verify card number not in network requests as plain text → verify card data not stored in localStorage/sessionStorage → verify HTTPS only |
+
+**Verify:** DevTools → Network tab (no plain card data), Console (no errors), Application tab (no sensitive storage)
+
+---
+
+## CROSS-LAYER VERIFICATION PATTERNS
+
+Every e2e scenario should verify changes across multiple layers. Use these patterns to ensure complete verification.
+
+### Pattern 1: Frontend Action → API Verification → Admin Confirmation
+
+```
+USER ACTION (Storefront)
+    ↓ triggers xAPI mutation
+API LAYER (GraphQL/REST)
+    ↓ persists to database
+ADMIN VERIFICATION (VC-Shell SPA)
+    ↓ confirms data integrity
+
+Example: Place Order
+1. Storefront: Complete checkout → see order confirmation page
+2. API: Query `order` via GraphQL → verify order object has correct items, prices, status
+3. Admin: Navigate to Orders → find order by number → verify all fields match
+```
+
+### Pattern 2: Admin Action → API Propagation → Frontend Reflection
+
+```
+ADMIN ACTION (VC-Shell SPA)
+    ↓ REST API call
+API LAYER (persists + reindex)
+    ↓ search index updated
+FRONTEND VERIFICATION (Storefront)
+    ↓ confirms change visible
+
+Example: Update Product Price
+1. Admin: Edit product price from $50 → $75, save
+2. API: Wait for search index rebuild (may take 30-60s)
+3. Storefront: Navigate to product → verify new price $75 → add to cart → verify cart total uses $75
+```
+
+### Pattern 3: GraphQL xAPI Round-Trip
+
+```
+MUTATION (write operation)
+    ↓ modify state
+QUERY (read operation)
+    ↓ verify state changed
+
+Example: Add to Cart → Verify Cart
+1. Mutation: addItem(productId, qty: 3)
+2. Query: cart { items { productId quantity } }
+3. Verify: item exists with qty=3
+```
+
+### xAPI Module Mapping for Verification
+
+| Module | Key Queries | Key Mutations | Used In Domains |
+|--------|------------|---------------|-----------------|
+| **xCart** | `cart`, `carts` | `addItem`, `changeCartItemQuantity`, `removeCartItem`, `clearCart`, `addCoupon`, `removeCoupon`, `addOrUpdateCartShipment`, `addOrUpdateCartPayment`, `addCartAddress` | CART, CHK, PAY |
+| **xCatalog** | `products`, `product`, `categories`, `category`, `properties` | — (read-only from storefront) | CAT, SEARCH |
+| **xOrder** | `order`, `orders`, `orderLineItems` | `createOrderFromCart`, `addOrUpdateOrderPayment`, `changeOrderStatus` | ORD, CHK |
+| **xCMS** | `pages`, `menu`, `blog` | — (read-only from storefront) | CAT (navigation), L10N |
+| **ProfileExperienceApi** | `me`, `organization`, `organizationContacts` | `updateContact`, `inviteUser`, `lockOrganizationContact`, `unlockOrganizationContact`, `createOrganization` | AUTH, ORG, MEMBER |
+| **Quote** | `quotes`, `quote` | `createQuoteFromCart`, `updateQuote`, `approveQuote`, `declineQuote`, `changeQuoteComment` | QUOTE |
+| **Wishlist/Lists** | `wishlists`, `wishlist` | `createWishlist`, `addWishlistItem`, `removeWishlistItem`, `renameWishlist`, `addWishlistBulkItem` | LIST |
+
+### Cross-Layer Verification Checklist
+
+For **every P0/P1 e2e scenario**, verify across ALL applicable layers:
+
+```
+□ STOREFRONT: UI shows expected state (visual + text + navigation)
+□ CONSOLE: No JavaScript errors in browser console
+□ NETWORK: No failed API calls (4xx/5xx) in network tab
+□ API: GraphQL/REST query confirms data persisted correctly
+□ ADMIN: Back-office UI reflects the change
+□ EMAIL: If applicable, notification email sent with correct content
+□ SEARCH INDEX: If catalog changed, verify search reflects update (after reindex)
+□ HAR: Export HAR file for evidence archive
+□ SCREENSHOT: Capture key states for documentation
+```
+
+---
 
 ## REMEMBER
 

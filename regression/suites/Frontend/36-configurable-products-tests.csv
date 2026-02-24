@@ -464,3 +464,624 @@ FRONTEND STEPS:
 - Product behaves as standard product with no configuration required
 - Base price $999.00 shown
 - Add to cart available without needing to configure anything",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-017,E2E: Create Product with Required Text Section and Verify Text Input on Storefront,Configurable Products > E2E Text Section,Functional,Critical,15m,"Admin logged in at ${BACK_URL}. Storefront accessible at ${FRONT_URL}. Category Configurable Products [YYYYMMDD] exists in B2B-mixed catalog (created in CFG-E2E-001). If running standalone create the category first: go to Catalog > B2B-mixed catalog > Categories > Add category; name=Configurable Products [YYYYMMDD]; code=configurable-products-[YYYYMMDD]; save.","ADMIN STEPS:
+1. Navigate to ${BACK_URL} and log in as ${ADMIN}
+2. Go to Catalog > Products > Add new product
+3. Name: Test Config Engraved Ring [YYYYMMDD]; SKU: RING-TXT-CFG-[YYYYMMDD]
+4. Set base List Price: $150.00; inventory: 30
+5. Set Category to Configurable Products [YYYYMMDD] in B2B-mixed catalog
+6. Navigate to configurable/configuration tab
+7. Add section: name=Engraving Text; type=Text; Required
+8. If character limit field available: set to 30 characters; save section
+9. Publish and save product
+FRONTEND STEPS:
+10. Navigate to ${FRONT_URL} and open PDP for Test Config Engraved Ring [YYYYMMDD]
+11. Verify Configure the parameters widget is visible
+12. Verify section Engraving Text is displayed with a text input field marked Required
+13. Verify the text input field is empty by default
+14. Type text: Happy Birthday into the Engraving Text field
+15. Verify text is accepted; price remains $150.00
+16. Set quantity to 1; click Add to Cart
+17. Verify item added with no validation error
+18. Navigate to cart; verify product at $150.00
+19. Verify Engraving Text value Happy Birthday is visible in the cart line item configuration details","- Product created with required Text section assigned to Configurable Products [YYYYMMDD] category
+- Widget shows Engraving Text section with text input field marked Required
+- Custom text Happy Birthday accepted and preserved in cart line item
+- Price remains $150.00 (text input does not affect price)",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-018,E2E: Required Text Section Blocks Add-to-Cart When Field Is Empty,Configurable Products > E2E Text Section,Functional,Critical,8m,"CFG-E2E-017 completed. Product Test Config Engraved Ring [YYYYMMDD] published at ${FRONT_URL}.","ADMIN STEPS: None required.
+FRONTEND STEPS:
+1. Navigate to PDP for Test Config Engraved Ring [YYYYMMDD] on ${FRONT_URL}
+2. Verify Engraving Text section is visible and marked Required
+3. Ensure the Engraving Text field is empty (do not type anything)
+4. Set quantity to 1; click Add to Cart
+5. Verify add-to-cart is blocked — validation error or inline message shown indicating Engraving Text is required
+6. Verify no item is added to cart
+7. Type text: With Love into the Engraving Text field
+8. Click Add to Cart again
+9. Verify item is added successfully with no validation error
+10. Navigate to cart; verify Engraving Text value With Love is shown in the line item","- Required text section blocks add-to-cart when field is empty
+- Validation error shown referencing required Engraving Text field
+- After entering text With Love: product adds to cart successfully
+- Text value With Love visible in cart line item",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-019,E2E: Create Product with Optional Text Section and Verify Empty and Filled Scenarios,Configurable Products > E2E Text Section,Functional,High,15m,"Admin logged in at ${BACK_URL}. Storefront accessible at ${FRONT_URL}. Category Configurable Products [YYYYMMDD] exists in B2B-mixed catalog (created in CFG-E2E-001). If running standalone create the category first: go to Catalog > B2B-mixed catalog > Categories > Add category; name=Configurable Products [YYYYMMDD]; code=configurable-products-[YYYYMMDD]; save.","ADMIN STEPS:
+1. Navigate to ${BACK_URL} and log in as ${ADMIN}
+2. Go to Catalog > Products > Add new product
+3. Name: Test Config Gift Box [YYYYMMDD]; SKU: GIFT-TXT-CFG-[YYYYMMDD]
+4. Set base List Price: $50.00; inventory: 25
+5. Set Category to Configurable Products [YYYYMMDD] in B2B-mixed catalog
+6. Navigate to configurable/configuration tab
+7. Add section: name=Gift Message; type=Text; Optional
+8. If character limit field available: set to 100 characters; save section
+9. Publish and save product
+FRONTEND STEPS - SCENARIO A (no text entered):
+10. Navigate to ${FRONT_URL} and open PDP for Test Config Gift Box [YYYYMMDD]
+11. Verify Configure the parameters widget is visible with Gift Message section marked Optional
+12. Leave the Gift Message field empty
+13. Set quantity to 1; click Add to Cart
+14. Verify item is added with no validation error (optional section allows empty)
+15. Navigate to cart; verify product at $50.00; Gift Message shows blank or no value
+16. Remove item from cart
+FRONTEND STEPS - SCENARIO B (text entered):
+17. Return to PDP for Test Config Gift Box [YYYYMMDD]
+18. Type text: Congratulations! into the Gift Message field
+19. Click Add to Cart
+20. Navigate to cart; verify Gift Message value Congratulations! is shown in the line item; price $50.00","- Optional text section does not block add-to-cart when empty
+- Scenario A: empty field — product adds successfully at $50.00 with no message shown
+- Scenario B: filled field — product adds successfully at $50.00 with Gift Message Congratulations! shown in cart",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-020,E2E: Custom Engraving Text Preserved Through Cart and Checkout to Order History,Configurable Products > E2E Text Section,Functional,Critical,25m,"CFG-E2E-017 completed. Product Test Config Engraved Ring [YYYYMMDD] published at ${FRONT_URL}. Registered customer account exists. Checkout and payment configured in QA environment.","ADMIN STEPS: None required.
+FRONTEND STEPS:
+1. Sign in at ${FRONT_URL}
+2. Open PDP for Test Config Engraved Ring [YYYYMMDD]
+3. Type text: Forever Yours into the Engraving Text field; verify text accepted; price = $150.00
+4. Set quantity to 1; click Add to Cart
+5. Navigate to cart; verify line item at $150.00; Engraving Text Forever Yours visible in config details
+6. Proceed to Checkout
+7. Verify checkout order summary shows Test Config Engraved Ring [YYYYMMDD] at $150.00 with Engraving Text Forever Yours
+8. Complete checkout with test payment
+9. Verify order confirmation page shows order number; summary shows Engraving Text Forever Yours at $150.00
+10. Navigate to Account > Order History; open the order; verify Engraving Text Forever Yours at $150.00
+ADMIN VERIFICATION:
+11. Navigate to ${BACK_URL} > Orders; open the order
+12. Verify product name and price $150.00; verify custom text Forever Yours visible in order line item details","- Custom engraving text Forever Yours preserved at every stage: cart, checkout summary, order confirmation, customer order history, and admin order detail
+- Price consistent at $150.00 throughout",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-021,E2E: Create Product with Required File Upload Section and Verify Upload on Storefront,Configurable Products > E2E File Section,Functional,Critical,15m,"Admin logged in at ${BACK_URL}. Storefront accessible at ${FRONT_URL}. Category Configurable Products [YYYYMMDD] exists in B2B-mixed catalog (created in CFG-E2E-001). If running standalone create the category first. A test image file (PNG or JPG; under 2MB) is available locally for upload.","ADMIN STEPS:
+1. Navigate to ${BACK_URL} and log in as ${ADMIN}
+2. Go to Catalog > Products > Add new product
+3. Name: Test Config Custom Jersey [YYYYMMDD]; SKU: JERSEY-FILE-CFG-[YYYYMMDD]
+4. Set base List Price: $80.00; inventory: 20
+5. Set Category to Configurable Products [YYYYMMDD] in B2B-mixed catalog
+6. Navigate to configurable/configuration tab
+7. Add section: name=Custom Logo; type=File; Required
+8. If accepted file types field available: set to PNG, JPG; if max file size field available: set to 2MB; save section
+9. Publish and save product
+FRONTEND STEPS:
+10. Navigate to ${FRONT_URL} and open PDP for Test Config Custom Jersey [YYYYMMDD]
+11. Verify Configure the parameters widget is visible
+12. Verify section Custom Logo is displayed with a file upload area marked Required
+13. Do not upload a file yet — verify upload area is in its empty default state
+14. Click the upload button or drag a test PNG/JPG file onto the drop zone
+15. Verify file upload completes successfully (file name or thumbnail shown; no error)
+16. Verify product price remains $80.00 (file sections do not add a price delta)
+17. Set quantity to 1; click Add to Cart
+18. Verify item added with no validation error
+19. Navigate to cart; verify product at $80.00; Custom Logo shows a reference to the uploaded file in the cart line item configuration details","- Product created with required File section assigned to Configurable Products [YYYYMMDD] category
+- Widget shows Custom Logo section with file upload area marked Required
+- Upload of PNG/JPG file completes successfully
+- Uploaded file reference preserved in cart line item
+- Price remains $80.00",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-022,E2E: Required File Section Blocks Add-to-Cart When No File Is Uploaded,Configurable Products > E2E File Section,Functional,Critical,8m,"CFG-E2E-021 completed. Product Test Config Custom Jersey [YYYYMMDD] published at ${FRONT_URL}. A test image file (PNG or JPG) is available locally.","ADMIN STEPS: None required.
+FRONTEND STEPS:
+1. Navigate to PDP for Test Config Custom Jersey [YYYYMMDD] on ${FRONT_URL}
+2. Verify Configure the parameters widget is visible with Custom Logo section marked Required
+3. Do not upload any file
+4. Set quantity to 1; click Add to Cart
+5. Verify add-to-cart is blocked — validation error or inline message shown indicating Custom Logo file is required
+6. Verify no item is added to cart
+7. Upload a test PNG/JPG file using the upload control
+8. Verify upload completes successfully (file name or thumbnail shown)
+9. Click Add to Cart again
+10. Verify item is added successfully with no validation error
+11. Navigate to cart; verify Custom Logo shows a file reference in the line item configuration details","- Required file section blocks add-to-cart when no file is uploaded
+- Validation error shown referencing required Custom Logo section
+- After uploading a valid file: product adds to cart successfully
+- File reference visible in cart line item",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-023,E2E: Create Product with Optional File Section and Verify Empty and Uploaded Scenarios,Configurable Products > E2E File Section,Functional,High,15m,"Admin logged in at ${BACK_URL}. Storefront accessible at ${FRONT_URL}. Category Configurable Products [YYYYMMDD] exists in B2B-mixed catalog (created in CFG-E2E-001). If running standalone create the category first. A test image file (PNG or JPG) is available locally.","ADMIN STEPS:
+1. Navigate to ${BACK_URL} and log in as ${ADMIN}
+2. Go to Catalog > Products > Add new product
+3. Name: Test Config Phone Case [YYYYMMDD]; SKU: CASE-FILE-CFG-[YYYYMMDD]
+4. Set base List Price: $25.00; inventory: 30
+5. Set Category to Configurable Products [YYYYMMDD] in B2B-mixed catalog
+6. Navigate to configurable/configuration tab
+7. Add section: name=Custom Design; type=File; Optional
+8. If accepted file types field available: set to PNG, JPG; save section
+9. Publish and save product
+FRONTEND STEPS - SCENARIO A (no file uploaded):
+10. Navigate to ${FRONT_URL} and open PDP for Test Config Phone Case [YYYYMMDD]
+11. Verify Configure the parameters widget is visible with Custom Design section marked Optional
+12. Do not upload any file
+13. Set quantity to 1; click Add to Cart
+14. Verify item added with no validation error (optional section allows no upload)
+15. Navigate to cart; verify product at $25.00; Custom Design shows blank or no file reference
+16. Remove item from cart
+FRONTEND STEPS - SCENARIO B (file uploaded):
+17. Return to PDP for Test Config Phone Case [YYYYMMDD]
+18. Upload a test PNG/JPG file using the Custom Design upload control
+19. Verify upload completes successfully (file name or thumbnail shown)
+20. Click Add to Cart
+21. Navigate to cart; verify Custom Design shows the uploaded file reference in the line item; price $25.00","- Optional file section does not block add-to-cart when no file is uploaded
+- Scenario A: no file — product adds successfully at $25.00 with no file reference shown
+- Scenario B: file uploaded — product adds successfully at $25.00 with Custom Design file reference shown in cart",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-024,E2E: Uploaded File Preserved Through Cart and Checkout to Order History,Configurable Products > E2E File Section,Functional,Critical,25m,"CFG-E2E-021 completed. Product Test Config Custom Jersey [YYYYMMDD] published at ${FRONT_URL}. Registered customer account exists. Checkout and payment configured in QA environment. A test image file (PNG or JPG) is available locally.","ADMIN STEPS: None required.
+FRONTEND STEPS:
+1. Sign in at ${FRONT_URL}
+2. Open PDP for Test Config Custom Jersey [YYYYMMDD]
+3. Upload a test PNG/JPG file using the Custom Logo upload control
+4. Verify upload completes successfully (file name or thumbnail shown); price = $80.00
+5. Set quantity to 1; click Add to Cart
+6. Navigate to cart; verify line item at $80.00; Custom Logo file reference visible in config details
+7. Proceed to Checkout
+8. Verify checkout order summary shows Test Config Custom Jersey [YYYYMMDD] at $80.00 with Custom Logo file reference
+9. Complete checkout with test payment
+10. Verify order confirmation page shows order number; Custom Logo file reference shown at $80.00
+11. Navigate to Account > Order History; open the order; verify Custom Logo file reference at $80.00
+ADMIN VERIFICATION:
+12. Navigate to ${BACK_URL} > Orders; open the order
+13. Verify product name and price $80.00; verify Custom Logo file reference visible in order line item details","- Uploaded file reference preserved at every stage: cart, checkout summary, order confirmation, customer order history, and admin order detail
+- Price consistent at $80.00 throughout",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-025,E2E: Create Product with All Three Section Types (Radio + Text + File) and Verify All Sections in Widget,Configurable Products > E2E Mixed Sections,Functional,Critical,20m,"Admin logged in at ${BACK_URL}. Storefront accessible at ${FRONT_URL}. Category Configurable Products [YYYYMMDD] exists in B2B-mixed catalog (created in CFG-E2E-001). If running standalone create the category first. A test image file (PNG or JPG) is available locally.","ADMIN STEPS:
+1. Navigate to ${BACK_URL} and log in as ${ADMIN}
+2. Go to Catalog > Products > Add new product
+3. Name: Test Config Custom Bike [YYYYMMDD]; SKU: BIKE-MIX-CFG-[YYYYMMDD]
+4. Set base List Price: $500.00; inventory: 15
+5. Set Category to Configurable Products [YYYYMMDD] in B2B-mixed catalog
+6. Navigate to configurable/configuration tab
+7. Add section 1: name=Frame Material; type=Radio; Required
+8. Add option: name=Aluminum. Set list price=$0.00. Set inventory quantity=20. Save option
+9. Add option: name=Carbon Fiber. Set list price=$200.00. Set inventory quantity=10. Save option
+10. Add option: name=Titanium. Set list price=$350.00. Set inventory quantity=8. Save option; save section
+11. Add section 2: name=Custom Name; type=Text; Optional. If character limit available: set to 20; save section
+12. Add section 3: name=Custom Decal; type=File; Optional. If file types available: set to PNG, JPG; save section
+13. Publish and save product
+FRONTEND STEPS:
+14. Navigate to ${FRONT_URL} and open PDP for Test Config Custom Bike [YYYYMMDD]
+15. Verify all 3 sections displayed: Frame Material (radio; Required); Custom Name (text; Optional); Custom Decal (file; Optional)
+16. Select Carbon Fiber in Frame Material; verify price = $700.00 ($500 + $200)
+17. Type text: RIDER1 into the Custom Name field; verify accepted
+18. Upload a test PNG/JPG file using the Custom Decal upload control; verify upload succeeds
+19. Verify price is still $700.00 (text and file sections do not affect price)
+20. Set quantity to 1; click Add to Cart; verify no validation error
+21. Navigate to cart; verify product at $700.00
+22. Verify cart line item shows: Frame Material=Carbon Fiber; Custom Name=RIDER1; Custom Decal=uploaded file reference","- Product created with all three section types assigned to Configurable Products [YYYYMMDD] category
+- Widget displays Frame Material (Radio; Required) with 3 options; Custom Name (Text; Optional); Custom Decal (File; Optional)
+- Carbon Fiber selection produces price $700.00
+- Custom text RIDER1 and uploaded file accepted
+- All three configuration values preserved in cart line item
+- Price $700.00 correct",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-026,E2E: Mixed Section Validation — Required Radio Blocks Cart but Optional Text and File Do Not,Configurable Products > E2E Mixed Sections,Functional,Critical,10m,"CFG-E2E-025 completed. Product Test Config Custom Bike [YYYYMMDD] published at ${FRONT_URL}. Frame Material section is Required; Custom Name and Custom Decal sections are Optional.","ADMIN STEPS: None required.
+FRONTEND STEPS - ATTEMPT 1 (Radio unselected):
+1. Navigate to PDP for Test Config Custom Bike [YYYYMMDD] on ${FRONT_URL}
+2. Do not select any Frame Material option; leave Custom Name empty; do not upload any Custom Decal file
+3. Set quantity to 1; click Add to Cart
+4. Verify add-to-cart is blocked — validation error shown indicating Frame Material is required
+5. Verify no item is added to cart
+FRONTEND STEPS - ATTEMPT 2 (Radio selected only):
+6. Select Aluminum in Frame Material; verify price = $500.00
+7. Leave Custom Name field empty; do not upload any Custom Decal file
+8. Click Add to Cart
+9. Verify item is added successfully with no validation error (optional Text and File sections allow empty)
+10. Navigate to cart; verify product at $500.00
+11. Verify Frame Material=Aluminum shown in the line item
+12. Verify Custom Name and Custom Decal are blank or absent in the line item","- Required Radio section (Frame Material) blocks add-to-cart when unselected
+- Optional Text and File sections (Custom Name; Custom Decal) do not block add-to-cart when left empty
+- Selecting Radio only (Aluminum at $500.00) is sufficient to add to cart
+- Cart shows Frame Material=Aluminum at $500.00 with no values for the optional sections",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-027,E2E: Text Section Input — Special Characters and XSS Attempt Do Not Execute,Configurable Products > E2E Security,Security,Critical,15m,"CFG-E2E-017 completed. Product Test Config Engraved Ring [YYYYMMDD] published at ${FRONT_URL}. Browser DevTools console accessible.","ADMIN STEPS: None required.
+FRONTEND STEPS - INPUT A (HTML tags):
+1. Navigate to PDP for Test Config Engraved Ring [YYYYMMDD] on ${FRONT_URL}
+2. Open browser DevTools console (F12); clear any existing console messages
+3. Type into Engraving Text field: <b>bold</b>
+4. Set quantity to 1; click Add to Cart
+5. Verify input is sanitized (tags stripped or escaped as literal text) or rejected; no HTML rendering occurs in the field or cart
+6. Check DevTools console — verify no new JavaScript errors or unexpected output
+7. Navigate to cart; verify Engraving Text stored and displayed as literal text; NOT rendered bold
+FRONTEND STEPS - INPUT B (XSS script tag):
+8. Return to PDP; clear cart item if needed
+9. Type into Engraving Text field: <script>alert('xss')</script>
+10. Click Add to Cart
+11. Verify no alert dialog appears on PDP
+12. Navigate to cart; verify no alert dialog appears; value stored as escaped literal text; NOT executed as script
+13. Check DevTools console — verify no errors related to script injection
+FRONTEND STEPS - INPUT C (SQL injection):
+14. Return to PDP; clear cart item if needed
+15. Type into Engraving Text field: '; DROP TABLE products;--
+16. Click Add to Cart; verify input accepted as plain text string OR rejected with validation error
+17. Verify no server error (500) or database error returned
+18. Navigate to cart; if accepted: verify text stored as a literal string
+ADMIN VERIFICATION:
+19. Navigate to ${BACK_URL} > Orders; find orders created during this test
+20. Verify Engraving Text values stored as escaped/sanitized literal strings in order line item details; verify no script execution in admin UI","- HTML tags escaped or rejected — no rendering in field, cart, or admin
+- XSS script tag does not execute on PDP, cart, or admin pages — no alert dialog appears
+- SQL injection string stored as literal string — no server errors; no database corruption
+- DevTools console shows no injection-related JavaScript errors
+- Admin order detail shows sanitized values",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-028,E2E: Text Field Boundary Testing — Whitespace Only; Single Char; At-Limit; Over-Limit; Emoji,Configurable Products > E2E Security,Functional,High,12m,"CFG-E2E-017 completed. Product Test Config Engraved Ring [YYYYMMDD] published at ${FRONT_URL}. Character limit on Engraving Text section is 30 characters.","ADMIN STEPS: None required.
+FRONTEND STEPS - INPUT A (whitespace only):
+1. Navigate to PDP for Test Config Engraved Ring [YYYYMMDD] on ${FRONT_URL}
+2. Type three spaces into Engraving Text field
+3. Click Add to Cart
+4. Verify input is rejected with validation error (whitespace-only not valid) or trimmed to empty and blocked; product NOT added with blank engraving
+FRONTEND STEPS - INPUT B (single character):
+5. Clear field; type single character: A
+6. Click Add to Cart; verify item added to cart
+7. Navigate to cart; verify Engraving Text shows A; remove item
+FRONTEND STEPS - INPUT C (exactly at character limit):
+8. Return to PDP; type exactly 30 characters: ABCDEFGHIJKLMNOPQRSTUVWXYZ1234 (verify count is 30)
+9. Verify field accepts input without error or truncation
+10. Click Add to Cart; verify success; navigate to cart; verify full 30-character string preserved; remove item
+FRONTEND STEPS - INPUT D (over character limit):
+11. Return to PDP; type 31 characters: ABCDEFGHIJKLMNOPQRSTUVWXYZ12345
+12. Verify one of: (a) field refuses 31st character (hard limit in UI); (b) validation error on add-to-cart; (c) value truncated to 30 chars
+13. Verify product never stored with more than 30 characters
+FRONTEND STEPS - INPUT E (emoji):
+14. Return to PDP; clear field; type an emoji character into Engraving Text field
+15. Click Add to Cart
+16. Verify handled gracefully — either accepted and stored correctly or rejected with clear validation; no crash; no server error (500)
+17. Navigate to cart if accepted; verify emoji renders correctly in cart line item","- Whitespace-only input rejected or treated as empty
+- Single character A accepted
+- Exactly 30 characters accepted and preserved in full
+- 31+ characters prevented in UI or rejected at submission — stored value never exceeds 30 chars
+- Emoji input handled gracefully with no crash or server error",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-029,E2E: Text Field with Unicode and International Character Input,Configurable Products > E2E Security,Functional,Medium,10m,"CFG-E2E-017 completed. Product Test Config Engraved Ring [YYYYMMDD] published at ${FRONT_URL}.","ADMIN STEPS: None required.
+FRONTEND STEPS - INPUT A (Chinese characters):
+1. Navigate to PDP for Test Config Engraved Ring [YYYYMMDD] on ${FRONT_URL}
+2. Type into Engraving Text field: Chinese characters for Happy Birthday (via system IME or paste)
+3. Click Add to Cart
+4. Verify input accepted or rejected gracefully; if accepted: navigate to cart and verify Chinese characters render correctly without garbling; if rejected: clear validation message; no crash; no server error
+FRONTEND STEPS - INPUT B (Arabic text):
+5. Return to PDP; clear field (remove cart item if needed)
+6. Type into Engraving Text field: Arabic text for Congratulations (RTL text)
+7. Click Add to Cart
+8. Verify input accepted or rejected gracefully; if accepted: navigate to cart and verify Arabic characters render correctly; reading direction preserved or handled without garbling
+FRONTEND STEPS - INPUT C (mixed RTL and LTR):
+9. Return to PDP; clear field
+10. Type mixed input: Hello followed by Arabic characters followed by 2024
+11. Click Add to Cart; verify accepted or rejected gracefully
+12. If accepted: verify all characters stored and rendered without garbling in cart and admin order detail
+ADMIN VERIFICATION:
+13. Navigate to ${BACK_URL} > Orders; open any orders created during this test
+14. Verify all unicode text values stored and displayed correctly in admin order line item — no mojibake; no question marks replacing characters","- Unicode text inputs (Chinese; Arabic; mixed RTL/LTR) handled gracefully at all stages
+- If accepted: characters stored and rendered correctly in cart; order confirmation; and admin without garbling or encoding corruption
+- If rejected: clear validation message shown; no crash; no server error",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-030,E2E: File Upload — Invalid File Types Are Rejected,Configurable Products > E2E File Edge Cases,Security,Critical,12m,"CFG-E2E-021 completed. Product Test Config Custom Jersey [YYYYMMDD] published at ${FRONT_URL}. Custom Logo section accepts PNG and JPG only. Test files available: .exe; .pdf; .svg; and a file with no extension.","ADMIN STEPS: None required.
+FRONTEND STEPS - FILE A (.exe):
+1. Navigate to PDP for Test Config Custom Jersey [YYYYMMDD] on ${FRONT_URL}
+2. Attempt to upload a .exe file via the Custom Logo upload control
+3. Verify file rejected — error message shown (e.g. Invalid file type or Only PNG and JPG allowed)
+4. Verify upload area returns to empty state; no file reference shown
+5. Click Add to Cart; verify still blocked (required section still empty)
+FRONTEND STEPS - FILE B (.pdf):
+6. Attempt to upload a .pdf file via the Custom Logo upload control
+7. Verify file rejected with appropriate error message; no .pdf reference shown
+FRONTEND STEPS - FILE C (.svg):
+8. Attempt to upload a .svg file via the Custom Logo upload control
+9. Verify file rejected with appropriate error message (SVG not in accepted PNG/JPG list); no .svg reference shown
+FRONTEND STEPS - FILE D (no extension):
+10. Attempt to upload a file with no extension via the Custom Logo upload control
+11. Verify file rejected with appropriate error message
+12. After all four rejection attempts: verify no invalid file stored on server; click Add to Cart — verify still blocked (required section empty)
+13. Upload a valid PNG file; verify accepted; click Add to Cart; verify success","- All four invalid file types (.exe; .pdf; .svg; no extension) rejected with clear error messages
+- Upload area returns to empty state after each rejection
+- No invalid file stored server-side
+- Required section remains unfulfilled after rejected uploads — add-to-cart remains blocked
+- Valid PNG accepted and allows successful add-to-cart",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-031,E2E: File Upload — Oversized File Rejected and Edge-Case File Sizes Handled Correctly,Configurable Products > E2E File Edge Cases,Functional,High,12m,"CFG-E2E-021 completed. Product Test Config Custom Jersey [YYYYMMDD] published at ${FRONT_URL}. Custom Logo section has max file size of 2MB. Test files: slightly over 2MB; exactly 2MB; 0-byte empty file; corrupt/truncated image file.","ADMIN STEPS: None required.
+FRONTEND STEPS - FILE A (slightly over 2MB):
+1. Navigate to PDP for Test Config Custom Jersey [YYYYMMDD] on ${FRONT_URL}
+2. Attempt to upload a PNG/JPG file slightly over 2MB (e.g. 2.1MB)
+3. Verify file rejected with file size error message (e.g. File exceeds maximum size of 2MB)
+4. Verify upload area returns to empty state
+FRONTEND STEPS - FILE B (exactly at 2MB):
+5. Attempt to upload a PNG/JPG file exactly 2MB
+6. Verify file accepted (boundary value: at-limit is allowed)
+7. Verify upload completes with file name or thumbnail shown; reload PDP to reset for next sub-test
+FRONTEND STEPS - FILE C (0-byte empty file):
+8. Attempt to upload a 0-byte file with .png extension
+9. Verify file rejected with appropriate error (e.g. File is empty or File size must be greater than 0)
+10. Verify upload area returns to empty state
+FRONTEND STEPS - FILE D (corrupt image):
+11. Attempt to upload a file with .png or .jpg extension containing corrupt/truncated binary data
+12. Verify handled gracefully — rejected with clear error or accepted but flagged
+13. Verify no server error (500); browser does not crash or hang
+14. After all sub-tests: upload a valid within-limit PNG; verify accepted; click Add to Cart; verify success","- File over 2MB rejected with size error
+- File exactly at 2MB accepted
+- 0-byte file rejected with appropriate error
+- Corrupt image file handled gracefully with no server error and no browser crash
+- Valid within-limit file accepted and allows successful add-to-cart",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-032,E2E: File Upload — Special and Adversarial Filenames Handled Safely,Configurable Products > E2E File Edge Cases,Security,High,12m,"CFG-E2E-021 completed. Product Test Config Custom Jersey [YYYYMMDD] published at ${FRONT_URL}. Test PNG/JPG images available with filenames: one with spaces; one with special characters; one with 200+ char name; one with path traversal sequence.","ADMIN STEPS: None required.
+FRONTEND STEPS - FILENAME A (spaces in name):
+1. Navigate to PDP for Test Config Custom Jersey [YYYYMMDD] on ${FRONT_URL}
+2. Upload a valid PNG image file named: my logo.png
+3. Verify upload completes successfully or fails gracefully; no server error
+4. Navigate to cart after add-to-cart; verify file reference shown (filename may be sanitized to my_logo.png); remove item
+FRONTEND STEPS - FILENAME B (special characters):
+5. Return to PDP; upload a valid JPG image file named: logo@2x (final).jpg
+6. Verify upload completes successfully OR rejected with safe sanitization message; verify no server error
+7. If accepted: verify file reference shown in cart without server errors
+FRONTEND STEPS - FILENAME C (very long filename):
+8. Return to PDP; upload a valid PNG image with a filename of 200+ characters
+9. Verify upload completes successfully OR rejected/truncated gracefully; verify no server error (500); no unhandled exception; no UI breakage from excessively long string
+FRONTEND STEPS - FILENAME D (path traversal attempt):
+10. Return to PDP; upload a valid PNG image named: ../../etc/passwd.png (path traversal attempt in filename)
+11. Verify filename is sanitized server-side — file must NOT be stored at the traversal path
+12. Verify no server error (500) returned
+13. If accepted: verify file stored safely in expected upload directory with sanitized name
+14. Open DevTools Network tab; confirm server response does not reveal internal file system paths","- Files with spaces upload successfully or fail gracefully
+- Files with special characters accepted or safely rejected with no server error
+- Very long filenames truncated or rejected gracefully — no UI overflow or server crash
+- Path traversal filename sanitized — file NOT stored at a traversal path
+- No server errors (500) for any filename variant",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-033,E2E: Upload File Then Remove It Before Add-to-Cart Re-Enforces Required File Validation,Configurable Products > E2E File Edge Cases,Functional,High,10m,"CFG-E2E-021 completed. Product Test Config Custom Jersey [YYYYMMDD] published at ${FRONT_URL}. Custom Logo section is Required. A test PNG/JPG image file is available locally.","ADMIN STEPS: None required.
+FRONTEND STEPS:
+1. Navigate to PDP for Test Config Custom Jersey [YYYYMMDD] on ${FRONT_URL}
+2. Upload a valid PNG/JPG file using the Custom Logo upload control
+3. Verify upload completes successfully (file name or thumbnail shown)
+4. Locate the remove/delete/clear control for the uploaded file (X button; trash icon; or similar); click it to remove the uploaded file
+5. Verify upload area returns to its empty/default state — no file name or thumbnail shown
+6. Set quantity to 1; click Add to Cart
+7. Verify add-to-cart is blocked — validation error shown indicating Custom Logo is required
+8. Verify no item is added to cart
+9. Upload the same or a different valid PNG/JPG file again using the Custom Logo upload control
+10. Verify upload completes successfully
+11. Click Add to Cart
+12. Verify item added successfully with no validation error
+13. Navigate to cart; verify Custom Logo shows the re-uploaded file reference in the line item","- Removing an uploaded file from a required file section re-enforces the validation constraint
+- After removal: add-to-cart blocked with validation error
+- Re-uploading a valid file restores the ability to add to cart
+- Cart line item correctly shows the second upload file reference",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-034,E2E: Backend Price Validation — Client-Side DOM Manipulation Cannot Override Server-Calculated Option Price,Configurable Products > E2E Price Integrity,Security,Critical,15m,"CFG-E2E-001 completed. Product Test Config Bike [YYYYMMDD] published at ${FRONT_URL}. Browser DevTools accessible.","ADMIN STEPS: None required.
+FRONTEND STEPS:
+1. Navigate to PDP for Test Config Bike [YYYYMMDD] on ${FRONT_URL}
+2. Select Racing Seat in Choose Upgrade section; verify displayed price = $295.00
+3. Open browser DevTools (F12); switch to Elements panel
+4. Locate the price display element showing $295.00 in the DOM
+5. Double-click the price text node or edit the element's inner text/attribute to change the displayed value to $1.00
+6. Verify the DOM now shows $1.00 on the page (confirming client-side manipulation applied)
+7. Without refreshing the page; set quantity to 1 and click Add to Cart
+8. Open DevTools Network tab; find the add-to-cart API request; inspect the request payload; note the option ID submitted
+9. Navigate to cart; verify cart line item price is $295.00 (server-calculated); NOT $1.00 (manipulated client value)
+10. Verify cart total reflects $295.00
+11. Proceed to checkout order summary; verify line item price is $295.00
+12. Verify at no point does the system accept $1.00 as the price for Racing Seat","- Server-calculated price $295.00 used throughout regardless of client-side DOM manipulation
+- Cart and checkout show $295.00
+- Manipulated $1.00 display value never persisted or accepted by the backend
+- Price integrity enforced server-side",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-035,E2E: API-Level Add-to-Cart Rejects Invalid and Cross-Product Option IDs,Configurable Products > E2E Price Integrity,Security,Critical,20m,"CFG-E2E-001 completed. Product Test Config Bike [YYYYMMDD] published at ${FRONT_URL}. CFG-E2E-004 completed (Test Config Laptop [YYYYMMDD] exists as a separate product). Browser DevTools Network tab accessible.","ADMIN STEPS: None required.
+FRONTEND STEPS - CAPTURE BASELINE REQUEST:
+1. Navigate to PDP for Test Config Bike [YYYYMMDD] on ${FRONT_URL}
+2. Open DevTools Network tab; select Basic Seat; click Add to Cart
+3. In Network tab find and inspect the add-to-cart API request (POST to cart endpoint)
+4. Copy the full request URL; headers; and body payload; note the option ID used for Basic Seat
+FRONTEND STEPS - ATTEMPT A (non-existent option ID):
+5. Open DevTools Console or Fetch/XHR replay tool
+6. Replay the captured add-to-cart request but replace the option ID with a random non-existent GUID (e.g. 00000000-0000-0000-0000-000000000001)
+7. Verify server returns an error response (HTTP 400 or 422); NOT a 200 success
+8. Verify no item added to cart for this invalid option
+FRONTEND STEPS - ATTEMPT B (option ID from a different product):
+9. Navigate to PDP for Test Config Laptop [YYYYMMDD]; select RAM=16GB; capture the add-to-cart request; note the option ID for 16GB RAM
+10. Replay the bike add-to-cart request but substitute the laptop option ID (16GB RAM) as the option for the bike
+11. Verify server returns an error response — cross-product option substitution must be rejected
+12. Verify no item added to cart with the mismatched option
+FRONTEND STEPS - ATTEMPT C (missing required section):
+13. Replay the add-to-cart request for Test Config Bike [YYYYMMDD] but omit the Choose Upgrade section entirely from the payload
+14. Note: Choose Upgrade is Optional so this may succeed — document actual behavior; cross-reference with CFG-E2E-005 which uses Required sections for the definitive omission test
+15. Verify no server errors (500) for any of the above attempts — only structured 4xx responses","- Non-existent option IDs rejected by backend with 4xx error response
+- Option IDs from a different product rejected — cross-product option substitution not accepted
+- Missing required sections handled consistently per product configuration rules
+- No 500 server errors returned
+- Cart does not contain any items from invalid API requests",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-036,E2E: API-Level Add-to-Cart with Negative and Zero Quantity Rejected by Backend,Configurable Products > E2E Price Integrity,Security,High,12m,"CFG-E2E-001 completed. Product Test Config Bike [YYYYMMDD] published at ${FRONT_URL}. Browser DevTools Network tab accessible.","ADMIN STEPS: None required.
+FRONTEND STEPS - CAPTURE BASELINE REQUEST:
+1. Navigate to PDP for Test Config Bike [YYYYMMDD] on ${FRONT_URL}; open DevTools Network tab
+2. Select Basic Seat; set quantity to 1; click Add to Cart
+3. In Network tab find and inspect the add-to-cart API request; copy the request URL; headers; and body; note the quantity field value
+FRONTEND STEPS - ATTEMPT A (negative quantity):
+4. Replay the captured add-to-cart request but change the quantity field to -1
+5. Verify server returns error response (HTTP 400 or 422); NOT a 200 success
+6. Navigate to cart; verify no item with quantity -1 has been added
+FRONTEND STEPS - ATTEMPT B (zero quantity):
+7. Replay the request with quantity=0
+8. Verify server returns error response; NOT a 200 success
+9. Navigate to cart; verify no item with quantity 0 has been added
+FRONTEND STEPS - ATTEMPT C (extremely large quantity):
+10. Replay the request with quantity=999999
+11. Verify server either rejects with error (exceeds stock or hard limit) or caps quantity at available stock
+12. Navigate to cart; verify quantity is NOT 999999; document actual behavior
+13. After all attempts: clear cart; add bike with Basic Seat at quantity=1 via normal UI flow; verify standard add-to-cart still works correctly","- Negative quantity (-1) rejected with 4xx error response
+- Zero quantity (0) rejected with 4xx error response
+- Extremely large quantity (999999) either rejected or capped at available stock — never stored as-is
+- Cart not contaminated with any invalid quantity items
+- Normal add-to-cart at quantity=1 continues to work",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-037,E2E: Admin Edits Option Price While Product Is in User Cart — Checkout Uses Current Price,Configurable Products > E2E Concurrency,Functional,Critical,20m,"CFG-E2E-001 completed. Product Test Config Bike [YYYYMMDD] published at ${FRONT_URL}. Admin logged in at ${BACK_URL} in a separate browser session or tab. Registered customer account exists at ${FRONT_URL}.","FRONTEND STEPS (user session):
+1. Sign in at ${FRONT_URL} as registered customer
+2. Open PDP for Test Config Bike [YYYYMMDD]; select Premium Seat; verify price = $245.00 ($200 + $45)
+3. Set quantity to 1; click Add to Cart
+4. Navigate to cart; verify line item: Test Config Bike [YYYYMMDD] with Premium Seat at $245.00; do NOT proceed to checkout yet
+ADMIN STEPS (concurrent admin session):
+5. In a separate browser tab; navigate to ${BACK_URL} and log in as ${ADMIN}
+6. Open Test Config Bike [YYYYMMDD] in Catalog > Products; navigate to configurable/configuration tab
+7. Find Premium Seat option in Choose Upgrade section; edit list price from $45.00 to $75.00; save option; save product
+8. Verify admin shows Premium Seat price is now $75.00
+FRONTEND STEPS (return to user session):
+9. Return to the user browser tab showing the cart
+10. Observe cart line item for Test Config Bike [YYYYMMDD] with Premium Seat; note displayed price ($245.00 or $275.00); document actual behavior
+11. Proceed to Checkout
+12. On checkout order summary page: verify the line item price for Premium Seat
+13. Verify checkout shows CURRENT server price ($275.00); NOT stale cached price ($245.00)
+14. Complete checkout with test payment at the displayed price
+15. Navigate to ${BACK_URL} > Orders; open the order
+16. Verify order line item price matches checkout price ($275.00); verify NOT placed at stale price $245.00","- Cart may display old price $245.00 immediately after admin edit (stale cache is acceptable)
+- Checkout page must recalculate and show current price $275.00 before order is placed
+- Order recorded at $275.00 (current price) not $245.00 (stale price)
+- No price discrepancy between checkout total and order total",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-038,E2E: Option Goes Out of Stock Between PDP Load and Add-to-Cart — Backend Rejects Stale Selection,Configurable Products > E2E Concurrency,Functional,Critical,15m,"CFG-E2E-009 completed. Product Test Config OOS Bike [YYYYMMDD] published at ${FRONT_URL}. Silver option has inventory quantity=8 (in stock). Admin logged in at ${BACK_URL} in a separate browser session or tab.","FRONTEND STEPS (user session — before stock change):
+1. Navigate to PDP for Test Config OOS Bike [YYYYMMDD] on ${FRONT_URL}
+2. Verify Silver option in Frame Color section is enabled and selectable
+3. Select Silver; verify price = $525.00
+4. Do NOT click Add to Cart yet — keep PDP open with Silver selected
+ADMIN STEPS (concurrent admin session):
+5. In a separate browser tab; navigate to ${BACK_URL} and log in as ${ADMIN}
+6. Open Test Config OOS Bike [YYYYMMDD] in Catalog > Products; navigate to configurable/configuration tab
+7. Find Silver option in Frame Color section; edit inventory quantity from 8 to 0; save option; save product
+8. Verify admin shows Silver option with inventory=0
+FRONTEND STEPS (return to user session — without refreshing PDP):
+9. Return to the user browser tab; PDP still shows Silver selected at $525.00 (stale state)
+10. Do NOT refresh the page; click Add to Cart with Silver still selected
+11. Verify server rejects the add-to-cart request — error message shown (e.g. Selected option is no longer available or Out of stock)
+12. Verify no item added to cart for the now-out-of-stock Silver option
+13. Reload PDP; verify Silver option now shown as disabled/greyed out (reflecting the stock change)
+14. Verify remaining in-stock options (Red; Blue) are still selectable","- Backend rejects add-to-cart request when selected option has gone out-of-stock between PDP load and cart submission
+- Error message shown to user
+- No item with out-of-stock option added to cart
+- After page reload; UI correctly reflects updated stock state with Silver disabled",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-039,E2E: Admin Deletes Option Currently in User Cart — Cart Handles Deleted Option Gracefully,Configurable Products > E2E Concurrency,Functional,Critical,15m,"CFG-E2E-001 completed. Product Test Config Bike [YYYYMMDD] has 4 options including Racing Seat. Admin logged in at ${BACK_URL} in a separate browser session or tab. Registered customer account exists at ${FRONT_URL}.","FRONTEND STEPS (user session — add to cart):
+1. Sign in at ${FRONT_URL} as registered customer
+2. Open PDP for Test Config Bike [YYYYMMDD]; select Racing Seat; verify price = $295.00
+3. Set quantity to 1; click Add to Cart
+4. Navigate to cart; verify line item: Test Config Bike [YYYYMMDD] with Racing Seat at $295.00; do NOT proceed to checkout yet
+ADMIN STEPS (concurrent admin session):
+5. In a separate browser tab; navigate to ${BACK_URL} and log in as ${ADMIN}
+6. Open Test Config Bike [YYYYMMDD] in Catalog > Products; navigate to configurable/configuration tab
+7. Find Racing Seat option; delete it; confirm deletion; save product
+8. Verify Racing Seat no longer appears in admin
+FRONTEND STEPS (return to user session — check cart):
+9. Return to user browser tab showing the cart
+10. Reload the cart page
+11. Observe behavior for the cart item referencing the now-deleted Racing Seat option
+12. Expected acceptable behaviors (document which one occurs): (a) item automatically removed from cart with informational message; OR (b) item shown with error/warning indicator (e.g. Configuration no longer available — please reconfigure); OR (c) item price recalculated to base price $200.00 with deleted option cleared
+13. Verify cart does NOT allow proceeding to checkout with the deleted option intact (no ghost option in checkout)
+14. Attempt to click Proceed to Checkout; verify either blocked with a message or the invalid item automatically removed before checkout loads","- Cart handles a deleted configuration option gracefully
+- Item either removed; flagged with error; or recalculated — never silently retained with an invalid deleted option
+- Proceeding to checkout with a deleted option is blocked or the item is corrected automatically
+- No unhandled errors or blank screens occur",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-040,E2E: Back Button After Add-to-Cart Returns to Functional PDP with No Stale Widget State,Configurable Products > E2E State Management,Functional,High,12m,"CFG-E2E-001 completed. Product Test Config Bike [YYYYMMDD] published at ${FRONT_URL}. Registered customer account exists at ${FRONT_URL}.","ADMIN STEPS: None required.
+FRONTEND STEPS:
+1. Sign in at ${FRONT_URL} as registered customer
+2. Open PDP for Test Config Bike [YYYYMMDD]; verify widget visible; select Premium Seat; verify price = $245.00
+3. Set quantity to 1; click Add to Cart; verify success notification
+4. Navigate to cart; verify Test Config Bike [YYYYMMDD] with Premium Seat at $245.00
+5. Click browser Back button to return to PDP
+6. Verify PDP loads correctly — no blank page; no error
+7. Verify Configure the parameters widget is visible and functional
+8. Verify widget state is reset to default (None at $200.00) OR retains previous selection (Premium Seat at $245.00) — document actual behavior
+9. In the widget; select Basic Seat; verify price updates to $215.00
+10. Set quantity to 1; click Add to Cart
+11. Navigate to cart; observe and document whether cart contains: (a) TWO separate line items (Premium Seat at $245 and Basic Seat at $215) with subtotal $460.00; OR (b) ONE updated line item with Basic Seat at $215.00
+12. Verify no JavaScript console errors occurred during the back-navigation flow
+13. Verify cart total is arithmetically correct for whichever behavior is observed","- PDP loads correctly after browser Back button press — no error or blank page
+- Configuration widget is functional
+- A second Add to Cart creates either a new separate line item or updates the existing one — both acceptable
+- Cart total is arithmetically correct
+- No JavaScript console errors occur during the back-navigation flow",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-041,E2E: Same Product Added to Cart Twice with Different Configurations Creates Separate Line Items,Configurable Products > E2E State Management,Functional,Critical,10m,"CFG-E2E-001 completed. Product Test Config Bike [YYYYMMDD] published at ${FRONT_URL}. Registered customer account exists at ${FRONT_URL}.","ADMIN STEPS: None required.
+FRONTEND STEPS:
+1. Sign in at ${FRONT_URL} as registered customer; ensure cart is empty
+2. Open PDP for Test Config Bike [YYYYMMDD]; select None (default); verify price = $200.00
+3. Set quantity to 1; click Add to Cart; verify item added
+4. Return to PDP for Test Config Bike [YYYYMMDD] (use browser Back or navigate directly)
+5. Select Racing Seat in Choose Upgrade; verify price = $295.00
+6. Set quantity to 1; click Add to Cart; verify item added
+7. Navigate to cart
+8. Verify cart contains TWO separate line items for Test Config Bike [YYYYMMDD]: line item 1 with Choose Upgrade=None at $200.00; and line item 2 with Choose Upgrade=Racing Seat at $295.00
+9. Verify the two items are NOT merged into a single line item with quantity=2
+10. Verify cart subtotal = $495.00 ($200.00 + $295.00)
+11. Verify each line item can be independently updated or removed; remove the Racing Seat item
+12. Verify only the None item at $200.00 remains; subtotal = $200.00","- Two add-to-cart actions with different configurations create TWO separate and distinct cart line items
+- Items are not merged; subtotal = $495.00
+- Each line item correctly shows its own configuration
+- Independent removal of one item works correctly and does not affect the other",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-042,E2E: Guest Adds Configured Product to Cart Then Signs In — Cart Merge Preserves Configuration,Configurable Products > E2E State Management,Functional,Critical,15m,"CFG-E2E-001 completed. Product Test Config Bike [YYYYMMDD] published at ${FRONT_URL}. A registered customer account exists (credentials available). Guest session (not logged in) at start.","ADMIN STEPS: None required.
+FRONTEND STEPS - GUEST SESSION:
+1. Ensure no user is signed in at ${FRONT_URL} (guest session); clear cookies if needed
+2. Open PDP for Test Config Bike [YYYYMMDD] as a guest (not logged in)
+3. Select Premium Seat in Choose Upgrade; verify price = $245.00
+4. Set quantity to 1; click Add to Cart
+5. Verify item added to cart without requiring login
+6. Navigate to cart; verify Test Config Bike [YYYYMMDD] with Premium Seat at $245.00 shown in guest cart
+FRONTEND STEPS - SIGN IN AND CART MERGE:
+7. Sign in using the registered customer account (use sign-in link from cart page or header)
+8. After successful sign-in; navigate to the cart
+9. Verify Test Config Bike [YYYYMMDD] with Premium Seat configuration at $245.00 is still present — configured item must NOT be lost during guest-to-authenticated cart merge
+10. Verify Choose Upgrade=Premium Seat correctly shown on the line item
+11. Verify price is $245.00; verify cart total is correct
+12. Proceed to Checkout; verify configured item (Premium Seat at $245.00) shown in checkout order summary","- Guest cart with configured product (Premium Seat at $245.00) correctly preserved after user signs in
+- Cart merge does not discard the configuration
+- Choose Upgrade=Premium Seat and price $245.00 intact in post-login cart and on checkout page",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-043,E2E: Hard Reload on Checkout Page Does Not Lose Configured Product or Configuration Details,Configurable Products > E2E State Management,Functional,High,12m,"CFG-E2E-010 completed (product Test Config Checkout Bike [YYYYMMDD] exists with Wheels section). Registered customer account exists at ${FRONT_URL}. Checkout and payment configured in QA environment.","ADMIN STEPS: None required.
+FRONTEND STEPS:
+1. Sign in at ${FRONT_URL} as registered customer; ensure cart is empty
+2. Open PDP for Test Config Checkout Bike [YYYYMMDD]
+3. Select Sport Wheels in Wheels section; verify price = $200.00
+4. Set quantity to 1; click Add to Cart
+5. Navigate to cart; verify line item: Test Config Checkout Bike [YYYYMMDD] with Sport Wheels at $200.00
+6. Click Proceed to Checkout; verify checkout page loads
+7. Verify order summary shows Test Config Checkout Bike [YYYYMMDD] with Wheels=Sport Wheels at $200.00
+8. Perform a hard reload of the checkout page (Ctrl+Shift+R or Cmd+Shift+R)
+9. Verify checkout page reloads without crashing (no blank screen; no redirect to homepage)
+10. Verify order summary still shows Test Config Checkout Bike [YYYYMMDD] with Wheels=Sport Wheels at $200.00 after reload
+11. Verify configured item has not been lost or reverted to unconfigured state
+12. Complete checkout with test payment
+13. Verify order confirmation page shows correct order total $200.00 with Sport Wheels noted
+14. Navigate to Account > Order History; verify order shows $200.00 with Sport Wheels","- Checkout page reloads correctly after hard reload (Ctrl+Shift+R) without crashing
+- Configured product (Sport Wheels at $200.00) preserved in checkout order summary after reload
+- Checkout completes successfully at $200.00 with Sport Wheels
+- Order history confirms correct configuration and price",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-044,E2E: Reorder Previously Purchased Configurable Product from Order History,Configurable Products > E2E Reorder & Wishlist,Functional,High,15m,"CFG-E2E-010 completed and the order for Test Config Checkout Bike [YYYYMMDD] with Sport Wheels at $200.00 is visible in Account > Order History. Registered customer account exists at ${FRONT_URL}.","ADMIN STEPS: None required.
+FRONTEND STEPS:
+1. Sign in at ${FRONT_URL} as the registered customer who placed the CFG-E2E-010 order
+2. Navigate to Account > Order History
+3. Find the order for Test Config Checkout Bike [YYYYMMDD] with Sport Wheels at $200.00
+4. Check whether a Reorder button or link is available on the order detail page or order list
+5. If Reorder is available: click it and observe behavior; verify whether: (a) product added to cart WITH original Sport Wheels configuration at $200.00; OR (b) product added to cart WITHOUT configuration (base price $150.00) and requires user to reconfigure; document which behavior occurs
+6. Navigate to cart; inspect the line item for Test Config Checkout Bike [YYYYMMDD]; verify the price and configuration shown
+7. If item added without configuration (case b): verify cart item shows reconfiguration prompt or configuration widget accessible from cart
+8. If Reorder is NOT available: document the absence; verify user can manually navigate to PDP and re-add the configured product
+9. Regardless of flow: verify cart total is arithmetically correct and checkout can be initiated without errors","- Reorder function (if present) adds the configurable product to the cart
+- Actual configuration behavior (preserved vs. requires reconfiguration) is documented
+- Cart total is arithmetically correct
+- No errors occur during the reorder flow
+- Checkout can be initiated from the resulting cart state",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-045,E2E: Add Configured Product to Wishlist and Add to Cart from Wishlist Preserves Configuration,Configurable Products > E2E Reorder & Wishlist,Functional,Medium,12m,"CFG-E2E-001 completed. Product Test Config Bike [YYYYMMDD] published at ${FRONT_URL}. Registered customer account exists at ${FRONT_URL}. Wishlist feature is enabled on the storefront.","ADMIN STEPS: None required.
+FRONTEND STEPS:
+1. Sign in at ${FRONT_URL} as registered customer; ensure cart is empty
+2. Open PDP for Test Config Bike [YYYYMMDD]
+3. Select Racing Seat in Choose Upgrade; verify price = $295.00
+4. Locate the Add to Wishlist button or heart icon on the PDP
+5. Verify the Racing Seat selection is active; click Add to Wishlist; verify success confirmation (e.g. Added to wishlist toast or icon changes to filled)
+6. Navigate to Wishlist page (Account > Wishlist or wishlist icon in header)
+7. Verify Test Config Bike [YYYYMMDD] appears in the wishlist
+8. Inspect whether wishlist item shows the Racing Seat configuration or shows the product without configuration details; document actual behavior
+9. Click Add to Cart from the wishlist item
+10. Navigate to cart; inspect line item for Test Config Bike [YYYYMMDD]
+11. If wishlist preserved configuration: verify cart shows Racing Seat at $295.00
+12. If wishlist did NOT preserve configuration: verify cart item shows base product at $200.00 and user is prompted to configure before checkout
+13. Verify no JavaScript errors or server errors occurred during the wishlist add and cart add flow","- Wishlist add and cart-from-wishlist flow completes without errors
+- Actual configuration preservation behavior (Racing Seat preserved vs. base product added) is documented
+- Cart total is arithmetically correct
+- No JavaScript or server errors occur",TP_CONFIGURABLE_PRODUCTS_001,Manual
+CFG-E2E-046,E2E: Add Configured Product with Quantity Exceeding Option Stock — Backend Enforces Stock Limit,Configurable Products > E2E Quantity Edge Cases,Functional,Critical,10m,"CFG-E2E-001 completed. Product Test Config Bike [YYYYMMDD] published at ${FRONT_URL}. Racing Seat option has inventory quantity=2. NOTE: this is intentional low-stock for this edge-case test.","ADMIN STEPS (verify stock):
+1. Navigate to ${BACK_URL} and log in as ${ADMIN}
+2. Open Test Config Bike [YYYYMMDD] in Catalog > Products; navigate to configurable/configuration tab
+3. Verify Racing Seat option shows inventory quantity=2; if changed by a previous test run; reset it to 2 before proceeding
+FRONTEND STEPS:
+4. Navigate to PDP for Test Config Bike [YYYYMMDD] on ${FRONT_URL}
+5. Select Racing Seat in Choose Upgrade; verify price = $295.00
+6. Locate the quantity input field on the PDP; set quantity to 5 (exceeds available stock of 2 for Racing Seat)
+7. Click Add to Cart
+8. Verify one of the following expected behaviors: (a) add-to-cart blocked with stock error message (e.g. Only 2 available for Racing Seat); OR (b) quantity automatically capped at 2 and item added with quantity=2 with informational message
+9. Verify system does NOT silently add item with quantity=5 when only 2 are in stock
+10. Navigate to cart; verify no line item exists for quantity=5 Racing Seat
+11. If quantity was capped at 2: verify line item shows quantity=2 at $590.00 (2 x $295.00)
+12. Attempt to manually update cart quantity from 2 to 5 directly in the cart; verify same stock enforcement applies","- Ordering quantity 5 of Racing Seat (stock=2) is either blocked with stock error or capped at 2
+- System never silently accepts quantity=5 when only 2 units are available
+- Cart quantity never exceeds available stock for the selected option
+- Stock enforcement applies both on PDP add-to-cart and cart quantity update",TP_CONFIGURABLE_PRODUCTS_001,Manual
