@@ -22,9 +22,9 @@ npm run env:check        # Verify all required env vars (29 total) via get_varia
 npm run ci:regression    # Run CI regression via Claude Agent SDK (npx tsx ci/run-regression.ts)
 npm run ci:smoke         # Run smoke tests only (suite 01)
 npm run ci:critical      # Run critical P0 suites (01, 06, 08, 14)
-npm run ci:frontend      # Run all frontend suites (01-13)
-npm run ci:backend       # Run all backend suites (14-17)
-npm run ci:full          # Run full regression (all 17 suites, $80 budget)
+npm run ci:frontend      # Run all frontend suites (01-13, 35-36)
+npm run ci:backend       # Run all backend suites (14-34)
+npm run ci:full          # Run full regression (all 36 suites, $80 budget)
 npm run ci:notify        # Send Teams notification (requires TEAMS_WEBHOOK_URL)
 ```
 
@@ -49,9 +49,14 @@ Access via `config.js`: `import { env } from './config.js'`
 
 ```
 vc-mcp-testing-module/
-├── .claude/agents/          # Claude Code agent configurations (7 agents)
-├── .mcp.json                # MCP server configuration
+├── .claude/agents/          # Claude Code agent configurations (7 agents, gitignored)
+├── .mcp.json                # MCP server configuration (tracked but OS-specific)
 ├── config/                  # Playwright MCP browser configs + test-suites.json manifest
+├── ci/                      # CI regression (Docker + Claude Agent SDK, gitignored)
+│   ├── agents/              # CI-specific agent definitions (3 agents)
+│   ├── config/              # Headless browser config for CI
+│   ├── run-regression.ts    # Orchestrator script
+│   └── notify-teams.ts      # Teams webhook notifications
 ├── docs/prompts/            # LLM prompt templates for QA automation
 ├── docs/guides/             # Testing guides (e.g., Storybook testing)
 ├── storybook/               # Visual regression baselines (Atomic Design: atoms/molecules/organisms)
@@ -60,12 +65,11 @@ vc-mcp-testing-module/
 ├── tests/                   # Test cases organized by sprint and JIRA ticket
 ├── reports/                 # Bug reports and regression test reports
 ├── archive/sprints/         # Historical sprint test cases
-├── ci/                      # CI regression testing (Docker + Claude Agent SDK)
 ├── config.js                # Environment configuration (loads .env)
 └── sitemap.md               # Site structure reference
 ```
 
-**Gitignored (not in repo):** `.claude/`, `settings.json`, `.env`, `test-results/`, `.serena/`, `.playwright-mcp/`
+**Gitignored:** `.claude/`, `settings.json`, `.env`, `test-results/`, `.serena/`, `.playwright-mcp/`, `ci/`, `.github/`
 
 **Tracked but local-specific:** `.mcp.json` and `config/` are tracked in git. After cloning, verify MCP configs match your local setup (Windows uses `cmd /c npx`, Linux/Mac uses `npx` directly).
 
@@ -75,21 +79,21 @@ vc-mcp-testing-module/
 Load a prompt template from `docs/prompts/`, execute via MCP browser tools with DevTools monitoring. After each flow: export HAR, capture console logs, take screenshots. Generate bug reports in `reports/bugs/`.
 
 ### 2. CI Regression via Claude Agent SDK
-`ci/run-regression.ts` orchestrates headless regression using `@anthropic-ai/claude-agent-sdk`. It reads suite CSVs from `regression/suites/Frontend/` and `regression/suites/Backend/`, injects them into prompts with agent instructions from `ci/agents/`, and runs them in parallel batches (up to 3 concurrent) against headless Chrome MCP server. Results are tracked in `reports/regression/history.json` for trend analysis. Teams notifications are sent via `ci/notify-teams.ts`.
+`ci/run-regression.ts` orchestrates headless regression using `@anthropic-ai/claude-agent-sdk`. It reads suite CSVs from `regression/suites/`, injects them into prompts with agent instructions from `ci/agents/` (3 CI-specific agent definitions: `qa-frontend-expert.md`, `qa-backend-expert.md`, `qa-testing-expert.md`), and runs suites in parallel batches (up to 3 concurrent, configurable via `MAX_PARALLEL`). Results are tracked in `reports/regression/history.json` (90-day rolling window). Teams notifications via `ci/notify-teams.ts`.
 
 **Regression Orchestration Pipeline (interactive mode):**
 1. `regression-orchestrator` agent reads `config/test-suites.json` manifest
 2. Resolves suite selection (`smoke`, `critical`, `sprint`, `full`, or comma-separated IDs)
 3. Assigns suites to browser pool slots (3 slots: chrome, firefox, edge)
-4. Spawns sub-agents using `docs/prompts/test-runner-agent.md` template with substituted parameters
+4. Spawns sub-agents using `docs/prompts/test-runner-agent.md` template with substituted parameters (`{{SUITE_ID}}`, `{{BROWSER_SERVER}}`, `{{ENVIRONMENT_URL}}`, `{{OUTPUT_FILE}}`, etc.)
 5. Each sub-agent gets an isolated browser context, executes all test cases from its CSV, writes JSON results
 6. Orchestrator collects results, handles retries with browser fallback chain, produces consolidated report
 
 ### Test Suite Manifest: `config/test-suites.json`
 Central configuration for regression orchestration. Defines:
 - **Browser pool**: 3 slots (playwright-chrome, playwright-firefox, playwright-edge) with fallback chain
-- **Suite definitions**: id, name, CSV file path, priority, test count, assigned agent type, tags (17 suites: 13 frontend + 4 backend)
-- **Selection groups**: `smoke` (01), `critical` (01,06,08,14), `sprint` (01-06,08,14,16), `full` (all 17), `frontend` (01-13), `backend` (14-17)
+- **Suite definitions**: 36 suites (15 frontend + 21 backend) with id, name, CSV file path, priority, test count, assigned agent type, and tags
+- **Selection groups**: `smoke` (01), `critical` (01,06,08,14), `sprint` (26 suites), `full` (all 36), `frontend` (01-13,35-36), `backend` (14-34)
 - **Defaults**: max 3 parallel agents, 2 retries, 30s retry delay, HAR capture enabled
 
 ## MCP Servers (configured in .mcp.json)
@@ -100,8 +104,6 @@ Central configuration for regression orchestration. Defines:
 | **playwright-firefox** | Browser automation with Firefox | `config/mcp-playwright-firefox.config.json` |
 | **playwright-edge** | Browser automation with Edge | `config/mcp-playwright-edge.config.json` |
 | **postman** | API testing - collections, environments, monitors | N/A (uses `--minimal` flag) |
-
-**Postman MCP** tools: `searchPostmanElements`, `getCollection`, `runCollection`, `getEnvironment`, `createCollection`
 
 Additional MCP servers (configured at user level, not in `.mcp.json`):
 - **Chrome DevTools MCP** - Console logs, network requests, performance tracing, HAR export
@@ -118,7 +120,7 @@ Additional MCP servers (configured at user level, not in `.mcp.json`):
 
 ## Claude Code Specialized Agents
 
-Seven agents in `.claude/agents/` for QA tasks:
+Seven agents in `.claude/agents/` for interactive QA tasks:
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
@@ -156,7 +158,7 @@ If more than 3 agents need browsers simultaneously, run them in sequential batch
 
 Key prompt templates in `docs/prompts/`:
 - `full-regression-qa-agent.md` - Complete Admin + Frontend regression
-- `test-runner-agent.md` - Suite execution template with parameterized placeholders (`{{SUITE_ID}}`, `{{BROWSER_SERVER}}`, etc.) for regression orchestrator
+- `test-runner-agent.md` - Suite execution template with parameterized placeholders (`{{SUITE_ID}}`, `{{BROWSER_SERVER}}`, `{{ENVIRONMENT_URL}}`, `{{OUTPUT_FILE}}`, etc.) for regression orchestrator
 - `storybook-testing.md` - Component testing
 - `platform-tests.md` - Backend/API testing
 - `How to test Builder.io.md` - Builder.io, Virto Pages & vc-frontend testing
@@ -165,46 +167,70 @@ Key prompt templates in `docs/prompts/`:
 
 ## Regression Test Suites
 
+36 suites total in `regression/suites/` in TestRail CSV format (`ID, Title, Section, Type, Priority, Estimate, Preconditions, Steps, Expected Result, References, Automation Status`).
+
 ### Frontend Suites (regression/suites/Frontend/)
 
-14 CSV files in TestRail CSV format:
-
-| Suite | Tests | Priority | Use Case |
-|-------|-------|----------|----------|
-| 00-full-regression-release | 90 | P0 | Composite suite for full release regression |
-| 01-smoke-tests | 12 | P0 | Daily validation before deployment |
-| 02-authentication-tests | 28 | P1 | Login, SSO, password management |
-| 03-catalog-search-tests | 23 | P1 | Browsing, filters, search |
-| 04-cart-checkout-tests | 31 | P1 | Cart ops, checkout flow |
-| 05-bopis-pickup-tests | 27 | P1 | Buy Online Pickup In Store |
-| 06-payment-tests | 28 | P0 | All payment processors |
-| 07-google-analytics-tests | 24 | P2 | GA4 event tracking |
-| 08-security-tests | 18 | P0 | PCI compliance, auth security |
-| 09-accessibility-tests | 23 | P1 | WCAG 2.1 AA compliance |
-| 10-localization-tests | 21 | P2 | 13 languages |
-| 11-performance-tests | 20 | P2 | Load times, Core Web Vitals |
-| 12-browser-compatibility-tests | 21 | P1 | Cross-browser matrix |
-| 13-b2c-features-tests | 49 | P1 | B2C variations, wishlists, compare, reviews |
+| Suite | Name | Priority | Tags |
+|-------|------|----------|------|
+| 01 | Smoke Tests | P0 | smoke, daily, pre-deploy |
+| 02 | Authentication Tests | P1 | auth, security |
+| 03 | Catalog & Search Tests | P1 | catalog, search |
+| 04 | Cart & Checkout Tests | P1 | cart, checkout, revenue-critical |
+| 05 | BOPIS Pickup Tests | P1 | bopis, pickup |
+| 06 | Payment Tests | P0 | payment, revenue-critical |
+| 07 | Google Analytics Tests | P2 | analytics, ga4 |
+| 08 | Security Tests | P0 | security, pci |
+| 09 | Accessibility Tests | P1 | wcag, a11y |
+| 10 | Localization Tests | P2 | i18n, languages |
+| 11 | Performance Tests | P2 | core-web-vitals |
+| 12 | Browser Compatibility Tests | P1 | cross-browser |
+| 13 | B2C Features Tests | P1 | b2c, variations, wishlists |
+| 35 | Frontend White Labeling Tests | P1 | whitelabeling, branding, responsive |
+| 36 | Configurable Products Tests | P1 | configurable-products, e2e |
 
 ### Backend Suites (regression/suites/Backend/)
 
-4 CSV files covering platform APIs, GraphQL, Admin SPA, and module configuration:
+| Suite | Name | Priority | Tags |
+|-------|------|----------|------|
+| 14 | Platform API Tests | P0 | api, rest, daily |
+| 15 | GraphQL xAPI Tests | P1 | graphql, xapi |
+| 16 | Catalog Admin Tests | P1 | catalog, admin, configurable-products |
+| 17 | Platform Core Tests | P1 | users, roles, dynamic-properties, healthcheck |
+| 18 | Store Admin Tests | P1 | store, configuration |
+| 19 | Pricing Admin Tests | P1 | pricing, pricelists |
+| 20 | Orders Admin Tests | P1 | orders, payments, shipments |
+| 21 | Customer Admin Tests | P1 | contacts, organizations |
+| 22 | Inventory Admin Tests | P1 | inventory, fulfillment |
+| 23 | Marketing Admin Tests | P1 | promotions, coupons, content |
+| 24 | Notifications Admin Tests | P1 | email, sms, templates |
+| 25 | CMS & Page Builder Tests | P1 | cms, pagebuilder |
+| 26 | Search & Indexing Tests | P1 | elastic, lucene, filters |
+| 27 | Assets Module Tests | P1 | upload, blob-storage |
+| 28 | Core Settings Tests | P2 | permissions, languages |
+| 29 | CSV Export Import Tests | P1 | csv, import, export |
+| 30 | Shipping Module Tests | P1 | shipping, bopis, rates |
+| 31 | SEO Module Tests | P1 | seo, redirects, slug |
+| 32 | White Labeling Tests | P2 | whitelabeling, branding |
+| 33 | Push Messages Tests | P2 | push-messages, notifications |
+| 34 | Image Tools Tests | P2 | thumbnails, resize |
 
-| Suite | Tests | Priority | Use Case |
-|-------|-------|----------|----------|
-| 14-platform-api-tests | 25 | P0 | REST API: Catalog, Pricing, Inventory, Orders, Customer CRUD |
-| 15-graphql-xapi-tests | 20 | P1 | GraphQL xAPI: xCart, xCatalog, xOrder, xCMS queries/mutations |
-| 16-admin-spa-tests | 25 | P1 | Admin SPA: Login, Catalog CRUD, Order management, Settings |
-| 17-module-config-tests | 15 | P2 | Module management, Cache, Search index, Import/Export |
+### Selection Groups (from test-suites.json)
 
-**Execution strategies:** Daily smoke (suite 01, ~30min), Critical P0 (01+06+08+14, ~2hrs), Sprint (01-06+08+14+16, ~4hrs), Full regression (all 17 suites, ~8hrs with parallelism)
+| Selection | Suites | Use Case |
+|-----------|--------|----------|
+| `smoke` | 01 | Daily validation before deployment |
+| `critical` | 01, 06, 08, 14 | P0 suites only |
+| `sprint` | 26 suites (01-06, 08, 14-27, 29-31, 35-36) | Before sprint release |
+| `full` | All 36 | Before production release |
+| `frontend` | 01-13, 35-36 | Frontend-only regression |
+| `backend` | 14-34 | Backend-only regression |
 
 ## CI Regression Testing
 
 The `ci/` directory provides Docker-based CI regression using the Claude Agent SDK:
 
 ```bash
-# Build and run locally
 docker build -t vc-regression -f ci/Dockerfile .
 docker run --rm --shm-size=2gb --env-file .env \
   -e ANTHROPIC_API_KEY=your-key \
@@ -214,14 +240,16 @@ docker run --rm --shm-size=2gb --env-file .env \
   vc-regression
 ```
 
-Suite selection: `smoke` (01), `critical` (01,06,08,14), `sprint` (01-06,08,14,16), `full` (all 17), `frontend` (01-13), `backend` (14-17), or comma-separated IDs (`01,04,06`). CI runs up to 3 suites in parallel (configurable via `MAX_PARALLEL`). Reports are written to `reports/regression/ci-YYYY-MM-DD/` (markdown + JSON summary). Result history tracked in `reports/regression/history.json` (90-day rolling window).
+Suite selection accepts the same group names as above, or comma-separated IDs (`01,04,06`). CI runs up to 3 suites in parallel (configurable via `MAX_PARALLEL`). Reports go to `reports/regression/ci-YYYY-MM-DD/` (markdown + JSON summary).
 
-**Scheduled Pipeline (GitHub Actions):**
+**Note:** The CI `run-regression.ts` has its own `SUITE_MAP` (suites 00-17) that is a subset of the full `test-suites.json` manifest (36 suites). The CI script needs updating to cover the newer backend suites (18-34) and frontend suites (35-36).
+
+**Scheduled Pipeline (GitHub Actions - `.github/workflows/regression.yml`):**
 - **Daily smoke**: Mon-Fri at 6:00 AM UTC — runs suite 01 ($5 budget)
-- **Weekly full regression**: Sunday at 2:00 AM UTC — runs all 17 suites ($80 budget)
+- **Weekly full regression**: Sunday at 2:00 AM UTC — runs all suites ($80 budget)
 - **Manual trigger**: Any selection, any environment, any budget via `workflow_dispatch`
 
-**Teams Notifications:** After each pipeline run, `ci/notify-teams.ts` sends an Adaptive Card to the configured Teams webhook with pass/fail summary, cost, duration, and a link to the GitHub Actions run. Requires `TEAMS_WEBHOOK_URL` secret.
+**Teams Notifications:** After each pipeline run, `ci/notify-teams.ts` sends an Adaptive Card to the configured Teams webhook. Requires `TEAMS_WEBHOOK_URL` secret.
 
 ## Testing Approach
 
@@ -287,45 +315,16 @@ Must always pass before deployment:
 
 ## Virto Commerce Platform Reference (via Context7)
 
-Context7 library ID: `/virtocommerce/vc-docs` (6,033 code snippets, High reputation)
+Context7 library ID: `/virtocommerce/vc-docs`
 
 Use `resolve-library-id` then `query-docs` to fetch up-to-date Virto Commerce documentation during testing and development tasks.
 
-### Platform Architecture
-- **Framework:** Enterprise-level, open-source, .NET-based e-commerce platform
-- **Architecture:** Modular, headless commerce — business logic exposed via APIs
-- **Capabilities:** Multi-store, multi-currency, multi-language deployments
-
-### API Layers
-| API | Purpose | Used By |
-|-----|---------|---------|
-| **REST API** | CRUD operations, integrations, admin tools | Backend agents, Postman collections |
-| **GraphQL xAPI** | Frontend-optimized storefront queries (xCart, xCatalog, xOrder, xCMS) | Storefront, frontend agents |
-
-The xAPI architecture was revamped in July 2024 — the monolithic `ExperienceApi` module was replaced with specialized modules (archived for Stable 8/9).
-
-### Tech Stack
-- **Database:** SQL Server, PostgreSQL, MySQL
-- **Search:** Elasticsearch, Azure Cognitive Search, Algolia
+- **Architecture:** Modular, headless, .NET-based e-commerce platform with multi-store/multi-currency/multi-language
+- **REST API:** CRUD operations, integrations, admin tools (used by backend agents, Postman)
+- **GraphQL xAPI:** Frontend-optimized storefront queries — xCart, xCatalog, xOrder, xCMS (used by storefront, frontend agents). The xAPI was revamped July 2024 from monolithic `ExperienceApi` to specialized modules.
 - **Frontend:** Vue.js storefront (themes), VC-Shell admin SPA (Angular)
+- **Search:** Elasticsearch, Azure Cognitive Search, Algolia
 - **Deployment:** On-prem (Windows/Linux), Docker, Azure App Services, Virto Cloud
-
-### Documentation Areas
-- **Platform** — backend admin, developer guides, cloud deployment
-- **Storefront** — Vue.js frontend, theme customization
-- **Marketplace** — multi-vendor operator & vendor portals
-
-### Common Context7 Queries
-```
-# Resolve the library first
-resolve-library-id("VirtoCommerce", "Virto Commerce platform docs")
-# Then query specific topics
-query-docs("/virtocommerce/vc-docs", "GraphQL xAPI cart mutations addItem removeItem")
-query-docs("/virtocommerce/vc-docs", "custom module development tutorial")
-query-docs("/virtocommerce/vc-docs", "payment provider integration")
-query-docs("/virtocommerce/vc-docs", "VC-Shell admin SPA blade system")
-query-docs("/virtocommerce/vc-docs", "Elasticsearch search indexing configuration")
-```
 
 ## Key Testing Domains
 
