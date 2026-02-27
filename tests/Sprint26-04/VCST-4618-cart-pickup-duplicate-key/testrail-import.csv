@@ -1,0 +1,265 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+TC-BE-001,cartPickupLocations — Two Configurable Variants Same ProductId,Backend > cartPickupLocations > Bug Fix,Defect Verification,Critical,10m,"- Auth as mutykovaelena@gmail.com or Alice May
+- Cart has 2 configurable variants of same base product (same ProductId, different options)
+- Pickup delivery method selected
+- GraphQL Playground open at https://vcst-qa.govirto.com/ui/graphiql","1. Log in and clear cart
+2. Add configurable product with Option A to cart
+3. Add same product with Option B to cart
+4. Verify 2 line items visible in cart
+5. Select Pickup delivery method
+6. Get cartId from URL or network
+7. Open GraphQL Playground
+8. Execute cartPickupLocations query with cartId
+9. Inspect response for errors vs data","- Response contains data.cartPickupLocations
+- No errors array in response
+- No ArgumentException or ARGUMENT error code
+- totalCount is non-negative integer
+- items array present (may be empty but no error)
+- term_facets array present",VCST-4618,Manual
+TC-BE-002,API Response Confirms No Error Toast Trigger,Backend > cartPickupLocations > Bug Fix,Defect Verification,Critical,5m,"- Multi-variant configurable cart (TC-BE-001 state)
+- Chrome DevTools Network tab open","1. On cart page with multi-variant configurable items
+2. Click pencil/edit icon next to pickup address
+3. Monitor Network tab for cartPickupLocations GraphQL request
+4. Inspect request/response
+5. Check browser console for uncaught exceptions","- HTTP 200 response
+- Response JSON has no errors key
+- Console has no uncaught exception for pickup locations
+- Modal opens (frontend confirmation)",VCST-4618,Manual
+TC-BE-003,Regression — cartPickupLocations Single Regular Product,Backend > cartPickupLocations > Regression,Regression,Critical,8m,"- Cart with 1 non-configurable product
+- Pickup delivery method selected
+- GraphQL Playground open","1. Clear cart
+2. Add 1 regular non-configurable product
+3. Select Pickup delivery method
+4. Get cartId
+5. Execute cartPickupLocations query
+6. Inspect response","- Query succeeds without errors
+- items array contains pickup locations
+- totalCount >= 0
+- No regression for standard flow",VCST-4618,Manual
+TC-BE-004,Regression — cartPickupLocations Single Configurable Product One Variant,Backend > cartPickupLocations > Regression,Regression,High,8m,"- Cart with 1 configurable product (only 1 option added)
+- Pickup delivery method selected","1. Clear cart
+2. Add configurable product with Option A only
+3. Verify 1 line item in cart
+4. Select Pickup delivery method
+5. Execute cartPickupLocations query
+6. Inspect response","- Query executes successfully
+- No error for single-item configurable cart
+- Single item does not expose edge case in grouping logic
+- Returns valid pickup location data",VCST-4618,Manual
+TC-BE-005,Quantity Aggregation — Two Variants Sum Correctly,Backend > cartPickupLocations > Fix Correctness,Functional,High,10m,"- Cart: configurable Option A qty 2 + Option B qty 3 (same base ProductId)
+- Pickup delivery method selected","1. Clear cart
+2. Add configurable product Option A qty=2
+3. Add same product Option B qty=3
+4. Verify cart shows 2+3 quantities
+5. Select Pickup delivery method
+6. Execute cartPickupLocations query
+7. Note availability quantity data in response","- Query returns successfully
+- If per-product quantity shown, reflects aggregated value (qty 5)
+- No duplicate entries per ProductId in response
+- Fix uses GroupBy + Sum correctly",VCST-4618,Manual
+TC-BE-006,Edge — Three Configurable Variants Same ProductId,Backend > cartPickupLocations > Edge Cases,Functional,High,10m,"- Cart with 3 configurable variants (Option A + B + C) all same base ProductId
+- Pickup delivery method selected","1. Clear cart
+2. Add configurable product Options A, B, C (3 separate add-to-cart actions)
+3. Verify 3 line items in cart
+4. Select Pickup delivery method
+5. Execute cartPickupLocations query
+6. Inspect response","- Query succeeds without error
+- ProductId deduplicated correctly (single entry per ProductId)
+- Quantities summed across all 3 variants
+- Response is valid",VCST-4618,Manual
+TC-BE-007,Regression — productPickupLocations Query Not Affected,Backend > productPickupLocations > Regression,Regression,High,8m,"- Known product ID (configurable or regular)
+- GraphQL Playground open","1. Navigate to GraphQL Playground
+2. Execute productPickupLocations query with known productId
+3. Request facets: address_countryname address_regionname address_city
+4. Inspect response","- Query returns valid data
+- No error in response
+- productPickupLocations handler unaffected by fix
+- items and term_facets populated",VCST-4618,Manual
+TC-BE-008,Negative — cartPickupLocations with Empty Cart,Backend > cartPickupLocations > Edge Cases,Negative,Medium,5m,"- Cart is empty (no items)
+- GraphQL Playground open","1. Clear cart completely
+2. Get empty cart ID
+3. Execute cartPickupLocations query with empty cartId
+4. Inspect response","- No exception thrown
+- Returns empty items or store-level locations
+- totalCount: 0 or valid number
+- No ArgumentException (empty list handled correctly by GroupBy)",VCST-4618,Manual
+TC-BE-009,Regression — Mixed Cart Regular Plus Configurable Duplicates,Backend > cartPickupLocations > Regression,Regression,High,12m,"- Cart: 1 regular product + 2 configurable variants (same ProductId) + 1 different regular product
+- All items selected for checkout
+- Pickup delivery method selected","1. Build mixed cart as described
+2. Select Pickup delivery method
+3. Execute cartPickupLocations query
+4. Inspect response for all expected products","- Query succeeds without error
+- GroupBy correctly handles configurable duplicates
+- Regular product entries not affected
+- All distinct ProductIds represented in search criteria
+- Valid pickup location data returned",VCST-4618,Manual
+TC-BE-010,Regression — Facets Return Correctly with Multi-Variant Cart,Backend > cartPickupLocations > Regression,Regression,High,8m,"- Multi-variant configurable cart (TC-BE-001 state)
+- Pickup delivery method selected","1. Execute cartPickupLocations query with facet parameter: address_countryname address_regionname address_city
+2. Inspect term_facets in response
+3. Verify each facet type present
+4. Verify each facet term has count","- term_facets contains address_countryname, address_regionname, address_city
+- Each term has term string and positive count
+- Facet counts accurate relative to totalCount
+- No missing or empty facet arrays",VCST-4618,Manual
+TC-FE-001,Primary Bug Fix — Cart BOPIS Modal Opens for Multi-Variant Cart,Frontend > Cart > BOPIS Modal > Bug Fix,Defect Verification,Critical,10m,"- Logged in as mutykovaelena@gmail.com
+- Cart has 2 configurable variants of same base product
+- Pickup delivery method selected","1. Log in to https://vcst-qa-storefront.govirto.com
+2. Clear cart and add configurable product Option A
+3. Add same product Option B
+4. Navigate to cart — verify 2 line items
+5. Select Pickup delivery method in SHIPPING DETAILS
+6. Click pencil/edit icon next to pickup address
+7. Wait up to 5 seconds
+8. Observe modal and any toast notifications","- No error toast appears
+- Pickup location selector modal opens successfully
+- Modal shows map and/or location list
+- No console errors related to cartPickupLocations",VCST-4618,Manual
+TC-FE-002,Cart BOPIS Modal Contains Map and Location List,Frontend > Cart > BOPIS Modal > Content,Functional,Critical,5m,"- Modal opened from TC-FE-001 state
+- Multi-variant configurable cart","1. With BOPIS modal open from TC-FE-001
+2. Verify map renders on right side (desktop)
+3. Verify location list on left side
+4. Verify at least 1 pickup location entry visible
+5. Verify map shows at least 1 marker
+6. Note total count displayed","- Map container visible and rendered
+- Location list shows entries with name and address
+- Total count displayed matches list length
+- No stuck loading spinner
+- Layout stable, no layout shifts",VCST-4618,Manual
+TC-FE-003,Faceted Filter — Country Filter Works in Cart BOPIS Modal,Frontend > Cart > BOPIS Modal > Filters,Functional,High,8m,"- BOPIS modal open with multi-variant cart
+- Multiple pickup locations from different countries available","1. Open BOPIS modal from cart
+2. Locate Country/countryname filter section
+3. Click a specific country option
+4. Verify location list updates to matching country only
+5. Verify map updates
+6. Verify filter count changes
+7. Deselect filter
+8. Verify all locations restored","- Country filter visible and clickable
+- Applying filter reduces list to matching entries
+- Map updates in sync with list
+- Deselecting restores all locations
+- No error on filter apply/remove",VCST-4618,Manual
+TC-FE-004,Faceted Filter — State/Region Filter Works in Cart BOPIS Modal,Frontend > Cart > BOPIS Modal > Filters,Functional,High,8m,"- BOPIS modal open with multi-variant cart
+- Pickup locations in multiple states/regions","1. Open BOPIS modal
+2. Locate State/Region filter (address_regionname)
+3. Apply a state filter
+4. Verify filtered results
+5. Verify map synchronization
+6. Clear filter","- State filter visible and functional
+- List and map both update
+- Count in filter reflects matching locations
+- Clearing restores full list",VCST-4618,Manual
+TC-FE-005,Faceted Filter — City Filter Works in Cart BOPIS Modal,Frontend > Cart > BOPIS Modal > Filters,Functional,High,8m,"- BOPIS modal open with multi-variant cart
+- Pickup locations in multiple cities","1. Open BOPIS modal
+2. Locate City filter (address_city)
+3. Apply a city filter
+4. Verify filtered results show only selected city
+5. Clear filter","- City filter visible and functional
+- Filtered results accurate
+- Map and list synchronized
+- No error on interactions",VCST-4618,Manual
+TC-FE-006,Pickup Location Selection and Confirmation in Cart,Frontend > Cart > BOPIS Modal > Selection,Functional,Critical,10m,"- BOPIS modal open from multi-variant configurable cart
+- At least 1 pickup location visible","1. Open BOPIS modal from cart
+2. Click on a location entry in list (or map marker)
+3. Verify location info card opens
+4. Verify info card shows name and address
+5. Verify Select/Confirm button present
+6. Click Select/Confirm button
+7. Verify info card closes
+8. Verify BOPIS modal closes
+9. Verify selected location shown in cart SHIPPING DETAILS","- Location info card opens with details
+- Select button is present (not view-only)
+- Clicking Select closes modal cleanly
+- Selected location displayed in cart summary
+- No error toast at any step",VCST-4618,Manual
+TC-FE-007,Modal Cancel Close Without Selection,Frontend > Cart > BOPIS Modal > Navigation,Functional,Medium,5m,"- BOPIS modal open from multi-variant cart","1. Open BOPIS modal
+2. Browse locations without selecting
+3. Click X close button on modal
+4. Verify modal closes
+5. Verify cart page state unchanged
+6. Click pencil icon to reopen modal
+7. Verify modal reopens without error","- Modal closes cleanly without errors
+- Cart state preserved from before opening
+- Modal can be reopened successfully
+- No console errors on close",VCST-4618,Manual
+TC-FE-008,Regression — Single Regular Product Cart BOPIS Modal,Frontend > Cart > BOPIS Modal > Regression,Regression,Critical,8m,"- Cart with 1 non-configurable regular product
+- Pickup delivery method selected","1. Clear cart
+2. Add 1 regular non-configurable product
+3. Select Pickup delivery method
+4. Click pencil/edit icon next to pickup address
+5. Verify modal opens","- Modal opens without error
+- No regression for standard single-product cart
+- Modal content (map, list, filters) all functional
+- Fix did not break the standard flow",VCST-4618,Manual
+TC-FE-009,Regression — Delivery Method Switch Pickup to Delivery and Back,Frontend > Cart > BOPIS > Regression,Regression,High,8m,"- Multi-variant configurable cart
+- Pickup delivery method active with location selected","1. Verify pickup location is selected in cart
+2. Switch delivery method to Delivery (shipping)
+3. Verify pickup location clears
+4. Verify delivery address fields appear
+5. Switch back to Pickup
+6. Click pencil icon to open pickup modal
+7. Verify modal opens without error
+8. Select a pickup location and confirm","- Delivery method switching works correctly
+- Pickup location cleared when switching to Delivery
+- Switching back allows modal to open without error
+- Full round trip Pickup to Delivery to Pickup works",VCST-4618,Manual
+TC-FE-010,Regression — Product Page BOPIS View-Only Modal Not Affected,Frontend > Product Page > BOPIS Widget > Regression,Regression,High,8m,"- Configurable product detail page with BOPIS widget
+- Logged in as mutykovaelena@gmail.com","1. Navigate to configurable product detail page
+2. Locate BOPIS availability widget
+3. Click BOPIS CTA button
+4. Verify view-only pickup modal opens
+5. Verify NO Select button present in location info card
+6. Close modal
+7. Verify product page unchanged","- Product page BOPIS modal opens successfully
+- Modal is view-only: no Select or Confirm button
+- Modal close returns to product page cleanly
+- Fix to cart handler did not break product page handler
+- No console errors",VCST-4618,Manual
+TC-FE-011,Mobile — Cart BOPIS Modal Opens at 375x667 Viewport,Frontend > Cart > BOPIS Modal > Mobile,Functional,High,10m,"- Browser viewport 375x667
+- Multi-variant configurable cart
+- Pickup delivery method selected","1. Set viewport to 375x667
+2. Navigate to cart page
+3. Click pickup edit icon
+4. Verify modal opens in mobile layout
+5. Verify List/Map toggle visible
+6. Switch between list and map views
+7. Select a pickup location on mobile
+8. Confirm selection","- Modal opens on mobile without error toast
+- Mobile layout shown (single column, list/map toggle)
+- Touch targets adequate (min 44x44px)
+- Selection flow completes on mobile
+- No horizontal scroll needed",VCST-4618,Manual
+TC-FE-012,Edge — Cart with 5+ Configurable Variants Same ProductId,Frontend > Cart > BOPIS Modal > Edge Cases,Functional,Medium,12m,"- Cart contains 5+ line items from same configurable product base (different options)","1. Build cart with 5+ configurable variants of same product
+2. Select Pickup delivery method
+3. Click pencil/edit icon
+4. Verify modal opens","- Modal opens without error regardless of variant count
+- GroupBy handles 5+ duplicates same as 2
+- Modal loads within 5 seconds
+- No timeout or server error",VCST-4618,Manual
+TC-EC-001,Edge — All Cart Items Unselected for Checkout,Backend > cartPickupLocations > Edge Cases,Functional,Medium,5m,"- Cart with configurable variants
+- All items unchecked/deselected from checkout","1. Build cart with configurable product variants
+2. Uncheck all items from checkout selection (if UI supports)
+3. Execute cartPickupLocations query","- Where(x => x.SelectedForCheckout) reduces items to zero
+- Query runs successfully on empty filtered set
+- Returns empty or store-level results, no error",VCST-4618,Manual
+TC-EC-002,Stress — Maximum Items Same ProductId,Backend > cartPickupLocations > Edge Cases,Performance,Low,10m,"- Cart with 10+ configurable option variants of same product","1. Add as many configurable variants as possible (10+)
+2. Execute cartPickupLocations query","- No timeout
+- No memory errors
+- GroupBy and Sum complete efficiently
+- Response time under 5 seconds",VCST-4618,Manual
+TC-EC-003,Regression — Multiple Distinct Configurable Products Different ProductIds,Backend > cartPickupLocations > Regression,Regression,Medium,8m,"- Cart: Product A Option 1 + Product B Option 1 (2 distinct ProductIds)
+- Pickup delivery method selected","1. Add 2 different configurable products (distinct ProductIds)
+2. Execute cartPickupLocations query
+3. Inspect response","- Both distinct ProductIds in search criteria
+- No error
+- GroupBy does not merge distinct products
+- Correct separation of products",VCST-4618,Manual
+TC-EC-004,Edge — Same Variant Added Twice as Separate Line Items,Backend > cartPickupLocations > Edge Cases,Functional,Medium,8m,"- Cart: Same configurable option added twice as separate line items (not qty update)","1. Add configurable product Option A qty=1
+2. Add same option A again as new line item qty=1
+3. Verify 2 separate line items with identical ProductId
+4. Execute cartPickupLocations query","- GroupBy collapses both into 1 entry
+- Quantity summed (1+1=2)
+- No error",VCST-4618,Manual
+TC-EC-005,Negative — Invalid cartId in cartPickupLocations,Backend > cartPickupLocations > Negative,Negative,Low,3m,"- GraphQL Playground open","1. Execute cartPickupLocations with non-existent random UUID as cartId","- Query returns gracefully with empty results or user-friendly error
+- No ArgumentException stack trace exposed
+- No internal server error
+- Clean error handling",VCST-4618,Manual

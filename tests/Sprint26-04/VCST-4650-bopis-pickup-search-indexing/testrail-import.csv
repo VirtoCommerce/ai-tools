@@ -1,0 +1,91 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+VCST4650-A01,City Keyword Search Returns All Matching Locations via GraphQL,BOPIS > API > productPickupLocations,Functional,Critical,10m,"QA backend accessible. Backend fix deployed. Address fields indexed in Elasticsearch.","1. Execute productPickupLocations GraphQL query with keyword = ""New York""
+2. Record totalCount from response
+3. Examine returned items for city field = ""New York""
+4. Compare totalCount against expected (30+)","totalCount >= 30. All returned items have address.city = New York. Response time < 2s. Before fix: 4 results.",VCST-4650,Manual
+VCST4650-A02,Postal Code Keyword Search Returns Matching Location via GraphQL,BOPIS > API > productPickupLocations,Functional,Critical,8m,"QA backend accessible. Backend fix deployed.","1. Execute productPickupLocations query with keyword = ""10059""
+2. Record totalCount
+3. Verify returned items have postalCode = ""10059""","totalCount >= 1. Returned items have address.postalCode = 10059. Before fix: 0 results.",VCST-4650,Manual
+VCST4650-A03,Street Address Keyword Search Returns Matching Location via GraphQL,BOPIS > API > productPickupLocations,Functional,High,8m,"QA backend accessible. Backend fix deployed.","1. Execute productPickupLocations query with keyword = ""Lexington Ave""
+2. Record totalCount
+3. Verify returned items have address.line1 containing ""Lexington""","totalCount >= 1. Returned items address.line1 contains Lexington Ave. Before fix: 0 results.",VCST-4650,Manual
+VCST4650-A04,Country Code Keyword Search Returns All Matching Locations via GraphQL,BOPIS > API > productPickupLocations,Functional,Critical,8m,"QA backend accessible. Backend fix deployed.","1. Execute productPickupLocations query with keyword = ""USA""
+2. Record totalCount
+3. Verify returned items have address.countryCode = ""USA"" or ""US""","totalCount >= 80. All returned items have address.countryCode = USA/US. Before fix: 0 results.",VCST-4650,Manual
+VCST4650-A05,Location Name Keyword Search Not Regressed,BOPIS > API > productPickupLocations,Functional,Critical,5m,"QA backend accessible. Backend fix deployed.","1. Execute productPickupLocations query with keyword = ""Brooklyn""
+2. Record totalCount
+3. Verify count matches pre-fix value (~5)","totalCount ~= 5. No regression in name-based search.",VCST-4650,Manual
+VCST4650-A06,Empty Keyword Returns All Locations,BOPIS > API > productPickupLocations,Functional,High,5m,"QA backend accessible. Backend fix deployed.","1. Execute productPickupLocations query with keyword = """"
+2. Record totalCount
+3. Execute query with no keyword parameter
+4. Compare both counts","Both queries return all pickup locations. Counts are consistent.",VCST-4650,Manual
+VCST4650-A07,City Keyword Search is Case Insensitive,BOPIS > API > productPickupLocations,Functional,High,8m,"QA backend accessible. Backend fix deployed.","1. Execute query with keyword = ""new york""
+2. Record totalCount
+3. Execute with keyword = ""NEW YORK""
+4. Execute with keyword = ""New York""
+5. Compare counts","All three variants return same totalCount. Search is case-insensitive.",VCST-4650,Manual
+VCST4650-A08,Cart Pickup Locations Query Not Regressed,BOPIS > API > cartPickupLocations,Functional,High,8m,"QA backend accessible. Cart ID available.","1. Execute cartPickupLocations query with keyword = ""New York""
+2. Record totalCount
+3. Execute with keyword = ""10059""
+4. Verify results consistent with expected cart behavior","Cart modal results unchanged. No regression in cartPickupLocations. Faceted filtering available.",VCST-4650,Manual
+VCST4650-B01,Product Page BOPIS Modal - City Search Shows Correct Results,BOPIS > Frontend > Product Page Modal,Functional,Critical,12m,"Logged in as test user. On BOPIS-eligible product page. Check pickup locations CTA visible.","1. Navigate to FRONT_URL
+2. Sign in with USER_EMAIL/USER_PASSWORD
+3. Navigate to a product in Bolts category
+4. Click ""Check pickup locations"" CTA
+5. Note initial total count
+6. Type ""New York"" in search field
+7. Click Search
+8. Record result count
+9. Capture screenshot","Modal opens. Searching New York returns 30+ results (significantly more than old 4). Results list shows locations with New York in city/address.",VCST-4650,Manual
+VCST4650-B02,Product Page BOPIS Modal - Postal Code Search Shows Results,BOPIS > Frontend > Product Page Modal,Functional,Critical,10m,"Logged in as test user. On BOPIS-eligible product page.","1. Open product page BOPIS modal
+2. Clear any existing search
+3. Type ""10059"" in search field
+4. Click Search
+5. Record result count
+6. Capture screenshot","Search returns 1+ result with postal code 10059. Was previously 0 results.",VCST-4650,Manual
+VCST4650-B03,Product Page BOPIS Modal - Country Code Search Shows Results,BOPIS > Frontend > Product Page Modal,Functional,Critical,10m,"Logged in as test user. On BOPIS-eligible product page.","1. Open product page BOPIS modal
+2. Clear any existing search
+3. Type ""USA"" in search field
+4. Click Search
+5. Record result count
+6. Capture screenshot","Search returns 80+ results. All in USA. Was previously 0 results.",VCST-4650,Manual
+VCST4650-B04,Product Page BOPIS Modal - Street Address Search Shows Results,BOPIS > Frontend > Product Page Modal,Functional,High,10m,"Logged in as test user. On BOPIS-eligible product page.","1. Open product page BOPIS modal
+2. Clear any existing search
+3. Type ""Lexington Ave"" in search field
+4. Click Search
+5. Record result count
+6. Capture screenshot","Search returns 1+ result with Lexington Ave in address. Was previously 0 results.",VCST-4650,Manual
+VCST4650-B05,Product Page BOPIS Modal - Location Name Search Not Regressed,BOPIS > Frontend > Product Page Modal,Functional,Critical,8m,"Logged in as test user. On BOPIS-eligible product page.","1. Open product page BOPIS modal
+2. Search ""Brooklyn""
+3. Record result count","Still returns ~5 results. No regression in name-based search.",VCST-4650,Manual
+VCST4650-B06,Product Page BOPIS Modal - No Results Empty State,BOPIS > Frontend > Product Page Modal,Functional,High,8m,"Logged in as test user. On BOPIS-eligible product page.","1. Open product page BOPIS modal
+2. Type ""ZZZZZ99999XYZ"" in search field
+3. Click Search
+4. Observe empty state message","Pickup points not found message displayed. No JS errors. Reset/clear option available.",VCST-4650,Manual
+VCST4650-B07,Product Page BOPIS Modal - Clear Search Restores All Locations,BOPIS > Frontend > Product Page Modal,Functional,High,10m,"Logged in as test user. On BOPIS-eligible product page.","1. Open product page BOPIS modal
+2. Note initial total count
+3. Search ""New York""
+4. Click X clear button
+5. Verify count restored
+6. Search ""New York"" again
+7. Click Reset Search if available
+8. Verify count restored","Clear/reset restores full location list. Count after clear matches initial count.",VCST-4650,Manual
+VCST4650-B08,Product Page BOPIS Modal - Mobile City Search Returns Correct Count,BOPIS > Frontend > Mobile,Functional,High,12m,"Logged in as test user. Viewport set to 390x844.","1. Set viewport to 390x844
+2. Navigate to BOPIS product page
+3. Open pickup modal
+4. Search ""New York""
+5. Capture screenshot showing result count","Result count matches desktop. Mobile layout not broken. Search field accessible.",VCST-4650,Manual
+VCST4650-B09,Product Page BOPIS Modal - Multiple Searches No Degradation,BOPIS > Frontend > Stability,Functional,High,15m,"Logged in as test user. On BOPIS-eligible product page.","1. Open product page BOPIS modal
+2. Search ""New York"" - note count - clear
+3. Search ""USA"" - note count - clear
+4. Search ""Brooklyn"" - note count - clear
+5. Search ""10059"" - note count - clear
+6. Search empty - note count
+7. Check browser console for errors","Each search returns consistent correct results. No accumulated console errors. No UI degradation.",VCST-4650,Manual
+VCST4650-B10,Cart BOPIS Modal Not Regressed by Indexing Changes,BOPIS > Frontend > Cart Modal,Regression,High,10m,"Logged in as test user. BOPIS product in cart.","1. Add BOPIS product to cart
+2. Navigate to cart
+3. Select Pickup delivery
+4. Open pickup location modal
+5. Verify faceted filters present (Country/State/City)
+6. Apply New York city filter
+7. Verify results correct","Cart BOPIS modal unchanged. Faceted filters available. No regression from backend indexing change.",VCST-4650,Manual
