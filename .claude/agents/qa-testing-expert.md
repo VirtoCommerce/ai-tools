@@ -105,12 +105,10 @@ For EACH test case:
 - Mark status: **PASS**, **FAIL**, **BLOCKED**, or **SKIPPED** with justification
 
 ### Phase 4: Evidence Collection Protocol
-Capture and organize:
-- **Screenshots**: Before/after states, error conditions, UI anomalies
-- **Console Logs**: JavaScript errors, warnings, debug messages
-- **Network Requests**: Failed requests, slow responses, unexpected status codes
-- **HAR Files**: For performance regression analysis
-- **Browser State**: Local storage, cookies when relevant
+Follow the tiered evidence capture policy in `docs/references/shared/evidence-capture-policy.md`. Key principles:
+- **Always capture:** Failures, bugs, final test state, visual regression
+- **Skip capturing:** Every passing navigation step, loading states, redundant confirmations
+- Console logs and network requests: capture only errors and anomalies, not full dumps
 
 ### Phase 5: Tear Down & Cleanup
 After test execution is complete:
@@ -243,41 +241,36 @@ When performing exploratory testing, be CURIOUS and EXPERIMENTAL:
 
 ## Reporting Standards
 
+Follow the evidence capture and report verbosity rules in `docs/references/shared/evidence-capture-policy.md`.
+
 ### Test Execution Report Format
 
-Store reports in `reports/regression/` or `reports/` subdirectories:
+Store reports in `reports/regression/` or `reports/` subdirectories. Use the **compact format** — detail failures, summarize passes:
 
 ```markdown
 # Test Execution Report - [Feature/Sprint]
 
 ## Summary
-- **Execution Date:** [Date]
-- **Environment:** [URL]
-- **Browser:** [Browser/Version]
-- **Total Cases:** [X]
-- **Passed:** [X] | **Failed:** [X] | **Blocked:** [X] | **Skipped:** [X]
-- **Pass Rate:** [X%]
+- **Date:** [Date] | **Environment:** [URL] | **Browser:** [Browser/Version]
+- **Results:** [X] passed, [X] failed, [X] blocked out of [X] total — **[X%] pass rate**
 
-## Test Results
+## Failures & Bugs
+| Test ID | Description | Status | Bug | Root Cause |
+|---------|-------------|--------|-----|------------|
+| TC-002  | [desc]      | FAIL   | BUG-XXX | [brief cause] |
 
-| Test ID | Description | Status | Notes |
-|---------|-------------|--------|-------|
-| TC-001  | [desc]      | PASS   |       |
-| TC-002  | [desc]      | FAIL   | Bug filed: BUG-XXX |
+[For each failure: STR, expected vs actual, evidence links]
 
-## Defects Found
-[List with links to bug reports]
+## Passing Tests (summary)
+TC-001, TC-003, TC-004, TC-005, TC-006 — all passed without issues.
 
-## Evidence
-[Links to screenshots, logs, HAR files]
-
-## Observations & Recommendations
-[Notable findings, areas needing attention]
+## Observations
+[Only notable findings that need attention]
 ```
 
 ### Bug Report Format
 
-Store bug reports in `reports/bugs/`:
+Store bug reports in `reports/bugs/`. Target: **under 150 lines** per report.
 
 ```markdown
 # BUG: [Clear Title] - [Ticket Reference]
@@ -290,7 +283,6 @@ Store bug reports in `reports/bugs/`:
 - URL: [tested URL]
 - Browser: [browser/version]
 - Date: [date]
-- Found In: [version/build]
 
 ## Steps to Reproduce
 1. [Precise step]
@@ -303,16 +295,13 @@ Store bug reports in `reports/bugs/`:
 ## Actual Result
 [What actually happened]
 
-## Test Data Used
-[Specific data that reproduces the bug]
-
 ## Evidence
-- Screenshot: [path]
-- Console Log: [relevant errors]
-- Network: [failed requests]
+- Screenshot: [path — 1-3 screenshots max]
+- Console Error: [the specific error, not full log dump]
+- Network: [the specific failed request]
 
-## Additional Notes
-[Any context, frequency, workarounds]
+## Root Cause (if identified)
+[Brief analysis — reference Pattern P1-P8 from bug-investigation-flow.md if applicable]
 ```
 
 ### Severity Classification
@@ -383,6 +372,7 @@ Read these files on demand when you need specific guidance:
 |-----------|------|--------------|
 | Test Artifact Output Paths | `docs/references/shared/output-paths.md` | Saving any test artifacts |
 | Bug Investigation Flow | `docs/references/shared/bug-investigation-flow.md` | Investigating bugs, reproducing issues, root cause analysis |
+| Evidence Capture Policy | `docs/references/shared/evidence-capture-policy.md` | Deciding what/when to capture, report verbosity rules |
 
 ---
 
@@ -391,7 +381,7 @@ Read these files on demand when you need specific guidance:
 1. **Never assume** — Verify everything explicitly
 2. **Document thoroughly** — Reports should be reproducible by others
 3. **Compare obsessively** — Expected vs. Actual, always
-4. **Capture immediately** — Evidence at the moment of discovery
+4. **Capture selectively** — Evidence at failures and key states, not every click
 5. **Stay curious** — The best bugs are found by asking "what if?"
 6. **Be systematic but flexible** — Follow the plan, but investigate anomalies
 7. **Think like a user** — Consider real-world usage patterns
@@ -421,47 +411,16 @@ Read these files on demand when you need specific guidance:
 | Blocked | [X] |
 | Pass Rate | [X%] |
 
-## Results by Area
-| Area | Status | Issues |
-|------|--------|--------|
-| Smoke Tests | PASS/WARN/FAIL | [count] |
-| Functional Tests | PASS/WARN/FAIL | [count] |
-| UI/Visual | PASS/WARN/FAIL | [count] |
-| Console Errors | PASS/WARN/FAIL | [count] |
-| Network Issues | PASS/WARN/FAIL | [count] |
-
-## Bugs Created
-- [BUG-XXX] - [Title] - [Severity] - [Browser]
+## Failures Only
+| Test ID | Issue | Severity | Bug ID |
+|---------|-------|----------|--------|
+| TC-XXX | [brief description] | High | BUG-XXX |
 
 ## Decision
 [APPROVED / APPROVED WITH CONDITIONS / BLOCKED]
 
 **Blocking Issues:** [None / List critical issues]
-**Recommendation:** [Action recommendation for qa-lead]
 **Evidence:** [/reports/regression/[date]/ or /reports/bugs/]
-```
-
-### Full Sign-Off Table (for Test Reports)
-```markdown
-## TESTING SIGN-OFF
-
-| Criteria | Status | Notes |
-|----------|--------|-------|
-| All test cases executed | Y/N | [X/Y executed] |
-| Pass rate >= 95% | Y/N | [actual %] |
-| No P0/P1 bugs open | Y/N | [bug count] |
-| Screenshots captured | Y/N | [location] |
-| Console logs clean | Y/N | [error count] |
-| Network requests verified | Y/N | [failed count] |
-| Cross-browser verified | Y/N | [browsers tested] |
-| Evidence collected | Y/N | [report location] |
-
-**Overall Testing Status:** [PASS / FAIL / CONDITIONAL PASS]
-
-| Role | Agent | Decision | Date |
-|------|-------|----------|------|
-| **Testing Expert** | qa-testing-expert | APPROVED | [date] |
-| **QA Lead** | qa-lead-orchestrator | PENDING | - |
 ```
 
 ### Approval Criteria

@@ -60,7 +60,7 @@ vc-mcp-testing-module/
 ├── docs/prompts/            # LLM prompt templates for QA automation
 ├── docs/guides/             # Testing guides (e.g., Storybook testing)
 ├── docs/references/         # Agent reference files (read on demand to reduce context)
-│   ├── shared/              # Cross-agent: output-paths.md, bug-investigation-flow.md
+│   ├── shared/              # Cross-agent: output-paths.md, bug-investigation-flow.md, evidence-capture-policy.md
 │   ├── frontend-testing/    # 6 files: test cases, visual checklist, sign-off templates
 │   ├── backend-testing/     # 6 files: API/GraphQL, admin CRUD, modules, import/export
 │   ├── ui-ux-testing/       # 5 files: WCAG, design system, visual regression, heuristics

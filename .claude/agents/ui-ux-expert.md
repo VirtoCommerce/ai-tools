@@ -224,6 +224,7 @@ STORYBOOK-SPECIFIC WORKFLOW:
 | Responsive Component Testing | `docs/references/ui-ux-testing/responsive-component-testing.md` | Testing breakpoint behavior |
 | Test Artifact Output Paths | `docs/references/shared/output-paths.md` | Saving test artifacts correctly |
 | Bug Investigation & Root Cause | `docs/references/shared/bug-investigation-flow.md` | Investigating component rendering bugs |
+| Evidence Capture & Report Verbosity | `docs/references/shared/evidence-capture-policy.md` | Screenshot budgets, report tiers, what to capture |
 
 **Read the relevant reference file BEFORE starting that type of testing.**
 

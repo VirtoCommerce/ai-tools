@@ -1,6 +1,7 @@
 # Backend Sign-Off & Bug Report Templates
 
 > Reference file for qa-backend-expert agent. Read when completing testing and reporting results.
+> **Verbosity rules:** See `docs/references/shared/evidence-capture-policy.md` for screenshot budgets and report tiers. Default to compact reports (detail failures, summarize passes). Bug reports should be under 150 lines. The example below is a maximum-detail template — real reports should include only the relevant sections.
 
 ## Quick Status Report (for Teams/Comment)
 

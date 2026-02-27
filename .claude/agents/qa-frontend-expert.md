@@ -99,6 +99,7 @@ Detailed test case templates and checklists are extracted to keep this agent lea
 | Visual & Behavioral Bug Detection | `docs/references/frontend-testing/visual-bug-detection-checklist.md` |
 | Sign-Off Tables, Bug Report Template | `docs/references/frontend-testing/sign-off-and-bug-templates.md` |
 | Bug Investigation & Root Cause | `docs/references/shared/bug-investigation-flow.md` |
+| Evidence Capture & Report Verbosity | `docs/references/shared/evidence-capture-policy.md` |
 
 **How to use:** When testing checkout, read `test-cases-checkout.md` for detailed step-by-step checklists. When doing visual QA, read the bug detection checklist. When reporting results, read the sign-off templates.
 

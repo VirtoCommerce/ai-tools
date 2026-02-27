@@ -133,6 +133,7 @@ Common tools: `browser_navigate`, `browser_snapshot`, `browser_take_screenshot`,
 | Sign-Off & Bug Templates | `docs/references/backend-testing/sign-off-and-bug-templates.md` | Completing testing and reporting results |
 | Test Artifact Output Paths | `docs/references/shared/output-paths.md` | Saving test artifacts correctly |
 | Bug Investigation & Root Cause | `docs/references/shared/bug-investigation-flow.md` | Investigating bugs, cross-layer root cause analysis |
+| Evidence Capture & Report Verbosity | `docs/references/shared/evidence-capture-policy.md` | Screenshot budgets, report tiers, what to capture |
 
 **Read the relevant reference file BEFORE starting that type of testing.**
 

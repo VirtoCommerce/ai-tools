@@ -100,6 +100,7 @@ You manage 5 specialized QA agents:
 |-----------|------|--------------|
 | Test Artifact Output Paths | `docs/references/shared/output-paths.md` | Saving test artifacts correctly |
 | Bug Investigation Flow | `docs/references/shared/bug-investigation-flow.md` | Understanding investigation status, handoff protocol |
+| Evidence Capture & Report Verbosity | `docs/references/shared/evidence-capture-policy.md` | Reviewing report quality, enforcing output standards |
 
 ## JIRA TICKET TRANSITION FLOW
 

@@ -529,3 +529,73 @@ CFG-CA-015,Delete Configurable Product from Admin and Verify Storefront Removal,
 - Product absent from category list
 - 404 page or Product not found message shown for direct URL
 - Product does not appear in search results","TP_CONFIGURABLE_PRODUCTS_001",Manual
+CAT-VID-001,Video Widget Display,Catalog > Product > Video,Functional,Medium,3m,"Admin logged in, product with video exists","1. Open Catalog module
+2. Navigate to a product that has videos
+3. Click on the Video widget/tab in product detail
+4. Observe the video widget display","- Video widget is visible in product detail
+- Widget displays video count or preview
+- No console errors on widget load",C315288,Not Automated
+CAT-VID-002,Add New Video to Product,Catalog > Product > Video,CRUD,High,5m,"Admin logged in, product open in edit mode","1. Open a product in Catalog
+2. Click Video section/tab
+3. Click Add Video
+4. Enter YouTube video URL
+5. Fill required fields (title, description)
+6. Click Save","- Add Video button is functional
+- YouTube URL field accepts valid URLs
+- Required fields are validated
+- Video is saved successfully
+- New video appears in video list","C315290 VCST-4445",Not Automated
+CAT-VID-003,List Added Videos,Catalog > Product > Video,Functional,Medium,3m,"Admin logged in, product has multiple videos added","1. Open a product with videos
+2. Navigate to Video section
+3. Observe the video list","- All added videos are listed
+- Each video shows title and thumbnail
+- List is scrollable if many videos
+- Video count matches expected",C315291,Not Automated
+CAT-VID-004,Modify Video Item,Catalog > Product > Video,CRUD,High,5m,"Admin logged in, product has at least one video","1. Open product Video section
+2. Click on existing video item
+3. Modify title or URL
+4. Click Save
+5. Reopen the video item","- Video item opens for editing
+- Fields are editable
+- Save completes without error
+- Updated data persists after reload","C315292 VCST-4445",Not Automated
+CAT-VID-005,Delete Video Item,Catalog > Product > Video,CRUD,Medium,3m,"Admin logged in, product has at least one video","1. Open product Video section
+2. Select a video item
+3. Click Delete
+4. Confirm deletion","- Delete confirmation dialog appears
+- Video is removed from the list
+- Video count decrements
+- Change persists after save",C315293,Not Automated
+CAT-VID-006,Video Thumbnails from YouTube,Catalog > Product > Video,Functional,Medium,5m,"Admin logged in, YouTube API key configured, product open","1. Open product Video section
+2. Add a new video with valid YouTube URL
+3. Save the video
+4. Observe thumbnail display","- Thumbnail is fetched from YouTube automatically
+- Thumbnail image displays correctly
+- Thumbnail URL is populated
+- No broken image icons","C315294 VCST-4445",Not Automated
+CAT-VID-007,Change URL for Video Thumbnail,Catalog > Product > Video,Functional,Medium,3m,"Admin logged in, product has video with thumbnail","1. Open product Video section
+2. Open existing video with thumbnail
+3. Change the thumbnail URL to a different image
+4. Save","- Thumbnail URL field is editable
+- New thumbnail displays after save
+- Change persists on reload",C315295,Not Automated
+CAT-VID-008,Video Required Fields Validation,Catalog > Product > Video,Negative,Medium,3m,"Admin logged in, product open in edit mode","1. Open product Video section
+2. Click Add Video
+3. Leave all fields empty
+4. Click Save","- Validation errors shown for required fields
+- Save is blocked until required fields filled
+- Error messages are clear and specific",C315296,Not Automated
+CAT-VID-009,Video Data Without YouTube API Key,Catalog > Product > Video,Negative,Medium,5m,"Admin logged in, YouTube API key NOT configured","1. Open product Video section
+2. Add a new video with YouTube URL
+3. Save
+4. Observe thumbnail behavior","- Video can still be saved without API key
+- Thumbnail may not auto-fetch without API key
+- No system crash or unhandled error
+- Appropriate warning or fallback displayed",C315297,Not Automated
+CAT-VID-010,Video Data With YouTube API Key,Catalog > Product > Video,Functional,Medium,5m,"Admin logged in, YouTube API key IS configured","1. Open product Video section
+2. Add a new video with YouTube URL
+3. Save
+4. Observe thumbnail and metadata behavior","- Video saved successfully
+- Thumbnail auto-fetched from YouTube
+- Video metadata (title, duration) populated if available
+- API key integration works without errors","C315298 VCST-4445",Not Automated

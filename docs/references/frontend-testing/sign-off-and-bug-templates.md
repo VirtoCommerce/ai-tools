@@ -1,6 +1,7 @@
 # Frontend Sign-Off & Bug Report Templates
 
 > Extracted from qa-frontend-expert agent. Use when reporting results or filing bugs.
+> **Verbosity rules:** See `docs/references/shared/evidence-capture-policy.md` for screenshot budgets and report tiers. Default to compact reports (detail failures, summarize passes). Bug reports should be under 150 lines.
 
 ---
 
