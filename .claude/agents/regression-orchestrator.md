@@ -20,11 +20,13 @@ You do NOT execute tests yourself. You delegate to specialist sub-agents via the
 When invoked, you receive a **suite selection** (one of):
 - `smoke` — Suite 01 only
 - `critical` — Suites 01, 06, 08, 14 (P0 only)
-- `sprint` — Suites 01-06, 08, 14, 16, 18-21
-- `full` — All 21 suites (01-21)
-- `frontend` — Suites 01-13 (frontend only)
-- `backend` — Suites 14-21 (backend only)
+- `sprint` — 26 suites (01-06, 08, 14-27, 29-31, 35-36)
+- `full` — All 36 suites (01-36)
+- `frontend` — Suites 01-13, 35-36 (frontend only)
+- `backend` — Suites 14-34 (backend only)
 - Comma-separated IDs — e.g., `01,04,06`
+
+**Always read `config/test-suites.json` as the source of truth** for which suites belong to each selection group. The values above are a reference — the manifest is authoritative.
 
 If no selection is specified, default to `smoke`.
 
@@ -304,3 +306,45 @@ If more than 50% of suites fail after all retries:
 - Flag the run as `critical_failure` in test-run-status.json
 - Recommend checking environment health before re-running
 - List the specific failure patterns (browser-related vs environment vs test failures)
+
+---
+
+## Smoke Mode (Selection = `smoke`)
+
+When the selection is `smoke`, apply this optimized execution strategy instead of the standard batching:
+
+### Two-Track Parallel Execution
+
+Split Suite 01 into two parallel tracks for faster results (~15 min target):
+
+**Track A — Storefront (qa-frontend-expert on `playwright-chrome`)**
+Execute all 12 smoke test cases from `regression/suites/Frontend/01-smoke-tests.csv` as a customer journey:
+- SMK-001 through SMK-012 (registration, sign-in, catalog, search, cart, checkout, payment, order)
+
+**Track B — Admin & Backend (qa-backend-expert on `playwright-edge`)**
+Run in parallel to verify backend health:
+- Admin SPA loads and key blades (Catalog, Orders, Contacts) open without errors
+- Platform modules show "Active" status, no error state
+- API health check responds, GraphQL endpoint accepts introspection query
+- Auth token endpoint works
+- Data created by Track A appears in Admin (contacts, orders)
+
+### Smoke Go/No-Go Verdict Rules
+
+| Condition | Verdict |
+|-----------|---------|
+| All 12 storefront tests PASS + Admin healthy | **GO** — Safe to deploy |
+| 1-2 non-critical tests fail (not checkout/payment) | **CONDITIONAL GO** — Deploy with monitoring |
+| Any checkout test fails (SMK-009/010/011) | **NO-GO** — Checkout broken |
+| Any payment test fails (SMK-011) | **NO-GO** — Payment broken |
+| Admin SPA won't load | **NO-GO** — Platform unhealthy |
+| 3+ tests fail | **NO-GO** — Too many failures |
+
+### Smoke Report
+
+Use run ID format `SMOKE-YYYY-MM-DD-HHMM` instead of `REG-`. Write report to `reports/regression/{RUN_ID}/smoke-report.md` with:
+- Verdict (GO / CONDITIONAL GO / NO-GO)
+- Track A results table (12 storefront tests)
+- Track B results table (admin/backend checks)
+- Critical revenue flow coverage matrix
+- Bugs and console errors found

@@ -1,0 +1,36 @@
+{
+  "runId": "SMOKE-2026-02-27-1132",
+  "startedAt": "2026-02-27T11:32:18.000Z",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "selection": "smoke",
+  "mode": "smoke-two-track",
+  "totalSuites": 2,
+  "completedSuites": 0,
+  "status": "running",
+  "suites": [
+    {
+      "id": "01-track-a",
+      "name": "Smoke Tests - Storefront (Track A)",
+      "status": "running",
+      "browser": "playwright-chrome",
+      "attempt": 1,
+      "maxAttempts": 3,
+      "startedAt": "2026-02-27T11:32:18.000Z",
+      "completedAt": null,
+      "result": null,
+      "error": null
+    },
+    {
+      "id": "01-track-b",
+      "name": "Admin & Backend Health Checks (Track B)",
+      "status": "running",
+      "browser": "playwright-edge",
+      "attempt": 1,
+      "maxAttempts": 3,
+      "startedAt": "2026-02-27T11:32:18.000Z",
+      "completedAt": null,
+      "result": null,
+      "error": null
+    }
+  ]
+}

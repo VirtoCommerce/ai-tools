@@ -59,6 +59,12 @@ vc-mcp-testing-module/
 │   └── notify-teams.ts      # Teams webhook notifications
 ├── docs/prompts/            # LLM prompt templates for QA automation
 ├── docs/guides/             # Testing guides (e.g., Storybook testing)
+├── docs/references/         # Agent reference files (read on demand to reduce context)
+│   ├── shared/              # Cross-agent: output-paths.md, bug-investigation-flow.md
+│   ├── frontend-testing/    # 6 files: test cases, visual checklist, sign-off templates
+│   ├── backend-testing/     # 6 files: API/GraphQL, admin CRUD, modules, import/export
+│   ├── ui-ux-testing/       # 5 files: WCAG, design system, visual regression, heuristics
+│   └── test-management/     # 1 file: E2E scenario catalog (105 scenarios, 18 domains)
 ├── storybook/               # Visual regression baselines (Atomic Design: atoms/molecules/organisms)
 ├── regression/suites/       # Regression test suites (Frontend + Backend, CSV format)
 ├── test-data/               # Test data (organizations, search queries, uploads)
@@ -120,19 +126,44 @@ Additional MCP servers (configured at user level, not in `.mcp.json`):
 
 ## Claude Code Specialized Agents
 
-Seven agents in `.claude/agents/` for interactive QA tasks:
+13 agents in `.claude/agents/` across two teams (QA + BA). See `.claude/agents/README.md` for full documentation.
+
+### QA Team (7 agents)
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| **qa-lead** (orchestrator) | sonnet | Orchestrates testing, delegates to specialists, manages JIRA workflow, makes go/no-go decisions |
+| **qa-lead-orchestrator** | sonnet | Orchestrates testing, delegates to specialists, manages JIRA workflow, makes go/no-go decisions |
+| **qa-frontend-expert** | opus | Customer-facing storefront, user journeys, checkout flows, mobile, cross-browser |
 | **qa-backend-expert** | opus | Platform APIs, GraphQL xAPI, Modules, Admin SPA, background jobs |
-| **qa-frontend-expert** | opus | Customer-facing storefront, user journeys, checkout flows, mobile |
 | **qa-testing-expert** | opus | Interactive testing - UI verification, Figma comparison, debugging |
 | **test-management-specialist** | sonnet | Test planning, test case writing, coverage tracking, TestRail artifacts |
 | **ui-ux-expert** | sonnet | Storybook component testing, WCAG 2.1 AA accessibility, design system |
-| **regression-orchestrator** | sonnet | Parallel regression execution - reads test-suites.json, spawns sub-agents, manages retries, consolidates reports |
+| **regression-orchestrator** | sonnet | Parallel regression + smoke mode, retries, browser fallback, consolidated reports |
 
-Usage: `"Use the qa-frontend-expert to verify the checkout flow"` or `@qa-lead`
+### BA Team (4 agents)
+
+| Agent | Model | Purpose |
+|-------|-------|---------|
+| **ba-system-analyzer** | sonnet | Repo structure, module inventory, user flows, pain points |
+| **ba-api-specialist** | sonnet | API surface via Postman/Swagger, health assessment |
+| **ba-story-writer** | sonnet | Agile user stories with BDD acceptance criteria, DoD, test scenarios |
+| **ba-doc-writer** | sonnet | User docs, admin guides, API quick-start, UX improvement specs |
+
+### Slash Commands (9)
+
+| Command | Purpose |
+|---------|---------|
+| `/qa-smoke` | Daily smoke test (12 P0 tests, ~15 min, GO/NO-GO verdict) |
+| `/qa-test VCST-XXXX` | Test a JIRA ticket, feature, or PR |
+| `/qa-regression [scope]` | Run regression suites (smoke/critical/sprint/full/frontend/backend) |
+| `/qa-status` | Dashboard: run status, JIRA queue, env health, recent bugs |
+| `/qa-bug [description]` | Reproduce, document, and optionally file a JIRA bug |
+| `/qa-exploratory [area]` | Guided exploratory testing session with heuristics |
+| `/qa-env-check` | Validate env vars, endpoints, MCP servers, test infra |
+| `/ba-analyze [scope]` | Business analysis (full/flows/api/docs/stories/module) |
+| `/ba-stories [feature]` | Generate Agile user stories with BDD acceptance criteria |
+
+Usage: `/qa-smoke`, `/qa-test VCST-1234`, or use agents directly: `"Use qa-frontend-expert to test checkout"`
 
 **Agent Teams mode** is enabled via `settings.json` (`teammateMode: "in-process"`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`). The `settings.json` also configures a `post_edit` hook that runs TypeScript type-checking after edits.
 
@@ -146,7 +177,7 @@ Usage: `"Use the qa-frontend-expert to verify the checkout flow"` or `@qa-lead`
 | **ui-ux-expert** | `Chrome DevTools MCP` | (no webkit on Windows) |
 | **test-management-specialist** | `playwright-chrome` (sequential, not parallel with frontend) | |
 
-If more than 3 agents need browsers simultaneously, run them in sequential batches.
+BA agents do not require browsers. Max 3 concurrent browser agents. Never use WebKit on Windows.
 
 ## Agent Delegation
 
