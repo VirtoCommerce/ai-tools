@@ -65,8 +65,8 @@ vc-mcp-testing-module/
 ├── docs/prompts/            # LLM prompt templates for QA automation
 ├── docs/guides/             # Testing guides (e.g., Storybook testing)
 ├── docs/references/         # Agent reference files (read on demand to reduce context)
-│   ├── frontend-testing/    # 6 files: test cases, visual checklist, sign-off templates
-│   └── backend-testing/     # 5 files: admin CRUD, modules, import/export, integrations, sign-off
+│   ├── frontend-testing/    # 5 files: test cases (catalog, checkout, account-b2b, responsive), visual checklist
+│   └── backend-testing/     # 4 files: admin CRUD, modules/jobs, import/export, integrations
 ├── storybook/               # Visual regression baselines (Atomic Design: atoms/molecules/organisms)
 ├── regression/suites/       # Regression test suites (Frontend + Backend, CSV format)
 ├── test-data/               # Test data (organizations, search queries, uploads)
@@ -231,61 +231,16 @@ BA agents do not require browsers. Max 3 concurrent browser agents. Never use We
 Key prompt templates in `docs/prompts/`:
 - `full-regression-qa-agent.md` - Complete Admin + Frontend regression
 - `test-runner-agent.md` - Suite execution template with parameterized placeholders (`{{SUITE_ID}}`, `{{BROWSER_SERVER}}`, `{{ENVIRONMENT_URL}}`, `{{OUTPUT_FILE}}`, etc.) for regression orchestrator
-- `storybook-testing.md` - Component testing
-- `platform-tests.md` - Backend/API testing
 - `How to test Builder.io.md` - Builder.io, Virto Pages & vc-frontend testing
-- `setup.xml` - XML-structured regression prompt with execution steps
 - `story-testing.txt` - Story-level testing prompt
 
 ## Regression Test Suites
 
-36 suites total in `regression/suites/` in TestRail CSV format (`ID, Title, Section, Type, Priority, Estimate, Preconditions, Steps, Expected Result, References, Automation Status`).
+36 suites in `regression/suites/` (15 frontend + 21 backend) in TestRail CSV format (`ID, Title, Section, Type, Priority, Estimate, Preconditions, Steps, Expected Result, References, Automation Status`). Full definitions in `config/test-suites.json`.
 
-### Frontend Suites (regression/suites/Frontend/)
-
-| Suite | Name | Priority | Tags |
-|-------|------|----------|------|
-| 01 | Smoke Tests | P0 | smoke, daily, pre-deploy |
-| 02 | Authentication Tests | P1 | auth, security |
-| 03 | Catalog & Search Tests | P1 | catalog, search |
-| 04 | Cart & Checkout Tests | P1 | cart, checkout, revenue-critical |
-| 05 | BOPIS Pickup Tests | P1 | bopis, pickup |
-| 06 | Payment Tests | P0 | payment, revenue-critical |
-| 07 | Google Analytics Tests | P2 | analytics, ga4 |
-| 08 | Security Tests | P0 | security, pci |
-| 09 | Accessibility Tests | P1 | wcag, a11y |
-| 10 | Localization Tests | P2 | i18n, languages |
-| 11 | Performance Tests | P2 | core-web-vitals |
-| 12 | Browser Compatibility Tests | P1 | cross-browser |
-| 13 | B2C Features Tests | P1 | b2c, variations, wishlists |
-| 35 | Frontend White Labeling Tests | P1 | whitelabeling, branding, responsive |
-| 36 | Configurable Products Tests | P1 | configurable-products, e2e |
-
-### Backend Suites (regression/suites/Backend/)
-
-| Suite | Name | Priority | Tags |
-|-------|------|----------|------|
-| 14 | Platform API Tests | P0 | api, rest, daily |
-| 15 | GraphQL xAPI Tests | P1 | graphql, xapi |
-| 16 | Catalog Admin Tests | P1 | catalog, admin, configurable-products |
-| 17 | Platform Core Tests | P1 | users, roles, dynamic-properties, healthcheck |
-| 18 | Store Admin Tests | P1 | store, configuration |
-| 19 | Pricing Admin Tests | P1 | pricing, pricelists |
-| 20 | Orders Admin Tests | P1 | orders, payments, shipments |
-| 21 | Customer Admin Tests | P1 | contacts, organizations |
-| 22 | Inventory Admin Tests | P1 | inventory, fulfillment |
-| 23 | Marketing Admin Tests | P1 | promotions, coupons, content |
-| 24 | Notifications Admin Tests | P1 | email, sms, templates |
-| 25 | CMS & Page Builder Tests | P1 | cms, pagebuilder |
-| 26 | Search & Indexing Tests | P1 | elastic, lucene, filters |
-| 27 | Assets Module Tests | P1 | upload, blob-storage |
-| 28 | Core Settings Tests | P2 | permissions, languages |
-| 29 | CSV Export Import Tests | P1 | csv, import, export |
-| 30 | Shipping Module Tests | P1 | shipping, bopis, rates |
-| 31 | SEO Module Tests | P1 | seo, redirects, slug |
-| 32 | White Labeling Tests | P2 | whitelabeling, branding |
-| 33 | Push Messages Tests | P2 | push-messages, notifications |
-| 34 | Image Tools Tests | P2 | thumbnails, resize |
+- **Frontend** (suites 01-13, 35-36): Smoke, Auth, Catalog, Cart, BOPIS, Payment, GA4, Security, A11y, i18n, Perf, Browser Compat, B2C, White Labeling, Configurable Products
+- **Backend** (suites 14-34): Platform API, GraphQL xAPI, Catalog/Store/Pricing/Orders/Customer/Inventory/Marketing/Notifications/CMS/Search/Assets/Settings Admin, CSV Import/Export, Shipping, SEO, White Labeling, Push Messages, Image Tools
+- **P0 suites**: 01 (Smoke), 06 (Payment), 08 (Security), 14 (Platform API)
 
 ### Selection Groups (from test-suites.json)
 
