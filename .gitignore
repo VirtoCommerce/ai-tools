@@ -1,6 +1,5 @@
 node_modules
 .env
-.cursorrules
 .playwright-mcp/
 .vscode/
 .serena/

@@ -18,7 +18,7 @@ This is a **QA testing documentation and MCP-driven testing repository** for the
 
 ```bash
 npm install              # Install dependencies
-npm run env:check        # Verify all required env vars (29 total) via get_variables_env.js
+npm run env:check        # Verify all required env vars (33 total) via get_variables_env.js
 npm run ci:regression    # Run CI regression via Claude Agent SDK (npx tsx ci/run-regression.ts)
 npm run ci:smoke         # Run smoke tests only (suite 01)
 npm run ci:critical      # Run critical P0 suites (01, 06, 08, 14)
@@ -30,8 +30,8 @@ npm run ci:notify        # Send Teams notification (requires TEAMS_WEBHOOK_URL)
 
 ## Environment Setup
 
-Create a `.env` file with required variables (29 total). Run `npm run env:check` to validate. Key groups:
-- **URLs:** `FRONT_URL`, `BACK_URL`, `VIRTO_START_FRONT`, `VIRTO_START_BACK`
+Create a `.env` file with required variables (33 total). Run `npm run env:check` to validate. Key groups:
+- **URLs:** `FRONT_URL`, `BACK_URL`, `VIRTO_START_FRONT`, `VIRTO_START_BACK`, `STORYBOOK_URL`, `STORYBOOK_DEV_URL`
 - **Credentials:** `ADMIN`, `ADMIN_PASSWORD`, `USER_EMAIL`, `USER_PASSWORD`, `USER2_*`, `USER_VIRTO`, `USER_VIRTO_PASSWORD`
 - **Store:** `STORE_ID`
 - **Payment processors:** Skyflow (`SKYFLOW_VISA`, `SKYFLOW_MASTERCARD`, `SKYFLOW_EXPIRY`, `SKYFLOW_CVV`), CyberSource, Authorize.Net, Datatrance (card/expiry/cvv + `DATATRANCE_OTP`)
@@ -49,12 +49,12 @@ Access via `config.js`: `import { env } from './config.js'`
 
 ```
 vc-mcp-testing-module/
-├── .claude/agents/          # Claude Code agent configurations (13 agents, gitignored)
-├── .claude/skills/          # Skills grouped by category (16 skills in 3 groups, gitignored)
+├── .claude/agents/          # Claude Code agent configurations (11 agents, tracked in git)
+├── .claude/skills/          # Skills grouped by category (16 skills in 3 groups, tracked in git)
 │   ├── vc-knowledge/        # VC docs, module analysis, API reference (3 skills)
 │   ├── testing/             # Storybook, accessibility, design, plan, API (5 skills)
 │   └── qa-methodology/      # Process, investigation, evidence, test design, risk, metrics, exploratory, defect (8 skills)
-├── .claude/commands/        # Slash commands (9 commands, gitignored)
+├── .claude/commands/        # Slash commands (9 commands, tracked in git)
 ├── .mcp.json                # MCP server configuration (tracked but OS-specific)
 ├── config/                  # Playwright MCP browser configs + test-suites.json manifest
 ├── ci/                      # CI regression (Docker + Claude Agent SDK, gitignored)
@@ -64,20 +64,24 @@ vc-mcp-testing-module/
 │   └── notify-teams.ts      # Teams webhook notifications
 ├── docs/prompts/            # LLM prompt templates for QA automation
 ├── docs/guides/             # Testing guides (e.g., Storybook testing)
+├── docs/workshop/           # Team onboarding workshop (plan, setup, presentation)
 ├── docs/references/         # Agent reference files (read on demand to reduce context)
 │   ├── frontend-testing/    # 5 files: test cases (catalog, checkout, account-b2b, responsive), visual checklist
 │   └── backend-testing/     # 4 files: admin CRUD, modules/jobs, import/export, integrations
 ├── storybook/               # Visual regression baselines (Atomic Design: atoms/molecules/organisms)
-├── regression/suites/       # Regression test suites (Frontend + Backend, CSV format)
+├── regression/suites/       # Regression test suites (Frontend/ + Backend/ subdirs, CSV format)
 ├── test-data/               # Test data (organizations, search queries, uploads)
-├── tests/                   # Test cases organized by sprint and JIRA ticket
+├── tests/                   # Test cases organized by sprint (Sprint26-02/, Sprint26-03/) then JIRA ticket
+│   └── INDEX.md             # Entry point: active test cases grouped by domain
 ├── reports/                 # Bug reports and regression test reports
 ├── archive/sprints/         # Historical sprint test cases
 ├── config.js                # Environment configuration (loads .env)
 └── sitemap.md               # Site structure reference
 ```
 
-**Gitignored:** `.claude/` (agents, skills, commands), `settings.json`, `.env`, `test-results/`, `.serena/`, `.playwright-mcp/`, `ci/`, `.github/`
+**Gitignored:** `settings.json`, `.env`, `test-results/`, `.serena/`, `.playwright-mcp/`, `ci/`, `.github/`, `.claude/settings.local.json`
+
+**Tracked in git:** `.claude/agents/`, `.claude/skills/`, `.claude/commands/` — agent definitions, skills, and slash commands are version-controlled.
 
 **Tracked but local-specific:** `.mcp.json` and `config/` are tracked in git. After cloning, verify MCP configs match your local setup (Windows uses `cmd /c npx`, Linux/Mac uses `npx` directly).
 
@@ -128,7 +132,7 @@ Additional MCP servers (configured at user level, not in `.mcp.json`):
 
 ## Claude Code Specialized Agents
 
-13 agents in `.claude/agents/` across two teams (QA + BA). See `.claude/agents/README.md` for full documentation.
+11 agents in `.claude/agents/` across two teams (QA + BA). See `.claude/agents/README.md` for full documentation.
 
 ### QA Team (7 agents)
 
@@ -236,8 +240,9 @@ Key prompt templates in `docs/prompts/`:
 
 ## Regression Test Suites
 
-36 suites in `regression/suites/` (15 frontend + 21 backend) in TestRail CSV format (`ID, Title, Section, Type, Priority, Estimate, Preconditions, Steps, Expected Result, References, Automation Status`). Full definitions in `config/test-suites.json`.
+36 modular suites + 1 master suite in `regression/suites/` (organized in `Frontend/` and `Backend/` subdirectories) in TestRail CSV format (`ID, Title, Section, Type, Priority, Estimate, Preconditions, Steps, Expected Result, References, Automation Status`). Full definitions in `config/test-suites.json`. **Total: 1,194 test cases** (427 frontend + 767 backend).
 
+- **Suite 00** (`Frontend/00-full-regression-release.csv`): Master suite — 90 consolidated P0/P1 test cases for major releases
 - **Frontend** (suites 01-13, 35-36): Smoke, Auth, Catalog, Cart, BOPIS, Payment, GA4, Security, A11y, i18n, Perf, Browser Compat, B2C, White Labeling, Configurable Products
 - **Backend** (suites 14-34): Platform API, GraphQL xAPI, Catalog/Store/Pricing/Orders/Customer/Inventory/Marketing/Notifications/CMS/Search/Assets/Settings Admin, CSV Import/Export, Shipping, SEO, White Labeling, Push Messages, Image Tools
 - **P0 suites**: 01 (Smoke), 06 (Payment), 08 (Security), 14 (Platform API)
