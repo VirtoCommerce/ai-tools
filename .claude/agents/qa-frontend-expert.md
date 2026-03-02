@@ -33,32 +33,22 @@ This layer gives you judgment. You know what matters and what to flag.
 
 ### Virto Commerce Storefront (Vue.js) Patterns
 
-- Vue hydration mismatches after SSR → check console for `[Vue warn]: Hydration` messages; these cause UI flicker and stale state
-- xAPI GraphQL returns errors *inside* HTTP 200 responses — always inspect `response.data.errors[]`, not just status code
-- Cart state lives in localStorage + server; desync after refresh = customer sees stale prices/quantities. Common after price changes in Admin
-- Coffee theme: CSS custom properties for theming, shared component library. Theme switch may cause FOUC if variables load late
-- Admin SPA (VC-Shell Angular) changes may not reflect on storefront until cache purge or Elasticsearch reindex
-- Storefront search uses Elasticsearch via xAPI — reindex lag means newly created products may not appear immediately
-- Payment iframes (Skyflow, CyberSource) live in cross-origin frames — console errors from the iframe are NOT visible in the main console
+> **Reference:** `.claude/agents/knowledge/platform-patterns.md` — full storefront, admin, and API layer patterns.
+
+Key patterns for frontend testing:
+- Vue hydration mismatches after SSR → check console for `[Vue warn]: Hydration` messages
+- xAPI GraphQL returns errors *inside* HTTP 200 — always inspect `response.data.errors[]`
+- Cart state desync between localStorage and server after Admin price changes
+- Payment iframes (Skyflow, CyberSource) are cross-origin — console errors NOT visible in main console
+- Elasticsearch reindex lag — newly created products may not appear immediately
 
 ### Performance Thresholds
 
-| Metric | Good | Bug | P0 Escalation |
-|--------|------|-----|---------------|
-| LCP | < 2.5s | > 2.5s | > 4.0s |
-| CLS | < 0.1 | > 0.1 | Any shift during checkout |
-| FCP | < 1.5s | > 1.5s | — |
-| TTI | < 3.5s | > 3.5s | — |
-| FID | < 100ms | > 100ms | — |
-| API response | < 500ms | > 500ms | > 2s |
-| Page weight | < 2MB | > 2MB | — |
+> **Reference:** `.claude/agents/knowledge/performance-thresholds.md` — full threshold tables for storefront, API, admin, and backend jobs.
 
 ### Browser Quirks
 
-- **iOS Safari**: `100vh` includes toolbar (use `dvh`), fixed positioning breaks during keyboard open, momentum scroll traps, safe area insets needed for notch devices, auto-zoom on inputs < 16px font-size
-- **Safari desktop**: `<input type="date">` renders native picker differently, backdrop-filter has performance issues, sticky positioning inside overflow containers breaks
-- **Firefox**: scrollbar styling limited to `::-webkit-scrollbar` not supported, subgrid support varies, `gap` may not work in older flexbox contexts
-- **Edge**: generally Chrome-compatible, but extension-injected console noise — filter out `extension://` messages
+> **Reference:** `.claude/agents/knowledge/browser-quirks.md` — iOS Safari, Safari desktop, Firefox, Edge, and WebKit limitations.
 
 ### UX Heuristics
 
@@ -73,11 +63,7 @@ This layer gives you judgment. You know what matters and what to flag.
 
 ### Network Semantics
 
-- GraphQL `errors[]` inside HTTP 200 = application error (not network error)
-- Silent 4xx on lazy-loaded images = visual bugs with no console trace
-- CORS preflight failures on payment iframes = integration issue (Skyflow, CyberSource)
-- Mixed content warnings = security flag, blocks resources on HTTPS
-- Duplicate API calls on single action = performance bug (check for missing debounce)
+> **Reference:** `.claude/agents/knowledge/debugging-signals.md` — console error patterns and network red flags.
 
 ---
 
@@ -135,7 +121,7 @@ Skills are methodology libraries with supporting reference files. Read the suppo
 | Starting any test session | `/qa-evidence` → `evidence-capture-policy.md` | Screenshot budgets, report tiers, what to capture |
 | Deriving test cases from JIRA | `/qa-test-design` → `test-design-techniques.md` | EP, BVA, decision tables, state transitions |
 | Prioritizing test depth | `/qa-risk` → `risk-prioritization-framework.md` | 5x5 risk matrix, test depth allocation |
-| Running exploratory testing | `/qa-exploratory-method` → `session-based-testing.md` | SBTM charters, heuristics, tours, debrief |
+| Running exploratory testing | `/qa-sbtm` → `session-based-testing.md` | SBTM charters, heuristics, tours, debrief |
 | Investigating a suspected bug | `/qa-investigate` → `bug-investigation-flow.md` | 5-phase: reproduce → isolate → gather → root cause → document |
 | Filing a bug report | `/qa-defect` → `defect-report-templates.md` | Frontend bug template with required fields |
 | Classifying/triaging a defect | `/qa-defect` → `defect-lifecycle-workflow.md` | JIRA Bug Workflow (16 statuses), severity matrix |
@@ -189,13 +175,13 @@ Use DOM for logic checks. Use screenshots for visual checks. Use both for ambigu
 
 | Area | Reference File |
 |------|---------------|
-| Catalog, Search, PDP, Cart | `docs/references/frontend-testing/test-cases-catalog.md` |
-| Checkout (Guest, Registered, B2B) | `docs/references/frontend-testing/test-cases-checkout.md` |
-| Account, Dashboard, B2B Features | `docs/references/frontend-testing/test-cases-account-b2b.md` |
-| Responsive, Cross-Browser, Perf | `docs/references/frontend-testing/test-cases-responsive-crossbrowser-perf.md` |
-| Visual Bug Detection | `docs/references/frontend-testing/visual-bug-detection-checklist.md` |
+| Frontend suites (Catalog, Checkout, Auth, Cart, etc.) | `regression/suites/Frontend/*.csv` (suites 01-13, 35-36) |
+| E2E Scenario Catalog (105 scenarios) | `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md` |
+| Visual Bug Detection & Design System | `.claude/skills/testing/qa-design/design-system-consistency.md` |
 | Storefront Sitemap (URLs, products, categories, languages) | `.claude/skills/vc-knowledge/vc-frontend/sitemap.md` |
 | Module → Suite Mapping, Dependencies, Impact Analysis | `.claude/skills/vc-knowledge/vc-module/module-suite-map.md` |
+| Performance Thresholds | `.claude/agents/knowledge/performance-thresholds.md` |
+| Browser Quirks | `.claude/agents/knowledge/browser-quirks.md` |
 
 ### Judge — Pass/Fail Classification
 

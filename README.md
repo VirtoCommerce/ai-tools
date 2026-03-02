@@ -513,20 +513,13 @@ vc-mcp-testing-module/
 │   └── mcp-playwright-webkit.config.json
 ├── docs/
 │   ├── prompts/                 # LLM prompt templates for QA automation
-│   │   ├── full-regression-qa-agent.md
 │   │   ├── platform-tests.md
 │   │   ├── storybook-testing.md
 │   │   ├── How to test Builder.io.md
 │   │   └── setup.xml
-│   └── guides/                  # Testing guides
-│       └── how-to-test-storybook.md
-├── storybook/                   # Visual regression baselines (Atomic Design)
-│   ├── atoms/                   # VcBadge, VcCheckbox, VcDialog, VcIcon, ...
-│   ├── molecules/               # VcAlert, VcButton, VcChip, VcInput, ...
-│   ├── organisms/               # VcAddToCart, VcPagination, VcProductCard, ...
-│   └── design-system/           # Theme comparison (default vs coffee)
+│   └── workshop/                # Team onboarding workshop
 ├── regression/
-│   └── suites/                  # 14 regression test suites (455 test cases, CSV)
+│   └── suites/                  # 36 regression test suites (1,194 test cases, CSV)
 ├── test-data/                   # Centralized test data
 │   ├── users/                   # User accounts and credentials
 │   ├── organizations/           # B2B organization data
@@ -576,7 +569,6 @@ This project uses an **LLM-driven testing workflow** instead of traditional `.sp
 
 | Template | Purpose |
 |----------|---------|
-| `full-regression-qa-agent.md` | Complete Admin + Frontend regression testing |
 | `platform-tests.md` | Backend/API platform testing |
 | `storybook-testing.md` | UI component visual regression testing |
 | `How to test Builder.io.md` | Builder.io, Virto Pages & vc-frontend testing |
@@ -600,7 +592,7 @@ Claude Code will:
 
 ## Regression Test Suites
 
-14 test suites in `regression/suites/` with 455 total test cases in TestRail-compatible CSV format.
+36 test suites (15 frontend + 21 backend) in `regression/suites/` with 1,194 total test cases in TestRail-compatible CSV format.
 
 | # | Suite | Tests | Priority | Est. Time |
 |---|-------|-------|----------|-----------|
@@ -776,7 +768,7 @@ Bug reports go in `reports/bugs/` with this format:
 
 ## Storybook Visual Regression
 
-The `storybook/` directory stores visual regression baselines organized by Atomic Design:
+Visual regression baselines are captured on-demand by the `/qa-storybook` skill (delegated to `ui-ux-expert` agent). Components tested across Atomic Design tiers:
 
 | Tier | Components |
 |------|-----------|
@@ -787,7 +779,7 @@ The `storybook/` directory stores visual regression baselines organized by Atomi
 
 Screenshot naming convention: `{story-name}-{viewport}.png` (e.g., `basic-desktop.png`, `hover-state-tablet.png`).
 
-See `docs/guides/how-to-test-storybook.md` for the complete Storybook testing guide.
+See `.claude/skills/testing/qa-storybook/how-to-test-storybook.md` for the complete Storybook testing guide.
 
 ---
 

@@ -107,7 +107,7 @@ MCP Servers (the "hands" of Claude)
 | `reports/bugs/` | Bug reports with evidence | Documenting defects |
 | `reports/regression/` | Regression execution reports | Sprint/release reports |
 | `tests/VCST-XXXX-*/` | Per-ticket test documentation | Feature-specific testing |
-| `storybook/` | Visual regression baselines | Component testing |
+| `/qa-storybook` skill | Visual regression testing | Component testing |
 | `ci/` | GitHub Actions + Docker automation | CI/CD regression runs |
 
 **Mention the 6 agents briefly (will demo in Part 2):**
@@ -412,7 +412,7 @@ Reporting:
 | Project context | `CLAUDE.md` |
 | Test suites | `regression/suites/README.md` |
 | Prompt templates | `docs/prompts/` |
-| Testing guides | `docs/guides/` |
+| Testing skills & guides | `.claude/skills/testing/` |
 | Test data | `test-data/README.md` |
 | CI/CD docs | `ci/README.md` |
 | QA Slack channel | [share link] |

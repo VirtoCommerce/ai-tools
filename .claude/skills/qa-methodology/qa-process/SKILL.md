@@ -58,7 +58,7 @@ Navigate and apply the ISTQB Foundation-level test process: 7 phases with formal
 |-------|------------------------|
 | Plan | `/qa-plan`, `/qa-risk` |
 | Analyze | This skill (deep section) → feeds `/qa-test-design` |
-| Design | `/qa-test-design`, `/qa-exploratory-method` (charters) |
+| Design | `/qa-test-design`, `/qa-sbtm` (charters) |
 | Implement | `/qa-env-check` |
 | Execute | `/qa-test`, `/qa-smoke`, `/qa-regression`, `/qa-investigate`, `/qa-evidence` |
 | Report | `/qa-metrics` (gates + catalog) |

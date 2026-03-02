@@ -7,13 +7,13 @@ This repository contains QA testing documentation and MCP-driven testing for the
 | Directory | Purpose |
 |-----------|---------|
 | [tests/](tests/) | Active test cases organized by sprint and VCST ticket |
-| [regression/](regression/) | Regression test suites (14 frontend + 21 backend CSV files) |
+| [regression/](regression/) | Regression test suites (15 frontend + 21 backend CSV files) |
 | [test-data/](test-data/) | Test fixtures, sample data, and test cards |
 | [reports/](reports/) | Bug reports and regression test results |
 | [docs/](docs/) | LLM prompt templates and testing guides |
 | [config/](config/) | MCP browser configs and test-suites.json manifest |
 | [ci/](ci/) | CI regression via Claude Agent SDK (Docker + GitHub Actions) |
-| [storybook/](storybook/) | Visual regression baselines (Atomic Design tiers) |
+| [Test suites & Cases/](Test%20suites%20%26%20Cases/) | Original TestRail export (source-of-truth reference) |
 | [scripts/](scripts/) | Utility scripts (Katalon test extraction) |
 | [archive/](archive/) | Historical sprint test documentation |
 
@@ -21,7 +21,7 @@ This repository contains QA testing documentation and MCP-driven testing for the
 
 ```
 vc-mcp-testing-module/
-├── .claude/agents/            # Claude Code agent configurations (7 agents)
+├── .claude/agents/            # Claude Code agent configurations (11 agents: 7 QA + 4 BA)
 ├── .github/workflows/         # GitHub Actions (regression.yml)
 │
 ├── config/                    # MCP browser configurations + suite manifest
@@ -38,22 +38,20 @@ vc-mcp-testing-module/
 │
 ├── docs/
 │   ├── prompts/               # LLM testing prompt templates
-│   └── guides/                # How-to guides
+│   ├── guides/                # How-to guides
+│   └── workshop/              # Team onboarding workshop
 │
 ├── tests/                     # Active test cases by sprint
 │   ├── Sprint26-02/           # Sprint directories with VCST-XXXX tickets
-│   └── Sprint26-03/
+│   ├── Sprint26-03/
+│   └── Sprint26-04/
 │
 ├── regression/
 │   └── suites/
-│       ├── Frontend/          # 14 CSV suites (00-13)
+│       ├── Frontend/          # 16 CSV suites (00-13, 35-36)
 │       └── Backend/           # 21 CSV suites (14-34)
 │
-├── storybook/                 # Visual regression baselines
-│   ├── atoms/                 # Badge, Checkbox, Dialog, Icon, etc.
-│   ├── molecules/             # Alert, Button, Chip, Input, etc.
-│   ├── organisms/             # AddToCart, ProductCard, Table, etc.
-│   └── design-system/         # Theme comparison (default, coffee)
+├── Test suites & Cases/       # Original TestRail export (reference data)
 │
 ├── test-data/
 │   ├── addresses/             # US address test data
@@ -108,6 +106,8 @@ Default environment is **QA**. Theme presets: Default, Coffee.
 | **Performance** | Load times, Core Web Vitals | [11-performance-tests](regression/suites/Frontend/11-performance-tests.csv) |
 | **Browser Compatibility** | Cross-browser testing | [12-browser-compatibility-tests](regression/suites/Frontend/12-browser-compatibility-tests.csv) |
 | **B2C Features** | Wishlists, compare, reviews, variations | [13-b2c-features-tests](regression/suites/Frontend/13-b2c-features-tests.csv) |
+| **White Labeling** | Frontend white labeling and branding | [35-frontend-whitelabeling-tests](regression/suites/Frontend/35-frontend-whitelabeling-tests.csv) |
+| **Configurable Products** | Product configurations and variations | [36-configurable-products-tests](regression/suites/Frontend/36-configurable-products-tests.csv) |
 
 ### Backend Suites (regression/suites/Backend/)
 
@@ -139,11 +139,11 @@ Default environment is **QA**. Theme presets: Default, Coffee.
 
 ```bash
 npm install              # Install dependencies
-npm run env:check        # Verify all required env vars (29 total)
+npm run env:check        # Verify all required env vars (33 total)
 npm run ci:regression    # Run CI regression via Claude Agent SDK
 npm run ci:smoke         # Run smoke tests only (suite 01)
 npm run ci:critical      # Run critical P0 suites (01, 06, 08, 14)
-npm run ci:frontend      # Run all frontend suites (01-13)
+npm run ci:frontend      # Run all frontend suites (01-13, 35-36)
 npm run ci:backend       # Run all backend suites (14+)
 npm run ci:full          # Run full regression (all suites)
 npm run ci:notify        # Send Teams notification
@@ -160,6 +160,10 @@ npm run ci:notify        # Send Teams notification
 | **test-management-specialist** | sonnet | Test planning, coverage tracking, TestRail artifacts |
 | **ui-ux-expert** | sonnet | Storybook, WCAG 2.1 AA accessibility, design system |
 | **regression-orchestrator** | sonnet | Parallel regression execution, retries, consolidated reports |
+| **ba-system-analyzer** | sonnet | BA: Repo structure, module inventory, user flows |
+| **ba-api-specialist** | sonnet | BA: API surface analysis via Postman/Swagger |
+| **ba-story-writer** | sonnet | BA: Agile user stories with BDD acceptance criteria |
+| **ba-doc-writer** | sonnet | BA: User docs, admin guides, API quick-start |
 
 ## MCP Servers
 
@@ -176,7 +180,7 @@ npm run ci:notify        # Send Teams notification
 
 - [CLAUDE.md](CLAUDE.md) - Project guidance for Claude Code
 - [README.md](README.md) - Quick start guide
-- [sitemap.md](sitemap.md) - B2B storefront structure
+- [.claude/skills/vc-knowledge/vc-frontend/sitemap.md](.claude/skills/vc-knowledge/vc-frontend/sitemap.md) - B2B storefront structure
 - [config/test-suites.json](config/test-suites.json) - Regression orchestration manifest
 - [tests/INDEX.md](tests/INDEX.md) - Test directory index
 - [ci/README.md](ci/README.md) - CI regression documentation

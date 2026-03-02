@@ -117,41 +117,27 @@ Guard conditions (test these explicitly):
 
 ### API Contract Semantics
 
-- **REST status codes**: 201 for creation, 204 for delete, 400 for validation, 401 unauthorized, 403 forbidden, 404 not found. "200 for everything" = contract violation
+> **Reference:** `.claude/agents/knowledge/platform-patterns.md` — full REST/GraphQL contract details, status codes, pagination, store context.
+
+Key backend-specific patterns:
 - **Idempotency**: PUT is idempotent (repeat = same result), POST is not (repeat = duplicate). Test this.
-- **GraphQL errors inside HTTP 200**: always check `response.data.errors[]` — partial data with errors is valid GraphQL behavior
-- **Pagination**: REST uses `skip/take` → response has `totalCount`. GraphQL uses `first/after` (cursor-based). Off-by-one bugs are common at boundaries
-- **Store context**: All xAPI queries require `storeId`, `cultureName`, `currencyCode` — missing context = confusing errors
 - **Error responses**: should include error code, message, no stack traces in production. Validate error shape, not just status code
 
 ### Admin SPA Blade System
 
+> **Reference:** `.claude/agents/knowledge/platform-patterns.md` — blade UI patterns, state persistence, memory leaks.
+
 Blades are Virto's sliding modal panels — the core UI pattern in the Angular Admin SPA:
 - Test: open/close (X button, backdrop click), stacking multiple blades, breadcrumb navigation, browser back button
-- Angular console errors on blade open/close = bug (watch for memory leaks on repeated open/close)
-- State persistence: edit form → open nested blade → return → edits should persist
 - Tooltip behavior: only one tooltip unfolded at a time, folds when switching
 
 ### Performance Thresholds
 
-| Metric | Good | Bug | P0 Escalation |
-|--------|------|-----|---------------|
-| REST API response | < 500ms | > 500ms | > 2s |
-| GraphQL query | < 500ms | > 500ms | > 2s (nested) |
-| Search index rebuild | < 30s | > 60s | stuck > 5min |
-| CSV import (100 items) | < 30s | > 60s | — |
-| Hangfire job | completes | fails silently | stuck > 5min |
-| Admin blade open | < 1s | > 2s | — |
+> **Reference:** `.claude/agents/knowledge/performance-thresholds.md` — full threshold tables for API, admin, backend jobs, and storefront.
 
 ### Data Cascade Effects
 
-Where the worst cross-module bugs hide:
-- Delete catalog → products, prices, search index entries should cascade-delete
-- Delete price list → storefront shows $0 + "Unavailable", can't add to cart
-- Cancel order → inventory adjusts only if "Adjust inventory" flag enabled
-- Disable module → API returns 404, Admin section disappears, dependent modules may break
-- Change product → search index stale until rebuild (event-based indexation may or may not trigger)
-- Change FFC stock to 0 → storefront "Sold out" label, "Add to cart" disabled
+> **Reference:** `.claude/agents/knowledge/platform-patterns.md` — data cascade effects (delete catalog, price list, cancel order, disable module, etc.).
 
 ---
 
@@ -215,7 +201,7 @@ Skills are methodology libraries with supporting reference files. Read the suppo
 | Starting any test session | `/qa-evidence` → `evidence-capture-policy.md` | Capture budgets, report tiers |
 | Deriving test cases from JIRA | `/qa-test-design` → `test-design-techniques.md` | EP, BVA, decision tables, state transitions |
 | Prioritizing test depth | `/qa-risk` → `risk-prioritization-framework.md` | 5x5 risk matrix, depth allocation |
-| Running exploratory testing | `/qa-exploratory-method` → `session-based-testing.md` | SBTM charters, heuristics, debrief |
+| Running exploratory testing | `/qa-sbtm` → `session-based-testing.md` | SBTM charters, heuristics, debrief |
 | Investigating a suspected bug | `/qa-investigate` → `bug-investigation-flow.md` | 5-phase: reproduce → isolate → gather → root cause → document |
 | Filing a bug report | `/qa-defect` → `defect-report-templates.md` | Backend bug template with required fields |
 | Classifying/triaging a defect | `/qa-defect` → `defect-lifecycle-workflow.md` | JIRA Bug Workflow (16 statuses), severity matrix |
@@ -271,12 +257,11 @@ This layer defines your operating boundaries. What you can perceive, what you ca
 | Area | Reference File |
 |------|---------------|
 | REST API & GraphQL xAPI test cases | `.claude/skills/testing/qa-api/test-cases-api-graphql.md` |
-| Admin SPA CRUD operations | `docs/references/backend-testing/test-cases-admin-crud.md` |
-| Module Settings & Background Jobs | `docs/references/backend-testing/test-cases-modules-jobs.md` |
-| Data Import/Export | `docs/references/backend-testing/test-cases-import-export.md` |
-| Cross-Module Integrations | `docs/references/backend-testing/test-cases-integration.md` |
+| Backend suites (Admin CRUD, Modules, Import/Export, etc.) | `regression/suites/Backend/*.csv` (suites 14-34) |
 | Module → Suite Mapping, Dependencies | `.claude/skills/vc-knowledge/vc-module/module-suite-map.md` |
 | xAPI Query Reference | `.claude/skills/vc-knowledge/vc-api/xapi-query-ref.md` |
+| Performance Thresholds | `.claude/agents/knowledge/performance-thresholds.md` |
+| Debugging Signals | `.claude/agents/knowledge/debugging-signals.md` |
 
 ### Judge — Pass/Fail Classification
 

@@ -14,6 +14,8 @@ This is a **QA testing documentation and MCP-driven testing repository** for the
 - **Node.js**: Version 18 or higher
 - **MCP Servers**: Configured in `.mcp.json`
 
+> **New here?** See [`.claude/ROUTING.md`](.claude/ROUTING.md) for a quick decision tree on when to use which command, skill, or agent.
+
 ## Commands
 
 ```bash
@@ -53,7 +55,7 @@ vc-mcp-testing-module/
 ├── .claude/skills/          # Skills grouped by category (16 skills in 3 groups, tracked in git)
 │   ├── vc-knowledge/        # VC docs, module analysis, API reference (3 skills)
 │   ├── testing/             # Storybook, accessibility, design, plan, API (5 skills)
-│   └── qa-methodology/      # Process, investigation, evidence, test design, risk, metrics, exploratory, defect (8 skills)
+│   └── qa-methodology/      # Process, investigation, evidence, test design, risk, metrics, SBTM, defect (8 skills)
 ├── .claude/commands/        # Slash commands (9 commands, tracked in git)
 ├── .mcp.json                # MCP server configuration (tracked but OS-specific)
 ├── config/                  # Playwright MCP browser configs + test-suites.json manifest
@@ -63,12 +65,8 @@ vc-mcp-testing-module/
 │   ├── run-regression.ts    # Orchestrator script
 │   └── notify-teams.ts      # Teams webhook notifications
 ├── docs/prompts/            # LLM prompt templates for QA automation
-├── docs/guides/             # Testing guides (e.g., Storybook testing)
 ├── docs/workshop/           # Team onboarding workshop (plan, setup, presentation)
-├── docs/references/         # Agent reference files (read on demand to reduce context)
-│   ├── frontend-testing/    # 5 files: test cases (catalog, checkout, account-b2b, responsive), visual checklist
-│   └── backend-testing/     # 4 files: admin CRUD, modules/jobs, import/export, integrations
-├── storybook/               # Visual regression baselines (Atomic Design: atoms/molecules/organisms)
+├── .claude/ROUTING.md       # Decision tree: when to use which command/skill/agent
 ├── regression/suites/       # Regression test suites (Frontend/ + Backend/ subdirs, CSV format)
 ├── test-data/               # Test data (organizations, search queries, uploads)
 ├── tests/                   # Test cases organized by sprint (Sprint26-02/, Sprint26-03/) then JIRA ticket
@@ -204,7 +202,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/qa-test-design` | `feature name \| technique \| VCST-XXXX` | Test case derivation: EP, BVA, decision tables, state transitions, pairwise, error guessing | `test-design-techniques.md` |
 | `/qa-risk` | `feature \| sprint \| release \| VCST-XXXX` | Risk-based test prioritization: 5x5 matrix, severity/priority, test depth allocation | `risk-prioritization-framework.md` |
 | `/qa-metrics` | `[metrics\|gates\|report\|trends]` | Quality metrics & gates: pass rate, defect density, DRE, coverage, gate enforcement | `quality-metrics-catalog.md`, `quality-gates.md` |
-| `/qa-exploratory-method` | `domain \| charter type \| heuristic` | Session-based exploratory testing: SBTM charters, CRISP/SFDPOT, tours, debrief | `session-based-testing.md` |
+| `/qa-sbtm` | `domain \| charter type \| heuristic` | Session-based exploratory testing: SBTM charters, CRISP/SFDPOT, tours, debrief | `session-based-testing.md` |
 
 Usage: `/qa-smoke`, `/qa-test VCST-1234`, `/qa-storybook Button`, `/vc-docs dynamic properties`, or use agents directly: `"Use qa-frontend-expert to test checkout"`
 
@@ -233,10 +231,9 @@ BA agents do not require browsers. Max 3 concurrent browser agents. Never use We
 ## Prompt Templates
 
 Key prompt templates in `docs/prompts/`:
-- `full-regression-qa-agent.md` - Complete Admin + Frontend regression
 - `test-runner-agent.md` - Suite execution template with parameterized placeholders (`{{SUITE_ID}}`, `{{BROWSER_SERVER}}`, `{{ENVIRONMENT_URL}}`, `{{OUTPUT_FILE}}`, etc.) for regression orchestrator
 - `How to test Builder.io.md` - Builder.io, Virto Pages & vc-frontend testing
-- `story-testing.txt` - Story-level testing prompt
+- `story-testing.md` - Story-level testing prompt
 
 ## Regression Test Suites
 
@@ -274,7 +271,7 @@ docker run --rm --shm-size=2gb --env-file .env \
 
 Suite selection accepts the same group names as above, or comma-separated IDs (`01,04,06`). CI runs up to 3 suites in parallel (configurable via `MAX_PARALLEL`). Reports go to `reports/regression/ci-YYYY-MM-DD/` (markdown + JSON summary).
 
-**Note:** The CI `run-regression.ts` has its own `SUITE_MAP` (suites 00-17) that is a subset of the full `test-suites.json` manifest (36 suites). The CI script needs updating to cover the newer backend suites (18-34) and frontend suites (35-36).
+**Note:** The CI `run-regression.ts` dynamically loads suite definitions from `config/test-suites.json` at startup, so adding new suites to the manifest automatically makes them available to CI. Selection groups (`smoke`, `critical`, `sprint`, `full`, `frontend`, `backend`) are also defined in the manifest's `selections` block.
 
 **Scheduled Pipeline (GitHub Actions - `.github/workflows/regression.yml`):**
 - **Daily smoke**: Mon-Fri at 6:00 AM UTC — runs suite 01 ($5 budget)
@@ -329,7 +326,7 @@ Reports in `reports/bugs/`:
 
 ## Storybook Visual Regression
 
-The `storybook/` directory stores visual regression baselines organized by Atomic Design tier: `atoms/`, `molecules/`, `organisms/`, `design-system/`. Each component folder has a `baselines/` directory for screenshots. Naming convention: `{story-name}-{viewport}.png` (e.g., `basic-desktop.png`, `hover-state-tablet.png`).
+Visual regression baselines are captured on-demand by the `/qa-storybook` skill (delegated to `ui-ux-expert` agent). No persistent `storybook/` directory is needed — baselines are stored in test evidence directories per ticket. Naming convention: `{story-name}-{viewport}.png` (e.g., `basic-desktop.png`, `hover-state-tablet.png`). See `.claude/skills/testing/qa-storybook/` for methodology and guides.
 
 ## Critical Revenue Flows
 

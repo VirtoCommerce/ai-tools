@@ -54,7 +54,7 @@
 │   │   ├── SKILL.md                 # Quality metrics & gate enforcement
 │   │   ├── quality-metrics-catalog.md
 │   │   └── quality-gates.md
-│   ├── qa-exploratory-method/
+│   ├── qa-sbtm/
 │   │   ├── SKILL.md                 # Session-based exploratory testing
 │   │   └── session-based-testing.md
 │   ├── qa-process/
@@ -115,7 +115,7 @@ Manual invocation, cross-team best practices. Process framework, reactive (post-
 | `/qa-test-design` | Systematic test case derivation: EP, BVA, decision tables, state transitions, pairwise, error guessing | test-design-techniques.md |
 | `/qa-risk` | Risk-based test prioritization: 5x5 matrix, severity/priority classification, test depth allocation | risk-prioritization-framework.md |
 | `/qa-metrics` | Quality metrics & gates: pass rate, defect density, DRE, coverage, gate enforcement | quality-metrics-catalog.md, quality-gates.md |
-| `/qa-exploratory-method` | Session-based exploratory testing: SBTM charters, CRISP/SFDPOT heuristics, tours, debrief | session-based-testing.md |
+| `/qa-sbtm` | Session-based exploratory testing: SBTM charters, CRISP/SFDPOT heuristics, tours, debrief | session-based-testing.md |
 
 ## Dependency Graph
 
@@ -131,13 +131,13 @@ qa-defect --> references qa-evidence (report validation, sign-off)
 qa-defect --> feeds into qa-metrics (defect counts, escape rates, reopen rates)
 qa-test-design --> feeds into qa-plan (test suite composition)
 qa-risk --> informs qa-test-design (technique selection by risk level)
-qa-risk --> informs qa-exploratory-method (charter prioritization)
+qa-risk --> informs qa-sbtm (charter prioritization)
 qa-metrics --> enforced by regression-orchestrator (gate evaluation)
-qa-exploratory-method --> references qa-risk (high-risk areas), qa-test-design (error guessing)
+qa-sbtm --> references qa-risk (high-risk areas), qa-test-design (error guessing)
 qa-storybook, qa-accessibility, qa-design --> delegate to ui-ux-expert agent
 qa-plan --> delegates to test-management-specialist agent
 qa-api --> delegates to qa-backend-expert agent
-Learning loop: qa-investigate (bug) --> qa-defect (triage) --> qa-risk (update) --> qa-exploratory-method (charter) --> qa-metrics (coverage)
+Learning loop: qa-investigate (bug) --> qa-defect (triage) --> qa-risk (update) --> qa-sbtm (charter) --> qa-metrics (coverage)
 ```
 
 ## Agent -> Skill Map
@@ -145,9 +145,9 @@ Learning loop: qa-investigate (bug) --> qa-defect (triage) --> qa-risk (update) 
 | Agent | Skills Referenced |
 |-------|-----------------|
 | qa-lead-orchestrator | qa-risk, qa-metrics, qa-process |
-| qa-frontend-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-exploratory-method |
-| qa-backend-expert | qa-api, qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-exploratory-method |
-| qa-testing-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-exploratory-method |
+| qa-frontend-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm |
+| qa-backend-expert | qa-api, qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm |
+| qa-testing-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-sbtm |
 | ui-ux-expert | qa-storybook, qa-accessibility, qa-design, qa-evidence, qa-investigate |
 | test-management-specialist | qa-plan, qa-evidence, qa-test-design, qa-risk, qa-process |
 | regression-orchestrator | qa-metrics (gate enforcement after runs) |

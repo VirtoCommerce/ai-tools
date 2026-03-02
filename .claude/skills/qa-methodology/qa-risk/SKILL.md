@@ -59,7 +59,7 @@ Apply risk-based testing strategy to prioritize test effort where it matters mos
 - Use `/qa-test-design` to apply appropriate techniques based on risk level
 - Critical risk items should get decision tables + state transitions
 - Use `/qa-metrics` to validate that risk coverage targets are met
-- Use `/qa-exploratory-method` for exploratory sessions on high-risk areas
+- Use `/qa-sbtm` for exploratory sessions on high-risk areas
 
 ## Rules
 - Revenue-critical flows (checkout, payment) start at minimum Medium risk regardless of change size

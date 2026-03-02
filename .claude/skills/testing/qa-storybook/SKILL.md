@@ -29,7 +29,7 @@ Test Storybook components for visual regression, responsive behavior, and state 
 2. **Identify target components:**
    - If component name: find matching stories in Storybook
    - If tier (atoms/molecules/organisms): test all components in that Atomic Design tier
-   - Baselines stored in `storybook/{tier}/{component}/baselines/`
+   - Baselines captured on-demand and stored in test evidence directories
 
 3. **Delegate to ui-ux-expert** via Task tool (`subagent_type: ui-ux-expert`):
    - Pass component name(s), Storybook URL, baseline directory
@@ -44,11 +44,11 @@ Test Storybook components for visual regression, responsive behavior, and state 
 
 5. **Output:**
    - Visual diff report with pass/fail per component/state/viewport
-   - New baselines saved to `storybook/{tier}/{component}/baselines/`
+   - New baselines saved to test evidence directory (e.g., `tests/SprintXX-XX/VCST-XXXX/screenshots/`)
    - Summary: X components tested, Y passed, Z regressions found
 
 ## Rules
 - Always capture all documented states, not just the default
 - Use naming convention: `{story-name}-{viewport}.png`
-- Baseline directory structure follows Atomic Design: `storybook/atoms/`, `storybook/molecules/`, `storybook/organisms/`
+- Baselines are captured on-demand — no persistent `storybook/` directory needed
 - If no baseline exists, the first capture becomes the baseline

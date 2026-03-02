@@ -48,6 +48,16 @@ Active test cases organized by VCST ticket number. Each directory contains test 
 | [VCST-4351](Sprint26-02/VCST-4351/) | Storybook component testing (12 reports) | Active |
 | [VCST-4233-storybook-migration-part7](Sprint26-03/VCST-4233-storybook-migration-part7/) | Storybook StoryFn to StoryObj migration (Part 7) - 5 components, 68 stories | ✅ Completed |
 
+### Sprint 26-04 (Current)
+| Ticket | Description | Status |
+|--------|-------------|--------|
+| [VCST-4445-youtube-isolation](Sprint26-04/VCST-4445-youtube-isolation/) | YouTube embed isolation | Active |
+| [VCST-4530-variation-shareable-links](Sprint26-04/VCST-4530-variation-shareable-links/) | Product variation shareable links | Active |
+| [VCST-4565-bopis-pickup-selected-modal](Sprint26-04/VCST-4565-bopis-pickup-selected-modal/) | BOPIS pickup selection modal | Active |
+| [VCST-4618-cart-pickup-duplicate-key](Sprint26-04/VCST-4618-cart-pickup-duplicate-key/) | Cart pickup duplicate key fix | Active |
+| [VCST-4650-bopis-pickup-search-indexing](Sprint26-04/VCST-4650-bopis-pickup-search-indexing/) | BOPIS pickup search indexing | Active |
+| [VCST-save-for-later-investigation](Sprint26-04/VCST-save-for-later-investigation/) | Save for later investigation | Active |
+
 ### Regression & Retests
 | Ticket | Description | Status |
 |--------|-------------|--------|
@@ -71,7 +81,7 @@ VCST-XXXX-feature/
 
 ## Related Resources
 
-- [Regression Test Suites](../regression/suites/) - 12 CSV test suites
+- [Regression Test Suites](../regression/suites/) - 36 CSV test suites (1,194 test cases)
 - [Suite to Test Mapping](../regression/mapping.md) - Links suites to implementations
 - [Bug Reports](../reports/bugs/) - Bug reports with evidence
 - [Test Data](../test-data/) - Test fixtures and sample data

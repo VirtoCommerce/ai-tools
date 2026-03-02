@@ -33,60 +33,22 @@ This layer gives you judgment across the entire Virto Commerce platform. Unlike 
 
 ### Virto Commerce Platform — Cross-Layer View
 
-**Storefront (Vue.js, `FRONT_URL`):**
-- SSR with client hydration — `[Vue warn]: Hydration` in console means server/client mismatch, causes UI flicker and stale state
-- xAPI GraphQL returns errors *inside* HTTP 200 — always check `response.data.errors[]`, not just status code
-- Cart state lives in localStorage + server — desync after refresh = stale prices/quantities. Common after Admin price changes
-- Coffee theme: CSS custom properties for theming. Theme switch may cause FOUC if variables load late
-- Search via Elasticsearch through xAPI — reindex lag means newly created products won't appear immediately
-- Payment iframes (Skyflow, CyberSource) are cross-origin — their console errors are NOT visible in main console
+> **Reference:** `.claude/agents/knowledge/platform-patterns.md` — full storefront, admin, and API layer patterns.
 
-**Admin SPA (Angular/VC-Shell, `BACK_URL`):**
-- Blade UI pattern: sliding modal panels that stack left-to-right — the core navigation model
-- Angular console errors on blade open/close = memory leak bug (watch for repeated open/close)
-- State persistence: edit form → open nested blade → return → edits must persist
-- Hangfire dashboard (`/hangfire`) shows background job health — silent failures hide here
-- Module changes in Admin may not reflect on storefront until Elasticsearch reindex or cache purge
-
-**API Layer:**
-- REST: 201=created, 204=deleted, 400=validation, 401=unauthorized, 403=forbidden, 404=not found. "200 for everything" = contract bug
-- GraphQL: errors inside HTTP 200 = application error. Partial data with errors = valid GraphQL behavior
-- All xAPI queries require store context: `storeId`, `cultureName`, `currencyCode` — missing context = confusing errors
-- Pagination: REST uses `skip/take`, GraphQL uses `first/after` cursor. Off-by-one bugs at boundaries
+Key patterns for cross-layer testing:
+- xAPI GraphQL returns errors *inside* HTTP 200 — always check `response.data.errors[]`
+- Cart state desync between localStorage and server after Admin price changes
+- Payment iframes (Skyflow, CyberSource) are cross-origin — console errors NOT visible in main console
+- Admin blade memory leaks on repeated open/close — watch Angular console errors
+- Elasticsearch reindex lag — newly created products won't appear immediately on storefront
 
 ### Performance Thresholds
 
-| Metric | Good | Bug | P0 Escalation |
-|--------|------|-----|---------------|
-| Storefront LCP | < 2.5s | > 2.5s | > 4.0s |
-| Storefront CLS | < 0.1 | > 0.1 | Any shift during checkout |
-| API response | < 500ms | > 500ms | > 2s |
-| Admin blade open | < 1s | > 2s | — |
-| Page weight | < 2MB | > 2MB | — |
-| Hangfire job | completes | fails silently | stuck > 5min |
+> **Reference:** `.claude/agents/knowledge/performance-thresholds.md` — full threshold tables for storefront, API, admin, and backend jobs.
 
 ### Debugging Signals — What Errors Actually Mean
 
-**Console Error Patterns:**
-
-| Pattern | Meaning | Severity |
-|---------|---------|----------|
-| `[Vue warn]: Hydration` | SSR/client mismatch — UI flicker, stale state | Medium (High if checkout) |
-| `Unhandled promise rejection` | Async error not caught — feature may silently fail | High |
-| `ChunkLoadError` | Bundle not found — deployment or CDN issue | High (P0 if blocks page) |
-| `TypeError: Cannot read properties of null` | Missing DOM element or null API response | High |
-| `CORS error` | Cross-origin blocked — integration broken | High (P0 if payment iframe) |
-| `CSP violation` | Content Security Policy blocks resource | Medium (High if functional impact) |
-| `extension://` messages | Browser extension noise | Ignore |
-| Angular `ExpressionChangedAfterItHasBeenChecked` | Change detection error — blade state bug | Medium |
-
-**Network Red Flags:**
-- HTTP 4xx on API calls = application error — inspect request payload for what went wrong
-- HTTP 5xx = server error — capture full request that triggered it
-- Duplicate API calls on single action = missing debounce, performance bug
-- CORS preflight failure on payment iframes = integration configuration issue
-- GraphQL response with both `data` and `errors` = partial failure, inspect both sections
-- Slow response (> 500ms) = performance bug, check if it's consistent or intermittent
+> **Reference:** `.claude/agents/knowledge/debugging-signals.md` — console error patterns table and network red flags.
 
 ### Figma Design Verification — What Matters
 
@@ -210,7 +172,7 @@ This layer gives you technique. You know how to execute tests, debug failures, c
 | Starting any test session | `/qa-evidence` → `evidence-capture-policy.md` | Capture budgets, report tiers |
 | Deriving test cases from JIRA | `/qa-test-design` → `test-design-techniques.md` | EP, BVA, decision tables, state transitions |
 | Prioritizing test depth | `/qa-risk` → `risk-prioritization-framework.md` | 5x5 risk matrix, depth allocation |
-| Running exploratory testing | `/qa-exploratory-method` → `session-based-testing.md` | SBTM charters, heuristics, debrief |
+| Running exploratory testing | `/qa-sbtm` → `session-based-testing.md` | SBTM charters, heuristics, debrief |
 | Investigating a suspected bug | `/qa-investigate` → `bug-investigation-flow.md` | 5-phase root cause analysis |
 | Filing a bug report | `/qa-defect` → `defect-report-templates.md` | Frontend + backend bug templates |
 | Classifying/triaging a defect | `/qa-defect` → `defect-lifecycle-workflow.md` | JIRA Bug Workflow, severity matrix |
@@ -265,17 +227,15 @@ Use DOM for logic checks. Use screenshots for visual checks. Use both when findi
 
 | Area | Reference File |
 |------|---------------|
-| Catalog, Search, PDP, Cart | `docs/references/frontend-testing/test-cases-catalog.md` |
-| Checkout (Guest, Registered, B2B) | `docs/references/frontend-testing/test-cases-checkout.md` |
-| Account, Dashboard, B2B Features | `docs/references/frontend-testing/test-cases-account-b2b.md` |
-| Responsive, Cross-Browser, Perf | `docs/references/frontend-testing/test-cases-responsive-crossbrowser-perf.md` |
-| Visual Bug Detection Checklist | `docs/references/frontend-testing/visual-bug-detection-checklist.md` |
-| Admin SPA CRUD | `docs/references/backend-testing/test-cases-admin-crud.md` |
-| Module Settings & Jobs | `docs/references/backend-testing/test-cases-modules-jobs.md` |
-| Import/Export | `docs/references/backend-testing/test-cases-import-export.md` |
-| Integration Tests | `docs/references/backend-testing/test-cases-integration.md` |
+| Frontend suites (Catalog, Checkout, Auth, etc.) | `regression/suites/Frontend/*.csv` (suites 01-13, 35-36) |
+| Backend suites (Admin CRUD, Modules, Import/Export) | `regression/suites/Backend/*.csv` (suites 14-34) |
+| E2E Scenario Catalog (105 scenarios) | `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md` |
 | REST & GraphQL API Tests | `.claude/skills/testing/qa-api/test-cases-api-graphql.md` |
+| Visual Bug Detection & Design System | `.claude/skills/testing/qa-design/design-system-consistency.md` |
 | Payment Test Matrix | `Test suites & Cases/Frontend/order-creation-matrix.txt` |
+| Performance Thresholds | `.claude/agents/knowledge/performance-thresholds.md` |
+| Browser Quirks | `.claude/agents/knowledge/browser-quirks.md` |
+| Debugging Signals | `.claude/agents/knowledge/debugging-signals.md` |
 
 ### Judge — Pass/Fail Classification
 

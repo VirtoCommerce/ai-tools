@@ -91,7 +91,7 @@ Measured per sprint or per release cycle.
 
 ### Regression Suite Reference
 
-The project has 36 regression suites (15 frontend + 21 backend) defined in `config/test-suites.json` with CSV files in `regression/suites/`. Coverage is measured against the E2E scenario catalog in `docs/references/test-management/`.
+The project has 36 regression suites (15 frontend + 21 backend) defined in `config/test-suites.json` with CSV files in `regression/suites/`. Coverage is measured against the E2E scenario catalog in `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md`.
 
 ---
 

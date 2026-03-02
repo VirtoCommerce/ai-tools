@@ -107,10 +107,7 @@ The Virto Commerce storefront uses the **Coffee theme** with CSS custom properti
 
 ### Browser Quirks Affecting Components
 
-- **iOS Safari**: `100vh` includes toolbar (use `dvh`), auto-zoom on inputs < 16px font-size, momentum scroll traps
-- **Firefox**: Scrollbar styling limited (`::-webkit-scrollbar` not supported), subgrid support varies
-- **Edge**: Extension-injected console noise — filter out `extension://` messages
-- **High-contrast mode** (Edge/Windows): Verify components remain usable, borders visible, focus indicators work
+> **Reference:** `.claude/agents/knowledge/browser-quirks.md` — iOS Safari, Firefox, Edge, high-contrast mode, and WebKit limitations.
 
 ### UX Heuristics (Nielsen's 10 applied to VC)
 
@@ -244,7 +241,7 @@ Use DOM for semantic checks (aria, roles, labels). Use screenshots for visual ch
 | Visual Regression Testing | `.claude/skills/testing/qa-storybook/visual-regression-testing.md` |
 | UX Heuristic Evaluation | `.claude/skills/testing/qa-design/ux-heuristic-evaluation.md` |
 | Responsive Component Testing | `.claude/skills/testing/qa-storybook/responsive-component-testing.md` |
-| Storybook Testing Guide | `docs/guides/how-to-test-storybook.md` |
+| Storybook Testing Guide | `.claude/skills/testing/qa-storybook/how-to-test-storybook.md` |
 
 ### Judge — Pass/Fail Classification
 
@@ -306,12 +303,12 @@ Ambiguous examples: component restyled (design update or regression?), new color
 
 ### Output Folder Structure
 
+Baselines are captured on-demand and stored in test evidence directories per ticket:
 ```
-storybook/
-├── atoms/VcBadge/baselines/, VcCheckbox/, VcIcon/, VcSwitch/, VcTypography/...
-├── molecules/VcAlert/, VcButton/baselines/, VcChip/, VcInput/, VcRating/, VcWidget/...
-├── organisms/VcAddToCart/, VcPagination/, VcProductCard/baselines/, VcQuantityStepper/, VcTable/...
-└── design-system/color-contrast-audit.md, typography-audit.md, spacing-consistency.md, theme-comparison/
+tests/SprintXX-XX/VCST-XXXX/screenshots/
+├── {story-name}-desktop.png
+├── {story-name}-tablet.png
+└── {story-name}-mobile.png
 ```
 
 Screenshot naming: `{story-name}-{viewport}.png` (e.g., `basic-desktop.png`, `hover-state-tablet.png`, `coffee-theme-desktop.png`)

@@ -40,7 +40,7 @@ The navigation hub — shows which skill, command, or agent to use for each phas
 |-------|----------|------------|-------------------|-----------------|
 | **Plan** | `/qa-plan`, `/qa-risk` | — | test-management-specialist, qa-lead-orchestrator | Test plan, risk register, schedule |
 | **Analyze** | `/qa-process` (this file) | — | test-management-specialist, qa-lead-orchestrator | Numbered test conditions list with traceability |
-| **Design** | `/qa-test-design`, `/qa-exploratory-method` | — | test-management-specialist | Test cases (CSV/MD), exploratory charters, test data requirements |
+| **Design** | `/qa-test-design`, `/qa-sbtm` | — | test-management-specialist | Test cases (CSV/MD), exploratory charters, test data requirements |
 | **Implement** | `/qa-process` (this file) | `/qa-env-check` | qa-lead-orchestrator | Readiness checklist (all green), test data created, environment verified |
 | **Execute** | `/qa-investigate`, `/qa-evidence` | `/qa-test`, `/qa-smoke`, `/qa-regression` | qa-testing-expert, qa-frontend-expert, qa-backend-expert | Test results, defect reports, evidence artifacts |
 | **Report** | `/qa-metrics` | `/qa-status` | qa-lead-orchestrator, regression-orchestrator | Quality report, gate verdict (APPROVED/CONDITIONS/BLOCKED) |
@@ -197,7 +197,7 @@ Check: Are all ACs covered? Are negative cases included? Are boundary conditions
 2. Derive test cases from test conditions using selected techniques
 3. Define test data requirements for each test case
 4. Build traceability: test conditions → test cases (many-to-many)
-5. Design exploratory charters using `/qa-exploratory-method` for areas not well covered by scripted tests
+5. Design exploratory charters using `/qa-sbtm` for areas not well covered by scripted tests
 
 ### Exit Criteria
 - All P0/P1 test conditions have at least 1 test case
@@ -238,7 +238,7 @@ Run through these 12 items before starting any test execution. Flag any item tha
 | 5 | Payment test cards — valid and not expired | Verify SKYFLOW_VISA, SKYFLOW_MASTERCARD, CyberSource, AuthNet, Datatrance cards in `.env` | `npm run env:check` |
 | 6 | Browser configs — viewport, HAR, video settings correct | Review `config/mcp-playwright-*.config.json` | File check |
 | 7 | HAR capture — enabled in browser configs | Confirm `recordHar` is set in browser configs | File check |
-| 8 | Baseline screenshots — current for visual regression | Check `storybook/` baselines are up to date | `/qa-storybook` |
+| 8 | Baseline screenshots — current for visual regression | Verify baselines exist for target components via `/qa-storybook` | `/qa-storybook` |
 | 9 | Regression suite CSVs — up to date with latest test cases | Verify `regression/suites/` CSVs match test case inventory | File check |
 | 10 | Preconditions — specific test preconditions are met | Review test case preconditions, create required state (e.g., orders, cart items) | Manual / API |
 | 11 | Smoke passing — basic functionality confirmed | Run `/qa-smoke` or verify latest smoke result | `/qa-smoke` |
@@ -500,6 +500,6 @@ Flaky test list              ──────>     Test maintenance priorities
 This connects to the broader learning loop across methodology skills:
 1. **Bug found** (Execute, via `/qa-investigate`) →
 2. **Risk updated** (Close, via `/qa-risk`) →
-3. **New charter created** (next Analyze, via `/qa-exploratory-method`) →
+3. **New charter created** (next Analyze, via `/qa-sbtm`) →
 4. **Coverage measured** (next Report, via `/qa-metrics`) →
 5. **Process improved** (next Plan, via this skill's Close checklist)
