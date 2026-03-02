@@ -1,3 +1,9 @@
+---
+description: "Test a JIRA ticket, feature area, or PR. Delegates to qa-lead-orchestrator who dispatches specialist agents and produces a verdict."
+argument-hint: "VCST-XXXX | feature name | PR #NNN"
+disable-model-invocation: true
+---
+
 # /qa-test — Test a JIRA Ticket or Feature
 
 Delegate ticket/feature testing to the **qa-lead-orchestrator** agent, which has the full orchestration logic for analyzing scope, dispatching specialists, and producing verdicts.

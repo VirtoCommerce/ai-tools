@@ -1,3 +1,9 @@
+---
+description: "Run 12 P0 smoke tests (Suite 01) for daily pre-deployment validation. Quick GO/NO-GO verdict in ~15 min."
+argument-hint: "[storefront|admin]"
+disable-model-invocation: true
+---
+
 # /qa-smoke — Quick Smoke Test Run
 
 Run the 12 P0 smoke tests (Suite 01) for daily pre-deployment validation. This is a shortcut that delegates to the regression-orchestrator's smoke mode.

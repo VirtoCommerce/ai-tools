@@ -1,3 +1,9 @@
+---
+description: "Run a guided exploratory testing session using CRISP/SFDPOT heuristics to find bugs that scripted tests miss."
+argument-hint: "[checkout|catalog|B2B|mobile|new]"
+disable-model-invocation: true
+---
+
 # /qa-exploratory — Exploratory Testing Session
 
 Run a guided exploratory testing session on a specific area of the application. Uses testing heuristics (CRISP, SFDPOT) to find bugs that scripted tests miss.

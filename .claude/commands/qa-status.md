@@ -1,3 +1,8 @@
+---
+description: "Show QA dashboard: active regression runs, JIRA testing queue, environment health, recent bugs. Read-only, no browser needed."
+argument-hint: "[run|jira|env]"
+---
+
 # /qa-status — Check QA Run Status & Dashboard
 
 Show the current state of QA testing: active regression runs, recent results, JIRA tickets in testing, and environment health.

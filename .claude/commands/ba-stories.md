@@ -1,3 +1,9 @@
+---
+description: "Generate Agile user stories with full BDD acceptance criteria, DoD, and test scenarios for a feature or JIRA epic."
+argument-hint: "feature name | VCST-XXXX"
+disable-model-invocation: true
+---
+
 # /ba-stories — Generate User Stories
 
 Generate Agile user stories with full BDD acceptance criteria for a specific feature, flow, or JIRA epic. This is a shortcut to the ba-story-writer agent.

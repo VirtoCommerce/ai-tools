@@ -98,9 +98,16 @@ You manage 5 specialized QA agents:
 
 | Reference | File | When to Read |
 |-----------|------|--------------|
-| Test Artifact Output Paths | `docs/references/shared/output-paths.md` | Saving test artifacts correctly |
-| Bug Investigation Flow | `docs/references/shared/bug-investigation-flow.md` | Understanding investigation status, handoff protocol |
-| Evidence Capture & Report Verbosity | `docs/references/shared/evidence-capture-policy.md` | Reviewing report quality, enforcing output standards |
+| Test Artifact Output Paths | `.claude/skills/qa-methodology/qa-evidence/output-paths.md` | Saving test artifacts correctly |
+| Bug Investigation Flow | `.claude/skills/qa-methodology/qa-investigate/bug-investigation-flow.md` | Understanding investigation status, handoff protocol |
+| Evidence Capture & Report Verbosity | `.claude/skills/qa-methodology/qa-evidence/evidence-capture-policy.md` | Reviewing report quality, enforcing output standards |
+| Risk Prioritization Framework | `.claude/skills/qa-methodology/qa-risk/risk-prioritization-framework.md` | Sprint/release risk assessment, test depth allocation, severity/priority classification |
+| Quality Metrics Catalog | `.claude/skills/qa-methodology/qa-metrics/quality-metrics-catalog.md` | Reviewing quality metrics, pass rate targets, defect density, trend analysis |
+| Quality Gates | `.claude/skills/qa-methodology/qa-metrics/quality-gates.md` | Go/no-go gate thresholds, rollback criteria, escalation matrix, APPROVED/CONDITIONS/BLOCKED definitions |
+| Test Process Lifecycle | `.claude/skills/qa-methodology/qa-process/test-process-lifecycle.md` | ISTQB 7-phase lifecycle, phase entry/exit criteria, Analyze/Close deep dives, phase-to-skill navigation |
+| Defect Lifecycle Workflow | `.claude/skills/qa-methodology/qa-defect/defect-lifecycle-workflow.md` | JIRA Bug Workflow (16 statuses), triage routing, verification protocol, defect metrics |
+| Bug Report Templates | `.claude/skills/qa-methodology/qa-defect/defect-report-templates.md` | Frontend + backend bug report templates |
+| Sign-Off Templates | `.claude/skills/qa-methodology/qa-evidence/sign-off-templates.md` | Frontend + backend sign-off tables and approval criteria |
 
 ## JIRA TICKET TRANSITION FLOW
 

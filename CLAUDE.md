@@ -49,7 +49,12 @@ Access via `config.js`: `import { env } from './config.js'`
 
 ```
 vc-mcp-testing-module/
-├── .claude/agents/          # Claude Code agent configurations (7 agents, gitignored)
+├── .claude/agents/          # Claude Code agent configurations (13 agents, gitignored)
+├── .claude/skills/          # Skills grouped by category (16 skills in 3 groups, gitignored)
+│   ├── vc-knowledge/        # VC docs, module analysis, API reference (3 skills)
+│   ├── testing/             # Storybook, accessibility, design, plan, API (5 skills)
+│   └── qa-methodology/      # Process, investigation, evidence, test design, risk, metrics, exploratory, defect (8 skills)
+├── .claude/commands/        # Slash commands (9 commands, gitignored)
 ├── .mcp.json                # MCP server configuration (tracked but OS-specific)
 ├── config/                  # Playwright MCP browser configs + test-suites.json manifest
 ├── ci/                      # CI regression (Docker + Claude Agent SDK, gitignored)
@@ -60,11 +65,8 @@ vc-mcp-testing-module/
 ├── docs/prompts/            # LLM prompt templates for QA automation
 ├── docs/guides/             # Testing guides (e.g., Storybook testing)
 ├── docs/references/         # Agent reference files (read on demand to reduce context)
-│   ├── shared/              # Cross-agent: output-paths.md, bug-investigation-flow.md, evidence-capture-policy.md
 │   ├── frontend-testing/    # 6 files: test cases, visual checklist, sign-off templates
-│   ├── backend-testing/     # 6 files: API/GraphQL, admin CRUD, modules, import/export
-│   ├── ui-ux-testing/       # 5 files: WCAG, design system, visual regression, heuristics
-│   └── test-management/     # 1 file: E2E scenario catalog (105 scenarios, 18 domains)
+│   └── backend-testing/     # 5 files: admin CRUD, modules, import/export, integrations, sign-off
 ├── storybook/               # Visual regression baselines (Atomic Design: atoms/molecules/organisms)
 ├── regression/suites/       # Regression test suites (Frontend + Backend, CSV format)
 ├── test-data/               # Test data (organizations, search queries, uploads)
@@ -75,7 +77,7 @@ vc-mcp-testing-module/
 └── sitemap.md               # Site structure reference
 ```
 
-**Gitignored:** `.claude/`, `settings.json`, `.env`, `test-results/`, `.serena/`, `.playwright-mcp/`, `ci/`, `.github/`
+**Gitignored:** `.claude/` (agents, skills, commands), `settings.json`, `.env`, `test-results/`, `.serena/`, `.playwright-mcp/`, `ci/`, `.github/`
 
 **Tracked but local-specific:** `.mcp.json` and `config/` are tracked in git. After cloning, verify MCP configs match your local setup (Windows uses `cmd /c npx`, Linux/Mac uses `npx` directly).
 
@@ -149,21 +151,60 @@ Additional MCP servers (configured at user level, not in `.mcp.json`):
 | **ba-story-writer** | sonnet | Agile user stories with BDD acceptance criteria, DoD, test scenarios |
 | **ba-doc-writer** | sonnet | User docs, admin guides, API quick-start, UX improvement specs |
 
-### Slash Commands (9)
+### Slash Commands (9) — `.claude/commands/`
 
-| Command | Purpose |
-|---------|---------|
-| `/qa-smoke` | Daily smoke test (12 P0 tests, ~15 min, GO/NO-GO verdict) |
-| `/qa-test VCST-XXXX` | Test a JIRA ticket, feature, or PR |
-| `/qa-regression [scope]` | Run regression suites (smoke/critical/sprint/full/frontend/backend) |
-| `/qa-status` | Dashboard: run status, JIRA queue, env health, recent bugs |
-| `/qa-bug [description]` | Reproduce, document, and optionally file a JIRA bug |
-| `/qa-exploratory [area]` | Guided exploratory testing session with heuristics |
-| `/qa-env-check` | Validate env vars, endpoints, MCP servers, test infra |
-| `/ba-analyze [scope]` | Business analysis (full/flows/api/docs/stories/module) |
-| `/ba-stories [feature]` | Generate Agile user stories with BDD acceptance criteria |
+All commands have YAML frontmatter with `description`, `argument-hint`, and invocation control. Commands with side effects use `disable-model-invocation: true` to prevent accidental auto-triggering.
 
-Usage: `/qa-smoke`, `/qa-test VCST-1234`, or use agents directly: `"Use qa-frontend-expert to test checkout"`
+| Command | Arguments | Auto-invoke | Purpose |
+|---------|-----------|-------------|---------|
+| `/qa-smoke` | `[storefront\|admin]` | No | Daily smoke test (12 P0 tests, ~15 min, GO/NO-GO verdict) |
+| `/qa-test` | `VCST-XXXX \| feature \| PR #N` | No | Test a JIRA ticket, feature, or PR |
+| `/qa-regression` | `[smoke\|critical\|sprint\|full\|frontend\|backend\|IDs]` | No | Run regression suites in parallel |
+| `/qa-status` | `[run\|jira\|env]` | **Yes** | Dashboard: run status, JIRA queue, env health, recent bugs |
+| `/qa-bug` | `description \| VCST-XXXX \| screenshot` | No | Reproduce, document, and optionally file a JIRA bug |
+| `/qa-exploratory` | `[checkout\|catalog\|B2B\|mobile\|new]` | No | Guided exploratory testing session with heuristics |
+| `/qa-env-check` | `[vars\|endpoints\|mcp]` | **Yes** | Validate env vars, endpoints, MCP servers, test infra |
+| `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|module <name>]` | No | Business analysis (full/flows/api/docs/stories/module) |
+| `/ba-stories` | `feature name \| VCST-XXXX` | No | Generate Agile user stories with BDD acceptance criteria |
+
+### Skills (16) — `.claude/skills/` (grouped by category)
+
+Skills are slash commands with supporting reference files, organized into 3 category directories. Each skill has a `SKILL.md` with `[Category]` tag in the description. See `.claude/skills/README.md` for full reference.
+
+**`vc-knowledge/` — Virto Commerce Knowledge (3) — auto-invocable:**
+
+| Skill | Arguments | Purpose | Supporting Files |
+|-------|-----------|---------|-----------------|
+| `/vc-docs` | `topic \| module \| concept` | Documentation lookup via Context7 | — (uses Context7 MCP) |
+| `/vc-module` | `module name \| suite ID` | Module analysis and test suite mapping | `module-suite-map.md` |
+| `/vc-api` | `xCart \| xCatalog \| REST` | xAPI & REST API query reference | `xapi-query-ref.md` |
+
+**`testing/` — Testing (5) — manual invocation:**
+
+| Skill | Arguments | Purpose | Supporting Files |
+|-------|-----------|---------|-----------------|
+| `/qa-storybook` | `component \| atoms \| all` | Storybook visual regression, responsive breakpoints | `visual-regression-testing.md`, `responsive-component-testing.md` |
+| `/qa-accessibility` | `page URL \| component \| full` | WCAG 2.1 AA accessibility audit (POUR principles) | `wcag-accessibility-checklist.md` |
+| `/qa-design` | `component \| page \| flow` | Design system consistency & UX heuristics | `design-system-consistency.md`, `ux-heuristic-evaluation.md` |
+| `/qa-plan` | `feature \| domain \| VCST-XXXX` | Test plans from E2E scenario catalog (105 scenarios) | `e2e-scenario-catalog.md` |
+| `/qa-api` | `endpoint \| module \| graphql` | REST API & GraphQL xAPI testing | `test-cases-api-graphql.md` |
+
+**`qa-methodology/` — QA Methodology (8) — manual invocation:**
+
+| Skill | Arguments | Purpose | Supporting Files |
+|-------|-----------|---------|-----------------|
+| `/qa-process` | `[phase name \| analyze VCST-XXXX \| close sprint-XX \| gates]` | ISTQB 7-phase lifecycle: Plan, Analyze, Design, Implement, Execute, Report, Close with entry/exit criteria | `test-process-lifecycle.md` |
+| `/qa-investigate` | `bug description \| VCST-XXXX` | Bug investigation (5 phases) and root cause analysis | `bug-investigation-flow.md` |
+| `/qa-evidence` | `[compact\|detailed\|signoff]` | Evidence capture & report formatting, output paths | `evidence-capture-policy.md`, `output-paths.md`, `sign-off-templates.md` |
+| `/qa-defect` | `triage VCST-XXXX \| verify VCST-XXXX \| classify \| workflow \| metrics` | Defect management lifecycle: JIRA Bug Workflow (16 statuses), triage, classification, verification, metrics | `defect-lifecycle-workflow.md`, `defect-report-templates.md` |
+| `/qa-test-design` | `feature name \| technique \| VCST-XXXX` | Test case derivation: EP, BVA, decision tables, state transitions, pairwise, error guessing | `test-design-techniques.md` |
+| `/qa-risk` | `feature \| sprint \| release \| VCST-XXXX` | Risk-based test prioritization: 5x5 matrix, severity/priority, test depth allocation | `risk-prioritization-framework.md` |
+| `/qa-metrics` | `[metrics\|gates\|report\|trends]` | Quality metrics & gates: pass rate, defect density, DRE, coverage, gate enforcement | `quality-metrics-catalog.md`, `quality-gates.md` |
+| `/qa-exploratory-method` | `domain \| charter type \| heuristic` | Session-based exploratory testing: SBTM charters, CRISP/SFDPOT, tours, debrief | `session-based-testing.md` |
+
+Usage: `/qa-smoke`, `/qa-test VCST-1234`, `/qa-storybook Button`, `/vc-docs dynamic properties`, or use agents directly: `"Use qa-frontend-expert to test checkout"`
+
+**Frontmatter fields:** `description` (shown in `/` menu with `[Category]` tag), `argument-hint` (autocomplete hint), `disable-model-invocation: true` (prevents Claude from auto-triggering). Only read-only commands/skills (`/qa-status`, `/qa-env-check`, `/vc-docs`, `/vc-module`, `/vc-api`) allow model invocation.
 
 **Agent Teams mode** is enabled via `settings.json` (`teammateMode: "in-process"`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`). The `settings.json` also configures a `post_edit` hook that runs TypeScript type-checking after edits.
 

@@ -125,15 +125,20 @@ Common tools: `browser_navigate`, `browser_snapshot`, `browser_take_screenshot`,
 
 | Testing Area | Reference File | When to Read |
 |-------------|----------------|--------------|
-| REST API & GraphQL xAPI | `docs/references/backend-testing/test-cases-api-graphql.md` | Testing Platform APIs or GraphQL xAPI |
+| REST API & GraphQL xAPI | `.claude/skills/testing/qa-api/test-cases-api-graphql.md` | Testing Platform APIs or GraphQL xAPI |
 | Admin SPA CRUD | `docs/references/backend-testing/test-cases-admin-crud.md` | Testing Admin SPA functionality |
 | Module Settings & Background Jobs | `docs/references/backend-testing/test-cases-modules-jobs.md` | Testing module config, RBAC, Hangfire jobs |
 | Data Import/Export | `docs/references/backend-testing/test-cases-import-export.md` | Testing CSV import/export (Suite 29) |
 | Integration Testing | `docs/references/backend-testing/test-cases-integration.md` | Testing cross-module integrations |
-| Sign-Off & Bug Templates | `docs/references/backend-testing/sign-off-and-bug-templates.md` | Completing testing and reporting results |
-| Test Artifact Output Paths | `docs/references/shared/output-paths.md` | Saving test artifacts correctly |
-| Bug Investigation & Root Cause | `docs/references/shared/bug-investigation-flow.md` | Investigating bugs, cross-layer root cause analysis |
-| Evidence Capture & Report Verbosity | `docs/references/shared/evidence-capture-policy.md` | Screenshot budgets, report tiers, what to capture |
+| Bug Report Templates | `.claude/skills/qa-methodology/qa-defect/defect-report-templates.md` | Filing bug reports (frontend + backend templates) |
+| Sign-Off Templates | `.claude/skills/qa-methodology/qa-evidence/sign-off-templates.md` | Completing testing and reporting results |
+| Defect Lifecycle & JIRA Workflow | `.claude/skills/qa-methodology/qa-defect/defect-lifecycle-workflow.md` | JIRA Bug Workflow, triage, fix verification |
+| Test Artifact Output Paths | `.claude/skills/qa-methodology/qa-evidence/output-paths.md` | Saving test artifacts correctly |
+| Bug Investigation & Root Cause | `.claude/skills/qa-methodology/qa-investigate/bug-investigation-flow.md` | Investigating bugs, cross-layer root cause analysis |
+| Evidence Capture & Report Verbosity | `.claude/skills/qa-methodology/qa-evidence/evidence-capture-policy.md` | Screenshot budgets, report tiers, what to capture |
+| Test Design Techniques | `.claude/skills/qa-methodology/qa-test-design/test-design-techniques.md` | Deriving API test cases using EP, BVA, decision tables, state transitions |
+| Risk Prioritization Framework | `.claude/skills/qa-methodology/qa-risk/risk-prioritization-framework.md` | Module risk assessment, test depth allocation, severity classification |
+| Session-Based Exploratory Testing | `.claude/skills/qa-methodology/qa-exploratory-method/session-based-testing.md` | Structured API edge case exploration, SBTM charters and heuristics |
 
 **Read the relevant reference file BEFORE starting that type of testing.**
 

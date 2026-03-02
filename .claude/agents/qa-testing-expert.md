@@ -105,7 +105,7 @@ For EACH test case:
 - Mark status: **PASS**, **FAIL**, **BLOCKED**, or **SKIPPED** with justification
 
 ### Phase 4: Evidence Collection Protocol
-Follow the tiered evidence capture policy in `docs/references/shared/evidence-capture-policy.md`. Key principles:
+Follow the tiered evidence capture policy in `.claude/skills/qa-methodology/qa-evidence/evidence-capture-policy.md`. Key principles:
 - **Always capture:** Failures, bugs, final test state, visual regression
 - **Skip capturing:** Every passing navigation step, loading states, redundant confirmations
 - Console logs and network requests: capture only errors and anomalies, not full dumps
@@ -123,6 +123,8 @@ After test execution is complete:
 ---
 
 ## Bug Detection Framework
+
+> For the full defect lifecycle (JIRA Bug Workflow, triage, classification, verification protocol), see `.claude/skills/qa-methodology/qa-defect/defect-lifecycle-workflow.md`.
 
 ### What to Watch For
 
@@ -241,7 +243,7 @@ When performing exploratory testing, be CURIOUS and EXPERIMENTAL:
 
 ## Reporting Standards
 
-Follow the evidence capture and report verbosity rules in `docs/references/shared/evidence-capture-policy.md`.
+Follow the evidence capture and report verbosity rules in `.claude/skills/qa-methodology/qa-evidence/evidence-capture-policy.md`.
 
 ### Test Execution Report Format
 
@@ -271,6 +273,7 @@ TC-001, TC-003, TC-004, TC-005, TC-006 — all passed without issues.
 ### Bug Report Format
 
 Store bug reports in `reports/bugs/`. Target: **under 150 lines** per report.
+For full frontend/backend bug templates, see `.claude/skills/qa-methodology/qa-defect/defect-report-templates.md`.
 
 ```markdown
 # BUG: [Clear Title] - [Ticket Reference]
@@ -370,9 +373,14 @@ Read these files on demand when you need specific guidance:
 
 | Reference | File | When to Read |
 |-----------|------|--------------|
-| Test Artifact Output Paths | `docs/references/shared/output-paths.md` | Saving any test artifacts |
-| Bug Investigation Flow | `docs/references/shared/bug-investigation-flow.md` | Investigating bugs, reproducing issues, root cause analysis |
-| Evidence Capture Policy | `docs/references/shared/evidence-capture-policy.md` | Deciding what/when to capture, report verbosity rules |
+| Test Artifact Output Paths | `.claude/skills/qa-methodology/qa-evidence/output-paths.md` | Saving any test artifacts |
+| Bug Investigation Flow | `.claude/skills/qa-methodology/qa-investigate/bug-investigation-flow.md` | Investigating bugs, reproducing issues, root cause analysis |
+| Evidence Capture Policy | `.claude/skills/qa-methodology/qa-evidence/evidence-capture-policy.md` | Deciding what/when to capture, report verbosity rules |
+| Test Design Techniques | `.claude/skills/qa-methodology/qa-test-design/test-design-techniques.md` | Selecting and applying test design techniques (EP, BVA, error guessing) during execution |
+| Session-Based Exploratory Testing | `.claude/skills/qa-methodology/qa-exploratory-method/session-based-testing.md` | SBTM charters, CRISP/SFDPOT heuristics, exploration tours, session notes |
+| Defect Lifecycle & JIRA Workflow | `.claude/skills/qa-methodology/qa-defect/defect-lifecycle-workflow.md` | JIRA Bug Workflow (16 statuses), triage, classification, fix verification |
+| Bug Report Templates | `.claude/skills/qa-methodology/qa-defect/defect-report-templates.md` | Full frontend/backend bug report templates |
+| Sign-Off Templates | `.claude/skills/qa-methodology/qa-evidence/sign-off-templates.md` | Full frontend/backend sign-off tables |
 
 ---
 
@@ -392,6 +400,7 @@ Read these files on demand when you need specific guidance:
 ## SIGN-OFF FORMAT
 
 **When reporting task completion to qa-lead-orchestrator, use this structured format:**
+For full frontend/backend sign-off tables, see `.claude/skills/qa-methodology/qa-evidence/sign-off-templates.md`.
 
 ### Quick Status Report (for Teams/Comment)
 ```markdown

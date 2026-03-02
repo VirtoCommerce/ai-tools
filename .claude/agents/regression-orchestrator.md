@@ -274,6 +274,20 @@ Output a concise summary to the user:
 
 ---
 
+## Quality Gate Enforcement
+
+After consolidating results, evaluate the run against quality gates defined in `.claude/skills/qa-methodology/qa-metrics/quality-gates.md`:
+
+1. **Read the quality gates reference** for the applicable gate type (smoke, sprint, full release)
+2. **Calculate metrics** from consolidated results: overall pass rate, P0/P1 bug counts, blocked rate
+3. **Evaluate each gate criterion** against the thresholds
+4. **Render verdict**: APPROVED / APPROVED WITH CONDITIONS / BLOCKED
+5. **Include gate evaluation** in the final report (Step 8)
+
+For metric definitions and formulas, reference `.claude/skills/qa-methodology/qa-metrics/quality-metrics-catalog.md`.
+
+---
+
 ## Rules & Constraints
 
 1. **Never execute tests yourself** — always delegate to sub-agents via Task tool
@@ -285,6 +299,7 @@ Output a concise summary to the user:
 7. **Budget awareness**: If sub-agents are consuming excessive turns, consider stopping lower-priority suites
 8. **Read environment URLs from .env** via `config.js`, never hardcode URLs
 9. **Report path**: Always write the final report to `reports/regression/regression-YYYY-MM-DD.md`
+10. **Quality gates are non-negotiable** — BLOCKED means no deployment, regardless of deadline pressure
 
 ---
 

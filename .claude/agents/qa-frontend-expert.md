@@ -97,11 +97,16 @@ Detailed test case templates and checklists are extracted to keep this agent lea
 | Account, Dashboard, B2B (Quotes, Quick Order) | `docs/references/frontend-testing/test-cases-account-b2b.md` |
 | Responsive, Cross-Browser, Performance | `docs/references/frontend-testing/test-cases-responsive-crossbrowser-perf.md` |
 | Visual & Behavioral Bug Detection | `docs/references/frontend-testing/visual-bug-detection-checklist.md` |
-| Sign-Off Tables, Bug Report Template | `docs/references/frontend-testing/sign-off-and-bug-templates.md` |
-| Bug Investigation & Root Cause | `docs/references/shared/bug-investigation-flow.md` |
-| Evidence Capture & Report Verbosity | `docs/references/shared/evidence-capture-policy.md` |
+| Bug Report Templates | `.claude/skills/qa-methodology/qa-defect/defect-report-templates.md` |
+| Sign-Off Tables | `.claude/skills/qa-methodology/qa-evidence/sign-off-templates.md` |
+| Defect Lifecycle & JIRA Workflow | `.claude/skills/qa-methodology/qa-defect/defect-lifecycle-workflow.md` |
+| Bug Investigation & Root Cause | `.claude/skills/qa-methodology/qa-investigate/bug-investigation-flow.md` |
+| Evidence Capture & Report Verbosity | `.claude/skills/qa-methodology/qa-evidence/evidence-capture-policy.md` |
+| Test Design Techniques | `.claude/skills/qa-methodology/qa-test-design/test-design-techniques.md` |
+| Risk Prioritization Framework | `.claude/skills/qa-methodology/qa-risk/risk-prioritization-framework.md` |
+| Session-Based Exploratory Testing | `.claude/skills/qa-methodology/qa-exploratory-method/session-based-testing.md` |
 
-**How to use:** When testing checkout, read `test-cases-checkout.md` for detailed step-by-step checklists. When doing visual QA, read the bug detection checklist. When reporting results, read the sign-off templates.
+**How to use:** When testing checkout, read `test-cases-checkout.md` for detailed step-by-step checklists. When doing visual QA, read the bug detection checklist. When reporting results, read the sign-off templates. When deriving test cases, read `test-design-techniques.md` for EP, BVA, decision tables. When prioritizing test effort, read `risk-prioritization-framework.md`. When doing exploratory testing, read `session-based-testing.md` for SBTM charters and heuristics.
 
 ---
 
@@ -130,7 +135,7 @@ Network:
 3. Note reproduction steps
 4. Check network tab for failed requests
 5. Test in different browser to isolate
-6. Create detailed bug report (see `sign-off-and-bug-templates.md`)
+6. Create detailed bug report (see `defect-report-templates.md` in qa-defect skill)
 
 ---
 
@@ -242,7 +247,8 @@ Blocking: [none or list]
 Full report: tests/SprintXX-XX/VCST-XXXX/test-execution-report.md
 ```
 
-For full sign-off tables, read `docs/references/frontend-testing/sign-off-and-bug-templates.md`.
+For full sign-off tables, read `.claude/skills/qa-methodology/qa-evidence/sign-off-templates.md`.
+For full bug report templates, read `.claude/skills/qa-methodology/qa-defect/defect-report-templates.md`.
 
 ### Approval Criteria
 - **APPROVED:** All critical flows pass, checkout works all browsers, no P0/P1 bugs

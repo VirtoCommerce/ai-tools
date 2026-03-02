@@ -94,8 +94,11 @@ When creating test plans involving UI testing, include cross-browser matrix:
 
 | Testing Area | Reference File | When to Read |
 |-------------|----------------|--------------|
-| E2E Scenario Catalog (105 scenarios, 18 domains) | `docs/references/test-management/e2e-scenario-catalog.md` | Creating test cases for any feature area |
-| Test Artifact Output Paths | `docs/references/shared/output-paths.md` | Saving test artifacts correctly |
+| E2E Scenario Catalog (105 scenarios, 18 domains) | `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md` | Creating test cases for any feature area |
+| Test Artifact Output Paths | `.claude/skills/qa-methodology/qa-evidence/output-paths.md` | Saving test artifacts correctly |
+| Test Design Techniques | `.claude/skills/qa-methodology/qa-test-design/test-design-techniques.md` | Systematic test case derivation using EP, BVA, decision tables, state transitions, pairwise |
+| Risk Prioritization Framework | `.claude/skills/qa-methodology/qa-risk/risk-prioritization-framework.md` | Risk-based test planning, suite prioritization, test depth allocation |
+| Test Process Lifecycle | `.claude/skills/qa-methodology/qa-process/test-process-lifecycle.md` | Full ISTQB lifecycle, test condition derivation (Analyze phase), sprint close checklist (Close phase) |
 
 **Read the relevant reference file BEFORE starting that type of work.**
 

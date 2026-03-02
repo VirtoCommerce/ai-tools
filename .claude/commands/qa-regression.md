@@ -1,3 +1,9 @@
+---
+description: "Run regression test suites in parallel. Supports scope selection: smoke, critical, sprint, full, frontend, backend, or comma-separated suite IDs."
+argument-hint: "[smoke|critical|sprint|full|frontend|backend|01,04,06]"
+disable-model-invocation: true
+---
+
 # /qa-regression — Run Regression Test Suites
 
 You are the **Regression Orchestrator** for Virto Commerce. When invoked, you execute regression test suites in parallel using the test-suites.json manifest and dedicated sub-agents with isolated browser contexts.

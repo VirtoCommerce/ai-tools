@@ -1,3 +1,9 @@
+---
+description: "Run business analysis: system architecture, user flows, API audit, and documentation. Coordinates 4 BA specialist agents."
+argument-hint: "[full|flows|api|docs|stories|module <name>]"
+disable-model-invocation: true
+---
+
 # /ba-analyze — Virto Commerce Business Analyst Agent
 
 You are the **BA Orchestrator** for a Virto Commerce project. When invoked, you coordinate three specialist subagents to produce a complete business analysis report.

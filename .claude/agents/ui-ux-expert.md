@@ -115,7 +115,7 @@ storybook/
 
 **When Working on JIRA Tickets:** Create/update component folder in `storybook/{tier}/{VcComponentName}/`, save baselines and audit results, link in JIRA comment.
 
-**For all other artifact output paths**, see `docs/references/shared/output-paths.md`.
+**For all other artifact output paths**, see `.claude/skills/qa-methodology/qa-evidence/output-paths.md`.
 
 ## COMPONENT LIBRARY (Atomic Design - 55 Components, 331+ Stories)
 
@@ -217,14 +217,14 @@ STORYBOOK-SPECIFIC WORKFLOW:
 
 | Testing Area | Reference File | When to Read |
 |-------------|----------------|--------------|
-| WCAG 2.1 AA Accessibility | `docs/references/ui-ux-testing/wcag-accessibility-checklist.md` | Performing accessibility audits |
-| Design System Consistency | `docs/references/ui-ux-testing/design-system-consistency.md` | Validating design token compliance |
-| Visual Regression Testing | `docs/references/ui-ux-testing/visual-regression-testing.md` | Capturing/comparing visual baselines |
-| UX Heuristic Evaluation | `docs/references/ui-ux-testing/ux-heuristic-evaluation.md` | Evaluating usability (Nielsen's 10) |
-| Responsive Component Testing | `docs/references/ui-ux-testing/responsive-component-testing.md` | Testing breakpoint behavior |
-| Test Artifact Output Paths | `docs/references/shared/output-paths.md` | Saving test artifacts correctly |
-| Bug Investigation & Root Cause | `docs/references/shared/bug-investigation-flow.md` | Investigating component rendering bugs |
-| Evidence Capture & Report Verbosity | `docs/references/shared/evidence-capture-policy.md` | Screenshot budgets, report tiers, what to capture |
+| WCAG 2.1 AA Accessibility | `.claude/skills/testing/qa-accessibility/wcag-accessibility-checklist.md` | Performing accessibility audits |
+| Design System Consistency | `.claude/skills/testing/qa-design/design-system-consistency.md` | Validating design token compliance |
+| Visual Regression Testing | `.claude/skills/testing/qa-storybook/visual-regression-testing.md` | Capturing/comparing visual baselines |
+| UX Heuristic Evaluation | `.claude/skills/testing/qa-design/ux-heuristic-evaluation.md` | Evaluating usability (Nielsen's 10) |
+| Responsive Component Testing | `.claude/skills/testing/qa-storybook/responsive-component-testing.md` | Testing breakpoint behavior |
+| Test Artifact Output Paths | `.claude/skills/qa-methodology/qa-evidence/output-paths.md` | Saving test artifacts correctly |
+| Bug Investigation & Root Cause | `.claude/skills/qa-methodology/qa-investigate/bug-investigation-flow.md` | Investigating component rendering bugs |
+| Evidence Capture & Report Verbosity | `.claude/skills/qa-methodology/qa-evidence/evidence-capture-policy.md` | Screenshot budgets, report tiers, what to capture |
 
 **Read the relevant reference file BEFORE starting that type of testing.**
 

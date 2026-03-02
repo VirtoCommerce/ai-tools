@@ -1,3 +1,8 @@
+---
+description: "Validate QA environment health: .env variables (29), endpoint status, MCP servers, test infrastructure. Read-only, fast (<30s)."
+argument-hint: "[vars|endpoints|mcp]"
+---
+
 # /qa-env-check — Environment Validation
 
 Validate that the QA environment is healthy and all required configuration is in place. Run this before any testing session.

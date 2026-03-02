@@ -1,7 +1,7 @@
 # Bug Investigation Flow
 
 > Shared reference for all QA agents. Read when investigating a suspected bug, reproducing a reported issue, or performing root cause analysis.
-> Bug report **templates** are in `docs/references/frontend-testing/sign-off-and-bug-templates.md` and `docs/references/backend-testing/sign-off-and-bug-templates.md`. This file covers the investigation **process** before the report.
+> Bug report **templates** are in `.claude/skills/qa-methodology/qa-defect/defect-report-templates.md`. This file covers the investigation **process** before the report. For the full defect lifecycle (triage, classification, verification), see `.claude/skills/qa-methodology/qa-defect/defect-lifecycle-workflow.md`.
 
 ---
 
