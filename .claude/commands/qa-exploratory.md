@@ -98,3 +98,6 @@ Write a session report to `reports/exploratory/exploratory-{area}-{date}.md`:
 - Capture screenshots for every bug found
 - Don't try to fix bugs — just document them
 - If a Critical bug is found, stop and report immediately
+
+## Related
+- `/qa-sbtm` skill — Full SBTM methodology: charter templates, CRISP/SFDPOT reference, debrief format

@@ -1,5 +1,5 @@
 ---
-description: "Validate QA environment health: .env variables (29), endpoint status, MCP servers, test infrastructure. Read-only, fast (<30s)."
+description: "Validate QA environment health: .env variables (33), endpoint status, MCP servers, test infrastructure. Read-only, fast (<30s)."
 argument-hint: "[vars|endpoints|mcp]"
 ---
 
@@ -19,7 +19,7 @@ Validate that the QA environment is healthy and all required configuration is in
 
 ## Checks Performed
 
-### 1. Environment Variables (29 required)
+### 1. Environment Variables (33 required)
 Run `npm run env:check` (uses `get_variables_env.js`) to verify all required variables are set:
 
 | Group | Variables |
@@ -28,9 +28,12 @@ Run `npm run env:check` (uses `get_variables_env.js`) to verify all required var
 | Credentials | `ADMIN`, `ADMIN_PASSWORD`, `USER_EMAIL`, `USER_PASSWORD`, `USER2_*`, `USER_VIRTO`, `USER_VIRTO_PASSWORD` |
 | Store | `STORE_ID` |
 | Skyflow | `SKYFLOW_VISA`, `SKYFLOW_MASTERCARD`, `SKYFLOW_EXPIRY`, `SKYFLOW_CVV` |
+| CyberSource | `CYBERSOURCE_CARD`, `CYBERSOURCE_EXPIRY`, `CYBERSOURCE_CVV` |
+| Authorize.Net | `AUTHORIZNET_CARD`, `AUTHORIZNET_EXPIRY`, `AUTHORIZNET_CVV` |
+| Datatrance | `DATATRANCE_MASTERCARD`, `DATATRANCE_EXPIRY`, `DATATRANCE_CVV`, `DATATRANCE_OTP` |
 | APIs | `FIGMA_API_KEY`, `BROWSERSTACK_USERNAME`, `BROWSERSTACK_ACCESS_KEY`, `POSTMAN_API_KEY` |
 
-Report: X/29 variables set. List any missing.
+Report: X/33 variables set. List any missing.
 
 ### 2. Endpoint Health
 Test each endpoint with curl (no browser needed):
@@ -65,7 +68,7 @@ Quick checks on test infrastructure:
 ```
 ## Environment Check — YYYY-MM-DD HH:MM
 
-### Variables: X/29 OK
+### Variables: X/33 OK
 [Missing: VAR1, VAR2 (if any)]
 
 ### Endpoints

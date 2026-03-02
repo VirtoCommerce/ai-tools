@@ -60,7 +60,7 @@ Combine all subagent outputs into the final structured report (see Output Format
 
 ## Output Format
 
-Produce a Markdown report saved as `ba-report-[date].md` in the project root, and also print a summary to the terminal.
+Produce a Markdown report saved as `reports/ba/ba-report-{date}.md`, and also print a summary to the terminal.
 
 ```markdown
 # BA Analysis Report — Virto Commerce

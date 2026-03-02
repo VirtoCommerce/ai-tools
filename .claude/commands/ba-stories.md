@@ -53,7 +53,7 @@ The ba-story-writer produces stories with:
 
 ### Step 3 — Save and Report
 
-Save output to `docs/ba-output/user-stories/{feature}-stories.md`
+Save output to `reports/ba/{feature}-stories.md`
 
 Output a summary to user:
 - Number of epics and stories generated
