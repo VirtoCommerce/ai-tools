@@ -305,13 +305,9 @@ For bug report templates: `.claude/skills/qa-methodology/qa-defect/defect-report
 
 ### Artifact Paths
 
-| Artifact | Path |
-|----------|------|
-| Test docs | `tests/SprintXX-XX/VCST-XXXX/` |
-| Screenshots | `tests/SprintXX-XX/VCST-XXXX/screenshots/` (desktop/, mobile/) |
-| Bug reports | `reports/bugs/` |
-| Regression reports | `reports/regression/` |
-| Raw browser artifacts (gitignored) | `test-results/{browser}/` |
+Full path map, naming conventions, folder structure per ticket, and gitignored vs tracked rules: read `.claude/skills/qa-methodology/qa-evidence/output-paths.md`
+
+Quick reference: `tests/` (tracked docs + screenshots), `reports/` (tracked bugs + regression), `test-results/` (gitignored raw browser artifacts)
 
 ### Scope Boundaries
 
