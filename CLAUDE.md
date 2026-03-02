@@ -51,9 +51,11 @@ Access via `config.js`: `import { env } from './config.js'`
 
 ```
 vc-mcp-testing-module/
+├── INDEX.md                 # Top-level repo navigation hub (quick links to all directories)
 ├── .claude/agents/          # Claude Code agent configurations (11 agents, tracked in git)
+│   └── knowledge/           # Shared agent reference files (platform-patterns, browser-quirks, debugging-signals, performance-thresholds)
 ├── .claude/skills/          # Skills grouped by category (16 skills in 3 groups, tracked in git)
-│   ├── vc-knowledge/        # VC docs, module analysis, API reference (3 skills)
+│   ├── vc-knowledge/        # VC docs, module analysis, API reference (3 skills) + vc-frontend/sitemap.md
 │   ├── testing/             # Storybook, accessibility, design, plan, API (5 skills)
 │   └── qa-methodology/      # Process, investigation, evidence, test design, risk, metrics, SBTM, defect (8 skills)
 ├── .claude/commands/        # Slash commands (9 commands, tracked in git)
@@ -73,6 +75,7 @@ vc-mcp-testing-module/
 │   └── INDEX.md             # Entry point: active test cases grouped by domain
 ├── reports/                 # Bug reports and regression test reports
 ├── archive/sprints/         # Historical sprint test cases
+├── Test suites & Cases/     # Original TestRail export (source-of-truth reference: Backend, E2E, Frontend)
 ├── config.js                # Environment configuration (loads .env)
 └── sitemap.md               # Site structure reference
 ```
@@ -90,6 +93,8 @@ Load a prompt template from `docs/prompts/`, execute via MCP browser tools with 
 
 ### 2. CI Regression via Claude Agent SDK
 `ci/run-regression.ts` orchestrates headless regression using `@anthropic-ai/claude-agent-sdk`. It reads suite CSVs from `regression/suites/`, injects them into prompts with agent instructions from `ci/agents/` (3 CI-specific agent definitions: `qa-frontend-expert.md`, `qa-backend-expert.md`, `qa-testing-expert.md`), and runs suites in parallel batches (up to 3 concurrent, configurable via `MAX_PARALLEL`). Results are tracked in `reports/regression/history.json` (90-day rolling window). Teams notifications via `ci/notify-teams.ts`.
+
+**Note:** CI mode uses only `playwright-chrome` (single headless Chromium) for all suites, regardless of agent type. The 3-browser pool (chrome/firefox/edge) applies only to interactive mode. CI environment mapping: `qa` → `FRONT_URL`/`BACK_URL`, `staging` → `VIRTO_START_FRONT`/`VIRTO_START_BACK`.
 
 **Regression Orchestration Pipeline (interactive mode):**
 1. `regression-orchestrator` agent reads `config/test-suites.json` manifest
@@ -130,7 +135,7 @@ Additional MCP servers (configured at user level, not in `.mcp.json`):
 
 ## Claude Code Specialized Agents
 
-11 agents in `.claude/agents/` across two teams (QA + BA). See `.claude/agents/README.md` for full documentation.
+11 agents in `.claude/agents/` across two teams (QA + BA). See `.claude/agents/README.md` for full documentation. Shared reference files in `.claude/agents/knowledge/`: `platform-patterns.md`, `browser-quirks.md`, `debugging-signals.md`, `performance-thresholds.md` — these are cross-agent knowledge bases that agents should consult during testing.
 
 ### QA Team (7 agents)
 
@@ -237,7 +242,7 @@ Key prompt templates in `docs/prompts/`:
 
 ## Regression Test Suites
 
-36 modular suites + 1 master suite in `regression/suites/` (organized in `Frontend/` and `Backend/` subdirectories) in TestRail CSV format (`ID, Title, Section, Type, Priority, Estimate, Preconditions, Steps, Expected Result, References, Automation Status`). Full definitions in `config/test-suites.json`. **Total: 1,194 test cases** (427 frontend + 767 backend).
+36 modular suites + 1 master suite in `regression/suites/` (organized in `Frontend/` and `Backend/` subdirectories) in TestRail CSV format (`ID, Title, Section, Type, Priority, Estimate, Preconditions, Steps, Expected Result, References, Automation Status`). Full definitions in `config/test-suites.json`. **Total: 1,274 test cases** (492 frontend + 782 backend). Always refer to `config/test-suites.json` for authoritative counts — CSV suites evolve.
 
 - **Suite 00** (`Frontend/00-full-regression-release.csv`): Master suite — 90 consolidated P0/P1 test cases for major releases
 - **Frontend** (suites 01-13, 35-36): Smoke, Auth, Catalog, Cart, BOPIS, Payment, GA4, Security, A11y, i18n, Perf, Browser Compat, B2C, White Labeling, Configurable Products
