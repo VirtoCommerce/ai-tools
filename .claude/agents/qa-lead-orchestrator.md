@@ -61,16 +61,16 @@ You manage 5 specialized QA agents:
 - Use for: PR analysis, code change review, codebase search
 - Key commands: `gh pr view`, `gh pr diff`, `gh pr list`, `gh pr checks`, `gh search code`, `gh api`
 
-**3. playwright MCP (Browser Automation - 5 Variants)**
+**3. playwright MCP (3 Browser Variants)**
 - Use for: Review E2E test results, delegate browser testing
 
 | Browser MCP Server | Browser | Delegation Use Case |
 |-------------------|---------|---------------------|
-| `playwright` | Chromium (default) | Primary testing baseline |
-| `playwright-chrome` | Chrome | Production browser verification |
+| `playwright-chrome` | Chrome | Primary testing baseline |
 | `playwright-firefox` | Firefox | Firefox compatibility checks |
-| `playwright-webkit` | WebKit/Safari | Safari/iOS validation |
 | `playwright-edge` | Edge | Enterprise browser testing |
+
+**Note:** WebKit is NOT supported on Windows — never attempt `playwright-webkit`.
 
 **4. postman (API Testing)**
 - Use for: Review API test collections and results

@@ -54,16 +54,16 @@ Ensure comprehensive test coverage through systematic test planning, detailed te
 - Use for: Access designs to understand UI requirements
 - Key tools: `figma_get_file`, `figma_get_images`
 
-**4. playwright MCP (Browser Automation - 5 Variants)**
+**4. playwright MCP (3 Browser Variants)**
 - Use for: UI exploration, test case validation, flow verification
 
 | Browser MCP Server | Browser | Use Case |
 |-------------------|---------|----------|
-| `playwright` | Chromium (default) | Primary testing, baseline |
-| `playwright-chrome` | Chrome | Production browser testing |
+| `playwright-chrome` | Chrome | Primary testing, baseline |
 | `playwright-firefox` | Firefox | Cross-browser validation |
-| `playwright-webkit` | WebKit/Safari | Safari compatibility |
 | `playwright-edge` | Edge | Enterprise browser testing |
+
+**Note:** WebKit is NOT supported on Windows — never attempt `playwright-webkit`.
 
 Common tools: `browser_navigate`, `browser_snapshot`, `browser_take_screenshot`, `browser_click`, `browser_fill`
 
@@ -82,12 +82,13 @@ When creating test plans involving UI testing, include cross-browser matrix:
 | Browser | MCP Server | Priority | Notes |
 |---------|------------|----------|-------|
 | Chrome | `playwright-chrome` | P0 | Primary, ~65% market share |
-| Safari/WebKit | `playwright-webkit` | P1 | Critical for Mac/iOS users |
 | Firefox | `playwright-firefox` | P1 | ~5% market share |
 | Edge | `playwright-edge` | P2 | Enterprise scenarios |
 
+**Note:** WebKit is NOT supported on Windows. Safari testing requires BrowserStack.
+
 **Mobile Testing:**
-- iPhone Safari via `playwright-webkit` or BrowserStack
+- iPhone Safari via BrowserStack (real devices)
 - Android Chrome via `playwright-chrome` or BrowserStack
 
 ## DETAILED TESTING REFERENCES (Read on Demand)

@@ -66,11 +66,12 @@ Common tools: `browser_navigate`, `browser_snapshot`, `browser_take_screenshot`,
 | Browser | MCP Server | Priority | UI/UX Focus |
 |---------|------------|----------|-------------|
 | Chrome | `playwright-chrome` | P0 | Primary baseline, DevTools access |
-| Safari/WebKit | `playwright-webkit` | P1 | Flexbox/Grid rendering, iOS Safari |
 | Firefox | `playwright-firefox` | P1 | CSS rendering differences |
 | Edge | `playwright-edge` | P2 | Enterprise, high-contrast mode |
 
-**Mobile Testing:** iPhone Safari (`playwright-webkit`), Android Chrome (`playwright-chrome`), touch targets min 44x44px, breakpoints: 375px, 768px, 1024px, 1280px.
+**Note:** WebKit not supported on Windows. Safari/iOS testing requires BrowserStack.
+
+**Mobile Testing:** iPhone Safari (BrowserStack), Android Chrome (`playwright-chrome`), touch targets min 44x44px, breakpoints: 375px, 768px, 1024px, 1280px.
 
 ## STORYBOOK ADDON TESTING WORKFLOW
 

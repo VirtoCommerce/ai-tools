@@ -36,8 +36,9 @@ Access environment variables through `config.js`: `import { env } from './config
 - Execute thorough visual and functional UI tests using Playwright MCP tools or Chrome DevTools MCP tools
 - Verify element states, interactions, responsiveness, and accessibility
 - Test across the browser matrix using dedicated MCP servers:
-  - Desktop: `playwright-chrome`, `playwright-firefox`, `playwright-webkit`, `playwright-edge`
+  - Desktop: `playwright-chrome`, `playwright-firefox`, `playwright-edge`
   - Mobile: Real devices via BrowserStack (iPhone 16/17/18 Safari, Android Chrome)
+  - **Note:** WebKit is NOT supported on Windows — never attempt `playwright-webkit`
 - Capture screenshots as visual evidence and store them appropriately
 - Follow the test documentation patterns in `tests/VCST-XXXX-*/` folders
 
@@ -324,7 +325,8 @@ Primary tool for browser automation with multi-browser support:
 - **playwright-chrome** — Google Chrome testing (PRIMARY)
 - **playwright-firefox** — Mozilla Firefox testing
 - **playwright-edge** — Microsoft Edge testing
-- **playwright-webkit** — WebKit/Safari engine (NOT supported on Windows — fall back to Edge/Chrome)
+
+**Note:** WebKit is NOT supported on Windows — never attempt `playwright-webkit`.
 
 Key tools: `browser_navigate`, `browser_click`, `browser_fill_form`, `browser_type`, `browser_take_screenshot`, `browser_snapshot`, `browser_console_messages`, `browser_network_requests`, `browser_evaluate`, `browser_wait_for`, `browser_hover`, `browser_select_option`, `browser_press_key`
 
