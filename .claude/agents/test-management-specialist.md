@@ -46,9 +46,9 @@ Ensure comprehensive test coverage through systematic test planning, detailed te
 - Use for: Fetch requirements, create test case tickets, link test cases to stories
 - Key tools: `getJiraIssue`, `searchJiraIssuesUsingJql`, `createJiraIssue`, `addCommentToJiraIssue`, `editJiraIssue`
 
-**2. github (GitHub Integration)**
-- Use for: Review code changes to understand implementation, access test repositories
-- Key tools: `get_pull_request`, `get_pull_request_files`, `search_code`, `get_file_contents`
+**2. GitHub (`gh` CLI via Bash)**
+- Use for: Review code changes to understand implementation, search codebase, fetch PRs
+- Key commands: `gh pr view`, `gh pr diff`, `gh search code`, `gh api repos/{owner}/{repo}/contents/{path}`
 
 **3. figma (Design Reference)**
 - Use for: Access designs to understand UI requirements

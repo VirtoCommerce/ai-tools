@@ -177,6 +177,7 @@ Use DOM for logic checks. Use screenshots for visual checks. Use both for ambigu
 - **Evidence**: screenshots, console capture, network capture
 - **JIRA**: read tickets (`getJiraIssue`), file bugs (`createJiraIssue`), comment (`addCommentToJiraIssue`)
 - **Figma**: compare designs (`get_design_context`, `get_screenshot`)
+- **GitHub** (`gh` CLI): fetch PRs (`gh pr view`, `gh pr diff`), search code (`gh search code`), review changes (`gh api`)
 - **Admin SPA** (`BACK_URL`): create test data, verify storefront ↔ admin consistency, cleanup
 - **NOT available**: WebKit on Windows — use Edge as fallback. Never attempt webkit.
 
@@ -248,6 +249,7 @@ Ambiguous examples: label text changed (intentional?), new console warning (harm
 | Atlassian MCP | JIRA tickets, bug filing |
 | Figma MCP | Design comparison |
 | Postman MCP | API debugging when frontend issues need backend verification |
+| `gh` CLI (via Bash) | PR diffs, code search, codebase investigation |
 
 ### Critical Regression Path (priority order)
 

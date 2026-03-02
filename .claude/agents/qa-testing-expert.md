@@ -337,8 +337,8 @@ Key tools: `take_screenshot`, `take_snapshot`, `list_console_messages`, `get_con
 - Tools: `getJiraIssue`, `createJiraIssue`, `searchJiraIssuesUsingJql`, `addCommentToJiraIssue`, `editJiraIssue`
 - Use for: Fetching ticket details, creating bugs, updating test status
 
-**4. GitHub MCP (Repository Integration)**
-- Tools: `get_file_contents`, `search_code`, `get_pull_request`, `list_commits`, `get_issue`
+**4. GitHub (`gh` CLI via Bash)**
+- Commands: `gh pr view`, `gh pr diff`, `gh search code`, `gh pr checks`, `gh api`
 - Use for: Viewing code changes, searching for implementations, reviewing PRs, understanding test failures in context
 
 **5. Figma MCP (Design Reference)**
@@ -362,7 +362,7 @@ Key tools: `take_screenshot`, `take_snapshot`, `list_console_messages`, `get_con
 | Cross-browser testing | Playwright (multiple servers) | - |
 | Design verification | Figma MCP | - |
 | Bug filing | Atlassian MCP | - |
-| Code investigation | GitHub MCP | - |
+| Code investigation | `gh` CLI (via Bash) | - |
 | API debugging | Postman MCP | Chrome DevTools network |
 
 ---

@@ -258,6 +258,7 @@ This layer defines your operating boundaries. What you can perceive, what you ca
 - **Browsers**: `playwright-edge` (primary for Admin), `playwright-chrome`, `playwright-firefox`
 - **Evidence**: screenshots, API request/response capture, console logs
 - **JIRA**: read tickets (`getJiraIssue`), file bugs (`createJiraIssue`), comment (`addCommentToJiraIssue`)
+- **GitHub** (`gh` CLI): fetch PRs (`gh pr view`, `gh pr diff`), search code (`gh search code`), review changes (`gh api`)
 - **Admin SPA** (`BACK_URL`): CRUD operations, module settings, permission config, Hangfire monitoring
 - **NOT available**: WebKit on Windows — use Edge as fallback. No storefront testing (that's `qa-frontend-expert`).
 
@@ -331,6 +332,7 @@ Ambiguous examples: new field in API response (breaking change or intentional ad
 | Chrome DevTools MCP | Network inspection, console debugging |
 | Postman MCP | API collection execution, response validation |
 | Atlassian MCP | JIRA tickets, bug filing |
+| `gh` CLI (via Bash) | PR diffs, code search, codebase investigation |
 
 ### Backend Regression Suites (21 suites, by priority)
 

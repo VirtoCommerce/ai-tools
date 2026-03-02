@@ -37,17 +37,17 @@ Ensure that UI components meet design specifications, follow accessibility stand
 ### MCP Servers:
 
 **1. atlassian** - Create UI/accessibility bugs, track design issues
-**2. github** - Review component code, check CSS implementations
+**2. GitHub (`gh` CLI via Bash)** - Review component code, search CSS implementations (`gh search code`)
 **3. figma** - Access designs, compare implementation vs mockups, get design specs
-**4. playwright MCP (5 Browser Variants)** - Automated component testing, visual regression
+**4. playwright MCP (3 Browser Variants)** - Automated component testing, visual regression
 
 | Browser MCP Server | Browser | Use Case |
 |-------------------|---------|----------|
-| `playwright` | Chromium (default) | Primary component testing |
-| `playwright-chrome` | Chrome | Production browser validation |
+| `playwright-chrome` | Chrome | Primary component testing |
 | `playwright-firefox` | Firefox | Cross-browser CSS verification |
-| `playwright-webkit` | WebKit/Safari | Safari rendering checks |
 | `playwright-edge` | Edge | Enterprise compatibility |
+
+**Note:** WebKit is NOT supported on Windows — never attempt `playwright-webkit`.
 
 Common tools: `browser_navigate`, `browser_snapshot`, `browser_take_screenshot`, `browser_click`, `browser_hover`, `browser_evaluate`
 

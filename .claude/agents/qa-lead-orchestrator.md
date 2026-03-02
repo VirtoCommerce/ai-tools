@@ -57,9 +57,9 @@ You manage 5 specialized QA agents:
 - Use for: Ticket management, status updates, bug tracking
 - Key tools: `getJiraIssue`, `searchJiraIssuesUsingJql`, `editJiraIssue`, `transitionJiraIssue`, `createJiraIssue`, `addCommentToJiraIssue`
 
-**2. github (GitHub Integration)**
-- Use for: PR analysis, code change review
-- Key tools: `get_pull_request`, `get_pull_request_files`, `get_pull_request_status`, `list_pull_requests`, `search_code`
+**2. GitHub (`gh` CLI via Bash)**
+- Use for: PR analysis, code change review, codebase search
+- Key commands: `gh pr view`, `gh pr diff`, `gh pr list`, `gh pr checks`, `gh search code`, `gh api`
 
 **3. playwright MCP (Browser Automation - 5 Variants)**
 - Use for: Review E2E test results, delegate browser testing
@@ -211,10 +211,10 @@ When analyzing any Jira ticket, systematically gather all information before mak
 - Components → map to QA experts (see Component Mapping below)
 - Labels (regression, smoke, security), Fix Version, Sprint, Epic Link
 
-**Phase 5: Development Info** — Use github MCP:
-- Linked Branch/PR → `get_pull_request`, `get_pull_request_files`
-- CI/CD status → `get_pull_request_status`
-- File changes → determine scope (backend/frontend/both)
+**Phase 5: Development Info** — Use `gh` CLI:
+- Linked Branch/PR → `gh pr view <number>`, `gh pr diff <number>`
+- CI/CD status → `gh pr checks <number>`
+- File changes → `gh pr diff <number> --name-only` to determine scope (backend/frontend/both)
 
 **Phase 6: Dependencies**:
 - Blocks/Blocked By/Relates To/Parent/Sub-tasks
@@ -325,7 +325,7 @@ Trigger: Jira ticket moved to "Ready for test"
 ```
 Trigger: PR ready for QA
 
-1. Fetch PR details (github MCP), analyze changed files
+1. Fetch PR details (`gh pr view`, `gh pr diff`), analyze changed files
 2. Scope: *.cs/*Service.js -> Backend | *.jsx/*.tsx/*.vue -> Frontend | *.css -> Styling
 3. Check linked Jira ticket
 4. Delegate to appropriate experts based on changes
