@@ -144,7 +144,7 @@ Learning loop: qa-investigate (bug) --> qa-defect (triage) --> qa-risk (update) 
 
 | Agent | Skills Referenced |
 |-------|-----------------|
-| qa-lead-orchestrator | qa-defect, qa-risk, qa-metrics, qa-process |
+| qa-lead-orchestrator | qa-risk, qa-metrics, qa-process |
 | qa-frontend-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-exploratory-method |
 | qa-backend-expert | qa-api, qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-exploratory-method |
 | qa-testing-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-exploratory-method |
