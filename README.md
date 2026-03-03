@@ -14,11 +14,12 @@ QA testing documentation and MCP-driven testing repository for the **Virto Comme
 - [Step 3: Environment Variables (.env)](#step-3-environment-variables-env)
 - [Step 4: IDE Setup](#step-4-ide-setup)
 - [Step 5: MCP Server Configuration](#step-5-mcp-server-configuration)
-- [Step 6: Claude Code Agent Setup](#step-6-claude-code-agent-setup)
-- [Step 7: Verify Your Setup](#step-7-verify-your-setup)
+- [Step 6: Verify Your Setup](#step-6-verify-your-setup)
 - [Available Commands](#available-commands)
+- [Slash Commands & Skills](#slash-commands--skills)
 - [Repository Structure](#repository-structure)
 - [How Testing Works](#how-testing-works)
+- [Claude Code Agents](#claude-code-agents)
 - [Regression Test Suites](#regression-test-suites)
 - [CI/CD Pipeline](#cicd-pipeline)
 - [Test Documentation Patterns](#test-documentation-patterns)
@@ -88,6 +89,7 @@ This installs:
 - `dotenv` - Environment variable management
 - `csv-parse` - CSV test data parsing
 - `@anthropic-ai/claude-agent-sdk` - Claude Agent SDK for CI regression runs
+- `tsx` - TypeScript execution for CI scripts
 
 ---
 
@@ -101,6 +103,8 @@ FRONT_URL=https://your-frontend-url.govirto.com/
 BACK_URL=https://your-backend-url.govirto.com
 VIRTO_START_FRONT=https://virtostart-demo-store.govirto.com/
 VIRTO_START_BACK=https://your-virtostart-backend-url.com
+STORYBOOK_URL=https://your-storybook-url.com
+STORYBOOK_DEV_URL=https://your-storybook-dev-url.com
 
 # ===== Admin Credentials =====
 ADMIN=your_admin_username
@@ -145,6 +149,7 @@ DATATRANCE_OTP=123456
 FIGMA_API_KEY=your_figma_api_key
 BROWSERSTACK_USERNAME=your_browserstack_username
 BROWSERSTACK_ACCESS_KEY=your_browserstack_access_key
+POSTMAN_API_KEY=your_postman_api_key
 
 # ===== Builder.io (Optional) =====
 # BUILDER_IO_URL=https://builder.io/content
@@ -159,7 +164,7 @@ After creating the `.env` file, validate it:
 npm run env:check
 ```
 
-This runs `get_variables_env.js` which checks that all 29 required variables are set. If any are missing, the script will print the missing variable names.
+This runs `get_variables_env.js` which checks that all 33 required variables are set. If any are missing, the script will print the missing variable names.
 
 ### Accessing Environment Variables in Code
 
@@ -186,18 +191,18 @@ console.log(env.SKYFLOW_VISA);
 ### Cursor / Windsurf
 
 1. Open the project folder
-2. MCP configuration will be read from `.mcp.json` (you need to create this - see next step)
-3. Agent definitions will be read from `.claude/agents/`
+2. MCP configuration will be read from `.mcp.json` (tracked in git, verify it matches your OS - see next step)
+3. Agent definitions in `.claude/agents/` and skills in `.claude/skills/` are tracked in git and available automatically
 
 ---
 
 ## Step 5: MCP Server Configuration
 
-MCP servers provide browser automation, API testing, JIRA integration, and more. These config files are **gitignored** so you must set them up locally.
+MCP servers provide browser automation, API testing, and more. The `.mcp.json` file is **tracked in git** but may need OS-specific adjustments.
 
-### 5.1 Create `.mcp.json` in the project root
+### 5.1 Verify `.mcp.json` in the project root
 
-This configures the Playwright MCP servers for multi-browser testing:
+The repository includes a `.mcp.json` with 3 Playwright browsers + Postman:
 
 ```json
 {
@@ -205,45 +210,23 @@ This configures the Playwright MCP servers for multi-browser testing:
     "playwright-chrome": {
       "type": "stdio",
       "command": "cmd",
-      "args": [
-        "/c", "npx", "@playwright/mcp@latest",
-        "--config", "config/mcp-playwright-chrome.config.json"
-      ]
-    },
-    "playwright-webkit": {
-      "type": "stdio",
-      "command": "cmd",
-      "args": [
-        "/c", "npx", "@playwright/mcp@latest",
-        "--config", "config/mcp-playwright-webkit.config.json"
-      ]
+      "args": ["/c", "npx", "@playwright/mcp@latest", "--config", "config/mcp-playwright-chrome.config.json"]
     },
     "playwright-firefox": {
       "type": "stdio",
       "command": "cmd",
-      "args": [
-        "/c", "npx", "@playwright/mcp@latest",
-        "--config", "config/mcp-playwright-firefox.config.json"
-      ]
+      "args": ["/c", "npx", "@playwright/mcp@latest", "--config", "config/mcp-playwright-firefox.config.json"]
     },
     "playwright-edge": {
       "type": "stdio",
       "command": "cmd",
-      "args": [
-        "/c", "npx", "@playwright/mcp@latest",
-        "--config", "config/mcp-playwright-edge.config.json"
-      ]
+      "args": ["/c", "npx", "@playwright/mcp@latest", "--config", "config/mcp-playwright-edge.config.json"]
     },
     "postman": {
       "type": "stdio",
       "command": "cmd",
-      "args": [
-        "/c", "npx", "@postman/postman-mcp-server@latest",
-        "--minimal"
-      ],
-      "env": {
-        "POSTMAN_API_KEY": "your-postman-api-key"
-      }
+      "args": ["/c", "npx", "@postman/postman-mcp-server@latest", "--minimal"],
+      "env": { "POSTMAN_API_KEY": "%POSTMAN_API_KEY%" }
     }
   }
 }
@@ -251,109 +234,23 @@ This configures the Playwright MCP servers for multi-browser testing:
 
 > **macOS/Linux users:** Replace `"command": "cmd"` and `"args": ["/c", "npx", ...]` with `"command": "npx"` and `"args": ["@playwright/mcp@latest", "--config", "config/..."]`.
 
-### 5.2 Create browser config files in `config/`
+> **Note:** WebKit is NOT supported on Windows. The repository uses Chromium, Firefox, and Edge (Chromium channel).
 
-Create the `config/` directory and add these 4 JSON files:
+### 5.2 Browser config files in `config/`
 
-**`config/mcp-playwright-chrome.config.json`**
-```json
-{
-  "browser": {
-    "browserName": "chromium",
-    "launchOptions": { "headless": false },
-    "contextOptions": {
-      "viewport": { "width": 1920, "height": 1080 },
-      "recordVideo": {
-        "dir": "./test-results/chrome/videos",
-        "video": "on-failure",
-        "size": { "width": 1920, "height": 1080 }
-      },
-      "recordHar": {
-        "path": "./test-results/chrome/har",
-        "omitContent": true
-      }
-    }
-  },
-  "isolated": true,
-  "outputDir": "./test-results/chrome",
-  "screenshot": "only-on-failure"
-}
-```
+The `config/` directory is tracked in git and contains 3 browser configuration files:
 
-**`config/mcp-playwright-edge.config.json`**
-```json
-{
-  "browser": {
-    "browserName": "chromium",
-    "launchOptions": { "headless": false, "channel": "msedge" },
-    "contextOptions": {
-      "viewport": { "width": 1920, "height": 1080 },
-      "recordVideo": {
-        "dir": "./test-results/edge/videos",
-        "video": "on-failure",
-        "size": { "width": 1920, "height": 1080 }
-      },
-      "recordHar": {
-        "path": "./test-results/edge/har",
-        "omitContent": true
-      }
-    }
-  },
-  "isolated": true,
-  "outputDir": "./test-results/edge",
-  "screenshot": "only-on-failure"
-}
-```
+| File | Browser | Engine |
+|------|---------|--------|
+| `mcp-playwright-chrome.config.json` | Chrome/Chromium | Chromium |
+| `mcp-playwright-firefox.config.json` | Firefox | Gecko |
+| `mcp-playwright-edge.config.json` | Edge | Chromium (msedge channel) |
 
-**`config/mcp-playwright-firefox.config.json`**
-```json
-{
-  "browser": {
-    "browserName": "firefox",
-    "launchOptions": { "headless": false },
-    "contextOptions": {
-      "viewport": { "width": 1920, "height": 1080 },
-      "recordVideo": {
-        "dir": "./test-results/firefox/videos",
-        "video": "on-failure",
-        "size": { "width": 1920, "height": 1080 }
-      },
-      "recordHar": {
-        "path": "./test-results/firefox/har",
-        "omitContent": true
-      }
-    }
-  },
-  "isolated": true,
-  "outputDir": "./test-results/firefox",
-  "screenshot": "only-on-failure"
-}
-```
-
-**`config/mcp-playwright-webkit.config.json`**
-```json
-{
-  "browser": {
-    "browserName": "webkit",
-    "launchOptions": { "headless": false },
-    "contextOptions": {
-      "viewport": { "width": 1920, "height": 1080 },
-      "recordVideo": {
-        "dir": "./test-results/webkit/videos",
-        "video": "on-failure",
-        "size": { "width": 1920, "height": 1080 }
-      },
-      "recordHar": {
-        "path": "./test-results/webkit/har",
-        "omitContent": true
-      }
-    }
-  },
-  "isolated": true,
-  "outputDir": "./test-results/webkit",
-  "screenshot": "only-on-failure"
-}
-```
+All configs set:
+- Viewport: 1920x1080
+- HAR capture: enabled
+- Video: on failure
+- Isolated browser contexts
 
 ### 5.3 Additional MCP Servers (User-Level Configuration)
 
@@ -364,63 +261,12 @@ These are configured at the user/IDE level, not in the project `.mcp.json`:
 | **Chrome DevTools MCP** | Console logs, network requests, performance tracing, HAR export | Follow [Chrome DevTools MCP docs](https://github.com/nicholasadamou/chrome-devtools-mcp) |
 | **Atlassian MCP** | JIRA integration - ticket management, bug reporting | Follow [Atlassian MCP docs](https://github.com/sooperset/mcp-atlassian) - requires Atlassian API token |
 | **Figma MCP** | Visual comparison against design specs | Requires `FIGMA_API_KEY` from `.env` |
-| **Serena** | Semantic code navigation and symbol-level editing | Follow [Serena docs](https://github.com/serena-ai/serena) |
 | **GitHub MCP** | PR review, code search, issue management | Requires GitHub personal access token |
+| **Context7** | Up-to-date library documentation lookup | See [Context7 docs](https://github.com/context7/context7) |
 
 ---
 
-## Step 6: Claude Code Agent Setup
-
-The project uses 6 specialized QA agents defined in `.claude/agents/`. Since this directory is gitignored, you need to set them up locally.
-
-### Creating Agents via Claude Code CLI
-
-1. Open your terminal and run `claude`
-2. Type `/agents`
-3. Select **Create new agent**
-4. Follow the prompts to name and configure each agent
-
-### Agent Definitions
-
-Create these 6 agent files in `.claude/agents/`:
-
-| File | Agent Name | Model | Purpose |
-|------|-----------|-------|---------|
-| `qa-lead.md` | qa-lead-orchestrator | sonnet | Coordinates QA team, manages testing strategy, JIRA workflow, go/no-go decisions |
-| `qa-backend-expert.md` | qa-backend-expert | opus | Platform APIs, GraphQL xAPI, Modules, Admin SPA, background jobs |
-| `qa-frontend-expert.md` | qa-frontend-expert | opus | Customer-facing storefront, user journeys, checkout flows, mobile testing |
-| `qa-testing-expert.md` | qa-testing-expert | opus | Interactive testing - UI verification, Figma comparison, debugging, evidence capture |
-| `test-management-specialist.md` | test-management-specialist | sonnet | Test planning, test case writing, coverage tracking, TestRail artifacts |
-| `ui-ux-expert.md` | ui-ux-expert | sonnet | Storybook component testing, WCAG 2.1 AA accessibility, design system consistency |
-
-> Ask your team lead for the agent definition files or copy them from a colleague's setup.
-
-### Using Agents
-
-In Claude Code chat, reference agents with natural language:
-
-```
-"Use the qa-frontend-expert to verify the checkout flow"
-"Use the qa-testing-expert to run smoke tests on the QA environment"
-"@qa-lead analyze JIRA ticket VCST-1234"
-```
-
-### Parallel Agent Execution
-
-When running multiple agents simultaneously, each agent **MUST use its own browser**:
-
-| Agent | Playwright MCP Server |
-|-------|----------------------|
-| qa-frontend-expert | `playwright-chrome` |
-| qa-backend-expert | `playwright-edge` |
-| qa-testing-expert | `playwright-firefox` |
-| ui-ux-expert | `playwright-webkit` |
-
-If more than 4 agents need browsers, run them in sequential batches.
-
----
-
-## Step 7: Verify Your Setup
+## Step 6: Verify Your Setup
 
 Run through this checklist to confirm everything is working:
 
@@ -443,13 +289,12 @@ npm install
 npm run env:check
 ```
 
-All 29 variables should print their values (no "Missing required environment variables" error).
+All 33 variables should print their values (no missing variable errors).
 
-### 4. Test Playwright browser launch
+### 4. Install Playwright browsers
 
 ```bash
-npx playwright install
-npm run test:chrome
+npx playwright install chromium firefox
 ```
 
 ### 5. Verify MCP servers connect
@@ -466,13 +311,12 @@ If Playwright MCP is configured correctly, a browser window will open and naviga
 
 - [ ] Repository cloned
 - [ ] `npm install` completed
-- [ ] `.env` file created with all 29 variables
+- [ ] `.env` file created with all 33 variables
 - [ ] `npm run env:check` passes
-- [ ] `.mcp.json` created in project root
-- [ ] `config/` directory with 4 browser config JSONs
-- [ ] Playwright browsers installed (`npx playwright install`)
+- [ ] `.mcp.json` verified for your OS (Windows uses `cmd /c npx`, macOS/Linux uses `npx` directly)
+- [ ] `config/` directory has 3 browser config JSONs (chrome, firefox, edge)
+- [ ] Playwright browsers installed (`npx playwright install chromium firefox`)
 - [ ] IDE installed with Claude Code extension
-- [ ] `.claude/agents/` directory with 6 agent definitions
 - [ ] Atlassian MCP configured (for JIRA access)
 - [ ] Chrome DevTools MCP configured (optional but recommended)
 - [ ] First test run successful (browser opens, navigates, takes screenshot)
@@ -483,14 +327,70 @@ If Playwright MCP is configured correctly, a browser window will open and naviga
 
 ```bash
 npm install              # Install dependencies
-npm run env:check        # Validate all 29 environment variables
-npm test                 # Run Playwright tests
-npm run test:headed      # Run tests with visible browser
-npm run test:debug       # Run tests in debug mode
-npm run test:chrome      # Run tests in Chrome only (--project=chromium)
-npm run test:report      # Open Playwright HTML report
+npm run env:check        # Validate all 33 environment variables
 npm run ci:regression    # Run CI regression via Claude Agent SDK
+npm run ci:smoke         # Run smoke tests only (suite 01)
+npm run ci:critical      # Run critical P0 suites (01, 06, 08, 14)
+npm run ci:frontend      # Run all frontend suites (01-13, 35-36)
+npm run ci:backend       # Run all backend suites (14-34)
+npm run ci:full          # Run full regression (all 36 suites, $80 budget)
+npm run ci:notify        # Send Teams notification (requires TEAMS_WEBHOOK_URL)
 ```
+
+---
+
+## Slash Commands & Skills
+
+### Slash Commands (9)
+
+Available via `/command-name` in Claude Code chat:
+
+| Command | Arguments | Purpose |
+|---------|-----------|---------|
+| `/qa-smoke` | `[storefront\|admin]` | Daily smoke test (12 P0 tests, ~15 min, GO/NO-GO verdict) |
+| `/qa-test` | `VCST-XXXX \| feature \| PR #N` | Test a JIRA ticket, feature, or PR |
+| `/qa-regression` | `[smoke\|critical\|sprint\|full\|frontend\|backend\|IDs]` | Run regression suites in parallel |
+| `/qa-status` | `[run\|jira\|env]` | Dashboard: run status, JIRA queue, env health, recent bugs |
+| `/qa-bug` | `description \| VCST-XXXX \| screenshot` | Reproduce, document, and optionally file a JIRA bug |
+| `/qa-exploratory` | `[checkout\|catalog\|B2B\|mobile\|new]` | Guided exploratory testing session with heuristics |
+| `/qa-env-check` | `[vars\|endpoints\|mcp]` | Validate env vars, endpoints, MCP servers, test infra |
+| `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|module <name>]` | Business analysis (full/flows/api/docs/stories/module) |
+| `/ba-stories` | `feature name \| VCST-XXXX` | Generate Agile user stories with BDD acceptance criteria |
+
+### Skills (16)
+
+Organized in 3 categories under `.claude/skills/`:
+
+**Virto Commerce Knowledge (auto-invocable):**
+
+| Skill | Purpose |
+|-------|---------|
+| `/vc-docs` | Documentation lookup via Context7 |
+| `/vc-module` | Module analysis and test suite mapping |
+| `/vc-api` | xAPI & REST API query reference |
+
+**Testing (manual invocation):**
+
+| Skill | Purpose |
+|-------|---------|
+| `/qa-storybook` | Storybook visual regression, responsive breakpoints |
+| `/qa-accessibility` | WCAG 2.1 AA accessibility audit |
+| `/qa-design` | Design system consistency & UX heuristics |
+| `/qa-plan` | Test plans from E2E scenario catalog (105 scenarios) |
+| `/qa-api` | REST API & GraphQL xAPI testing |
+
+**QA Methodology (manual invocation):**
+
+| Skill | Purpose |
+|-------|---------|
+| `/qa-process` | ISTQB 7-phase test lifecycle |
+| `/qa-investigate` | Bug investigation and root cause analysis |
+| `/qa-evidence` | Evidence capture & report formatting |
+| `/qa-defect` | Defect management lifecycle & JIRA workflow |
+| `/qa-test-design` | Test case derivation techniques (EP, BVA, decision tables) |
+| `/qa-risk` | Risk-based test prioritization (5x5 matrix) |
+| `/qa-metrics` | Quality metrics & gates |
+| `/qa-sbtm` | Session-based exploratory testing |
 
 ---
 
@@ -498,50 +398,50 @@ npm run ci:regression    # Run CI regression via Claude Agent SDK
 
 ```
 vc-mcp-testing-module/
-├── .claude/agents/              # Claude Code agent definitions (6 agents, gitignored)
-├── .github/workflows/           # GitHub Actions CI pipelines
-│   └── regression.yml           # Automated regression via Claude Agent SDK
-├── .mcp.json                    # MCP server configuration (gitignored)
-├── ci/                          # CI regression testing infrastructure
-│   ├── Dockerfile               # Docker image for CI runs
-│   ├── run-regression.ts        # Orchestrator script
-│   └── README.md                # CI setup documentation
-├── config/                      # Playwright MCP browser configs (gitignored)
+├── INDEX.md                 # Top-level repo navigation hub
+├── CLAUDE.md                # Claude Code project instructions (tracked)
+├── .claude/
+│   ├── agents/              # Claude Code agent definitions (11 agents, tracked)
+│   │   └── knowledge/       # Shared agent reference files
+│   ├── skills/              # Skills grouped by category (16 skills, tracked)
+│   │   ├── vc-knowledge/    # VC docs, module analysis, API reference
+│   │   ├── testing/         # Storybook, accessibility, design, plan, API
+│   │   └── qa-methodology/  # Process, investigation, evidence, test design, etc.
+│   ├── commands/            # Slash commands (9 commands, tracked)
+│   └── ROUTING.md           # Decision tree: when to use which command/skill/agent
+├── .mcp.json                # MCP server configuration (tracked, OS-specific)
+├── config/                  # Playwright MCP browser configs + test-suites.json (tracked)
 │   ├── mcp-playwright-chrome.config.json
 │   ├── mcp-playwright-edge.config.json
 │   ├── mcp-playwright-firefox.config.json
-│   └── mcp-playwright-webkit.config.json
+│   └── test-suites.json     # Suite manifest (36 suites, selection groups)
+├── ci/                      # CI regression infrastructure (gitignored)
+│   ├── agents/              # CI-specific agent definitions
+│   ├── config/              # Headless browser config
+│   ├── run-regression.ts    # Orchestrator script
+│   └── notify-teams.ts      # Teams webhook notifications
 ├── docs/
-│   ├── prompts/                 # LLM prompt templates for QA automation
-│   │   ├── platform-tests.md
-│   │   ├── storybook-testing.md
-│   │   ├── How to test Builder.io.md
-│   │   └── setup.xml
-│   └── workshop/                # Team onboarding workshop
+│   ├── prompts/             # LLM prompt templates for QA automation
+│   └── workshop/            # Team onboarding workshop
 ├── regression/
-│   └── suites/                  # 36 regression test suites (1,194 test cases, CSV)
-├── test-data/                   # Centralized test data
-│   ├── users/                   # User accounts and credentials
-│   ├── organizations/           # B2B organization data
-│   ├── products/                # Product catalog test data
-│   ├── addresses/               # Shipping/billing addresses
-│   ├── payment/                 # Payment test cards
-│   ├── search-queries/          # Search test terms
-│   ├── bopis/                   # Pickup locations
-│   ├── localization/            # Multi-language data (13 languages)
-│   └── security/                # Injection payloads, XSS vectors
-├── tests/VCST-XXXX-*/           # Test cases organized by JIRA ticket
+│   └── suites/              # 36 regression test suites (1,274 test cases, CSV)
+│       ├── Frontend/        # 15 suites (01-13, 35-36)
+│       └── Backend/         # 21 suites (14-34)
+├── test-data/               # Centralized test data
+├── tests/                   # Test cases organized by sprint & JIRA ticket
 ├── reports/
-│   ├── bugs/                    # Bug reports with evidence
-│   └── regression/              # Regression test execution reports
-├── archive/sprints/             # Historical sprint test cases
-├── test-results/                # Playwright test output (gitignored)
-├── config.js                    # Environment variable configuration
-├── get_variables_env.js         # Environment validation script
-├── package.json                 # Project dependencies and scripts
-├── CLAUDE.md                    # Claude Code project instructions (gitignored)
-└── sitemap.md                   # Site structure reference
+│   ├── bugs/                # Bug reports with evidence
+│   └── regression/          # Regression test execution reports
+├── archive/sprints/         # Historical sprint test cases
+├── Test suites & Cases/     # Original TestRail export (source-of-truth reference)
+├── config.js                # Environment variable configuration
+├── get_variables_env.js     # Environment validation script (33 vars)
+├── package.json             # Project dependencies and scripts
 ```
+
+**Tracked in git:** `.claude/agents/`, `.claude/skills/`, `.claude/commands/`, `.mcp.json`, `config/`, `CLAUDE.md`
+
+**Gitignored:** `settings.json`, `.env`, `test-results/`, `.serena/`, `.playwright-mcp/`, `ci/`, `.github/`
 
 ---
 
@@ -549,7 +449,9 @@ vc-mcp-testing-module/
 
 This project uses an **LLM-driven testing workflow** instead of traditional `.spec.js` test files.
 
-### Workflow Overview
+### Two Testing Modes
+
+#### 1. Interactive MCP-Driven Testing (Primary)
 
 ```
 1. Load a prompt template from docs/prompts/
@@ -565,13 +467,17 @@ This project uses an **LLM-driven testing workflow** instead of traditional `.sp
 6. Update JIRA tickets with test results
 ```
 
+#### 2. CI Regression via Claude Agent SDK
+
+`ci/run-regression.ts` orchestrates headless regression using `@anthropic-ai/claude-agent-sdk`. It reads suite CSVs from `regression/suites/`, runs suites in parallel batches (up to 3 concurrent), and produces consolidated reports. Results tracked in `reports/regression/history.json` (90-day rolling window).
+
 ### Prompt Templates
 
 | Template | Purpose |
 |----------|---------|
-| `platform-tests.md` | Backend/API platform testing |
-| `storybook-testing.md` | UI component visual regression testing |
+| `test-runner-agent.md` | Suite execution template with parameterized placeholders |
 | `How to test Builder.io.md` | Builder.io, Virto Pages & vc-frontend testing |
+| `story-testing.md` | Story-level testing prompt |
 
 ### Example: Running a Test Session
 
@@ -590,36 +496,116 @@ Claude Code will:
 
 ---
 
+## Claude Code Agents
+
+11 specialized agents in `.claude/agents/` (tracked in git) across two teams.
+
+### QA Team (7 agents)
+
+| Agent | Model | Purpose |
+|-------|-------|---------|
+| **qa-lead-orchestrator** | sonnet | Orchestrates testing, delegates to specialists, manages JIRA workflow, go/no-go decisions |
+| **qa-frontend-expert** | opus | Customer-facing storefront, user journeys, checkout flows, mobile, cross-browser |
+| **qa-backend-expert** | opus | Platform APIs, GraphQL xAPI, Modules, Admin SPA, background jobs |
+| **qa-testing-expert** | opus | Interactive testing - UI verification, Figma comparison, debugging |
+| **test-management-specialist** | sonnet | Test planning, test case writing, coverage tracking, TestRail artifacts |
+| **ui-ux-expert** | sonnet | Storybook component testing, WCAG 2.1 AA accessibility, design system |
+| **regression-orchestrator** | sonnet | Parallel regression, retries, browser fallback, consolidated reports |
+
+### BA Team (4 agents)
+
+| Agent | Model | Purpose |
+|-------|-------|---------|
+| **ba-system-analyzer** | sonnet | Repo structure, module inventory, user flows, pain points |
+| **ba-api-specialist** | sonnet | API surface via Postman/Swagger, health assessment |
+| **ba-story-writer** | sonnet | Agile user stories with BDD acceptance criteria, DoD, test scenarios |
+| **ba-doc-writer** | sonnet | User docs, admin guides, API quick-start, UX improvement specs |
+
+### Using Agents
+
+In Claude Code chat, reference agents with natural language:
+
+```
+"Use the qa-frontend-expert to verify the checkout flow"
+"Use the qa-testing-expert to run smoke tests on the QA environment"
+"Use the ba-story-writer to create stories for VCST-1234"
+```
+
+### Parallel Agent Execution
+
+When running multiple agents simultaneously, each agent **MUST use its own browser**:
+
+| Agent | Playwright MCP Server | Alternative |
+|-------|----------------------|-------------|
+| qa-frontend-expert | `playwright-chrome` | |
+| qa-backend-expert | `playwright-edge` | Chrome DevTools MCP for Admin SPA |
+| qa-testing-expert | `playwright-firefox` | |
+| ui-ux-expert | `Chrome DevTools MCP` | |
+
+Max 3 concurrent browser agents. BA agents do not require browsers.
+
+---
+
 ## Regression Test Suites
 
-36 test suites (15 frontend + 21 backend) in `regression/suites/` with 1,194 total test cases in TestRail-compatible CSV format.
+36 test suites (15 frontend + 21 backend) in `regression/suites/` with **1,274 total test cases** (492 frontend + 782 backend) in TestRail-compatible CSV format. Authoritative suite definitions live in `config/test-suites.json`.
 
-| # | Suite | Tests | Priority | Est. Time |
-|---|-------|-------|----------|-----------|
-| 00 | Full Regression Release | 108 | P0/P1 Critical | 13.5 hrs |
-| 01 | Smoke Tests | 12 | P0 Critical | 30 min |
-| 02 | Authentication Tests | 28 | P1 High | 1.5 hrs |
-| 03 | Catalog & Search Tests | 23 | P1 High | 1.5 hrs |
-| 04 | Cart & Checkout Tests | 26 | P1 Critical | 2 hrs |
-| 05 | BOPIS Pickup Tests | 27 | P1 Critical | 2.5 hrs |
-| 06 | Payment Tests | 32 | P0 Critical | 2 hrs |
-| 07 | Google Analytics Tests | 24 | P2 High | 2 hrs |
-| 08 | Security Tests | 21 | P0 Critical | 2 hrs |
-| 09 | Accessibility Tests | 27 | P1 High | 3 hrs |
-| 10 | Localization Tests | 21 | P2 Medium | 4 hrs |
-| 11 | Performance Tests | 20 | P2 Medium | 2 hrs |
-| 12 | Browser Compatibility Tests | 22 | P1 High | 4 hrs |
-| 13 | B2C Features Tests | 64 | P1 Critical | 5 hrs |
+### Frontend Suites (01-13, 35-36)
 
-### Execution Strategies
+| # | Suite | Tests | Priority |
+|---|-------|-------|----------|
+| 01 | Smoke Tests | 12 | P0 Critical |
+| 02 | Authentication Tests | 34 | P1 High |
+| 03 | Catalog & Search Tests | 39 | P1 High |
+| 04 | Cart & Checkout Tests | 31 | P1 Critical |
+| 05 | BOPIS Pickup Tests | 36 | P1 Critical |
+| 06 | Payment Tests | 28 | P0 Critical |
+| 07 | Google Analytics Tests | 24 | P2 High |
+| 08 | Security Tests | 18 | P0 Critical |
+| 09 | Accessibility Tests | 23 | P1 High |
+| 10 | Localization Tests | 21 | P2 Medium |
+| 11 | Performance Tests | 20 | P2 Medium |
+| 12 | Browser Compatibility Tests | 21 | P1 High |
+| 13 | B2C Features Tests | 55 | P1 Critical |
+| 35 | Frontend White Labeling Tests | 68 | P1 High |
+| 36 | Configurable Products Tests | 62 | P1 High |
 
-| Strategy | Suites | When | Duration |
-|----------|--------|------|----------|
-| **Daily Smoke** | 01 only | After every deployment | ~30 min |
-| **Sprint Release** | 01, 04, 05, 06, 08 | Before sprint release | ~3-4 hrs |
-| **Full Regression** | 00 (comprehensive) | Before production release | ~13.5 hrs (or ~4-5 hrs parallelized) |
-| **Modular Deep Dive** | All 01-13 | Quarterly or specialized testing | ~24+ hrs |
-| **Quarterly Audit** | 09, 10, 12 | WCAG + localization + browser compat | ~11 hrs |
+### Backend Suites (14-34)
+
+| # | Suite | Tests | Priority |
+|---|-------|-------|----------|
+| 14 | Platform API Tests | 25 | P0 Critical |
+| 15 | GraphQL xAPI Tests | 20 | P1 High |
+| 16 | Catalog Admin Tests | 48 | P1 High |
+| 17 | Platform Core Tests | 65 | P1 High |
+| 18 | Store Admin Tests | 65 | P1 High |
+| 19 | Pricing Admin Tests | 58 | P1 High |
+| 20 | Orders Admin Tests | 66 | P1 High |
+| 21 | Customer Admin Tests | 52 | P1 High |
+| 22 | Inventory Admin Tests | 43 | P1 High |
+| 23 | Marketing Admin Tests | 51 | P1 High |
+| 24 | Notifications Admin Tests | 52 | P1 High |
+| 25 | CMS & Page Builder Tests | 55 | P1 High |
+| 26 | Search & Indexing Tests | 40 | P1 High |
+| 27 | Assets Module Tests | 24 | P1 High |
+| 28 | Core Settings Tests | 14 | P2 Medium |
+| 29 | CSV Export Import Tests | 18 | P1 High |
+| 30 | Shipping Module Tests | 15 | P1 High |
+| 31 | SEO Module Tests | 20 | P1 High |
+| 32 | White Labeling Tests | 15 | P2 Medium |
+| 33 | Push Messages Tests | 16 | P2 Medium |
+| 34 | Image Tools Tests | 20 | P2 Medium |
+
+### Selection Groups
+
+| Selection | Suites | Use Case |
+|-----------|--------|----------|
+| `smoke` | 01 | Daily validation before deployment |
+| `critical` | 01, 06, 08, 14 | P0 suites only |
+| `sprint` | 26 suites | Before sprint release |
+| `full` | All 36 | Before production release |
+| `frontend` | 01-13, 35-36 | Frontend-only regression |
+| `backend` | 14-34 | Backend-only regression |
 
 ### CSV Column Format
 
@@ -644,11 +630,17 @@ Regression tests can run automatically via GitHub Actions using Docker and the C
 
 | Parameter | Options | Default |
 |-----------|---------|---------|
-| Suite selection | `smoke`, `full`, `critical`, `sprint`, or comma-separated IDs | `smoke` |
+| Suite selection | `smoke`, `full`, `critical`, `sprint`, `frontend`, `backend`, or comma-separated IDs | `smoke` |
 | Environment | `dev`, `qa`, `staging` | `qa` |
 | Max budget (USD) | Any number | `10.0` |
 | Max turns | Agent turns per suite | `100` |
-| Model | `claude-sonnet-4-5-20250929`, `claude-opus-4-6` | Sonnet |
+| Model | `claude-sonnet-4-6`, `claude-opus-4-6` | Sonnet |
+
+### Scheduled Pipeline
+
+- **Daily smoke**: Mon-Fri at 6:00 AM UTC — runs suite 01 ($5 budget)
+- **Weekly full regression**: Sunday at 2:00 AM UTC — runs all 36 suites ($80 budget)
+- **Manual trigger**: Any selection, any environment, any budget via `workflow_dispatch`
 
 ### Running Locally with Docker
 
@@ -674,9 +666,9 @@ docker run --rm \
 | Selection | Suites | Est. Cost | Est. Time |
 |-----------|--------|-----------|-----------|
 | `smoke` | 01 | ~$2-5 | ~30 min |
-| `critical` | 01, 06, 08 | ~$10-15 | ~2 hrs |
-| `sprint` | 01-06, 08 | ~$20-35 | ~4 hrs |
-| `full` | All 14 | ~$40-80 | ~8 hrs |
+| `critical` | 01, 06, 08, 14 | ~$10-15 | ~2 hrs |
+| `sprint` | 26 suites | ~$30-50 | ~4-6 hrs |
+| `full` | All 36 | ~$50-80 | ~8-12 hrs |
 
 ### Required GitHub Secrets
 
@@ -697,6 +689,7 @@ Add these to your repository **Settings > Secrets and variables > Actions**:
 | `CYBERSOURCE_*` | For suite 06 | CyberSource payment cards |
 | `AUTHORIZNET_*` | For suite 06 | Authorize.Net payment cards |
 | `DATATRANCE_*` | For suite 06 | Datatrance payment cards |
+| `TEAMS_WEBHOOK_URL` | Optional | Teams notification webhook |
 
 ---
 
@@ -779,8 +772,6 @@ Visual regression baselines are captured on-demand by the `/qa-storybook` skill 
 
 Screenshot naming convention: `{story-name}-{viewport}.png` (e.g., `basic-desktop.png`, `hover-state-tablet.png`).
 
-See `.claude/skills/testing/qa-storybook/how-to-test-storybook.md` for the complete Storybook testing guide.
-
 ---
 
 ## Key Testing Domains
@@ -825,8 +816,9 @@ See `.claude/skills/testing/qa-storybook/how-to-test-storybook.md` for the compl
 |---------|--------|------------|----------|
 | Chrome | Chromium | `playwright-chrome` | Primary |
 | Edge | Chromium | `playwright-edge` | High |
-| Safari/WebKit | WebKit | `playwright-webkit` | Critical |
 | Firefox | Gecko | `playwright-firefox` | High |
+
+> **Note:** WebKit/Safari is NOT supported on Windows. For Safari testing, use BrowserStack.
 
 ### Mobile
 
@@ -844,14 +836,14 @@ Mobile testing is done via BrowserStack (`BROWSERSTACK_USERNAME` / `BROWSERSTACK
 
 ### "Missing required environment variables"
 
-Run `npm run env:check` and add the missing variables to your `.env` file. All 29 variables listed in `config.js` are required.
+Run `npm run env:check` and add the missing variables to your `.env` file. All 33 variables listed in `get_variables_env.js` are required.
 
 ### Playwright MCP server not connecting
 
 1. Make sure `.mcp.json` exists in the project root
-2. Check that `config/` directory has all 4 browser config files
-3. Run `npx playwright install` to install browser binaries
-4. Restart your IDE after creating/modifying `.mcp.json`
+2. Check that `config/` directory has all 3 browser config files (chrome, firefox, edge)
+3. Run `npx playwright install chromium firefox` to install browser binaries
+4. Restart your IDE after modifying `.mcp.json`
 
 ### Browser not launching
 
@@ -859,6 +851,7 @@ Run `npm run env:check` and add the missing variables to your `.env` file. All 2
 2. On CI, use `headless: true` instead
 3. On Windows, ensure `"command": "cmd"` and `"args": ["/c", "npx", ...]`
 4. On macOS/Linux, use `"command": "npx"` directly
+5. Do NOT attempt to install WebKit on Windows - use Edge or Chrome instead
 
 ### "Cannot find module './config.js'"
 
@@ -866,10 +859,6 @@ The project uses ES modules (`"type": "module"` in `package.json`). Make sure yo
 ```javascript
 import { env } from './config.js';
 ```
-
-### Agent definitions not loading
-
-The `.claude/agents/` directory is gitignored. You need to create agent files locally. Ask your team lead for copies of the agent definitions.
 
 ### JIRA/Atlassian MCP not working
 
@@ -888,9 +877,9 @@ The `.claude/agents/` directory is gitignored. You need to create agent files lo
 | **Staging** | Pre-production | Final validation, smoke tests before release |
 
 Environment URLs are configured via `.env` variables:
-- `FRONT_URL` - Frontend storefront
-- `BACK_URL` - Backend/Admin
+- `FRONT_URL` / `BACK_URL` - QA environment
 - `VIRTO_START_FRONT` / `VIRTO_START_BACK` - Virtostart demo store
+- `STORYBOOK_URL` / `STORYBOOK_DEV_URL` - Storybook instances
 
 ---
 

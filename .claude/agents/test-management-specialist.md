@@ -177,6 +177,7 @@ Every test case MUST meet these criteria before delivery:
 
 | When | Skill → File to Read | What It Gives You |
 |------|---------------------|-------------------|
+| Feature investigation before test cases | `/qa-sbtm` → `session-based-testing.md` | SBTM charters, CRISP/SFDPOT heuristics, tours, debrief |
 | Creating test cases for any feature | `/qa-plan` → `e2e-scenario-catalog.md` | 105 E2E scenarios across 18 domains |
 | Systematic test case derivation | `/qa-test-design` → `test-design-techniques.md` | EP, BVA, decision tables, state transitions, pairwise |
 | Risk-based test planning | `/qa-risk` → `risk-prioritization-framework.md` | 5x5 risk matrix, depth allocation |
@@ -238,6 +239,7 @@ This layer defines your operating boundaries. What you can perceive, what you pr
 | Evidence Capture Policy | `.claude/skills/qa-methodology/qa-evidence/evidence-capture-policy.md` |
 | Quality Metrics Catalog | `.claude/skills/qa-methodology/qa-metrics/quality-metrics-catalog.md` |
 | Module → Suite Mapping | `.claude/skills/vc-knowledge/vc-module/module-suite-map.md` |
+| VC Documentation (via Context7) | `/vc-docs` — `resolve-library-id` → `query-docs` (`/virtocommerce/vc-docs`, 6,033+ snippets) |
 
 ### Judge — Artifact Quality Assessment
 
