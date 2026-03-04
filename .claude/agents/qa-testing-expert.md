@@ -214,7 +214,7 @@ Use DOM for logic checks. Use screenshots for visual checks. Use both when findi
 - **Evidence**: screenshots, console capture, network capture
 - **JIRA**: read tickets, file bugs, comment (`getJiraIssue`, `createJiraIssue`, `addCommentToJiraIssue`)
 - **Figma**: design comparison (`get_design_context`, `get_screenshot`)
-- **GitHub** (`gh` CLI): fetch PRs (`gh pr view`, `gh pr diff`), search code (`gh search code`)
+- **GitHub MCP**: fetch PRs (`get_pull_request`, `get_pull_request_files`), search code (`search_code`). Use `gh` CLI (Bash) as fallback for complex calls
 - **API**: direct testing via Postman MCP (`runCollection`, `getCollection`)
 - **Storefront** (`FRONT_URL`): customer-facing UI testing
 - **Admin SPA** (`BACK_URL`): data verification, CRUD, settings
@@ -228,6 +228,7 @@ Use DOM for logic checks. Use screenshots for visual checks. Use both when findi
 
 | Area | Reference File |
 |------|---------------|
+| Storefront Sitemap (URLs, categories, languages, navigation) | `.claude/skills/vc-knowledge/vc-frontend/sitemap.md` |
 | Frontend suites (Catalog, Checkout, Auth, etc.) | `regression/suites/Frontend/*.csv` (suites 01-13, 35-36) |
 | Backend suites (Admin CRUD, Modules, Import/Export) | `regression/suites/Backend/*.csv` (suites 14-34) |
 | E2E Scenario Catalog (105 scenarios) | `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md` |
@@ -237,6 +238,9 @@ Use DOM for logic checks. Use screenshots for visual checks. Use both when findi
 | Performance Thresholds | `.claude/agents/knowledge/performance-thresholds.md` |
 | Browser Quirks | `.claude/agents/knowledge/browser-quirks.md` |
 | Debugging Signals | `.claude/agents/knowledge/debugging-signals.md` |
+| White Labeling (branding, mainMenuLinks, footerLinks, VCST-4637) | `.claude/agents/knowledge/white-labeling.md` |
+| Store Settings (StoreSettingsType, feature flags, module settings, REST/xAPI) | `.claude/agents/knowledge/store-settings.md` |
+| Catalog (B2B-mixed virtual catalog, xCatalog GraphQL, filter syntax, facets, suites 03 & 16) | `.claude/agents/knowledge/catalog.md` |
 
 ### Judge — Pass/Fail Classification
 
@@ -298,7 +302,8 @@ Validate: `npm run env:check`
 | Postman MCP | API testing, collection execution |
 | Atlassian MCP | JIRA tickets, bug filing |
 | Figma MCP | Design comparison |
-| `gh` CLI (via Bash) | PR diffs, code search |
+| GitHub MCP | PRs (`get_pull_request`, `get_pull_request_files`), code search (`search_code`) |
+| context7 MCP | VC documentation lookup (`resolve-library-id`, `query-docs`) |
 
 Key Playwright tools: `browser_navigate`, `browser_click`, `browser_fill_form`, `browser_type`, `browser_take_screenshot`, `browser_snapshot`, `browser_console_messages`, `browser_network_requests`, `browser_evaluate`, `browser_wait_for`, `browser_hover`, `browser_select_option`, `browser_press_key`
 

@@ -220,7 +220,7 @@ This layer defines your operating boundaries. What you can perceive, what you pr
 - **Browsers**: `playwright-chrome` (primary), `playwright-firefox`, `playwright-edge`
 - **JIRA**: Read tickets, create test case tickets, link to stories, comment
 - **Figma**: Access designs for UI requirements
-- **GitHub**: `gh pr view`, `gh pr diff`, `gh search code` for implementation understanding
+- **GitHub MCP**: `get_pull_request`, `get_pull_request_files`, `search_code` for implementation understanding
 - **Postman**: Review API contracts for API test case accuracy
 - **NOT available**: WebKit on Windows. You explore and validate — you don't execute full test runs.
 
@@ -240,6 +240,10 @@ This layer defines your operating boundaries. What you can perceive, what you pr
 | Evidence Capture Policy | `.claude/skills/qa-methodology/qa-evidence/evidence-capture-policy.md` |
 | Quality Metrics Catalog | `.claude/skills/qa-methodology/qa-metrics/quality-metrics-catalog.md` |
 | Module → Suite Mapping | `.claude/skills/vc-knowledge/vc-module/module-suite-map.md` |
+| Storefront Sitemap (URLs, categories, languages, navigation) | `.claude/skills/vc-knowledge/vc-frontend/sitemap.md` |
+| White Labeling (branding, mainMenuLinks, footerLinks, VCST-4637) | `.claude/agents/knowledge/white-labeling.md` |
+| Store Settings (StoreSettingsType, feature flags, module settings, REST/xAPI) | `.claude/agents/knowledge/store-settings.md` |
+| Catalog (Admin CRUD, xCatalog GraphQL, filter syntax, suites 03 & 16, facets) | `.claude/agents/knowledge/catalog.md` |
 | VC Documentation (via Context7) | `/vc-docs` — `resolve-library-id` → `query-docs` (`/virtocommerce/vc-docs`, 6,033+ snippets) |
 
 ### Judge — Artifact Quality Assessment
@@ -291,7 +295,8 @@ BLOCKED ❌ → escalate to qa-lead (requirements unclear, environment broken)
 | Atlassian MCP | JIRA tickets, requirements, test case management |
 | Figma MCP | Design reference for UI test cases |
 | Postman MCP | API contract reference for API test cases |
-| `gh` CLI (via Bash) | PR diffs, code search, implementation understanding |
+| GitHub MCP | PRs (`get_pull_request`, `get_pull_request_files`), code search (`search_code`) |
+| context7 MCP | VC documentation lookup (`resolve-library-id`, `query-docs`) |
 
 ### Workflow (when assigned a feature, e.g., VCST-2000)
 

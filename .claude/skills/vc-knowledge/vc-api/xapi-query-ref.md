@@ -255,3 +255,185 @@ GET ${BACK_URL}/api/platform
 ### Store Context
 - Most xAPI queries require `storeId`, `cultureName`, `currencyCode`
 - Use environment: `STORE_ID` for storeId, `"en-US"` for default culture, `"USD"` for default currency
+
+---
+
+## pageContext (xFrontend)
+
+Single optimized query for storefront bootstrap — aggregates store, user, slug resolution, and white-labeling into one call instead of 4 separate queries. Part of the **xFrontend** module.
+
+**Expected response time:** ~200–400ms.
+
+### Arguments
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `domain` | String | Yes | Current domain — resolves store and URL context |
+| `storeId` | String | Yes | Store to load config from |
+| `cultureName` | String | Yes | Language for localized data |
+| `permalink` | String | Yes | URL path — used to resolve `slugInfo` |
+| `organizationId` | String | No | Org context for white-labeling override |
+| `userId` | String | No | User context |
+
+### Response Type: `PageContextResponseType`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `slugInfo` | SlugInfoResponseType | Resolved slug — `entityInfo { id }` |
+| `store` | StoreResponseType | Full store data (same shape as `store` query) |
+| `whiteLabelingSettings` | WhiteLabelingSettingsType | Branding: `logoUrl`, `faviconUrl`, `themePresetName`, `footerLinks[]`, `mainMenuLinks[]` |
+| `user` | UserType | Current user — `id`, `userName` |
+
+### Full Query Example
+
+```graphql
+{
+  pageContext(
+    domain: "localhost"
+    storeId: "${STORE_ID}"
+    cultureName: "en-US"
+    permalink: "/"
+    organizationId: "OrganizationId"
+    userId: "UserId"
+  ) {
+    slugInfo {
+      entityInfo { id }
+    }
+    store {
+      storeId storeName storeUrl
+      settings {
+        quotesEnabled isSpa anonymousUsersAllowed
+        emailVerificationEnabled emailVerificationRequired
+      }
+    }
+    whiteLabelingSettings {
+      logoUrl faviconUrl themePresetName
+      footerLinks { title url priority childItems { title url priority } }
+      mainMenuLinks { title url priority childItems { title url priority } }
+    }
+    user {
+      id userName
+    }
+  }
+}
+```
+
+### Example Response
+
+```json
+{
+  "data": {
+    "pageContext": {
+      "slugInfo": { "entityInfo": { "id": "92ab56ae-4199-47dc-..." } },
+      "store": { "storeId": "B2B-store" },
+      "whiteLabelingSettings": {
+        "logoUrl": "https://virtostart-main.govirto.com/cms-content/assets/.../logo.png"
+      },
+      "user": { "id": "UserId", "userName": "Anonymous" }
+    }
+  }
+}
+```
+
+### Notes
+- `slugInfo.entityInfo.id` resolves the entity (product, category, CMS page) for the current URL
+- `whiteLabelingSettings` returns org-level branding when `organizationId` is set, falls back to store-level
+- Invalid `organizationId` → `null` fields (HTTP 200, no error)
+- Missing `storeId` → HTTP 200 with `errors[]`
+- Querying without `mainMenuLinks` in the selection set still works (backward compatible)
+- Source: [xFrontend/PageContext.md](https://github.com/virtocommerce/vc-docs/blob/main/platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/xFrontend/PageContext.md)
+
+---
+
+## Store Settings
+
+### StoreResponseType Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `storeId` | String | Unique store identifier |
+| `storeName` | String | Display name |
+| `catalogId` | String | Linked product catalog ID |
+| `storeUrl` | String | Storefront URL |
+| `defaultLanguage` | LanguageType | `cultureName`, `nativeName`, `isInvariant`, `twoLetterLanguageName`, `twoLetterRegionName`, `threeLetterLanguageName`, `threeLetterRegionName` |
+| `availableLanguages` | Array\<LanguageType\> | All configured languages |
+| `defaultCurrency` | CurrencyType | `code`, `symbol` |
+| `availableCurrencies` | Array\<CurrencyType\> | All configured currencies |
+| `settings` | StoreSettingsType | Feature flags + SEO config |
+| `graphQLSettings` | GraphQLSettingsType | GraphQL endpoint settings (CORS, allowed origins — fields not publicly documented) |
+| `dynamicProperties` | DynamicPropertyValueType | Custom dynamic property values |
+
+### StoreSettingsType Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `quotesEnabled` | Boolean | Quotes / RFQ feature |
+| `subscriptionEnabled` | Boolean | Recurring subscriptions |
+| `taxCalculationEnabled` | Boolean | Tax calculation |
+| `anonymousUsersAllowed` | Boolean | Guest browsing |
+| `isSpa` | Boolean | Single-Page Application mode |
+| `emailVerificationEnabled` | Boolean | Email verification flow |
+| `emailVerificationRequired` | Boolean | Mandatory email verification |
+| `createAnonymousOrderEnabled` | Boolean | Guest checkout orders |
+| `defaultSelectedForCheckout` | Boolean | Default store at checkout |
+| `seoLinkType` | String | SEO URL format (`None`, etc.) |
+| `environmentName` | String | Environment label |
+| `passwordRequirements` | PasswordOptionsType | Password policy |
+| `modules` | Array\<ModuleSettingsType\> | Per-module settings / feature flags |
+
+### GraphQL — Full Store Query
+
+```graphql
+query($storeId: String!, $cultureName: String) {
+  store(storeId: $storeId, cultureName: $cultureName) {
+    userId userName
+    storeId storeName catalogId storeUrl
+    defaultLanguage {
+      isInvariant cultureName nativeName
+      twoLetterLanguageName twoLetterRegionName
+      threeLetterLanguageName threeLetterRegionName
+    }
+    availableLanguages { cultureName twoLetterLanguageName }
+    defaultCurrency { code symbol }
+    availableCurrencies { code symbol }
+    settings {
+      quotesEnabled subscriptionEnabled taxCalculationEnabled
+      anonymousUsersAllowed isSpa
+      emailVerificationEnabled emailVerificationRequired
+      createAnonymousOrderEnabled defaultSelectedForCheckout
+      seoLinkType environmentName
+      modules { moduleId settings { name value } }
+    }
+  }
+}
+# Variables: { "storeId": "${STORE_ID}", "cultureName": "en-US" }
+# Optional params: domain
+```
+
+### GraphQL — Module Settings (Feature Flags)
+
+```graphql
+query {
+  store(storeId: "${STORE_ID}", cultureName: "en-US") {
+    settings {
+      modules { moduleId settings { name value } }
+    }
+  }
+}
+```
+
+Example response (GA4 module):
+```json
+{ "moduleId": "VirtoCommerce.GoogleEcommerceAnalytics", "settings": [
+  { "name": "GoogleAnalytics4.EnableTracking", "value": true },
+  { "name": "GoogleAnalytics4.MeasurementId", "value": "GA-B2B-STORE" }
+]}
+```
+
+### REST — Store Settings
+
+```bash
+GET ${BACK_URL}/api/stores/${STORE_ID}/settings?cultureName=en-US
+```
+
+Returns all public store settings including `modules[]` with `moduleId`, `name`, `value`.

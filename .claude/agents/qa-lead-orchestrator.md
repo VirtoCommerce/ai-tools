@@ -129,10 +129,10 @@ This layer gives you technique for analyzing tickets, delegating work, and makin
 - Components → map to QA agents (routing table above)
 - Labels (regression, smoke, security), Fix Version, Sprint, Epic Link
 
-**Phase 5: Development Info** — Use `gh` CLI:
-- Linked PR → `gh pr view <number>`, `gh pr diff <number>`
-- CI/CD status → `gh pr checks <number>`
-- Changed files → `gh pr diff <number> --name-only` to scope: backend/frontend/both
+**Phase 5: Development Info** — Use GitHub MCP (`get_pull_request`, `get_pull_request_files`) or `gh` CLI as fallback:
+- Linked PR → `get_pull_request` (MCP) or `gh pr view <number>`
+- CI/CD status → `gh pr checks <number>` (CLI only)
+- Changed files → `get_pull_request_files` (MCP) or `gh pr diff <number> --name-only` to scope: backend/frontend/both
 
 **Phase 6: Dependencies**:
 - Blocks/Blocked By/Relates To/Parent/Sub-tasks
@@ -290,7 +290,9 @@ This layer defines your tools, judgment framework, and operating boundaries.
 | Tool | Use |
 |------|-----|
 | Atlassian MCP | JIRA: `getJiraIssue`, `searchJiraIssuesUsingJql`, `transitionJiraIssue`, `editJiraIssue`, `createJiraIssue`, `addCommentToJiraIssue` |
-| `gh` CLI (Bash) | PRs: `gh pr view`, `gh pr diff`, `gh pr checks`, `gh pr list`, `gh search code`, `gh api` |
+| GitHub MCP | PRs: `get_pull_request`, `get_pull_request_files`, `list_pull_requests`, `search_code` |
+| `gh` CLI (Bash) | CI/CD: `gh pr checks`; complex `gh api` calls not covered by GitHub MCP |
+| context7 MCP | VC documentation: `resolve-library-id`, `query-docs` |
 | Playwright MCP (3) | Verify fixes: `playwright-chrome`, `playwright-firefox`, `playwright-edge` |
 | Postman MCP | Review API tests: `getCollection`, `runCollection`, `getSpec` |
 | Chrome DevTools | Analyze failures: `list_network_requests`, `list_console_messages`, `take_snapshot` |

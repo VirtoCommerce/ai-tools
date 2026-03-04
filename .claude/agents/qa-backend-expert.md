@@ -244,7 +244,7 @@ This layer defines your operating boundaries. What you can perceive, what you ca
 - **Browsers**: `playwright-edge` (primary for Admin), `playwright-chrome`, `playwright-firefox`
 - **Evidence**: screenshots, API request/response capture, console logs
 - **JIRA**: read tickets (`getJiraIssue`), file bugs (`createJiraIssue`), comment (`addCommentToJiraIssue`)
-- **GitHub** (`gh` CLI): fetch PRs (`gh pr view`, `gh pr diff`), search code (`gh search code`), review changes (`gh api`)
+- **GitHub MCP**: fetch PRs (`get_pull_request`, `get_pull_request_files`), search code (`search_code`), list issues. Use `gh` CLI (Bash) as fallback for complex `gh api` calls not covered by MCP
 - **Admin SPA** (`BACK_URL`): CRUD operations, module settings, permission config, Hangfire monitoring
 - **NOT available**: WebKit on Windows — use Edge as fallback. No storefront testing (that's `qa-frontend-expert`).
 
@@ -262,6 +262,9 @@ This layer defines your operating boundaries. What you can perceive, what you ca
 | xAPI Query Reference | `.claude/skills/vc-knowledge/vc-api/xapi-query-ref.md` |
 | Performance Thresholds | `.claude/agents/knowledge/performance-thresholds.md` |
 | Debugging Signals | `.claude/agents/knowledge/debugging-signals.md` |
+| White Labeling (mainMenuLinks, footerLinks, DB schema, Admin SPA, VCST-4637) | `.claude/agents/knowledge/white-labeling.md` |
+| Store Settings (StoreSettingsType, feature flags, module settings, REST/xAPI) | `.claude/agents/knowledge/store-settings.md` |
+| Catalog (B2B-mixed virtual catalog, Admin CRUD, xCatalog GraphQL, filter syntax, suites 03 & 16) | `.claude/agents/knowledge/catalog.md` |
 
 ### Judge — Pass/Fail Classification
 
@@ -317,7 +320,8 @@ Ambiguous examples: new field in API response (breaking change or intentional ad
 | Chrome DevTools MCP | Network inspection, console debugging |
 | Postman MCP | API collection execution, response validation |
 | Atlassian MCP | JIRA tickets, bug filing |
-| `gh` CLI (via Bash) | PR diffs, code search, codebase investigation |
+| GitHub MCP | PRs (`get_pull_request`, `get_pull_request_files`), code search (`search_code`) |
+| context7 MCP | VC documentation lookup (`resolve-library-id`, `query-docs`) |
 
 ### Backend Regression Suites (21 suites, by priority)
 

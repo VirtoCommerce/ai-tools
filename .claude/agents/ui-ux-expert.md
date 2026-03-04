@@ -225,7 +225,7 @@ Use DOM for semantic checks (aria, roles, labels). Use screenshots for visual ch
 - **Browsers**: `playwright-chrome` (primary), `playwright-firefox`, `playwright-edge`
 - **Figma**: Get file, get images, compare design specs
 - **JIRA**: Read tickets, file a11y/design bugs, comment
-- **GitHub**: `gh search code` for CSS implementations, `gh pr diff` for component changes
+- **GitHub MCP**: `search_code` for CSS implementations, `get_pull_request_files` for component changes
 - **NOT available**: WebKit on Windows — use Edge for Safari-like testing, BrowserStack for real Safari.
 
 ### Memory Model
@@ -291,7 +291,8 @@ Ambiguous examples: component restyled (design update or regression?), new color
 | Chrome DevTools MCP | Accessibility tree, color contrast, element inspection |
 | Figma MCP | Design comparison, spec extraction |
 | Atlassian MCP | JIRA bugs, design tickets |
-| `gh` CLI (via Bash) | Component code search, CSS implementations |
+| GitHub MCP | Code search (`search_code`), PR file diffs (`get_pull_request_files`) |
+| context7 MCP | VC documentation lookup (`resolve-library-id`, `query-docs`) |
 
 ### Test Lifecycle
 

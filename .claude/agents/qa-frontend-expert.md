@@ -164,7 +164,7 @@ Use DOM for logic checks. Use screenshots for visual checks. Use both for ambigu
 - **Evidence**: screenshots, console capture, network capture
 - **JIRA**: read tickets (`getJiraIssue`), file bugs (`createJiraIssue`), comment (`addCommentToJiraIssue`)
 - **Figma**: compare designs (`get_design_context`, `get_screenshot`)
-- **GitHub** (`gh` CLI): fetch PRs (`gh pr view`, `gh pr diff`), search code (`gh search code`), review changes (`gh api`)
+- **GitHub MCP**: fetch PRs (`get_pull_request`, `get_pull_request_files`), search code (`search_code`), list issues. Use `gh` CLI (Bash) as fallback for complex `gh api` calls not covered by MCP
 - **Admin SPA** (`BACK_URL`): create test data, verify storefront ↔ admin consistency, cleanup
 - **NOT available**: WebKit on Windows — use Edge as fallback. Never attempt webkit.
 
@@ -184,6 +184,9 @@ Use DOM for logic checks. Use screenshots for visual checks. Use both for ambigu
 | Module → Suite Mapping, Dependencies, Impact Analysis | `.claude/skills/vc-knowledge/vc-module/module-suite-map.md` |
 | Performance Thresholds | `.claude/agents/knowledge/performance-thresholds.md` |
 | Browser Quirks | `.claude/agents/knowledge/browser-quirks.md` |
+| White Labeling (branding, mainMenuLinks, footerLinks, VCST-4637) | `.claude/agents/knowledge/white-labeling.md` |
+| Store Settings (isSpa, anonymousUsersAllowed, emailVerification, seoLinkType, feature flags) | `.claude/agents/knowledge/store-settings.md` |
+| Catalog (B2B-mixed virtual catalog, xCatalog GraphQL, filter syntax, facets, suites 03 & 16) | `.claude/agents/knowledge/catalog.md` |
 
 ### Judge — Pass/Fail Classification
 
@@ -237,7 +240,8 @@ Ambiguous examples: label text changed (intentional?), new console warning (harm
 | Atlassian MCP | JIRA tickets, bug filing |
 | Figma MCP | Design comparison |
 | Postman MCP | API debugging when frontend issues need backend verification |
-| `gh` CLI (via Bash) | PR diffs, code search, codebase investigation |
+| GitHub MCP | PRs (`get_pull_request`, `get_pull_request_files`), code search (`search_code`) |
+| context7 MCP | VC documentation lookup (`resolve-library-id`, `query-docs`) |
 
 ### Critical Regression Path (priority order)
 

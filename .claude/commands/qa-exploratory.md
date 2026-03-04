@@ -65,7 +65,7 @@ For each session, the agent should:
 
 ## Output
 
-Write a session report to `reports/exploratory/exploratory-{area}-{date}.md`:
+Write a session report to `reports/exploratory/SBTM-{charter}-YYYY-MM-DD.md`:
 
 ```markdown
 # Exploratory Session: [Area]

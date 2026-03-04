@@ -120,13 +120,13 @@ Central configuration for regression orchestration. Defines:
 | **playwright-firefox** | Browser automation with Firefox | `config/mcp-playwright-firefox.config.json` |
 | **playwright-edge** | Browser automation with Edge | `config/mcp-playwright-edge.config.json` |
 | **postman** | API testing - collections, environments, monitors | N/A (uses `--minimal` flag) |
+| **github** | PR review, code search, issue management | N/A (uses `GITHUB_PERSONAL_ACCESS_TOKEN` via `GIT_TOKEN`) |
+| **context7** | Up-to-date library documentation lookup | N/A (HTTP MCP at `mcp.context7.com`, uses `CONTEXT7_API_KEY`) |
 
 Additional MCP servers (configured at user level, not in `.mcp.json`):
 - **Chrome DevTools MCP** - Console logs, network requests, performance tracing, HAR export
 - **Atlassian MCP** - JIRA integration for test case management and bug reporting
 - **Figma MCP** - Visual comparison testing against design specs
-- **GitHub MCP** - PR review, code search, issue management
-- **Context7** - Up-to-date library documentation lookup (resolve-library-id, query-docs)
 
 ## Browser Automation
 

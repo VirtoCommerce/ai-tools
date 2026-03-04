@@ -39,7 +39,7 @@ Create a structured bug report from a description, screenshot, or observed issue
 ## Step 2 — Write Bug Report
 
 Generate a report in `reports/bugs/` using this naming convention:
-`BUG-{SEVERITY}-{SHORT-TITLE}.md`
+`BUG-{Short-Description}.md` or `BUG-{Short-Description}-VCST-XXXX.md` (if a JIRA ticket is known)
 
 ### Report Template
 ```markdown
