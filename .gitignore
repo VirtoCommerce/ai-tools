@@ -8,5 +8,6 @@ ci
 .github/
 test-results/
 .claude/settings.local.json
+.mcp.json
 
 
