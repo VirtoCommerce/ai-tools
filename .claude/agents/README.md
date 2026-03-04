@@ -15,7 +15,7 @@ Two agent teams for the Virto Commerce platform: **QA** (quality assurance) and 
 
 ---
 
-## Agent Inventory (13 agents)
+## Agent Inventory (11 agents)
 
 ### QA Team (7 agents)
 

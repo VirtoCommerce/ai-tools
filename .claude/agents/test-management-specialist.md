@@ -188,6 +188,7 @@ Every test case MUST meet these criteria before delivery:
 | Looking up VC docs | `/vc-docs` (auto-invocable) | Context7 VC documentation (6,033+ snippets) |
 | Module → suite mapping | `/vc-module` (auto-invocable) | Module dependencies, impact analysis |
 | xAPI query syntax | `/vc-api` (auto-invocable) | Ready-to-use GraphQL queries |
+| Storefront URLs & product types | `/vc-frontend` (auto-invocable) | Page routes, product types+fields+properties, configurable sections, availability, account structure, test data |
 
 **Skills you DON'T invoke** (delegate to other agents):
 - `/qa-storybook`, `/qa-accessibility`, `/qa-design` → `ui-ux-expert`

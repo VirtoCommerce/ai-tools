@@ -8,7 +8,7 @@
 | **Test screenshots** (evidence captured during test execution) | `tests/SprintXX-XX/VCST-XXXX/screenshots/` | `desktop/feature-overview.png`, `mobile/checkout-step3.png` |
 | **Bug reports** (detailed bug documentation) | `reports/bugs/` | `BUG-Checkout-Payment-Overlap-iOS.md` |
 | **Bug evidence** (screenshots & API traces for bugs) | `reports/bugs/screenshots/` and `reports/bugs/api-traces/` | `payment-form-broken-ios.png`, `graphql-error-response.json` |
-| **Ticket test evidence** (per-ticket reports & screenshots) | `reports/tickets/VCST-XXXX/` | `test-report.md`, `screenshots/*.png` |
+| **Ticket test evidence** (lightweight snapshots — no full test docs) | `reports/tickets/VCST-XXXX/` | `test-report.md`, `screenshots/*.png` — use only when no sprint folder applies (e.g. hotfix, ad-hoc verification) |
 | **Regression reports** (suite-level & consolidated reports) | `reports/regression/` | `frontend-regression-report-2026-02-09.md` |
 | **Full regression runs** (multi-suite reports) | `reports/regression/full-regression-YYYY-MM-DD/` | suite reports, `REGRESSION-REPORT.md` |
 | **Performance reports** | `reports/performance/` | `lists-page-performance-report-2026-02-11.md` |
@@ -43,4 +43,6 @@ tests/SprintXX-XX/VCST-XXXX-feature-name/
 - `test-results/` is gitignored -- use it only for raw browser output (HAR, videos, console logs)
 - `tests/` and `reports/` are tracked in git -- use them for all documentation artifacts
 - Never save test documentation into `test-results/` and never save raw browser dumps into `tests/` or `reports/`
+- **Never create `reports/VCST-XXXX/` directly** — ticket folders belong under `reports/tickets/VCST-XXXX/` or `tests/SprintXX-XX/VCST-XXXX/`
+- **Default for `/qa-test` runs:** always use `tests/SprintXX-XX/VCST-XXXX/`; only use `reports/tickets/` for ad-hoc evidence with no sprint context
 - See `reports/README.md` for full naming convention reference

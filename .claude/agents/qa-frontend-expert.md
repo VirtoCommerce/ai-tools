@@ -129,6 +129,7 @@ Skills are methodology libraries with supporting reference files. Read the suppo
 | Looking up VC docs | `/vc-docs` (auto-invocable) | Context7 query for VC architecture, modules, APIs |
 | Module → test suite mapping | `/vc-module` (auto-invocable) | Module dependencies, admin sections, suite IDs |
 | xAPI query syntax | `/vc-api` (auto-invocable) | Ready-to-use GraphQL for xCart, xCatalog, xOrder |
+| Storefront URLs & product types | `/vc-frontend` (auto-invocable) | Page routes, product types+fields+properties, configurable sections, availability, account structure, test data |
 
 **Skills you DON'T invoke** (they delegate to other specialist agents):
 - `/qa-storybook`, `/qa-accessibility`, `/qa-design` → `ui-ux-expert`
@@ -178,7 +179,8 @@ Use DOM for logic checks. Use screenshots for visual checks. Use both for ambigu
 | Frontend suites (Catalog, Checkout, Auth, Cart, etc.) | `regression/suites/Frontend/*.csv` (suites 01-13, 35-36) |
 | E2E Scenario Catalog (105 scenarios) | `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md` |
 | Visual Bug Detection & Design System | `.claude/skills/testing/qa-design/design-system-consistency.md` |
-| Storefront Sitemap (URLs, products, categories, languages) | `.claude/skills/vc-knowledge/vc-frontend/sitemap.md` |
+| Storefront Sitemap (URLs, categories, languages, navigation) | `.claude/skills/vc-knowledge/vc-frontend/sitemap.md` |
+| Product Types, Fields, Properties, Configurations, Availability | `.claude/skills/vc-knowledge/vc-frontend/products.md` |
 | Module → Suite Mapping, Dependencies, Impact Analysis | `.claude/skills/vc-knowledge/vc-module/module-suite-map.md` |
 | Performance Thresholds | `.claude/agents/knowledge/performance-thresholds.md` |
 | Browser Quirks | `.claude/agents/knowledge/browser-quirks.md` |

@@ -48,6 +48,7 @@ Quick decision tree for commands, skills, and agents.
 - `/vc-docs` — Documentation lookup via Context7
 - `/vc-module` — Module analysis and suite mapping
 - `/vc-api` — xAPI & REST API query reference
+- `/vc-frontend` — Storefront reference: URLs, navigation, product types, account structure, test data
 
 ### Agents (use directly for complex multi-step work)
 - `qa-lead-orchestrator` — Coordinates testing, go/no-go decisions

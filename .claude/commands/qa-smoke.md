@@ -6,37 +6,124 @@ disable-model-invocation: true
 
 # /qa-smoke — Quick Smoke Test Run
 
-Run the 12 P0 smoke tests (Suite 01) for daily pre-deployment validation. This is a shortcut that delegates to the regression-orchestrator's smoke mode.
+Run Suite 01 smoke tests for daily pre-deployment validation. Executes two parallel tracks for a GO/NO-GO verdict in ~15 min.
 
 ## Usage
 ```
-/qa-smoke              # Run full smoke suite (12 tests + admin health)
-/qa-smoke storefront   # Storefront tests only (Track A)
-/qa-smoke admin        # Admin backend health checks only (Track B)
+/qa-smoke              # Run full smoke suite (both tracks)
+/qa-smoke storefront   # Track A only (storefront tests)
+/qa-smoke admin        # Track B only (admin health checks)
 ```
 
 ---
 
 ## Execution
 
-Delegate to the **regression-orchestrator** agent with `smoke` selection:
+You are the smoke test orchestrator running in the main context. Spawn sub-agents directly — do NOT delegate to another orchestrator agent.
 
-1. Use the Task tool with `subagent_type: regression-orchestrator`
-2. Pass the prompt: "Run regression with selection = smoke. Environment URLs from config.js."
-3. If the user specified `storefront` or `admin`, include that in the prompt so the orchestrator only runs the relevant track.
-4. The regression-orchestrator handles everything: browser assignment, 2-track parallel execution, GO/NO-GO verdict, and report generation.
-5. When the agent returns, relay the verdict and report path to the user.
+### Step 1 — Read Suite & Prepare Run
 
-The regression-orchestrator's **Smoke Mode** section defines the full execution plan (Track A storefront on playwright-chrome, Track B admin on playwright-edge, verdict rules, report format).
+1. Read `config/test-suites.json` to get Suite 01 details (CSV path, test count)
+2. Read `config.js` to load `FRONT_URL` and `BACK_URL`
+3. Generate run ID: `SMOKE-YYYY-MM-DD-HHMM`
+4. Create output directory: `reports/regression/{RUN_ID}/`
 
----
+### Step 2 — Dispatch Parallel Tracks
 
-## Quick Reference: Verdict Rules
+Unless the user specified `storefront` or `admin` only, launch **both tracks simultaneously** in a single message using the Agent tool:
+
+**Track A — Storefront** (`qa-frontend-expert`, `playwright-chrome`)
+
+Prompt:
+```
+You are executing Track A of a smoke test run ({RUN_ID}).
+
+Suite: 01 — Smoke Tests
+CSV: regression/suites/Frontend/01-smoke-tests.csv
+Browser: playwright-chrome
+Frontend URL: {FRONT_URL}
+Output: reports/regression/{RUN_ID}/suite-01-trackA-results.json
+
+Follow the test-runner-agent protocol in docs/prompts/test-runner-agent.md.
+Execute all 12 smoke test cases (SMK-001 through SMK-012) as a customer journey.
+Capture evidence on failures. Write structured JSON results to the output file.
+```
+
+**Track B — Admin & Backend** (`qa-backend-expert`, `playwright-edge`)
+
+Prompt:
+```
+You are executing Track B of a smoke test run ({RUN_ID}).
+
+Browser: playwright-edge
+Backend URL: {BACK_URL}
+Frontend URL: {FRONT_URL}
+Output: reports/regression/{RUN_ID}/suite-01-trackB-results.json
+
+Run parallel admin/backend health checks:
+1. Admin SPA loads and key blades (Catalog, Orders, Contacts) open without errors
+2. Platform modules show Active status, no error state
+3. API health check endpoint responds (GET {BACK_URL}/api/platform/modules)
+4. GraphQL endpoint accepts introspection query
+5. Auth token endpoint works
+6. If Track A data is available, verify created contacts/orders appear in Admin
+
+Write structured JSON results to the output file with pass/fail per check.
+```
+
+### Step 3 — Collect Results & Verdict
+
+After both tracks complete, read both output files and apply verdict rules:
 
 | Condition | Verdict |
 |-----------|---------|
-| All 12 pass + Admin healthy | **GO** |
-| 1-2 non-critical fail | **CONDITIONAL GO** |
-| Checkout/payment fail | **NO-GO** |
-| Admin broken | **NO-GO** |
-| 3+ failures | **NO-GO** |
+| All 12 storefront tests PASS + Admin healthy | **GO** — Safe to deploy |
+| 1-2 non-critical tests fail (not checkout/payment) | **CONDITIONAL GO** — Deploy with monitoring |
+| Any checkout test fails (SMK-009/010/011) | **NO-GO** — Checkout broken |
+| Any payment test fails (SMK-011) | **NO-GO** — Payment broken |
+| Admin SPA won't load | **NO-GO** — Platform unhealthy |
+| 3+ tests fail | **NO-GO** — Too many failures |
+
+### Step 4 — Write Report
+
+Write `reports/regression/{RUN_ID}/smoke-report.md`:
+
+```markdown
+# Smoke Test Report — {RUN_ID}
+
+## Verdict: GO / CONDITIONAL GO / NO-GO
+
+| Field | Value |
+|-------|-------|
+| Run ID | {RUN_ID} |
+| Date | YYYY-MM-DD |
+| Environment | {FRONT_URL} |
+
+## Track A — Storefront Results
+
+| # | Test Case | Status | Notes |
+|---|-----------|--------|-------|
+| SMK-001 | ... | PASS/FAIL | ... |
+
+## Track B — Admin Health
+
+| Check | Status | Notes |
+|-------|--------|-------|
+| Admin SPA loads | PASS/FAIL | ... |
+
+## Bugs Found
+
+(list or "None")
+```
+
+### Step 5 — Deliver Summary
+
+Output verdict, pass rate, bugs found, and report path to the user.
+
+---
+
+## Rules
+
+- Never use WebKit — not supported on Windows
+- Never assign both tracks to the same browser server
+- Read all URLs from config.js / .env — never hardcode

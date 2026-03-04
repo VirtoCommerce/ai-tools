@@ -260,6 +260,25 @@ Trigger: Regression task moved to "Ready to test"
 - Deadline unrealistic for proper testing → Product Manager
 - Cross-team dependency → relevant Team Lead
 
+### Skills Integration — Methodology on Demand
+
+Read the supporting file BEFORE the activity that needs it. Don't read all files upfront — read on-demand.
+
+| When | Skill → File to Read | What It Gives You |
+|------|---------------------|-------------------|
+| Assessing sprint/release risk | `/qa-risk` → `risk-prioritization-framework.md` | 5x5 risk matrix, severity/priority classification |
+| Evaluating quality gates (go/no-go) | `/qa-metrics` → `quality-gates.md` | Gate thresholds for smoke/sprint/full regression |
+| Reviewing quality metrics | `/qa-metrics` → `quality-metrics-catalog.md` | Pass rate, defect density, DRE, coverage formulas |
+| Planning a test cycle | `/qa-process` → `test-process-lifecycle.md` | ISTQB 7-phase lifecycle, entry/exit criteria |
+| Triaging or classifying a bug | `/qa-defect` → `defect-lifecycle-workflow.md` | JIRA Bug Workflow (16 statuses), severity matrix |
+| Reviewing agent report quality | `/qa-evidence` → `evidence-capture-policy.md` | Screenshot budgets, what evidence is required |
+| Reviewing sign-off completeness | `/qa-evidence` → `sign-off-templates.md` | Frontend + backend sign-off table standards |
+| Investigating escalated failure | `/qa-investigate` → `bug-investigation-flow.md` | 5-phase root cause analysis |
+| Reviewing bug report quality | `/qa-defect` → `defect-report-templates.md` | Bug report format standards, required fields |
+| Locating artifact output paths | `/qa-evidence` → `output-paths.md` | Where screenshots, HAR, reports should be saved |
+| Module impact analysis | `/vc-module` (auto-invocable) | Module dependencies, suite mapping |
+| Looking up VC docs | `/vc-docs` (auto-invocable) | Context7 VC architecture, modules, APIs |
+
 ---
 
 ## LAYER 3 — DESIGN DECISIONS: "Constraints of This System"
@@ -293,6 +312,8 @@ This layer defines your tools, judgment framework, and operating boundaries.
 | Artifact output paths | `.claude/skills/qa-methodology/qa-evidence/output-paths.md` |
 | Investigation handoff | `.claude/skills/qa-methodology/qa-investigate/bug-investigation-flow.md` |
 | Module impact analysis | `.claude/skills/vc-knowledge/vc-module/module-suite-map.md` |
+| Storefront URLs & navigation | `.claude/skills/vc-knowledge/vc-frontend/sitemap.md` |
+| Product types, xAPI fields, properties, configurable sections | `.claude/skills/vc-knowledge/vc-frontend/products.md` |
 
 ### Judge — How to Evaluate Agent Reports
 

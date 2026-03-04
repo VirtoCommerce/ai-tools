@@ -180,7 +180,8 @@ npm run ci:notify        # Send Teams notification
 
 - [CLAUDE.md](CLAUDE.md) - Project guidance for Claude Code
 - [README.md](README.md) - Quick start guide
-- [.claude/skills/vc-knowledge/vc-frontend/sitemap.md](.claude/skills/vc-knowledge/vc-frontend/sitemap.md) - B2B storefront structure
+- [.claude/skills/vc-knowledge/vc-frontend/sitemap.md](.claude/skills/vc-knowledge/vc-frontend/sitemap.md) - B2B storefront structure (URLs, navigation, categories)
+- [.claude/skills/vc-knowledge/vc-frontend/products.md](.claude/skills/vc-knowledge/vc-frontend/products.md) - Product types, xAPI fields, properties, configurable sections, sample test data
 - [config/test-suites.json](config/test-suites.json) - Regression orchestration manifest
 - [tests/INDEX.md](tests/INDEX.md) - Test directory index
 - [ci/README.md](ci/README.md) - CI regression documentation

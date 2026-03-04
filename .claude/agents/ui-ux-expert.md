@@ -241,7 +241,7 @@ Use DOM for semantic checks (aria, roles, labels). Use screenshots for visual ch
 | Visual Regression Testing | `.claude/skills/testing/qa-storybook/visual-regression-testing.md` |
 | UX Heuristic Evaluation | `.claude/skills/testing/qa-design/ux-heuristic-evaluation.md` |
 | Responsive Component Testing | `.claude/skills/testing/qa-storybook/responsive-component-testing.md` |
-| Storybook Testing Guide | `.claude/skills/testing/qa-storybook/how-to-test-storybook.md` |
+| Storybook Visual Regression | `.claude/skills/testing/qa-storybook/visual-regression-testing.md` |
 
 ### Judge — Pass/Fail Classification
 

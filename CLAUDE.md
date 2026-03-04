@@ -42,6 +42,8 @@ Create a `.env` file with required variables (33 total). Run `npm run env:check`
 
 Access via `config.js`: `import { env } from './config.js'`
 
+**Note:** This project uses ES modules (`"type": "module"` in `package.json`). Always use `.js` extensions in imports.
+
 ## Environment Configuration
 
 - QA environment URLs must come from environment variables, never hardcoded. When referencing environments (QA, Stage, Prod), always check env config files for the correct URL mapping.
@@ -54,8 +56,8 @@ vc-mcp-testing-module/
 ├── INDEX.md                 # Top-level repo navigation hub (quick links to all directories)
 ├── .claude/agents/          # Claude Code agent configurations (11 agents, tracked in git)
 │   └── knowledge/           # Shared agent reference files (platform-patterns, browser-quirks, debugging-signals, performance-thresholds)
-├── .claude/skills/          # Skills grouped by category (16 skills in 3 groups, tracked in git)
-│   ├── vc-knowledge/        # VC docs, module analysis, API reference (3 skills) + vc-frontend/sitemap.md
+├── .claude/skills/          # Skills grouped by category (17 skills in 3 groups, tracked in git)
+│   ├── vc-knowledge/        # VC docs, module analysis, API reference, storefront reference (4 skills)
 │   ├── testing/             # Storybook, accessibility, design, plan, API (5 skills)
 │   └── qa-methodology/      # Process, investigation, evidence, test design, risk, metrics, SBTM, defect (8 skills)
 ├── .claude/commands/        # Slash commands (9 commands, tracked in git)
@@ -74,10 +76,9 @@ vc-mcp-testing-module/
 ├── tests/                   # Test cases organized by sprint (Sprint26-02/, Sprint26-03/) then JIRA ticket
 │   └── INDEX.md             # Entry point: active test cases grouped by domain
 ├── reports/                 # Bug reports and regression test reports
-├── archive/sprints/         # Historical sprint test cases
+├── archive/sprints/         # Historical sprint test cases                
 ├── Test suites & Cases/     # Original TestRail export (source-of-truth reference: Backend, E2E, Frontend)
 ├── config.js                # Environment configuration (loads .env)
-└── sitemap.md               # Site structure reference
 ```
 
 **Gitignored:** `settings.json`, `.env`, `test-results/`, `.serena/`, `.playwright-mcp/`, `ci/`, `.github/`, `.claude/settings.local.json`
@@ -124,10 +125,12 @@ Additional MCP servers (configured at user level, not in `.mcp.json`):
 - **Chrome DevTools MCP** - Console logs, network requests, performance tracing, HAR export
 - **Atlassian MCP** - JIRA integration for test case management and bug reporting
 - **Figma MCP** - Visual comparison testing against design specs
+- **GitHub MCP** - PR review, code search, issue management
 - **Context7** - Up-to-date library documentation lookup (resolve-library-id, query-docs)
 
 ## Browser Automation
 
+- Install browsers: `npx playwright install chromium firefox` (Edge uses the system-installed `msedge` channel).
 - Default to `chromium` (not `chrome`) for Playwright MCP browser launches. WebKit is NOT supported on Windows — fall back to Edge or Chrome immediately without attempting installation.
 - Always verify MCP server config uses correct browser engine names: `chromium`, `firefox`, `webkit` (not `chrome`, `edge`).
 - After any MCP config change, remind the user that a server restart is required before the new config takes effect.
@@ -174,17 +177,18 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|module <name>]` | No | Business analysis (full/flows/api/docs/stories/module) |
 | `/ba-stories` | `feature name \| VCST-XXXX` | No | Generate Agile user stories with BDD acceptance criteria |
 
-### Skills (16) — `.claude/skills/` (grouped by category)
+### Skills (17) — `.claude/skills/` (grouped by category)
 
 Skills are slash commands with supporting reference files, organized into 3 category directories. Each skill has a `SKILL.md` with `[Category]` tag in the description. See `.claude/skills/README.md` for full reference.
 
-**`vc-knowledge/` — Virto Commerce Knowledge (3) — auto-invocable:**
+**`vc-knowledge/` — Virto Commerce Knowledge (4) — auto-invocable:**
 
 | Skill | Arguments | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|
 | `/vc-docs` | `topic \| module \| concept` | Documentation lookup via Context7 | — (uses Context7 MCP) |
 | `/vc-module` | `module name \| suite ID` | Module analysis and test suite mapping | `module-suite-map.md` |
 | `/vc-api` | `xCart \| xCatalog \| REST` | xAPI & REST API query reference | `xapi-query-ref.md` |
+| `/vc-frontend` | `page \| URL \| product type \| account \| menu \| sitemap` | Storefront reference: page URLs, navigation, product types, account structure, test data | `sitemap.md` |
 
 **`testing/` — Testing (5) — manual invocation:**
 
@@ -211,7 +215,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 
 Usage: `/qa-smoke`, `/qa-test VCST-1234`, `/qa-storybook Button`, `/vc-docs dynamic properties`, or use agents directly: `"Use qa-frontend-expert to test checkout"`
 
-**Frontmatter fields:** `description` (shown in `/` menu with `[Category]` tag), `argument-hint` (autocomplete hint), `disable-model-invocation: true` (prevents Claude from auto-triggering). Only read-only commands/skills (`/qa-status`, `/qa-env-check`, `/vc-docs`, `/vc-module`, `/vc-api`) allow model invocation.
+**Frontmatter fields:** `description` (shown in `/` menu with `[Category]` tag), `argument-hint` (autocomplete hint), `disable-model-invocation: true` (prevents Claude from auto-triggering). Only read-only commands/skills (`/qa-status`, `/qa-env-check`, `/vc-docs`, `/vc-module`, `/vc-api`, `/vc-frontend`) allow model invocation.
 
 **Agent Teams mode** is enabled via `settings.json` (`teammateMode: "in-process"`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`). The `settings.json` also configures a `post_edit` hook that runs TypeScript type-checking after edits.
 
@@ -305,7 +309,7 @@ Theme presets: Coffee
 ## Test Documentation Pattern
 
 ```
-tests/VCST-XXXX-feature/
+tests/SprintXX-XX/VCST-XXXX-feature/
 ├── test-plan.md              # Test strategy and scope
 ├── test-cases.md             # Detailed test specifications (or .csv)
 ├── test-execution-report.md  # Results with pass/fail status

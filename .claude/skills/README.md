@@ -1,20 +1,23 @@
 # .claude/skills/ — Skill Directory
 
-> 16 skills organized in 3 category groups. Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
+> 17 skills organized in 3 category groups. Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
 
 ## Directory Structure
 
 ```
 .claude/skills/
-├── vc-knowledge/                    # VC Knowledge (3) — auto-invocable, read-only
+├── vc-knowledge/                    # VC Knowledge (4) — auto-invocable, read-only
 │   ├── vc-docs/
 │   │   └── SKILL.md                 # Documentation lookup via Context7
 │   ├── vc-module/
 │   │   ├── SKILL.md                 # Module analysis and test suite mapping
 │   │   └── module-suite-map.md
-│   └── vc-api/
-│       ├── SKILL.md                 # xAPI & REST API reference
-│       └── xapi-query-ref.md
+│   ├── vc-api/
+│   │   ├── SKILL.md                 # xAPI & REST API reference
+│   │   └── xapi-query-ref.md
+│   └── vc-frontend/
+│       ├── SKILL.md                 # Storefront reference: URLs, navigation, product types, account structure
+│       └── sitemap.md               # Full site map (updated March 2026)
 │
 ├── testing/                         # Testing (5) — manual invocation
 │   ├── qa-storybook/
@@ -68,7 +71,7 @@
 └── README.md                        # This file
 ```
 
-## VC Knowledge (3) — `vc-knowledge/`
+## VC Knowledge (4) — `vc-knowledge/`
 
 Auto-invocable, read-only reference skills. No side effects.
 
@@ -77,6 +80,7 @@ Auto-invocable, read-only reference skills. No side effects.
 | `/vc-docs` | Documentation lookup via Context7 | -- (Context7 MCP) |
 | `/vc-module` | Module -> test suite mapping, dependencies, API surface | module-suite-map.md |
 | `/vc-api` | xAPI & REST API query/mutation reference | xapi-query-ref.md |
+| `/vc-frontend` | Storefront reference: page URLs, navigation, product types, account structure, test data | sitemap.md |
 
 ## Testing (5) — `testing/`
 

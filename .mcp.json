@@ -45,6 +45,26 @@
       "env": {
         "POSTMAN_API_KEY": "%POSTMAN_API_KEY%"
       }
+    },
+    "github": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "%GIT_TOKEN%"
+      }
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "env": {
+        "CONTEXT7_API_KEY": "%CONTEXT7_API_KEY%"
+      }
     }
   }
 }

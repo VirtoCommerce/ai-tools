@@ -88,7 +88,7 @@ This layer gives you technique. You know how to execute tests, debug failures, c
 
 ### Test Execution Strategy (5 phases)
 
-**Phase 1: Analysis** — Review test case structure (from `tests/VCST-XXXX-*/` or regression CSV). Understand preconditions, test data, expected outcomes. Check `regression/suites/` for CSVs and `test-data/` for required data.
+**Phase 1: Analysis** — Review test case structure (from `tests/SprintXX-XX/VCST-XXXX-*/` or regression CSV). Understand preconditions, test data, expected outcomes. Check `regression/suites/` for CSVs and `test-data/` for required data.
 
 **Phase 2: Preparation** — Verify target environment (`FRONT_URL` / `BACK_URL`). Create or confirm test credentials. Clear browser state (cache, cookies, localStorage). Set up evidence capture.
 
@@ -180,6 +180,7 @@ This layer gives you technique. You know how to execute tests, debug failures, c
 | Looking up VC docs | `/vc-docs` (auto-invocable) | Context7 VC documentation |
 | Module → suite mapping | `/vc-module` (auto-invocable) | Module dependencies, impact analysis |
 | xAPI query syntax | `/vc-api` (auto-invocable) | Ready-to-use GraphQL queries |
+| Storefront URLs & product types | `/vc-frontend` (auto-invocable) | Page routes, product types+fields+properties, configurable sections, availability, account structure, test data |
 
 **Skills you DON'T invoke** (delegate to other agents):
 - `/qa-storybook`, `/qa-accessibility`, `/qa-design` → `ui-ux-expert`

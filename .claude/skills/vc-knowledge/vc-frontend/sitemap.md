@@ -1,7 +1,7 @@
-# Sitemap: https://vcst-qa-storefront.govirto.com/
+# Sitemap: FRONT_URL
 
-**Generated:** October 14, 2025  
-**Base URL:** https://vcst-qa-storefront.govirto.com/
+**Generated:** March 4, 2026
+**Base URL:** FRONT_URL (from `FRONT_URL` env var)
 
 ## Overview
 
@@ -9,8 +9,9 @@ This is a B2B e-commerce platform built on Virto Commerce. The site supports mul
 
 ## Available Languages
 
-The site supports 13 languages with locale-specific URLs:
+The site now supports **14 languages** with locale-specific URLs:
 - **English (en)** - `/` or `/en/`
+- **English US (en-US)** - `/en-US/` *(two English variants available)*
 - **Deutsch (de)** - `/de/`
 - **français (fr)** - `/fr/`
 - **italiano (it)** - `/it/`
@@ -22,6 +23,7 @@ The site supports 13 languages with locale-specific URLs:
 - **日本語 (ja)** - `/ja/`
 - **suomi (fi)** - `/fi/`
 - **русский (ru)** - `/ru/`
+- **español (es)** - `/es/` *(new since Oct 2025)*
 
 **Note:** All pages listed below are available in each language by prefixing with the language code (e.g., `/de/catalog`, `/fr/catalog`, etc.)
 
@@ -31,7 +33,13 @@ The site supports 13 languages with locale-specific URLs:
 
 ### Homepage
 - **URL:** `/`
-- **Description:** Main landing page with featured products ("Daily Deals") and commercial management highlights
+- **Title:** QA & Main page
+- **Sections:**
+  - Hero banner ("Gifts for sweetheart. Sale") → links to `/soda` and `/catalog`
+  - "Discounts. Loyalty cards" — featured gift card products
+  - "Popular categories" — category tiles (Consumer Electronics, Home Appliances, Phones & Accessories, Computer Office & Education, Medical goods)
+  - "Might be interesting" — promotional banners (Drinks & Food, Security & Protection, Digital products)
+  - "Favorable delivery" — banner links to `/new-home` and `/kitchen-supplies/everything-for-kitchen`
 
 ### Static Pages
 | Page | URL | Description |
@@ -40,29 +48,47 @@ The site supports 13 languages with locale-specific URLs:
 | Contacts | `/contacts` | Contact information page |
 | Catalog | `/catalog` | Main catalog page |
 | Demo Landing | `/demo-landing` | Demo landing page |
-| News | `/news` | News section |
-| Brands | `/brands` | All popular brands page |
+| Brands | `/Brands` | All popular brands page |
 | Find a Branch | `/branch/vendor-fulfillment` | Branch locator |
 | Bulk Order | `/bulk-order` | Bulk order page |
 | Compare | `/compare` | Product comparison page |
 | Cart | `/cart` | Shopping cart page |
-| Forgot password | `/forgot-password` | Reset password page |
+| Soda | `/soda` | Soda category / promo landing *(new)* |
 
 ---
 
 ## 2. Account Pages
 
-All account pages require authentication:
+All account pages require authentication. Account sidebar is organized into 4 groups:
 
+### Purchasing
 | Page | URL | Description |
 |------|-----|-------------|
-| Dashboard | `/account/dashboard` | User account dashboard |
+| Dashboard | `/account/dashboard` | User account dashboard (latest orders + monthly spend report) |
 | Orders | `/account/orders` | Order history |
 | Lists | `/account/lists` | Organization lists |
-| Notifications | `/account/notifications` | User notifications |
 | Quote Requests | `/account/quotes` | Quote requests management |
-| Saved credit cards | `/account/saved-credit-cards` | Saved credit cards|
+| Saved for Later | `/account/saved-for-later` | Saved items list |
+| Back-in-stock List | `/account/back-in-stock` | Back-in-stock notifications |
 
+### Marketing
+| Page | URL | Description |
+|------|-----|-------------|
+| Notifications | `/account/notifications` | User notifications |
+| Points History | `/account/points-history` | Loyalty points history |
+
+### Corporate
+| Page | URL | Description |
+|------|-----|-------------|
+| Company Info | `/company/info` | Company information *(new — was not in sitemap)* |
+| Company Members | `/company/members` | Company members management *(new — was not in sitemap)* |
+
+### User
+| Page | URL | Description |
+|------|-----|-------------|
+| Profile | `/account/profile` | User profile settings |
+| Change Password | `/account/change-password` | Password management |
+| Saved Credit Cards | `/account/saved-credit-cards` | Saved payment methods |
 
 ---
 
@@ -75,7 +101,7 @@ All account pages require authentication:
 | Alcoholic Drinks | `/alcoholic-drinks` | Alcoholic beverages category |
 | Accessories | `/accessories` | Accessories category |
 | Jewelry and Gems | `/jewelry-and-gems` | Jewelry products |
-| Car Covers | `/car-covers` | Car covers category |
+| Car Covers | `/car-covers` *(alias: Car covers EN)* | Car covers category |
 | Online Courses | `/online-courses` | Courses and audiobooks |
 | Juice | `/juice` | Juice products |
 | Kitchen Supplies | `/kitchen-supplies` | Kitchen supplies |
@@ -86,37 +112,53 @@ All account pages require authentication:
 | New Home / Rental Home | `/new-home` | Home furnishings |
 | TV | `/tv` | Television products |
 | NewTest2 | `/newtest2` | Test category |
-| Fake | `/fake1` | Test category |
 | Coffee and Tea | `/coffee-and-tea` | Coffee and tea products |
 | Coming Soon | `/coming-soon` | Coming soon category |
 | Bolts | `/bolts` | Bolts category |
 | New Catalog Item | `/new-catalog-item` | New catalog items |
-| Category 1 | `/category1` | Generic category |
+| Category 1 | `/category1` | Generic test category |
+| Soda | `/soda` | Soda products *(new — top-level)* |
 
 ### Subcategories
 
 | Subcategory | URL | Parent Category |
 |-------------|-----|-----------------|
-| Juice Syrup | `/juice/juice-syrup` | Juice |
+| Beer | `/alcoholic-drinks/beer` | Alcoholic Drinks *(new)* |
+| Cider | `/alcoholic-drinks/cider` | Alcoholic Drinks *(new)* |
+| Distilled | `/alcoholic-drinks/distilled` | Alcoholic Drinks *(new)* |
+| Efes Beer | `/alcoholic-drinks/efes-beer` | Alcoholic Drinks *(new)* |
+| Gin Tonic | `/alcoholic-drinks/gin-tonic` | Alcoholic Drinks *(new)* |
+| Wine | `/alcoholic-drinks/wine` | Alcoholic Drinks *(new)* |
+| Carriage Bolts | `/bolts/carriage-bolts` | Bolts *(new)* |
+| Flange Bolts | `/bolts/flange-bolts` | Bolts *(new)* |
+| Everything for Kitchen | `/kitchen-supplies/everything-for-kitchen` | Kitchen Supplies *(new)* |
+| All-in-One Printers | `/printers/all-in-one` | Printers *(new)* |
+| Multifunction Printers | `/printers/multifunction-printers` | Printers *(new)* |
+| Chips | `/snacks/chips` | Snacks *(new)* |
+| Cookie | `/snacks/cookie` | Snacks *(new)* |
+| Crackers | `/snacks/crackers` | Snacks *(new)* |
+| Nachos | `/snacks/nachos` | Snacks *(new)* |
+| Mineral Water | `/soft-drinks/mineral-water` | Soft Drinks *(new)* |
+| Soda | `/soft-drinks/soda` | Soft Drinks *(new)* |
 | Holders & Stands | `/accessories/aliexpress/phones-and-accessories/holders-stands` | Accessories |
 | Car Covers (NewTest2) | `/newtest2/car-covers` | NewTest2 |
+| Juice Syrup | `/juice/juice-syrup` | Juice |
 
 ### Category by ID
-The site also uses category IDs for navigation:
 
-| Category | URL |
-|----------|-----|
-| Consumer Electronics | `/category/36b507a9-0bdf-4cd9-821e-4dcbb6e1d578` |
-| Allbiz | `/category/61b05fae-0ea6-45e7-ae4f-8bdc5c043847` |
-| Computer, Office, Education | `/category/b3a3f328-cc99-4d88-a8f1-08fb02f43c8e` |
-| Phones and Accessories | `/category/ab8be45e-3ff6-4b8c-80a3-1d3ef2dfa0ac` |
-| Home Appliances | `/category/7f965eeb-a5d7-42a3-89c9-7c7237e43f9d` |
+| Category | URL | Notes |
+|----------|-----|-------|
+| Consumer Electronics | `/category/36b507a9-0bdf-4cd9-821e-4dcbb6e1d578` | |
+| Medical goods | `/category/61b05fae-0ea6-45e7-ae4f-8bdc5c043847` | Was "Allbiz" in Oct 2025 |
+| Computer, Office, Education | `/category/b3a3f328-cc99-4d88-a8f1-08fb02f43c8e` | |
+| Phones and Accessories | `/category/ab8be45e-3ff6-4b8c-80a3-1d3ef2dfa0ac` | |
+| Home Appliances | `/category/7f965eeb-a5d7-42a3-89c9-7c7237e43f9d` | |
+| Security & Protection | `/category/eee07117-dbbf-4713-b2be-8c9a96d81192` | *(new)* |
+| Digital products | `/category/03b70abf-a428-4049-957c-230783952ea9` | *(new)* |
 
 ---
 
 ## 4. E2E Test Categories
-
-Testing categories for automated testing:
 
 | Category | URL |
 |----------|-----|
@@ -129,36 +171,76 @@ Testing categories for automated testing:
 
 ## 5. Product Pages
 
-### Product URL Structure
-Products use a UUID-based URL structure:
-- Pattern: `/product/{product-id}`
+### Product URL Structures
 
-### Sample Product Pages (from Homepage)
+| Pattern | Example | Notes |
+|---------|---------|-------|
+| `/product/{uuid}` | `/product/bee0d93a-...` | Standard UUID-based product URL |
+| `/{category}/{slug}` | `/products-with-options/configurable-caps-shirts/configurable-hat` | SEO-friendly product URL under category |
+| `/{category}/{sub}/{parent}/{slug}` | `/products-with-options/variations-of-jeans/jeans/hat` | Variation product under parent |
 
-| Product | Product ID | URL |
-|---------|------------|-----|
-| Samsung Galaxy Tab S9 FE Case | 46b43d0a-c608-4ddd-87f7-dbf63316e7c7 | `/product/46b43d0a-c608-4ddd-87f7-dbf63316e7c7` |
-| JIANWU Pencil Case | bc2654d3-fdba-4657-a83b-28141696b054 | `/product/bc2654d3-fdba-4657-a83b-28141696b054` |
-| Kawaii Pencil Case (3 Compartment) | 8425ba69-3c7a-4ea3-ae48-eeec63d2ab3d | `/product/8425ba69-3c7a-4ea3-ae48-eeec63d2ab3d` |
-| Kawaii Pencil Case (Large Capacity) | dd4867c1-b104-481e-a08c-aca4d92a34ff | `/product/dd4867c1-b104-481e-a08c-aca4d92a34ff` |
-| Laptop Bag (Xiaomi Lenovo HP Dell) | a6c72cdc-5bee-4739-ade3-4be9df03e6b8 | `/product/a6c72cdc-5bee-4739-ade3-4be9df03e6b8` |
-| MacBook Sleeve | dc914bd5-442d-45d6-ba84-edd0d4ea9bba | `/product/dc914bd5-442d-45d6-ba84-edd0d4ea9bba` |
-| Laptop Bag (Xiaomi HP Dell) | d79debf1-95c7-410b-b1c2-4d272ccfc4b7 | `/product/d79debf1-95c7-410b-b1c2-4d272ccfc4b7` |
-| Laptop Bag Women 2023 | b38c173e-9a8a-4283-aba6-74ad986c8edc | `/product/b38c173e-9a8a-4283-aba6-74ad986c8edc` |
-| MacBook Air Case M2 | 58d69c3a-75eb-4a3d-bf88-150d6f90c448 | `/product/58d69c3a-75eb-4a3d-bf88-150d6f90c448` |
-| Laptop Charger Storage Bag | 5024db78-f53a-43d3-8088-de73fd4daba9 | `/product/5024db78-f53a-43d3-8088-de73fd4daba9` |
-| Laptop Sleeve Bag | 65c15800-8b9d-43d5-9c1f-b546ae460e6f | `/product/65c15800-8b9d-43d5-9c1f-b546ae460e6f` |
-| Large Capacity Pencil Bag | bcac3195-24ff-40ec-ac36-3f1a0d1fc447 | `/product/bcac3195-24ff-40ec-ac36-3f1a0d1fc447` |
-| Multi Layer Pencil Case | d3bbdd46-a866-4446-80e2-40c70f3e30be | `/product/d3bbdd46-a866-4446-80e2-40c70f3e30be` |
-| Pen Storage Bag | fe6ac5c3-ea37-4f90-89e0-85abe91c5881 | `/product/fe6ac5c3-ea37-4f90-89e0-85abe91c5881` |
-| Electronic Accessories Travel Case | 0fa6c0b6-6ef0-43fb-b754-b533fd7fbebc | `/product/0fa6c0b6-6ef0-43fb-b754-b533fd7fbebc` |
-| iPad Silicone Case | 79a4d40d-1f22-4e16-a661-5cfb660919fa | `/product/79a4d40d-1f22-4e16-a661-5cfb660919fa` |
-| Tablet Sleeve Case | 0abf0884-726a-4fa6-a378-43d8d7fc7fca | `/product/0abf0884-726a-4fa6-a378-43d8d7fc7fca` |
-| Samsung Galaxy Tab Sleeve (raugee) | 69d61550-ea8e-4eee-9e61-75ed2c728212 | `/product/69d61550-ea8e-4eee-9e61-75ed2c728212` |
-| Samsung Galaxy Tab Sleeve (hacrin) | 2a0ec218-132c-4933-a208-e872e6c68654 | `/product/2a0ec218-132c-4933-a208-e872e6c68654` |
-| Tablet Sleeve (OPUYYM) | 464557e0-48b9-4e1e-967a-9f0681ae46df | `/product/464557e0-48b9-4e1e-967a-9f0681ae46df` |
+### Product Types
 
-**Note:** The site contains thousands of products. The above list represents a sample from the homepage.
+The platform supports 3 product display types, visible in the `/products-with-options` category:
+
+#### 1. Configurable Products
+- **CTA:** "Customize" button
+- **Description:** User configures custom properties, file uploads, or specific options before adding to cart. No pre-set variants.
+- **Category:** `/products-with-options/configurable-caps-shirts/` (8 products)
+- **Examples:**
+
+| Product | URL | Price | Notes |
+|---------|-----|-------|-------|
+| Configurable Hat | `/products-with-options/configurable-caps-shirts/configurable-hat` | $15 | |
+| Custom T-shirt | `/products-with-options/configurable-caps-shirts/custom-t-shirt` | $12 | |
+| Vintage Colorado Hoodie | `/products-with-options/configurable-caps-shirts/hoodie` | $54 | Product color: Malachite, in stock 2333 |
+| Hoodie Base (File non required) | `/products-with-options/configurable-caps-shirts/physical` | $300 | File upload option |
+| Hoodie Base (File required) | `/products-with-options/configurable-caps-shirts/physical-1703` | $250 ~~$300~~ (-17%) | File upload required |
+| Base product EN | `/products-with-options/configurable-caps-shirts/111111` | $1,999 ~~$2,000~~ | Custom text properties (Custom1, Custom2, Custom3) |
+| Product No variations | `/products-with-options/configurable-caps-shirts/product-no-variations` | $900 ~~$1,000~~ (-10%) | Color: Beige, 9999+ stock |
+| Product No B2C Layout | `/products-with-options/configurable-caps-shirts/product-no-b2c-layout-master` | From $300 | 2 variations |
+
+#### 2. Products with Variations
+- **CTA:** "N variations" link + "Show on a separate page" icon
+- **Description:** Standard variant selection (color, size, material). Shows "From $X" price and variation count on listing.
+- **Category:** `/products-with-options/variations-of-jeans/` (7 products)
+- **URL pattern:** `/{category}/{subcategory}/{parent-slug}/{variant-slug}`
+- **Examples:**
+
+| Product | URL | Price | Variations | Notes |
+|---------|-----|-------|-----------|-------|
+| Black California Beach Pullover Hoodie | `.../jeans/vintage-california-beach-pullover-hoodie` | From $19 | 7 | |
+| Men's Adjustable Scholarship Hat | `.../jeans/hat` | From $4 | 3 | Product color: Steel Blue |
+| Men's Flannel Shirts | `.../jeans/mens-flannel-shirts-...` | From $6 | 5 | |
+| High Waist Jeans 44 Brown&Coffee | `.../jeans/high-waist-jeans-brown` | From $35 | 6 | Rating 4/5 |
+| Baggy Regular Jeans | `.../jeans/baggy-regular-jeans-grey` | From $28 | 3 | Rating 5/5, -26% |
+| Skinny High Jeans Blue | `.../jeans/skinny-high-jeans-blue` | From $25 | 2 | |
+| MAGCOMSEN Women's Cotton T-Shirts | `.../jeans/magcomsen-...` | From $14.99 | 9 | -30% |
+
+#### 3. Simple Products
+- **CTA:** Quantity selector + "Add to cart" directly on the listing card
+- **Description:** No variants or custom options. Price shown as a single value.
+- **Example:** "Product No variations" (when stock is shown directly on card)
+
+### Filters Available on `/products-with-options`
+`price` | `Size` | `Categories` | `Color` | `Type` | `Product color` | `Size chart`
+
+### Subcategories of `/products-with-options`
+| Subcategory | URL | Count |
+|-------------|-----|-------|
+| Variations with options | `/products-with-options/variations-of-jeans` | 7 |
+| Configurable caps & shirts | `/products-with-options/configurable-caps-shirts` | 8 |
+
+### Sample Product Pages (from Homepage — March 2026)
+
+| Product | Product ID |
+|---------|------------|
+| UNTUCKit eGift Card | `bee0d93a-cd70-4313-bc6c-716cb415b43a` |
+| Eddie Bauer Gift Cards | `e91d8f7c-35fa-41a2-b6d1-dfbfa980f5c0` |
+| Athleta eGift Cards | `adc1ea7a-04cb-456c-bb71-eb696a1ee546` |
+| Best of Cities / Best of Nulu eGift Card | `d1a0f4b1-a634-4d94-bab5-8dc7b5342596` |
+
+**Note:** Homepage now features loyalty/gift card products ("Discounts. Loyalty cards" section) instead of the previous "Daily Deals" section.
 
 ---
 
@@ -170,32 +252,48 @@ Products use a UUID-based URL structure:
 
 ### Compare Products
 - **URL:** `/compare`
-- **Description:** Product comparison feature
 
 ---
 
 ## 7. External Links
 
-The site includes links to related platforms:
-
 | Platform | URL | Description |
 |----------|-----|-------------|
 | Virto Commerce Admin | https://vcst-qa.govirto.com/ | Admin platform |
-| Virto Start Demo | https://virtostart-demo-store.govirto.com/ | Demo store |
 | Virto Commerce | https://virtocommerce.com | Main website |
-| About Virto | https://virtocommerce.com/about-us | About page |
-| Partners | https://virtocommerce.com/our-partners | Partners page |
-| Manufacturer Partners | https://virtocommerce.com/solutions/b2b-portal-for-manufacturers | B2B solutions |
-| News/Blog | https://virtocommerce.com/blog/category/news | Blog |
-| Careers | https://virtocommerce.com/career | Careers page |
 | Builder.io | https://www.builder.io/ | Visual development platform |
 
 ---
 
 ## 8. Menu Structure
 
-### All Products Menu
-Available via the "All products" dropdown, includes:
+### Top Header Bar
+
+**Unauthenticated:**
+- Language selector | Currency selector | Ship to | Theme toggle | Call us | Contacts | Sign in | Sign up now
+
+**Authenticated:**
+- Language selector | Currency selector | Ship to | Theme toggle | Call us | **Dashboard** (link → `/account/dashboard`) | Contacts | **Account menu** button (shows "OrgName / UserName")
+
+### Account Menu Dropdown *(new design — March 2026)*
+Triggered by the "OrgName / UserName" button in the top-right header. Opens a dropdown panel with:
+
+1. **User section:** User name (avatar + full name, links to `/account/dashboard`) + Logout button
+2. **Organizations section:** "Organizations" label + Search box + scrollable list of organizations with radio buttons (click to switch active organization)
+
+> **Note:** The Account menu no longer contains account page navigation links. Account pages are accessed via the sidebar on the Dashboard page, or via the **Dashboard** link in the top header.
+
+### Main Nav Icon Bar (authenticated)
+Icons shown in the middle navigation row (right side):
+- Bulk order → `/bulk-order`
+- Compare → `/compare`
+- Lists → `/account/lists`
+- Orders → `/account/orders`
+- **Notifications** (button — opens notifications dropdown, no dedicated page link)
+- Cart → `/cart`
+
+### All Products Dropdown
+Available via the "All products" button, includes:
 
 - Shop all categories
 - Shop by brand
@@ -225,38 +323,44 @@ Available via the "All products" dropdown, includes:
 - [E2E Test] Notebooks
 - [E2E Test] SSD
 
-### Main Navigation Bar
-- Alcoholic Drinks
-- Accessories
-- Jewelry and gems
-- Car covers
-- Courses and audio books
-- Juice
-- Kitchen supplies
-- Products with options
-- Soft drinks
-- Snacks
-- Printers
-- Rental home
-- TV new
-- Fake
-- All BRANDS
-- SEE ALL PRODUCTS
+### Main Navigation Bar *(subcategories inline)*
+- B2B-store
+- Carriage Bolts
+- Flange Bolts
+- Inkjet Printers
+- Laser Printers
+- Beer
+- Cider
+- Distilled
+- Efes beer
+- Gin tonic
+- Wine
+- Softdrinks
+- Mineral water
+- Chips
+- Nachos
+- Cookie
+- Crackers
+- SEE ALL
 
 ---
 
 ## 9. Site Features
 
 ### User Features
-- Multi-language support (13 languages)
+- Multi-language support (14 languages, added español)
 - Multi-currency support (USD primary)
-- Delivery address selection
+- **Theme toggle: Light / Dark / Auto** *(new)*
+- Delivery address / Ship-to selection
 - Account management
 - Organization/Corporate accounts
 - Quote management
 - Bulk ordering
 - Product comparison
 - Wishlist/Lists
+- Saved for Later *(new)*
+- Back-in-stock notifications *(new)*
+- Loyalty points history *(new)*
 - Product reviews and ratings
 - Notifications system
 - Barcode scanning
@@ -269,7 +373,7 @@ Available via the "All products" dropdown, includes:
 - Detailed specifications
 - Price ranges (from/to)
 - Sale/Discount indicators
-- Gift options
+- Gift card products
 
 ### B2B Features
 - Corporate account management
@@ -286,21 +390,15 @@ Available via the "All products" dropdown, includes:
 
 ### Platform
 - **Platform:** Virto Commerce (ASP.NET)
-- **Version:** 2.33.0-pr-1976-d87f-d87f2cb6
+- **Version:** 2.43.0-pr-2200-cbd4-cbd47d7f *(was 2.33.0-pr-1976 in Oct 2025)*
 - **Environment:** QA
 - **GraphQL:** WebSocket connection available
 
 ### URL Patterns
 
 #### Localized URLs
-All pages support localization:
 - Default (English): `/{page}`
 - Localized: `/{language-code}/{page}`
-
-Examples:
-- English Homepage: `/` or `/en/`
-- German Homepage: `/de/`
-- French Products: `/fr/products-with-options`
 
 #### Category URLs
 - Friendly URL: `/{category-slug}`
@@ -308,61 +406,68 @@ Examples:
 
 #### Product URLs
 - Pattern: `/product/{product-uuid}`
-- Example: `/product/46b43d0a-c608-4ddd-87f7-dbf63316e7c7`
 
 ---
 
 ## 11. Total Page Count Estimate
 
-Based on the discovered structure:
-
 | Type | Count | Notes |
 |------|-------|-------|
-| Static Pages | ~15 | Homepage, sign-up, contacts, catalog, etc. |
-| Account Pages | 6 | Dashboard, orders, lists, etc. |
-| Main Categories | ~30 | Including test categories |
-| Products | 20+ visible | Thousands more in catalog |
-| Languages | 13 | All pages × 13 languages |
+| Static Pages | ~14 | Homepage, sign-up, contacts, catalog, soda, etc. |
+| Account Pages | 13 | Dashboard, orders, lists, profile, company info/members, etc. |
+| Main Categories | ~35 | Including subcategories and test categories |
+| Category IDs | 7 | Named ID-based categories |
+| Products | 4 visible | Thousands more in catalog |
+| Languages | 14 | All pages × 14 languages |
 
-**Estimated Total Unique Pages (English only):** 70+  
-**Estimated Total with All Languages:** 900+ (70 × 13)  
-**Estimated Product Pages:** 5,000+ (based on typical B2B catalog size)
-
-**Grand Total Estimate:** 6,000+ unique URLs
+**Estimated Total Unique Pages (English only):** 77+
+**Estimated Total with All Languages:** 1,078+ (77 × 14)
+**Estimated Product Pages:** 5,000+
 
 ---
 
 ## Notes
 
 1. **Dynamic Content:** Many pages contain dynamic content loaded via GraphQL/WebSocket
-2. **Authentication Required:** Account pages require login
+2. **Authentication Required:** Account pages require login — 5 new account pages added since Oct 2025
 3. **Product Variations:** Products with variations may have additional sub-pages
 4. **SEO URLs:** The site uses SEO-friendly URLs in multiple languages
 5. **No Sitemap.xml:** The site does not provide a `/sitemap.xml` file
 6. **Test Categories:** Several E2E test categories exist for automated testing purposes
+7. **Category label change:** ID `61b05fae` was "Allbiz", now labeled "Medical goods"
 
 ---
 
-## How to Use This Sitemap
+## Changelog (vs. March 4, 2026 rev 1)
 
-### For Testing
-- Use language codes to test multilingual functionality
-- Account pages require authentication
-- Product IDs are UUIDs for direct access
+| Change | Details |
+|--------|---------|
+| Account menu redesign | Now a dropdown with user info + organizations list (radio buttons + search). No longer contains account page nav links |
+| New pages | `/company/info`, `/company/members` (Corporate section) |
+| Dashboard sidebar | 4 groups: Purchasing, Marketing, Corporate, User |
+| Notifications in nav bar | Changed from link to button (dropdown panel, no dedicated page) |
+| Top header (authenticated) | Added "Dashboard" quick-link next to Contacts |
+| Product types documented | 3 types: Configurable ("Customize"), Variation-based ("N variations"), Simple (direct add to cart). Full product list added for `/products-with-options` |
 
-### For Development
-- URL patterns follow consistent structure
-- Categories support both slug and UUID access
-- All main pages are localizable
+## Changelog (vs. October 14, 2025)
 
-### For SEO
-- Each language has dedicated URL structure
-- Friendly URLs for categories and products
-- Multiple entry points per language
+| Change | Details |
+|--------|---------|
+| Platform version | 2.33.0 → 2.43.0 |
+| Language added | español (es) — 13 → 14 languages |
+| New account pages | `saved-for-later`, `back-in-stock`, `points-history`, `profile`, `change-password` |
+| New feature | Theme toggle (Light/Dark/Auto) |
+| New subcategories | Alcoholic drinks (6), Bolts (2), Printers (2), Snacks (4), Soft Drinks (2), Kitchen (1) |
+| New category IDs | Security & Protection, Digital products |
+| Category renamed | "Allbiz" → "Medical goods" (same ID) |
+| Homepage sections | "Daily Deals" → "Discounts. Loyalty cards" + new promotional sections |
+| Navigation bar | Replaced top-level nav with inline subcategory navigation |
+| New top-level page | `/soda` |
+| Removed from homepage | `/forgot-password` (may still exist but not linked from main nav) |
+| Homepage title | "Virto Commerce" → "QA & Main page" |
 
 ---
 
-**Last Updated:** October 14, 2025  
-**Tool Used:** Playwright Browser Automation  
-**Coverage:** Main pages, categories, and sample products
-
+**Last Updated:** March 4, 2026 (rev 2)
+**Tool Used:** Playwright Browser Automation (Firefox) + Chrome DevTools MCP
+**Coverage:** Homepage, navigation menus, language selector, account pages, dashboard sidebar
