@@ -56,12 +56,12 @@ vc-mcp-testing-module/
 ├── INDEX.md                 # Top-level repo navigation hub (quick links to all directories)
 ├── .claude/agents/          # Claude Code agent configurations (11 agents, tracked in git)
 │   └── knowledge/           # Shared agent reference files (platform-patterns, browser-quirks, debugging-signals, performance-thresholds)
-├── .claude/skills/          # Skills grouped by category (17 skills in 3 groups, tracked in git)
+├── .claude/skills/          # Skills grouped by category (18 skills in 3 groups, tracked in git)
 │   ├── vc-knowledge/        # VC docs, module analysis, API reference, storefront reference (4 skills)
 │   ├── testing/             # Storybook, accessibility, design, plan, API (5 skills)
 │   └── qa-methodology/      # Process, investigation, evidence, test design, risk, metrics, SBTM, defect (8 skills)
 ├── .claude/commands/        # Slash commands (9 commands, tracked in git)
-├── .mcp.json                # MCP server configuration (tracked but OS-specific)
+├── .mcp.json                # MCP server configuration (gitignored, local-only)
 ├── config/                  # Playwright MCP browser configs + test-suites.json manifest
 ├── ci/                      # CI regression (Docker + Claude Agent SDK, gitignored)
 │   ├── agents/              # CI-specific agent definitions (3 agents)
@@ -81,11 +81,13 @@ vc-mcp-testing-module/
 ├── config.js                # Environment configuration (loads .env)
 ```
 
-**Gitignored:** `settings.json`, `.env`, `test-results/`, `.serena/`, `.playwright-mcp/`, `ci/`, `.github/`, `.claude/settings.local.json`
+**Gitignored:** `settings.json`, `.env`, `.mcp.json`, `test-results/`, `.serena/`, `.playwright-mcp/`, `ci/`, `.github/`, `.claude/settings.local.json`
 
-**Tracked in git:** `.claude/agents/`, `.claude/skills/`, `.claude/commands/` — agent definitions, skills, and slash commands are version-controlled.
+**Tracked in git:** `.claude/agents/`, `.claude/skills/`, `.claude/commands/`, `.claude/hooks/hooks.json`, `.claude/playwright-baseline.json`, `config/` — agent definitions, skills, slash commands, hooks, and browser configs are version-controlled.
 
-**Tracked but local-specific:** `.mcp.json` and `config/` are tracked in git. After cloning, verify MCP configs match your local setup (Windows uses `cmd /c npx`, Linux/Mac uses `npx` directly).
+**Note on `ci/`:** The `ci/` directory is gitignored and will not exist after a fresh clone. It must be created locally. See the CI Regression section for required structure. The `npm run ci:*` scripts will fail without it.
+
+**Note on `.mcp.json`:** This file is gitignored. After cloning, create it locally. Windows uses `cmd /c npx`, Linux/Mac uses `npx` directly. See the MCP Servers section for required server configuration.
 
 ## Architecture: Two Testing Modes
 
@@ -123,10 +125,12 @@ Central configuration for regression orchestration. Defines:
 | **github** | PR review, code search, issue management | N/A (uses `GITHUB_PERSONAL_ACCESS_TOKEN` via `GIT_TOKEN`) |
 | **context7** | Up-to-date library documentation lookup | N/A (HTTP MCP at `mcp.context7.com`, uses `CONTEXT7_API_KEY`) |
 
-Additional MCP servers (configured at user level, not in `.mcp.json`):
+Additional MCP servers (configured at user level or in IDE settings, not in `.mcp.json`):
 - **Chrome DevTools MCP** - Console logs, network requests, performance tracing, HAR export
 - **Atlassian MCP** - JIRA integration for test case management and bug reporting
 - **Figma MCP** - Visual comparison testing against design specs
+
+All 6 servers in the table above are configured in `.mcp.json` (project-level). The 3 additional servers above are typically configured at the user/IDE level.
 
 ## Browser Automation
 
@@ -138,7 +142,7 @@ Additional MCP servers (configured at user level, not in `.mcp.json`):
 
 ## Claude Code Specialized Agents
 
-11 agents in `.claude/agents/` across two teams (QA + BA). See `.claude/agents/README.md` for full documentation. Shared reference files in `.claude/agents/knowledge/`: `platform-patterns.md`, `browser-quirks.md`, `debugging-signals.md`, `performance-thresholds.md` — these are cross-agent knowledge bases that agents should consult during testing.
+11 agents in `.claude/agents/` across two teams (QA + BA). See `.claude/agents/README.md` for full documentation. Shared reference files in `.claude/agents/knowledge/`: `platform-patterns.md`, `browser-quirks.md`, `debugging-signals.md`, `performance-thresholds.md`, `catalog.md`, `store-settings.md`, `white-labeling.md` — these are cross-agent knowledge bases that agents should consult during testing.
 
 ### QA Team (7 agents)
 
@@ -177,7 +181,7 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|module <name>]` | No | Business analysis (full/flows/api/docs/stories/module) |
 | `/ba-stories` | `feature name \| VCST-XXXX` | No | Generate Agile user stories with BDD acceptance criteria |
 
-### Skills (17) — `.claude/skills/` (grouped by category)
+### Skills (18) — `.claude/skills/` (grouped by category)
 
 Skills are slash commands with supporting reference files, organized into 3 category directories. Each skill has a `SKILL.md` with `[Category]` tag in the description. See `.claude/skills/README.md` for full reference.
 
@@ -190,7 +194,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/vc-api` | `xCart \| xCatalog \| REST` | xAPI & REST API query reference | `xapi-query-ref.md` |
 | `/vc-frontend` | `page \| URL \| product type \| account \| menu \| sitemap` | Storefront reference: page URLs, navigation, product types, account structure, test data | `sitemap.md` |
 
-**`testing/` — Testing (5) — manual invocation:**
+**`testing/` — Testing (6) — manual invocation:**
 
 | Skill | Arguments | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|
@@ -198,6 +202,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/qa-accessibility` | `page URL \| component \| full` | WCAG 2.1 AA accessibility audit (POUR principles) | `wcag-accessibility-checklist.md` |
 | `/qa-design` | `component \| page \| flow` | Design system consistency & UX heuristics | `design-system-consistency.md`, `ux-heuristic-evaluation.md` |
 | `/qa-plan` | `feature \| domain \| VCST-XXXX` | Test plans from E2E scenario catalog (105 scenarios) | `e2e-scenario-catalog.md` |
+| `/qa-checklist` | `domain \| feature \| VCST-XXXX \| new <domain>` | Test case writing checklists (18 domains + Bug Fix Verification, 158 items) | `domain-checklists.md`, `checklist-creation-guide.md` |
 | `/qa-api` | `endpoint \| module \| graphql` | REST API & GraphQL xAPI testing | `test-cases-api-graphql.md` |
 
 **`qa-methodology/` — QA Methodology (8) — manual invocation:**
@@ -217,7 +222,7 @@ Usage: `/qa-smoke`, `/qa-test VCST-1234`, `/qa-storybook Button`, `/vc-docs dyna
 
 **Frontmatter fields:** `description` (shown in `/` menu with `[Category]` tag), `argument-hint` (autocomplete hint), `disable-model-invocation: true` (prevents Claude from auto-triggering). Only read-only commands/skills (`/qa-status`, `/qa-env-check`, `/vc-docs`, `/vc-module`, `/vc-api`, `/vc-frontend`) allow model invocation.
 
-**Agent Teams mode** is enabled via `settings.json` (`teammateMode: "in-process"`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`). The `settings.json` also configures a `post_edit` hook that runs TypeScript type-checking after edits.
+**Agent Teams mode** is enabled via `settings.json` (`teammateMode: "in-process"`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`). A `post_edit` hook in `.claude/hooks/hooks.json` runs TypeScript type-checking (`npx tsc --noEmit`) after edits.
 
 **Parallel execution:** When running multiple agents in parallel, each agent MUST use its own separate browser session via a different Playwright MCP server. Agents sharing a browser will interfere with each other (navigation, cookies, state). Assign one MCP server per agent:
 

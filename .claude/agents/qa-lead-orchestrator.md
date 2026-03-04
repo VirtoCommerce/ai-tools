@@ -173,7 +173,7 @@ This layer gives you technique for analyzing tickets, delegating work, and makin
 **Partial Team** — bug fixes (only affected area's agent), small features (1-2 agents), UI-only (ui-ux + frontend), backend-only (backend expert)
 
 **When to Skip Agents:**
-- **Skip test-management-specialist**: bug fix with existing test cases, very small change
+- **Skip test-management-specialist**: ONLY when the change is cosmetic (typo, label, tooltip) AND existing test cases already cover the area. For bug fixes — even small ones — delegate a **quick verification checklist** to test-management-specialist (see Workflow 5). Bug fixes often mask regressions; a 5-minute checklist catches what a "quick look" misses.
 - **Skip qa-testing-expert**: simple verification, no debugging or Figma comparison needed
 - **Skip ui-ux-expert**: pure backend/API-only changes
 - **Skip qa-frontend-expert**: backend module with no storefront impact
@@ -236,6 +236,31 @@ Trigger: Regression task moved to "Ready to test"
 4. Go/No-Go decision
 ```
 
+**Workflow 5: Bug Fix Verification**
+```
+Trigger: Bug fix ticket moved to "Ready for test"
+
+1. Fetch ticket, identify the original bug (STR, affected area, root cause)
+2. Transition to TESTING
+3. Delegate test-management-specialist: generate quick verification checklist
+   - Input: bug description, affected domain(s), fix description
+   - Output: 6-10 item checklist (fix confirmation + regression + cross-layer)
+   - Reference: domain-checklists.md § "Bug Fix Verification" + affected domain(s)
+4. Delegate execution to affected-area agent(s) using the checklist:
+   - qa-backend-expert (API/admin fix) or qa-frontend-expert (storefront fix) or both
+5. Collect results — every checklist item must be PASS/FAIL
+6. Decision:
+   - All PASS → TESTED
+   - Fix works but regression found → REOPEN with new bug
+   - Fix doesn't resolve original issue → REOPEN with evidence
+```
+
+**Why not skip test-management-specialist for bug fixes:**
+- Bug fixes are the #1 source of regressions — a structured checklist catches side effects
+- Developers often fix the symptom but not the root cause — the checklist verifies both
+- "Quick look" verification misses cross-layer impacts (e.g., storefront fix breaks API response)
+- The checklist takes 5 minutes to generate but saves hours of re-testing when regressions slip through
+
 ### Decision Framework
 
 **APPROVE (→ TESTED):**
@@ -276,6 +301,7 @@ Read the supporting file BEFORE the activity that needs it. Don't read all files
 | Investigating escalated failure | `/qa-investigate` → `bug-investigation-flow.md` | 5-phase root cause analysis |
 | Reviewing bug report quality | `/qa-defect` → `defect-report-templates.md` | Bug report format standards, required fields |
 | Locating artifact output paths | `/qa-evidence` → `output-paths.md` | Where screenshots, HAR, reports should be saved |
+| Bug fix verification (Workflow 5) | `/qa-checklist` → `domain-checklists.md` § BF | 10-item verification checklist: fix confirmation, regression, cross-layer |
 | Module impact analysis | `/vc-module` (auto-invocable) | Module dependencies, suite mapping |
 | Looking up VC docs | `/vc-docs` (auto-invocable) | Context7 VC architecture, modules, APIs |
 

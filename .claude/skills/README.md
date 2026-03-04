@@ -1,6 +1,6 @@
 # .claude/skills/ — Skill Directory
 
-> 17 skills organized in 3 category groups. Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
+> 18 skills organized in 3 category groups. Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
 
 ## Directory Structure
 
@@ -19,7 +19,7 @@
 │       ├── SKILL.md                 # Storefront reference: URLs, navigation, product types, account structure
 │       └── sitemap.md               # Full site map (updated March 2026)
 │
-├── testing/                         # Testing (5) — manual invocation
+├── testing/                         # Testing (6) — manual invocation
 │   ├── qa-storybook/
 │   │   ├── SKILL.md                 # Storybook visual regression
 │   │   ├── visual-regression-testing.md
@@ -34,6 +34,10 @@
 │   ├── qa-plan/
 │   │   ├── SKILL.md                 # Test plans from E2E catalog
 │   │   └── e2e-scenario-catalog.md
+│   ├── qa-checklist/
+│   │   ├── SKILL.md                 # Test case writing checklist creation
+│   │   ├── domain-checklists.md     # 18 domain checklists + Bug Fix Verification (158 items)
+│   │   └── checklist-creation-guide.md
 │   └── qa-api/
 │       ├── SKILL.md                 # REST API & GraphQL xAPI testing
 │       └── test-cases-api-graphql.md
@@ -82,7 +86,7 @@ Auto-invocable, read-only reference skills. No side effects.
 | `/vc-api` | xAPI & REST API query/mutation reference | xapi-query-ref.md |
 | `/vc-frontend` | Storefront reference: page URLs, navigation, product types, account structure, test data | sitemap.md |
 
-## Testing (5) — `testing/`
+## Testing (6) — `testing/`
 
 Manual invocation, delegates to specialist agents.
 
@@ -92,6 +96,7 @@ Manual invocation, delegates to specialist agents.
 | `/qa-accessibility` | ui-ux-expert | wcag-accessibility-checklist.md |
 | `/qa-design` | ui-ux-expert | design-system-consistency.md, ux-heuristic-evaluation.md |
 | `/qa-plan` | test-management-specialist | e2e-scenario-catalog.md |
+| `/qa-checklist` | test-management-specialist | domain-checklists.md, checklist-creation-guide.md |
 | `/qa-api` | qa-backend-expert | test-cases-api-graphql.md |
 
 ## QA Methodology (8) — `qa-methodology/`
@@ -134,6 +139,8 @@ qa-defect --> references qa-risk (severity/priority classification)
 qa-defect --> references qa-evidence (report validation, sign-off)
 qa-defect --> feeds into qa-metrics (defect counts, escape rates, reopen rates)
 qa-test-design --> feeds into qa-plan (test suite composition)
+qa-checklist --> feeds into qa-plan (ensures domain coverage)
+qa-checklist --> references qa-test-design (expand items into test cases)
 qa-risk --> informs qa-test-design (technique selection by risk level)
 qa-risk --> informs qa-sbtm (charter prioritization)
 qa-metrics --> enforced by regression-orchestrator (gate evaluation)
@@ -153,7 +160,7 @@ Learning loop: qa-investigate (bug) --> qa-defect (triage) --> qa-risk (update) 
 | qa-backend-expert | qa-api, qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm |
 | qa-testing-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-sbtm |
 | ui-ux-expert | qa-storybook, qa-accessibility, qa-design, qa-evidence, qa-investigate |
-| test-management-specialist | qa-plan, qa-evidence, qa-test-design, qa-risk, qa-process |
+| test-management-specialist | qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-risk, qa-process |
 | regression-orchestrator | qa-metrics (gate enforcement after runs) |
 
 ## Frontmatter Reference

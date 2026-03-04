@@ -53,6 +53,8 @@ The site now supports **14 languages** with locale-specific URLs:
 | Bulk Order | `/bulk-order` | Bulk order page |
 | Compare | `/compare` | Product comparison page |
 | Cart | `/cart` | Shopping cart page |
+| Checkout Payment | `/checkout/payment` | Checkout payment step |
+| Forgot Password | `/forgot-password` | Password recovery page |
 | Soda | `/soda` | Soda category / promo landing *(new)* |
 
 ---
@@ -413,15 +415,15 @@ Available via the "All products" button, includes:
 
 | Type | Count | Notes |
 |------|-------|-------|
-| Static Pages | ~14 | Homepage, sign-up, contacts, catalog, soda, etc. |
+| Static Pages | ~16 | Homepage, sign-up, contacts, catalog, checkout/payment, forgot-password, soda, etc. |
 | Account Pages | 13 | Dashboard, orders, lists, profile, company info/members, etc. |
 | Main Categories | ~35 | Including subcategories and test categories |
 | Category IDs | 7 | Named ID-based categories |
 | Products | 4 visible | Thousands more in catalog |
 | Languages | 14 | All pages × 14 languages |
 
-**Estimated Total Unique Pages (English only):** 77+
-**Estimated Total with All Languages:** 1,078+ (77 × 14)
+**Estimated Total Unique Pages (English only):** 79+
+**Estimated Total with All Languages:** 1,106+ (79 × 14)
 **Estimated Product Pages:** 5,000+
 
 ---
@@ -463,7 +465,6 @@ Available via the "All products" button, includes:
 | Homepage sections | "Daily Deals" → "Discounts. Loyalty cards" + new promotional sections |
 | Navigation bar | Replaced top-level nav with inline subcategory navigation |
 | New top-level page | `/soda` |
-| Removed from homepage | `/forgot-password` (may still exist but not linked from main nav) |
 | Homepage title | "Virto Commerce" → "QA & Main page" |
 
 ---

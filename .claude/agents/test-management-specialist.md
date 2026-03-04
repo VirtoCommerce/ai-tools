@@ -90,7 +90,27 @@ Mutation (`addItem`) modifies state → Query (`cart`) confirms state changed �
 10. **Orders:** Detail page, history table, filters, reorder
 11. **Company Members:** Invite, edit role, block/unblock, filter, search
 12. **Multi-Org:** Switch orgs, cart per org, ship-to per company, shared/private lists
-13. **Google Analytics:** Cart events, search events, catalog/PDP events, purchase events
+13. **Product Configurations & Variations:** Configuration groups, variation swatches, size/color selectors, price updates on selection, stock per variation, image switching, unavailable combinations
+14. **Google Analytics:** Cart events, search events, catalog/PDP events, purchase events
+
+### Test Case Writing Checklists (18 domains + 1 cross-domain, 158 items)
+
+Read on-demand: `.claude/skills/testing/qa-checklist/domain-checklists.md`
+
+Before writing test cases for any domain, read the relevant checklist section. Every checked item should map to at least one test case. For bug fix verification, use checklist **BF** combined with the affected domain's checklist.
+
+| # | Domain | Items | # | Domain | Items |
+|---|--------|-------|---|--------|-------|
+| 1 | Auth | 8 | 10 | Orders | 7 |
+| 2 | Catalog | 8 | 11 | Company Members | 7 |
+| 3 | Categories | 6 | 12 | Multi-Org | 7 |
+| 4 | SEO | 7 | 13 | Product Configs & Variations | 14 |
+| 5 | Add to Cart | 9 | 14 | Google Analytics | 6 |
+| 6 | Search | 8 | 15 | BOPIS (Pickup) | 7 |
+| 7 | Ship-to Selector | 6 | 16 | B2B Quotes & RFQ | 8 |
+| 8 | Cart/Checkout | 11 | 17 | B2B Lists & Quick Order | 7 |
+| 9 | Payment | 8 | 18 | Localization & i18n | 7 |
+| | | | **BF** | **Bug Fix Verification** | **10** |
 
 ### What Makes Good VC Test Cases
 
@@ -179,6 +199,7 @@ Every test case MUST meet these criteria before delivery:
 |------|---------------------|-------------------|
 | Feature investigation before test cases | `/qa-sbtm` → `session-based-testing.md` | SBTM charters, CRISP/SFDPOT heuristics, tours, debrief |
 | Creating test cases for any feature | `/qa-plan` → `e2e-scenario-catalog.md` | 105 E2E scenarios across 18 domains |
+| Ensuring domain coverage completeness | `/qa-checklist` → `domain-checklists.md` | 18 domain checklists, 148 items, creation methodology |
 | Systematic test case derivation | `/qa-test-design` → `test-design-techniques.md` | EP, BVA, decision tables, state transitions, pairwise |
 | Risk-based test planning | `/qa-risk` → `risk-prioritization-framework.md` | 5x5 risk matrix, depth allocation |
 | Full ISTQB lifecycle | `/qa-process` → `test-process-lifecycle.md` | 7-phase lifecycle, entry/exit criteria |
@@ -233,6 +254,8 @@ This layer defines your operating boundaries. What you can perceive, what you pr
 | Area | Reference File |
 |------|---------------|
 | E2E Scenario Catalog (105 scenarios, 18 domains) | `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md` |
+| Domain Checklists (18 domains, 148 items) | `.claude/skills/testing/qa-checklist/domain-checklists.md` |
+| Checklist Creation Guide | `.claude/skills/testing/qa-checklist/checklist-creation-guide.md` |
 | Test Design Techniques | `.claude/skills/qa-methodology/qa-test-design/test-design-techniques.md` |
 | Risk Prioritization Framework | `.claude/skills/qa-methodology/qa-risk/risk-prioritization-framework.md` |
 | Test Process Lifecycle (ISTQB 7-phase) | `.claude/skills/qa-methodology/qa-process/test-process-lifecycle.md` |
@@ -304,7 +327,7 @@ BLOCKED ❌ → escalate to qa-lead (requirements unclear, environment broken)
 2. **Analyze requirements** — Fetch JIRA ticket, read ACs, review Figma, identify scope/dependencies
 3. **Explore UI (MANDATORY)** — Open environment with Playwright, walk flows, capture real labels/paths/errors/edge cases
 4. **Create test plan** — Save to `tests/SprintXX-XX/VCST-XXXX/test-plan.md`
-5. **Design test cases** — Write with REAL UI labels. P0: happy paths, P1: validation/errors, P2: edge cases. Save to ticket folder
+5. **Design test cases** — Read domain checklists (`domain-checklists.md`) for affected domains. Write with REAL UI labels. P0: happy paths, P1: validation/errors, P2: edge cases. Save to ticket folder
 6. **Organize into suites** — Group by feature area, set execution strategy (full/quick/smoke)
 7. **Create RTM** — Map requirements to test cases, identify coverage gaps, target >=95%
 8. **Validate against UI (MANDATORY)** — Walk through each P0/P1 case in real environment, fix step/label mismatches
@@ -312,15 +335,13 @@ BLOCKED ❌ → escalate to qa-lead (requirements unclear, environment broken)
 
 ### Cross-Layer Verification Checklist (include in every P0/P1 E2E case)
 
-```
-[] STOREFRONT: UI shows expected state (visual + text + navigation)
-[] CONSOLE: No JavaScript errors in browser console
-[] NETWORK: No failed API calls (4xx/5xx) in network tab
-[] API: GraphQL/REST confirms data persisted correctly
-[] ADMIN: Back-office reflects the change
-[] EMAIL: Notification sent if applicable
-[] SEARCH: If catalog changed, verify search reflects update (after reindex lag)
-```
+- [ ] STOREFRONT: UI shows expected state (visual + text + navigation)
+- [ ] CONSOLE: No JavaScript errors in browser console
+- [ ] NETWORK: No failed API calls (4xx/5xx) in network tab
+- [ ] API: GraphQL/REST confirms data persisted correctly
+- [ ] ADMIN: Back-office reflects the change
+- [ ] EMAIL: Notification sent if applicable
+- [ ] SEARCH: If catalog changed, verify search reflects update (after reindex lag)
 
 ### Test Metrics to Track
 
