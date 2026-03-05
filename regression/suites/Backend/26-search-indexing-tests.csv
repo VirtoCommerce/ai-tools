@@ -1,12 +1,57 @@
 ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
 SRCH-001,Search by full product name (Elastic),Elastic Search,Functional,Critical,3m,Elastic search configured; products indexed,"1. Navigate to Admin > Search
 2. Search by full product name","Product found and displayed in results",C139043,Not Automated
-SRCH-002,Search by partial input (few symbols),Elastic Search,Functional,High,2m,Elastic search configured; products indexed,"1. Search by first few characters of product name","Matching products returned in results",C139044,Not Automated
-SRCH-003,Search by multiple words,Elastic Search,Functional,High,2m,Products indexed,"1. Search using multiple words from product name/description","Products matching multi-word query returned",C139046,Not Automated
-SRCH-004,Search with incorrect value - no results,Elastic Search,Negative,Medium,2m,Products indexed,"1. Search with random/incorrect text","No results returned; appropriate empty state shown",C139045,Not Automated
+SRCH-002,Search by partial input (few symbols),Elastic Search,Functional,High,3m,Elastic search configured; products indexed including a product named 'Bolt'; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Search
+2. Select the Products index tab or entity type
+3. Enter the first 3 characters 'Bol' in the search field
+4. Click Search or press Enter
+5. Inspect the returned results list
+6. Verify the result count displayed above the results
+7. Click on a result to confirm it is a product whose name contains 'Bol'","- Search field accepts partial text 'Bol' without errors
+- Results list is returned within 3 seconds
+- Results contain at least one product with name matching 'Bolt' or starting with 'Bol'
+- Result count is greater than 0
+- No full-name match is required; prefix/partial match is sufficient
+- Results do not include products with completely unrelated names",C139044,Not Automated
+SRCH-003,Search by multiple words,Elastic Search,Functional,High,3m,Elastic search configured; products indexed including a product described with 'stainless steel bolt'; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Search
+2. Select the Products index tab or entity type
+3. Enter the multi-word query 'stainless steel bolt' in the search field
+4. Click Search or press Enter
+5. Review the returned results list
+6. Verify that results contain products relevant to all or most of the entered words
+7. Check that result ranking places the closest matches at the top","- Search accepts the multi-word input 'stainless steel bolt' without errors
+- Results are returned within 3 seconds
+- At least one result is relevant to the query (e.g. product name or description contains 'stainless', 'steel', or 'bolt')
+- Results are ranked by relevance — products matching more words appear higher
+- No error or empty state is shown when multiple words are entered
+- Irrelevant products that share no keywords with the query are not returned",C139046,Not Automated
+SRCH-004,Search with incorrect value - no results,Elastic Search,Negative,Medium,3m,Elastic search configured; products indexed; no product exists with the search term used; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Search
+2. Select the Products index tab or entity type
+3. Enter the nonsensical search term 'xyznonexistent12345' in the search field
+4. Click Search or press Enter
+5. Observe the results area for returned items
+6. Check for a zero-results count or empty state message
+7. Verify no error page or application crash occurs","- Search accepts the nonsensical input without errors
+- Results list returns zero items
+- Result count displays 0 or equivalent (e.g. 'No results found')
+- An appropriate empty state message is shown to indicate no matches
+- No application error, exception stack trace, or crash is shown
+- UI remains fully functional and a new search can be initiated after the empty result",C139045,Not Automated
 SRCH-005,Lucene search by full product name,Lucene Search,Functional,Medium,3m,Lucene search provider configured,"1. Configure Lucene search provider
 2. Search by full product name","Product found using Lucene search",C180636,Not Automated
-SRCH-006,Lucene search by partial input,Lucene Search,Functional,Medium,2m,Lucene search configured,"1. Search by first few characters","Matching products returned via Lucene",C180637,Not Automated
+SRCH-006,Lucene search by partial input,Lucene Search,Functional,Medium,3m,Lucene search provider configured and set as active; products indexed including a product named 'Bolt'; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Search
+2. Verify that Lucene is the active search provider (check Settings > Search if needed)
+3. Select the Products index tab or entity type in the Lucene search view
+4. Enter the partial text 'Bol' in the search field
+5. Click Search or press Enter
+6. Inspect the returned results list
+7. Verify result count and relevance of returned products","- Lucene search provider is confirmed active before executing the search
+- Search field accepts partial input 'Bol' without errors
+- Results are returned within 3 seconds
+- At least one product with name starting with or containing 'Bol' (e.g. 'Bolt') is present in results
+- Result count is greater than 0
+- Lucene-specific partial text matching is applied (wildcard or prefix matching)
+- Results are consistent with what Elastic Search returns for the same partial input",C180637,Not Automated
 SRCH-007,Run index build,Index Management,Functional,Critical,5m,Search module installed; products exist,"1. Navigate to Search > Index
 2. Click Build/Run Index
 3. Wait for completion","Index built successfully; status shows completed",C327396,Katalon
@@ -90,3 +135,87 @@ SRCH-039,Settings - enable scale-out indexing,Settings,Functional,Medium,3m,Admi
 SRCH-040,Scalable indexation verification,Scalable Indexation,Performance,Low,10m,Multi-instance configuration; large dataset,"1. Configure scalable indexation partitions
 2. Run indexation with x2 scaling
 3. Verify product schema and partitioning","Scalable indexation completes correctly; products searchable across partitions",C356720 C356721 C356722,Not Automated
+SRCH-041,Blue-Green Index Backup Before Rebuild,Index Management,Functional,Medium,4m,Blue-green indexing enabled; active index contains indexed data; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Search > Index Management
+2. Identify the currently active index and note its document count
+3. Locate the Backup option in the index management toolbar or context menu
+4. Select the active index for backup
+5. Click Backup and wait for the backup operation to complete
+6. Verify that the backup operation status shows success
+7. Initiate a full index rebuild on the active index
+8. After rebuild completes, verify the backup still exists and is accessible","- Active index is identified and its document count is recorded before backup
+- Backup option is available in the index management UI
+- Backup operation starts without errors
+- Backup completion status is shown (success/completed)
+- The backup operation does not interrupt the active index availability
+- Backup remains intact after a subsequent rebuild operation
+- Backup can be referenced for rollback if rebuild fails",C329230,Not Automated
+SRCH-042,Blue-Green Index Swap — Active and Inactive Exchange,Index Management,Functional,High,4m,Blue-green indexing enabled; both active and inactive indices are built and contain data; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Search > Index Management
+2. Note the current active index name/identifier and its document count
+3. Note the current inactive (standby) index name/identifier and its document count
+4. Click the Swap Indexes button
+5. Confirm the swap operation in the confirmation dialog if prompted
+6. Wait for the swap operation to complete
+7. Refresh the Index Management page
+8. Verify which index is now marked as active","- Swap operation is initiated without errors
+- Confirmation dialog (if shown) correctly describes the swap action
+- After swap, the previously inactive index is now marked as active
+- After swap, the previously active index is now marked as inactive (standby)
+- Document counts on both indices remain unchanged after the swap
+- Swap status is updated in the UI without requiring a full page reload
+- System search queries now use the newly activated index",C329231,Not Automated
+SRCH-043,Cancel Ongoing Index Rebuild,Index Management,Functional,Medium,4m,Index rebuild is in progress (triggered via Build or Rebuild action); admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Search > Index Management
+2. Initiate a full index rebuild by clicking Build or Rebuild
+3. Observe that the index status changes to 'Building' or 'In Progress'
+4. While the build is actively running, locate the Cancel button
+5. Click Cancel to stop the ongoing rebuild
+6. Wait for the cancellation to be acknowledged by the system
+7. Refresh the Index Management blade
+8. Verify the final state of the index after cancellation","- Index build starts successfully and status shows 'Building' or 'In Progress'
+- Cancel button is visible and clickable while the build is in progress
+- Cancellation request is accepted without errors
+- Index status transitions from 'Building' to 'Cancelled' or 'Idle' after cancellation
+- System does not crash or enter an inconsistent state after cancellation
+- Partial index data from the cancelled build does not corrupt the existing active index
+- A new build can be initiated successfully after the cancellation",C329028,Not Automated
+SRCH-044,Multi-Instance Index Refresh,Index Management,Functional,Medium,5m,Multi-instance Virto Commerce deployment configured; search index exists; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Search > Index Management
+2. Verify the current index status and note the document count
+3. Add a new product or modify an existing product to create a pending index change
+4. Navigate back to Search > Index Management
+5. Click the Refresh button on the index blade
+6. Observe the index status and document count after refresh
+7. Verify that the refresh operation broadcasts to all running instances
+8. Confirm that search results on the storefront reflect the refreshed index data","- Refresh button is available in the index management UI
+- Refresh operation completes without errors
+- Document count updates after the refresh to reflect the latest indexed data
+- Index status shows 'Active' or 'Ready' after successful refresh
+- Newly added or modified product is discoverable in search after the refresh
+- Multi-instance coordination ensures all instances serve the refreshed index
+- No stale data returned from any instance after refresh completes",C338456,Not Automated
+SRCH-045,Blue-Green Multi-Instance Index Coordination,Index Management,Functional,Medium,6m,Multi-instance deployment with blue-green indexing enabled; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Search > Index Management
+2. Note the currently active index identifier across the instance configuration
+3. Build a new index on the inactive (standby) slot
+4. Wait for the inactive index build to complete successfully
+5. Execute a Swap Indexes operation to promote the standby index to active
+6. Verify the swap completes in the primary instance
+7. Check each additional instance to confirm they all report the same active index
+8. Execute a search query from the storefront and inspect which index serves the results","- All instances initially use the same active index before the swap
+- Inactive index build completes without affecting active index service
+- Swap operation is reflected across all instances within a reasonable timeframe (e.g., < 30 seconds)
+- All instances report the same newly active index after the swap
+- No instance continues to serve search results from the old (now inactive) index after the coordination period
+- Search queries return consistent results across all instances after swap
+- Zero downtime observed during the swap coordination",C338469,Not Automated
+SRCH-046,Partial Index Rebuild — Single Document Type,Index Management,Functional,Medium,4m,Multiple document types indexed (e.g. Products, Customers, Orders); admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Search > Index Management
+2. Identify available document type options (e.g. Product, Customer, Order, Category)
+3. Select only the 'Product' document type for rebuild
+4. Click Build or Rebuild for the selected document type only
+5. Monitor the rebuild progress and wait for completion
+6. Verify that only the Product index was rebuilt by checking index timestamps or build logs
+7. Verify that other document type indices (Customer, Order) were not rebuilt
+8. Run a product search to confirm products are correctly indexed after partial rebuild","- Document type selector allows choosing a single type for rebuild
+- Partial rebuild starts for the selected document type only
+- Rebuild completion status shows success for the Product index
+- Index timestamp for Products is updated to the current time
+- Index timestamps for other document types (Customer, Order) remain unchanged
+- Product search returns correct results after the partial rebuild
+- System stability is maintained; no errors or corruption in non-rebuilt indices",,Not Automated

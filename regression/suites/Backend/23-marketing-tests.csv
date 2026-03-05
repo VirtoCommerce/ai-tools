@@ -234,3 +234,225 @@ MKT-051,Settings tooltips,Marketing > Settings,Functional,Medium,3min,Admin logg
 3. Click tooltip for field1 > Verify unfolds
 4. Click tooltip for field2 > Verify field2 unfolds, field1 folds
 5. Click Hide > Verify all fold","Tooltips behave correctly",C338431,None
+MKT-052,Publishing Condition — All Stores,Marketing > Content Publishing,Functional,High,5min,"Admin logged in to Backend
+Content publishing exists [MKT-010]","1. Navigate to ${BACK_URL}/marketing/dynamicContent
+2. Open an existing content publishing
+3. Navigate to Publishing Conditions section
+4. Click Add condition
+5. Select condition type ""Store"" and set value to All Stores
+6. Save the publishing
+7. Verify the condition is saved and displayed
+8. Check that content appears on all configured stores in storefront","- Publishing condition ""All Stores"" is added successfully
+- Condition is displayed in the conditions list with correct type and value
+- Content publishing is active across all stores
+- Storefront renders the content for all store contexts
+- No store restriction errors appear in the system logs",C184649,Not Automated
+MKT-053,Publishing Condition — Specific Store,Marketing > Content Publishing,Functional,High,5min,"Admin logged in to Backend
+Content publishing exists [MKT-010]
+Multiple stores configured","1. Navigate to ${BACK_URL}/marketing/dynamicContent
+2. Open an existing content publishing
+3. Navigate to Publishing Conditions section
+4. Click Add condition
+5. Select condition type ""Store"" and choose a specific store from the dropdown
+6. Save the publishing
+7. Verify the condition is saved
+8. Open storefront for the specified store and verify content is visible
+9. Open storefront for a different store and verify content is NOT visible","- Specific store condition is added and saved correctly
+- Content publishing displays the selected store name in the conditions list
+- Content is visible on the assigned specific store storefront
+- Content is not visible on other stores
+- Condition can be edited or removed independently",,Not Automated
+MKT-054,Publishing Condition — Specific Contact,Marketing > Content Publishing,Functional,High,5min,"Admin logged in to Backend
+Content publishing exists [MKT-010]
+Contact exists in the system","1. Navigate to ${BACK_URL}/marketing/dynamicContent
+2. Open an existing content publishing
+3. Navigate to Publishing Conditions section
+4. Click Add condition
+5. Select condition type targeting a specific contact or user
+6. Search for and select an existing contact
+7. Save the publishing
+8. Verify the condition is saved with the contact name
+9. Login to storefront as that contact and verify content visibility","- Contact-based publishing condition is added and saved
+- Condition displays the selected contact name or identifier
+- Content is visible to the targeted contact on the storefront
+- Content is not visible to other (non-targeted) contacts
+- Condition persists after saving and page refresh",,Not Automated
+MKT-055,Content Scheduling — Start Date,Marketing > Content Publishing,Functional,High,5min,"Admin logged in to Backend
+Content publishing exists [MKT-010]","1. Navigate to ${BACK_URL}/marketing/dynamicContent
+2. Open an existing content publishing
+3. Click Edit to open the editing form
+4. Set Start Date to a future date and time (e.g., tomorrow at 09:00)
+5. Leave End Date empty
+6. Save the publishing
+7. Verify start date is saved and displayed correctly
+8. Verify content is NOT visible on storefront before the start date
+9. Advance system time or wait for start date and verify content becomes visible","- Start Date field accepts a valid future date and time
+- Published content is inactive and not shown on storefront before the start date
+- After the start date is reached the content becomes active automatically
+- Start date and time are displayed correctly in the content publishing list
+- Is Active flag is automatically managed based on date range",,Not Automated
+MKT-056,Content Scheduling — End Date,Marketing > Content Publishing,Functional,High,5min,"Admin logged in to Backend
+Content publishing with Is Active = TRUE exists","1. Navigate to ${BACK_URL}/marketing/dynamicContent
+2. Open an active content publishing
+3. Click Edit
+4. Set End Date to a past date and time
+5. Save the publishing
+6. Verify the content publishing is now inactive or expired
+7. Check storefront to confirm content is no longer visible
+8. Set End Date to a future date and save
+9. Verify content becomes visible on storefront again","- End Date field accepts valid date and time values
+- Setting End Date to a past date deactivates the content publishing
+- Content is no longer rendered on the storefront after the end date
+- Setting a future End Date re-enables content visibility
+- Expired content publishing shows appropriate status in the list",,Not Automated
+MKT-057,Content Scheduling — Date Range,Marketing > Content Publishing,Functional,High,8min,"Admin logged in to Backend
+Content publishing exists [MKT-010]","1. Navigate to ${BACK_URL}/marketing/dynamicContent
+2. Open an existing content publishing
+3. Click Edit
+4. Set Start Date to a past date (e.g., yesterday)
+5. Set End Date to a future date (e.g., next week)
+6. Save the publishing
+7. Verify content is currently visible on storefront (within the date range)
+8. Update End Date to a past date and save
+9. Verify content is no longer visible on storefront
+10. Verify that Start Date before End Date validation is enforced","- Both Start Date and End Date can be set simultaneously
+- Content is visible only when the current date is within the defined range
+- Setting End Date earlier than Start Date triggers a validation error
+- Content automatically deactivates when End Date is reached
+- Date range is clearly displayed in the content publishing details",,Not Automated
+MKT-058,Dynamic Expression Content Items — Create Expression-Based Content,Marketing > Content Items,Functional,High,8min,"Admin logged in to Backend
+Dynamic expression content item type available","1. Navigate to ${BACK_URL}/marketing/dynamicContent
+2. Click on Content Items in the Dynamic Content section
+3. Click Add to create a new content item
+4. Select the expression-based or dynamic content type
+5. Configure the expression with dynamic variables (e.g., customer name, product)
+6. Enter the HTML template using expression syntax
+7. Click Create and verify the item is created
+8. Link the content item to a content publishing
+9. Verify the expression is evaluated correctly on the storefront","- Expression-based content item is created successfully
+- Dynamic expression syntax is accepted in the HTML field
+- Content item appears in the list with correct name and type
+- When rendered on the storefront, dynamic expressions evaluate to actual values
+- Invalid expression syntax shows a helpful error message during creation",,Not Automated
+MKT-059,Promotion — Catalog Discount,Marketing > Promotions,Functional,High,8min,"Admin logged in to Backend
+Catalog with products exists","1. Navigate to ${BACK_URL}/marketing/promotions
+2. Click Add and enter a promotion name
+3. Set the promotion type to Catalog discount
+4. Configure catalog condition: select a product category
+5. Configure effect: set percentage discount (e.g., 10% off)
+6. Set Is Active = TRUE and save the promotion
+7. Open storefront and navigate to the targeted category
+8. Verify product prices reflect the 10% discount
+9. Verify products outside the category are not discounted","- Catalog discount promotion is created and saved with all configured parameters
+- Promotion appears in the promotions list with Catalog type
+- Products in the targeted category show the configured percentage discount on storefront
+- Discount is applied to the base price and shown with original and discounted prices
+- Products outside the targeted category are not affected by the promotion",,Not Automated
+MKT-060,Promotion — Cart Discount,Marketing > Promotions,Functional,High,8min,"Admin logged in to Backend
+Products exist for cart testing","1. Navigate to ${BACK_URL}/marketing/promotions
+2. Click Add and enter a promotion name
+3. Configure cart condition: set minimum cart subtotal (e.g., $50)
+4. Configure effect: set fixed amount discount (e.g., $5 off cart subtotal)
+5. Set Is Active = TRUE and save the promotion
+6. Open storefront and add products totaling less than $50
+7. Verify the cart discount is NOT applied
+8. Add more products to exceed $50 subtotal
+9. Verify the $5 discount is applied to the cart total","- Cart discount promotion is created with fixed amount effect
+- Discount is not applied when cart subtotal is below the minimum threshold
+- Discount is applied automatically when cart subtotal meets or exceeds the condition
+- Discounted amount is clearly shown in the cart and checkout summary
+- Promotion name is displayed in the cart alongside the discount line item",,Not Automated
+MKT-061,Promotion — Coupon Code,Marketing > Promotions,Functional,High,8min,"Admin logged in to Backend
+Promotion exists [MKT-021]","1. Navigate to ${BACK_URL}/marketing/promotions
+2. Open an existing promotion
+3. Navigate to the Coupon management section
+4. Click Add coupon and enter a unique coupon code (e.g., SAVE10)
+5. Set max uses to 100 and max uses per user to 1
+6. Save the coupon
+7. Open storefront and add products to cart
+8. Enter the coupon code at checkout
+9. Verify the promotion discount is applied
+10. Verify the coupon code appears in the order summary","- Coupon code is created and linked to the promotion successfully
+- Coupon code field accepts alphanumeric characters
+- Entering the correct code on storefront activates the associated promotion
+- Discount from the promotion is applied to the cart immediately after coupon entry
+- Applied coupon code is visible in the cart and order summary
+- Invalid or expired coupon code shows an appropriate error message",C184622,Not Automated
+MKT-062,Promotion — Usage Limit,Marketing > Promotions,Functional,High,8min,"Admin logged in to Backend
+Promotion with coupon exists [MKT-061]","1. Navigate to ${BACK_URL}/marketing/promotions
+2. Open a promotion with coupon
+3. Edit the coupon and set Maximum uses number to 2
+4. Set Maximum uses per user to 1
+5. Save the coupon
+6. Use the coupon code on storefront for User1 and complete checkout
+7. Attempt to use the same coupon code again with User1
+8. Verify the per-user limit is enforced
+9. Use the coupon code with User2 to consume the global limit
+10. Attempt a third usage and verify it is blocked","- Maximum uses number limits total redemptions across all users
+- Maximum uses per user limits redemptions for a single user
+- Coupon is accepted when within usage limits
+- Second usage by the same user is rejected with an appropriate error message
+- Coupon is blocked for all users after the global maximum uses is reached
+- Usage count is accurately tracked and displayed in admin",,Not Automated
+MKT-063,Promotion — Date Range,Marketing > Promotions,Functional,High,8min,"Admin logged in to Backend
+Promotion exists [MKT-021]","1. Navigate to ${BACK_URL}/marketing/promotions
+2. Open an existing promotion
+3. Set Start date to yesterday and End date to next week
+4. Set Is Active = TRUE and save
+5. Verify promotion is active on storefront
+6. Update End date to yesterday and save
+7. Verify promotion is no longer active on storefront
+8. Set Start date to tomorrow and End date to next week
+9. Verify promotion is not yet active on storefront
+10. Verify date range validation (end date must be after start date)","- Promotion is only applied when the current date is within the Start-End date range
+- Promotion becomes inactive automatically when the end date is passed
+- Promotion does not activate before the start date even if Is Active = TRUE
+- Setting end date earlier than start date triggers a validation error
+- Date range is displayed clearly in the promotion list and detail blade",,Not Automated
+MKT-064,Promotion — Stacking Rules,Marketing > Promotion Policies,Functional,High,10min,"Admin logged in to Backend
+Two active promotions exist with different effects
+CombineStackable policy is set in Settings","1. Navigate to ${BACK_URL}/marketing/promotions
+2. Set Promotion1 as ""Can be combined"" (combinable)
+3. Set Promotion2 as ""Can be combined"" (combinable)
+4. On storefront verify both promotions are applied simultaneously
+5. Set Promotion2 as ""Exclusive"" (cannot be combined)
+6. Trigger both promotions on storefront
+7. Verify only the exclusive promotion is applied
+8. Set both promotions as exclusive
+9. Verify only the higher-priority promotion is applied
+10. Verify the stacking rule behavior matches the CombineStackable policy","- When both promotions are combinable, both discounts are applied to the cart
+- When one promotion is exclusive, only that exclusive promotion is applied
+- When both are exclusive, only the promotion with higher priority is applied
+- Stacking behavior is consistent with the policy configured in Settings
+- The applied and excluded promotions are clearly indicated in the cart summary",,Not Automated
+MKT-065,xAPI Marketing Content Query — Query Active Content via GraphQL,Marketing > xAPI Dynamic Content,Integration,High,8min,"Admin logged in to Backend
+Active content publishing exists with Is Active = TRUE
+xAPI endpoint accessible","1. Navigate to ${BACK_URL}/marketing/dynamicContent and ensure content publishing is active
+2. Open GraphQL playground or API client targeting the xAPI endpoint
+3. Query for dynamic content items using the appropriate xAPI query
+4. Verify the response includes the active content item
+5. Set Is Active = FALSE on the content publishing in admin
+6. Re-execute the GraphQL query
+7. Verify the response does not include the now-inactive content
+8. Re-enable Is Active = TRUE and verify content returns in query
+9. Verify query results match the admin configuration exactly","- xAPI GraphQL query returns active content items when Is Active = TRUE
+- Query response contains correct content item data: name, type, content body
+- Setting Is Active = FALSE removes the content from xAPI query results
+- Re-enabling Is Active = TRUE restores the content item in query results
+- Query response time is within acceptable performance thresholds
+- No unauthorized content items appear in the response",C352338,Not Automated
+MKT-066,Search in Publishing List View — Use Search Bar to Find Published Content,Marketing > Content Publishing,Functional,High,5min,"Admin logged in to Backend
+Multiple content publishings exist with different names","1. Navigate to ${BACK_URL}/marketing/dynamicContent
+2. Open the Content Publishing list
+3. Click on the search bar
+4. Enter a partial name of an existing content publishing
+5. Verify the list filters to show matching results
+6. Enter the full exact name and verify single result
+7. Enter a name that does not match any publishing
+8. Verify the list shows empty state or no results message
+9. Clear the search field and verify the full list is restored","- Search bar is visible and functional in the content publishing list view
+- Entering a partial name filters the list to show matching content publishings
+- Entering the exact name returns the specific content publishing
+- Non-matching search term shows empty state with appropriate message
+- Clearing the search field restores the complete unfiltered list
+- Search is case-insensitive and returns consistent results",C183352,Not Automated

@@ -698,3 +698,314 @@ B2C-VAR-011,VcVariantPickerGroup - All Variant Options Render Correctly,B2C Feat
 - Unselected state clearly different from selected
 - Disabled/out-of-stock variant shown differently (grayed)
 - No visual regression from Storybook StoryFn to StoryObj migration",VCST-4233,Manual
+B2C-ORG-001,Org Switcher Visible for Multi-Org User,B2C Features > Organization,Functional,Critical,4m,"User belongs to 2 or more organizations, logged in to storefront","1. Log in as a user who belongs to multiple organizations
+2. Navigate to the storefront header or account area
+3. Locate the organization switcher control
+4. Verify it is visible and shows the current organization name","- Org switcher control is visible in the header or account section
+- Current organization name is displayed on the switcher
+- Switcher appears only for users belonging to 2 or more organizations
+- Single-org users do not see the switcher (see B2C-ORG-010)",Coverage Gap Analysis,Generated
+B2C-ORG-002,Switch Org - Pricing Update,B2C Features > Organization,Functional,Critical,6m,"Multi-org user, Org A and Org B have different contract pricing for the same product","1. Log in and confirm Org A is active (check org switcher)
+2. Navigate to a product with org-specific contract pricing
+3. Note the price shown for Org A
+4. Open the org switcher and select Org B
+5. Navigate to the same product
+6. Verify the price has updated to Org B's contract price","- After switching to Org B, the product price reflects Org B's contract/tier pricing
+- Price is different from Org A's price (confirming org-specific pricing is applied)
+- Pricing update occurs without requiring a page reload or re-login
+- Cart prices also update to reflect the new org's pricing",Coverage Gap Analysis,Generated
+B2C-ORG-003,Switch Org - Cart Isolation,B2C Features > Organization,Functional,Critical,7m,"Multi-org user, logged in as Org A","1. Log in and confirm Org A is active
+2. Add 2 specific products to the cart under Org A
+3. Note the Org A cart items
+4. Open the org switcher and switch to Org B
+5. Navigate to the cart
+6. Verify Org A cart items are not present
+7. Add a different product to the Org B cart
+8. Switch back to Org A
+9. Verify the Org A cart still has the original 2 products","- Org A cart is isolated from Org B cart — switching orgs loads that org's specific cart
+- Org B cart starts empty (or shows Org B's previous cart) — Org A items are not visible
+- After adding items to Org B cart and switching back, Org A cart items are preserved
+- Cart count in header reflects the active org's cart",Coverage Gap Analysis,Generated
+B2C-ORG-004,Switch Org - Addresses Update,B2C Features > Organization,Functional,High,5m,"Multi-org user, Org A and Org B have different saved addresses","1. Log in as Org A
+2. Navigate to account addresses or the ship-to selector
+3. Note the addresses available for Org A
+4. Switch to Org B using the org switcher
+5. Navigate to account addresses or ship-to selector again
+6. Verify addresses shown belong to Org B","- Addresses displayed after switching to Org B are Org B's addresses
+- Org A addresses are not shown while Org B is active
+- Ship-to selector in header reflects Org B's addresses
+- Checkout address options reflect the active org's addresses",Coverage Gap Analysis,Generated
+B2C-ORG-005,Switch Org - Lists Scope,B2C Features > Organization,Functional,High,5m,"Multi-org user, Org A and Org B each have at least one saved list","1. Log in as Org A
+2. Navigate to My Lists
+3. Note the lists available for Org A
+4. Switch to Org B
+5. Navigate to My Lists
+6. Verify only Org B's lists are shown","- After switching to Org B, only lists associated with Org B are displayed
+- Org A lists are not visible while Org B is active
+- Shared lists within an org are scoped to that org only
+- Switching back to Org A restores Org A's lists",Coverage Gap Analysis,Generated
+B2C-ORG-006,Default Org on Sign-in,B2C Features > Organization,Functional,High,4m,"Multi-org user, one org is configured as the default","1. Log in to the storefront with the multi-org user credentials
+2. Observe which organization is loaded immediately after sign-in
+3. Verify the org switcher shows the default org as active
+4. Verify the default org's pricing and catalog are shown","- Default org is loaded automatically on sign-in (not a random or last-used org)
+- Org switcher displays the default org name as the active selection
+- Default org's catalog pricing, addresses, and cart are shown
+- No prompt to select an org is required on sign-in (default is auto-applied)",Coverage Gap Analysis,Generated
+B2C-ORG-007,Search Orgs in Switcher,B2C Features > Organization,Functional,High,4m,"Multi-org user belonging to 6 or more organizations","1. Log in as a user with many org memberships (6+)
+2. Open the org switcher
+3. Locate the search input within the switcher dropdown
+4. Type part of an org name (e.g., first 3 characters)
+5. Verify the results filter to matching org names
+6. Clear the search and verify all orgs are shown again","- Search/filter input is present inside the org switcher dropdown
+- Typing filters the org list dynamically to matching org names
+- Non-matching orgs are hidden while search is active
+- Clearing the search restores the full list of orgs
+- Selecting a filtered result correctly switches to that org",Coverage Gap Analysis,Generated
+B2C-ORG-008,Switch Org - Navigation Reset,B2C Features > Organization,Functional,Medium,4m,"Multi-org user, currently on a deep category or account page for Org A","1. Log in as Org A
+2. Navigate to a deep category page or checkout flow
+3. Note the breadcrumb trail
+4. Switch to Org B using the org switcher
+5. Verify the page state and navigation after the switch","- After switching orgs, the user is redirected to a neutral page (e.g., homepage or catalog root) rather than remaining on a context-specific page for the previous org
+- Breadcrumbs and category context reset to reflect Org B
+- No stale Org A navigation state remains visible
+- Any in-progress flows (like checkout) are exited cleanly",Coverage Gap Analysis,Generated
+B2C-ORG-009,Switch Back - Cart Intact,B2C Features > Organization,Functional,Critical,6m,"Multi-org user, items in Org A cart, currently viewing Org B","1. Log in as Org A and add 3 specific products to the Org A cart
+2. Switch to Org B
+3. Optionally add a different item to the Org B cart
+4. Switch back to Org A
+5. Navigate to the cart
+6. Verify all 3 original Org A items are present with correct quantities","- Switching away from Org A and back preserves the Org A cart intact
+- All originally added items are still present after returning to Org A
+- Quantities and selected variants are unchanged
+- Org B items are not present in Org A cart after switching back",Coverage Gap Analysis,Generated
+B2C-ORG-010,Single Org User - No Switcher,B2C Features > Organization,Functional,Medium,3m,"User belongs to exactly one organization, logged in to storefront","1. Log in as a user who belongs to only one organization
+2. Navigate to the header and account area
+3. Look for the org switcher control","- No org switcher control is visible in the header or account area
+- The single org is active by default
+- UI is not cluttered with a switcher that has no utility
+- User experience is unchanged from pre-multi-org behavior for single-org users",Coverage Gap Analysis,Generated
+B2C-BULK-001,Quick Order by SKU,B2C Features > Bulk Order,Functional,Critical,5m,"User logged in, /bulk-order page accessible, at least one known product SKU","1. Navigate to /bulk-order (Quick Order page)
+2. Locate the SKU entry field
+3. Enter a known valid product SKU
+4. Confirm the entry (press Enter or click Add)
+5. Verify product info appears: product name, image, unit price, available quantity","- Quick Order page loads at /bulk-order
+- SKU entry field is present and focused
+- Entering a valid SKU and confirming loads the product details in the row
+- Product name, price, and availability are displayed for the entered SKU
+- Quantity field becomes editable after product is found",Coverage Gap Analysis,Generated
+B2C-BULK-002,Add All to Cart,B2C Features > Bulk Order,Functional,Critical,6m,"Quick Order page with 3+ valid SKUs entered and quantities set","1. Navigate to /bulk-order
+2. Enter 3 different valid SKUs and set quantities (e.g., 2, 5, 1)
+3. Verify all 3 rows show correct product info
+4. Click 'Add All to Cart'
+5. Navigate to cart
+6. Verify all 3 products are in the cart with correct quantities","- 'Add All to Cart' button is enabled when at least one valid product row is populated
+- Clicking adds all listed products to the cart simultaneously
+- Cart contains all 3 products with the specified quantities
+- Cart count updates to reflect all added items
+- Success notification: 'X items added to cart'",Coverage Gap Analysis,Generated
+B2C-BULK-003,Invalid SKU Handling,B2C Features > Bulk Order,Functional,High,4m,"Quick Order page open","1. Navigate to /bulk-order
+2. Enter a valid SKU in row 1 and confirm
+3. Enter a non-existent SKU (e.g., 'FAKE-SKU-99999') in row 2 and confirm
+4. Verify error state on row 2
+5. Verify row 1 is unaffected","- Row 2 shows an error: 'Product not found' or 'Invalid SKU'
+- Row 1 with the valid SKU remains displayed correctly
+- Error is scoped to the invalid row only (other rows unaffected)
+- 'Add All to Cart' only processes valid rows; invalid rows are skipped or cause a specific warning",Coverage Gap Analysis,Generated
+B2C-BULK-004,Multi-row Entry,B2C Features > Bulk Order,Functional,High,5m,"Quick Order page open","1. Navigate to /bulk-order
+2. Enter 5 different valid SKUs in separate rows
+3. Set different quantities for each (e.g., 1, 3, 2, 5, 10)
+4. Verify all 5 rows display product info correctly
+5. Verify a running total or summary is calculated","- All 5 rows display correctly with product name, price, and set quantity
+- Page does not slow down or lose state with 5+ rows
+- Running total (if displayed) sums the subtotal for all rows correctly
+- Can continue adding more rows beyond 5 (or up to any stated limit)",Coverage Gap Analysis,Generated
+B2C-BULK-005,Paste from Spreadsheet,B2C Features > Bulk Order,Functional,High,5m,"Quick Order page open, clipboard contains tab-separated SKU and quantity data","1. In a text editor or spreadsheet, create 3 rows with format: SKU[tab]Quantity
+2. Copy these 3 rows to clipboard
+3. Navigate to /bulk-order
+4. Paste (Ctrl+V) into the bulk order entry area or first SKU field
+5. Verify rows are auto-populated with the pasted SKUs and quantities","- Paste action auto-populates multiple rows from tab-separated clipboard data
+- SKU and quantity from each pasted row are correctly assigned to separate columns
+- Product lookup is triggered for each pasted SKU
+- Invalid SKUs in the pasted data are flagged per row
+- Valid products display correctly after paste",Coverage Gap Analysis,Generated
+B2C-BULK-006,Bulk Order Quantity Validation,B2C Features > Bulk Order,Functional,Medium,3m,"Quick Order page with a valid product SKU entered","1. Enter a valid SKU and confirm the product is found
+2. Set the quantity field to 0
+3. Attempt to add to cart
+4. Verify validation error
+5. Set the quantity to -1 (negative)
+6. Verify validation error
+7. Set a valid quantity (e.g., 1)
+8. Verify add to cart succeeds","- Quantity of 0 triggers validation error: 'Quantity must be at least 1'
+- Negative quantity triggers validation error
+- 'Add to Cart' or 'Add All to Cart' is blocked for rows with invalid quantities
+- Setting a positive valid quantity clears the error and enables the add action",Coverage Gap Analysis,Generated
+B2C-LIST-016,Create Shared List,B2C Features > Shared Lists,Functional,High,5m,"Logged in user who is a member of a B2B organization, on My Lists page","1. Navigate to My Lists (/account/lists)
+2. Click 'Create New List'
+3. Enter list name: 'Team Supplies'
+4. Set privacy/visibility to 'Shared' (visible to org members)
+5. Click 'Create'
+6. Verify list created successfully
+7. Verify the list is marked as 'Shared'","- Create list form includes a visibility option: Private vs Shared
+- Selecting 'Shared' marks the list as visible to all members of the current organization
+- List created successfully with 'Shared' badge or indicator
+- List appears in My Lists with Shared status
+- Other org members can see this list (see B2C-LIST-017)",Coverage Gap Analysis,Generated
+B2C-LIST-017,Org Member Sees Shared List,B2C Features > Shared Lists,Functional,High,5m,"Shared list 'Team Supplies' created by User A, User B is a member of the same organization","1. Log in as User B (a different org member from User A)
+2. Navigate to My Lists (/account/lists)
+3. Look for the list 'Team Supplies' created by User A","- 'Team Supplies' list is visible to User B in the lists section
+- Shared lists from other org members are displayed (e.g., in a 'Shared with me' or 'Team Lists' section)
+- List shows who created it (User A's name)
+- User B can view the contents of the shared list",Coverage Gap Analysis,Generated
+B2C-LIST-018,Add to Shared List,B2C Features > Shared Lists,Functional,High,5m,"Shared list 'Team Supplies' visible to User B (org member)","1. Log in as User B
+2. Navigate to the shared list 'Team Supplies'
+3. Click 'Add Product' or navigate to a product and add it to 'Team Supplies'
+4. Verify product is added to the shared list
+5. Log in as User A (list creator)
+6. Navigate to 'Team Supplies'
+7. Verify the product added by User B is visible","- User B can add products to a shared list owned by User A
+- Product added by User B appears immediately in the shared list
+- When User A views the list, the item added by User B is present
+- Added item shows who added it (if attribution is supported)",Coverage Gap Analysis,Generated
+B2C-LIST-019,Private List Not Visible to Org Members,B2C Features > Shared Lists,Functional,Medium,4m,"User A has created a Private list, User B is a member of the same org","1. Verify User A has a list set to 'Private'
+2. Log in as User B (different org member)
+3. Navigate to My Lists
+4. Verify User A's private list is NOT visible to User B","- User A's Private list does not appear in User B's My Lists view
+- No mechanism allows User B to discover or access User A's private list
+- User B only sees their own lists and lists explicitly shared with the org
+- Privacy setting is enforced server-side, not just hidden in the UI",Coverage Gap Analysis,Generated
+
+B2C-DASH-001,Dashboard Page Loads,B2C Features > Dashboard,Functional,Medium,3m,User signed in with valid credentials,"1. Sign in to storefront
+2. Navigate to /account/dashboard
+3. Verify page loads completely
+4. Check browser console for JavaScript errors
+5. Verify page title and heading display","- /account/dashboard loads without errors
+- No JavaScript console errors present
+- Page heading confirms Dashboard context
+- All page sections render (no blank areas)
+- Network requests complete with 200 status",Coverage Gap Analysis,Generated
+B2C-DASH-002,Recent Orders Widget,B2C Features > Dashboard,Functional,Medium,4m,"User signed in, has at least one previous order","1. Sign in and navigate to /account/dashboard
+2. Locate the Recent Orders widget/section
+3. Verify order entries are displayed
+4. Check each entry for order number
+5. Check each entry for order date
+6. Check each entry for order status
+7. Check each entry for order amount","- Recent Orders section visible on dashboard
+- Each order entry shows order number (e.g., ORD-12345)
+- Order date displayed per entry
+- Order status shown (e.g., Processing, Shipped, Delivered)
+- Order amount/total shown per entry
+- Orders sorted most-recent first",Coverage Gap Analysis,Generated
+B2C-DASH-003,Monthly Spend Display,B2C Features > Dashboard,Functional,Medium,4m,"User signed in, has orders placed in current calendar month","1. Sign in and navigate to /account/dashboard
+2. Locate the monthly spending summary widget
+3. Note the displayed amount
+4. Cross-reference against orders placed this month via Order History
+5. Verify totals match","- Monthly spend widget visible on dashboard
+- Amount displayed corresponds to current calendar month
+- Value matches sum of current-month orders from Order History
+- Currency symbol and formatting correct
+- Label clearly indicates the time period (e.g., This Month)",Coverage Gap Analysis,Generated
+B2C-DASH-004,Quick Navigation Links,B2C Features > Dashboard,Functional,Medium,4m,"User signed in, account section accessible","1. Sign in and navigate to /account/dashboard
+2. Locate quick-navigation links or tiles
+3. Click the Orders link
+4. Verify navigation to Order History page
+5. Return to dashboard
+6. Click the Profile link
+7. Verify navigation to Profile page
+8. Return to dashboard
+9. Click the Addresses link
+10. Verify navigation to Addresses page
+11. Return to dashboard
+12. Click the Lists link
+13. Verify navigation to Lists page","- Orders link navigates to /account/orders or Order History
+- Profile link navigates to /account/profile
+- Addresses link navigates to /account/addresses
+- Lists link navigates to /account/lists
+- Back-navigation returns to dashboard correctly
+- All links resolve without 404 errors",Coverage Gap Analysis,Generated
+B2C-DASH-005,Dashboard After First Login,B2C Features > Dashboard,Functional,Medium,5m,"New user account created, no prior orders or activity","1. Register a new user account
+2. Sign in for the first time
+3. Navigate to /account/dashboard
+4. Observe the dashboard empty state","- Dashboard loads without errors for new user
+- Empty state message displayed (no blank or broken sections)
+- Helpful prompts or call-to-action shown (e.g., Start shopping, Browse catalog)
+- No order widget errors due to missing data
+- No spend widget errors due to missing data
+- Navigation links still functional",Coverage Gap Analysis,Generated
+B2C-NOTIF-001,Notification Bell Icon,B2C Features > Notifications,Functional,Medium,3m,"User signed in, header navigation visible","1. Sign in to storefront
+2. Observe the header navigation bar
+3. Locate the notification bell icon
+4. Verify badge element on the icon","- Notification bell icon visible in header navigation
+- Badge (numeric counter) displayed on bell icon when notifications exist
+- Badge count reflects number of unread notifications
+- Icon is visually distinct and tappable",Coverage Gap Analysis,Generated
+B2C-NOTIF-002,Notification Dropdown Opens,B2C Features > Notifications,Functional,Medium,3m,"User signed in, at least one notification exists","1. Sign in to storefront
+2. Click the notification bell icon in header
+3. Verify dropdown panel opens
+4. Inspect notification list order
+5. Verify notification entry details","- Dropdown panel opens on bell click
+- Notification list displayed within dropdown
+- Notifications ordered most-recent first (newest at top)
+- Each notification shows title/description and timestamp
+- Dropdown closes when clicking outside or pressing Escape",Coverage Gap Analysis,Generated
+B2C-NOTIF-003,Mark as Read,B2C Features > Notifications,Functional,Medium,4m,"User signed in, unread notification exists, badge count visible","1. Note the current badge count on the bell icon
+2. Open the notification dropdown
+3. Click on an unread notification
+4. Observe visual state change of the notification
+5. Observe the badge count on the bell icon","- Clicked notification visually changes to read state (e.g., loses bold or highlight)
+- Badge count on bell icon decrements by 1
+- Notification remains in list but marked as read
+- If last unread notification read, badge disappears or shows 0",Coverage Gap Analysis,Generated
+B2C-NOTIF-004,Empty Notifications,B2C Features > Notifications,Functional,Medium,3m,"User signed in, account has no notifications","1. Sign in with account that has no notifications
+2. Click the notification bell icon in header
+3. Observe the dropdown content","- Notification dropdown opens
+- No notifications message or equivalent empty-state text displayed
+- No broken layout or empty blank area
+- Bell icon shows no badge or badge shows 0
+- Empty state is styled consistently with design system",Coverage Gap Analysis,Generated
+B2C-STOCK-001,Back-in-Stock Page,B2C Features > Back in Stock,Functional,Medium,3m,"User signed in, back-in-stock feature enabled","1. Sign in to storefront
+2. Navigate to /account/back-in-stock
+3. Verify page loads
+4. Observe listed products","- /account/back-in-stock page loads without errors
+- Page heading confirms context (e.g., Back in Stock Alerts)
+- If subscriptions exist: product list displays with product name, image, and status
+- If no subscriptions: empty state shown with helpful message
+- No JavaScript console errors",Coverage Gap Analysis,Generated
+B2C-STOCK-002,Subscribe to Alert,B2C Features > Back in Stock,Functional,Medium,5m,"User signed in, out-of-stock product exists on PDP","1. Navigate to an out-of-stock product detail page
+2. Verify Notify When Available or equivalent button is shown
+3. Click the button
+4. Verify confirmation feedback (toast or inline message)
+5. Navigate to /account/back-in-stock
+6. Verify the product appears in the subscribed list","- Notify When Available button visible on OOS product PDP
+- Clicking the button shows confirmation (toast, modal, or inline text)
+- Product appears in /account/back-in-stock list after subscribing
+- Product name and image shown in the list
+- Subscription persists after page refresh",Coverage Gap Analysis,Generated
+B2C-STOCK-003,Unsubscribe from Alert,B2C Features > Back in Stock,Functional,Medium,4m,"User signed in, at least one product subscribed in back-in-stock list","1. Navigate to /account/back-in-stock
+2. Locate a subscribed product entry
+3. Click the remove/unsubscribe action
+4. Confirm removal if prompted
+5. Verify the product is no longer in the list
+6. Navigate back to the product PDP","- Remove/unsubscribe action available per subscribed product
+- Confirmation step shown if applicable
+- Product removed from /account/back-in-stock list immediately
+- List updates without requiring page refresh
+- Product PDP no longer shows active subscription state (if applicable)",Coverage Gap Analysis,Generated
+B2C-POINTS-001,Points History Page,B2C Features > Loyalty,Functional,Medium,3m,"User signed in, loyalty/points feature enabled for store","1. Sign in to storefront
+2. Navigate to /account/points-history
+3. Verify page loads
+4. Observe points balance display
+5. Observe transaction history list","- /account/points-history page loads without errors
+- Current points balance prominently displayed
+- Transaction history list shown (date, description, points earned/spent)
+- Transactions ordered most-recent first
+- No JavaScript console errors",Coverage Gap Analysis,Generated
+B2C-POINTS-002,Points After Order,B2C Features > Loyalty,Functional,Medium,6m,"User signed in, loyalty feature enabled, current points balance noted before test","1. Note current points balance on /account/points-history
+2. Place a new order through checkout
+3. Complete order to confirmation page
+4. Navigate to /account/points-history
+5. Verify new transaction entry
+6. Verify points balance has increased","- New transaction entry appears in points history after order
+- Transaction references the order (order number or description)
+- Points credited matches expected earn rate for the order
+- Points balance updates to reflect new total
+- Transaction timestamp reflects order date",Coverage Gap Analysis,Generated

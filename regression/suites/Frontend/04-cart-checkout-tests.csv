@@ -178,3 +178,765 @@ CHK-013,Order - Delivery Details Display,Orders > Delivery,Functional,High,3m,"D
 3. Verify tracking (if available)","- Shipping address correct
 - Carrier shown
 - Tracking link (when shipped)",VCST-4499,Automated
+CHK-014,Guest Checkout - Happy Path,Checkout > Guest,Functional,Critical,8m,"Store allows anonymous users (anonymousUsersAllowed: true), products available in catalog","1. Open storefront in a private/incognito window (not logged in)
+2. Navigate to a product detail page
+3. Click Add to Cart
+4. Navigate to cart and click Checkout
+5. Enter guest email address
+6. Fill in shipping address fields (first name, last name, address, city, state, ZIP, country)
+7. Select a shipping method
+8. Enter payment details
+9. Click Place Order
+10. Verify order confirmation page","- Guest user can reach checkout without registering
+- Email field appears at checkout start
+- Shipping form accepts all required fields
+- Shipping methods are listed and selectable
+- Payment form accepts input
+- Order confirmation page displays with order number
+- Cart is cleared after successful order
+- Confirmation email sent to entered guest email",Coverage Gap Analysis,Generated
+CHK-015,Guest Checkout - New Address Entry,Checkout > Guest,Functional,High,5m,"Guest user at checkout (no saved addresses)","1. Proceed to checkout as guest
+2. Verify no saved addresses are shown or auto-populated
+3. Manually fill all address fields: first name, last name, street address, city, state/province, ZIP/postal code, country, phone number
+4. Proceed to shipping method selection
+5. Verify address is used","- No pre-populated address fields for guest users
+- All required address fields accept input
+- Field validation passes for valid data
+- Address is carried through to order summary
+- Shipping methods calculate based on entered address",Coverage Gap Analysis,Generated
+CHK-016,Guest Checkout - Track Order,Checkout > Guest,Functional,High,5m,"Guest order successfully placed","1. Note the order number from guest checkout confirmation page
+2. Note the email address used during guest checkout
+3. Navigate to the order tracking page (e.g., /account/orders/track or similar)
+4. Enter the guest email address
+5. Enter the order number
+6. Submit the tracking form
+7. Verify order status is displayed","- Order tracking page is accessible without login
+- Form accepts email and order number inputs
+- Correct order details are returned for valid email+order number combination
+- Order status is clearly displayed
+- Incorrect combinations show appropriate error message",Coverage Gap Analysis,Generated
+CHK-017,Guest Checkout - Prompt Registration After Purchase,Checkout > Guest,Functional,Medium,5m,"Guest order just placed, on confirmation page","1. Complete a guest checkout and land on the order confirmation page
+2. Look for a 'Create Account' or 'Register' prompt on the confirmation page
+3. Verify the prompt mentions linking the order to the new account
+4. Click the Create Account call-to-action
+5. Complete registration with the same email used for guest checkout","- Confirmation page displays a 'Create Account' prompt
+- Prompt text references linking the current order to the new account
+- Registration form pre-fills the email from the guest checkout
+- After registration, the guest order appears in the new account's order history",Coverage Gap Analysis,Generated
+CHK-018,Guest Checkout - With Coupon Code,Checkout > Guest,Functional,High,5m,"Guest user at checkout, valid coupon code exists in system","1. Proceed to checkout as guest (not logged in)
+2. Enter guest email address
+3. Fill shipping address
+4. Select shipping method
+5. Locate coupon code input field on cart or checkout page
+6. Enter a valid coupon code
+7. Click Apply
+8. Verify discount is applied to order total
+9. Complete checkout","- Coupon code field is accessible to guest users
+- Valid coupon is accepted and discount applied
+- Order summary reflects the discounted total
+- Discount is preserved through to the order confirmation
+- Order confirmation shows the coupon discount line item",Coverage Gap Analysis,Generated
+CHK-019,Guest Checkout - Field Validation,Checkout > Guest,Functional,High,5m,"Guest user at checkout step","1. Attempt to proceed past email step without entering an email
+2. Verify error message for empty email
+3. Enter an invalid email format (e.g., 'notanemail')
+4. Attempt to proceed and verify format validation error
+5. Enter a valid email and proceed
+6. Leave required address fields empty and attempt to proceed
+7. Verify inline error messages per field
+8. Fix all errors with valid data and proceed","- Empty email field shows 'Email is required' or equivalent error
+- Invalid email format shows 'Enter a valid email address' error
+- Required address fields show individual inline errors when empty
+- Errors appear inline next to the relevant field
+- After fixing all errors, form proceeds normally",Coverage Gap Analysis,Generated
+CHK-020,Guest Checkout - Register After Purchase and Order Linked,Checkout > Guest,Functional,High,8m,"Guest order placed, on confirmation page","1. Complete a guest checkout
+2. On the confirmation page, click 'Create Account'
+3. Complete the registration form using the same email address as the guest order
+4. Submit the registration
+5. Navigate to account order history","- Registration completes successfully
+- New account is created with the guest email
+- Order placed as guest is now visible in the new account's order history
+- Order details match the original guest order (items, totals, address)",Coverage Gap Analysis,Generated
+CHK-021,Guest Checkout - Disabled When Anonymous Users Not Allowed,Checkout > Guest,Functional,Critical,3m,"Store configured with anonymousUsersAllowed: false","1. Open storefront in an incognito/private window (not logged in)
+2. Navigate to a product detail page
+3. Click Add to Cart
+4. Attempt to navigate to checkout","- Guest checkout is not available
+- User is redirected to the sign-in page when attempting to checkout
+- Sign-in page displays a prompt to log in or register
+- Cart contents are preserved for after login",Coverage Gap Analysis,Generated
+CART-019,Cart Persistence - Sign Out and Sign In,Cart > Persistence,Functional,Critical,5m,"User has an account, at least one product available","1. Log in to the storefront
+2. Add two or more products to the cart
+3. Note the items and quantities in the cart
+4. Sign out of the account
+5. Sign back in with the same credentials
+6. Navigate to the cart","- After signing back in, the same items are present in the cart
+- Quantities match what was added before sign-out
+- Cart total is correct",Coverage Gap Analysis,Generated
+CART-020,Cart Persistence - Price Updates While Signed Out,Cart > Persistence,Functional,High,8m,"User has an account, admin access available, product in cart","1. Log in and add a product to the cart
+2. Note the current price of the product
+3. Sign out of the storefront
+4. In Admin, navigate to the product and update its price
+5. Sign back in to the storefront
+6. Navigate to the cart","- Cart still contains the product after sign-in
+- The cart now displays the updated (current) price for the product
+- Line total and cart total reflect the new price
+- No stale cached price is shown",Coverage Gap Analysis,Generated
+CART-021,Cart Persistence - Cross-Device (Cross-Session),Cart > Persistence,Functional,High,5m,"User has an account, can open two separate browser sessions or devices","1. Log in to the storefront in Browser Session A
+2. Add two or more products to the cart
+3. Open a new browser session (e.g., different browser or incognito after sign-in) — Browser Session B
+4. Log in with the same account credentials
+5. Navigate to the cart in Browser Session B","- Cart in Session B contains the same items added in Session A
+- Quantities and selected variants match
+- Cart is synchronized via server-side session/account, not just local storage",Coverage Gap Analysis,Generated
+CART-022,Cart Persistence - Guest Cart Merge on Sign In,Cart > Persistence,Functional,High,5m,"Store allows guest shopping, user has an account","1. Open the storefront without logging in (guest)
+2. Add one or more products to the cart as a guest
+3. Navigate to sign in
+4. Sign in with an existing account that already has items in the cart
+5. Navigate to the cart after sign-in","- Guest cart items are merged with the existing account cart
+- No items are silently dropped
+- If the same product exists in both carts, quantities are combined or handled per configured merge strategy
+- User sees a combined cart with all items",Coverage Gap Analysis,Generated
+CART-023,Cart Validation - Out of Stock After Add,Cart > Validation,Functional,Critical,5m,"Product is in cart, admin access to change inventory","1. Add a product to the cart
+2. In Admin, set the product's inventory to 0 (out of stock)
+3. Return to the storefront cart page (or refresh)
+4. Observe cart item state
+5. Attempt to proceed to checkout","- Cart displays a warning or error on the out-of-stock item
+- Item is visually flagged (e.g., 'Out of Stock' label or warning banner)
+- Checkout button is blocked/disabled until the out-of-stock item is removed
+- User is given an option to remove the unavailable item",Coverage Gap Analysis,Generated
+CART-024,Cart Validation - Price Change After Add,Cart > Validation,Functional,High,5m,"Product is in cart, admin access to change pricing","1. Add a product to the cart and note its price
+2. In Admin, update the product's price to a higher value
+3. Return to the storefront and refresh the cart page
+4. Observe the cart item price","- Cart displays the current (updated) price for the item
+- Price change is reflected in both the line total and cart total
+- If the platform shows a price-change notification, it appears
+- User must acknowledge the change before proceeding (if configured)",Coverage Gap Analysis,Generated
+CART-025,Cart Validation - Product Unpublished After Add,Cart > Validation,Functional,High,5m,"Product is in cart, admin access to unpublish product","1. Add a product to the cart
+2. In Admin, unpublish or deactivate the product from the catalog
+3. Return to the storefront and refresh the cart page
+4. Attempt to proceed to checkout","- Cart shows the product as unavailable (e.g., 'This item is no longer available')
+- Checkout is blocked until the unavailable item is removed
+- User is prompted to remove the item
+- Removing the item unblocks the checkout flow",Coverage Gap Analysis,Generated
+CART-026,Cart Validation - Quantity Exceeds Available Stock,Cart > Validation,Functional,High,5m,"Product in cart with limited stock, inventory tracking enabled","1. Add a product to the cart with quantity 1
+2. Update the quantity to a value exceeding the available stock (e.g., if 5 available, enter 10)
+3. Apply or save the quantity change
+4. Observe cart validation behavior
+5. Attempt to proceed to checkout","- Cart shows a warning that requested quantity exceeds available stock
+- Quantity is either auto-corrected to the maximum available or checkout is blocked
+- Warning message clearly states the maximum available quantity
+- User can adjust quantity to the allowed maximum and proceed normally",Coverage Gap Analysis,Generated
+CART-027,Cart Validation - Mixed Valid and Invalid Items,Cart > Validation,Functional,Critical,8m,"Multiple products in cart, admin access to make some unavailable","1. Add three or more products to the cart
+2. In Admin, make one product out of stock and unpublish another product
+3. Return to the storefront cart page and refresh
+4. Observe how the cart handles mixed valid/invalid items
+5. Remove invalid items
+6. Attempt to proceed to checkout","- Valid items remain in the cart with correct prices and quantities
+- Invalid items are clearly flagged with individual status messages (out of stock, unavailable)
+- A summary warning banner explains that some items need attention
+- Checkout is blocked until all invalid items are resolved
+- After removing all invalid items, checkout proceeds normally",Coverage Gap Analysis,Generated
+CHK-022,Order Status - New,Orders > Tracking,Functional,Critical,3m,"Order just placed by logged-in user","1. Place an order through the storefront
+2. Navigate to account order history
+3. Click on the newly placed order
+4. View the order status","- Order status displays as 'New' immediately after placement
+- Status is visible on the order detail page
+- Status label matches the platform's configured display text for the New status",Coverage Gap Analysis,Generated
+CHK-023,Order Status - Processing,Orders > Tracking,Functional,High,5m,"Order in 'New' status, admin access available","1. Note an order in 'New' status in the storefront order history
+2. In Admin, navigate to the order
+3. Update the order status to 'Processing'
+4. Return to the storefront
+5. Refresh the order detail page","- Order status on the storefront updates to 'Processing' (or equivalent)
+- Status change is reflected without requiring a new login
+- Order status history/timeline shows the transition from New to Processing",Coverage Gap Analysis,Generated
+CHK-024,Order Status - Shipped with Tracking Number,Orders > Tracking,Functional,High,5m,"Order in 'Processing' status, admin access available","1. In Admin, update the order to 'Shipped' status
+2. Add a tracking number and carrier name to the shipment
+3. Navigate to the storefront order detail page and refresh","- Order status displays as 'Shipped'
+- Tracking number is visible on the order detail page
+- Carrier name is displayed alongside the tracking number
+- Tracking link (if configured) is clickable and opens the carrier tracking page",Coverage Gap Analysis,Generated
+CHK-025,Order Status - Completed,Orders > Tracking,Functional,High,3m,"Order in 'Shipped' status, admin access available","1. In Admin, update the order status to 'Completed'
+2. Navigate to the storefront order detail page and refresh","- Order status displays as 'Completed'
+- No actions like 'Cancel' are available for a completed order
+- Order history reflects the completed status
+- Any configured post-completion actions (e.g., review prompt) appear if applicable",Coverage Gap Analysis,Generated
+CHK-026,Checkout Validation - Empty Required Fields,Checkout > Validation,Functional,Critical,5m,"User at checkout shipping address step","1. Navigate to the checkout shipping step
+2. Leave all address fields empty
+3. Attempt to proceed to the next checkout step by clicking Continue or Next
+4. Observe validation behavior","- Inline validation errors appear next to each required empty field
+- Error messages clearly identify which field is missing (e.g., 'First name is required')
+- The form does not advance to the next step
+- All required fields are highlighted or marked with an error state",Coverage Gap Analysis,Generated
+CHK-027,Checkout Validation - Invalid ZIP/Postal Code,Checkout > Validation,Functional,High,3m,"User at checkout shipping address step, address fields partially filled","1. Fill in all address fields with valid data
+2. Replace the ZIP/postal code with an invalid value (e.g., 'ABCDE' for a US address or '123' for a country requiring more digits)
+3. Attempt to proceed to the next step","- Validation error appears on the ZIP/postal code field
+- Error message indicates the format is invalid for the selected country
+- Form does not advance until ZIP is corrected
+- After entering a valid ZIP, validation clears and form proceeds",Coverage Gap Analysis,Generated
+CHK-028,Checkout Validation - Invalid Phone Number,Checkout > Validation,Functional,High,3m,"User at checkout shipping address step","1. Fill in all required address fields with valid data
+2. Enter an invalid phone number (e.g., '123', '(abc) def-ghij', or a number that is too short)
+3. Attempt to proceed to the next step","- Validation error appears on the phone number field
+- Error message indicates the phone number format is invalid
+- Form does not advance until a valid phone number is entered
+- After entering a valid phone number, validation clears",Coverage Gap Analysis,Generated
+CHK-029,Checkout Validation - Invalid Email Format,Checkout > Validation,Functional,High,3m,"Guest user at email entry step, or registered user editing contact email at checkout","1. In the email field at checkout, enter an invalid email format (e.g., 'user@', 'notanemail', 'user@domain')
+2. Attempt to proceed to the next step","- Validation error appears on the email field immediately or on submit
+- Error message indicates the email format is invalid (e.g., 'Enter a valid email address')
+- Form does not advance with an invalid email
+- After correcting to a valid email format, the error clears",Coverage Gap Analysis,Generated
+CHK-030,Checkout Validation - Fix Errors and Proceed,Checkout > Validation,Functional,Critical,5m,"User at checkout with validation errors present on address form","1. Trigger validation errors by attempting to proceed with empty or invalid fields
+2. Fix each validation error by entering valid data in each highlighted field
+3. Ensure all error states clear as each field is corrected
+4. Click Continue/Next once all fields are valid","- Validation error messages disappear as each field is corrected with valid input
+- All error states are cleared before proceeding
+- Form successfully advances to the next checkout step after all errors are resolved
+- No residual error states remain on the corrected fields",Coverage Gap Analysis,Generated
+CHK-031,B2B Checkout - PO Number Entry,Checkout > B2B,Functional,High,5m,"Logged in as B2B organization user, cart has items","1. Navigate to cart and proceed to checkout
+2. On the checkout page, locate the PO Number field (visible for organization users)
+3. Enter a valid PO number (e.g., 'PO-2026-001')
+4. Complete the remaining checkout steps (shipping, payment)
+5. Place the order
+6. Verify the PO number on the order confirmation page","- PO Number field is visible for B2B/organization users
+- Field accepts alphanumeric PO number input
+- PO number is displayed on the order confirmation page
+- PO number appears on the order detail page in account order history
+- PO number is stored with the order in Admin",Coverage Gap Analysis,Generated
+CHK-032,B2B Checkout - Net 30 Payment Terms,Checkout > B2B,Functional,High,5m,"Logged in as B2B org user with Net 30 terms configured for the organization","1. Navigate to checkout with items in cart
+2. Proceed to payment method selection
+3. Verify 'Net 30' or equivalent payment terms option is available
+4. Select Net 30 as the payment method
+5. Place the order
+6. Verify order status","- Net 30 payment terms option is displayed at checkout for eligible org users
+- Selecting Net 30 does not require credit card entry
+- Order is placed with status 'Pending Approval' or 'On Account' per configured workflow
+- Order appears in admin with Net 30 payment method recorded",Coverage Gap Analysis,Generated
+CHK-033,B2B Checkout - Approval Workflow,Checkout > B2B,Functional,Critical,10m,"B2B org with approval workflow enabled, Buyer and Admin roles available","1. Log in as a Buyer user (role with purchase limit requiring approval)
+2. Add items to cart that exceed the buyer's purchase limit
+3. Proceed through checkout and place the order
+4. Note the order status
+5. Log in as an Admin/Approver
+6. Navigate to the pending order in Admin
+7. Approve the order
+8. Return to storefront as the Buyer and check order status","- Order is placed with status 'Pending Approval'
+- Buyer receives a notification that the order requires approval
+- Admin sees the order in the approval queue
+- After Admin approves, order status changes to 'Processing'
+- Buyer sees updated status in their order history",Coverage Gap Analysis,Generated
+CHK-034,B2B Checkout - Buyer Cannot Bypass Approval,Checkout > B2B,Functional,Critical,5m,"B2B org with approval workflow enabled, logged in as Buyer","1. Log in as a Buyer user subject to approval workflow
+2. Add items to cart that exceed the purchase limit requiring approval
+3. Attempt to manipulate checkout to bypass the approval step (e.g., directly submitting API requests, modifying UI elements)
+4. Observe system behavior","- Approval requirement is enforced server-side, not only on the frontend
+- Any attempt to bypass the approval step fails
+- Order cannot transition to 'Processing' without proper approval
+- System logs or flags any suspicious bypass attempts if applicable",Coverage Gap Analysis,Generated
+CHK-035,B2B Checkout - Organization Shipping Address,Checkout > B2B,Functional,High,5m,"Logged in as B2B org user, organization has a configured shipping address","1. Log in as a B2B organization user
+2. Add items to cart and proceed to checkout
+3. Observe the shipping address options
+4. Verify organization-specific addresses are listed separately from personal addresses","- Organization shipping addresses are displayed as a distinct group or clearly labeled
+- The org address can be selected as the shipping destination
+- Personal addresses are available but clearly differentiated
+- Selected org address is carried through to the order confirmation",Coverage Gap Analysis,Generated
+CHK-036,B2B Checkout - Contract Pricing Applied,Checkout > B2B,Functional,Critical,8m,"B2B org with contract/tier pricing configured, products with org-specific prices","1. Log in as a B2B organization user with configured contract pricing
+2. Navigate to a product that has org-specific contract pricing
+3. Verify the contract price is displayed on the product page
+4. Add the product to cart
+5. Proceed through checkout
+6. Verify the price in the cart and at checkout","- Contract/negotiated price is shown on the product detail page (not the standard catalog price)
+- Cart line item shows the contract price
+- Order summary at checkout reflects contract pricing
+- Placed order uses contract pricing, not standard catalog pricing
+- Price difference from catalog price is correctly reflected in totals",Coverage Gap Analysis,Generated
+CHK-037,B2B Checkout - Coupon on Top of Contract Price,Checkout > B2B,Functional,High,8m,"B2B org user with contract pricing, valid coupon applicable to the product","1. Log in as a B2B org user
+2. Add a product with contract pricing to the cart
+3. Apply a valid coupon code at checkout
+4. Verify the discount calculation
+5. Place the order","- Coupon is accepted for B2B users
+- Discount is calculated on top of the contract price (or per the configured discount stacking rules)
+- Cart total correctly reflects: contract price minus coupon discount
+- Order confirmation and admin order detail show the coupon discount as a separate line item
+- No double-discounting occurs",Coverage Gap Analysis,Generated
+CHK-038,B2B Checkout - PO Number Validation,Checkout > B2B,Functional,High,5m,"Logged in as B2B org user, at checkout with PO Number field visible","1. Leave the PO Number field empty if it is a required field, then attempt to place the order
+2. Verify the required field validation error
+3. Enter a PO number that exceeds the maximum allowed character length
+4. Verify the length validation error
+5. Enter a valid PO number within the allowed length
+6. Verify the error clears and checkout proceeds","- If PO Number is required, an error appears when the field is empty: 'PO Number is required'
+- If a maximum character limit exists, entering a too-long value shows a validation error
+- Validation errors appear inline next to the PO Number field
+- Valid PO number clears all errors and allows order placement",Coverage Gap Analysis,Generated
+QUOTE-001,Create RFQ from Cart,Quotes > RFQ,Functional,Critical,6m,"User logged in as B2B buyer, items in cart","1. Navigate to cart with at least 2 items
+2. Locate and click the 'Request Quote' button
+3. Verify RFQ form displays with line items pre-populated
+4. Fill in specifications or notes field
+5. Submit the RFQ
+6. Verify confirmation message
+7. Verify quote status is 'Processing'","- 'Request Quote' button visible in cart for B2B users
+- RFQ form pre-populates with current cart items and quantities
+- Specifications/notes field accepts free text
+- Form submits successfully
+- Confirmation message: 'Your quote request has been submitted'
+- Quote appears in /account/quotes with status 'Processing'
+- Cart items remain after RFQ submission",Coverage Gap Analysis,Generated
+QUOTE-002,View Quote in Account,Quotes > RFQ,Functional,High,4m,"RFQ submitted with status 'Processing'","1. Navigate to /account/quotes
+2. Verify quotes list page loads
+3. Verify submitted quote appears in the list
+4. Verify quote shows: Quote ID, date submitted, status 'Processing', item count","- /account/quotes page accessible from account menu
+- Submitted quote visible in list
+- Quote displays correct metadata: ID, submission date, status
+- Status badge shows 'Processing'
+- Quote line item count matches original cart",Coverage Gap Analysis,Generated
+QUOTE-003,Quote Detail Page,Quotes > RFQ,Functional,High,4m,"Quote exists with status 'Processing'","1. Navigate to /account/quotes
+2. Click on the quote
+3. Verify quote detail page loads
+4. Verify line items display with product names and quantities
+5. Verify specifications/notes are shown
+6. Verify current status is displayed","- Quote detail page shows all line items from original RFQ
+- Each line item shows: product name, requested quantity, original unit price
+- Specifications/notes visible as entered during submission
+- Status clearly shown at top of page
+- Quote ID and submission date shown",Coverage Gap Analysis,Generated
+QUOTE-004,Admin Response Notification,Quotes > RFQ,Functional,High,5m,"Admin has responded to quote with pricing","1. Sign in as B2B buyer with a quote that Admin has responded to
+2. Check for notification in storefront header or notifications area
+3. Navigate to /account/quotes","- Notification badge or alert visible indicating 'Quote Received'
+- Quotes list shows updated status indicating admin response
+- Email notification sent to buyer (if configured)
+- Quote status changed from 'Processing' to 'Quote Received' or equivalent",Coverage Gap Analysis,Generated
+QUOTE-005,View Updated Quote Pricing,Quotes > RFQ,Functional,Critical,5m,"Admin has responded to quote with proposed pricing","1. Navigate to /account/quotes
+2. Click on the quote with Admin's response
+3. View line items on quote detail page
+4. Compare Admin's proposed pricing to original prices","- Quote detail page shows Admin's proposed unit prices per line item
+- Original requested prices shown alongside for comparison (if applicable)
+- Price difference visible (e.g., negotiated price vs catalog price)
+- Total proposed quote value shown
+- Validity/expiry date displayed if set by Admin",Coverage Gap Analysis,Generated
+QUOTE-006,Accept Quote,Quotes > RFQ,Functional,Critical,5m,"Quote with Admin pricing response is available","1. View quote detail page with Admin's proposed pricing
+2. Review all line items and proposed prices
+3. Click 'Accept Quote' button
+4. Confirm acceptance in dialog
+5. Verify quote status changes to 'Accepted'
+6. Verify 'Convert to Order' button appears","- 'Accept Quote' button visible when quote has Admin pricing
+- Confirmation dialog appears: 'Accept this quote?'
+- After acceptance: status changes to 'Accepted'
+- 'Convert to Order' button becomes visible
+- 'Reject Quote' button no longer available after acceptance
+- Acceptance timestamp recorded",Coverage Gap Analysis,Generated
+QUOTE-007,Convert Quote to Order,Quotes > RFQ,Functional,Critical,8m,"Quote status is 'Accepted', 'Convert to Order' button visible","1. View accepted quote detail page
+2. Click 'Convert to Order'
+3. Verify checkout flow opens pre-populated with quote items
+4. Select shipping address and method
+5. Confirm payment method
+6. Place order
+7. Verify order uses quoted prices, not current catalog prices","- 'Convert to Order' button initiates checkout
+- Checkout pre-populated with quote line items and quantities
+- Prices used are the Admin-quoted prices, not current catalog prices
+- Shipping and payment steps complete normally
+- Order confirmation shows quoted prices
+- Quote status updates to 'Ordered' or 'Closed' after conversion
+- Order references the original quote ID",Coverage Gap Analysis,Generated
+QUOTE-008,Reject Quote,Quotes > RFQ,Functional,High,5m,"Quote with Admin pricing response is available","1. View quote detail page with Admin's proposed pricing
+2. Click 'Reject Quote' button
+3. Enter rejection reason in text field
+4. Submit rejection
+5. Verify quote status changes to 'Rejected'
+6. Verify Admin sees the rejection in Admin portal","- 'Reject Quote' button visible when quote has Admin response
+- Rejection reason field is required
+- After submission: status changes to 'Rejected'
+- Rejection reason stored and visible in quote history
+- Admin notified of rejection (notification or status update in Admin portal)
+- Cannot convert rejected quote to order",Coverage Gap Analysis,Generated
+QUOTE-009,Quote Negotiation,Quotes > RFQ,Functional,High,6m,"Quote exists with Admin's initial pricing response","1. View quote with Admin pricing
+2. Locate 'Request Revision' or 'Counter-offer' option
+3. Enter desired pricing adjustment or comment
+4. Submit revision request
+5. Verify quote status reflects pending negotiation
+6. Admin updates pricing in response
+7. View revised quote with updated pricing","- Option to request price revision is available on quote detail
+- Buyer can enter counter-offer or price adjustment request with notes
+- Quote returns to negotiation status
+- Admin receives notification of revision request
+- Admin updates pricing in response
+- Buyer can view revised quote with updated Admin pricing
+- Negotiation history/trail visible on quote",Coverage Gap Analysis,Generated
+QUOTE-010,Quote with Substitution,Quotes > RFQ,Functional,High,5m,"Admin has offered an alternate/substitute product on a quote line","1. View quote detail page where Admin has added a substitute product
+2. Locate the substitution on the affected line item
+3. Review substitute product details: name, SKU, price
+4. Compare original product to substitute
+5. Accept or reject the substitution","- Substituted line item clearly flagged (e.g., badge 'Substitution')
+- Both original requested product and substitute are shown
+- Substitute shows: name, SKU, unit price, availability
+- Buyer can accept or reject individual substitutions
+- Accepting substitution updates the line item for order conversion",Coverage Gap Analysis,Generated
+QUOTE-011,Quote Expiry,Quotes > RFQ,Functional,High,4m,"Quote with an expiry date set by Admin, date has passed","1. Navigate to /account/quotes
+2. Locate a quote past its expiry date
+3. Verify quote shows 'Expired' status
+4. Click on the expired quote
+5. Verify 'Convert to Order' button is NOT available
+6. Verify option to request a new quote is available","- Expired quote shows 'Expired' status badge in list
+- Expired date displayed on quote detail
+- 'Convert to Order' button is absent or disabled for expired quotes
+- 'Accept Quote' button is absent or disabled
+- Option presented to submit a new RFQ for the same items
+- Expired quotes cannot be reactivated",Coverage Gap Analysis,Generated
+QUOTE-012,Quote History Filter,Quotes > RFQ,Functional,Medium,4m,"Multiple quotes exist with different statuses: Processing, Accepted, Rejected, Expired","1. Navigate to /account/quotes
+2. Locate filter or status dropdown
+3. Filter by status 'Processing' and verify only Processing quotes shown
+4. Filter by status 'Accepted' and verify only Accepted quotes shown
+5. Filter by status 'Rejected' and verify only Rejected quotes shown
+6. Filter by status 'Expired' and verify only Expired quotes shown
+7. Clear filter and verify all quotes shown","- Filter control available (dropdown or tabs) on quotes list page
+- Each status filter correctly limits displayed quotes
+- Quote count updates to reflect filtered set
+- Clearing filter restores full list
+- Active filter state is visually indicated",Coverage Gap Analysis,Generated
+QUOTE-013,Quote with Attachments,Quotes > RFQ,Functional,Medium,5m,"User submitting a new RFQ from cart","1. Navigate to cart with items
+2. Click 'Request Quote'
+3. Locate file attachment option on RFQ form
+4. Upload a specification PDF or image file
+5. Verify file uploads and filename displayed
+6. Submit RFQ
+7. Verify attachment is visible on quote detail page","- File upload field present on RFQ submission form
+- Accepted file types shown (e.g., PDF, DOCX, PNG, JPG)
+- File size limit enforced (e.g., 10MB)
+- Uploaded filename displayed with option to remove before submission
+- After submission: attachment visible on quote detail page
+- Admin can download the attachment",Coverage Gap Analysis,Generated
+QUOTE-014,Multiple Active Quotes,Quotes > RFQ,Functional,Medium,4m,"At least 3 quotes exist with different statuses","1. Navigate to /account/quotes
+2. Verify all quotes listed with correct statuses
+3. Verify sorting — most recent first by default
+4. Click column headers to change sort order (if available)
+5. Verify sort changes order of listed quotes","- Multiple quotes display in a list/table format
+- Each row shows: Quote ID, submission date, status, item count, total value
+- Default sort is most recent first (descending by date)
+- Sort by status or date functions correctly
+- Pagination or infinite scroll for many quotes (if applicable)",Coverage Gap Analysis,Generated
+QUOTE-015,RFQ from Saved List,Quotes > RFQ,Functional,High,5m,"User has a saved list with products, RFQ feature enabled","1. Navigate to /account/lists (My Lists)
+2. Open a saved list containing products
+3. Locate 'Request Quote' option on the list page (not from cart)
+4. Click 'Request Quote' from list
+5. Verify RFQ form opens with list products pre-populated
+6. Fill specifications and submit
+7. Verify quote created with list items","- 'Request Quote' button available directly on saved list page
+- RFQ form pre-populates with all list items and quantities
+- Works independently of cart — products do not need to be in cart first
+- Submitted quote appears in /account/quotes with 'Processing' status
+- List items remain in list after RFQ submission",Coverage Gap Analysis,Generated
+CHK-039,Reorder - Add to Cart,Orders > Reorder,Functional,High,5m,"User has at least one completed order in order history","1. Navigate to /account/orders (order history)
+2. Click on a completed order
+3. Verify order detail page loads
+4. Click 'Reorder' button
+5. Verify items added to cart
+6. Navigate to cart
+7. Verify reordered items present with correct quantities","- 'Reorder' button visible on completed order detail page
+- Clicking 'Reorder' adds all order line items to cart
+- Quantities match original order quantities
+- Success notification: 'Items added to cart'
+- Cart count updates
+- Items from current cart are not replaced (reorder items are added alongside)",Coverage Gap Analysis,Generated
+CHK-040,Reorder - Current Prices,Orders > Reorder,Functional,High,5m,"User has a completed order with items whose prices may have changed since order date","1. Navigate to order history
+2. Find an order placed at least 30 days ago
+3. Note the prices from the original order
+4. Click 'Reorder'
+5. Navigate to cart
+6. Compare reordered item prices to original order prices","- Cart shows current catalog prices, not historical order prices
+- Price difference noted if catalog price has changed
+- Cart total reflects current pricing
+- No system error if price has changed
+- Customer can review current prices before checkout",Coverage Gap Analysis,Generated
+CHK-041,Reorder - Partial Availability,Orders > Reorder,Functional,High,6m,"Order contains at least one discontinued or unavailable product","1. Navigate to order detail for an order containing a discontinued product
+2. Click 'Reorder'
+3. Observe the reorder process
+4. Navigate to cart
+5. Verify available items were added
+6. Verify notification or warning about unavailable item","- Available products added to cart successfully
+- Discontinued or unavailable items not added to cart
+- Warning message shown listing unavailable items: 'Some items are no longer available: [Product Name]'
+- Cart contains only the available reorder items
+- Customer can proceed to checkout with available items",Coverage Gap Analysis,Generated
+CHK-042,Reorder - Out of Stock Item,Orders > Reorder,Functional,Medium,5m,"Order contains an item that is currently out of stock (but product still exists)","1. Navigate to order detail for an order containing a currently out-of-stock product
+2. Click 'Reorder'
+3. Observe the process
+4. Check if out-of-stock item was added to cart","- Out-of-stock item either not added to cart with appropriate message, or added with 'Out of Stock' warning
+- Appropriate notification shown: '[Product] is currently out of stock'
+- Available items from the order are still added to cart
+- Customer informed of out-of-stock situation before attempting checkout",Coverage Gap Analysis,Generated
+CHK-043,Separate Billing Address,Checkout > Billing,Functional,High,5m,"User in checkout with shipping address selected","1. Navigate to checkout and select shipping address
+2. Locate billing address section
+3. Verify 'Same as shipping address' checkbox is present and checked by default
+4. Uncheck 'Same as shipping address'
+5. Verify billing address form appears
+6. Enter different billing address details
+7. Proceed to payment step","- 'Same as shipping address' checkbox present in billing section
+- Checkbox is checked by default
+- Unchecking reveals a separate billing address form
+- Billing form has same fields as shipping: Name, Street, City, State, ZIP, Country
+- Can enter a different address without error
+- Billing address form validates required fields",Coverage Gap Analysis,Generated
+CHK-044,Billing Address Validation,Checkout > Billing,Functional,High,5m,"'Same as shipping' unchecked, billing address form visible","1. Leave required billing address fields empty
+2. Attempt to proceed to next checkout step
+3. Verify validation errors appear on billing form
+4. Enter invalid ZIP code (e.g., '999')
+5. Verify ZIP validation error
+6. Fix all errors with valid billing address data
+7. Proceed to next step successfully","- Required fields enforced: Street, City, State/Province, ZIP, Country
+- Field-level error messages appear on invalid input
+- Invalid ZIP format triggers specific error message
+- Cannot proceed to payment step without valid billing address
+- After correcting errors, checkout proceeds normally",Coverage Gap Analysis,Generated
+CHK-045,Billing Address Persists in Order Detail,Checkout > Billing,Functional,Medium,8m,"Checkout completed with different billing and shipping addresses","1. Place order with a billing address different from shipping address
+2. Navigate to order history
+3. Open the placed order's detail page
+4. Locate billing address section
+5. Verify billing address is displayed separately from shipping","- Order detail page shows both addresses distinctly
+- Shipping address section labeled 'Ship To' or 'Shipping Address'
+- Billing address section labeled 'Bill To' or 'Billing Address'
+- Both addresses match what was entered at checkout
+- Addresses are not conflated or overwritten",Coverage Gap Analysis,Generated
+CHK-046,Default Billing Same as Shipping,Checkout > Billing,Functional,Medium,3m,"User at checkout billing step","1. Navigate to checkout
+2. Complete shipping address step
+3. Observe billing section on payment step
+4. Verify 'Same as shipping address' is checked by default
+5. Verify no separate billing form is shown when checked","- Billing section defaults to 'Same as shipping address' checked
+- No separate billing address form displayed when checkbox is checked
+- Shipping address used as billing without additional input required
+- Default behavior reduces friction for standard purchases",Coverage Gap Analysis,Generated
+CHK-047,Invoice Download Button,Orders > Invoice,Functional,High,4m,"User has at least one completed/shipped order in order history","1. Navigate to account order history
+2. Click on a completed order
+3. Verify order detail page loads
+4. Locate 'Download Invoice' button or link
+5. Verify button is visible for completed/shipped orders","- 'Download Invoice' button or link visible on detail page of completed orders
+- Button clearly labeled (e.g., 'Download Invoice', 'Get Invoice', 'PDF Invoice')
+- Button accessible without additional navigation
+- Clicking the button triggers a PDF download or opens PDF in browser",Coverage Gap Analysis,Generated
+CHK-048,Invoice PDF Content,Orders > Invoice,Functional,High,6m,"Completed order with 'Download Invoice' available","1. Click 'Download Invoice' on a completed order
+2. Open the downloaded PDF
+3. Verify the PDF contains line items with product names and quantities
+4. Verify unit prices and line totals are shown
+5. Verify tax amount is shown
+6. Verify order total (subtotal + shipping + tax) is shown
+7. Verify both shipping and billing addresses are present
+8. Verify company/store information is present","- PDF opens and renders without error
+- Line items: product name, SKU, quantity, unit price, line total
+- Order subtotal, shipping cost, tax, and grand total all shown
+- Shipping address ('Ship To') shown
+- Billing address ('Bill To') shown
+- Store/company name, logo, and contact info present
+- Order number and order date visible on invoice
+- No placeholder text or missing data fields",Coverage Gap Analysis,Generated
+CHK-049,Invoice Not Available for Pending Orders,Orders > Invoice,Functional,Medium,3m,"User has a pending or processing order (not yet shipped or completed)","1. Navigate to order history
+2. Find an order with status 'Pending' or 'Processing'
+3. Click on that order to view detail
+4. Look for invoice download button","- 'Download Invoice' button is absent or disabled for pending/processing orders
+- If button is shown, clicking it displays: 'Invoice not yet available' or similar message
+- No error thrown when attempting to access invoice for pending order
+- Appropriate message explains when invoice will be available (e.g., 'Available after shipment')",Coverage Gap Analysis,Generated
+CHK-050,Submit Return Request,Orders > Returns,Functional,High,6m,"User has a shipped or delivered order eligible for return","1. Navigate to order history
+2. Click on a shipped/delivered order
+3. Locate 'Request Return' or 'Return Items' button
+4. Click to open return request flow
+5. Select items to return (checkboxes per line item)
+6. Select return reason from dropdown
+7. Submit return request
+8. Verify confirmation message","- 'Request Return' button visible on eligible shipped/delivered orders
+- Return flow allows selecting specific items to return
+- Reason selection: Defective, Wrong item, Changed mind, Damaged, etc.
+- Optional comments field for additional details
+- Confirmation message: 'Return request submitted' with reference number
+- Return request appears on order detail with status 'Pending'",Coverage Gap Analysis,Generated
+CHK-051,Return Status Display,Orders > Returns,Functional,High,4m,"Return request has been submitted for an order","1. Navigate to the order detail for an order with a submitted return request
+2. Locate the return section on the order detail page
+3. Verify return status is displayed","- Return request section visible on order detail page
+- Return status shown: 'Pending' immediately after submission
+- Return reference number or ID displayed
+- Items included in return listed
+- Return submission date shown",Coverage Gap Analysis,Generated
+CHK-052,Return Reason Required,Orders > Returns,Functional,Medium,3m,"User in return request flow, items selected","1. Select items for return
+2. Leave the return reason field empty or unselected
+3. Attempt to submit the return request
+4. Verify validation error
+5. Select a return reason
+6. Submit successfully","- Submitting without a reason triggers validation error
+- Error message: 'Please select a return reason' or similar
+- Cannot proceed without selecting a reason
+- After selecting a reason, submission succeeds",Coverage Gap Analysis,Generated
+CHK-053,Partial Return,Orders > Returns,Functional,High,5m,"Order with 3 or more line items, all items eligible for return","1. Navigate to return request for a multi-item order
+2. Select only 2 of 3 available items using item checkboxes
+3. Leave 1 item unselected
+4. Select return reason
+5. Submit return request
+6. Verify only the 2 selected items are in the return","- Individual item selection via checkboxes per line item
+- Unselected items are excluded from return request
+- Return confirmation lists only the 2 selected items
+- Unselected item remains on order without return status
+- Partial return does not affect the non-returned item's order status",Coverage Gap Analysis,Generated
+CHK-054,Return History,Orders > Returns,Functional,Medium,4m,"User has submitted at least 2 return requests across different orders","1. Navigate to account returns section (e.g., /account/returns or within Orders)
+2. Verify all return requests are listed
+3. Verify each return shows: return ID, order reference, status, items, submission date","- Return history accessible from account menu or order history
+- List shows all submitted return requests
+- Each entry shows: Return ID/reference, associated order number, current status, item count, date
+- Can click a return to view full details
+- Returns sorted by most recent first",Coverage Gap Analysis,Generated
+
+CHK-055,Subscription Option Visible,Checkout > Subscriptions,Functional,Medium,3m,"subscriptionEnabled feature flag = true, eligible subscription product exists","1. Navigate to an eligible product detail page
+2. Verify the subscription purchase option is displayed
+3. Verify the one-time purchase option is also displayed
+4. Compare the two option presentations","- Subscription option visible alongside one-time purchase option
+- Options are clearly labeled (e.g., One-time purchase / Subscribe and Save)
+- Subscription pricing or savings shown if applicable
+- UI does not show subscription option for ineligible products",Coverage Gap Analysis,Generated
+CHK-056,Select Subscription Frequency,Checkout > Subscriptions,Functional,Medium,4m,"subscriptionEnabled feature flag = true, eligible product on PDP","1. Select the subscription option on an eligible product
+2. Locate the frequency selector
+3. Select Weekly frequency
+4. Verify price per interval displayed
+5. Select Monthly frequency
+6. Verify price updates
+7. Select Quarterly frequency
+8. Verify price updates","- Frequency selector appears after selecting subscription option
+- Available intervals: Weekly, Monthly, Quarterly (or store-configured intervals)
+- Price per interval shown for each selection
+- Price label updates correctly when frequency changes
+- Only one frequency selectable at a time",Coverage Gap Analysis,Generated
+CHK-057,Subscription Checkout,Checkout > Subscriptions,Functional,Medium,8m,"subscriptionEnabled feature flag = true, subscription product added to cart with frequency selected","1. Select subscription option and frequency on eligible product
+2. Add to cart
+3. Navigate to cart and verify subscription details shown
+4. Proceed to checkout
+5. Complete shipping and payment steps
+6. Verify order review page shows subscription details
+7. Place order","- Cart shows product with subscription label and selected frequency
+- Checkout steps complete without errors
+- Order review page shows: product name, subscription frequency, price per interval
+- Order confirmation page shown after placing
+- Order number generated and displayed",Coverage Gap Analysis,Generated
+CHK-058,Subscription in Order History,Checkout > Subscriptions,Functional,Medium,4m,"Subscription order placed (CHK-057 executed), user in Order History","1. Navigate to /account/orders
+2. Locate the subscription order
+3. Click to view order details
+4. Inspect subscription-specific fields","- Subscription order visible in Order History
+- Order detail shows recurrence frequency (e.g., Monthly)
+- Next delivery date displayed
+- Subscription status shown (e.g., Active)
+- Order line item indicates it is a subscription",Coverage Gap Analysis,Generated
+CHK-059,Cancel Subscription,Checkout > Subscriptions,Functional,Medium,5m,"Active subscription exists in account, subscriptionEnabled feature flag = true","1. Navigate to subscription management (e.g., /account/subscriptions)
+2. Locate an active subscription
+3. Click Cancel subscription
+4. Confirm the cancellation in the dialog
+5. Verify subscription status updates","- Subscription management page accessible
+- Cancel action available for active subscriptions
+- Confirmation dialog shown before cancelling
+- After confirmation, subscription status changes to Cancelled
+- Cancelled subscription no longer triggers future orders
+- UI feedback confirms cancellation (toast or inline message)",Coverage Gap Analysis,Generated
+CHK-060,Subscription Not Available When Feature Disabled,Checkout > Subscriptions,Functional,Medium,3m,subscriptionEnabled feature flag = false,"1. Confirm subscriptionEnabled is set to false in store configuration
+2. Navigate to any product detail page (including previously eligible products)
+3. Verify no subscription option is displayed
+4. Navigate to /account/subscriptions (if URL known)
+5. Verify no subscription management UI accessible","- No subscription purchase option shown on any product PDP
+- One-time purchase is the only available option
+- /account/subscriptions returns 404 or redirects appropriately
+- No subscription-related UI elements present anywhere in storefront",Coverage Gap Analysis,Generated
+CART-028,Price Increase During Session,Cart > Price Changes,Functional,Medium,6m,"User logged in, product added to cart at original price, admin access available","1. Add a product to cart and note the price (e.g., $10.00)
+2. In Admin SPA, increase the product price to $15.00
+3. Return to the storefront cart (without clearing cache)
+4. Reload or revisit the cart page
+5. Verify the displayed unit price
+6. Verify the cart total","- Cart line item price updates to reflect increased price ($15.00)
+- Cart subtotal and total recalculate automatically
+- A price-change notification or warning shown to the customer (if applicable)
+- Customer cannot checkout at the old price
+- No mismatch between displayed price and order total on checkout",Coverage Gap Analysis,Generated
+CART-029,Price Decrease During Session,Cart > Price Changes,Functional,Medium,6m,"User logged in, product added to cart at original price, admin access available","1. Add a product to cart and note the price (e.g., $20.00)
+2. In Admin SPA, decrease the product price to $15.00
+3. Return to the storefront cart
+4. Reload or revisit the cart page
+5. Verify the displayed unit price
+6. Verify the cart total","- Cart line item price updates to reflect decreased price ($15.00)
+- Cart subtotal and total recalculate automatically
+- Customer benefits from the lower price
+- No residual old price shown anywhere in cart
+- Checkout proceeds at the new lower price",Coverage Gap Analysis,Generated
+CART-031,Quantity Stepper - PDP Increment Adds to Cart Immediately,Cart > Quantity Stepper,Functional,Critical,3m,"User logged in, product available, not in cart","1. Navigate to product detail page
+2. Verify spinbutton 'Product quantity' shows '0' and 'Decrease quantity' button is disabled
+3. Click 'Increase quantity' button
+4. Verify spinbutton shows '1'
+5. Verify 'in Cart' indicator appears showing '1'
+6. Verify Cart badge increments by 1
+7. Verify 'Decrease quantity' button becomes enabled","- Product added to cart immediately on '+' click (no separate Add to Cart button)
+- 'in Cart' indicator appears adjacent to stepper
+- Cart badge updates in real-time
+- 'Decrease quantity' transitions from disabled to enabled",QS-PDP-001,Manual
+CART-032,Quantity Stepper - PDP Decrement to Zero Removes from Cart,Cart > Quantity Stepper,Functional,Critical,3m,"User logged in, product in cart with qty=1 (spinbutton shows '1')","1. On PDP verify spinbutton shows '1' and 'in Cart' indicator shows '1'
+2. Click 'Decrease quantity' button
+3. Verify spinbutton shows '0'
+4. Verify 'in Cart' indicator disappears
+5. Verify Cart badge decrements by 1
+6. Verify 'Decrease quantity' button becomes disabled
+7. Navigate to /cart and confirm product is removed","- Decrementing to 0 on PDP removes product from cart
+- 'in Cart' indicator removed from DOM
+- Cart badge reflects removal
+- 'Decrease quantity' disabled at qty=0",QS-PDP-004,Manual
+CART-033,Quantity Stepper - Same SKU from Listing and PDP Creates Single Line Item,Cart > Quantity Stepper,Functional,Critical,3m,"User logged in, cart empty or product not in cart","1. Navigate to category listing page
+2. Click 'Increase quantity' on product card - qty becomes 1
+3. Navigate to product detail page for the same product
+4. Verify spinbutton shows '1' (synced from listing add)
+5. Click 'Increase quantity' on PDP
+6. Navigate to /cart
+7. Count line items for this product SKU","- PDP spinbutton reflects qty added from listing
+- Exactly one line item exists in cart (no duplicate)
+- Line item quantity = 2
+- Satisfies BL-CART-007 (same SKU increments existing line)",QS-PDP-006,Manual
+CART-034,Quantity Stepper - Cart Page Minimum is 1 (Decrease Disabled),Cart > Quantity Stepper,Functional,High,3m,"Product in cart with qty=1, navigate to /cart","1. On cart page verify spinbutton shows '1' for line item
+2. Observe 'Decrease quantity' button state
+3. Attempt to click 'Decrease quantity'","- 'Decrease quantity' button is disabled at qty=1 on cart page
+- Quantity cannot go below 1 via stepper (use 'Remove from cart' button instead)
+- Cart page minimum differs from PDP (where 0 is allowed)",QS-BVA-003,Manual
+CART-035,Quantity Stepper - Direct Input Updates Cart and Totals,Cart > Quantity Stepper,Functional,High,3m,"Product in cart with qty=1, on cart page or PDP","1. Click on spinbutton 'Product quantity' field to focus
+2. Select all text and type '5'
+3. Press Tab or Enter to commit
+4. Verify spinbutton shows '5'
+5. On cart page verify line total = 5 x unit price
+6. Verify Order Summary subtotal and total update","- Direct keyboard entry accepted
+- Cart updated to qty=5 without creating duplicate line
+- Line total recalculates accurately
+- Order Summary reflects new totals",QS-INPUT-001,Manual
+CART-036,Quantity Stepper - Invalid Input Rejected (Negative and Non-Numeric),Cart > Quantity Stepper,Functional,High,5m,"Product in cart, spinbutton focused","1. Select all text in spinbutton and type '-1' then press Tab
+2. Verify value is rejected or reverted to last valid quantity
+3. Select all and type 'abc' then press Tab
+4. Verify value is rejected or reverted
+5. Select all and type '1.5' then press Tab
+6. Verify value is rejected or rounded to integer
+7. Check browser console for errors after each attempt","- Negative numbers rejected
+- Non-numeric input rejected
+- Decimal values rejected or rounded
+- No console errors or failed API calls
+- Cart quantity remains at last valid value",QS-INPUT-004,Manual
+CART-037,Quantity Stepper - Max Stock Enforcement,Cart > Quantity Stepper,Functional,High,5m,"Product with known limited stock (e.g. stock=5), qty=0 in cart","1. Click 'Increase quantity' repeatedly until reaching max stock
+2. Observe 'Increase quantity' button state at max stock
+3. Attempt to click 'Increase quantity' one more time
+4. Try direct input of 99999 in spinbutton field
+5. Press Tab to commit","- 'Increase quantity' button becomes disabled at max stock
+- Additional clicks have no effect
+- Direct input of qty > stock is capped or shows warning
+- Cart quantity never exceeds available inventory
+- Satisfies BL-CART-001",QS-BVA-002,Manual
+CART-038,Quantity Stepper - Cart Quantity Persists After Page Refresh,Cart > Quantity Stepper,Functional,High,3m,"Product in cart with qty=3, on /cart page","1. Verify spinbutton shows '3'
+2. Refresh the browser page (F5)
+3. Wait for cart page to fully load
+4. Verify spinbutton still shows '3'
+5. Verify Cart badge count unchanged","- Cart quantity persists server-side
+- Page refresh does not lose quantity
+- Cart badge consistent after reload",QS-PERSIST-001,Manual
+CART-039,Quantity Stepper - Rapid Double-Click Does Not Corrupt Cart,Cart > Quantity Stepper,Functional,High,3m,"Product in cart with qty=1, on PDP or cart page","1. Double-click 'Increase quantity' button rapidly
+2. Wait 2 seconds for API responses to settle
+3. Observe spinbutton value
+4. Navigate to /cart and verify line item quantity
+5. Check browser console for errors","- Spinbutton shows a deterministic value (2 or 3)
+- No duplicate line items created
+- No console errors from race conditions
+- Cart total is arithmetically consistent with displayed quantity",QS-ERR-001,Manual
+CART-030,Discount Removal During Session,Cart > Price Changes,Functional,Medium,6m,"User logged in, product in cart with an active promotional discount applied, admin access available","1. Add a discounted product to cart and note discounted price
+2. In Admin SPA, deactivate or remove the promotion/coupon
+3. Return to storefront cart
+4. Reload or revisit the cart page
+5. Verify the displayed price
+6. Verify cart totals","- Cart line item price updates to full price (discount removed)
+- Discount line removed from cart summary
+- Cart total recalculates to full price
+- No stale discount amount persists
+- Customer informed that promotion is no longer valid (if applicable)",Coverage Gap Analysis,Generated

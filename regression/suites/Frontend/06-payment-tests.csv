@@ -163,3 +163,145 @@ PAY-EDGE-001,Double-Click Submit Prevention,Payment > Edge,Edge Case,High,5m,"- 
 3. Verify behavior","- Only one order created
 - Button disabled after click
 - No duplicate charges",VCST-3387 TC-EDGE-020,Manual
+PAY-DECLINE-001,Declined Card - Error Message Displayed,Payment > Declined,Functional,Critical,5m,"- Checkout at payment step
+- Payment processor configured with known decline test card","1. Fill out the payment form using a known-decline test card number (per payment processor test documentation)
+2. Fill in a valid expiry date, CVV, and cardholder name
+3. Click 'Place Order'
+4. Wait for the payment processor response","- A clear error message is displayed to the user (e.g., 'Your card was declined. Please try a different payment method.')
+- The payment form is NOT cleared — all fields retain their entered values
+- The order is NOT created
+- The user remains on the checkout payment step and can retry",Coverage Gap Analysis,Generated
+PAY-DECLINE-002,Declined Card - Retry with Different Card,Payment > Declined,Functional,Critical,8m,"- Payment declined state from PAY-DECLINE-001
+- A valid test card available for retry","1. After receiving a decline error on the first card, do not refresh the page
+2. Clear the card number field and enter a different valid test card number
+3. Update CVV if required for the new card
+4. Click 'Place Order' again","- The retry attempt is accepted without requiring a full page reload
+- The new card is processed by the payment processor
+- Payment succeeds with the valid card
+- Order confirmation page is displayed
+- Only one order is created (no duplicate from the first declined attempt)",Coverage Gap Analysis,Generated
+PAY-DECLINE-003,Declined Card - Network Timeout Recovery,Payment > Declined,Functional,High,8m,"- Checkout at payment step
+- Ability to simulate network timeout (e.g., via DevTools Network throttling or request blocking)","1. Fill out the payment form with a valid test card
+2. Using browser DevTools, simulate a network timeout or block the payment API endpoint
+3. Click 'Place Order'
+4. Observe the error handling
+5. Restore normal network conditions
+6. Retry the payment submission","- An appropriate timeout/network error message is displayed (e.g., 'Payment processing timed out. Please try again.')
+- The error message does not expose internal server details
+- The checkout form is still usable after the timeout
+- After restoring network, the retry attempt is processed successfully
+- No duplicate order is created from the timeout attempt",Coverage Gap Analysis,Generated
+PAY-DECLINE-004,Declined Card - Double-Click Prevention Still Enforced After Error,Payment > Declined,Edge Case,High,5m,"- Payment has just returned a decline error
+- User is on the payment step with the error message visible","1. After receiving a decline error message, do NOT clear the form
+2. Rapidly double-click or triple-click the 'Place Order' / 'Retry' button
+3. Observe how many payment requests are sent (monitor via DevTools Network tab)","- Only one payment request is sent per user action, even after a decline error
+- The 'Place Order' button is disabled immediately after the first click on retry
+- No duplicate payment authorization requests are sent to the payment processor
+- The button re-enables only after the response is received",Coverage Gap Analysis,Generated
+PAY-DECLINE-005,Declined Card - Cart and Progress Preserved,Payment > Declined,Functional,Critical,5m,"- User has gone through checkout (shipping + payment steps)
+- Payment has returned a decline error","1. Complete all checkout steps up to and including payment
+2. Submit a payment that will be declined
+3. Observe the cart and checkout state after the decline error
+4. Verify cart contents
+5. Verify whether checkout progress (shipping address, shipping method) is preserved","- Cart contents are not lost after a payment decline
+- All items remain in the cart with correct quantities
+- Previously entered shipping address is preserved
+- Previously selected shipping method is preserved
+- User does not need to re-enter shipping information to retry payment",Coverage Gap Analysis,Generated
+PAY-SKY-002,Skyflow - Mastercard Payment,Skyflow > Extended,Functional,High,8m,"- Skyflow configured
+- Mastercard test card available in .env (SKYFLOW_MASTERCARD)","1. Navigate to checkout and select Skyflow payment method
+2. Enter the Mastercard test card number from SKYFLOW_MASTERCARD env variable
+3. Enter the expiry date from SKYFLOW_EXPIRY env variable
+4. Enter the CVV from SKYFLOW_CVV env variable
+5. Submit payment","- Mastercard card number is accepted by the Skyflow iframe
+- Card type is detected as Mastercard (MC icon shown)
+- Payment is processed successfully
+- Order confirmation page is displayed with order number
+- Order appears in admin with Mastercard payment recorded",Coverage Gap Analysis,Generated
+PAY-SKY-003,Skyflow - Invalid Card Number Validation,Skyflow > Extended,Functional,High,3m,"- Skyflow payment form loaded at checkout","1. In the Skyflow card number field, enter an invalid card number (e.g., '1234567890123456' which fails Luhn check)
+2. Move focus out of the card number field (tab or click elsewhere)
+3. Observe validation feedback
+4. Attempt to submit the form","- Skyflow displays a validation error on the card number field ('Invalid card number' or equivalent)
+- The error appears inline within the Skyflow iframe
+- The 'Place Order' button cannot be successfully submitted with an invalid card
+- The error clears when a valid card number is entered",Coverage Gap Analysis,Generated
+PAY-SKY-004,Skyflow - Empty Fields Validation,Skyflow > Extended,Functional,High,3m,"- Skyflow payment form loaded at checkout","1. Leave all Skyflow payment fields empty (card number, expiry, CVV)
+2. Click 'Place Order' without filling in any payment details
+3. Observe error messages per field","- Each empty required field shows an individual validation error message
+- Card number field: 'Card number is required' or equivalent
+- Expiry field: 'Expiry date is required' or equivalent
+- CVV field: 'CVV is required' or equivalent
+- Form cannot be submitted until all required fields are filled",Coverage Gap Analysis,Generated
+PAY-SKY-005,Skyflow - Card Type Detection,Skyflow > Extended,Functional,Medium,3m,"- Skyflow payment form loaded at checkout","1. In the Skyflow card number field, begin entering a Visa test card number (starts with 4)
+2. Observe the card type icon displayed in or near the card field
+3. Clear the field
+4. Begin entering a Mastercard test card number (starts with 51-55 or 2221-2720)
+5. Observe the card type icon","- When a Visa card number is entered, the Visa icon/logo is highlighted or displayed
+- When a Mastercard number is entered, the Mastercard icon/logo is highlighted or displayed
+- Other card type icons are dimmed when a specific type is detected
+- Card type detection is responsive as digits are typed (not only after full entry)",Coverage Gap Analysis,Generated
+PAY-AN-002,Authorize.Net - Field Validation on Invalid Card,Authorize.Net > Extended,Functional,High,3m,"- Authorize.Net payment form loaded at checkout","1. Enter an invalid card number in the Authorize.Net card number field (e.g., '1234 5678 9012 3456' — fails Luhn check)
+2. Fill in valid expiry and CVV
+3. Attempt to submit the form","- Validation error appears on the card number field ('Invalid card number' or equivalent)
+- The form cannot be submitted with an invalid card number
+- Error message is displayed inline near the card number field
+- After entering a valid card number, the error clears",Coverage Gap Analysis,Generated
+PAY-AN-003,Authorize.Net - Empty Fields Validation,Authorize.Net > Extended,Functional,High,3m,"- Authorize.Net payment form loaded at checkout","1. Leave all payment fields empty (card number, expiry, CVV, cardholder name)
+2. Click 'Place Order' without entering any payment data
+3. Observe per-field validation errors","- Each empty required field shows an individual error message
+- Card number: 'Card number is required'
+- Expiry: 'Expiry date is required'
+- CVV: 'CVV is required'
+- Cardholder name (if required): 'Name is required'
+- Form is not submitted until all required fields have valid input",Coverage Gap Analysis,Generated
+PAY-AN-004,Authorize.Net - Transaction ID on Confirmation,Authorize.Net > Extended,Functional,Medium,8m,"- Authorize.Net configured with valid test credentials","1. Complete a full checkout using Authorize.Net test card credentials from .env
+2. Payment is authorized and order placed
+3. View the order confirmation page
+4. Navigate to account order history and view order details","- Payment is successfully authorized via Authorize.Net
+- Order confirmation page is displayed
+- Transaction ID or authorization code from Authorize.Net is visible on the confirmation page or order detail page
+- Transaction ID is also stored in the Admin order record under payment details",Coverage Gap Analysis,Generated
+PAY-AN-005,Authorize.Net - Order Visible in Admin with Payment Details,Authorize.Net > Extended,Functional,High,8m,"- Authorize.Net payment completed successfully (PAY-AN-001 passed)","1. After placing a successful order via Authorize.Net, note the order number
+2. Log in to the Admin portal
+3. Navigate to Orders and locate the order by number
+4. View the order's payment details section","- Order is present in Admin with the correct order number
+- Payment method shows Authorize.Net
+- Payment status shows as captured/authorized
+- Transaction ID from Authorize.Net is recorded in the payment details
+- Order total in Admin matches the amount authorized",Coverage Gap Analysis,Generated
+PAY-DT-002,Datatrans - OTP Flow,Datatrans > Extended,Functional,High,10m,"- Datatrans configured
+- Test card and OTP available from .env (DATATRANCE_OTP)","1. Navigate to checkout and select Datatrans payment method
+2. Enter the Datatrans test card details (card number, expiry, CVV from .env)
+3. Submit payment — observe redirect or modal for OTP/3DS
+4. When prompted, enter the OTP code from the DATATRANCE_OTP environment variable
+5. Submit the OTP
+6. Observe the return to store and order confirmation","- Datatrans payment redirect or modal opens correctly
+- OTP/3DS authentication prompt appears
+- Valid OTP from env is accepted
+- After OTP verification, payment is confirmed
+- User is returned to the store with the order confirmation page
+- Order number is displayed and order is created",Coverage Gap Analysis,Generated
+PAY-DT-003,Datatrans - Invalid OTP Recovery,Datatrans > Extended,Functional,High,8m,"- Datatrans OTP prompt is displayed during checkout","1. When prompted for the OTP, enter an incorrect OTP code (e.g., '000000')
+2. Submit the incorrect OTP
+3. Observe the error message
+4. Enter the correct OTP from the DATATRANCE_OTP environment variable
+5. Submit the correct OTP","- Invalid OTP shows an error message (e.g., 'Incorrect code. Please try again.')
+- The OTP entry form remains available for retry
+- After entering the correct OTP, payment is verified and completes successfully
+- Order confirmation page is displayed
+- No duplicate order is created from the failed OTP attempt",Coverage Gap Analysis,Generated
+PAY-DT-004,Datatrans - Card Validation,Datatrans > Extended,Functional,High,3m,"- Datatrans payment form or redirect loaded","1. Enter an invalid card number in the Datatrans card field (e.g., a number failing Luhn check)
+2. Fill other fields with valid test data
+3. Attempt to proceed with the invalid card","- Datatrans shows a validation error on the card number field
+- The error message is clear (e.g., 'Invalid card number')
+- Payment cannot proceed with an invalid card number
+- After correcting the card number to a valid test card, the error clears",Coverage Gap Analysis,Generated
+PAY-DT-005,Datatrans - Return to Store After Payment,Datatrans > Extended,Functional,Critical,10m,"- Datatrans configured, full payment flow executable","1. Proceed to checkout and select Datatrans as the payment method
+2. Complete the Datatrans payment flow including any OTP if required (use credentials from .env)
+3. After payment confirmation within Datatrans, observe the redirect back to the store
+4. Verify the order confirmation page
+5. Verify order details on the confirmation page","- After completing payment in Datatrans, the user is automatically redirected back to the storefront
+- The storefront displays the order confirmation page
+- Order number is shown on the confirmation page
+- Order items, totals, and shipping address on the confirmation match what was entered during checkout
+- Order is also visible in the user's account order history",Coverage Gap Analysis,Generated

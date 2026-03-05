@@ -138,3 +138,176 @@ NOTIF-052,NotificationsSample module - install and test,Extensions,Functional,Lo
 3. Send notification
 4. Update template and resend
 5. Delete template","Module installs correctly; CRUD operations on sample notifications work",C311917 C311918 C311919 C311920,Not Automated
+NOTIF-053,Notification Attachment — No Attachment,Notification Attachments,Functional,High,3min,"Admin logged in to Backend
+Notification template exists without attachments","1. Navigate to ${BACK_URL}/notifications
+2. Select a notification type that has no attachments configured
+3. Open the notification template details blade
+4. Verify the Attachments widget or section is visible
+5. Verify the attachment list is empty
+6. Verify the UI indicates the no-attachment state clearly (e.g., empty state message)
+7. Send a test notification from this template
+8. Verify the received email has no file attachments","- Attachments section is visible in the notification template blade
+- Empty attachment state is displayed with appropriate messaging
+- No attachment files are listed when none are configured
+- Test email sent from this template arrives without any file attachments
+- No error is shown for templates without attachments",C342062,Not Automated
+NOTIF-054,Notification Attachment Widget — Upload Attachment,Notification Attachments,Functional,High,5min,"Admin logged in to Backend
+Notification template exists
+PDF or image file available for upload","1. Navigate to ${BACK_URL}/notifications
+2. Open a notification template details blade
+3. Locate the Attachments widget or section
+4. Click Add or Upload to attach a file
+5. Select a PDF or image file from the file picker
+6. Verify the file appears in the attachments list
+7. Save the template
+8. Send a test notification
+9. Verify the received email includes the uploaded file as an attachment","- Attachments widget is visible on the notification template blade
+- File upload dialog opens when clicking the upload button
+- Uploaded file appears in the attachment list with filename and size
+- Template saves successfully with the attachment
+- Test email is received with the file correctly attached
+- Attachment file is downloadable and uncorrupted in the received email",C342063,Not Automated
+NOTIF-055,Notification Preview with Sample Data,Preview,Functional,High,5min,"Admin logged in to Backend
+Notification template exists with dynamic fields (e.g., {CustomerName}, {OrderNumber})","1. Navigate to ${BACK_URL}/notifications
+2. Select a notification type with dynamic template fields
+3. Open the template and click Preview
+4. Enter sample data values for each dynamic field (e.g., CustomerName: John Doe)
+5. Click the Preview button to render the template
+6. Verify all dynamic placeholders are replaced with sample values
+7. Modify one sample data value
+8. Click Preview again and verify the output updates with the new value","- Preview option is accessible from the notification template blade
+- Sample data form shows all dynamic fields available in the template
+- Entering sample data and clicking Preview renders the template with substituted values
+- All placeholders (e.g., {CustomerName}) are replaced with the entered sample data
+- Preview output is visually accurate to how the email will appear to recipients
+- Changing sample data and re-previewing updates the rendered output correctly",C342249,Not Automated
+NOTIF-056,Notification Preview — Email Format,Preview,Functional,High,5min,"Admin logged in to Backend
+Email notification template exists with HTML content","1. Navigate to ${BACK_URL}/notifications
+2. Select an email notification type
+3. Open the template blade
+4. Click Preview
+5. Enter sample data for required dynamic fields
+6. Click Preview to render
+7. Verify the preview displays in HTML email format (not plain text)
+8. Verify any layout template (header/footer) is applied
+9. Verify images and styling render correctly in the preview","- Email notification preview renders in HTML format with proper email structure
+- Preview includes any assigned notification layout (header, footer, branding)
+- Images embedded in the template render correctly in the preview
+- Email styling (fonts, colors, spacing) is applied consistently
+- Preview accurately represents the email appearance in a mail client
+- Plain text fallback is noted if the template includes one",C342250,Not Automated
+NOTIF-057,Share Preview via Email — Send Preview to Recipient,Preview Share,Functional,High,5min,"Admin logged in to Backend
+Notification preview has been rendered with sample data","1. Navigate to ${BACK_URL}/notifications and open a notification template
+2. Click Preview and enter sample data
+3. Click Preview to render the template
+4. Click the Share or Send Preview button
+5. Enter a valid email address in the recipient field
+6. Click Send to deliver the preview email
+7. Check the recipient email inbox
+8. Verify the email is received with the preview content","- Share or Send Preview button is available on the rendered preview page
+- Recipient email address field accepts valid email format
+- Clicking Send dispatches the preview email to the specified address
+- Preview email is received in the inbox with correct template content
+- Sample data values appear substituted correctly in the received email
+- Email subject and sender information are correctly populated",C342214,Not Automated
+NOTIF-058,Abandoned Cart Notification — Enable Setting,Abandoned Cart,Functional,High,5min,"Admin logged in to Backend
+Notification module installed
+Abandoned cart feature available in Settings","1. Navigate to ${BACK_URL}/settings
+2. Open the Notifications section or Abandoned Cart settings
+3. Locate the Enable Abandoned Cart Notifications toggle
+4. Set the toggle to Enabled
+5. Save the settings
+6. Verify the setting is saved as enabled
+7. Create a cart on the storefront and abandon it without checking out
+8. Wait for the configured reminder period
+9. Verify the abandoned cart notification email is sent","- Abandoned Cart Notifications enable toggle is available in Settings
+- Setting is saved successfully when enabled
+- System recognizes abandoned carts after the configured delay period
+- Abandoned cart email notification is sent to the customer who abandoned the cart
+- Notification content includes cart items and a link to resume checkout",C394634,Not Automated
+NOTIF-059,Abandoned Cart — Delay Configuration,Abandoned Cart,Functional,High,5min,"Admin logged in to Backend
+Abandoned cart notifications are enabled [NOTIF-058]","1. Navigate to ${BACK_URL}/settings and open Abandoned Cart settings
+2. Locate the delay or reminder interval configuration field
+3. Change the delay to a shorter period (e.g., 1 hour or minimum allowed value)
+4. Save the setting
+5. Create and abandon a cart on the storefront
+6. Wait for the configured delay period
+7. Verify the abandoned cart email is sent after the configured delay
+8. Change delay to a longer period and verify the email is sent at the new interval","- Delay configuration field is visible and editable in the abandoned cart settings
+- Delay value is saved correctly after clicking Save
+- Abandoned cart notification is triggered after the configured delay period (not before)
+- Changing the delay value takes effect for newly abandoned carts
+- Email timestamp confirms the notification was sent at the correct delay interval
+- Minimum and maximum delay values are enforced by validation",C394636,Not Automated
+NOTIF-060,Abandoned Cart — Template Content,Abandoned Cart,Functional,High,5min,"Admin logged in to Backend
+Abandoned cart notifications are enabled [NOTIF-058]
+Customer has an abandoned cart with multiple items","1. Open the storefront as a registered customer
+2. Add at least 2 different products to the cart
+3. Navigate away from the checkout without completing the purchase
+4. Wait for the abandoned cart notification delay to expire
+5. Check the customer email inbox
+6. Open the abandoned cart notification email
+7. Verify the email includes all abandoned cart items with names and quantities
+8. Verify a link or button to resume checkout is present in the email","- Abandoned cart email is received at the customer email address
+- Email subject line references the abandoned cart or order
+- All items added to the cart are listed in the email with product names and quantities
+- Product images are included in the email if the template supports it
+- A clear call-to-action button or link to resume checkout is included
+- Cart link in the email restores the cart session correctly when clicked",C394638,Not Automated
+NOTIF-061,Abandoned Cart — Disable Setting,Abandoned Cart,Functional,High,5min,"Admin logged in to Backend
+Abandoned cart notifications are currently enabled [NOTIF-058]","1. Navigate to ${BACK_URL}/settings and open the Abandoned Cart settings
+2. Set the Enable Abandoned Cart Notifications toggle to Disabled
+3. Save the setting
+4. Verify the setting is saved as disabled
+5. Create and abandon a cart on the storefront
+6. Wait for the abandoned cart delay period to expire
+7. Check the customer email inbox
+8. Verify NO abandoned cart notification email is received
+9. Re-enable the setting and verify notifications resume","- Abandoned Cart Notifications toggle can be disabled and saved correctly
+- After disabling, no abandoned cart emails are sent even after the delay period expires
+- Customer email inbox does not receive abandoned cart notification when feature is disabled
+- Re-enabling the setting restores abandoned cart notification behavior for new carts
+- Disabling the setting does not affect other notification types",C394640,Not Automated
+NOTIF-062,Notification Layout CRUD — Create Notification Layout,Notification Layout,Functional,High,5min,"Admin logged in to Backend
+Notification module installed","1. Navigate to ${BACK_URL}/notifications
+2. Open the Notification Layouts section
+3. Click Add to create a new layout
+4. Enter a layout name (e.g., Company Email Layout)
+5. Enter HTML template content with header and footer sections
+6. Click Save to create the layout
+7. Verify the layout appears in the layouts list
+8. Open the layout again to verify all content is saved correctly","- Notification Layouts section is accessible in the Notifications module
+- Add button allows creating a new layout
+- Layout name and HTML template content are accepted and saved
+- Newly created layout appears in the layouts list with the correct name
+- Reopening the layout shows all saved content without data loss
+- Layout is available for assignment to notification templates",C343727,Not Automated
+NOTIF-063,Notification Layout — Edit and Preview,Notification Layout,Functional,High,5min,"Admin logged in to Backend
+Notification layout exists [NOTIF-062]","1. Navigate to ${BACK_URL}/notifications and open Notification Layouts
+2. Open an existing notification layout
+3. Modify the HTML content (e.g., change the header color or add footer text)
+4. Click Save to persist the changes
+5. Assign the layout to a notification template
+6. Open the notification template and click Preview
+7. Render a preview with sample data
+8. Verify the preview shows the layout wrapper with the updated content","- Notification layout HTML content is editable after initial creation
+- Changes to the layout are saved and persisted correctly
+- Layout modification is reflected in all notification templates using this layout
+- Preview of a notification template using this layout shows the updated layout design
+- Header and footer sections from the layout wrap the notification body content
+- Layout preview renders HTML correctly without broken styling",C343729,Not Automated
+NOTIF-064,Password Reset Notification Limit — Verify Rate Limiting,Account Notifications,Functional,High,5min,"Admin logged in to Backend
+User account exists with valid email
+Password reset rate limiting is configured in settings","1. Navigate to the storefront or admin login page
+2. Request a password reset for a user account
+3. Verify the first password reset email is received
+4. Immediately request a second password reset for the same account
+5. Verify the second request is accepted or rate-limited depending on configuration
+6. Continue requesting password resets to exceed the configured limit
+7. Verify that additional requests are blocked with an appropriate error message
+8. Verify that blocked requests do not send additional emails","- First password reset request generates and sends a reset email successfully
+- After exceeding the configured request limit, additional requests are blocked
+- Rate limit error message is displayed to the user when limit is exceeded
+- No additional password reset emails are sent once the limit is reached
+- Rate limiting window resets after the configured cooldown period
+- Admin can view and manage rate limit settings in notification configuration",C307517,Not Automated

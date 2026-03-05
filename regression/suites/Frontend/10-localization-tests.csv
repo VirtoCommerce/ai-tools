@@ -117,3 +117,56 @@ L10N-LAYOUT-001,Layout Integrity - Long Text,Localization > Layout,Localization,
 4. Verify no broken layouts","- Layouts remain intact
 - Text wraps appropriately
 - No overflow issues",VCST-4499 TC-010,Manual
+
+L10N-CURR-001,Currency Switcher Visible,Localization > Currency,Localization,Medium,3m,Store configured with multiple currencies enabled,"1. Navigate to the storefront homepage
+2. Check the header area for currency switcher
+3. Check the footer area if not in header
+4. Open the currency switcher
+5. Verify available currency options listed","- Currency switcher control visible in header or footer
+- Clicking/tapping opens list of available currencies
+- Current active currency shown as selected
+- All store-configured currencies listed (minimum: USD, EUR)
+- Switcher is keyboard accessible",Coverage Gap Analysis,Generated
+L10N-CURR-002,Switch to EUR,Localization > Currency,Localization,Medium,5m,"Store configured with USD and EUR, currently displaying USD","1. Navigate to a product category page with USD prices
+2. Note a product price in USD (e.g., $100.00)
+3. Open the currency switcher
+4. Select EUR
+5. Observe all prices on the page
+6. Navigate to the cart (if items present)
+7. Verify cart totals","- All product prices convert to EUR after selection
+- Currency symbol changes from $ to euro symbol
+- Cart totals shown in EUR
+- Mini-cart header also reflects EUR
+- Exchange rate applied consistently across all prices on page",Coverage Gap Analysis,Generated
+L10N-CURR-003,Currency Persists Across Navigation,Localization > Currency,Localization,Medium,5m,"Store with multiple currencies, EUR selected","1. Switch currency to EUR
+2. Navigate to a different category page
+3. Verify prices on new page are in EUR
+4. Navigate to a product detail page
+5. Verify PDP price is in EUR
+6. Refresh the page
+7. Verify EUR still selected after refresh","- EUR prices shown on category page after navigation
+- EUR prices shown on product detail page
+- Currency preference persists across page navigation
+- Currency preference persists after browser page refresh
+- No reversion to USD on navigation or refresh",Coverage Gap Analysis,Generated
+L10N-CURR-004,Checkout in Selected Currency,Localization > Currency,Localization,Medium,8m,"Store with multiple currencies, EUR selected, product in cart","1. Switch currency to EUR
+2. Add a product to cart
+3. Proceed through checkout
+4. Verify shipping and payment pages show EUR amounts
+5. Verify order review page shows EUR total
+6. Place the order
+7. Verify order confirmation shows EUR total
+8. Verify Order History shows EUR amount","- All checkout step amounts shown in EUR
+- Payment amount charged in EUR
+- Order confirmation page shows EUR total
+- Order History record shows EUR currency and amount
+- No currency mismatch between checkout and confirmation",Coverage Gap Analysis,Generated
+L10N-CURR-005,Currency Symbol Display,Localization > Currency,Localization,Medium,4m,"Store configured with USD, EUR, and GBP currencies","1. Set currency to USD, navigate to any product, note symbol and format
+2. Set currency to EUR, navigate to same product, note symbol and format
+3. Set currency to GBP, navigate to same product, note symbol and format
+4. Compare symbol placement and number formatting for each","- USD: $ symbol, format $1,234.56
+- EUR: euro symbol, format follows locale convention
+- GBP: pound symbol, format follows locale convention
+- Symbol placement correct for each currency (prefix or suffix as per locale)
+- No raw currency code (USD/EUR/GBP) displayed instead of symbol
+- Decimal and thousands separators correct per currency locale",Coverage Gap Analysis,Generated

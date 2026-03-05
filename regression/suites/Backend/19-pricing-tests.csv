@@ -540,30 +540,6 @@ PRICE-050,Settings > Disable product price indexing,Pricing > Settings,Functiona
 7. Reopen edit blade
 8. Check Indexation widget
 9. Verify prices reindexed but NOT included in index","Setting saved as disabled. Prices reindexed but NOT included in index.",C242168,None
-PRICE-051,[Deprecated] Settings > Enable Store all product prices as object in index,Pricing > Settings,Functional,Medium,10min,"Admin logged in to Backend
-Admin on Settings panel
-'Enable product price indexing' is ON
-DEPRECATED: PT-8571 PT-8365: remove StorePricesInIndex setting #179","1. Open Pricing settings blade > Search
-2. Enable 'Store all product prices as object in index'
-3. Click 'Save'
-4. Open Search Index
-5. Choose Products and Catalog
-6. Click 'Build index' > Build
-7. Wait for completion
-8. Open Catalog > Product > Index widget
-9. Verify JSON file with __price added with whole product details","Setting saved as enabled. Build process finished successfully. JSON file with __price added with whole product details.",C242165,None
-PRICE-052,[Deprecated] Settings > Disable Store all product prices as object in index,Pricing > Settings,Functional,Medium,10min,"Admin logged in to Backend
-Admin on Settings panel
-'Enable product price indexing' is ON
-DEPRECATED: PT-8571 PT-8365: remove StorePricesInIndex setting #179","1. Open Pricing settings blade > Search
-2. Disable 'Store all product prices as object in index'
-3. Click 'Save'
-4. Open Search Index
-5. Choose Products and Catalog
-6. Click 'Build index' > Build
-7. Wait for completion
-8. Open Catalog > Product > Index widget
-9. Verify there are no product details in __price JSON file","Setting saved as disabled. Build process finished successfully. There are no product details in __price JSON file.",C242169,None
 PRICE-053,Permissions > Access only,Pricing > Permissions,Security,High,5min,"Admin logged in to Backend
 Role_1 created with permissions:
 - pricing:access

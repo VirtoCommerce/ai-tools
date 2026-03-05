@@ -55,8 +55,8 @@ Access via `config.js`: `import { env } from './config.js'`
 vc-mcp-testing-module/
 ├── INDEX.md                 # Top-level repo navigation hub (quick links to all directories)
 ├── .claude/agents/          # Claude Code agent configurations (11 agents, tracked in git)
-│   └── knowledge/           # Shared agent reference files (platform-patterns, browser-quirks, debugging-signals, performance-thresholds)
-├── .claude/skills/          # Skills grouped by category (18 skills in 3 groups, tracked in git)
+│   └── knowledge/           # Shared agent reference files (8 files: business-logic, platform-patterns, browser-quirks, debugging-signals, performance-thresholds, catalog, store-settings, white-labeling)
+├── .claude/skills/          # Skills grouped by category (19 skills in 3 groups, tracked in git)
 │   ├── vc-knowledge/        # VC docs, module analysis, API reference, storefront reference (4 skills)
 │   ├── testing/             # Storybook, accessibility, design, plan, API (5 skills)
 │   └── qa-methodology/      # Process, investigation, evidence, test design, risk, metrics, SBTM, defect (8 skills)
@@ -142,7 +142,7 @@ All 6 servers in the table above are configured in `.mcp.json` (project-level). 
 
 ## Claude Code Specialized Agents
 
-11 agents in `.claude/agents/` across two teams (QA + BA). See `.claude/agents/README.md` for full documentation. Shared reference files in `.claude/agents/knowledge/`: `platform-patterns.md`, `browser-quirks.md`, `debugging-signals.md`, `performance-thresholds.md`, `catalog.md`, `store-settings.md`, `white-labeling.md` — these are cross-agent knowledge bases that agents should consult during testing.
+11 agents in `.claude/agents/` across two teams (QA + BA). See `.claude/agents/README.md` for full documentation. QA agents use a **four-layer prompt architecture** — business logic (invariants), domain knowledge (judgment), skill set (technique), and design decisions (constraints). Shared reference files in `.claude/agents/knowledge/`: `business-logic.md`, `platform-patterns.md`, `browser-quirks.md`, `debugging-signals.md`, `performance-thresholds.md`, `catalog.md`, `store-settings.md`, `white-labeling.md` (8 files) — these are cross-agent knowledge bases that agents should consult during testing. `business-logic.md` — testable business invariants: pricing, cart, checkout, orders, auth, B2B, catalog, cross-domain.
 
 ### QA Team (7 agents)
 
@@ -181,7 +181,7 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|module <name>]` | No | Business analysis (full/flows/api/docs/stories/module) |
 | `/ba-stories` | `feature name \| VCST-XXXX` | No | Generate Agile user stories with BDD acceptance criteria |
 
-### Skills (18) — `.claude/skills/` (grouped by category)
+### Skills (19) — `.claude/skills/` (grouped by category)
 
 Skills are slash commands with supporting reference files, organized into 3 category directories. Each skill has a `SKILL.md` with `[Category]` tag in the description. See `.claude/skills/README.md` for full reference.
 
@@ -194,7 +194,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/vc-api` | `xCart \| xCatalog \| REST` | xAPI & REST API query reference | `xapi-query-ref.md` |
 | `/vc-frontend` | `page \| URL \| product type \| account \| menu \| sitemap` | Storefront reference: page URLs, navigation, product types, account structure, test data | `sitemap.md` |
 
-**`testing/` — Testing (6) — manual invocation:**
+**`testing/` — Testing (7) — manual invocation:**
 
 | Skill | Arguments | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|
@@ -204,6 +204,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/qa-plan` | `feature \| domain \| VCST-XXXX` | Test plans from E2E scenario catalog (105 scenarios) | `e2e-scenario-catalog.md` |
 | `/qa-checklist` | `domain \| feature \| VCST-XXXX \| new <domain>` | Test case writing checklists (18 domains + Bug Fix Verification, 158 items) | `domain-checklists.md`, `checklist-creation-guide.md` |
 | `/qa-api` | `endpoint \| module \| graphql` | REST API & GraphQL xAPI testing | `test-cases-api-graphql.md` |
+| `/qa-coverage-gap` | `analyze \| generate \| validate \| full \| domain <name> \| suite <ID>` | Autonomous test coverage gap analysis and generation (4-cycle pipeline) | `coverage-gap-methodology.md`, `feature-domain-map.md` |
 
 **`qa-methodology/` — QA Methodology (8) — manual invocation:**
 
@@ -251,7 +252,7 @@ Key prompt templates in `docs/prompts/`:
 
 ## Regression Test Suites
 
-36 modular suites + 1 master suite in `regression/suites/` (organized in `Frontend/` and `Backend/` subdirectories) in TestRail CSV format (`ID, Title, Section, Type, Priority, Estimate, Preconditions, Steps, Expected Result, References, Automation Status`). Full definitions in `config/test-suites.json`. **Total: 1,274 test cases** (492 frontend + 782 backend). Always refer to `config/test-suites.json` for authoritative counts — CSV suites evolve.
+36 modular suites + 1 master suite in `regression/suites/` (organized in `Frontend/` and `Backend/` subdirectories) in TestRail CSV format (`ID, Title, Section, Type, Priority, Estimate, Preconditions, Steps, Expected Result, References, Automation Status`). Full definitions in `config/test-suites.json`. **Total: ~1,546 test cases** (~643 frontend + 903 backend). Always refer to `config/test-suites.json` for authoritative counts — CSV suites evolve.
 
 - **Suite 00** (`Frontend/00-full-regression-release.csv`): Master suite — 90 consolidated P0/P1 test cases for major releases
 - **Frontend** (suites 01-13, 35-36): Smoke, Auth, Catalog, Cart, BOPIS, Payment, GA4, Security, A11y, i18n, Perf, Browser Compat, B2C, White Labeling, Configurable Products

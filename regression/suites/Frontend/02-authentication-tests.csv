@@ -208,3 +208,130 @@ AUTH-034,Account Menu - Mobile Responsive Layout,Authentication > Account Menu >
 - Touch targets adequate (44x44px minimum)
 - Menu opens/closes correctly
 - Navigation from mobile menu works",VCST-4589,Manual
+AUTH-035,Members Page Display,Authentication > Company Members,Functional,Critical,4m,"User logged in as company Admin or Maintainer, navigate to /company/members","1. Log in as a company Admin or Maintainer
+2. Navigate to /company/members (or Company > Members from account menu)
+3. Verify the member list loads
+4. Verify each member row displays: name, email, assigned role, account status (Active/Blocked)","- /company/members page loads without error
+- Member list displays all company members
+- Each member row shows: full name, email address, role (Buyer/Admin), status
+- List is sortable or filterable (if available)
+- Own account visible in the list",Coverage Gap Analysis,Generated
+AUTH-036,Invite Member - Buyer Role,Authentication > Company Members,Functional,Critical,6m,"Logged in as company Admin, on Members page","1. Click 'Invite Member' button on the Members page
+2. Enter recipient email address
+3. Select role: 'Buyer'
+4. Submit the invitation form
+5. Verify success confirmation
+6. Check that invitation appears as pending in the member list (if applicable)","- 'Invite Member' button is visible for Admin users
+- Invitation form accepts email address and role selection
+- Role options include at minimum: Buyer, Admin
+- After submission: success message 'Invitation sent' or similar
+- Invited email receives an invitation email
+- Pending invitation visible in member list (status: Invited/Pending)",Coverage Gap Analysis,Generated
+AUTH-037,Invite Member - Admin Role,Authentication > Company Members,Functional,High,6m,"Logged in as company Admin, on Members page","1. Click 'Invite Member'
+2. Enter a new recipient email address
+3. Select role: 'Admin'
+4. Submit invitation
+5. Recipient accepts invitation and logs in
+6. Verify the new Admin has admin-level permissions (can invite others, can manage members)","- Invitation with Admin role can be sent
+- Invited Admin receives invitation email
+- After accepting: new member appears in list with 'Admin' role
+- New Admin can access member management and invitation features
+- New Admin cannot exceed their own permission scope",Coverage Gap Analysis,Generated
+AUTH-038,Edit Member Role,Authentication > Company Members,Functional,High,5m,"Logged in as company Admin, at least one Buyer member exists","1. Navigate to /company/members
+2. Locate a member with 'Buyer' role
+3. Click Edit or role change option next to the member
+4. Change role from 'Buyer' to 'Admin'
+5. Save the change
+6. Verify the member list updates immediately
+7. Log in as the edited member and verify Admin permissions are active","- Edit/role-change option available per member row
+- Role dropdown or selector shows available roles
+- Saving changes updates the member's role in the list immediately
+- Changed member's permissions are updated on their next action or page load
+- Member receives notification of role change (if configured)",Coverage Gap Analysis,Generated
+AUTH-039,Block Member,Authentication > Company Members,Functional,High,5m,"Logged in as company Admin, at least one active Buyer member exists","1. Navigate to /company/members
+2. Locate an active Buyer member
+3. Click Block or Deactivate option for that member
+4. Confirm the block action in the dialog
+5. Verify member status changes to 'Blocked' in the list
+6. Attempt to log in as the blocked user","- Block/Deactivate option available for non-Admin members
+- Confirmation dialog appears: 'Block this member?'
+- After confirmation: member status changes to 'Blocked' in the list
+- Blocked member cannot sign in: receives error 'Your account has been blocked. Contact your administrator.'
+- Blocked member's existing sessions invalidated (if applicable)",Coverage Gap Analysis,Generated
+AUTH-040,Unblock Member,Authentication > Company Members,Functional,High,5m,"Logged in as company Admin, at least one Blocked member exists","1. Navigate to /company/members
+2. Locate a Blocked member
+3. Click Unblock or Activate option for that member
+4. Confirm the unblock action
+5. Verify member status returns to 'Active'
+6. Attempt to log in as the previously blocked member","- Unblock/Activate option visible for Blocked members
+- Confirmation dialog for unblock action (optional but expected)
+- After unblock: member status returns to 'Active' in the list
+- Previously blocked member can now sign in successfully
+- Member's data and history preserved after unblock",Coverage Gap Analysis,Generated
+AUTH-041,Filter Members by Role,Authentication > Company Members,Functional,Medium,4m,"Logged in as company Admin, member list has members with both Buyer and Admin roles","1. Navigate to /company/members
+2. Locate the filter control (dropdown, tabs, or checkbox)
+3. Filter by role 'Buyer' and verify only Buyer members shown
+4. Filter by role 'Admin' and verify only Admin members shown
+5. Clear filter and verify all members shown","- Role filter control is present on the Members page
+- Filtering by 'Buyer' displays only members with Buyer role
+- Filtering by 'Admin' displays only members with Admin role
+- Member count updates to reflect the filter
+- Clearing the filter restores the full member list",Coverage Gap Analysis,Generated
+AUTH-042,Search Members,Authentication > Company Members,Functional,Medium,3m,"Logged in as company Admin, at least 5 members exist with distinct names","1. Navigate to /company/members
+2. Locate the search input field
+3. Type part of a member's name (at least 3 characters)
+4. Verify results filter dynamically as text is entered
+5. Clear the search field
+6. Verify full member list restored","- Search input field is present on the Members page
+- Typing filters the member list dynamically (live search or on Enter)
+- Search matches on name and/or email address
+- No-results state shown if no members match the search term
+- Clearing search field restores the complete member list",Coverage Gap Analysis,Generated
+
+AUTH-043,Impersonation - View as Customer,Authentication > Impersonation,Functional,Medium,5m,"Admin account with impersonation permissions, target customer account exists","1. Log in to Admin SPA
+2. Navigate to customer account management
+3. Select a target customer user
+4. Initiate login-on-behalf (impersonation)
+5. Observe the storefront session that opens
+6. Verify catalog, prices, and cart reflect customer context","- Storefront opens in customer context (not admin context)
+- Catalog displays products available to that customer
+- Prices shown match the customer pricing tier
+- Customer cart is shown (not admin cart)
+- No admin-only UI elements visible in storefront",Coverage Gap Analysis,Generated
+AUTH-044,Impersonation - Switch Companies,Authentication > Impersonation,Functional,Medium,6m,"Admin account with impersonation permissions, customer belongs to multiple companies","1. Initiate impersonation of a customer who belongs to multiple companies
+2. Observe the current company context
+3. Use the company switcher in the storefront
+4. Switch to a different company
+5. Verify catalog, prices, and account context fully change","- Company switcher accessible during impersonation session
+- Switching company changes catalog and pricing context
+- Account header reflects new company name
+- Previously loaded company data does not bleed into new context
+- No console errors on company switch",Coverage Gap Analysis,Generated
+AUTH-045,Impersonation - Stop Impersonation,Authentication > Impersonation,Functional,Medium,4m,Admin currently impersonating a customer,"1. While impersonating a customer, locate the stop-impersonation control
+2. Click Stop Impersonation or equivalent
+3. Observe the resulting session
+4. Verify admin context is restored","- Stop impersonation control visible and accessible during impersonation
+- Clicking it ends the customer session
+- Admin is returned to Admin SPA or admin-authenticated state
+- No customer-specific data (cart, addresses, profile) persists in admin session
+- Session cookies/tokens reflect admin identity after stop",Coverage Gap Analysis,Generated
+AUTH-046,Impersonation - Place Order on Behalf,Authentication > Impersonation,Functional,Medium,8m,"Admin impersonating a customer, cart accessible, checkout enabled","1. Initiate impersonation of target customer
+2. Add a product to cart
+3. Proceed through checkout
+4. Complete and place the order
+5. Navigate to Order History in customer account
+6. Verify order appears attributed to the customer","- Checkout flow completes successfully during impersonation
+- Order confirmation page shown
+- Order appears in the customer Order History (not admin history)
+- Order record shows customer as the owner
+- Order can be found in Admin SPA under the customer account",Coverage Gap Analysis,Generated
+AUTH-047,Impersonation - No Persistent Side Effects,Authentication > Impersonation,Functional,Medium,6m,"Customer has items in cart before impersonation begins, admin account separate","1. Note the customer cart contents before impersonation (via admin or pre-setup)
+2. Admin initiates impersonation of the customer
+3. Admin views the cart but does NOT modify it
+4. Admin stops the impersonation session
+5. Customer logs in independently
+6. Customer verifies their cart is unchanged","- Customer cart contents are identical before and after impersonation session
+- No items added, removed, or quantity-changed by impersonation session
+- Customer saved addresses unchanged
+- Customer profile data unchanged
+- No orphaned sessions remain after impersonation ends",Coverage Gap Analysis,Generated

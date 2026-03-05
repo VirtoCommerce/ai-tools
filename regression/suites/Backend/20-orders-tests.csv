@@ -302,3 +302,141 @@ ORD-066,Order2Sample module CRUD,Orders > Extensions,Functional,Medium,10min,Adm
 3. Read order > Verify data
 4. Update order > Verify changes saved
 5. Delete order > Verify removed","Module installs. Full CRUD cycle works correctly.",C311912-C311916,None
+ORD-067,Payment Capture — Manual Capture,Orders > Payment Capture,Functional,High,8min,"Admin logged in to Backend
+Order exists with payment in Authorized status via manual payment method","1. Navigate to ${BACK_URL}/orders
+2. Open an order with payment in Authorized status
+3. Open the payment document from the Documents section
+4. Verify the Capture button is visible and enabled
+5. Click the Capture button
+6. Confirm the capture action in the dialog
+7. Verify the payment status transitions","- Capture button is visible when payment is in Authorized status
+- Capture confirmation dialog is displayed
+- Payment status changes from Authorized to Paid after capture
+- Payment document displays updated status immediately
+- Audit log records the capture action with timestamp",C358190,Not Automated
+ORD-068,Payment Refund — Full Refund,Orders > Payment Refund,Functional,High,8min,"Admin logged in to Backend
+Order exists with payment in Paid status","1. Navigate to ${BACK_URL}/orders
+2. Open an order with payment in Paid status
+3. Open the payment document from the Documents section
+4. Verify the Refund button is visible and enabled
+5. Click the Refund button
+6. Enter the full payment amount as the refund amount
+7. Confirm the refund action
+8. Verify the payment status transitions","- Refund button is visible when payment is in Paid status
+- Refund dialog allows entering amount up to the full payment value
+- Payment status transitions from Paid to Refunded after full refund
+- Refund document is created and linked to the payment
+- Order totals reflect the refund correctly",C358193,Not Automated
+ORD-069,Payment Refund — Partial Refund,Orders > Payment Refund,Functional,High,8min,"Admin logged in to Backend
+Order exists with payment in Paid status with amount > $10","1. Navigate to ${BACK_URL}/orders
+2. Open an order with payment in Paid status
+3. Open the payment document from the Documents section
+4. Click the Refund button
+5. Enter a partial amount (less than the total payment amount)
+6. Confirm the partial refund
+7. Verify the refund document and payment state
+8. Verify remaining balance is correct","- Partial refund is accepted with amount less than total
+- Payment status remains Paid (not fully refunded)
+- Refund document is created with the partial amount
+- Refund amount is displayed correctly in the refund document
+- Subsequent refund is possible for remaining balance",C358194,Not Automated
+ORD-070,Payment Status Transitions — Authorized to Captured to Refunded,Orders > Payment Documents,Functional,High,10min,"Admin logged in to Backend
+Order exists with manual payment method
+Payment is in New status","1. Navigate to ${BACK_URL}/orders and open the target order
+2. Open the payment document
+3. Transition payment from New to Authorized (click Authorize)
+4. Verify payment is in Authorized status
+5. Click Capture to transition to Paid/Captured
+6. Verify payment is in Paid status
+7. Click Refund and enter full amount to transition to Refunded
+8. Verify final Refunded status
+9. Verify each status transition is logged in the change history","- Payment transitions correctly through each stage: New to Authorized to Paid to Refunded
+- Each transition button appears only when the payment is in the correct prerequisite status
+- Status badges update immediately after each transition
+- Change log records each transition with timestamp and acting user
+- No backward transitions are available once in terminal states",C232799 C232804,Not Automated
+ORD-071,Subscription Order — Open Subscription,Orders > Subscriptions,Functional,High,10min,"Admin logged in to Backend
+Subscription feature enabled
+Customer with active subscription exists","1. Navigate to ${BACK_URL}/orders
+2. Locate and open a subscription order (identified by subscription icon/badge)
+3. Verify the Subscription widget is visible on the order details blade
+4. Open the Subscription widget to view subscription details
+5. Verify subscription fields: frequency, next order date, status
+6. Attempt to modify subscription frequency
+7. Save changes and verify persistence
+8. Verify related orders are linked in the subscription chain","- Subscription order is identifiable by its badge or indicator in the list
+- Subscription widget displays: frequency, next date, status, and linked orders
+- Subscription parameters are editable by admin
+- Changes to subscription settings save and persist correctly
+- Subscription order history shows all related recurring orders",C169810,Not Automated
+ORD-072,Configurable Product Line Items — Verify Configuration in Order,Orders > Configurable Products,Functional,High,8min,"Admin logged in to Backend
+Order exists containing a configurable product line item","1. Navigate to ${BACK_URL}/orders
+2. Open an order that contains a configurable product
+3. Open the Line Items widget
+4. Click on the configurable line item to open its details blade
+5. Verify the Configuration tab is present in the line item details
+6. Open the Configuration tab and verify all selected options are displayed
+7. Verify Discounts tab shows any configuration-related discounts
+8. Verify Dynamic Properties tab is accessible","- Configurable product line item shows all four tabs: View, Configuration, Discounts, Dynamic properties
+- Configuration tab displays all selected product options and their values
+- Configuration options match what was ordered by the customer
+- Discounts tab reflects any applicable discounts for the configuration
+- Dynamic properties are accessible and editable per line item",C396955,Not Automated
+ORD-073,Role-Based Order Access — Operator Can Only View Assigned Orders,Orders > Employee Assignment,Security,High,8min,"Admin logged in to Backend
+Order Manager role created with order permissions [ORD-031]
+Employee1 assigned to Order Manager role
+Order1 assigned to Employee1
+Order2 assigned to a different employee","1. Login to ${BACK_URL} as Employee1 with Order Manager role
+2. Navigate to Orders module
+3. Verify Orders blade link is visible
+4. Open Orders list and note which orders are displayed
+5. Verify Order1 (assigned to Employee1) is visible
+6. Verify Order2 (assigned to another employee) is NOT visible
+7. Attempt to directly access Order2 via URL
+8. Verify access is restricted","- Employee1 can access the Orders module
+- Orders list shows only orders assigned to Employee1
+- Order2 assigned to another employee is not visible in the list
+- Direct URL access to unassigned orders returns an access denied or empty result
+- No privilege escalation is possible through URL manipulation",C169803,Not Automated
+ORD-074,Order Changes Widget — Change Log Tracks All Modifications,Orders > Order Widgets,Functional,High,8min,"Admin logged in to Backend
+Order exists with at least one prior modification","1. Navigate to ${BACK_URL}/orders and open an existing order
+2. Make a modification to the order (e.g., update customer comment)
+3. Save the changes
+4. Open the Changes widget on the order details blade
+5. Verify the latest modification appears in the change log
+6. Make a second modification (e.g., update dynamic property)
+7. Save and re-open Changes widget
+8. Verify both changes are tracked with timestamps and user info","- Changes widget displays a chronological log of all order modifications
+- Each log entry shows: field changed, old value, new value, timestamp, and user who made the change
+- Most recent changes appear at the top of the log
+- Changes widget refreshes after saving new modifications without requiring page reload
+- System-generated changes (status transitions) are also captured",C169806,Not Automated
+ORD-075,Order Immutability After Payment — Paid Order Items Cannot Be Edited,Orders > Order Management,Functional,High,8min,"Admin logged in to Backend
+Order exists with payment status Paid","1. Navigate to ${BACK_URL}/orders
+2. Open an order where the payment status is Paid
+3. Attempt to modify the line item quantity in the Line Items widget
+4. Attempt to add a new line item to the order
+5. Attempt to remove an existing line item
+6. Attempt to change the product price
+7. Verify all edit controls for order items are disabled or hidden
+8. Verify Save button is disabled or changes cannot be submitted","- Line item quantity field is read-only or disabled when payment is Paid
+- Add line item button is disabled or hidden for paid orders
+- Remove line item action is not available for paid orders
+- Price override fields are disabled after payment capture
+- System prevents modification of paid order contents with appropriate messaging",BL-ORDER-001,Not Automated
+ORD-076,Order Validation Full Field List — Complete Validation Test,Orders > Validation,Negative,High,10min,Admin logged in to Backend (API/Swagger),"1. Open Swagger UI at ${BACK_URL}/docs or use API client
+2. Test order validation for fields: Number, CustomerId, CustomerName, StoreId, Currency, Status, CreatedDate
+3. Submit invalid value for Number field (e.g., empty string or exceeding max length)
+4. Submit invalid value for CustomerId (e.g., null or non-existent ID)
+5. Submit invalid value for CustomerName (e.g., exceeding character limit)
+6. Submit invalid value for StoreId (e.g., non-existent store)
+7. Submit invalid Currency code (e.g., invalid ISO code)
+8. Submit invalid Status value (e.g., non-existent status string)
+9. Submit invalid CreatedDate (e.g., future date or wrong format)","- Number field returns validation error for empty or oversized values
+- CustomerId returns error for null or non-existent customer
+- CustomerName returns error when exceeding maximum length
+- StoreId returns validation error for non-existent store reference
+- Currency returns error for invalid ISO 4217 currency code
+- Status returns error for values outside allowed status enumeration
+- CreatedDate returns error for invalid date format or out-of-range values
+- Each validation error message clearly identifies the offending field",C301875,Not Automated

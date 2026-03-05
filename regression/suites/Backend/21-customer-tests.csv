@@ -252,3 +252,138 @@ CUST-052,CustomerSample module CRUD,Customer > Extensions,Functional,Medium,8min
 3. Read contact > Verify data
 4. Update contact > Verify changes
 5. Delete contact > Verify removed","Module installs. Full CRUD cycle works.",C311901-C311904,None
+CUST-053,Search Contact with Wildcard Operator,Customer > Contact Management > Search,Functional,Medium,5m,"Admin logged in to Backend (${BACK_URL}), multiple contacts exist with varied names","1. Navigate to Customer module > Contacts
+2. Locate the search bar
+3. Enter a search term using the asterisk wildcard (e.g. John*)
+4. Press Enter or click Search
+5. Verify the results include all contacts whose names start with the prefix
+6. Try a mid-string wildcard (e.g. *son) and verify trailing match behavior
+7. Verify results are limited to relevant matches only","- Wildcard (*) operator is supported in the contact search field
+- Search with prefix wildcard returns all matching contacts
+- Mid-string wildcard returns contacts with the suffix in the name
+- Non-matching wildcard queries return an empty result set
+- Search results update without page reload",C261091,Not Automated
+CUST-054,Search Contact with Replace Operator,Customer > Contact Management > Search,Functional,Medium,5m,"Admin logged in to Backend (${BACK_URL}), contacts exist that differ by a single character in their names","1. Navigate to Customer module > Contacts
+2. Enter a search term using the question mark replace operator (e.g. Jo?n)
+3. Press Enter or click Search
+4. Verify results include contacts matching the single-character wildcard
+5. Try ? at different positions in the query
+6. Verify non-matching queries return empty results","- Question mark (?) operator is supported in the contact search field
+- Single-character wildcard matches exactly one character at its position
+- Results include contacts like John, Joan matching Jo?n pattern
+- Pattern matching is case-insensitive
+- Empty result set is displayed when no contacts match the pattern",,Not Automated
+CUST-055,Contact Filters UI,Customer > Contact Management > Filters,Functional,Medium,5m,"Admin logged in to Backend (${BACK_URL}), contacts list has multiple entries with different statuses and organizations","1. Navigate to Customer module > Contacts
+2. Locate the filter controls (column headers or filter panel)
+3. Apply a filter on the Status column (e.g. Active)
+4. Verify only contacts with Active status are shown
+5. Apply an additional filter on Organization
+6. Verify results are filtered by both criteria simultaneously
+7. Clear all filters and verify the full list is restored","- Filter controls are visible on the contacts list
+- Status filter narrows the list to matching contacts
+- Multiple filters can be applied simultaneously
+- Combined filters produce a correctly intersected result
+- Clearing filters restores the full unfiltered list
+- Filter state is maintained during pagination",C346120,Not Automated
+CUST-056,Email Verification After Account Creation,Customer > Contact Management > Account,Functional,High,5m,"Admin logged in to Backend (${BACK_URL}), email service is configured for the test environment","1. Navigate to Customer module > Contacts
+2. Click Add to create a new contact
+3. Enter contact details including a valid test email address
+4. Save the contact record
+5. Optionally create a login account for the contact
+6. Verify a verification email is sent to the provided address
+7. Check that the account status reflects pending verification","- Contact is created successfully with the provided email
+- System sends a verification email to the contact address after account creation
+- Account status shows as pending verification or unverified until email is confirmed
+- Verification email contains a valid verification link
+- Resend verification option is available in the admin UI",C278785,Not Automated
+CUST-057,Contact About Field,Customer > Contact Management > Profile,Functional,Low,3m,"Admin logged in to Backend (${BACK_URL}), an existing contact record is available","1. Navigate to Customer module > Contacts
+2. Open an existing contact record
+3. Locate the About field on the contact profile
+4. Enter a descriptive text in the About field (e.g. Key account manager for region)
+5. Save the contact
+6. Reopen the contact and verify the About text is displayed
+7. Edit the About field to a different value and save again","- About field is visible and editable on the contact profile
+- Entered text saves successfully
+- Saved About text persists after page reload
+- Edited value overwrites the previous About text
+- About field supports multi-line or long text input",C343690,Not Automated
+CUST-058,Organization About Field,Customer > Organization Management > Profile,Functional,Low,3m,"Admin logged in to Backend (${BACK_URL}), an existing organization record is available","1. Navigate to Customer module > Organizations (or Contacts filtered to organizations)
+2. Open an existing organization record
+3. Locate the About field on the organization profile
+4. Enter a descriptive text about the organization
+5. Save the organization
+6. Reopen the organization and verify the About text is displayed
+7. Edit the About field and verify the update saves correctly","- About field is visible and editable on the organization profile
+- Entered text saves successfully
+- Saved About text persists after page reload
+- Edited value is stored correctly
+- Organization About field behaves independently from Contact About field",C343693,Not Automated
+CUST-059,xAPI Contact Query with About Field,Customer > xAPI Integration,Integration,Medium,8m,"Admin logged in to Backend (${BACK_URL}), a contact with a populated About field exists, xAPI endpoint is accessible","1. Open a contact in admin and note the About field value
+2. Open the GraphQL xAPI explorer or use a REST client
+3. Execute a contact query by ID or email
+4. Include the about field in the query selection
+5. Verify the response includes the about field with the correct value
+6. Update the About field in admin and re-query via xAPI
+7. Verify the updated value is returned","- xAPI contact query returns the about field in the response
+- About field value matches what is stored in admin
+- Updated About field value is reflected in subsequent xAPI queries
+- Field is correctly typed (string) in the response schema
+- Query works for contacts with empty About field (returns null or empty string)",C343694,Not Automated
+CUST-060,Multiple Search Criteria,Customer > Contact Management > Search,Functional,Medium,5m,"Admin logged in to Backend (${BACK_URL}), contacts exist with various names, organizations, and statuses","1. Navigate to Customer module > Contacts
+2. Enter a first name in the search bar
+3. Apply an additional filter for Organization
+4. Apply a Status filter (e.g. Active)
+5. Observe the combined filter results
+6. Verify all returned contacts match all three criteria simultaneously
+7. Remove one filter and verify results expand accordingly","- Multiple search criteria can be applied simultaneously
+- Results are narrowed to contacts matching all active filters
+- Removing a filter expands the result set appropriately
+- No performance degradation with multiple active filters
+- Filter combination is consistent and predictable",C223626,Not Automated
+CUST-061,Customer Photo Upload,Customer > Contact Management > Profile,Functional,Low,5m,"Admin logged in to Backend (${BACK_URL}), a valid JPG or PNG image under 2 MB is available","1. Navigate to Customer module > Contacts
+2. Open a contact record
+3. Locate the photo or avatar section
+4. Click Upload Photo or Change Photo
+5. Select a valid JPG or PNG image
+6. Wait for upload to complete
+7. Save the contact
+8. Reload the page and verify the photo is displayed","- Photo upload option is available on the contact profile
+- Valid image file uploads successfully without errors
+- Uploaded photo thumbnail appears on the contact profile
+- Photo persists after page reload
+- Photo is associated with the correct contact record",,Not Automated
+CUST-062,Customer Photo Upload Invalid Format,Customer > Contact Management > Profile,Functional,Low,3m,"Admin logged in to Backend (${BACK_URL}), a non-image file (e.g. .pdf, .txt, .exe) is available for testing","1. Navigate to Customer module > Contacts
+2. Open a contact record
+3. Locate the photo or avatar upload section
+4. Click Upload Photo
+5. Select a non-image file (e.g. document.pdf or file.txt)
+6. Attempt to upload the file
+7. Observe the system response","- System rejects non-image file formats
+- An error message is displayed stating accepted file types (e.g. JPG, PNG, GIF)
+- Invalid file is not uploaded or stored
+- Existing contact photo (if any) remains unchanged
+- No server errors or crashes occur from the invalid upload attempt",,Not Automated
+CUST-063,Role Assignment in Customer Module,Customer > Organization Management > Roles,Functional,High,5m,"Admin logged in to Backend (${BACK_URL}), an organization with at least one contact member exists, roles are defined in the system","1. Navigate to Customer module > Organizations
+2. Open an organization
+3. Navigate to the Members tab
+4. Select a contact member
+5. Locate the role assignment section
+6. Assign an available role to the contact within this organization
+7. Save the assignment
+8. Verify the role is listed on the contact within the organization","- Role assignment is available for contacts within an organization
+- Available roles are listed in a dropdown or selection UI
+- Role is assigned and saved successfully
+- Assigned role is visible on the contact record within the organization
+- Role assignment is organization-scoped (not global)",,Not Automated
+CUST-064,Multi-Org Contact Hierarchy,Customer > Organization Management > Hierarchy,Functional,High,8m,"Admin logged in to Backend (${BACK_URL}), two separate organizations exist, a contact is a member of one organization only","1. Navigate to Customer module > Contacts
+2. Locate a contact assigned to Organization A
+3. Verify the contact appears in Organization A member list
+4. Navigate to Organization B
+5. Verify the contact does not appear in Organization B member list
+6. Add the contact to Organization B via the member management UI
+7. Verify the contact now appears in both Organization A and B
+8. Remove the contact from Organization A and verify they remain in Organization B only","- Contact visibility is scoped to the organizations they belong to
+- A contact not in Organization B is not visible in its member list
+- Contact can be added to multiple organizations
+- Removing a contact from one organization does not affect membership in others
+- Organization hierarchy is correctly maintained for reporting and access control",,Not Automated

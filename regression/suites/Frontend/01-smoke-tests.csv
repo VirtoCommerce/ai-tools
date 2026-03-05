@@ -94,3 +94,32 @@ SMK-012,Order Confirmation - Verify Details,Smoke > Orders,Functional,Critical,3
 - Order number generated
 - Items and totals correct
 - Order appears in history",VCST-4499,Automated
+SMK-013,Search to Cart - End-to-End Flow,Smoke > Search,Functional,Critical,5m,"User logged in, cart empty or at known state","1. Click search bar
+2. Type 'hoodie' and press Enter
+3. Verify search results page loads with matching products
+4. Locate 'Vintage Colorado Hoodie' ($54.00)
+5. Click '+' to add to cart
+6. Verify cart icon badge increments
+7. Navigate to cart page
+8. Verify product listed at correct price","- Search results display matching products
+- Product added to cart from search results
+- Cart badge updates
+- Cart page shows Vintage Colorado Hoodie at $54.00
+- No errors during entire search-to-cart flow",SRCH-NEW-035,Manual
+SMK-014,Quantity Stepper - PDP Increment and Cart Sync,Smoke > Cart,Functional,Critical,5m,"User logged in, product available with stock > 3","1. Navigate to product detail page for an in-stock product
+2. Verify spinbutton 'Product quantity' shows '0' and 'Decrease quantity' button is disabled
+3. Click 'Increase quantity' button twice
+4. Verify spinbutton shows '2' and 'in Cart' indicator shows '2'
+5. Verify Cart badge increments by 2
+6. Click 'Decrease quantity' button once
+7. Verify spinbutton shows '1' and 'in Cart' indicator shows '1'
+8. Navigate to /cart
+9. Verify product appears with quantity 1 and correct line total
+10. On cart page click 'Increase quantity' to set qty to 2
+11. Verify line total recalculates to 2 x unit price","- Stepper +/- buttons increment and decrement correctly on PDP
+- 'in Cart' indicator reflects current quantity
+- Cart badge updates immediately on each click
+- 'Decrease quantity' disabled at qty=0 on PDP
+- Cart page shows correct quantity synced from PDP
+- Cart line total and Order Summary recalculate on quantity change
+- No duplicate line items created",QS-PDP-001,Manual

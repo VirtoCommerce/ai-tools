@@ -599,3 +599,230 @@ CAT-VID-010,Video Data With YouTube API Key,Catalog > Product > Video,Functional
 - Thumbnail auto-fetched from YouTube
 - Video metadata (title, duration) populated if available
 - API key integration works without errors","C315298 VCST-4445",Not Automated
+CAT-034,Add Tax Type to Product,Catalog > Product > Properties,Functional,High,5m,"Admin logged in to Backend (${BACK_URL}), at least one tax type configured in Tax module","1. Navigate to Catalog module
+2. Open an existing physical product
+3. Scroll to or navigate to the Properties tab
+4. Locate the Tax Type field
+5. Click the Tax Type dropdown
+6. Select an available tax type from the list
+7. Click Save","- Tax Type dropdown is visible on the product form
+- Available tax types are listed in the dropdown
+- Selected tax type is saved successfully
+- Product record shows correct tax type after save
+- No validation errors appear",C180485,Not Automated
+CAT-035,Delete Tax Type from Product,Catalog > Product > Properties,Functional,High,5m,"Admin logged in to Backend (${BACK_URL}), product has a tax type assigned","1. Navigate to Catalog module
+2. Open the product that has a tax type assigned
+3. Navigate to the Properties tab
+4. Locate the Tax Type field
+5. Click the Tax Type dropdown
+6. Select the blank/empty option to clear the tax type
+7. Click Save","- Tax Type can be cleared/removed from the dropdown
+- Product saves successfully with no tax type
+- Tax Type field shows empty after save
+- No errors or unhandled exceptions appear",C345251,Not Automated
+CAT-036,Category Image Upload,Catalog > Category > Images,Functional,Medium,5m,"Admin logged in to Backend (${BACK_URL}), a test image file (JPG or PNG under 5 MB) ready for upload","1. Navigate to Catalog module
+2. Open an existing category or create a new one
+3. Click on the Images tab within the category blade
+4. Click the Upload or Add Image button
+5. Select a valid image file from the local filesystem
+6. Wait for upload to complete
+7. Click Save","- Upload dialog opens correctly
+- Image uploads without errors
+- Uploaded image thumbnail is visible in the Images tab
+- Category saves with the image attached
+- Image URL is accessible and renders in the browser",C180491,Not Automated
+CAT-037,Category SEO Configuration,Catalog > Category > SEO,Functional,Medium,5m,"Admin logged in to Backend (${BACK_URL}), Stores module accessible with at least one store configured","1. Navigate to Catalog module
+2. Open an existing category
+3. Click on the SEO tab within the category blade
+4. Click Add SEO or select a store to configure SEO
+5. Enter a SEO URL keyword (slug)
+6. Enter a page title
+7. Enter a meta description
+8. Click Save","- SEO tab is accessible on the category blade
+- SEO URL keyword field accepts input and validates uniqueness
+- Page title and meta description fields accept input
+- SEO data saves successfully
+- Saved SEO values persist after reopening the category",C180492,Not Automated
+CAT-038,Toggle Category Visible Checkbox,Catalog > Category > Properties,Functional,Medium,3m,"Admin logged in to Backend (${BACK_URL}), an existing category is available","1. Navigate to Catalog module
+2. Open an existing category
+3. Locate the Visible checkbox in the Properties or Details section
+4. Note the current state of the checkbox
+5. Toggle the Visible checkbox to the opposite state
+6. Click Save
+7. Reopen the category and verify the saved state","- Visible checkbox is present on the category form
+- Checkbox state toggles on click
+- Toggled state saves correctly
+- Reopened category shows the updated Visible value
+- No errors occur on save",C292384,Not Automated
+CAT-039,Sort Language Check Property,Catalog > Property Management,Functional,Low,5m,"Admin logged in to Backend (${BACK_URL}), catalog with properties defined in multiple languages","1. Navigate to Catalog module
+2. Open Catalog > Properties blade
+3. Add or open a property with multilingual display names
+4. Switch the UI language or view properties sorted by language
+5. Verify the sort order of languages in the property editor
+6. Save any changes and reopen to confirm persistence","- Language options appear in the expected sort order (alphabetical or configured order)
+- Display names for each language are editable and distinct
+- Sorted order is consistent across page refreshes
+- No duplicate language entries appear",C362079,Not Automated
+CAT-040,Unit of Measure Group CRUD,Catalog > Units of Measure,CRUD,Medium,8m,"Admin logged in to Backend (${BACK_URL}), Catalog module with UoM feature enabled","1. Navigate to Catalog module > Units of Measure section
+2. Click Add to create a new UoM group
+3. Enter a unique group name (e.g. Weight)
+4. Save the group and verify it appears in the list
+5. Open the group and edit the name (e.g. Weight Units)
+6. Save and verify updated name
+7. Delete the group via the Delete button
+8. Confirm deletion and verify the group no longer appears in the list","- New UoM group is created and visible in the list
+- Group name updates correctly on edit
+- Delete action removes the group permanently
+- No orphaned data remains after deletion
+- All CRUD operations complete without errors",,Not Automated
+CAT-041,Unit of Measure Unit CRUD,Catalog > Units of Measure,CRUD,Medium,8m,"Admin logged in to Backend (${BACK_URL}), at least one UoM group exists","1. Navigate to Catalog module > Units of Measure
+2. Open an existing UoM group
+3. Click Add Unit to create a new unit (e.g. kg - kilogram)
+4. Enter unit name, short name, and conversion factor
+5. Save the unit and verify it appears within the group
+6. Edit the unit short name and conversion factor
+7. Save changes and verify updates
+8. Delete the unit and confirm it is removed from the group","- New unit is created within the group with correct fields
+- Unit name, short name, and conversion factor save correctly
+- Edited values persist after save
+- Deleted unit no longer appears in the group list
+- Group integrity is maintained after unit deletion",,Not Automated
+CAT-042,Unit of Measure Extended Properties,Catalog > Product > Properties,Functional,Medium,5m,"Admin logged in to Backend (${BACK_URL}), a UoM group with at least one unit is configured","1. Navigate to Catalog module and open a product
+2. Go to the Properties tab
+3. Locate a property that uses a Unit of Measure
+4. Verify the UoM selector is displayed next to the property value
+5. Select a unit from the UoM dropdown
+6. Enter a numeric value for the property
+7. Save the product
+8. Reopen the product and verify the UoM value is retained","- UoM selector appears on product properties that support it
+- Unit dropdown shows available units from the configured group
+- Selected unit and value save correctly
+- Reopened product shows the correct UoM and value
+- UoM display is consistent across product detail views",,Not Automated
+CAT-043,Product Automatic Links,Catalog > Product > Links,Functional,Medium,5m,"Admin logged in to Backend (${BACK_URL}), product exists in a virtual catalog setup","1. Navigate to Catalog module
+2. Open a product that belongs to a physical catalog
+3. Navigate to the Links tab
+4. Click Add Link or observe automatic link entries
+5. Verify links to virtual catalogs are displayed
+6. Click on a link entry to verify it navigates to the linked location
+7. Verify link details (catalog name, category path)","- Links tab is accessible on the product blade
+- Automatic links from virtual catalog assignments are displayed
+- Each link shows the correct catalog and category reference
+- Clicking a link navigates to the correct location
+- No broken or duplicate links appear",,Not Automated
+CAT-044,Category Automatic Links,Catalog > Category > Links,Functional,Medium,5m,"Admin logged in to Backend (${BACK_URL}), category linked to a virtual catalog","1. Navigate to Catalog module
+2. Open a category that has virtual catalog associations
+3. Navigate to the Links tab
+4. Verify automatic links from virtual catalog assignments are listed
+5. Inspect each link for correct catalog and path information
+6. Confirm no stale or broken links appear after catalog restructuring","- Links tab is accessible on the category blade
+- Automatic links reflect current virtual catalog associations
+- Link details (catalog name, path) are accurate
+- Stale links from deleted associations are not shown
+- No errors appear when viewing the Links tab",,Not Automated
+CAT-045,Links from Category and Product,Catalog > Navigation,Functional,Medium,5m,"Admin logged in to Backend (${BACK_URL}), product and category both linked to a virtual catalog","1. Navigate to Catalog module
+2. Open a category linked to a virtual catalog
+3. Navigate to the Links tab and click on a link
+4. Verify navigation to the virtual catalog location
+5. Return and open a product within this category
+6. Navigate to the product Links tab
+7. Click on a product link and verify correct navigation
+8. Verify breadcrumb or path information is correct","- Category link navigates to the correct virtual catalog location
+- Product link navigates to the correct virtual catalog entry
+- Breadcrumb or path reflects the virtual catalog hierarchy
+- Navigation is consistent between category and product links
+- No 404 or broken navigation occurs",,Not Automated
+CAT-046,Full-Text Search Within Catalog Module,Catalog > Search,Functional,Medium,3m,"Admin logged in to Backend (${BACK_URL}), catalog populated with at least 20 products and categories","1. Navigate to Catalog module
+2. Locate the search/filter bar at the top of the catalog blade
+3. Enter a partial product name in the search field
+4. Observe search results filtering in real-time or on submit
+5. Clear the search field and verify all items return
+6. Enter a category name and verify filtering applies to categories
+7. Enter a non-existent term and verify an appropriate empty-state message","- Search bar is present and accepts text input
+- Entering a term filters the product/category list to matching items
+- Clearing the search restores the full list
+- Category name search filters categories correctly
+- Non-existent term shows an empty state or No results message
+- Search is case-insensitive",,Not Automated
+CAT-047,Clone BOM Product,Catalog > Product > BOM,Functional,High,8m,"Admin logged in to Backend (${BACK_URL}), a BOM (Bill of Materials) product exists with at least one component","1. Navigate to Catalog module
+2. Locate and open a BOM product
+3. Note the product name, properties, and BOM components
+4. Click the Clone or Copy action (from toolbar or context menu)
+5. Confirm the clone action in the dialog
+6. Wait for the clone to complete
+7. Open the cloned product from the list","- Clone action is available on BOM products
+- Cloned product is created with a distinct name (e.g. Copy of original name)
+- All top-level product properties are copied to the clone
+- BOM component list is present in the cloned product
+- Clone has a new unique product ID
+- No errors occur during the clone operation",,Not Automated
+CAT-048,Clone BOM Product Variations,Catalog > Product > BOM > Variations,Functional,High,8m,"Admin logged in to Backend (${BACK_URL}), a BOM product with variations (child products) exists","1. Navigate to Catalog module and open a BOM product with variations
+2. Note the number and details of variations
+3. Initiate the Clone action
+4. Confirm the clone action
+5. Open the cloned product
+6. Navigate to the Variations tab of the cloned product
+7. Verify the cloned variations match the originals in count and properties","- Cloned BOM product includes all variations from the original
+- Each variation is a new record with a unique ID
+- Variation properties (name, SKU, images) are copied correctly
+- Cloned variations are editable independently of the original
+- No variation data is lost or corrupted during cloning",,Not Automated
+CAT-049,Virtual Catalog Assignment,Catalog > Virtual Catalogs,Functional,High,5m,"Admin logged in to Backend (${BACK_URL}), a virtual catalog and at least one physical catalog product exist","1. Navigate to Catalog module
+2. Open or create a Virtual Catalog
+3. Navigate into a category within the virtual catalog
+4. Click Add Items or Link Products
+5. Search for and select a product from the physical catalog
+6. Confirm the assignment
+7. Verify the product appears in the virtual catalog category","- Virtual catalog structure is accessible and editable
+- Product search returns physical catalog products
+- Selected product is assigned to the virtual catalog category
+- Assigned product is visible in the virtual catalog without duplicating the original
+- Assignment persists after page refresh
+- Product remains in its original physical catalog",,Not Automated
+CAT-050,Dynamic Product Associations,Catalog > Product > Associations,Functional,Medium,8m,"Admin logged in to Backend (${BACK_URL}), Associations feature enabled, multiple products exist","1. Navigate to Catalog module and open a product
+2. Navigate to the Associations tab
+3. Click Add Dynamic Association or configure an association group
+4. Define association criteria (e.g. same category, same brand)
+5. Save the association rule
+6. Verify the associated products list populates based on the rule
+7. Verify associated products update if catalog changes match the rule","- Associations tab is accessible on the product blade
+- Dynamic association rule can be created with criteria
+- Matching products are listed under the dynamic association
+- Association list refreshes when matching criteria are met
+- Saved rules persist after navigating away and returning
+- No performance degradation with large product sets",,Not Automated
+CAT-051,Product Required Properties Validation,Catalog > Product > Validation,Functional,High,5m,"Admin logged in to Backend (${BACK_URL}), catalog schema has at least one property marked as Required","1. Navigate to Catalog module and open or create a product
+2. Navigate to the Properties tab
+3. Identify a property marked as Required (indicated by asterisk or label)
+4. Clear or leave the required property field empty
+5. Attempt to Save the product
+6. Observe validation feedback
+7. Fill in the required property and save again","- Required properties are visually marked (asterisk or highlight)
+- Saving with empty required property shows a validation error message
+- Error message identifies which property is missing
+- Product does not save while required fields are empty
+- After filling required field, product saves successfully
+- No data loss occurs for non-required fields during failed save attempt",,Not Automated
+CAT-052,Text Option Properties,Catalog > Property Management,Functional,Medium,5m,"Admin logged in to Backend (${BACK_URL}), Catalog module with property management access","1. Navigate to Catalog module > Properties or open a catalog property blade
+2. Click Add Property
+3. Select ShortText or Text as the property value type
+4. Set property display name and configure it as an Option (not free-text)
+5. Add at least 3 predefined option values
+6. Save the property
+7. Assign it to a product and verify the option values appear as a dropdown","- Property is created with text type and predefined options
+- Option values are saved and listed correctly
+- On a product, the property appears as a dropdown with the defined options
+- Only predefined options are selectable (no free-text entry)
+- Selecting an option and saving the product persists the value",,Not Automated
+CAT-053,Property Name Rules Validation,Catalog > Property Management,Functional,Medium,3m,"Admin logged in to Backend (${BACK_URL}), Catalog module with property creation access","1. Navigate to Catalog module > Properties blade
+2. Click Add Property
+3. Attempt to enter invalid characters in the property Name field (e.g. spaces, special chars like @#!%)
+4. Observe whether validation prevents saving
+5. Attempt to save the property with an invalid name
+6. Observe the error message
+7. Enter a valid property name (alphanumeric, underscores, hyphens only)
+8. Save and verify success","- Invalid characters in property name trigger a validation error
+- Error message clearly states the name rules (e.g. Only alphanumeric, underscore, and hyphen allowed)
+- Property cannot be saved with an invalid name
+- Valid name allows the property to be created successfully
+- Existing properties with valid names are not affected",,Not Automated

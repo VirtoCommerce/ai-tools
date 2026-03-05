@@ -575,4 +575,179 @@ PLAT-065,Healthcheck - With Cache Problems,Platform > Healthcheck,Monitoring,Hig
 5. Verify cache error displayed","- Status: Degraded or Unhealthy
 - Cache showing red/error status
 - Error description displayed (e.g., 'Redis connection failed')
-- System still partially operational","C343388",Katalon
+- System still partially operational","C343388",KatalonPLAT-066,Account Lockout After Failed Login Attempts,Platform > Security > Authentication,Security,Critical,8m,"Admin logged in to Backend (${BACK_URL}), a test user account exists with known credentials, account lockout policy is enabled (e.g. 5 failed attempts)","1. Navigate to ${BACK_URL} login page
+2. Enter the test user email
+3. Enter an incorrect password 5 times consecutively
+4. Observe the response after the 5th failed attempt
+5. Attempt to log in with the correct password
+6. Verify the account is locked","- After 5 failed attempts, the system displays an account lockout message
+- Correct credentials are rejected while account is locked
+- Lockout message explains the situation (e.g. Account locked, contact administrator)
+- Lockout is recorded in platform audit logs
+- Successful login is prevented until account is unlocked",C407704,Not Automated
+PLAT-067,Unlock Locked Account via Admin,Platform > Security > User Management,Security,Critical,5m,"Admin logged in to Backend (${BACK_URL}), a user account is in locked state due to failed login attempts","1. Navigate to Security module > Users
+2. Search for and open the locked user account
+3. Observe the locked status indicator on the user profile
+4. Click the Unlock Account button or toggle
+5. Confirm the unlock action
+6. Verify the user status changes to active
+7. Attempt to log in as the unlocked user with correct credentials","- Locked account displays a locked status indicator in the admin UI
+- Unlock button is available to admin users
+- Unlock action changes the account status to active immediately
+- Unlocked user can successfully log in with correct credentials
+- Unlock action is recorded in the audit log",C407705,Not Automated
+PLAT-068,Session Termination on Admin Lock,Platform > Security > Session Management,Security,High,8m,"Admin logged in to Backend (${BACK_URL}), a second browser session is open as the test user","1. Open a browser session as a test user and navigate to Backend
+2. As admin in a separate session, navigate to Security module > Users
+3. Open the test user account
+4. Lock the account (or disable it)
+5. Switch to the test user browser session
+6. Attempt to perform any action or navigate
+7. Observe session behavior","- Active session of the locked user is terminated or invalidated
+- Test user session is redirected to the login page
+- Error or notification message indicates the account has been locked
+- The user cannot continue performing actions after account lock
+- Session termination is reflected in audit logs",C407706,Not Automated
+PLAT-069,Session Termination on Account Deletion,Platform > Security > Session Management,Security,High,8m,"Admin logged in to Backend (${BACK_URL}), a test user has an active session open in a separate browser","1. Open a browser session as the test user and navigate to Backend
+2. As admin, navigate to Security module > Users
+3. Select and delete the test user account
+4. Confirm the deletion
+5. Switch to the test user browser session
+6. Attempt to navigate or perform an action
+7. Observe whether the session is terminated","- Deleted user account session is immediately invalidated
+- Test user session redirects to login page or shows an error
+- Deleted user cannot authenticate again after deletion
+- Deletion is recorded in the platform audit log
+- No orphaned session data remains",C407707,Not Automated
+PLAT-070,Dynamic Property Integer Type,Platform > Dynamic Properties,Functional,Medium,5m,"Admin logged in to Backend (${BACK_URL}), Dynamic Properties module is accessible","1. Navigate to Platform > Dynamic Properties
+2. Select an entity type (e.g. Member or Order)
+3. Click Add Property
+4. Set property type to Integer
+5. Enter a property name and display name
+6. Save the property
+7. Open an entity record and set a value for this property
+8. Attempt to enter a non-integer value (e.g. 3.5 or text)
+9. Save and verify","- Integer dynamic property is created successfully
+- Property appears on the entity record form
+- Only integer values are accepted (decimal or text input is rejected or truncated)
+- Integer value saves and persists correctly on the entity
+- Validation error is shown for non-integer input",,Not Automated
+PLAT-071,Dynamic Property Short Text Type,Platform > Dynamic Properties,Functional,Medium,5m,"Admin logged in to Backend (${BACK_URL}), Dynamic Properties module is accessible","1. Navigate to Platform > Dynamic Properties
+2. Select an entity type
+3. Click Add Property
+4. Set property type to ShortText
+5. Configure a maximum character limit (e.g. 100)
+6. Enter property name and save
+7. Open an entity record and enter text up to the limit
+8. Attempt to enter text exceeding the limit
+9. Save and verify","- ShortText property is created with the configured character limit
+- Property appears on the entity form as a text input
+- Input is restricted to the configured character limit
+- Text within the limit saves correctly
+- Exceeding the limit shows a validation warning or prevents saving",,Not Automated
+PLAT-072,Dynamic Property Long Text HTML Type,Platform > Dynamic Properties,Functional,Medium,8m,"Admin logged in to Backend (${BACK_URL}), Dynamic Properties module is accessible","1. Navigate to Platform > Dynamic Properties
+2. Select an entity type
+3. Click Add Property
+4. Set property type to LongText or HTML
+5. Enter property name and save
+6. Open an entity record
+7. Locate the new property and enter rich text or HTML content
+8. Save the entity
+9. Reopen the entity and verify the content renders correctly","- LongText or HTML property is created and visible on the entity form
+- Rich text editor or HTML input area is provided for the property
+- HTML content is saved without escaping markup
+- Reopened entity displays the HTML content rendered correctly
+- XSS prevention is in place (script tags are sanitized)",,Not Automated
+PLAT-073,Dynamic Property Dictionary Type,Platform > Dynamic Properties,Functional,Medium,8m,"Admin logged in to Backend (${BACK_URL}), Dynamic Properties module is accessible","1. Navigate to Platform > Dynamic Properties
+2. Select an entity type
+3. Click Add Property
+4. Set property type to Dictionary
+5. Add at least 3 predefined dictionary values
+6. Save the property
+7. Open an entity record
+8. Locate the dictionary property and select a predefined value
+9. Save and verify the selection persists","- Dictionary property is created with predefined values
+- Property on entity form renders as a dropdown with predefined values
+- Only predefined values are selectable
+- Selected value saves correctly on the entity
+- Predefined value list is editable in admin (add/remove/reorder)",,Not Automated
+PLAT-074,Dynamic Property Across Entity Types,Platform > Dynamic Properties,Functional,Medium,10m,"Admin logged in to Backend (${BACK_URL}), Dynamic Properties module is accessible, Contact and Organization entities available","1. Navigate to Platform > Dynamic Properties
+2. Create a new Text dynamic property for Contact entity type
+3. Create the same-named property for Organization entity type
+4. Navigate to Customers module and open a Contact record
+5. Verify the property appears on the Contact
+6. Enter a value and save
+7. Open an Organization record
+8. Verify the same-named property appears on Organization
+9. Enter a different value and save
+10. Verify properties are independent per entity type","- Same property name can exist independently on different entity types
+- Contact and Organization both display their respective property
+- Values on Contact do not affect values on Organization
+- Properties are entity-scoped and do not bleed across types
+- All saved values persist correctly after navigation",,Not Automated
+PLAT-075,User Profile Photo Upload,Platform > User Management > Profile,Functional,Low,5m,"Admin logged in to Backend (${BACK_URL}), a valid JPG or PNG image file under 2 MB is ready","1. Navigate to Security module > Users
+2. Open a user profile
+3. Locate the avatar or photo section
+4. Click Upload Photo or Change Avatar
+5. Select a valid image file
+6. Wait for upload to complete
+7. Save the profile
+8. Reload the page and verify the photo is displayed","- Photo upload button is visible on the user profile
+- Valid image file uploads successfully
+- Uploaded photo thumbnail appears on the profile
+- Photo persists after page reload
+- No errors occur during upload or save",,Not Automated
+PLAT-076,User Profile Photo Delete,Platform > User Management > Profile,Functional,Low,3m,"Admin logged in to Backend (${BACK_URL}), a user profile has a photo already uploaded","1. Navigate to Security module > Users
+2. Open a user profile that has a photo
+3. Locate the existing photo/avatar
+4. Click the Remove or Delete Photo button
+5. Confirm the deletion if prompted
+6. Save the profile
+7. Reload the page and verify the photo is removed","- Remove photo option is available when a photo is set
+- Confirming removal clears the photo from the profile
+- Default avatar or placeholder appears after photo removal
+- Removal persists after page reload
+- No errors occur during the remove operation",,Not Automated
+PLAT-077,Login Background Customization,Platform > Appearance > Login Page,Functional,Low,5m,"Admin logged in to Backend (${BACK_URL}), a valid background image file (JPG or PNG) is available","1. Navigate to Platform settings or Appearance section
+2. Locate the Login page customization settings
+3. Upload a new background image
+4. Save the settings
+5. Open a new incognito/private browser window
+6. Navigate to the Backend login page
+7. Verify the custom background image is displayed","- Login page customization settings are accessible in admin
+- Background image upload succeeds
+- Settings save without errors
+- Custom background is visible on the login page in a new session
+- Image scales/covers correctly for different viewport sizes",,Not Automated
+PLAT-078,Platform YAML Settings Override,Platform > Configuration,Functional,High,10m,"Admin logged in to Backend (${BACK_URL}), platform-cm.yaml configuration file is accessible for editing","1. Identify a configurable setting available in platform-cm.yaml (e.g. a feature flag or limit)
+2. Edit platform-cm.yaml to set the value to a non-default value
+3. Restart the application or apply config reload
+4. Log in to the Backend
+5. Navigate to the relevant module or setting
+6. Verify the overridden value is in effect
+7. Revert the YAML change and verify the default is restored","- platform-cm.yaml settings take effect after application restart
+- Overridden value is reflected in the admin UI or behavior
+- Default value is restored when the YAML override is removed
+- No startup errors occur from the config change
+- Config changes are logged in application startup logs",,Not Automated
+PLAT-079,Authorization Scopes,Platform > Security > Roles and Permissions,Security,High,8m,"Admin logged in to Backend (${BACK_URL}), a role with restricted permissions (e.g. catalog:read only) is created and assigned to a test user","1. Log in to Backend as the restricted test user
+2. Navigate to the Catalog module
+3. Attempt to view catalog items (should be allowed with catalog:read)
+4. Attempt to create a new catalog item (should be blocked without catalog:create)
+5. Attempt to delete a catalog item (should be blocked without catalog:delete)
+6. Observe the UI feedback for blocked actions
+7. Log out and verify admin can perform all operations","- User with catalog:read scope can view catalog items
+- Create button is hidden or disabled for user without catalog:create permission
+- Delete button is hidden or disabled without catalog:delete permission
+- API calls for restricted operations return 403 Forbidden
+- No privilege escalation is possible through the UI",,Not Automated
+PLAT-080,Zero-Price and Negative Price Prevention,Platform > Catalog > Pricing Validation,Functional,Critical,5m,"Admin logged in to Backend (${BACK_URL}), a product with pricing enabled exists","1. Navigate to Catalog module and open a product with an existing price
+2. Navigate to the Prices tab or Pricing section
+3. Attempt to enter a negative value (e.g. -10.00) in the price field
+4. Attempt to save
+5. Observe validation behavior
+6. Attempt to enter 0.00 as the price
+7. Attempt to save and observe behavior","- Negative price value triggers a validation error
+- Error message states that price must be zero or greater (or greater than zero depending on policy)
+- Product does not save with a negative price
+- Zero price behavior follows configured policy (allowed or blocked)
+- Positive price values save normally without errors",BL-PRICE-002,Not Automated

@@ -261,3 +261,304 @@ SRCH-010,Organization Search - Filters,Search > Organization,Functional,Medium,5
 4. Verify filtered results","- Org filters available
 - Filters work correctly
 - Combined filtering works",tests/VCST-4357-org-search,Automated
+SRCH-NEW-001,Search Bar - Click Opens Dropdown Empty State,Search > Dropdown,Functional,Critical,2m,"Storefront open at homepage; search input has no text","1. Locate the search input labeled 'Search' in main navigation
+2. Click the search input","- Dropdown opens below the input
+- 'Hints' section visible with 1+ prior search terms as clickable buttons
+- Each hint shows a search icon and query text
+- 'Start typing to search' text visible
+- 'Check all products' link visible pointing to /catalog
+- No product results shown yet
+- CONSOLE: No JavaScript errors
+- NETWORK: No failed API calls",E2E-SEARCH-005,Manual
+SRCH-NEW-002,Search Bar - Autocomplete Shows Product Previews While Typing,Search > Autocomplete,Functional,Critical,3m,"Storefront open; products matching 'hoodie' exist in catalog","1. Click the search input
+2. Type 'hoodie' one character at a time
+3. Wait for dropdown update after each character
+4. Observe final dropdown with all 6 characters typed","- 'Products' section appears in dropdown
+- Each entry: thumbnail image + product name (clickable link) + price
+- At least 4 products shown
+- 'Hints' section remains visible above Products
+- Clear (X) button appears in input
+- NETWORK: GraphQL searchProducts query fires with keyword: 'hoodie'
+- CONSOLE: No JS errors","E2E-SEARCH-005, SRCH-002",Manual
+SRCH-NEW-003,Search Bar - Hints Section Shows Prior Searches on Focus,Search > Hints,Functional,High,3m,"At least 2 prior searches exist ('laptop' and 'hoodie' are visible as hints)","1. Click the search input
+2. Observe the 'Hints' section label
+3. Observe hint items (icon + text)
+4. Click the hint button labeled 'laptop'","- Section labeled exactly 'Hints'
+- Each hint is a button with search icon and query text
+- Clicking 'laptop' populates input with 'laptop'
+- Browser navigates to /search?q=laptop
+- Search results for 'laptop' display","E2E-SEARCH-003, SRCH-008",Manual
+SRCH-NEW-004,Search Bar - Clear Button Resets Input to Empty,Search > Input Controls,Functional,High,2m,"Storefront open at any page","1. Click the search input
+2. Type 'hoodie'
+3. Verify clear (X) button appears
+4. Click the clear (X) button","- After typing: clear button visible; input contains 'hoodie'
+- After click: input is empty
+- Dropdown returns to 'Hints' state
+- Clear button disappears
+- User stays on same page",,Manual
+SRCH-NEW-005,Search Bar - Clicking Autocomplete Product Navigates to PDP,Search > Autocomplete,Functional,Critical,3m,"Storefront open at homepage; 'Vintage Colorado Hoodie' in catalog","1. Click the search input
+2. Type 'hoodie'
+3. Wait for autocomplete product results
+4. Click 'Vintage Colorado Hoodie' in the dropdown","- Browser navigates to PDP for Vintage Colorado Hoodie
+- PDP loads with correct product name
+- Search dropdown closes
+- No JavaScript errors",E2E-SEARCH-005,Manual
+SRCH-NEW-006,Search Bar - Check All Products Link Goes to Catalog,Search > Dropdown,Functional,Low,2m,"Storefront open at homepage","1. Click the search input (do not type)
+2. Verify 'Check all products' link is visible
+3. Click 'Check all products'","- Browser navigates to /catalog
+- Full product catalog page loads
+- Dropdown closes",,Manual
+SRCH-NEW-007,Search - Submit via Enter Key,Search > Submission,Functional,Critical,2m,"Storefront open at any page","1. Click the search input
+2. Type 'hoodie'
+3. Press the Enter key","- Browser navigates to /search?q=hoodie
+- Results page loads with heading showing result count
+- 'hoodie' is bold/emphasized in heading
+- Search input retains 'hoodie'
+- Products displayed in grid view by default","E2E-SEARCH-001, SRCH-001",Manual
+SRCH-NEW-008,Search - Submit via Search Button (Magnifier Icon),Search > Submission,Functional,Critical,2m,"Storefront open at any page","1. Click the search input
+2. Type 'hoodie'
+3. Click the 'Search' button (magnifier icon)","- Browser navigates to /search?q=hoodie
+- Results page loads identically to Enter key submission
+- Same products and count as SRCH-NEW-007",,Manual
+SRCH-NEW-009,Search Results - Result Count in Heading Is Accurate,Search > Results Page,Functional,High,2m,"Navigate to /search?q=hoodie","1. Navigate to /search?q=hoodie
+2. Read the page heading
+3. Count the product cards in the grid","- h1 heading shows correct result count
+- Count in heading matches actual number of product cards rendered",,Manual
+SRCH-NEW-010,Search Results - Grid and List View Toggle,Search > Results Page > Layout,Functional,High,3m,"Navigate to /search?q=hoodie (4 results)","1. Navigate to /search?q=hoodie
+2. Confirm default grid layout
+3. Click 'Switch to list view'
+4. Verify list layout
+5. Click 'Switch to grid view'
+6. Verify grid returns","- Default is grid view
+- List view: single-column format
+- Grid view: multi-column layout
+- Product count consistent across view switches
+- No JS errors during switching",,Manual
+SRCH-NEW-011,Search Results - Sort Options Change Product Order,Search > Sorting,Functional,High,5m,"Navigate to /search?q=hoodie (multiple results with varying prices)","1. Navigate to /search?q=hoodie
+2. Note sort dropdown (default: 'Featured')
+3. Select 'Price: Low to High'
+4. Record product order
+5. Select 'Price: High to Low'
+6. Verify reversed order
+7. Select alphabetical sort
+8. Verify A-Z order","- Price Low to High: ascending order
+- Price High to Low: descending order
+- Alphabetical: A-Z by name
+- Product count unchanged after each sort
+- URL updates to reflect sort",SRCH-007,Manual
+SRCH-NEW-012,Search Results - Show in Stock Checkbox Default and Toggle,Search > Filters > Checkboxes,Functional,High,3m,"Navigate to /search?q=hoodie","1. Verify 'Show in stock' is checked by default
+2. Verify chip in chip bar
+3. Uncheck 'Show in stock'
+4. Observe chip bar and results
+5. Re-check 'Show in stock'","- 'Show in stock' checked on page load
+- Chip present in chip bar
+- Unchecking removes chip; result count may change
+- Re-checking restores chip and results",,Manual
+SRCH-NEW-013,Search Results - Purchased Before Checkbox,Search > Filters > Checkboxes,Functional,Medium,3m,"User authenticated with prior purchases; navigate to /search?q=hoodie","1. Verify 'Purchased before' unchecked by default
+2. Check 'Purchased before'
+3. Verify chip appears
+4. Verify results filter to prior purchases
+5. Uncheck
+6. Verify full results return","- Defaults to unchecked
+- Checking adds chip and filters to prior purchases
+- Unchecking removes chip and restores all results",,Manual
+SRCH-NEW-014,Search Results - Sidebar Facet Filter,Search > Filters > Sidebar,Functional,High,5m,"Navigate to /search?q=hoodie; sidebar shows Color facet","1. Expand 'Color' facet group
+2. Select a color value
+3. Observe chip bar and result count
+4. Verify chip appears
+5. Click 'Close chip'
+6. Verify full results return","- Sidebar facets are expandable
+- Selecting a value creates a chip
+- Product list updates to matching items
+- Close chip removes filter and restores count",SRCH-006,Manual
+SRCH-NEW-015,Search Results - Reset Filters Preserves Search Term,Search > Filters > Reset,Functional,High,3m,"Navigate to /search?q=hoodie; apply sidebar facet filter","1. Apply a sidebar facet filter
+2. Verify 'Reset filters' button visible
+3. Click 'Reset filters'","- All filters cleared
+- Search term 'hoodie' remains in header input
+- URL retains ?q=hoodie; filter params removed
+- Full result set restored",CAT-021,Manual
+SRCH-NEW-016,Search - No Results State UI Validation,Search > No Results,Functional,Critical,2m,"Storefront is accessible","1. Navigate to /search?q=xyzqwerty9876543","- h1 shows sorry message with query term bold
+- 'There are no results found' message visible
+- 'Reset search' button visible
+- No product cards or sidebar filters shown
+- No 'Did you mean...?' suggestion","E2E-SEARCH-004, SRCH-003",Manual
+SRCH-NEW-017,Search - Reset Search Button Clears Query,Search > No Results,Functional,High,2m,"On no-results page /search?q=xyzqwerty9876543","1. Verify no-results state
+2. Click 'Reset search'","- Search input cleared
+- User redirected from no-results page
+- No JavaScript errors",,Manual
+SRCH-NEW-018,Search - Whitespace-Only Query Handling,Search > Edge Cases,Functional,High,2m,"Storefront open at any page","1. Click search input
+2. Type '   ' (3 spaces)
+3. Press Enter","- Submission blocked or user lands on no-results/catalog page
+- No crash or JS error
+- No 5xx response",,Manual
+SRCH-NEW-019,Search - Very Long Query (200+ Characters),Search > Edge Cases,Functional,Medium,2m,"Storefront open at any page","1. Type 200 repeated 'a' characters
+2. Press Enter","- Input accepts long string or enforces max-length
+- No JS or server error
+- URL is properly URL-encoded",,Manual
+SRCH-NEW-020,Search - XSS Script Injection in Input,Search > Security,Security,Critical,3m,"Storefront is accessible","1. Type: <script>alert('xss')</script>
+2. Press Enter
+3. Check for alert dialog
+4. Check console","- No alert dialog appears
+- Script not executed
+- URL encodes input
+- Heading displays query as literal text",E2E-SEC-002,Manual
+SRCH-NEW-021,Search - SQL Injection Attempt,Search > Security,Security,High,2m,"Storefront is accessible","1. Type: ' OR '1'='1
+2. Press Enter","- No database error or stack trace
+- Query handled gracefully
+- API returns 200
+- No console errors",E2E-SEC-002,Manual
+SRCH-NEW-022,Search - Special Characters Are URL-Encoded Correctly,Search > Edge Cases,Functional,High,3m,"Storefront open at any page","1. Search for 'hoodie & jeans'
+2. Search for 'product (new)'
+3. Search for 'item #123'","- Ampersand, parentheses, hash properly URL-encoded
+- All searches load without errors
+- Heading shows decoded query text",SRCH-004,Manual
+SRCH-NEW-023,Search - Direct URL Navigation with Query Parameter,Search > URL Navigation,Functional,High,2m,"Storefront is accessible","1. Navigate directly to /search?q=hoodie in a new tab","- Results page loads without prior homepage visit
+- Search input pre-populated with 'hoodie'
+- Correct results displayed
+- Filters and sort functional",E2E-SEARCH-001,Manual
+SRCH-NEW-024,Search - Empty Query Parameter Loads Catalog,Search > URL Navigation,Functional,Medium,2m,"Storefront is accessible","1. Navigate to /search?q=","- Page loads without error
+- Products displayed (catalog-style)
+- Search input empty",,Manual
+SRCH-NEW-025,Search Bar - Keyboard-Only Navigation,Search > Accessibility,Accessibility,High,5m,"Storefront open; keyboard-only operation","1. Tab to search input
+2. Verify focus indicator
+3. Type 'hoodie'
+4. Arrow Down into dropdown
+5. Navigate hints with Arrow keys
+6. Enter on hint item
+7. Escape to close without submitting","- Search reachable via Tab
+- Visible focus indicator
+- Arrow keys navigate dropdown
+- Enter executes search from hint
+- Escape closes dropdown
+- No keyboard trap","WCAG 2.1 AA 2.1.1, 2.4.3",Manual
+SRCH-NEW-026,Search Bar - ARIA Roles and Labels,Search > Accessibility,Accessibility,High,5m,"Storefront open; DevTools Accessibility panel available","1. Inspect search input role and name
+2. Inspect Barcode scan button name
+3. Inspect Search button name
+4. Inspect clear (X) button name
+5. Inspect dropdown container role","- Input: role=searchbox, name=Search
+- Buttons have correct accessible names
+- Dropdown uses role=listbox or equivalent
+- All interactive elements have accessible names","WCAG 2.1 AA 4.1.2",Manual
+SRCH-NEW-027,Search - Autocomplete Response Time Under 2 Seconds,Search > Performance,Performance,Medium,5m,"DevTools Network tab open","1. Type 'hoodie' in search input
+2. Measure time to autocomplete appearance
+3. Check GraphQL request duration","- Autocomplete results within 2 seconds
+- GraphQL call under 1500ms
+- No loading spinner over 2 seconds",,Manual
+SRCH-NEW-028,Search - Results Page Load Time Under 3 Seconds,Search > Performance,Performance,Medium,5m,"DevTools Network tab open; no throttling","1. Navigate to /search?q=hoodie (fresh)
+2. Measure time to full render","- Full render within 3 seconds
+- Heading visible within 2 seconds
+- No major layout shift
+- All requests return 200",,Manual
+SRCH-NEW-029,Search Bar - Firefox Compatibility,Search > Cross-Browser,Compatibility,Medium,5m,"Firefox via playwright-firefox","1. Open homepage in Firefox
+2. Search for 'hoodie'
+3. Verify autocomplete and results page","- Search works identically to Chrome
+- No Firefox-specific errors or layout breaks",,Manual
+SRCH-NEW-030,Search Bar - Edge Compatibility,Search > Cross-Browser,Compatibility,Medium,5m,"Edge via playwright-edge","1. Open homepage in Edge
+2. Search for 'hoodie'
+3. Verify autocomplete and results page","- Identical behavior to Chrome
+- No Edge-specific issues",,Manual
+SRCH-NEW-031,Search Bar - Mobile Viewport 375px,Search > Mobile,Functional,High,5m,"Chrome DevTools emulation at 375px","1. Set viewport to 375px
+2. Verify search input visible
+3. Tap search input
+4. Type 'hoodie'
+5. Verify autocomplete readable
+6. Tap a product","- Search functional at 375px
+- Dropdown fits within viewport
+- Product names readable
+- Navigation to PDP works",,Manual
+SRCH-NEW-032,Search - Mobile Results Page Layout 375px,Search > Mobile,Functional,High,5m,"375px viewport; navigate to /search?q=hoodie","1. Verify heading readable
+2. Verify 1-2 column grid
+3. Verify sort accessible
+4. Verify filters accessible
+5. Verify touch targets >= 44x44px","- Heading readable
+- Grid adapts to 1-2 columns
+- Sort/filters accessible without horizontal scroll
+- Touch targets meet minimum size",,Manual
+SRCH-NEW-033,Search - GA4 search Event Fires on Query Submission,Search > Analytics,Functional,Medium,5m,"DevTools Console open; GTM configured","1. Run window.dataLayer to confirm
+2. Search for 'hoodie'
+3. Check dataLayer for search event","- search event found with search_term: 'hoodie'
+- No GA4 or GTM errors",E2E-GA-004,Manual
+SRCH-NEW-034,Search - GA4 view_search_results Event on Results Page,Search > Analytics,Functional,Medium,5m,"DevTools Console open","1. Navigate to /search?q=hoodie
+2. Check dataLayer for view_search_results event","- view_search_results event found with search_term: 'hoodie'
+- No GA4 or GTM errors",E2E-GA-004,Manual
+SRCH-NEW-035,Search to Cart - Full End-to-End Flow,Search > E2E,Functional,Critical,10m,"User authenticated; cart at known state","1. Search for 'hoodie' via Enter
+2. Locate 'Vintage Colorado Hoodie' ($54.00)
+3. Click '+' to add to cart
+4. Verify cart badge increments
+5. Navigate to cart
+6. Verify product in cart at correct price","- Search finds product
+- Add-to-cart works from search results
+- Cart shows correct product, price, quantity
+- No errors during entire flow","E2E-SEARCH-001, BL-CART",Manual
+SRCH-NEW-036,Search - Browser Back Returns to Results Page,Search > Navigation,Functional,High,3m,"User navigated from search results to a PDP","1. Navigate to /search?q=hoodie
+2. Click a product to open PDP
+3. Click browser Back button","- Returns to /search?q=hoodie
+- Same results displayed
+- Search input still shows 'hoodie'
+- Product cards visible",E2E-SEARCH-001,Manual
+
+CAT-035,Brands Page Loads,Catalog > Brands,Functional,Medium,3m,"Store has brand data configured, brands page enabled","1. Navigate to /Brands
+2. Verify page loads completely
+3. Check for brand list or grid layout
+4. Check browser console for JavaScript errors","- /Brands page loads without errors
+- Brand list or grid displayed
+- Each brand entry shows brand name (and logo/image if configured)
+- No JavaScript console errors
+- Page title or heading confirms Brands context",Coverage Gap Analysis,Generated
+CAT-036,Brand Navigation,Catalog > Brands,Functional,Medium,4m,"Brands page loaded, at least one brand with products exists","1. Navigate to /Brands
+2. Click on a brand entry
+3. Verify the resulting product listing page
+4. Verify all listed products belong to the selected brand","- Clicking brand navigates to a brand-filtered product listing page
+- Page heading or breadcrumb shows selected brand name
+- All displayed products are associated with that brand
+- Facet filters available on the brand result page
+- URL reflects brand filter context",Coverage Gap Analysis,Generated
+CAT-037,Brand Product Count,Catalog > Brands,Functional,Medium,4m,"Brands page loaded, brands have known product counts","1. Navigate to /Brands
+2. Locate a brand entry that shows a product count badge or label
+3. Note the displayed count
+4. Click on the brand
+5. Count or compare the number of products in the resulting listing","- Brand entry shows product count (e.g., 24 products)
+- Clicking the brand opens listing with matching product count
+- Product count on brand listing matches count displayed on Brands page
+- Count updates if product availability changes (zero-count brands hidden or marked)",Coverage Gap Analysis,Generated
+CAT-030,Add to Compare,Catalog > Compare,Functional,High,4m,"User on a category page, product comparison feature enabled, at least 2 comparable products visible","1. Navigate to a category page with product cards
+2. Locate the 'Compare' icon or checkbox on a product card
+3. Click 'Compare' on the first product
+4. Verify the product is added to the compare bar at the bottom or side of the page
+5. Verify the compare bar count increments to 1","- 'Compare' icon or checkbox is visible on product card (hover or always shown)
+- Clicking adds the product to the compare bar
+- Compare bar appears or updates at the bottom of the page
+- Compare bar shows the added product's name/thumbnail
+- Compare bar count shows 1",Coverage Gap Analysis,Generated
+CAT-031,Compare Page Display,Catalog > Compare,Functional,High,5m,"2 or more products added to the compare bar","1. Add 2 or more products to compare via category page
+2. Click 'Compare' in the compare bar or navigate to /compare
+3. Verify the compare page loads
+4. Verify products are displayed side by side
+5. Verify specs/attributes are shown in rows for comparison","- Compare page loads at /compare or similar URL
+- Products are displayed in a side-by-side column layout
+- Product names, images, and prices are shown at the top of each column
+- Specification attributes (e.g., size, weight, material, warranty) are listed in rows
+- Differences between products are visually highlighted (if feature supported)
+- Each product has an 'Add to Cart' button on the compare page",Coverage Gap Analysis,Generated
+CAT-032,Compare Limit,Catalog > Compare,Functional,Medium,4m,"Category page with the compare feature active, currently comparing the maximum allowed products","1. Add products to compare until the maximum is reached (check for a limit, typically 3 or 4)
+2. Attempt to add one more product beyond the limit
+3. Verify a limit message is displayed
+4. Verify the extra product is not added","- System enforces a maximum number of comparable products (e.g., 3 or 4)
+- Attempting to add beyond the limit shows a message: 'You can compare up to X products' or similar
+- The over-limit product is not added to the compare bar
+- Compare bar still shows only the allowed maximum number of products",Coverage Gap Analysis,Generated
+CAT-033,Remove from Compare,Catalog > Compare,Functional,Medium,3m,"2 or more products added to compare, on /compare page","1. Navigate to the compare page with 2+ products
+2. Locate the remove button (X or Remove) on one product column
+3. Click remove on one product
+4. Verify the removed product's column disappears
+5. Verify remaining products are still displayed","- Remove/close button is available per product on the compare page
+- Clicking remove eliminates that product's column from the comparison
+- Remaining products are still shown correctly
+- Compare bar count decrements to reflect the removal
+- If only 1 product remains, the page may show a prompt to add more for comparison",Coverage Gap Analysis,Generated
+CAT-034,Compare Empty State,Catalog > Compare,Functional,Medium,3m,"No products added to compare (fresh session or after clearing)","1. Navigate to /compare with no products in the compare bar (clear compare if needed)
+2. Observe the empty state on the compare page","- Compare page loads without error even with no products
+- Empty state UI is shown with a message: 'No products to compare' or similar
+- A call-to-action is displayed: 'Browse catalog' or 'Add products to compare' link
+- No broken layout or JavaScript errors
+- User can easily navigate back to catalog to add products",Coverage Gap Analysis,Generated

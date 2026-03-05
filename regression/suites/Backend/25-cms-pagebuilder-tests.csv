@@ -144,3 +144,307 @@ CMS-054,Cross-browser compatibility - Chrome and Edge,Cross-Browser,Compatibilit
 CMS-055,Login and user profile in Page Builder admin,Authentication,Functional,Medium,3m,User credentials available,"1. Login to Page Builder admin with valid credentials
 2. Verify user profile display
 3. Check logo display","Login successful; user profile and logo displayed correctly",C415421 C415425 C415426,Not Automated
+CMS-056,Rich Text Field Type — Add Rich Text Content Block,Field Types,Functional,High,5min,"Admin logged in to Backend
+Page exists in Page Builder designer","1. Navigate to ${BACK_URL}/pages and open an existing page
+2. Click Open Designer to enter the page builder
+3. Add a new section or open an existing section for editing
+4. Locate the Rich Text field type in the field list
+5. Click on the Rich Text field to open the rich text editor
+6. Enter formatted text content: bold, italic, and a hyperlink
+7. Click Save or apply the changes
+8. Preview the page and verify rich text renders correctly","- Rich Text field type is available in the page builder field list
+- Rich text editor opens with full formatting toolbar: bold, italic, underline, links, lists
+- Formatted content is saved and persisted correctly
+- Page preview renders the rich text with all applied formatting styles
+- HTML output is clean and valid without extraneous markup",C221068,Not Automated
+CMS-057,Form Field Type (Draft) — Create Form Field in Page,Field Types,Functional,High,5min,"Admin logged in to Backend
+Page exists in Page Builder designer","1. Navigate to ${BACK_URL}/pages and open an existing page
+2. Click Open Designer to enter the page builder
+3. Add a new section for editing
+4. Locate the Form field type in the field list
+5. Click on the Form field to open its configuration
+6. Enter a field label and placeholder text
+7. Set the field as required if the option is available
+8. Save and preview the page
+9. Verify the form field renders in draft state on the page","- Form field type is available in the page builder section
+- Configuration panel opens for the form field with label and placeholder options
+- Form field is saved with the configured settings
+- Page preview shows the form field in the correct position
+- Draft form field is displayed but may not be fully functional until published",C221069,Not Automated
+CMS-058,Select Field Type — Add Dropdown Select Field,Field Types,Functional,High,5min,"Admin logged in to Backend
+Page exists in Page Builder designer","1. Navigate to ${BACK_URL}/pages and open an existing page
+2. Click Open Designer to enter the page builder
+3. Add a new section or open an existing section
+4. Locate the Select/Dropdown field type in the field list
+5. Click on the Select field to open its configuration
+6. Add multiple options (e.g., Option A, Option B, Option C)
+7. Set a default selected option
+8. Save and preview the page
+9. Verify the dropdown renders with all configured options","- Select field type is available in the page builder
+- Configuration allows adding multiple selectable options
+- Default option can be designated
+- All configured options appear in the dropdown on the page preview
+- Select field maintains its configuration after saving and reopening
+- Dropdown styling is consistent with the page theme",C221072,Not Automated
+CMS-059,Page Section — Image with Text,Designer Sections,Functional,High,5min,"Admin logged in to Backend
+Page exists in Page Builder designer
+Image file available for upload","1. Navigate to ${BACK_URL}/pages and open a page in the designer
+2. Click Add Section
+3. Select the Image with Text section type
+4. Upload an image in the image field
+5. Enter text content in the text area
+6. Configure image position (left or right of text)
+7. Save the section
+8. Preview the page and verify the layout","- Image with Text section is available in the section type picker
+- Image upload accepts common image formats (JPG, PNG, WebP)
+- Text and image render side by side as configured
+- Image position toggle works correctly (left/right alignment)
+- Section is saved and persists after page reload
+- Responsive layout adapts correctly on mobile viewport preview",C221092,Not Automated
+CMS-060,Page Section — Text Over Image,Designer Sections,Functional,High,5min,"Admin logged in to Backend
+Page exists in Page Builder designer
+Image file available for upload","1. Navigate to ${BACK_URL}/pages and open a page in the designer
+2. Click Add Section
+3. Select the Text Over Image section type
+4. Upload a background image
+5. Enter overlay text content
+6. Configure text position and color for contrast
+7. Save the section
+8. Preview the page and verify text overlays the image correctly","- Text Over Image section is available in the section type picker
+- Background image is uploaded and displayed behind the text overlay
+- Text renders on top of the image with correct positioning
+- Text color and styling provide readable contrast against the background image
+- Section renders correctly in page preview with proper z-index layering
+- Image dimensions are maintained without distortion",C221093,Not Automated
+CMS-061,Page Section — Cards List,Designer Sections,Functional,High,5min,"Admin logged in to Backend
+Page exists in Page Builder designer","1. Navigate to ${BACK_URL}/pages and open a page in the designer
+2. Click Add Section
+3. Select the Cards List section type
+4. Add at least 3 card items
+5. For each card: enter title, description, and optional image
+6. Configure the card layout (grid columns)
+7. Save the section
+8. Preview the page and verify cards display correctly","- Cards List section is available in the section type picker
+- Multiple card items can be added with title, description, and image
+- Cards are displayed in a grid layout as configured
+- Each card renders with the correct content and styling
+- Adding, reordering, and removing cards works correctly
+- Cards list is responsive and adjusts on different viewport sizes",C221094,Not Automated
+CMS-062,Page Section — Simple Text Block,Designer Sections,Functional,High,3min,"Admin logged in to Backend
+Page exists in Page Builder designer","1. Navigate to ${BACK_URL}/pages and open a page in the designer
+2. Click Add Section
+3. Select the Simple Text Block section type
+4. Enter plain text content in the text area
+5. Configure text alignment and font settings if available
+6. Save the section
+7. Preview the page and verify text displays correctly
+8. Verify the section does not include any unexpected HTML tags","- Simple Text Block section is available in the section type picker
+- Plain text content is entered and saved correctly
+- Text renders on the page preview with configured alignment
+- No rich text formatting is applied unless explicitly configured
+- Section content is clean and readable in the page output
+- Section can be edited after creation to update text content",C221095,Not Automated
+CMS-063,Page Section — Two Column Text,Designer Sections,Functional,High,5min,"Admin logged in to Backend
+Page exists in Page Builder designer","1. Navigate to ${BACK_URL}/pages and open a page in the designer
+2. Click Add Section
+3. Select the Two Column Text section type
+4. Enter text content in the left column
+5. Enter different text content in the right column
+6. Configure column proportions if available
+7. Save the section
+8. Preview the page and verify both columns display correctly side by side","- Two Column Text section is available in the section type picker
+- Both left and right columns accept and save text content independently
+- Columns render side by side in the page preview
+- Column content is editable independently without affecting the other column
+- Layout responds correctly when previewing at smaller viewport sizes
+- Section is saved and persists correctly with both columns populated",C221096,Not Automated
+CMS-064,Page Section — Simple Image,Designer Sections,Functional,High,3min,"Admin logged in to Backend
+Page exists in Page Builder designer
+Image file available for upload","1. Navigate to ${BACK_URL}/pages and open a page in the designer
+2. Click Add Section
+3. Select the Simple Image section type
+4. Upload an image file using the image upload field
+5. Add optional alt text for accessibility
+6. Configure image alignment (center, left, right)
+7. Save the section
+8. Preview the page and verify the image displays correctly","- Simple Image section is available in the section type picker
+- Image upload accepts JPEG, PNG, and WebP formats
+- Uploaded image renders at appropriate size without distortion
+- Alt text is applied to the image for accessibility compliance
+- Image alignment setting is applied correctly in the preview
+- Section is saved and image persists after page reload",C221099,Not Automated
+CMS-065,Navigation Menu Counter Display,Grid View,Functional,Medium,3min,"Admin logged in to Backend
+Multiple pages exist in various statuses (Draft, Published, Archived)","1. Navigate to ${BACK_URL}/pages
+2. Observe the navigation menu or sidebar with page status filters
+3. Check the counter displayed next to each status category (Draft, Active, Pending, Archived)
+4. Compare the counter numbers against the actual page count in each category
+5. Create a new draft page and verify the Draft counter increments
+6. Publish a page and verify the Draft counter decrements and Active counter increments
+7. Verify total count updates dynamically without page refresh","- Counter badges are visible next to each status category in the navigation menu
+- Counter numbers accurately reflect the current count of pages in each status
+- Creating a new draft page increments the Draft counter by 1
+- Publishing a draft page decrements Draft counter and increments Active counter
+- Counters update in real time or after status change actions
+- Zero counts display as 0 or are hidden depending on UI design",C415386,Not Automated
+CMS-066,Navigation Menu Filtering — Filter Pages in Nav Menu Blade,Status Filters,Functional,High,3min,"Admin logged in to Backend
+Pages exist in Draft, Published, Pending, and Archived states","1. Navigate to ${BACK_URL}/pages
+2. Click on the Draft filter in the navigation menu
+3. Verify only draft pages appear in the main list area
+4. Click on the Active filter
+5. Verify only published/active pages appear
+6. Click on the Pending filter
+7. Verify only scheduled/pending pages appear
+8. Click on the Archived filter
+9. Verify only archived pages appear
+10. Verify the selected filter is visually highlighted in the menu","- Each navigation filter correctly limits the page list to the corresponding status
+- Draft filter shows only pages with Draft status
+- Active filter shows only pages with Published status
+- Pending filter shows only pages with Scheduled status
+- Archived filter shows only pages with Archived status
+- Active filter is visually indicated (bold, highlight, or underline)
+- Switching filters updates the list immediately without full page reload",C415388,Not Automated
+CMS-067,Page Blade — Basic Info Section,Page Configuration,Functional,High,3min,"Admin logged in to Backend
+Page exists in the system","1. Navigate to ${BACK_URL}/pages
+2. Open an existing page to view its details blade
+3. Locate the Basic Information section
+4. Verify all fields are present: Name, Permalink, Language
+5. Verify the Permalink field shows the read-only domain prefix and editable slug
+6. Edit the Name field with a new value
+7. Edit the Permalink slug
+8. Change the Language dropdown selection
+9. Save and verify all changes persist","- Basic Information section is visible and contains all required fields
+- Name field is editable and accepts text input
+- Permalink field displays read-only domain URL prefix with editable slug portion
+- Language dropdown lists all configured store languages
+- All three fields save correctly and persist after page reload
+- Permalink updates are reflected in the frontend URL immediately after publishing",C415390,Not Automated
+CMS-068,Page Blade — Scheduling Section,Page Configuration,Functional,High,5min,"Admin logged in to Backend
+Page exists in the system","1. Navigate to ${BACK_URL}/pages and open an existing page
+2. Expand the Scheduling section in the page blade
+3. Set a future Publish Date using the date picker
+4. Set a future Unpublish Date (after the publish date)
+5. Save the scheduling settings
+6. Verify the Scheduled badge appears in the page list
+7. Verify the page is not accessible on the storefront before the publish date
+8. Update the publish date to the past and verify the page becomes accessible
+9. Verify setting unpublish date in the past removes the page from the storefront","- Scheduling section is visible and expandable in the page details blade
+- Publish Date accepts future date and time via date picker
+- Unpublish Date accepts future date and time after the publish date
+- Saving scheduling dates causes the Scheduled badge to appear in the grid
+- Page follows the schedule: not accessible before publish date, accessible within range
+- Setting unpublish date in the past removes the page from storefront
+- Validation prevents setting Unpublish Date before Publish Date",C415392,Not Automated
+CMS-069,Page Blade — Personalization Section,Page Configuration,Functional,High,5min,"Admin logged in to Backend
+User groups and organizations are configured
+Page exists in the system","1. Navigate to ${BACK_URL}/pages and open an existing page
+2. Expand the Personalization section in the page blade
+3. Toggle the Visibility setting to restrict to registered users only
+4. Save and verify on storefront that anonymous users cannot access the page
+5. Return to admin and select User Groups from the restriction dropdown
+6. Select one or more user groups
+7. Save and verify the Personalized badge appears in the page list
+8. Verify only users belonging to the selected groups can access the page
+9. Set Organization restriction and verify organization-level access control","- Personalization section is visible and expandable in the page details blade
+- Visibility toggle restricts page access to authenticated users only when enabled
+- User Groups dropdown allows selecting one or more groups for targeted access
+- Personalized badge appears in the grid list when any personalization is configured
+- Users not in the restricted groups cannot access the page on the storefront
+- Organization restriction limits page visibility to members of specified organizations
+- Multiple personalization rules can be combined and saved simultaneously",C415394,Not Automated
+CMS-070,Page Blade — SEO Section,Page Configuration,Functional,High,5min,"Admin logged in to Backend
+Page exists in the system","1. Navigate to ${BACK_URL}/pages and open an existing page
+2. Expand or navigate to the SEO section in the page blade
+3. Enter a Meta Title in the SEO title field
+4. Enter a Meta Description in the description field
+5. Enter Meta Keywords
+6. Save all SEO settings
+7. Publish the page if not already published
+8. Open the page on the storefront
+9. Inspect the page HTML source to verify meta tags are present","- SEO section is accessible in the page blade with title, description, and keywords fields
+- Meta Title, Meta Description, and Keywords fields accept text input and save correctly
+- Published page HTML contains the correct meta title tag in the head section
+- Meta description is rendered as a meta description tag in the page head
+- SEO fields persist after page save and are visible upon reopening the page blade
+- Empty SEO fields do not generate invalid or empty meta tags in page output",C415396,Not Automated
+CMS-071,"Page Sorting in List — Sort Pages by Name, Date, and Status",Grid View,Functional,Medium,3min,"Admin logged in to Backend
+At least 5 pages exist with different names and creation dates","1. Navigate to ${BACK_URL}/pages and view the full page list
+2. Click the Name column header to sort pages alphabetically A-Z
+3. Click the Name column header again to sort Z-A
+4. Click the Creation Date column header to sort by oldest first
+5. Click the Creation Date column header again to sort by newest first
+6. Click the Status column header if available to sort by status
+7. Verify the sort order is visually indicated by an arrow icon on the column header
+8. Verify the page list reorders correctly after each sort action","- Clicking column headers sorts the page list by that column
+- First click sorts ascending, second click sorts descending
+- Name sorting arranges pages in correct alphabetical order
+- Date sorting arranges pages by creation date in correct chronological order
+- Status sorting groups pages by their current status
+- Active sort direction is visually indicated by an arrow or icon on the column header
+- Sort state persists when switching between navigation filters",C415398,Not Automated
+CMS-072,Page Bulk Operations — Select Multiple and Bulk Publish/Unpublish,Grid View,Functional,High,5min,"Admin logged in to Backend
+At least 3 draft pages exist","1. Navigate to ${BACK_URL}/pages and filter to show Draft pages
+2. Select multiple pages using the individual checkboxes
+3. Verify the bulk action toolbar appears with action options
+4. Click Bulk Publish
+5. Confirm the bulk publish action
+6. Verify all selected pages transition to Published status
+7. Select multiple Published pages
+8. Click Bulk Unpublish or Archive
+9. Verify all selected pages transition to the new status
+10. Verify the page count counters update accordingly","- Individual checkboxes and bulk select checkbox are functional in the page list
+- Selecting multiple pages activates the bulk action toolbar
+- Bulk Publish transitions all selected draft pages to Published status simultaneously
+- Bulk Unpublish or Archive transitions all selected pages to the new status
+- Page list and status counters update after bulk operations complete
+- Confirmation dialog appears before executing destructive bulk operations
+- Partial failure is handled gracefully with error feedback for specific pages",C415400,Not Automated
+CMS-073,Archive Page Workflow — Archive and Verify Storefront Removal,Status Transitions,Functional,High,5min,"Admin logged in to Backend
+A published page exists and is accessible on the storefront","1. Navigate to ${BACK_URL}/pages and identify a currently published page
+2. Note the page permalink URL
+3. Verify the page is accessible on the storefront using the permalink URL
+4. Open the page in the admin and click Archive
+5. Confirm the archive action in the dialog
+6. Verify the page status changes to Archived in the admin
+7. Attempt to access the same permalink URL on the storefront
+8. Verify the page is no longer accessible (404 or redirect)
+9. Verify the page is listed under the Archived filter in admin","- Archive action is available for Published pages
+- Confirmation dialog appears before archiving
+- Page status transitions from Published to Archived after confirmation
+- Archived page is no longer accessible on the storefront (returns 404 or redirect)
+- Page permalink URL is freed and the page is removed from storefront navigation
+- Archived page is visible in the admin under the Archived status filter
+- Archived page does not appear in storefront search results",,Not Automated
+CMS-074,Restore Archived Page — Restore from Archive,Status Transitions,Functional,High,5min,"Admin logged in to Backend
+An archived page exists [CMS-073]","1. Navigate to ${BACK_URL}/pages and click the Archived filter
+2. Locate the previously archived page
+3. Open the archived page details blade
+4. Verify the available actions (Restore or Publish buttons)
+5. Click Restore or Publish to restore the page
+6. Confirm the action if a dialog appears
+7. Verify the page transitions to Draft or Published status
+8. Verify the restored page is accessible on the storefront
+9. Verify the page appears in the correct status filter in the list","- Archived pages are accessible in the admin via the Archived status filter
+- Restore or Publish action is available on archived page details blade
+- Restoring an archived page transitions its status to Draft or Published
+- Restored page becomes accessible on the storefront once published
+- Page permalink is restored to its original URL
+- Page appears correctly in the page list under its new status filter after restore",,Not Automated
+CMS-075,Multilanguage Page Management — Create Page in Multiple Languages,Page Management,Functional,High,8min,"Admin logged in to Backend
+Store configured with at least two languages (e.g., English and French)
+CMS module installed","1. Navigate to ${BACK_URL}/pages
+2. Click Add to create a new page
+3. Enter page name and permalink in English
+4. Select English as the language
+5. Save and publish the English page
+6. Verify the English page is accessible on the storefront at the English URL prefix
+7. Create another page with the same permalink but select French as the language
+8. Add French content to the page and save
+9. Publish the French page
+10. Verify the French page is accessible at the French language URL prefix
+11. Verify the English page at the English URL returns English content","- Page creation allows selecting a specific language from the configured store languages
+- English and French (or configured language) pages can be created with the same permalink
+- Each language page is treated as a separate entity in the page list
+- English page is accessible at the English storefront URL prefix (e.g., /en/permalink)
+- French page is accessible at the French storefront URL prefix (e.g., /fr/permalink)
+- Language-specific pages show the correct language badge in the admin list
+- Wrong language URL prefix returns 404 for the correct-language-only page",,Not Automated
