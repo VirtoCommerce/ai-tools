@@ -45,8 +45,8 @@
       "name": "Smoke Tests",
       "file": "regression/suites/Frontend/01-smoke-tests.csv",
       "priority": "P0",
-      "testCount": 12,
-      "estimatedMinutes": 15,
+      "testCount": 14,
+      "estimatedMinutes": 23,
       "agent": "qa-testing-expert",
       "tags": ["smoke", "daily", "pre-deploy"]
     },
@@ -65,8 +65,8 @@
       "name": "Catalog & Search Tests",
       "file": "regression/suites/Frontend/03-catalog-search-tests.csv",
       "priority": "P1",
-      "testCount": 39,
-      "estimatedMinutes": 25,
+      "testCount": 75,
+      "estimatedMinutes": 55,
       "agent": "qa-frontend-expert",
       "tags": ["catalog", "search", "sprint"]
     },
@@ -75,8 +75,8 @@
       "name": "Cart & Checkout Tests",
       "file": "regression/suites/Frontend/04-cart-checkout-tests.csv",
       "priority": "P1",
-      "testCount": 31,
-      "estimatedMinutes": 35,
+      "testCount": 40,
+      "estimatedMinutes": 45,
       "agent": "qa-frontend-expert",
       "tags": ["cart", "checkout", "revenue-critical", "sprint"]
     },

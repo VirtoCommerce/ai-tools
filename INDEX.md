@@ -11,6 +11,8 @@ This repository contains QA testing documentation and MCP-driven testing for the
 | [test-data/](test-data/) | Test fixtures, sample data, and test cards |
 | [reports/](reports/) | Bug reports and regression test results |
 | [docs/](docs/) | LLM prompt templates and testing guides |
+| [docs/presentation/](docs/presentation/) | Agentic QA architecture presentation (18 slides) |
+| [docs/agentic-qa-cheatsheet.md](docs/agentic-qa-cheatsheet.md) | Quick reference: commands, skills, agents, workflows |
 | [config/](config/) | MCP browser configs and test-suites.json manifest |
 | [ci/](ci/) | CI regression via Claude Agent SDK (Docker + GitHub Actions) |
 | [Test suites & Cases/](Test%20suites%20%26%20Cases/) | Original TestRail export (source-of-truth reference) |
@@ -22,6 +24,7 @@ This repository contains QA testing documentation and MCP-driven testing for the
 ```
 vc-mcp-testing-module/
 ├── .claude/agents/            # Claude Code agent configurations (11 agents: 7 QA + 4 BA)
+│   └── knowledge/             # 8 shared reference files (business-logic, platform-patterns, etc.)
 ├── .github/workflows/         # GitHub Actions (regression.yml)
 │
 ├── config/                    # MCP browser configurations + suite manifest

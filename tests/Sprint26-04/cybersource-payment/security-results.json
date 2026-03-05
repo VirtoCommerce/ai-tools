@@ -1,0 +1,67 @@
+{
+  "suiteId": "06-security",
+  "suiteName": "CyberSource PCI/Security Compliance",
+  "runId": "CYBERSOURCE-2026-03-05",
+  "browser": "playwright-firefox",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "startedAt": "2026-03-05T14:08:00Z",
+  "completedAt": "2026-03-05T14:13:00Z",
+  "totalCases": 6,
+  "passed": 6,
+  "failed": 0,
+  "blocked": 0,
+  "skipped": 0,
+  "passRate": "100.0%",
+  "testCases": [
+    {
+      "id": "PAY-SEC-001",
+      "title": "Card Number Iframe - Cross-origin isolation",
+      "section": "Security > PCI",
+      "priority": "Critical",
+      "status": "PASS",
+      "notes": "Iframe from testflex.cybersource.com, contentDocument returns null, cross-origin access throws Permission denied"
+    },
+    {
+      "id": "PAY-SEC-002",
+      "title": "CVV Iframe - Cross-origin isolation",
+      "section": "Security > PCI",
+      "priority": "Critical",
+      "status": "PASS",
+      "notes": "CVV in separate iframe, securityCode type, maxLength 4, cross-origin fully blocked"
+    },
+    {
+      "id": "PAY-SEC-003",
+      "title": "No Card Data in Network Requests",
+      "section": "Security > PCI",
+      "priority": "Critical",
+      "status": "PASS",
+      "notes": "179 requests inspected, 0 contain card number or CVV. Tokenization via testflex.cybersource.com/flex/v2/tokens"
+    },
+    {
+      "id": "PAY-SEC-004",
+      "title": "No Card Data in Browser Storage",
+      "section": "Security > PCI",
+      "priority": "Critical",
+      "status": "PASS",
+      "notes": "localStorage (23 keys), sessionStorage (4 keys), cookies (6) - none contain card data"
+    },
+    {
+      "id": "PAY-SEC-005",
+      "title": "HTTPS Only - No Mixed Content",
+      "section": "Security > PCI",
+      "priority": "Critical",
+      "status": "PASS",
+      "notes": "176 resources loaded, 0 non-HTTPS. All 12 domains serve over HTTPS exclusively"
+    },
+    {
+      "id": "PAY-SEC-006",
+      "title": "JWT Token Auth - Dynamic Per Session",
+      "section": "Security > PCI",
+      "priority": "High",
+      "status": "PASS",
+      "notes": "RS256 JWT, 15-min expiry, JTI and MicroformId change per session, origin-restricted to storefront domain"
+    }
+  ],
+  "bugs": [],
+  "errors": []
+}

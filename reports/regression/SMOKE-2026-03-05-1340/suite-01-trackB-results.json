@@ -1,0 +1,54 @@
+{
+  "suiteId": "01-trackB",
+  "suiteName": "Admin & Backend Health Checks",
+  "runId": "SMOKE-2026-03-05-1340",
+  "browser": "playwright-edge",
+  "environment": "https://vcst-qa.govirto.com",
+  "startedAt": "2026-03-05T13:41:05Z",
+  "completedAt": "2026-03-05T13:43:16Z",
+  "totalCases": 5,
+  "passed": 5,
+  "failed": 0,
+  "blocked": 0,
+  "skipped": 0,
+  "passRate": "100.0%",
+  "testCases": [
+    {
+      "id": "ADM-001",
+      "title": "Admin SPA loads and key blades open",
+      "status": "PASS",
+      "notes": "Login succeeded with admin. Platform v3.1007.0. Catalog blade opened (23 catalogs), Orders blade opened (7,370 orders), Contacts blade opened (548 entries). No Angular console errors beyond known shipping pickup-locations 404 and unhandled rejection on load."
+    },
+    {
+      "id": "ADM-002",
+      "title": "Platform modules show Active status with no errors",
+      "status": "PASS",
+      "notes": "Modules blade loaded. Browse: 76, Installed: 76, Updates: 0. No modules in Error or Disabled state."
+    },
+    {
+      "id": "ADM-003",
+      "title": "API health check - GET /api/platform/modules responds",
+      "status": "PASS",
+      "notes": "GET /api/platform/modules returned HTTP 200 OK, Content-Type: application/json, 76 modules in response body."
+    },
+    {
+      "id": "ADM-004",
+      "title": "GraphQL endpoint accepts introspection query",
+      "status": "PASS",
+      "notes": "POST /graphql introspection returned valid schema. queryType: Query, mutationType: Mutations, 400 types registered. No errors."
+    },
+    {
+      "id": "ADM-005",
+      "title": "OAuth token endpoint works",
+      "status": "PASS",
+      "notes": "POST /connect/token with grant_type=password returned HTTP 200, Bearer token, expires_in: 1799s, refresh_token present."
+    }
+  ],
+  "bugs": [],
+  "errors": [
+    {
+      "type": "console-warning",
+      "description": "Known console errors on page load: (1) Failed to load resource /api/shipping/pickup-locations/indexedSearchEnabled (404), (2) Possibly unhandled rejection in error.js. Both are pre-existing and not new regressions."
+    }
+  ]
+}

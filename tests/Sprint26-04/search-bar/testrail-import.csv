@@ -1,0 +1,293 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+SRCH-NEW-001,Search Bar - Click Opens Dropdown Empty State,Search > Dropdown,Functional,Critical,2m,"Storefront open at homepage; search input has no text","1. Locate the search input labeled 'Search' in main navigation
+2. Click the search input","- Dropdown opens below the input
+- 'Hints' section visible with 1+ prior search terms as clickable buttons
+- Each hint shows a search icon and query text
+- 'Start typing to search' text visible
+- 'Check all products' link visible pointing to /catalog
+- No product results shown yet
+- CONSOLE: No JavaScript errors
+- NETWORK: No failed API calls",E2E-SEARCH-005,Manual
+SRCH-NEW-002,Search Bar - Autocomplete Shows Product Previews While Typing,Search > Autocomplete,Functional,Critical,3m,"Storefront open; products matching 'hoodie' exist in catalog","1. Click the search input
+2. Type 'hoodie' one character at a time
+3. Wait for dropdown update after each character
+4. Observe final dropdown with all 6 characters typed","- 'Products' section appears in dropdown
+- Each entry: thumbnail image + product name (clickable link) + price
+- At least 4 products shown (Vintage Colorado Hoodie $54.00; Hoodie Base product with only File req From $250.00; Hoodie Base with Only File non required $300.00; Black California Beach Pullover Hoodie From $19.00)
+- 'Hints' section remains visible above Products
+- Clear (X) button appears in input
+- NETWORK: GraphQL searchProducts query fires with keyword: 'hoodie'
+- CONSOLE: No JS errors","E2E-SEARCH-005, SRCH-002",Manual
+SRCH-NEW-003,Search Bar - Hints Section Shows Prior Searches on Focus,Search > Hints,Functional,High,3m,"At least 2 prior searches exist ('laptop' and 'hoodie' are visible as hints)","1. Click the search input
+2. Observe the 'Hints' section label
+3. Observe hint items (icon + text)
+4. Click the hint button labeled 'laptop'","- Section labeled exactly 'Hints' (not 'Recent searches')
+- Each hint is a button with search icon and query text
+- Clicking 'laptop' populates input with 'laptop'
+- Browser navigates to /search?q=laptop
+- Search results for 'laptop' display","E2E-SEARCH-003, SRCH-008",Manual
+SRCH-NEW-004,Search Bar - Clear Button Resets Input to Empty,Search > Input Controls,Functional,High,2m,"Storefront open at any page","1. Click the search input
+2. Type 'hoodie'
+3. Verify clear (X) button appears
+4. Click the clear (X) button","- After typing: clear button visible; input contains 'hoodie'
+- After click: input is empty
+- Dropdown returns to 'Hints' + 'Start typing to search' state
+- Clear button disappears
+- User stays on same page (no navigation)",,Manual
+SRCH-NEW-005,Search Bar - Clicking Autocomplete Product Navigates to PDP,Search > Autocomplete,Functional,Critical,3m,"Storefront open at homepage; 'Vintage Colorado Hoodie' in catalog","1. Click the search input
+2. Type 'hoodie'
+3. Wait for autocomplete product results
+4. Click 'Vintage Colorado Hoodie' in the dropdown","- Browser navigates to /products-with-options/configurable-caps-shirts/hoodie
+- PDP loads with product name 'Vintage Colorado Hoodie'
+- Search dropdown closes
+- No JavaScript errors",E2E-SEARCH-005,Manual
+SRCH-NEW-006,Search Bar - Check All Products Link Goes to Catalog,Search > Dropdown,Functional,Low,2m,"Storefront open at homepage","1. Click the search input (do not type)
+2. Verify 'Check all products' link is visible
+3. Click 'Check all products'","- Browser navigates to /catalog
+- Full product catalog page loads
+- Dropdown closes",,Manual
+SRCH-NEW-007,Search - Submit via Enter Key,Search > Submission,Functional,Critical,2m,"Storefront open at any page","1. Click the search input
+2. Type 'hoodie'
+3. Press the Enter key","- Browser navigates to /search?q=hoodie
+- Results page loads
+- Heading: 'Your search for hoodie returned the following 4 results' (count may vary)
+- 'hoodie' is bold/emphasized in heading
+- Search input retains 'hoodie'
+- Products displayed in grid view by default","E2E-SEARCH-001, SRCH-001",Manual
+SRCH-NEW-008,Search - Submit via Search Button (Magnifier Icon),Search > Submission,Functional,Critical,2m,"Storefront open at any page","1. Click the search input
+2. Type 'hoodie'
+3. Click the 'Search' button (magnifier icon)","- Browser navigates to /search?q=hoodie
+- Results page loads identically to SRCH-NEW-007
+- Same products and count as Enter key submission",,Manual
+SRCH-NEW-009,Search Results - Result Count in Heading Is Accurate,Search > Results Page,Functional,High,2m,"Navigate to /search?q=hoodie; current count is 4 products","1. Navigate to https://vcst-qa-storefront.govirto.com/search?q=hoodie
+2. Read the page heading
+3. Count the product cards in the grid","- h1 reads: 'Your search for hoodie returned the following 4 results'
+- Count in heading (4) matches actual number of product cards rendered",,Manual
+SRCH-NEW-010,Search Results - Grid and List View Toggle,Search > Results Page > Layout,Functional,High,3m,"Navigate to /search?q=hoodie (4 results)","1. Navigate to /search?q=hoodie
+2. Confirm default grid layout (multiple product columns)
+3. Click 'Switch to list view'
+4. Verify list layout (single-column with more detail)
+5. Click 'Switch to grid view'
+6. Verify grid layout returns","- Default is grid view
+- List view: single-column format
+- Grid view: multi-column layout
+- Product count consistent (4) across all view switches
+- No JS errors during switching
+- Active view button has visual active state",,Manual
+SRCH-NEW-011,Search Results - Sort Options Change Product Order,Search > Sorting,Functional,High,5m,"Navigate to /search?q=hoodie (multiple results with varying prices)","1. Navigate to /search?q=hoodie
+2. Note available sort options in 'Sort by:' dropdown (default: 'Featured')
+3. Select 'Price: Low to High'
+4. Record product order by price
+5. Select 'Price: High to Low'
+6. Verify order reversed from step 4
+7. Select 'Name: A to Z' or equivalent
+8. Verify alphabetical order
+9. Select 'Featured' to reset","- Sort dropdown has at least Featured and price sort options
+- 'Price: Low to High': ascending price order ($19 before $54 before $250)
+- 'Price: High to Low': descending price order
+- Alphabetical sort: products in A-Z order by name
+- Product count stays at 4 after each sort change
+- URL updates to reflect selected sort",SRCH-007,Manual
+SRCH-NEW-012,Search Results - Show in Stock Checkbox Default and Toggle,Search > Filters > Checkboxes,Functional,High,3m,"Navigate to /search?q=hoodie","1. Navigate to /search?q=hoodie
+2. Verify 'Show in stock' checkbox is checked by default
+3. Verify 'Show in stock' chip is in the chip bar
+4. Uncheck 'Show in stock'
+5. Observe chip bar and result count
+6. Re-check 'Show in stock'
+7. Verify chip returns","- 'Show in stock' is checked on page load
+- Chip labeled 'Show in stock' is present in chip bar
+- Unchecking removes chip; result count may change
+- Re-checking restores chip and filtered results
+- 'Reset filters' button appears/disappears based on active non-default filters",,Manual
+SRCH-NEW-013,Search Results - Purchased Before Checkbox,Search > Filters > Checkboxes,Functional,Medium,3m,"User authenticated with prior purchases matching 'hoodie'; navigate to /search?q=hoodie","1. Verify 'Purchased before' is unchecked by default
+2. Check 'Purchased before'
+3. Verify 'Purchased before' chip appears
+4. Verify results filter to prior purchases only
+5. Uncheck 'Purchased before'
+6. Verify chip disappears and full results return","- 'Purchased before' defaults to unchecked
+- Checking adds a chip and filters to prior purchase items
+- Unchecking removes chip and restores all results",,Manual
+SRCH-NEW-014,Search Results - Sidebar Facet Filter,Search > Filters > Sidebar,Functional,High,5m,"Navigate to /search?q=hoodie; sidebar shows Color facet","1. Click 'Color' facet group header to expand
+2. Select a color value (e.g., 'Malachite')
+3. Observe chip bar and result count
+4. Verify chip labeled with selected color appears
+5. Verify result count updates
+6. Click 'Close chip' on the color chip
+7. Verify full results return","- Sidebar facet groups are expandable
+- Selecting a value creates a chip in the active-filter bar
+- Product list updates to matching items only
+- 'Close chip' removes filter and restores full count
+- No errors during facet apply/remove",SRCH-006,Manual
+SRCH-NEW-015,Search Results - Reset Filters Preserves Search Term,Search > Filters > Reset,Functional,High,3m,"Navigate to /search?q=hoodie; apply at least one sidebar facet filter","1. Navigate to /search?q=hoodie
+2. Apply a sidebar facet filter (e.g., Color: Malachite)
+3. Verify 'Reset filters' button is visible
+4. Click 'Reset filters'","- All applied filters cleared (beyond any defaults)
+- Search term 'hoodie' remains in the header search input
+- URL retains ?q=hoodie; filter params are removed
+- Full result set for 'hoodie' restored
+- 'Reset filters' button disappears after all non-default filters cleared",CAT-021,Manual
+SRCH-NEW-016,Search - No Results State UI Validation,Search > No Results,Functional,Critical,2m,"Storefront is accessible","1. Navigate to https://vcst-qa-storefront.govirto.com/search?q=xyzqwerty9876543","- h1: Sorry, your search for ""xyzqwerty9876543"" didn't return any results
+- Search term is bold/emphasized in heading
+- 'There are no results found' message visible
+- 'Reset search' button visible
+- No product cards displayed
+- No sidebar filter panel shown
+- No 'Did you mean...?' suggestion
+- URL is /search?q=xyzqwerty9876543","E2E-SEARCH-004, SRCH-003",Manual
+SRCH-NEW-017,Search - Reset Search Button Clears Query,Search > No Results,Functional,High,2m,"Navigate to /search?q=xyzqwerty9876543 (no-results page is showing)","1. Verify no-results state and 'Reset search' button are visible
+2. Click 'Reset search'","- Search input in header is cleared
+- User is redirected from the no-results page (to homepage or catalog)
+- No JavaScript error occurs",,Manual
+SRCH-NEW-018,Search - Whitespace-Only Query Handling,Search > Edge Cases,Functional,High,2m,"Storefront open at any page","1. Click the search input
+2. Type '   ' (3 spaces only)
+3. Press Enter or click the Search button","- Either: no navigation occurs (submission blocked for whitespace-only input)
+- Or: if navigation occurs, user lands on no-results or catalog page
+- Application does not crash or throw a JS error
+- NETWORK: No 5xx response",,Manual
+SRCH-NEW-019,Search - Very Long Query (200+ Characters),Search > Edge Cases,Functional,Medium,2m,"Storefront open at any page","1. Click the search input
+2. Type a 200-character string of repeated 'a' characters
+3. Press Enter","- Input accepts the long string (or enforces visible max-length constraint)
+- If submitted: no-results page loads without errors
+- No JS error, no 500 error, no application crash
+- URL is properly URL-encoded",,Manual
+SRCH-NEW-020,Search - XSS Script Injection in Input,Search > Security,Security,Critical,3m,"Storefront is accessible","1. Click the search input
+2. Type: <script>alert('xss')</script>
+3. Press Enter
+4. Observe browser for alert dialog
+5. Read results page heading
+6. Check browser console for script execution","- No JavaScript alert dialog appears
+- Script is not executed
+- URL encodes the input (e.g., %3Cscript%3E...)
+- Results page heading displays query as literal text
+- CONSOLE: No alerts, no XSS-related errors",E2E-SEC-002,Manual
+SRCH-NEW-021,Search - SQL Injection Attempt,Search > Security,Security,High,2m,"Storefront is accessible","1. Click the search input
+2. Type: ' OR '1'='1
+3. Press Enter","- No database error, exception page, or stack trace displayed
+- Results page handles query gracefully
+- Application remains stable
+- NETWORK: API response is 200
+- CONSOLE: No error-level messages",E2E-SEC-002,Manual
+SRCH-NEW-022,Search - Special Characters Are URL-Encoded Correctly,Search > Edge Cases,Functional,High,3m,"Storefront open at any page","1. Search for 'hoodie & jeans' -- check URL
+2. Search for 'product (new)' -- check URL
+3. Search for 'item #123' -- check URL","- 'hoodie & jeans': URL encodes ampersand (%26)
+- 'product (new)': URL encodes parentheses (%28, %29)
+- 'item #123': URL encodes hash (%23)
+- All searches: results page loads without error
+- h1 displays decoded (human-readable) query text
+- NETWORK: All requests return 200",SRCH-004,Manual
+SRCH-NEW-023,Search - Direct URL Navigation with Query Parameter,Search > URL Navigation,Functional,High,2m,"Storefront is accessible","1. Open a new browser tab
+2. Navigate directly to: https://vcst-qa-storefront.govirto.com/search?q=hoodie","- Search results page loads correctly (no prior homepage visit needed)
+- Header search input pre-populated with 'hoodie'
+- Heading shows correct result count for 'hoodie'
+- Products matching 'hoodie' are displayed
+- Sidebar filters and sort dropdown are functional",E2E-SEARCH-001,Manual
+SRCH-NEW-024,Search - Empty Query Parameter Loads Catalog,Search > URL Navigation,Functional,Medium,2m,"Storefront is accessible","1. Navigate directly to: https://vcst-qa-storefront.govirto.com/search?q=","- Page loads without error (no 404, no 500)
+- Page title is 'QA & Catalog' (catalog-style page)
+- Products are displayed (not a no-results state)
+- Search input is empty or contains no query",,Manual
+SRCH-NEW-025,Search Bar - Keyboard-Only Navigation,Search > Accessibility,Accessibility,High,5m,"Storefront open at homepage; keyboard-only operation","1. Press Tab repeatedly from top of page until search input is focused
+2. Verify visible focus indicator on input
+3. Type 'hoodie' via keyboard
+4. Verify autocomplete dropdown appears
+5. Press Tab or Arrow Down to move focus into dropdown
+6. Use Arrow keys to navigate hint items
+7. Press Enter on a hint item to execute search
+8. Repeat steps 1-3 then press Escape to close dropdown","- Search input reachable via Tab
+- Visible focus indicator present when focused
+- Typing triggers autocomplete dropdown
+- Arrow keys navigate within dropdown
+- Enter on hint item executes search
+- Escape closes dropdown and returns focus to input
+- No keyboard trap
+- CONSOLE: No keyboard-related JS errors","WCAG 2.1 AA 2.1.1, 2.4.3",Manual
+SRCH-NEW-026,Search Bar - ARIA Roles and Labels,Search > Accessibility,Accessibility,High,5m,"Storefront open at homepage; DevTools Accessibility panel available","1. Inspect search input role and accessible name (DevTools Accessibility)
+2. Inspect 'Barcode scan' button accessible name
+3. Inspect 'Search' button accessible name
+4. Type in input then inspect clear (X) button accessible name
+5. With dropdown open inspect dropdown container role and aria attributes","- Search input: role='searchbox'; accessible name='Search'
+- 'Barcode scan': accessible name is 'Barcode scan'
+- 'Search' button: accessible name is 'Search'
+- Clear button: non-empty accessible name describing its purpose
+- Dropdown: role='listbox' or equivalent ARIA pattern
+- All dropdown interactive elements have non-empty accessible names","WCAG 2.1 AA 4.1.2",Manual
+SRCH-NEW-027,Search - Autocomplete Response Time Under 2 Seconds,Search > Performance,Performance,Medium,5m,"Storefront open at homepage; DevTools Network tab open","1. Open DevTools Network tab
+2. Click search input and type 'hoodie'
+3. Start timer from first character typed
+4. Observe when autocomplete product results appear
+5. Note GraphQL request duration in Network tab","- Autocomplete product results appear within 2 seconds of first character
+- GraphQL API call completes under 1500ms
+- No loading spinner visible for more than 2 seconds",,Manual
+SRCH-NEW-028,Search - Results Page Load Time Under 3 Seconds,Search > Performance,Performance,Medium,5m,"DevTools Network tab open; throttling set to 'No throttling'","1. Navigate to /search?q=hoodie from a fresh navigation
+2. Measure time from navigation start until product cards and heading are visible and interactive","- Results page fully rendered within 3 seconds
+- h1 heading with result count visible within 2 seconds
+- No major layout shift after initial product render
+- NETWORK: All calls return 200; no 4xx or 5xx",,Manual
+SRCH-NEW-029,Search Bar - Firefox Compatibility,Search > Cross-Browser,Compatibility,Medium,5m,"Firefox available via playwright-firefox MCP","1. Open homepage in Firefox
+2. Click search input
+3. Type 'hoodie'
+4. Verify autocomplete dropdown
+5. Press Enter
+6. Verify results page loads","- Search input accessible and focused in Firefox
+- Autocomplete renders with images, names, prices
+- Enter submission works same as Chrome
+- Results page displays correctly
+- CONSOLE: No Firefox-specific errors",,Manual
+SRCH-NEW-030,Search Bar - Edge Compatibility,Search > Cross-Browser,Compatibility,Medium,5m,"Edge available via playwright-edge MCP","1. Open homepage in Edge
+2. Click search input
+3. Type 'hoodie'
+4. Verify autocomplete dropdown
+5. Press Enter
+6. Verify results page loads","- Identical behavior to Chrome
+- No Edge-specific rendering or interaction issues",,Manual
+SRCH-NEW-031,Search Bar - Mobile Viewport 375px,Search > Mobile,Functional,High,5m,"Chrome DevTools device emulation at 375px; storefront open at homepage","1. Set viewport to 375px wide
+2. Verify search input visible in header
+3. Tap the search input
+4. Verify dropdown opens in mobile layout
+5. Type 'hoodie'
+6. Verify autocomplete results visible and readable
+7. Tap a product in the dropdown","- Search input visible and interactive at 375px
+- Dropdown fits within mobile viewport (no horizontal scroll)
+- Product names and prices readable in dropdown
+- Tapping product navigates to correct PDP
+- No layout breaks at mobile width",,Manual
+SRCH-NEW-032,Search - Mobile Results Page Layout 375px,Search > Mobile,Functional,High,5m,"Chrome DevTools device emulation at 375px; navigate to /search?q=hoodie","1. Set viewport to 375px
+2. Navigate to /search?q=hoodie
+3. Verify results heading readable
+4. Verify product cards use 1 or 2 column grid
+5. Verify sort dropdown accessible (no horizontal scroll)
+6. Verify filter controls accessible (e.g., collapsed behind 'Filters' button)
+7. Verify touch targets >= 44x44px","- Heading readable at 375px
+- Product card grid adapts to 1-2 columns (not 4)
+- Sort controls accessible without horizontal scroll
+- Filters accessible via mobile-friendly control
+- All touch targets meet 44x44px minimum (WCAG 2.5.5)",,Manual
+SRCH-NEW-033,Search - GA4 search Event Fires on Query Submission,Search > Analytics,Functional,Medium,5m,"DevTools Console open; Google Tag Manager configured on storefront","1. Open DevTools Console
+2. Run window.dataLayer to confirm array exists
+3. Click search input; type 'hoodie'; press Enter
+4. After results load run: window.dataLayer.filter(e => e.event === 'search')","- window.dataLayer is an array and exists
+- A search event found: { event: 'search', search_term: 'hoodie' }
+- search_term matches submitted query exactly
+- CONSOLE: No GA4 or GTM errors",E2E-GA-004,Manual
+SRCH-NEW-034,Search - GA4 view_search_results Event on Results Page,Search > Analytics,Functional,Medium,5m,"DevTools Console open","1. Navigate to /search?q=hoodie
+2. In Console run: window.dataLayer.filter(e => e.event === 'view_search_results')","- At least one view_search_results event in dataLayer
+- Event includes search_term: 'hoodie'
+- CONSOLE: No GA4 or GTM errors",E2E-GA-004,Manual
+SRCH-NEW-035,Search to Cart - Full End-to-End Flow,Search > E2E,Functional,Critical,10m,"User authenticated; cart is empty or at known state","1. Click search input; type 'hoodie'; press Enter
+2. Verify navigation to /search?q=hoodie
+3. Locate 'Vintage Colorado Hoodie' ($54.00) on results page
+4. Click '+' (Increase quantity) on the product card to set quantity 1
+5. Verify success notification or cart icon badge increments
+6. Click 'Cart' link in navigation
+7. Verify 'Vintage Colorado Hoodie' is in the cart at $54.00","- Search finds product on results page
+- Quantity stepper functional on search result cards
+- Cart badge increments by 1
+- Cart page shows: name 'Vintage Colorado Hoodie'; price $54.00; quantity 1
+- NETWORK: GraphQL addItem mutation returns success
+- CONSOLE: No errors during entire flow","E2E-SEARCH-001, BL-CART",Manual
+SRCH-NEW-036,Search - Browser Back Returns to Results Page,Search > Navigation,Functional,High,3m,"User navigated from search results to a product PDP","1. Navigate to /search?q=hoodie
+2. Click 'Vintage Colorado Hoodie' to open PDP
+3. Verify PDP loads
+4. Click browser Back button","- Browser returns to /search?q=hoodie
+- Search results page displayed with same query and results
+- Header search input still shows 'hoodie'
+- Product cards visible (page not blank or in error state)",E2E-SEARCH-001,Manual

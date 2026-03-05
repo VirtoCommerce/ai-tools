@@ -151,6 +151,19 @@ Runs all 4 agents in pipeline: analyzer+api in parallel, then story-writer, then
 
 ---
 
+## Prompt Architecture (QA Agents)
+
+QA agents use a **four-layer prompt architecture**:
+
+1. **Business Logic** (invariants) — what the correct business outcome is → `knowledge/business-logic.md`
+2. **Domain Knowledge** (judgment) — what good implementation looks like
+3. **Skill Set** (technique) — how to find what's broken
+4. **Design Decisions** (constraints) — tools and boundaries
+
+Shared knowledge files in `knowledge/` (8 files): `business-logic.md`, `platform-patterns.md`, `browser-quirks.md`, `debugging-signals.md`, `performance-thresholds.md`, `catalog.md`, `store-settings.md`, `white-labeling.md`.
+
+---
+
 ## Customizing Agents
 
 Each agent is a Markdown file in `.claude/agents/` with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior, add patterns, or adjust output format.

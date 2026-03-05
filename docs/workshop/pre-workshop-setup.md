@@ -12,10 +12,11 @@
 Before starting, request the following from your team lead:
 
 1. **Anthropic API key** (for Claude Code)
-2. **`.env` file** with all credentials (URLs, test users, payment cards, API keys)
-3. **Agent definition files** (6 markdown files for `.claude/agents/`)
-4. **`CLAUDE.md`** file (project knowledge base)
-5. **Postman API key** (for API testing MCP server)
+2. **`.env` file** with all credentials (33 variables: URLs, test users, payment cards, API keys)
+3. **`CLAUDE.md`** file (project knowledge base)
+4. **Postman API key** (for API testing MCP server)
+
+**Note:** Agent definitions (11 agents), skills (18), commands (9), and knowledge files (8) are all tracked in git — they come with the repo clone. No need to copy them separately.
 
 ---
 
@@ -57,6 +58,8 @@ FRONT_URL=
 BACK_URL=
 VIRTO_START_FRONT=
 VIRTO_START_BACK=
+STORYBOOK_URL=
+STORYBOOK_DEV_URL=
 
 # ===== Admin Credentials =====
 ADMIN=
@@ -99,6 +102,7 @@ DATATRANCE_OTP=
 FIGMA_API_KEY=
 BROWSERSTACK_USERNAME=
 BROWSERSTACK_ACCESS_KEY=
+POSTMAN_API_KEY=
 ```
 
 **Validate your `.env`:**
@@ -107,7 +111,7 @@ BROWSERSTACK_ACCESS_KEY=
 npm run env:check
 ```
 
-You should see all 29 variable values printed. If you see `Missing required environment variables`, add the missing ones.
+You should see all 33 variable values printed. If you see `Missing required environment variables`, add the missing ones.
 
 ---
 
@@ -128,14 +132,6 @@ You should see all 29 variable values printed. If you see `Missing required envi
         "--config", "config/mcp-playwright-chrome.config.json"
       ]
     },
-    "playwright-webkit": {
-      "type": "stdio",
-      "command": "cmd",
-      "args": [
-        "/c", "npx", "@playwright/mcp@latest",
-        "--config", "config/mcp-playwright-webkit.config.json"
-      ]
-    },
     "playwright-firefox": {
       "type": "stdio",
       "command": "cmd",
@@ -151,6 +147,29 @@ You should see all 29 variable values printed. If you see `Missing required envi
         "/c", "npx", "@playwright/mcp@latest",
         "--config", "config/mcp-playwright-edge.config.json"
       ]
+    },
+    "postman": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@anthropic-ai/postman-api-mcp-server@latest", "--minimal"],
+      "env": {
+        "POSTMAN_API_KEY": "<your-postman-api-key>"
+      }
+    },
+    "github": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@anthropic-ai/github-mcp-server@latest"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "<your-github-token>"
+      }
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "x-api-key": "<your-context7-api-key>"
+      }
     }
   }
 }
@@ -165,152 +184,68 @@ You should see all 29 variable values printed. If you see `Missing required envi
 }
 ```
 
-### 4.2 Create `config/` directory with 4 browser config files
+**Note:** WebKit is NOT supported on Windows. Do not add a `playwright-webkit` server. Use Chrome, Firefox, and Edge only.
 
-```bash
-mkdir config
-```
+### 4.2 Browser config files in `config/` directory
 
-**`config/mcp-playwright-chrome.config.json`**
+The `config/` directory with 3 browser config files is already tracked in git — they come with the repo clone. Verify they exist:
 
-```json
-{
-  "browser": {
-    "browserName": "chromium",
-    "launchOptions": { "headless": false },
-    "contextOptions": {
-      "viewport": { "width": 1920, "height": 1080 },
-      "recordVideo": {
-        "dir": "./test-results/chrome/videos",
-        "video": "on-failure",
-        "size": { "width": 1920, "height": 1080 }
-      },
-      "recordHar": {
-        "path": "./test-results/chrome/har",
-        "omitContent": true
-      }
-    }
-  },
-  "isolated": true,
-  "outputDir": "./test-results/chrome",
-  "screenshot": "only-on-failure"
-}
-```
+- `config/mcp-playwright-chrome.config.json`
+- `config/mcp-playwright-firefox.config.json`
+- `config/mcp-playwright-edge.config.json`
 
-**`config/mcp-playwright-edge.config.json`**
-
-```json
-{
-  "browser": {
-    "browserName": "chromium",
-    "launchOptions": { "headless": false, "channel": "msedge" },
-    "contextOptions": {
-      "viewport": { "width": 1920, "height": 1080 },
-      "recordVideo": {
-        "dir": "./test-results/edge/videos",
-        "video": "on-failure",
-        "size": { "width": 1920, "height": 1080 }
-      },
-      "recordHar": {
-        "path": "./test-results/edge/har",
-        "omitContent": true
-      }
-    }
-  },
-  "isolated": true,
-  "outputDir": "./test-results/edge",
-  "screenshot": "only-on-failure"
-}
-```
-
-**`config/mcp-playwright-firefox.config.json`**
-
-```json
-{
-  "browser": {
-    "browserName": "firefox",
-    "launchOptions": { "headless": false },
-    "contextOptions": {
-      "viewport": { "width": 1920, "height": 1080 },
-      "recordVideo": {
-        "dir": "./test-results/firefox/videos",
-        "video": "on-failure",
-        "size": { "width": 1920, "height": 1080 }
-      },
-      "recordHar": {
-        "path": "./test-results/firefox/har",
-        "omitContent": true
-      }
-    }
-  },
-  "isolated": true,
-  "outputDir": "./test-results/firefox",
-  "screenshot": "only-on-failure"
-}
-```
-
-**`config/mcp-playwright-webkit.config.json`**
-
-```json
-{
-  "browser": {
-    "browserName": "webkit",
-    "launchOptions": { "headless": false },
-    "contextOptions": {
-      "viewport": { "width": 1920, "height": 1080 },
-      "recordVideo": {
-        "dir": "./test-results/webkit/videos",
-        "video": "on-failure",
-        "size": { "width": 1920, "height": 1080 }
-      },
-      "recordHar": {
-        "path": "./test-results/webkit/har",
-        "omitContent": true
-      }
-    }
-  },
-  "isolated": true,
-  "outputDir": "./test-results/webkit",
-  "screenshot": "only-on-failure"
-}
-```
+Each config sets:
+- Viewport: 1920x1080
+- HAR capture: enabled (omitContent: true)
+- Screenshot: only-on-failure
+- Isolated context: true
 
 ---
 
 ## Step 5: Install Playwright Browsers
 
 ```bash
-npx playwright install
+npx playwright install chromium firefox
 ```
 
-This downloads Chromium, Firefox, and WebKit browser binaries (~500 MB total).
+This downloads Chromium and Firefox browser binaries (~400 MB total). Edge uses the system-installed `msedge` channel — no separate install needed.
+
+**Important:** Do NOT install WebKit on Windows — it is not supported. If you attempt it, fall back to Chrome or Edge immediately.
 
 ---
 
-## Step 6: Set Up Agent Definitions
+## Step 6: Verify Agent Definitions (Already in Git)
 
-Create the `.claude/agents/` directory:
+Agent definitions, skills, commands, and knowledge files are all tracked in git — they come with the repo clone. Verify they exist:
 
 ```bash
-mkdir -p .claude/agents
+ls .claude/agents/       # Should show 11 .md files
+ls .claude/skills/       # Should show 3 category directories (18 skills)
+ls .claude/commands/      # Should show 9 .md files
+ls .claude/agents/knowledge/  # Should show 8 .md files
 ```
 
-Copy the 6 agent definition files provided by your team lead into this directory:
+**11 agents (7 QA + 4 BA):**
 
 | File | Agent |
 |------|-------|
-| `qa-lead.md` | QA orchestrator - delegates tasks to specialists |
-| `qa-backend-expert.md` | Backend/API testing specialist |
-| `qa-frontend-expert.md` | Storefront/UI testing specialist |
-| `qa-testing-expert.md` | Interactive testing & debugging |
-| `test-management-specialist.md` | Test planning & documentation |
-| `ui-ux-expert.md` | Accessibility & design system testing |
+| `qa-lead-orchestrator.md` | QA coordinator — delegates, JIRA workflow, go/no-go |
+| `qa-frontend-expert.md` | Storefront, checkout, mobile, cross-browser |
+| `qa-backend-expert.md` | REST APIs, GraphQL xAPI, Admin SPA, modules |
+| `qa-testing-expert.md` | Interactive testing, Figma comparison, debugging |
+| `test-management-specialist.md` | Test planning, case writing, coverage |
+| `ui-ux-expert.md` | Storybook, WCAG 2.1 AA, design system |
+| `regression-orchestrator.md` | Parallel 36-suite regression, quality gates |
+| `ba-system-analyzer.md` | Architecture, module inventory, user flows |
+| `ba-api-specialist.md` | API surface analysis via Postman/Swagger |
+| `ba-story-writer.md` | Agile stories with BDD acceptance criteria |
+| `ba-doc-writer.md` | User docs, admin guides, API quick-start |
 
 ---
 
-## Step 7: Create `CLAUDE.md`
+## Step 7: Verify `CLAUDE.md`
 
-Copy the `CLAUDE.md` file provided by your team lead into the project root. This file gives Claude Code knowledge about the project structure, testing strategy, and MCP configuration.
+`CLAUDE.md` is tracked in git and comes with the repo clone. Verify it exists in the project root. This file gives Claude Code knowledge about the project structure, testing strategy, MCP configuration, all 11 agents, 18 skills, and 9 commands.
 
 ---
 
@@ -322,11 +257,13 @@ Run through this checklist before the workshop:
 
 - [ ] `node --version` returns 18+
 - [ ] `npm install` completed without errors
-- [ ] `npm run env:check` prints all 29 variables (no errors)
-- [ ] `.mcp.json` exists in project root
-- [ ] `config/` has 4 JSON files (chrome, edge, firefox, webkit)
-- [ ] `npx playwright install` completed
-- [ ] `.claude/agents/` has 6 `.md` files
+- [ ] `npm run env:check` prints all 33 variables (no errors)
+- [ ] `.mcp.json` exists in project root (6 servers: 3 Playwright + postman + github + context7)
+- [ ] `config/` has 3 browser JSON files (chrome, firefox, edge)
+- [ ] `npx playwright install chromium firefox` completed
+- [ ] `.claude/agents/` has 11 `.md` files
+- [ ] `.claude/skills/` has 3 category directories (18 skills)
+- [ ] `.claude/commands/` has 9 `.md` files
 - [ ] `CLAUDE.md` exists in project root
 - [ ] VS Code with Claude Code extension installed
 
@@ -359,8 +296,8 @@ Your `.env` file is missing some variables. Run `npm run env:check` to see which
 ### Playwright MCP server not connecting
 
 1. Verify `.mcp.json` exists in the project root (not inside a subdirectory)
-2. Check `config/` has all 4 browser config files
-3. Run `npx playwright install` to ensure browsers are installed
+2. Check `config/` has all 3 browser config files (chrome, firefox, edge — no WebKit)
+3. Run `npx playwright install chromium firefox` to ensure browsers are installed
 4. **Restart VS Code** after creating/modifying `.mcp.json` (required!)
 
 ### Browser not launching
@@ -375,7 +312,7 @@ This project uses ES modules. Make sure you're importing with the `.js` extensio
 import { env } from './config.js';
 ```
 
-### Agent not showing up in `/agents`
+### Agent not showing up
 
 Make sure the agent `.md` file is in `.claude/agents/` (not `.claude/` root) and has the correct YAML frontmatter at the top:
 ```markdown
@@ -384,6 +321,10 @@ name: agent-name
 model: opus
 ---
 ```
+
+### WebKit/Safari not working
+
+WebKit is NOT supported on Windows. Do not attempt to use it. Use Chrome, Firefox, or Edge instead. Remove any `playwright-webkit` entry from `.mcp.json`.
 
 ---
 

@@ -11,10 +11,11 @@
 
 - [ ] Demo machine fully configured (all MCP servers, agents, .env working)
 - [ ] Backup screen recordings for each demo (in case of connectivity issues)
-- [ ] Template files ready to share: `.env`, `.mcp.json`, agent definitions, `CLAUDE.md`
+- [ ] Template files ready to share: `.env`, `.mcp.json`, `CLAUDE.md`
 - [ ] Shared Anthropic API key available (for participants who couldn't get their own)
 - [ ] QA environment accessible (storefront + backend)
 - [ ] Teams channel created for workshop Q&A
+- [ ] Quick reference cheatsheet printed/shared (`docs/agentic-qa-cheatsheet.md`)
 - [ ] Projector/screen share working
 - [ ] Sent [pre-workshop-setup.md](pre-workshop-setup.md) to participants 1 week before
 
@@ -46,10 +47,11 @@
 
 **Points to cover:**
 
-- This repo contains: test suites (CSV), prompt templates, agent definitions, test data, and reports
-- Tests are executed by typing natural language commands in Claude Code
-- Claude opens a real browser (Chrome, Firefox, WebKit, Edge), clicks buttons, fills forms, captures screenshots
+- This repo contains: 36 test suites (CSV), prompt templates, 11 agent definitions, 18 skills, test data, and reports
+- Tests are executed by typing natural language commands or slash commands in Claude Code
+- Claude opens a real browser (Chrome, Firefox, Edge), clicks buttons, fills forms, captures screenshots
 - No Playwright/Selenium coding expertise needed
+- WebKit is NOT supported on Windows — we use 3 browsers: Chrome, Firefox, Edge
 
 ### 1.2 Architecture (5 min)
 
@@ -70,25 +72,27 @@ Claude Code  <-- reads CLAUDE.md for project context
   |  Selects appropriate tools
   |
   v
-MCP Servers (the "hands" of Claude)
+MCP Servers (the "hands" of Claude) — 9 total
   |
-  ├── Playwright MCP (Chrome)  --> Opens browser, clicks, types, screenshots
-  ├── Playwright MCP (Firefox) --> Cross-browser testing
-  ├── Playwright MCP (WebKit)  --> Safari compatibility
-  ├── Playwright MCP (Edge)    --> Enterprise browser
-  ├── Chrome DevTools MCP      --> Console logs, network HAR, performance
-  ├── Atlassian MCP            --> Read/write JIRA tickets
-  ├── Figma MCP                --> Compare UI vs design specs
-  └── Postman MCP              --> API test collections
+  ├── Playwright MCP (Chrome)   --> Opens browser, clicks, types, screenshots
+  ├── Playwright MCP (Firefox)  --> Cross-browser testing
+  ├── Playwright MCP (Edge)     --> Enterprise browser (msedge channel)
+  ├── Chrome DevTools MCP       --> Console logs, network HAR, performance
+  ├── Atlassian MCP             --> Read/write JIRA tickets
+  ├── Figma MCP                 --> Compare UI vs design specs
+  ├── Postman MCP               --> API test collections
+  ├── GitHub MCP                --> PR review, code search, issues
+  └── Context7 MCP              --> Virto Commerce documentation lookup
 ```
 
 **Points to cover:**
 
 - MCP = Model Context Protocol. Think of it as giving Claude "hands" to interact with tools
-- Each Playwright MCP server controls one browser instance
-- We can run 4 browsers in parallel (one per MCP server)
-- Chrome DevTools MCP gives us deep debugging (console, network, performance)
+- Each Playwright MCP server controls one browser instance (max 3 concurrent)
+- We can run 3 browsers in parallel — Chrome, Firefox, Edge (no WebKit on Windows)
+- Chrome DevTools MCP gives us deep debugging (console, network, HAR, performance)
 - Atlassian MCP lets us read/create JIRA tickets without leaving the IDE
+- Postman MCP for API testing, GitHub MCP for PR review, Context7 for VC documentation
 
 ### 1.3 What's in the Repo (5 min)
 
@@ -100,26 +104,40 @@ MCP Servers (the "hands" of Claude)
 
 | Directory | What's Inside | You'll Use It For |
 |-----------|--------------|-------------------|
-| `regression/suites/` | 14 test suites, 455 test cases (CSV) | Running regression tests |
+| `regression/suites/` | 36 test suites, 1,274 test cases (CSV) | Running regression tests |
 | `docs/prompts/` | Natural language prompt templates | Starting test sessions |
-| `.claude/agents/` | 6 specialized QA agents | Delegating testing tasks |
+| `.claude/agents/` | 11 specialized agents (7 QA + 4 BA) | Delegating testing tasks |
+| `.claude/agents/knowledge/` | 8 shared knowledge files | Business logic, patterns |
+| `.claude/skills/` | 18 skills in 3 categories | Methodology libraries |
+| `.claude/commands/` | 9 slash commands | Quick actions |
 | `test-data/` | Users, products, addresses, payment cards | Test data reference |
 | `reports/bugs/` | Bug reports with evidence | Documenting defects |
 | `reports/regression/` | Regression execution reports | Sprint/release reports |
-| `tests/VCST-XXXX-*/` | Per-ticket test documentation | Feature-specific testing |
-| `/qa-storybook` skill | Visual regression testing | Component testing |
-| `ci/` | GitHub Actions + Docker automation | CI/CD regression runs |
+| `tests/SprintXX-XX/` | Per-ticket test documentation | Feature-specific testing |
+| `ci/` | Docker + GitHub Actions + Claude Agent SDK | CI/CD regression runs |
 
-**Mention the 6 agents briefly (will demo in Part 2):**
+**Mention the 11 agents briefly (will demo in Part 2):**
+
+**QA Team (7):**
 
 | Agent | Specialty |
 |-------|-----------|
-| **qa-lead** | Orchestrates team, manages JIRA workflow |
-| **qa-frontend-expert** | Storefront, checkout, mobile |
-| **qa-backend-expert** | APIs, Admin SPA, modules |
-| **qa-testing-expert** | Interactive testing, debugging |
-| **test-management-specialist** | Test planning, test cases |
-| **ui-ux-expert** | Storybook, accessibility, design |
+| **qa-lead-orchestrator** | Orchestrates team, JIRA workflow, go/no-go decisions |
+| **qa-frontend-expert** | Storefront, checkout, mobile, cross-browser |
+| **qa-backend-expert** | REST APIs, GraphQL xAPI, Admin SPA, modules |
+| **qa-testing-expert** | Interactive testing, Figma comparison, debugging |
+| **test-management-specialist** | Test planning, case writing, 18 domain checklists |
+| **ui-ux-expert** | Storybook (55 components), WCAG 2.1 AA, design |
+| **regression-orchestrator** | Parallel 36-suite regression, quality gates |
+
+**BA Team (4):**
+
+| Agent | Specialty |
+|-------|-----------|
+| **ba-system-analyzer** | Repo structure, module inventory, user flows |
+| **ba-api-specialist** | API surface analysis via Postman/Swagger |
+| **ba-story-writer** | Agile stories with BDD acceptance criteria |
+| **ba-doc-writer** | User docs, admin guides, API quick-start |
 
 ---
 
@@ -205,23 +223,25 @@ MCP Servers (the "hands" of Claude)
 
 **Script:**
 
-1. Show `.mcp.json` - point out 4 Playwright servers (Chrome, Firefox, WebKit, Edge)
+1. Show `.mcp.json` - point out 3 Playwright servers (Chrome, Firefox, Edge)
 
 2. Explain the concept:
 
-   > "Each MCP server controls one browser. When we run agents in parallel, each agent gets its own browser so they don't interfere with each other."
+   > "Each MCP server controls one browser. When we run agents in parallel, each agent gets its own browser so they don't interfere with each other. Max 3 concurrent browser agents."
 
 3. Quick comparison demo:
    ```
-   Using playwright-webkit, navigate to the storefront homepage and take a screenshot.
+   Using playwright-firefox, navigate to the storefront homepage and take a screenshot.
    Then compare: does the layout look the same as in Chrome?
    ```
 
-4. Show the WebKit browser opening (looks like Safari)
+4. Show the Firefox browser opening
 
 5. **Key takeaway:**
 
-   > "One prompt, four browsers. No separate test framework for each browser. And when we run agents in parallel, qa-frontend-expert gets Chrome, qa-testing-expert gets Firefox, ui-ux-expert gets WebKit - all at the same time."
+   > "One prompt, three browsers. No separate test framework for each browser. And when we run agents in parallel, qa-frontend-expert gets Chrome, qa-testing-expert gets Firefox, qa-backend-expert gets Edge - all at the same time."
+
+**Note:** WebKit is NOT supported on Windows. We use Chrome, Firefox, and Edge.
 
 ---
 
@@ -258,10 +278,10 @@ MCP Servers (the "hands" of Claude)
 **5a. CLAUDE.md - Project Knowledge Base (3 min)**
 
 - Open `CLAUDE.md` in the editor
-- Point out key sections: MCP servers, regression suites, critical revenue flows, agent assignment matrix
+- Point out key sections: MCP servers, regression suites, critical revenue flows, agent assignment matrix, skills and commands
 - Say:
 
-  > "This file is the reason Claude knows our project. Without it, Claude is a generic assistant. With it, Claude knows we have 14 regression suites, 4 payment processors, 29 environment variables, and which agent should test what."
+  > "This file is the reason Claude knows our project. Without it, Claude is a generic assistant. With it, Claude knows we have 36 regression suites, 4 payment processors, 33 environment variables, 11 agents, 18 skills, and which agent should test what."
 
 **5b. Plan Mode (3 min)**
 
@@ -280,12 +300,17 @@ MCP Servers (the "hands" of Claude)
 **5c. Slash Commands & Shortcuts (2 min)**
 
 - Show quick demos:
-  - `/help` - list available commands
-  - `/compact` - compress conversation to save context window
-  - `/agents` - list available agents
+  - `/qa-status` - show QA dashboard (read-only, auto-invoke)
+  - `/qa-env-check` - validate environment health
+  - `/qa-smoke` - daily smoke test
 - Mention `@` for referencing files:
   ```
-  @regression/suites/01-smoke-tests.csv - run the first 3 test cases from this suite
+  @regression/suites/Frontend/01-smoke-tests.csv - run the first 3 test cases from this suite
+  ```
+- Mention skills:
+  ```
+  /vc-docs dynamic properties
+  /qa-checklist checkout
   ```
 
 **5d. Inline Diffs (2 min)**
@@ -372,10 +397,12 @@ Expected Result:
 ### Top 5 Takeaways (3 min)
 
 1. **No-code testing** - Write tests in English, not JavaScript
-2. **Specialized agents** - 6 pre-built domain experts ready to use
-3. **Multi-browser** - Test Chrome, Firefox, WebKit, Edge simultaneously
+2. **Specialized agents** - 11 pre-built domain experts (7 QA + 4 BA) ready to use
+3. **Multi-browser** - Test Chrome, Firefox, Edge simultaneously (max 3 concurrent)
 4. **JIRA integrated** - Bug reporting without leaving your IDE
-5. **CLAUDE.md** - One file makes Claude an expert on your project
+5. **Slash commands** - `/qa-smoke`, `/qa-test`, `/qa-regression` for quick actions
+6. **18 skills** - Built-in methodology (ISTQB, SBTM, WCAG, risk-based testing)
+7. **CLAUDE.md** - One file makes Claude an expert on your project
 
 ### Your Daily Workflow (3 min)
 
@@ -397,12 +424,14 @@ Reporting:
 
 ### Regression Testing Cadence (2 min)
 
-| When | What | Suite | Time |
-|------|------|-------|------|
-| Every deployment | Smoke test | Suite 01 | 30 min |
-| Sprint release | Critical flows | Suites 01, 04, 05, 06, 08 | 3-4 hrs |
-| Major release | Full regression | Suite 00 | 13.5 hrs (or 4-5 hrs parallelized) |
-| Quarterly | Accessibility + localization + browsers | Suites 09, 10, 12 | 11 hrs |
+| When | What | Command | Time |
+|------|------|---------|------|
+| Every deployment | Smoke test (Suite 01) | `/qa-regression smoke` | ~15 min |
+| Sprint release | Critical P0 (01,06,08,14) | `/qa-regression critical` | ~2 hrs |
+| Sprint release | Sprint suites (26 suites) | `/qa-regression sprint` | ~4 hrs |
+| Major release | Full regression (all 36) | `/qa-regression full` | ~8 hrs parallel |
+| Daily (CI) | Automated smoke | GitHub Actions Mon-Fri 6AM UTC | $5 |
+| Weekly (CI) | Automated full | GitHub Actions Sunday 2AM UTC | $80 |
 
 ### Where to Find Help (1 min)
 
@@ -410,12 +439,16 @@ Reporting:
 |----------|----------|
 | Full setup guide | `README.md` |
 | Project context | `CLAUDE.md` |
-| Test suites | `regression/suites/README.md` |
+| Repo navigation | `INDEX.md` |
+| Architecture presentation | `docs/presentation/agentic-qa-workflow.md` |
+| Quick reference cheatsheet | `docs/agentic-qa-cheatsheet.md` |
+| Decision tree | `.claude/ROUTING.md` |
+| Test suites | `regression/suites/` (36 CSV files) |
 | Prompt templates | `docs/prompts/` |
-| Testing skills & guides | `.claude/skills/testing/` |
+| Skills & methodology | `.claude/skills/` (18 skills) |
 | Test data | `test-data/README.md` |
 | CI/CD docs | `ci/README.md` |
-| QA Slack channel | [share link] |
+| QA Teams channel | [share link] |
 
 ### Q&A (1 min)
 
@@ -426,8 +459,9 @@ Open floor for questions. If time is short, direct to Slack channel for follow-u
 ## Post-Workshop Actions (Instructor)
 
 - [ ] Share workshop recording
-- [ ] Share all template files (`.env`, `.mcp.json`, agents, `CLAUDE.md`) via shared drive
-- [ ] Post Slack message with links to key docs
+- [ ] Share all template files (`.env`, `.mcp.json`, `CLAUDE.md`) via shared drive
+- [ ] Share cheatsheet (`docs/agentic-qa-cheatsheet.md`)
+- [ ] Post Teams message with links to key docs
 - [ ] Schedule follow-up check-in in 1 week
 - [ ] Collect feedback (quick survey: 3 questions)
 

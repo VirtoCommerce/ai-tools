@@ -10,6 +10,7 @@ Quick decision tree for commands, skills, and agents.
 | **Run regression suites** | `/qa-regression [smoke\|critical\|sprint\|full\|IDs]` | Command |
 | **Test a JIRA ticket/feature/PR** | `/qa-test VCST-XXXX` | Command |
 | **Run exploratory testing session** | `/qa-exploratory [checkout\|catalog\|B2B\|mobile]` | Command |
+| **Get a test checklist for a domain** | `/qa-checklist domain` | Skill |
 | **File or investigate a bug** | `/qa-bug description` | Command |
 | **Check environment health** | `/qa-env-check` | Command |
 | **See QA dashboard** | `/qa-status` | Command |
@@ -27,6 +28,7 @@ Quick decision tree for commands, skills, and agents.
 
 ### Plan Tests (Skills — methodology reference)
 - `/qa-plan` — Test plans from E2E scenario catalog
+- `/qa-checklist` — Test case writing checklists (18 domains, 158 items)
 - `/qa-test-design` — Test case derivation (EP, BVA, decision tables)
 - `/qa-risk` — Risk-based prioritization (5x5 matrix)
 - `/qa-sbtm` — SBTM charters, heuristics, tours, debrief
@@ -67,4 +69,4 @@ Quick decision tree for commands, skills, and agents.
 | `/qa-smoke` | `/qa-plan` | Smoke uses E2E scenario catalog for P0 selection |
 | `/qa-regression` | `/qa-metrics` | Regression results feed into quality gates |
 | `/qa-bug` | `/qa-investigate`, `/qa-defect` | Bug command uses investigation flow + defect templates |
-| `/qa-test` | `/qa-test-design`, `/qa-risk` | Test derives cases and prioritizes based on risk |
+| `/qa-test` | `/qa-test-design`, `/qa-checklist`, `/qa-risk` | Test derives cases, applies domain checklists, and prioritizes based on risk |

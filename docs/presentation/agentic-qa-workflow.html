@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic QA: LLM-Driven Testing for Virto Commerce</title>
+<style>
+/* ===== Anthropic-inspired design tokens ===== */
+:root {
+  --bg-primary: #131314;
+  --bg-slide: #1a1a1c;
+  --bg-code: #232326;
+  --bg-table-header: #1f1f22;
+  --bg-table-row: rgba(255,255,255,0.02);
+  --bg-table-row-alt: rgba(255,255,255,0.05);
+  --text-primary: #faf9f0;
+  --text-secondary: #b0afa6;
+  --text-muted: #78776e;
+  --accent: #d97757;
+  --accent-hover: #e08a6d;
+  --accent-subtle: rgba(217,119,87,0.15);
+  --border: rgba(255,255,255,0.08);
+  --border-accent: rgba(217,119,87,0.3);
+  --radius: 8px;
+  --radius-lg: 12px;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  --shadow: 0 2px 12px rgba(0,0,0,0.4);
+}
+
+/* ===== Reset & base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== Slide container ===== */
+.deck { position: relative; width: 100%; height: 100%; }
+
+.slide {
+  position: absolute; inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+.slide.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.slide-inner {
+  width: min(1100px, 90vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--bg-slide);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 48px 56px 40px;
+  box-shadow: var(--shadow);
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) transparent;
+}
+.slide-inner::-webkit-scrollbar { width: 6px; }
+.slide-inner::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+
+/* ===== Slide number badge ===== */
+.slide-number {
+  position: absolute;
+  top: 18px; right: 24px;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+/* ===== Typography ===== */
+.slide-title {
+  font-size: clamp(28px, 3vw, 38px);
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 8px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.slide-subtitle {
+  font-size: 20px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  font-weight: 400;
+}
+
+.slide-content h1, .slide-content h2, .slide-content h3 {
+  color: var(--accent);
+  margin: 20px 0 10px;
+}
+
+.slide-content p {
+  margin: 10px 0;
+  color: var(--text-primary);
+}
+
+.slide-content strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.slide-content a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border-accent);
+}
+.slide-content a:hover { color: var(--accent-hover); }
+
+/* ===== Lists ===== */
+.slide-content ul, .slide-content ol {
+  margin: 10px 0 10px 24px;
+}
+.slide-content li {
+  margin: 5px 0;
+  color: var(--text-primary);
+}
+.slide-content li::marker {
+  color: var(--accent);
+}
+
+/* ===== Tables ===== */
+.slide-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 15px;
+}
+.slide-content th {
+  background: var(--bg-table-header);
+  color: var(--accent);
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 2px solid var(--border-accent);
+  white-space: nowrap;
+}
+.slide-content td {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  vertical-align: top;
+}
+.slide-content tr:nth-child(even) td { background: var(--bg-table-row-alt); }
+.slide-content tr:hover td { background: var(--accent-subtle); }
+
+/* ===== Code blocks ===== */
+.slide-content pre {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin: 14px 0;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.slide-content pre code {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  white-space: pre;
+}
+.slide-content code.inline {
+  font-family: var(--font-mono);
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+
+/* ===== Speaker notes ===== */
+.speaker-notes {
+  display: none;
+  margin-top: 24px;
+  padding: 16px 20px;
+  background: rgba(217,119,87,0.08);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius);
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+.speaker-notes strong { color: var(--accent); }
+body.show-notes .speaker-notes { display: block; }
+
+/* ===== Notes row (icon + label + speaker notes) ===== */
+.notes-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+.notes-row .speaker-notes {
+  flex-basis: 100%;
+  margin-top: 6px;
+}
+
+/* ===== Decorative slide icons — persistent CLI-style spinner ===== */
+.slide-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: var(--accent);
+  opacity: 0.45;
+  cursor: pointer;
+  transition: opacity 0.4s, filter 0.4s;
+  animation: cli-spin 3s linear infinite;
+}
+.slide-icon:hover {
+  opacity: 1;
+  filter: drop-shadow(0 0 8px var(--accent)) drop-shadow(0 0 20px rgba(217,119,87,0.4));
+  animation: cli-spin 1.2s linear infinite;
+}
+.slide-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Title slide: larger centered icon, static */
+#slide-0 .slide-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 18px;
+  opacity: 0.5;
+  animation: none;
+}
+#slide-0 .slide-icon:hover {
+  opacity: 1;
+  animation: none;
+}
+
+@keyframes cli-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ===== Spinner label — cycling funny text ===== */
+.spinner-label {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-style: italic;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  transition: opacity 0.3s, color 0.3s;
+  animation: label-fade 3s ease-in-out infinite;
+  user-select: none;
+}
+.notes-row:hover .spinner-label {
+  opacity: 1;
+  color: var(--accent);
+}
+@keyframes label-fade {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.85; }
+}
+
+/* ===== Progress bar ===== */
+.progress-bar {
+  position: fixed;
+  bottom: 0; left: 0;
+  height: 3px;
+  background: var(--accent);
+  transition: width 0.35s ease;
+  z-index: 100;
+}
+
+/* ===== Navigation controls ===== */
+.nav-controls {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  z-index: 50;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+body:hover .nav-controls,
+body:focus-within .nav-controls { opacity: 1; }
+
+.nav-btn {
+  background: var(--bg-slide);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  transition: all 0.2s;
+}
+.nav-btn:hover {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  border-color: var(--border-accent);
+}
+
+.nav-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ===== Title slide special ===== */
+#slide-0 .slide-title {
+  font-size: clamp(36px, 4vw, 52px);
+  text-align: center;
+  margin-bottom: 16px;
+}
+#slide-0 .slide-subtitle {
+  text-align: center;
+  font-size: 22px;
+}
+#slide-0 .slide-inner {
+  text-align: center;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .slide-inner { padding: 28px 24px 24px; }
+  .slide-content table { font-size: 13px; }
+  .slide-content pre { font-size: 12px; padding: 12px; }
+}
+
+/* ===== Print / export ===== */
+@media print {
+  .slide { position: relative; opacity: 1; pointer-events: auto; page-break-after: always; }
+  .nav-controls, .progress-bar { display: none; }
+  .speaker-notes { display: block; }
+}
+</style>
+</head>
+<body>
+
+<div class="deck">
+
+    <section class="slide active" id="slide-0">
+      <div class="slide-inner">
+        <div class="slide-number">1 / 20</div>
+        <div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="m3.127 10.604 3.135-1.76.053-.153-.053-.085H6.11l-.525-.032-1.791-.048-1.554-.065-1.505-.08-.38-.081L0 7.832l.036-.234.32-.214.455.04 1.009.069 1.513.105 1.097.064 1.626.17h.259l.036-.105-.089-.065-.068-.064-1.566-1.062-1.695-1.121-.887-.646-.48-.327-.243-.306-.104-.67.435-.48.585.04.15.04.593.456 1.267.981 1.654 1.218.242.202.097-.068.012-.049-.109-.181-.9-1.626-.96-1.655-.428-.686-.113-.411a2 2 0 0 1-.068-.484l.496-.674L4.446 0l.662.089.279.242.411.94.666 1.48 1.033 2.014.302.597.162.553.06.17h.105v-.097l.085-1.134.157-1.392.154-1.792.052-.504.25-.605.497-.327.387.186.319.456-.045.294-.19 1.23-.37 1.93-.243 1.29h.142l.161-.16.654-.868 1.097-1.372.484-.545.565-.601.363-.287h.686l.505.751-.226.775-.707.895-.585.759-.839 1.13-.524.904.048.072.125-.012 1.897-.403 1.024-.186 1.223-.21.553.258.06.263-.218.536-1.307.323-1.533.307-2.284.54-.028.02.032.04 1.029.098.44.024h1.077l2.005.15.525.346.315.424-.053.323-.807.411-3.631-.863-.872-.218h-.12v.073l.726.71 1.331 1.202 1.667 1.55.084.383-.214.302-.226-.032-1.464-1.101-.565-.497-1.28-1.077h-.084v.113l.295.432 1.557 2.34.08.718-.112.234-.404.141-.444-.08-.911-1.28-.94-1.44-.759-1.291-.093.053-.448 4.821-.21.246-.484.186-.403-.307-.214-.496.214-.98.258-1.28.21-1.016.19-1.263.112-.42-.008-.028-.092.012-.953 1.307-1.448 1.957-1.146 1.227-.274.109-.477-.247.045-.44.266-.39 1.586-2.018.956-1.25.617-.723-.004-.105h-.036l-4.212 2.736-.75.096-.324-.302.04-.496.154-.162 1.267-.871z"/>
+  </svg></div>
+        <h1 class="slide-title">Agentic QA: LLM-Driven Testing for Virto Commerce</h1>
+        <p class="slide-subtitle">Architecture, Agent Teams, and Orchestration Patterns</p>
+        <div class="slide-content"></div>
+        <div class="speaker-notes"><strong>Notes:</strong> This presentation covers the architecture and key features of our agentic QA system — a fully LLM-driven testing workflow where AI agents execute tests through real browsers using natural language instructions.</div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-1">
+      <div class="slide-inner">
+        <div class="slide-number">2 / 20</div>
+        
+        <h1 class="slide-title">Agenda</h1>
+        
+        <div class="slide-content"><ol><li>Why Agentic QA? The problem we solve</li><li>By the Numbers</li><li>Architecture: Two Modes, One Foundation</li><li>MCP Servers — Claude's "Hands and Eyes"</li><li>Agent Teams (11 agents, 2 teams)</li><li>Four-Layer Prompt Architecture</li><li>Browser Isolation &amp; Orchestration</li><li>Regression Pipeline &amp; Quality Gates</li><li>CI/CD, Commands &amp; Skills</li><li>Knowledge Layer &amp; Skill Graph</li><li>Agent Routing: Skills vs Knowledge</li><li>Live: Smoke Test in Action</li><li>Benefits &amp; Roadmap</li></ol>
+<p><strong>Total presentation ~40 min | Live demo +20 min | Q&amp;A +10 min</strong></p></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="34" x2="41.3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 10 L20 6 M24 10 L28 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M24 38 L20 42 M24 38 L28 42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 18 L8 18 M12 18 L12 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 30 L40 30 M36 30 L36 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 30 L8 30 M12 30 L12 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> Adjust depth based on audience. For a 20-min lightning talk, focus on slides 1-5 and 16-17. For the full 60-min session, include live demo after slide 16. Press S to toggle speaker notes during the talk, L to switch spinner language between English, Russian, or mixed.</div></div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-2">
+      <div class="slide-inner">
+        <div class="slide-number">3 / 20</div>
+        
+        <h1 class="slide-title">Why Agentic QA?</h1>
+        
+        <div class="slide-content"><table><thead><tr><th>Challenge</th><th>Traditional Automation</th><th>Agentic QA</th></tr></thead><tbody><tr><td>Selector changes</td><td>Tests break</td><td>Agents adapt (self-healing)</td></tr><tr><td>Skill requirement</td><td>Developer-level coding</td><td>Natural language prompts</td></tr><tr><td>Maintenance cost</td><td>High (brittle scripts)</td><td>Low (prompt updates)</td></tr><tr><td>Cross-browser</td><td>Separate configs per browser</td><td>One prompt, 3 browsers</td></tr><tr><td>Scale</td><td>Hard to grow test suites</td><td>1,274 tests, 36 suites</td></tr></tbody></table>
+<pre><code>Traditional:                         Agentic:
+await page.goto('/login');           "Sign in to the storefront
+await page.fill('#email', '...');    with the test user and verify
+await page.fill('#pass', '...');     the dashboard loads correctly"
+await page.click('#submit');
+assert(page.url()).contains('/dashboard');</code></pre></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="34" x2="41.3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 10 L20 6 M24 10 L28 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M24 38 L20 42 M24 38 L28 42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 18 L8 18 M12 18 L12 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 30 L40 30 M36 30 L36 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 30 L8 30 M12 30 L12 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> Traditional test automation requires Playwright/Selenium expertise and produces brittle scripts that break on every UI change. Our approach replaces code with natural language — Claude reads the instructions and drives real browsers. When a developer renames a CSS class, traditional tests break; agentic tests just find the button by context.</div></div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-3">
+      <div class="slide-inner">
+        <div class="slide-number">4 / 20</div>
+        
+        <h1 class="slide-title">Agentic QA at a Glance</h1>
+        
+        <div class="slide-content"><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody><tr><td>AI Agents</td><td>11 (7 QA + 4 BA)</td></tr><tr><td>Regression Suites</td><td>36 (15 frontend + 21 backend)</td></tr><tr><td>Total Test Cases</td><td>1,274 (492 frontend + 782 backend)</td></tr><tr><td>Slash Commands</td><td>9</td></tr><tr><td>Skills (methodology libraries)</td><td>18 across 3 categories</td></tr><tr><td>MCP Servers</td><td>9 (6 project + 3 user-level)</td></tr><tr><td>Shared Knowledge Files</td><td>8 cross-agent references</td></tr><tr><td>Max Concurrent Browsers</td><td>3</td></tr><tr><td>CI Schedule</td><td>Daily smoke + weekly full regression</td></tr></tbody></table></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="34" x2="41.3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 10 L20 6 M24 10 L28 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M24 38 L20 42 M24 38 L28 42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 18 L8 18 M12 18 L12 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 30 L40 30 M36 30 L36 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 30 L8 30 M12 30 L12 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> These are the current numbers from the repository. The system is modular — adding a new suite or skill is a file addition, not a code change.</div></div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-4">
+      <div class="slide-inner">
+        <div class="slide-number">5 / 20</div>
+        
+        <h1 class="slide-title">Two Testing Modes, One Shared Foundation</h1>
+        
+        <div class="slide-content"><pre><code>+-------------- INTERACTIVE MODE ---------------+    +------------- CI MODE ----------------+
+|                                                |    |                                     |
+|  Engineer in IDE (VS Code / Cursor)            |    |  GitHub Actions (schedule / manual)  |
+|       |                                        |    |       |                              |
+|  Claude Code CLI                               |    |  Docker container                    |
+|       |                                        |    |       |                              |
+|  11 Specialized Agents                         |    |  Claude Agent SDK                    |
+|       |                                        |    |  (run-regression.ts)                 |
+|  9 MCP Servers                                 |    |       |                              |
+|  (3 browsers + DevTools + JIRA + Figma + ...)  |    |  Headless Chromium (single browser)  |
+|       |                                        |    |       |                              |
+|  Reports + JIRA updates + Screenshots          |    |  Reports + Teams notifications       |
++------------------------------------------------+    +-------------------------------------+
+                         \                                      /
+                          \                                    /
+                    +---------- SHARED FOUNDATION -----------+
+                    |                                        |
+                    |  config/test-suites.json (36 suites)   |
+                    |  regression/suites/ (CSV test cases)   |
+                    |  .claude/agents/ (agent definitions)   |
+                    |  .claude/agents/knowledge/ (8 files)   |
+                    +----------------------------------------+</code></pre></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="34" x2="41.3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 10 L20 6 M24 10 L28 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M24 38 L20 42 M24 38 L28 42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 18 L8 18 M12 18 L12 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 30 L40 30 M36 30 L36 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 30 L8 30 M12 30 L12 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> Interactive mode is what engineers use daily — full MCP server stack, 3 concurrent browsers, JIRA integration. CI mode runs in Docker with a single headless Chromium, triggered by GitHub Actions on schedule or manually. Both modes share the same suite manifest, test cases, and agent definitions.</div></div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-5">
+      <div class="slide-inner">
+        <div class="slide-number">6 / 20</div>
+        
+        <h1 class="slide-title">9 MCP Servers — Claude's "Hands and Eyes"</h1>
+        
+        <div class="slide-content"><p>MCP (Model Context Protocol) turns Claude from a text generator into an agent that can interact with external tools.</p>
+<p><strong>Project-level servers (configured in <code class="inline">.mcp.json</code>):</strong></p>
+<table><thead><tr><th>Server</th><th>Purpose</th></tr></thead><tbody><tr><td><strong>playwright-chrome</strong></td><td>Browser automation with Chromium</td></tr><tr><td><strong>playwright-firefox</strong></td><td>Browser automation with Firefox</td></tr><tr><td><strong>playwright-edge</strong></td><td>Browser automation with Edge (msedge channel)</td></tr><tr><td><strong>postman</strong></td><td>API testing — collections, environments, monitors</td></tr><tr><td><strong>github</strong></td><td>PR review, code search, issue management</td></tr><tr><td><strong>context7</strong></td><td>Up-to-date Virto Commerce documentation lookup</td></tr></tbody></table>
+<p><strong>User-level servers (IDE settings):</strong></p>
+<table><thead><tr><th>Server</th><th>Purpose</th></tr></thead><tbody><tr><td><strong>Chrome DevTools</strong></td><td>Console logs, network requests, HAR export, performance tracing</td></tr><tr><td><strong>Atlassian</strong></td><td>JIRA ticket management, bug filing, status transitions</td></tr><tr><td><strong>Figma</strong></td><td>Visual comparison against design specs</td></tr></tbody></table></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="34" x2="41.3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 10 L20 6 M24 10 L28 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M24 38 L20 42 M24 38 L28 42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 18 L8 18 M12 18 L12 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 30 L40 30 M36 30 L36 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 30 L8 30 M12 30 L12 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> Without MCP servers, Claude can only generate text. With them, it opens browsers, clicks buttons, reads JIRA tickets, captures screenshots, exports HAR files, and compares designs against Figma. The 3-browser pool enables parallel testing — each agent gets its own isolated browser session.</div></div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-6">
+      <div class="slide-inner">
+        <div class="slide-number">7 / 20</div>
+        
+        <h1 class="slide-title">11 Specialized Agents — Two Teams</h1>
+        
+        <div class="slide-content"><p><strong>QA Team (7 agents):</strong></p>
+<table><thead><tr><th>Agent</th><th>Model</th><th>Role</th></tr></thead><tbody><tr><td><strong>qa-lead-orchestrator</strong></td><td>Sonnet</td><td>Coordinates team, manages JIRA workflow, makes go/no-go decisions</td></tr><tr><td><strong>qa-frontend-expert</strong></td><td>Opus</td><td>Storefront testing, checkout flows, mobile, cross-browser</td></tr><tr><td><strong>qa-backend-expert</strong></td><td>Opus</td><td>REST APIs, GraphQL xAPI, Admin SPA, module CRUD, RBAC</td></tr><tr><td><strong>qa-testing-expert</strong></td><td>Opus</td><td>Interactive execution, Figma comparison, console/network debugging</td></tr><tr><td><strong>ui-ux-expert</strong></td><td>Sonnet</td><td>Storybook (55 components), WCAG 2.1 AA accessibility, design system</td></tr><tr><td><strong>test-management-specialist</strong></td><td>Sonnet</td><td>Test planning, case writing, 18 domain checklists, coverage tracking</td></tr><tr><td><strong>regression-orchestrator</strong></td><td>Sonnet</td><td>36-suite regression, parallel batching, browser fallback, quality gates</td></tr></tbody></table>
+<p><strong>BA Team (4 agents):</strong></p>
+<table><thead><tr><th>Agent</th><th>Model</th><th>Role</th></tr></thead><tbody><tr><td><strong>ba-system-analyzer</strong></td><td>Sonnet</td><td>Repo structure, module inventory, user flows, pain points</td></tr><tr><td><strong>ba-api-specialist</strong></td><td>Sonnet</td><td>API surface analysis via Postman/Swagger</td></tr><tr><td><strong>ba-story-writer</strong></td><td>Sonnet</td><td>Agile user stories with BDD acceptance criteria</td></tr><tr><td><strong>ba-doc-writer</strong></td><td>Sonnet</td><td>User docs, admin guides, API quick-start</td></tr></tbody></table></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="34" x2="41.3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 10 L20 6 M24 10 L28 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M24 38 L20 42 M24 38 L28 42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 18 L8 18 M12 18 L12 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 30 L40 30 M36 30 L36 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 30 L8 30 M12 30 L12 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> Opus models are used for the 3 specialist testing agents that need deep reasoning (frontend, backend, testing). Sonnet models handle coordination, planning, and documentation where speed matters more than depth. Each agent has a focused role — no agent tries to do everything.</div></div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-7">
+      <div class="slide-inner">
+        <div class="slide-number">8 / 20</div>
+        
+        <h1 class="slide-title">How Agents "Think" — Four Decision Layers</h1>
+        
+        <div class="slide-content"><p>Each QA agent's prompt definition (<code class="inline">.claude/agents/*.md</code>) follows a consistent four-layer structure:</p>
+<pre><code>+-----------------------------------------------------------+
+|  LAYER 1: BUSINESS LOGIC (Invariants)                     |
+|  "What the correct business outcome is"                   |
+|  Source: knowledge/business-logic.md                      |
+|  Rules like BL-PRICE-001, BL-CART-004, BL-ORD-001        |
++-----------------------------------------------------------+
+                          |
++-----------------------------------------------------------+
+|  LAYER 2: DOMAIN KNOWLEDGE (Judgment)                     |
+|  "What good implementation looks like"                    |
+|  Sources: platform-patterns.md, browser-quirks.md         |
+|  Example: "Checkout must use async validation"            |
++-----------------------------------------------------------+
+                          |
++-----------------------------------------------------------+
+|  LAYER 3: SKILL SET (Technique)                           |
+|  "How to find what's broken"                              |
+|  Selector strategy, API test order, evidence capture      |
+|  Example: data-testid &gt; aria-label &gt; semantic HTML        |
++-----------------------------------------------------------+
+                          |
++-----------------------------------------------------------+
+|  LAYER 4: DESIGN DECISIONS (Constraints)                  |
+|  "Tools available and boundaries"                         |
+|  MCP servers, browser assignment, quality thresholds      |
+|  Example: "Use playwright-chrome, max 100 turns"          |
++-----------------------------------------------------------+</code></pre></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="34" x2="41.3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 10 L20 6 M24 10 L28 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M24 38 L20 42 M24 38 L28 42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 18 L8 18 M12 18 L12 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 30 L40 30 M36 30 L36 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 30 L8 30 M12 30 L12 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> Layer 1 is shared across all agents — business-logic.md is the single source of truth for what constitutes correct behavior. Layers 2-4 are agent-specific. This architecture ensures every agent applies the same business rules while using domain-appropriate techniques to find violations.</div></div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-8">
+      <div class="slide-inner">
+        <div class="slide-number">9 / 20</div>
+        
+        <h1 class="slide-title">3 Concurrent Browsers, Zero Interference</h1>
+        
+        <div class="slide-content"><pre><code>+-- Browser Pool (max 3 concurrent) --+
+|                                      |
+|  Slot 1: playwright-chrome           |
+|    --&gt; qa-frontend-expert            |
+|                                      |
+|  Slot 2: playwright-firefox          |
+|    --&gt; qa-testing-expert             |
+|                                      |
+|  Slot 3: playwright-edge             |
+|    --&gt; qa-backend-expert             |
+|                                      |
++--------------------------------------+
+    ui-ux-expert --&gt; Chrome DevTools MCP (separate)
+    test-management-specialist --&gt; sequential only</code></pre>
+<table><thead><tr><th>Rule</th><th>Rationale</th></tr></thead><tbody><tr><td>Never share a browser session between agents</td><td>Navigation, cookies, and state would conflict</td></tr><tr><td>Max 3 concurrent browser agents</td><td>3 Playwright MCP servers available</td></tr><tr><td>Fallback chain: chrome -&gt; firefox -&gt; edge</td><td>If primary browser slot is occupied</td></tr><tr><td>Never use WebKit on Windows</td><td>Not supported — fall back to Edge immediately</td></tr></tbody></table></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="34" x2="41.3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 10 L20 6 M24 10 L28 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M24 38 L20 42 M24 38 L28 42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 18 L8 18 M12 18 L12 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 30 L40 30 M36 30 L36 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 30 L8 30 M12 30 L12 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> This is a hard constraint. If two agents share a browser, one agent's navigation destroys the other's context. Each agent gets its own isolated Playwright MCP server with separate cookies, storage, and viewport.</div></div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-9">
+      <div class="slide-inner">
+        <div class="slide-number">10 / 20</div>
+        
+        <h1 class="slide-title">Lead Delegates, Never Executes</h1>
+        
+        <div class="slide-content"><p>The <code class="inline">qa-lead-orchestrator</code> NEVER runs tests directly. It follows a strict delegation pattern:</p>
+<pre><code>  JIRA Ticket / User Request
+            |
+     +------v------+
+     |   ANALYZE    |  Read ticket, parse ACs, identify scope
+     +------+-------+
+            |
+  +---------+---------+---------+
+  |         |         |         |
+DELEGATE  MONITOR   RULES    JUDGE
+(assign   (track    (apply   (approve/
+agents)   progress) BL-*)    reject)
+  |         |         |         |
+  +---------+---------+---------+
+            |
+     +------v------+
+     | CONSOLIDATE |  Collect results from all specialists
+     +------+------+
+            |
+     +------v------+------v------+
+     |             |             |
+  APPROVED    CONDITIONAL    BLOCKED
+  (TESTED)   (minor issues) (REOPEN)</code></pre>
+<p><strong>Five Orchestration Workflows:</strong></p>
+<table><thead><tr><th>Workflow</th><th>Trigger</th><th>Agents Dispatched</th></tr></thead><tbody><tr><td>New Feature Testing</td><td>VCST-XXXX ticket</td><td>frontend + backend + (optional) ui-ux</td></tr><tr><td>PR Review</td><td>GitHub PR</td><td>backend (APIs) + frontend (UI) + testing (interactive)</td></tr><tr><td>Module Testing</td><td>Module install/update</td><td>backend (API verification) + test-mgmt (regression mapping)</td></tr><tr><td>Release Testing</td><td>Sprint/prod gate</td><td>regression-orchestrator (batches of 3 sub-agents)</td></tr><tr><td>Bug Fix Verification</td><td>Bug ticket</td><td>testing (reproduction) + test-mgmt (checklist)</td></tr></tbody></table></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="34" x2="41.3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 10 L20 6 M24 10 L28 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M24 38 L20 42 M24 38 L28 42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 18 L8 18 M12 18 L12 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 30 L40 30 M36 30 L36 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 30 L8 30 M12 30 L12 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> The lead agent is a coordinator, not an executor. It reads the JIRA ticket, decides which specialists to dispatch based on the scope (frontend changes? backend APIs? accessibility?), monitors their progress, and makes the final go/no-go decision based on quality gates.</div></div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-10">
+      <div class="slide-inner">
+        <div class="slide-number">11 / 20</div>
+        
+        <h1 class="slide-title">36 Suites, Parallel Batching, Quality Gates</h1>
+        
+        <div class="slide-content"><p><strong>Pipeline Steps:</strong></p>
+<pre><code>  1. Read config/test-suites.json manifest
+  2. Resolve selection (smoke | critical | sprint | full | IDs)
+  3. Generate run ID (REG-YYYY-MM-DD-HHMM)
+  4. Sort suites by priority (P0 first)
+  5. Dispatch sub-agents in batches of 3 (one per browser slot)
+  6. Monitor results, free browser slots on completion
+  7. Retry failures (max 2 retries, browser fallback chain)
+  8. Consolidate final report
+  9. Evaluate quality gates --&gt; APPROVED | CONDITIONAL | BLOCKED</code></pre>
+<p><strong>Selection Groups:</strong></p>
+<table><thead><tr><th>Selection</th><th>Suites</th><th>Tests</th><th>Use Case</th></tr></thead><tbody><tr><td><code class="inline">smoke</code></td><td>01</td><td>~12</td><td>Daily pre-deploy validation</td></tr><tr><td><code class="inline">critical</code></td><td>01, 06, 08, 14</td><td>~120</td><td>P0 gate before any release</td></tr><tr><td><code class="inline">sprint</code></td><td>26 suites</td><td>~600</td><td>Sprint release gate</td></tr><tr><td><code class="inline">full</code></td><td>All 36</td><td>1,274</td><td>Production release gate</td></tr><tr><td><code class="inline">frontend</code></td><td>01-13, 35-36</td><td>492</td><td>Frontend-only regression</td></tr><tr><td><code class="inline">backend</code></td><td>14-34</td><td>782</td><td>Backend-only regression</td></tr></tbody></table></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="34" x2="41.3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 10 L20 6 M24 10 L28 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M24 38 L20 42 M24 38 L28 42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 18 L8 18 M12 18 L12 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 30 L40 30 M36 30 L36 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 30 L8 30 M12 30 L12 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> The regression-orchestrator reads the manifest, groups suites into batches of 3 (matching the browser pool), and dispatches sub-agents in parallel. P0 suites run first. If a suite fails, it retries with the next browser in the fallback chain. The result is a consolidated report with a quality gate verdict.</div></div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-11">
+      <div class="slide-inner">
+        <div class="slide-number">12 / 20</div>
+        
+        <h1 class="slide-title">Non-Negotiable Thresholds</h1>
+        
+        <div class="slide-content"><table><thead><tr><th>Gate</th><th>Pass Rate</th><th>P0 Bugs Allowed</th><th>P1 Bugs Allowed</th><th>Verdict</th></tr></thead><tbody><tr><td><strong>Smoke</strong> (daily)</td><td>100%</td><td>0</td><td>0</td><td>GO / NO-GO</td></tr><tr><td><strong>Sprint</strong> (pre-release)</td><td>&gt;= 95%</td><td>0</td><td>Any</td><td>APPROVED / CONDITIONAL / BLOCKED</td></tr><tr><td><strong>Full Release</strong> (major)</td><td>&gt;= 95%</td><td>0</td><td>&lt;= 3</td><td>APPROVED / CONDITIONAL / BLOCKED</td></tr></tbody></table>
+<p><strong>Verdict Definitions:</strong></p>
+<table><thead><tr><th>Verdict</th><th>Meaning</th><th>Action</th></tr></thead><tbody><tr><td><strong>APPROVED</strong></td><td>All gates pass</td><td>Safe to deploy</td></tr><tr><td><strong>CONDITIONAL</strong></td><td>Minor issues (P2/P3 only)</td><td>Deploy with tracked follow-ups</td></tr><tr><td><strong>BLOCKED</strong></td><td>P0/P1 failures or low pass rate</td><td>No deployment, regardless of schedule</td></tr></tbody></table></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="34" x2="41.3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 10 L20 6 M24 10 L28 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M24 38 L20 42 M24 38 L28 42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 18 L8 18 M12 18 L12 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 30 L40 30 M36 30 L36 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 30 L8 30 M12 30 L12 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> BLOCKED means no deployment, period. These gates are enforced automatically by the regression-orchestrator and qa-lead-orchestrator agents. Schedule pressure does not override quality gates.</div></div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-12">
+      <div class="slide-inner">
+        <div class="slide-number">13 / 20</div>
+        
+        <h1 class="slide-title">Docker + GitHub Actions + Teams</h1>
+        
+        <div class="slide-content"><pre><code>  GitHub Actions (trigger)
+        |
+        v
+  Docker Container (Playwright + Agent SDK)
+        |
+        v
+  run-regression.ts (orchestrator)
+        |
+        v
+  Claude Agent SDK --&gt; Headless Chromium
+        |                    |
+        v                    v
+  Budget tracking       Suite execution
+  ($5 smoke / $80 full)  (parallel batches of 3)
+        |
+        v
+  reports/regression/ci-YYYY-MM-DD/
+        |
+        v
+  Teams Adaptive Card notification</code></pre>
+<p><strong>Schedule:</strong></p>
+<table><thead><tr><th>Trigger</th><th>When</th><th>Selection</th><th>Budget</th></tr></thead><tbody><tr><td>Daily smoke</td><td>Mon-Fri 6:00 AM UTC</td><td>Suite 01</td><td>$5</td></tr><tr><td>Weekly full</td><td>Sunday 2:00 AM UTC</td><td>All 36 suites</td><td>$80</td></tr><tr><td>Manual</td><td>Any time (workflow_dispatch)</td><td>Any selection</td><td>Custom</td></tr></tbody></table>
+<p><strong>Features:</strong></p>
+<ul><li>Budget management with per-suite allocation ($2 minimum floor)</li><li>90-day rolling history in <code class="inline">reports/regression/history.json</code></li><li>Artifacts uploaded with 30-day retention</li><li>Teams webhook notifications with suite-by-suite breakdown</li></ul></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="34" x2="41.3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 10 L20 6 M24 10 L28 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M24 38 L20 42 M24 38 L28 42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 18 L8 18 M12 18 L12 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 30 L40 30 M36 30 L36 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 30 L8 30 M12 30 L12 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> CI mode uses a single headless Chromium (not the 3-browser pool). The orchestrator dispatches suites sequentially in batches, tracks budget globally, and sends a Teams notification with an Adaptive Card showing the full breakdown. Manual triggers allow any selection, any environment, any budget.</div></div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-13">
+      <div class="slide-inner">
+        <div class="slide-number">14 / 20</div>
+        
+        <h1 class="slide-title">9 Commands + 18 Skills</h1>
+        
+        <div class="slide-content"><p><strong>Commands (action-oriented, execute immediately):</strong></p>
+<table><thead><tr><th>Command</th><th>Purpose</th></tr></thead><tbody><tr><td><code class="inline">/qa-smoke</code></td><td>Daily GO/NO-GO smoke test (~15 min)</td></tr><tr><td><code class="inline">/qa-test VCST-XXXX</code></td><td>Test a JIRA ticket, feature, or PR</td></tr><tr><td><code class="inline">/qa-regression [scope]</code></td><td>Run regression suites in parallel</td></tr><tr><td><code class="inline">/qa-status</code></td><td>Dashboard: run status, JIRA queue, env health</td></tr><tr><td><code class="inline">/qa-bug [description]</code></td><td>Reproduce, document, file bug to JIRA</td></tr><tr><td><code class="inline">/qa-exploratory [area]</code></td><td>Guided exploratory testing session</td></tr><tr><td><code class="inline">/qa-env-check</code></td><td>Validate environment health</td></tr><tr><td><code class="inline">/ba-analyze [scope]</code></td><td>Business analysis coordination</td></tr><tr><td><code class="inline">/ba-stories [feature]</code></td><td>Generate BDD user stories</td></tr></tbody></table>
+<p><strong>Skills (methodology libraries, 3 categories):</strong></p>
+<table><thead><tr><th>Category</th><th>Count</th><th>Skills</th></tr></thead><tbody><tr><td><strong>vc-knowledge</strong></td><td>4</td><td>/vc-docs, /vc-module, /vc-api, /vc-frontend</td></tr><tr><td><strong>testing</strong></td><td>6</td><td>/qa-storybook, /qa-accessibility, /qa-design, /qa-plan, /qa-checklist, /qa-api</td></tr><tr><td><strong>qa-methodology</strong></td><td>8</td><td>/qa-process, /qa-investigate, /qa-evidence, /qa-defect, /qa-test-design, /qa-risk, /qa-metrics, /qa-sbtm</td></tr></tbody></table></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="34" x2="41.3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 10 L20 6 M24 10 L28 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M24 38 L20 42 M24 38 L28 42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 18 L8 18 M12 18 L12 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 30 L40 30 M36 30 L36 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 30 L8 30 M12 30 L12 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> Commands trigger agent workflows. Skills inject methodology knowledge. For example, <code class="inline">/qa-test VCST-1234</code> triggers the lead orchestrator to analyze the ticket and dispatch specialists. <code class="inline">/qa-checklist checkout</code> loads the checkout domain checklist (158 items across 18 domains) to guide test case writing.</div></div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-14">
+      <div class="slide-inner">
+        <div class="slide-number">15 / 20</div>
+        
+        <h1 class="slide-title">8 Shared Knowledge Files</h1>
+        
+        <div class="slide-content"><p>All QA agents consult shared reference files in <code class="inline">.claude/agents/knowledge/</code>:</p>
+<table><thead><tr><th>File</th><th>Content</th><th>Used By</th></tr></thead><tbody><tr><td><strong>business-logic.md</strong></td><td>Testable business invariants with BL-* IDs (pricing, cart, checkout, auth, orders)</td><td>All QA agents</td></tr><tr><td><strong>platform-patterns.md</strong></td><td>Storefront, admin SPA, API implementation patterns</td><td>frontend, backend, testing</td></tr><tr><td><strong>browser-quirks.md</strong></td><td>Chrome/Firefox/Edge behavioral differences and workarounds</td><td>frontend, testing</td></tr><tr><td><strong>debugging-signals.md</strong></td><td>Console error patterns, network failure signals, HAR interpretation</td><td>frontend, backend, testing</td></tr><tr><td><strong>performance-thresholds.md</strong></td><td>LCP, CLS, API latency targets, Core Web Vitals</td><td>frontend, testing</td></tr><tr><td><strong>catalog.md</strong></td><td>B2B catalog structure, product types, xCatalog GraphQL</td><td>frontend, backend</td></tr><tr><td><strong>store-settings.md</strong></td><td>Multi-currency, feature flags, payment processor config</td><td>frontend, backend</td></tr><tr><td><strong>white-labeling.md</strong></td><td>Branding overrides, themes, custom domains</td><td>frontend, ui-ux</td></tr></tbody></table></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="34" x2="41.3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 10 L20 6 M24 10 L28 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M24 38 L20 42 M24 38 L28 42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 18 L8 18 M12 18 L12 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 30 L40 30 M36 30 L36 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 30 L8 30 M12 30 L12 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> Business-logic.md is the most important file — it contains testable invariants like "discount stacking must never exceed 100%" (BL-PRICE-001) or "order cancellation must reverse inventory" (BL-ORD-002). Every QA agent consults this file to know what constitutes a real bug vs. expected behavior.</div></div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-15">
+      <div class="slide-inner">
+        <div class="slide-number">16 / 20</div>
+        
+        <h1 class="slide-title">How Methodology Skills Connect</h1>
+        
+        <div class="slide-content"><pre><code>  qa-process (ISTQB 7-phase lifecycle) ---- umbrella
+       |
+       +-- qa-test-design (EP, BVA, decision tables, state transitions)
+       |       |
+       |       +-- qa-plan (test suite composition from 105 E2E scenarios)
+       |       +-- qa-checklist (18 domain checklists, 158 items)
+       |
+       +-- qa-risk (5x5 risk matrix, severity/priority, test depth)
+       |       |
+       |       +-- qa-sbtm (session-based exploratory testing, CRISP/SFDPOT)
+       |
+       +-- qa-investigate (5-phase bug investigation)
+       |       |
+       |       +-- qa-defect (JIRA bug workflow, 16 statuses, triage)
+       |               |
+       |               +-- qa-metrics (defect density, DRE, escape rate)
+       |
+       +-- qa-evidence (capture policy, output paths, sign-off templates)
+
+  Continuous loop: investigate -&gt; defect -&gt; risk -&gt; sbtm -&gt; metrics</code></pre></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="34" x2="41.3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 10 L20 6 M24 10 L28 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M24 38 L20 42 M24 38 L28 42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 18 L8 18 M12 18 L12 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 30 L40 30 M36 30 L36 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 30 L8 30 M12 30 L12 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> Skills are not isolated — they form a dependency graph. The process skill is the umbrella (ISTQB lifecycle). Test design feeds into planning and checklists. Risk assessment drives exploratory testing priorities. Bug investigation feeds into defect management which feeds into metrics. This creates a continuous learning loop.</div></div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-16">
+      <div class="slide-inner">
+        <div class="slide-number">17 / 20</div>
+        
+        <h1 class="slide-title">How Agents Know What to Load and When</h1>
+        
+        <div class="slide-content"><pre><code>                    AGENT PROMPT (e.g., test-management-specialist.md)
+                    ┌───────────────────────────────────────────────┐
+                    │                                               │
+  ALWAYS LOADED     │  &gt; Reference: business-logic.md      ←──── Mechanism 1
+  (hardcoded)       │  &gt; Reference: e2e-scenario-catalog.md        │  Hardcoded
+                    │  &gt; Reference: domain-checklists.md           │  References
+                    │  + 13 more long-term reference files         │
+                    │                                               │
+  ON-DEMAND         │  | Situation         | Skill → File |  ←──── Mechanism 2
+  (conditional)     │  | Writing cases     | /qa-plan     |        │  Conditional
+                    │  | Coverage check    | /qa-checklist |        │  Routing Table
+                    │  | Risk assessment   | /qa-risk     |        │
+                    │  | ISTQB lifecycle   | /qa-process  |        │
+                    │  | 9 more rows...    | ...          |        │
+                    └───────────────────────────────────────────────┘
+
+  AUTO-INVOCABLE    /vc-docs  /vc-module  /vc-api  /vc-frontend  ←── Mechanism 3
+  (4 skills)        Claude calls these automatically when needed       No gate
+
+  SYSTEM GUIDE      .claude/ROUTING.md                            ←── Mechanism 4
+                    Decision tree: "I want to..." → use this          For humans
+                                                                      and agents
+
+  FORMAL MAP        Agent → Skill Map in skills/README.md         ←── Mechanism 5
+                    Explicit binding per agent role                    Cross-reference</code></pre>
+<table><thead><tr><th>Mechanism</th><th>Type</th><th>Example</th></tr></thead><tbody><tr><td><strong>1. Hardcoded refs</strong></td><td>Always loaded</td><td><code class="inline">test-management-specialist</code> loads <code class="inline">business-logic.md</code> + 15 reference files at every startup</td></tr><tr><td><strong>2. Conditional table</strong></td><td>On-demand</td><td>"Writing test cases?" → load <code class="inline">/qa-plan</code> → <code class="inline">e2e-scenario-catalog.md</code></td></tr><tr><td><strong>3. Auto-invocable</strong></td><td>Automatic</td><td>Agent hits unknown URL → Claude auto-calls <code class="inline">/vc-frontend</code> → gets sitemap</td></tr><tr><td><strong>4. ROUTING.md</strong></td><td>System guide</td><td>"I want a checklist" → use <code class="inline">/qa-checklist</code> (Skill)</td></tr><tr><td><strong>5. Agent→Skill Map</strong></td><td>Cross-reference</td><td><code class="inline">test-management-specialist</code> → qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-risk, qa-process</td></tr></tbody></table>
+<p><strong>Key insight:</strong> Knowledge files = memory (always available). Skills = reference books (loaded when needed).</p></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="34" x2="41.3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 10 L20 6 M24 10 L28 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M24 38 L20 42 M24 38 L28 42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 18 L8 18 M12 18 L12 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 30 L40 30 M36 30 L36 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 30 L8 30 M12 30 L12 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> This is the glue that makes 18 skills and 8 knowledge files work together without chaos. Agents don't guess — each agent prompt has hardcoded references (always loaded) and a conditional routing table (loaded on-demand by situation). Four VC knowledge skills are auto-invocable — Claude calls them without explicit instruction. The ROUTING.md file serves as a system-level decision tree for both humans and agents. The test-management-specialist is the best example: it has 16 hardcoded reference files and a 13-row conditional skill table — more than any other agent, because test planning touches every methodology.</div></div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-17">
+      <div class="slide-inner">
+        <div class="slide-number">18 / 20</div>
+        
+        <h1 class="slide-title">End-to-End: `/qa-smoke`</h1>
+        
+        <div class="slide-content"><pre><code>  Step 1: User types /qa-smoke in IDE
+            |
+  Step 2: qa-lead-orchestrator reads config/test-suites.json (Suite 01)
+            |
+  Step 3: Generates run ID: SMOKE-2026-03-05-0900
+            |
+  Step 4: Dispatches TWO parallel tracks:
+            |
+     +------+------+
+     |             |
+  Track A       Track B
+  qa-frontend   qa-backend
+  -expert       -expert
+  (chrome)      (edge)
+  12 P0 tests   Admin health
+     |             |
+  Step 5: Both tracks execute tests through real browsers
+            |
+  Step 6: Orchestrator collects results, applies verdict rules:
+          - All pass + admin healthy = GO
+          - Checkout fails = NO-GO
+          - 3+ failures = NO-GO
+            |
+  Step 7: Writes smoke-report.md, delivers verdict:
+          "GO -- Safe to deploy"</code></pre>
+<p><strong>Time:</strong> ~15 minutes from invocation to verdict.</p></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="34" x2="41.3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 10 L20 6 M24 10 L28 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M24 38 L20 42 M24 38 L28 42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 18 L8 18 M12 18 L12 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 30 L40 30 M36 30 L36 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 30 L8 30 M12 30 L12 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> This is the daily ritual. One command, two parallel agents, a consolidated verdict. No manual coordination. The lead orchestrator handles everything — scope analysis, agent dispatch, result collection, and final decision.</div></div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-18">
+      <div class="slide-inner">
+        <div class="slide-number">19 / 20</div>
+        
+        <h1 class="slide-title">What Agentic QA Delivers</h1>
+        
+        <div class="slide-content"><table><thead><tr><th>Benefit</th><th>Detail</th></tr></thead><tbody><tr><td><strong>No coding expertise needed</strong></td><td>Tests are plain English prompts, not Playwright scripts</td></tr><tr><td><strong>Self-healing</strong></td><td>Agents adapt to UI changes — no broken selectors</td></tr><tr><td><strong>Parallel execution</strong></td><td>3 concurrent browser agents reduce wall-clock time</td></tr><tr><td><strong>Full JIRA integration</strong></td><td>Read tickets, file bugs, transition status — all from IDE</td></tr><tr><td><strong>Quality gates enforced</strong></td><td>Automated at smoke/sprint/release levels</td></tr><tr><td><strong>CI automation</strong></td><td>Daily smoke + weekly full regression on schedule</td></tr><tr><td><strong>Budget controlled</strong></td><td>Per-suite allocation, $5-$80 per run depending on scope</td></tr><tr><td><strong>Methodology built-in</strong></td><td>18 skills encode ISTQB, SBTM, WCAG, risk-based testing</td></tr><tr><td><strong>Evidence-driven</strong></td><td>HAR files, screenshots, console logs captured automatically</td></tr><tr><td><strong>Modular architecture</strong></td><td>Adding a suite = adding a CSV file + manifest entry</td></tr></tbody></table></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="6.7" y1="34" x2="41.3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 10 L20 6 M24 10 L28 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M24 38 L20 42 M24 38 L28 42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 18 L8 18 M12 18 L12 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 30 L40 30 M36 30 L36 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 30 L8 30 M12 30 L12 34" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> The biggest wins are self-healing (no maintenance when UI changes) and the elimination of coding expertise as a barrier. QA engineers write prompts, not code. The system scales by adding CSV suites, not by writing more automation scripts.</div></div>
+      </div>
+    </section>
+
+    <section class="slide" id="slide-19">
+      <div class="slide-inner">
+        <div class="slide-number">20 / 20</div>
+        
+        <h1 class="slide-title">What's Next</h1>
+        
+        <div class="slide-content"><table><thead><tr><th>Initiative</th><th>Description</th></tr></thead><tbody><tr><td><strong>Multi-browser CI</strong></td><td>Extend CI from single headless Chromium to 3-browser pool</td></tr><tr><td><strong>Visual regression baselines</strong></td><td>Persistent Storybook component snapshots for automated comparison</td></tr><tr><td><strong>BrowserStack integration</strong></td><td>Cloud-based mobile device testing (iOS Safari, Android Chrome)</td></tr><tr><td><strong>AI-generated test cases</strong></td><td>Derive test cases automatically from JIRA acceptance criteria</td></tr><tr><td><strong>Sprint coverage reports</strong></td><td>Automated mapping of code changes to affected test suites</td></tr><tr><td><strong>Self-updating suites</strong></td><td>Regression suites that evolve based on code change analysis</td></tr></tbody></table></div>
+        <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="m3.127 10.604 3.135-1.76.053-.153-.053-.085H6.11l-.525-.032-1.791-.048-1.554-.065-1.505-.08-.38-.081L0 7.832l.036-.234.32-.214.455.04 1.009.069 1.513.105 1.097.064 1.626.17h.259l.036-.105-.089-.065-.068-.064-1.566-1.062-1.695-1.121-.887-.646-.48-.327-.243-.306-.104-.67.435-.48.585.04.15.04.593.456 1.267.981 1.654 1.218.242.202.097-.068.012-.049-.109-.181-.9-1.626-.96-1.655-.428-.686-.113-.411a2 2 0 0 1-.068-.484l.496-.674L4.446 0l.662.089.279.242.411.94.666 1.48 1.033 2.014.302.597.162.553.06.17h.105v-.097l.085-1.134.157-1.392.154-1.792.052-.504.25-.605.497-.327.387.186.319.456-.045.294-.19 1.23-.37 1.93-.243 1.29h.142l.161-.16.654-.868 1.097-1.372.484-.545.565-.601.363-.287h.686l.505.751-.226.775-.707.895-.585.759-.839 1.13-.524.904.048.072.125-.012 1.897-.403 1.024-.186 1.223-.21.553.258.06.263-.218.536-1.307.323-1.533.307-2.284.54-.028.02.032.04 1.029.098.44.024h1.077l2.005.15.525.346.315.424-.053.323-.807.411-3.631-.863-.872-.218h-.12v.073l.726.71 1.331 1.202 1.667 1.55.084.383-.214.302-.226-.032-1.464-1.101-.565-.497-1.28-1.077h-.084v.113l.295.432 1.557 2.34.08.718-.112.234-.404.141-.444-.08-.911-1.28-.94-1.44-.759-1.291-.093.053-.448 4.821-.21.246-.484.186-.403-.307-.214-.496.214-.98.258-1.28.21-1.016.19-1.263.112-.42-.008-.028-.092.012-.953 1.307-1.448 1.957-1.146 1.227-.274.109-.477-.247.045-.44.266-.39 1.586-2.018.956-1.25.617-.723-.004-.105h-.036l-4.212 2.736-.75.096-.324-.302.04-.496.154-.162 1.267-.871z"/>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> The current system is a strong foundation. The roadmap focuses on expanding coverage (mobile, multi-browser CI), reducing manual effort (AI-generated tests, self-updating suites), and improving feedback loops (sprint coverage reports).</div></div>
+      </div>
+    </section>
+</div>
+
+<div class="progress-bar" id="progress"></div>
+
+<div class="nav-controls">
+  <button class="nav-btn" onclick="prev()" title="Previous (Left Arrow)">&larr; Prev</button>
+  <span class="nav-hint">Arrow keys &bull; S = notes &bull; L = lang</span>
+  <button class="nav-btn" onclick="next()" title="Next (Right Arrow)">Next &rarr;</button>
+</div>
+
+<script>
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const progress = document.getElementById('progress');
+  const total = slides.length;
+  let current = 0;
+
+  function go(n) {
+    if (n < 0 || n >= total) return;
+    slides[current].classList.remove('active');
+    current = n;
+    slides[current].classList.add('active');
+    progress.style.width = ((current + 1) / total * 100) + '%';
+    window.location.hash = '#slide-' + current;
+  }
+
+  window.next = function() { go(current + 1); };
+  window.prev = function() { go(current - 1); };
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(current + 1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); go(current - 1); }
+    else if (e.key === 'Home') { e.preventDefault(); go(0); }
+    else if (e.key === 'End') { e.preventDefault(); go(total - 1); }
+    else if (e.key === 's' || e.key === 'S') { document.body.classList.toggle('show-notes'); }
+    else if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+  });
+
+  // Touch swipe support
+  let touchStartX = 0;
+  document.addEventListener('touchstart', function(e) { touchStartX = e.changedTouches[0].screenX; });
+  document.addEventListener('touchend', function(e) {
+    const diff = e.changedTouches[0].screenX - touchStartX;
+    if (Math.abs(diff) > 50) { diff < 0 ? go(current + 1) : go(current - 1); }
+  });
+
+  // Handle hash on load
+  if (window.location.hash) {
+    const m = window.location.hash.match(/slide-(\d+)/);
+    if (m) go(parseInt(m[1], 10));
+  }
+  progress.style.width = ((current + 1) / total * 100) + '%';
+
+  // ---- CLI-style spinner labels (EN + RU, toggle with L key) ----
+  var wordsEN = [
+    'whispering...','noodling...','pondering...','brewing...','scheming...',
+    'conjuring...','manifesting...','vibing...','cooking...','daydreaming...',
+    'rethinking...','hallucinating...','calibrating...','percolating...','spiraling...',
+    'untangling...','assembling...','simmering...','overthinking...','doodling...',
+  ];
+  var wordsRU = [
+    'шепчемся...','котелок варит...','обмозговываем...','заваривается...','мутим схему...',
+    'колдуем...','визуализируем...','ловим волну...','стряпаем...','витаем в облаках...',
+    'переосмысляем...','галлюцинируем...','калибруем...','просачивается...','закручиваем...',
+    'распутываем...','собираем по кусочкам...','томится на медленном...','перемудрили...','рисуем каракули...',
+  ];
+  // mixed = alternating EN, RU, EN, RU...
+  var wordsMixed = [];
+  for (var wi = 0; wi < wordsEN.length; wi++) { wordsMixed.push(wordsEN[wi], wordsRU[wi]); }
+
+  var langModes = ['mixed', 'en', 'ru'];
+  var langNames = { mixed: 'EN + RU', en: 'English', ru: 'Русский' };
+  var langIdx = 0;
+
+  function getActiveWords() {
+    var m = langModes[langIdx];
+    if (m === 'en') return wordsEN;
+    if (m === 'ru') return wordsRU;
+    return wordsMixed;
+  }
+
+  var labels = document.querySelectorAll('.spinner-label');
+  var wordIdx = Math.floor(Math.random() * 20);
+
+  function cycleLabels() {
+    var words = getActiveWords();
+    var idx = wordIdx % words.length;
+    labels.forEach(function(el) {
+      el.style.opacity = '0';
+      setTimeout(function() {
+        el.textContent = words[idx];
+        el.style.opacity = '';
+      }, 300);
+    });
+    wordIdx++;
+  }
+  cycleLabels();
+  setInterval(cycleLabels, 3000);
+
+  // L key toggles language
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'l' || e.key === 'L') {
+      langIdx = (langIdx + 1) % langModes.length;
+      wordIdx = 0;
+      cycleLabels();
+      // brief toast
+      var toast = document.createElement('div');
+      toast.textContent = langNames[langModes[langIdx]];
+      toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#1a1a1c;color:#d97757;border:1px solid rgba(217,119,87,0.3);padding:6px 18px;border-radius:8px;font-size:14px;font-family:var(--font-mono);z-index:999;opacity:0;transition:opacity 0.3s;';
+      document.body.appendChild(toast);
+      requestAnimationFrame(function() { toast.style.opacity = '1'; });
+      setTimeout(function() { toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 300); }, 1500);
+    }
+  });
+})();
+</script>
+</body>
+</html>

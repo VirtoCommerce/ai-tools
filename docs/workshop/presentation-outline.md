@@ -64,7 +64,7 @@ await page.click('#submit');
 - Tests self-heal when UI changes (no broken selectors)
 - 40% faster test authoring
 - Tests double as documentation (readable by anyone)
-- Cross-browser testing built-in (4 browsers, one prompt)
+- Cross-browser testing built-in (3 browsers, one prompt)
 
 **Speaker notes:** When a developer changes a button from `#submit-btn` to `[data-testid="login-submit"]`, traditional tests break. Claude just finds the "Sign In" button. It adapts.
 
@@ -82,19 +82,23 @@ You (VS Code + Claude Code)
     Claude Code  <-- CLAUDE.md (project knowledge)
          |
     MCP Servers  (Claude's "hands")
-    /    |    |    \        \       \
-Chrome  FF  WebKit Edge   JIRA   DevTools
+    /    |    \      |       |       |       |       |
+Chrome  FF  Edge  DevTools  JIRA  Figma  Postman  GitHub  Context7
 ```
 
 **Bullet points:**
 
 - MCP = Model Context Protocol (gives Claude tools to interact with the world)
-- 4 Playwright browsers for cross-browser testing
-- Chrome DevTools for console logs, network, performance
+- 3 Playwright browsers for cross-browser testing (Chrome, Firefox, Edge)
+- Chrome DevTools for console logs, network, HAR export, performance
 - Atlassian MCP for JIRA integration
 - Figma MCP for design comparison
+- Postman MCP for API testing
+- GitHub MCP for PR review and code search
+- Context7 MCP for Virto Commerce documentation
+- **Note:** WebKit is NOT supported on Windows — always use Chrome, Firefox, or Edge
 
-**Speaker notes:** Think of MCP servers as Claude's hands. Without them, Claude can only talk. With them, it can open browsers, click buttons, read JIRA tickets, capture screenshots.
+**Speaker notes:** Think of MCP servers as Claude's hands. Without them, Claude can only talk. With them, it can open browsers, click buttons, read JIRA tickets, capture screenshots, test APIs via Postman, and look up VC documentation.
 
 ---
 
@@ -102,33 +106,48 @@ Chrome  FF  WebKit Edge   JIRA   DevTools
 
 **Title:** What's in the Repo
 
-| Folder | Contains | Test Cases |
-|--------|----------|------------|
-| `regression/suites/` | 14 test suites (CSV) | 455 cases |
+| Folder | Contains | Count |
+|--------|----------|-------|
+| `regression/suites/` | 36 test suites (CSV) | 1,274 cases |
 | `docs/prompts/` | Prompt templates | 5 templates |
-| `.claude/agents/` | QA specialist agents | 6 agents |
+| `.claude/agents/` | QA + BA specialist agents | 11 agents |
+| `.claude/agents/knowledge/` | Shared knowledge files | 8 files |
+| `.claude/skills/` | Methodology skill libraries | 18 skills |
+| `.claude/commands/` | Slash commands | 9 commands |
 | `test-data/` | Products, users, addresses, cards | 12 categories |
-| `reports/` | Bug reports + regression reports | - |
-| `ci/` | GitHub Actions CI/CD | Automated runs |
+| `reports/` | Bug reports + regression reports | — |
+| `ci/` | Docker + GitHub Actions CI/CD | Automated runs |
 
-**Speaker notes:** You don't need to know all of this today. The key folders are `regression/suites` where our test cases live, `docs/prompts` for test templates, and `.claude/agents` for our AI specialists.
+**Speaker notes:** You don't need to know all of this today. The key folders are `regression/suites` where our test cases live, `docs/prompts` for test templates, `.claude/agents` for our AI specialists, and `.claude/skills` for methodology libraries.
 
 ---
 
-## Slide 7: The QA Agent Team
+## Slide 7: The Agent Teams
 
-**Title:** 6 Specialized AI Agents
+**Title:** 11 Specialized AI Agents (7 QA + 4 BA)
+
+**QA Team:**
 
 | Agent | Expertise | Model |
 |-------|-----------|-------|
-| **qa-lead** | Orchestration, JIRA, approvals | Sonnet (fast) |
-| **qa-frontend-expert** | Storefront, checkout, mobile | Opus (smart) |
-| **qa-backend-expert** | APIs, Admin, modules | Opus (smart) |
-| **qa-testing-expert** | Interactive testing, debugging | Opus (smart) |
-| **test-management** | Test plans, coverage | Sonnet (fast) |
-| **ui-ux-expert** | Storybook, accessibility | Sonnet (fast) |
+| **qa-lead-orchestrator** | Coordination, JIRA workflow, go/no-go decisions | Sonnet (fast) |
+| **qa-frontend-expert** | Storefront, checkout, mobile, cross-browser | Opus (smart) |
+| **qa-backend-expert** | REST APIs, GraphQL xAPI, Admin SPA, modules | Opus (smart) |
+| **qa-testing-expert** | Interactive testing, Figma comparison, debugging | Opus (smart) |
+| **test-management-specialist** | Test planning, case writing, 18 domain checklists | Sonnet (fast) |
+| **ui-ux-expert** | Storybook (55 components), WCAG 2.1 AA | Sonnet (fast) |
+| **regression-orchestrator** | Parallel 36-suite regression, quality gates | Sonnet (fast) |
 
-**Speaker notes:** Think of these as your AI team members. Each one has deep domain knowledge encoded in their definition file. You just tell them what to test.
+**BA Team:**
+
+| Agent | Expertise | Model |
+|-------|-----------|-------|
+| **ba-system-analyzer** | Repo structure, module inventory, user flows | Sonnet |
+| **ba-api-specialist** | API surface analysis via Postman/Swagger | Sonnet |
+| **ba-story-writer** | Agile stories with BDD acceptance criteria | Sonnet |
+| **ba-doc-writer** | User docs, admin guides, API quick-start | Sonnet |
+
+**Speaker notes:** Think of these as your AI team members. The QA team tests everything, while the BA team handles analysis and documentation. Each agent carries hundreds of lines of domain knowledge encoded in its definition file. You just tell them what to do.
 
 ---
 
@@ -223,23 +242,25 @@ Phase 5: Tear Down & Cleanup
 
 ## Slide 12: Demo 3 - Multi-Browser Testing
 
-**Title:** One Prompt, Four Browsers
+**Title:** One Prompt, Three Browsers
 
 **Demo instructions:**
-1. Show `.mcp.json` with 4 Playwright servers
-2. Run same test in WebKit (Safari engine)
+1. Show `.mcp.json` with 3 Playwright servers (Chrome, Firefox, Edge)
+2. Run same test in Firefox
 3. Compare with Chrome result
 
 **Key point:** Each agent gets its own browser:
 
 | Agent | Browser |
 |-------|---------|
-| qa-frontend-expert | Chrome |
-| qa-backend-expert | Edge |
-| qa-testing-expert | Firefox |
-| ui-ux-expert | WebKit (Safari) |
+| qa-frontend-expert | Chrome (playwright-chrome) |
+| qa-backend-expert | Edge (playwright-edge) |
+| qa-testing-expert | Firefox (playwright-firefox) |
+| ui-ux-expert | Chrome DevTools MCP |
 
-**Speaker notes:** When we run 4 agents in parallel, each gets its own browser session. They don't interfere with each other. That's 4x testing speed.
+**Note:** WebKit is NOT supported on Windows. We use 3 Playwright browsers (Chrome, Firefox, Edge) + Chrome DevTools MCP. Max 3 concurrent browser agents.
+
+**Speaker notes:** When we run 3 agents in parallel, each gets its own isolated browser session. They don't interfere with each other — separate cookies, navigation, and state. That's 3x testing speed.
 
 ---
 
@@ -268,11 +289,12 @@ Phase 5: Tear Down & Cleanup
 
 **What CLAUDE.md gives Claude:**
 
-- All MCP server configurations
-- 14 regression suites with priorities
+- All 9 MCP server configurations
+- 36 regression suites with priorities
 - 10 critical revenue flows
 - Agent-to-browser assignment matrix
-- 29 environment variable descriptions
+- 33 environment variable descriptions
+- 18 skills and 9 commands reference
 - Bug report format and conventions
 
 **Speaker notes:** This single file transforms Claude from a generic assistant into a Virto Commerce QA expert. Without it, you'd have to explain everything in every conversation.
@@ -304,7 +326,7 @@ Phase 5: Tear Down & Cleanup
 
 **Title:** IDE Integration Highlights
 
-- **Slash commands:** `/agents`, `/compact`, `/help`
+- **Slash commands:** `/qa-smoke`, `/qa-test`, `/qa-regression`, `/qa-status`, `/qa-env-check`, etc.
 - **@-mentions:** `@regression/suites/01-smoke-tests.csv` to reference files
 - **Inline diffs:** Accept/reject file changes visually
 - **Conversation history:** Reference past test sessions
@@ -393,12 +415,14 @@ Expected Result:
 **Title:** Remember These
 
 1. **No-code testing** - Write tests in English, not JavaScript
-2. **Specialized agents** - 6 domain experts, just ask them
-3. **Multi-browser** - 4 browsers simultaneously
+2. **Specialized agents** - 11 domain experts (7 QA + 4 BA), just ask them
+3. **Multi-browser** - 3 browsers simultaneously (Chrome, Firefox, Edge)
 4. **JIRA integrated** - Bug reports from your IDE
 5. **CLAUDE.md** - One file = project-expert Claude
+6. **18 skills** - Built-in methodology (ISTQB, SBTM, WCAG, risk-based testing)
+7. **9 slash commands** - `/qa-smoke`, `/qa-test`, `/qa-regression`, etc.
 
-**Speaker notes:** If you remember nothing else, remember these five things. They'll save you hours every week.
+**Speaker notes:** If you remember nothing else, remember these seven things. They'll save you hours every week.
 
 ---
 
@@ -429,12 +453,14 @@ Reporting:
 
 | Trigger | Suite | Time |
 |---------|-------|------|
-| Every deploy | Smoke (01) | 30 min |
-| Sprint release | Critical (01,04,05,06,08) | 3-4 hrs |
-| Major release | Full regression (00) | 4-5 hrs parallel |
-| Quarterly | A11y + i18n + browsers (09,10,12) | 11 hrs |
+| Every deploy | Smoke (01) | `/qa-regression smoke` | ~15 min |
+| Sprint release | Critical P0 (01,06,08,14) | `/qa-regression critical` | ~2 hrs |
+| Sprint release | Sprint suites (26 suites) | `/qa-regression sprint` | ~4 hrs |
+| Major release | Full regression (all 36) | `/qa-regression full` | ~8 hrs parallel |
+| Daily (CI) | Smoke (01) | GitHub Actions Mon-Fri 6AM UTC | Automated ($5) |
+| Weekly (CI) | Full (all 36) | GitHub Actions Sunday 2AM UTC | Automated ($80) |
 
-**Speaker notes:** Smoke tests after every deployment - that's 12 test cases, 30 minutes. For releases, we run the critical path suites. Full regression runs automatically via GitHub Actions CI/CD.
+**Speaker notes:** Smoke tests after every deployment - that's 12 P0 test cases, ~15 minutes. For sprint releases, we run 26 suites. Full regression covers all 36 suites (1,274 tests). CI runs automatically via GitHub Actions with Docker + Claude Agent SDK.
 
 ---
 
@@ -446,13 +472,18 @@ Reporting:
 |------|-------|
 | Setup guide | `README.md` |
 | Project context | `CLAUDE.md` |
-| Test suites | `regression/suites/README.md` |
+| Repo navigation | `INDEX.md` |
+| Architecture presentation | `docs/presentation/agentic-qa-workflow.md` |
+| Quick reference | `docs/agentic-qa-cheatsheet.md` |
+| Decision tree | `.claude/ROUTING.md` |
+| Test suites | `regression/suites/` (36 CSV files) |
 | Prompt templates | `docs/prompts/` |
+| Skills & methodology | `.claude/skills/` (18 skills) |
 | Test data | `test-data/README.md` |
 | CI/CD | `ci/README.md` |
-| Questions | QA Slack channel |
+| Questions | QA Teams channel |
 
-**Speaker notes:** Everything is documented in the repo. Start with README.md if you need to re-setup anything. Use the Slack channel for questions.
+**Speaker notes:** Everything is documented in the repo. Start with README.md if you need to re-setup anything. The cheatsheet and ROUTING.md are great daily references. Use the Teams channel for questions.
 
 ---
 
@@ -469,7 +500,7 @@ Reporting:
 - Week 2: Try automated CI regression
 - Month 1: Create your own custom agent
 
-**Speaker notes:** Thank you all! The workshop recording and template files will be shared in Slack. Start with daily smoke tests this week. Any questions?
+**Speaker notes:** Thank you all! The workshop recording and template files will be shared in Teams. Start with daily smoke tests this week — just type `/qa-smoke`. Any questions?
 
 ---
 
@@ -479,10 +510,11 @@ Prepare these screenshots as backup visuals for slides:
 
 1. **VS Code with Claude Code panel open** - for Slide 1/title
 2. **Browser automation in action** - Claude driving a browser (for Slide 8)
-3. **Agent list output** (`/agents` command) - for Slide 10
+3. **Agent list output** - 11 agents displayed (for Slide 10)
 4. **JIRA ticket fetched in Claude Code** - for Slide 13
 5. **CLAUDE.md open in editor** - for Slide 14
 6. **Plan Mode output** - for Slide 15
-7. **Inline diff view** - for Slide 16
+7. **Slash commands in action** - `/qa-smoke`, `/qa-status` (for Slide 16)
 8. **GitHub Actions regression workflow** - for Slide 23
-9. **Generated regression report** - for Slide 23
+9. **Teams Adaptive Card notification** - for Slide 23
+10. **Generated regression report** - for Slide 23

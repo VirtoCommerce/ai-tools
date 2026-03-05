@@ -35,10 +35,4 @@ Cross-layer architecture knowledge shared by all QA agents.
 
 ## Data Cascade Effects
 
-Where the worst cross-module bugs hide:
-- Delete catalog -> products, prices, search index entries should cascade-delete
-- Delete price list -> storefront shows $0 + "Unavailable", can't add to cart
-- Cancel order -> inventory adjusts only if "Adjust inventory" flag enabled
-- Disable module -> API returns 404, Admin section disappears, dependent modules may break
-- Change product -> search index stale until rebuild (event-based indexation may or may not trigger)
-- Change FFC stock to 0 -> storefront "Sold out" label, "Add to cart" disabled
+> **Moved to:** `.claude/agents/knowledge/business-logic.md` § Cross-Domain Invariants (BL-CROSS) — business-framed cascade rules with verification instructions and violation signals.
