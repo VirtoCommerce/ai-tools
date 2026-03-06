@@ -1,0 +1,119 @@
+{
+  "batch": "A-backend",
+  "agent": "qa-backend-expert",
+  "timestamp": "2026-03-06T12:00:00Z",
+  "domains": ["PRICING", "ORDERS", "AUTH"],
+  "gapsAddressed": 7,
+  "casesGenerated": 23,
+  "suitesModified": ["19", "20", "08"],
+  "caseIds": [
+    "PRICE-059",
+    "PRICE-060",
+    "PRICE-061",
+    "PRICE-062",
+    "PRICE-063",
+    "PRICE-064",
+    "ORD-077",
+    "ORD-078",
+    "ORD-079",
+    "ORD-080",
+    "ORD-081",
+    "ORD-082",
+    "ORD-083",
+    "ORD-084",
+    "ORD-085",
+    "ORD-086",
+    "ORD-087",
+    "ORD-088",
+    "ORD-089",
+    "ORD-090",
+    "SEC-SESSION-001",
+    "SEC-SESSION-002",
+    "SEC-SESSION-003"
+  ],
+  "idRanges": {
+    "PRICING": {
+      "prefix": "PRICE",
+      "previousHighest": "PRICE-058",
+      "newRange": "PRICE-059 to PRICE-064",
+      "count": 6
+    },
+    "ORDERS": {
+      "prefix": "ORD",
+      "previousHighest": "ORD-076",
+      "newRange": "ORD-077 to ORD-090",
+      "count": 14
+    },
+    "AUTH": {
+      "prefix": "SEC-SESSION",
+      "previousHighest": "SEC-SENSITIVE-002",
+      "newRange": "SEC-SESSION-001 to SEC-SESSION-003",
+      "count": 3
+    }
+  },
+  "gapDetails": [
+    {
+      "gapId": "BK-GAP-001",
+      "title": "Discount stacking order",
+      "invariant": "BL-PRICE-001",
+      "score": 10.0,
+      "priority": "Critical",
+      "casesGenerated": 3,
+      "caseIds": ["PRICE-059", "PRICE-060", "PRICE-061"]
+    },
+    {
+      "gapId": "BK-GAP-002",
+      "title": "Tax calculation after discounts",
+      "invariant": "BL-PRICE-002",
+      "score": 10.0,
+      "priority": "Critical",
+      "casesGenerated": 3,
+      "caseIds": ["PRICE-062", "PRICE-063", "PRICE-064"]
+    },
+    {
+      "gapId": "BK-GAP-003",
+      "title": "Payment state machine illegal transitions",
+      "invariant": "BL-ORD-001/006",
+      "score": 8.1,
+      "priority": "High",
+      "casesGenerated": 4,
+      "caseIds": ["ORD-077", "ORD-078", "ORD-079", "ORD-080"]
+    },
+    {
+      "gapId": "BK-GAP-004",
+      "title": "Refund boundary conditions",
+      "invariant": "BL-ORD-004",
+      "score": 8.1,
+      "priority": "High",
+      "casesGenerated": 3,
+      "caseIds": ["ORD-081", "ORD-082", "ORD-083"]
+    },
+    {
+      "gapId": "BK-GAP-005",
+      "title": "Shipment state machine illegal transitions",
+      "invariant": "BL-ORD-007",
+      "score": 8.0,
+      "priority": "High",
+      "casesGenerated": 3,
+      "caseIds": ["ORD-084", "ORD-085", "ORD-086"]
+    },
+    {
+      "gapId": "BK-GAP-007",
+      "title": "Order placement multi-system side effects",
+      "invariant": "BL-CROSS-005",
+      "score": 9.5,
+      "priority": "Critical",
+      "casesGenerated": 4,
+      "caseIds": ["ORD-087", "ORD-088", "ORD-089", "ORD-090"]
+    },
+    {
+      "gapId": "BK-GAP-010",
+      "title": "Session expiry during checkout",
+      "invariant": "BL-AUTH-001",
+      "score": 8.4,
+      "priority": "High",
+      "casesGenerated": 3,
+      "caseIds": ["SEC-SESSION-001", "SEC-SESSION-002", "SEC-SESSION-003"]
+    }
+  ]
+}

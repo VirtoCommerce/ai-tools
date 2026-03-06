@@ -1,0 +1,14 @@
+contact_id,org_id,first_name,last_name,full_name,email,phone,title,department,status,time_zone,default_language,currency_code,test_purpose
+CON-001,ORG-001,John,Mitchell,John Mitchell,john.mitchell@acme-industrial.test,+1-212-555-1010,VP of Procurement,Purchasing,Active,America/New_York,en-US,USD,Org admin — full permissions
+CON-002,ORG-001,Sarah,Chen,Sarah Chen,sarah.chen@acme-industrial.test,+1-212-555-1020,Senior Buyer,Purchasing,Active,America/New_York,en-US,USD,Buyer role — can place orders and manage cart
+CON-003,ORG-001,Mike,Torres,Mike Torres,mike.torres@acme-industrial.test,+1-212-555-1030,Procurement Analyst,Purchasing,Active,America/New_York,en-US,USD,Viewer role — read-only access
+CON-004,ORG-001,Lisa,Wang,Lisa Wang,lisa.wang@acme-industrial.test,+1-212-555-1040,Regional Buyer,Purchasing,Active,America/Chicago,en-US,USD,Second buyer — multi-buyer approval workflow
+CON-005,ORG-001,James,Brown,James Brown,james.brown@acme-industrial.test,+1-212-555-1050,Accounts Payable,Finance,Inactive,America/New_York,en-US,USD,Inactive contact — should not be able to login
+CON-006,ORG-002,Emily,Johnson,Emily Johnson,emily.johnson@techflow.test,+1-415-555-2010,IT Director,IT,Active,America/Los_Angeles,en-US,USD,TechFlow org admin — multi-org testing
+CON-007,ORG-002,David,Kim,David Kim,david.kim@techflow.test,+1-415-555-2020,Systems Engineer,IT,Active,America/Los_Angeles,en-US,USD,TechFlow buyer — cross-org order separation
+CON-008,ORG-003,Carlos,Rodriguez,Carlos Rodriguez,carlos.rodriguez@buildright.test,+1-713-555-3010,Safety Manager,Operations,Active,America/Chicago,en-US,USD,BuildRight org admin — safety products focus
+CON-009,ORG-003,Angela,Foster,Angela Foster,angela.foster@buildright.test,+1-713-555-3020,Purchasing Agent,Procurement,Active,America/Chicago,en-US,USD,BuildRight buyer — industrial products
+CON-010,ORG-004,Robert,Lee,Robert Lee,robert.lee@acme-west.test,+1-310-555-4010,West Coast Manager,Operations,Active,America/Los_Angeles,en-US,USD,Child org (Acme West) admin — hierarchy test
+CON-011,ORG-005,Hans,Mueller,Hans Mueller,hans.mueller@acme-eu.test,+49-30-555-5010,EU Operations Lead,Operations,Active,Europe/Berlin,de-DE,EUR,Child org (Acme EU) admin — multi-language/currency
+CON-012,ORG-006,Tom,Blocked,Tom Blocked,tom.blocked@suspended-corp.test,+1-555-555-6010,Manager,Operations,Active,America/New_York,en-US,USD,Contact in suspended org — access should be denied
+CON-013,ORG-008,Solo,Admin,Solo Admin,solo.admin@singleuser.test,+1-555-555-8010,Owner,Management,Active,America/New_York,en-US,USD,Single user in org — minimal B2B setup

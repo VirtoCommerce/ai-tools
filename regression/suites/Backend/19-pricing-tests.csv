@@ -651,3 +651,96 @@ Step 2: Delete assignment
 4. Click 'Delete'
 5. Confirm deletion
 6. Verify assignment deleted","Both steps: Delete button visible on header. Price list deleted. Assignment deleted.",C338381,None
+PRICE-059,Discount stacking — coupon applies to sale price not list price,Pricing > Discount Stacking,Functional,Critical,10min,"Admin logged in to Backend and Storefront
+Product_1 has list price = $100 and sale price = $70
+Coupon code SAVE10 configured for 10% discount
+Price list assigned to store with product_1","1. Navigate to Storefront as logged-in customer
+2. Add Product_1 to cart (qty=1)
+3. Verify cart shows sale price $70 as the line item price
+4. Apply coupon code SAVE10
+5. Verify discount amount in cart response
+6. Execute xAPI cart query and inspect cart.items[].placedPrice and cart.items[].discountAmount
+7. Calculate expected: discount = 10% of $70 = $7.00 (NOT 10% of $100)
+8. Verify cart.items[].extendedPrice = $63.00","1. Cart line item placedPrice = $70.00 (sale price, not list price)
+2. Coupon discount = $7.00 (10% of sale price $70)
+3. Coupon discount is NOT $10.00 (10% of list price $100)
+4. extendedPrice = $63.00
+5. Discount stacking order: sale price replaces list price first, then coupon applies to sale price",Coverage Gap Analysis BL-PRICE-001,Generated
+PRICE-060,Discount stacking — coupon applies to tier price at threshold qty,Pricing > Discount Stacking,Functional,Critical,10min,"Admin logged in to Backend and Storefront
+Product_1 has list price = $100
+Tier price configured: qty >= 5 triggers price $80 per unit
+Coupon code SAVE10 configured for 10% discount
+Price list with tier pricing assigned to store","1. Navigate to Storefront as logged-in customer
+2. Add Product_1 to cart with qty = 5
+3. Verify cart shows tier price $80 per unit as the line item price
+4. Apply coupon code SAVE10
+5. Execute xAPI cart query and inspect cart.items[].placedPrice and cart.items[].discountAmount
+6. Calculate expected: discount = 10% of $80 = $8.00 per unit, total discount = $40.00
+7. Verify cart.items[].extendedPrice = $360.00 (5 x $72)","1. Cart line item placedPrice = $80.00 (tier price at qty threshold)
+2. Coupon discount per unit = $8.00 (10% of tier price $80)
+3. Coupon discount is NOT $10.00 per unit (10% of list price $100)
+4. Total line extendedPrice = $360.00
+5. Discount stacking order: tier price activates at threshold, then coupon applies to tier price",Coverage Gap Analysis BL-PRICE-001,Generated
+PRICE-061,Discount stacking — sale + tier + coupon all three layers,Pricing > Discount Stacking,Functional,Critical,15min,"Admin logged in to Backend and Storefront
+Product_1 configured with:
+- List price = $200
+- Sale price = $150
+- Tier price: qty >= 10 triggers price $120 per unit
+- Coupon SAVE20 configured for 20% discount
+Price list assigned to store","1. Navigate to Storefront as logged-in customer
+2. Add Product_1 to cart with qty = 10
+3. Verify cart shows tier price $120 per unit (tier overrides sale at threshold)
+4. Apply coupon code SAVE20
+5. Execute xAPI cart query and inspect cart.items[].placedPrice, cart.items[].discountAmount, cart.items[].extendedPrice
+6. Calculate expected: placedPrice = $120, discount = 20% of $120 = $24 per unit
+7. Verify total extendedPrice = 10 x ($120 - $24) = $960.00
+8. Verify cart.subTotal and cart.total reflect correct stacked discounts","1. placedPrice = $120.00 (tier price at qty >= 10)
+2. Coupon discount per unit = $24.00 (20% of $120 tier price)
+3. extendedPrice = $960.00 for the line
+4. All three discount layers stack correctly: sale replaces list, tier replaces sale at threshold, coupon applies to final tier price
+5. cart.subTotal and cart.total are mathematically consistent",Coverage Gap Analysis BL-PRICE-001,Generated
+PRICE-062,Tax calculated after coupon discount applied,Pricing > Tax Calculation,Functional,Critical,10min,"Admin logged in to Backend and Storefront
+Product_1 has price = $100
+Tax rate = 10% configured for shipping address region
+Coupon FLAT20 configured for $20 flat discount
+Tax calculation enabled for store","1. Navigate to Storefront as logged-in customer
+2. Add Product_1 to cart (qty=1)
+3. Proceed to checkout and set shipping address to taxable region
+4. Verify tax before coupon: taxTotal should = 10% of $100 = $10.00
+5. Apply coupon code FLAT20 ($20 discount)
+6. Verify subtotal after discount = $80.00
+7. Execute xAPI cart query and inspect cart.taxTotal
+8. Calculate expected: taxTotal = 10% of $80 = $8.00
+9. Verify taxTotal is NOT $10.00 (tax on pre-discount amount)","1. Before coupon: taxTotal = $10.00 (10% of $100)
+2. After coupon: subtotal = $80.00, taxTotal = $8.00 (10% of $80)
+3. Tax is calculated AFTER discount, not before
+4. Tax base = (line total after discounts), confirming BL-PRICE-002
+5. taxTotal is NOT $10.00 after coupon application",Coverage Gap Analysis BL-PRICE-002,Generated
+PRICE-063,Tax recalculates when coupon is removed,Pricing > Tax Calculation,Functional,Critical,10min,"Admin logged in to Backend and Storefront
+Product_1 has price = $100
+Tax rate = 10% configured for shipping address region
+Coupon FLAT20 applied to cart ($20 discount)
+Cart currently shows taxTotal = $8.00","1. Navigate to Storefront cart with coupon FLAT20 already applied
+2. Verify current state: subtotal = $80, taxTotal = $8.00
+3. Remove coupon code FLAT20 from cart
+4. Execute xAPI cart query and inspect cart.taxTotal
+5. Verify subtotal reverts to $100.00
+6. Calculate expected: taxTotal = 10% of $100 = $10.00
+7. Verify taxTotal has recalculated to $10.00","1. After coupon removal: subtotal = $100.00
+2. taxTotal recalculates to $10.00 (10% of $100)
+3. Tax base correctly reverts to pre-coupon amount
+4. No stale tax amount remains from discounted calculation",Coverage Gap Analysis BL-PRICE-002,Generated
+PRICE-064,Tax base uses post-tier-pricing amount,Pricing > Tax Calculation,Functional,Critical,10min,"Admin logged in to Backend and Storefront
+Product_1 has list price = $50
+Tier price: qty >= 10 triggers price $35 per unit
+Tax rate = 8% configured for shipping address region
+Tax calculation enabled for store","1. Navigate to Storefront as logged-in customer
+2. Add Product_1 to cart with qty = 10
+3. Proceed to checkout and set shipping address to taxable region
+4. Verify placedPrice = $35 per unit (tier price)
+5. Execute xAPI cart query and inspect cart.taxTotal
+6. Calculate expected: line total = 10 x $35 = $350, taxTotal = 8% of $350 = $28.00
+7. Verify taxTotal is NOT 8% of $500 ($50 x 10 = $500 at list price) = $40.00","1. Line total = $350.00 (10 x $35 tier price)
+2. taxTotal = $28.00 (8% of $350)
+3. Tax is NOT $40.00 (8% of list-price total $500)
+4. Tax base uses post-tier-pricing amount, confirming BL-PRICE-002",Coverage Gap Analysis BL-PRICE-002,Generated

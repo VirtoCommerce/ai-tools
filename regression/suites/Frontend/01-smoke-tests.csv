@@ -123,3 +123,38 @@ SMK-014,Quantity Stepper - PDP Increment and Cart Sync,Smoke > Cart,Functional,C
 - Cart page shows correct quantity synced from PDP
 - Cart line total and Order Summary recalculate on quantity change
 - No duplicate line items created",QS-PDP-001,Manual
+SMK-015,B2C Variation Selection - Select Option and Add to Cart,Smoke > Variations,Functional,Critical,5m,"User logged in. Product with VirtoFrontend_UI_Layout=B2C property exists in catalog with color or size variations (2+ in-stock variants). Storefront accessible at ${FRONT_URL}.","1. Navigate to a B2C variation product PDP (e.g., in /products-with-options/ category)
+2. Verify the 'Options' section is displayed (B2C selector layout)
+3. Verify 'Add to Cart' button is disabled before any option is selected
+4. Click one available option (e.g., color swatch 'Blue' or size button 'M')
+5. Verify the option shows selected state (border highlight or checkmark)
+6. Verify product price updates to the selected variant's price
+7. Verify main product image updates to the variant image
+8. Verify 'Add to Cart' button is now enabled
+9. Click 'Add to Cart'
+10. Verify success notification appears
+11. Navigate to /cart
+12. Verify cart line item shows the variant detail (e.g., 'T-Shirt — Color: Blue') not just parent product name","- Options section visible on PDP; standard variation table/list is hidden
+- 'Add to Cart' disabled before selection (checklist B.4)
+- Clicking option shows selected visual state (checklist B.1)
+- Price updates immediately to selected variant price (checklist C.1)
+- Product image switches to variant image (checklist E.1)
+- 'Add to Cart' enabled after selection (checklist B.4)
+- Success notification shown after clicking 'Add to Cart'
+- Cart badge increments
+- Cart line item shows variant attribute details, not just parent name (checklist D.2)
+- No console errors during entire flow",B2C-VAR-001 B2C-VAR-002 C411037 C411052 C411051,Manual
+SMK-016,B2C Variation - Price and Stock Update on Selection,Smoke > Variations,Functional,Critical,4m,"User logged in. B2C variation product exists with at least 2 variants that have different prices. Storefront accessible at ${FRONT_URL}.","1. Navigate to a B2C variation product PDP that has variants with different prices
+2. Note the 'From $X' price or default displayed price before any selection
+3. Click the first available option (e.g., Size 'S')
+4. Note the displayed price after selection
+5. Click a different option (e.g., Size 'L') that has a higher or lower price
+6. Verify price updates to the second variant's price
+7. Verify stock indicator (In stock / Out of stock) reflects the selected variant's stock
+8. Verify the SKU displayed on the page updates to the selected variant's SKU","- Price displayed before selection: 'From $X' or base price
+- After selecting option 1: price updates to that variant's price immediately (no reload)
+- After selecting option 2: price updates again to the new variant's price
+- Price always shows 2 decimal places (e.g., $24.99 not $24.9)
+- Stock indicator is specific to selected variant (not aggregate)
+- SKU code on page updates to variant SKU
+- No console errors",B2C-VAR-006 B2C-VAR-007 C411052,Manual

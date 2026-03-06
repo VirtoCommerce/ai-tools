@@ -1,0 +1,6 @@
+role_id,role_name,role_type,description,permissions,test_purpose
+ROLE-001,Organization Administrator,Organization,"Full org management — users, contacts, addresses, orders, purchasing","org:manage, org:members:manage, org:orders:view, org:orders:create, catalog:view, cart:manage, checkout:place_order, addresses:manage, quotes:manage",Org admin role — full permissions
+ROLE-002,Purchasing Agent,Organization,"Can browse catalog, manage cart, place orders, view own orders","catalog:view, cart:manage, checkout:place_order, org:orders:view_own, addresses:view, quotes:request",Buyer role — purchasing without org management
+ROLE-003,Catalog Viewer,Organization,"Read-only access — browse catalog and view prices only","catalog:view, org:orders:view_own",Viewer role — no purchasing (RBAC negative test)
+ROLE-004,Finance Manager,Organization,"View all orders, manage payment methods, no product purchasing","org:orders:view, org:orders:export, payment_methods:manage, addresses:view",Finance role — order visibility without purchasing
+ROLE-005,Custom Restricted,Organization,"Minimal custom role — only catalog browse, no cart access","catalog:view",Minimal role — RBAC boundary test (cannot add to cart)

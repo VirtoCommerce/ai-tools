@@ -162,10 +162,34 @@ Blades are Virto's sliding modal panels — the core UI pattern in the Angular A
 
 This layer gives you technique. You know how to find backend bugs, not just where to look.
 
-### API Testing Strategy (order matters)
+### API Testing Strategy (two-tier)
+
+Use the right tool for each scenario:
+
+| Scenario | Tool | Why |
+|----------|------|-----|
+| Structured regression (suites 14, 15) | Postman MCP — collection with test scripts, `runCollection` | Repeatable, structured pass/fail results |
+| CRUD + state machine workflows (order lifecycle) | Postman MCP — chained requests with pre-request scripts | Extract IDs between steps, assert state transitions |
+| RBAC permission matrix | Postman MCP — same collection, swap auth per role via environment | Test all roles without rebuilding requests |
+| GraphQL xAPI queries | Postman MCP — `graphql` mode requests | Native GraphQL support, variable injection |
+| Quick investigation / one-off calls | Browser → Swagger (`${BACK_URL}/docs/index.html`) or GraphiQL | Faster for probing, no collection overhead |
+| Admin SPA UI verification | Playwright (browser automation) | Blade UI requires DOM interaction |
+
+**Postman collection build pattern** (incremental, not monolithic):
+1. `createEnvironment` — set `baseUrl`, `storeId`, `authToken` as variables
+2. `createCollection` — structure with folders per domain (Auth, CRUD, Workflows, Permissions)
+3. `createCollectionRequest` — add requests one at a time with test scripts in `events[].script.exec`
+4. `runCollection` — execute and get structured results (use `environmentId` for env-specific runs)
+
+**Test script conventions for Postman requests:**
+- Pre-request: obtain/refresh OAuth2 token, set dynamic variables (`pm.collectionVariables.set`)
+- Test: assert status code, response schema shape, business invariants, response time < threshold
+- Chain: extract IDs from response (`pm.response.json().id`) into variables for next request
+
+**Execution order (regardless of tool):**
 
 1. **Auth first** — obtain OAuth2 token, verify expiry, test refresh flow
-2. **CRUD foundation** — create test entities via API, verify persistence
+2. **CRUD foundation** — create test entities, verify persistence
 3. **Complex workflows** — multi-step: order lifecycle, import/export round-trip
 4. **Edge cases** — invalid input, missing required fields, boundary values, concurrent updates
 5. **Permissions** — repeat critical tests with restricted roles (Store Manager, Customer, Anonymous)
@@ -215,6 +239,7 @@ Skills are methodology libraries with supporting reference files. Read the suppo
 
 | When | Skill → File to Read | What It Gives You |
 |------|---------------------|-------------------|
+| Seeding test data before testing | `/qa-seed-data` → `test-data-generation.md` | API endpoints, entity schemas, Postman seed/teardown collections |
 | Starting any test session | `/qa-evidence` → `evidence-capture-policy.md` | Capture budgets, report tiers |
 | Deriving test cases from JIRA | `/qa-test-design` → `test-design-techniques.md` | EP, BVA, decision tables, state transitions |
 | Prioritizing test depth | `/qa-risk` → `risk-prioritization-framework.md` | 5x5 risk matrix, depth allocation |
@@ -244,7 +269,8 @@ This layer defines your operating boundaries. What you can perceive, what you ca
 
 | Channel | Tool | Reliable For |
 |---------|------|-------------|
-| API responses | Postman MCP, `browser_network_requests` | Status codes, response bodies, headers, timing |
+| API responses | Postman MCP (`runCollection` results), `browser_network_requests` | Status codes, response bodies, headers, timing, test script pass/fail |
+| Postman collections | Postman MCP (`getCollection`, `getCollections`) | Existing test suites, reusable requests, saved environments |
 | Admin SPA DOM | `browser_snapshot` | Blade state, form values, entity data, button visibility |
 | Admin SPA visual | `browser_take_screenshot` | Layout, blade stacking, error states |
 | Console | `browser_console_messages` | Angular errors, API failure traces |
@@ -256,7 +282,8 @@ This layer defines your operating boundaries. What you can perceive, what you ca
 
 ### Action Space
 
-- **API**: Send REST requests (Postman MCP), execute GraphQL queries (via browser or Postman)
+- **API (Postman MCP)**: `createCollection` (structured test suites), `createCollectionRequest` (individual requests with test scripts), `createEnvironment` (env variables per QA/staging), `runCollection` (execute and get pass/fail results), `generateCollection` (from OpenAPI spec). Supports `graphql` mode for xAPI queries. Use for regression, CRUD workflows, RBAC matrix, and chained multi-step flows
+- **API (Browser)**: Swagger (`${BACK_URL}/docs/index.html`) and GraphiQL (`${BACK_URL}/ui/graphiql`) for quick investigation and one-off exploratory calls
 - **Browser**: navigate, click, type, hover, scroll, screenshot (Admin SPA testing)
 - **Browsers**: `playwright-edge` (primary for Admin), `playwright-chrome`, `playwright-firefox`
 - **Evidence**: screenshots, API request/response capture, console logs
@@ -283,6 +310,7 @@ This layer defines your operating boundaries. What you can perceive, what you ca
 | White Labeling (mainMenuLinks, footerLinks, DB schema, Admin SPA, VCST-4637) | `.claude/agents/knowledge/white-labeling.md` |
 | Store Settings (StoreSettingsType, feature flags, module settings, REST/xAPI) | `.claude/agents/knowledge/store-settings.md` |
 | Catalog (B2B-mixed virtual catalog, Admin CRUD, xCatalog GraphQL, filter syntax, suites 03 & 16) | `.claude/agents/knowledge/catalog.md` |
+| Test Data Generation (API endpoints, entity schemas, seed profiles, Postman collection patterns, teardown) | `.claude/agents/knowledge/test-data-generation.md` |
 
 ### Judge — Pass/Fail Classification
 
@@ -337,7 +365,7 @@ Ambiguous examples: new field in API response (breaking change or intentional ad
 | `playwright-chrome` | Cross-browser Admin validation |
 | `playwright-firefox` | Cross-browser Admin validation |
 | Chrome DevTools MCP | Network inspection, console debugging |
-| Postman MCP | API collection execution, response validation |
+| Postman MCP | API collections (create, build requests with test scripts, run), environments, GraphQL xAPI testing |
 | Atlassian MCP | JIRA tickets, bug filing |
 | GitHub MCP | PRs (`get_pull_request`, `get_pull_request_files`), code search (`search_code`) |
 | context7 MCP | VC documentation lookup (`resolve-library-id`, `query-docs`) |

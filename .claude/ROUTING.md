@@ -8,9 +8,11 @@ Quick decision tree for commands, skills, and agents.
 |--------------|-----|------|
 | **Run smoke tests** | `/qa-smoke` | Command |
 | **Run regression suites** | `/qa-regression [smoke\|critical\|sprint\|full\|IDs]` | Command |
+| **Run autonomous regression** | `/qa-regression [scope] --autonomous` | Command |
 | **Test a JIRA ticket/feature/PR** | `/qa-test VCST-XXXX` | Command |
 | **Run exploratory testing session** | `/qa-exploratory [checkout\|catalog\|B2B\|mobile]` | Command |
 | **Get a test checklist for a domain** | `/qa-checklist domain` | Skill |
+| **Analyze test coverage gaps** | `/qa-coverage-gap analyze` | Skill |
 | **File or investigate a bug** | `/qa-bug description` | Command |
 | **Check environment health** | `/qa-env-check` | Command |
 | **See QA dashboard** | `/qa-status` | Command |
@@ -22,7 +24,7 @@ Quick decision tree for commands, skills, and agents.
 ### Run Tests (Commands — execute immediately)
 - `/qa-smoke` — Daily smoke (12 P0 tests, GO/NO-GO)
 - `/qa-test` — Test a ticket, feature, or PR
-- `/qa-regression` — Run regression suites in parallel
+- `/qa-regression` — Run regression suites in parallel (add `--autonomous` for Agent Teams mode with failure recovery + JIRA)
 - `/qa-exploratory` — Guided exploratory session
 - `/qa-bug` — Reproduce and document bugs
 
@@ -32,6 +34,7 @@ Quick decision tree for commands, skills, and agents.
 - `/qa-test-design` — Test case derivation (EP, BVA, decision tables)
 - `/qa-risk` — Risk-based prioritization (5x5 matrix)
 - `/qa-sbtm` — SBTM charters, heuristics, tours, debrief
+- `/qa-coverage-gap` — Autonomous coverage gap analysis and test case generation
 
 ### QA Methodology (Skills — process frameworks)
 - `/qa-process` — ISTQB 7-phase lifecycle
@@ -60,6 +63,7 @@ Quick decision tree for commands, skills, and agents.
 - `test-management-specialist` — Test planning, case writing, coverage
 - `ui-ux-expert` — Storybook, accessibility, design system
 - `regression-orchestrator` — Parallel regression, retries, consolidated reports
+- `autonomous-regression-orchestrator` — Agent Teams regression: token bucket, failure recovery, JIRA
 
 ## Cross-References
 
@@ -70,3 +74,4 @@ Quick decision tree for commands, skills, and agents.
 | `/qa-regression` | `/qa-metrics` | Regression results feed into quality gates |
 | `/qa-bug` | `/qa-investigate`, `/qa-defect` | Bug command uses investigation flow + defect templates |
 | `/qa-test` | `/qa-test-design`, `/qa-checklist`, `/qa-risk` | Test derives cases, applies domain checklists, and prioritizes based on risk |
+| `/qa-regression` | `/qa-coverage-gap` | Coverage gap analysis validates suite completeness before regression runs |

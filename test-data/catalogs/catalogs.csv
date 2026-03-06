@@ -1,0 +1,6 @@
+catalog_id,catalog_name,catalog_type,languages,default_language,is_active,linked_physical_catalogs,assigned_store,description,test_purpose
+CAT-PHYS-001,B2B-Electronics,Physical,"en-US,de-DE,fr-FR",en-US,Yes,,,Electronics physical catalog — source for B2B-mixed virtual,Primary physical catalog for electronics products
+CAT-PHYS-002,B2B-Industrial,Physical,"en-US,de-DE",en-US,Yes,,,Industrial supplies physical catalog — B2B-focused,Industrial/MRO products physical catalog
+CAT-PHYS-003,B2B-Office,Physical,"en-US,es-ES,fr-FR",en-US,Yes,,,Office supplies physical catalog,Office and workplace products
+CAT-VIRT-001,B2B-mixed,Virtual,"en-US,de-DE,fr-FR,es-ES",en-US,Yes,"B2B-Electronics,B2B-Industrial,B2B-Office",B2B-store,Virtual catalog aggregating all physical catalogs — assigned to B2B-store,Primary storefront catalog (mirrors actual QA env)
+CAT-VIRT-002,B2B-Electronics-Only,Virtual,"en-US,de-DE",en-US,Yes,B2B-Electronics,,Virtual catalog for electronics-only storefront,Single-source virtual catalog testing

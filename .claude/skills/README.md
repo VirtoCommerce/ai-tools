@@ -1,6 +1,6 @@
 # .claude/skills/ — Skill Directory
 
-> 18 skills organized in 3 category groups. Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
+> 19 skills organized in 3 category groups. Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
 
 ## Directory Structure
 
@@ -17,13 +17,15 @@
 │   │   └── xapi-query-ref.md
 │   └── vc-frontend/
 │       ├── SKILL.md                 # Storefront reference: URLs, navigation, product types, account structure
-│       └── sitemap.md               # Full site map (updated March 2026)
+│       ├── sitemap.md               # Full site map (updated March 2026)
+│       └── products.md              # Product types, xAPI fields, configurable sections, test data
 │
-├── testing/                         # Testing (6) — manual invocation
+├── testing/                         # Testing (8) — manual invocation
 │   ├── qa-storybook/
 │   │   ├── SKILL.md                 # Storybook visual regression
 │   │   ├── visual-regression-testing.md
-│   │   └── responsive-component-testing.md
+│   │   ├── responsive-component-testing.md
+│   │   └── how-to-test-storybook.md # Storybook testing reference guide
 │   ├── qa-accessibility/
 │   │   ├── SKILL.md                 # WCAG 2.1 AA accessibility audit
 │   │   └── wcag-accessibility-checklist.md
@@ -38,9 +40,15 @@
 │   │   ├── SKILL.md                 # Test case writing checklist creation
 │   │   ├── domain-checklists.md     # 18 domain checklists + Bug Fix Verification (158 items)
 │   │   └── checklist-creation-guide.md
-│   └── qa-api/
-│       ├── SKILL.md                 # REST API & GraphQL xAPI testing
-│       └── test-cases-api-graphql.md
+│   ├── qa-api/
+│   │   ├── SKILL.md                 # REST API & GraphQL xAPI testing
+│   │   └── test-cases-api-graphql.md
+│   ├── qa-coverage-gap/
+│   │   ├── SKILL.md                 # Autonomous test coverage gap analysis
+│   │   ├── coverage-gap-methodology.md
+│   │   └── feature-domain-map.md
+│   └── qa-seed-data/
+│       └── SKILL.md                 # Test data generation via Postman MCP (uses knowledge/test-data-generation.md)
 │
 ├── qa-methodology/                  # QA Methodology (8) — cross-team practices
 │   ├── qa-investigate/
@@ -86,18 +94,20 @@ Auto-invocable, read-only reference skills. No side effects.
 | `/vc-api` | xAPI & REST API query/mutation reference | xapi-query-ref.md |
 | `/vc-frontend` | Storefront reference: page URLs, navigation, product types, account structure, test data | sitemap.md |
 
-## Testing (6) — `testing/`
+## Testing (8) — `testing/`
 
 Manual invocation, delegates to specialist agents.
 
 | Skill | Delegates To | Supporting Files |
 |-------|-------------|-----------------|
-| `/qa-storybook` | ui-ux-expert | visual-regression-testing.md, responsive-component-testing.md |
+| `/qa-storybook` | ui-ux-expert | visual-regression-testing.md, responsive-component-testing.md, how-to-test-storybook.md |
 | `/qa-accessibility` | ui-ux-expert | wcag-accessibility-checklist.md |
 | `/qa-design` | ui-ux-expert | design-system-consistency.md, ux-heuristic-evaluation.md |
 | `/qa-plan` | test-management-specialist | e2e-scenario-catalog.md |
 | `/qa-checklist` | test-management-specialist | domain-checklists.md, checklist-creation-guide.md |
 | `/qa-api` | qa-backend-expert | test-cases-api-graphql.md |
+| `/qa-coverage-gap` | test-management-specialist | coverage-gap-methodology.md, feature-domain-map.md |
+| `/qa-seed-data` | qa-backend-expert | `knowledge/test-data-generation.md` (agent knowledge file) |
 
 ## QA Methodology (8) — `qa-methodology/`
 
@@ -145,23 +155,28 @@ qa-risk --> informs qa-test-design (technique selection by risk level)
 qa-risk --> informs qa-sbtm (charter prioritization)
 qa-metrics --> enforced by regression-orchestrator (gate evaluation)
 qa-sbtm --> references qa-risk (high-risk areas), qa-test-design (error guessing)
+qa-coverage-gap --> references qa-plan (E2E catalog), qa-checklist (domain coverage)
 qa-storybook, qa-accessibility, qa-design --> delegate to ui-ux-expert agent
 qa-plan --> delegates to test-management-specialist agent
 qa-api --> delegates to qa-backend-expert agent
+qa-coverage-gap --> delegates to test-management-specialist agent
 Learning loop: qa-investigate (bug) --> qa-defect (triage) --> qa-risk (update) --> qa-sbtm (charter) --> qa-metrics (coverage)
 ```
 
 ## Agent -> Skill Map
 
+> **Note:** All QA agents also reference auto-invocable `vc-knowledge` skills (`vc-docs`, `vc-module`, `vc-api`, `vc-frontend`) via their Skills Integration tables. These are omitted from the map below for brevity.
+
 | Agent | Skills Referenced |
 |-------|-----------------|
-| qa-lead-orchestrator | qa-risk, qa-metrics, qa-process |
-| qa-frontend-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm |
+| qa-lead-orchestrator | qa-risk, qa-metrics, qa-process, qa-defect, qa-evidence, qa-investigate, qa-checklist |
+| qa-frontend-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm, qa-design, qa-plan |
 | qa-backend-expert | qa-api, qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm |
-| qa-testing-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-sbtm |
-| ui-ux-expert | qa-storybook, qa-accessibility, qa-design, qa-evidence, qa-investigate |
-| test-management-specialist | qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-risk, qa-process |
+| qa-testing-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm, qa-design, qa-plan, qa-api |
+| ui-ux-expert | qa-storybook, qa-accessibility, qa-design, qa-evidence, qa-investigate, qa-defect |
+| test-management-specialist | qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-risk, qa-process, qa-sbtm, qa-metrics |
 | regression-orchestrator | qa-metrics (gate enforcement after runs) |
+| autonomous-regression-orchestrator | — (orchestration only, no skill references) |
 
 ## Frontmatter Reference
 

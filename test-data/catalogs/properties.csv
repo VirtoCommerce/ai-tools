@@ -1,0 +1,16 @@
+property_id,property_name,property_type,value_type,is_required,is_multivalue,is_dictionary,dictionary_values,applies_to,catalog_id,test_purpose
+PROP-001,Brand,PRODUCT,ShortText,Yes,No,Yes,"Dell,HP,Lenovo,Cisco,Meraki,Ubiquiti,Logitech,Microsoft,Samsung,LG,3M,DeWalt,Makita,Bosch,Steelcase,Herman Miller",All,All,Brand property — dictionary single-value
+PROP-002,Color,VARIATION,ShortText,No,No,Yes,"Black,White,Silver,Gray,Blue,Red,Green,Navy,Beige,Wood",All,All,Color variation property
+PROP-003,Size,VARIATION,ShortText,No,No,Yes,"XS,S,M,L,XL,XXL,24-inch,27-inch,32-inch,34-inch",All,All,Size variation property
+PROP-004,Material,PRODUCT,ShortText,No,No,Yes,"Aluminum,Steel,Plastic,Wood,Fabric,Leather,Carbon Fiber,Mesh,Glass",All,All,Material dictionary property
+PROP-005,Weight,PRODUCT,DecimalNumber,No,No,No,,All,All,Weight in kg — numeric property
+PROP-006,Warranty (months),PRODUCT,Integer,No,No,No,,All,All,Warranty period — integer property
+PROP-007,Release Date,PRODUCT,DateTime,No,No,No,,All,All,Product release date — datetime property
+PROP-008,Energy Star Certified,PRODUCT,Boolean,No,No,No,,Electronics,CAT-PHYS-001,Boolean property — energy rating
+PROP-009,Compatible Systems,PRODUCT,ShortText,No,Yes,Yes,"Windows,macOS,Linux,ChromeOS,iOS,Android",Electronics,CAT-PHYS-001,Multi-value dictionary property
+PROP-010,Certification,PRODUCT,ShortText,No,Yes,Yes,"ISO 9001,ISO 14001,UL Listed,CE Marked,OSHA Compliant,ANSI Rated,RoHS,FCC",Industrial,CAT-PHYS-002,Multi-value certification property
+PROP-011,Voltage,PRODUCT,ShortText,No,No,Yes,"110V,220V,110-240V (Universal),12V DC,24V DC,48V DC",Industrial,CAT-PHYS-002,Voltage specification
+PROP-012,Connectivity,PRODUCT,ShortText,No,Yes,Yes,"USB-C,USB-A,HDMI,DisplayPort,Thunderbolt 4,Ethernet RJ45,Wi-Fi 6E,Bluetooth 5.3",Electronics,CAT-PHYS-001,Multi-value connectivity
+PROP-013,Max Load (kg),PRODUCT,DecimalNumber,No,No,No,,Industrial,CAT-PHYS-002,Load capacity — numeric
+PROP-014,Paper Size,PRODUCT,ShortText,No,Yes,Yes,"Letter,Legal,A4,A3,Tabloid",Office,CAT-PHYS-003,Paper size compatibility
+PROP-015,Ergonomic Rating,PRODUCT,ShortText,No,No,Yes,"Basic,Standard,Premium,BIFMA Certified",Office,CAT-PHYS-003,Furniture ergonomic level

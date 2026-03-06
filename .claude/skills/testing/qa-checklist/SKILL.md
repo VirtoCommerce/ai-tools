@@ -1,7 +1,7 @@
 ---
 description: "[Testing] Generate test case writing checklists for any domain, feature, or regression area. Uses 18 built-in domain checklists + custom creation."
 argument-hint: "domain name | feature | VCST-XXXX | new <domain>"
-disable-model-invocation: true
+
 ---
 
 # /qa-checklist — Test Case Writing Checklist Creation

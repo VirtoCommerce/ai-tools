@@ -456,3 +456,362 @@ Multiple content publishings exist with different names","1. Navigate to ${BACK_
 - Non-matching search term shows empty state with appropriate message
 - Clearing the search field restores the complete unfiltered list
 - Search is case-insensitive and returns consistent results",C183352,Not Automated
+MKT-067,Create dynamic association (CRUD),Marketing > Dynamic Associations,Functional,High,8min,"Admin logged in to Backend
+VirtoCommerce.DynamicAssociationsModule installed and active","1. Navigate to Marketing > Dynamic Associations
+2. Click 'Add' to open the new association blade
+3. Enter Name (e.g., 'Cross-sell Electronics')
+4. Set Group (e.g., 'Related Products')
+5. Set Priority to 10
+6. Verify 'aActive' toggle is ON by default (note: column header has known typo 'aActive')
+7. Configure association rules: select source category and target category
+8. Click 'Save'
+9. Verify the association appears in the list grid with correct Name, Group, Priority, and Active status
+10. Reopen the association blade and verify all fields persisted correctly","- Dynamic association is created successfully with all configured fields
+- Association appears in the grid list with correct Name, Group, Priority values
+- The 'aActive' column displays the correct active state (known UI typo in column header)
+- Reopening the association shows all saved values without data loss
+- Save operation returns HTTP 200/204 with no errors in browser console",,Not Automated
+MKT-068,Edit dynamic association,Marketing > Dynamic Associations,Functional,High,5min,"Admin logged in to Backend
+Dynamic association exists [MKT-067]","1. Navigate to Marketing > Dynamic Associations
+2. Open an existing dynamic association from the grid
+3. Edit the Name field to a new value (e.g., 'Updated Cross-sell')
+4. Save and verify the name change persisted
+5. Reopen and change the Group field to a different value
+6. Save and verify
+7. Reopen and change Priority from 10 to 50
+8. Save and verify priority updated in the grid
+9. Toggle Active state from ON to OFF
+10. Save and verify the Active column reflects the change","- All editable fields (Name, Group, Priority, Active) can be modified and saved
+- Changes persist after save and blade close/reopen cycle
+- Grid list reflects updated values immediately after save
+- No validation errors when saving valid modifications
+- Browser console shows no errors during edit operations",,Not Automated
+MKT-069,Delete dynamic association (single and bulk),Marketing > Dynamic Associations,Functional,High,5min,"Admin logged in to Backend
+Multiple dynamic associations exist","1. Navigate to Marketing > Dynamic Associations
+2. Select a single association via checkbox
+3. Click 'Delete' toolbar button > Confirm deletion
+4. Verify the association is removed from the grid
+5. Create 3 new associations for bulk delete test
+6. Select all 3 associations via checkboxes
+7. Click 'Delete' toolbar button > Confirm bulk deletion
+8. Verify all 3 associations are removed from the grid
+9. Verify the total count in the grid updates correctly","- Single association is deleted after confirmation
+- Bulk delete removes all selected associations in one operation
+- Deleted associations no longer appear in the grid list
+- Grid total count updates to reflect deletions
+- No orphaned data remains after deletion (verify via API: GET /api/dynamicassociations/search returns empty for deleted IDs)",,Not Automated
+MKT-070,Search dynamic associations,Marketing > Dynamic Associations,Functional,Medium,5min,"Admin logged in to Backend
+Multiple dynamic associations exist with different names","1. Navigate to Marketing > Dynamic Associations
+2. Enter a partial name in the search bar (e.g., 'Cross')
+3. Verify the grid filters to show only matching associations
+4. Enter the full exact name and verify single result
+5. Enter a non-matching term (e.g., 'ZZZZNOTEXIST')
+6. Verify the grid shows empty state or no results
+7. Clear the search field and verify the full list is restored
+8. Verify pagination works: if more than one page of results, navigate to page 2 and back","- Search bar filters the dynamic associations grid by keyword
+- Partial name match returns all associations containing the search term
+- Exact name match returns the specific association
+- Non-matching search shows empty state with appropriate message
+- Clearing search restores the complete unfiltered list
+- Pagination controls work correctly with filtered and unfiltered results",,Not Automated
+MKT-071,Evaluate dynamic association rules via API,Marketing > Dynamic Associations,Integration,High,8min,"Admin logged in to Backend
+Dynamic association with configured rules exists [MKT-067]
+Products exist in the configured source and target categories","1. Create a dynamic association with source category 'Electronics' and target category 'Accessories'
+2. Set the association to Active and save
+3. Send POST request to /api/dynamicassociations/evaluate with body:
+   { ""productId"": ""<source-product-id>"", ""group"": ""Related Products"", ""storeId"": ""${STORE_ID}"" }
+4. Verify HTTP 200 response with array of recommended product IDs from the target category
+5. Send the same request with a productId NOT in the source category
+6. Verify the response returns empty array or no matching associations
+7. Set the association to Inactive and repeat step 3
+8. Verify inactive association returns no results","- POST /api/dynamicassociations/evaluate returns HTTP 200 with valid product recommendations
+- Response contains product IDs from the configured target category
+- Products outside the source category return empty results
+- Inactive associations are excluded from evaluation
+- Response schema includes expected fields (productId, associatedProductIds or equivalent)
+- Response time is within acceptable thresholds (< 2s)",,Not Automated
+MKT-072,Preview dynamic association results via API,Marketing > Dynamic Associations,Integration,High,8min,"Admin logged in to Backend
+Dynamic association with configured rules exists [MKT-067]","1. Open an existing dynamic association in the admin blade
+2. Send POST request to /api/dynamicassociations/preview with the association configuration payload
+3. Verify HTTP 200 response with preview of matching products
+4. Modify the association rules (change target category) without saving
+5. Send another preview request with the modified payload
+6. Verify preview results reflect the modified rules (not the saved state)
+7. Send preview with invalid/empty rules
+8. Verify graceful error handling (HTTP 400 or empty result, not 500)","- POST /api/dynamicassociations/preview returns HTTP 200 with product preview
+- Preview shows products that would match the current rule configuration
+- Preview works with unsaved rule modifications (evaluates the submitted payload, not persisted state)
+- Invalid or empty rules return appropriate error response (HTTP 400) or empty results
+- Preview response time is within acceptable thresholds (< 3s)
+- Response includes product details sufficient for admin preview (ID, name, image)",,Not Automated
+MKT-073,Priority ordering between dynamic associations,Marketing > Dynamic Associations,Functional,High,8min,"Admin logged in to Backend
+Two dynamic associations exist for the same source category with different priorities","1. Create Association A: source='Electronics', target='Accessories', Priority=10, Active=TRUE
+2. Create Association B: source='Electronics', target='Cables', Priority=20, Active=TRUE
+3. Send POST /api/dynamicassociations/evaluate for a product in Electronics
+4. Verify results include products from both Accessories and Cables
+5. Note the ordering of results: higher priority (lower number) association results should appear first
+6. Change Association A Priority to 30 (lower priority than B)
+7. Re-evaluate and verify Association B results now appear first
+8. Set both associations to the same priority and verify both still return results","- Higher priority associations (lower priority number) return results first in evaluate response
+- Changing priority values alters the ordering of association results
+- Equal priority associations both return results without error
+- Priority field accepts numeric values and is validated on save
+- Priority ordering is consistent across multiple evaluate calls",,Not Automated
+MKT-074,Active/inactive toggle excludes from evaluate results,Marketing > Dynamic Associations,Functional,High,5min,"Admin logged in to Backend
+Dynamic association exists [MKT-067] with Active=TRUE","1. Navigate to Marketing > Dynamic Associations
+2. Open the existing active association
+3. Send POST /api/dynamicassociations/evaluate and confirm results are returned
+4. Toggle the Active switch to OFF (inactive)
+5. Save the association
+6. Verify the 'aActive' column in the grid shows inactive state
+7. Send the same POST /api/dynamicassociations/evaluate request
+8. Verify the response returns no results from this association
+9. Toggle Active back to ON and save
+10. Re-evaluate and confirm results are returned again","- Active associations return results in /api/dynamicassociations/evaluate
+- Setting Active=FALSE and saving excludes the association from evaluate results
+- The grid 'aActive' column accurately reflects the toggle state (known typo in header)
+- Re-enabling Active=TRUE restores the association in evaluate results
+- Toggle changes take effect immediately after save without requiring platform restart",,Not Automated
+MKT-075,Delete store with assigned promotions,Marketing > Data Integrity,Functional,High,8min,"Admin logged in to Backend
+Promotion assigned to a specific store exists
+KNOWN BUG: 'Clothing store main page slider' content publishing has broken store reference showing 'Error: Not found'","1. Navigate to Marketing > Promotions
+2. Note a promotion assigned to a specific store (e.g., 'Electronics Store')
+3. Navigate to Stores module and attempt to delete that store
+4. Observe the behavior: does deletion succeed, fail, or warn?
+5. If deletion succeeds: return to Marketing > Promotions
+6. Open the promotion that was assigned to the deleted store
+7. Verify the Store field behavior (empty, error, or graceful fallback)
+8. Check for 'Error: Not found' similar to the known broken store reference in 'Clothing store main page slider'
+9. Verify the promotion can still be edited and reassigned to another store","- Store deletion behavior is clearly defined: either blocks deletion (referential integrity) or cascades gracefully
+- If store is deleted: promotion store reference should show empty or 'Not assigned' rather than 'Error: Not found'
+- KNOWN ISSUE: 'Clothing store main page slider' already exhibits broken store reference ('Error: Not found') -- verify if this pattern extends to promotions
+- Promotion remains editable and can be reassigned to a valid store after orphaning
+- No 500 errors or unhandled exceptions when accessing promotions with deleted store references
+- Browser console shows no JavaScript errors when opening the affected promotion blade",,Not Automated
+MKT-076,Delete content placeholder linked to published content,Marketing > Data Integrity,Functional,Medium,8min,"Admin logged in to Backend
+Content publishing exists with a linked placeholder [MKT-012]","1. Navigate to Marketing > Dynamic Content > Content Publishing
+2. Open an existing publishing and note the linked placeholder name
+3. Navigate to Marketing > Dynamic Content > Placeholders
+4. Delete the linked placeholder > Confirm
+5. Return to the content publishing that referenced the deleted placeholder
+6. Open the publishing blade and inspect the placeholder reference
+7. Verify behavior: does it show empty, error, or orphaned reference?
+8. Check storefront to verify no broken content renders
+9. Verify the publishing can still be edited and a new placeholder assigned","- Placeholder deletion succeeds even when referenced by a publishing
+- Content publishing shows empty or 'Not assigned' placeholder reference (not a crash or unhandled error)
+- Storefront does not render broken or partial content for the affected publishing
+- Publishing remains editable and a new placeholder can be linked
+- No orphaned placeholder references persist in the database
+- Browser console shows no errors when opening the affected publishing blade",,Not Automated
+MKT-077,Delete content item referenced in publication,Marketing > Data Integrity,Functional,Medium,8min,"Admin logged in to Backend
+Content publishing exists with linked content items [MKT-012]","1. Navigate to Marketing > Dynamic Content > Content Publishing
+2. Open an existing publishing and note the linked content item(s)
+3. Navigate to Marketing > Dynamic Content > Content Items
+4. Delete the linked content item > Confirm
+5. Return to the content publishing that referenced the deleted content item
+6. Open the publishing blade and inspect the content items section
+7. Verify behavior: does it show empty list, error, or orphaned reference?
+8. Query xAPI for the affected publishing's content
+9. Verify xAPI returns empty content (not an error) for the affected publishing","- Content item deletion succeeds even when referenced by a publishing
+- Content publishing shows the content item as removed from its linked items list
+- xAPI query for the affected publishing returns empty content or excludes the deleted item
+- No 500 errors from xAPI when querying content with deleted item references
+- Publishing remains editable and new content items can be linked
+- Storefront does not attempt to render deleted content items",,Not Automated
+MKT-078,Delete promotion with active coupons,Marketing > Data Integrity,Functional,Medium,5min,"Admin logged in to Backend
+Promotion with active coupons exists [MKT-037]","1. Navigate to Marketing > Promotions
+2. Open a promotion that has active coupons assigned
+3. Note the coupon codes associated with this promotion
+4. Delete the promotion > Confirm
+5. Verify the promotion is removed from the list
+6. Navigate to check if orphaned coupons remain (search for the coupon codes)
+7. Try to use one of the deleted promotion's coupon codes on storefront
+8. Verify the coupon is no longer valid","- Promotion deletion succeeds and removes the promotion from the list
+- Coupons associated with the deleted promotion are also cleaned up (cascade delete) or clearly orphaned
+- Orphaned coupon codes are not redeemable on storefront after promotion deletion
+- No 500 errors when attempting to use a coupon from a deleted promotion
+- Storefront shows appropriate error message ('Invalid coupon' or 'Coupon not found') for orphaned codes
+- No coupon data remains linked to a non-existent promotion in the admin UI",,Not Automated
+MKT-079,Promotions search REST API contract,Marketing > REST API,Integration,High,8min,"Admin logged in to Backend
+Multiple promotions exist (32+ from exploration data)
+API authentication token obtained","1. Send POST /api/marketing/promotions/search with body: { ""skip"": 0, ""take"": 10 }
+2. Verify HTTP 200 response with JSON containing 'results' array and 'totalCount'
+3. Verify response schema: each promotion has id, name, store, isActive, startDate, endDate, priority
+4. Verify totalCount matches the actual number of promotions in admin
+5. Test pagination: send with skip=10, take=10 and verify next page of results
+6. Test sorting: send with ""sort"": ""name:asc"" and verify results are alphabetically ordered
+7. Test with skip=0, take=0 and verify response returns totalCount but empty results array
+8. Test with skip exceeding totalCount and verify empty results with correct totalCount
+9. Send request without authentication token and verify HTTP 401","- POST /api/marketing/promotions/search returns HTTP 200 with valid JSON response
+- Response contains 'results' array and 'totalCount' integer field
+- Each promotion object includes required fields: id, name, store, isActive, startDate, endDate, priority
+- Pagination (skip/take) works correctly and returns the expected subset of results
+- Sorting parameter orders results as specified
+- Unauthenticated requests return HTTP 401
+- Response time is within acceptable thresholds (< 2s for 10 results)",,Not Automated
+MKT-080,Content items evaluate REST API contract,Marketing > REST API,Integration,High,8min,"Admin logged in to Backend
+Content publishing exists with placeholder and content items [MKT-012]
+API authentication token obtained","1. Send POST /api/marketing/contentitems/evaluate with body:
+   { ""storeId"": ""${STORE_ID}"", ""placeholderName"": ""<existing-placeholder>"", ""cultureName"": ""en-US"" }
+2. Verify HTTP 200 response with array of matching content items
+3. Verify each content item has expected fields: id, name, contentType, dynamicContent
+4. Send request with a non-existent placeholder name
+5. Verify response returns empty array (not 404 or 500)
+6. Send request without storeId
+7. Verify appropriate validation error (HTTP 400 or empty result)
+8. Send request with cultureName for a language with no content
+9. Verify response handles missing localized content gracefully","- POST /api/marketing/contentitems/evaluate returns HTTP 200 with matching content
+- Response array contains content items linked to the specified placeholder and store
+- Non-existent placeholder returns empty array with HTTP 200 (not error)
+- Missing storeId returns validation error or empty results (not 500)
+- Missing cultureName falls back gracefully (default language or empty)
+- Response schema is consistent across different parameter combinations",,Not Automated
+MKT-081,Promotion CRUD via REST API,Marketing > REST API,Integration,High,10min,"Admin logged in to Backend
+API authentication token obtained","1. POST /api/marketing/promotions with body: { ""name"": ""API Test Promo"", ""store"": ""${STORE_ID}"", ""isActive"": true }
+2. Verify HTTP 200/201 response with created promotion object including generated ID
+3. GET the created promotion by ID and verify all fields match
+4. PUT /api/marketing/promotions with updated name: ""API Test Promo Updated""
+5. Verify HTTP 200/204 response
+6. GET the promotion again and verify name is updated
+7. Test PUT idempotency: send the same PUT request again and verify same result (no duplicate)
+8. DELETE /api/marketing/promotions with the promotion ID
+9. Verify HTTP 200/204 response
+10. GET the deleted promotion and verify HTTP 404
+11. Repeat DELETE on the same ID and verify idempotent behavior (no error or 404)","- POST creates promotion and returns the created object with ID
+- GET retrieves the promotion with all fields matching the creation payload
+- PUT updates the promotion; repeated PUT with same data produces same result (idempotent)
+- DELETE removes the promotion; subsequent GET returns 404
+- Repeated DELETE does not cause server error (idempotent or returns 404)
+- All endpoints require authentication (401 without token)
+- Response content-type is application/json for all operations",,Not Automated
+MKT-082,Coupon import API error handling,Marketing > REST API,Integration,Medium,8min,"Admin logged in to Backend
+API authentication token obtained
+Test CSV files prepared: valid file, invalid files (missing columns, wrong delimiter, text in numeric fields)","1. POST /api/marketing/promotions/coupons/import with a valid CSV file containing coupon_code and max_uses_number columns
+2. Verify HTTP 200 response and coupons are created
+3. POST import with CSV missing the 'coupon_code' column
+4. Verify appropriate error response (HTTP 400) with message about missing required column
+5. POST import with CSV missing the 'max_uses_number' column
+6. Verify appropriate error response about missing column
+7. POST import with CSV using semicolon delimiter instead of comma
+8. Verify error response about invalid format
+9. POST import with CSV containing text values in 'max_uses_number' column
+10. Verify error response about invalid data type
+11. POST import with an excessively large file (1000+ rows)
+12. Verify the import completes or returns a clear size limit error","- Valid CSV import succeeds with HTTP 200 and creates all coupons
+- Missing required columns return HTTP 400 with descriptive error messages
+- Wrong delimiter format returns clear parsing error
+- Invalid data types in numeric fields return validation errors
+- Large file imports either succeed or return a clear size/limit error (not timeout or 500)
+- Error responses include actionable messages (not generic 'Internal Server Error')",,Not Automated
+MKT-083,Dynamic associations evaluate REST API contract,Marketing > REST API,Integration,High,8min,"Admin logged in to Backend
+Dynamic association with configured rules exists [MKT-067]
+API authentication token obtained","1. Send POST /api/dynamicassociations/evaluate with body:
+   { ""productId"": ""<valid-product-id>"", ""group"": ""Related Products"", ""storeId"": ""${STORE_ID}"", ""take"": 10 }
+2. Verify HTTP 200 response with array of associated product IDs
+3. Verify response schema includes expected fields (productId, associatedObjects or results array)
+4. Send request with non-existent productId
+5. Verify response returns empty array (not 404 or 500)
+6. Send request with empty/null group parameter
+7. Verify graceful handling (all groups returned or validation error)
+8. Send request without storeId
+9. Verify validation error response
+10. Send request without authentication and verify HTTP 401","- POST /api/dynamicassociations/evaluate returns HTTP 200 with product recommendations
+- Response schema is consistent and includes product identifiers
+- Non-existent productId returns empty results (not error)
+- Missing or null group parameter is handled gracefully
+- Missing storeId returns validation error
+- Unauthenticated requests return HTTP 401
+- Response time is within acceptable thresholds (< 2s)",,Not Automated
+MKT-084,xAPI query with invalid placeholder name,Marketing > xAPI Error Handling,Integration,Medium,5min,"Admin logged in to Backend
+xAPI endpoint accessible at ${BACK_URL}/ui/graphiql","1. Open GraphiQL at ${BACK_URL}/ui/graphiql
+2. Execute a dynamic content query with a valid storeId but invalid/non-existent placeholder name (e.g., 'NONEXISTENT_PLACEHOLDER_999')
+3. Observe the response: check for HTTP status code and response body
+4. Verify the response is NOT an HTTP 500 Internal Server Error
+5. Verify the response returns empty data or a descriptive error message
+6. Execute the query with an empty string placeholder name
+7. Verify graceful error handling (validation error or empty result)
+8. Execute the query with special characters in placeholder name (e.g., '<script>alert(1)</script>')
+9. Verify no XSS reflection and graceful error response","- Invalid placeholder name returns empty data or descriptive error (not HTTP 500)
+- Empty placeholder name returns validation error or empty result
+- Special characters in placeholder name are handled safely (no XSS, no stack trace)
+- Error responses do not expose internal stack traces or server implementation details
+- Response format is consistent GraphQL JSON regardless of error type",,Not Automated
+MKT-085,xAPI query without storeId,Marketing > xAPI Error Handling,Integration,Medium,5min,"Admin logged in to Backend
+xAPI endpoint accessible at ${BACK_URL}/ui/graphiql","1. Open GraphiQL at ${BACK_URL}/ui/graphiql
+2. Execute a dynamic content query WITHOUT the storeId parameter
+3. Observe the response for validation error
+4. Verify the error message clearly indicates storeId is required
+5. Execute the query with an empty string storeId
+6. Verify appropriate validation error
+7. Execute the query with a non-existent storeId (e.g., 'FAKE_STORE_ID')
+8. Verify the response returns empty data or store-not-found error
+9. Verify no HTTP 500 errors in any scenario","- Missing storeId returns a clear validation error indicating the parameter is required
+- Empty string storeId returns validation error (not 500)
+- Non-existent storeId returns empty results or descriptive error
+- All error responses use standard GraphQL error format with 'errors' array
+- No internal server errors (500) for any missing/invalid storeId scenario
+- Error messages are user-friendly and do not expose internal details",,Not Automated
+MKT-086,MarketingExperienceApi Swagger health check,Marketing > xAPI Error Handling,Integration,High,3min,"Admin logged in to Backend
+KNOWN BUG: This endpoint currently returns HTTP 500","1. Navigate to ${BACK_URL}/docs/VirtoCommerce.MarketingExperienceApi/swagger.json
+2. Observe the HTTP response status code
+3. If HTTP 200: verify the response is valid JSON with OpenAPI/Swagger schema
+4. If HTTP 500: document the error response body
+5. Navigate to ${BACK_URL}/docs/index.html
+6. Check if VirtoCommerce.MarketingExperienceApi appears in the Swagger UI module dropdown
+7. If present: click to load and verify the API documentation renders
+8. Check browser console for any JavaScript errors during Swagger load","- KNOWN BUG: /docs/VirtoCommerce.MarketingExperienceApi/swagger.json returns HTTP 500 instead of valid Swagger JSON
+- Expected behavior: endpoint should return HTTP 200 with valid OpenAPI 3.0 / Swagger 2.0 JSON schema
+- The module should appear in the Swagger UI dropdown and load its API documentation
+- When fixed: verify the schema includes all marketing xAPI endpoints
+- Document the exact error response for bug tracking purposes",,Not Automated
+MKT-087,Content item HTML XSS prevention,Marketing > Content Security,Security,High,8min,"Admin logged in to Backend","1. Navigate to Marketing > Dynamic Content > Content Items
+2. Click 'Add' to create a new content item
+3. In the Name field enter: '<script>alert(""XSS"")</script>Test Item'
+4. In the HTML/Content field enter: '<img src=x onerror=alert(1)><p>Test content</p>'
+5. Click 'Create' and verify the item is saved
+6. Open the created content item and verify the name is displayed safely (no script execution)
+7. Link this content item to a content publishing with an active placeholder
+8. Query the content via xAPI and inspect the returned HTML
+9. Verify script tags are sanitized or escaped in the xAPI response
+10. Check the storefront rendering to ensure no JavaScript executes from injected content","- Script tags in content item name are escaped or stripped when rendered in admin UI
+- Script tags in HTML content field are either sanitized on save or escaped on render
+- xAPI response contains sanitized HTML (no executable script tags)
+- Storefront does not execute injected JavaScript from content items
+- Admin blade does not trigger XSS when displaying content items with script payloads
+- No unhandled errors when saving content with script tags",,Not Automated
+MKT-088,Content item with special characters,Marketing > Content Security,Functional,Medium,5min,"Admin logged in to Backend","1. Navigate to Marketing > Dynamic Content > Content Items
+2. Create content item with Unicode name: 'Aktionstag Fruhling 2026'
+3. Save and verify the name displays correctly with special characters
+4. Create content item with emoji in name: 'Summer Sale'
+5. Save and verify emoji renders correctly in the grid and blade
+6. Create content item with very long name (255+ characters)
+7. Verify validation: either truncates or shows max length error
+8. Create content item with HTML entities in description: '&amp; &lt; &gt; &quot;'
+9. Verify entities are stored and displayed correctly without double-encoding
+10. Create content item with Cyrillic characters: 'Test content item name'
+11. Verify multi-script text displays correctly","- Unicode characters (umlauts, accents) are saved and displayed correctly
+- Emoji characters are handled gracefully (saved correctly or rejected with clear message)
+- Very long names are validated with appropriate max length enforcement
+- HTML entities are stored without double-encoding and display correctly
+- Cyrillic and other non-Latin scripts are saved and rendered correctly
+- No data corruption or mojibake in any character encoding scenario
+- Search functionality works correctly with special character content",,Not Automated
+MKT-089,Promotion combination policy setting persistence,Marketing > Settings,Functional,Medium,8min,"Admin logged in to Backend
+Two active promotions exist with different discount effects","1. Navigate to Settings > Marketing
+2. Locate the 'Promotion combination policy' setting
+3. Note the current value (e.g., CombineStackable)
+4. Change the value to 'BestReward'
+5. Click Save
+6. Close the Settings blade and reopen it
+7. Verify the value persisted as 'BestReward'
+8. On storefront: trigger both promotions in a cart
+9. Verify only the promotion with the biggest discount is applied (BestReward behavior)
+10. Return to Settings and switch back to 'CombineStackable'
+11. Save and verify persistence
+12. On storefront: trigger both combinable promotions
+13. Verify both promotions are applied (CombineStackable behavior)","- Promotion combination policy setting persists after save and blade close/reopen
+- Switching from CombineStackable to BestReward changes storefront promotion behavior
+- Under BestReward: only the promotion with the largest discount is applied
+- Under CombineStackable: combinable promotions stack; exclusive promotions follow priority rules
+- Setting change takes effect on next cart evaluation without platform restart
+- Settings tooltip correctly describes the policy options",,Not Automated

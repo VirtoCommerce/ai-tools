@@ -440,3 +440,203 @@ ORD-076,Order Validation Full Field List — Complete Validation Test,Orders > V
 - Status returns error for values outside allowed status enumeration
 - CreatedDate returns error for invalid date format or out-of-range values
 - Each validation error message clearly identifies the offending field",C301875,Not Automated
+ORD-077,Payment state — Pending to Captured skipping Authorization must fail,Orders > Payment State Machine,Negative,High,8min,"Admin logged in to Backend
+Order exists with payment in Pending status
+Manual payment method configured
+API access available via Swagger at ${BACK_URL}/docs","1. Open Swagger UI at ${BACK_URL}/docs/index.html
+2. Locate the payment status update endpoint (PUT /api/order/customerOrders)
+3. Retrieve order with payment in Pending status via GET /api/order/customerOrders/{orderId}
+4. Attempt to change payment status directly from Pending to Captured (skip Authorized)
+5. Send the PUT request with modified payment status
+6. Inspect the HTTP response status code
+7. Inspect the response body for error details
+8. Verify payment status remains Pending in subsequent GET request","1. API returns 400 or 422 error response
+2. Response body contains error message indicating invalid state transition
+3. Payment status remains Pending (not changed to Captured)
+4. No partial state corruption — payment document is unchanged
+5. Illegal transition Pending to Captured is rejected by state machine guard",Coverage Gap Analysis BL-ORD-001,Generated
+ORD-078,Payment state — Voided to Captured must fail,Orders > Payment State Machine,Negative,High,8min,"Admin logged in to Backend
+Order exists with payment in Voided status (terminal state)
+API access available via Swagger at ${BACK_URL}/docs","1. Open Swagger UI at ${BACK_URL}/docs/index.html
+2. Retrieve order with payment in Voided status via GET /api/order/customerOrders/{orderId}
+3. Attempt to change payment status from Voided to Captured via PUT request
+4. Send the PUT request with modified payment status
+5. Inspect the HTTP response status code
+6. Inspect the response body for error details
+7. Verify payment status remains Voided in subsequent GET request","1. API returns 400 or 422 error response
+2. Response body contains error message indicating Voided is a terminal state
+3. Payment status remains Voided (cannot transition to Captured)
+4. No state corruption — Voided payments cannot be reactivated
+5. Error response does not expose stack traces or internal details",Coverage Gap Analysis BL-ORD-001,Generated
+ORD-079,Payment state — Refunded to Captured must fail,Orders > Payment State Machine,Negative,High,8min,"Admin logged in to Backend
+Order exists with payment in Refunded status (terminal state)
+API access available via Swagger at ${BACK_URL}/docs","1. Open Swagger UI at ${BACK_URL}/docs/index.html
+2. Retrieve order with payment in Refunded status via GET /api/order/customerOrders/{orderId}
+3. Attempt to change payment status from Refunded to Captured via PUT request
+4. Send the PUT request with modified payment status
+5. Inspect the HTTP response status code
+6. Inspect the response body for error details
+7. Verify payment status remains Refunded in subsequent GET request","1. API returns 400 or 422 error response
+2. Response body contains error message indicating Refunded is a terminal state
+3. Payment status remains Refunded (cannot transition to Captured)
+4. No state corruption — Refunded payments cannot be recaptured
+5. Terminal states are enforced consistently across API",Coverage Gap Analysis BL-ORD-001,Generated
+ORD-080,Payment state — Admin shows only valid transition buttons per state,Orders > Payment State Machine,Functional,High,10min,"Admin logged in to Backend
+Orders exist with payments in various states: Pending, Authorized, Paid (Captured), Voided, Refunded","1. Navigate to ${BACK_URL} and open Orders module
+2. Open order with payment in Pending status > Open payment document
+3. Note which action buttons are visible (expected: Authorize only)
+4. Open order with payment in Authorized status > Open payment document
+5. Note which action buttons are visible (expected: Capture, Void only)
+6. Open order with payment in Paid status > Open payment document
+7. Note which action buttons are visible (expected: Refund only)
+8. Open order with payment in Voided status > Open payment document
+9. Verify no transition buttons are visible (terminal state)
+10. Open order with payment in Refunded status > Open payment document
+11. Verify no transition buttons are visible (terminal state)","1. Pending: only Authorize button visible, no Capture/Refund/Void
+2. Authorized: only Capture and Void buttons visible, no Refund
+3. Paid: only Refund button visible, no Capture/Authorize
+4. Voided: no action buttons visible (terminal state)
+5. Refunded: no action buttons visible (terminal state)
+6. Illegal transitions are not available through Admin UI",Coverage Gap Analysis BL-ORD-006,Generated
+ORD-081,Refund boundary — partial refund exceeding remaining balance must fail,Orders > Payment Refund,Negative,High,10min,"Admin logged in to Backend
+Order exists with payment captured for $100
+Partial refund of $30 already processed
+Remaining refundable balance = $70
+API access available via Swagger at ${BACK_URL}/docs","1. Verify order has payment in Paid status with original amount $100
+2. Verify existing partial refund of $30 is recorded
+3. Attempt to issue a second refund for $80 via API (exceeds remaining $70)
+4. Send the refund request
+5. Inspect the HTTP response status code
+6. Inspect the response body for error details
+7. Verify remaining refundable balance is still $70 (unchanged)
+8. Verify no refund document was created for the $80 attempt","1. API returns 400 or 422 error response
+2. Response body indicates refund amount exceeds remaining balance
+3. Remaining refundable balance stays at $70.00
+4. No partial or full refund document created for the invalid $80 request
+5. Cumulative refund tracking enforced: $30 already refunded + $80 requested > $100 captured",Coverage Gap Analysis BL-ORD-004,Generated
+ORD-082,Refund boundary — voided payment cannot be refunded,Orders > Payment Refund,Negative,High,8min,"Admin logged in to Backend
+Order exists with payment in Voided status
+API access available via Swagger at ${BACK_URL}/docs","1. Retrieve order with payment in Voided status via GET /api/order/customerOrders/{orderId}
+2. Attempt to issue a refund on the voided payment via API
+3. Send the refund request
+4. Inspect the HTTP response status code
+5. Inspect the response body for error details
+6. Verify payment status remains Voided
+7. Verify no refund document was created","1. API returns 400 or 422 error response
+2. Response body indicates voided payments cannot be refunded
+3. Payment status remains Voided (unchanged)
+4. No refund document created
+5. Voided is a terminal state — only Captured/Paid payments can be refunded",Coverage Gap Analysis BL-ORD-004,Generated
+ORD-083,Refund boundary — fully refunded payment cannot be refunded again,Orders > Payment Refund,Negative,High,8min,"Admin logged in to Backend
+Order exists with payment fully refunded (status = Refunded)
+API access available via Swagger at ${BACK_URL}/docs","1. Retrieve order with payment in Refunded status via GET /api/order/customerOrders/{orderId}
+2. Verify refund total equals original captured amount
+3. Attempt to issue an additional refund via API (any amount)
+4. Send the refund request
+5. Inspect the HTTP response status code
+6. Inspect the response body for error details
+7. Verify payment status remains Refunded
+8. Verify no additional refund document was created","1. API returns 400 or 422 error response
+2. Response body indicates payment already fully refunded
+3. Payment status remains Refunded (unchanged)
+4. No additional refund document created
+5. Refunded is a terminal state — no further refunds possible",Coverage Gap Analysis BL-ORD-004,Generated
+ORD-084,Shipment state — New to Sent skipping PickPack must fail,Orders > Shipment State Machine,Negative,High,8min,"Admin logged in to Backend
+Order exists with shipment in New status
+API access available via Swagger at ${BACK_URL}/docs","1. Retrieve order with shipment in New status via GET /api/order/customerOrders/{orderId}
+2. Attempt to change shipment status directly from New to Sent (skip PickPack) via PUT request
+3. Send the PUT request with modified shipment status
+4. Inspect the HTTP response status code
+5. Inspect the response body for error details
+6. Verify shipment status remains New in subsequent GET request","1. API returns 400 or 422 error response
+2. Response body indicates invalid state transition (New to Sent not allowed)
+3. Shipment status remains New (unchanged)
+4. Shipment state machine enforces: New > PickPack > Sent > Delivered
+5. Skipping intermediate states is not permitted",Coverage Gap Analysis BL-ORD-007,Generated
+ORD-085,Shipment state — New to Delivered skipping PickPack and Sent must fail,Orders > Shipment State Machine,Negative,High,8min,"Admin logged in to Backend
+Order exists with shipment in New status
+API access available via Swagger at ${BACK_URL}/docs","1. Retrieve order with shipment in New status via GET /api/order/customerOrders/{orderId}
+2. Attempt to change shipment status directly from New to Delivered (skip PickPack and Sent) via PUT request
+3. Send the PUT request with modified shipment status
+4. Inspect the HTTP response status code
+5. Inspect the response body for error details
+6. Verify shipment status remains New in subsequent GET request","1. API returns 400 or 422 error response
+2. Response body indicates invalid state transition (New to Delivered not allowed)
+3. Shipment status remains New (unchanged)
+4. Multiple intermediate states cannot be skipped simultaneously
+5. State machine guard rejects transitions that skip required intermediate steps",Coverage Gap Analysis BL-ORD-007,Generated
+ORD-086,Shipment state — Delivered to Sent backward transition must fail,Orders > Shipment State Machine,Negative,High,8min,"Admin logged in to Backend
+Order exists with shipment in Delivered status (terminal state)
+API access available via Swagger at ${BACK_URL}/docs","1. Retrieve order with shipment in Delivered status via GET /api/order/customerOrders/{orderId}
+2. Attempt to change shipment status from Delivered back to Sent via PUT request
+3. Send the PUT request with modified shipment status
+4. Inspect the HTTP response status code
+5. Inspect the response body for error details
+6. Verify shipment status remains Delivered in subsequent GET request","1. API returns 400 or 422 error response
+2. Response body indicates backward transitions are not allowed
+3. Shipment status remains Delivered (unchanged)
+4. Delivered is effectively a terminal state — no backward movement permitted
+5. State machine is unidirectional: New > PickPack > Sent > Delivered",Coverage Gap Analysis BL-ORD-007,Generated
+ORD-087,Order placement — inventory decremented for each line item in correct FFC,Orders > Order Placement Side Effects,Integration,Critical,15min,"Admin logged in to Backend
+Track inventory = TRUE
+Products with known stock quantities in specific FFCs
+API access available
+Storefront accessible","1. Navigate to ${BACK_URL} > Inventory module
+2. Record current stock quantity for Product_1 in FFC_1 (e.g., qty = 50)
+3. Record current stock quantity for Product_2 in FFC_2 (e.g., qty = 30)
+4. Place order via API or Storefront containing Product_1 (qty=2) and Product_2 (qty=3)
+5. Verify order creation succeeds with status = New
+6. Navigate to Inventory module
+7. Check stock for Product_1 in FFC_1
+8. Check stock for Product_2 in FFC_2
+9. Verify decrements match ordered quantities","1. Product_1 stock in FFC_1 decreased by 2 (50 > 48)
+2. Product_2 stock in FFC_2 decreased by 3 (30 > 27)
+3. Inventory adjustments are per-FFC (correct fulfillment center)
+4. Stock changes are immediate upon order placement
+5. No cross-FFC inventory leakage",Coverage Gap Analysis BL-CROSS-005,Generated
+ORD-088,Order placement — order appears in customer order history,Orders > Order Placement Side Effects,Integration,Critical,10min,"Customer account exists with known order history count
+Storefront and xAPI accessible
+Products available for purchase","1. Execute xAPI query to get current order count for customer:
+   query { orders(storeId: ""${STORE_ID}"", cultureName: ""en-US"", userId: ""<customer-id>"") { totalCount } }
+2. Record current totalCount (e.g., N)
+3. Place a new order via Storefront or API as the customer
+4. Record the new order number
+5. Execute the same xAPI orders query again
+6. Verify totalCount = N + 1
+7. Execute detailed order query to find the new order by number
+8. Verify order details match what was placed","1. Order totalCount increments by 1 after placement
+2. New order appears in customer order history query
+3. Order number, status, items, and totals match the placed order
+4. Order is immediately visible (no delay or indexing lag for history)",Coverage Gap Analysis BL-CROSS-005,Generated
+ORD-089,Order placement — cart is cleared after successful order,Orders > Order Placement Side Effects,Integration,Critical,10min,"Customer account exists
+Cart has items added
+Storefront and xAPI accessible","1. Add Product_1 (qty=2) and Product_2 (qty=1) to cart
+2. Execute xAPI cart query to verify cart has 2 line items:
+   query { cart(storeId: ""${STORE_ID}"", cultureName: ""en-US"", currencyCode: ""USD"") { items { quantity productId } itemsCount } }
+3. Verify itemsCount = 2
+4. Complete checkout and place the order
+5. Verify order creation returns success with order number
+6. Execute the same xAPI cart query again
+7. Verify cart is empty (itemsCount = 0, items = [])","1. Before order: cart has 2 line items
+2. Order placement succeeds with order number generated
+3. After order: cart query returns itemsCount = 0 and empty items array
+4. Cart is fully cleared — no residual line items remain
+5. Customer can start a fresh cart immediately after order",Coverage Gap Analysis BL-CROSS-005,Generated
+ORD-090,Order placement — order number generated and totals match cart,Orders > Order Placement Side Effects,Integration,Critical,10min,"Admin logged in to Backend
+Customer account exists
+Cart has items with known prices
+Number template configured in Settings > Orders","1. Add products to cart and proceed to checkout
+2. Before placing order, execute xAPI cart query to capture: cart.subTotal, cart.taxTotal, cart.shippingTotal, cart.total
+3. Record cart totals
+4. Place the order
+5. Retrieve the new order via API: GET /api/order/customerOrders/{orderId}
+6. Verify order.number is generated and follows the configured number template
+7. Verify order.status = 'New'
+8. Compare order.subTotal with cart.subTotal
+9. Compare order.taxTotal with cart.taxTotal
+10. Compare order.total with cart.total","1. Order number is generated following the configured template (not null or empty)
+2. Order status = 'New' immediately after placement
+3. order.subTotal matches cart.subTotal exactly
+4. order.taxTotal matches cart.taxTotal exactly
+5. order.total matches cart.total exactly
+6. All monetary values transfer accurately from cart to order",Coverage Gap Analysis BL-CROSS-005,Generated

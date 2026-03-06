@@ -118,3 +118,54 @@ SEC-SENSITIVE-002,Error Message Safety,Data Protection > Errors,Security,Medium,
 3. Check error messages","- No stack traces exposed
 - No internal paths shown
 - Generic safe messages",security-manual,Manual
+SEC-SESSION-001,Session expiry during checkout — re-auth preserves cart,Authentication > Session Expiry,Security,High,15min,"- Customer logged in with items in cart
+- Checkout flow started (shipping address entered)
+- Token expiry mechanism available (short-lived token or manual invalidation)","1. Log in as customer and add products to cart
+2. Proceed to checkout and enter shipping address
+3. Wait for session token to expire (or manually invalidate token via API/DevTools)
+4. Attempt to proceed to payment step
+5. Verify system detects expired session and prompts for re-authentication
+6. Re-authenticate with same customer credentials
+7. Verify cart contents are intact after re-authentication
+8. Verify checkout can resume from shipping/payment step
+9. Execute xAPI cart query to confirm all line items and quantities preserved","1. Expired session is detected when attempting checkout action
+2. User is prompted to re-authenticate (redirect to login or modal)
+3. After re-auth, cart contents are fully intact (same items, quantities, prices)
+4. Checkout resumes without requiring user to re-enter shipping address
+5. No data loss during session expiry and re-authentication flow",Coverage Gap Analysis BL-AUTH-001,Generated
+SEC-SESSION-002,Session re-auth during checkout — resume from last step,Authentication > Session Expiry,Security,High,15min,"- Customer logged in with items in cart
+- Checkout flow in progress (shipping address and method selected)
+- Token expiry mechanism available","1. Log in as customer and add products to cart
+2. Proceed through checkout: enter shipping address, select shipping method
+3. Arrive at payment step
+4. Force session expiry (clear auth token from storage or wait for expiry)
+5. Attempt to submit payment or interact with payment form
+6. Verify re-authentication prompt appears
+7. Re-authenticate with same credentials
+8. Verify checkout state: shipping address still populated, shipping method still selected
+9. Verify payment step is accessible without restarting checkout
+10. Complete the order successfully","1. Re-authentication prompt appears on expired session during payment
+2. After re-auth, shipping address is still populated (not cleared)
+3. Shipping method selection is preserved
+4. User lands back on payment step (not restarted to beginning)
+5. Order can be completed successfully after session re-auth
+6. Checkout state is fully preserved across session boundary",Coverage Gap Analysis BL-AUTH-001,Generated
+SEC-SESSION-003,Session expiry does not create partial or orphan order,Authentication > Session Expiry,Security,Critical,15min,"- Customer logged in with items in cart
+- Checkout flow started
+- xAPI access available for order verification
+- Token expiry mechanism available","1. Log in as customer and add products to cart
+2. Proceed to checkout and enter all required information
+3. Force session expiry immediately before order submission (clear token)
+4. Attempt to submit/place the order with expired token
+5. Verify order submission fails gracefully (not silently)
+6. Re-authenticate with same credentials
+7. Execute xAPI orders query to check for any new orders:
+   query { orders(storeId: ""${STORE_ID}"", cultureName: ""en-US"") { totalCount items { number status } } }
+8. Verify no partial or orphan order was created during the failed submission
+9. Verify cart still contains the original items
+10. Complete the order normally after re-auth","1. Order submission with expired token fails with clear error (not silent)
+2. No partial order exists in the system (no orphan order with incomplete data)
+3. No payment was captured or authorized for the failed attempt
+4. Cart remains intact with all items after session expiry
+5. Order can be completed normally after re-authentication
+6. System maintains transactional integrity — no order created until full completion",Coverage Gap Analysis BL-AUTH-001,Generated

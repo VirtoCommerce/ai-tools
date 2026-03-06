@@ -1,0 +1,6 @@
+pricelist_id,pricelist_name,currency,description,priority,assigned_catalog,assigned_store,test_purpose
+PL-USD-001,B2B Standard USD,USD,Default USD price list for B2B-store,100,CAT-VIRT-001,B2B-store,Primary USD pricing — all products
+PL-EUR-001,B2B Standard EUR,EUR,EUR price list for European customers,90,CAT-VIRT-001,B2B-store,Multi-currency testing — EUR
+PL-USD-002,B2B Volume Discount USD,USD,Volume discount pricing for large orders,110,CAT-VIRT-001,B2B-store,Higher priority overrides standard — quantity tier testing
+PL-USD-003,VIP Customer USD,USD,Special pricing for VIP/preferred accounts,120,CAT-VIRT-001,B2B-store,Customer-group specific pricing
+PL-USD-004,Clearance USD,USD,Clearance/sale pricing — temporary,130,CAT-VIRT-001,B2B-store,Highest priority — sale price override testing

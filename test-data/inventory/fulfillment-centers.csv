@@ -1,0 +1,6 @@
+ffc_id,ffc_name,ffc_code,address_line1,city,state,postal_code,country_code,phone,is_active,max_releases_per_day,pickup_available,description,test_purpose
+FFC-001,East Coast Warehouse,FFC-EAST,1200 Distribution Pkwy,Edison,NJ,08817,US,+1-732-555-0100,true,500,false,Primary East Coast fulfillment center — handles bulk of US orders,Main FFC — high stock levels
+FFC-002,West Coast Warehouse,FFC-WEST,8400 Logistics Blvd,Ontario,CA,91761,US,+1-909-555-0200,true,400,false,West Coast fulfillment center — serves western US region,Secondary FFC — split stock testing
+FFC-003,Central Hub,FFC-CENTRAL,500 Commerce Dr,Dallas,TX,75201,US,+1-214-555-0300,true,300,true,Central US hub — supports BOPIS pickup,BOPIS pickup center
+FFC-004,EU Distribution Center,FFC-EU,Industriestrasse 42,Frankfurt,,60311,DE,+49-69-555-0400,true,200,false,European distribution center — EUR orders,Multi-region inventory testing
+FFC-005,Inactive Warehouse,FFC-INACTIVE,999 Closed Rd,Detroit,MI,48201,US,+1-313-555-0500,false,0,false,Decommissioned warehouse — should not receive allocations,Inactive FFC — negative test

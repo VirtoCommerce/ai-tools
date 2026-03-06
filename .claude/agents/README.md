@@ -15,9 +15,9 @@ Two agent teams for the Virto Commerce platform: **QA** (quality assurance) and 
 
 ---
 
-## Agent Inventory (11 agents)
+## Agent Inventory (12 agents)
 
-### QA Team (7 agents)
+### QA Team (8 agents)
 
 | Agent | Model | Color | Purpose |
 |-------|-------|-------|---------|
@@ -28,6 +28,7 @@ Two agent teams for the Virto Commerce platform: **QA** (quality assurance) and 
 | **ui-ux-expert** | sonnet | pink | Storybook, WCAG 2.1 AA, design system |
 | **test-management-specialist** | sonnet | purple | Test planning, case writing, coverage tracking |
 | **regression-orchestrator** | sonnet | orange | Parallel regression + smoke mode, retries, reports |
+| **autonomous-regression-orchestrator** | sonnet | orange | Agent Teams regression: token bucket, failure recovery, JIRA integration |
 
 ### BA Team (4 agents)
 
@@ -112,6 +113,8 @@ Reads JIRA ticket, maps to affected components, dispatches specialists, reports 
 
 ### 3. Regression (`/qa-regression [scope]`)
 Reads `config/test-suites.json`, dispatches sub-agents in batches of 3, retries with browser fallback chain.
+
+**Autonomous mode** (`/qa-regression [scope] --autonomous`): Uses `autonomous-regression-orchestrator` with Agent Teams for enhanced orchestration — 3+1 token bucket, exponential backoff (30s→60s→120s), persistent failure tracking, consolidated reporting via `scripts/reporting.ts`, and auto-JIRA ticket creation. Results in `results/{RUN_ID}/`.
 
 | Selection | Suites | Use Case |
 |-----------|--------|----------|

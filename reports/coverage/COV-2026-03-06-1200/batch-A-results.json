@@ -1,0 +1,36 @@
+{
+  "batch": "A",
+  "agent": "qa-frontend-expert",
+  "domains": ["CART", "CHECKOUT", "ORDERS"],
+  "gapsAddressed": 9,
+  "casesGenerated": 29,
+  "suitesModified": ["04"],
+  "caseIds": [
+    "CART-040", "CART-041", "CART-042",
+    "CART-043", "CART-044", "CART-045",
+    "CART-046", "CART-047", "CART-048",
+    "CHK-061", "CHK-062", "CHK-063", "CHK-064",
+    "CHK-065", "CHK-066", "CHK-067",
+    "CHK-068", "CHK-069", "CHK-070",
+    "CHK-071", "CHK-072", "CHK-073", "CHK-074",
+    "ORD-001", "ORD-002", "ORD-003",
+    "ORD-004", "ORD-005", "ORD-006"
+  ],
+  "idRanges": {
+    "CART": "CART-040 to CART-048",
+    "CHK": "CHK-061 to CHK-074",
+    "ORD": "ORD-001 to ORD-006"
+  },
+  "gapDetails": [
+    { "id": "GAP-001", "domain": "CART", "name": "Cart persistence (sign out/in)", "score": 9.4, "priority": "Critical", "cases": ["CART-040", "CART-041", "CART-042"] },
+    { "id": "GAP-002", "domain": "CART", "name": "Price change during session", "score": 8.4, "priority": "High", "cases": ["CART-043", "CART-044", "CART-045"] },
+    { "id": "GAP-003", "domain": "CART", "name": "Cart validation errors block checkout", "score": 9.4, "priority": "Critical", "cases": ["CART-046", "CART-047", "CART-048"] },
+    { "id": "GAP-004", "domain": "CHECKOUT", "name": "Guest checkout", "score": 9.4, "priority": "Critical", "cases": ["CHK-061", "CHK-062", "CHK-063", "CHK-064"] },
+    { "id": "GAP-005", "domain": "CHECKOUT", "name": "B2B checkout (PO number, approval)", "score": 8.4, "priority": "High", "cases": ["CHK-065", "CHK-066", "CHK-067"] },
+    { "id": "GAP-006", "domain": "CHECKOUT", "name": "Billing != shipping address", "score": 8.4, "priority": "High", "cases": ["CHK-068", "CHK-069", "CHK-070"] },
+    { "id": "GAP-007", "domain": "CHECKOUT", "name": "Checkout field validation", "score": 9.4, "priority": "Critical", "cases": ["CHK-071", "CHK-072", "CHK-073", "CHK-074"] },
+    { "id": "GAP-008", "domain": "ORDERS", "name": "Reorder flow", "score": 8.4, "priority": "High", "cases": ["ORD-001", "ORD-002", "ORD-003"] },
+    { "id": "GAP-009", "domain": "ORDERS", "name": "Order status tracking", "score": 8.8, "priority": "High", "cases": ["ORD-004", "ORD-005", "ORD-006"] }
+  ],
+  "timestamp": "2026-03-06T12:00:00Z"
+}

@@ -1,0 +1,68 @@
+price_id,pricelist_id,product_id,sku,list_price,sale_price,min_quantity,currency,test_purpose
+PR-001,PL-USD-001,BPROD-001,CISCO-SW24-001,2499.99,,1,USD,Standard price — enterprise switch
+PR-002,PL-USD-001,BPROD-002,CISCO-SW48-001,4299.99,,1,USD,Standard price — large switch
+PR-003,PL-USD-001,BPROD-003,UBNT-AP-001,179.99,,1,USD,Standard price — access point
+PR-004,PL-USD-001,BPROD-004,CAT6-PATCH-001,8.99,,1,USD,Standard price — low-cost cable
+PR-005,PL-USD-001,BPROD-005,CAT6-PATCH-025,12.99,,1,USD,Standard price — cable variant
+PR-006,PL-USD-001,BPROD-006,DELL-LAT-001,1499.99,,1,USD,Standard price — laptop base config
+PR-007,PL-USD-001,BPROD-007,DELL-LAT-001-32-1TB,1899.99,,1,USD,Variation price — upgraded config
+PR-008,PL-USD-001,BPROD-008,DELL-LAT-001-8-256,1199.99,,1,USD,Variation price — entry config
+PR-009,PL-USD-001,BPROD-009,HP-Z2-001,3899.99,,1,USD,Standard price — workstation
+PR-010,PL-USD-001,BPROD-010,LG-27UK850-001,449.99,,1,USD,Standard price — monitor
+PR-011,PL-USD-001,BPROD-011,SAMSUNG-34-001,599.99,,1,USD,Standard price — ultrawide monitor
+PR-012,PL-USD-001,BPROD-012,LOGI-MX-001,99.99,,1,USD,Standard price — mouse parent
+PR-013,PL-USD-001,BPROD-013,LOGI-MX-001-GY,99.99,,1,USD,Same price as parent — color variation
+PR-014,PL-USD-001,BPROD-014,LOGI-MX-001-WH,99.99,,1,USD,Same price as parent — color variation
+PR-015,PL-USD-001,BPROD-015,LOGI-KB-001,109.99,,1,USD,Standard price — keyboard
+PR-016,PL-USD-001,BPROD-016,3M-PPE-HARDHAT-001,29.99,,1,USD,Standard price — hard hat parent
+PR-017,PL-USD-001,BPROD-017,3M-PPE-HARDHAT-WH,29.99,,1,USD,Same price — white variation
+PR-018,PL-USD-001,BPROD-018,3M-PPE-HARDHAT-YL,29.99,,1,USD,Same price — yellow variation
+PR-019,PL-USD-001,BPROD-019,3M-PPE-HARDHAT-BL,29.99,,1,USD,Same price — blue variation
+PR-020,PL-USD-001,BPROD-020,FAK-OSHA-001,89.99,,1,USD,Standard price — first aid kit
+PR-021,PL-USD-001,BPROD-021,DEWALT-DCD771-001,149.99,,1,USD,Standard price — cordless drill
+PR-022,PL-USD-001,BPROD-022,MAKITA-XFD131-001,169.99,,1,USD,Standard price — competing drill
+PR-023,PL-USD-001,BPROD-023,BOSCH-WRENCH-001,89.99,,1,USD,Standard price — wrench set
+PR-024,PL-USD-001,BPROD-024,HEX-BOLT-001,24.99,,1,USD,Standard price — bolt box (qty 1 box)
+PR-025,PL-USD-001,BPROD-025,PJACK-001,349.99,,1,USD,Standard price — pallet jack
+PR-026,PL-USD-001,BPROD-026,HAMM-A4-001,49.99,,1,USD,Standard price — paper case
+PR-027,PL-USD-001,BPROD-027,HP-TONER-001,79.99,,1,USD,Standard price — toner
+PR-028,PL-USD-001,BPROD-028,STLCASE-LEAP-001,1299.99,,1,USD,Standard price — chair parent
+PR-029,PL-USD-001,BPROD-029,STLCASE-LEAP-BK,1299.99,,1,USD,Same price — black variation
+PR-030,PL-USD-001,BPROD-030,STLCASE-LEAP-NY,1299.99,,1,USD,Same price — navy variation
+PR-031,PL-USD-001,BPROD-031,STLCASE-LEAP-MS,1399.99,,1,USD,Premium for mesh — material surcharge variation
+PR-032,PL-USD-001,BPROD-032,HMILL-DESK-001,1849.99,,1,USD,Standard price — sit-stand desk
+PR-033,PL-USD-001,BPROD-033,LOGI-RALLY-001,2999.99,,1,USD,Standard price — conference system
+PR-034,PL-USD-001,BPROD-034,MS-TEAMS-HEADSET,49.99,,1,USD,Standard price — headset
+PR-035,PL-USD-001,BPROD-035,COFFEE-KEURIG-001,199.99,,1,USD,Standard price — coffee brewer
+PR-036,PL-USD-001,BPROD-036,DOCK-TB4-001,379.99,,1,USD,Standard price — TB4 dock
+PR-037,PL-USD-001,BPROD-037,DIGITAL-LICENSE-001,12.50,,1,USD,Per-user monthly price — digital product
+PR-038,PL-USD-001,BPROD-038,WARRANTY-EXT-001,149.99,,1,USD,Standard price — warranty service
+PR-039,PL-USD-001,BPROD-039,OOS-PRODUCT-001,249.99,,1,USD,Priced but out of stock
+PR-040,PL-USD-001,BPROD-042,MIN-PRICE-001,1.99,,1,USD,Minimum price boundary test
+PR-041,PL-USD-002,BPROD-004,CAT6-PATCH-001,7.49,,10,USD,Volume tier — 10+ cables at discount
+PR-042,PL-USD-002,BPROD-004,CAT6-PATCH-001,5.99,,50,USD,Volume tier — 50+ cables deeper discount
+PR-043,PL-USD-002,BPROD-004,CAT6-PATCH-001,4.99,,100,USD,Volume tier — 100+ cables best price
+PR-044,PL-USD-002,BPROD-024,HEX-BOLT-001,21.99,,5,USD,Volume tier — 5+ boxes
+PR-045,PL-USD-002,BPROD-024,HEX-BOLT-001,18.99,,20,USD,Volume tier — 20+ boxes
+PR-046,PL-USD-002,BPROD-024,HEX-BOLT-001,15.99,,50,USD,Volume tier — 50+ boxes
+PR-047,PL-USD-002,BPROD-026,HAMM-A4-001,44.99,,5,USD,Volume tier — 5+ paper cases
+PR-048,PL-USD-002,BPROD-026,HAMM-A4-001,39.99,,20,USD,Volume tier — 20+ paper cases
+PR-049,PL-USD-002,BPROD-027,HP-TONER-001,69.99,,5,USD,Volume tier — 5+ toners
+PR-050,PL-USD-002,BPROD-027,HP-TONER-001,59.99,,20,USD,Volume tier — 20+ toners bulk
+PR-051,PL-USD-002,BPROD-003,UBNT-AP-001,159.99,,10,USD,Volume tier — 10+ access points
+PR-052,PL-USD-002,BPROD-003,UBNT-AP-001,139.99,,25,USD,Volume tier — 25+ access points
+PR-053,PL-USD-002,BPROD-006,DELL-LAT-001,1349.99,,5,USD,Volume tier — 5+ laptops fleet discount
+PR-054,PL-USD-002,BPROD-006,DELL-LAT-001,1199.99,,25,USD,Volume tier — 25+ laptops enterprise discount
+PR-055,PL-USD-004,BPROD-010,LG-27UK850-001,449.99,349.99,1,USD,Sale price — monitor clearance
+PR-056,PL-USD-004,BPROD-011,SAMSUNG-34-001,599.99,499.99,1,USD,Sale price — ultrawide clearance
+PR-057,PL-USD-004,BPROD-021,DEWALT-DCD771-001,149.99,119.99,1,USD,Sale price — tool clearance
+PR-058,PL-USD-004,BPROD-035,COFFEE-KEURIG-001,199.99,149.99,1,USD,Sale price — breakroom clearance
+PR-059,PL-EUR-001,BPROD-001,CISCO-SW24-001,2299.99,,1,EUR,EUR price — enterprise switch
+PR-060,PL-EUR-001,BPROD-003,UBNT-AP-001,164.99,,1,EUR,EUR price — access point
+PR-061,PL-EUR-001,BPROD-006,DELL-LAT-001,1379.99,,1,EUR,EUR price — laptop
+PR-062,PL-EUR-001,BPROD-010,LG-27UK850-001,414.99,,1,EUR,EUR price — monitor
+PR-063,PL-EUR-001,BPROD-012,LOGI-MX-001,91.99,,1,EUR,EUR price — mouse
+PR-064,PL-EUR-001,BPROD-015,LOGI-KB-001,101.99,,1,EUR,EUR price — keyboard
+PR-065,PL-EUR-001,BPROD-028,STLCASE-LEAP-001,1199.99,,1,EUR,EUR price — chair
+PR-066,PL-EUR-001,BPROD-032,HMILL-DESK-001,1699.99,,1,EUR,EUR price — desk
+PR-067,PL-EUR-001,BPROD-037,DIGITAL-LICENSE-001,11.50,,1,EUR,EUR per-user monthly — digital product

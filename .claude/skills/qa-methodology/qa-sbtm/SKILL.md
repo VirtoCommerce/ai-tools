@@ -1,7 +1,6 @@
 ---
 description: "[QA Method] Session-based exploratory testing: SBTM charters, heuristics (CRISP/SFDPOT), tours, session notes, debrief."
 argument-hint: "domain | charter type | heuristic"
-disable-model-invocation: true
 ---
 
 # /qa-sbtm — Session-Based Test Management (SBTM) Methodology

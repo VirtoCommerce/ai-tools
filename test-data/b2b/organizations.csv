@@ -1,0 +1,9 @@
+org_id,org_name,org_type,status,business_category,description,phones,emails,groups,parent_org_id,test_purpose
+ORG-001,TEST-Acme Industrial Supply,B2B,Active,Industrial Distribution,"Full-service industrial supply distributor — primary test org with complete hierarchy",+1-212-555-1000;+1-212-555-1001,purchasing@acme-industrial.test;info@acme-industrial.test,Premium Customers,,Primary org — full user hierarchy (admin + buyers + viewer)
+ORG-002,TEST-TechFlow Solutions,B2B,Active,Technology Services,"IT procurement and consulting firm — second org for multi-org testing",+1-415-555-2000,orders@techflow.test;support@techflow.test,Standard Customers,,Second org — multi-org switching tests
+ORG-003,TEST-BuildRight Construction,B2B,Active,Construction,"Construction company — tests industrial/safety product purchasing",+1-713-555-3000,procurement@buildright.test,Standard Customers,,Third org — safety/industrial product focus
+ORG-004,TEST-Acme West Division,Division,Active,Industrial Distribution,"West Coast division of Acme — child org for hierarchy testing",+1-310-555-4000,west@acme-industrial.test,,ORG-001,Child org — parent-child hierarchy test
+ORG-005,TEST-Acme EU Operations,Division,Active,Industrial Distribution,"European operations — child org for multi-region",+49-30-555-5000,eu@acme-industrial.test,,ORG-001,Child org — multi-region/currency testing
+ORG-006,TEST-Suspended Corp,B2B,Suspended,Manufacturing,"Suspended organization — should not allow purchases or login",+1-555-555-6000,info@suspended-corp.test,Blocked,,Suspended org — negative access test
+ORG-007,TEST-Empty Org,B2B,Active,Consulting,"Active org with no contacts or users — empty state testing",+1-555-555-7000,info@empty-org.test,,,Empty org — no members boundary test
+ORG-008,TEST-SingleUser Ltd,B2B,Active,Retail,"Org with exactly one user — minimal B2B setup",+1-555-555-8000,admin@singleuser.test,Standard Customers,,Single-user org — minimal hierarchy test

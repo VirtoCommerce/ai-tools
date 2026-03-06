@@ -88,8 +88,11 @@ For EACH test case in the CSV, execute the following protocol:
   - **SKIPPED** — test intentionally skipped with documented reason
 - Add notes for any status other than PASS
 
-### 2.7 Bug Detection
-For each FAIL, create a bug entry with:
+### 2.7 Bug Detection (Preliminary Only)
+
+**You are the test executor, NOT the bug investigator.** When a test case fails, record a preliminary bug entry with the evidence you have. A separate agent (`qa-testing-expert` via `/qa-bug`) will independently reproduce and investigate before the bug is confirmed and filed.
+
+For each FAIL, create a **preliminary** bug entry with:
 - Bug ID: `BUG_{{SUITE_ID}}_NNN` (sequential)
 - Title: concise problem statement
 - Severity: Critical / High / Medium / Low
@@ -97,6 +100,12 @@ For each FAIL, create a bug entry with:
 - Steps to Reproduce: numbered, deterministic
 - Expected vs Actual
 - Console errors (if any)
+- **`confirmed`: `false`** — always set to false. Only an independent investigation agent can set this to true.
+
+**Do NOT treat preliminary bugs as confirmed defects.** Transient failures (search index lag, stale cache, timing issues) frequently appear during automated regression. The orchestrator will dispatch a separate investigation agent to:
+1. Reproduce the failure independently on a fresh browser context
+2. Run the bug investigation flow (isolate layer, gather evidence, identify root cause)
+3. Classify as confirmed bug, flaky test, environment issue, or false positive
 
 ---
 
@@ -159,7 +168,8 @@ Write structured JSON to `{{OUTPUT_FILE}}` with this exact schema:
       "stepsToReproduce": "1. ...\n2. ...\n3. ...",
       "expected": "What should happen",
       "actual": "What actually happened",
-      "consoleErrors": ["error message if any"]
+      "consoleErrors": ["error message if any"],
+      "confirmed": false
     }
   ],
   "errors": []

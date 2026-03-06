@@ -27,6 +27,7 @@ npm run ci:critical      # Run critical P0 suites (01, 06, 08, 14)
 npm run ci:frontend      # Run all frontend suites (01-13, 35-36)
 npm run ci:backend       # Run all backend suites (14-34)
 npm run ci:full          # Run full regression (all 36 suites, $80 budget)
+npm run ci:coverage      # Run coverage generation pipeline (npx tsx ci/run-coverage.ts)
 npm run ci:notify        # Send Teams notification (requires TEAMS_WEBHOOK_URL)
 ```
 
@@ -55,10 +56,10 @@ Access via `config.js`: `import { env } from './config.js'`
 vc-mcp-testing-module/
 ├── INDEX.md                 # Top-level repo navigation hub (quick links to all directories)
 ├── .claude/agents/          # Claude Code agent configurations (11 agents, tracked in git)
-│   └── knowledge/           # Shared agent reference files (8 files: business-logic, platform-patterns, browser-quirks, debugging-signals, performance-thresholds, catalog, store-settings, white-labeling)
-├── .claude/skills/          # Skills grouped by category (19 skills in 3 groups, tracked in git)
+│   └── knowledge/           # Shared agent reference files (9 files: business-logic, platform-patterns, browser-quirks, debugging-signals, performance-thresholds, catalog, store-settings, white-labeling, test-data-generation)
+├── .claude/skills/          # Skills grouped by category (20 skills in 3 groups, tracked in git)
 │   ├── vc-knowledge/        # VC docs, module analysis, API reference, storefront reference (4 skills)
-│   ├── testing/             # Storybook, accessibility, design, plan, API (5 skills)
+│   ├── testing/             # Storybook, accessibility, design, plan, API, seed data (6 skills)
 │   └── qa-methodology/      # Process, investigation, evidence, test design, risk, metrics, SBTM, defect (8 skills)
 ├── .claude/commands/        # Slash commands (9 commands, tracked in git)
 ├── .mcp.json                # MCP server configuration (gitignored, local-only)
@@ -78,10 +79,12 @@ vc-mcp-testing-module/
 ├── reports/                 # Bug reports and regression test reports
 ├── archive/sprints/         # Historical sprint test cases                
 ├── Test suites & Cases/     # Original TestRail export (source-of-truth reference: Backend, E2E, Frontend)
+├── scripts/                 # Utility scripts (reporting.ts, skill-usage, presentation generator)
+├── results/                 # Autonomous regression run outputs (gitignored, transient)
 ├── config.js                # Environment configuration (loads .env)
 ```
 
-**Gitignored:** `settings.json`, `.env`, `.mcp.json`, `test-results/`, `.serena/`, `.playwright-mcp/`, `ci/`, `.github/`, `.claude/settings.local.json`
+**Gitignored:** `settings.json`, `.env`, `.mcp.json`, `test-results/`, `results/`, `.serena/`, `.playwright-mcp/`, `ci/`, `.github/`, `.claude/settings.local.json`
 
 **Tracked in git:** `.claude/agents/`, `.claude/skills/`, `.claude/commands/`, `.claude/hooks/hooks.json`, `.claude/playwright-baseline.json`, `config/` — agent definitions, skills, slash commands, hooks, and browser configs are version-controlled.
 
@@ -89,7 +92,7 @@ vc-mcp-testing-module/
 
 **Note on `.mcp.json`:** This file is gitignored. After cloning, create it locally. Windows uses `cmd /c npx`, Linux/Mac uses `npx` directly. See the MCP Servers section for required server configuration.
 
-## Architecture: Two Testing Modes
+## Architecture: Three Testing Modes
 
 ### 1. Interactive MCP-Driven Testing (Primary)
 Load a prompt template from `docs/prompts/`, execute via MCP browser tools with DevTools monitoring. After each flow: export HAR, capture console logs, take screenshots. Generate bug reports in `reports/bugs/`.
@@ -106,6 +109,13 @@ Load a prompt template from `docs/prompts/`, execute via MCP browser tools with 
 4. Spawns sub-agents using `docs/prompts/test-runner-agent.md` template with substituted parameters (`{{SUITE_ID}}`, `{{BROWSER_SERVER}}`, `{{ENVIRONMENT_URL}}`, `{{OUTPUT_FILE}}`, etc.)
 5. Each sub-agent gets an isolated browser context, executes all test cases from its CSV, writes JSON results
 6. Orchestrator collects results, handles retries with browser fallback chain, produces consolidated report
+
+### 3. Autonomous Interactive Regression (Agent Teams)
+`autonomous-regression-orchestrator` creates a team of child agents using Agent Teams API (TeamCreate, SendMessage, TaskCreate). Each child gets an isolated browser context, fresh authentication, and exponential backoff (30s→60s→120s). The orchestrator manages a 3+1 token bucket (3 browser + 1 reporting agent), tracks failures in `results/{RUN_ID}/failures.json`, retries failed suites with browser fallback chain (max 3 attempts), and produces a consolidated report with quality gate evaluation and optional JIRA ticket creation via Atlassian MCP.
+
+**Invoke:** `/qa-regression critical --autonomous` or use `autonomous-regression-orchestrator` agent directly.
+**Results:** `results/{RUN_ID}/` (regression-report.md, summary.json, failures.json, per-suite results)
+**Reporting module:** `scripts/reporting.ts` (generate reports, JIRA payloads, status updates)
 
 ### Test Suite Manifest: `config/test-suites.json`
 Central configuration for regression orchestration. Defines:
@@ -142,9 +152,9 @@ All 6 servers in the table above are configured in `.mcp.json` (project-level). 
 
 ## Claude Code Specialized Agents
 
-11 agents in `.claude/agents/` across two teams (QA + BA). See `.claude/agents/README.md` for full documentation. QA agents use a **four-layer prompt architecture** — business logic (invariants), domain knowledge (judgment), skill set (technique), and design decisions (constraints). Shared reference files in `.claude/agents/knowledge/`: `business-logic.md`, `platform-patterns.md`, `browser-quirks.md`, `debugging-signals.md`, `performance-thresholds.md`, `catalog.md`, `store-settings.md`, `white-labeling.md` (8 files) — these are cross-agent knowledge bases that agents should consult during testing. `business-logic.md` — testable business invariants: pricing, cart, checkout, orders, auth, B2B, catalog, cross-domain.
+12 agents in `.claude/agents/` across two teams (QA + BA). See `.claude/agents/README.md` for full documentation. QA agents use a **four-layer prompt architecture** — business logic (invariants), domain knowledge (judgment), skill set (technique), and design decisions (constraints). Shared reference files in `.claude/agents/knowledge/`: `business-logic.md`, `platform-patterns.md`, `browser-quirks.md`, `debugging-signals.md`, `performance-thresholds.md`, `catalog.md`, `store-settings.md`, `white-labeling.md` (8 files) — these are cross-agent knowledge bases that agents should consult during testing. `business-logic.md` — testable business invariants: pricing, cart, checkout, orders, auth, B2B, catalog, cross-domain.
 
-### QA Team (7 agents)
+### QA Team (8 agents)
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
@@ -155,6 +165,7 @@ All 6 servers in the table above are configured in `.mcp.json` (project-level). 
 | **test-management-specialist** | sonnet | Test planning, test case writing, coverage tracking, TestRail artifacts |
 | **ui-ux-expert** | sonnet | Storybook component testing, WCAG 2.1 AA accessibility, design system |
 | **regression-orchestrator** | sonnet | Parallel regression + smoke mode, retries, browser fallback, consolidated reports |
+| **autonomous-regression-orchestrator** | sonnet | Agent Teams regression: token bucket, exponential backoff, failure recovery, JIRA integration |
 
 ### BA Team (4 agents)
 
@@ -165,7 +176,7 @@ All 6 servers in the table above are configured in `.mcp.json` (project-level). 
 | **ba-story-writer** | sonnet | Agile user stories with BDD acceptance criteria, DoD, test scenarios |
 | **ba-doc-writer** | sonnet | User docs, admin guides, API quick-start, UX improvement specs |
 
-### Slash Commands (9) — `.claude/commands/`
+### Slash Commands (10) — `.claude/commands/`
 
 All commands have YAML frontmatter with `description`, `argument-hint`, and invocation control. Commands with side effects use `disable-model-invocation: true` to prevent accidental auto-triggering.
 
@@ -178,10 +189,11 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/qa-bug` | `description \| VCST-XXXX \| screenshot` | No | Reproduce, document, and optionally file a JIRA bug |
 | `/qa-exploratory` | `[checkout\|catalog\|B2B\|mobile\|new]` | No | Guided exploratory testing session with heuristics |
 | `/qa-env-check` | `[vars\|endpoints\|mcp]` | **Yes** | Validate env vars, endpoints, MCP servers, test infra |
+| `/qa-coverage-generation` | `[p0\|p1\|full\|domain <name>\|ci-dry-run]` | No | Orchestrated parallel coverage generation across domain batches with CI support |
 | `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|module <name>]` | No | Business analysis (full/flows/api/docs/stories/module) |
 | `/ba-stories` | `feature name \| VCST-XXXX` | No | Generate Agile user stories with BDD acceptance criteria |
 
-### Skills (19) — `.claude/skills/` (grouped by category)
+### Skills (20) — `.claude/skills/` (grouped by category)
 
 Skills are slash commands with supporting reference files, organized into 3 category directories. Each skill has a `SKILL.md` with `[Category]` tag in the description. See `.claude/skills/README.md` for full reference.
 
@@ -194,7 +206,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/vc-api` | `xCart \| xCatalog \| REST` | xAPI & REST API query reference | `xapi-query-ref.md` |
 | `/vc-frontend` | `page \| URL \| product type \| account \| menu \| sitemap` | Storefront reference: page URLs, navigation, product types, account structure, test data | `sitemap.md` |
 
-**`testing/` — Testing (7) — manual invocation:**
+**`testing/` — Testing (8) — manual invocation:**
 
 | Skill | Arguments | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|
@@ -205,6 +217,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/qa-checklist` | `domain \| feature \| VCST-XXXX \| new <domain>` | Test case writing checklists (18 domains + Bug Fix Verification, 158 items) | `domain-checklists.md`, `checklist-creation-guide.md` |
 | `/qa-api` | `endpoint \| module \| graphql` | REST API & GraphQL xAPI testing | `test-cases-api-graphql.md` |
 | `/qa-coverage-gap` | `analyze \| generate \| validate \| full \| domain <name> \| suite <ID>` | Autonomous test coverage gap analysis and generation (4-cycle pipeline) | `coverage-gap-methodology.md`, `feature-domain-map.md` |
+| `/qa-seed-data` | `minimal \| catalog \| b2b \| pricing \| full \| teardown` | Generate test data via Postman MCP: catalogs, products, pricing, inventory, users, orgs | `test-data-generation.md` (knowledge file) |
 
 **`qa-methodology/` — QA Methodology (8) — manual invocation:**
 

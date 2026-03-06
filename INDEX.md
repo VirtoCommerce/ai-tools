@@ -16,14 +16,14 @@ This repository contains QA testing documentation and MCP-driven testing for the
 | [config/](config/) | MCP browser configs and test-suites.json manifest |
 | [ci/](ci/) | CI regression via Claude Agent SDK (Docker + GitHub Actions) |
 | [Test suites & Cases/](Test%20suites%20%26%20Cases/) | Original TestRail export (source-of-truth reference) |
-| [scripts/](scripts/) | Utility scripts (Katalon test extraction) |
+| [scripts/](scripts/) | Utility scripts (reporting, skill-usage, presentation generator) |
 | [archive/](archive/) | Historical sprint test documentation |
 
 ## Directory Structure
 
 ```
 vc-mcp-testing-module/
-├── .claude/agents/            # Claude Code agent configurations (11 agents: 7 QA + 4 BA)
+├── .claude/agents/            # Claude Code agent configurations (12 agents: 8 QA + 4 BA)
 │   └── knowledge/             # 8 shared reference files (business-logic, platform-patterns, etc.)
 ├── .github/workflows/         # GitHub Actions (regression.yml)
 │
@@ -87,7 +87,7 @@ Configured via environment variables in `.env` (run `npm run env:check` to valid
 | **Storybook QA** | `STORYBOOK_URL` |
 | **Storybook Dev** | `STORYBOOK_DEV_URL` |
 
-Default environment is **QA**. Theme presets: Default, Coffee.
+Default environment is **QA**. Theme presets: Coffee.
 
 ## Test Domains
 
@@ -163,6 +163,7 @@ npm run ci:notify        # Send Teams notification
 | **test-management-specialist** | sonnet | Test planning, coverage tracking, TestRail artifacts |
 | **ui-ux-expert** | sonnet | Storybook, WCAG 2.1 AA accessibility, design system |
 | **regression-orchestrator** | sonnet | Parallel regression execution, retries, consolidated reports |
+| **autonomous-regression-orchestrator** | sonnet | Agent Teams regression: token bucket, failure recovery, JIRA integration |
 | **ba-system-analyzer** | sonnet | BA: Repo structure, module inventory, user flows |
 | **ba-api-specialist** | sonnet | BA: API surface analysis via Postman/Swagger |
 | **ba-story-writer** | sonnet | BA: Agile user stories with BDD acceptance criteria |
@@ -176,8 +177,11 @@ npm run ci:notify        # Send Teams notification
 | **playwright-firefox** | Browser automation with Firefox |
 | **playwright-edge** | Browser automation with Edge |
 | **postman** | API testing - collections, environments, monitors |
-| **Chrome DevTools** | Console logs, network requests, HAR export |
-| **Atlassian** | JIRA integration for test/bug management |
+| **github** | PR review, code search, issue management |
+| **context7** | Up-to-date library documentation lookup |
+| **Chrome DevTools** | Console logs, network requests, HAR export (user-level) |
+| **Atlassian** | JIRA integration for test/bug management (user-level) |
+| **Figma** | Visual comparison testing against design specs (user-level) |
 
 ## Key Files
 

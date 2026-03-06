@@ -1,0 +1,63 @@
+stock_id,ffc_id,product_id,sku,in_stock_quantity,reserved_quantity,reorder_min_quantity,preorder_quantity,backorder_quantity,allow_backorder,allow_preorder,track_inventory,test_purpose
+STK-001,FFC-001,BPROD-001,CISCO-SW24-001,25,2,5,0,0,false,false,true,Normal stock — enterprise switch East
+STK-002,FFC-002,BPROD-001,CISCO-SW24-001,10,0,3,0,0,false,false,true,Split stock — enterprise switch West
+STK-003,FFC-001,BPROD-002,CISCO-SW48-001,8,1,3,0,0,false,false,true,Normal stock — large switch
+STK-004,FFC-001,BPROD-003,UBNT-AP-001,150,5,20,0,0,false,false,true,High stock — access points bulk
+STK-005,FFC-002,BPROD-003,UBNT-AP-001,75,0,10,0,0,false,false,true,Split stock — APs West
+STK-006,FFC-003,BPROD-003,UBNT-AP-001,30,0,5,0,0,false,false,true,BOPIS pickup stock — APs
+STK-007,FFC-001,BPROD-004,CAT6-PATCH-001,500,10,50,0,0,false,false,true,High stock — cables bulk East
+STK-008,FFC-002,BPROD-004,CAT6-PATCH-001,300,0,30,0,0,false,false,true,High stock — cables bulk West
+STK-009,FFC-001,BPROD-005,CAT6-PATCH-025,200,0,25,0,0,false,false,true,Normal stock — cable variant
+STK-010,FFC-001,BPROD-006,DELL-LAT-001,40,3,10,0,0,false,false,true,Normal stock — laptop parent
+STK-011,FFC-002,BPROD-006,DELL-LAT-001,15,0,5,0,0,false,false,true,Split stock — laptop West
+STK-012,FFC-001,BPROD-007,DELL-LAT-001-32-1TB,12,1,3,0,0,false,false,true,Normal stock — upgraded laptop
+STK-013,FFC-001,BPROD-008,DELL-LAT-001-8-256,20,0,5,0,0,false,false,true,Normal stock — entry laptop
+STK-014,FFC-001,BPROD-009,HP-Z2-001,6,0,2,0,0,false,false,true,Low stock — workstation (expensive)
+STK-015,FFC-001,BPROD-010,LG-27UK850-001,35,2,5,0,0,false,false,true,Normal stock — monitor
+STK-016,FFC-002,BPROD-010,LG-27UK850-001,20,0,5,0,0,false,false,true,Split stock — monitor West
+STK-017,FFC-001,BPROD-011,SAMSUNG-34-001,18,0,3,0,0,false,false,true,Normal stock — ultrawide
+STK-018,FFC-001,BPROD-012,LOGI-MX-001,60,0,10,0,0,false,false,true,Normal stock — mouse parent
+STK-019,FFC-001,BPROD-013,LOGI-MX-001-GY,25,0,5,0,0,false,false,true,Normal stock — gray mouse
+STK-020,FFC-001,BPROD-014,LOGI-MX-001-WH,25,0,5,0,0,false,false,true,Normal stock — white mouse
+STK-021,FFC-001,BPROD-015,LOGI-KB-001,45,0,10,0,0,false,false,true,Normal stock — keyboard
+STK-022,FFC-001,BPROD-016,3M-PPE-HARDHAT-001,100,0,15,0,0,false,false,true,High stock — hard hat parent
+STK-023,FFC-001,BPROD-017,3M-PPE-HARDHAT-WH,40,0,10,0,0,false,false,true,Normal stock — white hard hat
+STK-024,FFC-001,BPROD-018,3M-PPE-HARDHAT-YL,40,0,10,0,0,false,false,true,Normal stock — yellow hard hat
+STK-025,FFC-001,BPROD-019,3M-PPE-HARDHAT-BL,40,0,10,0,0,false,false,true,Normal stock — blue hard hat
+STK-026,FFC-003,BPROD-016,3M-PPE-HARDHAT-001,20,0,5,0,0,false,false,true,BOPIS pickup — hard hats
+STK-027,FFC-001,BPROD-020,FAK-OSHA-001,30,0,5,0,0,false,false,true,Normal stock — first aid kit
+STK-028,FFC-001,BPROD-021,DEWALT-DCD771-001,50,0,10,0,0,false,false,true,Normal stock — cordless drill
+STK-029,FFC-002,BPROD-021,DEWALT-DCD771-001,25,0,5,0,0,false,false,true,Split stock — drill West
+STK-030,FFC-001,BPROD-022,MAKITA-XFD131-001,35,0,5,0,0,false,false,true,Normal stock — competing drill
+STK-031,FFC-001,BPROD-023,BOSCH-WRENCH-001,40,0,10,0,0,false,false,true,Normal stock — wrench set
+STK-032,FFC-001,BPROD-024,HEX-BOLT-001,500,20,50,0,0,false,false,true,High stock — bulk fasteners East
+STK-033,FFC-002,BPROD-024,HEX-BOLT-001,300,0,30,0,0,false,false,true,High stock — bulk fasteners West
+STK-034,FFC-001,BPROD-025,PJACK-001,5,0,2,0,0,false,false,true,Low stock — pallet jack (heavy item)
+STK-035,FFC-001,BPROD-026,HAMM-A4-001,200,5,30,0,0,false,false,true,High stock — paper consumable
+STK-036,FFC-002,BPROD-026,HAMM-A4-001,100,0,20,0,0,false,false,true,Split stock — paper West
+STK-037,FFC-001,BPROD-027,HP-TONER-001,80,0,15,0,0,false,false,true,Normal stock — toner consumable
+STK-038,FFC-001,BPROD-028,STLCASE-LEAP-001,10,0,3,0,0,false,false,true,Normal stock — chair parent
+STK-039,FFC-001,BPROD-029,STLCASE-LEAP-BK,8,1,2,0,0,false,false,true,Normal stock — black chair
+STK-040,FFC-001,BPROD-030,STLCASE-LEAP-NY,5,0,2,0,0,false,false,true,Low stock — navy chair
+STK-041,FFC-001,BPROD-031,STLCASE-LEAP-MS,3,0,1,0,0,false,false,true,Low stock — mesh chair (premium)
+STK-042,FFC-001,BPROD-032,HMILL-DESK-001,7,0,2,0,0,false,false,true,Low stock — sit-stand desk
+STK-043,FFC-001,BPROD-033,LOGI-RALLY-001,4,0,1,0,0,false,false,true,Low stock — conference system (expensive)
+STK-044,FFC-001,BPROD-034,MS-TEAMS-HEADSET,90,0,15,0,0,false,false,true,High stock — headset commodity
+STK-045,FFC-003,BPROD-034,MS-TEAMS-HEADSET,15,0,5,0,0,false,false,true,BOPIS pickup — headsets
+STK-046,FFC-001,BPROD-035,COFFEE-KEURIG-001,20,0,5,0,0,false,false,true,Normal stock — coffee brewer
+STK-047,FFC-001,BPROD-036,DOCK-TB4-001,30,0,5,0,0,false,false,true,Normal stock — TB4 dock
+STK-048,FFC-001,BPROD-037,DIGITAL-LICENSE-001,0,0,0,0,0,false,false,false,No tracking — digital product (license)
+STK-049,FFC-001,BPROD-038,WARRANTY-EXT-001,0,0,0,0,0,false,false,false,No tracking — digital service (warranty)
+STK-050,FFC-001,BPROD-039,OOS-PRODUCT-001,0,0,5,0,0,false,false,true,Zero stock — out-of-stock test
+STK-051,FFC-002,BPROD-039,OOS-PRODUCT-001,0,0,5,0,0,false,false,true,Zero stock both FFCs — confirms unavailable
+STK-052,FFC-001,BPROD-040,INACTIVE-PROD-001,10,0,3,0,0,false,false,true,Stock exists but product inactive — should not be purchasable
+STK-053,FFC-001,BPROD-041,BULK-PALLET-001,3,0,1,0,0,false,false,true,Low stock — freight/oversized item
+STK-054,FFC-001,BPROD-042,MIN-PRICE-001,1000,0,100,0,0,false,false,true,High stock — minimum price boundary item
+STK-055,FFC-004,BPROD-001,CISCO-SW24-001,15,0,3,0,0,false,false,true,EU stock — enterprise switch
+STK-056,FFC-004,BPROD-003,UBNT-AP-001,50,0,10,0,0,false,false,true,EU stock — access points
+STK-057,FFC-004,BPROD-006,DELL-LAT-001,10,0,3,0,0,false,false,true,EU stock — laptops
+STK-058,FFC-004,BPROD-010,LG-27UK850-001,12,0,3,0,0,false,false,true,EU stock — monitors
+STK-059,FFC-001,BPROD-025,PJACK-001,0,0,2,5,0,false,true,true,Preorder — pallet jack backordered with preorder qty
+STK-060,FFC-001,BPROD-043,BACKORDER-TEST-001,0,0,5,0,10,true,false,true,Backorder allowed — test backorder flow
+STK-061,FFC-001,BPROD-014,LOGI-MX-001-WH,1,0,5,0,0,false,false,true,Critical low stock — only 1 left (boundary)
+STK-062,FFC-003,BPROD-021,DEWALT-DCD771-001,8,0,3,0,0,false,false,true,BOPIS pickup — drills

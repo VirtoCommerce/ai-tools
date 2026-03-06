@@ -1,7 +1,6 @@
 ---
 description: "[Testing] WCAG 2.1 AA accessibility audit: POUR principles, keyboard nav, color contrast, ARIA."
 argument-hint: "page URL | component name | full audit"
-disable-model-invocation: true
 ---
 
 # /qa-accessibility — WCAG 2.1 AA Accessibility Audit

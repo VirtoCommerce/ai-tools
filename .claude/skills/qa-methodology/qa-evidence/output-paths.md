@@ -13,6 +13,7 @@
 | **Full regression runs** (multi-suite reports) | `reports/regression/full-regression-YYYY-MM-DD/` | suite reports, `REGRESSION-REPORT.md` |
 | **Performance reports** | `reports/performance/` | `lists-page-performance-report-2026-02-11.md` |
 | **Exploratory session reports** (SBTM) | `reports/exploratory/` | `SBTM-checkout-edge-cases-2026-03-01.md` |
+| **Checklists** (domain test checklists, verification checklists) | `reports/checklists/` | `checkout-checklist-2026-03-06.md`, `b2c-variations-checklist.md` |
 | **BA analysis reports** (system analysis, stories, API audit) | `reports/ba/` | `ba-report-2026-03-04.md`, `checkout-stories.md` |
 | **Raw browser artifacts** (console logs, HAR, videos -- gitignored) | `test-results/{browser}/` | `test-results/chrome/console-*.log`, `test-results/firefox/har/` |
 

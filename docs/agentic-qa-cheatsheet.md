@@ -16,7 +16,7 @@
 
 ---
 
-## 2. Skills (18)
+## 2. Skills (19)
 
 ### vc-knowledge (4) — auto-invocable
 
@@ -27,7 +27,7 @@
 | `/vc-api` | xAPI & REST API query reference |
 | `/vc-frontend` | Storefront URLs, navigation, product types, test data |
 
-### testing (6) — manual invocation
+### testing (7) — manual invocation
 
 | Skill | Purpose | Delegates To |
 |-------|---------|--------------|
@@ -37,6 +37,7 @@
 | `/qa-plan` | Test plans from E2E scenario catalog (105 scenarios) | test-management-specialist |
 | `/qa-checklist` | Domain checklists (18 domains, 158 items) | test-management-specialist |
 | `/qa-api` | REST API & GraphQL xAPI testing | qa-backend-expert |
+| `/qa-coverage-gap` | Autonomous coverage gap analysis and test generation | test-management-specialist |
 
 ### qa-methodology (8) — manual invocation
 
@@ -53,7 +54,7 @@
 
 ---
 
-## 3. Agents (11)
+## 3. Agents (12)
 
 | Agent | Model | Browser | Role |
 |-------|-------|---------|------|
@@ -64,6 +65,7 @@
 | **ui-ux-expert** | Sonnet | DevTools | Storybook (55 components), WCAG 2.1 AA |
 | **test-management-specialist** | Sonnet | — | Test planning, case writing, coverage tracking |
 | **regression-orchestrator** | Sonnet | — | Parallel regression, quality gates |
+| **autonomous-regression-orchestrator** | Sonnet | — | Agent Teams regression, failure recovery, JIRA |
 | **ba-system-analyzer** | Sonnet | — | Architecture, module inventory, user flows |
 | **ba-api-specialist** | Sonnet | — | API surface via Postman/Swagger |
 | **ba-story-writer** | Sonnet | — | BDD user stories with acceptance criteria |
@@ -91,6 +93,9 @@
 
 # Bug investigation and filing
 /qa-bug Cart total shows $0 after coupon applied
+
+# Analyze test coverage gaps
+/qa-coverage-gap analyze
 
 # Guided exploratory testing
 /qa-exploratory checkout
@@ -136,9 +141,9 @@
 | Path | Purpose |
 |------|---------|
 | `CLAUDE.md` | Project knowledge base for Claude Code |
-| `.claude/agents/` | 11 agent definitions (.md files) |
+| `.claude/agents/` | 12 agent definitions (.md files) |
 | `.claude/agents/knowledge/` | 8 shared knowledge files |
-| `.claude/skills/` | 18 skills in 3 category directories |
+| `.claude/skills/` | 19 skills in 3 category directories |
 | `.claude/commands/` | 9 slash commands |
 | `.claude/ROUTING.md` | Decision tree: when to use which command/skill/agent |
 | `config/test-suites.json` | Regression suite manifest (source of truth) |

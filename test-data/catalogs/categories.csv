@@ -1,0 +1,31 @@
+category_id,catalog_id,parent_id,category_name,code,level,is_active,priority,seo_slug,meta_title,meta_description,test_purpose
+CCAT-001,CAT-PHYS-001,,Electronics,electronics,1,Yes,1,electronics,Electronics — B2B Store,Shop electronics for business,Root category — Electronics
+CCAT-002,CAT-PHYS-001,CCAT-001,Networking Equipment,networking-equipment,2,Yes,1,networking-equipment,Networking Equipment,Enterprise networking gear,Subcategory L2 — tech products
+CCAT-003,CAT-PHYS-001,CCAT-002,Routers & Switches,routers-switches,3,Yes,1,routers-switches,Routers & Switches,Managed and unmanaged switches,Subcategory L3 — leaf category
+CCAT-004,CAT-PHYS-001,CCAT-002,Cables & Adapters,cables-adapters,3,Yes,2,cables-adapters,Cables & Adapters,Ethernet and fiber cables,Subcategory L3 — leaf category
+CCAT-005,CAT-PHYS-001,CCAT-001,Computers & Laptops,computers-laptops,2,Yes,2,computers-laptops,Computers & Laptops,Business computers and workstations,Subcategory L2
+CCAT-006,CAT-PHYS-001,CCAT-005,Laptops,laptops,3,Yes,1,laptops,Business Laptops,Laptops for enterprise,Leaf category — laptops
+CCAT-007,CAT-PHYS-001,CCAT-005,Desktops & Workstations,desktops-workstations,3,Yes,2,desktops-workstations,Desktop Workstations,High-performance workstations,Leaf category — desktops
+CCAT-008,CAT-PHYS-001,CCAT-001,Peripherals,peripherals,2,Yes,3,peripherals,Computer Peripherals,Keyboards mice monitors,Subcategory L2
+CCAT-009,CAT-PHYS-001,CCAT-008,Monitors & Displays,monitors-displays,3,Yes,1,monitors-displays,Monitors & Displays,Business monitors and displays,Leaf category
+CCAT-010,CAT-PHYS-001,CCAT-008,Input Devices,input-devices,3,Yes,2,input-devices,Keyboards Mice Accessories,Input devices for workstations,Leaf category
+CCAT-011,CAT-PHYS-002,,Industrial Supplies,industrial-supplies,1,Yes,1,industrial-supplies,Industrial Supplies,B2B industrial products,Root category — Industrial
+CCAT-012,CAT-PHYS-002,CCAT-011,Safety Equipment,safety-equipment,2,Yes,1,safety-equipment,Safety Equipment,PPE and safety gear,Subcategory L2 — safety
+CCAT-013,CAT-PHYS-002,CCAT-012,Personal Protective Equipment,ppe,3,Yes,1,ppe,PPE — Personal Protective Equipment,Hard hats gloves goggles,Leaf category — PPE
+CCAT-014,CAT-PHYS-002,CCAT-012,First Aid & Medical,first-aid,3,Yes,2,first-aid,First Aid Supplies,First aid kits and medical supplies,Leaf category — first aid
+CCAT-015,CAT-PHYS-002,CCAT-011,Tools & Hardware,tools-hardware,2,Yes,2,tools-hardware,Tools & Hardware,Hand tools power tools fasteners,Subcategory L2 — tools
+CCAT-016,CAT-PHYS-002,CCAT-015,Power Tools,power-tools,3,Yes,1,power-tools,Power Tools,Drills saws grinders,Leaf category
+CCAT-017,CAT-PHYS-002,CCAT-015,Hand Tools,hand-tools,3,Yes,2,hand-tools,Hand Tools,Wrenches screwdrivers pliers,Leaf category
+CCAT-018,CAT-PHYS-002,CCAT-015,Fasteners & Hardware,fasteners,3,Yes,3,fasteners,Fasteners & Hardware,Bolts nuts screws anchors,Leaf category — high SKU count
+CCAT-019,CAT-PHYS-002,CCAT-011,Material Handling,material-handling,2,Yes,3,material-handling,Material Handling,Shelving carts pallet jacks,Subcategory L2
+CCAT-020,CAT-PHYS-003,,Office Supplies,office-supplies,1,Yes,1,office-supplies,Office Supplies,Workplace essentials,Root category — Office
+CCAT-021,CAT-PHYS-003,CCAT-020,Paper & Printing,paper-printing,2,Yes,1,paper-printing,Paper & Printing Supplies,Printer paper toner ink,Subcategory L2
+CCAT-022,CAT-PHYS-003,CCAT-020,Furniture,office-furniture,2,Yes,2,office-furniture,Office Furniture,Desks chairs storage,Subcategory L2
+CCAT-023,CAT-PHYS-003,CCAT-022,Desks & Tables,desks-tables,3,Yes,1,desks-tables,Office Desks & Tables,Standing desks conference tables,Leaf category
+CCAT-024,CAT-PHYS-003,CCAT-022,Chairs & Seating,chairs-seating,3,Yes,2,chairs-seating,Office Chairs & Seating,Ergonomic task guest chairs,Leaf category
+CCAT-025,CAT-PHYS-003,CCAT-020,Breakroom Supplies,breakroom,2,Yes,3,breakroom,Breakroom Supplies,Coffee snacks cleaning,Subcategory L2
+CCAT-026,CAT-PHYS-003,CCAT-020,Technology Accessories,tech-accessories,2,Yes,4,tech-accessories,Technology Accessories,USB hubs docking stations headsets,Subcategory L2
+CCAT-027,CAT-PHYS-001,CCAT-001,Audio & Video,audio-video,2,Yes,4,audio-video,Audio & Video Equipment,Conference room AV systems,Subcategory L2 — AV
+CCAT-028,CAT-PHYS-001,CCAT-027,Conference Systems,conference-systems,3,Yes,1,conference-systems,Conference Room Systems,Webcams speakerphones displays,Leaf category
+CCAT-029,CAT-PHYS-001,CCAT-027,Headsets & Speakers,headsets-speakers,3,Yes,2,headsets-speakers,Business Headsets & Speakers,Office audio equipment,Leaf category
+CCAT-030,CAT-PHYS-001,,Inactive Category,inactive-cat,1,No,99,inactive-category,Inactive Category,This category is disabled,Testing inactive/hidden category behavior

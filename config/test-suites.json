@@ -3,7 +3,7 @@
     "version": "2.0",
     "description": "Regression test suite manifest for parallel orchestration (Frontend + Backend)",
     "generated": "2026-02-23",
-    "totalSuites": 36,
+    "totalSuites": 40,
     "csvFormat": "TestRail CSV (ID, Title, Section, Type, Priority, Estimate, Preconditions, Steps, Expected Result, References, Automation Status)"
   },
   "defaults": {
@@ -75,7 +75,7 @@
       "name": "Cart & Checkout Tests",
       "file": "regression/suites/Frontend/04-cart-checkout-tests.csv",
       "priority": "P1",
-      "testCount": 40,
+      "testCount": 69,
       "estimatedMinutes": 45,
       "agent": "qa-frontend-expert",
       "tags": ["cart", "checkout", "revenue-critical", "sprint"]
@@ -115,7 +115,7 @@
       "name": "Security Tests",
       "file": "regression/suites/Frontend/08-security-tests.csv",
       "priority": "P0",
-      "testCount": 18,
+      "testCount": 21,
       "estimatedMinutes": 20,
       "agent": "qa-backend-expert",
       "tags": ["security", "pci", "daily"]
@@ -185,7 +185,7 @@
       "name": "GraphQL xAPI Tests",
       "file": "regression/suites/Backend/15-graphql-xapi-tests.csv",
       "priority": "P1",
-      "testCount": 20,
+      "testCount": 29,
       "estimatedMinutes": 25,
       "agent": "qa-backend-expert",
       "tags": ["graphql", "xapi", "backend", "sprint"]
@@ -225,7 +225,7 @@
       "name": "Pricing Admin Tests",
       "file": "regression/suites/Backend/19-pricing-tests.csv",
       "priority": "P1",
-      "testCount": 58,
+      "testCount": 64,
       "estimatedMinutes": 95,
       "agent": "qa-backend-expert",
       "tags": ["backend", "pricing", "admin", "crud", "pricelists"]
@@ -235,7 +235,7 @@
       "name": "Orders Admin Tests",
       "file": "regression/suites/Backend/20-orders-tests.csv",
       "priority": "P1",
-      "testCount": 66,
+      "testCount": 80,
       "estimatedMinutes": 90,
       "agent": "qa-backend-expert",
       "tags": ["backend", "orders", "admin", "crud", "payments", "shipments"]
@@ -245,7 +245,7 @@
       "name": "Customer Admin Tests",
       "file": "regression/suites/Backend/21-customer-tests.csv",
       "priority": "P1",
-      "testCount": 52,
+      "testCount": 72,
       "estimatedMinutes": 75,
       "agent": "qa-backend-expert",
       "tags": ["backend", "customer", "admin", "crud", "contacts", "organizations"]
@@ -265,7 +265,7 @@
       "name": "Marketing Admin Tests",
       "file": "regression/suites/Backend/23-marketing-tests.csv",
       "priority": "P1",
-      "testCount": 51,
+      "testCount": 74,
       "estimatedMinutes": 80,
       "agent": "qa-backend-expert",
       "tags": ["backend", "marketing", "admin", "crud", "promotions", "coupons", "content"]
@@ -399,14 +399,54 @@
       "estimatedMinutes": 120,
       "agent": "qa-frontend-expert",
       "tags": ["frontend", "configurable-products", "configurations", "e2e", "cart", "checkout", "admin", "security", "negative-testing", "edge-cases"]
+    },
+    {
+      "id": "37",
+      "name": "Returns Admin Tests",
+      "file": "regression/suites/Backend/37-returns-tests.csv",
+      "priority": "P1",
+      "testCount": 22,
+      "estimatedMinutes": 35,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "returns", "admin", "crud", "status-workflow", "cross-module"]
+    },
+    {
+      "id": "38",
+      "name": "Contracts Admin Tests",
+      "file": "regression/suites/Backend/38-contracts-tests.csv",
+      "priority": "P1",
+      "testCount": 18,
+      "estimatedMinutes": 30,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "contracts", "admin", "crud", "b2b", "pricing", "vendors"]
+    },
+    {
+      "id": "39",
+      "name": "Loyalty Admin Tests",
+      "file": "regression/suites/Backend/39-loyalty-tests.csv",
+      "priority": "P1",
+      "testCount": 18,
+      "estimatedMinutes": 30,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "loyalty", "admin", "conditions", "rewards", "localization"]
+    },
+    {
+      "id": "40",
+      "name": "Channels & Data Quality Tests",
+      "file": "regression/suites/Backend/40-channels-tests.csv",
+      "priority": "P2",
+      "testCount": 15,
+      "estimatedMinutes": 25,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "channels", "catalog-publishing", "completeness", "data-quality"]
     }
   ],
   "selections": {
     "smoke": ["01"],
     "critical": ["01", "06", "08", "14"],
-    "sprint": ["01", "02", "03", "04", "05", "06", "08", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "29", "30", "31", "35", "36"],
-    "full": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36"],
+    "sprint": ["01", "02", "03", "04", "05", "06", "08", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "29", "30", "31", "35", "36", "37", "38", "39"],
+    "full": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40"],
     "frontend": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "35", "36"],
-    "backend": ["14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34"]
+    "backend": ["14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "37", "38", "39", "40"]
   }
 }

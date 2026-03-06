@@ -1,7 +1,6 @@
 ---
 description: "[Testing] REST API & GraphQL xAPI: authentication, CRUD, error handling, pagination, search."
 argument-hint: "endpoint | module name | graphql | full"
-disable-model-invocation: true
 ---
 
 # /qa-api — API & GraphQL Testing

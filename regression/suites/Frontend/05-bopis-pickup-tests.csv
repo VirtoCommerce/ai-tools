@@ -302,4 +302,192 @@ BOPIS-036,Product Page BOPIS Widget - Mobile Responsive (375x667),BOPIS > Produc
 - Map renders (may be smaller or below list)
 - Touch interactions work (tap, pinch zoom on map)
 - Close button accessible
+BOPIS-037,Feature Flag Disabled - Pickup Option Hidden,BOPIS > Cart > Toggle,Functional,High,3m,"BOPIS module deactivated in store settings, products in cart","1. Deactivate BOPIS in store settings
+2. Navigate to cart
+3. Observe delivery method options
+4. Inspect DOM for pickup elements","- 'Pickup' option not in delivery options
+- No pickup trace in DOM
+- Only 'Shipping/Delivery' available",C410938,Manual
+BOPIS-038,Availability Label: Today (Main FFC Match),BOPIS > Cart > Availability,Functional,Critical,5m,"Product assigned to Main_1 FFC, location L1 Main FC = Main_1","1. Add product to cart > Select Pickup
+2. Open PickPoints modal
+3. Find location L1
+4. Observe availability chip","- 'Today' label on L1
+- No Transfer/Global label
+- Location selectable
+- Map marker matches",C412653,Manual
+BOPIS-039,Availability Label: Transfer (Transfer FFC Match),BOPIS > Cart > Availability,Functional,High,5m,"Product assigned to Transfer_1 FFC, location L3 Transfer FC = Transfer_1, GlobalTransfer = OFF","1. Add product to cart > Select Pickup
+2. Open PickPoints modal
+3. Find location L3
+4. Observe availability chip","- Transfer duration label shown (e.g., 'Transfer (2-3 days)')
+- Location selectable
+- Label text matches TransferDurationText from Admin config",C412656,Manual
+BOPIS-040,Availability Label: Global Transfer (1 week),BOPIS > Cart > Availability,Functional,High,5m,"Product assigned to Main_1 FFC, location L2 no Main FC, GlobalTransfer = ON","1. Add product to cart > Select Pickup
+2. Open PickPoints modal
+3. Find location L2
+4. Observe availability chip","- 'Global Transfer (1 week)' label shown
+- Label text matches GlobalTransferDurationText
+- Location selectable",C412655,Manual
+BOPIS-041,Availability Label: Not Available (No Match + Global OFF),BOPIS > Cart > Availability,Functional,High,5m,"Product assigned to Transfer_1 FFC, location L4 Main FC only, GlobalTransfer = OFF","1. Add product to cart > Select Pickup
+2. Open PickPoints modal
+3. Find location L4
+4. Attempt to select","- 'Not available' state (greyed/disabled)
+- Cannot select for pickup
+- No console errors",C412654,Manual
+BOPIS-042,Availability Label: TrackInventory=FALSE but MFC stock=0,BOPIS > Cart > Availability,Functional,Medium,5m,"Product with TrackInventory=FALSE, MFC stock reported 0","1. Add product to cart > Select Pickup
+2. Open PickPoints modal
+3. Check availability labels","- Product shows as available (TrackInventory=FALSE means stock not checked)
+- Location selectable despite 0 stock report",C412663,Manual
+BOPIS-043,No Valid Pickup Locations - Pickup Blocked,BOPIS > Cart > Availability,Functional,High,5m,"Product P5 with GlobalTransfer=OFF has no compatible locations","1. Add product P5 to cart
+2. Select Pickup
+3. Open PickPoints modal","- Message: 'There are no available pickup points for these products'
+- Pickup radio blocked or error shown
+- User prompted to select another shipping method",C412691,Manual
+BOPIS-044,Inactive Location Excluded from Modal,BOPIS > Cart > Availability,Functional,High,3m,"One location deactivated in Admin (Store > Shipping > BOPIS > Active=OFF)","1. Open PickPoints modal from cart
+2. Verify deactivated location is NOT in the list
+3. Verify active locations still present","- Deactivated location absent from list and map
+- Active locations unaffected
+- No error or empty gap in list",C410939,Manual
+BOPIS-045,Mixed Cart: BOPIS + Delivery-Only Items,BOPIS > Cart > Mixed,Functional,High,8m,"Cart has BOPIS-eligible and delivery-only products","1. Add both products to cart
+2. Observe delivery toggle per item
+3. Select Pickup for eligible, Shipping for delivery-only
+4. Verify totals
+5. Proceed to checkout","- BOPIS item shows Pickup toggle; delivery-only shows Shipping only
+- Independent delivery selection per item
+- Totals: $0 shipping on pickup, shipping cost on delivery
+- Checkout summary shows both methods",checklist-D,Manual
+BOPIS-046,Mixed Cart: Pickup Location for One Item Does Not Cascade,BOPIS > Cart > Mixed,Functional,High,5m,"Mixed cart with pickup selected for one item","1. Confirm pickup location for BOPIS item
+2. Check delivery-only item settings
+3. Verify totals split","- Delivery-only item unaffected by pickup selection
+- No pickup location assigned to delivery item
+- Cart correctly shows split fulfillment",checklist-D,Manual
+BOPIS-047,Cart Totals: Zero Shipping for Pickup Order,BOPIS > Cart > Totals,Functional,Critical,5m,"All items set to Pickup, location confirmed","1. Confirm pickup location
+2. Observe order summary shipping line
+3. Verify total = subtotal + tax","- Shipping line: $0.00 or 'Free'
+- Total = subtotal + tax (no shipping)
+- No stale shipping amount from previous selection",C413982,Manual
+BOPIS-048,Cart Totals: Switch from Delivery to Pickup Removes Shipping Cost,BOPIS > Cart > Totals,Functional,High,5m,"Cart showing delivery with shipping cost applied","1. Note current total with shipping cost
+2. Switch to Pickup
+3. Confirm pickup location
+4. Verify shipping cost removed from total","- Shipping cost line removed or set to $0
+- Total decreases by shipping amount
+- Tax recalculated if applicable",checklist-F,Manual
+BOPIS-049,Cart Totals: Tax Correct with Pickup,BOPIS > Cart > Totals,Functional,High,5m,"Pickup order with tax-applicable items","1. Confirm pickup location
+2. Verify tax line in order summary
+3. Calculate expected tax: rate x (subtotal - discount)","- Tax applied on post-discount subtotal
+- Tax amount matches expected rate
+- Tax line visible even with $0 shipping",checklist-F,Manual
+BOPIS-050,Switch Delivery to Pickup: Shipping Cleared,BOPIS > Cart > Switch,Functional,High,5m,"Cart with delivery address and shipping method selected","1. Select Shipping, choose address + method
+2. Switch to Pickup
+3. Observe cart state","- Shipping method cleared
+- Address form hidden
+- 'Select pickup location' prompt appears
+- Shipping cost removed",BOPIS-027,Manual
+BOPIS-051,Switch Pickup to Delivery: Location Cleared,BOPIS > Cart > Switch,Functional,High,5m,"Cart with pickup location confirmed","1. Switch from Pickup to Shipping
+2. Observe cart state","- Pickup location cleared
+- Address form/selector reappears
+- Shipping cost re-applied on method selection",BOPIS-027,Manual
+BOPIS-052,Rapid Toggle Delivery/Pickup/Delivery/Pickup,BOPIS > Cart > Switch,Functional,Medium,3m,"Products in cart","1. Toggle between Pickup and Delivery 4+ times rapidly
+2. Observe UI state after each toggle
+3. Check console for errors","- Each toggle resets to correct state
+- No ghost data from previous mode
+- No UI freeze or console errors
+- Final state matches last selection",checklist-G,Manual
+BOPIS-053,ShipTo Header Change While Pickup Active,BOPIS > Cart > Switch,Functional,Medium,5m,"Pickup selected and location confirmed, header ship-to selector available","1. With Pickup active, change ship-to address via header selector
+2. Observe delivery method state","- Delivery method switches back to Shipping
+- Pickup selection cleared
+- New address applied",C410850,Manual
+BOPIS-054,Quantity Increase Revalidates Pickup Availability,BOPIS > Cart > Revalidation,Functional,High,5m,"Pickup confirmed at a location with limited branch stock","1. With pickup confirmed, increase item quantity significantly
+2. Observe availability label
+3. Check for error or re-selection prompt","- Availability label refreshes for new quantity
+- If qty > branch stock: error/flag shown
+- Cannot proceed silently with insufficient pickup stock",checklist-H,Manual
+BOPIS-055,Quantity Decrease Below MOQ in Pickup Mode,BOPIS > Cart > Revalidation,Functional,Medium,3m,"Product has pack size or MOQ, pickup mode active","1. Try setting quantity below MOQ or non-pack multiple
+2. Observe validation","- Same pack size rules enforced as in delivery mode
+- Non-multiple quantity rejected or auto-rounded",checklist-H,Manual
+BOPIS-056,Same SKU Added Again Aggregates Quantity,BOPIS > Cart > Revalidation,Functional,Medium,3m,"Product already in cart with pickup, same product on PDP","1. Add same product again from PDP
+2. Return to cart
+3. Check line items and quantity","- Existing line incremented (no duplicate line)
+- Aggregated quantity validated against pickup branch stock",checklist-H,Manual
+BOPIS-057,Facet Filter: Country,BOPIS > Cart > Filters,Functional,High,3m,"PickPoints modal open from cart, locations in multiple countries","1. Select Country filter (e.g., USA)
+2. Observe list and map","- Only USA locations shown
+- Map updates markers
+- Filter chip displayed
+- Store count updates",C413538,Manual
+BOPIS-058,Facet Filter: State/Province,BOPIS > Cart > Filters,Functional,High,3m,"PickPoints modal open, country selected","1. Select State (e.g., NY)
+2. Observe filtered results","- Only NY locations shown
+- Map zooms to region",C413540,Manual
+BOPIS-059,Facet Filter: City,BOPIS > Cart > Filters,Functional,High,3m,"PickPoints modal open","1. Select City (e.g., New York)
+2. Observe filtered results","- Only New York city locations shown
+- Map shows city markers",C413541,Manual
+BOPIS-060,Facet Filter: State Disabled for Non-US/CA Countries,BOPIS > Cart > Filters,Functional,Medium,3m,"PickPoints modal open","1. Select a non-US/CA country (e.g., Denmark)
+2. Click State/Province filter
+3. Observe behavior","- State filter disabled
+- Prevents invalid filter combination",C413543,Manual
+BOPIS-061,Search by ZIP Code,BOPIS > Cart > Search,Functional,High,3m,"PickPoints modal open from cart","1. Enter ZIP code (e.g., 10001)
+2. Submit search","- Matching locations displayed
+- Map markers at correct positions",C413546,Manual
+BOPIS-062,Search by Address,BOPIS > Cart > Search,Functional,High,3m,"PickPoints modal open from cart","1. Enter address (e.g., '34th St')
+2. Submit search","- All locations on that street displayed
+- Address searching functional",C413550,Manual
+BOPIS-063,Search with Special Characters (Apostrophe + Ampersand),BOPIS > Cart > Search,Functional,Medium,3m,"PickPoints modal open","1. Search 'St. Patrick's'
+2. Search '5th Ave & 50th'","- Both searches return correct results
+- Special characters handled properly",C413551,Manual
+BOPIS-064,Search with Whitespace Only,BOPIS > Cart > Search,Functional,Medium,2m,"PickPoints modal open","1. Type only spaces in search
+2. Submit","- All pickup points restored
+- Whitespace trimmed automatically",C413553,Manual
+BOPIS-065,Multi-Filter: Country + State + City + Search (4 Levels),BOPIS > Cart > Multi-Filter,Functional,High,5m,"PickPoints modal open, locations in multiple countries/states/cities","1. Select USA > New York > New York City
+2. Search 'Building'
+3. Verify results","- Results filtered by all 4 levels
+- Only matching locations in NYC shown
+- All filter chips visible",C413522,Manual
+BOPIS-066,Multi-Filter: No Results at Multiple Levels,BOPIS > Cart > Multi-Filter,Functional,Medium,3m,"PickPoints modal open with filters applied","1. Select USA > NY > NYC
+2. Search 'NonExistent'","- 'Pickup points not found' message
+- All filters still visible and removable
+- 'RESET SEARCH' button available",C413523,Manual
+BOPIS-067,Multi-Select: Multiple Countries,BOPIS > Cart > Multi-Filter,Functional,Critical,3m,"PickPoints modal open","1. Open Country dropdown
+2. Select USA and Canada","- Both chips shown
+- Results from both countries
+- Deselecting one updates results",C413527,Manual
+BOPIS-068,Multi-Select: Multiple States,BOPIS > Cart > Multi-Filter,Functional,Critical,3m,"PickPoints modal open, USA selected","1. Open State dropdown
+2. Select multiple states","- Multiple state chips appear
+- All relevant results returned",C413528,Manual
+BOPIS-069,Breadcrumb Filter Removal,BOPIS > Cart > Filter Management,Functional,Medium,3m,"Multiple filters applied in PickPoints modal","1. Apply USA + NY + NYC + Search
+2. Click X on State filter chip
+3. Verify results update","- State removed
+- Results update to remaining filters
+- Search still applied",C413524,Manual
+BOPIS-070,Reset All Filters and Search,BOPIS > Cart > Filter Management,Functional,High,3m,"Multiple filters and search applied","1. Click 'Reset filters'
+2. Verify full state restored","- All chips removed
+- Search bar cleared
+- Full location list restored
+- Map shows all markers",C413525,Manual
+BOPIS-071,Apply Filters After Search,BOPIS > Cart > Filter Management,Functional,Medium,3m,"PickPoints modal open","1. Search 'Building' first
+2. Then select USA country filter","- Combined results: only USA locations with 'Building'
+- Filter + search combine correctly",C413526,Manual
+BOPIS-072,Deactivated Location While Confirmed in Cart,BOPIS > Cart > Edge Cases,Functional,High,8m,"Pickup location confirmed in cart, Admin access available","1. Confirm a pickup location in cart
+2. In Admin: deactivate that location
+3. Return to storefront cart
+4. Attempt to proceed to checkout","- Checkout detects invalid pickup selection
+- User prompted to re-select location
+- Order NOT placed with deactivated location",C410939,Manual
+BOPIS-073,Org User Pickup Isolation,BOPIS > Cart > Edge Cases,Functional,High,5m,"User has access to Org A and Org B","1. In Org A cart, confirm pickup location
+2. Switch to Org B
+3. Open cart","- Org A pickup selection not shown in Org B cart
+- Clean state for Org B
+- No cross-org data leak",C411028,Manual
+BOPIS-074,Billing Address Required for BOPIS Order,BOPIS > Cart > Edge Cases,Functional,High,5m,"Pickup selected, no billing address saved","1. Select Pickup and confirm location
+2. Proceed to checkout
+3. Attempt to place order without billing address","- Billing address form shown (even though no shipping address needed)
+- Order cannot be placed without billing address
+- Validation error if billing missing",C410943,Manual
+BOPIS-075,Cross-Layer: xAPI Order Shows Pickup FFC,BOPIS > Cart > Cross-Layer,Integration,Critical,10m,"BOPIS order placed successfully","1. Place order with Pickup fulfillment
+2. Query xAPI: order shipments
+3. Open Admin > Orders > find order","- xAPI: shipments[].fulfillmentCenterId = selected pickup location
+- Admin: order shows pickup location name + address
+- No shipping cost in stored order",checklist-K,Manual
+BOPIS-076,Cross-Layer: Cart API Shows $0 Shipping,BOPIS > Cart > Cross-Layer,Integration,High,5m,"Pickup selected and confirmed in cart","1. Open DevTools Network tab
+2. Find cart API response
+3. Check shipments[].price","- shipments[].price = 0
+- total = subtotal + taxTotal (no shipping)
+- Consistent with storefront display",checklist-K,Manual
 - No horizontal scrolling required",VCST-4584,Manual

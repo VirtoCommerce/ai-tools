@@ -387,3 +387,247 @@ CUST-064,Multi-Org Contact Hierarchy,Customer > Organization Management > Hierar
 - Contact can be added to multiple organizations
 - Removing a contact from one organization does not affect membership in others
 - Organization hierarchy is correctly maintained for reporting and access control",,Not Automated
+CUST-065,Invite customer from Contacts toolbar — full flow,Customer > Invite Customers,Functional,Critical,5m,"Admin logged in to Backend (${BACK_URL}), at least one store configured, email service operational","1. Navigate to Customer module > Contacts
+2. Locate and click 'Invite customers' button in the toolbar
+3. Verify the Invite blade opens with fields: Store (dropdown), Language (dropdown), Organization (dropdown), Role (dropdown), Emails (text input), Message (textarea)
+4. Select a Store from the dropdown (e.g. B2B-store)
+5. Verify Language auto-populates from store default
+6. Leave Organization empty
+7. Verify Role defaults to 'Organization employee'
+8. Enter a valid email address in the Emails field
+9. Click the 'Invite' button
+10. Verify success response in the UI (toast or confirmation message)
+11. Check network request: POST /api/members/customers/invite with correct payload","- Invite blade opens from Contacts toolbar with all expected fields
+- Store dropdown lists all configured stores
+- Language auto-populates from selected store default language
+- Role defaults to 'Organization employee'
+- POST /api/members/customers/invite is sent with storeId, emails, cultureName, role
+- API returns HTTP 200 with succeeded:true
+- UI displays success confirmation",,Not Automated
+CUST-066,Invite customer from Organization context — org pre-filled,Customer > Invite Customers,Functional,Critical,5m,"Admin logged in to Backend (${BACK_URL}), organization exists with known name","1. Navigate to Customer module > Contacts
+2. Open an existing Organization detail blade
+3. Locate and click 'Invite customers' button in the organization toolbar
+4. Verify the Invite blade opens with Organization field pre-filled with current organization name
+5. Select a Store from the dropdown
+6. Enter a valid email address
+7. Click 'Invite'
+8. Verify success response
+9. Check API request payload includes organizationId matching the opened organization
+10. After invite is accepted, verify the new user is linked to the organization","- Invite blade opens from Organization detail toolbar
+- Organization field is pre-filled with the current organization name and is read-only or pre-selected
+- API request payload contains correct organizationId
+- Invitation associates the user with the specified organization
+- API returns succeeded:true",,Not Automated
+CUST-067,Invite form validation — required fields,Customer > Invite Customers,Functional,Critical,5m,"Admin logged in to Backend (${BACK_URL})","1. Navigate to Customer module > Contacts > Click 'Invite customers'
+2. Leave all fields empty > Verify 'Invite' button is disabled or clicking it shows validation errors
+3. Select a Store but leave Emails empty > Verify Invite button remains disabled or shows email required error
+4. Clear Store, enter an email address > Verify Invite button remains disabled or shows store required error
+5. Select Store AND enter email > Verify Invite button becomes enabled
+6. Clear the email field again > Verify button disables
+7. Enter only whitespace in email field > Verify validation rejects it","- Invite button is disabled when Store is empty
+- Invite button is disabled when Emails field is empty
+- Both Store and at least one email are required to enable submission
+- Whitespace-only email input is rejected
+- Validation messages are clear and visible",,Not Automated
+CUST-068,Invite API — valid request,Customer > Invite Customers > API,Functional,Critical,5m,"Admin logged in to Backend (${BACK_URL}), valid OAuth2 token obtained, store and organization exist","1. Send POST /api/members/customers/invite with valid payload:
+   { ""storeId"": ""${STORE_ID}"", ""emails"": [""testinvite@example.com""], ""cultureName"": ""en-US"", ""roleId"": ""org-employee"", ""message"": ""Welcome"" }
+2. Verify HTTP 200 response
+3. Verify response body contains succeeded:true
+4. Verify response includes per-email result details
+5. Send same request again with a different email to confirm repeatability","- POST /api/members/customers/invite returns HTTP 200
+- Response body: { succeeded: true } or equivalent success indicator
+- Per-email results included in response
+- Request is repeatable with different email addresses
+- Content-Type is application/json",,Not Automated
+CUST-069,Invite API — empty body,Customer > Invite Customers > API,Functional,Critical,3m,"Admin logged in to Backend (${BACK_URL}), valid OAuth2 token obtained","1. Send POST /api/members/customers/invite with empty body: {}
+2. Verify response status code (expected: 200 with succeeded:false, or 400)
+3. Verify response contains error code or validation message
+4. Send POST with null body
+5. Verify response contains error information
+6. Send POST with body: { ""emails"": [] } (empty array)
+7. Verify response indicates no emails provided","- Empty body request does not cause HTTP 500
+- Response contains succeeded:false with descriptive error code/message
+- Null body is handled gracefully
+- Empty emails array returns validation error
+- No unhandled exceptions or stack traces in response
+- Note: API currently returns HTTP 200 with succeeded:false for validation errors instead of HTTP 400",,Not Automated
+CUST-070,Invite API — invalid email format,Customer > Invite Customers > API,Functional,Critical,3m,"Admin logged in to Backend (${BACK_URL}), valid OAuth2 token obtained","1. Send POST /api/members/customers/invite with payload: { ""storeId"": ""${STORE_ID}"", ""emails"": [""not-an-email""] }
+2. Verify response indicates email validation failure
+3. Send with emails: [""@missing-local.com""]
+4. Verify validation failure
+5. Send with emails: [""spaces in@email.com""]
+6. Verify validation failure
+7. Send with emails: [""valid@test.com"", ""invalid""] (mixed valid and invalid)
+8. Verify per-email validation results","- Malformed email addresses are rejected with clear error messages
+- Various invalid formats are caught: missing @, missing domain, spaces, missing local part
+- Mixed valid/invalid emails: valid ones may succeed while invalid ones fail (or all fail depending on implementation)
+- No HTTP 500 errors for invalid input
+- Error messages reference the specific invalid email",,Not Automated
+CUST-071,Invite API — already registered email,Customer > Invite Customers > API,Functional,Critical,5m,"Admin logged in to Backend (${BACK_URL}), valid OAuth2 token obtained, a user account already exists with known email","1. Identify an existing registered user email from the system
+2. Send POST /api/members/customers/invite with payload: { ""storeId"": ""${STORE_ID}"", ""emails"": [""existing-user@example.com""] }
+3. Verify response indicates the email is already registered
+4. Verify the response contains succeeded:false or a per-email error for the duplicate
+5. Verify the existing user account is NOT modified or duplicated
+6. Send invite with mix of new and existing emails
+7. Verify per-email results correctly distinguish new vs existing","- Already registered email returns an appropriate error (not a generic 500)
+- Response clearly indicates the email is already in use
+- Existing user account remains unchanged
+- Mixed batch: new emails succeed, existing emails fail with clear per-email status
+- No duplicate accounts created",,Not Automated
+CUST-072,Invite RBAC — permission required,Customer > Invite Customers > Permissions,Security,Critical,8m,"Admin logged in to Backend (${BACK_URL}), two test users: User_Admin with full customer permissions, User_Limited with only customer:read and customer:access (no customer:create)","1. Login as User_Admin > Navigate to Contacts > Verify 'Invite customers' button is visible
+2. Click 'Invite customers' > Verify blade opens and invite can be submitted
+3. Logout > Login as User_Limited (customer:read + customer:access only)
+4. Navigate to Contacts > Verify 'Invite customers' button is hidden or disabled
+5. Attempt direct API call as User_Limited: POST /api/members/customers/invite
+6. Verify API returns HTTP 403 Forbidden or 401 Unauthorized
+7. Login as Admin > Grant customer:create to User_Limited role
+8. Login as User_Limited > Verify 'Invite customers' button now appears","- Users with full customer permissions see and can use the Invite button
+- Users without customer:create permission do not see the Invite button
+- Direct API call without permission returns 403 Forbidden
+- Granting customer:create permission enables the Invite feature
+- No permission bypass possible via direct API access",,Not Automated
+CUST-073,Invite with all 3 roles,Customer > Invite Customers > Roles,Functional,High,8m,"Admin logged in to Backend (${BACK_URL}), store configured, 3 roles available: Organization employee, Organization maintainer, Purchasing agent","1. Navigate to Contacts > Click 'Invite customers'
+2. Select Store, enter email_1@test.com
+3. Select role 'Organization employee' from dropdown > Click Invite
+4. Verify API request contains roleId for Organization employee
+5. Repeat: enter email_2@test.com, select 'Organization maintainer' > Invite
+6. Verify API request contains roleId for Organization maintainer
+7. Repeat: enter email_3@test.com, select 'Purchasing agent' > Invite
+8. Verify API request contains roleId for Purchasing agent
+9. Verify all 3 invitations succeeded","- Role dropdown shows exactly 3 options: Organization employee, Organization maintainer, Purchasing agent
+- Each role selection sends the correct roleId in the API request payload
+- All 3 roles can be used to successfully send invitations
+- Default role is 'Organization employee' when no selection is made",,Not Automated
+CUST-074,Invite multiple emails in single request,Customer > Invite Customers,Functional,High,5m,"Admin logged in to Backend (${BACK_URL}), store configured","1. Navigate to Contacts > Click 'Invite customers'
+2. Select Store and Role
+3. Enter 3 email addresses: user1@test.com, user2@test.com, user3@test.com
+4. Click Invite
+5. Monitor network request: verify all 3 emails appear in the emails array of the POST payload
+6. Verify response contains per-email success/failure status
+7. Enter 1 valid and 1 invalid email > Submit
+8. Verify per-email results: valid succeeds, invalid fails
+9. Test with duplicate emails in the same request","- Multiple emails can be entered and submitted in a single invite request
+- API request payload contains all entered emails in the emails array
+- Response provides per-email success/failure status
+- Mixed valid/invalid: each email processed independently
+- Duplicate emails in same request are handled gracefully (deduplicated or error per duplicate)",,Not Automated
+CUST-075,Invite from Store context — store pre-filled,Customer > Invite Customers,Functional,High,5m,"Admin logged in to Backend (${BACK_URL}), at least one store exists","1. Navigate to More > Stores
+2. Open a Store detail blade (e.g. B2B-store)
+3. Locate and click 'Invite customers' button in the store toolbar
+4. Verify the Invite blade opens with Store field pre-filled with the current store
+5. Verify the Store field is read-only or pre-selected
+6. Verify Language auto-populates from this store's default language
+7. Enter an email address and click Invite
+8. Verify API request storeId matches the pre-filled store","- Invite blade opens from Store detail toolbar
+- Store field is pre-filled with the current store name/ID
+- Store field cannot be changed (pre-selected context)
+- Language defaults correctly from the store configuration
+- API request storeId matches the pre-filled store",,Not Automated
+CUST-076,Invite roles API — GET available roles,Customer > Invite Customers > API,Functional,High,3m,"Admin logged in to Backend (${BACK_URL}), valid OAuth2 token obtained","1. Send GET /api/members/customers/invite/roles
+2. Verify HTTP 200 response
+3. Verify response is a JSON array with exactly 3 role objects
+4. Verify each role has id and name fields
+5. Verify role names: 'Organization employee', 'Organization maintainer', 'Purchasing agent'
+6. Verify role IDs are non-empty strings
+7. Send request without auth token > Verify 401 Unauthorized","- GET /api/members/customers/invite/roles returns HTTP 200
+- Response contains exactly 3 roles
+- Each role object has id (string) and name (string) fields
+- Role names match: Organization employee, Organization maintainer, Purchasing agent
+- Unauthenticated request returns 401
+- Response Content-Type is application/json",,Not Automated
+CUST-077,GraphQL inviteUser mutation,Customer > Invite Customers > xAPI,Integration,High,8m,"Admin logged in to Backend (${BACK_URL}), GraphQL xAPI endpoint accessible at ${BACK_URL}/ui/graphiql, store and organization exist","1. Open GraphiQL at ${BACK_URL}/ui/graphiql
+2. Execute inviteUser mutation:
+   mutation { inviteUser(command: { storeId: ""${STORE_ID}"", emails: [""gqltest@example.com""], cultureName: ""en-US"", roleId: ""org-employee"", organizationId: ""test-org-id"", message: ""GraphQL invite test"" }) { succeeded errors { code description } } }
+3. Verify response: { data: { inviteUser: { succeeded: true } } }
+4. Execute with invalid storeId > Verify succeeded:false with error
+5. Execute with empty emails array > Verify error response
+6. Verify inviteUser mutation appears in schema introspection with InputInviteUserType","- inviteUser mutation executes successfully via GraphQL
+- Response includes succeeded boolean and errors array
+- Valid request returns succeeded:true
+- Invalid storeId returns succeeded:false with descriptive error
+- Empty emails returns error
+- Mutation is discoverable via schema introspection",,Not Automated
+CUST-078,Invite with custom message,Customer > Invite Customers,Functional,High,5m,"Admin logged in to Backend (${BACK_URL}), store configured","1. Navigate to Contacts > Click 'Invite customers'
+2. Select Store and enter email
+3. Locate the Message textarea field
+4. Enter a custom message: 'Welcome to our B2B platform! Your account is ready.'
+5. Click Invite
+6. Monitor network request: verify message field is included in the POST payload
+7. Verify API response is succeeded:true
+8. Repeat without message (leave textarea empty) > Verify invite still succeeds
+9. Enter a very long message (500+ characters) > Verify behavior","- Message textarea is visible and editable on the Invite blade
+- Custom message is included in the API request payload as 'message' field
+- Invite succeeds with a custom message
+- Invite succeeds without a message (field is optional)
+- Long messages are either accepted or truncated with feedback to the user
+- Message field does not break invite functionality",,Not Automated
+CUST-079,Invite language selection,Customer > Invite Customers,Functional,High,5m,"Admin logged in to Backend (${BACK_URL}), store configured with multiple languages","1. Navigate to Contacts > Click 'Invite customers'
+2. Select a Store > Verify Language dropdown auto-populates with store default language
+3. Open Language dropdown > Verify available options (up to 14: EN, DE, FR, ES, NO, SV, PL, IT, PT, JA, ZH, FI, RU, and store default)
+4. Select 'de-DE' (German)
+5. Enter email and click Invite
+6. Monitor API request: verify cultureName is 'de-DE'
+7. Change store > Verify language resets to new store default
+8. Select 'ja-JP' (Japanese) > Invite > Verify cultureName is 'ja-JP'","- Language dropdown auto-populates from store default language
+- Dropdown lists all configured languages for the selected store
+- Selecting a different language updates cultureName in the API request
+- Changing the store resets the language to the new store's default
+- Non-default languages (de-DE, ja-JP, etc.) are correctly sent in the invite payload",,Not Automated
+CUST-080,Invite notification template rendering,Customer > Invite Customers > Notifications,Integration,High,8m,"Admin logged in to Backend (${BACK_URL}), notification service operational, store configured","1. Send an invite via POST /api/members/customers/invite with valid payload including organizationId
+2. Navigate to More > Notifications > Notification activity feed (or check notification log)
+3. Search for the most recent notification sent to the invited email
+4. Verify notification type is 'Signup invite notification (with organization)' when org is specified
+5. Verify template variables are replaced: invite URL is populated, organization name appears, custom message appears
+6. Send another invite WITHOUT organizationId
+7. Verify notification type is 'Signup invite notification (customer)' (without org template)
+8. Verify invite URL in the notification is valid and clickable","- Invitation triggers a notification in the system notification log
+- With organization: uses 'Signup invite notification (with organization)' template
+- Without organization: uses 'Signup invite notification (customer)' template
+- Template variables (invite_url, organization name, message) are correctly replaced
+- Invite URL is a valid, functional link
+- Known issue: template body contains grammar error 'Please  to register by invite clicking here'",,Not Automated
+CUST-081,Invite notification template content,Customer > Invite Customers > Notifications,Functional,Medium,5m,"Admin logged in to Backend (${BACK_URL})","1. Navigate to More > Notifications > Notification templates
+2. Search for 'Signup invite notification (customer)' template
+3. Open template > Verify subject line, body content, and template variables: {{ message }}, {{ invite_url }}
+4. Search for 'Signup invite notification (with organization)' template
+5. Open template > Verify it includes organization-specific variables in addition to base variables
+6. Verify both templates have correct sender configuration
+7. Note any grammar errors in template body text","- Both invite notification templates exist in the Notifications module
+- 'Signup invite notification (customer)' template contains {{ message }} and {{ invite_url }} variables
+- 'Signup invite notification (with organization)' template contains organization-specific variables
+- Templates have subject line and body configured
+- Known issue: template body has grammar error 'Please  to register by invite clicking here' (double space and incorrect word order)",,Not Automated
+CUST-082,Invite without organization — correct template used,Customer > Invite Customers > Notifications,Functional,Medium,5m,"Admin logged in to Backend (${BACK_URL}), store configured, notification log accessible","1. Navigate to Contacts > Click 'Invite customers'
+2. Select Store, enter email, leave Organization field empty
+3. Click Invite > Verify success
+4. Check notification log or API: verify the notification used 'Signup invite notification (customer)' template (NOT the 'with organization' template)
+5. Now send another invite WITH an Organization selected
+6. Verify notification used 'Signup invite notification (with organization)' template
+7. Compare the two notification bodies to confirm different templates were applied","- Invite without organization uses 'Signup invite notification (customer)' template
+- Invite with organization uses 'Signup invite notification (with organization)' template
+- Template selection is automatic based on whether organizationId is provided
+- Both templates render correctly with appropriate content",,Not Automated
+CUST-083,Invite store dropdown options,Customer > Invite Customers > UI,Functional,Medium,3m,"Admin logged in to Backend (${BACK_URL}), multiple stores configured in the system","1. Navigate to Customer module > Contacts > Click 'Invite customers'
+2. Click on the Store dropdown field
+3. Verify all configured stores appear in the dropdown list
+4. Verify store names are readable and correctly displayed
+5. Select each store one by one > Verify Language updates accordingly
+6. Navigate to More > Stores > Count the active stores
+7. Compare active store count with dropdown options count","- Store dropdown lists all active/configured stores in the system
+- Store count in dropdown matches the number of active stores in Store management
+- Each store name is displayed correctly (no truncation or encoding issues)
+- Selecting different stores updates the Language dropdown to each store's default language
+- No duplicate or inactive stores appear in the dropdown",,Not Automated
+CUST-084,GraphQL inviteUser with customerOrderId,Customer > Invite Customers > xAPI,Integration,Medium,8m,"Admin logged in to Backend (${BACK_URL}), GraphQL xAPI endpoint accessible, an existing order ID available, store configured","1. Open GraphiQL at ${BACK_URL}/ui/graphiql
+2. Introspect InputInviteUserType > Verify customerOrderId field exists in the schema
+3. Execute inviteUser mutation with customerOrderId:
+   mutation { inviteUser(command: { storeId: ""${STORE_ID}"", emails: [""orderinvite@example.com""], cultureName: ""en-US"", customerOrderId: ""existing-order-id"" }) { succeeded errors { code description } } }
+4. Verify response succeeded:true
+5. Verify the invited user is associated with the specified order (check via order API or admin)
+6. Execute with invalid customerOrderId > Verify error handling
+7. Note: customerOrderId field is available in GraphQL but NOT exposed in the Admin UI Invite blade","- InputInviteUserType schema includes customerOrderId field (string, optional)
+- Mutation with valid customerOrderId executes successfully
+- Invited user is linked to the specified order
+- Invalid customerOrderId returns a descriptive error (not 500)
+- Known limitation: customerOrderId is only available via GraphQL API, not in Admin UI
+- This enables order-linked invitation workflows for B2B scenarios",,Not Automated

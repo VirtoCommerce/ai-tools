@@ -1,0 +1,14 @@
+user_id,contact_id,org_id,user_name,email,password,user_type,is_admin,is_active,roles,store_id,test_purpose
+USR-001,CON-001,ORG-001,john.mitchell,john.mitchell@acme-industrial.test,TestPass123!,Customer,false,true,Organization Administrator,B2B-store,Org admin — full org management + purchasing
+USR-002,CON-002,ORG-001,sarah.chen,sarah.chen@acme-industrial.test,TestPass123!,Customer,false,true,Purchasing Agent,B2B-store,Buyer — cart + checkout + order history
+USR-003,CON-003,ORG-001,mike.torres,mike.torres@acme-industrial.test,TestPass123!,Customer,false,true,Catalog Viewer,B2B-store,Viewer — browse only no purchasing
+USR-004,CON-004,ORG-001,lisa.wang,lisa.wang@acme-industrial.test,TestPass123!,Customer,false,true,Purchasing Agent,B2B-store,Second buyer — multi-buyer workflow
+USR-005,CON-005,ORG-001,james.brown,james.brown@acme-industrial.test,TestPass123!,Customer,false,false,Purchasing Agent,B2B-store,Inactive user — login should fail
+USR-006,CON-006,ORG-002,emily.johnson,emily.johnson@techflow.test,TestPass123!,Customer,false,true,Organization Administrator,B2B-store,TechFlow admin — multi-org switching
+USR-007,CON-007,ORG-002,david.kim,david.kim@techflow.test,TestPass123!,Customer,false,true,Purchasing Agent,B2B-store,TechFlow buyer — order isolation between orgs
+USR-008,CON-008,ORG-003,carlos.rodriguez,carlos.rodriguez@buildright.test,TestPass123!,Customer,false,true,Organization Administrator,B2B-store,BuildRight admin — industrial focus
+USR-009,CON-009,ORG-003,angela.foster,angela.foster@buildright.test,TestPass123!,Customer,false,true,Purchasing Agent,B2B-store,BuildRight buyer — safety product orders
+USR-010,CON-010,ORG-004,robert.lee,robert.lee@acme-west.test,TestPass123!,Customer,false,true,Organization Administrator,B2B-store,Child org admin — parent-child hierarchy
+USR-011,CON-011,ORG-005,hans.mueller,hans.mueller@acme-eu.test,TestPass123!,Customer,false,true,Organization Administrator,B2B-store,EU org admin — multi-language + EUR currency
+USR-012,CON-012,ORG-006,tom.blocked,tom.blocked@suspended-corp.test,TestPass123!,Customer,false,true,Purchasing Agent,B2B-store,Suspended org user — access denied test
+USR-013,CON-013,ORG-008,solo.admin,solo.admin@singleuser.test,TestPass123!,Customer,false,true,Organization Administrator,B2B-store,Solo org admin — single-user org boundary

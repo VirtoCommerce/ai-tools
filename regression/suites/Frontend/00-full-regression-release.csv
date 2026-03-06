@@ -295,6 +295,101 @@ FR-CART-009,Cart - Invalid Promo Code,Full Regression > Cart > Promo,Negative,Me
 - No discount applied
 - Cart totals unchanged
 - Promo field remains visible to try again",CART-012,Manual
+FR-CART-010,Can't Add to Cart - Price N/A or Zero,Full Regression > Cart > Product Validation,Functional,High,5m,"Product_1 in stock with price set to 0 or removed in Admin","1. In Admin: Catalog > Product_1 > Price widget > set price to 0 or remove price
+2. Go to storefront > navigate to Product_1
+3. Observe price display and Add to Cart button state
+4. Attempt to add product to cart","- Price shows as N/A or $0.00
+- Add to Cart button is inactive/disabled
+- Product cannot be added to cart
+- No console errors",C410689,Manual
+FR-CART-011,Can't Add to Cart - Can't Be Purchased Flag,Full Regression > Cart > Product Validation,Functional,High,5m,"Product_1 in stock with price assigned, Admin access available","1. In Admin: Catalog > Product_1 > switch off 'Can be purchased' toggle
+2. Go to storefront > navigate to Product_1
+3. Observe Add to Cart button state
+4. Attempt to add product to cart","- Add to Cart button is inactive/disabled
+- Product cannot be added to cart
+- Product is still visible in catalog",C410690,Manual
+FR-CART-012,Can't Add to Cart - Product Not Visible,Full Regression > Cart > Product Validation,Functional,High,5m,"Product_1 in stock with price assigned, Admin access available","1. In Admin: Catalog > Product_1 > switch off 'Visible' toggle
+2. Go to storefront > navigate to category containing Product_1
+3. Search for Product_1
+4. Try direct URL access to Product_1","- Product is not displayed in category listing
+- Product is not found in search results
+- Direct URL returns 404 or redirects
+- Product cannot be added to cart",C410691,Manual
+FR-CART-013,Can't Add to Cart - Out of Stock (FFC = 0),Full Regression > Cart > Product Validation,Functional,Critical,5m,"Product_1 in stock with price assigned, Admin access available","1. In Admin: Catalog > Product_1 > Fulfillment center widget > set 0 for all available FFCs
+2. Go to storefront > navigate to Product_1
+3. Observe stock label and Add to Cart button
+4. Attempt to add product to cart","- Red label 'Out of stock' is shown
+- Add to Cart button is inactive/disabled
+- Product cannot be added to cart",C410692,Manual
+FR-CART-014,Quantity Increment (+) Button on Catalog Page,Full Regression > Cart > Product Validation,Functional,High,3m,"User on Catalog page, product has available stock","1. Locate a product with +/- buttons on catalog page
+2. Click + button to add product to cart
+3. Click + again to increment quantity
+4. Verify cart counter updates","- Product is added to cart on first click
+- Quantity increases by 1 on subsequent clicks (respecting min/max rules)
+- Cart counter updates in real-time",C411195,Manual
+FR-CART-015,Quantity Decrement (-) Button on Catalog Page,Full Regression > Cart > Product Validation,Functional,High,3m,"Product in catalog has min qty = 3","1. Add product to cart using + button (qty reaches 3)
+2. Click - once to decrease quantity
+3. Continue clicking - until quantity reaches 0","- Quantity decreases by 1 per click
+- At quantity 0: product is removed from cart
+- (-) button is disabled when quantity is 0",C411196,Manual
+FR-CART-016,Quantity +/- Buttons on Product Detail Page,Full Regression > Cart > Product Validation,Functional,High,3m,"User on product details page, stock available","1. Click + to set quantity = 2
+2. Click Add to Cart
+3. Verify cart contents","- 2 items added to cart
+- Cart counter updated
+- +/- buttons respect min/max/pack rules",C411197,Manual
+FR-CART-017,Stock Limit - Quantity Capped at Available Stock,Full Regression > Cart > Product Validation,Functional,High,3m,"Product with limited stock (e.g., 5 units)","1. Navigate to product with limited stock
+2. Click + button repeatedly past available stock
+3. Observe quantity behavior","- Quantity stops increasing at maximum available stock
+- + button becomes disabled at stock limit
+- No error in console",C411201,Manual
+FR-CART-018,Min-Max Quantity Validation,Full Regression > Cart > Product Validation,Functional,High,3m,"Product with min qty and max qty configured","1. Enter a quantity below the minimum allowed
+2. Enter a quantity above the maximum allowed
+3. Observe auto-correction behavior","- Below-min input is auto-corrected to minimum
+- Above-max input is auto-corrected to maximum
+- System prevents invalid quantities",C411204,Manual
+FR-CART-019,Pack Size Validation - Invalid Pack Quantity,Full Regression > Cart > Product Validation,Functional,High,3m,"Product sold in packs of 3 or 6","1. Enter quantity not matching pack size (e.g., pack of 6, enter 7)
+2. Try to confirm/add to cart
+3. Observe validation behavior","- Value rounded/adjusted to nearest valid pack size
+- Error or warning shown if validation is strict
+- System prevents non-pack quantities",C411205,Manual
+FR-CART-020,Catalog Page - Min Quantity Auto-Correction,Full Regression > Cart > Product Validation,Functional,High,3m,"Product has min qty = 1 or pack = 3","1. Manually set input field below min (e.g., 0 or 2)
+2. Click outside input field (blur)
+3. Observe value","- Value auto-corrected to minimum pack quantity
+- No console errors",C411206,Manual
+FR-CART-021,Catalog Page - Max Quantity Auto-Correction,Full Regression > Cart > Product Validation,Functional,High,3m,"Product has defined max = 10","1. Enter 15 in input field
+2. Confirm input (blur or Enter)
+3. Observe value","- Value corrected to max allowed (10)
+- + button disabled at max",C411207,Manual
+FR-CART-022,Catalog Page - Pack Quantity Rounding,Full Regression > Cart > Product Validation,Functional,High,3m,"Product sold in packs of 3","1. Enter quantity = 5
+2. Try to confirm
+3. Observe rounding","- Value rounded/adjusted to nearest valid pack (e.g., 6)
+- Error/warning shown if validation is strict",C411208,Manual
+FR-CART-023,Product Variations - Default Min Quantity per Variation,Full Regression > Cart > Product Validation,Functional,Medium,3m,"Product has variations with different min values","1. Select variation A (min = 1)
+2. Observe default quantity
+3. Select variation B (min = 3)
+4. Observe default quantity update","- Input field updates to correct min for each variation
+- Switching variations resets quantity to variation's min",C411209,Manual
+FR-CART-024,Variation Table - Min-Max/Stock/Pack Validation,Full Regression > Cart > Product Validation,Functional,High,5m,"Product with variations displayed in table layout","1. Enter quantity below min for a variation
+2. Enter quantity above max for a variation
+3. Enter quantity above stock for a variation
+4. Enter invalid pack size quantity","- System prevents invalid input for each case
+- Appropriate error message shown per variation
+- Valid quantities are accepted",C411202,Manual
+FR-CART-025,Product Page - Manual Quantity Input Field,Full Regression > Cart > Product Validation,Functional,High,3m,"User on product details page, stock available","1. Enter custom quantity (e.g., 7) in input field
+2. Click Add to Cart
+3. Verify cart contents","- Custom quantity accepted if valid
+- Correct quantity added to cart
+- Cart total reflects entered quantity",C411183,Manual
+FR-CART-026,Product Variations - Invalid Quantity for Variation,Full Regression > Cart > Product Validation,Functional,High,3m,"Variation requires pack of 5","1. Enter quantity = 7 for the variation
+2. Click Add to Cart
+3. Observe validation","- System rejects invalid pack quantity
+- Error/warning message displayed
+- Product not added with invalid quantity",C411184,Manual
+FR-CART-027,Clear Input Field - Reset Behavior,Full Regression > Cart > Product Validation,Functional,High,3m,"Product on page, input allows manual editing","1. Delete all characters in quantity input field (leave empty)
+2. Click outside (blur)
+3. Observe field behavior","- +/- buttons are disabled when field has focus
+- Field resets to previous valid quantity (e.g., 1 or pack size) on blur
+- No console errors",C411186,Manual
 FR-CHECKOUT-001,Checkout - Standard Delivery,Full Regression > Checkout > Delivery,Functional,Critical,10m,"Products in cart, shipping addresses configured","1. Navigate to cart
 2. Click 'Checkout' or 'Proceed to Checkout'
 3. Verify checkout page loads
@@ -906,6 +1001,189 @@ FR-BROWSER-006,Cross-Browser - Chrome Mobile (Android),Full Regression > Browser
 - Payment forms work
 - No Android-specific bugs
 - Performance acceptable",FR-BROWSER-006,Manual
+FR-B2C-VAR-101,B2C Variation Layout - Options Section Displayed (B2C Property Set),Full Regression > B2C Variations > Display,Functional,Critical,5m,"Admin access available. Product with VirtoFrontend_UI_Layout=B2C catalog property set. Product has 2+ active variations with variation properties (Color/Size/Fabric). Storefront at ${FRONT_URL}.","1. Navigate to the B2C variation product PDP
+2. Verify the 'Options' section is visible on the page
+3. Verify the standard variation list view is NOT displayed
+4. Verify the standard variation table view is NOT displayed
+5. Verify the VirtoFrontend_UI_Layout property is NOT visible in the product specifications section
+6. Count the option groups and verify they match the variation properties defined (e.g., Color, Size)","- 'Options' section renders on PDP
+- Standard variation list/table is hidden (not rendered in DOM)
+- VirtoFrontend_UI_Layout=B2C property not shown to customer in specs
+- Number of option groups matches variation properties defined on product
+- Each option group has a label matching the property name (e.g., 'Color', 'Size')
+- No console errors on page load",C411031,Manual
+FR-B2C-VAR-102,B2C Variation Layout - Standard Layout Shown When B2C Property Absent,Full Regression > B2C Variations > Display,Functional,High,4m,"Product with VirtoFrontend_UI_Layout=B2B (or property absent). Product has 2+ variations.","1. Navigate to PDP of product with B2B layout (or no layout property)
+2. Verify the 'Options' section is NOT displayed
+3. Verify the standard variation list or table view IS displayed
+4. Verify variations are listed with their names, prices, and Add to Cart controls","- Options section is not rendered (B2C selector absent)
+- Standard variation list or table view is visible
+- Variation rows show: variation name, price, stock indicator, quantity input, Add to Cart
+- No console errors",C411032,Manual
+FR-B2C-VAR-103,B2C Color Swatches - Render and Visual Accuracy,Full Regression > B2C Variations > Color Swatches,Functional,Critical,5m,"B2C product with color variations. Swatches configured with hex color values or color images.","1. Navigate to B2C variation product PDP with color options
+2. Locate the color option group
+3. Observe each color swatch renders as a colored circle/square (not just a text label)
+4. Hover over each swatch on desktop
+5. Verify tooltip shows the color name
+6. Verify swatch background color matches the variation's configured color","- Color swatches render as visual color indicators (CSS background or image)
+- Each swatch is a distinct, recognizable color matching configuration
+- Tooltip appears on hover showing color name (e.g., 'Navy Blue')
+- Swatches are minimum 32x32px clickable area (44x44px preferred for accessibility)
+- All configured colors present with none missing
+- No broken/transparent swatches for configured colors",C411048 C411049,Manual
+FR-B2C-VAR-104,B2C Option Selection - Select State and Single-Select Enforcement,Full Regression > B2C Variations > Selection,Functional,Critical,5m,"B2C variation product PDP loaded. At least 2 options per group available.","1. Navigate to B2C variation PDP
+2. Click first color swatch (e.g., 'Blue')
+3. Verify Blue shows selected state (border highlight, checkmark, or background change)
+4. Click second color swatch (e.g., 'Red')
+5. Verify Red shows selected state and Blue is now deselected
+6. If size options also present: click Size 'M'
+7. Verify M shows selected state; click Size 'L'
+8. Verify L selected, M deselected
+9. Verify only one value per option group is selected at any time","- Clicking option shows visible selected state (border, checkmark, or background)
+- Clicking a second option in the same group deselects the first
+- Only one value selectable per option group at any time (single-select per group)
+- Selection state is visually clear and distinguishable from unselected state
+- No console errors on selection",C411037,Manual
+FR-B2C-VAR-105,B2C Option Selection - Add to Cart Disabled Until All Required Options Selected,Full Regression > B2C Variations > Selection,Functional,Critical,5m,"B2C variation product with 2 required option groups (Color + Size). PDP loaded, no options selected.","1. Navigate to B2C variation PDP with Color and Size option groups
+2. Verify 'Add to Cart' button is disabled (greyed out, not clickable) with no options selected
+3. Select Color: Blue only (Size not yet selected)
+4. Verify 'Add to Cart' remains disabled
+5. Select Size: M (both options now selected)
+6. Verify 'Add to Cart' button becomes enabled
+7. Deselect or change to unavailable combination if possible
+8. Verify 'Add to Cart' disables again or remains enabled correctly","- 'Add to Cart' disabled before any option selected
+- 'Add to Cart' disabled after only partial selection (1 of 2 required groups)
+- 'Add to Cart' enabled only when all required option groups have a selection
+- Guidance text visible when attempting interaction without full selection (e.g., 'Please select a size')
+- No JS errors when clicking disabled 'Add to Cart'",C411046 C411041,Manual
+FR-B2C-VAR-106,B2C Price Update on Variation Selection,Full Regression > B2C Variations > Price,Functional,Critical,6m,"B2C variation product with variants that have different prices. At least 2 variants with distinct prices.","1. Navigate to B2C variation PDP
+2. Note the initial price displayed (From $X or default)
+3. Select the first option (e.g., Color: Blue, variant price $29.99)
+4. Observe price update
+5. Select a different option (e.g., Color: Red, variant price $34.99)
+6. Observe price update
+7. If variant has salePrice + listPrice: observe both prices displayed
+8. Verify price format (2 decimal places)","- Price updates immediately on each option selection (no page reload)
+- After selecting Blue: price shows $29.99
+- After selecting Red: price shows $34.99
+- If salePrice and listPrice exist: salePrice shown as primary, listPrice shown with strikethrough
+- All prices display exactly 2 decimal places (BL-PRICE-003)
+- Price matches expected variant price from catalog configuration
+- No console errors",C411052 B2C-VAR-006,Manual
+FR-B2C-VAR-107,B2C Stock Indicator and SKU Update on Variation Selection,Full Regression > B2C Variations > Stock,Functional,Critical,5m,"B2C variation product with variants that have different stock levels. One variant in stock, one out of stock or low stock.","1. Navigate to B2C variation PDP
+2. Select an in-stock variation option
+3. Verify stock indicator shows 'In stock' or equivalent for that variant
+4. Verify SKU code on page updates to the selected variant's SKU
+5. Select an out-of-stock or low-stock variation option (if available)
+6. Verify stock indicator updates accordingly
+7. Verify 'Add to Cart' is disabled for out-of-stock selection","- Stock indicator updates per variant selection (not aggregate across all variants)
+- In-stock variant: 'In stock' badge/label visible
+- Out-of-stock variant: 'Out of stock' label shown; 'Add to Cart' disabled
+- Low-stock variant: 'Low stock' or '3 remaining' shown (if configured)
+- SKU code on PDP updates to selected variant's SKU (not parent SKU)
+- No console errors",C411052 B2C-VAR-007,Manual
+FR-B2C-VAR-108,B2C Variation Image Gallery Updates on Selection,Full Regression > B2C Variations > Images,Functional,Critical,5m,"B2C variation product with color-specific images assigned to variants.","1. Navigate to B2C variation PDP
+2. Note the default main product image shown before selection
+3. Select Color: Blue
+4. Verify main product image updates to the Blue variant's image
+5. Verify thumbnail gallery updates to show Blue variant images
+6. Select Color: Red
+7. Verify main image updates to Red variant image
+8. Verify thumbnails update to Red variant images
+9. Click a thumbnail to verify it sets the main image","- Main product image changes to variant-specific image on selection (no reload)
+- Thumbnail gallery updates to show images assigned to selected variant
+- Thumbnails from other variants are replaced (not accumulated)
+- Clicking thumbnail sets it as the main image (gallery behavior intact)
+- If no variant-specific image: parent product default image shown (no broken image icon)
+- No console errors or flicker during image switch",C411051 B2C-VAR-002,Manual
+FR-B2C-VAR-109,B2C Add to Cart - Correct Variant SKU Sent to Cart API,Full Regression > B2C Variations > Cart,Functional,Critical,8m,"B2C variation product. Browser DevTools Network tab open. User authenticated. Cart empty.","1. Open browser DevTools > Network tab; filter for GraphQL or /graphql requests
+2. Navigate to B2C variation PDP
+3. Select a specific variant (e.g., Color: Blue, Size: M)
+4. Note the expected variant SKU for Blue+M (look up in Admin or product specs)
+5. Click 'Add to Cart'
+6. In Network tab: locate the addItem GraphQL mutation request
+7. Inspect the request payload: verify the productId or SKU field matches the Blue+M variant SKU
+8. Navigate to /cart
+9. Verify cart line item shows 'Product Name — Color: Blue, Size: M'","- addItem mutation sent with correct variant SKU (not parent product SKU)
+- Request payload productId/SKU matches the selected Blue+M combination
+- Cart line item shows variant attribute details: 'Color: Blue, Size: M'
+- Cart item price matches the selected variant's price
+- Cart quantity = 1 (or quantity set by stepper)
+- No 4xx/5xx errors in network requests
+- Success notification shown
+- Cart badge increments",C411059 D2C-VAR-005,Manual
+FR-B2C-VAR-110,B2C Unavailable Variation Options - Greyed Out and Cannot Add,Full Regression > B2C Variations > Unavailable,Functional,Critical,6m,"B2C variation product where some variations are out of stock. At least one out-of-stock variant exists.","1. Navigate to B2C variation PDP
+2. Identify which option values have out-of-stock variants
+3. Verify those options appear greyed out, disabled, or marked with a visual unavailability indicator
+4. Attempt to click a greyed-out option
+5. Verify it cannot be selected
+6. Select an in-stock option; then check if any size/color combinations become unavailable
+7. Verify incompatible combinations disable remaining options (cross-option unavailability)","- Out-of-stock variation options are visually distinct (greyed, strikethrough, or 'Out of Stock' badge)
+- Clicking a disabled option has no effect (selection does not change)
+- Selecting one attribute disables incompatible combinations in other attribute groups
+- 'Add to Cart' button remains disabled when selected combination is out of stock
+- No console errors when clicking disabled options",C411038 B2C-VAR-007,Manual
+FR-B2C-VAR-111,B2C Variation - Cart Line Shows Variant Attributes Not Parent Name,Full Regression > B2C Variations > Cart,Functional,High,5m,"B2C variation product added to cart with specific option selection (e.g., Color: Navy, Size: L).","1. Add a B2C variation product to cart with specific selections (Color: Navy, Size: L)
+2. Navigate to /cart
+3. Locate the cart line item for the product
+4. Verify the line item displays variant attribute details
+5. Navigate to checkout and verify order summary line item
+6. Complete order and verify confirmation page shows variant details","- Cart line item shows: 'Product Name' with variant attributes listed (e.g., Color: Navy / Size: L)
+- Parent product name alone is NOT the only information shown
+- Checkout order summary shows same variant details
+- Order confirmation page shows same variant details
+- Variant attributes are human-readable labels (not internal property codes)
+- No console errors",B2C-VAR-005,Manual
+FR-B2C-VAR-112,B2C Variation - Unavailable Combination Matrix Reflects Admin Changes,Full Regression > B2C Variations > Unavailable,Functional,High,8m,"Admin access. B2C variation product with admin ability to remove or deactivate a specific variation.","1. In Admin: Catalog > Product > Variations > deactivate or remove one specific variant (e.g., Blue/XL)
+2. Navigate to B2C variation PDP on storefront (clear cache if needed)
+3. Verify Blue/XL combination is no longer available as a selectable option
+4. Verify other Blue variants (S, M, L) remain available if still active
+5. Re-activate the Blue/XL variant in Admin
+6. Refresh storefront and verify Blue/XL option is available again","- Deactivated variant no longer appears as selectable option on storefront (after cache/reindex)
+- Other variants in the same color/size groups remain available
+- Re-activating variant restores it to the option matrix
+- No stale combinations remain after admin changes propagate
+- No console errors",C411036,Manual
+FR-B2C-VAR-113,B2C Variation - Shareable URL Deep Links to Correct Variant,Full Regression > B2C Variations > URL,Functional,High,6m,"B2C variation product with URL-encoding of variation selection implemented (VCST-4530).","1. Navigate to B2C variation PDP
+2. Select a specific variant (Color: Red, Size: M)
+3. Observe URL in browser address bar for query parameters or slug changes
+4. Copy the full URL
+5. Open a new incognito browser window
+6. Paste and navigate to the copied URL
+7. Verify the correct options (Red, M) are pre-selected on page load
+8. Verify price and image match the Red/M variant","- URL updates to encode the selected variation (query params or path)
+- Sharing the URL in a new browser pre-selects the correct options
+- Pre-selected state shows correct variant price
+- Pre-selected state shows correct variant image
+- No redirect to base product URL (shareable link preserved)
+- No console errors on direct variation URL load",VCST-4530,Manual
+FR-B2C-VAR-114,B2C Variation - Mobile Touch Interactions with Color Swatches,Full Regression > B2C Variations > Mobile,Functional,High,6m,"Mobile viewport 375x812px. B2C variation product with color swatches and size selectors.","1. Resize browser to 375x812px (or use DevTools mobile emulation)
+2. Navigate to B2C variation PDP
+3. Verify Options section is visible and not obscured
+4. Verify color swatches are large enough to tap (minimum 44x44px touch target)
+5. Tap a color swatch and verify selection state changes
+6. Verify no horizontal overflow from option groups
+7. Tap a size button and verify selection state
+8. Verify 'Add to Cart' is enabled after full selection
+9. Tap 'Add to Cart' and verify success","- Options section renders correctly in mobile viewport
+- Color swatches have sufficient touch target size (44x44px minimum)
+- Tapping swatch registers correct selection without requiring precise tap
+- Option groups stack vertically without horizontal scrolling
+- Size buttons readable and tappable at mobile size
+- Full variation selection + add to cart flow completes on mobile
+- No layout overflow or hidden options due to mobile viewport",C411062 B2C-VAR-009,Manual
+FR-B2C-VAR-115,B2C Variation - Rapid Option Switching Resolves to Final State,Full Regression > B2C Variations > Edge Cases,Functional,High,5m,"B2C variation product with at least 3 color options. PDP loaded.","1. Navigate to B2C variation PDP
+2. Rapidly click: Blue swatch, then Red swatch, then Green swatch in quick succession (within 1-2 seconds)
+3. Wait 1 second after last click
+4. Verify the final displayed state (price, image, SKU, selected swatch)
+5. Verify the final state matches Green (the last click)
+6. Add to cart
+7. Verify cart contains the Green variant, not Blue or Red","- After rapid clicks, UI settles on the last-clicked option (Green)
+- Price reflects Green variant price
+- Image reflects Green variant image
+- No stale state from intermediate selections (Blue or Red) visible
+- Cart add sends Green variant SKU
+- No console errors from race conditions or duplicate API calls
+- No duplicate network requests that cause conflicting state",J1-EDGE-CASE,Manual
 FR-SECURITY-001,SQL Injection Prevention,Full Regression > Security > Injection,Security,Critical,10m,"User on search or form page","1. Attempt SQL injection in search: laptop' OR '1'='1
 2. Attempt in login form: admin' OR '1'='1' --
 3. Attempt in registration email field
@@ -1260,3 +1538,240 @@ FR-B2C-CONFIG-003,Product Configuration - Dependent Options,Full Regression > B2
 - Configuration logic prevents errors
 - Valid combination adds to cart successfully
 - Complex configurations handled smoothly",B2C-CONFIG-006,Manual
+FR-BOPIS-006,BOPIS - Feature Flag Disabled Hides Pickup Option,Full Regression > BOPIS > Toggle,Functional,High,3m,"BOPIS module deactivated in store settings","1. Deactivate BOPIS in store settings
+2. Navigate to cart with products
+3. Observe delivery method options
+4. Check DOM for pickup elements","- 'Pickup' option does not appear in delivery options
+- No trace of pickup in DOM
+- Only 'Shipping/Delivery' option available",C410938,Manual
+FR-BOPIS-007,BOPIS - Availability Label: Today (Main FFC Match),Full Regression > BOPIS > Availability,Functional,Critical,5m,"Product assigned to Main_1 FFC, location L1 has Main FC = Main_1","1. Add BOPIS-eligible product to cart
+2. Select Pickup > open PickPoints modal
+3. Find location L1 in list
+4. Observe availability label","- Location L1 shows 'Today' label
+- No 'Transfer' or 'Global' label present
+- Location is selectable",C412653,Manual
+FR-BOPIS-008,BOPIS - Availability Label: Transfer (Transfer FFC Match),Full Regression > BOPIS > Availability,Functional,High,5m,"Product assigned to Transfer_1 FFC, location L3 has Transfer FC = Transfer_1, EnableGlobalTransfer = FALSE","1. Add product to cart
+2. Select Pickup > open PickPoints modal
+3. Find location L3
+4. Observe availability label","- Location L3 shows transfer duration label (e.g., 'Transfer (2-3 days)')
+- Location is selectable",C412656,Manual
+FR-BOPIS-009,BOPIS - Availability Label: Global Transfer,Full Regression > BOPIS > Availability,Functional,High,5m,"Product assigned to Main_1 FFC, location L2 has no Main FC, EnableGlobalTransfer = TRUE","1. Add product to cart
+2. Select Pickup > open PickPoints modal
+3. Find location L2
+4. Observe availability label","- Location L2 shows 'Global Transfer (1 week)' label
+- Location remains selectable",C412655,Manual
+FR-BOPIS-010,BOPIS - Availability Label: Not Available (No Match + Global OFF),Full Regression > BOPIS > Availability,Functional,High,5m,"Product assigned to Transfer_1 FFC, location L4 has Main FC only, EnableGlobalTransfer = FALSE","1. Add product to cart
+2. Select Pickup > open PickPoints modal
+3. Find location L4
+4. Attempt to select it","- Location L4 displayed as 'Not available' (greyed/disabled)
+- Cannot be selected for pickup",C412654,Manual
+FR-BOPIS-011,BOPIS - No Valid Pickup Locations for Product,Full Regression > BOPIS > Availability,Functional,High,5m,"Product P5 with EnableGlobalTransfer = FALSE has no compatible locations","1. Add product P5 to cart
+2. Select Pickup
+3. Open PickPoints modal","- Message: 'There are no available pickup points for these products'
+- Pickup radio option blocked or shows error
+- User prompted to select another shipping method",C412691,Manual
+FR-BOPIS-012,BOPIS - Mixed Cart: Delivery + Pickup Items,Full Regression > BOPIS > Mixed Cart,Functional,High,8m,"Cart has BOPIS-eligible product and delivery-only product","1. Add BOPIS-eligible product and delivery-only product to cart
+2. Observe delivery options per item
+3. Select Pickup for eligible item, Shipping for delivery-only item
+4. Proceed to checkout","- BOPIS-eligible item shows 'Pickup' toggle; delivery-only shows only 'Shipping'
+- Each item maintains independent delivery selection
+- Totals: no shipping cost on pickup item, shipping cost on delivery item
+- Checkout summary shows both fulfillment methods",checklist-D,Manual
+FR-BOPIS-013,BOPIS - Cart Totals: Zero Shipping Cost for Pickup,Full Regression > BOPIS > Totals,Functional,Critical,5m,"Product in cart with Pickup selected and location confirmed","1. Confirm pickup location in cart
+2. Observe order summary
+3. Check shipping line
+4. Verify total calculation","- Shipping line shows $0.00 or 'Free'
+- Total = subtotal + tax only (no shipping)
+- No stale shipping amount from previous delivery selection",C413982,Manual
+FR-BOPIS-014,BOPIS - Switch Delivery to Pickup Clears Shipping,Full Regression > BOPIS > Switch,Functional,High,5m,"Cart with delivery address and shipping method selected","1. Select 'Shipping' and choose address + method (note shipping cost)
+2. Switch to 'Pickup'
+3. Observe cart state
+4. Select and confirm pickup location","- Shipping method selection cleared
+- Shipping address form hidden
+- 'Select pickup location' prompt appears
+- Shipping cost removed from total",BOPIS-027,Manual
+FR-BOPIS-015,BOPIS - Switch Pickup to Delivery Clears Location,Full Regression > BOPIS > Switch,Functional,High,5m,"Cart with pickup location confirmed","1. With pickup confirmed, switch to 'Shipping'
+2. Observe cart state","- Pickup location selection cleared
+- Shipping address form/selector reappears
+- Shipping cost re-applied when method selected",BOPIS-027,Manual
+FR-BOPIS-016,BOPIS - Quantity Change Revalidates Pickup Availability,Full Regression > BOPIS > Revalidation,Functional,High,5m,"Pickup location confirmed, product has limited branch stock","1. With pickup location confirmed, increase item quantity significantly
+2. Observe availability label/status
+3. Check for error or re-selection prompt","- Availability label refreshes for new quantity
+- If qty exceeds branch stock: error shown or location flagged
+- Order cannot proceed silently with insufficient stock at pickup branch",checklist-H,Manual
+FR-BOPIS-017,BOPIS - Facet Filter: Country + State + City (Multi-Level),Full Regression > BOPIS > Filters,Functional,High,5m,"Pickup modal open, locations in multiple countries/states/cities","1. Open PickPoints modal from cart
+2. Select Country: USA
+3. Select State: New York
+4. Select City: New York City
+5. Verify filtered results","- Each filter level narrows results
+- Map updates to filtered locations
+- Filter chips shown for each level
+- Results match all applied filters",C413522,Manual
+FR-BOPIS-018,BOPIS - Multi-Select Filters (Multiple Countries),Full Regression > BOPIS > Filters,Functional,High,5m,"Pickup modal open, locations in multiple countries","1. Open Country dropdown
+2. Select USA and Canada
+3. Observe results","- Both country chips displayed
+- Results from both countries returned
+- Deselecting one updates results correctly",C413527,Manual
+FR-BOPIS-019,BOPIS - Search with Special Characters,Full Regression > BOPIS > Search,Functional,Medium,3m,"Pickup modal open","1. Search for location with apostrophe (e.g., 'St. Patrick's')
+2. Search for location with ampersand (e.g., '5th Ave & 50th')
+3. Search with whitespace only","- Apostrophe and ampersand handled correctly
+- Matching locations found
+- Whitespace-only search restores all results",C413551,Manual
+FR-BOPIS-020,BOPIS - Reset All Filters,Full Regression > BOPIS > Filters,Functional,High,3m,"Pickup modal with multiple filters and search applied","1. Apply Country + State + keyword search
+2. Click 'Reset filters' or 'Clear all'
+3. Observe results","- All filter chips removed
+- Search bar cleared
+- Full pickup location list restored
+- Map shows all markers",C413525,Manual
+FR-BOPIS-021,BOPIS - Cross-Layer: Storefront → xAPI → Admin Order,Full Regression > BOPIS > Cross-Layer,Integration,Critical,10m,"Complete BOPIS order placed","1. Place order with Pickup fulfillment
+2. Query xAPI: order shipments
+3. Open Admin > Orders > find the order
+4. Verify pickup details","- xAPI shows shipments[].fulfillmentCenterId = selected pickup location
+- Admin order detail shows pickup location name, address
+- No shipping cost in stored order
+- Fulfillment method = Pickup",checklist-K,Manual
+FR-PAYMENT-006,Declined Card → Retry with Valid Card → Order Confirmed,Full Regression > Payment > Retry,Functional,Critical,8m,"User authenticated, cart with product, Skyflow payment configured, valid and invalid card numbers available","1. Add product to cart and proceed to checkout
+2. Fill shipping address and select shipping method
+3. At payment step, enter a declined card number
+4. Click 'Place Order'
+5. Observe error message
+6. Clear card fields and enter valid Skyflow Visa card
+7. Click 'Place Order' again
+8. Verify order confirmation page
+9. In Admin > Orders, verify only ONE order exists for this transaction","- Declined card shows clear error: 'Your card was declined' or similar
+- Payment form remains accessible for retry (not locked)
+- Entering valid card and resubmitting succeeds
+- Order confirmation page displays with order number
+- Admin shows exactly one order (no duplicate from failed attempt)
+- No console errors during retry flow
+- Cart is cleared after successful order",BL-CHK-004,Manual
+FR-PAYMENT-007,Double-Click Place Order Prevention (Idempotency),Full Regression > Payment > Idempotency,Functional,Critical,5m,"User authenticated, cart with product, at order review step, payment details entered","1. Complete checkout up to order review step
+2. Rapidly double-click 'Place Order' button
+3. Wait for order processing
+4. Verify order confirmation page
+5. In Admin > Orders, count orders from this session
+6. Verify only one order was created","- First click triggers order placement; button becomes disabled or shows spinner
+- Second click is ignored (button disabled or idempotency key prevents duplicate)
+- Only ONE order created in Admin
+- No duplicate charges on payment processor
+- Order confirmation shows single order number
+- No 5xx errors in network tab from concurrent submissions",BL-CHK-002,Manual
+FR-CHECKOUT-008,Guest Checkout - Full Flow Without Sign-In,Full Regression > Checkout > Guest,Functional,Critical,10m,"Anonymous user (not signed in), store allows guest checkout, cart empty","1. As anonymous user, navigate to catalog
+2. Add a product to cart
+3. Click 'Proceed to Checkout'
+4. Verify guest checkout option available (email entry without account creation)
+5. Enter guest email address
+6. Fill shipping address
+7. Select shipping method
+8. Enter payment details (Skyflow Visa)
+9. Review order summary
+10. Click 'Place Order'
+11. Verify order confirmation page with order number","- Guest checkout option available without forced registration
+- Email field accepts valid email
+- Shipping address form works for guest
+- Payment processing succeeds for guest
+- Order confirmation page shows order number
+- Confirmation email sent to guest email
+- Order visible in Admin > Orders
+- Guest cannot view order history (no account)",BL-CHK-001,Manual
+FR-MULTI-ORG-003,Organization Switch - Full Context Isolation,Full Regression > Multi-Org > Context,Functional,Critical,8m,"User assigned to two organizations (Org A and Org B) with different catalogs/prices, signed in as Org A","1. Sign in as multi-org user (default Org A)
+2. Add a product to cart; note Org A price
+3. Switch to Org B using org selector
+4. Verify cart is empty or shows Org B cart (not Org A items)
+5. Verify product prices reflect Org B pricing
+6. Verify shipping addresses are Org B addresses (not Org A)
+7. Switch back to Org A
+8. Verify Org A cart is intact with original items and prices","- Org switch updates entire context: cart, prices, addresses, catalog
+- Org A cart items do NOT appear in Org B context
+- Org B prices may differ from Org A (tier/contract pricing)
+- Shipping addresses are org-specific
+- Switching back to Org A restores Org A cart intact
+- No data leakage between organizations
+- Org name/logo in header updates on switch",BL-B2B-001,Manual
+FR-WL-001,White Labeling - Org Branding Displayed After Sign-In,Full Regression > White Labeling > Branding,Functional,Critical,5m,"B2B org user with White Labeling Enabled = ON in Admin, org has custom logo and theme configured","1. Sign in as B2B org user with White Labeling enabled
+2. After sign-in, observe header area for org logo
+3. Verify org logo replaces or overlays store default logo
+4. Verify theme colors match org preset (if configured)
+5. Check browser tab for custom favicon (if configured)
+6. Navigate to multiple pages and verify branding persists","- Org-specific logo displayed in header (not store default)
+- Theme colors match org configuration
+- Favicon updates to org favicon (if set)
+- Branding persists across page navigation
+- Branding loads without flash of default branding
+- Sign out returns to default store branding",BL-B2B-006,Manual
+FR-CONFIG-004,Configurable Product - Configure → Add to Cart → Order Confirmed,Full Regression > Configurable Products > E2E,Integration,Critical,10m,"Configurable product exists with at least one required option group and price modifiers, user authenticated","1. Navigate to configurable product PDP
+2. Verify configuration options are displayed
+3. Select an upgrade option (e.g., +$50 option)
+4. Verify price updates dynamically (base + modifier)
+5. Click 'Add to Cart'
+6. Navigate to cart and verify configured product with options listed
+7. Proceed to checkout
+8. Complete payment
+9. Verify order confirmation shows configured product with selected options
+10. In Admin > Orders, verify order line shows configuration details and correct price","- Configuration options render correctly on PDP
+- Price updates dynamically as options are selected
+- Cart line shows product name + selected configuration options
+- Cart price = base price + sum of option modifiers
+- Checkout preserves configuration details
+- Order confirmation lists configured options
+- Admin order shows configuration details and correct total
+- No console errors during configuration flow",BL-CAT-006,Manual
+FR-AUTH-005,Session Expiry Mid-Checkout - Cart Preserved After Re-Login,Full Regression > Auth > Session,Functional,Critical,8m,"User authenticated, product in cart, checkout started, session timeout configured","1. Sign in and add product to cart
+2. Begin checkout (fill shipping address)
+3. Wait for session to expire (or manually expire via Admin/clear auth token)
+4. Attempt to proceed to payment step
+5. Verify redirect to sign-in page
+6. Sign back in with same credentials
+7. Verify return to checkout with cart intact
+8. Complete the order","- Session expiry triggers redirect to sign-in (not a crash or blank page)
+- Sign-in page shows friendly message: 'Session expired, please sign in again'
+- After re-login, user returns to checkout (not homepage)
+- Cart contents preserved (same items, quantities, prices)
+- Shipping address entered before expiry is preserved (or easily re-selectable)
+- Can complete order after re-authentication
+- No duplicate cart items from session restore",BL-AUTH-001,Manual
+FR-CART-028,Coupon Applies to Sale Price Not List Price,Full Regression > Cart > Pricing,Functional,Critical,6m,"Product with active sale price (e.g., list $100, sale $80), valid coupon code that gives percentage or fixed discount","1. Navigate to product with sale price
+2. Verify sale price displayed (e.g., $80 with strikethrough $100)
+3. Add to cart
+4. In cart, verify item price = sale price ($80)
+5. Apply valid coupon code (e.g., 10% off)
+6. Verify discount calculated on sale price: 10% of $80 = $8
+7. Verify cart total = $80 - $8 = $72 (not $100 - $10 = $90)
+8. Open DevTools > Network > inspect cart GraphQL query
+9. Verify placedPrice in response = $80 (sale price)","- Coupon discount calculated on sale/placed price, not list price
+- Cart shows: List price (strikethrough), Sale price, Coupon discount, Final total
+- Discount amount = percentage × sale price (not list price)
+- GraphQL cart.items[].placedPrice = sale price
+- No double-discounting (coupon on top of already-reduced price is correct)
+- Removing coupon restores to sale price (not list price)",BL-PRICE-001,Manual
+FR-SEO-001,SEO - Canonical URL and Meta Tags on PDP and Category Page,Full Regression > SEO > Meta,Functional,High,5m,"Storefront accessible, browser DevTools available","1. Navigate to a category page
+2. Open DevTools > Elements tab
+3. Find <link rel='canonical'> in <head>
+4. Verify canonical URL matches current page URL
+5. Find <title> tag and verify it contains category name
+6. Find <meta name='description'> and verify non-empty
+7. Navigate to a product detail page
+8. Repeat canonical URL check
+9. Verify <title> contains product name
+10. Verify <meta name='description'> contains product info","- <link rel='canonical'> present on every page
+- Canonical URL matches the current clean URL (no query params like ?page=1)
+- <title> tag populated: category name or product name included
+- <meta name='description'> non-empty, contains relevant content
+- No duplicate canonical tags
+- No noindex tag on public pages
+- Open Graph tags present (og:title, og:image, og:url) for social sharing",BL-SEO-001,Manual
+FR-WL-002,White Labeling - Branding Updates on Organization Switch,Full Regression > White Labeling > Switch,Functional,High,8m,"User assigned to two orgs: Org A (WL ON, custom logo A) and Org B (WL ON, custom logo B)","1. Sign in as multi-org user (default Org A)
+2. Verify Org A branding: logo A in header, Org A theme colors
+3. Switch to Org B via org selector
+4. Verify logo updates to Org B logo (no page reload required)
+5. Verify theme colors update to Org B preset
+6. Verify favicon updates (if different per org)
+7. Verify main menu links update to Org B menu configuration
+8. Navigate to multiple pages under Org B context
+9. Switch back to Org A and verify branding reverts","- Org switch triggers branding update without full page reload
+- No flash of wrong branding during switch (Org A logo briefly visible under Org B)
+- Logo, theme, favicon, menu all update to target org
+- Branding persists across navigation within org context
+- Switching back fully restores previous org branding
+- No console errors during branding switch
+- DOM does not retain stale branding elements from previous org",BL-CROSS-008,Manual

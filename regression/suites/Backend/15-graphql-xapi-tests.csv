@@ -119,3 +119,91 @@ GQL-020,GraphQL Introspection Security,GraphQL > Security,Security,High,3m,"Grap
 - No internal/debug types exposed
 - Schema does not reveal implementation details
 - Rate limiting applies to introspection queries",xAPI,Automated
+GQL-021,xCart - Cart Uses Live Price After Admin Price Change (Not Cached Index),GraphQL > xCart > Cross-Domain,Functional,Critical,8m,"Authenticated user, product with known price in price list, access to Admin API at ${BACK_URL}","1. Note current price of Product A via xCatalog products query
+2. Change Product A price via REST API: PUT ${BACK_URL}/api/pricing/pricelists/{priceListId}/prices with new amount
+3. Immediately (within 5 seconds) execute addItem mutation to add Product A to cart
+4. Query cart: query { cart(storeId: STORE_ID, cartId: CART_ID) { items { productId listPrice { amount } placedPrice { amount } } } }
+5. Compare cart line item placedPrice against NEW price set in step 2","- Cart line item placedPrice equals the NEW price from step 2 (not the old cached/indexed price)
+- listPrice reflects the updated price list value
+- No mixed pricing: all price fields on the line item use the live price
+- BL-CROSS-002: Cart must use live (current) price even during reindex lag window","Coverage Gap Analysis BL-CROSS-002",Generated
+GQL-022,xCatalog - Product Listing Price During Reindex Lag Window,GraphQL > xCatalog > Cross-Domain,Functional,Critical,10m,"Product with known price, Elasticsearch indexing enabled, access to Admin API","1. Query xCatalog for Product A and record current listed price: query { products(storeId: STORE_ID, query: ""ProductA_code"") { items { id name prices { list { amount } } } } }
+2. Change Product A price via REST API: PUT ${BACK_URL}/api/pricing/pricelists/{priceListId}/prices
+3. Immediately re-query xCatalog products (same query as step 1)
+4. Document whether old or new price is returned (reindex lag is acceptable per BL-CROSS-002)
+5. Wait 60 seconds for reindex to complete
+6. Re-query xCatalog products again
+7. Verify price now reflects the updated value","- Step 3: Old price MAY be returned (acceptable reindex lag of 30-60s per BL-CROSS-002)
+- Step 6: After reindex window, xCatalog MUST return the new price
+- Document actual lag duration observed
+- If price still shows old value after 90 seconds, flag as potential reindex failure
+- Note: This is informational/monitoring — storefront listing lag is acceptable but cart price must be live (see GQL-021)","Coverage Gap Analysis BL-CROSS-002",Generated
+GQL-023,xCart - Price Update Reflected on Re-query After Admin Change,GraphQL > xCart > Cross-Domain,Functional,Critical,8m,"Cart with existing item at known price, access to Admin API","1. Create cart and add Product A (quantity 1) via addItem mutation
+2. Query cart and record placedPrice for the line item
+3. Change Product A price in Admin via REST API: PUT ${BACK_URL}/api/pricing/pricelists/{priceListId}/prices with different amount
+4. Re-query the same cart: query { cart(storeId: STORE_ID, cartId: CART_ID) { items { productId placedPrice { amount } listPrice { amount } } totals { subTotal { amount } } } }
+5. Compare placedPrice before and after price change","- placedPrice in step 4 reflects the NEW price (updated in step 3)
+- totals.subTotal recalculated with the new price
+- No stale/cached price persisted in the cart
+- BL-CROSS-002: Cart always uses live price regardless of index state
+- If placedPrice still shows old value, this is a P0 violation of BL-CROSS-002","Coverage Gap Analysis BL-CROSS-002",Generated
+GQL-024,xOrder - createOrderFromCart Idempotency (Duplicate Call Returns Same Order),GraphQL > xOrder > Cross-Domain,Functional,Critical,10m,"Full cart ready for order: items added, shipping address set, shipping method selected, payment method configured","1. Prepare cart through full checkout flow (addItem, addOrUpdateCartShipment with address and method, addOrUpdateCartPayment)
+2. Execute: mutation { createOrderFromCart(cartId: CART_ID) { id number status } } — record returned order ID and number
+3. Execute the SAME mutation again: mutation { createOrderFromCart(cartId: CART_ID) { id number status } }
+4. Query orders list to count orders: query { orders(filter: ""createdDate gt 2026-03-06"") { totalCount items { id number } } }
+5. Verify only 1 order exists for this cart","- Step 2: First call succeeds, returns order ID and number
+- Step 3: Second call either returns the SAME order ID/number or returns an error indicating cart already converted (NOT a 500 error)
+- Step 4: Exactly 1 order created (not 2)
+- No duplicate payment charges
+- No duplicate inventory decrements
+- BL-CROSS-010: All checkout mutations must be idempotent","Coverage Gap Analysis BL-CROSS-010",Generated
+GQL-025,xOrder - Second createOrderFromCart Returns Same Order ID (Not Server Error),GraphQL > xOrder > Cross-Domain,Functional,Critical,10m,"Full cart ready for order creation","1. Prepare cart through full checkout flow
+2. Execute createOrderFromCart mutation — record orderId and orderNumber
+3. Wait 2 seconds
+4. Execute createOrderFromCart with the same cartId again
+5. Inspect the response structure of the second call
+6. If successful response: verify orderId matches step 2
+7. If error response: verify it is a structured GraphQL error (not HTTP 500)","- Second call MUST NOT return HTTP 500 or unhandled exception
+- Acceptable responses: (a) same order ID returned, or (b) structured error like ""Cart already converted to order"" or ""Cart not found""
+- response.errors[] if present must have clear message, not stack trace
+- No partial order created by second call
+- BL-CROSS-010: Idempotent behavior — same input produces same output without side effects","Coverage Gap Analysis BL-CROSS-010",Generated
+GQL-026,xCart - Cart Invalidated After Order Creation (No Reuse),GraphQL > xCart > Cross-Domain,Functional,Critical,8m,"Cart converted to order via createOrderFromCart","1. Create cart, add items, complete checkout setup
+2. Execute createOrderFromCart mutation — record orderId
+3. Attempt to add an item to the same cart: mutation { addItem(cartId: CART_ID, productId: PRODUCT_ID, quantity: 1) { id itemsCount } }
+4. Attempt to query the cart: query { cart(storeId: STORE_ID, cartId: CART_ID) { id status itemsCount } }
+5. Attempt changeCartItemQuantity on the converted cart","- Step 3: addItem returns error (cart not found, cart already converted, or similar)
+- Step 4: Cart query returns empty/null or cart with status indicating it is no longer active
+- Step 5: Mutation fails with appropriate error
+- No silent success that would allow modifying a completed order's source cart
+- BL-CROSS-010: Post-order cart must be invalidated to prevent reuse and duplicate orders","Coverage Gap Analysis BL-CROSS-010",Generated
+GQL-027,xCart - Currency Switch Updates All Line Items to New Price List,GraphQL > xCart > Cross-Domain,Functional,High,10m,"Products with prices in both USD and EUR price lists, authenticated user","1. Create cart in USD: mutation { createCart(storeId: STORE_ID, userId: USER_ID, currencyCode: ""USD"", cultureName: ""en-US"") { id } }
+2. Add multiple items (Product A and Product B) via addItem mutations
+3. Query cart and record all prices in USD: items[].listPrice, items[].placedPrice, totals.subTotal
+4. Switch currency by updating cart: mutation { changeCartCurrency(cartId: CART_ID, newCurrencyCode: ""EUR"") { id currency { code } items { productId listPrice { amount currencyCode } placedPrice { amount currencyCode } } totals { subTotal { amount currencyCode } } } }
+5. Verify ALL monetary fields now use EUR","- All items[].listPrice.currencyCode = ""EUR""
+- All items[].placedPrice.currencyCode = ""EUR""
+- totals.subTotal.currencyCode = ""EUR""
+- Price amounts correspond to EUR price list values (NOT USD-to-EUR conversion)
+- No mixed currency state: zero fields still showing USD
+- BL-CROSS-004: Currency switch must update ALL monetary fields atomically","Coverage Gap Analysis BL-CROSS-004",Generated
+GQL-028,xCart - Shipping Rates Recalculate After Currency Switch,GraphQL > xCart > Cross-Domain,Functional,High,10m,"Cart with items and shipping address set, shipping methods configured for both USD and EUR","1. Create cart in USD, add items, set shipping address via addOrUpdateCartShipment
+2. Query available shipping methods: query { cart(storeId: STORE_ID, cartId: CART_ID) { availableShippingMethods { code optionName price { amount currencyCode } } } }
+3. Record shipping rates in USD
+4. Switch cart currency to EUR via changeCartCurrency mutation
+5. Re-query available shipping methods (same query as step 2)
+6. Compare shipping rates before and after currency switch","- Step 5: All shipping method prices show currencyCode = ""EUR""
+- Shipping rates are EUR-specific values (not converted from USD)
+- No shipping methods still displaying USD amounts
+- If a shipping method is unavailable in EUR, it should be excluded from the list
+- Cart totals (including shipping) all in EUR
+- BL-CROSS-004: Shipping rates must update as part of atomic currency switch","Coverage Gap Analysis BL-CROSS-004",Generated
+GQL-029,xCart - Product Without New Currency Price Flagged After Currency Switch,GraphQL > xCart > Cross-Domain,Functional,High,8m,"Cart with items: Product A has both USD and EUR prices, Product B has ONLY USD price","1. Create cart in USD, add Product A and Product B
+2. Query cart — both items present with USD prices
+3. Switch currency to EUR via changeCartCurrency mutation
+4. Query cart: query { cart(storeId: STORE_ID, cartId: CART_ID) { items { productId name listPrice { amount currencyCode } isValid validationErrors { errorCode errorMessage } } validationErrors { errorCode } itemsCount } }
+5. Check Product B status (the one without EUR price)","- Product A: listPrice in EUR, valid, no errors
+- Product B: either (a) removed from cart with itemsCount decremented, or (b) flagged with validationErrors indicating no price available in EUR, or (c) isValid = false
+- Product B must NOT show a $0.00 EUR price or a converted-from-USD price
+- Cart totals must exclude Product B if it has no valid EUR price
+- BL-CROSS-004 + BL-PRICE-005: Products without price list in new currency become unavailable","Coverage Gap Analysis BL-CROSS-004 BL-PRICE-005",Generated

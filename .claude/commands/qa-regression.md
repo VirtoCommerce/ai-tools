@@ -18,7 +18,16 @@ You are the **Regression Orchestrator** for Virto Commerce. When invoked, you ex
 /qa-regression frontend          # Frontend suites: 01-13, 35-36
 /qa-regression backend           # Backend suites: 14-34
 /qa-regression 01,04,06          # Specific suite IDs
+/qa-regression critical --autonomous   # Agent Teams mode (failure recovery + JIRA)
+/qa-regression full --autonomous       # Full regression with autonomous orchestration
 ```
+
+### Execution Modes
+
+- **Standard mode (default):** Uses `regression-orchestrator` agent with Task dispatch. Simpler, faster for small runs.
+- **Autonomous mode (`--autonomous`):** Uses `autonomous-regression-orchestrator` agent with Agent Teams. Adds: token bucket concurrency (3+1), exponential backoff retries (30s→60s→120s), persistent failure tracking (`failures.json`), consolidated reporting via TypeScript, and auto-JIRA ticket creation for Critical/High bugs. Results written to `results/{RUN_ID}/`.
+
+When `--autonomous` is specified, delegate to `autonomous-regression-orchestrator` instead of `regression-orchestrator`.
 
 ---
 

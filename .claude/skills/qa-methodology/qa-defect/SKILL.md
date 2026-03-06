@@ -1,7 +1,6 @@
 ---
 description: "[QA Method] Defect management lifecycle: JIRA Bug Workflow, triage, classification, report validation, verification protocol, defect metrics."
 argument-hint: "triage VCST-XXXX | verify VCST-XXXX | classify | workflow | metrics"
-disable-model-invocation: true
 ---
 
 # /qa-defect — Defect Management Lifecycle

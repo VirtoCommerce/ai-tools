@@ -1,7 +1,6 @@
 ---
 description: "[Testing] Design system consistency & UX heuristics: Figma comparison, tokens, Nielsen's 10."
 argument-hint: "component | page URL | flow name"
-disable-model-invocation: true
 ---
 
 # /qa-design — Design & UX Evaluation
