@@ -1,36 +1,39 @@
 {
-  "runId": "SMOKE-2026-02-27-1132",
-  "startedAt": "2026-02-27T11:32:18.000Z",
-  "environment": "https://vcst-qa-storefront.govirto.com",
-  "selection": "smoke",
-  "mode": "smoke-two-track",
-  "totalSuites": 2,
-  "completedSuites": 0,
-  "status": "running",
-  "suites": [
-    {
-      "id": "01-track-a",
-      "name": "Smoke Tests - Storefront (Track A)",
-      "status": "running",
-      "browser": "playwright-chrome",
-      "attempt": 1,
-      "maxAttempts": 3,
-      "startedAt": "2026-02-27T11:32:18.000Z",
-      "completedAt": null,
-      "result": null,
-      "error": null
-    },
-    {
-      "id": "01-track-b",
-      "name": "Admin & Backend Health Checks (Track B)",
-      "status": "running",
-      "browser": "playwright-edge",
-      "attempt": 1,
-      "maxAttempts": 3,
-      "startedAt": "2026-02-27T11:32:18.000Z",
-      "completedAt": null,
-      "result": null,
-      "error": null
-    }
-  ]
+  "runId": "REG-2026-03-09-FE",
+  "selection": "frontend",
+  "agentOverride": "qa-frontend-expert",
+  "startedAt": "2026-03-09T17:22:00Z",
+  "completedAt": "2026-03-10T00:30:00Z",
+  "status": "completed",
+  "totalSuites": 15,
+  "completed": 15,
+  "passed": 13,
+  "failed": 2,
+  "blocked": 0,
+  "cancelled": 0,
+  "currentBatch": 5,
+  "totalBatches": 5,
+  "environment": {
+    "frontUrl": "https://vcst-qa-storefront.govirto.com",
+    "backUrl": "https://vcst-qa.govirto.com",
+    "version": "2.43.0-alpha.2254",
+    "verified": true
+  },
+  "suites": {
+    "01": { "status": "completed", "browser": "playwright-chrome", "batch": 1, "attempt": 1, "execPassRate": "100%", "passed": 10, "failed": 0, "blocked": 4, "skipped": 2 },
+    "06": { "status": "completed", "browser": "playwright-firefox", "batch": 1, "attempt": 1, "execPassRate": "94.4%", "passed": 17, "failed": 1, "blocked": 14, "skipped": 13 },
+    "08": { "status": "completed", "browser": "playwright-edge", "batch": 1, "attempt": 1, "execPassRate": "94.4%", "passed": 17, "failed": 0, "blocked": 3, "skipped": 1 },
+    "02": { "status": "completed", "browser": "playwright-chrome", "batch": 2, "attempt": 1, "execPassRate": "100%", "passed": 30, "failed": 0, "skipped": 17 },
+    "03": { "status": "completed", "browser": "playwright-firefox", "batch": 2, "attempt": 1, "execPassRate": "93.1%", "passed": 27, "failed": 0, "ambiguous": 2, "skipped": 35 },
+    "04": { "status": "completed", "browser": "playwright-edge", "batch": 2, "attempt": 1, "execPassRate": "96.9%", "passed": 31, "failed": 0, "skipped": 1 },
+    "05": { "status": "completed", "browser": "playwright-chrome", "batch": 3, "attempt": 1, "execPassRate": "98.1%", "passed": 52, "failed": 1, "skipped": 23 },
+    "09": { "status": "completed", "browser": "playwright-firefox", "batch": 3, "attempt": 1, "execPassRate": "59%", "passed": 13, "failed": 5, "skipped": 0 },
+    "12": { "status": "completed", "browser": "playwright-edge", "batch": 3, "attempt": 1, "execPassRate": "100%", "passed": 10, "failed": 0, "skipped": 11 },
+    "13": { "status": "completed", "browser": "playwright-chrome", "batch": 4, "attempt": 2, "execPassRate": "100%", "passed": 24, "failed": 0, "skipped": 8 },
+    "35": { "status": "completed", "browser": "playwright-firefox", "batch": 4, "attempt": 2, "execPassRate": "72.3%", "passed": 34, "failed": 3, "blocked": 8, "skipped": 23 },
+    "36": { "status": "completed", "browser": "playwright-edge", "batch": 4, "attempt": 2, "execPassRate": "100%", "passed": 14, "failed": 0, "blocked": 29, "skipped": 2 },
+    "07": { "status": "completed", "browser": "playwright-firefox", "batch": 5, "attempt": 1, "execPassRate": "90.5%", "passed": 19, "failed": 2, "skipped": 2 },
+    "10": { "status": "completed", "browser": "playwright-edge", "batch": 5, "attempt": 3, "execPassRate": "100%", "passed": 26, "failed": 0, "skipped": 0 },
+    "11": { "status": "completed", "browser": "playwright-chrome", "batch": 5, "attempt": 1, "execPassRate": "65%", "passed": 13, "failed": 3, "skipped": 0 }
+  }
 }

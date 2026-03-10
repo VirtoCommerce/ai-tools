@@ -1,0 +1,262 @@
+{
+  "suiteId": "04",
+  "suiteName": "Cart & Checkout Tests",
+  "runId": "REG-2026-03-09-FE",
+  "browser": "playwright-edge",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "storeVersion": "2.43.0-alpha.2254",
+  "executedAt": "2026-03-09T18:30:00Z",
+  "completedAt": "2026-03-09T19:15:00Z",
+  "user": "mutykovaelena@gmail.com",
+  "organization": "ACME Store 3",
+  "summary": {
+    "total": 32,
+    "passed": 31,
+    "failed": 0,
+    "skipped": 1,
+    "blocked": 0,
+    "passRate": "96.9%"
+  },
+  "results": [
+    {
+      "id": "CART-001",
+      "title": "Add Single Product to Cart",
+      "status": "PASS",
+      "notes": "Added Hot Portable Digital Camera from catalog, cart badge updated to 1"
+    },
+    {
+      "id": "CART-002",
+      "title": "Add Product from Category Page",
+      "status": "PASS",
+      "notes": "Added product from Printers category listing via quantity stepper"
+    },
+    {
+      "id": "CART-003",
+      "title": "Add Product from Product Detail Page",
+      "status": "PASS",
+      "notes": "Added from PDP using increase quantity button, cart badge updated correctly"
+    },
+    {
+      "id": "CART-004",
+      "title": "Add Product Variation to Cart",
+      "status": "PASS",
+      "notes": "Xerox 3225 product page: added VAR ($46.00) and GIFT+ ($319.00) variations separately. Sidebar showed 'Variations in cart: 2', cart badge updated to 2"
+    },
+    {
+      "id": "CART-005",
+      "title": "Add Multiple Quantities",
+      "status": "PASS",
+      "notes": "Increased quantity to 3 using stepper, cart total recalculated correctly"
+    },
+    {
+      "id": "CART-006",
+      "title": "View Cart Page",
+      "status": "PASS",
+      "notes": "Cart page displays product image, name, properties, price, quantity stepper, total, and order summary sidebar"
+    },
+    {
+      "id": "CART-007",
+      "title": "Increase Quantity in Cart",
+      "status": "PASS",
+      "notes": "Used stepper increment button on cart page, line total and subtotal recalculated"
+    },
+    {
+      "id": "CART-008",
+      "title": "Direct Quantity Input",
+      "status": "PASS",
+      "notes": "Used Ctrl+A then typed new value in spinbutton. Quantity updated, totals recalculated. Note: Vue spinbutton requires keyboard select-all, not input.select()"
+    },
+    {
+      "id": "CART-009",
+      "title": "Remove Item - Single Product",
+      "status": "PASS",
+      "notes": "Clicked remove button, item removed immediately, cart shows empty state when last item removed"
+    },
+    {
+      "id": "CART-010",
+      "title": "Save for Later",
+      "status": "PASS",
+      "notes": "Save for later button present and functional on cart line items"
+    },
+    {
+      "id": "CART-011",
+      "title": "Clear Cart - All Items",
+      "status": "PASS",
+      "notes": "Clear cart button triggered confirmation dialog 'Do you want to clear your cart?' with Yes/No. Clicking Yes cleared all items, cart shows empty state with 'Continue shopping' and 'Add with bulk order' links"
+    },
+    {
+      "id": "CART-012",
+      "title": "Cart Empty State",
+      "status": "PASS",
+      "notes": "Empty cart shows 'Your cart is empty' message, 'Use the search to find everything you need', Continue shopping link, Add with bulk order link"
+    },
+    {
+      "id": "CART-013",
+      "title": "Cart Item Properties Display",
+      "status": "PASS",
+      "notes": "Vintage Colorado Hoodie shows properties: Size=55, Product color=Malachite. Xerox variations show Color property"
+    },
+    {
+      "id": "CART-014",
+      "title": "Valid Coupon Code",
+      "status": "SKIPPED",
+      "notes": "No known valid coupon code available in test environment. Promo code field and Apply button are present and functional"
+    },
+    {
+      "id": "CART-015",
+      "title": "Invalid Coupon Code",
+      "status": "PASS",
+      "notes": "Entered 'FAKECODE', clicked Apply, error message displayed. Vue Apollo warning in console (expected for invalid coupon)"
+    },
+    {
+      "id": "CART-016",
+      "title": "Cart Badge Count",
+      "status": "PASS",
+      "notes": "Cart badge in header accurately reflects item count. Shows '1', '2', '3' etc. Disappears when cart is empty"
+    },
+    {
+      "id": "CART-017",
+      "title": "Cart Subtotal Calculation",
+      "status": "PASS",
+      "notes": "Subtotal correctly sums line totals (price x quantity for each item)"
+    },
+    {
+      "id": "CART-018",
+      "title": "Order Summary Display",
+      "status": "PASS",
+      "notes": "Order summary sidebar shows Subtotal, Discount, Tax, Shipping cost, Total. All values update when cart changes"
+    },
+    {
+      "id": "CHK-001",
+      "title": "Checkout Page Layout",
+      "status": "PASS",
+      "notes": "Single-page checkout with sections: Cart items, Shipping details (Pickup/Shipping toggle, address, delivery method), Payment details (billing address, payment method, card form), Order comment, Order summary sidebar"
+    },
+    {
+      "id": "CHK-003",
+      "title": "Select Existing Shipping Address",
+      "status": "PASS",
+      "notes": "Address selection dialog opened with table of saved addresses. Selected Detroit address, billing auto-synced via 'Same as shipping address' checkbox"
+    },
+    {
+      "id": "CHK-005",
+      "title": "Select Delivery Method",
+      "status": "PASS",
+      "notes": "Delivery method dropdown shows Fixed Rate (Ground) and Fixed Rate (Air). Selection updates shipping cost and total in order summary"
+    },
+    {
+      "id": "CHK-006",
+      "title": "Select Payment Method",
+      "status": "PASS",
+      "notes": "6 payment methods available: Authorize.Net, CyberSource, Datatrans, Manual, Pay with points, Skyflow. Selecting CyberSource shows card form with iframes for card number and CVV"
+    },
+    {
+      "id": "CHK-007",
+      "title": "Fill CyberSource Payment Card",
+      "status": "PASS",
+      "notes": "Card number and CVV fields are cross-origin iframes (CyberSource hosted). Cardholder name and expiry are regular inputs. Card: 4622943127013705"
+    },
+    {
+      "id": "CHK-008",
+      "title": "Order Comment",
+      "status": "PASS",
+      "notes": "Order comment textarea with 0/1000 character counter. Accepts input correctly"
+    },
+    {
+      "id": "CHK-009",
+      "title": "Place Order - Double Submit Prevention",
+      "status": "PASS",
+      "notes": "BL-CHK-003 verified: Place Order button disables after first click, preventing duplicate order submission"
+    },
+    {
+      "id": "CHK-010",
+      "title": "Order Confirmation",
+      "status": "PASS",
+      "notes": "After placing order, redirected to confirmation page showing order number CO260309-00007, status 'Payment required' (expected for CyberSource B2B), View order button"
+    },
+    {
+      "id": "CHK-011",
+      "title": "Order Appears in History",
+      "status": "PASS",
+      "notes": "Order CO260309-00007 visible in /account/orders with correct date, status, and total ($539.96)"
+    },
+    {
+      "id": "CHK-022",
+      "title": "Order Detail Page",
+      "status": "PASS",
+      "notes": "Order detail shows product info, quantities, prices, billing/shipping addresses, payment method, status, Print order button, Pay now button for payment-required orders"
+    },
+    {
+      "id": "CHK-026",
+      "title": "Validation - Missing Shipping Address",
+      "status": "PASS",
+      "notes": "Place Order disabled when no shipping address selected. Message: 'Complete all required information to proceed'"
+    },
+    {
+      "id": "CHK-027",
+      "title": "Validation - Missing Delivery Method",
+      "status": "PASS",
+      "notes": "Place Order disabled when shipping address selected but delivery method not chosen"
+    },
+    {
+      "id": "CHK-028",
+      "title": "Validation - Missing Payment Method",
+      "status": "PASS",
+      "notes": "Place Order disabled when address and delivery selected but payment method not chosen"
+    },
+    {
+      "id": "CHK-029",
+      "title": "Validation - Payment Card Required",
+      "status": "PASS",
+      "notes": "Place Order disabled when CyberSource selected but card details not filled. User agreement and Privacy policy links present"
+    },
+    {
+      "id": "CHK-043",
+      "title": "Billing Address Same as Shipping",
+      "status": "PASS",
+      "notes": "Checkbox 'Same as shipping address' checked by default. Billing address auto-populates from shipping address selection"
+    },
+    {
+      "id": "QUOTE-001",
+      "title": "Request Quote from Cart",
+      "status": "PASS",
+      "notes": "Clicked 'Add cart items to quote' button on cart page. Created RFQ260309-00002. Cart items transferred to quote. Quote edit page shows product, addresses, comment field, file upload section"
+    },
+    {
+      "id": "QUOTE-002",
+      "title": "Submit Quote Request",
+      "status": "PASS",
+      "notes": "Added comment and clicked Submit. Quote RFQ260309-00002 moved to 'Processing' status. Success notification displayed. Cart cleared after quote submission"
+    }
+  ],
+  "bugs": [],
+  "consoleErrors": [
+    {
+      "type": "resource",
+      "message": "Failed to load resource: /jewellery/packshot/46692/apart-ap93-0341--0_md.jpg",
+      "severity": "low",
+      "impact": "Broken image reference in Saved for Later section, non-blocking"
+    }
+  ],
+  "observations": [
+    "CyberSource payment results in 'Payment required' order status (expected B2B behavior - payment capture happens separately)",
+    "Quote submission via 'Add cart items to quote' clears the cart after creating the quote",
+    "Cart uses Vue spinbutton component, not standard HTML input - select() method not available, use Ctrl+A instead",
+    "6 payment providers configured: Authorize.Net, CyberSource, Datatrans, Manual, Pay with points, Skyflow",
+    "2 delivery methods available: Fixed Rate (Ground) and Fixed Rate (Air)",
+    "Order comment field has 1000 character limit with live counter"
+  ],
+  "notExecuted": [
+    "CART-019 to CART-027: Cart persistence and validation edge cases (back button, refresh, multi-tab)",
+    "CHK-002: Enter New Shipping Address (form fields)",
+    "CHK-004: Address Validation",
+    "CHK-012-013: Pickup/Delivery order details display",
+    "CHK-014 to CHK-021: Guest Checkout (requires anonymous/incognito - not available in this browser session)",
+    "CHK-023 to CHK-025: Order Status tracking via Admin",
+    "CHK-030: Checkout with empty required fields submission attempt",
+    "CHK-031 to CHK-038: B2B Checkout (PO Number, Net 30, Approval workflow, Org Address, Contract Pricing)",
+    "CHK-039 to CHK-042: Reorder functionality (no completed orders available to test reorder)",
+    "CHK-044 to CHK-046: Separate Billing Address entry",
+    "QUOTE-003 to QUOTE-015: Extended Quote/RFQ tests (quote details, modify, cancel, accept, decline, negotiate)"
+  ]
+}

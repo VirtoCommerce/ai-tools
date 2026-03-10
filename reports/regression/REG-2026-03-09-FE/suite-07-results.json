@@ -1,0 +1,216 @@
+{
+  "suiteId": "07",
+  "suiteName": "Google Analytics Tests",
+  "runId": "REG-2026-03-09-FE",
+  "browser": "playwright-firefox",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "executedAt": "2026-03-09T22:30:00Z",
+  "completedAt": "2026-03-09T22:38:00Z",
+  "summary": {
+    "total": 24,
+    "passed": 19,
+    "failed": 2,
+    "skipped": 2,
+    "manual": 1,
+    "passRate": "90.5%"
+  },
+  "results": [
+    {
+      "id": "GA-001",
+      "title": "Login Event - User Authentication",
+      "status": "PASS",
+      "notes": "gtm.load event triggered, user_id set in GA config, currency USD and language en-US included. GTM ID: G-S2KXT3KTJZ, debugMode: true."
+    },
+    {
+      "id": "GA-002",
+      "title": "view_item_list - Category Page",
+      "status": "PASS",
+      "notes": "Event fires on /snacks category. item_list_id: category_snacks_page_1, item_list_name: Category \"Snacks\" (page 1), items_skus CSV present, items_count: 6 matches visible products."
+    },
+    {
+      "id": "GA-003",
+      "title": "view_item - Product Detail Page",
+      "status": "PASS",
+      "notes": "Event fires on OREO COOKIES PDP. currency: USD, value: 10.2, items[0] with item_id 6052259, item_name, price 10.2, item_category hierarchy (Catalog > Snacks > Snacks & chips)."
+    },
+    {
+      "id": "GA-004",
+      "title": "select_item - Product Click from List",
+      "status": "PASS",
+      "notes": "Event fires before navigation when clicking product from category list. item_list_id and item_list_name present, items array with product details."
+    },
+    {
+      "id": "GA-005",
+      "title": "add_to_cart - Add Product",
+      "status": "PASS",
+      "notes": "Event fires on add to cart. currency: USD, value: 1019.9999999999999 (floating point precision, expected ~1020.00 for 100x$10.20), source_route correct, items array with product. Minor: floating point precision issue in value calculation."
+    },
+    {
+      "id": "GA-006",
+      "title": "view_cart - Cart Page Load",
+      "status": "PASS",
+      "notes": "Event fires on /cart page load. currency: USD, value: 2040, items array with all cart items, items_count: 1 matching cart contents."
+    },
+    {
+      "id": "GA-007",
+      "title": "update_cart_item - Quantity Change",
+      "status": "PASS",
+      "notes": "Event fires on quantity increment. item_id: 6052259, new_quantity: 200, previous_quantity: 100."
+    },
+    {
+      "id": "GA-008",
+      "title": "remove_from_cart - Remove Item",
+      "status": "PASS",
+      "notes": "Event fires on item removal. currency: USD, value: 2040, items array with removed item (quantity: 200, price: 10.2)."
+    },
+    {
+      "id": "GA-009",
+      "title": "clear_cart - Clear All Items",
+      "status": "PASS",
+      "notes": "Event fires after confirming clear cart dialog. currency: USD, value: 0, items: empty array, items_count: 0. Matches expected results."
+    },
+    {
+      "id": "GA-010",
+      "title": "begin_checkout - Start Checkout",
+      "status": "PASS",
+      "notes": "Event fires on cart page load alongside view_cart. currency: USD, value: 2040, items array with all items, items_count: 1."
+    },
+    {
+      "id": "GA-011",
+      "title": "add_shipping_info - Ground Shipping",
+      "status": "PASS",
+      "notes": "Event fires when Ground shipping selected. shipping_tier: Ground, currency: USD, value: 150 (shipping cost), items array present."
+    },
+    {
+      "id": "GA-012",
+      "title": "add_shipping_info - Pickup (Zero Cost)",
+      "status": "PASS",
+      "notes": "Event fires when Pickup selected. shipping_tier: Pickup, value: 0. Previously reported bug (showing 150) is fixed."
+    },
+    {
+      "id": "GA-013",
+      "title": "add_shipping_info - Switch Methods",
+      "status": "PASS",
+      "notes": "Each shipping method change fires correct event. Ground: value 150, Pickup: value 0, back to Ground: value 150. No stale values."
+    },
+    {
+      "id": "GA-014",
+      "title": "add_payment_info - Payment Selected",
+      "status": "FAIL",
+      "severity": "High",
+      "notes": "BUG: No add_payment_info event fires when selecting 'Bank card (Datatrans)' payment method. Payment method visually selected in dropdown but no GA4 event pushed to dataLayer. Only shipping-related events appear.",
+      "evidence": "ga-014-payment-no-event.png",
+      "expected": "add_payment_info event with payment_type: DatatransPaymentMethod, currency: USD, value: order total",
+      "actual": "No add_payment_info event in dataLayer after payment method selection"
+    },
+    {
+      "id": "GA-015",
+      "title": "place_order - Order Submission",
+      "status": "SKIPPED",
+      "notes": "Skipped: Requires completing full checkout flow (shipping address + payment details + placing real order). Place Order button was disabled without full checkout configuration. Would create test order requiring cleanup."
+    },
+    {
+      "id": "GA-016",
+      "title": "purchase - Payment Complete",
+      "status": "MANUAL",
+      "notes": "Marked as Manual in test suite CSV. Requires actual payment processing with Authorize.Net test card."
+    },
+    {
+      "id": "GA-017",
+      "title": "view_search_results - Search Results",
+      "status": "FAIL",
+      "severity": "High",
+      "notes": "BUG: No view_search_results event fires after search. Instead, a view_item_list event fires with item_list_id: category_undefined_page_1 and item_list_name: Category \"undefined\" (page 1). The search term is not captured, results_count and results_page are missing.",
+      "evidence": "ga-017-search-no-event.png",
+      "expected": "view_search_results event with search_term, results_count, results_page, visible_items",
+      "actual": "view_item_list event with item_list_id: category_undefined_page_1 (wrong event type, 'undefined' category name)"
+    },
+    {
+      "id": "GA-018",
+      "title": "add_to_wishlist - Add to List",
+      "status": "PASS",
+      "notes": "Event fires after adding product to list. currency: USD, value: 10.2, items array with product details including item_id 6052259, item_category hierarchy, affiliation: Lays."
+    },
+    {
+      "id": "GA-019",
+      "title": "GA Config - Currency Setting",
+      "status": "PASS",
+      "notes": "Currency parameter set to USD in GA config event. Matches store currency."
+    },
+    {
+      "id": "GA-020",
+      "title": "GA Config - Language Setting",
+      "status": "PASS",
+      "notes": "Language parameter set to en-US in GA config event. Matches user language setting."
+    },
+    {
+      "id": "GA-021",
+      "title": "GA Config - User ID",
+      "status": "PASS",
+      "notes": "user_id present in GA config. UUID format (36-char GUID). Set after login."
+    },
+    {
+      "id": "GA-022",
+      "title": "Event Items - Product Structure",
+      "status": "PASS",
+      "notes": "Product structure in view_item event contains: item_id (SKU 6052259), item_name, price (10.2), quantity (9290 = inventory), item_category hierarchy (Catalog > Snacks > Snacks & chips up to 3 levels), affiliation (Lays vendor), discount (0)."
+    },
+    {
+      "id": "GA-023",
+      "title": "Event Timing - Page Load Events",
+      "status": "PASS",
+      "notes": "view_item_list fires on category page load with correct data (item_list_id: category_snacks_page_1, items_count: 6). Event fires after page content is available, not too early or too late."
+    },
+    {
+      "id": "GA-024",
+      "title": "Event Persistence - Multiple Actions",
+      "status": "PASS",
+      "notes": "All events captured in correct sequence across SPA navigation: view_item_list (category) -> view_item (product) -> view_item_list (recommended) -> add_to_cart. No duplicates, data accurate for each event."
+    }
+  ],
+  "bugs": [
+    {
+      "id": "GA-014",
+      "title": "add_payment_info GA4 event not firing when payment method selected",
+      "severity": "High",
+      "category": "Analytics",
+      "description": "Selecting 'Bank card (Datatrans)' payment method on cart/checkout page does not push an add_payment_info event to the dataLayer. The payment method dropdown visually updates but no GA4 tracking event is generated.",
+      "impact": "Payment funnel analytics are incomplete. Cannot track payment method selection step in checkout funnel, affecting conversion analysis.",
+      "stepsToReproduce": [
+        "1. Login and add product to cart",
+        "2. Navigate to /cart",
+        "3. Configure shipping (address + Ground delivery)",
+        "4. Open Payment method dropdown",
+        "5. Select 'Bank card (Datatrans)'",
+        "6. Check dataLayer for add_payment_info event"
+      ],
+      "expected": "add_payment_info event with payment_type: DatatransPaymentMethod",
+      "actual": "No add_payment_info event in dataLayer"
+    },
+    {
+      "id": "GA-017",
+      "title": "view_search_results GA4 event missing; fires view_item_list with 'undefined' category instead",
+      "severity": "High",
+      "category": "Analytics",
+      "description": "Searching for a term (e.g., 'laptop') does not fire a view_search_results event. Instead, a view_item_list event fires with item_list_id 'category_undefined_page_1' and item_list_name 'Category \"undefined\" (page 1)'. The search term, results count, and page number are not tracked.",
+      "impact": "Search analytics completely broken. Cannot track what users search for, search result counts, or search-to-purchase conversion. The 'undefined' category name suggests a code path issue where search results reuse category tracking without proper context.",
+      "stepsToReproduce": [
+        "1. Login to storefront",
+        "2. Enter 'laptop' in search box",
+        "3. Click Search or press Enter",
+        "4. Wait for results page to load",
+        "5. Check dataLayer for view_search_results event"
+      ],
+      "expected": "view_search_results event with search_term: 'laptop', results_count, results_page: 1, visible_items",
+      "actual": "view_item_list event with item_list_id: 'category_undefined_page_1', item_list_name: 'Category \"undefined\" (page 1)'"
+    }
+  ],
+  "observations": [
+    "GTM container G-S2KXT3KTJZ loaded with debugMode: true on QA environment",
+    "dataLayer events use Arguments object format with numeric string keys: e['0']='event', e['1']=event_name, e['2']=params",
+    "dataLayer persists across SPA navigations but resets on full page loads",
+    "Floating point precision issue in add_to_cart value calculation (1019.9999... instead of 1020.00 for 100x$10.20) - cosmetic, not a functional bug",
+    "begin_checkout event fires on cart page load (same time as view_cart), not on a separate checkout step",
+    "Storefront version: 2.43.0-alpha.2254"
+  ]
+}

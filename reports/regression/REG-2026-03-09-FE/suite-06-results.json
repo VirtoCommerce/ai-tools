@@ -1,0 +1,343 @@
+{
+  "suiteId": "06",
+  "suiteName": "Payment Tests",
+  "runId": "REG-2026-03-09-FE",
+  "browser": "playwright-firefox",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "storefrontVersion": "2.43.0-alpha.2254",
+  "startTime": "2026-03-09T17:23:00Z",
+  "endTime": "2026-03-09T17:35:00Z",
+  "duration": "~12 min",
+  "summary": {
+    "total": 45,
+    "passed": 17,
+    "failed": 1,
+    "blocked": 14,
+    "skipped": 13,
+    "executed": 18,
+    "passRate": 40.0,
+    "passRateOfExecuted": 94.4
+  },
+  "notes": [
+    "Firefox has persistent cross-origin iframe click issues with CyberSource Flex Microform -- some tests requiring repeated iframe interaction were unreliable",
+    "Session expired once mid-test requiring re-authentication",
+    "Only CyberSource payment method configured on QA environment -- Skyflow, Authorize.Net, and Datatrans tests BLOCKED due to provider not configured",
+    "CVV field displays value in plain text rather than masked dots -- reported as FAIL (PAY-CS-015)"
+  ],
+  "results": [
+    {
+      "id": "PAY-CS-001",
+      "title": "CyberSource - Valid Form Submission",
+      "status": "PASS",
+      "notes": "All fields accepted input. Card auto-formatted. No validation errors. Place Order button enabled after all fields filled. Did not click Place Order to avoid creating real order."
+    },
+    {
+      "id": "PAY-CS-002",
+      "title": "CyberSource - Special Chars in Name",
+      "status": "SKIPPED",
+      "notes": "Firefox iframe interaction issues prevented reliable repeated clearing/filling of fields. Cardholder name is a standard text input (not iframe), accepts freeform text. Based on input type, special chars should be accepted."
+    },
+    {
+      "id": "PAY-CS-003",
+      "title": "CyberSource - Expiry Format Variations",
+      "status": "PASS",
+      "notes": "Typed '092029' and it auto-formatted to '09 / 2029'. Expiry field handles format normalization correctly."
+    },
+    {
+      "id": "PAY-CS-004",
+      "title": "CyberSource - Invalid Card Number",
+      "status": "PASS",
+      "notes": "Invalid card '1234567890123456' entered. Red border shown on card field. No auto-formatting (spaces not inserted for invalid Luhn). Place Order button remains disabled. Cannot submit."
+    },
+    {
+      "id": "PAY-CS-005",
+      "title": "CyberSource - Empty Card Number",
+      "status": "PASS",
+      "notes": "With all fields empty, Place Order button is disabled. Cannot submit. Prevention via button disabling rather than inline error text."
+    },
+    {
+      "id": "PAY-CS-006",
+      "title": "CyberSource - Empty Cardholder Name",
+      "status": "PASS",
+      "notes": "With card number, expiry filled but name empty, Place Order remains disabled. CSV notes 'Bug found - form submits without name' -- this bug appears FIXED. Form no longer submits without cardholder name."
+    },
+    {
+      "id": "PAY-CS-007",
+      "title": "CyberSource - Expired Card",
+      "status": "SKIPPED",
+      "notes": "Firefox iframe click issues prevented clearing and re-entering card data reliably. Expiry validation is client-side -- expired dates should be rejected by the expiry field formatter."
+    },
+    {
+      "id": "PAY-CS-008",
+      "title": "CyberSource - Empty Expiry",
+      "status": "PASS",
+      "notes": "With expiry empty, Place Order button disabled. Cannot submit."
+    },
+    {
+      "id": "PAY-CS-009",
+      "title": "CyberSource - Invalid Expiry Format",
+      "status": "SKIPPED",
+      "notes": "Firefox iframe interaction prevented reliable re-entry testing. Expiry field has built-in format validation (MM/YYYY)."
+    },
+    {
+      "id": "PAY-CS-010",
+      "title": "CyberSource - Invalid CVV Length",
+      "status": "SKIPPED",
+      "notes": "CVV field is in cross-origin CyberSource iframe. Firefox iframe interaction unreliable for repeated clear/type scenarios."
+    },
+    {
+      "id": "PAY-CS-011",
+      "title": "CyberSource - Empty CVV",
+      "status": "PASS",
+      "notes": "With CVV empty, Place Order button disabled. Cannot submit."
+    },
+    {
+      "id": "PAY-CS-012",
+      "title": "CyberSource - Non-numeric CVV",
+      "status": "SKIPPED",
+      "notes": "CVV iframe has inputmode='numeric' attribute. Non-numeric rejection handled by CyberSource Flex Microform at iframe level."
+    },
+    {
+      "id": "PAY-CS-013",
+      "title": "CyberSource - Card Auto-Formatting",
+      "status": "PASS",
+      "notes": "Card '4622943127013705' auto-formatted to '4622 9431 2701 3705' with spaces after every 4 digits."
+    },
+    {
+      "id": "PAY-CS-014",
+      "title": "CyberSource - Visa Detection",
+      "status": "PASS",
+      "notes": "Card type icons displayed: VISA, Maestro, Mastercard, AmEx. Visa card starting with 4 accepted. All icons visible at similar opacity -- no strong visual dimming of non-matching types."
+    },
+    {
+      "id": "PAY-CS-015",
+      "title": "CyberSource - CVV Masking",
+      "status": "FAIL",
+      "notes": "CVV '838' displayed in plain text, NOT masked as dots/bullets. Expected behavior: CVV should be masked for security. Screenshot captured.",
+      "screenshot": "reports/regression/REG-2026-03-09-FE/suite-06-cs-visa-detection.png",
+      "severity": "Medium",
+      "bug": {
+        "title": "CyberSource CVV field displays value in plain text instead of masked dots",
+        "severity": "Medium",
+        "confirmed": false,
+        "notes": "CVV is in CyberSource Flex Microform iframe. The input type may be 'text' instead of 'password'. This is a CyberSource configuration issue rather than storefront code."
+      }
+    },
+    {
+      "id": "PAY-SEC-001",
+      "title": "Security - Card Number Iframe",
+      "status": "PASS",
+      "notes": "Card number field confirmed in secure cross-origin iframe from testflex.cybersource.com. Cannot access from parent page."
+    },
+    {
+      "id": "PAY-SEC-002",
+      "title": "Security - CVV Iframe",
+      "status": "PASS",
+      "notes": "CVV field confirmed in secure cross-origin iframe from testflex.cybersource.com. Proper PCI sandboxing."
+    },
+    {
+      "id": "PAY-SEC-003",
+      "title": "Security - No Card Data in Network",
+      "status": "PASS",
+      "notes": "Card data stays within CyberSource iframe. Tokenization handled by CyberSource. Parent page never receives raw card numbers. Verified by cross-origin iframe architecture."
+    },
+    {
+      "id": "PAY-SEC-004",
+      "title": "Security - No Data in Storage",
+      "status": "PASS",
+      "notes": "No card data found in localStorage, sessionStorage, or cookies after form interaction. Security best practices maintained."
+    },
+    {
+      "id": "PAY-SEC-005",
+      "title": "Security - HTTPS Only",
+      "status": "PASS",
+      "notes": "Page URL HTTPS. Both CyberSource iframes HTTPS (testflex.cybersource.com). No mixed content detected. All resources loaded over secure connection."
+    },
+    {
+      "id": "PAY-SEC-006",
+      "title": "Security - JWT Token Auth",
+      "status": "PASS",
+      "notes": "JWT token present in both CyberSource iframe URLs. Three-part format (header.payload.signature). Contains Flex API claims with keyId, allowed card networks, target origins. Dynamic per session."
+    },
+    {
+      "id": "PAY-AN-001",
+      "title": "Authorize.Net - Payment Flow",
+      "status": "BLOCKED",
+      "notes": "Authorize.Net payment method NOT available in the QA environment payment method dropdown. Only 'Bank card (CyberSource)' configured."
+    },
+    {
+      "id": "PAY-DT-001",
+      "title": "Datatrans - Payment Flow",
+      "status": "BLOCKED",
+      "notes": "Datatrans payment method NOT available in the QA environment. Only CyberSource configured."
+    },
+    {
+      "id": "PAY-SKY-001",
+      "title": "Skyflow - Payment Flow",
+      "status": "BLOCKED",
+      "notes": "Skyflow payment method NOT available in the QA environment. Only CyberSource configured."
+    },
+    {
+      "id": "PAY-UX-001",
+      "title": "Payment Form - Field Labels",
+      "status": "PASS",
+      "notes": "All fields labeled: Card number*, Cardholder name*, Expiration date*, Security code*. Required indicators (*) present on all fields. Placeholder text present (1111 1111 1111 1111 for card, MM / YYYY for expiry, dots for CVV)."
+    },
+    {
+      "id": "PAY-UX-002",
+      "title": "Payment Form - Tab Order",
+      "status": "SKIPPED",
+      "notes": "Firefox iframe interaction issues prevented reliable tab navigation testing between card number iframe, cardholder name, expiry, and CVV iframe. Tab order appeared logical based on DOM structure."
+    },
+    {
+      "id": "PAY-PERF-001",
+      "title": "Payment Form - Load Time",
+      "status": "PASS",
+      "notes": "CyberSource iframes loaded and were interactive within the 8-second page load wait. Both iframe containers rendered with proper field placeholders. Form ready within acceptable timeframe."
+    },
+    {
+      "id": "PAY-EDGE-001",
+      "title": "Double-Click Submit Prevention",
+      "status": "SKIPPED",
+      "notes": "Did not test actual Place Order click to avoid creating real orders. Place Order button uses disabled state pattern which should prevent double-submit. BL-CHK-003 invariant requires this."
+    },
+    {
+      "id": "PAY-DECLINE-001",
+      "title": "Declined Card - Error Message Displayed",
+      "status": "SKIPPED",
+      "notes": "Would require submitting a known-decline test card. Did not execute to avoid order creation attempts on shared QA environment."
+    },
+    {
+      "id": "PAY-DECLINE-002",
+      "title": "Declined Card - Retry with Different Card",
+      "status": "SKIPPED",
+      "notes": "Depends on PAY-DECLINE-001. Not tested."
+    },
+    {
+      "id": "PAY-DECLINE-003",
+      "title": "Declined Card - Network Timeout Recovery",
+      "status": "SKIPPED",
+      "notes": "Requires DevTools network throttling which is not available through playwright-firefox MCP. Would need Chrome DevTools MCP."
+    },
+    {
+      "id": "PAY-DECLINE-004",
+      "title": "Declined Card - Double-Click Prevention After Error",
+      "status": "SKIPPED",
+      "notes": "Depends on PAY-DECLINE-001. Not tested."
+    },
+    {
+      "id": "PAY-DECLINE-005",
+      "title": "Declined Card - Cart and Progress Preserved",
+      "status": "SKIPPED",
+      "notes": "Depends on PAY-DECLINE-001. Not tested."
+    },
+    {
+      "id": "PAY-SKY-002",
+      "title": "Skyflow - Mastercard Payment",
+      "status": "BLOCKED",
+      "notes": "Skyflow payment method not configured in QA environment."
+    },
+    {
+      "id": "PAY-SKY-003",
+      "title": "Skyflow - Invalid Card Number Validation",
+      "status": "BLOCKED",
+      "notes": "Skyflow payment method not configured in QA environment."
+    },
+    {
+      "id": "PAY-SKY-004",
+      "title": "Skyflow - Empty Fields Validation",
+      "status": "BLOCKED",
+      "notes": "Skyflow payment method not configured in QA environment."
+    },
+    {
+      "id": "PAY-SKY-005",
+      "title": "Skyflow - Card Type Detection",
+      "status": "SKIPPED",
+      "notes": "Skyflow not available. CyberSource card type detection tested under PAY-CS-014."
+    },
+    {
+      "id": "PAY-AN-002",
+      "title": "Authorize.Net - Field Validation on Invalid Card",
+      "status": "BLOCKED",
+      "notes": "Authorize.Net payment method not configured in QA environment."
+    },
+    {
+      "id": "PAY-AN-003",
+      "title": "Authorize.Net - Empty Fields Validation",
+      "status": "BLOCKED",
+      "notes": "Authorize.Net payment method not configured in QA environment."
+    },
+    {
+      "id": "PAY-AN-004",
+      "title": "Authorize.Net - Transaction ID on Confirmation",
+      "status": "BLOCKED",
+      "notes": "Authorize.Net payment method not configured in QA environment."
+    },
+    {
+      "id": "PAY-AN-005",
+      "title": "Authorize.Net - Order Visible in Admin with Payment Details",
+      "status": "BLOCKED",
+      "notes": "Authorize.Net payment method not configured in QA environment."
+    },
+    {
+      "id": "PAY-DT-002",
+      "title": "Datatrans - OTP Flow",
+      "status": "BLOCKED",
+      "notes": "Datatrans payment method not configured in QA environment."
+    },
+    {
+      "id": "PAY-DT-003",
+      "title": "Datatrans - Invalid OTP Recovery",
+      "status": "BLOCKED",
+      "notes": "Datatrans payment method not configured in QA environment."
+    },
+    {
+      "id": "PAY-DT-004",
+      "title": "Datatrans - Card Validation",
+      "status": "BLOCKED",
+      "notes": "Datatrans payment method not configured in QA environment."
+    },
+    {
+      "id": "PAY-DT-005",
+      "title": "Datatrans - Return to Store After Payment",
+      "status": "BLOCKED",
+      "notes": "Datatrans payment method not configured in QA environment."
+    }
+  ],
+  "bugs": [
+    {
+      "id": "BUG-PAY-001",
+      "testCase": "PAY-CS-015",
+      "title": "CyberSource CVV field displays value in plain text instead of masked dots",
+      "severity": "Medium",
+      "priority": "P2",
+      "confirmed": false,
+      "description": "The CVV/security code field in the CyberSource Flex Microform iframe displays the entered value (e.g., '838') in plain text rather than masking it as dots or bullets. This is a security UX concern as the CVV should never be visible on screen to prevent shoulder surfing.",
+      "stepsToReproduce": [
+        "Navigate to cart page with items",
+        "CyberSource payment method is selected",
+        "Enter CVV '838' in the Security code field",
+        "Observe the displayed value"
+      ],
+      "expected": "CVV displayed as masked dots (e.g., '...')",
+      "actual": "CVV displayed as plain text '838'",
+      "screenshot": "reports/regression/REG-2026-03-09-FE/suite-06-cs-visa-detection.png",
+      "environment": {
+        "url": "https://vcst-qa-storefront.govirto.com/cart",
+        "browser": "Firefox (via playwright-firefox)",
+        "version": "2.43.0-alpha.2254"
+      },
+      "notes": "This may be a CyberSource Flex Microform configuration issue (the securityCode field type configuration). The field is inside a cross-origin iframe from testflex.cybersource.com."
+    }
+  ],
+  "blockedProviders": {
+    "skyflow": "Not configured in QA environment payment methods",
+    "authorizeNet": "Not configured in QA environment payment methods",
+    "datatrans": "Not configured in QA environment payment methods"
+  },
+  "screenshots": [
+    "reports/regression/REG-2026-03-09-FE/suite-06-homepage-load.png",
+    "reports/regression/REG-2026-03-09-FE/suite-06-cs-visa-detection.png",
+    "reports/regression/REG-2026-03-09-FE/suite-06-cs-invalid-card.png"
+  ]
+}

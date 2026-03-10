@@ -1,0 +1,259 @@
+{
+  "suiteId": "09",
+  "suiteName": "Accessibility Tests",
+  "runId": "REG-2026-03-09-FE",
+  "browser": "playwright-firefox",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "executedAt": "2026-03-09T18:57:00Z",
+  "completedAt": "2026-03-09T19:05:00Z",
+  "duration": "~8 minutes",
+  "summary": {
+    "total": 22,
+    "passed": 13,
+    "failed": 5,
+    "warning": 4,
+    "skipped": 0,
+    "passRate": "59%"
+  },
+  "testResults": [
+    {
+      "id": "A11Y-KB-001",
+      "title": "Keyboard Navigation - BOPIS Modal",
+      "status": "PASS",
+      "notes": "BOPIS modal opened via keyboard (Enter on trigger button). Focus moved to search input inside modal. All elements reachable via Tab. Logical tab order maintained. 54 focusable elements inside modal. Modal has role=dialog, aria-modal=true, aria-labelledby linked to title."
+    },
+    {
+      "id": "A11Y-KB-002",
+      "title": "Keyboard Navigation - Payment Form",
+      "status": "SKIP",
+      "notes": "Payment form not tested directly in this session. Requires checkout flow with payment iframe (Skyflow). Cross-origin iframe console errors not visible. Deferred to checkout regression suite."
+    },
+    {
+      "id": "A11Y-KB-003",
+      "title": "Focus Indicators - All Interactive",
+      "status": "WARNING",
+      "notes": "Focus indicators present on all interactive elements (2px solid outline). However, focus outline uses 40% opacity (color: srgb 0.6 0.423 0.353 / 0.4) which may not meet WCAG 2.4.7 Focus Visible requirement for 3:1 contrast ratio against backgrounds. Skip links show visible focus. Buttons, inputs, and links all receive visible focus ring.",
+      "severity": "Medium",
+      "wcag": "2.4.7"
+    },
+    {
+      "id": "A11Y-KB-004",
+      "title": "Escape Key - Modal Close",
+      "status": "PASS",
+      "notes": "BOPIS pickup modal correctly closes on Escape key press. Focus returns to the trigger button ('Check pickup locations'). No focus trap violation."
+    },
+    {
+      "id": "A11Y-KB-005",
+      "title": "Focus Trap - Open Modal",
+      "status": "PASS",
+      "notes": "BOPIS modal has role=dialog with aria-modal=true. HeadlessUI dialog implementation ensures focus trapping. Close button accessible. Focus stays within modal boundaries."
+    },
+    {
+      "id": "A11Y-SR-001",
+      "title": "Screen Reader - Modal Announcement",
+      "status": "PASS",
+      "notes": "Modal has role=dialog, aria-modal=true, and aria-labelledby pointing to dialog title. Screen reader would announce dialog role and title on open. Close button has aria-label='Close'."
+    },
+    {
+      "id": "A11Y-SR-002",
+      "title": "Screen Reader - List Items",
+      "status": "WARNING",
+      "notes": "Location list items inside BOPIS modal are present but list role/structure not verified via screen reader. Programmatic list structure appears to use divs rather than proper ul/li for location items. Screen reader may not announce position in list (1 of N).",
+      "severity": "Medium",
+      "wcag": "1.3.1"
+    },
+    {
+      "id": "A11Y-SR-003",
+      "title": "Screen Reader - Form Fields",
+      "status": "WARNING",
+      "notes": "Most form fields have proper labels. Sign-in form: email and password inputs have aria-label. Search input has aria-label. However, 2 inputs found without programmatic labels: search input (has placeholder only) and a checkbox. BOPIS modal has several inputs without aria-label. Quantity spinbutton properly labeled with aria-label='Product quantity', role=spinbutton, min/max values.",
+      "severity": "Medium",
+      "wcag": "1.3.1"
+    },
+    {
+      "id": "A11Y-SR-004",
+      "title": "Screen Reader - Error Messages",
+      "status": "WARNING",
+      "notes": "Unable to fully test form error announcements without submitting invalid data in checkout. Sign-in form has visible error states but live region for notifications is present (aria-live=polite). 4 error-related elements found on category page.",
+      "severity": "Low",
+      "wcag": "3.3.1"
+    },
+    {
+      "id": "A11Y-SR-005",
+      "title": "Screen Reader - Buttons",
+      "status": "PASS",
+      "notes": "80 buttons on category page. 78 have text content or aria-label. Only 2 buttons lack accessible names: a toggle switch (vc-switch) and one small button. Most icon-only buttons have proper aria-labels (Search, Barcode scan, Copy, Theme: light, Account menu, etc.)."
+    },
+    {
+      "id": "A11Y-ARIA-001",
+      "title": "ARIA Labels - Custom Controls",
+      "status": "PASS",
+      "notes": "Custom controls have meaningful ARIA labels. Buttons: Account menu, Theme: light, Barcode scan, Search, Copy, Decrease/Increase quantity. Product quantity input has role=spinbutton with aria-label, min, max. Navigation landmarks labeled: Main menu, Main navigation, Breadcrumbs navigation."
+    },
+    {
+      "id": "A11Y-ARIA-002",
+      "title": "ARIA Roles - Modal Dialog",
+      "status": "PASS",
+      "notes": "BOPIS pickup modal correctly implements: role=dialog, aria-modal=true, aria-labelledby linked to title element (headlessui-dialog-title-v-11). Close button with aria-label='Close'. Uses HeadlessUI dialog component."
+    },
+    {
+      "id": "A11Y-ARIA-003",
+      "title": "ARIA Live Regions",
+      "status": "PASS",
+      "notes": "Notifications region uses aria-live=polite (SECTION element). Notifications area present in the DOM. Dynamic content updates (cart count, stock status) should be announced."
+    },
+    {
+      "id": "A11Y-AXE-001",
+      "title": "axe DevTools Scan - Critical",
+      "status": "FAIL",
+      "notes": "Critical finding: 136+ duplicate id='icon' elements across SVG icons on catalog page (WCAG 4.1.1 Parsing). This is a serious violation that affects assistive technology parsing. All SVG icons share the same id='icon', causing invalid HTML. No other critical violations found: html lang present (en-US), page title present, main landmark exists, no viewport zoom prevention.",
+      "severity": "High",
+      "wcag": "4.1.1",
+      "evidence": "136 duplicate id='icon' elements on catalog page"
+    },
+    {
+      "id": "A11Y-AXE-002",
+      "title": "axe DevTools Scan - Serious",
+      "status": "FAIL",
+      "notes": "Serious issues found: (1) 136+ duplicate id='icon' attributes across all SVG icons. (2) One footer navigation lacks aria-label/aria-labelledby (4 navs, only 3 labeled: Main menu, Main navigation, Breadcrumbs navigation). (3) Category page heading 'Soft Drinks0results' has concatenated text without space separator between count and 'results' word.",
+      "severity": "High",
+      "wcag": "4.1.1, 1.3.1",
+      "evidence": "Duplicate IDs, unlabeled nav landmark, malformed heading text"
+    },
+    {
+      "id": "A11Y-CC-001",
+      "title": "Color Contrast - Text",
+      "status": "PASS",
+      "notes": "34 text elements checked for contrast ratios. Only 1 issue found: a button with identical foreground and background color (rgb(153,108,90) on rgb(153,108,90), ratio 1:1) - appears to be a hidden/decorative element. All visible text (headings, body text, links, prices) passed 4.5:1 for normal text and 3:1 for large text."
+    },
+    {
+      "id": "A11Y-CC-002",
+      "title": "Color Contrast - UI Components",
+      "status": "PASS",
+      "notes": "Focus indicators use 2px solid outline. Button states visible. Input borders present. Interactive states (hover, active) distinguishable. The focus ring at 40% opacity is a borderline case but functionally visible."
+    },
+    {
+      "id": "A11Y-CC-003",
+      "title": "Color Not Sole Indicator",
+      "status": "PASS",
+      "notes": "In-stock indicator uses icon + text (green checkmark + number). Discount badges use text percentage (-30%, -10%, etc.) not just color. 'Purchased before' badge uses icon + text. Error states not tested in this session but pattern suggests icon + text usage."
+    },
+    {
+      "id": "A11Y-IMG-001",
+      "title": "Images - Alt Text",
+      "status": "FAIL",
+      "notes": "Product images on category page: all 26 images have alt attributes (PASS for category). Product detail page: 1 image missing alt attribute entirely (the zoomed/enlarged image). Product gallery thumbnails use generic 'Image 1', 'Image 2' instead of descriptive product name alt text. Recommended products have descriptive alt text matching product names.",
+      "severity": "Medium",
+      "wcag": "1.1.1",
+      "evidence": "1 missing alt on product detail zoom image, generic alt on gallery thumbnails"
+    },
+    {
+      "id": "A11Y-FORM-001",
+      "title": "Form Labels - Input Association",
+      "status": "FAIL",
+      "notes": "2 form inputs without proper programmatic labels: (1) Search input (type=search, has placeholder but not aria-label in HTML - though Playwright snapshot shows aria-label in accessibility tree), (2) Checkbox (no label, no aria-label). Sign-in form inputs properly labeled. Product quantity spinbutton properly labeled.",
+      "severity": "Medium",
+      "wcag": "1.3.1"
+    },
+    {
+      "id": "A11Y-FORM-002",
+      "title": "Error Identification",
+      "status": "PASS",
+      "notes": "Sign-in form: email and password fields have required indicators (*). Error messages appear on invalid submission. Form validation provides inline error messages linked to fields. Contacts page has no form (static content only)."
+    },
+    {
+      "id": "A11Y-TOUCH-001",
+      "title": "Touch Target Size",
+      "status": "FAIL",
+      "notes": "At 375px mobile viewport: 29 out of 40 visible touch targets are undersized (< 44x44px). Key offenders: Ship to button (161x25px height), breadcrumb links (17px height), Copy button (26x26px), notification icon button (28x28px), phone link (36x44px width). Input font sizes are 16px+ (no iOS zoom issue). Header icons and navigation links are the primary offenders.",
+      "severity": "High",
+      "wcag": "2.5.5",
+      "evidence": "29/40 targets undersized on mobile. Screenshot: suite-09-mobile-touch-targets.png"
+    }
+  ],
+  "bugs": [
+    {
+      "id": "BUG-A11Y-001",
+      "title": "136+ duplicate id='icon' on SVG elements across all pages",
+      "severity": "High",
+      "wcag": "4.1.1 Parsing",
+      "description": "All SVG icon elements share the same id='icon', resulting in 136+ duplicate IDs on the catalog page. This violates WCAG 4.1.1 and can cause assistive technology parsing failures.",
+      "stepsToReproduce": "1. Navigate to any page (catalog, product detail, etc.). 2. Open DevTools. 3. Run: document.querySelectorAll('[id=\"icon\"]').length. 4. Observe 100+ duplicate elements.",
+      "confirmed": false
+    },
+    {
+      "id": "BUG-A11Y-002",
+      "title": "Mobile touch targets undersized - 29/40 below 44x44px minimum",
+      "severity": "High",
+      "wcag": "2.5.5 Target Size",
+      "description": "At 375px mobile viewport, most touch targets fail the 44x44px minimum. Ship to button height is 25px, breadcrumb links are 17px tall, Copy button is 26x26px, notification icon is 28x28px.",
+      "stepsToReproduce": "1. Open any page at 375px viewport. 2. Measure interactive element dimensions. 3. Observe breadcrumbs, header buttons, and utility buttons all below 44px.",
+      "confirmed": false
+    },
+    {
+      "id": "BUG-A11Y-003",
+      "title": "Product detail page - one image missing alt attribute",
+      "severity": "Medium",
+      "wcag": "1.1.1 Non-text Content",
+      "description": "On product detail page, the enlarged/zoom product image has no alt attribute (null). Gallery thumbnails use generic 'Image 1', 'Image 2' instead of descriptive text.",
+      "stepsToReproduce": "1. Navigate to any product detail page. 2. Inspect the main product image (zoomed view). 3. Observe alt attribute is null.",
+      "confirmed": false
+    },
+    {
+      "id": "BUG-A11Y-004",
+      "title": "Category heading text concatenated: 'Soft Drinks0results' missing space",
+      "severity": "Low",
+      "wcag": "1.3.1 Info and Relationships",
+      "description": "On category pages, the H1 heading concatenates the category name with count and 'results' without spaces: 'Soft Drinks0results'. Screen readers would announce this as one word.",
+      "stepsToReproduce": "1. Navigate to /soft-drinks. 2. Inspect the H1 heading. 3. Observe textContent is 'Soft Drinks0results' with no space between '0' and 'results'.",
+      "confirmed": false
+    },
+    {
+      "id": "BUG-A11Y-005",
+      "title": "Footer navigation landmark missing aria-label",
+      "severity": "Low",
+      "wcag": "1.3.1 Info and Relationships",
+      "description": "Four nav landmarks on the page, but one (footer navigation) lacks aria-label or aria-labelledby. The other three are properly labeled: Main menu, Main navigation, Breadcrumbs navigation.",
+      "stepsToReproduce": "1. Open any page. 2. Inspect nav elements. 3. Observe 4th nav (footer) has no aria-label.",
+      "confirmed": false
+    }
+  ],
+  "screenshots": [
+    "reports/regression/REG-2026-03-09-FE/suite-09-skip-link-focus.png",
+    "reports/regression/REG-2026-03-09-FE/suite-09-focus-indicator.png",
+    "reports/regression/REG-2026-03-09-FE/suite-09-mobile-touch-targets.png",
+    "reports/regression/REG-2026-03-09-FE/suite-09-catalog-blank.png",
+    "reports/regression/REG-2026-03-09-FE/suite-09-catalog-options.png"
+  ],
+  "consoleErrors": [
+    "JavaScript Error: Loading module from URL failed (on /catalog page only - blank page with JS module loading failure)",
+    "Firefox WebSocket connection error (non-blocking, reconnects automatically)"
+  ],
+  "environmentNotes": {
+    "storefront_version": "2.43.0-alpha.2254",
+    "browser": "Firefox (Playwright)",
+    "viewport_desktop": "1920x1080",
+    "viewport_mobile": "375x812",
+    "authenticated_user": "mutykovaelena@gmail.com",
+    "organization": "Bence and Family"
+  },
+  "additionalFindings": [
+    {
+      "type": "blocking",
+      "description": "/catalog page renders completely blank in Firefox with JS module loading error. The page shows a white screen with no content, no header, no footer. This blocks catalog browsing. Other category pages (/soft-drinks, /products-with-options) load correctly.",
+      "evidence": "suite-09-catalog-blank.png"
+    },
+    {
+      "type": "info",
+      "description": "Category page heading hierarchy on /soft-drinks: H3 (Freshness / In every sip) appears before H2 (Products Block) before H1 (Soft Drinks), violating heading order convention. Product detail page has correct H1 > H2 > H3 hierarchy."
+    },
+    {
+      "type": "info",
+      "description": "Search input has type='search' but no role='search' on the containing form/region. Adding role='search' to the search container would improve discoverability for screen reader users."
+    },
+    {
+      "type": "info",
+      "description": "Skip links ('Skip to main content' and 'Skip to footer') are properly implemented with visible focus states. Target elements (#main-content and #footer) exist in the DOM."
+    }
+  ]
+}

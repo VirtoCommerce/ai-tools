@@ -30,6 +30,14 @@
       "configFile": "config/mcp-playwright-edge.config.json",
       "status": "valid",
       "agentAssignment": "qa-backend-expert"
+    },
+    {
+      "serverName": "Chrome DevTools",
+      "browserName": "chromium",
+      "channel": null,
+      "configFile": null,
+      "status": "valid",
+      "agentAssignment": "ui-ux-expert"
     }
   ],
   "excluded": [
