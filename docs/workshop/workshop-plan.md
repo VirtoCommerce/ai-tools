@@ -191,7 +191,7 @@ MCP Servers (the "hands" of Claude) — 9 total
    Point out the 6 agents and their specialties.
 
 2. Open one agent definition file to show structure:
-   - Open `.claude/agents/qa-testing-expert.md` in the editor
+   - Open `.claude/agents/qa/qa-testing-expert.md` in the editor
    - Show: name, model selection (opus for complex tasks), and the instructions section
    - Point out: "This agent knows about all our payment processors, all regression suites, the bug report format, evidence collection protocol"
 

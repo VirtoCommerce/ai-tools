@@ -169,7 +169,7 @@ Shared knowledge files in `knowledge/` (8 files): `business-logic.md`, `platform
 
 ## Customizing Agents
 
-Each agent is a Markdown file in `.claude/agents/` with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior, add patterns, or adjust output format.
+Agents are organized in subfolders: `.claude/agents/qa/` (8 QA agents + `shared-instructions.md`) and `.claude/agents/ba/` (4 BA agents). Shared knowledge files are in `.claude/agents/knowledge/`. Each agent is a Markdown file with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior.
 
 ---
 

@@ -1,1011 +1,902 @@
-ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
-B2C-VAR-001,Product Variations - Size Selection,B2C Features > Variations,Functional,Critical,4m,"Product with size variations (S/M/L/XL)","1. Navigate to product with size variations (e.g., T-Shirt)
-2. Verify size selector displays
-3. Verify all sizes listed (S, M, L, XL)
-4. Click size 'M'
-5. Verify size selected (highlighted)
-6. Verify Add to Cart enabled
-7. Click Add to Cart
-8. View cart
-9. Verify selected size shown in cart","- Size selector displays (dropdown or buttons)
-- All available sizes listed
-- Clicking size selects it (visual feedback)
-- Only one size selectable at a time
-- Add to Cart enabled after selection
-- Cart displays: Product Name - Size: M
-- Correct SKU for selected size variant
-- Price correct for size (if size affects price)",VCST-4547,Automated
-B2C-VAR-002,Product Variations - Color Selection,B2C Features > Variations,Functional,Critical,4m,"Product with color variations","1. Navigate to product with colors (e.g., Blue, Red, Black, White)
-2. Verify color selector displays
-3. Click color 'Blue'
-4. Verify color selected
-5. Verify product image updates to blue variant
-6. Click Add to Cart
-7. View cart","- Color selector displays (swatches or dropdown)
-- Color swatches show actual colors
-- Clicking selects color (border/checkmark)
-- Main product image updates to show selected color
-- Cart shows: Product Name - Color: Blue
-- Correct color variant SKU",VCST-4547,Automated
-B2C-VAR-003,Product Variations - Multi-Attribute (Size + Color),B2C Features > Variations,Functional,Critical,6m,"Product with size and color variations","1. Navigate to configurable product
-2. Verify both size and color selectors display
-3. Select Size: M
-4. Verify color options update (only colors available in M)
-5. Select Color: Blue
-6. Verify price updates (if variant pricing)
-7. Verify stock status shows
-8. Click Add to Cart
-9. View cart","- Both selectors visible
-- Selecting first attribute filters second (only valid combinations)
-- Variant-specific pricing displays
-- Stock status per variant: In Stock / Low Stock / Out of Stock
-- Add to Cart disabled until all required attributes selected
-- Cart shows: Product - Size: M, Color: Blue
-- Correct variant SKU and price",VCST-4547,Automated
-B2C-VAR-004,Product Variations - Out of Stock Variant,B2C Features > Variations,Negative,High,4m,"Product with some variants out of stock","1. Navigate to configurable product
-2. Select size that is out of stock
-3. Verify out of stock message
-4. Verify Add to Cart disabled
-5. Select different size (in stock)
-6. Verify Add to Cart enabled","- Out of stock variants visible but disabled/grayed
-- Clicking out of stock variant shows message: 'This variant is out of stock'
-- Add to Cart button disabled or shows 'Out of Stock'
-- Selecting in-stock variant enables Add to Cart
-- Stock status badge visible per variant",VCST-4547,Manual
-B2C-VAR-005,Product Variations - Price Updates by Variant,B2C Features > Variations,Functional,High,4m,"Product with variant-specific pricing (e.g., size affects price)","1. Navigate to product with size-based pricing
-2. Note default price (e.g., $29.99 for size S)
-3. Select size L
-4. Verify price updates (e.g., $34.99 for size L)
-5. Select size XL
-6. Verify price updates again (e.g., $39.99)
-7. Add to cart
-8. Verify cart price matches variant price","- Default price displays for default/first variant
-- Selecting different variant updates price immediately
-- Price change animates or highlights briefly
-- Old price may show strikethrough if on sale
-- Cart line price matches selected variant price
-- Checkout total uses correct variant pricing",VCST-4547,Manual
-B2C-VAR-006,Product Variations - Mobile Variant Selection,B2C Features > Variations,Functional,Critical,5m,"Mobile device (375x667), product with variations","1. Open product page on mobile
-2. Scroll to variant selectors
-3. Tap size selector
-4. Verify selector opens (native picker or custom)
-5. Select size from picker
-6. Verify selection updates
-7. Repeat for color
-8. Add to cart from mobile","- Variant selectors optimized for touch
-- Selectors large enough (44x44px minimum)
-- Native pickers used on mobile (better UX)
-- Selected values clearly visible
-- Add to Cart button accessible
-- No horizontal scrolling required",VCST-4547,Manual
-B2C-VAR-007,Product Variations - Image Gallery per Variant,B2C Features > Variations,Functional,Medium,5m,"Product with variant-specific images","1. Navigate to product with color variants
-2. View image gallery (default variant)
-3. Select different color (e.g., Red)
-4. Verify image gallery updates to red variant images
-5. Verify all thumbnails update
-6. Select another color (Blue)
-7. Verify gallery updates again","- Each color variant has its own image set
-- Main image updates immediately on variant selection
-- Thumbnail gallery updates to show variant images
-- Image transition smooth (fade or slide)
-- Gallery position resets to first image
-- Zoom/lightbox shows correct variant images",VCST-4547,Manual
-B2C-VAR-008,Product Variations - Default Variant Selection,B2C Features > Variations,Functional,Medium,3m,"Product with multiple variants","1. Navigate to product page
-2. Verify default variant pre-selected
-3. Verify Add to Cart enabled (if default variant in stock)
-4. Add to cart without changing selection
-5. Verify correct default variant added","- Default variant pre-selected on page load
-- Usually first available variant or most popular
-- Selection visible (not blank state)
-- Can add to cart immediately without interaction
-- Default variant follows business rules (e.g., smallest size, most popular color)",VCST-4547,Manual
-B2C-VAR-009,Product Variations - Add Multiple Variants to Cart,B2C Features > Variations,Functional,High,6m,"Product with variations","1. Navigate to product
-2. Select Size: S, Color: Blue
-3. Add to cart
-4. Stay on product page
-5. Select Size: M, Color: Red
-6. Add to cart again
-7. View cart
-8. Verify both variants in cart as separate line items","- Can add multiple variants without leaving product page
-- Each variant added as separate cart line item
-- Cart shows:
-  Line 1: Product - Size: S, Color: Blue
-  Line 2: Product - Size: M, Color: Red
-- Each line has its own quantity
-- Subtotal sums all variants correctly",VCST-4547,Automated
-B2C-VAR-010,Product Variations - Variant URL Parameters,B2C Features > Variations,Functional,Medium,4m,"Product with variations","1. Navigate to product
-2. Select Size: L, Color: Black
-3. Check URL
-4. Verify URL includes variant params (e.g., ?size=L&color=Black)
-5. Copy URL
-6. Open URL in new tab
-7. Verify correct variant pre-selected","- URL updates with variant parameters
-- Parameters human-readable (not IDs)
-- Direct link to variant opens with that variant selected
-- Sharing variant URL preserves selection
-- SEO-friendly URLs
-- Back button works correctly with variant changes",VCST-4547,Manual
-B2C-LIST-001,Create Wishlist/List,B2C Features > Lists,Functional,Critical,4m,"User logged in, no lists created","1. Navigate to Lists or Wishlist page
-2. Click 'Create New List' button
-3. Enter list name: 'Summer Essentials'
-4. Optionally set privacy: Private or Shared
-5. Click 'Create'
-6. Verify list created
-7. Verify list appears in My Lists","- 'Create New List' button visible
-- Form displays: Name (required), Description (optional), Privacy (Private/Shared)
-- List creates successfully
-- Success message: 'List created'
-- List appears in My Lists section
-- Default list is 'Wishlist' if first list
-- Can create multiple lists",VCST-3928,Manual
-B2C-LIST-002,Add Product to List from Product Page,B2C Features > Lists,Functional,Critical,4m,"User logged in, list exists","1. Navigate to product detail page
-2. Locate 'Add to List' or heart icon
-3. Click Add to List
-4. Verify list selector modal/dropdown opens
-5. Select list: 'Summer Essentials'
-6. Click 'Add'
-7. Verify success notification","- 'Add to List' button/icon visible
-- Clicking opens list selector
-- All user's lists displayed
-- Option to create new list inline
-- Success message: 'Added to Summer Essentials'
-- Heart icon fills/changes color
-- Product added to selected list",VCST-3928,Automated
-B2C-LIST-003,Add Product to List from Category Page,B2C Features > Lists,Functional,High,3m,"User on category page, list exists","1. Navigate to category
-2. Hover over product card
-3. Click heart/Add to List icon on card
-4. Select list
-5. Verify added","- Add to List icon visible on product card (hover or always)
-- Quick add without leaving category page
-- List selector appears
-- Product added successfully
-- Can continue browsing
-- Icon indicates product already in list",VCST-3928,Automated
-B2C-LIST-004,View List Contents,B2C Features > Lists,Functional,Critical,3m,"User logged in, list has products","1. Navigate to My Lists
-2. Click on list 'Summer Essentials'
-3. Verify list page opens
-4. Verify products display","- List page shows all products in list
-- Products display: Image, Name, Price, In Stock status
-- Grid or list view options
-- Each product has:
-  - View Product link
-  - Add to Cart button
-  - Remove from List button
-- List metadata: Name, Item count, Created date",VCST-3928,Automated
-B2C-LIST-005,Add to Cart from List,B2C Features > Lists,Functional,High,4m,"User viewing list with products","1. Open list
-2. Locate product in list
-3. Click 'Add to Cart' on product
-4. Verify success notification
-5. Click 'Add All to Cart' button (if available)
-6. Verify all list items added to cart","- Each product has Add to Cart button
-- Can add individual products
-- 'Add All to Cart' button adds entire list
-- Success notification per product or bulk
-- Cart count updates
-- Products remain in list (not removed)
-- Out of stock items skipped or show warning",VCST-3928,Automated
-B2C-LIST-006,Remove Product from List,B2C Features > Lists,Functional,High,3m,"Product in list","1. Open list
-2. Locate product
-3. Click Remove or X icon
-4. Verify confirmation prompt (optional)
-5. Confirm removal
-6. Verify product removed from list","- Remove button/icon visible per product
-- Confirmation prompt: 'Remove from Summer Essentials?'
-- Product removed from list immediately
-- Success message: 'Removed from list'
-- List count decrements
-- Product no longer shows in list
-- Can re-add product later",VCST-3928,Automated
-B2C-LIST-007,Rename/Edit List,B2C Features > Lists,Functional,Medium,3m,"List exists","1. Navigate to My Lists
-2. Click Edit/Settings on list
-3. Change name: 'Summer Essentials' to 'Summer 2026'
-4. Change description or privacy
-5. Click Save
-6. Verify list updated","- Edit option available (pencil icon or menu)
-- Can edit: Name, Description, Privacy
-- Changes save successfully
-- List name updates everywhere
-- No impact on products in list",VCST-3928,Manual
-B2C-LIST-008,Delete List,B2C Features > Lists,Functional,Medium,3m,"List exists with products","1. Navigate to list
-2. Click Delete or menu > Delete
-3. Verify confirmation: 'Delete Summer 2026? (X items will be removed)'
-4. Confirm deletion
-5. Verify list removed
-6. Verify products not deleted (still in catalog)","- Delete option available
-- Confirmation prompt warns about item count
-- Deletion removes list only (not products)
-- Success message: 'List deleted'
-- List removed from My Lists
-- Cannot recover deleted list
-- Products remain in catalog",VCST-3928,Manual
-B2C-LIST-009,Share List (Public Link),B2C Features > Lists,Functional,High,5m,"List exists, sharing enabled","1. Open list
-2. Click Share button
-3. Verify share options: Public Link, Email
-4. Click 'Get Public Link'
-5. Copy link
-6. Open link in incognito/different browser
-7. Verify list accessible without login","- Share button visible
-- Share modal displays options
-- Public link generated
-- Link is shareable URL
-- Opening link shows list (read-only)
-- Cannot edit shared list without permission
-- Share modal shows list as 'Shared'",VCST-3928,Manual
-B2C-LIST-010,Share List via Email,B2C Features > Lists,Functional,Medium,5m,"List exists","1. Open list
-2. Click Share
-3. Select Email option
-4. Enter recipient email: friend@example.com
-5. Add optional message
-6. Click Send
-7. Check recipient email
-8. Verify invitation email received","- Email share option available
-- Form: Recipient email, optional message
-- Email sent successfully
-- Recipient receives invitation email
-- Email contains: List name, sender name, item count, view link
-- Clicking link opens list
-- Recipient can view and add to their cart (if logged in)",VCST-3928,Manual
-B2C-LIST-011,Mark List as Private/Shared,B2C Features > Lists,Functional,Medium,3m,"List exists","1. Edit list settings
-2. Toggle privacy: Private → Shared
-3. Save
-4. Verify list marked as Shared
-5. Toggle back to Private
-6. Verify shared links disabled","- Privacy toggle in settings
-- Private: Only visible to owner
-- Shared: Accessible via link
-- Changing to Private disables existing share links
-- Badge shows Private/Shared status",VCST-3928,Manual
-B2C-LIST-012,Product Already in List Indicator,B2C Features > Lists,Functional,Medium,3m,"Product already added to list","1. Add product to list
-2. Navigate back to product page
-3. Verify heart icon filled or indicator shows
-4. Hover over heart icon
-5. Verify tooltip: 'In Summer Essentials'
-6. Click heart icon
-7. Verify options: Remove or Add to different list","- Heart icon filled/highlighted if in any list
-- Tooltip shows which list(s)
-- Clicking filled heart shows options:
-  - Remove from list
-  - Add to another list
-- Prevents duplicate adds to same list
-- Clear visual feedback",VCST-3928,Manual
-B2C-LIST-013,Move Product Between Lists,B2C Features > Lists,Functional,Medium,4m,"Product in list A, list B exists","1. Open list A
-2. Click menu on product
-3. Select 'Move to...'
-4. Select list B
-5. Verify product moved","- Move option in product menu
-- List selector shows all lists
-- Product removed from list A
-- Product added to list B
-- No duplicate in original list
-- Success message shown",VCST-3928,Manual
-B2C-LIST-014,List - Out of Stock Product Handling,B2C Features > Lists,Functional,High,4m,"List contains out of stock product","1. Add product to list while in stock
-2. Admin marks product out of stock
-3. Open list
-4. Verify out of stock badge on product
-5. Attempt to Add to Cart
-6. Verify error or disabled state","- Out of stock products remain in list
-- Badge shows 'Out of Stock'
-- Add to Cart disabled or shows message
-- Option to remove or keep in list
-- Notification if back in stock (optional)",VCST-3928,Manual
-B2C-LIST-015,List Analytics - GA4 add_to_wishlist Event,B2C Features > Lists,Analytics,Medium,4m,"GA4 configured, list exists","1. Navigate to product page
-2. Click Add to List
-3. Select list
-4. Open DevTools > Network
-5. Verify GA4 event 'add_to_wishlist' fired
-6. Inspect event parameters","- add_to_wishlist event fires on add
-- Event parameters:
-  - currency (USD)
-  - value (product price)
-  - items array (item_id, item_name, price)
-- Event visible in GA DebugView
-- Tracking captures list name (optional)",VCST-3928,Manual
-B2C-SHIP-001,Ship To - View Saved Addresses,B2C Features > Ship To,Functional,Critical,3m,"User logged in, saved addresses exist","1. Navigate to Account > Addresses or click Ship To selector in header
-2. Verify address list displays
-3. Verify each address shows: Name, Street, City, State, ZIP, Phone
-4. Verify default address marked","- Address list displays all saved addresses
-- Each address shows full details
-- Default address has badge: 'Default'
-- Addresses formatted consistently
-- Edit/Delete options per address",VCST-4575,Automated
-B2C-SHIP-002,Ship To - Add New Address,B2C Features > Ship To,Functional,Critical,5m,"User logged in","1. Navigate to Addresses
-2. Click 'Add New Address'
-3. Fill form:
-   - First Name: Jane
-   - Last Name: Doe
-   - Address: 456 New St
-   - City: Springfield
-   - State: IL
-   - ZIP: 62701
-   - Phone: 555-987-6543
-4. Check 'Set as default' (optional)
-5. Click Save
-6. Verify address saved","- Add address button visible
-- Form displays all required fields
-- State dropdown populated based on country
-- ZIP and phone validated
-- 'Set as default' checkbox option
-- Address saves successfully
-- Success message: 'Address added'
-- New address appears in list
-- If set as default, badge shows",VCST-4575,Automated
-B2C-SHIP-003,Ship To - Edit Address,B2C Features > Ship To,Functional,High,4m,"Saved address exists","1. Navigate to Addresses
-2. Click Edit on address
-3. Modify street: '456 New St Apt 2B'
-4. Modify phone
-5. Click Save
-6. Verify address updated","- Edit button/link available
-- Form pre-filled with current address
-- Can modify any field
-- Validation applied
-- Updates save successfully
-- Address displays updated info
-- Orders using this address unaffected (historical)",VCST-4575,Automated
-B2C-SHIP-004,Ship To - Delete Address,B2C Features > Ship To,Functional,High,3m,"Non-default address exists","1. Navigate to Addresses
-2. Click Delete on address
-3. Verify confirmation prompt
-4. Confirm deletion
-5. Verify address removed","- Delete option available (except default)
-- Confirmation: 'Delete this address?'
-- Address removed from list
-- Cannot delete default address (must set another as default first)
-- Historical orders preserve address",VCST-4575,Automated
-B2C-SHIP-005,Ship To - Set Default Address,B2C Features > Ship To,Functional,High,3m,"Multiple addresses exist","1. Navigate to Addresses
-2. Click 'Set as Default' on non-default address
-3. Verify default badge moves to new address
-4. Verify only one default exists","- Set as Default option available
-- Only one default allowed
-- Previous default loses badge
-- New default gains badge
-- Default used in checkout automatically
-- Default shown first in address list",VCST-4575,Automated
-B2C-SHIP-006,Ship To - Select Address in Checkout,B2C Features > Ship To,Functional,Critical,4m,"Multiple saved addresses, in checkout","1. Proceed to checkout
-2. Verify default address pre-selected
-3. Click 'Change' or address selector
-4. Verify address list displays
-5. Select different address
-6. Verify selection updates checkout","- Default address pre-selected
-- Can change address via selector
-- All saved addresses listed
-- Selecting updates shipping address
-- Order summary shows selected address
-- Shipping costs may update based on address",VCST-4575,Automated
-B2C-SHIP-007,Ship To - Header Selector/Dropdown,B2C Features > Ship To,Functional,High,4m,"User logged in, multiple addresses","1. Locate Ship To selector in header (if present)
-2. Click Ship To selector
-3. Verify dropdown shows addresses
-4. Select different address
-5. Verify selection updates
-6. Verify context switches (pricing may update for region)","- Ship To selector visible in header (near account menu)
-- Shows current default address (truncated)
-- Clicking opens dropdown with all addresses
-- Can select from dropdown
-- Selection updates immediately
-- Context switches (pricing, availability, shipping)
-- Useful for B2B multi-location scenarios",VCST-4575,Manual
-B2C-SHIP-008,Ship To - Add Address During Checkout,B2C Features > Ship To,Functional,High,5m,"User in checkout","1. Navigate to checkout
-2. Click 'Add New Address' in shipping section
-3. Fill address form
-4. Check 'Save for future' (optional)
-5. Click Use This Address
-6. Verify address used in checkout
-7. Complete order
-8. Check Addresses page
-9. Verify address saved (if checkbox selected)","- Can add address inline during checkout
-- Form same as address management
-- Option to save for future orders
-- Address used immediately
-- If saved, appears in address list
-- If not saved, used for order only (guest-like)
-- Smooth checkout flow",VCST-4575,Automated
-B2C-SHIP-009,Ship To - Address Validation,B2C Features > Ship To,Functional,High,5m,"User adding/editing address","1. Navigate to Add Address
-2. Enter invalid ZIP: '999'
-3. Attempt to save
-4. Verify validation error: 'Invalid ZIP code'
-5. Enter valid ZIP: 90210
-6. Enter invalid phone: '123'
-7. Verify error: 'Phone must be 10 digits'
-8. Fix phone: 555-123-4567
-9. Save successfully","- ZIP code validated (5 or 9 digits for US)
-- Phone number validated (10 digits, optional format)
-- Address line 1 required
-- City, State, ZIP required
-- Error messages clear and specific
-- Cannot save invalid address
-- Real-time validation feedback (optional)
-- Formatting help (e.g., ZIP: 12345 or 12345-6789)",VCST-4575,Manual
-B2C-SHIP-010,Ship To - Mobile Address Management,B2C Features > Ship To,Functional,High,5m,"Mobile device (375x667), logged in","1. Navigate to Addresses on mobile
-2. Verify address list mobile-optimized
-3. Tap Add New Address
-4. Fill form on mobile
-5. Use native pickers for State
-6. Save address
-7. Verify responsive design","- Address list stacks vertically on mobile
-- Cards or list items tap-friendly
-- Add button accessible
-- Form fields full-width
-- Native select for State (better UX)
-- Phone keyboard type for phone field
-- Keyboard doesn't obscure fields
-- No horizontal scrolling",VCST-4575,Manual
-B2C-SHIP-011,Ship To - International Address Support,B2C Features > Ship To,Functional,Medium,6m,"International shipping enabled","1. Add New Address
-2. Select Country: Canada
-3. Verify Province/State updates to Canadian provinces
-4. Fill address:
-   - Street: 123 Maple Ave
-   - City: Toronto
-   - Province: Ontario
-   - Postal Code: M5A 1A1 (Canadian format)
-   - Country: Canada
-5. Save
-6. Verify address accepted","- Country selector displays all enabled countries
-- State/Province field updates based on country
-- ZIP/Postal Code validation per country
-  - US: 12345 or 12345-6789
-  - Canada: A1A 1A1
-  - UK: SW1A 1AA
-- Phone format accepts international (+ prefix)
-- Address format respects country conventions",VCST-4575,Manual
-B2C-SHIP-012,Ship To - Address Nickname,B2C Features > Ship To,Functional,Low,3m,"User adding address","1. Add New Address
-2. Locate Nickname/Label field (optional)
-3. Enter nickname: 'Home' or 'Office'
-4. Fill address
-5. Save
-6. Verify nickname displays in address list","- Optional nickname field
-- Nickname displayed in list: 'Home - 123 Main St'
-- Helps distinguish similar addresses
-- Nickname editable
-- Nickname shown in checkout selector",VCST-4575,Manual
-B2C-CONFIG-001,Product Configuration - Configurable Options,B2C Features > Configurations,Functional,Critical,6m,"Product with configurations (e.g., custom PC, engraved item)","1. Navigate to configurable product
-2. Verify configuration options display
-3. Select option 1: Processor: Intel i7
-4. Verify price updates (+$100)
-5. Select option 2: RAM: 16GB
-6. Verify price updates (+$50)
-7. Select option 3: Storage: 512GB SSD
-8. Verify price updates (+$75)
-9. Verify total configuration price
-10. Add to cart
-11. View cart","- Configuration UI displays (dropdowns, radio buttons, or visual selector)
-- Each option listed: Name, choices, price impact
-- Selecting option updates running total
-- Price breakdown shown:
-  Base: $500
-  + Processor upgrade: $100
-  + RAM upgrade: $50
-  + Storage upgrade: $75
-  Total: $725
-- Add to Cart enabled after required options selected
-- Cart shows configured product with all selections",VCST-4547,Manual
-B2C-CONFIG-002,Product Configuration - Required Options,B2C Features > Configurations,Functional,High,4m,"Product with required configuration options","1. Navigate to configurable product
-2. Verify required options marked (asterisk or 'Required')
-3. Attempt to add to cart without selecting
-4. Verify error: 'Please select all required options'
-5. Select required options
-6. Verify Add to Cart enabled
-7. Add to cart","- Required options marked clearly
-- Add to Cart disabled until all required selected
-- Error message if attempt to add without selection
-- Optional vs required distinction clear
-- Cannot proceed without required choices",VCST-4547,Manual
-B2C-CONFIG-003,Product Configuration - Optional Add-Ons,B2C Features > Configurations,Functional,Medium,5m,"Product with optional add-ons (warranty, gift wrap)","1. Navigate to product
-2. Scroll to optional add-ons
-3. Verify add-ons listed: Extended Warranty (+$50), Gift Wrap (+$5)
-4. Check Extended Warranty checkbox
-5. Verify price updates
-6. Uncheck warranty
-7. Verify price reverts
-8. Check Gift Wrap
-9. Add to cart
-10. View cart","- Optional add-ons shown separately from required config
-- Checkbox or toggle per add-on
-- Add-on name, description, price shown
-- Selecting updates total price
-- Unselecting reverts price
-- Cart shows selected add-ons as sub-items or separate lines
-- Add-ons can be unchecked in cart (if supported)",VCST-4547,Manual
-B2C-CONFIG-004,Product Configuration - Text Input (Engraving),B2C Features > Configurations,Functional,High,5m,"Product with text customization (engraving, monogram)","1. Navigate to engravable product (e.g., jewelry)
-2. Locate text input: 'Engraving (up to 20 characters)'
-3. Enter text: 'Happy Birthday'
-4. Verify character count: 14/20
-5. Verify preview updates (if available)
-6. Enter more text exceeding limit
-7. Verify validation: 'Max 20 characters'
-8. Reduce to valid length
-9. Add to cart
-10. View cart","- Text input field for customization
-- Character limit specified and enforced
-- Real-time character count shown
-- Cannot exceed limit (blocked or validation error)
-- Preview shows engraved text (optional)
-- Cart displays: Product + Engraving: 'Happy Birthday'
-- Engraved text editable in cart (or not, depends on policy)
-- Price includes engraving fee",VCST-4547,Manual
-B2C-CONFIG-005,Product Configuration - Image Upload,B2C Features > Configurations,Functional,Medium,6m,"Product allowing image upload (custom print)","1. Navigate to product requiring image upload
-2. Verify upload area: 'Upload your photo'
-3. Click upload or drag image
-4. Select image file (JPG, PNG)
-5. Verify image uploads
-6. Verify thumbnail preview
-7. Verify file size validation (max 5MB)
-8. Attempt to upload invalid file (.txt)
-9. Verify error: 'Only JPG/PNG allowed'
-10. Upload valid image
-11. Add to cart","- Image upload field visible
-- Accepts drag-and-drop or click to browse
-- File type validation (JPG, PNG, GIF)
-- File size limit enforced (e.g., 5MB)
-- Thumbnail preview after upload
-- Can replace image before adding to cart
-- Cart shows configured product with uploaded image reference
-- Image stored securely for order fulfillment",VCST-4547,Manual
-B2C-CONFIG-006,Product Configuration - Dependent Options,B2C Features > Configurations,Functional,High,5m,"Product with dependent configuration options","1. Navigate to configurable product
-2. Select Color: Blue
-3. Verify Size options update (only sizes available in Blue)
-4. Select Size: M
-5. Verify Material options (only materials for Blue/M combo)
-6. Complete configuration
-7. Add to cart","- Option B depends on Option A selection
-- Selecting Option A filters/enables Option B choices
-- Only valid combinations shown
-- Cannot select invalid combination
-- Clear indication when options are filtered (e.g., 'Size XL not available in Blue')
-- Configuration logic prevents impossible combinations",VCST-4547,Manual
-B2C-CONFIG-007,Product Configuration - Bundle/Kit Builder,B2C Features > Configurations,Functional,Medium,8m,"Bundle product (build your own gift basket)","1. Navigate to bundle product
-2. Verify bundle builder displays
-3. Step 1: Select base (Small/Medium/Large basket)
-4. Step 2: Choose items (min 3, max 10 from catalog)
-5. Select 5 items from list
-6. Verify running total updates per item
-7. Step 3: Add card message (optional)
-8. Review bundle summary
-9. Add to cart
-10. View cart","- Multi-step bundle builder
-- Each step shows: Instructions, available choices, running total
-- Minimum/maximum item rules enforced
-- Cannot proceed without meeting min/max
-- Selecting items updates total immediately
-- Bundle summary shows all selected components
-- Cart displays bundle as single product with components listed
-- Price is sum of base + selected items",VCST-4547,Manual
-B2C-CONFIG-008,Product Configuration - Price Calculation Accuracy,B2C Features > Configurations,Functional,Critical,5m,"Configurable product with multiple price modifiers","1. Navigate to product
-2. Note base price: $100
-3. Select option with +$50 modifier
-4. Verify total: $150
-5. Select option with +$25 modifier
-6. Verify total: $175
-7. Select option with -$10 discount
-8. Verify total: $165
-9. Add to cart
-10. Verify cart price matches: $165
-11. Proceed to checkout
-12. Verify order total uses $165","- Base price displayed clearly
-- Each option shows price modifier: +$50, +$25, -$10
-- Running total updates with each selection
-- Total calculation accurate (no rounding errors)
-- Cart price matches configured price
-- Checkout uses correct price
-- Order confirmation shows itemized configuration pricing
-- No price discrepancies across pages",VCST-4547,Automated
-B2C-CONFIG-009,Product Configuration - Save Configuration for Later,B2C Features > Configurations,Functional,Low,5m,"Logged in user, configurable product","1. Navigate to product
-2. Configure product (select options)
-3. Click 'Save Configuration' (if feature exists)
-4. Enter name: 'My Custom PC'
-5. Save
-6. Navigate away
-7. Return to product
-8. Click 'Load Configuration'
-9. Select 'My Custom PC'
-10. Verify options pre-selected","- Save configuration feature available (optional)
-- Can name saved config
-- Config saved to user account
-- Can load saved config later
-- All options restored correctly
-- Useful for complex configurations (custom PC, car)
-- Can share saved config via link (advanced)",VCST-4547,Manual
-B2C-CONFIG-010,Product Configuration - Reset Configuration,B2C Features > Configurations,Functional,Medium,3m,"Product configured with multiple options","1. Configure product (select 5+ options)
-2. Locate 'Reset' or 'Clear All' button
-3. Click Reset
-4. Verify confirmation prompt (optional)
-5. Confirm
-6. Verify all options reset to default
-7. Verify price returns to base price","- Reset button visible
-- Confirmation prompt (optional): 'Clear all selections?'
-- All options reset to default/unselected state
-- Price reverts to base price
-- User can start configuration over
-- No unsaved changes warning (config not persistent until cart)",VCST-4547,Manual
-B2C-CONFIG-011,Product Configuration - Mobile Configuration UI,B2C Features > Configurations,Functional,High,6m,"Mobile device, configurable product","1. Open product on mobile
-2. Scroll to configuration section
-3. Interact with option selectors
-4. Verify mobile-optimized UI
-5. Select multiple options
-6. Verify price updates visible
-7. Add to cart from mobile","- Configuration UI responsive
-- Dropdowns use native pickers on mobile
-- Visual selectors (color swatches) large enough to tap
-- Price updates visible (sticky footer or always visible)
-- Multi-step config uses wizard/stepper (optional)
-- No horizontal scrolling
-- Add to Cart button accessible
-- Configuration summary collapsible on mobile",VCST-4547,Manual
-B2C-CONFIG-012,Product Configuration - Accessibility,B2C Features > Configurations,Accessibility,High,8m,"Configurable product, keyboard/screen reader","1. Navigate to product using keyboard only
-2. Tab through configuration options
-3. Verify focus indicators visible
-4. Select options using keyboard (Enter/Space)
-5. Enable screen reader
-6. Verify options announced
-7. Verify price updates announced
-8. Complete configuration and add to cart","- All configuration options keyboard accessible
-- Tab order logical
-- Focus indicators visible
-- Can select options via keyboard (Enter, Space, Arrow keys)
-- Screen reader announces:
-  - Option labels
-  - Current selection
-  - Price changes
-  - Required vs optional
-- ARIA labels present
-- Error messages announced
-- WCAG 2.1 AA compliant",VCST-4547,Manual
-B2C-CONFIG-013,Configurable Product - Discount Scales Correctly with Quantity,B2C Features > Configurations > Pricing,Functional,Critical,6m,"Configurable product with discounted options, quantity > 1","1. Navigate to configurable product page (e.g. bike builder)
-2. Select a configuration option that has a discount (list price > sale price)
-3. Set quantity to 2 or more
-4. Observe the subtotal in the configuration section
-5. Verify in cart: subtotal = salePrice x quantity (not listPrice x quantity)
-6. Verify cart discount amount = (listPrice - salePrice) x quantity","- Sale price is used for subtotal calculation (not list price)
-- Discount amount is multiplied by quantity: discountAmount * qty = correct total discount
-- Cart subtotal is mathematically correct: salePrice x qty
-- No pricing discrepancy between product page and cart
-- VCST-4586 regression case",VCST-4586,Manual
-B2C-CONFIG-014,Configurable Product - Sale Price Displayed as Primary Price,B2C Features > Configurations > Pricing,Functional,Critical,4m,"Configurable product with discounted options (list price != sale price)","1. Navigate to configurable product
-2. Select an option with a discount applied
-3. Observe the price display in the configuration section
-4. Verify which price is shown prominently","- Sale price (salePrice) is displayed prominently (bold, dark colour)
-- List price (listPrice) is shown with strikethrough formatting
-- Visual presentation: salePrice = primary, listPrice = secondary/crossed out
-- Price math is clear (e.g. $88.00 sale with $126.00 crossed out)",VCST-4586,Manual
-B2C-CONFIG-015,Configurable Product - Mobile Sale Price Display,B2C Features > Configurations > Pricing > Mobile,Functional,High,4m,"Mobile viewport (375x667), configurable product with discounted options","1. Set viewport to 375x667
-2. Navigate to configurable product
-3. Select an option with a discount
-4. Observe price display in configuration section on mobile","- Mobile fallback price component shows sale price (not list price)
-- Sale price visible in mobile configuration section
-- Regression check: list price should NOT be shown as the primary price on mobile
-- Testing fix for mobile bug found in VCST-4586",VCST-4586,Manual
-B2C-CONFIG-016,Configurable Product - No Auto-Scroll on First Collapsed Section Click,B2C Features > Configurations > Interaction,Functional,High,5m,"Fresh page load of configurable product with multiple accordion sections (some collapsed by default)","1. Navigate to configurable product page (fresh load - no cached state)
-2. Wait for page to fully load
-3. Locate a configuration accordion section that is COLLAPSED by default
-4. Click the accordion header to expand it
-5. Immediately click a radio button option inside the newly expanded section
-6. Verify page scroll position","- Page does NOT auto-scroll after the first radio button click
-- Radio button selection STICKS (does not revert to 'None' or default)
-- Scroll position remains where user was before click
-- Selected option is confirmed as checked
-- VCST-4612 regression case",VCST-4612,Manual
-B2C-CONFIG-017,Configurable Product - First Click Radio Selection Sticks (No Revert),B2C Features > Configurations > Interaction,Functional,High,4m,"Fresh page load, configurable product with collapsed accordion sections","1. Fresh page load of configurable product
-2. Expand a collapsed accordion section
-3. Click a radio button option (first option in the newly expanded section)
-4. Observe the radio button state after 1-2 seconds
-5. Verify the selection has not reverted","- Radio button remains selected after first click
-- The selection does NOT revert to 'None' or the default value
-- Price updates to reflect the selected option
-- Section header updates to show selected option name
-- VCST-4612 regression case (selection revert bug)",VCST-4612,Manual
-B2C-VAR-011,VcVariantPickerGroup - All Variant Options Render Correctly,B2C Features > Variations > UI,Functional,High,4m,"Product with multiple variation options (size, colour), Storybook changes deployed","1. Navigate to product with size and colour variants
-2. Observe the variant picker UI (colour swatches, size buttons)
-3. Click various options
-4. Verify visual feedback for selected, unselected, and disabled states","- All variant options render (no blank spaces or broken swatches)
-- Selected state visually distinct (border, checkmark, fill)
-- Unselected state clearly different from selected
-- Disabled/out-of-stock variant shown differently (grayed)
-- No visual regression from Storybook StoryFn to StoryObj migration",VCST-4233,Manual
-B2C-ORG-001,Org Switcher Visible for Multi-Org User,B2C Features > Organization,Functional,Critical,4m,"User belongs to 2 or more organizations, logged in to storefront","1. Log in as a user who belongs to multiple organizations
-2. Navigate to the storefront header or account area
-3. Locate the organization switcher control
-4. Verify it is visible and shows the current organization name","- Org switcher control is visible in the header or account section
-- Current organization name is displayed on the switcher
-- Switcher appears only for users belonging to 2 or more organizations
-- Single-org users do not see the switcher (see B2C-ORG-010)",Coverage Gap Analysis,Generated
-B2C-ORG-002,Switch Org - Pricing Update,B2C Features > Organization,Functional,Critical,6m,"Multi-org user, Org A and Org B have different contract pricing for the same product","1. Log in and confirm Org A is active (check org switcher)
-2. Navigate to a product with org-specific contract pricing
-3. Note the price shown for Org A
-4. Open the org switcher and select Org B
-5. Navigate to the same product
-6. Verify the price has updated to Org B's contract price","- After switching to Org B, the product price reflects Org B's contract/tier pricing
-- Price is different from Org A's price (confirming org-specific pricing is applied)
-- Pricing update occurs without requiring a page reload or re-login
-- Cart prices also update to reflect the new org's pricing",Coverage Gap Analysis,Generated
-B2C-ORG-003,Switch Org - Cart Isolation,B2C Features > Organization,Functional,Critical,7m,"Multi-org user, logged in as Org A","1. Log in and confirm Org A is active
-2. Add 2 specific products to the cart under Org A
-3. Note the Org A cart items
-4. Open the org switcher and switch to Org B
-5. Navigate to the cart
-6. Verify Org A cart items are not present
-7. Add a different product to the Org B cart
-8. Switch back to Org A
-9. Verify the Org A cart still has the original 2 products","- Org A cart is isolated from Org B cart — switching orgs loads that org's specific cart
-- Org B cart starts empty (or shows Org B's previous cart) — Org A items are not visible
-- After adding items to Org B cart and switching back, Org A cart items are preserved
-- Cart count in header reflects the active org's cart",Coverage Gap Analysis,Generated
-B2C-ORG-004,Switch Org - Addresses Update,B2C Features > Organization,Functional,High,5m,"Multi-org user, Org A and Org B have different saved addresses","1. Log in as Org A
-2. Navigate to account addresses or the ship-to selector
-3. Note the addresses available for Org A
-4. Switch to Org B using the org switcher
-5. Navigate to account addresses or ship-to selector again
-6. Verify addresses shown belong to Org B","- Addresses displayed after switching to Org B are Org B's addresses
-- Org A addresses are not shown while Org B is active
-- Ship-to selector in header reflects Org B's addresses
-- Checkout address options reflect the active org's addresses",Coverage Gap Analysis,Generated
-B2C-ORG-005,Switch Org - Lists Scope,B2C Features > Organization,Functional,High,5m,"Multi-org user, Org A and Org B each have at least one saved list","1. Log in as Org A
-2. Navigate to My Lists
-3. Note the lists available for Org A
-4. Switch to Org B
-5. Navigate to My Lists
-6. Verify only Org B's lists are shown","- After switching to Org B, only lists associated with Org B are displayed
-- Org A lists are not visible while Org B is active
-- Shared lists within an org are scoped to that org only
-- Switching back to Org A restores Org A's lists",Coverage Gap Analysis,Generated
-B2C-ORG-006,Default Org on Sign-in,B2C Features > Organization,Functional,High,4m,"Multi-org user, one org is configured as the default","1. Log in to the storefront with the multi-org user credentials
-2. Observe which organization is loaded immediately after sign-in
-3. Verify the org switcher shows the default org as active
-4. Verify the default org's pricing and catalog are shown","- Default org is loaded automatically on sign-in (not a random or last-used org)
-- Org switcher displays the default org name as the active selection
-- Default org's catalog pricing, addresses, and cart are shown
-- No prompt to select an org is required on sign-in (default is auto-applied)",Coverage Gap Analysis,Generated
-B2C-ORG-007,Search Orgs in Switcher,B2C Features > Organization,Functional,High,4m,"Multi-org user belonging to 6 or more organizations","1. Log in as a user with many org memberships (6+)
-2. Open the org switcher
-3. Locate the search input within the switcher dropdown
-4. Type part of an org name (e.g., first 3 characters)
-5. Verify the results filter to matching org names
-6. Clear the search and verify all orgs are shown again","- Search/filter input is present inside the org switcher dropdown
-- Typing filters the org list dynamically to matching org names
-- Non-matching orgs are hidden while search is active
-- Clearing the search restores the full list of orgs
-- Selecting a filtered result correctly switches to that org",Coverage Gap Analysis,Generated
-B2C-ORG-008,Switch Org - Navigation Reset,B2C Features > Organization,Functional,Medium,4m,"Multi-org user, currently on a deep category or account page for Org A","1. Log in as Org A
-2. Navigate to a deep category page or checkout flow
-3. Note the breadcrumb trail
-4. Switch to Org B using the org switcher
-5. Verify the page state and navigation after the switch","- After switching orgs, the user is redirected to a neutral page (e.g., homepage or catalog root) rather than remaining on a context-specific page for the previous org
-- Breadcrumbs and category context reset to reflect Org B
-- No stale Org A navigation state remains visible
-- Any in-progress flows (like checkout) are exited cleanly",Coverage Gap Analysis,Generated
-B2C-ORG-009,Switch Back - Cart Intact,B2C Features > Organization,Functional,Critical,6m,"Multi-org user, items in Org A cart, currently viewing Org B","1. Log in as Org A and add 3 specific products to the Org A cart
-2. Switch to Org B
-3. Optionally add a different item to the Org B cart
-4. Switch back to Org A
-5. Navigate to the cart
-6. Verify all 3 original Org A items are present with correct quantities","- Switching away from Org A and back preserves the Org A cart intact
-- All originally added items are still present after returning to Org A
-- Quantities and selected variants are unchanged
-- Org B items are not present in Org A cart after switching back",Coverage Gap Analysis,Generated
-B2C-ORG-010,Single Org User - No Switcher,B2C Features > Organization,Functional,Medium,3m,"User belongs to exactly one organization, logged in to storefront","1. Log in as a user who belongs to only one organization
-2. Navigate to the header and account area
-3. Look for the org switcher control","- No org switcher control is visible in the header or account area
-- The single org is active by default
-- UI is not cluttered with a switcher that has no utility
-- User experience is unchanged from pre-multi-org behavior for single-org users",Coverage Gap Analysis,Generated
-B2C-BULK-001,Quick Order by SKU,B2C Features > Bulk Order,Functional,Critical,5m,"User logged in, /bulk-order page accessible, at least one known product SKU","1. Navigate to /bulk-order (Quick Order page)
-2. Locate the SKU entry field
-3. Enter a known valid product SKU
-4. Confirm the entry (press Enter or click Add)
-5. Verify product info appears: product name, image, unit price, available quantity","- Quick Order page loads at /bulk-order
-- SKU entry field is present and focused
-- Entering a valid SKU and confirming loads the product details in the row
-- Product name, price, and availability are displayed for the entered SKU
-- Quantity field becomes editable after product is found",Coverage Gap Analysis,Generated
-B2C-BULK-002,Add All to Cart,B2C Features > Bulk Order,Functional,Critical,6m,"Quick Order page with 3+ valid SKUs entered and quantities set","1. Navigate to /bulk-order
-2. Enter 3 different valid SKUs and set quantities (e.g., 2, 5, 1)
-3. Verify all 3 rows show correct product info
-4. Click 'Add All to Cart'
-5. Navigate to cart
-6. Verify all 3 products are in the cart with correct quantities","- 'Add All to Cart' button is enabled when at least one valid product row is populated
-- Clicking adds all listed products to the cart simultaneously
-- Cart contains all 3 products with the specified quantities
-- Cart count updates to reflect all added items
-- Success notification: 'X items added to cart'",Coverage Gap Analysis,Generated
-B2C-BULK-003,Invalid SKU Handling,B2C Features > Bulk Order,Functional,High,4m,"Quick Order page open","1. Navigate to /bulk-order
-2. Enter a valid SKU in row 1 and confirm
-3. Enter a non-existent SKU (e.g., 'FAKE-SKU-99999') in row 2 and confirm
-4. Verify error state on row 2
-5. Verify row 1 is unaffected","- Row 2 shows an error: 'Product not found' or 'Invalid SKU'
-- Row 1 with the valid SKU remains displayed correctly
-- Error is scoped to the invalid row only (other rows unaffected)
-- 'Add All to Cart' only processes valid rows; invalid rows are skipped or cause a specific warning",Coverage Gap Analysis,Generated
-B2C-BULK-004,Multi-row Entry,B2C Features > Bulk Order,Functional,High,5m,"Quick Order page open","1. Navigate to /bulk-order
-2. Enter 5 different valid SKUs in separate rows
-3. Set different quantities for each (e.g., 1, 3, 2, 5, 10)
-4. Verify all 5 rows display product info correctly
-5. Verify a running total or summary is calculated","- All 5 rows display correctly with product name, price, and set quantity
-- Page does not slow down or lose state with 5+ rows
-- Running total (if displayed) sums the subtotal for all rows correctly
-- Can continue adding more rows beyond 5 (or up to any stated limit)",Coverage Gap Analysis,Generated
-B2C-BULK-005,Paste from Spreadsheet,B2C Features > Bulk Order,Functional,High,5m,"Quick Order page open, clipboard contains tab-separated SKU and quantity data","1. In a text editor or spreadsheet, create 3 rows with format: SKU[tab]Quantity
-2. Copy these 3 rows to clipboard
-3. Navigate to /bulk-order
-4. Paste (Ctrl+V) into the bulk order entry area or first SKU field
-5. Verify rows are auto-populated with the pasted SKUs and quantities","- Paste action auto-populates multiple rows from tab-separated clipboard data
-- SKU and quantity from each pasted row are correctly assigned to separate columns
-- Product lookup is triggered for each pasted SKU
-- Invalid SKUs in the pasted data are flagged per row
-- Valid products display correctly after paste",Coverage Gap Analysis,Generated
-B2C-BULK-006,Bulk Order Quantity Validation,B2C Features > Bulk Order,Functional,Medium,3m,"Quick Order page with a valid product SKU entered","1. Enter a valid SKU and confirm the product is found
-2. Set the quantity field to 0
-3. Attempt to add to cart
-4. Verify validation error
-5. Set the quantity to -1 (negative)
-6. Verify validation error
-7. Set a valid quantity (e.g., 1)
-8. Verify add to cart succeeds","- Quantity of 0 triggers validation error: 'Quantity must be at least 1'
-- Negative quantity triggers validation error
-- 'Add to Cart' or 'Add All to Cart' is blocked for rows with invalid quantities
-- Setting a positive valid quantity clears the error and enables the add action",Coverage Gap Analysis,Generated
-B2C-LIST-016,Create Shared List,B2C Features > Shared Lists,Functional,High,5m,"Logged in user who is a member of a B2B organization, on My Lists page","1. Navigate to My Lists (/account/lists)
-2. Click 'Create New List'
-3. Enter list name: 'Team Supplies'
-4. Set privacy/visibility to 'Shared' (visible to org members)
-5. Click 'Create'
-6. Verify list created successfully
-7. Verify the list is marked as 'Shared'","- Create list form includes a visibility option: Private vs Shared
-- Selecting 'Shared' marks the list as visible to all members of the current organization
-- List created successfully with 'Shared' badge or indicator
-- List appears in My Lists with Shared status
-- Other org members can see this list (see B2C-LIST-017)",Coverage Gap Analysis,Generated
-B2C-LIST-017,Org Member Sees Shared List,B2C Features > Shared Lists,Functional,High,5m,"Shared list 'Team Supplies' created by User A, User B is a member of the same organization","1. Log in as User B (a different org member from User A)
-2. Navigate to My Lists (/account/lists)
-3. Look for the list 'Team Supplies' created by User A","- 'Team Supplies' list is visible to User B in the lists section
-- Shared lists from other org members are displayed (e.g., in a 'Shared with me' or 'Team Lists' section)
-- List shows who created it (User A's name)
-- User B can view the contents of the shared list",Coverage Gap Analysis,Generated
-B2C-LIST-018,Add to Shared List,B2C Features > Shared Lists,Functional,High,5m,"Shared list 'Team Supplies' visible to User B (org member)","1. Log in as User B
-2. Navigate to the shared list 'Team Supplies'
-3. Click 'Add Product' or navigate to a product and add it to 'Team Supplies'
-4. Verify product is added to the shared list
-5. Log in as User A (list creator)
-6. Navigate to 'Team Supplies'
-7. Verify the product added by User B is visible","- User B can add products to a shared list owned by User A
-- Product added by User B appears immediately in the shared list
-- When User A views the list, the item added by User B is present
-- Added item shows who added it (if attribution is supported)",Coverage Gap Analysis,Generated
-B2C-LIST-019,Private List Not Visible to Org Members,B2C Features > Shared Lists,Functional,Medium,4m,"User A has created a Private list, User B is a member of the same org","1. Verify User A has a list set to 'Private'
-2. Log in as User B (different org member)
-3. Navigate to My Lists
-4. Verify User A's private list is NOT visible to User B","- User A's Private list does not appear in User B's My Lists view
-- No mechanism allows User B to discover or access User A's private list
-- User B only sees their own lists and lists explicitly shared with the org
-- Privacy setting is enforced server-side, not just hidden in the UI",Coverage Gap Analysis,Generated
-
-B2C-DASH-001,Dashboard Page Loads,B2C Features > Dashboard,Functional,Medium,3m,User signed in with valid credentials,"1. Sign in to storefront
-2. Navigate to /account/dashboard
-3. Verify page loads completely
-4. Check browser console for JavaScript errors
-5. Verify page title and heading display","- /account/dashboard loads without errors
-- No JavaScript console errors present
-- Page heading confirms Dashboard context
-- All page sections render (no blank areas)
-- Network requests complete with 200 status",Coverage Gap Analysis,Generated
-B2C-DASH-002,Recent Orders Widget,B2C Features > Dashboard,Functional,Medium,4m,"User signed in, has at least one previous order","1. Sign in and navigate to /account/dashboard
-2. Locate the Recent Orders widget/section
-3. Verify order entries are displayed
-4. Check each entry for order number
-5. Check each entry for order date
-6. Check each entry for order status
-7. Check each entry for order amount","- Recent Orders section visible on dashboard
-- Each order entry shows order number (e.g., ORD-12345)
-- Order date displayed per entry
-- Order status shown (e.g., Processing, Shipped, Delivered)
-- Order amount/total shown per entry
-- Orders sorted most-recent first",Coverage Gap Analysis,Generated
-B2C-DASH-003,Monthly Spend Display,B2C Features > Dashboard,Functional,Medium,4m,"User signed in, has orders placed in current calendar month","1. Sign in and navigate to /account/dashboard
-2. Locate the monthly spending summary widget
-3. Note the displayed amount
-4. Cross-reference against orders placed this month via Order History
-5. Verify totals match","- Monthly spend widget visible on dashboard
-- Amount displayed corresponds to current calendar month
-- Value matches sum of current-month orders from Order History
-- Currency symbol and formatting correct
-- Label clearly indicates the time period (e.g., This Month)",Coverage Gap Analysis,Generated
-B2C-DASH-004,Quick Navigation Links,B2C Features > Dashboard,Functional,Medium,4m,"User signed in, account section accessible","1. Sign in and navigate to /account/dashboard
-2. Locate quick-navigation links or tiles
-3. Click the Orders link
-4. Verify navigation to Order History page
-5. Return to dashboard
-6. Click the Profile link
-7. Verify navigation to Profile page
-8. Return to dashboard
-9. Click the Addresses link
-10. Verify navigation to Addresses page
-11. Return to dashboard
-12. Click the Lists link
-13. Verify navigation to Lists page","- Orders link navigates to /account/orders or Order History
-- Profile link navigates to /account/profile
-- Addresses link navigates to /account/addresses
-- Lists link navigates to /account/lists
-- Back-navigation returns to dashboard correctly
-- All links resolve without 404 errors",Coverage Gap Analysis,Generated
-B2C-DASH-005,Dashboard After First Login,B2C Features > Dashboard,Functional,Medium,5m,"New user account created, no prior orders or activity","1. Register a new user account
-2. Sign in for the first time
-3. Navigate to /account/dashboard
-4. Observe the dashboard empty state","- Dashboard loads without errors for new user
-- Empty state message displayed (no blank or broken sections)
-- Helpful prompts or call-to-action shown (e.g., Start shopping, Browse catalog)
-- No order widget errors due to missing data
-- No spend widget errors due to missing data
-- Navigation links still functional",Coverage Gap Analysis,Generated
-B2C-NOTIF-001,Notification Bell Icon,B2C Features > Notifications,Functional,Medium,3m,"User signed in, header navigation visible","1. Sign in to storefront
-2. Observe the header navigation bar
-3. Locate the notification bell icon
-4. Verify badge element on the icon","- Notification bell icon visible in header navigation
-- Badge (numeric counter) displayed on bell icon when notifications exist
-- Badge count reflects number of unread notifications
-- Icon is visually distinct and tappable",Coverage Gap Analysis,Generated
-B2C-NOTIF-002,Notification Dropdown Opens,B2C Features > Notifications,Functional,Medium,3m,"User signed in, at least one notification exists","1. Sign in to storefront
-2. Click the notification bell icon in header
-3. Verify dropdown panel opens
-4. Inspect notification list order
-5. Verify notification entry details","- Dropdown panel opens on bell click
-- Notification list displayed within dropdown
-- Notifications ordered most-recent first (newest at top)
-- Each notification shows title/description and timestamp
-- Dropdown closes when clicking outside or pressing Escape",Coverage Gap Analysis,Generated
-B2C-NOTIF-003,Mark as Read,B2C Features > Notifications,Functional,Medium,4m,"User signed in, unread notification exists, badge count visible","1. Note the current badge count on the bell icon
-2. Open the notification dropdown
-3. Click on an unread notification
-4. Observe visual state change of the notification
-5. Observe the badge count on the bell icon","- Clicked notification visually changes to read state (e.g., loses bold or highlight)
-- Badge count on bell icon decrements by 1
-- Notification remains in list but marked as read
-- If last unread notification read, badge disappears or shows 0",Coverage Gap Analysis,Generated
-B2C-NOTIF-004,Empty Notifications,B2C Features > Notifications,Functional,Medium,3m,"User signed in, account has no notifications","1. Sign in with account that has no notifications
-2. Click the notification bell icon in header
-3. Observe the dropdown content","- Notification dropdown opens
-- No notifications message or equivalent empty-state text displayed
-- No broken layout or empty blank area
-- Bell icon shows no badge or badge shows 0
-- Empty state is styled consistently with design system",Coverage Gap Analysis,Generated
-B2C-STOCK-001,Back-in-Stock Page,B2C Features > Back in Stock,Functional,Medium,3m,"User signed in, back-in-stock feature enabled","1. Sign in to storefront
-2. Navigate to /account/back-in-stock
-3. Verify page loads
-4. Observe listed products","- /account/back-in-stock page loads without errors
-- Page heading confirms context (e.g., Back in Stock Alerts)
-- If subscriptions exist: product list displays with product name, image, and status
-- If no subscriptions: empty state shown with helpful message
-- No JavaScript console errors",Coverage Gap Analysis,Generated
-B2C-STOCK-002,Subscribe to Alert,B2C Features > Back in Stock,Functional,Medium,5m,"User signed in, out-of-stock product exists on PDP","1. Navigate to an out-of-stock product detail page
-2. Verify Notify When Available or equivalent button is shown
-3. Click the button
-4. Verify confirmation feedback (toast or inline message)
-5. Navigate to /account/back-in-stock
-6. Verify the product appears in the subscribed list","- Notify When Available button visible on OOS product PDP
-- Clicking the button shows confirmation (toast, modal, or inline text)
-- Product appears in /account/back-in-stock list after subscribing
-- Product name and image shown in the list
-- Subscription persists after page refresh",Coverage Gap Analysis,Generated
-B2C-STOCK-003,Unsubscribe from Alert,B2C Features > Back in Stock,Functional,Medium,4m,"User signed in, at least one product subscribed in back-in-stock list","1. Navigate to /account/back-in-stock
-2. Locate a subscribed product entry
-3. Click the remove/unsubscribe action
-4. Confirm removal if prompted
-5. Verify the product is no longer in the list
-6. Navigate back to the product PDP","- Remove/unsubscribe action available per subscribed product
-- Confirmation step shown if applicable
-- Product removed from /account/back-in-stock list immediately
-- List updates without requiring page refresh
-- Product PDP no longer shows active subscription state (if applicable)",Coverage Gap Analysis,Generated
-B2C-POINTS-001,Points History Page,B2C Features > Loyalty,Functional,Medium,3m,"User signed in, loyalty/points feature enabled for store","1. Sign in to storefront
-2. Navigate to /account/points-history
-3. Verify page loads
-4. Observe points balance display
-5. Observe transaction history list","- /account/points-history page loads without errors
-- Current points balance prominently displayed
-- Transaction history list shown (date, description, points earned/spent)
-- Transactions ordered most-recent first
-- No JavaScript console errors",Coverage Gap Analysis,Generated
-B2C-POINTS-002,Points After Order,B2C Features > Loyalty,Functional,Medium,6m,"User signed in, loyalty feature enabled, current points balance noted before test","1. Note current points balance on /account/points-history
-2. Place a new order through checkout
-3. Complete order to confirmation page
-4. Navigate to /account/points-history
-5. Verify new transaction entry
-6. Verify points balance has increased","- New transaction entry appears in points history after order
-- Transaction references the order (order number or description)
-- Points credited matches expected earn rate for the order
-- Points balance updates to reflect new total
-- Transaction timestamp reflects order date",Coverage Gap Analysis,Generated
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+B2C-VAR-001,Product Variations - Size Selection,B2C Features > Variations,Critical,BL-B2C-001,ECL-7.1,"Product with size variations (S/M/L/XL)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product with size variations (e.g., T-Shirt)
+2. [ASSERT] Verify size selector displays
+3. [ASSERT] Verify all sizes listed (S, M, L, XL)
+4. [ACT] Click size 'M'
+5. [ASSERT] Verify size M is selected (highlighted)
+6. [ASSERT] Verify Add to Cart is enabled
+7. [ACT] Click Add to Cart
+8. [NAV] Navigate to cart
+9. [ASSERT] Verify selected size shown in cart","[DOM] Size selector element is visible
+[STATE] Size 'M' is selected with visual highlight
+[STATE] Add to Cart button is enabled
+[DOM] Cart line displays: Product Name - Size: M
+[DOM] Correct SKU for selected size variant shown
+[FORMAT] Price correct for selected size variant","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Size selector does not display; incorrect size shown in cart; Add to Cart not enabled after size selection; cart shows wrong SKU",remove item from cart,VCST-4547,Automated
+B2C-VAR-002,Product Variations - Color Selection,B2C Features > Variations,Critical,BL-B2C-001,,Product with color variations,"url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product with colors (e.g., Blue, Red, Black, White)
+2. [ASSERT] Verify color selector displays
+3. [ACT] Click color 'Blue'
+4. [ASSERT] Verify Blue is selected
+5. [ASSERT] Verify product image updates to blue variant
+6. [ACT] Click Add to Cart
+7. [NAV] Navigate to cart","[DOM] Color selector is visible (swatches or dropdown)
+[DOM] Color swatches show actual colors
+[STATE] Blue color is selected (border or checkmark indicator)
+[DOM] Main product image updated to blue variant
+[DOM] Cart shows: Product Name - Color: Blue
+[DOM] Correct color variant SKU in cart","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Color selector missing; image does not update on color change; wrong color variant SKU in cart",remove item from cart,VCST-4547,Automated
+B2C-VAR-003,Product Variations - Multi-Attribute (Size + Color),B2C Features > Variations,Critical,BL-B2C-001,ECL-7.1,"Product with size and color variations","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
+2. [ASSERT] Verify both size and color selectors display
+3. [ACT] Select Size: M
+4. [ASSERT] Verify color options update to only colors available in size M
+5. [ACT] Select Color: Blue
+6. [ASSERT] Verify price updates for M/Blue variant
+7. [ASSERT] Verify stock status is shown
+8. [ACT] Click Add to Cart
+9. [NAV] Navigate to cart","[DOM] Both size and color selectors visible
+[STATE] Selecting size M filters color options to valid combinations only
+[FORMAT] Variant-specific price displayed
+[DOM] Stock status shown (In Stock / Low Stock / Out of Stock)
+[STATE] Add to Cart disabled until all required attributes selected
+[DOM] Cart shows: Product - Size: M, Color: Blue
+[DOM] Correct variant SKU and price in cart","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Invalid attribute combinations selectable; price not updating on variant change; cart shows wrong SKU or attribute combo",remove item from cart,VCST-4547,Automated
+B2C-VAR-004,Product Variations - Out of Stock Variant,B2C Features > Variations,High,BL-B2C-001,,"Product with some variants out of stock","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
+2. [ACT] Select size that is out of stock
+3. [ASSERT] Verify out of stock message displayed
+4. [ASSERT] Verify Add to Cart is disabled
+5. [ACT] Select different size (in stock)
+6. [ASSERT] Verify Add to Cart is enabled","[DOM] Out of stock variant visible but disabled or grayed
+[DOM] Message shown: 'This variant is out of stock' or equivalent
+[STATE] Add to Cart button disabled for out of stock variant
+[STATE] Add to Cart button enabled after selecting in-stock variant
+[DOM] Stock status badge visible per variant","[CONSOLE] no uncaught JS errors","Out of stock variant not grayed; Add to Cart enabled for OOS variant; no out of stock message shown",none,VCST-4547,Manual
+B2C-VAR-005,Product Variations - Price Updates by Variant,B2C Features > Variations,High,BL-B2C-001,ECL-7.1,"Product with variant-specific pricing (e.g., size affects price)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product with size-based pricing
+2. [ASSERT] Note default price (e.g., $29.99 for size S)
+3. [ACT] Select size L
+4. [ASSERT] Verify price updates (e.g., $34.99)
+5. [ACT] Select size XL
+6. [ASSERT] Verify price updates again (e.g., $39.99)
+7. [ACT] Add to cart
+8. [ASSERT] Verify cart price matches variant price","[FORMAT] Default price displays for default or first variant
+[FORMAT] Selecting different variant updates price immediately
+[MATH] Cart line price matches selected variant price
+[MATH] Checkout total uses correct variant pricing","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Price does not update on variant change; cart shows incorrect price for selected variant",remove item from cart,VCST-4547,Manual
+B2C-VAR-006,Product Variations - Mobile Variant Selection,B2C Features > Variations,Critical,BL-B2C-001,,"Mobile device (375x667), product with variations","url={{FRONT_URL}};viewport=375x667;sku={{TEST_SKU}}","1. [NAV] Open product page on mobile viewport (375x667)
+2. [SCROLL] Scroll to variant selectors
+3. [ACT] Tap size selector
+4. [ASSERT] Verify selector opens (native picker or custom)
+5. [ACT] Select size from picker
+6. [ASSERT] Verify selection updates
+7. [ACT] Repeat for color selector
+8. [ACT] Click Add to Cart from mobile","[DOM] Variant selectors optimized for touch (min 44x44px)
+[STATE] Selected values clearly visible after tap
+[DOM] Add to Cart button accessible on mobile
+[DOM] No horizontal scrolling required","[CONSOLE] no uncaught JS errors","Selectors too small to tap; selection not registering on touch; Add to Cart not accessible on mobile",none,VCST-4547,Manual
+B2C-VAR-007,Product Variations - Image Gallery per Variant,B2C Features > Variations,Medium,BL-B2C-001,,"Product with variant-specific images","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to product with color variants
+2. [ASSERT] View image gallery for default variant
+3. [ACT] Select color: Red
+4. [ASSERT] Verify image gallery updates to red variant images
+5. [ASSERT] Verify all thumbnails update
+6. [ACT] Select color: Blue
+7. [ASSERT] Verify gallery updates again to blue variant images","[DOM] Each color variant has its own image set
+[DOM] Main image updates immediately on variant selection
+[DOM] Thumbnail gallery updates to show variant images
+[DOM] Gallery position resets to first image on variant switch","[CONSOLE] no uncaught JS errors","Main image or thumbnails not updating when variant changes; gallery shows images from wrong variant",none,VCST-4547,Manual
+B2C-VAR-008,Product Variations - Default Variant Selection,B2C Features > Variations,Medium,BL-B2C-001,,"Product with multiple variants","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product page
+2. [ASSERT] Verify default variant pre-selected
+3. [ASSERT] Verify Add to Cart is enabled (if default variant in stock)
+4. [ACT] Add to cart without changing selection
+5. [ASSERT] Verify correct default variant added to cart","[STATE] Default variant pre-selected on page load (not blank state)
+[STATE] Add to Cart enabled immediately without user interaction
+[DOM] Default variant SKU in cart matches expected default","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Page loads without any variant selected; Add to Cart requires selection when it should not; wrong default variant added to cart",remove item from cart,VCST-4547,Manual
+B2C-VAR-009,Product Variations - Add Multiple Variants to Cart,B2C Features > Variations,High,BL-B2C-001,ECL-7.1,"Product with variations","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product
+2. [ACT] Select Size: S, Color: Blue
+3. [ACT] Click Add to Cart
+4. [WAIT] Wait for cart confirmation
+5. [ACT] Select Size: M, Color: Red (without leaving page)
+6. [ACT] Click Add to Cart again
+7. [NAV] Navigate to cart
+8. [ASSERT] Verify both variants present as separate line items","[DOM] Cart shows two separate line items
+[DOM] Line 1: Product - Size: S, Color: Blue
+[DOM] Line 2: Product - Size: M, Color: Red
+[DOM] Each line has its own quantity field
+[MATH] Subtotal sums both variants correctly","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Only one variant shown in cart; variants merged into single line; incorrect subtotal calculation",remove item from cart,VCST-4547,Automated
+B2C-VAR-010,Product Variations - Variant URL Parameters,B2C Features > Variations,Medium,BL-B2C-001,,"Product with variations","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to product
+2. [ACT] Select Size: L, Color: Black
+3. [ASSERT] Check URL for variant params (e.g., ?size=L&color=Black)
+4. [ACT] Copy URL and open in new tab
+5. [NAV] Navigate to copied variant URL
+6. [ASSERT] Verify correct variant pre-selected on load","[NAV] URL updates with human-readable variant parameters
+[STATE] Opening variant URL pre-selects that variant
+[NAV] Back button works correctly after variant URL changes","[CONSOLE] no uncaught JS errors","URL does not update with variant params; direct variant URL does not pre-select the variant; URL uses internal IDs instead of readable names",none,VCST-4547,Manual
+B2C-VAR-011,VcVariantPickerGroup - All Variant Options Render Correctly,B2C Features > Variations > UI,High,BL-B2C-001,,"Product with multiple variation options (size, colour), Storybook changes deployed","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to product with size and colour variants
+2. [ASSERT] Observe the variant picker UI (colour swatches, size buttons)
+3. [ACT] Click various variant options
+4. [ASSERT] Verify visual feedback for selected, unselected, and disabled states","[DOM] All variant options render (no blank spaces or broken swatches)
+[STATE] Selected state visually distinct (border, checkmark, or fill)
+[STATE] Unselected state clearly differs from selected
+[STATE] Disabled or out-of-stock variant shown grayed
+[DOM] No visual regression from Storybook StoryFn to StoryObj migration","[CONSOLE] no uncaught JS errors","Blank swatches; broken variant picker; selected/unselected states visually identical; OOS variants not grayed",none,VCST-4233,Manual
+B2C-LIST-001,Create Wishlist/List,B2C Features > Lists,Critical,BL-B2C-002,,"User logged in, no lists created","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Lists or Wishlist page
+2. [ACT] Click 'Create New List' button
+3. [ACT] Enter list name: 'Summer Essentials'
+4. [ACT] Optionally set privacy: Private or Shared
+5. [ACT] Click 'Create'
+6. [ASSERT] Verify list created
+7. [ASSERT] Verify list appears in My Lists","[DOM] 'Create New List' button is visible
+[DOM] Form displays: Name (required), Description (optional), Privacy (Private/Shared)
+[DOM] Success message shown: 'List created' or equivalent
+[DOM] List appears in My Lists section
+[DOM] Can create multiple lists","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Create button missing; form missing required fields; list not appearing in My Lists after creation; success message not shown",delete created list,VCST-3928,Manual
+B2C-LIST-002,Add Product to List from Product Page,B2C Features > Lists,Critical,BL-B2C-002,ECL-14.1,"User logged in, list exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product detail page
+2. [ACT] Locate and click 'Add to List' or heart icon
+3. [ASSERT] Verify list selector modal or dropdown opens
+4. [ACT] Select list: 'Summer Essentials'
+5. [ACT] Click 'Add'
+6. [ASSERT] Verify success notification","[DOM] 'Add to List' button or heart icon visible on PDP
+[DOM] List selector shows all user lists
+[DOM] Option to create new list inline visible
+[DOM] Success message: 'Added to Summer Essentials'
+[STATE] Heart icon fills or changes color after add","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Add to List button missing; list selector does not open; success notification not shown; heart icon not updating state",none,VCST-3928,Automated
+B2C-LIST-003,Add Product to List from Category Page,B2C Features > Lists,High,BL-B2C-002,ECL-14.1,"User on category page, list exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to category page
+2. [ACT] Hover over product card
+3. [ACT] Click heart or 'Add to List' icon on card
+4. [ACT] Select list from selector
+5. [ASSERT] Verify product added without leaving category page","[DOM] Add to List icon visible on product card (on hover or always)
+[DOM] List selector appears inline
+[DOM] Product added successfully (notification shown)
+[STATE] Icon indicates product already in list after add","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Icon not visible on hover; list selector does not appear; page navigates away unexpectedly; icon state not updated",none,VCST-3928,Automated
+B2C-LIST-004,View List Contents,B2C Features > Lists,Critical,BL-B2C-002,,"User logged in, list has products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to My Lists
+2. [ACT] Click on list 'Summer Essentials'
+3. [ASSERT] Verify list page opens
+4. [ASSERT] Verify products display with all details","[DOM] List page shows all products
+[DOM] Each product shows: Image, Name, Price, In Stock status
+[DOM] Each product has: View Product link, Add to Cart button, Remove from List button
+[DOM] List metadata shown: Name, Item count, Created date","[CONSOLE] no uncaught JS errors","List page not loading; products missing image or price; action buttons (Add to Cart, Remove) missing",none,VCST-3928,Automated
+B2C-LIST-005,Add to Cart from List,B2C Features > Lists,High,BL-B2C-002,ECL-14.1,"User viewing list with products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open list page
+2. [ACT] Click 'Add to Cart' on a product in the list
+3. [ASSERT] Verify success notification
+4. [ACT] Click 'Add All to Cart' button (if available)
+5. [ASSERT] Verify all list items added to cart","[DOM] Each product has Add to Cart button
+[DOM] 'Add All to Cart' button present
+[DOM] Success notification per product or bulk add
+[STATE] Cart count updates after add
+[DOM] Products remain in list after adding to cart
+[DOM] Out of stock items show warning or are skipped","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Add to Cart button missing on list items; products removed from list after add; Add All to Cart fails silently",remove item from cart,VCST-3928,Automated
+B2C-LIST-006,Remove Product from List,B2C Features > Lists,High,BL-B2C-002,,"Product in list","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open list page
+2. [ACT] Click Remove or X icon on a product
+3. [ASSERT] Verify confirmation prompt (if applicable)
+4. [ACT] Confirm removal
+5. [ASSERT] Verify product removed from list
+6. [ASSERT] Verify list count decrements","[DOM] Remove button or X icon visible per product
+[DOM] Confirmation prompt shown: 'Remove from Summer Essentials?'
+[DOM] Product no longer shown in list after removal
+[DOM] Success message: 'Removed from list'
+[DOM] List item count decrements by 1","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Remove button missing; product still visible after removal; no confirmation prompt; list count not updated",none,VCST-3928,Automated
+B2C-LIST-007,Rename/Edit List,B2C Features > Lists,Medium,BL-B2C-002,,"List exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to My Lists
+2. [ACT] Click Edit or Settings on list 'Summer Essentials'
+3. [ACT] Change name to 'Summer 2026'
+4. [ACT] Change description or privacy (optional)
+5. [ACT] Click Save
+6. [ASSERT] Verify list updated with new name everywhere","[DOM] Edit option available (pencil icon or menu)
+[DOM] Form fields editable: Name, Description, Privacy
+[DOM] List name 'Summer 2026' updated in My Lists and list header
+[DOM] Products in list unaffected by rename","[CONSOLE] no uncaught JS errors","Edit option missing; name change not persisting; list name not updated in all locations",none,VCST-3928,Manual
+B2C-LIST-008,Delete List,B2C Features > Lists,Medium,BL-B2C-002,,"List exists with products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to list page
+2. [ACT] Click Delete or menu > Delete
+3. [ASSERT] Verify confirmation prompt warns about item count
+4. [ACT] Confirm deletion
+5. [ASSERT] Verify list removed from My Lists
+6. [ASSERT] Verify products still in catalog","[DOM] Delete option available
+[DOM] Confirmation prompt shows item count: 'Delete Summer 2026? (X items will be removed)'
+[DOM] List no longer appears in My Lists after deletion
+[DOM] Success message: 'List deleted'
+[DOM] Products remain available in catalog","[CONSOLE] no uncaught JS errors","Delete option missing; no confirmation prompt; list remains in My Lists after deletion; catalog products incorrectly removed",none,VCST-3928,Manual
+B2C-LIST-009,Share List (Public Link),B2C Features > Lists,High,BL-B2C-002,,"List exists, sharing enabled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open list page
+2. [ACT] Click Share button
+3. [ASSERT] Verify share options display: Public Link, Email
+4. [ACT] Click 'Get Public Link'
+5. [ACT] Copy generated link
+6. [NAV] Open link in incognito or different browser
+7. [ASSERT] Verify list accessible without login","[DOM] Share button visible
+[DOM] Share modal shows Public Link and Email options
+[DOM] Public link generated as shareable URL
+[DOM] Opening link shows list in read-only mode
+[STATE] Share modal shows list as 'Shared'","[CONSOLE] no uncaught JS errors","Share button missing; public link not generated; shared list not accessible without login; shared link editable by external users",none,VCST-3928,Manual
+B2C-LIST-010,Share List via Email,B2C Features > Lists,Medium,BL-B2C-002,,"List exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open list page
+2. [ACT] Click Share
+3. [ACT] Select Email option
+4. [ACT] Enter recipient email: friend@example.com
+5. [ACT] Add optional message
+6. [ACT] Click Send
+7. [ASSERT] Verify email received with correct details","[DOM] Email share option available in share modal
+[DOM] Form shows: Recipient email field, optional message field
+[EMAIL] Recipient receives invitation email
+[EMAIL] Email contains: List name, sender name, item count, view link
+[DOM] Clicking link in email opens the list","[CONSOLE] no uncaught JS errors","Email share option missing; email not delivered; email missing list details or view link",none,VCST-3928,Manual
+B2C-LIST-011,Mark List as Private/Shared,B2C Features > Lists,Medium,BL-B2C-002,,"List exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open list settings via Edit
+2. [ACT] Toggle privacy: Private → Shared
+3. [ACT] Save
+4. [ASSERT] Verify list marked as Shared
+5. [ACT] Toggle back to Private
+6. [ASSERT] Verify shared links are now disabled","[STATE] Privacy toggle in list settings
+[DOM] Changing to Shared shows 'Shared' badge on list
+[DOM] Changing back to Private disables existing share links
+[STATE] Badge reflects current privacy status (Private/Shared)","[CONSOLE] no uncaught JS errors","Privacy toggle missing; status badge not updating; old share links remain active after reverting to Private",none,VCST-3928,Manual
+B2C-LIST-012,Product Already in List Indicator,B2C Features > Lists,Medium,BL-B2C-002,,"Product already added to list","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Add product to a list
+2. [NAV] Navigate back to product PDP
+3. [ASSERT] Verify heart icon is filled or indicator is shown
+4. [ACT] Hover over heart icon
+5. [ASSERT] Verify tooltip shows 'In Summer Essentials' or similar
+6. [ACT] Click filled heart icon
+7. [ASSERT] Verify options: Remove from list or Add to different list","[STATE] Heart icon filled or highlighted if product is in any list
+[DOM] Tooltip shows which list(s) the product is in
+[DOM] Clicking filled heart shows: Remove from list / Add to another list
+[DOM] Duplicate add to same list is prevented","[CONSOLE] no uncaught JS errors","Heart icon not filled for product already in list; tooltip missing; no options shown on clicking filled heart",none,VCST-3928,Manual
+B2C-LIST-013,Move Product Between Lists,B2C Features > Lists,Medium,BL-B2C-002,,"Product in list A, list B exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open list A
+2. [ACT] Click menu on product
+3. [ACT] Select 'Move to...'
+4. [ACT] Select list B
+5. [ASSERT] Verify product moved to list B
+6. [ASSERT] Verify product no longer in list A","[DOM] Move option available in product context menu
+[DOM] List selector shows all available lists
+[DOM] Product removed from list A
+[DOM] Product added to list B (no duplicate in A)
+[DOM] Success message shown","[CONSOLE] no uncaught JS errors","Move option missing; product duplicated in both lists after move; product disappears from both lists",none,VCST-3928,Manual
+B2C-LIST-014,List - Out of Stock Product Handling,B2C Features > Lists,High,BL-B2C-002,,"List contains out of stock product","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Add product to list while in stock
+2. [ADMIN] Mark product out of stock via Admin SPA
+3. [NAV] Open list
+4. [ASSERT] Verify out of stock badge on product
+5. [ACT] Attempt to Add to Cart
+6. [ASSERT] Verify button is disabled or shows error","[DOM] Out of stock products remain in list
+[DOM] Badge shows 'Out of Stock' on affected product
+[STATE] Add to Cart button disabled or shows out-of-stock message
+[DOM] Option to remove product from list still available","[ADMIN] Product marked out of stock visible in Admin SPA
+[CONSOLE] no uncaught JS errors","Out of stock product disappears from list; Add to Cart not disabled for OOS product; no OOS badge shown",none,VCST-3928,Manual
+B2C-LIST-015,List Analytics - GA4 add_to_wishlist Event,B2C Features > Lists,Medium,BL-B2C-002,,"GA4 configured, list exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product page
+2. [ACT] Click Add to List and select list
+3. [WAIT] Wait for confirmation
+4. [ASSERT] Open DevTools > Network tab
+5. [ASSERT] Verify GA4 event 'add_to_wishlist' fired
+6. [ASSERT] Inspect event parameters","[NETWORK] GA4 add_to_wishlist event fired on add action
+[NETWORK] Event parameters: currency (USD), value (product price), items array (item_id, item_name, price)
+[DOM] Event visible in GA DebugView","[NETWORK] GA4 event request present in network log
+[CONSOLE] no uncaught JS errors","add_to_wishlist event not firing; event parameters missing currency, value, or items array",none,VCST-3928,Manual
+B2C-LIST-016,Create Shared List,B2C Features > Shared Lists,High,BL-B2C-002,ECL-14.1,"Logged in user who is a member of a B2B organization, on My Lists page","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to My Lists (/account/lists)
+2. [ACT] Click 'Create New List'
+3. [ACT] Enter list name: 'Team Supplies'
+4. [ACT] Set visibility to 'Shared' (visible to org members)
+5. [ACT] Click 'Create'
+6. [ASSERT] Verify list created successfully
+7. [ASSERT] Verify list is marked as 'Shared'","[DOM] Create list form includes visibility option: Private vs Shared
+[DOM] List created with 'Shared' badge or indicator
+[DOM] List appears in My Lists with Shared status
+[DOM] Other org members can see this list (validated in B2C-LIST-017)","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Shared visibility option missing; list created without Shared badge; Shared list not visible to other org members",delete created list,Coverage Gap Analysis,Generated
+B2C-LIST-017,Org Member Sees Shared List,B2C Features > Shared Lists,High,BL-B2C-002,,"Shared list 'Team Supplies' created by User A; User B is a member of the same organization","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Log in as User B (different org member from User A)
+2. [NAV] Navigate to My Lists (/account/lists)
+3. [ASSERT] Look for list 'Team Supplies' created by User A","[DOM] 'Team Supplies' list visible to User B in lists section
+[DOM] Shared lists from other org members displayed (e.g., 'Shared with me' or 'Team Lists' section)
+[DOM] List shows creator attribution (User A's name)
+[DOM] User B can view contents of the shared list","[CONSOLE] no uncaught JS errors","Shared list not visible to org member; list not showing creator name; org member cannot open shared list contents",none,Coverage Gap Analysis,Generated
+B2C-LIST-018,Add to Shared List,B2C Features > Shared Lists,High,BL-B2C-002,ECL-14.1,"Shared list 'Team Supplies' visible to User B (org member)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in as User B
+2. [NAV] Navigate to the shared list 'Team Supplies'
+3. [ACT] Click 'Add Product' or navigate to a product and add it to 'Team Supplies'
+4. [ASSERT] Verify product is added to the shared list
+5. [NAV] Log in as User A (list creator)
+6. [NAV] Navigate to 'Team Supplies'
+7. [ASSERT] Verify the product added by User B is visible","[DOM] User B can add products to a shared list owned by User A
+[DOM] Product added by User B appears in the shared list immediately
+[DOM] When User A views the list, item added by User B is present
+[DOM] Added item shows who added it (if attribution is supported)","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","User B cannot add to shared list owned by another user; product added by User B not visible to User A; attribution missing",none,Coverage Gap Analysis,Generated
+B2C-LIST-019,Private List Not Visible to Org Members,B2C Features > Shared Lists,Medium,BL-B2C-002,,"User A has created a Private list; User B is a member of the same org","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [ASSERT] Verify User A has a list set to 'Private'
+2. [NAV] Log in as User B (different org member)
+3. [NAV] Navigate to My Lists
+4. [ASSERT] Verify User A's private list is NOT visible to User B","[DOM] User A's Private list does not appear in User B's My Lists view
+[DOM] No mechanism allows User B to discover or access User A's private list
+[DOM] User B only sees their own lists and explicitly shared org lists","[CONSOLE] no uncaught JS errors","Private list visible to other org members; private list accessible via guessed URL",none,Coverage Gap Analysis,Generated
+B2C-SHIP-001,Ship To - View Saved Addresses,B2C Features > Ship To,Critical,BL-B2C-003,,"User logged in, saved addresses exist","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Account > Addresses or click Ship To selector in header
+2. [ASSERT] Verify address list displays
+3. [ASSERT] Verify each address shows: Name, Street, City, State, ZIP, Phone
+4. [ASSERT] Verify default address is marked","[DOM] Address list displays all saved addresses
+[DOM] Each address shows full details (Name, Street, City, State, ZIP, Phone)
+[DOM] Default address has 'Default' badge
+[DOM] Edit and Delete options visible per address","[CONSOLE] no uncaught JS errors","Address list empty when addresses exist; default badge missing; address details incomplete",none,VCST-4575,Automated
+B2C-SHIP-002,Ship To - Add New Address,B2C Features > Ship To,Critical,BL-B2C-003,,"User logged in","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Addresses
+2. [ACT] Click 'Add New Address'
+3. [ACT] Fill form: First Name: Jane, Last Name: Doe, Address: 456 New St, City: Springfield, State: IL, ZIP: 62701, Phone: 555-987-6543
+4. [ACT] Optionally check 'Set as default'
+5. [ACT] Click Save
+6. [ASSERT] Verify address saved and appears in list","[DOM] Add address button visible
+[DOM] Form displays all required fields
+[DOM] State dropdown populated based on country
+[DOM] Success message: 'Address added'
+[DOM] New address appears in list
+[DOM] Default badge shown if set as default","[CONSOLE] no uncaught JS errors","Add address button missing; form missing required fields; address not appearing in list after save; validation not applied to ZIP or phone",none,VCST-4575,Automated
+B2C-SHIP-003,Ship To - Edit Address,B2C Features > Ship To,High,BL-B2C-003,,"Saved address exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Addresses
+2. [ACT] Click Edit on an address
+3. [ACT] Modify street to '456 New St Apt 2B'
+4. [ACT] Modify phone number
+5. [ACT] Click Save
+6. [ASSERT] Verify address updated in list","[DOM] Edit button or link available per address
+[STATE] Form pre-filled with current address data
+[DOM] Updated address displays new street and phone
+[DOM] Historical orders using this address are unaffected","[CONSOLE] no uncaught JS errors","Edit button missing; form not pre-filled; updates not saving; historical orders show incorrect updated address",none,VCST-4575,Automated
+B2C-SHIP-004,Ship To - Delete Address,B2C Features > Ship To,High,BL-B2C-003,,"Non-default address exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Addresses
+2. [ACT] Click Delete on a non-default address
+3. [ASSERT] Verify confirmation prompt
+4. [ACT] Confirm deletion
+5. [ASSERT] Verify address removed from list","[DOM] Delete option available (not shown for default address)
+[DOM] Confirmation prompt: 'Delete this address?'
+[DOM] Address removed from list after confirmation
+[DOM] Cannot delete default address (UI prevents it)","[CONSOLE] no uncaught JS errors","Delete available for default address; no confirmation prompt; address not removed after deletion",none,VCST-4575,Automated
+B2C-SHIP-005,Ship To - Set Default Address,B2C Features > Ship To,High,BL-B2C-003,,"Multiple addresses exist","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Addresses
+2. [ACT] Click 'Set as Default' on a non-default address
+3. [ASSERT] Verify default badge moves to new address
+4. [ASSERT] Verify only one default address exists","[STATE] Only one address has 'Default' badge at any time
+[DOM] Previous default loses badge; new default gains badge
+[DOM] New default appears first in address list
+[DOM] Default pre-selected in checkout","[CONSOLE] no uncaught JS errors","Multiple addresses showing Default badge simultaneously; badge not updating; new default not used in checkout",none,VCST-4575,Automated
+B2C-SHIP-006,Ship To - Select Address in Checkout,B2C Features > Ship To,Critical,BL-B2C-003,,"Multiple saved addresses, in checkout","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Proceed to checkout
+2. [ASSERT] Verify default address pre-selected
+3. [ACT] Click 'Change' or open address selector
+4. [ASSERT] Verify address list displays all saved addresses
+5. [ACT] Select a different address
+6. [ASSERT] Verify shipping address updates in checkout","[STATE] Default address pre-selected on checkout load
+[DOM] All saved addresses listed in selector
+[DOM] Selecting updates shipping address in order summary
+[FORMAT] Shipping costs may update based on selected address","[CONSOLE] no uncaught JS errors","Default address not pre-selected; address selector not showing all addresses; shipping cost not updating after address change",none,VCST-4575,Automated
+B2C-SHIP-007,Ship To - Header Selector/Dropdown,B2C Features > Ship To,High,BL-B2C-003,,"User logged in, multiple addresses","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Locate Ship To selector in header
+2. [ACT] Click Ship To selector
+3. [ASSERT] Verify dropdown shows addresses
+4. [ACT] Select a different address
+5. [ASSERT] Verify selection updates
+6. [ASSERT] Verify context switches (pricing may update for region)","[DOM] Ship To selector visible in header (near account menu)
+[DOM] Shows current default address (truncated)
+[DOM] Clicking opens dropdown with all addresses
+[STATE] Selection updates immediately
+[DOM] Pricing, availability, or shipping context switches after selection","[CONSOLE] no uncaught JS errors","Ship To selector missing from header; dropdown not opening; context not switching after address selection",none,VCST-4575,Manual
+B2C-SHIP-008,Ship To - Add Address During Checkout,B2C Features > Ship To,High,BL-B2C-003,,"User in checkout","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to checkout
+2. [ACT] Click 'Add New Address' in shipping section
+3. [ACT] Fill address form
+4. [ACT] Check 'Save for future' (optional)
+5. [ACT] Click 'Use This Address'
+6. [ASSERT] Verify address used in checkout
+7. [ACT] Complete order
+8. [NAV] Navigate to Addresses page
+9. [ASSERT] Verify address saved if checkbox was selected","[DOM] Add new address option available inline in checkout
+[STATE] Address used immediately for the current order
+[DOM] If 'Save for future' checked: address appears in Addresses list after order
+[DOM] If not saved: address used for order only","[CONSOLE] no uncaught JS errors","Add address option missing in checkout; address not used for current order; address not persisted when save option checked",none,VCST-4575,Automated
+B2C-SHIP-009,Ship To - Address Validation,B2C Features > Ship To,High,BL-B2C-003,,"User adding or editing address","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Add Address
+2. [ACT] Enter invalid ZIP: '999'
+3. [ACT] Attempt to save
+4. [ASSERT] Verify validation error: 'Invalid ZIP code'
+5. [ACT] Enter valid ZIP: 90210
+6. [ACT] Enter invalid phone: '123'
+7. [ASSERT] Verify error: 'Phone must be 10 digits'
+8. [ACT] Fix phone to 555-123-4567
+9. [ACT] Save
+10. [ASSERT] Verify address saves successfully","[DOM] ZIP code validated: 5 or 9 digits for US
+[DOM] Phone number validated: 10 digits
+[DOM] Error messages clear and specific per field
+[STATE] Cannot save address with invalid fields
+[DOM] Formatting hints shown (e.g., ZIP: 12345 or 12345-6789)","[CONSOLE] no uncaught JS errors","Invalid ZIP or phone accepted without error; error messages not specific enough; validation only on submit (not real-time)",none,VCST-4575,Manual
+B2C-SHIP-010,Ship To - Mobile Address Management,B2C Features > Ship To,High,BL-B2C-003,,"Mobile device (375x667), logged in","url={{FRONT_URL}};viewport=375x667;user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Addresses on mobile viewport
+2. [ASSERT] Verify address list is mobile-optimized (stacked layout)
+3. [ACT] Tap Add New Address
+4. [ACT] Fill address form on mobile
+5. [ACT] Use native picker for State
+6. [ACT] Save address
+7. [ASSERT] Verify responsive design","[DOM] Address list stacks vertically on mobile
+[DOM] Cards or list items are tap-friendly
+[DOM] Form fields are full-width
+[DOM] Native select used for State field (better UX)
+[DOM] Phone keyboard type used for phone field
+[DOM] No horizontal scrolling","[CONSOLE] no uncaught JS errors","Horizontal scrolling present; touch targets too small; form fields not full-width; native pickers not used",none,VCST-4575,Manual
+B2C-SHIP-011,Ship To - International Address Support,B2C Features > Ship To,Medium,BL-B2C-003,,"International shipping enabled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open Add New Address
+2. [ACT] Select Country: Canada
+3. [ASSERT] Verify Province/State updates to Canadian provinces
+4. [ACT] Fill address: 123 Maple Ave, Toronto, Ontario, M5A 1A1, Canada
+5. [ACT] Save
+6. [ASSERT] Verify address accepted with Canadian postal code format","[DOM] Country selector shows all enabled countries
+[DOM] State/Province field updates based on selected country
+[FORMAT] ZIP/Postal code validation per country: US=12345 or 12345-6789; Canada=A1A 1A1; UK=SW1A 1AA
+[DOM] Phone field accepts international format (+ prefix)","[CONSOLE] no uncaught JS errors","Province field not updating when country changed; Canadian postal code rejected; international phone format rejected",none,VCST-4575,Manual
+B2C-SHIP-012,Ship To - Address Nickname,B2C Features > Ship To,Low,BL-B2C-003,,"User adding address","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open Add New Address
+2. [ACT] Enter nickname: 'Home' or 'Office' in the optional Nickname field
+3. [ACT] Fill address fields
+4. [ACT] Save
+5. [ASSERT] Verify nickname displays in address list","[DOM] Optional nickname field present in address form
+[DOM] Nickname displayed in list: 'Home - 123 Main St'
+[DOM] Nickname shown in checkout address selector
+[DOM] Nickname editable via Edit address","[CONSOLE] no uncaught JS errors","Nickname field missing; nickname not showing in address list or checkout selector",none,VCST-4575,Manual
+B2C-CONFIG-001,Product Configuration - Configurable Options,B2C Features > Configurations,Critical,BL-B2C-001,ECL-7.1,"Product with configurations (e.g., custom PC, engraved item)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
+2. [ASSERT] Verify configuration options display
+3. [ACT] Select option 1: Processor: Intel i7
+4. [ASSERT] Verify price updates (+$100)
+5. [ACT] Select option 2: RAM: 16GB
+6. [ASSERT] Verify price updates (+$50)
+7. [ACT] Select option 3: Storage: 512GB SSD
+8. [ASSERT] Verify price updates (+$75)
+9. [ASSERT] Verify total configuration price: $725
+10. [ACT] Add to cart
+11. [NAV] Navigate to cart
+12. [ASSERT] Verify cart shows configured product with all selections","[DOM] Configuration UI visible (dropdowns, radio buttons, or visual selectors)
+[DOM] Each option shows: Name, choices, price impact
+[MATH] Price updates with each selection: Base $500 + $100 + $50 + $75 = $725
+[DOM] Price breakdown shown
+[STATE] Add to Cart enabled after all required options selected
+[DOM] Cart shows configured product with all selected options","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Configuration options not displaying; price not updating on selection; cart shows base price instead of configured price",remove item from cart,VCST-4547,Manual
+B2C-CONFIG-002,Product Configuration - Required Options,B2C Features > Configurations,High,BL-B2C-001,,"Product with required configuration options","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
+2. [ASSERT] Verify required options are marked (asterisk or 'Required')
+3. [ACT] Attempt to add to cart without selecting required options
+4. [ASSERT] Verify error: 'Please select all required options'
+5. [ACT] Select all required options
+6. [ASSERT] Verify Add to Cart is enabled
+7. [ACT] Add to cart","[STATE] Add to Cart disabled until all required options selected
+[DOM] Required options marked clearly (asterisk or label)
+[DOM] Error message shown if add attempted without required selections
+[DOM] Optional vs required distinction clear in UI","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Add to Cart enabled without required selections; error message not shown; required options not visually distinguished from optional",remove item from cart,VCST-4547,Manual
+B2C-CONFIG-003,Product Configuration - Optional Add-Ons,B2C Features > Configurations,Medium,BL-B2C-001,ECL-7.1,"Product with optional add-ons (warranty, gift wrap)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product
+2. [SCROLL] Scroll to optional add-ons section
+3. [ASSERT] Verify add-ons listed: Extended Warranty (+$50), Gift Wrap (+$5)
+4. [ACT] Check Extended Warranty
+5. [ASSERT] Verify price updates (+$50)
+6. [ACT] Uncheck Extended Warranty
+7. [ASSERT] Verify price reverts
+8. [ACT] Check Gift Wrap
+9. [ACT] Add to cart
+10. [ASSERT] Verify cart shows selected add-ons","[DOM] Optional add-ons shown separately from required configuration
+[STATE] Checkbox or toggle per add-on
+[DOM] Each add-on shows name, description, price
+[MATH] Price updates when add-on checked; reverts when unchecked
+[DOM] Cart shows selected add-ons as sub-items or separate lines","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Add-ons not shown; price not updating when add-on checked; add-ons missing from cart",remove item from cart,VCST-4547,Manual
+B2C-CONFIG-004,Product Configuration - Text Input (Engraving),B2C Features > Configurations,High,BL-B2C-001,,"Product with text customization (engraving, monogram)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to engravable product
+2. [ACT] Enter text in engraving field: 'Happy Birthday'
+3. [ASSERT] Verify character count: 14/20
+4. [ACT] Attempt to enter text exceeding 20-character limit
+5. [ASSERT] Verify validation: 'Max 20 characters'
+6. [ACT] Reduce text to valid length
+7. [ACT] Add to cart
+8. [ASSERT] Verify cart displays engraving text","[DOM] Text input field present with character limit label
+[FORMAT] Real-time character count shown (14/20)
+[STATE] Cannot exceed character limit (blocked or error shown)
+[DOM] Cart displays: Product + Engraving: 'Happy Birthday'","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Character limit not enforced; character count not shown in real time; engraving text missing from cart",remove item from cart,VCST-4547,Manual
+B2C-CONFIG-005,Product Configuration - Image Upload,B2C Features > Configurations,Medium,BL-B2C-001,,"Product allowing image upload (custom print)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product requiring image upload
+2. [ASSERT] Verify upload area: 'Upload your photo'
+3. [ACT] Click upload or drag a valid JPG/PNG image
+4. [ASSERT] Verify image uploads and thumbnail preview shown
+5. [ACT] Attempt to upload invalid file (.txt)
+6. [ASSERT] Verify error: 'Only JPG/PNG allowed'
+7. [ACT] Upload valid image (under 5MB)
+8. [ACT] Add to cart","[DOM] Image upload area visible (drag-and-drop or click-to-browse)
+[DOM] File type validation: JPG, PNG accepted; others rejected with specific error
+[DOM] File size limit enforced (5MB max)
+[DOM] Thumbnail preview shown after valid upload
+[DOM] Cart shows configured product with uploaded image reference","[CONSOLE] no uncaught JS errors","Upload field missing; invalid file types accepted without error; thumbnail not shown after upload; file size limit not enforced",remove item from cart,VCST-4547,Manual
+B2C-CONFIG-006,Product Configuration - Dependent Options,B2C Features > Configurations,High,BL-B2C-001,,"Product with dependent configuration options","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
+2. [ACT] Select Color: Blue
+3. [ASSERT] Verify Size options update to only sizes available in Blue
+4. [ACT] Select Size: M
+5. [ASSERT] Verify Material options show only valid options for Blue/M combo
+6. [ACT] Complete configuration
+7. [ACT] Add to cart","[DOM] Selecting Color: Blue filters Size options to valid combinations only
+[DOM] Invalid combinations not selectable
+[DOM] Clear indication when options filtered (e.g., 'Size XL not available in Blue')
+[STATE] Configuration prevents impossible combinations","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Invalid size/color combinations selectable; dependent options not filtering after first selection",remove item from cart,VCST-4547,Manual
+B2C-CONFIG-007,Product Configuration - Bundle/Kit Builder,B2C Features > Configurations,Medium,BL-B2C-001,ECL-7.1,"Bundle product (build your own gift basket)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to bundle product
+2. [ASSERT] Verify multi-step bundle builder displays
+3. [ACT] Step 1: Select base: Small/Medium/Large basket
+4. [ACT] Step 2: Choose 5 items from catalog (min 3, max 10)
+5. [ASSERT] Verify running total updates per item selected
+6. [ACT] Step 3: Add optional card message
+7. [ASSERT] Review bundle summary showing all selected components
+8. [ACT] Add to cart
+9. [ASSERT] Verify cart shows bundle as single product with component list","[DOM] Multi-step bundle builder with clear step indicators
+[DOM] Each step shows instructions, choices, and running total
+[STATE] Cannot proceed step without meeting minimum item requirements
+[MATH] Total = base price + sum of selected item prices
+[DOM] Cart shows bundle as single product with components listed","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Bundle builder not displaying steps; minimum item rule not enforced; running total not updating; cart shows components separately instead of as bundle",remove item from cart,VCST-4547,Manual
+B2C-CONFIG-008,Product Configuration - Price Calculation Accuracy,B2C Features > Configurations,Critical,BL-B2C-001,ECL-7.1,"Configurable product with multiple price modifiers","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
+2. [ASSERT] Note base price: $100
+3. [ACT] Select option with +$50 modifier
+4. [ASSERT] Verify total: $150
+5. [ACT] Select option with +$25 modifier
+6. [ASSERT] Verify total: $175
+7. [ACT] Select option with -$10 discount
+8. [ASSERT] Verify total: $165
+9. [ACT] Add to cart
+10. [ASSERT] Verify cart price: $165
+11. [NAV] Proceed to checkout
+12. [ASSERT] Verify order total uses $165","[MATH] Running total updates accurately with each modifier applied: $100 + $50 + $25 - $10 = $165
+[DOM] Each option shows price modifier: +$50, +$25, -$10
+[MATH] Cart price matches configured price: $165
+[MATH] Checkout and order confirmation use $165 (no price discrepancies)","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Rounding errors in price calculation; cart price differs from configured price; checkout uses different price than cart",remove item from cart,VCST-4547,Automated
+B2C-CONFIG-009,Product Configuration - Save Configuration for Later,B2C Features > Configurations,Low,BL-B2C-001,,"Logged in user, configurable product","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
+2. [ACT] Select multiple options to configure product
+3. [ACT] Click 'Save Configuration' button
+4. [ACT] Enter name: 'My Custom PC'
+5. [ACT] Save
+6. [NAV] Navigate away from product
+7. [NAV] Return to product
+8. [ACT] Click 'Load Configuration' and select 'My Custom PC'
+9. [ASSERT] Verify all previously selected options are pre-populated","[DOM] Save Configuration button available
+[DOM] Saved configuration stored with given name: 'My Custom PC'
+[STATE] Loading saved config restores all option selections correctly
+[DOM] Configuration visible in user account or product page","[CONSOLE] no uncaught JS errors","Save Configuration button missing; saved config not restoring all options; config not persisting after navigation",none,VCST-4547,Manual
+B2C-CONFIG-010,Product Configuration - Reset Configuration,B2C Features > Configurations,Medium,BL-B2C-001,,"Product configured with multiple options selected","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [ACT] Configure product by selecting 5+ options
+2. [ACT] Click 'Reset' or 'Clear All' button
+3. [ASSERT] Verify confirmation prompt (if applicable)
+4. [ACT] Confirm reset
+5. [ASSERT] Verify all options reset to default or unselected
+6. [ASSERT] Verify price returns to base price","[DOM] Reset or Clear All button visible
+[STATE] All options reset to default or unselected state after confirm
+[FORMAT] Price reverts to base price
+[DOM] No confirmation prompt references unsaved changes (config not persistent until cart)","[CONSOLE] no uncaught JS errors","Reset button missing; some options remain selected after reset; price not reverting to base price",none,VCST-4547,Manual
+B2C-CONFIG-011,Product Configuration - Mobile Configuration UI,B2C Features > Configurations,High,BL-B2C-001,,"Mobile device (375x667), configurable product","url={{FRONT_URL}};viewport=375x667;sku={{TEST_SKU}}","1. [NAV] Open configurable product on mobile viewport (375x667)
+2. [SCROLL] Scroll to configuration section
+3. [ACT] Interact with option selectors on mobile
+4. [ASSERT] Verify mobile-optimized UI
+5. [ACT] Select multiple options
+6. [ASSERT] Verify price updates are visible
+7. [ACT] Click Add to Cart","[DOM] Configuration UI is responsive
+[DOM] Dropdowns use native pickers on mobile
+[DOM] Visual selectors (color swatches) large enough to tap (44x44px min)
+[DOM] Price updates visible (sticky footer or always-visible element)
+[DOM] No horizontal scrolling
+[DOM] Add to Cart accessible without scrolling off-screen","[CONSOLE] no uncaught JS errors","Horizontal scrolling on mobile; swatches too small to tap; price updates hidden below fold; Add to Cart not accessible",none,VCST-4547,Manual
+B2C-CONFIG-012,Product Configuration - Accessibility,B2C Features > Configurations,High,BL-B2C-001,,"Configurable product, keyboard and screen reader available","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to product using keyboard only (Tab key)
+2. [KEY] Tab through configuration options
+3. [ASSERT] Verify focus indicators are visible
+4. [KEY] Select options using Enter or Space
+5. [ACT] Enable screen reader
+6. [ASSERT] Verify options announced by screen reader
+7. [ASSERT] Verify price updates announced
+8. [KEY] Complete configuration and add to cart using keyboard","[STATE] All configuration options keyboard accessible
+[DOM] Tab order is logical
+[DOM] Focus indicators visible on all interactive elements
+[DOM] ARIA labels present on options
+[DOM] Screen reader announces: option labels, current selection, price changes, required vs optional
+[DOM] Error messages announced
+[DOM] WCAG 2.1 AA compliant","[CONSOLE] no uncaught JS errors","Focus indicator missing; options not reachable by Tab; screen reader not announcing price changes; ARIA labels missing",none,VCST-4547,Manual
+B2C-CONFIG-013,Configurable Product - Discount Scales Correctly with Quantity,B2C Features > Configurations > Pricing,Critical,BL-B2C-001,ECL-7.1,"Configurable product with discounted options, quantity > 1","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product page (e.g., bike builder)
+2. [ACT] Select a configuration option that has a discount (list price > sale price)
+3. [ACT] Set quantity to 2 or more
+4. [ASSERT] Observe the subtotal in the configuration section
+5. [ASSERT] Verify cart subtotal = salePrice x quantity
+6. [ASSERT] Verify cart discount amount = (listPrice - salePrice) x quantity","[MATH] Subtotal = salePrice x quantity (NOT listPrice x quantity)
+[MATH] Cart discount amount = (listPrice - salePrice) x quantity
+[MATH] Cart subtotal is mathematically correct with no rounding errors
+[FORMAT] No pricing discrepancy between product page and cart
+[DOM] VCST-4586 regression: sale price used for all quantity calculations","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Subtotal uses listPrice instead of salePrice; discount amount not scaling with quantity; pricing discrepancy between product page and cart",remove item from cart,VCST-4586,Manual
+B2C-CONFIG-014,Configurable Product - Sale Price Displayed as Primary Price,B2C Features > Configurations > Pricing,Critical,BL-B2C-001,,"Configurable product with discounted options (list price != sale price)","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
+2. [ACT] Select an option with a discount applied (list price > sale price)
+3. [ASSERT] Observe price display in configuration section
+4. [ASSERT] Verify which price is shown prominently","[DOM] Sale price (salePrice) displayed prominently (bold, dark color)
+[DOM] List price (listPrice) shown with strikethrough formatting
+[FORMAT] Visual presentation: salePrice = primary; listPrice = secondary or crossed out
+[FORMAT] Example: $88.00 sale shown large; $126.00 crossed out shown smaller
+[DOM] VCST-4586 regression: sale price must be primary","[CONSOLE] no uncaught JS errors","List price shown as primary price; sale price shown with strikethrough (reversed display); no strikethrough on list price",none,VCST-4586,Manual
+B2C-CONFIG-015,Configurable Product - Mobile Sale Price Display,B2C Features > Configurations > Pricing > Mobile,High,BL-B2C-001,,"Mobile viewport (375x667), configurable product with discounted options","url={{FRONT_URL}};viewport=375x667;sku={{TEST_SKU}}","1. [NAV] Set viewport to 375x667
+2. [NAV] Navigate to configurable product
+3. [ACT] Select an option with a discount
+4. [ASSERT] Observe price display in configuration section on mobile","[DOM] Mobile fallback price component shows sale price as primary (not list price)
+[DOM] Sale price visible in mobile configuration section
+[FORMAT] VCST-4586 regression: list price must NOT be shown as primary on mobile","[CONSOLE] no uncaught JS errors","List price shown as primary on mobile; sale price hidden or shown as secondary on mobile",none,VCST-4586,Manual
+B2C-CONFIG-016,Configurable Product - No Auto-Scroll on First Collapsed Section Click,B2C Features > Configurations > Interaction,High,BL-B2C-001,,"Fresh page load of configurable product with multiple accordion sections (some collapsed by default)","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product page (fresh load - no cached state)
+2. [WAIT] Wait for page to fully load
+3. [ASSERT] Locate a configuration accordion section that is COLLAPSED by default
+4. [ACT] Click the accordion header to expand it
+5. [ACT] Immediately click a radio button option inside the newly expanded section
+6. [ASSERT] Verify page scroll position has not changed","[STATE] Page does NOT auto-scroll after first radio button click
+[STATE] Radio button selection STICKS (does not revert to 'None' or default)
+[NAV] Scroll position remains where user was before click
+[STATE] Selected option confirmed as checked after 1-2 seconds
+[DOM] VCST-4612 regression case: no auto-scroll on first click","[CONSOLE] no uncaught JS errors","Page auto-scrolls after clicking radio button in newly expanded section; radio button selection reverts to None after first click",none,VCST-4612,Manual
+B2C-CONFIG-017,Configurable Product - First Click Radio Selection Sticks (No Revert),B2C Features > Configurations > Interaction,High,BL-B2C-001,,"Fresh page load, configurable product with collapsed accordion sections","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Fresh page load of configurable product
+2. [ACT] Expand a collapsed accordion section
+3. [ACT] Click a radio button option (first option in newly expanded section)
+4. [WAIT] Wait 1-2 seconds
+5. [ASSERT] Verify radio button state has not reverted","[STATE] Radio button remains selected after first click (does not revert to None or default)
+[FORMAT] Price updates to reflect the selected option
+[DOM] Section header updates to show selected option name
+[STATE] VCST-4612 regression case: selection revert bug must not recur","[CONSOLE] no uncaught JS errors","Radio button selection reverts to None or default value 1-2 seconds after click; price not updating; section header not updating",none,VCST-4612,Manual
+B2C-ORG-001,Org Switcher Visible for Multi-Org User,B2C Features > Organization,Critical,BL-B2C-004,,"User belongs to 2 or more organizations, logged in to storefront","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as a user who belongs to multiple organizations
+2. [NAV] Navigate to storefront header or account area
+3. [ASSERT] Locate the organization switcher control
+4. [ASSERT] Verify it is visible and shows current organization name","[DOM] Org switcher control visible in header or account section
+[DOM] Current organization name displayed on switcher
+[STATE] Switcher appears only for users with 2+ org memberships
+[DOM] Single-org users do not see switcher (validated in B2C-ORG-010)","[CONSOLE] no uncaught JS errors","Org switcher not visible for multi-org user; switcher showing for single-org users; current org name not shown on control",none,Coverage Gap Analysis,Generated
+B2C-ORG-002,Switch Org - Pricing Update,B2C Features > Organization,Critical,BL-B2C-004,,"Multi-org user, Org A and Org B have different contract pricing for the same product","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in and confirm Org A is active (check org switcher)
+2. [NAV] Navigate to a product with org-specific contract pricing
+3. [ASSERT] Note the price shown for Org A
+4. [ACT] Open org switcher and select Org B
+5. [NAV] Navigate to the same product
+6. [ASSERT] Verify price updated to Org B's contract price","[FORMAT] After switching to Org B, product price reflects Org B's contract/tier pricing
+[FORMAT] Price is different from Org A's price
+[STATE] Pricing update occurs without requiring page reload or re-login
+[FORMAT] Cart prices also update to reflect new org's pricing","[CONSOLE] no uncaught JS errors","Price not changing after org switch; Org A price shown while Org B active; page reload required to see new pricing",none,Coverage Gap Analysis,Generated
+B2C-ORG-003,Switch Org - Cart Isolation,B2C Features > Organization,Critical,BL-B2C-004,ECL-7.1,"Multi-org user, logged in as Org A","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in and confirm Org A is active
+2. [ACT] Add 2 specific products to cart under Org A
+3. [ASSERT] Note the Org A cart items
+4. [ACT] Open org switcher and switch to Org B
+5. [NAV] Navigate to cart
+6. [ASSERT] Verify Org A cart items are NOT present in Org B cart
+7. [ACT] Add a different product to Org B cart
+8. [ACT] Switch back to Org A
+9. [NAV] Navigate to cart
+10. [ASSERT] Verify original 2 Org A items are still present","[DOM] Switching to Org B shows Org B's cart (not Org A's items)
+[DOM] Org B cart starts empty or shows Org B's own cart
+[DOM] After switching back to Org A, original 2 items still in cart
+[DOM] Cart count in header reflects active org's cart
+[DOM] Org B items not present in Org A cart after switching back","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Org A items visible in Org B cart after switch; cart shared between orgs; switching back to Org A loses original cart items",remove item from cart,Coverage Gap Analysis,Generated
+B2C-ORG-004,Switch Org - Addresses Update,B2C Features > Organization,High,BL-B2C-004,,"Multi-org user, Org A and Org B have different saved addresses","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as Org A
+2. [NAV] Navigate to account addresses or ship-to selector
+3. [ASSERT] Note the addresses available for Org A
+4. [ACT] Switch to Org B using org switcher
+5. [NAV] Navigate to account addresses or ship-to selector
+6. [ASSERT] Verify addresses shown belong to Org B","[DOM] Addresses after switching to Org B are Org B's addresses
+[DOM] Org A addresses not shown while Org B is active
+[DOM] Ship-to selector in header reflects Org B's addresses
+[DOM] Checkout address options reflect active org's addresses","[CONSOLE] no uncaught JS errors","Org A addresses visible while Org B is active; ship-to selector showing wrong org's addresses",none,Coverage Gap Analysis,Generated
+B2C-ORG-005,Switch Org - Lists Scope,B2C Features > Organization,High,BL-B2C-004,,"Multi-org user, Org A and Org B each have at least one saved list","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as Org A
+2. [NAV] Navigate to My Lists
+3. [ASSERT] Note lists available for Org A
+4. [ACT] Switch to Org B
+5. [NAV] Navigate to My Lists
+6. [ASSERT] Verify only Org B's lists are shown","[DOM] After switching to Org B, only lists associated with Org B are displayed
+[DOM] Org A lists not visible while Org B is active
+[DOM] Shared lists within an org are scoped to that org only
+[STATE] Switching back to Org A restores Org A's lists","[CONSOLE] no uncaught JS errors","Org A lists visible while Org B is active; lists not scoping to active org",none,Coverage Gap Analysis,Generated
+B2C-ORG-006,Default Org on Sign-in,B2C Features > Organization,High,BL-B2C-004,,"Multi-org user, one org configured as default","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in to storefront with multi-org user credentials
+2. [ASSERT] Observe which organization loads immediately after sign-in
+3. [ASSERT] Verify org switcher shows default org as active
+4. [ASSERT] Verify default org's pricing and catalog are shown","[DOM] Default org loaded automatically on sign-in (not random or last-used)
+[DOM] Org switcher displays default org name as active selection
+[DOM] Default org's catalog, pricing, addresses, and cart shown
+[STATE] No prompt to select org required on sign-in","[CONSOLE] no uncaught JS errors","Wrong org loaded on sign-in; user prompted to select org on every login; last-used org loaded instead of default",none,Coverage Gap Analysis,Generated
+B2C-ORG-007,Search Orgs in Switcher,B2C Features > Organization,High,BL-B2C-004,,"Multi-org user belonging to 6 or more organizations","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as a user with 6+ org memberships
+2. [ACT] Open the org switcher
+3. [ASSERT] Locate the search input within the switcher dropdown
+4. [ACT] Type part of an org name (first 3 characters)
+5. [ASSERT] Verify results filter to matching org names
+6. [ACT] Clear the search
+7. [ASSERT] Verify all orgs shown again","[DOM] Search or filter input present inside org switcher dropdown
+[STATE] Typing filters org list dynamically to matching names
+[DOM] Non-matching orgs hidden while search active
+[State] Clearing search restores full org list
+[STATE] Selecting a filtered result correctly switches to that org","[CONSOLE] no uncaught JS errors","Search input missing in switcher; typing does not filter list; clearing search does not restore full list",none,Coverage Gap Analysis,Generated
+B2C-ORG-008,Switch Org - Navigation Reset,B2C Features > Organization,Medium,BL-B2C-004,,"Multi-org user, currently on a deep category or account page for Org A","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as Org A
+2. [NAV] Navigate to a deep category page or checkout flow
+3. [ASSERT] Note the breadcrumb trail
+4. [ACT] Switch to Org B using org switcher
+5. [ASSERT] Verify page state and navigation after switch","[NAV] After switching orgs, user redirected to neutral page (homepage or catalog root) rather than remaining on Org A context page
+[DOM] Breadcrumbs reset to reflect Org B
+[DOM] No stale Org A navigation state visible
+[STATE] In-progress flows (e.g., checkout) exited cleanly","[CONSOLE] no uncaught JS errors","User remains on Org A context page after switch; breadcrumbs still show Org A path; stale Org A state visible",none,Coverage Gap Analysis,Generated
+B2C-ORG-009,Switch Back - Cart Intact,B2C Features > Organization,Critical,BL-B2C-004,ECL-7.1,"Multi-org user, items in Org A cart, currently viewing Org B","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in as Org A and add 3 specific products to Org A cart
+2. [ACT] Switch to Org B
+3. [ACT] Optionally add a different item to Org B cart
+4. [ACT] Switch back to Org A
+5. [NAV] Navigate to cart
+6. [ASSERT] Verify all 3 original Org A items present with correct quantities","[DOM] Switching away from Org A and back preserves Org A cart intact
+[DOM] All originally added items still present after returning
+[DOM] Quantities and selected variants unchanged
+[DOM] Org B items not present in Org A cart after switching back","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Org A cart items lost after switching to Org B and back; quantities changed; Org B items mixed into Org A cart",remove item from cart,Coverage Gap Analysis,Generated
+B2C-ORG-010,Single Org User - No Switcher,B2C Features > Organization,Medium,BL-B2C-004,,"User belongs to exactly one organization, logged in to storefront","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Log in as a user who belongs to only one organization
+2. [NAV] Navigate to header and account area
+3. [ASSERT] Look for org switcher control","[DOM] No org switcher control visible in header or account area
+[DOM] Single org active by default
+[DOM] UI not cluttered with switcher that has no utility","[CONSOLE] no uncaught JS errors","Org switcher visible for single-org user; org switcher shown but empty or broken for single-org users",none,Coverage Gap Analysis,Generated
+B2C-BULK-001,Quick Order by SKU,B2C Features > Bulk Order,Critical,BL-B2C-001,ECL-14.1,"User logged in, /bulk-order page accessible, at least one known product SKU","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order (Quick Order page)
+2. [ASSERT] Locate the SKU entry field
+3. [ACT] Enter a known valid product SKU
+4. [KEY] Press Enter or click Add to confirm entry
+5. [ASSERT] Verify product info appears: name, image, unit price, available quantity","[DOM] Quick Order page loads at /bulk-order
+[DOM] SKU entry field present and auto-focused
+[DOM] Valid SKU entry loads product: name, price, availability in row
+[STATE] Quantity field becomes editable after product found","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Page does not load at /bulk-order; SKU field missing; product info not appearing after valid SKU entry",none,Coverage Gap Analysis,Generated
+B2C-BULK-002,Add All to Cart,B2C Features > Bulk Order,Critical,BL-B2C-001,ECL-14.1,"Quick Order page with 3+ valid SKUs entered and quantities set","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order
+2. [ACT] Enter 3 different valid SKUs and set quantities: 2, 5, 1
+3. [ASSERT] Verify all 3 rows show correct product info
+4. [ACT] Click 'Add All to Cart'
+5. [WAIT] Wait for cart update confirmation
+6. [NAV] Navigate to cart
+7. [ASSERT] Verify all 3 products in cart with correct quantities","[STATE] 'Add All to Cart' button enabled when at least one valid product row populated
+[DOM] Cart contains all 3 products with specified quantities after add
+[DOM] Cart count updates to reflect all added items
+[DOM] Success notification: 'X items added to cart'","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Add All to Cart fails silently; cart missing one or more products; incorrect quantities in cart after bulk add",remove item from cart,Coverage Gap Analysis,Generated
+B2C-BULK-003,Invalid SKU Handling,B2C Features > Bulk Order,High,BL-B2C-001,,"Quick Order page open","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to /bulk-order
+2. [ACT] Enter a valid SKU in row 1 and confirm
+3. [ACT] Enter a non-existent SKU 'FAKE-SKU-99999' in row 2 and confirm
+4. [ASSERT] Verify error state on row 2
+5. [ASSERT] Verify row 1 is unaffected","[DOM] Row 2 shows error: 'Product not found' or 'Invalid SKU'
+[DOM] Row 1 with valid SKU remains displayed correctly
+[DOM] Error scoped to invalid row only (other rows unaffected)
+[STATE] 'Add All to Cart' skips or warns about invalid rows","[CONSOLE] no uncaught JS errors","Error not shown for invalid SKU; error spreading to valid rows; Add All to Cart silently skips invalid rows without warning",none,Coverage Gap Analysis,Generated
+B2C-BULK-004,Multi-row Entry,B2C Features > Bulk Order,High,BL-B2C-001,,"Quick Order page open","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order
+2. [ACT] Enter 5 different valid SKUs in separate rows
+3. [ACT] Set quantities: 1, 3, 2, 5, 10
+4. [ASSERT] Verify all 5 rows display product info correctly
+5. [ASSERT] Verify running total or summary calculated correctly","[DOM] All 5 rows display with product name, price, and set quantity
+[DOM] Page does not slow down or lose state with 5+ rows
+[MATH] Running total (if displayed) sums subtotals for all rows correctly
+[DOM] Can continue adding rows beyond 5","[CONSOLE] no uncaught JS errors","Page performance degradation with 5+ rows; row data lost when adding new rows; running total calculation incorrect",none,Coverage Gap Analysis,Generated
+B2C-BULK-005,Paste from Spreadsheet,B2C Features > Bulk Order,High,BL-B2C-001,,"Quick Order page open, clipboard contains tab-separated SKU and quantity data","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [ACT] In a text editor, create 3 rows with format: SKU[tab]Quantity
+2. [ACT] Copy the 3 rows to clipboard
+3. [NAV] Navigate to /bulk-order
+4. [KEY] Press Ctrl+V in the bulk order entry area or first SKU field
+5. [ASSERT] Verify rows auto-populated with pasted SKUs and quantities","[DOM] Paste action auto-populates multiple rows from tab-separated clipboard data
+[DOM] SKU and quantity from each pasted row assigned to correct columns
+[DOM] Product lookup triggered for each pasted SKU
+[DOM] Invalid SKUs in pasted data flagged per row
+[DOM] Valid products display correctly after paste","[CONSOLE] no uncaught JS errors","Paste not triggering row population; SKUs and quantities mixed up across columns; product lookup not triggered for pasted SKUs",none,Coverage Gap Analysis,Generated
+B2C-BULK-006,Bulk Order Quantity Validation,B2C Features > Bulk Order,Medium,BL-B2C-001,,"Quick Order page with a valid product SKU entered","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order and enter a valid SKU
+2. [ACT] Set quantity field to 0
+3. [ACT] Attempt to add to cart
+4. [ASSERT] Verify validation error shown
+5. [ACT] Set quantity to -1 (negative)
+6. [ASSERT] Verify validation error
+7. [ACT] Set valid quantity: 1
+8. [ASSERT] Verify add to cart succeeds","[DOM] Quantity 0 triggers error: 'Quantity must be at least 1'
+[DOM] Negative quantity triggers validation error
+[STATE] Add to Cart or Add All to Cart blocked for rows with invalid quantities
+[STATE] Setting valid positive quantity clears error and enables add action","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Zero or negative quantity accepted without error; Add to Cart not blocked for invalid quantities",remove item from cart,Coverage Gap Analysis,Generated
+B2C-DASH-001,Dashboard Page Loads,B2C Features > Dashboard,Medium,BL-B2C-003,,"User signed in with valid credentials","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in to storefront
+2. [NAV] Navigate to /account/dashboard
+3. [WAIT] Wait for page to fully load
+4. [ASSERT] Check browser console for JavaScript errors
+5. [ASSERT] Verify page title and heading display","[DOM] /account/dashboard loads without errors
+[DOM] Page heading confirms Dashboard context
+[DOM] All page sections render (no blank areas)
+[NETWORK] All network requests complete with 200 status","[CONSOLE] no uncaught JS errors
+[NETWORK] no 4xx or 5xx network errors on dashboard load","Dashboard page returns 404 or 500; blank sections visible; JavaScript console errors on load",none,Coverage Gap Analysis,Generated
+B2C-DASH-002,Recent Orders Widget,B2C Features > Dashboard,Medium,BL-B2C-003,,"User signed in, has at least one previous order","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in and navigate to /account/dashboard
+2. [ASSERT] Locate Recent Orders widget or section
+3. [ASSERT] Verify order entries are displayed
+4. [ASSERT] Verify each entry shows: order number, date, status, amount","[DOM] Recent Orders section visible on dashboard
+[DOM] Each order entry shows order number (e.g., ORD-12345)
+[DOM] Order date displayed per entry
+[DOM] Order status shown (Processing, Shipped, Delivered)
+[FORMAT] Order total amount shown per entry
+[DOM] Orders sorted most-recent first","[CONSOLE] no uncaught JS errors","Recent Orders section missing; order entries showing blank data; orders not sorted by date",none,Coverage Gap Analysis,Generated
+B2C-DASH-003,Monthly Spend Display,B2C Features > Dashboard,Medium,BL-B2C-003,,"User signed in, has orders placed in current calendar month","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in and navigate to /account/dashboard
+2. [ASSERT] Locate monthly spending summary widget
+3. [ASSERT] Note the displayed amount
+4. [NAV] Cross-reference against Order History for current month
+5. [ASSERT] Verify totals match","[DOM] Monthly spend widget visible on dashboard
+[FORMAT] Amount corresponds to current calendar month
+[MATH] Value matches sum of current-month orders from Order History
+[FORMAT] Currency symbol and formatting correct
+[DOM] Label clearly indicates the time period (e.g., 'This Month')","[CONSOLE] no uncaught JS errors","Monthly spend widget missing; amount not matching Order History sum; wrong month shown; no period label",none,Coverage Gap Analysis,Generated
+B2C-DASH-004,Quick Navigation Links,B2C Features > Dashboard,Medium,BL-B2C-003,,"User signed in, account section accessible","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in and navigate to /account/dashboard
+2. [ASSERT] Locate quick-navigation links or tiles
+3. [ACT] Click Orders link
+4. [ASSERT] Verify navigation to Order History page
+5. [ACT] Return to dashboard
+6. [ACT] Click Profile link
+7. [ASSERT] Verify navigation to Profile page
+8. [ACT] Return to dashboard
+9. [ACT] Click Addresses link
+10. [ASSERT] Verify navigation to Addresses page
+11. [ACT] Return to dashboard
+12. [ACT] Click Lists link
+13. [ASSERT] Verify navigation to Lists page","[NAV] Orders link navigates to /account/orders or Order History
+[NAV] Profile link navigates to /account/profile
+[NAV] Addresses link navigates to /account/addresses
+[NAV] Lists link navigates to /account/lists
+[NAV] Back-navigation returns to dashboard correctly
+[DOM] All links resolve without 404 errors","[NETWORK] no 404 responses on quick-nav link clicks
+[CONSOLE] no uncaught JS errors","Any quick-nav link returning 404; back-navigation not returning to dashboard; links missing from dashboard",none,Coverage Gap Analysis,Generated
+B2C-DASH-005,Dashboard After First Login,B2C Features > Dashboard,Medium,BL-B2C-003,,"New user account created, no prior orders or activity","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Register a new user account
+2. [NAV] Sign in for the first time
+3. [NAV] Navigate to /account/dashboard
+4. [ASSERT] Observe dashboard empty state","[DOM] Dashboard loads without errors for new user
+[DOM] Empty state message displayed (no blank or broken sections)
+[DOM] Helpful prompts or call-to-action shown (e.g., 'Start shopping', 'Browse catalog')
+[DOM] No order widget errors due to missing data
+[DOM] No spend widget errors due to missing data
+[DOM] Navigation links still functional","[CONSOLE] no uncaught JS errors","Dashboard throws JS errors for new user; blank sections with no empty-state message; widget rendering errors due to empty data",none,Coverage Gap Analysis,Generated
+B2C-NOTIF-001,Notification Bell Icon,B2C Features > Notifications,Medium,BL-B2C-003,,"User signed in, header navigation visible","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in to storefront
+2. [ASSERT] Observe the header navigation bar
+3. [ASSERT] Locate the notification bell icon
+4. [ASSERT] Verify badge element on the icon","[DOM] Notification bell icon visible in header navigation
+[DOM] Badge (numeric counter) displayed on bell when notifications exist
+[FORMAT] Badge count reflects number of unread notifications
+[DOM] Icon is visually distinct and meets minimum tap target size","[CONSOLE] no uncaught JS errors","Bell icon missing from header; badge not showing when notifications exist; badge count incorrect",none,Coverage Gap Analysis,Generated
+B2C-NOTIF-002,Notification Dropdown Opens,B2C Features > Notifications,Medium,BL-B2C-003,,"User signed in, at least one notification exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in to storefront
+2. [ACT] Click the notification bell icon in header
+3. [ASSERT] Verify dropdown panel opens
+4. [ASSERT] Inspect notification list order
+5. [ASSERT] Verify notification entry details","[DOM] Dropdown panel opens on bell click
+[DOM] Notification list displayed within dropdown
+[DOM] Notifications ordered most-recent first (newest at top)
+[DOM] Each notification shows title or description and timestamp
+[STATE] Dropdown closes when clicking outside or pressing Escape","[CONSOLE] no uncaught JS errors","Dropdown not opening on bell click; notifications not sorted newest-first; dropdown not closing on outside click or Escape",none,Coverage Gap Analysis,Generated
+B2C-NOTIF-003,Mark as Read,B2C Features > Notifications,Medium,BL-B2C-003,,"User signed in, unread notification exists, badge count visible","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [ASSERT] Note the current badge count on bell icon
+2. [ACT] Open the notification dropdown
+3. [ACT] Click on an unread notification
+4. [ASSERT] Observe visual state change of the notification
+5. [ASSERT] Observe badge count on bell icon","[STATE] Clicked notification changes to read state (loses bold or highlight)
+[DOM] Badge count decrements by 1 after marking as read
+[DOM] Notification remains in list but marked as read
+[STATE] If last unread notification read, badge disappears or shows 0","[CONSOLE] no uncaught JS errors","Notification visual state not changing after click; badge count not decrementing; notification disappearing from list after mark-as-read",none,Coverage Gap Analysis,Generated
+B2C-NOTIF-004,Empty Notifications,B2C Features > Notifications,Medium,BL-B2C-003,,"User signed in, account has no notifications","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in with account that has no notifications
+2. [ACT] Click the notification bell icon in header
+3. [ASSERT] Observe the dropdown content","[DOM] Notification dropdown opens without errors
+[DOM] Empty state message or equivalent displayed (not blank area)
+[DOM] Bell icon shows no badge or badge shows 0
+[DOM] Empty state styled consistently with design system","[CONSOLE] no uncaught JS errors","Dropdown not opening for zero-notification account; blank area shown instead of empty-state message; layout broken with no notifications",none,Coverage Gap Analysis,Generated
+B2C-STOCK-001,Back-in-Stock Page,B2C Features > Back in Stock,Medium,BL-B2C-001,,"User signed in, back-in-stock feature enabled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in to storefront
+2. [NAV] Navigate to /account/back-in-stock
+3. [ASSERT] Verify page loads
+4. [ASSERT] Observe listed products","[DOM] /account/back-in-stock page loads without errors
+[DOM] Page heading confirms context (e.g., Back in Stock Alerts)
+[DOM] If subscriptions exist: product list shows name, image, and status
+[DOM] If no subscriptions: empty state shown with helpful message","[CONSOLE] no uncaught JS errors","Page returns 404; page shows blank without empty-state; JS errors on load",none,Coverage Gap Analysis,Generated
+B2C-STOCK-002,Subscribe to Alert,B2C Features > Back in Stock,Medium,BL-B2C-001,,"User signed in, out-of-stock product exists on PDP","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to an out-of-stock product detail page
+2. [ASSERT] Verify 'Notify When Available' or equivalent button is shown
+3. [ACT] Click the Notify When Available button
+4. [ASSERT] Verify confirmation feedback (toast or inline message)
+5. [NAV] Navigate to /account/back-in-stock
+6. [ASSERT] Verify the product appears in the subscribed list","[DOM] Notify When Available button visible on OOS product PDP
+[DOM] Clicking shows confirmation (toast, modal, or inline text)
+[DOM] Product appears in /account/back-in-stock list after subscribing
+[DOM] Product name and image shown in the list
+[STATE] Subscription persists after page refresh","[CONSOLE] no uncaught JS errors","Notify When Available button missing on OOS product; no confirmation after clicking; subscription not appearing in back-in-stock list",none,Coverage Gap Analysis,Generated
+B2C-STOCK-003,Unsubscribe from Alert,B2C Features > Back in Stock,Medium,BL-B2C-001,,"User signed in, at least one product subscribed in back-in-stock list","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to /account/back-in-stock
+2. [ASSERT] Locate a subscribed product entry
+3. [ACT] Click remove or unsubscribe action
+4. [ACT] Confirm removal if prompted
+5. [ASSERT] Verify product no longer in list
+6. [NAV] Navigate back to product PDP
+7. [ASSERT] Verify PDP no longer shows active subscription state","[DOM] Remove or unsubscribe action available per subscribed product
+[DOM] Product removed from list immediately after action (no page refresh required)
+[DOM] List updates without full page refresh
+[STATE] Product PDP no longer shows active subscription state after unsubscribe","[CONSOLE] no uncaught JS errors","Unsubscribe action missing; product remaining in list after unsubscribe; PDP still showing active subscription state",none,Coverage Gap Analysis,Generated
+B2C-POINTS-001,Points History Page,B2C Features > Loyalty,Medium,BL-B2C-003,,"User signed in, loyalty/points feature enabled for store","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in to storefront
+2. [NAV] Navigate to /account/points-history
+3. [ASSERT] Verify page loads
+4. [ASSERT] Observe points balance display
+5. [ASSERT] Observe transaction history list","[DOM] /account/points-history page loads without errors
+[FORMAT] Current points balance prominently displayed
+[DOM] Transaction history list shown: date, description, points earned/spent
+[DOM] Transactions ordered most-recent first","[CONSOLE] no uncaught JS errors","Page returns 404; points balance missing or showing 0 when points exist; transaction list empty; layout broken",none,Coverage Gap Analysis,Generated
+B2C-POINTS-002,Points After Order,B2C Features > Loyalty,Medium,BL-B2C-003,,"User signed in, loyalty feature enabled, current points balance noted before test","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Note current points balance on /account/points-history
+2. [ACT] Place a new order through checkout
+3. [NAV] Navigate to order confirmation page
+4. [ASSERT] Verify confirmation page loads
+5. [NAV] Navigate to /account/points-history
+6. [ASSERT] Verify new transaction entry present
+7. [ASSERT] Verify points balance increased","[DOM] New transaction entry appears in points history after order
+[DOM] Transaction references the order (order number or description)
+[MATH] Points credited matches expected earn rate for the order total
+[FORMAT] Points balance updated to reflect new total
+[FORMAT] Transaction timestamp reflects order date","[CONSOLE] no uncaught JS errors","Points balance not increasing after order; new transaction not appearing in history; points calculation not matching expected earn rate",none,Coverage Gap Analysis,Generated

@@ -1,0 +1,19 @@
+coupon_id,promo_id,code,max_uses_total,max_uses_per_customer,expiration_date,is_edge_case,edge_case_type,precondition,test_purpose,used_by
+COU-001,P01,QA10OFF,0,0,,false,,,Primary coupon — unlimited uses — 10% off cart,CPN-001 CPN-003 CPN-004 CPN-005 CPN-007 CPN-008 CPN-028 CPN-029 CPN-033 CPN-037 CPN-038 CPN-044 CPN-045 CPN-048
+COU-002,P02,QA,0,0,,false,,,Simple 5% coupon — unlimited uses,CPN-002 CPN-006 CPN-009 CPN-011 CPN-013 CPN-016 CPN-017 CPN-018 CPN-046
+COU-003,P03,SUPER,0,0,,false,,,20% off coupon — used in exclusivity and priority tests,CPN-042 CPN-046
+COU-004,P04,AIR,0,0,,false,,,Shipping discount coupon — 10% off shipping cost,CPN-012
+COU-005,P05,AGENT,0,0,,false,,,Welcome/registration coupon — 15% off,CPN-032
+COU-006,P06,E2E-COUPON,0,0,,false,,,Fixed $5 off — end-to-end checkout test,CPN-033 CPN-034
+COU-007,P07,WINE,0,0,,false,,,Category-scoped coupon — Wine products only,CPN-030
+COU-008,P08,PRIVATE4590,0,0,,false,,,Private coupon — not shown on storefront but manually enterable,CPN-027 CPN-035
+COU-009,P09,EXPIRED-TEST,0,0,,false,,,Coupon on inactive promotion — must be rejected,CPN-014
+COU-010,P15,QA-LIMITED,1,0,,true,max_total_uses,Use once as USER_EMAIL before test — Total use count must equal 1,Max 1 total use — second attempt must be rejected,CPN-039
+COU-011,P15,QA-PERCUST,100,1,,true,max_per_customer,Use once as USER_EMAIL before test — per-customer count must be 1,Max 1 use per customer — same user second attempt rejected,CPN-039
+COU-012,P15,QA-EXPDATE,0,0,tomorrow,true,coupon_expiry_future,,Coupon-level expiry set to tomorrow — must still work today,CPN-040
+COU-013,P15,QA-CPNEXPIRED,0,0,yesterday,true,coupon_expiry_past,,Coupon-level expiry in past — must be rejected even if promotion is active,CPN-040
+COU-014,P15,VALIDCODE123,0,0,,true,alphanumeric,,Valid alphanumeric-only code — must be accepted,CPN-041
+COU-015,P15,QA-MAXED,1,0,,true,maxed_out,Use once as USER_EMAIL before test — then total use count = max use number = 1,Pre-used coupon at total limit — second use must be rejected,CPN-039
+COU-016,P01,IMPORT-TEST1,0,0,,true,bulk_import,Import via Admin CSV upload — do not create manually,Bulk import test coupon 1,CPN-047
+COU-017,P01,IMPORT-TEST2,0,0,,true,bulk_import,Import via Admin CSV upload — do not create manually,Bulk import test coupon 2,CPN-047
+COU-018,P01,IMPORT-TEST3,0,0,,true,bulk_import,Import via Admin CSV upload — do not create manually,Bulk import test coupon 3,CPN-047

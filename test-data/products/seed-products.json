@@ -1,0 +1,1041 @@
+{
+  "_meta": {
+    "description": "Product seed data for Virto Commerce REST API. Use with /qa-seed-data or Postman MCP to create on platform.",
+    "naming_convention": "AGENT-TEST- prefix for all entities",
+    "date_placeholder": "{{YYYYMMDD}} — replace with current date at seed time",
+    "dependency_order": "Catalog > Category > Product > Variation > Price > Inventory > Reindex",
+    "cleanup": "Delete in reverse order. Match AGENT-TEST-* pattern.",
+    "last_updated": "2026-03-10"
+  },
+  "catalogs": [
+    {
+      "ref_id": "SEED-CAT-001",
+      "name": "AGENT-TEST-Catalog-{{YYYYMMDD}}",
+      "isVirtual": false,
+      "languages": [
+        { "languageCode": "en-US", "isDefault": true },
+        { "languageCode": "de-DE", "isDefault": false }
+      ],
+      "test_purpose": "Physical catalog for product seed data"
+    }
+  ],
+  "categories": [
+    {
+      "ref_id": "SEED-CCAT-001",
+      "catalog_ref": "SEED-CAT-001",
+      "parent_ref": null,
+      "name": "AGENT-TEST-Cat-IT-Equipment",
+      "code": "AGENT-TEST-CAT-IT-{{YYYYMMDD}}",
+      "isActive": true,
+      "priority": 1,
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-it-equipment", "pageTitle": "IT Equipment", "metaDescription": "Test IT equipment category" }
+      ],
+      "test_purpose": "Root category — IT equipment"
+    },
+    {
+      "ref_id": "SEED-CCAT-002",
+      "catalog_ref": "SEED-CAT-001",
+      "parent_ref": "SEED-CCAT-001",
+      "name": "AGENT-TEST-Cat-Servers",
+      "code": "AGENT-TEST-CAT-SRV-{{YYYYMMDD}}",
+      "isActive": true,
+      "priority": 1,
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-servers", "pageTitle": "Servers", "metaDescription": "Test server category" }
+      ],
+      "test_purpose": "Subcategory — servers"
+    },
+    {
+      "ref_id": "SEED-CCAT-003",
+      "catalog_ref": "SEED-CAT-001",
+      "parent_ref": "SEED-CCAT-001",
+      "name": "AGENT-TEST-Cat-NetworkGear",
+      "code": "AGENT-TEST-CAT-NET-{{YYYYMMDD}}",
+      "isActive": true,
+      "priority": 2,
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-network-gear", "pageTitle": "Network Gear", "metaDescription": "Test networking category" }
+      ],
+      "test_purpose": "Subcategory — networking"
+    },
+    {
+      "ref_id": "SEED-CCAT-004",
+      "catalog_ref": "SEED-CAT-001",
+      "parent_ref": "SEED-CCAT-001",
+      "name": "AGENT-TEST-Cat-Peripherals",
+      "code": "AGENT-TEST-CAT-PER-{{YYYYMMDD}}",
+      "isActive": true,
+      "priority": 3,
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-peripherals", "pageTitle": "Peripherals", "metaDescription": "Test peripherals category" }
+      ],
+      "test_purpose": "Subcategory — peripherals and accessories"
+    },
+    {
+      "ref_id": "SEED-CCAT-005",
+      "catalog_ref": "SEED-CAT-001",
+      "parent_ref": null,
+      "name": "AGENT-TEST-Cat-Office-Supplies",
+      "code": "AGENT-TEST-CAT-OFF-{{YYYYMMDD}}",
+      "isActive": true,
+      "priority": 2,
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-office-supplies", "pageTitle": "Office Supplies", "metaDescription": "Test office supplies" }
+      ],
+      "test_purpose": "Root category — office supplies"
+    },
+    {
+      "ref_id": "SEED-CCAT-006",
+      "catalog_ref": "SEED-CAT-001",
+      "parent_ref": null,
+      "name": "AGENT-TEST-Cat-Inactive",
+      "code": "AGENT-TEST-CAT-INACT-{{YYYYMMDD}}",
+      "isActive": false,
+      "priority": 99,
+      "test_purpose": "Inactive category — negative test: should not appear on storefront"
+    }
+  ],
+  "products": [
+    {
+      "ref_id": "SEED-PROD-001",
+      "category_ref": "SEED-CCAT-002",
+      "name": "AGENT-TEST-Rack-Server-2U",
+      "code": "AGENT-TEST-SRV2U-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "minQuantity": 1,
+      "maxQuantity": 50,
+      "vendor": "Dell Technologies",
+      "gtin": "0884116900001",
+      "manufacturerPartNumber": "R760xs-001",
+      "taxType": "Taxable",
+      "weight": 25.4,
+      "weightUnit": "kg",
+      "height": 8.7,
+      "width": 48.2,
+      "length": 73.4,
+      "measureUnit": "cm",
+      "packageType": "Crate",
+      "descriptions": [
+        { "content": "<p>2U rack-mount server with dual Intel Xeon processors. Ideal for enterprise workloads, virtualization, and database hosting.</p>", "descriptionType": "FullReview", "languageCode": "en-US" },
+        { "content": "<p>Enterprise 2U rack server with Xeon processors.</p>", "descriptionType": "QuickReview", "languageCode": "en-US" },
+        { "content": "<p>2U Rack-Server mit Dual Intel Xeon Prozessoren.</p>", "descriptionType": "QuickReview", "languageCode": "de-DE" }
+      ],
+      "properties": [
+        { "name": "Brand", "values": [{ "value": "Dell", "valueType": "ShortText" }] },
+        { "name": "Voltage", "values": [{ "value": "110-240V (Universal)", "valueType": "ShortText" }] },
+        { "name": "Warranty (months)", "values": [{ "value": "36", "valueType": "Integer" }] },
+        { "name": "Certification", "multivalue": true, "values": [
+          { "value": "UL Listed", "valueType": "ShortText" },
+          { "value": "CE Marked", "valueType": "ShortText" },
+          { "value": "FCC", "valueType": "ShortText" }
+        ]},
+        { "name": "Energy Star Certified", "values": [{ "value": "true", "valueType": "Boolean" }] },
+        { "name": "Compatible Systems", "multivalue": true, "values": [
+          { "value": "Windows", "valueType": "ShortText" },
+          { "value": "Linux", "valueType": "ShortText" }
+        ]}
+      ],
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-rack-server-2u", "pageTitle": "2U Rack Server", "metaDescription": "Enterprise 2U rack server for QA testing" },
+        { "languageCode": "de-DE", "semanticUrl": "test-rack-server-2u-de", "pageTitle": "2U Rack-Server", "metaDescription": "Enterprise Rack-Server QA Test" }
+      ],
+      "test_purpose": "High-value physical product with full fields, multi-language SEO, multi-value properties",
+      "price": { "list": 8999.99, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 15, "reservedQuantity": 2 }
+    },
+    {
+      "ref_id": "SEED-PROD-002",
+      "category_ref": "SEED-CCAT-002",
+      "name": "AGENT-TEST-Tower-Server-Entry",
+      "code": "AGENT-TEST-TSRV-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "minQuantity": 1,
+      "maxQuantity": 20,
+      "vendor": "HP Inc",
+      "gtin": "0195697900001",
+      "manufacturerPartNumber": "ML350-G11",
+      "taxType": "Taxable",
+      "weight": 18.0,
+      "weightUnit": "kg",
+      "height": 47.5,
+      "width": 17.5,
+      "length": 64.8,
+      "measureUnit": "cm",
+      "packageType": "Box",
+      "descriptions": [
+        { "content": "<p>Entry-level tower server for small business. Single Intel Xeon processor, expandable memory, hot-swap drives.</p>", "descriptionType": "FullReview", "languageCode": "en-US" },
+        { "content": "<p>Small business tower server.</p>", "descriptionType": "QuickReview", "languageCode": "en-US" }
+      ],
+      "properties": [
+        { "name": "Brand", "values": [{ "value": "HP", "valueType": "ShortText" }] },
+        { "name": "Voltage", "values": [{ "value": "110-240V (Universal)", "valueType": "ShortText" }] },
+        { "name": "Warranty (months)", "values": [{ "value": "36", "valueType": "Integer" }] },
+        { "name": "Energy Star Certified", "values": [{ "value": "true", "valueType": "Boolean" }] }
+      ],
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-tower-server-entry", "pageTitle": "Tower Server Entry", "metaDescription": "Entry tower server for testing" }
+      ],
+      "test_purpose": "Mid-value server — price comparison with SEED-PROD-001",
+      "price": { "list": 3499.99, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 8, "reservedQuantity": 0 }
+    },
+    {
+      "ref_id": "SEED-PROD-003",
+      "category_ref": "SEED-CCAT-003",
+      "name": "AGENT-TEST-Managed-Switch-48P",
+      "code": "AGENT-TEST-SW48-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "minQuantity": 1,
+      "maxQuantity": 100,
+      "vendor": "Cisco Systems",
+      "gtin": "0882658900001",
+      "manufacturerPartNumber": "SG350-48-K9",
+      "taxType": "Taxable",
+      "weight": 3.9,
+      "weightUnit": "kg",
+      "height": 4.4,
+      "width": 44.0,
+      "length": 28.5,
+      "measureUnit": "cm",
+      "packageType": "Box",
+      "descriptions": [
+        { "content": "<p>48-port Gigabit managed switch with 4 SFP combo ports. Layer 3 static routing, VLAN support, QoS.</p>", "descriptionType": "FullReview", "languageCode": "en-US" },
+        { "content": "<p>48-port managed Gigabit switch.</p>", "descriptionType": "QuickReview", "languageCode": "en-US" }
+      ],
+      "properties": [
+        { "name": "Brand", "values": [{ "value": "Cisco", "valueType": "ShortText" }] },
+        { "name": "Connectivity", "multivalue": true, "values": [
+          { "value": "Ethernet RJ45", "valueType": "ShortText" }
+        ]},
+        { "name": "Voltage", "values": [{ "value": "110-240V (Universal)", "valueType": "ShortText" }] },
+        { "name": "Warranty (months)", "values": [{ "value": "60", "valueType": "Integer" }] },
+        { "name": "Certification", "multivalue": true, "values": [
+          { "value": "UL Listed", "valueType": "ShortText" },
+          { "value": "CE Marked", "valueType": "ShortText" }
+        ]}
+      ],
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-managed-switch-48p", "pageTitle": "48-Port Managed Switch", "metaDescription": "Cisco 48-port managed switch for testing" }
+      ],
+      "test_purpose": "Networking product — bulk ordering candidate, standard B2B item",
+      "price": { "list": 849.99, "sale": null, "currency": "USD" },
+      "volume_prices": [
+        { "list": 799.99, "minQuantity": 5, "currency": "USD" },
+        { "list": 749.99, "minQuantity": 10, "currency": "USD" },
+        { "list": 699.99, "minQuantity": 25, "currency": "USD" }
+      ],
+      "stock": { "inStockQuantity": 60, "reservedQuantity": 5 }
+    },
+    {
+      "ref_id": "SEED-PROD-004",
+      "category_ref": "SEED-CCAT-004",
+      "name": "AGENT-TEST-USB-C-Dock-12Port",
+      "code": "AGENT-TEST-DOCK12-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "minQuantity": 1,
+      "maxQuantity": 200,
+      "vendor": "CalDigit",
+      "gtin": "0718000900001",
+      "manufacturerPartNumber": "CD-TS4-12",
+      "taxType": "Taxable",
+      "weight": 0.6,
+      "weightUnit": "kg",
+      "height": 4.0,
+      "width": 14.0,
+      "length": 11.0,
+      "measureUnit": "cm",
+      "packageType": "Box",
+      "descriptions": [
+        { "content": "<p>Universal USB-C docking station with 12 ports. Supports dual 4K displays, 100W power delivery, and Gigabit Ethernet.</p>", "descriptionType": "FullReview", "languageCode": "en-US" },
+        { "content": "<p>12-port USB-C docking station.</p>", "descriptionType": "QuickReview", "languageCode": "en-US" }
+      ],
+      "properties": [
+        { "name": "Brand", "values": [{ "value": "CalDigit", "valueType": "ShortText" }] },
+        { "name": "Connectivity", "multivalue": true, "values": [
+          { "value": "USB-C", "valueType": "ShortText" },
+          { "value": "USB-A", "valueType": "ShortText" },
+          { "value": "HDMI", "valueType": "ShortText" },
+          { "value": "DisplayPort", "valueType": "ShortText" },
+          { "value": "Ethernet RJ45", "valueType": "ShortText" }
+        ]},
+        { "name": "Compatible Systems", "multivalue": true, "values": [
+          { "value": "Windows", "valueType": "ShortText" },
+          { "value": "macOS", "valueType": "ShortText" },
+          { "value": "ChromeOS", "valueType": "ShortText" }
+        ]},
+        { "name": "Warranty (months)", "values": [{ "value": "24", "valueType": "Integer" }] }
+      ],
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-usbc-dock-12port", "pageTitle": "USB-C Dock 12-Port", "metaDescription": "Universal USB-C docking station" }
+      ],
+      "test_purpose": "Configurable product PARENT — has color variations (SEED-PROD-004A/B/C)",
+      "price": { "list": 289.99, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 45, "reservedQuantity": 0 }
+    },
+    {
+      "ref_id": "SEED-PROD-004A",
+      "category_ref": "SEED-CCAT-004",
+      "mainProductRef": "SEED-PROD-004",
+      "name": "AGENT-TEST-USB-C-Dock-12Port-Silver",
+      "code": "AGENT-TEST-DOCK12-SLV-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "properties": [
+        { "name": "Color", "values": [{ "value": "Silver", "valueType": "ShortText" }] }
+      ],
+      "test_purpose": "Variation — silver dock",
+      "price": { "list": 289.99, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 20, "reservedQuantity": 0 }
+    },
+    {
+      "ref_id": "SEED-PROD-004B",
+      "category_ref": "SEED-CCAT-004",
+      "mainProductRef": "SEED-PROD-004",
+      "name": "AGENT-TEST-USB-C-Dock-12Port-Black",
+      "code": "AGENT-TEST-DOCK12-BLK-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "properties": [
+        { "name": "Color", "values": [{ "value": "Black", "valueType": "ShortText" }] }
+      ],
+      "test_purpose": "Variation — black dock",
+      "price": { "list": 289.99, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 25, "reservedQuantity": 0 }
+    },
+    {
+      "ref_id": "SEED-PROD-004C",
+      "category_ref": "SEED-CCAT-004",
+      "mainProductRef": "SEED-PROD-004",
+      "name": "AGENT-TEST-USB-C-Dock-12Port-SpaceGray",
+      "code": "AGENT-TEST-DOCK12-SGR-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "properties": [
+        { "name": "Color", "values": [{ "value": "Gray", "valueType": "ShortText" }] }
+      ],
+      "test_purpose": "Variation — space gray dock",
+      "price": { "list": 299.99, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 15, "reservedQuantity": 0 }
+    },
+    {
+      "ref_id": "SEED-PROD-005",
+      "category_ref": "SEED-CCAT-005",
+      "name": "AGENT-TEST-Printer-Paper-A4-Case",
+      "code": "AGENT-TEST-PAPER-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "minQuantity": 1,
+      "maxQuantity": 500,
+      "vendor": "Hammermill",
+      "gtin": "0010300900001",
+      "taxType": "Taxable",
+      "weight": 22.7,
+      "weightUnit": "kg",
+      "height": 26.0,
+      "width": 46.0,
+      "length": 30.0,
+      "measureUnit": "cm",
+      "packageType": "Case",
+      "descriptions": [
+        { "content": "<p>Premium A4 copy paper, 20lb, 92 brightness. Case of 5000 sheets (10 reams). Ideal for high-volume office printing.</p>", "descriptionType": "FullReview", "languageCode": "en-US" },
+        { "content": "<p>A4 copy paper — 5000 sheet case.</p>", "descriptionType": "QuickReview", "languageCode": "en-US" }
+      ],
+      "properties": [
+        { "name": "Brand", "values": [{ "value": "Hammermill", "valueType": "ShortText" }] },
+        { "name": "Paper Size", "multivalue": true, "values": [
+          { "value": "A4", "valueType": "ShortText" },
+          { "value": "Letter", "valueType": "ShortText" }
+        ]}
+      ],
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-printer-paper-a4", "pageTitle": "A4 Printer Paper Case", "metaDescription": "Office copy paper 5000 sheets" }
+      ],
+      "test_purpose": "Consumable — high reorder frequency, bulk ordering, volume pricing",
+      "price": { "list": 49.99, "sale": null, "currency": "USD" },
+      "volume_prices": [
+        { "list": 44.99, "minQuantity": 5, "currency": "USD" },
+        { "list": 39.99, "minQuantity": 20, "currency": "USD" },
+        { "list": 34.99, "minQuantity": 50, "currency": "USD" }
+      ],
+      "stock": { "inStockQuantity": 500, "reservedQuantity": 10 }
+    },
+    {
+      "ref_id": "SEED-PROD-006",
+      "category_ref": "SEED-CCAT-003",
+      "name": "AGENT-TEST-Wireless-AP-WiFi6E",
+      "code": "AGENT-TEST-AP6E-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "minQuantity": 1,
+      "maxQuantity": 100,
+      "vendor": "Ubiquiti Inc",
+      "gtin": "0817882900001",
+      "manufacturerPartNumber": "U6-Enterprise",
+      "taxType": "Taxable",
+      "weight": 0.58,
+      "weightUnit": "kg",
+      "height": 4.0,
+      "width": 22.0,
+      "length": 22.0,
+      "measureUnit": "cm",
+      "packageType": "Box",
+      "descriptions": [
+        { "content": "<p>Enterprise Wi-Fi 6E access point with tri-band support. 10.2 Gbps aggregate throughput. PoE+ powered with 2.5GbE uplink.</p>", "descriptionType": "FullReview", "languageCode": "en-US" },
+        { "content": "<p>Wi-Fi 6E enterprise access point.</p>", "descriptionType": "QuickReview", "languageCode": "en-US" }
+      ],
+      "properties": [
+        { "name": "Brand", "values": [{ "value": "Ubiquiti", "valueType": "ShortText" }] },
+        { "name": "Connectivity", "multivalue": true, "values": [
+          { "value": "Wi-Fi 6E", "valueType": "ShortText" },
+          { "value": "Ethernet RJ45", "valueType": "ShortText" }
+        ]},
+        { "name": "Voltage", "values": [{ "value": "48V DC", "valueType": "ShortText" }] },
+        { "name": "Warranty (months)", "values": [{ "value": "24", "valueType": "Integer" }] },
+        { "name": "Energy Star Certified", "values": [{ "value": "false", "valueType": "Boolean" }] }
+      ],
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-wireless-ap-wifi6e", "pageTitle": "Wi-Fi 6E Access Point", "metaDescription": "Enterprise Wi-Fi 6E access point" }
+      ],
+      "test_purpose": "Networking product — mid-price, bulk candidate for B2B deployment projects",
+      "price": { "list": 379.99, "sale": 329.99, "currency": "USD" },
+      "stock": { "inStockQuantity": 120, "reservedQuantity": 10 }
+    },
+    {
+      "ref_id": "SEED-PROD-007",
+      "category_ref": "SEED-CCAT-004",
+      "name": "AGENT-TEST-Software-License-Annual",
+      "code": "AGENT-TEST-SWLIC-{{YYYYMMDD}}",
+      "productType": "Digital",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": false,
+      "minQuantity": 1,
+      "maxQuantity": 10000,
+      "vendor": "Microsoft",
+      "taxType": "Non-Taxable",
+      "weight": 0,
+      "descriptions": [
+        { "content": "<p>Annual enterprise software license — per seat. Includes updates, support, and cloud features.</p>", "descriptionType": "FullReview", "languageCode": "en-US" },
+        { "content": "<p>Annual software license per user.</p>", "descriptionType": "QuickReview", "languageCode": "en-US" }
+      ],
+      "properties": [
+        { "name": "Brand", "values": [{ "value": "Microsoft", "valueType": "ShortText" }] },
+        { "name": "Compatible Systems", "multivalue": true, "values": [
+          { "value": "Windows", "valueType": "ShortText" },
+          { "value": "macOS", "valueType": "ShortText" },
+          { "value": "iOS", "valueType": "ShortText" },
+          { "value": "Android", "valueType": "ShortText" }
+        ]},
+        { "name": "Warranty (months)", "values": [{ "value": "12", "valueType": "Integer" }] }
+      ],
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-software-license-annual", "pageTitle": "Annual Software License", "metaDescription": "Enterprise software license per seat" }
+      ],
+      "test_purpose": "Digital product — no shipping, no inventory tracking, non-taxable",
+      "price": { "list": 15.99, "sale": null, "currency": "USD" },
+      "volume_prices": [
+        { "list": 13.99, "minQuantity": 10, "currency": "USD" },
+        { "list": 11.99, "minQuantity": 50, "currency": "USD" },
+        { "list": 9.99, "minQuantity": 100, "currency": "USD" }
+      ],
+      "stock": { "inStockQuantity": 0, "reservedQuantity": 0 }
+    },
+    {
+      "ref_id": "SEED-PROD-008",
+      "category_ref": "SEED-CCAT-003",
+      "name": "AGENT-TEST-Network-Cable-Cat6A-100ft",
+      "code": "AGENT-TEST-CAT6A100-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "minQuantity": 1,
+      "maxQuantity": 1000,
+      "vendor": "CableMatters",
+      "gtin": "0814000900001",
+      "taxType": "Taxable",
+      "weight": 0.9,
+      "weightUnit": "kg",
+      "height": 3.0,
+      "width": 20.0,
+      "length": 15.0,
+      "measureUnit": "cm",
+      "packageType": "Bag",
+      "descriptions": [
+        { "content": "<p>Cat6A shielded Ethernet cable, 100 feet. Supports 10Gbps at 100m. Snagless gold-plated RJ45 connectors.</p>", "descriptionType": "FullReview", "languageCode": "en-US" },
+        { "content": "<p>Cat6A 100ft shielded Ethernet cable.</p>", "descriptionType": "QuickReview", "languageCode": "en-US" }
+      ],
+      "properties": [
+        { "name": "Connectivity", "multivalue": true, "values": [
+          { "value": "Ethernet RJ45", "valueType": "ShortText" }
+        ]},
+        { "name": "Certification", "multivalue": true, "values": [
+          { "value": "UL Listed", "valueType": "ShortText" }
+        ]},
+        { "name": "Warranty (months)", "values": [{ "value": "12", "valueType": "Integer" }] }
+      ],
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-cat6a-cable-100ft", "pageTitle": "Cat6A Cable 100ft", "metaDescription": "Shielded Cat6A Ethernet cable" }
+      ],
+      "test_purpose": "Low-cost consumable — high quantity ordering, minimum order testing",
+      "price": { "list": 24.99, "sale": null, "currency": "USD" },
+      "volume_prices": [
+        { "list": 19.99, "minQuantity": 10, "currency": "USD" },
+        { "list": 14.99, "minQuantity": 50, "currency": "USD" },
+        { "list": 11.99, "minQuantity": 100, "currency": "USD" }
+      ],
+      "stock": { "inStockQuantity": 800, "reservedQuantity": 0 }
+    },
+    {
+      "ref_id": "SEED-PROD-009",
+      "category_ref": "SEED-CCAT-002",
+      "name": "AGENT-TEST-UPS-3000VA-Rack",
+      "code": "AGENT-TEST-UPS3K-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "minQuantity": 1,
+      "maxQuantity": 10,
+      "vendor": "APC by Schneider Electric",
+      "gtin": "0731304900001",
+      "manufacturerPartNumber": "SMT3000RM2UC",
+      "taxType": "Taxable",
+      "weight": 38.6,
+      "weightUnit": "kg",
+      "height": 8.9,
+      "width": 43.2,
+      "length": 66.0,
+      "measureUnit": "cm",
+      "packageType": "Crate",
+      "descriptions": [
+        { "content": "<p>3000VA/2700W rack-mount UPS with SmartConnect cloud monitoring. Pure sine wave output. LCD display. Hot-swappable batteries.</p>", "descriptionType": "FullReview", "languageCode": "en-US" },
+        { "content": "<p>3000VA rack UPS with cloud monitoring.</p>", "descriptionType": "QuickReview", "languageCode": "en-US" }
+      ],
+      "properties": [
+        { "name": "Brand", "values": [{ "value": "APC", "valueType": "ShortText" }] },
+        { "name": "Voltage", "values": [{ "value": "110-240V (Universal)", "valueType": "ShortText" }] },
+        { "name": "Certification", "multivalue": true, "values": [
+          { "value": "UL Listed", "valueType": "ShortText" },
+          { "value": "FCC", "valueType": "ShortText" }
+        ]},
+        { "name": "Warranty (months)", "values": [{ "value": "36", "valueType": "Integer" }] }
+      ],
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-ups-3000va-rack", "pageTitle": "3000VA Rack UPS", "metaDescription": "APC rack mount UPS system" }
+      ],
+      "test_purpose": "Heavy/expensive item — freight shipping, low maxQuantity, hazmat-adjacent (batteries)",
+      "price": { "list": 1849.99, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 6, "reservedQuantity": 1 }
+    },
+    {
+      "ref_id": "SEED-PROD-010",
+      "category_ref": "SEED-CCAT-004",
+      "name": "AGENT-TEST-Webcam-4K-Conference",
+      "code": "AGENT-TEST-WC4K-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "minQuantity": 1,
+      "maxQuantity": 200,
+      "vendor": "Logitech",
+      "gtin": "0097855900001",
+      "manufacturerPartNumber": "960-001682",
+      "taxType": "Taxable",
+      "weight": 0.16,
+      "weightUnit": "kg",
+      "height": 5.5,
+      "width": 10.0,
+      "length": 7.0,
+      "measureUnit": "cm",
+      "packageType": "Box",
+      "descriptions": [
+        { "content": "<p>4K Ultra HD webcam with auto-framing, Show Mode, and built-in privacy shutter. USB-C connectivity.</p>", "descriptionType": "FullReview", "languageCode": "en-US" },
+        { "content": "<p>4K conference webcam with auto-framing.</p>", "descriptionType": "QuickReview", "languageCode": "en-US" }
+      ],
+      "properties": [
+        { "name": "Brand", "values": [{ "value": "Logitech", "valueType": "ShortText" }] },
+        { "name": "Connectivity", "multivalue": true, "values": [
+          { "value": "USB-C", "valueType": "ShortText" }
+        ]},
+        { "name": "Compatible Systems", "multivalue": true, "values": [
+          { "value": "Windows", "valueType": "ShortText" },
+          { "value": "macOS", "valueType": "ShortText" },
+          { "value": "ChromeOS", "valueType": "ShortText" }
+        ]},
+        { "name": "Warranty (months)", "values": [{ "value": "24", "valueType": "Integer" }] }
+      ],
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-webcam-4k-conference", "pageTitle": "4K Conference Webcam", "metaDescription": "4K webcam for business conferencing" }
+      ],
+      "test_purpose": "Mid-price peripheral — good for cart testing, bundle candidate",
+      "price": { "list": 199.99, "sale": 169.99, "currency": "USD" },
+      "stock": { "inStockQuantity": 75, "reservedQuantity": 3 }
+    },
+    {
+      "ref_id": "SEED-PROD-011",
+      "category_ref": "SEED-CCAT-003",
+      "name": "AGENT-TEST-Firewall-Appliance-SMB",
+      "code": "AGENT-TEST-FW-SMB-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "minQuantity": 1,
+      "maxQuantity": 25,
+      "vendor": "Fortinet",
+      "gtin": "0842382900001",
+      "manufacturerPartNumber": "FG-60F",
+      "taxType": "Taxable",
+      "weight": 0.9,
+      "weightUnit": "kg",
+      "height": 3.8,
+      "width": 21.6,
+      "length": 15.0,
+      "measureUnit": "cm",
+      "packageType": "Box",
+      "descriptions": [
+        { "content": "<p>Desktop firewall appliance for small-to-medium business. 10 Gbps firewall throughput, SD-WAN, IPS, and WiFi integration.</p>", "descriptionType": "FullReview", "languageCode": "en-US" },
+        { "content": "<p>SMB firewall with SD-WAN.</p>", "descriptionType": "QuickReview", "languageCode": "en-US" }
+      ],
+      "properties": [
+        { "name": "Brand", "values": [{ "value": "Fortinet", "valueType": "ShortText" }] },
+        { "name": "Connectivity", "multivalue": true, "values": [
+          { "value": "Ethernet RJ45", "valueType": "ShortText" },
+          { "value": "Wi-Fi 6E", "valueType": "ShortText" },
+          { "value": "USB-A", "valueType": "ShortText" }
+        ]},
+        { "name": "Voltage", "values": [{ "value": "12V DC", "valueType": "ShortText" }] },
+        { "name": "Warranty (months)", "values": [{ "value": "12", "valueType": "Integer" }] },
+        { "name": "Certification", "multivalue": true, "values": [
+          { "value": "FCC", "valueType": "ShortText" },
+          { "value": "CE Marked", "valueType": "ShortText" }
+        ]}
+      ],
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-firewall-smb", "pageTitle": "SMB Firewall Appliance", "metaDescription": "Fortinet desktop firewall for small business" }
+      ],
+      "test_purpose": "Security appliance — subscription renewal model (hardware + service license)",
+      "price": { "list": 599.99, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 20, "reservedQuantity": 0 }
+    },
+    {
+      "ref_id": "SEED-PROD-012",
+      "category_ref": "SEED-CCAT-005",
+      "name": "AGENT-TEST-Toner-Cartridge-Black",
+      "code": "AGENT-TEST-TONER-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "minQuantity": 1,
+      "maxQuantity": 500,
+      "vendor": "HP Inc",
+      "gtin": "0192545900001",
+      "manufacturerPartNumber": "CF258X",
+      "taxType": "Taxable",
+      "weight": 0.72,
+      "weightUnit": "kg",
+      "height": 16.0,
+      "width": 34.0,
+      "length": 16.0,
+      "measureUnit": "cm",
+      "packageType": "Box",
+      "descriptions": [
+        { "content": "<p>HP 58X high-yield black original LaserJet toner cartridge. Yields approximately 10,000 pages. Works with HP LaserJet Pro M404, MFP M428 series.</p>", "descriptionType": "FullReview", "languageCode": "en-US" },
+        { "content": "<p>HP 58X high-yield black toner.</p>", "descriptionType": "QuickReview", "languageCode": "en-US" }
+      ],
+      "properties": [
+        { "name": "Brand", "values": [{ "value": "HP", "valueType": "ShortText" }] },
+        { "name": "Warranty (months)", "values": [{ "value": "12", "valueType": "Integer" }] }
+      ],
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-toner-cartridge-hp58x", "pageTitle": "HP 58X Toner Black", "metaDescription": "High-yield black toner cartridge" }
+      ],
+      "test_purpose": "Office consumable — frequent reorder, volume pricing, subscription candidate",
+      "price": { "list": 159.99, "sale": null, "currency": "USD" },
+      "volume_prices": [
+        { "list": 144.99, "minQuantity": 5, "currency": "USD" },
+        { "list": 129.99, "minQuantity": 10, "currency": "USD" }
+      ],
+      "stock": { "inStockQuantity": 200, "reservedQuantity": 5 }
+    },
+    {
+      "ref_id": "SEED-PROD-013",
+      "category_ref": "SEED-CCAT-004",
+      "name": "AGENT-TEST-Monitor-27in-4K",
+      "code": "AGENT-TEST-MON27-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "minQuantity": 1,
+      "maxQuantity": 50,
+      "vendor": "LG Electronics",
+      "gtin": "0719192900001",
+      "manufacturerPartNumber": "27UP850N-W",
+      "taxType": "Taxable",
+      "weight": 6.2,
+      "weightUnit": "kg",
+      "height": 62.0,
+      "width": 61.4,
+      "length": 23.0,
+      "measureUnit": "cm",
+      "packageType": "Box",
+      "descriptions": [
+        { "content": "<p>27-inch 4K UHD IPS monitor with HDR400, USB-C with 96W power delivery, and DCI-P3 98% color gamut. VESA DisplayHDR 400.</p>", "descriptionType": "FullReview", "languageCode": "en-US" },
+        { "content": "<p>27-inch 4K USB-C monitor.</p>", "descriptionType": "QuickReview", "languageCode": "en-US" }
+      ],
+      "properties": [
+        { "name": "Brand", "values": [{ "value": "LG", "valueType": "ShortText" }] },
+        { "name": "Size", "values": [{ "value": "27-inch", "valueType": "ShortText" }] },
+        { "name": "Connectivity", "multivalue": true, "values": [
+          { "value": "USB-C", "valueType": "ShortText" },
+          { "value": "HDMI", "valueType": "ShortText" },
+          { "value": "DisplayPort", "valueType": "ShortText" }
+        ]},
+        { "name": "Energy Star Certified", "values": [{ "value": "true", "valueType": "Boolean" }] },
+        { "name": "Warranty (months)", "values": [{ "value": "36", "valueType": "Integer" }] }
+      ],
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-monitor-27-4k", "pageTitle": "27-inch 4K Monitor", "metaDescription": "LG 27-inch 4K UHD IPS monitor with USB-C" }
+      ],
+      "test_purpose": "Mid-high value peripheral — fragile shipping, fleet deployment",
+      "price": { "list": 499.99, "sale": 399.99, "currency": "USD" },
+      "stock": { "inStockQuantity": 30, "reservedQuantity": 2 }
+    },
+    {
+      "ref_id": "SEED-PROD-014",
+      "category_ref": "SEED-CCAT-002",
+      "name": "AGENT-TEST-NAS-Storage-4Bay",
+      "code": "AGENT-TEST-NAS4B-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "minQuantity": 1,
+      "maxQuantity": 20,
+      "vendor": "Synology",
+      "gtin": "0846504900001",
+      "manufacturerPartNumber": "DS923+",
+      "taxType": "Taxable",
+      "weight": 2.24,
+      "weightUnit": "kg",
+      "height": 16.6,
+      "width": 19.9,
+      "length": 22.3,
+      "measureUnit": "cm",
+      "packageType": "Box",
+      "descriptions": [
+        { "content": "<p>4-bay NAS storage server with AMD Ryzen R1600 dual-core. Supports up to 108TB raw. 2x M.2 NVMe cache slots, 2x 1GbE + 10GbE expansion.</p>", "descriptionType": "FullReview", "languageCode": "en-US" },
+        { "content": "<p>4-bay NAS for small business storage.</p>", "descriptionType": "QuickReview", "languageCode": "en-US" }
+      ],
+      "properties": [
+        { "name": "Brand", "values": [{ "value": "Synology", "valueType": "ShortText" }] },
+        { "name": "Connectivity", "multivalue": true, "values": [
+          { "value": "Ethernet RJ45", "valueType": "ShortText" },
+          { "value": "USB-A", "valueType": "ShortText" }
+        ]},
+        { "name": "Voltage", "values": [{ "value": "110-240V (Universal)", "valueType": "ShortText" }] },
+        { "name": "Warranty (months)", "values": [{ "value": "36", "valueType": "Integer" }] }
+      ],
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-nas-storage-4bay", "pageTitle": "4-Bay NAS Storage", "metaDescription": "Synology 4-bay NAS server for business" }
+      ],
+      "test_purpose": "Data storage product — mid-high value, diskless (drives sold separately)",
+      "price": { "list": 599.99, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 12, "reservedQuantity": 0 }
+    },
+    {
+      "ref_id": "SEED-PROD-015",
+      "category_ref": "SEED-CCAT-005",
+      "name": "AGENT-TEST-Ergonomic-Chair-Mesh",
+      "code": "AGENT-TEST-CHAIR-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "minQuantity": 1,
+      "maxQuantity": 50,
+      "vendor": "Steelcase Inc",
+      "gtin": "0841000900001",
+      "manufacturerPartNumber": "SC-GESTURE-MS",
+      "taxType": "Taxable",
+      "weight": 22.0,
+      "weightUnit": "kg",
+      "height": 110.0,
+      "width": 68.0,
+      "length": 63.0,
+      "measureUnit": "cm",
+      "packageType": "Box",
+      "descriptions": [
+        { "content": "<p>Steelcase Gesture ergonomic mesh-back chair with 360-degree arm adjustment. Designed for multi-device work. BIFMA and GREENGUARD certified.</p>", "descriptionType": "FullReview", "languageCode": "en-US" },
+        { "content": "<p>Ergonomic mesh office chair.</p>", "descriptionType": "QuickReview", "languageCode": "en-US" }
+      ],
+      "properties": [
+        { "name": "Brand", "values": [{ "value": "Steelcase", "valueType": "ShortText" }] },
+        { "name": "Material", "values": [{ "value": "Mesh", "valueType": "ShortText" }] },
+        { "name": "Ergonomic Rating", "values": [{ "value": "BIFMA Certified", "valueType": "ShortText" }] },
+        { "name": "Certification", "multivalue": true, "values": [
+          { "value": "ISO 14001", "valueType": "ShortText" }
+        ]},
+        { "name": "Warranty (months)", "values": [{ "value": "144", "valueType": "Integer" }] }
+      ],
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-ergonomic-chair-mesh", "pageTitle": "Ergonomic Mesh Chair", "metaDescription": "Steelcase Gesture ergonomic office chair" }
+      ],
+      "test_purpose": "Furniture — large/heavy item, fleet ordering for office fitouts",
+      "price": { "list": 1449.99, "sale": null, "currency": "USD" },
+      "volume_prices": [
+        { "list": 1299.99, "minQuantity": 5, "currency": "USD" },
+        { "list": 1149.99, "minQuantity": 20, "currency": "USD" }
+      ],
+      "stock": { "inStockQuantity": 10, "reservedQuantity": 0 }
+    }
+  ],
+  "edge_case_products": [
+    {
+      "ref_id": "SEED-EDGE-001",
+      "category_ref": "SEED-CCAT-003",
+      "name": "AGENT-TEST-Out-Of-Stock-Switch",
+      "code": "AGENT-TEST-OOS-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "vendor": "Cisco Systems",
+      "descriptions": [
+        { "content": "<p>Product with zero inventory across all FFCs — tests out-of-stock behavior on storefront.</p>", "descriptionType": "FullReview", "languageCode": "en-US" }
+      ],
+      "properties": [
+        { "name": "Brand", "values": [{ "value": "Cisco", "valueType": "ShortText" }] }
+      ],
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-oos-switch", "pageTitle": "Out of Stock Switch", "metaDescription": "OOS test product" }
+      ],
+      "test_purpose": "Out of stock — verify unavailable messaging, add-to-cart blocked",
+      "price": { "list": 499.99, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 0, "reservedQuantity": 0 }
+    },
+    {
+      "ref_id": "SEED-EDGE-002",
+      "category_ref": "SEED-CCAT-004",
+      "name": "AGENT-TEST-Inactive-Product-Hidden",
+      "code": "AGENT-TEST-INACT-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": false,
+      "isBuyable": false,
+      "trackInventory": true,
+      "vendor": "Generic",
+      "descriptions": [
+        { "content": "<p>This product is inactive and should NOT appear on the storefront or in search results.</p>", "descriptionType": "FullReview", "languageCode": "en-US" }
+      ],
+      "test_purpose": "Inactive product — verify hidden from storefront, xCatalog returns empty, cannot add to cart",
+      "price": { "list": 99.99, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 50, "reservedQuantity": 0 }
+    },
+    {
+      "ref_id": "SEED-EDGE-003",
+      "category_ref": "SEED-CCAT-005",
+      "name": "AGENT-TEST-Min-Price-$0.01",
+      "code": "AGENT-TEST-MINP-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "vendor": "Generic",
+      "weight": 0.01,
+      "weightUnit": "kg",
+      "descriptions": [
+        { "content": "<p>Minimum price boundary test product — $0.01 list price.</p>", "descriptionType": "FullReview", "languageCode": "en-US" }
+      ],
+      "test_purpose": "Price boundary — $0.01 minimum, verify cart totals, tax calculation, payment processing",
+      "price": { "list": 0.01, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 9999, "reservedQuantity": 0 }
+    },
+    {
+      "ref_id": "SEED-EDGE-004",
+      "category_ref": "SEED-CCAT-002",
+      "name": "AGENT-TEST-Max-Price-$99999.99",
+      "code": "AGENT-TEST-MAXP-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "vendor": "Enterprise Systems",
+      "weight": 500.0,
+      "weightUnit": "kg",
+      "descriptions": [
+        { "content": "<p>Maximum price boundary test — $99,999.99 enterprise system. Tests high-value cart, payment limits, and display formatting.</p>", "descriptionType": "FullReview", "languageCode": "en-US" }
+      ],
+      "test_purpose": "Price boundary — max value, verify display formatting, cart overflow, payment gateway limits",
+      "price": { "list": 99999.99, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 1, "reservedQuantity": 0 }
+    },
+    {
+      "ref_id": "SEED-EDGE-005",
+      "category_ref": "SEED-CCAT-004",
+      "name": "AGENT-TEST-Special-Chars-<Script>&\"Quote\"",
+      "code": "AGENT-TEST-SPEC-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "vendor": "Test & Co. <Corp>",
+      "descriptions": [
+        { "content": "<p>Product with special characters in name: &lt;script&gt;alert('xss')&lt;/script&gt; &amp; \"double quotes\" &amp; unicode: Lautst\u00e4rkeregler \u30d8\u30c3\u30c9\u30d5\u30a9\u30f3</p>", "descriptionType": "FullReview", "languageCode": "en-US" }
+      ],
+      "properties": [
+        { "name": "Brand", "values": [{ "value": "Test<Brand>&\"Special\"", "valueType": "ShortText" }] }
+      ],
+      "seoInfos": [
+        { "languageCode": "en-US", "semanticUrl": "test-special-chars-product", "pageTitle": "Special & <Characters> Test", "metaDescription": "XSS & injection test product" }
+      ],
+      "test_purpose": "XSS/injection test — special chars in name, vendor, properties, descriptions, SEO fields",
+      "price": { "list": 29.99, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 10, "reservedQuantity": 0 }
+    },
+    {
+      "ref_id": "SEED-EDGE-006",
+      "category_ref": "SEED-CCAT-003",
+      "name": "AGENT-TEST-Low-Stock-1-Unit",
+      "code": "AGENT-TEST-LOW1-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "minQuantity": 1,
+      "maxQuantity": 1,
+      "vendor": "Generic",
+      "descriptions": [
+        { "content": "<p>Only 1 unit in stock. Tests low-stock badge, concurrent cart race condition, and maxQuantity=1 enforcement.</p>", "descriptionType": "FullReview", "languageCode": "en-US" }
+      ],
+      "test_purpose": "Low stock boundary — single unit, concurrent ordering race condition, qty validation",
+      "price": { "list": 299.99, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 1, "reservedQuantity": 0 }
+    },
+    {
+      "ref_id": "SEED-EDGE-007",
+      "category_ref": "SEED-CCAT-004",
+      "name": "AGENT-TEST-Sale-Price-Higher-Than-List",
+      "code": "AGENT-TEST-SALEH-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "vendor": "Generic",
+      "descriptions": [
+        { "content": "<p>Test product where sale price exceeds list price — edge case for pricing display logic.</p>", "descriptionType": "FullReview", "languageCode": "en-US" }
+      ],
+      "test_purpose": "Price anomaly — sale > list, verify platform handles gracefully (shows list or errors)",
+      "price": { "list": 49.99, "sale": 79.99, "currency": "USD" },
+      "stock": { "inStockQuantity": 25, "reservedQuantity": 0 }
+    },
+    {
+      "ref_id": "SEED-EDGE-008",
+      "category_ref": "SEED-CCAT-005",
+      "name": "AGENT-TEST-Long-Name-Product-With-Very-Long-Description-That-Exceeds-Normal-Display-Width-For-Testing-Truncation-And-Overflow-Behavior-In-Product-Cards-And-Search-Results",
+      "code": "AGENT-TEST-LONG-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "vendor": "Very Long Vendor Name International Corporation Ltd",
+      "descriptions": [
+        { "content": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. This description is intentionally long to test truncation behavior in product cards, search results, and admin listings. The platform should handle this gracefully without breaking layout or causing horizontal overflow. Additional padding text to ensure we exceed any reasonable character limit for short descriptions that might be applied in various UI contexts throughout the storefront and admin panels.</p>", "descriptionType": "FullReview", "languageCode": "en-US" }
+      ],
+      "test_purpose": "Long text boundary — tests truncation in product name, description, vendor in UI displays",
+      "price": { "list": 19.99, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 50, "reservedQuantity": 0 }
+    },
+    {
+      "ref_id": "SEED-EDGE-009",
+      "category_ref": "SEED-CCAT-003",
+      "name": "AGENT-TEST-Backorder-Allowed",
+      "code": "AGENT-TEST-BACK-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "vendor": "Generic",
+      "descriptions": [
+        { "content": "<p>Product with backorder enabled — zero stock but purchasable. Tests backorder flow and messaging.</p>", "descriptionType": "FullReview", "languageCode": "en-US" }
+      ],
+      "test_purpose": "Backorder — allowBackorder=true, zero stock, verify purchasable + messaging",
+      "price": { "list": 199.99, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 0, "reservedQuantity": 0, "backorderQuantity": 50, "allowBackorder": true }
+    },
+    {
+      "ref_id": "SEED-EDGE-010",
+      "category_ref": "SEED-CCAT-002",
+      "name": "AGENT-TEST-Preorder-Product",
+      "code": "AGENT-TEST-PREORD-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "vendor": "Generic",
+      "descriptions": [
+        { "content": "<p>Product available for preorder — not yet in stock. Tests preorder flow and expected delivery messaging.</p>", "descriptionType": "FullReview", "languageCode": "en-US" }
+      ],
+      "test_purpose": "Preorder — allowPreorder=true, zero stock, verify preorder cart flow",
+      "price": { "list": 799.99, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 0, "reservedQuantity": 0, "preorderQuantity": 25, "allowPreorder": true }
+    },
+    {
+      "ref_id": "SEED-EDGE-011",
+      "category_ref": "SEED-CCAT-004",
+      "name": "AGENT-TEST-No-Price-Product",
+      "code": "AGENT-TEST-NOPR-{{YYYYMMDD}}",
+      "productType": "Physical",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": true,
+      "vendor": "Generic",
+      "descriptions": [
+        { "content": "<p>Product with NO price assigned in any price list. Tests 'Contact for Price' and add-to-cart blocking behavior.</p>", "descriptionType": "FullReview", "languageCode": "en-US" }
+      ],
+      "test_purpose": "No price — verify storefront shows 'Contact for Price' or equivalent, cart rejects",
+      "price": null,
+      "stock": { "inStockQuantity": 100, "reservedQuantity": 0 }
+    },
+    {
+      "ref_id": "SEED-EDGE-012",
+      "category_ref": "SEED-CCAT-005",
+      "name": "AGENT-TEST-BillOfMaterials-Kit",
+      "code": "AGENT-TEST-BOM-{{YYYYMMDD}}",
+      "productType": "BillOfMaterials",
+      "isActive": true,
+      "isBuyable": true,
+      "trackInventory": false,
+      "vendor": "Bundle Corp",
+      "descriptions": [
+        { "content": "<p>Bill of Materials / Kit product type — bundles multiple items. Tests BOM display, pricing aggregation, and cart behavior.</p>", "descriptionType": "FullReview", "languageCode": "en-US" }
+      ],
+      "test_purpose": "BillOfMaterials product type — tests BOM/kit display and purchasing flow",
+      "price": { "list": 449.99, "sale": null, "currency": "USD" },
+      "stock": { "inStockQuantity": 0, "reservedQuantity": 0 }
+    }
+  ]
+}

@@ -316,7 +316,7 @@ Payment-related events to track:
 ## Contact
 
 **Payment Integration Issues:** Contact DevOps team
-**Test Data Questions:** See `.claude/agents/test-management-specialist`
+**Test Data Questions:** See `.claude/agents/qa/test-management-specialist`
 **Processor Support:** See processor-specific documentation links above
 
 ---

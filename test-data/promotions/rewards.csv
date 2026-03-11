@@ -1,0 +1,16 @@
+reward_id,promo_id,reward_type,reward_amount,reward_unit,max_discount,applies_to,description,test_purpose,used_by
+RWD-001,P01,Percent off cart subtotal,10,%,,cart subtotal,10% off entire cart subtotal,Primary cart discount — stackable with other coupons,CPN-005 CPN-028 CPN-029 CPN-037 CPN-038 CPN-044
+RWD-002,P02,Percent off cart subtotal,5,%,,cart subtotal,5% off entire cart subtotal,Small discount — stacking and general tests,CPN-006 CPN-009 CPN-013
+RWD-003,P03,Percent off cart subtotal,20,%,,cart subtotal,20% off entire cart subtotal,Large discount — exclusivity conflict test,CPN-042 CPN-046
+RWD-004,P04,Percent off shipping,10,%,,shipping,10% off shipping cost,Shipping-type reward — not cart subtotal,CPN-012
+RWD-005,P05,Percent off cart subtotal,15,%,,cart subtotal,15% off entire cart subtotal,Registration welcome discount,CPN-032
+RWD-006,P06,Fixed dollar off cart,5,$,,cart subtotal,$5 fixed amount off cart subtotal,Fixed amount reward type — verify dollar-off calculation,CPN-033 CPN-034
+RWD-007,P07,Percent off category,10,%,,Wine category,10% off products in Wine category only,Category-scoped reward — non-matching products unaffected,CPN-030
+RWD-008,P08,Percent off cart subtotal,5,%,,cart subtotal,5% off — private promotion,Private reward — same as public but hidden from coupons page,CPN-027 CPN-035
+RWD-009,P10,Free gift item,1,item,,gift product,Add 1 free gift item to cart automatically,Automatic reward — no coupon code required,CPN-043
+RWD-010,P11,Fixed dollar off cart,5,$,,cart subtotal,$5 fixed off — reward variant,Alternative fixed-dollar reward definition,CPN-033
+RWD-011,P12,Fixed dollar off shipping,999,$,,shipping,$999 off shipping — effectively free,Free shipping via high dollar offset,CPN-012
+RWD-012,P13,Percent off category,20,%,no cap,category,20% off category — no max discount cap,Uncapped category percent reward,CPN-030
+RWD-013,P14,Percent off cart subtotal,10,%,,cart subtotal,10% off cart — requires $50 minimum,Conditional reward — only fires when cart condition met,CPN-029
+RWD-014,P15,Percent off cart subtotal,10,%,,cart subtotal,10% off — parent for usage-limit coupons,Shared reward for all coupon config variant tests,CPN-039 CPN-040 CPN-041
+RWD-015,P16,Percent off cart subtotal,10,%,,cart subtotal,10% off — globally exclusive,Blocks all other coupons when applied,CPN-042

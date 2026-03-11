@@ -3,7 +3,7 @@
     "version": "2.0",
     "description": "Regression test suite manifest for parallel orchestration (Frontend + Backend)",
     "generated": "2026-02-23",
-    "totalSuites": 40,
+    "totalSuites": 42,
     "csvFormat": "TestRail CSV (ID, Title, Section, Type, Priority, Estimate, Preconditions, Steps, Expected Result, References, Automation Status)"
   },
   "defaults": {
@@ -71,14 +71,34 @@
       "tags": ["catalog", "search", "sprint"]
     },
     {
-      "id": "04",
-      "name": "Cart & Checkout Tests",
-      "file": "regression/suites/Frontend/04-cart-checkout-tests.csv",
+      "id": "04a",
+      "name": "Cart Tests",
+      "file": "regression/suites/Frontend/04a-cart-tests.csv",
       "priority": "P1",
-      "testCount": 69,
-      "estimatedMinutes": 45,
+      "testCount": 48,
+      "estimatedMinutes": 25,
       "agent": "qa-frontend-expert",
-      "tags": ["cart", "checkout", "revenue-critical", "sprint"]
+      "tags": ["cart", "revenue-critical", "sprint"]
+    },
+    {
+      "id": "04b",
+      "name": "Checkout Tests",
+      "file": "regression/suites/Frontend/04b-checkout-tests.csv",
+      "priority": "P1",
+      "testCount": 74,
+      "estimatedMinutes": 35,
+      "agent": "qa-frontend-expert",
+      "tags": ["checkout", "revenue-critical", "sprint"]
+    },
+    {
+      "id": "04c",
+      "name": "Orders & Quotes Tests",
+      "file": "regression/suites/Frontend/04c-orders-quotes-tests.csv",
+      "priority": "P1",
+      "testCount": 21,
+      "estimatedMinutes": 15,
+      "agent": "qa-frontend-expert",
+      "tags": ["orders", "quotes", "sprint"]
     },
     {
       "id": "05",
@@ -444,9 +464,9 @@
   "selections": {
     "smoke": ["01"],
     "critical": ["01", "06", "08", "14"],
-    "sprint": ["01", "02", "03", "04", "05", "06", "08", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "29", "30", "31", "35", "36", "37", "38", "39"],
-    "full": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40"],
-    "frontend": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "35", "36"],
+    "sprint": ["01", "02", "03", "04a", "04b", "04c", "05", "06", "08", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "29", "30", "31", "35", "36", "37", "38", "39"],
+    "full": ["01", "02", "03", "04a", "04b", "04c", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40"],
+    "frontend": ["01", "02", "03", "04a", "04b", "04c", "05", "06", "07", "08", "09", "10", "11", "12", "13", "35", "36"],
     "backend": ["14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "37", "38", "39", "40"]
   }
 }

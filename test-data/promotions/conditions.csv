@@ -1,0 +1,5 @@
+condition_id,promo_id,condition_group,condition_type,operator,value,description,test_purpose,used_by
+COND-001,P07,catalog,Specific category,in,Wine,Applies only to products in Wine category,Category-scoped reward — validates coupon only discounts matching items,CPN-030
+COND-002,P14,cart,Cart subtotal,>=,50,Cart must have subtotal >= $50 for coupon to apply,Threshold condition — validates minimum cart value enforcement,CPN-029
+COND-003,P12,cart,Shipping method,any,,Applies to any shipping method available,Free shipping condition — any method qualifies,CPN-012
+COND-004,P13,catalog,Specific category,in,any test category,Applies to any configured test category,Category percent reward — 20% off matching items,CPN-030

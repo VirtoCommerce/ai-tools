@@ -1,160 +1,252 @@
-ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
-SMK-001,User Registration - Personal Account,Smoke > Registration,Functional,Critical,5m,"Browser open, QA environment: https://vcst-qa-storefront.govirto.com","1. Navigate to registration page
-2. Select 'Personal' account type
-3. Fill required fields: First Name, Last Name, Email, Password
-4. Accept terms and conditions
-5. Click 'Create Account' button","- Registration form submits successfully
-- User receives confirmation message
-- User can sign in with new credentials
-- Account visible in admin panel",regression-qa-theme-26.csv,Automated
-SMK-002,User Registration - Organization Account,Smoke > Registration,Functional,Critical,5m,"Browser open, QA environment accessible","1. Navigate to registration page
-2. Select 'Organization' account type
-3. Fill required fields: Company Name, First Name, Last Name, Email, Password
-4. Accept terms and conditions
-5. Click 'Create Account' button","- Organization account created
-- Company appears in Organizations list
-- User assigned as organization admin",regression-qa-theme-26.csv,Automated
-SMK-003,Sign In - Personal User,Smoke > Authentication,Functional,Critical,3m,"Valid personal user account exists (USER_EMAIL from .env)","1. Navigate to sign-in page
-2. Enter email: USER_EMAIL
-3. Enter password: USER_PASSWORD
-4. Click 'Sign In' button","- User authenticated successfully
-- Redirected to homepage/dashboard
-- User name displayed in header
-- Cart and wishlist accessible",regression-qa-theme-26.csv,Automated
-SMK-004,Sign In - Organization User,Smoke > Authentication,Functional,Critical,3m,"Valid organization user account exists","1. Navigate to sign-in page
-2. Enter organization user credentials
-3. Click 'Sign In' button
-4. Verify organization context","- User logged in with organization context
-- Organization name visible
-- B2B features accessible",regression-qa-theme-26.csv,Automated
-SMK-005,Catalog Browsing - Category Navigation,Smoke > Catalog,Functional,Critical,5m,"User logged in","1. Navigate to main catalog
-2. Click on a category (e.g., 'Snacks')
-3. Verify product listing loads
-4. Click on subcategory
-5. Verify filtered results","- Category page loads with products
-- Breadcrumbs show correct path
-- Product count displayed
-- Facets/filters available",regression-qa-theme-26.csv,Automated
-SMK-006,Product Search - Basic Query,Smoke > Search,Functional,Critical,3m,"User logged in, products exist in catalog","1. Click on search bar
-2. Enter search term 'laptop'
-3. Press Enter or click search icon
-4. Verify results page","- Search results display
-- Results match search term
-- Result count shown
-- Filters available",regression-qa-theme-26.csv,Automated
-SMK-007,Add to Cart - Single Product,Smoke > Cart,Functional,Critical,3m,"User logged in, product available","1. Navigate to product detail page
-2. Set quantity to 1
-3. Click 'Add to Cart' button
-4. Verify cart notification","- Product added to cart
-- Cart icon shows updated count
-- Success notification displayed
-- Product visible in cart",regression-qa-theme-26.csv,Automated
-SMK-008,Cart Operations - View and Update,Smoke > Cart,Functional,Critical,5m,"Products already in cart","1. Navigate to cart page
-2. Verify all items display
-3. Change quantity of an item
-4. Verify totals recalculate
-5. Remove an item
-6. Verify item removed","- Cart displays all items correctly
-- Quantity updates reflected
-- Prices recalculate accurately
-- Remove works without errors",VCST-4499,Automated
-SMK-009,Checkout - Standard Delivery,Smoke > Checkout,Functional,Critical,8m,"Products in cart, shipping addresses configured","1. Navigate to cart
-2. Select 'Delivery' shipping option
-3. Select or enter shipping address
-4. Select shipping method (Ground)
-5. Select payment method
-6. Review order summary
-7. Click 'Place Order'","- Delivery option selectable
-- Address form works correctly
-- Shipping cost calculated
-- Order created successfully",VCST-4499,Automated
-SMK-010,Checkout - BOPIS Pickup,Smoke > Checkout,Functional,Critical,8m,"Products in cart, pickup locations configured","1. Navigate to cart
-2. Select 'Pickup' option
-3. Click 'Select pickup location'
-4. Choose location from map/list
-5. Confirm selection
-6. Complete checkout","- Pickup modal opens correctly
-- Location selectable
-- No shipping cost applied
-- Order created with pickup details",VCST-4499,Automated
-SMK-011,Payment Processing - Credit Card,Smoke > Payment,Functional,Critical,5m,"Checkout ready, test card available","1. Proceed to payment step
-2. Select 'Bank card' payment method
-3. Enter test card details
-4. Submit payment
-5. Verify authorization","- Payment form accepts input
-- Card validated
-- Payment authorized
-- Order status updated",VCST-3387,Manual
-SMK-012,Order Confirmation - Verify Details,Smoke > Orders,Functional,Critical,3m,"Order just completed","1. Verify confirmation page displays
-2. Check order number present
-3. Verify line items listed
-4. Check totals match
-5. Navigate to order history
-6. Find order in list","- Confirmation page shows all details
-- Order number generated
-- Items and totals correct
-- Order appears in history",VCST-4499,Automated
-SMK-013,Search to Cart - End-to-End Flow,Smoke > Search,Functional,Critical,5m,"User logged in, cart empty or at known state","1. Click search bar
-2. Type 'hoodie' and press Enter
-3. Verify search results page loads with matching products
-4. Locate 'Vintage Colorado Hoodie' ($54.00)
-5. Click '+' to add to cart
-6. Verify cart icon badge increments
-7. Navigate to cart page
-8. Verify product listed at correct price","- Search results display matching products
-- Product added to cart from search results
-- Cart badge updates
-- Cart page shows Vintage Colorado Hoodie at $54.00
-- No errors during entire search-to-cart flow",SRCH-NEW-035,Manual
-SMK-014,Quantity Stepper - PDP Increment and Cart Sync,Smoke > Cart,Functional,Critical,5m,"User logged in, product available with stock > 3","1. Navigate to product detail page for an in-stock product
-2. Verify spinbutton 'Product quantity' shows '0' and 'Decrease quantity' button is disabled
-3. Click 'Increase quantity' button twice
-4. Verify spinbutton shows '2' and 'in Cart' indicator shows '2'
-5. Verify Cart badge increments by 2
-6. Click 'Decrease quantity' button once
-7. Verify spinbutton shows '1' and 'in Cart' indicator shows '1'
-8. Navigate to /cart
-9. Verify product appears with quantity 1 and correct line total
-10. On cart page click 'Increase quantity' to set qty to 2
-11. Verify line total recalculates to 2 x unit price","- Stepper +/- buttons increment and decrement correctly on PDP
-- 'in Cart' indicator reflects current quantity
-- Cart badge updates immediately on each click
-- 'Decrease quantity' disabled at qty=0 on PDP
-- Cart page shows correct quantity synced from PDP
-- Cart line total and Order Summary recalculate on quantity change
-- No duplicate line items created",QS-PDP-001,Manual
-SMK-015,B2C Variation Selection - Select Option and Add to Cart,Smoke > Variations,Functional,Critical,5m,"User logged in. Product with VirtoFrontend_UI_Layout=B2C property exists in catalog with color or size variations (2+ in-stock variants). Storefront accessible at ${FRONT_URL}.","1. Navigate to a B2C variation product PDP (e.g., in /products-with-options/ category)
-2. Verify the 'Options' section is displayed (B2C selector layout)
-3. Verify 'Add to Cart' button is disabled before any option is selected
-4. Click one available option (e.g., color swatch 'Blue' or size button 'M')
-5. Verify the option shows selected state (border highlight or checkmark)
-6. Verify product price updates to the selected variant's price
-7. Verify main product image updates to the variant image
-8. Verify 'Add to Cart' button is now enabled
-9. Click 'Add to Cart'
-10. Verify success notification appears
-11. Navigate to /cart
-12. Verify cart line item shows the variant detail (e.g., 'T-Shirt — Color: Blue') not just parent product name","- Options section visible on PDP; standard variation table/list is hidden
-- 'Add to Cart' disabled before selection (checklist B.4)
-- Clicking option shows selected visual state (checklist B.1)
-- Price updates immediately to selected variant price (checklist C.1)
-- Product image switches to variant image (checklist E.1)
-- 'Add to Cart' enabled after selection (checklist B.4)
-- Success notification shown after clicking 'Add to Cart'
-- Cart badge increments
-- Cart line item shows variant attribute details, not just parent name (checklist D.2)
-- No console errors during entire flow",B2C-VAR-001 B2C-VAR-002 C411037 C411052 C411051,Manual
-SMK-016,B2C Variation - Price and Stock Update on Selection,Smoke > Variations,Functional,Critical,4m,"User logged in. B2C variation product exists with at least 2 variants that have different prices. Storefront accessible at ${FRONT_URL}.","1. Navigate to a B2C variation product PDP that has variants with different prices
-2. Note the 'From $X' price or default displayed price before any selection
-3. Click the first available option (e.g., Size 'S')
-4. Note the displayed price after selection
-5. Click a different option (e.g., Size 'L') that has a higher or lower price
-6. Verify price updates to the second variant's price
-7. Verify stock indicator (In stock / Out of stock) reflects the selected variant's stock
-8. Verify the SKU displayed on the page updates to the selected variant's SKU","- Price displayed before selection: 'From $X' or base price
-- After selecting option 1: price updates to that variant's price immediately (no reload)
-- After selecting option 2: price updates again to the new variant's price
-- Price always shows 2 decimal places (e.g., $24.99 not $24.9)
-- Stock indicator is specific to selected variant (not aggregate)
-- SKU code on page updates to variant SKU
-- No console errors",B2C-VAR-006 B2C-VAR-007 C411052,Manual
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+SMK-001,"Registration — Personal Account","Smoke > Registration",Critical,BL-AUTH-001,"ECL-4.1, ECL-4.4","Fresh browser, {{FRONT_URL}} accessible, unique test email available","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/register
+[WAIT] account type selector visible
+[ACT] select 'Personal' account type
+[ACT] fill 'First Name': 'Test'
+[ACT] fill 'Last Name': 'User'
+[ACT] fill 'Email': unique test email (not {{USER_EMAIL}})
+[ACT] fill 'Password': valid password
+[ACT] check 'I agree to the Terms and Conditions'
+[ACT] click 'Create Account'
+[WAIT] redirect to homepage OR confirmation message","[DOM] confirmation message shown OR user redirected to authenticated homepage
+[DOM] user name visible in header after redirect
+[STATE] login with new credentials succeeds on retry","[API] POST to /api/account (or /connect/token) returns 200
+[ADMIN] user visible under Customers in admin panel
+[CONSOLE] no TypeError or JS errors during form submit
+[NETWORK] no 4xx/5xx on account creation request","Validation error on valid email format, form stays on same page with no feedback, 400/500 on account create API, spinner stuck >5s","Delete test account via admin if environment requires cleanup",regression-qa-theme-26.csv,Automated
+SMK-002,"Registration — Organization Account","Smoke > Registration",Critical,BL-ORG-001,"ECL-4.1, ECL-4.4","Fresh browser, {{FRONT_URL}} accessible, unique company name available","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/register
+[WAIT] account type selector visible
+[ACT] select 'Organization' account type
+[WAIT] 'Company Name' field appears
+[ACT] fill 'Company Name': unique company name
+[ACT] fill 'First Name', 'Last Name', 'Email', 'Password'
+[ACT] check 'Terms and Conditions'
+[ACT] click 'Create Account'
+[WAIT] redirect to homepage OR confirmation","[DOM] success message OR authenticated homepage
+[DOM] organization name visible in account context area
+[STATE] user has B2B navigation items accessible (Quotes, Company Members)","[API] POST account creation returns 200
+[ADMIN] organization appears in Organizations list
+[ADMIN] user assigned as organization admin role
+[CONSOLE] no errors during submission
+[NETWORK] no 4xx/5xx","Organization account type option missing from selector, company name field not shown after selecting org type, org not created in admin, B2B nav absent","Delete test org via admin if needed",regression-qa-theme-26.csv,Automated
+SMK-003,"Sign In — Personal User","Smoke > Authentication",Critical,BL-AUTH-001,"ECL-4.2","Valid personal user account exists: {{USER_EMAIL}} / {{USER_PASSWORD}}","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/login
+[WAIT] login form visible
+[ACT] fill 'Email': {{USER_EMAIL}}
+[ACT] fill 'Password': {{USER_PASSWORD}}
+[ACT] click 'Sign In'
+[WAIT] redirect to homepage or dashboard","[DOM] user name (from {{USER_EMAIL}} profile) visible in header
+[DOM] cart icon accessible in header
+[DOM] wishlist accessible
+[DOM] account dropdown/menu available
+[STATE] user is authenticated (no login prompt on protected pages)","[API] POST /connect/token returns 200 with access_token
+[CONSOLE] no 401 or authentication errors
+[NETWORK] no 4xx on subsequent page load API calls","Invalid credentials error on valid credentials, redirect loop, spinner stuck >5s, user name absent from header","none",regression-qa-theme-26.csv,Automated
+SMK-004,"Sign In — Organization User","Smoke > Authentication",Critical,"BL-AUTH-001, BL-ORG-002","ECL-4.2, ECL-14.3","Valid organization user account exists: {{ORG_USER_EMAIL}} / {{ORG_USER_PASSWORD}}","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/login
+[WAIT] login form visible
+[ACT] fill 'Email': {{ORG_USER_EMAIL}}
+[ACT] fill 'Password': {{ORG_USER_PASSWORD}}
+[ACT] click 'Sign In'
+[WAIT] redirect to homepage","[DOM] organization name visible in header or account area
+[DOM] B2B navigation items visible: Quotes, Company Members (or equivalent)
+[STATE] company context active (not personal account context)","[API] /xapi/graphql (me query) returns organization field populated with org name
+[CONSOLE] no errors
+[NETWORK] no 4xx on page load","Login succeeds but organization context absent (me.organization is null), B2B features missing, org name not shown — may require page refresh (ECL-14.3)","none",regression-qa-theme-26.csv,Automated
+SMK-005,"Catalog — Category Navigation","Smoke > Catalog",Critical,BL-CAT-001,"ECL-3.2, ECL-3.3","User logged in as {{USER_EMAIL}}, at least one category with products exists","email={{USER_EMAIL}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/catalog
+[WAIT] category list visible
+[ACT] click on first available category (e.g., 'Snacks')
+[WAIT] product listing loads
+[ACT] click on a subcategory (if available)
+[WAIT] filtered product list loads","[DOM] products listed with names, prices, images
+[DOM] breadcrumbs show: Home > [Category] > [Subcategory]
+[DOM] product count label visible (e.g., '24 items')
+[DOM] facet/filter panel available","[API] /xapi/graphql (categories + products query) returns items array non-empty
+[CONSOLE] no JS errors during category navigation
+[NETWORK] no 4xx on catalog queries","Category loads with 0 products (unless truly empty), breadcrumbs missing, console 4xx on catalog query, facets absent","none",regression-qa-theme-26.csv,Automated
+SMK-006,"Search — Basic Query","Smoke > Search",Critical,BL-SEARCH-001,"ECL-3.1, ECL-3.2, ECL-3.3","User logged in, products exist in catalog, search index healthy","email={{USER_EMAIL}}, front_url={{FRONT_URL}}, search_term=laptop","[NAV] {{FRONT_URL}}
+[ACT] click search bar
+[ACT] type 'laptop' (or known-existing search term)
+[KEY] Enter (or click search icon)
+[WAIT] search results page loads","[DOM] search results page title contains search term
+[DOM] at least 1 product result visible
+[DOM] result count label visible (e.g., 'X results for laptop')
+[DOM] filter panel available on results page","[API] /xapi/graphql (products query with filter term) returns items array non-empty
+[CONSOLE] no search-related errors
+[NETWORK] no 4xx on search request","Zero results for known-existing term (search index down), filter panel absent, result count shows 0 while products visible, console errors","none",regression-qa-theme-26.csv,Automated
+SMK-007,"Add to Cart — Single Product","Smoke > Cart",Critical,BL-CART-001,"ECL-2.1, ECL-7.3","User logged in as {{USER_EMAIL}}, product {{TEST_SKU}} in stock","email={{USER_EMAIL}}, sku={{TEST_SKU}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/product/{{TEST_SKU}}
+[WAIT] 'Add to Cart' button visible and enabled
+[ACT] set quantity to 1 (if spinbutton not already at 1)
+[ACT] click 'Add to Cart'
+[WAIT] success notification visible OR cart badge increments","[DOM] toast/notification contains 'added' or 'cart' text
+[DOM] cart icon badge increments by 1
+[STATE] product appears in mini-cart or cart page
+[FORMAT] all prices display with exactly 2 decimal places","[API] POST /xapi/graphql (addItem mutation) returns HTTP 200
+[API] addItem response errors[] is empty
+[API] cart.items contains item with sku={{TEST_SKU}}
+[CONSOLE] no TypeError or JS errors during add action
+[NETWORK] no 4xx/5xx on addItem request","Spinner visible >5s after click, errors[] non-empty in addItem response, cart badge unchanged after 3s, 4xx/5xx on addItem, console TypeError","Remove {{TEST_SKU}} from cart after test (removeCartItem or clear cart)",VCST-4499,Automated
+SMK-008,"Cart Operations — View and Update","Smoke > Cart",Critical,"BL-CART-002, BL-PRICE-001","ECL-2.3, ECL-7.3","Products already in cart (at least 1 item), user logged in","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads with items
+[ASSERT] all items visible with names, images, prices
+[ACT] click '+' (increase quantity) on first item
+[WAIT] quantity value increments, line total recalculates
+[ACT] click 'Remove' or trash icon on an item (use second item if only 1 remains)
+[WAIT] item removed from list, cart total updates","[DOM] all items display name, image, price, quantity before changes
+[DOM] line total = unit price × quantity after increment
+[DOM] cart subtotal recalculates after quantity change
+[DOM] removed item no longer appears in cart
+[DOM] cart grand total updates after removal
+[MATH] line total = unit price × updated quantity (2 decimal places)","[API] changeCartItemQuantity mutation returns 200, errors[] empty
+[API] removeCartItem mutation returns 200, errors[] empty
+[API] cart.total in response matches displayed grand total
+[CONSOLE] no errors during quantity changes
+[NETWORK] no 4xx/5xx on cart update calls","Quantity change not reflected in line total, total doesn't recalculate after update, remove action silently fails, errors[] non-empty on cart mutation","Restore cart to known state if test removed the only item",VCST-4499,Automated
+SMK-009,"Checkout — Standard Delivery","Smoke > Checkout",Critical,"BL-CHK-001, BL-PRICE-002","ECL-1.2, ECL-6.2, ECL-6.3","Products in cart, {{USER_EMAIL}} logged in, shipping addresses configured in account","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[ACT] select 'Delivery' shipping option (not Pickup)
+[WAIT] shipping address section visible
+[ACT] select existing shipping address OR enter new address
+[ACT] select shipping method 'Ground' (or first available)
+[WAIT] order summary shows shipping cost and updated total
+[ACT] select payment method
+[WAIT] payment section ready
+[ACT] click 'Place Order' (or complete payment per payment method)
+[WAIT] order confirmation page","[DOM] delivery option selectable and selected
+[DOM] address form accepts input without validation errors on valid address
+[DOM] shipping cost shows as non-zero amount in order summary
+[DOM] order confirmation page displays order number
+[NAV] URL contains /order/ or /confirmation after successful placement","[API] addOrUpdateCartShipment mutation returns 200, errors[] empty
+[API] createOrderFromCart mutation returns 200 with orderId (no errors[])
+[ADMIN] order appears in admin panel with status 'New'
+[CONSOLE] no errors during checkout flow
+[NETWORK] no 4xx/5xx on checkout API calls","Shipping methods not loading, address validation errors on valid address, 'Place Order' hangs >10s, createOrderFromCart errors[] non-empty, redirect to error page","Note created orderId; cart cleared after successful order",VCST-4499,Automated
+SMK-010,"Checkout — BOPIS Pickup","Smoke > Checkout",Critical,BL-BOPIS-001,"ECL-2.1, ECL-6.2","Products in cart, pickup locations configured in system, {{USER_EMAIL}} logged in","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[ACT] select 'Pickup' shipping option
+[WAIT] 'Select pickup location' button visible
+[ACT] click 'Select pickup location'
+[WAIT] pickup location modal opens
+[ACT] select a pickup location from list
+[ACT] confirm selection
+[WAIT] checkout updates to show pickup location selected
+[ACT] select payment method
+[ACT] click 'Place Order'
+[WAIT] order confirmation page","[DOM] Pickup option available alongside Delivery
+[DOM] location selection modal opens on click
+[DOM] at least one pickup location selectable
+[DOM] shipping cost = $0.00 for pickup
+[DOM] order confirmation shows selected pickup location name","[API] addOrUpdateCartShipment with fulfillmentCenterId returns 200, errors[] empty
+[API] cart.shipments[0].fulfillmentCenter populated with selected location
+[API] createOrderFromCart returns orderId, errors[] empty
+[CONSOLE] no errors
+[NETWORK] no 4xx/5xx","Pickup option missing from cart, location modal doesn't open, location list empty, shipping cost non-zero for pickup, fulfillmentCenter absent in API response","Note created orderId",VCST-4499,Automated
+SMK-011,"Payment — Credit Card Authorization","Smoke > Payment",Critical,BL-PAY-001,"ECL-1.1, ECL-1.2, ECL-7.3, ECL-14.6","Checkout ready (cart with items, address selected), test card details available from .env","card_number={{TEST_CARD_NUMBER}}, card_exp={{TEST_CARD_EXP}}, card_cvv={{TEST_CARD_CVV}}, front_url={{FRONT_URL}}","[WAIT] at payment step (CyberSource: form on cart page; others: after clicking 'Place Order' → /checkout/payment)
+[WAIT] payment form loaded with card input fields visible
+[ACT] fill card number: {{TEST_CARD_NUMBER}}
+[ACT] fill expiry: {{TEST_CARD_EXP}}
+[ACT] fill CVV: {{TEST_CARD_CVV}}
+[ACT] submit payment
+[WAIT] authorization result (success OR expected test-mode response)","[DOM] payment form visible with card number, expiry, CVV fields
+[DOM] card fields accept test card input without masking errors
+[DOM] after submit: success message OR order confirmation visible
+[STATE] order status = 'New' or 'Payment authorized' (not 'Payment failed')","[API] payment processor webhook received (verify via admin order payment status)
+[ADMIN] order payment status = Authorized or Paid
+[CONSOLE] no payment script errors (note: ad-blockers may block iframe — ECL-14.6)
+[NETWORK] no CORS errors on payment form requests","Payment form blank after page load (iframe blocked by ad-blocker — ECL-14.6), card fields reject valid test card, payment hangs >30s, 3DS challenge appears in test mode","none",VCST-3387,Manual
+SMK-012,"Order Confirmation — Verify Details","Smoke > Orders",Critical,BL-ORD-001,"ECL-11.1","Order just completed (follow-on from SMK-009 or SMK-011)","front_url={{FRONT_URL}}","[WAIT] on confirmation page after order placed
+[ASSERT] order number visible on page
+[ASSERT] line items listed with names and prices
+[ASSERT] totals on confirmation match cart totals from previous step
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] order history page loads
+[ASSERT] most recent order in list matches the just-placed order number","[DOM] order number generated and displayed (e.g., format 'CO[digits]')
+[DOM] all ordered products listed on confirmation page with names
+[DOM] confirmation subtotal matches cart subtotal (within rounding)
+[DOM] order appears in /account/orders list","[API] GET /xapi/graphql (order query by orderId) returns correct items and totals
+[CONSOLE] no errors on confirmation page (especially on analytics events)
+[NETWORK] GA4 purchase event fired if analytics tracking enabled","Confirmation page missing order number, totals mismatch vs cart, order absent from history, duplicate order if page refreshed (ECL-11.1)","none",VCST-4499,Automated
+SMK-013,"Search to Cart — End-to-End Flow","Smoke > Search",Critical,"BL-SEARCH-001, BL-CART-001, BL-PRICE-001","ECL-3.3, ECL-2.1, ECL-7.3","User logged in as {{USER_EMAIL}}, cart empty, 'Vintage Colorado Hoodie' ($54.00) exists in catalog","email={{USER_EMAIL}}, front_url={{FRONT_URL}}, search_term=hoodie, product_name=Vintage Colorado Hoodie, expected_price=54.00","[NAV] {{FRONT_URL}}
+[ACT] click search bar
+[ACT] type 'hoodie'
+[KEY] Enter
+[WAIT] search results page loads
+[ASSERT] 'Vintage Colorado Hoodie' visible in results
+[ACT] click '+' (quick-add) button on 'Vintage Colorado Hoodie'
+[WAIT] cart badge increments
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[ASSERT] 'Vintage Colorado Hoodie' in cart at $54.00","[DOM] search results show products matching 'hoodie'
+[DOM] 'Vintage Colorado Hoodie' visible with price $54.00
+[DOM] cart badge increments after quick-add
+[DOM] cart page shows 'Vintage Colorado Hoodie'
+[DOM] cart line price = $54.00 (exactly 2 decimal places)
+[MATH] line total = $54.00 × quantity","[API] products query returns items with name containing 'hoodie', non-empty
+[API] addItem mutation errors[] empty
+[API] cart.items contains SKU matching hoodie product
+[CONSOLE] no errors during search-to-cart flow
+[NETWORK] no 4xx during search or add","Search returns no results for 'hoodie' (index down — ECL-14.2), product not found in results, quick-add fails or no cart badge increment, cart shows wrong price","Remove hoodie from cart after test",SRCH-NEW-035,Manual
+SMK-014,"Quantity Stepper — PDP Increment and Cart Sync","Smoke > Cart",Critical,BL-CART-003,"ECL-2.1, ECL-7.3, ECL-5.3","User logged in as {{USER_EMAIL}}, in-stock product available with stock > 3","email={{USER_EMAIL}}, front_url={{FRONT_URL}}","[NAV] known in-stock product PDP on {{FRONT_URL}}
+[WAIT] 'Product quantity' spinbutton visible
+[ASSERT] spinbutton shows '0' and 'Decrease quantity' button is disabled
+[ACT] click 'Increase quantity' button
+[WAIT] spinbutton shows '1', 'in Cart' indicator shows '1'
+[ASSERT] cart badge = 1
+[ACT] click 'Increase quantity' button again
+[WAIT] spinbutton shows '2'
+[ASSERT] cart badge = 2
+[ACT] click 'Decrease quantity' button
+[WAIT] spinbutton shows '1'
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart loads
+[ASSERT] product shown with qty 1, line total = 1 × unit price
+[ACT] click '+' on cart page to increase qty to 2
+[WAIT] line total updates
+[ASSERT] line total = 2 × unit price","[DOM] 'Decrease quantity' disabled at qty=0 (not clickable)
+[DOM] spinbutton increments and decrements correctly
+[DOM] 'in Cart' indicator on PDP reflects current quantity
+[DOM] cart badge equals spinbutton value after each change
+[DOM] no duplicate line items for same product in cart
+[MATH] cart line total = qty × unit price (2 decimal places)","[API] each +/- triggers addItem or changeCartItemQuantity mutation, errors[] empty
+[API] cart.items shows correct quantity after each change
+[CONSOLE] no errors on rapid +/- clicks
+[NETWORK] no 4xx/5xx on cart mutations","'Decrease quantity' clickable at qty=0, cart badge not syncing with PDP stepper, duplicate line items appearing, line total not recalculating, negative quantity accepted (ECL-5.3)","Remove product from cart after test",QS-PDP-001,Manual
+SMK-015,"B2C Variation — Select Option and Add to Cart","Smoke > Variations",Critical,BL-CAT-002,"ECL-8.2, ECL-7.2, ECL-14.5","User logged in. B2C variation product with VirtoFrontend_UI_Layout=B2C property exists in catalog with 2+ in-stock variants (color or size). {{FRONT_URL}} accessible.","front_url={{FRONT_URL}}","[NAV] B2C variation product PDP (e.g., in /products-with-options/ category)
+[WAIT] 'Options' section visible (B2C layout)
+[ASSERT] 'Add to Cart' button is disabled before any option selected
+[ACT] click first available option (e.g., color swatch 'Blue' or size 'M')
+[WAIT] option shows selected state (border highlight or checkmark)
+[ASSERT] product price updates to selected variant's price (no page reload)
+[ASSERT] main product image updates to variant image
+[ASSERT] 'Add to Cart' button is now enabled
+[ACT] click 'Add to Cart'
+[WAIT] success notification appears
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart loads
+[ASSERT] cart line item shows variant attribute detail (e.g., 'T-Shirt — Color: Blue')","[DOM] 'Options' section visible on PDP; standard variation table hidden
+[DOM] 'Add to Cart' disabled before any option selected (ECL-14.5)
+[DOM] clicked option shows selected visual state (border/checkmark)
+[DOM] price updates immediately after option click (no reload)
+[DOM] main image switches to variant-specific image
+[DOM] 'Add to Cart' enabled after selection
+[DOM] cart line item shows variant attribute name+value, not parent product name only","[API] product.variants in response contain distinct prices per variantId
+[API] addItem mutation uses selected variantId, errors[] empty
+[API] cart.items[].name or cart.items[].selectedAttributes contains variant descriptor
+[CONSOLE] no errors during option selection or add to cart
+[NETWORK] no 4xx/5xx","'Add to Cart' enabled before selection (ECL-14.5), price not updating on option click, cart shows parent product name without variant detail, image not switching (ECL-14.5), addItem uses parent SKU instead of variant SKU","Remove variant product from cart","B2C-VAR-001 B2C-VAR-002 C411037 C411052 C411051",Manual
+SMK-016,"B2C Variation — Price and Stock Update on Selection","Smoke > Variations",Critical,"BL-PRICE-001, BL-CAT-002, BL-PRICE-003","ECL-2.3, ECL-8.2, ECL-14.5","User logged in. B2C variation product with 2+ variants at different prices exists. {{FRONT_URL}} accessible.","front_url={{FRONT_URL}}","[NAV] B2C variation product PDP with variants at different prices
+[WAIT] 'From $X' price or base price displayed before selection
+[ACT] click first option (e.g., Size 'S')
+[WAIT] price updates to variant-specific price
+[ASSERT] price shows exactly 2 decimal places
+[ACT] click a different option (e.g., Size 'L') with a different price
+[WAIT] price updates again
+[ASSERT] price updated to second variant's price
+[ASSERT] stock indicator reflects selected variant's stock (not aggregate)
+[ASSERT] SKU on page updates to selected variant's SKU","[DOM] price before selection: 'From $X' or base price
+[DOM] price after first selection: variant-specific price, 2 decimal places
+[DOM] price changes again after switching to second variant (no reload)
+[DOM] stock indicator is per-variant ('In Stock' or 'Out of Stock') not parent aggregate
+[DOM] SKU code on page matches selected variant's SKU
+[FORMAT] price always 2 decimal places (e.g., '$24.99' not '$24.9')","[API] product.variants each have distinct price values in xAPI response
+[API] selectedVariant.price in response matches DOM displayed price
+[CONSOLE] no errors during variant switching
+[NETWORK] no 4xx/5xx during option selection","Price unchanged after switching variants (stale cache — ECL-14.4), stock indicator shows parent aggregate instead of variant-specific (ECL-14.5), SKU not updating on selection, price displays >2 decimal places (BL-PRICE-003)","none","B2C-VAR-006 B2C-VAR-007 C411052",Manual

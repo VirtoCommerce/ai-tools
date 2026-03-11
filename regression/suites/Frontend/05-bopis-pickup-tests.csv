@@ -1,493 +1,914 @@
-ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
-BOPIS-001,Map Stability - Basic Operations,BOPIS > Map,Functional,Critical,15m,"- PR #2138 deployed
-- Cart has products
-- Multiple pickup locations configured","1. Navigate to cart page
-2. Select 'Pickup' option
-3. Click 'Select pickup location'
-4. Measure map container dimensions
-5. Enter location name in search
-6. Verify map dimensions unchanged
-7. Clear search using X button
-8. Verify map dimensions unchanged
-9. Enter address in search
-10. Clear search manually
-11. Repeat steps 5-10 three times","- Map modal opens correctly
-- Map maintains consistent dimensions
-- No visual 'jumping' or layout shifts
-- Smooth transitions between states
-- Consistent across multiple iterations",VCST-4499 TC-001,Automated
-BOPIS-002,Desktop - Location Selection Flow,BOPIS > Desktop,Functional,Critical,12m,"- Desktop browser 1920x1080
-- PR #2138 deployed
-- Multiple pickup locations","1. Open pickup location modal
-2. Verify desktop layout (map right, list left)
-3. Click location in list
-4. Verify marker highlights on map
-5. Verify map pans to location
-6. Verify info window opens
-7. Click different location
-8. Verify smooth transition
-9. Click marker directly on map
-10. Click 'Select' in info window
-11. Verify PickupLocationCard opens
-12. Click 'Confirm'
-13. Verify modal closes, location set","- Desktop side-by-side layout
-- List/map synchronization
-- Smooth pan animations
-- Info windows work correctly
-- Selection flow completes
-- Location appears in cart",VCST-4499 TC-002,Automated
-BOPIS-003,Mobile - List/Map Toggle,BOPIS > Mobile,Functional,Critical,10m,"- Mobile device (375x667)
-- iOS Safari or Chrome Android
-- PR #2138 deployed","1. Open pickup modal on mobile
-2. Verify list view by default
-3. Verify List/Map toggle visible
-4. Click 'Map' toggle
-5. Verify map view displays
-6. Verify list hidden
-7. Click 'List' toggle
-8. Verify list view returns
-9. Select location from map
-10. Complete selection flow","- Mobile single-column layout
-- Toggle switches views instantly
-- Only one view visible at a time
-- Touch targets adequate (44x44px)
-- Selection works on mobile",VCST-4499 TC-003,Automated
-BOPIS-004,Search - Location Name,BOPIS > Search,Functional,High,5m,"- Pickup modal open
-- Multiple locations configured","1. Enter partial location name
-2. Verify list filters
-3. Verify map shows matching markers
-4. Clear search
-5. Verify all locations return","- Partial match works
-- List and map sync
-- Clear restores all",VCST-4499 TC-004,Automated
-BOPIS-005,Search - Address,BOPIS > Search,Functional,High,5m,"- Pickup modal open
-- Geolocation available","1. Enter full address
-2. Verify map zooms to area
-3. Verify nearby locations highlighted
-4. Select nearest location","- Address geocoding works
-- Map zooms appropriately
-- Nearby locations shown",VCST-4499 TC-004,Automated
-BOPIS-006,Search - Invalid/Empty Results,BOPIS > Search,Functional,Medium,3m,"- Pickup modal open","1. Enter invalid address 'xyzabc123'
-2. Verify graceful handling
-3. Verify can reset and continue","- No crash on invalid input
-- Empty state message
-- Can reset and search again",VCST-4499 TC-004,Automated
-BOPIS-007,Search - Debounce/Performance,BOPIS > Search,Functional,Medium,3m,"- Pickup modal open
-- Network tab open","1. Type rapidly in search field
-2. Monitor API calls
-3. Verify debouncing","- Search debounced
-- No excessive API calls
-- Reasonable response time",VCST-4499 TC-004,Automated
-BOPIS-008,Filter - Availability,BOPIS > Filters,Functional,High,5m,"- Locations with varying availability","1. Open filter section
-2. Apply availability filter
-3. Verify list filters
-4. Verify map updates","- Filter UI visible
-- Available locations shown
-- Unavailable hidden/greyed",VCST-4499 TC-005,Automated
-BOPIS-009,Filter - Distance,BOPIS > Filters,Functional,High,5m,"- Location/geolocation enabled","1. Apply distance filter
-2. Verify locations sorted
-3. Combine with other filters","- Distance filter works
-- Sorted by proximity
-- Combines with other filters",VCST-4499 TC-005,Automated
-BOPIS-010,Filter - Combined,BOPIS > Filters,Functional,Medium,5m,"- Multiple filter options","1. Apply availability filter
-2. Apply distance filter
-3. Search while filtered
-4. Verify combined results
-5. Clear all filters","- Filters combine correctly
-- Search respects filters
-- Clear restores all",VCST-4499 TC-005,Automated
-BOPIS-011,Map - Zoom Controls,BOPIS > Map,Functional,High,3m,"- Pickup modal with map visible","1. Click zoom in control
-2. Verify map zooms
-3. Click zoom out
-4. Verify map zooms out
-5. Pan by dragging","- Zoom controls work
-- Smooth zoom animation
-- Pan/drag works",VCST-4499 TC-006,Automated
-BOPIS-012,Map - Info Window Single Display,BOPIS > Map,Functional,High,5m,"- Multiple markers visible","1. Click marker A
-2. Verify info window A opens
-3. Quickly click marker B
-4. Verify only window B visible
-5. Rapidly click multiple markers","- Single info window policy
-- No race conditions
-- No crashes on rapid clicks",VCST-4499 TC-006,Automated
-BOPIS-013,Map - Background Click Close,BOPIS > Map,Functional,Medium,2m,"- Info window open","1. Click map background (not marker)
-2. Verify info window closes","- Info window closes
-- Can reopen by clicking marker",VCST-4499 TC-006,Automated
-BOPIS-014,Pickup Location Card - Content,BOPIS > Card,Functional,High,5m,"- Location selected","1. Select a location
-2. Verify card opens
-3. Check location name
-4. Check address
-5. Check hours of operation
-6. Check availability chips
-7. Check contact info","- Card displays all info
-- Name and address correct
-- Hours visible
-- Availability chips styled
-- Contact info present",VCST-4499 TC-007,Automated
-BOPIS-015,Pickup Location Card - Cancel,BOPIS > Card,Functional,Medium,3m,"- Location card open","1. Click 'Cancel' button
-2. Verify card closes
-3. Verify returns to map modal
-4. Verify selection unchanged","- Card closes
-- Modal still open
-- Previous state preserved",VCST-4499 TC-007,Automated
-BOPIS-016,Pickup Location Card - Confirm,BOPIS > Card,Functional,Critical,3m,"- Location card open","1. Click 'Confirm' button
-2. Verify card closes
-3. Verify modal closes
-4. Verify location in cart","- Selection confirmed
-- Both dialogs close
-- Location appears in cart
-- Can proceed to checkout",VCST-4499 TC-007,Automated
-BOPIS-017,Scroll Behavior - List Independent,BOPIS > Scroll,Functional,Medium,5m,"- Many locations (scrollable list)","1. Open pickup modal
-2. Scroll location list
-3. Verify map stays static
-4. Scroll to bottom
-5. Verify no over-scroll","- List scrolls independently
-- Map does not move
-- Boundaries work correctly",VCST-4499 TC-008,Automated
-BOPIS-018,Scroll Behavior - Card Lock,BOPIS > Scroll,Functional,Medium,3m,"- Location card open","1. Open location card
-2. Try to scroll background
-3. Verify scroll disabled
-4. Close card
-5. Verify scroll enabled","- Background scroll locked
-- Re-enabled after close",VCST-4499 TC-008,Automated
-BOPIS-019,Pickup Filters - City Search,BOPIS > City Filter,Functional,High,5m,"- Locations in multiple cities","1. Open pickup modal
-2. Find city filter
-3. Enter city name
-4. Verify filtered results","- City filter available
-- Search within city works
-- Results match city",VCST-3865,Automated
-BOPIS-020,Pickup Filters - State Search,BOPIS > State Filter,Functional,High,5m,"- Locations in multiple states","1. Open pickup modal
-2. Find state filter
-3. Select state
-4. Verify filtered results","- State filter available
-- Results filtered by state
-- Count updates",VCST-3865,Automated
-BOPIS-021,Pickup Filters - Combined Search,BOPIS > Filters,Functional,High,5m,"- Locations with various attributes","1. Apply city filter
-2. Apply state filter
-3. Search by name
-4. Verify combined results","- All filters combine
-- AND logic applied
-- Results accurate",VCST-4447,Automated
-BOPIS-022,Map Width After Search (Bug Fix),BOPIS > Bug Verification,Defect Verification,Critical,10m,"- PR #2138 deployed
-- VCST-4518 fix included","1. Open pickup modal
-2. Measure initial map width (~50%)
-3. Search 'Westent foxpost'
-4. Verify 'not found' message
-5. CRITICAL: Verify map width >= 40%
-6. Reset search
-7. Search valid location
-8. CRITICAL: Verify map width >= 40%
-9. Open info card
-10. Verify card has space","- Map never shrinks below 40%
-- List capped at max width
-- Info card readable
-- Bug VCST-4518 fixed",VCST-4499 BUG-001,Manual
-BOPIS-023,Responsive - 320px Width,BOPIS > Responsive,Functional,High,5m,"- Browser at 320px width","1. Open pickup modal
-2. Verify single column layout
-3. Test List/Map toggle
-4. Complete selection flow","- No horizontal scroll
-- Mobile layout correct
-- All features work",VCST-4499 TC-009,Automated
-BOPIS-024,Responsive - 768px Width,BOPIS > Responsive,Functional,High,5m,"- Browser at 768px width","1. Open pickup modal
-2. Check layout transition
-3. Test all functionality","- Appropriate breakpoint layout
-- No broken elements",VCST-4499 TC-009,Automated
-BOPIS-025,Responsive - 1920px Width,BOPIS > Responsive,Functional,High,5m,"- Browser at 1920px width","1. Open pickup modal
-2. Verify side-by-side layout
-3. Verify no stretching issues","- Desktop layout correct
-- List left, map right
-- Proportions correct",VCST-4499 TC-009,Automated
-BOPIS-026,Integration - Cart to Checkout,BOPIS > Integration,Integration,Critical,10m,"- Products in cart
-- Pickup locations available","1. Add products to cart
-2. Select Pickup
-3. Choose pickup location
-4. Verify in cart
-5. Proceed to checkout
-6. Verify pickup info in checkout
-7. Complete order
-8. Verify in confirmation","- End-to-end flow works
-- Pickup persists through checkout
-- Order shows pickup details",VCST-4499 TC-015,Automated
-BOPIS-027,Integration - Switch Delivery Methods,BOPIS > Integration,Integration,High,5m,"- Products in cart","1. Select Pickup
-2. Choose location
-3. Switch to Delivery
-4. Verify pickup cleared
-5. Switch back to Pickup
-6. Verify can reselect","- Can switch methods
-- Pickup clears on switch
-- Can reselect location",VCST-4499 TC-015,Automated
-BOPIS-028,Product Page BOPIS Widget - View-Only Modal Opens,BOPIS > Product Page,Functional,Critical,5m,"- Product detail page for BOPIS-eligible product
-- Pickup locations configured","1. Navigate to product detail page for a BOPIS-eligible product
-2. Locate the BOPIS shipping widget in the shipping section
-3. Verify the widget shows a CTA (e.g. 'Check availability at nearby locations')
-4. Click the CTA button
-5. Verify the pickup location modal opens","- BOPIS CTA button visible in product page shipping section
-- Clicking CTA opens pickup location modal
-- Modal opens without errors
-- Map renders with location markers
-- Location list populates",VCST-4584,Manual
-BOPIS-029,Product Page BOPIS Widget - No Select Button (View Only),BOPIS > Product Page,Functional,Critical,5m,"- BOPIS modal opened from product detail page","1. Open BOPIS modal from product detail page
-2. Scroll through location list
-3. Click on a location in the list
-4. Inspect the location info card and map info window
-5. Confirm no 'Select' button is present","- No 'Select' or 'Choose this location' button visible in the modal
-- Modal is informational/view-only
-- Location can be viewed but not selected from product page
-- Contrast: Cart BOPIS modal (BOPIS-034) still shows 'Select' button",VCST-4584,Manual
-BOPIS-030,Product Page BOPIS Widget - Map and Location List Display,BOPIS > Product Page,Functional,High,5m,"- BOPIS modal opened from product detail page","1. Open BOPIS modal from product detail page
-2. Verify map renders with markers
-3. Verify location list displays below or beside map
-4. Verify each location entry shows: name, address, distance (if available)
-5. Scroll through location list","- Map loads with markers for pickup locations
-- Location list displays all available locations
-- Each entry shows location name, address
-- Map and list are synchronized
-- Modal dimensions stable, no layout shift",VCST-4584,Manual
-BOPIS-031,Product Page BOPIS Widget - Close Modal Returns to Product Page,BOPIS > Product Page,Functional,High,3m,"- BOPIS modal opened from product detail page","1. Open BOPIS modal from product detail page
-2. Interact with modal (scroll list, view a location)
-3. Click X (close) button or press Escape
-4. Verify modal closes
-5. Verify product detail page is unchanged","- Modal closes cleanly
-- No navigation occurs (user stays on product page)
-- Product page state is unchanged (scroll position preserved)
-- Product cart widget still visible and functional
-- No console errors on close",VCST-4584,Manual
-BOPIS-032,Product Page BOPIS Widget - Radio Button Has No Indicator,BOPIS > Product Page,Functional,High,3m,"- BOPIS modal opened from product detail page","1. Open BOPIS modal from product detail page
-2. Locate radio buttons in location list (if present)
-3. Inspect radio button visual style
-4. Verify no circular radio indicator is shown","- Radio button circles (filled circle indicator) are NOT visible in product page modal
-- Location highlighting uses a different visual (e.g. border or background)
-- This is the noIndicator prop behaviour
-- Compare: Cart BOPIS modal still shows standard radio indicators",VCST-4584,Manual
-BOPIS-033,Location Info Card - New Fields Display (Email Phone Hours),BOPIS > Location Info,Functional,High,5m,"- Pickup locations configured with contactEmail, contactPhone, workingHours, description fields","1. Open BOPIS modal (from cart or product page)
-2. Click on a location that has all new fields populated
-3. Verify info card displays: Contact email, Contact phone, Working hours, Description
-4. Verify fields are absent if not populated (no empty labels)","- Contact email displays when populated
-- Contact phone displays when populated
-- Working hours display when populated
-- Description text displays when populated
-- Fields absent when not configured (no empty placeholders)
-- Layout is not broken by additional fields",VCST-4584,Manual
-BOPIS-034,Cart BOPIS Modal - Select Button Still Present (Regression),BOPIS > Cart > Regression,Functional,Critical,5m,"- Items in cart
-- BOPIS modal opened from cart/checkout","1. Add a BOPIS-eligible product to cart
-2. Navigate to cart
-3. Select Pickup delivery option
-4. Click 'Select pickup location'
-5. Open BOPIS modal
-6. Click on a location
-7. Verify 'Select' button is present","- 'Select' button visible in location info card in the cart BOPIS modal
-- Clicking 'Select' chooses the location and closes modal
-- Selected location shown in cart/checkout
-- Cart BOPIS modal is NOT broken by the VCST-4584 product page changes",VCST-4584,Manual
-BOPIS-035,VCST-4613 Availability Tooltip on Product Page,BOPIS > Product Page,Functional,Medium,4m,"- Product detail page with BOPIS widget
-- Pickup locations with varying availability","1. Navigate to product detail page
-2. Locate the BOPIS widget availability indicator
-3. Hover over or click the availability tooltip trigger
-4. Verify tooltip shows location count or availability status
-5. Verify tooltip content is accurate","- Availability tooltip triggers on hover or click
-- Tooltip shows correct count of available pickup locations
-- Content reflects actual stock at nearby locations
-- Tooltip closes on mouseout or click outside
-- No console errors",VCST-4613,Manual
-BOPIS-036,Product Page BOPIS Widget - Mobile Responsive (375x667),BOPIS > Product Page > Mobile,Functional,High,5m,"- Mobile viewport (375x667)
-- Product detail page with BOPIS widget","1. Set viewport to 375x667 (mobile)
-2. Navigate to product detail page
-3. Verify BOPIS widget renders correctly (no overflow or cut-off)
-4. Tap the BOPIS CTA button
-5. Verify modal opens and is mobile-optimized
-6. Verify map and list are accessible on mobile
-7. Verify close button is tappable (44x44px minimum)","- BOPIS widget visible and not overflowing on mobile
-- CTA button tap target adequate
-- Modal opens in mobile-friendly layout
-- Map renders (may be smaller or below list)
-- Touch interactions work (tap, pinch zoom on map)
-- Close button accessible
-BOPIS-037,Feature Flag Disabled - Pickup Option Hidden,BOPIS > Cart > Toggle,Functional,High,3m,"BOPIS module deactivated in store settings, products in cart","1. Deactivate BOPIS in store settings
-2. Navigate to cart
-3. Observe delivery method options
-4. Inspect DOM for pickup elements","- 'Pickup' option not in delivery options
-- No pickup trace in DOM
-- Only 'Shipping/Delivery' available",C410938,Manual
-BOPIS-038,Availability Label: Today (Main FFC Match),BOPIS > Cart > Availability,Functional,Critical,5m,"Product assigned to Main_1 FFC, location L1 Main FC = Main_1","1. Add product to cart > Select Pickup
-2. Open PickPoints modal
-3. Find location L1
-4. Observe availability chip","- 'Today' label on L1
-- No Transfer/Global label
-- Location selectable
-- Map marker matches",C412653,Manual
-BOPIS-039,Availability Label: Transfer (Transfer FFC Match),BOPIS > Cart > Availability,Functional,High,5m,"Product assigned to Transfer_1 FFC, location L3 Transfer FC = Transfer_1, GlobalTransfer = OFF","1. Add product to cart > Select Pickup
-2. Open PickPoints modal
-3. Find location L3
-4. Observe availability chip","- Transfer duration label shown (e.g., 'Transfer (2-3 days)')
-- Location selectable
-- Label text matches TransferDurationText from Admin config",C412656,Manual
-BOPIS-040,Availability Label: Global Transfer (1 week),BOPIS > Cart > Availability,Functional,High,5m,"Product assigned to Main_1 FFC, location L2 no Main FC, GlobalTransfer = ON","1. Add product to cart > Select Pickup
-2. Open PickPoints modal
-3. Find location L2
-4. Observe availability chip","- 'Global Transfer (1 week)' label shown
-- Label text matches GlobalTransferDurationText
-- Location selectable",C412655,Manual
-BOPIS-041,Availability Label: Not Available (No Match + Global OFF),BOPIS > Cart > Availability,Functional,High,5m,"Product assigned to Transfer_1 FFC, location L4 Main FC only, GlobalTransfer = OFF","1. Add product to cart > Select Pickup
-2. Open PickPoints modal
-3. Find location L4
-4. Attempt to select","- 'Not available' state (greyed/disabled)
-- Cannot select for pickup
-- No console errors",C412654,Manual
-BOPIS-042,Availability Label: TrackInventory=FALSE but MFC stock=0,BOPIS > Cart > Availability,Functional,Medium,5m,"Product with TrackInventory=FALSE, MFC stock reported 0","1. Add product to cart > Select Pickup
-2. Open PickPoints modal
-3. Check availability labels","- Product shows as available (TrackInventory=FALSE means stock not checked)
-- Location selectable despite 0 stock report",C412663,Manual
-BOPIS-043,No Valid Pickup Locations - Pickup Blocked,BOPIS > Cart > Availability,Functional,High,5m,"Product P5 with GlobalTransfer=OFF has no compatible locations","1. Add product P5 to cart
-2. Select Pickup
-3. Open PickPoints modal","- Message: 'There are no available pickup points for these products'
-- Pickup radio blocked or error shown
-- User prompted to select another shipping method",C412691,Manual
-BOPIS-044,Inactive Location Excluded from Modal,BOPIS > Cart > Availability,Functional,High,3m,"One location deactivated in Admin (Store > Shipping > BOPIS > Active=OFF)","1. Open PickPoints modal from cart
-2. Verify deactivated location is NOT in the list
-3. Verify active locations still present","- Deactivated location absent from list and map
-- Active locations unaffected
-- No error or empty gap in list",C410939,Manual
-BOPIS-045,Mixed Cart: BOPIS + Delivery-Only Items,BOPIS > Cart > Mixed,Functional,High,8m,"Cart has BOPIS-eligible and delivery-only products","1. Add both products to cart
-2. Observe delivery toggle per item
-3. Select Pickup for eligible, Shipping for delivery-only
-4. Verify totals
-5. Proceed to checkout","- BOPIS item shows Pickup toggle; delivery-only shows Shipping only
-- Independent delivery selection per item
-- Totals: $0 shipping on pickup, shipping cost on delivery
-- Checkout summary shows both methods",checklist-D,Manual
-BOPIS-046,Mixed Cart: Pickup Location for One Item Does Not Cascade,BOPIS > Cart > Mixed,Functional,High,5m,"Mixed cart with pickup selected for one item","1. Confirm pickup location for BOPIS item
-2. Check delivery-only item settings
-3. Verify totals split","- Delivery-only item unaffected by pickup selection
-- No pickup location assigned to delivery item
-- Cart correctly shows split fulfillment",checklist-D,Manual
-BOPIS-047,Cart Totals: Zero Shipping for Pickup Order,BOPIS > Cart > Totals,Functional,Critical,5m,"All items set to Pickup, location confirmed","1. Confirm pickup location
-2. Observe order summary shipping line
-3. Verify total = subtotal + tax","- Shipping line: $0.00 or 'Free'
-- Total = subtotal + tax (no shipping)
-- No stale shipping amount from previous selection",C413982,Manual
-BOPIS-048,Cart Totals: Switch from Delivery to Pickup Removes Shipping Cost,BOPIS > Cart > Totals,Functional,High,5m,"Cart showing delivery with shipping cost applied","1. Note current total with shipping cost
-2. Switch to Pickup
-3. Confirm pickup location
-4. Verify shipping cost removed from total","- Shipping cost line removed or set to $0
-- Total decreases by shipping amount
-- Tax recalculated if applicable",checklist-F,Manual
-BOPIS-049,Cart Totals: Tax Correct with Pickup,BOPIS > Cart > Totals,Functional,High,5m,"Pickup order with tax-applicable items","1. Confirm pickup location
-2. Verify tax line in order summary
-3. Calculate expected tax: rate x (subtotal - discount)","- Tax applied on post-discount subtotal
-- Tax amount matches expected rate
-- Tax line visible even with $0 shipping",checklist-F,Manual
-BOPIS-050,Switch Delivery to Pickup: Shipping Cleared,BOPIS > Cart > Switch,Functional,High,5m,"Cart with delivery address and shipping method selected","1. Select Shipping, choose address + method
-2. Switch to Pickup
-3. Observe cart state","- Shipping method cleared
-- Address form hidden
-- 'Select pickup location' prompt appears
-- Shipping cost removed",BOPIS-027,Manual
-BOPIS-051,Switch Pickup to Delivery: Location Cleared,BOPIS > Cart > Switch,Functional,High,5m,"Cart with pickup location confirmed","1. Switch from Pickup to Shipping
-2. Observe cart state","- Pickup location cleared
-- Address form/selector reappears
-- Shipping cost re-applied on method selection",BOPIS-027,Manual
-BOPIS-052,Rapid Toggle Delivery/Pickup/Delivery/Pickup,BOPIS > Cart > Switch,Functional,Medium,3m,"Products in cart","1. Toggle between Pickup and Delivery 4+ times rapidly
-2. Observe UI state after each toggle
-3. Check console for errors","- Each toggle resets to correct state
-- No ghost data from previous mode
-- No UI freeze or console errors
-- Final state matches last selection",checklist-G,Manual
-BOPIS-053,ShipTo Header Change While Pickup Active,BOPIS > Cart > Switch,Functional,Medium,5m,"Pickup selected and location confirmed, header ship-to selector available","1. With Pickup active, change ship-to address via header selector
-2. Observe delivery method state","- Delivery method switches back to Shipping
-- Pickup selection cleared
-- New address applied",C410850,Manual
-BOPIS-054,Quantity Increase Revalidates Pickup Availability,BOPIS > Cart > Revalidation,Functional,High,5m,"Pickup confirmed at a location with limited branch stock","1. With pickup confirmed, increase item quantity significantly
-2. Observe availability label
-3. Check for error or re-selection prompt","- Availability label refreshes for new quantity
-- If qty > branch stock: error/flag shown
-- Cannot proceed silently with insufficient pickup stock",checklist-H,Manual
-BOPIS-055,Quantity Decrease Below MOQ in Pickup Mode,BOPIS > Cart > Revalidation,Functional,Medium,3m,"Product has pack size or MOQ, pickup mode active","1. Try setting quantity below MOQ or non-pack multiple
-2. Observe validation","- Same pack size rules enforced as in delivery mode
-- Non-multiple quantity rejected or auto-rounded",checklist-H,Manual
-BOPIS-056,Same SKU Added Again Aggregates Quantity,BOPIS > Cart > Revalidation,Functional,Medium,3m,"Product already in cart with pickup, same product on PDP","1. Add same product again from PDP
-2. Return to cart
-3. Check line items and quantity","- Existing line incremented (no duplicate line)
-- Aggregated quantity validated against pickup branch stock",checklist-H,Manual
-BOPIS-057,Facet Filter: Country,BOPIS > Cart > Filters,Functional,High,3m,"PickPoints modal open from cart, locations in multiple countries","1. Select Country filter (e.g., USA)
-2. Observe list and map","- Only USA locations shown
-- Map updates markers
-- Filter chip displayed
-- Store count updates",C413538,Manual
-BOPIS-058,Facet Filter: State/Province,BOPIS > Cart > Filters,Functional,High,3m,"PickPoints modal open, country selected","1. Select State (e.g., NY)
-2. Observe filtered results","- Only NY locations shown
-- Map zooms to region",C413540,Manual
-BOPIS-059,Facet Filter: City,BOPIS > Cart > Filters,Functional,High,3m,"PickPoints modal open","1. Select City (e.g., New York)
-2. Observe filtered results","- Only New York city locations shown
-- Map shows city markers",C413541,Manual
-BOPIS-060,Facet Filter: State Disabled for Non-US/CA Countries,BOPIS > Cart > Filters,Functional,Medium,3m,"PickPoints modal open","1. Select a non-US/CA country (e.g., Denmark)
-2. Click State/Province filter
-3. Observe behavior","- State filter disabled
-- Prevents invalid filter combination",C413543,Manual
-BOPIS-061,Search by ZIP Code,BOPIS > Cart > Search,Functional,High,3m,"PickPoints modal open from cart","1. Enter ZIP code (e.g., 10001)
-2. Submit search","- Matching locations displayed
-- Map markers at correct positions",C413546,Manual
-BOPIS-062,Search by Address,BOPIS > Cart > Search,Functional,High,3m,"PickPoints modal open from cart","1. Enter address (e.g., '34th St')
-2. Submit search","- All locations on that street displayed
-- Address searching functional",C413550,Manual
-BOPIS-063,Search with Special Characters (Apostrophe + Ampersand),BOPIS > Cart > Search,Functional,Medium,3m,"PickPoints modal open","1. Search 'St. Patrick's'
-2. Search '5th Ave & 50th'","- Both searches return correct results
-- Special characters handled properly",C413551,Manual
-BOPIS-064,Search with Whitespace Only,BOPIS > Cart > Search,Functional,Medium,2m,"PickPoints modal open","1. Type only spaces in search
-2. Submit","- All pickup points restored
-- Whitespace trimmed automatically",C413553,Manual
-BOPIS-065,Multi-Filter: Country + State + City + Search (4 Levels),BOPIS > Cart > Multi-Filter,Functional,High,5m,"PickPoints modal open, locations in multiple countries/states/cities","1. Select USA > New York > New York City
-2. Search 'Building'
-3. Verify results","- Results filtered by all 4 levels
-- Only matching locations in NYC shown
-- All filter chips visible",C413522,Manual
-BOPIS-066,Multi-Filter: No Results at Multiple Levels,BOPIS > Cart > Multi-Filter,Functional,Medium,3m,"PickPoints modal open with filters applied","1. Select USA > NY > NYC
-2. Search 'NonExistent'","- 'Pickup points not found' message
-- All filters still visible and removable
-- 'RESET SEARCH' button available",C413523,Manual
-BOPIS-067,Multi-Select: Multiple Countries,BOPIS > Cart > Multi-Filter,Functional,Critical,3m,"PickPoints modal open","1. Open Country dropdown
-2. Select USA and Canada","- Both chips shown
-- Results from both countries
-- Deselecting one updates results",C413527,Manual
-BOPIS-068,Multi-Select: Multiple States,BOPIS > Cart > Multi-Filter,Functional,Critical,3m,"PickPoints modal open, USA selected","1. Open State dropdown
-2. Select multiple states","- Multiple state chips appear
-- All relevant results returned",C413528,Manual
-BOPIS-069,Breadcrumb Filter Removal,BOPIS > Cart > Filter Management,Functional,Medium,3m,"Multiple filters applied in PickPoints modal","1. Apply USA + NY + NYC + Search
-2. Click X on State filter chip
-3. Verify results update","- State removed
-- Results update to remaining filters
-- Search still applied",C413524,Manual
-BOPIS-070,Reset All Filters and Search,BOPIS > Cart > Filter Management,Functional,High,3m,"Multiple filters and search applied","1. Click 'Reset filters'
-2. Verify full state restored","- All chips removed
-- Search bar cleared
-- Full location list restored
-- Map shows all markers",C413525,Manual
-BOPIS-071,Apply Filters After Search,BOPIS > Cart > Filter Management,Functional,Medium,3m,"PickPoints modal open","1. Search 'Building' first
-2. Then select USA country filter","- Combined results: only USA locations with 'Building'
-- Filter + search combine correctly",C413526,Manual
-BOPIS-072,Deactivated Location While Confirmed in Cart,BOPIS > Cart > Edge Cases,Functional,High,8m,"Pickup location confirmed in cart, Admin access available","1. Confirm a pickup location in cart
-2. In Admin: deactivate that location
-3. Return to storefront cart
-4. Attempt to proceed to checkout","- Checkout detects invalid pickup selection
-- User prompted to re-select location
-- Order NOT placed with deactivated location",C410939,Manual
-BOPIS-073,Org User Pickup Isolation,BOPIS > Cart > Edge Cases,Functional,High,5m,"User has access to Org A and Org B","1. In Org A cart, confirm pickup location
-2. Switch to Org B
-3. Open cart","- Org A pickup selection not shown in Org B cart
-- Clean state for Org B
-- No cross-org data leak",C411028,Manual
-BOPIS-074,Billing Address Required for BOPIS Order,BOPIS > Cart > Edge Cases,Functional,High,5m,"Pickup selected, no billing address saved","1. Select Pickup and confirm location
-2. Proceed to checkout
-3. Attempt to place order without billing address","- Billing address form shown (even though no shipping address needed)
-- Order cannot be placed without billing address
-- Validation error if billing missing",C410943,Manual
-BOPIS-075,Cross-Layer: xAPI Order Shows Pickup FFC,BOPIS > Cart > Cross-Layer,Integration,Critical,10m,"BOPIS order placed successfully","1. Place order with Pickup fulfillment
-2. Query xAPI: order shipments
-3. Open Admin > Orders > find order","- xAPI: shipments[].fulfillmentCenterId = selected pickup location
-- Admin: order shows pickup location name + address
-- No shipping cost in stored order",checklist-K,Manual
-BOPIS-076,Cross-Layer: Cart API Shows $0 Shipping,BOPIS > Cart > Cross-Layer,Integration,High,5m,"Pickup selected and confirmed in cart","1. Open DevTools Network tab
-2. Find cart API response
-3. Check shipments[].price","- shipments[].price = 0
-- total = subtotal + taxTotal (no shipping)
-- Consistent with storefront display",checklist-K,Manual
-- No horizontal scrolling required",VCST-4584,Manual
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+BOPIS-001,Map Stability - Basic Operations,BOPIS > Map,Critical,BL-BOPIS-007,"ECL-14.1","PR #2138 deployed; Cart has products; Multiple pickup locations configured","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Pickup' radio button in delivery options
+[ACT] click 'Select pickup location'
+[WAIT] pickup location modal opens with map and location list
+[ACT] measure map container dimensions
+[ACT] type location name in search field
+[WAIT] search results update
+[ASSERT] map dimensions unchanged
+[ACT] click X button to clear search
+[WAIT] all locations restored
+[ASSERT] map dimensions unchanged
+[ACT] type address in search field
+[ACT] clear search manually
+[ACT] repeat search/clear cycle three more times","[DOM] pickup modal opens without errors
+[DOM] map renders with markers
+[STATE] map container dimensions remain stable across all search interactions
+[STATE] no visual layout jump or shift observed after each clear/search cycle","[CONSOLE] no TypeError or JS errors during modal interactions
+[NETWORK] no 5xx errors on search API calls","Map dimension changes during search (VCST-4518 regression); Map width drops below 40% after search; console TypeError on map interaction; Modal not responding to search input","Close modal; navigate away from cart",VCST-4499 TC-001,Automated
+BOPIS-002,Desktop - Location Selection Flow,BOPIS > Desktop,Critical,BL-BOPIS-004,"ECL-14.1","Desktop browser 1920x1080; PR #2138 deployed; Multiple pickup locations available","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ASSERT] desktop layout has map on right and list on left
+[ACT] click location A in list
+[WAIT] map marker highlights and pans to location A
+[ASSERT] info window opens for location A
+[ACT] click a different location B in list
+[WAIT] smooth transition to location B
+[ACT] click a map marker directly
+[WAIT] info window opens for clicked marker
+[ACT] click 'Select' in info window
+[WAIT] PickupLocationCard opens
+[ACT] click 'Confirm' button
+[WAIT] modal closes and pickup location shown in cart","[DOM] desktop side-by-side layout renders (map right, list left)
+[STATE] list and map are synchronized — clicking list item highlights matching marker
+[DOM] 'Select' button present in location info card
+[DOM] pickup location name and address visible in cart summary after confirm
+[STATE] modal fully closes after Confirm","[API] mutation errors[] is empty for selectPickupLocation
+[CONSOLE] no TypeError or JS errors during modal interactions","Modal not closing after Confirm; 'Select' button missing in cart BOPIS modal; Map marker not highlighting on list click; Pickup location not appearing in cart summary","Clear pickup location or remove items from cart",VCST-4499 TC-002,Automated
+BOPIS-003,Mobile - List/Map Toggle,BOPIS > Mobile,Critical,BL-BOPIS-004,"ECL-14.1","Mobile device (375x667); iOS Safari or Chrome Android; PR #2138 deployed","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] resize viewport to 375x667
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens in mobile layout
+[ASSERT] list view shown by default
+[ASSERT] List/Map toggle visible
+[ACT] click 'Map' toggle
+[WAIT] map view displays
+[ASSERT] list is hidden
+[ACT] click 'List' toggle
+[WAIT] list view returns
+[ACT] select a location from map view
+[ACT] click 'Select' button
+[ACT] click 'Confirm' button
+[WAIT] modal closes and pickup location shown in cart","[DOM] mobile single-column layout renders
+[STATE] toggle switches views instantly with only one view visible at a time
+[DOM] touch targets adequate (min 44x44px) for toggle and close buttons
+[DOM] pickup location confirmed in cart after selection on mobile","[API] mutation errors[] is empty for selectPickupLocation
+[CONSOLE] no TypeError or JS errors during modal interactions","Mobile toggle not switching views; Both list and map visible simultaneously on mobile; Touch targets too small; Modal not closeable on mobile","Clear pickup location or remove items from cart",VCST-4499 TC-003,Automated
+BOPIS-004,Search - Location Name,BOPIS > Search,High,BL-BOPIS-007,"ECL-14.2","Pickup modal open; Multiple locations configured","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] type partial location name in search field
+[WAIT] list filters to matching locations
+[ASSERT] map shows only matching markers
+[ACT] clear search field
+[WAIT] all locations restored in list and map","[DOM] partial name match filters list correctly
+[STATE] list and map remain synchronized after search
+[STATE] clearing search restores all locations","[CONSOLE] no TypeError or JS errors during modal interactions
+[NETWORK] search API returns 2xx response","Search does not filter list; Map not syncing with list after search; Clearing search does not restore all locations","Close modal; navigate away",VCST-4499 TC-004,Automated
+BOPIS-005,Search - Address,BOPIS > Search,High,BL-BOPIS-007,"ECL-14.2","Pickup modal open; Geolocation available","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] type full address in search field
+[WAIT] map zooms to area matching address
+[ASSERT] nearby locations highlighted or filtered
+[ACT] select nearest location
+[ACT] click 'Select' then 'Confirm'
+[WAIT] modal closes and pickup location shown in cart","[STATE] address geocoding returns map zoom to correct area
+[DOM] nearby pickup locations visible after address search
+[DOM] pickup location confirmed in cart","[API] mutation errors[] is empty for selectPickupLocation
+[CONSOLE] no TypeError or JS errors during modal interactions","Address search returns no results for valid address; Map does not zoom after address entry; Geocoding error not handled gracefully","Clear pickup location or remove items from cart",VCST-4499 TC-004,Automated
+BOPIS-006,Search - Invalid/Empty Results,BOPIS > Search,Medium,BL-BOPIS-007,"ECL-14.2","Pickup modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] type 'xyzabc123' in search field
+[WAIT] no-results state displayed
+[ASSERT] empty state message shown
+[ACT] clear search field or click reset
+[WAIT] all locations restored
+[ASSERT] search field is empty and usable again","[DOM] no-results / empty state message shown for invalid input
+[STATE] application does not crash on invalid search input
+[STATE] can reset and perform new search after invalid input","[CONSOLE] no TypeError or JS errors on invalid search input","Application crash on invalid search; No empty state message; Cannot reset after invalid search","Close modal; navigate away",VCST-4499 TC-004,Automated
+BOPIS-007,Search - Debounce/Performance,BOPIS > Search,Medium,BL-BOPIS-007,"ECL-14.2","Pickup modal open; Network tab open in DevTools","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] type rapidly in search field (5+ characters within 500ms)
+[WAIT] observe API calls in Network tab
+[ASSERT] search requests are debounced (not one per keystroke)
+[ASSERT] response time is reasonable (< 2s)","[STATE] search is debounced — API not called on every single keystroke
+[STATE] no excessive or redundant API calls observed
+[STATE] response time acceptable under typical conditions","[NETWORK] verify search API call count is <= number of debounce intervals (not per keystroke)
+[CONSOLE] no TypeError or JS errors during rapid typing","Excessive API calls on every keystroke; Search hangs or times out; console errors on rapid input","Close modal; navigate away",VCST-4499 TC-004,Automated
+BOPIS-008,Filter - Availability,BOPIS > Filters,High,BL-BOPIS-003,"ECL-14.2","Pickup modal open; Locations with varying availability configured","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] open filter section
+[ACT] apply availability filter (e.g., 'Available')
+[WAIT] list updates to show only available locations
+[ASSERT] map updates markers to match filtered list","[DOM] availability filter UI visible
+[STATE] only available locations shown after filter applied
+[STATE] unavailable locations hidden or visually greyed","[CONSOLE] no TypeError or JS errors during filter interaction
+[NETWORK] filter API returns 2xx response","Filter UI not visible; Unavailable locations still shown after filtering; Map not updating to reflect filter","Close modal; navigate away",VCST-4499 TC-005,Automated
+BOPIS-009,Filter - Distance,BOPIS > Filters,High,BL-BOPIS-003,"ECL-14.2","Pickup modal open; Location/geolocation enabled","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] apply distance filter
+[WAIT] list updates and sorts by proximity
+[ASSERT] locations sorted nearest first
+[ACT] combine distance filter with availability filter
+[ASSERT] combined filter results accurate","[STATE] locations sorted by proximity after distance filter applied
+[STATE] distance filter combines correctly with other filters","[CONSOLE] no TypeError or JS errors during filter interaction","Locations not sorted by distance; Distance filter not combining with other filters","Close modal; navigate away",VCST-4499 TC-005,Automated
+BOPIS-010,Filter - Combined,BOPIS > Filters,Medium,BL-BOPIS-003,"ECL-14.2","Pickup modal open; Multiple filter options configured","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] apply availability filter
+[ACT] apply distance filter
+[ACT] type location name in search while filters active
+[WAIT] combined results shown
+[ASSERT] all three criteria applied simultaneously
+[ACT] click 'Clear all filters' or equivalent
+[WAIT] all locations restored","[STATE] availability filter, distance filter, and search combine with AND logic
+[STATE] clearing all filters restores the full location list
+[STATE] map reflects all filter states","[CONSOLE] no TypeError or JS errors during combined filter interactions","Filters not combining correctly; Clearing filters does not restore all locations; Map not updating on filter change","Close modal; navigate away",VCST-4499 TC-005,Automated
+BOPIS-011,Map - Zoom Controls,BOPIS > Map,High,BL-BOPIS-007,"ECL-14.1","Pickup modal open with map visible","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens with map rendered
+[ACT] click zoom-in control on map
+[WAIT] map zooms in
+[ASSERT] zoom level increased
+[ACT] click zoom-out control
+[WAIT] map zooms out
+[ASSERT] zoom level decreased
+[ACT] pan map by drag interaction","[STATE] zoom in control increases map zoom level
+[STATE] zoom out control decreases map zoom level
+[STATE] pan/drag interaction moves map viewport","[CONSOLE] no TypeError or JS errors during zoom/pan interactions","Zoom controls unresponsive; Map does not pan on drag; JS errors on zoom interaction","Close modal; navigate away",VCST-4499 TC-006,Automated
+BOPIS-012,Map - Info Window Single Display,BOPIS > Map,High,BL-BOPIS-007,"ECL-14.1","Pickup modal open; Multiple markers visible on map","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens with multiple markers
+[ACT] click marker A on map
+[WAIT] info window A opens
+[ACT] immediately click marker B on map
+[WAIT] info window B opens
+[ASSERT] only info window B visible (A is closed)
+[ACT] rapidly click several different markers
+[ASSERT] never more than one info window open","[STATE] only one info window displayed at a time
+[STATE] clicking a new marker closes any previously open info window
+[STATE] no race conditions or double info window on rapid clicks","[CONSOLE] no TypeError or JS errors during rapid marker clicking","More than one info window visible simultaneously; Application crash on rapid marker clicks; Info window not closing when new marker clicked","Close modal; navigate away",VCST-4499 TC-006,Automated
+BOPIS-013,Map - Background Click Close,BOPIS > Map,Medium,BL-BOPIS-007,"ECL-14.1","Pickup modal open; Info window open for a marker","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] click a map marker to open its info window
+[WAIT] info window opens
+[ACT] click map background (not on any marker)
+[WAIT] info window closes
+[ASSERT] info window is gone
+[ACT] click same marker again
+[WAIT] info window reopens","[STATE] info window closes when clicking map background
+[STATE] info window can be reopened by clicking marker again","[CONSOLE] no TypeError or JS errors during background click","Info window not closing on background click; Cannot reopen info window after closing","Close modal; navigate away",VCST-4499 TC-006,Automated
+BOPIS-014,Pickup Location Card - Content,BOPIS > Card,High,BL-BOPIS-006,"ECL-14.1","Pickup location selected; Location configured with all fields (name, address, hours, contact)","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] click a location in list
+[WAIT] location info card opens
+[ASSERT] location name displayed
+[ASSERT] address displayed
+[ASSERT] hours of operation displayed
+[ASSERT] availability chips visible and styled
+[ASSERT] contact information present","[DOM] location name and address displayed in info card
+[DOM] hours of operation section visible
+[DOM] availability chips rendered with correct labels
+[DOM] contact information (phone/email) present when configured","[CONSOLE] no TypeError or JS errors during card render","Missing location name or address; Hours of operation absent; Availability chips not rendering; Info card does not open","Close modal; navigate away",VCST-4499 TC-007,Automated
+BOPIS-015,Pickup Location Card - Cancel,BOPIS > Card,Medium,BL-BOPIS-004,"ECL-14.1","Pickup location card open (location clicked in modal)","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] click a location to open its info card
+[WAIT] info card opens
+[ACT] click 'Cancel' button on info card
+[WAIT] info card closes
+[ASSERT] modal is still open (not closed)
+[ASSERT] previous modal state preserved (same location list visible)","[STATE] info card closes on Cancel
+[STATE] main pickup modal remains open after Cancel
+[STATE] location list state preserved — previously viewed location not selected","[CONSOLE] no TypeError or JS errors during Cancel action","Cancel closes entire modal instead of just card; Modal state lost after Cancel","Close modal; navigate away",VCST-4499 TC-007,Automated
+BOPIS-016,Pickup Location Card - Confirm,BOPIS > Card,Critical,BL-BOPIS-004,"ECL-14.1","Pickup location card open","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] click a location in list
+[WAIT] info card opens
+[ACT] click 'Confirm' button
+[WAIT] info card closes
+[WAIT] modal closes
+[ASSERT] pickup location name and address shown in cart summary
+[ASSERT] can proceed to checkout","[DOM] pickup location name and address visible in cart summary
+[STATE] both info card and pickup modal close after Confirm
+[STATE] cart checkout flow accessible after location confirmed","[API] mutation errors[] is empty for selectPickupLocation
+[CONSOLE] no TypeError or JS errors during Confirm action","Modal not closing after Confirm; Pickup location not appearing in cart after Confirm; Checkout blocked after location confirmed","Clear pickup location or remove items from cart",VCST-4499 TC-007,Automated
+BOPIS-017,Scroll Behavior - List Independent,BOPIS > Scroll,Medium,BL-BOPIS-007,"ECL-14.1","Pickup modal open; Many locations configured (list is scrollable)","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens with scrollable list
+[ACT] scroll down in location list
+[ASSERT] map stays in fixed position (does not scroll or pan)
+[ACT] scroll to bottom of list
+[ASSERT] no over-scroll or bounce outside list bounds","[STATE] location list scrolls independently without moving the map
+[STATE] scroll boundaries enforced — no over-scroll beyond list edges","[CONSOLE] no TypeError or JS errors during list scroll","List scroll causes map to move or pan; Over-scroll takes user outside modal bounds","Close modal; navigate away",VCST-4499 TC-008,Automated
+BOPIS-018,Scroll Behavior - Card Lock,BOPIS > Scroll,Medium,BL-BOPIS-007,"ECL-14.1","Pickup modal open; Location info card open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] click a location to open info card
+[WAIT] info card opens
+[ACT] attempt to scroll background content behind card
+[ASSERT] background scroll is disabled while card open
+[ACT] close info card (Cancel)
+[WAIT] card closes
+[ASSERT] scroll is re-enabled after card closes","[STATE] background scroll locked when location info card is open
+[STATE] scroll re-enabled after info card is dismissed","[CONSOLE] no TypeError or JS errors during scroll lock/unlock","Background scrolls behind open card; Scroll remains locked after card closed","Close modal; navigate away",VCST-4499 TC-008,Automated
+BOPIS-019,Pickup Filters - City Search,BOPIS > City Filter,High,BL-BOPIS-003,"ECL-14.2","Pickup modal open; Locations in multiple cities configured","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] locate city filter input
+[ACT] type city name in city filter
+[WAIT] location list updates
+[ASSERT] only locations in matching city displayed","[DOM] city filter input is available
+[STATE] entering city name filters list to matching city locations
+[DOM] displayed results match city filter input","[CONSOLE] no TypeError or JS errors during city filter interaction","City filter not available; Filtering by city shows incorrect locations; No results for valid city","Close modal; navigate away",VCST-3865,Automated
+BOPIS-020,Pickup Filters - State Search,BOPIS > State Filter,High,BL-BOPIS-003,"ECL-14.2","Pickup modal open; Locations in multiple states configured","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] locate state filter
+[ACT] select a state from state filter
+[WAIT] location list filters to selected state
+[ASSERT] result count updates
+[ASSERT] all displayed locations are in selected state","[DOM] state filter is available
+[STATE] selecting a state filters list to locations in that state
+[DOM] result count reflects filtered set","[CONSOLE] no TypeError or JS errors during state filter interaction","State filter not available; Filtering by state shows locations from other states; Count not updating","Close modal; navigate away",VCST-3865,Automated
+BOPIS-021,Pickup Filters - Combined Search,BOPIS > Filters,High,BL-BOPIS-003,"ECL-14.2","Pickup modal open; Locations with various city/state attributes","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] apply city filter
+[ACT] apply state filter
+[ACT] type location name in search field
+[WAIT] combined filter and search results shown
+[ASSERT] all three criteria applied simultaneously with AND logic","[STATE] city filter, state filter, and name search combine with AND logic
+[STATE] only locations matching all three criteria shown","[CONSOLE] no TypeError or JS errors during combined filter interactions","Filters not combining with AND logic; Search overrides filters instead of combining","Close modal; navigate away",VCST-4447,Automated
+BOPIS-022,Map Width After Search (Bug Fix),BOPIS > Bug Verification,Critical,BL-BOPIS-007,"ECL-7.1","PR #2138 deployed; VCST-4518 fix included; Cart has products","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] measure initial map container width (note value as baseline ~50%)
+[ACT] type 'Westent foxpost' in search field
+[WAIT] no-results / 'not found' message appears
+[ASSERT] map container width >= 40% of modal width
+[ACT] clear search field (click X)
+[WAIT] all locations restored
+[ASSERT] map container width >= 40% of modal width
+[ACT] type a valid location name
+[WAIT] results shown
+[ASSERT] map container width >= 40% of modal width
+[ACT] click a location to open info card
+[ASSERT] info card content is readable with adequate map space","[MATH] map container width >= 40% of modal width at all times
+[DOM] no-results state does not cause map to collapse
+[DOM] info card is readable alongside the map (map not crowded out)
+[STATE] VCST-4518 regression: map width never shrinks below 40%","[CONSOLE] no TypeError or JS errors during search interactions
+[NETWORK] search API returns 2xx response","Map width drops below 40% during or after search (VCST-4518 regression); Map entirely hidden after no-results search; Info card overlaps map making content unreadable","Close modal; navigate away",VCST-4499 BUG-001,Manual
+BOPIS-023,Responsive - 320px Width,BOPIS > Responsive,High,BL-BOPIS-007,"ECL-14.1","Browser at 320px viewport width","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] resize viewport to 320px width
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens at 320px
+[ASSERT] single column layout with no horizontal scroll
+[ACT] click 'Map' toggle
+[WAIT] map view renders
+[ACT] click 'List' toggle
+[WAIT] list view renders
+[ACT] complete full selection flow (select location, Confirm)","[STATE] no horizontal scroll at 320px viewport
+[DOM] mobile single-column layout renders correctly
+[STATE] List/Map toggle functional at 320px
+[DOM] pickup location confirmed successfully at 320px","[API] mutation errors[] is empty for selectPickupLocation
+[CONSOLE] no TypeError or JS errors at 320px","Horizontal scroll present at 320px; Modal elements overflow or cut off; Toggle not functional at narrow viewport","Clear pickup location or remove items from cart",VCST-4499 TC-009,Automated
+BOPIS-024,Responsive - 768px Width,BOPIS > Responsive,High,BL-BOPIS-007,"ECL-14.1","Browser at 768px viewport width","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] resize viewport to 768px width
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens at 768px
+[ASSERT] layout uses appropriate breakpoint (tablet layout)
+[ACT] test all modal functionality (search, select, confirm)
+[ASSERT] no broken or overlapping elements","[STATE] appropriate breakpoint layout applied at 768px
+[STATE] no broken, overflowing, or overlapping elements
+[STATE] all modal functionality works at tablet width","[CONSOLE] no TypeError or JS errors at 768px","Layout broken at 768px breakpoint; Elements overlapping at tablet width","Clear pickup location or remove items from cart",VCST-4499 TC-009,Automated
+BOPIS-025,Responsive - 1920px Width,BOPIS > Responsive,High,BL-BOPIS-007,"ECL-14.1","Browser at 1920px viewport width","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] resize viewport to 1920px width
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens at 1920px
+[ASSERT] desktop side-by-side layout (list left, map right)
+[ASSERT] no excessive stretching or whitespace on large screen
+[ASSERT] proportions visually balanced","[DOM] desktop side-by-side layout: list on left, map on right
+[STATE] no stretching, overflow, or excessive whitespace at 1920px
+[STATE] proportions visually correct (list ~50%, map ~50%)","[CONSOLE] no TypeError or JS errors at 1920px","Map or list stretched to 100% at large viewport; Layout not using side-by-side at 1920px","Clear pickup location or remove items from cart",VCST-4499 TC-009,Automated
+BOPIS-026,Integration - Cart to Checkout,BOPIS > Integration,Critical,"BL-BOPIS-002,BL-BOPIS-006","ECL-14.1","Products in cart; Pickup locations available; Billing address saved","url={{FRONT_URL}};sku={{TEST_SKU}};email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
+[ACT] add product to cart if not present
+[ACT] click 'Pickup' radio button
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] click a location and click 'Select'
+[ACT] click 'Confirm'
+[WAIT] modal closes and location shown in cart
+[ASSERT] shipping cost = $0.00
+[ACT] click 'Proceed to checkout' or equivalent
+[WAIT] checkout page loads
+[ASSERT] pickup location info visible in checkout summary
+[ACT] complete order placement
+[WAIT] order confirmation page
+[ASSERT] order shows pickup fulfillment details","[DOM] pickup location persists from cart through to checkout summary
+[STATE] shipping cost = $0.00 throughout checkout flow
+[DOM] order confirmation shows pickup details
+[NAV] checkout completes without redirect errors","[API] mutation errors[] is empty for selectPickupLocation
+[API] xAPI order shows shipments[].fulfillmentCenterId = selected pickup location
+[CONSOLE] no TypeError or JS errors during end-to-end flow","Pickup location lost between cart and checkout; Shipping cost not $0 in checkout; Order confirmation shows delivery instead of pickup","Cancel order via admin",VCST-4499 TC-015,Automated
+BOPIS-027,Integration - Switch Delivery Methods,BOPIS > Integration,High,"BL-BOPIS-002,BL-BOPIS-004","ECL-14.1,ECL-7.1","Products in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Pickup' radio button
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] select a location and click 'Confirm'
+[WAIT] pickup location shown in cart
+[ACT] click 'Delivery' or 'Shipping' radio button
+[WAIT] pickup location cleared from cart
+[ASSERT] shipping cost re-appears
+[ACT] click 'Pickup' radio button again
+[WAIT] pickup prompt shown
+[ASSERT] can select a new pickup location","[STATE] switching to Delivery clears the previously confirmed pickup location
+[STATE] shipping cost restored after switching to Delivery
+[STATE] switching back to Pickup allows re-selection of a location","[API] mutation errors[] is empty for clearPickupLocation
+[CONSOLE] no TypeError or JS errors during method switching","Pickup location not cleared when switching to Delivery; Shipping cost not restored on switch to Delivery; Cannot re-select pickup location after switching back","Clear pickup location or remove items from cart",VCST-4499 TC-015,Automated
+BOPIS-028,Product Page BOPIS Widget - View-Only Modal Opens,BOPIS > Product Page,Critical,BL-BOPIS-004,"ECL-14.1","Product detail page for BOPIS-eligible product; Pickup locations configured","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}} navigate to BOPIS-eligible product detail page
+[WAIT] product detail page loads
+[ASSERT] BOPIS shipping widget visible in shipping section
+[ASSERT] CTA button visible (e.g., 'Check availability at nearby locations')
+[ACT] click the BOPIS CTA button
+[WAIT] pickup location modal opens
+[ASSERT] map renders with location markers
+[ASSERT] location list populates","[DOM] BOPIS CTA button visible in product page shipping section
+[DOM] clicking CTA opens pickup location modal without errors
+[DOM] map renders with location markers
+[DOM] location list populates with available locations","[CONSOLE] no TypeError or JS errors when opening modal from product page","BOPIS CTA not visible on product page; Modal does not open on CTA click; Map fails to render; Location list empty","Close modal; navigate away",VCST-4584,Manual
+BOPIS-029,Product Page BOPIS Widget - No Select Button (View Only),BOPIS > Product Page,Critical,"BL-BOPIS-004,BL-BOPIS-005","ECL-14.1","BOPIS modal opened from product detail page","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}} navigate to BOPIS-eligible product detail page
+[ACT] click BOPIS CTA to open modal
+[WAIT] pickup location modal opens
+[SCROLL] scroll through location list
+[ACT] click on a location in the list
+[WAIT] location info card / info window opens
+[ASSERT] no 'Select' or 'Choose this location' button present in info card
+[ASSERT] modal is informational/view-only
+[SCROLL] verify no Select button visible anywhere in modal","[DOM] 'Select' button NOT present in product page BOPIS modal
+[STATE] product page BOPIS modal is view-only — location can be viewed but not selected
+[DOM] contrast verified: cart BOPIS modal (BOPIS-034) still has 'Select' button","[CONSOLE] no TypeError or JS errors when interacting with view-only modal","'Select' button unexpectedly present in product page BOPIS modal (regression); Modal allows location selection from product page","Close modal; navigate away",VCST-4584,Manual
+BOPIS-030,Product Page BOPIS Widget - Map and Location List Display,BOPIS > Product Page,High,BL-BOPIS-004,"ECL-14.1","BOPIS modal opened from product detail page","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}} navigate to BOPIS-eligible product detail page
+[ACT] click BOPIS CTA to open modal
+[WAIT] pickup location modal opens
+[ASSERT] map renders with markers for all pickup locations
+[ASSERT] location list displays all available locations
+[SCROLL] scroll through location list
+[ASSERT] each entry shows location name and address
+[ASSERT] map and list are synchronized (clicking list item highlights map marker)
+[ASSERT] modal dimensions stable — no layout shift","[DOM] map renders with markers for pickup locations
+[DOM] location list shows all available locations with name and address per entry
+[STATE] map and list stay synchronized
+[STATE] modal dimensions stable throughout interaction — no layout jump","[CONSOLE] no TypeError or JS errors during map and list interaction","Map fails to render or shows no markers; Location list empty; Layout shift during modal interaction","Close modal; navigate away",VCST-4584,Manual
+BOPIS-031,Product Page BOPIS Widget - Close Modal Returns to Product Page,BOPIS > Product Page,High,BL-BOPIS-004,"ECL-14.1","BOPIS modal opened from product detail page","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}} navigate to BOPIS-eligible product detail page
+[ACT] click BOPIS CTA to open modal
+[WAIT] modal opens
+[ACT] scroll through location list
+[ACT] click a location to view details
+[ACT] click X (close) button on modal
+[WAIT] modal closes
+[ASSERT] user remains on product detail page (no navigation)
+[ASSERT] product page state unchanged (scroll position preserved)
+[ASSERT] product add-to-cart widget still visible and functional","[STATE] modal closes cleanly on X click
+[NAV] user remains on product detail page — no navigation away
+[STATE] product page scroll position preserved after modal close
+[DOM] add-to-cart widget still visible and functional after modal close","[CONSOLE] no TypeError or JS errors on modal close","Modal close navigates user away from product page; Page state lost after modal close; Add-to-cart widget missing after close","Navigate away from product page",VCST-4584,Manual
+BOPIS-032,Product Page BOPIS Widget - Radio Button Has No Indicator,BOPIS > Product Page,High,BL-BOPIS-004,"ECL-14.1","BOPIS modal opened from product detail page","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}} navigate to BOPIS-eligible product detail page
+[ACT] click BOPIS CTA to open modal
+[WAIT] modal opens
+[ACT] locate radio buttons in location list
+[ASSERT] radio buttons do NOT show circular filled indicator (noIndicator prop active)
+[ACT] click a location and observe highlight style
+[ASSERT] selection uses border or background highlight, not a circular radio indicator","[DOM] no circular radio indicator visible in product page BOPIS modal (noIndicator prop)
+[DOM] location selection is visually indicated by border or background color change — not circular indicator
+[DOM] contrast: cart BOPIS modal (BOPIS-034) shows standard radio indicators","[CONSOLE] no TypeError or JS errors when interacting with location list","Standard circular radio indicators visible in product page BOPIS modal (noIndicator prop not applied)","Close modal; navigate away",VCST-4584,Manual
+BOPIS-033,Location Info Card - New Fields Display (Email Phone Hours),BOPIS > Location Info,High,BL-BOPIS-004,"ECL-14.1","Pickup locations configured with contactEmail, contactPhone, workingHours, and description fields populated","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] click on a location that has all new fields populated
+[WAIT] location info card opens
+[ASSERT] contact email visible
+[ASSERT] contact phone visible
+[ASSERT] working hours visible
+[ASSERT] description text visible
+[ACT] click on a location with no optional fields populated
+[ASSERT] optional field labels absent (no empty placeholders)","[DOM] contact email displayed when populated
+[DOM] contact phone displayed when populated
+[DOM] working hours section displayed when populated
+[DOM] description text displayed when populated
+[DOM] optional fields absent when not configured — no empty placeholder labels
+[STATE] layout not broken by presence of additional fields","[CONSOLE] no TypeError or JS errors when rendering info card with all fields","Empty placeholder labels shown for unpopulated fields; Info card layout broken with all fields present; Required fields (name, address) missing","Close modal; navigate away",VCST-4584,Manual
+BOPIS-034,Cart BOPIS Modal - Select Button Still Present (Regression),BOPIS > Cart > Regression,Critical,BL-BOPIS-004,"ECL-14.1","Items in cart; BOPIS modal opened from cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] add BOPIS-eligible product to cart
+[ACT] click 'Pickup' radio button
+[ACT] click 'Select pickup location'
+[WAIT] cart BOPIS modal opens
+[ACT] click on a location in list
+[WAIT] location info card opens
+[ASSERT] 'Select' button IS present in location info card
+[ACT] click 'Select' button
+[WAIT] location selected and modal closes
+[ASSERT] selected location shown in cart","[DOM] 'Select' button visible in location info card in cart BOPIS modal
+[STATE] clicking 'Select' confirms the location and closes the modal
+[DOM] selected pickup location shown in cart summary
+[STATE] cart BOPIS modal NOT broken by VCST-4584 product page changes","[API] mutation errors[] is empty for selectPickupLocation
+[CONSOLE] no TypeError or JS errors in cart BOPIS modal","'Select' button missing in cart BOPIS modal (regression from VCST-4584 changes); Cart BOPIS modal behaves like product page view-only modal","Clear pickup location or remove items from cart",VCST-4584,Manual
+BOPIS-035,VCST-4613 Availability Tooltip on Product Page,BOPIS > Product Page,Medium,BL-BOPIS-003,"ECL-14.2","Product detail page with BOPIS widget; Pickup locations with varying availability configured","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}} navigate to BOPIS-eligible product detail page
+[WAIT] product detail page loads
+[ACT] locate BOPIS widget availability indicator
+[ACT] hover over availability tooltip trigger
+[WAIT] tooltip appears
+[ASSERT] tooltip shows location count or availability status
+[ASSERT] tooltip content is accurate (matches actual pickup location data)
+[ACT] move mouse away from tooltip trigger
+[WAIT] tooltip closes","[DOM] availability tooltip trigger visible on product page BOPIS widget
+[STATE] tooltip appears on hover with location count or availability status
+[STATE] tooltip content reflects actual pickup location data
+[STATE] tooltip closes on mouseout or click outside
+[STATE] tooltip triggers on click on mobile/touch","[CONSOLE] no TypeError or JS errors on tooltip interaction","Tooltip does not appear on hover; Tooltip shows incorrect availability count; Tooltip does not close on mouseout","Navigate away from product page",VCST-4613,Manual
+BOPIS-036,Product Page BOPIS Widget - Mobile Responsive (375x667),BOPIS > Product Page > Mobile,High,BL-BOPIS-004,"ECL-14.1","Mobile viewport (375x667); Product detail page with BOPIS widget","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}} navigate to BOPIS-eligible product detail page
+[ACT] resize viewport to 375x667 (mobile)
+[WAIT] page renders at mobile size
+[ASSERT] BOPIS widget renders without overflow or cut-off
+[ACT] tap the BOPIS CTA button
+[WAIT] modal opens in mobile-friendly layout
+[ASSERT] map accessible on mobile (may be below list)
+[ASSERT] location list accessible
+[ASSERT] close button tap target >= 44x44px
+[ACT] tap a location to view details
+[ACT] tap close button
+[WAIT] modal closes","[STATE] BOPIS widget not overflowing at 375px width
+[DOM] CTA button tap target adequate on mobile
+[STATE] modal opens in mobile-friendly layout
+[DOM] close button tap target meets 44x44px minimum
+[STATE] touch interactions work (tap locations, close modal)","[CONSOLE] no TypeError or JS errors at mobile viewport","BOPIS widget overflowing at 375px; CTA button tap target too small; Modal not mobile-optimized; Close button not accessible on mobile","Close modal; navigate away",VCST-4584,Manual
+BOPIS-037,Feature Flag Disabled - Pickup Option Hidden,BOPIS > Cart > Toggle,High,BL-BOPIS-005,"ECL-7.1","BOPIS module deactivated in store settings; Products in cart","url={{FRONT_URL}};admin={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}};sku={{TEST_SKU}}","[ADMIN] verify BOPIS module is deactivated in store settings
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[ASSERT] 'Pickup' option is NOT present in delivery method options
+[ASSERT] only 'Shipping' or 'Delivery' available
+[ACT] inspect DOM for any hidden pickup elements","[DOM] 'Pickup' option absent from delivery method options
+[STATE] no pickup-related DOM elements present (no hidden divs)
+[DOM] only Shipping/Delivery option available","[ADMIN] verify BOPIS deactivation setting before running storefront test
+[CONSOLE] no TypeError or JS errors on cart page","Pickup option visible despite BOPIS module being deactivated; Hidden pickup DOM elements still rendered","Re-activate BOPIS in store settings admin",C410938,Manual
+BOPIS-038,Availability Label: Today (Main FFC Match),BOPIS > Cart > Availability,Critical,BL-BOPIS-003,"ECL-14.2","Product assigned to Main_1 FFC; Location L1 Main FC = Main_1; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Pickup' radio button
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] locate location L1 in location list
+[ASSERT] availability chip on L1 shows 'Today' label
+[ASSERT] no 'Transfer' or 'Global Transfer' label shown
+[ASSERT] location L1 is selectable (not greyed out)
+[ASSERT] map marker for L1 reflects available state","[DOM] 'Today' availability label on location L1
+[STATE] location L1 is selectable
+[DOM] map marker for L1 shows available state (correct color/icon)
+[STATE] no Transfer or Global Transfer label present on L1","[CONSOLE] no TypeError or JS errors when rendering availability labels
+[NETWORK] availability data loaded from correct FFC matching endpoint","L1 shows 'Transfer' or 'Not Available' despite Main FFC match; Availability label missing from chip","Close modal; navigate away",C412653,Manual
+BOPIS-039,Availability Label: Transfer (Transfer FFC Match),BOPIS > Cart > Availability,High,BL-BOPIS-003,"ECL-14.2","Product assigned to Transfer_1 FFC; Location L3 Transfer FC = Transfer_1; GlobalTransfer = OFF; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Pickup' radio button
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] locate location L3 in list
+[ASSERT] availability chip shows Transfer duration label (e.g., 'Transfer (2-3 days)')
+[ASSERT] label text matches TransferDurationText from Admin config
+[ASSERT] location L3 is selectable","[DOM] Transfer duration label visible on location L3 chip
+[STATE] label text matches TransferDurationText configured in Admin
+[STATE] location L3 is selectable despite requiring transfer","[CONSOLE] no TypeError or JS errors when rendering Transfer label
+[NETWORK] availability data reflects Transfer FFC match","L3 shows 'Today' or 'Not Available' instead of Transfer label; Transfer duration text does not match Admin config","Close modal; navigate away",C412656,Manual
+BOPIS-040,Availability Label: Global Transfer (1 week),BOPIS > Cart > Availability,High,BL-BOPIS-003,"ECL-14.2","Product assigned to Main_1 FFC; Location L2 has no Main FC; GlobalTransfer = ON; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Pickup' radio button
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] locate location L2 in list
+[ASSERT] availability chip shows 'Global Transfer (1 week)' or GlobalTransferDurationText
+[ASSERT] label text matches GlobalTransferDurationText from Admin config
+[ASSERT] location L2 is selectable","[DOM] 'Global Transfer (1 week)' or GlobalTransferDurationText label visible on L2
+[STATE] label text matches GlobalTransferDurationText configured in Admin
+[STATE] location L2 is selectable when GlobalTransfer = ON","[CONSOLE] no TypeError or JS errors when rendering Global Transfer label
+[NETWORK] availability data reflects global transfer fallback","L2 shows 'Not Available' despite GlobalTransfer being ON; Global Transfer text does not match Admin config","Close modal; navigate away",C412655,Manual
+BOPIS-041,Availability Label: Not Available (No Match + Global OFF),BOPIS > Cart > Availability,High,BL-BOPIS-003,"ECL-14.2","Product assigned to Transfer_1 FFC; Location L4 has Main FC only; GlobalTransfer = OFF; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Pickup' radio button
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] locate location L4 in list
+[ASSERT] L4 shows 'Not available' state (greyed or disabled chip)
+[ACT] attempt to click/select L4
+[ASSERT] L4 cannot be selected for pickup
+[ASSERT] no console errors on attempting to select unavailable location","[DOM] L4 shows 'Not available' state visually (greyed/disabled)
+[STATE] L4 cannot be selected when no FFC match and GlobalTransfer = OFF
+[STATE] attempting to select L4 produces no error and does not proceed","[CONSOLE] no TypeError or JS errors when rendering Not Available state","L4 shown as selectable despite no FFC match; L4 shows incorrect availability label (Today/Transfer)","Close modal; navigate away",C412654,Manual
+BOPIS-042,Availability Label: TrackInventory=FALSE but MFC stock=0,BOPIS > Cart > Availability,Medium,BL-BOPIS-003,"ECL-14.2","Product with TrackInventory=FALSE; MFC stock reported as 0; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Pickup' radio button
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] check availability labels on locations with MFC stock=0
+[ASSERT] location shows as available (not 'Not Available') because TrackInventory=FALSE
+[ACT] select the location
+[ASSERT] location is selectable despite stock=0 report","[STATE] location shown as available when product has TrackInventory=FALSE — stock level not checked
+[STATE] location is selectable even with reported stock=0
+[DOM] availability chip does not show 'Not Available' for TrackInventory=FALSE products","[CONSOLE] no TypeError or JS errors when rendering availability for TrackInventory=FALSE product","Location shown as 'Not Available' for TrackInventory=FALSE product with stock=0; TrackInventory=FALSE not respected in availability logic","Close modal; navigate away",C412663,Manual
+BOPIS-043,No Valid Pickup Locations - Pickup Blocked,BOPIS > Cart > Availability,High,BL-BOPIS-003,"ECL-14.2,ECL-14.4","Product P5 assigned to FFC with GlobalTransfer=OFF; No compatible pickup locations","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] add product P5 to cart
+[ACT] click 'Pickup' radio button
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ASSERT] message shown: 'There are no available pickup points for these products' or equivalent
+[ASSERT] Pickup radio blocked or error shown on modal
+[ASSERT] user is prompted to select another shipping method","[DOM] 'There are no available pickup points for these products' message shown (or equivalent)
+[STATE] Pickup radio blocked or in error state
+[DOM] user is prompted to select a different shipping method
+[STATE] user cannot proceed with pickup when no valid locations exist","[CONSOLE] no TypeError or JS errors when no pickup locations available","No message shown when no pickup locations available; Pickup radio not blocked; User can proceed with pickup despite no valid locations","Navigate away from cart",C412691,Manual
+BOPIS-044,Inactive Location Excluded from Modal,BOPIS > Cart > Availability,High,"BL-BOPIS-005,BL-BOPIS-001","ECL-7.1","One pickup location deactivated in Admin (Store > Shipping > BOPIS > Active=OFF); Other locations remain active","url={{FRONT_URL}};admin={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}}","[ADMIN] verify target location is deactivated (Active=OFF) before test
+[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ASSERT] deactivated location is NOT present in location list
+[ASSERT] deactivated location is NOT shown on map
+[ASSERT] active locations are present and unaffected","[STATE] deactivated location absent from list and map
+[STATE] active locations still present and selectable
+[DOM] no empty gap or error in location list where deactivated location would be","[ADMIN] verify location deactivated before running storefront test
+[CONSOLE] no TypeError or JS errors when loading location list","Deactivated location appears in list or on map; Active locations missing due to deactivation side effect","Re-activate location in admin",C410939,Manual
+BOPIS-045,Mixed Cart: BOPIS + Delivery-Only Items,BOPIS > Cart > Mixed,High,"BL-BOPIS-002,BL-CART-001","ECL-14.4","Cart has both BOPIS-eligible and delivery-only products","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] add BOPIS-eligible product to cart
+[ACT] add delivery-only product to cart
+[WAIT] cart shows both items
+[ASSERT] BOPIS item has Pickup toggle option
+[ASSERT] delivery-only item shows Shipping only (no Pickup toggle)
+[ACT] select Pickup for BOPIS-eligible item
+[ACT] confirm pickup location
+[ACT] verify delivery-only item still shows Shipping method
+[ASSERT] cart totals show $0 shipping on pickup item + shipping cost on delivery item
+[ACT] proceed to checkout
+[ASSERT] checkout summary shows both fulfillment methods","[STATE] BOPIS item shows Pickup toggle; delivery-only item shows Shipping only
+[STATE] delivery method selectors are independent per item
+[MATH] cart total = BOPIS subtotal + delivery item subtotal + shipping cost (delivery only) + tax
+[DOM] checkout summary shows both Pickup and Shipping fulfillment methods","[API] mutation errors[] is empty for selectPickupLocation
+[CONSOLE] no TypeError or JS errors with mixed cart
+[NETWORK] cart API reflects separate delivery methods per line item","Pickup toggle visible on delivery-only item; Mixed cart shows single delivery method for all items; Cart totals incorrect with split fulfillment","Clear pickup location or remove items from cart",checklist-D,Manual
+BOPIS-046,Mixed Cart: Pickup Location for One Item Does Not Cascade,BOPIS > Cart > Mixed,High,"BL-BOPIS-001,BL-CART-001","ECL-14.4,ECL-7.1","Mixed cart with pickup confirmed for BOPIS item; Delivery-only item in same cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart shows mixed items
+[ACT] confirm pickup location for BOPIS-eligible item
+[WAIT] pickup location shown for BOPIS item
+[ASSERT] delivery-only item still shows Shipping delivery method
+[ASSERT] no pickup location assigned to delivery-only item
+[ACT] check cart totals
+[ASSERT] totals reflect split fulfillment correctly","[STATE] delivery-only item unaffected by pickup location selection on BOPIS item
+[STATE] no pickup location assigned to delivery-only item
+[MATH] cart total correctly reflects split fulfillment (pickup + delivery costs)","[API] mutation errors[] is empty for selectPickupLocation
+[NETWORK] cart API response shows separate shipments per item — delivery-only item has no fulfillmentCenterId
+[CONSOLE] no TypeError or JS errors with split fulfillment","Pickup location cascades to delivery-only item; Cart totals incorrect due to pickup assignment on delivery item","Clear pickup location or remove items from cart",checklist-D,Manual
+BOPIS-047,Cart Totals: Zero Shipping for Pickup Order,BOPIS > Cart > Totals,Critical,BL-BOPIS-002,"ECL-14.1","All cart items set to Pickup; Pickup location confirmed","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] add product to cart
+[ACT] click 'Pickup' radio button
+[ACT] confirm a pickup location
+[WAIT] pickup confirmed in cart
+[ASSERT] shipping line shows $0.00 or 'Free'
+[ASSERT] order summary total = subtotal + tax (no shipping component)","[STATE] shipping cost = $0.00 after pickup location confirmed
+[MATH] total = subtotal + tax (no shipping charge added)
+[DOM] shipping line shows $0.00 or 'Free' in order summary
+[STATE] no stale shipping amount from previous delivery selection","[NETWORK] cart API response shipments[].price = 0 after pickup confirmed
+[CONSOLE] no TypeError or JS errors in cart totals calculation","Shipping cost not $0 after pickup confirmed; Total includes shipping charge after pickup; Stale shipping amount from previous delivery selection persisting","Clear pickup location or remove items from cart",C413982,Manual
+BOPIS-048,Cart Totals: Switch from Delivery to Pickup Removes Shipping Cost,BOPIS > Cart > Totals,High,BL-BOPIS-002,"ECL-14.1,ECL-7.1","Cart showing Delivery with shipping cost applied; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] ensure Delivery is selected with a shipping method applied
+[ASSERT] note current total including shipping cost
+[ACT] click 'Pickup' radio button
+[ACT] confirm a pickup location
+[WAIT] pickup confirmed
+[ASSERT] shipping cost line removed or set to $0
+[ASSERT] total decreased by the previous shipping amount
+[ASSERT] tax recalculated if applicable","[STATE] shipping cost removed or set to $0 after switching to Pickup
+[MATH] total decreases by the shipping amount previously shown
+[STATE] tax recalculated after switching to Pickup if applicable","[NETWORK] cart API response shipments[].price = 0 after switching to pickup
+[API] mutation errors[] is empty for selectPickupLocation
+[CONSOLE] no TypeError or JS errors during delivery-to-pickup switch","Shipping cost persists after switching to Pickup; Total not recalculated after switching; Old shipping amount shown alongside pickup","Clear pickup location or remove items from cart",checklist-F,Manual
+BOPIS-049,Cart Totals: Tax Correct with Pickup,BOPIS > Cart > Totals,High,BL-PRICE-002,"ECL-14.1","Pickup order with tax-applicable items; Pickup location confirmed","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] confirm pickup location
+[WAIT] pickup confirmed in cart with $0 shipping
+[ASSERT] tax line visible in order summary
+[ACT] calculate expected tax: applicable tax rate × (subtotal - discount)
+[ASSERT] displayed tax amount matches calculated expected tax
+[ASSERT] tax line visible even with $0 shipping","[DOM] tax line visible in order summary
+[MATH] tax = applicable rate × (subtotal - discount) — calculated on post-discount subtotal
+[STATE] tax displayed correctly even with $0 shipping
+[MATH] total = subtotal - discount + tax (no shipping)","[NETWORK] cart API taxTotal field matches displayed tax amount
+[CONSOLE] no TypeError or JS errors in tax calculation","Tax line missing from order summary; Tax calculated on pre-discount subtotal (wrong); Tax = $0 incorrectly despite tax-applicable items","Clear pickup location or remove items from cart",checklist-F,Manual
+BOPIS-050,Switch Delivery to Pickup: Shipping Cleared,BOPIS > Cart > Switch,High,"BL-BOPIS-002,BL-BOPIS-004","ECL-7.1","Cart with Delivery address and shipping method selected; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] select Shipping delivery method
+[ACT] choose a shipping address and shipping method
+[WAIT] shipping cost applied in cart
+[ACT] click 'Pickup' radio button
+[WAIT] delivery mode changes to Pickup
+[ASSERT] shipping method is cleared
+[ASSERT] address form is hidden
+[ASSERT] 'Select pickup location' prompt appears
+[ASSERT] shipping cost removed from order summary","[STATE] shipping method cleared when switching to Pickup
+[DOM] address form hidden after switching to Pickup
+[DOM] 'Select pickup location' prompt visible
+[STATE] shipping cost removed from order summary","[API] mutation errors[] is empty for clearPickupLocation or shipping clear mutation
+[CONSOLE] no TypeError or JS errors during delivery-to-pickup switch","Shipping method not cleared when switching to Pickup; Address form still visible; Shipping cost persists after switch to Pickup","Clear pickup location or remove items from cart",BOPIS-027,Manual
+BOPIS-051,Switch Pickup to Delivery: Location Cleared,BOPIS > Cart > Switch,High,"BL-BOPIS-002,BL-BOPIS-004","ECL-14.1,ECL-7.1","Cart with pickup location confirmed; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] confirm a pickup location
+[WAIT] pickup location shown in cart
+[ACT] click 'Shipping' or 'Delivery' radio button
+[WAIT] delivery mode changes
+[ASSERT] pickup location is cleared from cart
+[ASSERT] address form or address selector reappears
+[ACT] select a shipping method
+[ASSERT] shipping cost re-applied to order summary","[STATE] pickup location cleared when switching to Delivery
+[DOM] address form or address selector reappears after switching to Delivery
+[STATE] shipping cost re-applied after selecting a shipping method","[API] mutation errors[] is empty for clearPickupLocation
+[CONSOLE] no TypeError or JS errors during pickup-to-delivery switch","Pickup location not cleared on switch to Delivery; Address form not reappearing; Old pickup location still shown in cart","Navigate away from cart",BOPIS-027,Manual
+BOPIS-052,Rapid Toggle Delivery/Pickup/Delivery/Pickup,BOPIS > Cart > Switch,Medium,"BL-BOPIS-002,BL-BOPIS-004","ECL-7.1,ECL-14.1","Products in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] toggle to Pickup
+[ACT] immediately toggle to Delivery
+[ACT] immediately toggle back to Pickup
+[ACT] immediately toggle to Delivery again
+[WAIT] UI settles on final state (Delivery)
+[ASSERT] UI correctly shows Delivery state — no ghost pickup data
+[ACT] check console for errors
+[ASSERT] no UI freeze during rapid toggling","[STATE] final state matches last delivery method selection
+[STATE] no ghost data from previous mode persists
+[STATE] no UI freeze or unresponsive elements after rapid toggling","[CONSOLE] no TypeError or JS errors during rapid toggle
+[API] mutation errors[] is empty for any clearPickupLocation calls triggered","UI stuck in intermediate state after rapid toggling; Ghost pickup location shown in Delivery mode; Console errors during rapid toggle; UI freeze","Navigate away from cart",checklist-G,Manual
+BOPIS-053,ShipTo Header Change While Pickup Active,BOPIS > Cart > Switch,Medium,"BL-BOPIS-001,BL-BOPIS-002","ECL-7.1","Pickup selected and location confirmed; Header ship-to address selector available","url={{FRONT_URL}};sku={{TEST_SKU}};email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
+[ACT] confirm a pickup location
+[WAIT] pickup location shown in cart
+[ACT] click the ship-to address selector in the page header
+[ACT] change the ship-to address to a different address
+[WAIT] cart updates
+[ASSERT] delivery method switches back to Shipping (not Pickup)
+[ASSERT] previous pickup location is cleared
+[ASSERT] new address is applied","[STATE] delivery method switches from Pickup to Shipping when ship-to address changed via header
+[STATE] pickup location cleared after ship-to change
+[DOM] new ship-to address applied in cart","[API] mutation errors[] is empty for clearPickupLocation triggered by ship-to change
+[CONSOLE] no TypeError or JS errors during ship-to change with pickup active","Pickup not cleared after ship-to address change; Delivery method stays as Pickup despite ship-to change","Clear pickup location or remove items from cart",C410850,Manual
+BOPIS-054,Quantity Increase Revalidates Pickup Availability,BOPIS > Cart > Revalidation,High,"BL-CART-001,BL-CART-002","ECL-2.1,ECL-14.2","Pickup confirmed at a location with limited branch stock; Product quantity 1 in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] confirm pickup location (branch stock is limited, e.g., 5 units)
+[WAIT] pickup location confirmed
+[ACT] increase item quantity significantly (e.g., to 20 — exceeding branch stock)
+[WAIT] cart updates
+[ASSERT] availability label refreshes for new quantity
+[ASSERT] if qty > branch stock: error or warning shown
+[ASSERT] cannot proceed silently to checkout with insufficient pickup stock","[STATE] availability label refreshes when quantity exceeds branch stock
+[STATE] error or warning shown if quantity exceeds available pickup branch stock
+[STATE] checkout not allowed silently with insufficient pickup stock","[NETWORK] cart API revalidates availability against branch stock on quantity change
+[CONSOLE] no TypeError or JS errors during quantity change","Availability not revalidated after quantity increase; Silent oversell — can proceed to checkout with qty > branch stock; No error shown when qty exceeds stock","Clear pickup location or remove items from cart",checklist-H,Manual
+BOPIS-055,Quantity Decrease Below MOQ in Pickup Mode,BOPIS > Cart > Revalidation,Medium,BL-CART-001,"ECL-2.1","Product has pack size or MOQ configured; Pickup mode active","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] with pickup active, attempt to set quantity below MOQ or to a non-pack-size multiple
+[WAIT] cart validates quantity
+[ASSERT] same pack size rules enforced as in delivery mode
+[ASSERT] non-multiple quantity rejected or auto-rounded to valid quantity","[STATE] pack size / MOQ rules enforced in pickup mode same as delivery mode
+[STATE] invalid quantity rejected or auto-rounded to valid pack multiple","[CONSOLE] no TypeError or JS errors during MOQ validation in pickup mode","Pack size / MOQ rules not enforced in pickup mode; Invalid quantity accepted silently in pickup mode","Navigate away from cart",checklist-H,Manual
+BOPIS-056,Same SKU Added Again Aggregates Quantity,BOPIS > Cart > Revalidation,Medium,BL-CART-001,"ECL-2.1,ECL-14.2","Product already in cart with pickup confirmed; Same product available on PDP","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}} navigate to PDP of product already in cart with pickup
+[ACT] click 'Add to cart' again on the same product
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart loads
+[ASSERT] no duplicate line item — existing line quantity incremented
+[ASSERT] aggregated quantity validated against pickup branch stock","[STATE] adding same SKU from PDP increments existing cart line (no duplicate)
+[STATE] aggregated quantity revalidated against pickup branch stock","[NETWORK] cart API reflects incremented quantity on existing line item
+[CONSOLE] no TypeError or JS errors during quantity aggregation","Duplicate line item created instead of incrementing existing line; Aggregated quantity not validated against pickup stock","Clear pickup location or remove items from cart",checklist-H,Manual
+BOPIS-057,Facet Filter: Country,BOPIS > Cart > Filters,High,BL-BOPIS-003,"ECL-14.2","PickPoints modal open from cart; Pickup locations in multiple countries configured","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] select Country filter (e.g., USA)
+[WAIT] list filters to USA locations only
+[ASSERT] map updates to show only USA markers
+[ASSERT] filter chip for Country displayed
+[ASSERT] location count updates to reflect filtered set","[STATE] only locations in selected country shown after Country filter applied
+[STATE] map markers updated to match filtered set
+[DOM] Country filter chip displayed after selection
+[DOM] location count reflects filtered set","[CONSOLE] no TypeError or JS errors during Country filter interaction
+[NETWORK] filter API returns 2xx response","Locations from other countries shown after Country filter applied; Map markers not updated; Filter chip not shown","Close modal; navigate away",C413538,Manual
+BOPIS-058,Facet Filter: State/Province,BOPIS > Cart > Filters,High,BL-BOPIS-003,"ECL-14.2","PickPoints modal open; Country filter already applied (e.g., USA)","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] select Country filter: USA
+[ACT] select State filter: NY
+[WAIT] list filters to NY locations
+[ASSERT] map zooms to New York region
+[ASSERT] only NY locations shown","[STATE] only NY locations shown after State filter applied
+[STATE] map zooms to filtered region
+[DOM] State filter chip displayed","[CONSOLE] no TypeError or JS errors during State filter interaction","Locations outside NY shown; Map not zooming to filtered region; State filter chip not shown","Close modal; navigate away",C413540,Manual
+BOPIS-059,Facet Filter: City,BOPIS > Cart > Filters,High,BL-BOPIS-003,"ECL-14.2","PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] select City filter (e.g., New York)
+[WAIT] list filters to New York city locations
+[ASSERT] map shows only city markers
+[ASSERT] all displayed locations are in New York city","[STATE] only New York city locations shown after City filter applied
+[STATE] map shows only markers in the filtered city
+[DOM] City filter chip displayed","[CONSOLE] no TypeError or JS errors during City filter interaction","Locations outside the selected city shown; Map not updating for city filter; City filter chip not shown","Close modal; navigate away",C413541,Manual
+BOPIS-060,Facet Filter: State Disabled for Non-US/CA Countries,BOPIS > Cart > Filters,Medium,BL-BOPIS-003,"ECL-14.2","PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] select a non-US/CA country (e.g., Denmark)
+[WAIT] country filter applied
+[ACT] attempt to interact with State/Province filter
+[ASSERT] State/Province filter is disabled for non-US/CA country
+[ASSERT] no invalid filter combination possible","[STATE] State/Province filter disabled when non-US/CA country selected
+[STATE] prevents invalid Country + State filter combination","[CONSOLE] no TypeError or JS errors when State filter disabled","State filter active for non-US/CA country; Invalid Country + State filter combination possible","Close modal; navigate away",C413543,Manual
+BOPIS-061,Search by ZIP Code,BOPIS > Cart > Search,High,BL-BOPIS-003,"ECL-14.2","PickPoints modal open from cart","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] type ZIP code (e.g., 10001) in search field
+[ACT] submit or wait for debounced search
+[WAIT] results update
+[ASSERT] matching locations displayed for ZIP code area
+[ASSERT] map markers positioned at correct locations for ZIP code area","[STATE] ZIP code search returns locations in the correct area
+[DOM] map markers at correct positions for ZIP code search","[CONSOLE] no TypeError or JS errors during ZIP code search
+[NETWORK] geocoding API returns 2xx response for ZIP code","ZIP code search returns no results for valid ZIP; Map markers in wrong location for ZIP code search","Close modal; navigate away",C413546,Manual
+BOPIS-062,Search by Address,BOPIS > Cart > Search,High,BL-BOPIS-003,"ECL-14.2","PickPoints modal open from cart","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] type a street address (e.g., '34th St') in search field
+[ACT] submit or wait for debounced search
+[WAIT] results update
+[ASSERT] all locations on or near that street displayed
+[ASSERT] address searching functional","[STATE] address search returns locations near the searched street
+[STATE] address searching functional for partial street names","[CONSOLE] no TypeError or JS errors during address search
+[NETWORK] geocoding API returns 2xx response for address search","Address search returns no results for valid address; Address searching not functional","Close modal; navigate away",C413550,Manual
+BOPIS-063,Search with Special Characters (Apostrophe + Ampersand),BOPIS > Cart > Search,Medium,BL-BOPIS-007,"ECL-14.2","PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] type 'St. Patrick's' in search field
+[WAIT] results update
+[ASSERT] correct results returned (apostrophe handled properly)
+[ACT] clear search field
+[ACT] type '5th Ave & 50th' in search field
+[WAIT] results update
+[ASSERT] correct results returned (ampersand handled properly)","[STATE] apostrophe in search returns correct results without error
+[STATE] ampersand in search returns correct results without error
+[STATE] special characters properly escaped in search API calls","[CONSOLE] no TypeError or JS errors on special character search
+[NETWORK] search API does not return 4xx/5xx for special characters","Application error or crash on apostrophe in search; Incorrect results or empty set for valid special character queries","Close modal; navigate away",C413551,Manual
+BOPIS-064,Search with Whitespace Only,BOPIS > Cart > Search,Medium,BL-BOPIS-007,"ECL-14.2","PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] type only spaces (3-5 spaces) in search field
+[ACT] submit or trigger search
+[WAIT] results update
+[ASSERT] all pickup locations restored (whitespace-only treated as empty)
+[ASSERT] search field trims whitespace automatically","[STATE] whitespace-only search treated as empty — all locations restored
+[STATE] search field trims whitespace automatically","[CONSOLE] no TypeError or JS errors on whitespace-only search
+[NETWORK] search API not called or called with empty string for whitespace-only input","Whitespace-only search returns no results; Application error on whitespace-only search","Close modal; navigate away",C413553,Manual
+BOPIS-065,Multi-Filter: Country + State + City + Search (4 Levels),BOPIS > Cart > Multi-Filter,High,BL-BOPIS-003,"ECL-14.2,ECL-14.4","PickPoints modal open; Locations in multiple countries/states/cities configured","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] select Country filter: USA
+[ACT] select State filter: New York
+[ACT] select City filter: New York City
+[ACT] type 'Building' in search field
+[WAIT] combined 4-level filter results shown
+[ASSERT] only NYC locations containing 'Building' shown
+[ASSERT] all four filter chips visible","[STATE] all four filter levels (Country + State + City + Search) combine with AND logic
+[STATE] only NYC locations matching 'Building' search shown
+[DOM] all four filter chips visible simultaneously","[CONSOLE] no TypeError or JS errors with 4-level combined filter
+[NETWORK] filtered API response returns only matching locations","Multi-level filters not combining with AND; Incorrect results at 4-level combination; Filter chips missing for some levels","Close modal; navigate away",C413522,Manual
+BOPIS-066,Multi-Filter: No Results at Multiple Levels,BOPIS > Cart > Multi-Filter,Medium,BL-BOPIS-003,"ECL-14.2","PickPoints modal open; Country/State/City filters applied","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] apply USA > NY > NYC filter combination
+[ACT] type 'NonExistent' in search field
+[WAIT] no-results state shown
+[ASSERT] 'Pickup points not found' message or equivalent displayed
+[ASSERT] all filter chips still visible and removable
+[ASSERT] 'RESET SEARCH' button or equivalent available","[DOM] 'Pickup points not found' message shown when no results at multiple filter levels
+[DOM] all applied filter chips still visible and individually removable
+[DOM] reset/clear button available to restore state","[CONSOLE] no TypeError or JS errors when multi-filter yields no results","Application crash or blank state with no message when multi-filter yields no results; Filter chips not removable in no-results state; Reset button absent","Close modal; navigate away",C413523,Manual
+BOPIS-067,Multi-Select: Multiple Countries,BOPIS > Cart > Multi-Filter,Critical,BL-BOPIS-003,"ECL-14.2","PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] open Country filter dropdown
+[ACT] select USA
+[ACT] select Canada (multi-select)
+[WAIT] results update to show locations from both countries
+[ASSERT] both USA and Canada filter chips shown
+[ASSERT] results include locations from both countries
+[ACT] deselect USA
+[ASSERT] only Canada locations shown after deselect","[DOM] both USA and Canada chips shown after multi-select
+[STATE] results include locations from both selected countries
+[STATE] deselecting one country updates results to remaining country only","[CONSOLE] no TypeError or JS errors during multi-select country filter
+[NETWORK] filter API returns locations from all selected countries","Multi-select not supported for Country filter; Deselecting one country removes all filters; Results not updating on multi-country selection","Close modal; navigate away",C413527,Manual
+BOPIS-068,Multi-Select: Multiple States,BOPIS > Cart > Multi-Filter,Critical,BL-BOPIS-003,"ECL-14.2","PickPoints modal open; USA country selected","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] select Country: USA
+[ACT] open State filter dropdown
+[ACT] select NY
+[ACT] select CA (multi-select)
+[WAIT] results update
+[ASSERT] multiple state chips (NY, CA) displayed
+[ASSERT] results include locations from both NY and CA","[DOM] multiple state chips displayed after multi-select
+[STATE] results include locations from all selected states","[CONSOLE] no TypeError or JS errors during multi-select state filter","Multi-select not supported for State filter; Results only showing one state despite multi-select","Close modal; navigate away",C413528,Manual
+BOPIS-069,Breadcrumb Filter Removal,BOPIS > Cart > Filter Management,Medium,BL-BOPIS-003,"ECL-14.2","PickPoints modal open; Multiple filters applied","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] apply USA + NY + NYC + 'Building' search combination
+[WAIT] combined filter results shown
+[ACT] click X on State (NY) filter chip to remove it
+[WAIT] results update
+[ASSERT] NY state filter removed from results
+[ASSERT] remaining filters (USA, NYC, 'Building') still applied
+[ASSERT] search term still active","[STATE] removing State chip updates results — only State filter removed
+[STATE] remaining filters (Country, City, Search) still active after State removal
+[DOM] removed chip no longer visible; other chips remain","[CONSOLE] no TypeError or JS errors during filter chip removal","Removing one chip removes all filters; Other filters deactivated when one chip removed; Search term cleared on chip removal","Close modal; navigate away",C413524,Manual
+BOPIS-070,Reset All Filters and Search,BOPIS > Cart > Filter Management,High,BL-BOPIS-003,"ECL-14.2","PickPoints modal open; Multiple filters and search applied","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] apply multiple filters (Country, State) and a search term
+[WAIT] combined results shown
+[ACT] click 'Reset filters' or 'Clear all' button
+[WAIT] all filters and search cleared
+[ASSERT] all filter chips removed
+[ASSERT] search bar cleared
+[ASSERT] full location list restored
+[ASSERT] map shows all markers","[STATE] all filter chips removed after Reset
+[STATE] search bar cleared after Reset
+[STATE] full location list restored to pre-filter state
+[STATE] map shows all markers after Reset","[CONSOLE] no TypeError or JS errors during filter reset","Not all filters cleared after Reset; Search term not cleared on Reset; Full location list not restored; Map not showing all markers after Reset","Close modal; navigate away",C413525,Manual
+BOPIS-071,Apply Filters After Search,BOPIS > Cart > Filter Management,Medium,BL-BOPIS-003,"ECL-14.2","PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] type 'Building' in search field
+[WAIT] search results shown
+[ACT] select Country filter: USA
+[WAIT] combined search + filter results shown
+[ASSERT] only USA locations containing 'Building' shown
+[ASSERT] search and country filter combined with AND logic","[STATE] filter applied after search combines with AND logic (not overriding search)
+[STATE] only locations matching both search term and filter shown","[CONSOLE] no TypeError or JS errors when filter applied after search","Applying filter after search overrides search term; Combined search + filter shows all filter results ignoring search","Close modal; navigate away",C413526,Manual
+BOPIS-072,Deactivated Location While Confirmed in Cart,BOPIS > Cart > Edge Cases,High,"BL-BOPIS-005,BL-BOPIS-001","ECL-7.1","Pickup location confirmed in cart; Admin access available","url={{FRONT_URL}};admin={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] confirm a pickup location in cart
+[WAIT] pickup location shown in cart
+[ADMIN] navigate to Admin and deactivate the confirmed pickup location (Active=OFF)
+[WAIT] deactivation saved in Admin
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart reloads
+[ACT] attempt to proceed to checkout
+[ASSERT] checkout detects invalid pickup selection
+[ASSERT] user prompted to re-select a pickup location
+[ASSERT] order NOT placed with deactivated location","[STATE] checkout detects that previously confirmed pickup location is now deactivated
+[DOM] user prompted to re-select a valid pickup location
+[STATE] order cannot be placed with a deactivated pickup location","[ADMIN] verify location deactivated before returning to storefront
+[CONSOLE] no TypeError or JS errors when invalid pickup location detected","Order placed with deactivated pickup location; No prompt shown when confirmed location is deactivated; Checkout does not revalidate pickup location","Re-activate location in admin",C410939,Manual
+BOPIS-073,Org User Pickup Isolation,BOPIS > Cart > Edge Cases,High,BL-BOPIS-001,"ECL-7.1","User has access to Org A and Org B; Org A cart has items and confirmed pickup location","url={{FRONT_URL}};email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[ACT] log in as org user
+[ACT] switch context to Org A
+[NAV] {{FRONT_URL}}/cart
+[ACT] confirm a pickup location in Org A cart
+[WAIT] pickup location shown in Org A cart
+[ACT] switch context to Org B
+[NAV] {{FRONT_URL}}/cart
+[WAIT] Org B cart loads
+[ASSERT] Org A pickup selection NOT visible in Org B cart
+[ASSERT] Org B cart is in clean state (no pickup location from Org A)","[STATE] Org A pickup location not visible in Org B cart
+[STATE] clean cart state for Org B — no cross-org data leakage
+[STATE] pickup location isolation enforced per org","[API] verify no cross-org cart data in cart API response for Org B
+[CONSOLE] no TypeError or JS errors during org context switch","Org A pickup location shown in Org B cart (cross-org data leak); Cart state not isolated between orgs","Clear any pickup selections; navigate away",C411028,Manual
+BOPIS-074,Billing Address Required for BOPIS Order,BOPIS > Cart > Edge Cases,High,BL-BOPIS-006,"ECL-14.1","Pickup selected and location confirmed; No billing address saved for user","url={{FRONT_URL}};email={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] confirm a pickup location
+[WAIT] pickup location shown in cart with $0 shipping
+[ACT] proceed to checkout
+[WAIT] checkout page loads
+[ASSERT] billing address form is shown (even though no shipping address needed)
+[ACT] attempt to place order without entering billing address
+[ASSERT] validation error shown — billing address required
+[ASSERT] order NOT placed without billing address","[DOM] billing address form visible in checkout for BOPIS order
+[STATE] order cannot be placed without billing address even in pickup mode
+[DOM] validation error message shown when billing address missing","[CONSOLE] no TypeError or JS errors during billing address validation in BOPIS checkout","Billing address form hidden in BOPIS checkout; Order placed without billing address; No validation error for missing billing address","Cancel order via admin if placed erroneously",C410943,Manual
+BOPIS-075,Cross-Layer: xAPI Order Shows Pickup FFC,BOPIS > Cart > Cross-Layer,Critical,"BL-BOPIS-002,BL-BOPIS-006","ECL-14.1,ECL-14.4","BOPIS order placed successfully; xAPI access available; Admin access available","url={{FRONT_URL}};back={{BACK_URL}};admin={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}};email={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] add product and confirm pickup location
+[ACT] complete checkout to place order
+[WAIT] order confirmation shown
+[ACT] query xAPI: GET order by ID; inspect shipments[] array
+[ASSERT] shipments[].fulfillmentCenterId = selected pickup location ID
+[ADMIN] navigate to Admin > Orders > find the order
+[ASSERT] Admin order view shows pickup location name and address
+[ASSERT] no shipping cost in stored order","[API] xAPI order shipments[].fulfillmentCenterId = selected pickup location ID
+[ADMIN] Admin order view shows correct pickup location name and address
+[STATE] no shipping cost in stored order data
+[STATE] order data consistent between xAPI response and Admin view","[API] mutation errors[] is empty for all selectPickupLocation mutations during checkout
+[NETWORK] xAPI order query returns 2xx with correct fulfillmentCenterId
+[ADMIN] verify pickup location name in Admin order view matches storefront selection
+[CONSOLE] no TypeError or JS errors during order placement","xAPI order does not show fulfillmentCenterId; Admin shows wrong or missing pickup location; Shipping cost present in stored order despite pickup fulfillment","Cancel order via admin",checklist-K,Manual
+BOPIS-076,Cross-Layer: Cart API Shows $0 Shipping,BOPIS > Cart > Cross-Layer,High,BL-BOPIS-002,"ECL-14.1","Pickup selected and location confirmed in cart; DevTools Network tab accessible","url={{FRONT_URL}};back={{BACK_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] open browser DevTools Network tab
+[ACT] confirm a pickup location in cart
+[WAIT] cart API response observable in Network tab
+[ACT] find cart API response (e.g., GraphQL cart query or REST cart endpoint)
+[ASSERT] shipments[].price = 0 in cart API response
+[ASSERT] total = subtotal + taxTotal (no shipping component)
+[ASSERT] storefront display of $0.00 shipping consistent with API response","[NETWORK] cart API response shipments[].price = 0 after pickup confirmed
+[MATH] total = subtotal + taxTotal in API response — no shipping component
+[STATE] API response consistent with storefront display of $0 shipping","[API] mutation errors[] is empty for selectPickupLocation
+[NETWORK] cart API shipments[].price = 0 verified in Network tab
+[ADMIN] if order placed, verify stored order has $0 shipping in Admin
+[CONSOLE] no TypeError or JS errors during cart load after pickup confirmed","Cart API shipments[].price > 0 despite pickup confirmed; Total in API includes shipping; Storefront display inconsistent with API response","Clear pickup location or remove items from cart",checklist-K,Manual

@@ -1,746 +1,698 @@
-ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
-PRICE-001,Create a new price list,Pricing > Pricelist Management,Functional,Critical,5min,Admin logged in to Backend,"1. Navigate to Pricing module > Price Lists
-2. Click 'Add' button
-3. Enter price list name
-4. Select currency
-5. Click 'Create' button","1. New price list is created
-2. New price list is displayed on Price Lists screen",C178828,Katalon
-PRICE-002,Edit price list,Pricing > Pricelist Management,Functional,High,5min,"Admin logged in to Backend
-Price list created [PRICE-001]","1. Navigate to Pricing module > Price Lists
-2. Open existing price list
-3. Modify price list details (name, description)
-4. Click 'Save' button
-5. Verify changes in the table","All changes are saved. Data in the table is updated.",C178873,Katalon
-PRICE-003,Delete price list,Pricing > Pricelist Management,Functional,High,3min,"Admin logged in to Backend
-Price list created [PRICE-001]","1. Navigate to Pricing module > Price Lists
-2. Select price list to delete
-3. Click 'Delete' button
-4. Confirm deletion","Price list is deleted",C178875,Katalon
-PRICE-004,Filter pricelists,Pricing > Pricelist Management,Functional,Medium,5min,"Admin logged in to Backend
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+PRICE-001,Create a new price list,Pricing > Pricelist Management,Critical,BL-PRICE-004,ECL-8.1,"Admin logged in to Backend","pricelist_name={{TEST_SKU}}-PL-001; currency=USD","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
+[ACT] Click 'Add' button
+[ACT] Enter price list name
+[ACT] Select currency USD
+[ACT] Click 'Create' button","[STATE] New price list is created and visible in list
+[DOM] Price list name appears in Price Lists table","[ADMIN] Verify price list persists after page refresh
+[API] GET /api/pricing/pricelists — confirm new entry exists","Price list not created; 'Create' button unresponsive; name not reflected in list","delete created price list via Admin",C178828,Katalon
+PRICE-002,Edit price list,Pricing > Pricelist Management,High,BL-PRICE-004,ECL-8.1,"Admin logged in to Backend
+Price list created [PRICE-001]","updated_name={{TEST_SKU}}-PL-EDIT; updated_description=test description","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
+[ACT] Open existing price list
+[ACT] Modify price list name and description
+[ACT] Click 'Save' button
+[ASSERT] Verify changes reflected in table","[STATE] All changes are saved
+[DOM] Updated name and description appear in the Price Lists table","[ADMIN] Re-open price list blade and confirm persisted values
+[API] GET /api/pricing/pricelists/{id} — confirm updated fields","Changes not saved; stale data in table after save; save button unresponsive","restore original prices",C178873,Katalon
+PRICE-003,Delete price list,Pricing > Pricelist Management,High,BL-PRICE-004,"","Admin logged in to Backend
+Price list created [PRICE-001]","target_pricelist_id from PRICE-001","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
+[ACT] Select price list to delete
+[ACT] Click 'Delete' button
+[ACT] Confirm deletion
+[ASSERT] Verify price list removed from list","[STATE] Price list is deleted
+[DOM] Price list no longer appears in table","[API] GET /api/pricing/pricelists/{id} returns 404 after deletion","Price list still visible after deletion; confirmation dialog not appearing; delete fails silently","none",C178875,Katalon
+PRICE-004,Filter pricelists,Pricing > Pricelist Management,Medium,BL-PRICE-004,"","Admin logged in to Backend
 Multiple price lists exist with different currencies
-Filter_1 already created","1. Navigate to Pricing module > Price Lists
-2. Select filter_1 from dropdown
-3. Verify filtered results
-4. Click blue cross to clear filter
-5. Click 'Select filter' > 'Add new filter'
-6. Fill fields: Filter name and Currencies
-7. Click 'Save & Apply'
-8. Verify new filter_2 created and applied","1. filter_1 is selected and price list sorted by filter_1
-2. Filter cleared
-3. Blade with Filter criteria opened
-4. Fields are filled
-5. New filter_2 created and saved in list of filters. Price list sorted by filter_2",C178894,Katalon
-PRICE-005,Add products to the price list,Pricing > Prices,Functional,Critical,5min,"Admin logged in to Backend
-Price list created [PRICE-001]","1. Navigate to Pricing module > Price Lists
-2. Open price list from PRICE-001
-3. Click on 'Prices' widget
-4. Click 'Add' button
-5. Select products to add
-6. Confirm selection","1. Selected products are added to the price list
-2. Number of products added is displayed in Prices widget",C178829,Katalon
-PRICE-006,Add prices to the product,Pricing > Prices,Functional,High,10min,"Admin logged in to Backend
+Filter_1 already created","filter_name=Filter_1; currency=USD; new_filter_name=Filter_2","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
+[ACT] Select filter_1 from dropdown
+[ASSERT] Verify filtered results sorted by filter_1
+[ACT] Click blue cross to clear filter
+[ASSERT] Verify filter cleared
+[ACT] Click 'Select filter' > 'Add new filter'
+[ACT] Fill Filter name and Currencies fields
+[ACT] Click 'Save & Apply'
+[ASSERT] Verify new filter_2 created and applied","[STATE] filter_1 applied — price list sorted by filter_1 criteria
+[STATE] Filter cleared successfully
+[DOM] New filter_2 blade opens with filter criteria fields
+[STATE] filter_2 created and saved in filter list; price list sorted by filter_2","[ADMIN] Verify filter persists across sessions
+[ADMIN] Confirm filter_2 appears in filter dropdown","Filter not applied; filter clear button missing; new filter not saved","delete created price list via Admin",C178894,Katalon
+PRICE-005,Add products to the price list,Pricing > Prices,Critical,BL-PRICE-001,"","Admin logged in to Backend
+Price list created [PRICE-001]","product_ids={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
+[ACT] Open price list from PRICE-001
+[ACT] Click on 'Prices' widget
+[ACT] Click 'Add' button
+[ACT] Select products to add using {{TEST_SKU}}
+[ACT] Confirm selection
+[ASSERT] Verify products appear in Prices widget","[STATE] Selected products are added to the price list
+[DOM] Number of products added is displayed in Prices widget count","[ADMIN] Reload price list blade and confirm product count persists
+[API] GET /api/pricing/pricelists/{id}/prices — confirm product entries","Product selection dialog not opening; products not saved; widget count not updated","delete created price list via Admin",C178829,Katalon
+PRICE-006,Add prices to the product,Pricing > Prices,High,BL-PRICE-001,"ECL-7.1","Admin logged in to Backend
 Price list created [PRICE-001]
-Products added to price list [PRICE-005]","Step 1: Add List Price
-1. Go to the price list from PRICE-001
-2. Click on 'Prices' widget
-3. Go to any product
-4. Enter price into 'List Price' input field
-5. Click 'Save'
-
-Step 2: Add Sale Price
-1. Go to same product again
-2. Enter Sale price to the input field
-3. Click 'Save'
-
-Step 3: Add price with different min quantity
-1. Go to same product again
-2. Add one more price
-3. Specify min quantity different from previous steps
-4. Enter List and Sales prices
-5. Click 'Save'","Step 1: System saves entered price and displays product Price in 'Price range' column
-
-Step 2: System saves changes. Price range consists of List price and Sale price
-
-Step 3:
-1. System saves changes and entered prices are displayed in 'Price range' column
-2. Number of prices is displayed in '#' column
-3. Specified price is available for specified Min. Quantity",C178848,Katalon
-PRICE-007,View price list via catalog module,Pricing > Prices,Functional,Medium,3min,"Admin logged in to Backend
-Product has prices in multiple price lists","1. Navigate to Catalog module > Products
-2. Open any product with prices
-3. Click on 'Price' widget
-4. Review all prices from all price lists","System opens screen that displays prices for selected item from all Price lists which contain this item",C178852,Katalon (generic)
-PRICE-008,Export price lists,Pricing > Pricelist Management,Functional,Medium,5min,"Admin logged in to Backend
-Multiple price lists exist","1. Navigate to Pricing module > Price Lists
-2. Select price lists to export
-3. Click 'Export' button
-4. Configure export settings
-5. Click 'Start Export'
-6. Wait for completion
-7. Download exported file","After export is completed you can download the file with the price lists you have selected",C178871,None
-PRICE-009,Change price on Backend > Price updated on Storefront,Pricing > Price Logic,Integration,High,5min,"Admin logged in to Backend
+Products added to price list [PRICE-005]","list_price=100.00; sale_price=80.00; min_qty_tier=5; list_price_tier=70.00; sale_price_tier=60.00","[NAV] Navigate to {{BACK_URL}} Pricing > Price Lists > open PRICE-001 > Prices widget
+[ACT] Click on a product
+[ACT] Enter list_price=100.00 into 'List Price' input field
+[ACT] Click 'Save'
+[ASSERT] Verify price appears in Price range column
+[ACT] Re-open product; enter sale_price=80.00
+[ACT] Click 'Save'
+[ASSERT] Verify Price range shows both list and sale price
+[ACT] Re-open product; click 'Add price row'
+[ACT] Set min_qty=5; enter list_price_tier=70.00 and sale_price_tier=60.00
+[ACT] Click 'Save'
+[ASSERT] Verify tier price row saved","[STATE] Step 1: List price saved; product Price range column shows $100.00
+[STATE] Step 2: Price range shows list price ($100) and sale price ($80)
+[STATE] Step 3: New price row with min qty=5 saved; '#' column shows 2 price rows; tier price available for qty>=5","[API] GET /api/pricing/pricelists/{id}/prices — confirm all three price entries
+[CONSOLE] No JS errors during save operations","Save fails silently; price range column not updated; tier price row not persisting","restore original prices",C178848,Katalon
+PRICE-007,View price list via catalog module,Pricing > Prices,Medium,BL-PRICE-001,"","Admin logged in to Backend
+Product has prices in multiple price lists","product_id={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} Catalog module > Products
+[ACT] Open any product with prices ({{TEST_SKU}})
+[ACT] Click on 'Price' widget
+[ASSERT] Review all prices from all price lists","[DOM] Screen displays all prices for selected item from every Price list that contains this item
+[STATE] All price list entries visible with their respective list/sale prices","[API] GET /api/pricing/products/{id}/prices — cross-check count and values with UI display","Price widget not opening; prices from some price lists missing; widget shows 0 prices","none",C178852,Katalon (generic)
+PRICE-008,Export price lists,Pricing > Pricelist Management,Medium,BL-PRICE-004,"ECL-5.1","Admin logged in to Backend
+Multiple price lists exist","export_format=CSV","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
+[ACT] Select price lists to export
+[ACT] Click 'Export' button
+[ACT] Configure export settings
+[ACT] Click 'Start Export'
+[WAIT] Wait for completion indicator
+[ACT] Download exported file
+[ASSERT] Verify file contents","[STATE] Export completes successfully
+[DOM] Download link available after export
+[FORMAT] Downloaded CSV file contains selected price list data","[NETWORK] Confirm download request succeeds (HTTP 200)
+[CONSOLE] No JS errors during export","Export button unresponsive; export hangs indefinitely; downloaded file empty or malformed","none",C178871,None
+PRICE-009,Change price on Backend > Price updated on Storefront,Pricing > Price Logic,High,BL-PRICE-001,"ECL-7.1","Admin logged in to Backend
 Product has price assigned
-Storefront accessible","1. Navigate to Catalog > Products
-2. Open product with price
-3. Open 'Price' widget
-4. Change price value
-5. Click 'Save'
-6. Rebuild search index
-7. Navigate to Storefront
-8. Open same product
-9. Verify price matches backend change","Price is updated on storefront to match backend change",C183312,None
-PRICE-010,Remove price on Backend > Price updated to 0 and Unavailable label,Pricing > Price Logic,Integration,High,5min,"Admin logged in to Backend
+Storefront accessible","product_sku={{TEST_SKU}}; new_price=199.99","[NAV] Navigate to {{BACK_URL}} Catalog > Products
+[ACT] Open product with price ({{TEST_SKU}})
+[ACT] Open 'Price' widget
+[ACT] Change price value to 199.99
+[ACT] Click 'Save'
+[ACT] Rebuild search index
+[NAV] Navigate to {{FRONT_URL}}
+[ACT] Open same product page
+[ASSERT] Verify displayed price matches 199.99","[STATE] Price is updated on storefront to match backend change
+[DOM] Product detail page shows new price $199.99
+[MATH] No rounding or currency conversion errors","[API] GraphQL xAPI products query — confirm prices[].actual.amount = 199.99
+[NETWORK] Search index rebuild completes (HTTP 200)","Storefront shows stale price; index rebuild fails; price mismatch between Admin and storefront","restore original prices",C183312,None
+PRICE-010,Remove price on Backend > Price updated to 0 and Unavailable label,Pricing > Price Logic,High,BL-PRICE-001,"ECL-7.1","Admin logged in to Backend
 Product has price assigned
-Storefront accessible","1. Navigate to Catalog > Products
-2. Open product with price
-3. Open 'Price' widget
-4. Delete all prices
-5. Click 'Save'
-6. Rebuild search index
-7. Navigate to Storefront
-8. Open same product
-9. Verify price and availability","1. Price is updated to 0
-2. 'Unavailable' label is shown
-3. Product cannot be added to cart",C251761,None
-PRICE-011,Price with highest priority shown on Storefront,Pricing > Price Logic,Integration,High,10min,"Admin logged in to Backend and Storefront
-Two price lists assigned to same product with different prices","Step 1: Test price list #1 priority
-1. Go to Backend (Admin/Store)
-2. Set priority of price list assignment #1 higher than #2
-3. Go to storefront
-4. Go to product from preconditions
-5. Verify product price
-
-Step 2: Test price list #2 priority
-1. Go back to Backend
-2. Set priority of price list assignment #2 higher than #1
-3. Go to storefront
-4. Reload page
-5. Go to product from preconditions
-6. Verify product price","Step 1: Product price = price specified in price list #1
-
-Step 2: Product price = price specified in price list #2",C183310,None
-PRICE-012,Delete price > Next price by priority shown on Storefront,Pricing > Price Logic,Integration,High,8min,"Admin logged in to Backend and Storefront
+Storefront accessible","product_sku={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} Catalog > Products
+[ACT] Open product with price ({{TEST_SKU}})
+[ACT] Open 'Price' widget
+[ACT] Delete all prices
+[ACT] Click 'Save'
+[ACT] Rebuild search index
+[NAV] Navigate to {{FRONT_URL}}
+[ACT] Open same product page
+[ASSERT] Verify price and availability label","[STATE] Price is updated to 0
+[DOM] 'Unavailable' label is shown on product page
+[STATE] Product cannot be added to cart — Add to Cart button disabled or absent","[API] GraphQL xAPI products query — confirm prices[] is empty or price = 0
+[CONSOLE] No JS errors when viewing unavailable product","Unavailable label not shown; product still addable to cart; index rebuild fails","restore original prices",C251761,None
+PRICE-011,Price with highest priority shown on Storefront,Pricing > Price Logic,High,BL-PRICE-004,"ECL-7.1","Admin logged in to Backend and Storefront
+Two price lists assigned to same product with different prices","pricelist_1_price=50.00; pricelist_2_price=80.00; product_sku={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} Pricing > Price Lists
+[ACT] Set priority of price list #1 higher than #2
+[ACT] Rebuild index
+[NAV] Navigate to {{FRONT_URL}} and open product ({{TEST_SKU}})
+[ASSERT] Verify product price = price from pricelist #1 ($50.00)
+[NAV] Return to {{BACK_URL}}
+[ACT] Set priority of price list #2 higher than #1
+[ACT] Rebuild index
+[NAV] Navigate to {{FRONT_URL}} and reload product page
+[ASSERT] Verify product price = price from pricelist #2 ($80.00)","[STATE] Step 1: Product price = price from pricelist #1 ($50.00)
+[STATE] Step 2: Product price = price from pricelist #2 ($80.00)","[API] GraphQL xAPI products query — confirm prices[].pricelistId matches winning priority list","Wrong pricelist price shown; price not changing after priority switch; stale cache","restore original prices",C183310,None
+PRICE-012,Delete price > Next price by priority shown on Storefront,Pricing > Price Logic,High,BL-PRICE-004,"ECL-7.1","Admin logged in to Backend and Storefront
 Three prices with different priorities for same product
-Price with higher priority displayed on Storefront","1. Navigate to Backend
-2. Go to product with multiple prices
-3. Delete price with highest priority
-4. Save changes
-5. Rebuild search index
-6. Go to Storefront
-7. Verify product price","1. Price has changed
-2. Product price = price that has higher priority among two remaining",C183311,None
-PRICE-013,Price changed when switching currency on Storefront,Pricing > Price Logic,Integration,High,8min,"Admin logged in to Backend
-Two price lists with different currencies (USD EUR) for same product
+Price with higher priority displayed on Storefront","product_sku={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} and open product ({{TEST_SKU}}) with three tiered-priority prices
+[ACT] Delete price with highest priority
+[ACT] Save changes
+[ACT] Rebuild search index
+[NAV] Navigate to {{FRONT_URL}} and open product page
+[ASSERT] Verify product price changed to next-highest-priority price","[STATE] Product price has changed
+[STATE] Product price = price that holds highest priority among two remaining","[API] GraphQL xAPI products query — confirm prices[].pricelistId is second-priority list after deletion","Deleted price still showing; wrong fallback price shown; index rebuild fails","restore original prices",C183311,None
+PRICE-013,Price changed when switching currency on Storefront,Pricing > Price Logic,High,BL-PRICE-001,"","Admin logged in to Backend
+Two price lists with different currencies (USD, EUR) for same product
 Price lists assigned to catalog containing product
 Currency on storefront = USD
-Storefront accessible","Step 1: Verify USD price
-1. Go to Storefront
-2. Go to product from preconditions
-3. Verify price
-
-Step 2: Verify EUR price
-1. Switch currency to EUR
-2. Go to product from preconditions
-3. Verify price","Step 1: Product price = price specified in USD price list
-
-Step 2: Product price = price specified in EUR price list",C183323,None
-PRICE-014,No price for currency > Currency autoconverted,Pricing > Price Logic,Integration,Medium,5min,"Admin logged in to Backend and Storefront
+Storefront accessible","product_sku={{TEST_SKU}}; usd_price=100.00; eur_price=90.00","[NAV] Navigate to {{FRONT_URL}} and open product ({{TEST_SKU}})
+[ASSERT] Verify price = USD price ($100.00)
+[ACT] Switch currency to EUR
+[NAV] Navigate to product ({{TEST_SKU}}) again
+[ASSERT] Verify price = EUR price (€90.00)","[STATE] Step 1: Product price = price in USD price list ($100.00)
+[STATE] Step 2: Product price = price in EUR price list (€90.00)","[API] GraphQL xAPI products query with currencyCode=EUR — confirm prices[].actual currency code and amount","Currency switch not applied; wrong price shown for EUR; currency symbol not updated","none",C183323,None
+PRICE-014,No price for currency > Currency autoconverted,Pricing > Price Logic,Medium,BL-PRICE-001,"","Admin logged in to Backend and Storefront
 Product has price in primary currency
 No prices for product in other currency
-Exchange rate set for other currencies","1. Go to Backend > Settings > Stores
-2. Verify exchange rate is set
-3. Go to Storefront
-4. Switch to currency without price list
-5. Navigate to product
-6. Verify price calculation","Product price = price in primary currency × exchange rate of set currency",C183344,None
-PRICE-015,Add product with price lists in different currencies to cart > Check price,Pricing > Price Logic,Integration,Medium,10min,"Admin logged in to Backend and Storefront
+Exchange rate set for other currencies","primary_currency=USD; primary_price=100.00; exchange_rate_currency=EUR; exchange_rate=0.92","[NAV] Navigate to {{BACK_URL}} Settings > Stores
+[ASSERT] Verify exchange rate is set for EUR
+[NAV] Navigate to {{FRONT_URL}}
+[ACT] Switch to currency without price list (EUR)
+[NAV] Navigate to product page
+[ASSERT] Verify price = primary_price × exchange_rate","[MATH] Product price = 100.00 × 0.92 = €92.00
+[FORMAT] Price displayed in EUR with correct currency symbol","[API] GraphQL xAPI products query with currencyCode=EUR — confirm converted price","Autoconversion not applied; price shows 0 or primary currency symbol; exchange rate not configured","none",C183344,None
+PRICE-015,Add product with price lists in different currencies to cart > Check price,Pricing > Price Logic,Medium,BL-PRICE-001,"ECL-7.1","Admin logged in to Backend and Storefront
 Product has two price lists in USD and EUR
-Default currency in store is USD","Step 1: Verify USD pricing
-1. Add Product1 to cart
-2. Go to Catalog > Product1 > Price
-3. Change price for USD price list
-4. Rebuild index
-5. Go to Storefront > Cart
-6. Refresh page
-7. Verify line-item price and currency
-
-Step 2: Verify EUR pricing
-1. Switch currency in Store to EUR
-2. Add Product1 to cart
-3. Go to Catalog > Product1 > Price
-4. Change price for EUR price list
-5. Rebuild index
-6. Go to Storefront > Cart
-7. Refresh page
-8. Verify line-item price and currency","Step 1:
-- Line-item price = price_usd
-- currencyCode = USD for store and cart
-
-Step 2:
-- Line-item price = price_eur
-- currencyCode = EUR for store and cart",C358947,None
-PRICE-016,Pricelist assigned to store,Pricing > Price Logic,Integration,High,5min,"Admin logged in to Backend
+Default currency in store is USD","product_sku={{TEST_SKU}}; usd_price=120.00; eur_price=110.00","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Add Product1 ({{TEST_SKU}}) to cart in USD
+[NAV] Navigate to {{BACK_URL}} Catalog > Product1 > Price widget
+[ACT] Change price for USD price list to 120.00
+[ACT] Rebuild index
+[NAV] Navigate to {{FRONT_URL}} > Cart; refresh page
+[ASSERT] Verify line-item price = $120.00 and currencyCode = USD
+[ACT] Switch currency in Store to EUR in Admin settings
+[NAV] Navigate to {{FRONT_URL}}; add Product1 to cart
+[NAV] Navigate to {{BACK_URL}} Catalog > Product1 > Price widget
+[ACT] Change price for EUR price list to 110.00
+[ACT] Rebuild index
+[NAV] Navigate to {{FRONT_URL}} > Cart; refresh page
+[ASSERT] Verify line-item price = €110.00 and currencyCode = EUR","[STATE] Step 1: line-item price = $120.00; currencyCode = USD
+[STATE] Step 2: line-item price = €110.00; currencyCode = EUR","[API] GraphQL xAPI cart query — inspect items[].placedPrice.amount and items[].placedPrice.currency","Cart shows wrong currency; line price not updated after index rebuild; currency mismatch in cart response","restore original prices",C358947,None
+PRICE-016,Pricelist assigned to store,Pricing > Price Logic,High,BL-PRICE-004,"","Admin logged in to Backend
 Store1 exists in system
 Virtual catalog1 exists and assigned to store1
-Storefront accessible","1. Navigate to Pricing > Price Lists
-2. Create or open price list
-3. Go to Assignments widget
-4. Create assignment to Store1
-5. Set price for product
-6. Rebuild index
-7. Go to Storefront
-8. Navigate to product
-9. Verify correct price displayed","User sees correct price for current store",C317549,None
-PRICE-017,Pricelist > Assign to store > Assign to catalog,Pricing > Price Logic,Integration,High,8min,"Admin logged in to Backend
+Storefront accessible","store_id={{STORE_ID}}; product_sku={{TEST_SKU}}; expected_price=75.00","[NAV] Navigate to {{BACK_URL}} Pricing > Price Lists
+[ACT] Create or open price list
+[ACT] Go to Assignments widget
+[ACT] Create assignment to {{STORE_ID}}
+[ACT] Set price for product ({{TEST_SKU}}) = 75.00
+[ACT] Rebuild index
+[NAV] Navigate to {{FRONT_URL}}
+[ACT] Navigate to product ({{TEST_SKU}})
+[ASSERT] Verify correct price displayed","[STATE] Product shows $75.00 on storefront for store {{STORE_ID}}
+[DOM] Price visible on product detail page","[API] GraphQL xAPI products query with storeId={{STORE_ID}} — confirm prices[].actual.amount = 75.00","Wrong price shown; price not showing for correct store; assignment not taking effect","delete created price list via Admin",C317549,None
+PRICE-017,Pricelist > Assign to store > Assign to catalog,Pricing > Price Logic,High,BL-PRICE-004,"","Admin logged in to Backend
 Pricelist assigned to store [PRICE-016]
-Catalog assignment available","1. Go to existing price list assignment from PRICE-016
-2. Add catalog assignment to same price list
-3. Set different price for catalog assignment
-4. Save changes
-5. Rebuild index
-6. Go to Storefront
-7. Verify which price is displayed (catalog takes precedence)","User sees price from catalog assignment (catalog assignment has higher precedence than store assignment)",C317550,None
-PRICE-018,Pricelist > Assign to catalog > Assign to store,Pricing > Price Logic,Integration,Medium,5min,"Admin logged in to Backend
-Pricelist assigned to catalog [PRICE-017]","1. Verify catalog assignment exists
-2. Add store assignment to same price list
-3. Set different price for store assignment
-4. Save changes
-5. Rebuild index
-6. Go to Storefront
-7. Verify which price is displayed","User sees correct price (verify assignment precedence order)",C317551,None
-PRICE-019,Pricelist assigned to store > Verify in xAPI,Pricing > Price Logic,Integration,High,5min,"Admin logged in to Backend
+Catalog assignment available","store_price=75.00; catalog_price=50.00; product_sku={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} and open price list assignment from PRICE-016
+[ACT] Add catalog assignment to same price list
+[ACT] Set different price for catalog assignment = 50.00
+[ACT] Save changes
+[ACT] Rebuild index
+[NAV] Navigate to {{FRONT_URL}}
+[ASSERT] Verify which price is displayed (catalog assignment takes precedence)","[STATE] Product shows catalog assignment price ($50.00)
+[DOM] Catalog price ($50.00) shown — not store price ($75.00)
+[STATE] Catalog assignment has higher precedence than store assignment","[API] GraphQL xAPI products query — confirm prices[].actual.amount = 50.00 and pricelistId matches catalog assignment","Store price shown instead of catalog price; assignment precedence not respected","restore original prices",C317550,None
+PRICE-018,Pricelist > Assign to catalog > Assign to store,Pricing > Price Logic,Medium,BL-PRICE-004,"","Admin logged in to Backend
+Pricelist assigned to catalog [PRICE-017]","catalog_price=50.00; store_price=60.00; product_sku={{TEST_SKU}}","[ASSERT] Verify catalog assignment exists from PRICE-017
+[ACT] Add store assignment to same price list with price = 60.00
+[ACT] Save changes
+[ACT] Rebuild index
+[NAV] Navigate to {{FRONT_URL}}
+[ASSERT] Verify which price is displayed (verify assignment precedence)","[STATE] Product shows catalog assignment price ($50.00) — catalog precedence over store confirmed","[API] GraphQL xAPI products query — confirm prices[].actual.amount reflects catalog assignment price","Store price shown instead of catalog price; precedence order not maintained","restore original prices",C317551,None
+PRICE-019,Pricelist assigned to store > Verify in xAPI,Pricing > Price Logic,High,BL-PRICE-004,"ECL-14.1","Admin logged in to Backend
 Pricelist1 assigned to mystore1
-GraphQL xAPI endpoint accessible","1. Open GraphQL xAPI endpoint
-2. Execute query:
-query {
-  products(
-    storeId: ""mystore1""
-    cultureName: ""en-US""
-    currencyCode: ""USD""
-    productIds: ""<product-id>""
-  ) {
-    items {
-      name
-      id
-      prices {
-        list {
-          formattedAmountWithoutPoint
-        }
-        pricelistId
-        actual {
-          formattedAmount
-        }
-      }
-    }
-  }
-}
-3. Verify response contains correct price data","Response contains:
-{
-  ""data"": {
-    ""products"": {
-      ""items"": [{
-        ""name"": ""test prod""
-        ""id"": ""<product-id>""
-        ""prices"": [{
-          ""list"": {
-            ""formattedAmountWithoutPoint"": ""$111""
-          }
-          ""pricelistId"": ""<pricelist-id>""
-          ""actual"": {
-            ""formattedAmount"": ""$111.00""
-          }
-        }]
-      }]
-    }
-  }
-}",C317552,None
-PRICE-020,Pricelist > Validate description field length,Pricing > Pricelist Management,Negative,Medium,3min,"Admin logged in to Backend
-API access available","1. Prepare POST request to /api/pricing/pricelists
-2. Include pricelist with description > 512 characters
-3. Send request
-4. Verify response","Error response:
-Response body: [""Description must not be longer than 512 symbols""]",C340884,None
-PRICE-021,Delete price with min qty=1 > Last one with min qty=1,Pricing > Min Quantity,Negative,High,3min,"Admin logged in to Backend
+GraphQL xAPI endpoint accessible","store_id=mystore1; product_id=<product-id>; expected_list_price=$111; expected_actual_price=$111.00","[NAV] Open GraphQL xAPI endpoint at {{BACK_URL}}/graphql
+[ACT] Execute products query with storeId='mystore1', cultureName='en-US', currencyCode='USD', productIds='<product-id>'
+[ASSERT] Inspect response data structure","[STATE] Response contains data.products.items array
+[FORMAT] prices[].list.formattedAmountWithoutPoint = '$111'
+[FORMAT] prices[].actual.formattedAmount = '$111.00'
+[STATE] prices[].pricelistId = expected pricelist ID","[API] Confirm HTTP 200 and no errors[] in GraphQL response
+[NETWORK] Response time < 2s","GraphQL errors[] array non-empty; prices[] array empty; formattedAmount mismatch; pricelistId missing","none",C317552,None
+PRICE-020,Pricelist > Validate description field length,Pricing > Pricelist Management,Medium,BL-PRICE-004,"ECL-8.1","Admin logged in to Backend
+API access available","description_length=513 chars; endpoint={{BACK_URL}}/api/pricing/pricelists","[ACT] Prepare POST request to {{BACK_URL}}/api/pricing/pricelists
+[ACT] Include pricelist with description longer than 512 characters
+[ACT] Send request
+[ASSERT] Verify error response","[STATE] HTTP 400 or 422 error response received
+[DOM] Response body contains: 'Description must not be longer than 512 symbols'","[API] Confirm error response body matches expected validation message exactly
+[NETWORK] HTTP status code is 4xx (not 200/500)","Server returns HTTP 200 (validation bypass); server returns 500 (unhandled exception); error message differs","none",C340884,None
+PRICE-021,Delete price with min qty=1 > Last one with min qty=1,Pricing > Min Quantity,High,BL-PRICE-002,"","Admin logged in to Backend
 Product has multiple prices
-At least one price has min qty = 1","1. Navigate to Catalog > Product > Price widget
-2. Select all prices with min qty = 1 except last one
-3. Delete them
-4. Try to delete last price with min qty = 1
-5. Verify error message","Error: ""You must have at least one price per single unit (with minimum quantity at 1).""",C342188,None
-PRICE-022,Delete prices with min qty=1 > Last two with min qty=1,Pricing > Min Quantity,Negative,High,3min,"Admin logged in to Backend
+At least one price has min qty = 1","product_sku={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} Catalog > Product ({{TEST_SKU}}) > Price widget
+[ACT] Select all prices with min qty = 1 except the last one
+[ACT] Delete them
+[ACT] Attempt to delete the last remaining price with min qty = 1
+[ASSERT] Verify error message appears","[STATE] Error message shown: 'You must have at least one price per single unit (with minimum quantity at 1).'
+[STATE] Last price with min qty=1 is NOT deleted","[API] GET /api/pricing/products/{id}/prices — confirm price with min qty=1 still exists after failed deletion attempt","Error not shown; price deleted despite validation; wrong error message text","none",C342188,None
+PRICE-022,Delete prices with min qty=1 > Last two with min qty=1,Pricing > Min Quantity,High,BL-PRICE-002,"","Admin logged in to Backend
 Product has multiple prices
-At least two prices have min qty = 1","1. Navigate to Catalog > Product > Price widget
-2. Select last two prices with min qty = 1
-3. Try to delete both simultaneously
-4. Verify error message","Error: ""You must have at least one price per single unit (with minimum quantity at 1).""",C342189,None
-PRICE-023,Delete all prices from product,Pricing > Min Quantity,Negative,Medium,5min,"Admin logged in to Backend
+At least two prices have min qty = 1","product_sku={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} Catalog > Product ({{TEST_SKU}}) > Price widget
+[ACT] Select the last two prices with min qty = 1 simultaneously
+[ACT] Attempt to delete both
+[ASSERT] Verify error message appears","[STATE] Error message shown: 'You must have at least one price per single unit (with minimum quantity at 1).'
+[STATE] Both prices with min qty=1 are NOT deleted","[API] GET /api/pricing/products/{id}/prices — confirm both prices still exist","Error not shown; bulk delete succeeds despite validation; wrong error message text","none",C342189,None
+PRICE-023,Delete all prices from product,Pricing > Min Quantity,Medium,BL-PRICE-002,"","Admin logged in to Backend
 Product configured with:
 - Price_1 from PriceList_1 min qty = 1
 - Price_2 from PriceList_1 min qty = 2
-- Price_3 from PriceList_3 min qty = 1","1. Navigate to Catalog > Product > Price widget
-2. Add prices as specified in preconditions
-3. Save
-4. Select all prices
-5. Try to delete all
-6. Verify system behavior","System prevents deletion or shows appropriate error about min qty requirement",C342190,None
-PRICE-024,Add pricelist with different Min qty > Check list/sale price in Cart,Pricing > Min Quantity,Integration,High,15min,"Admin logged in to Backend and Storefront
+- Price_3 from PriceList_3 min qty = 1","product_sku={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} Catalog > Product ({{TEST_SKU}}) > Price widget
+[ACT] Add prices as specified in preconditions; Save
+[ACT] Select all prices
+[ACT] Attempt to delete all
+[ASSERT] Verify system behavior — should prevent full deletion","[STATE] System prevents deletion or shows appropriate error
+[STATE] At least one price with min qty=1 remains","[API] GET /api/pricing/products/{id}/prices — confirm at least one price with min qty=1 persists","All prices deleted; no validation triggered; 500 server error on bulk delete","none",C342190,None
+PRICE-024,Add pricelist with different Min qty > Check list/sale price in Cart,Pricing > Min Quantity,High,BL-PRICE-002,"ECL-7.1","Admin logged in to Backend and Storefront
 Product1 configured with tiered pricing:
-- qty=1: ListPrice1=349.00 / SalePrice1=210.00
-- qty=4: ListPrice2=100.00 / SalePrice2=N/A
-- qty=10: ListPrice3=88.00 / SalePrice3=69.00
-Note: If Sale Price is N/A it is ignored","Step 1: Verify qty=1 pricing
-1. Go to Storefront
-2. Open product page for Product1
-3. Verify list/sale price shows 349/210 USD per item
-
-Step 2: Verify qty=1 in cart
-1. Add 1 product to cart
-2. Verify list/sale price in cart
-3. Verify discount calculation
-
-Step 3: Verify qty=4 pricing
-1. Set qty = 4 in cart
-2. Verify list/sale price in cart
-3. Verify discount calculation
-
-Step 4: Verify qty=10 pricing
-1. Set qty = 10 in cart
-2. Verify list/sale price in cart
-3. Verify discount calculation","Step 1: List/sale price = 349/210 USD per item
-
-Step 2: List/sale price matches catalog. DiscountAmount = ListPrice1 - SalePrice1 (per item with min qty 1)
-
-Step 3: List price still 349 but new price is 100. DiscountAmount = (ListPrice1 - ListPrice2) × 4
-
-Step 4: List price still 349 but new price is 69. DiscountAmount = (ListPrice1 - SalePrice3) × 10",C357936,None
-PRICE-025,Pricelists > Lowest price > User group,Pricing > Lowest Price,Functional,Medium,5min,"Admin logged in to Backend and Storefront
-Two price lists (priceList_1 priceList_2) with different prices (price_1 price_2) for same product (product_1)
+- qty=1: ListPrice=349.00 / SalePrice=210.00
+- qty=4: ListPrice=100.00 / SalePrice=N/A
+- qty=10: ListPrice=88.00 / SalePrice=69.00","product_sku={{TEST_SKU}}; tier1_list=349.00; tier1_sale=210.00; tier4_list=100.00; tier10_list=88.00; tier10_sale=69.00","[NAV] Navigate to {{FRONT_URL}} and open Product1 ({{TEST_SKU}})
+[ASSERT] Verify list/sale price shows $349/$210 per item
+[ACT] Add 1 product to cart
+[ASSERT] Verify list/sale price = $349/$210; discountAmount = $349-$210 = $139.00
+[ACT] Set qty = 4 in cart
+[ASSERT] Verify list stays $349 but actual price = $100; discountAmount = ($349-$100) × 4 = $996.00
+[ACT] Set qty = 10 in cart
+[ASSERT] Verify list stays $349 but actual price = $69; discountAmount = ($349-$69) × 10 = $2800.00","[MATH] Step 1: list=$349.00, sale=$210.00 per item on PDP
+[MATH] Step 2: cart qty=1, discountAmount=$139.00
+[MATH] Step 3: cart qty=4, placedPrice=$100.00, totalDiscount=$996.00
+[MATH] Step 4: cart qty=10, placedPrice=$69.00, totalDiscount=$2800.00","[API] GraphQL xAPI cart query — inspect items[].placedPrice, items[].discountAmount, items[].listPrice at each qty step","Wrong tier price applied; math rounding errors; discount calculated on wrong base price","restore original prices",C357936,None
+PRICE-025,Pricelists > Lowest price > User group,Pricing > Lowest Price,Medium,BL-PRICE-003,"","Admin logged in to Backend and Storefront
+Two price lists (priceList_1, priceList_2) with different prices (price_1, price_2) for same product (product_1)
 Same priority set for both price lists
 Both price lists assigned to same user group (VIP)
-user_1 added to user group VIP","1. Login as user_1 (VIP member)
-2. Navigate to Storefront
-3. Open product_1
-4. Verify price displayed","System displays the lowest product price between price_1 and price_2",C343697,None
-PRICE-026,Pricelists > Lowest price > Without user group,Pricing > Lowest Price,Functional,Medium,5min,"Admin logged in to Backend and Storefront
-Two price lists (priceList_1 priceList_2) with different prices (price_1 price_2) for same product (product_1)
+user_1 added to user group VIP","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; product_sku={{TEST_SKU}}; price_1=80.00; price_2=60.00","[NAV] Navigate to {{FRONT_URL}} and login as user_1 (VIP member) using {{USER_EMAIL}}/{{USER_PASSWORD}}
+[ACT] Open product_1 ({{TEST_SKU}})
+[ASSERT] Verify displayed price = lowest of price_1 and price_2","[STATE] System displays lowest product price = $60.00 (min of price_1=$80.00 and price_2=$60.00)
+[DOM] $60.00 shown on product detail page for VIP user","[API] GraphQL xAPI products query with authenticated VIP user token — confirm prices[].actual.amount = 60.00","VIP prices not applied; higher price shown instead of lowest; group membership not recognized","none",C343697,None
+PRICE-026,Pricelists > Lowest price > Without user group,Pricing > Lowest Price,Medium,BL-PRICE-003,"","Admin logged in to Backend and Storefront
+Two price lists (priceList_1, priceList_2) with different prices (price_1, price_2) for same product (product_1)
 Same priority set for both price lists
 No user groups assigned to these price lists
-user_1 does not belong to any user groups","1. Login as user_1 (no group membership)
-2. Navigate to Storefront
-3. Open product_1
-4. Verify price displayed","System displays the lowest product price between price_1 and price_2",C343699,None
-PRICE-027,Add new assignment,Pricing > Assignment Management,Functional,Critical,5min,"Admin logged in to Backend
-Price list exists","1. Navigate to Pricing module > Price List Assignments
-2. Click 'Add' button
-3. Enter assignment name
-4. Select catalog
-5. Select price list
-6. Click 'Create' button (without additional rules/conditions)
-7. Verify assignment in list","1. System creates assignment without additional rules and conditions
-2. System displays number of assignments in 'Assignment' widget",C178853,Katalon
-PRICE-028,Edit price list assignment,Pricing > Assignment Management,Functional,High,5min,"Admin logged in to Backend
-Assignment created [PRICE-027]","1. Navigate to Pricing module > Price List Assignments
-2. Open existing assignment
-3. Modify assignment details (name description priority)
-4. Click 'Save' button
-5. Verify changes in table","All changes are saved. Data in table is updated.",C178874,Katalon
-PRICE-029,Delete price list assignment,Pricing > Assignment Management,Functional,High,3min,"Admin logged in to Backend
-Assignment created [PRICE-027]","1. Navigate to Pricing module > Price List Assignments
-2. Select assignment to delete
-3. Click 'Delete' button
-4. Confirm deletion
-5. Verify assignment removed from list","Assignment is deleted",C178876,Katalon
-PRICE-030,Assignments with rules and conditions,Pricing > Assignment Logic,Functional,High,8min,"Admin logged in to Backend
-Assignment created [PRICE-027]","1. Go to assignment from PRICE-027
-2. Go to 'Eligible Shoppers' section
-3. Click 'Add condition'
-4. Select conditions and configure them
-5. Click 'Save'
-6. Verify conditions are displayed","System displays selected conditions with possibility to delete them",C178870,Katalon
-PRICE-031,Export price list assignments,Pricing > Assignment Logic,Functional,Medium,5min,"Admin logged in to Backend
-Multiple assignments exist","1. Navigate to Pricing module > Price List Assignments
-2. Select assignments to export
-3. Click 'Export' button
-4. Configure export settings
-5. Click 'Start Export'
-6. Wait for completion
-7. Download exported file","After export is completed you can download the file with assignments you have selected",C178872,None
-PRICE-032,Add recommended price to price list,Pricing > Recommended Price,Functional,Medium,5min,"Admin logged in to Backend
-Price list exists with products","1. Open Pricing module > Price Lists
-2. Open price list > Prices widget
-3. Select and click on product
-4. Verify recommended price field is displayed
-5. Add value in recommended price field
-6. Click 'Save'
-7. Re-open product
-8. Verify value persisted","Recommended price field displayed in table before List and Sale price. Value saved successfully.",C340925,None
-PRICE-033,Edit recommended price in price lists,Pricing > Recommended Price,Functional,Medium,5min,"Admin logged in to Backend
-Recommended price added [PRICE-032]","1. Click on Pricing > Price Lists
-2. Choose pricelist_1
-3. Click on Product_1
-4. Verify recommended price field displays current value
-5. Enter new value
-6. Click 'Save'
-7. Re-open blade
-8. Verify new value persisted","New blade opened with value in recommended price field. New value saved successfully.",C340928,None
-PRICE-034,Product > Price widget > Check recommended price field,Pricing > Recommended Price,Functional,Medium,3min,"Admin logged in to Backend
-Recommended price added to pricelist_1","1. Navigate to Catalog > Products
-2. Open product with recommended price
-3. Click on 'Price' widget
-4. Verify recommended price field is visible and editable","Recommended price field with value displays and is editable",C340926,None
-PRICE-035,Product > Price widget > Edit recommended price field,Pricing > Recommended Price,Functional,Medium,5min,"Admin logged in to Backend
-Recommended price added [PRICE-032]","1. Click on Product_1 > Price widget
-2. Verify recommended price field displays current value
-3. Enter new value
-4. Click 'Save'
-5. Re-open blade
-6. Verify new value persisted","New blade opened with value in recommended price field. New value saved successfully.",C340929,None
-PRICE-036,Search pricelist by various criteria,Pricing > Search & Filter,Functional,Medium,5min,"Admin logged in to Backend
-Multiple price lists exist with various names and currencies","Step 1: Search by partial name
-1. Navigate to Pricing module > Price Lists
-2. Enter ""Clothing"" in search field
-3. Verify results
-
-Step 2: Search by partial text
-1. Enter ""elect"" in search field
-2. Verify results
-
-Step 3: Search by currency
-1. Enter ""USD"" in search field
-2. Verify results","All steps: System displays results matching search request",C182896,None
-PRICE-037,Search pricelist assignment by name,Pricing > Search & Filter,Functional,Medium,5min,"Admin logged in to Backend
-Multiple price list assignments exist","1. Navigate to Pricing module > Price List Assignments
-2. Enter ""B2B-mixed"" in search field
-3. Verify search results
-4. Enter ""B2B-MIxed-MFD"" in search field (case insensitive)
-5. Verify search results","System displays search results matching assignment name (case insensitive)",C182897,None
-PRICE-038,Create and apply filter in pricing module,Pricing > Search & Filter,Functional,Medium,8min,"Admin logged in to Backend
-Multiple price lists/assignments exist","1. Navigate to Pricing module > Price Lists or Assignments
-2. Click 'Select filter' > 'Add new filter'
-3. Select filter criteria
-4. Click 'Save & Apply'
-5. Verify filtering
-6. Create another filter with different criteria
-7. Apply new filter
-8. Verify filtering","System displays filtering objects correctly. Correct filtering data displayed for each filter.",C182898,None
-PRICE-039,Search with wrong/no results request,Pricing > Search & Filter,Negative,Medium,3min,"Admin logged in to Backend
-Pricing module open","1. Navigate to Pricing module
-2. Enter wrong/non-existent search request in search field
-3. Verify message","System displays 'no data' message",C182899,None
-PRICE-040,Filter then search within filtered data,Pricing > Search & Filter,Functional,Medium,5min,"Admin logged in to Backend
-Filter created for pricelist [PRICE-038]","1. Navigate to Pricing module
-2. Apply filter
-3. Enter search request in search line
-4. Verify results","System displays search result from filtered data only",C182900,None
-PRICE-041,Search products in pricelist by multiple criteria,Pricing > Search & Filter,Functional,Medium,5min,"Admin logged in to Backend
-Price list exists with multiple products","1. Navigate to Pricing module > Price Lists
-2. Open price list > Prices widget
-3. Search by SKU
-4. Verify results
-5. Search by color
-6. Verify results
-7. Search by size
-8. Verify results
-9. Search by category
-10. Verify results
-11. Search by name
-12. Verify results","Search results are shown for all criteria (SKU color size category name)",C205045,None
-PRICE-042,Settings > Export/Import page size,Pricing > Settings,Functional,Medium,10min,"Admin logged in to Backend
-Admin on Settings panel","Step 1: Change setting
-1. Open Settings > Pricing > General
-2. Change value for 'The page size being used for Export/Import' (example: 1)
-3. Click 'Save'
-4. Verify changes saved
-
-Step 2: Test Export
-1. Open Export & Import page
-2. Select Export blade
-3. Choose VirtoCommerce.Pricing
-4. Click 'Start Export'
-5. Verify progress bar updates with setting value
-
-Step 3: Test Import
-1. Open Export & Import page
-2. Select Import blade
-3. Choose VirtoCommerce.Pricing
-4. Click 'Start Import'
-5. Verify progress bar updates with setting value","All steps: Changes saved. Progress bar updates with values from setting.",C242158,None
-PRICE-043,Settings > Enable event-based indexation for pricing entities,Pricing > Settings,Functional,Medium,8min,"Admin logged in to Backend","1. Open Settings > Pricing > General
-2. Enable 'Enable event-based indexation for pricing entities'
-3. Click 'Save'
-4. Open Catalog > Category > Product > Price widget
-5. Change Min. quantity value
-6. Click 'Save'
-7. Reopen edit blade
-8. Check Indexation widget
-9. Verify system was reindexed after saving change","Setting saved as enabled. System was reindexed after saving change.",C242159,None
-PRICE-044,Settings > Disable event-based indexation for pricing entities,Pricing > Settings,Functional,Medium,8min,"Admin logged in to Backend","1. Open Settings > Pricing > General
-2. Disable 'Enable event-based indexation for pricing entities'
-3. Click 'Save'
-4. Open Catalog > Category > Product > Price widget
-5. Change Min. quantity value
-6. Click 'Save'
-7. Reopen edit blade
-8. Check Indexation widget
-9. Verify system doesn't index after saving change","Setting saved as disabled. System doesn't index after saving change.",C242160,None
-PRICE-045,Settings > Enable log pricing changes,Pricing > Settings,Functional,Medium,8min,"Admin logged in to Backend","1. Open Settings > Pricing > General
-2. Enable 'Log pricing changes'
-3. Click 'Save'
-4. Open Catalog > Product > Price widget
-5. Change price value
-6. Save changes
-7. Check PlatformOperationLog table
-8. Verify new row was added","Setting saved as enabled. New row was added to PlatformOperationLog.",C261705,None
-PRICE-046,Settings > Disable log pricing changes,Pricing > Settings,Functional,Medium,8min,"Admin logged in to Backend","1. Open Settings > Pricing > General
-2. Disable 'Log pricing changes'
-3. Click 'Save'
-4. Open Catalog > Product > Price widget
-5. Change price value
-6. Save changes
-7. Check PlatformOperationLog table
-8. Verify new row was NOT added","Setting saved as disabled. New row was NOT added to PlatformOperationLog.",C261704,None
-PRICE-047,Settings > Tooltips show/hide behavior,Pricing > Settings,Functional,Medium,5min,"Admin logged in to Backend","1. Open Settings > Pricing > General blade
-2. Verify all tooltips are folded
-3. Click 'Show' link for field1
-4. Verify tooltip for field1 unfolded
-5. Click 'Show' link for field2
-6. Verify tooltip for field2 unfolded and field1 folded
-7. Click 'Hide' link
-8. Verify all tooltips folded","All tooltips behave correctly: one tooltip unfolded at a time tooltip for field2 unfolds and field1 folds all tooltips fold when Hide clicked",C338422,None
-PRICE-048,Settings > Pricing indexation date and time,Pricing > Settings,Functional,Medium,10min,"Admin logged in to Backend
-Admin on Settings panel","1. Open Pricing settings blade > Search
-2. Check 'Pricing indexation date and time' field (format: Jul 3 2020 12:50:14 PM)
-3. Go to Catalog > Product > Price widget
-4. Change Price value
-5. Set valid from/to dates
-6. Click 'Save'
-7. Open Search Index page
-8. Select Products > Build index
-9. Click 'Build'
-10. Wait for completion
-11. After running background job 'IndexingJobs.IndexChangesJob' check field again
-12. Verify new indexation date/time displays","Last indexation date and time displays in correct format. After rebuild new indexation date and time displays in the field.",C242161,None
-PRICE-049,Settings > Enable product price indexing,Pricing > Settings,Functional,Medium,8min,"Admin logged in to Backend
-'Enable event-based indexation for pricing entities' is ON","1. Open Settings > Pricing > Search
-2. Enable 'Enable product price indexing'
-3. Click 'Save'
-4. Open Catalog > Product > Price widget
-5. Change Price value
-6. Click 'Save'
-7. Reopen edit blade
-8. Check Indexation widget
-9. Verify prices reindexed and included in index","Setting saved as enabled. Prices reindexed and included in index.",C242163,None
-PRICE-050,Settings > Disable product price indexing,Pricing > Settings,Functional,Medium,8min,"Admin logged in to Backend
-'Enable event-based indexation for pricing entities' is ON","1. Open Settings > Pricing > Search
-2. Disable 'Enable product price indexing'
-3. Click 'Save'
-4. Open Catalog > Product > Price widget
-5. Change Price value
-6. Click 'Save'
-7. Reopen edit blade
-8. Check Indexation widget
-9. Verify prices reindexed but NOT included in index","Setting saved as disabled. Prices reindexed but NOT included in index.",C242168,None
-PRICE-053,Permissions > Access only,Pricing > Permissions,Security,High,5min,"Admin logged in to Backend
-Role_1 created with permissions:
-- pricing:access
-- catalog:read
-Role_1 assigned to User_1","1. Login to Backend as User_1
-2. Find 'Pricing' module in Navigation
-3. Open 'Pricing' blade
-4. Try to open 'Price lists' tab
-5. Try to open any price list
-6. Try to open 'Price list assignments' tab
-7. Try to open any assignment","Pricing module visible in Navigation. Pricing blade opens. Price lists tab opens but unable to open price lists (nothing happens on click). Price list assignments tab opens but unable to open assignments (nothing happens on click).",C338376,None
-PRICE-054,Permissions > Read,Pricing > Permissions,Security,High,5min,"Admin logged in to Backend
-Role_1 created with permissions:
-- pricing:access
-- pricing:read
-- catalog:read
-Role_1 assigned to User_1","1. Login to Backend as User_1
-2. Open 'Pricing' module
-3. Open 'Price lists' tab
-4. Try to open any price list
-5. Verify all data visible
-6. Open 'Price list assignments' tab
-7. Try to open any assignment
-8. Verify all data visible","Price list opens and all data is visible. Price list assignment opens and all data is visible.",C338377,None
-PRICE-055,Permissions > Export,Pricing > Permissions,Security,High,8min,"Admin logged in to Backend
-Role_1 created with permissions:
-- pricing:access
-- pricing:read
-- pricing:export
-- catalog:read
-Role_1 assigned to User_1","Step 1: Export price lists
-1. Login to Backend as User_1
-2. Open 'Pricing' module > Price lists
-3. Verify 'Export' button on header
-4. Click 'Export'
-5. Select provider data and properties
-6. Click 'Start export'
-7. Verify export progress and file download
-
-Step 2: Export assignments
-1. Open 'Price list assignment' tab
-2. Verify 'Export' button on header
-3. Click 'Export'
-4. Select provider data and properties
-5. Click 'Start export'
-6. Verify export progress and file download","Both steps: Export button visible on header. Export progress blade opens. When export finishes file can be downloaded.",C338378,None
-PRICE-056,Permissions > Create,Pricing > Permissions,Security,High,8min,"Admin logged in to Backend
-Role_1 created with permissions:
-- pricing:access
-- pricing:read
-- pricing:create
-- catalog:read
-Role_1 assigned to User_1","Step 1: Create price list
-1. Login to Backend as User_1
-2. Open 'Pricing' module > Price lists
-3. Verify 'Add' button is clickable
-4. Click 'Add'
-5. Enter name and select currency
-6. Click 'Create'
-7. Verify new price list created
-
-Step 2: Create assignment
-1. Open 'Price list assignments' tab
-2. Verify 'Add' button is clickable
-3. Click 'Add'
-4. Enter assignment name
-5. Select catalog and price list
-6. Click 'Create'
-7. Verify new assignment created","Both steps: Add button visible and clickable. New price list created. New assignment created.",C338379,None
-PRICE-057,Permissions > Update,Pricing > Permissions,Security,High,8min,"Admin logged in to Backend
-Role_1 created with permissions:
-- pricing:access
-- pricing:read
-- pricing:update
-- catalog:read
-Role_1 assigned to User_1","Step 1: Update price list
-1. Login to Backend as User_1
-2. Open 'Pricing' module > Price lists
-3. Open any price list
-4. Change some fields
-5. Click 'Save'
-6. Verify all changes saved
-
-Step 2: Update assignment
-1. Open 'Price list assignments' tab
-2. Open any assignment
-3. Change some fields
-4. Click 'Save'
-5. Verify all changes saved","Both steps: All changes are saved.",C338380,None
-PRICE-058,Permissions > Delete,Pricing > Permissions,Security,High,8min,"Admin logged in to Backend
-Role_1 created with permissions:
-- pricing:access
-- pricing:read
-- pricing:delete
-- catalog:read
-Role_1 assigned to User_1","Step 1: Delete price list
-1. Login to Backend as User_1
-2. Open 'Pricing' module > Price lists
-3. Verify 'Delete' button on header
-4. Mark price list to delete
-5. Click 'Delete'
-6. Confirm deletion
-7. Verify price list deleted
-
-Step 2: Delete assignment
-1. Open 'Price list assignments' tab
-2. Verify 'Delete' button on header
-3. Mark assignment to delete
-4. Click 'Delete'
-5. Confirm deletion
-6. Verify assignment deleted","Both steps: Delete button visible on header. Price list deleted. Assignment deleted.",C338381,None
-PRICE-059,Discount stacking — coupon applies to sale price not list price,Pricing > Discount Stacking,Functional,Critical,10min,"Admin logged in to Backend and Storefront
+user_1 does not belong to any user groups","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; product_sku={{TEST_SKU}}; price_1=90.00; price_2=75.00","[NAV] Navigate to {{FRONT_URL}} and login as user_1 (no group) using {{USER_EMAIL}}/{{USER_PASSWORD}}
+[ACT] Open product_1 ({{TEST_SKU}})
+[ASSERT] Verify displayed price = lowest of price_1 and price_2","[STATE] System displays lowest product price = $75.00 (min of price_1=$90.00 and price_2=$75.00)
+[DOM] $75.00 shown on product detail page for ungrouped user","[API] GraphQL xAPI products query without group token — confirm prices[].actual.amount = 75.00","Higher price shown instead of lowest; user group filtering wrongly applied to no-group pricelists","none",C343699,None
+PRICE-027,Add new assignment,Pricing > Assignment Management,Critical,BL-PRICE-004,"","Admin logged in to Backend
+Price list exists","assignment_name=TestAssignment-001; catalog_id={{STORE_ID}}","[NAV] Navigate to {{BACK_URL}} Pricing module > Price List Assignments
+[ACT] Click 'Add' button
+[ACT] Enter assignment name: TestAssignment-001
+[ACT] Select catalog
+[ACT] Select price list
+[ACT] Click 'Create' button (without additional rules/conditions)
+[ASSERT] Verify assignment appears in list","[STATE] System creates assignment without additional rules and conditions
+[DOM] Assignment count in 'Assignment' widget is incremented
+[STATE] New assignment visible in Assignments list","[API] GET /api/pricing/assignments — confirm new assignment entry exists
+[ADMIN] Reload Assignments blade and confirm assignment persists","Assignment not created; widget count not updated; assignment not visible in list","delete created price list via Admin",C178853,Katalon
+PRICE-028,Edit price list assignment,Pricing > Assignment Management,High,BL-PRICE-004,"","Admin logged in to Backend
+Assignment created [PRICE-027]","updated_name=TestAssignment-EDIT; updated_description=edited description; updated_priority=10","[NAV] Navigate to {{BACK_URL}} Pricing module > Price List Assignments
+[ACT] Open existing assignment (TestAssignment-001)
+[ACT] Modify assignment name, description, and priority
+[ACT] Click 'Save' button
+[ASSERT] Verify changes reflected in table","[STATE] All changes are saved
+[DOM] Updated name, description, and priority appear in the Assignments table","[API] GET /api/pricing/assignments/{id} — confirm updated fields match input values","Changes not saved; stale data in table; save button unresponsive","restore original prices",C178874,Katalon
+PRICE-029,Delete price list assignment,Pricing > Assignment Management,High,BL-PRICE-004,"","Admin logged in to Backend
+Assignment created [PRICE-027]","assignment_id from PRICE-027","[NAV] Navigate to {{BACK_URL}} Pricing module > Price List Assignments
+[ACT] Select assignment to delete
+[ACT] Click 'Delete' button
+[ACT] Confirm deletion
+[ASSERT] Verify assignment removed from list","[STATE] Assignment is deleted
+[DOM] Assignment no longer appears in Assignments table","[API] GET /api/pricing/assignments/{id} returns 404","Assignment still visible after deletion; confirmation dialog missing; delete fails silently","none",C178876,Katalon
+PRICE-030,Assignments with rules and conditions,Pricing > Assignment Logic,High,BL-PRICE-004,"","Admin logged in to Backend
+Assignment created [PRICE-027]","condition_type=UserGroup; condition_value=VIP","[NAV] Navigate to {{BACK_URL}} and open assignment from PRICE-027
+[ACT] Go to 'Eligible Shoppers' section
+[ACT] Click 'Add condition'
+[ACT] Select condition type (UserGroup) and configure with value VIP
+[ACT] Click 'Save'
+[ASSERT] Verify conditions are displayed","[STATE] Condition saved and displayed in Eligible Shoppers section
+[DOM] Condition shows type and configured value; delete option available for each condition","[ADMIN] Reload assignment blade and confirm conditions persist
+[API] GET /api/pricing/assignments/{id} — confirm conditions in response","Conditions not saved; 'Add condition' button missing; conditions reset after save","restore original prices",C178870,Katalon
+PRICE-031,Export price list assignments,Pricing > Assignment Logic,Medium,BL-PRICE-004,"ECL-5.1","Admin logged in to Backend
+Multiple assignments exist","export_format=CSV","[NAV] Navigate to {{BACK_URL}} Pricing module > Price List Assignments
+[ACT] Select assignments to export
+[ACT] Click 'Export' button
+[ACT] Configure export settings
+[ACT] Click 'Start Export'
+[WAIT] Wait for completion indicator
+[ACT] Download exported file
+[ASSERT] Verify file contents","[STATE] Export completes successfully
+[DOM] Download link available after export
+[FORMAT] Downloaded CSV file contains selected assignment data","[NETWORK] Confirm download request succeeds (HTTP 200)
+[CONSOLE] No JS errors during export","Export hangs indefinitely; file download fails; exported file missing assignment records","none",C178872,None
+PRICE-032,Add recommended price to price list,Pricing > Recommended Price,Medium,BL-PRICE-001,"","Admin logged in to Backend
+Price list exists with products","product_sku={{TEST_SKU}}; recommended_price=250.00","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
+[ACT] Open price list > Prices widget
+[ACT] Select and click on product ({{TEST_SKU}})
+[ASSERT] Verify recommended price field is displayed before List and Sale price columns
+[ACT] Add value 250.00 in recommended price field
+[ACT] Click 'Save'
+[ACT] Re-open product blade
+[ASSERT] Verify value 250.00 persisted","[DOM] Recommended price field displayed in table before List and Sale price
+[STATE] Recommended price value 250.00 saved successfully
+[STATE] Value persists on re-opening product blade","[API] GET /api/pricing/pricelists/{id}/prices — confirm recommendedPrice field = 250.00","Recommended price field not visible; value not saved; field order incorrect","restore original prices",C340925,None
+PRICE-033,Edit recommended price in price lists,Pricing > Recommended Price,Medium,BL-PRICE-001,"","Admin logged in to Backend
+Recommended price added [PRICE-032]","product_sku={{TEST_SKU}}; current_recommended=250.00; new_recommended=300.00","[NAV] Navigate to {{BACK_URL}} Pricing > Price Lists > choose pricelist_1
+[ACT] Click on Product_1 ({{TEST_SKU}})
+[ASSERT] Verify recommended price field displays 250.00
+[ACT] Enter new value 300.00 in recommended price field
+[ACT] Click 'Save'
+[ACT] Re-open blade
+[ASSERT] Verify new value 300.00 persisted","[DOM] Blade opens with current recommended price value displayed
+[STATE] New recommended price value 300.00 saved successfully
+[STATE] Value persists on re-opening blade","[API] GET /api/pricing/pricelists/{id}/prices — confirm recommendedPrice field = 300.00","Old value persists; save fails; field reverts on re-open","restore original prices",C340928,None
+PRICE-034,Product > Price widget > Check recommended price field,Pricing > Recommended Price,Medium,BL-PRICE-001,"","Admin logged in to Backend
+Recommended price added to pricelist_1","product_sku={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} Catalog > Products
+[ACT] Open product ({{TEST_SKU}}) that has recommended price
+[ACT] Click on 'Price' widget
+[ASSERT] Verify recommended price field is visible and editable","[DOM] Recommended price field visible in Price widget with current value
+[STATE] Field is editable (not read-only)","[ADMIN] Confirm field is editable and accepts numeric input","Recommended price field missing in Price widget; field is read-only; incorrect value shown","none",C340926,None
+PRICE-035,Product > Price widget > Edit recommended price field,Pricing > Recommended Price,Medium,BL-PRICE-001,"","Admin logged in to Backend
+Recommended price added [PRICE-032]","product_sku={{TEST_SKU}}; current_recommended=250.00; new_recommended=275.00","[NAV] Navigate to {{BACK_URL}} Catalog > Product_1 ({{TEST_SKU}}) > Price widget
+[ASSERT] Verify recommended price field displays 250.00
+[ACT] Enter new value 275.00
+[ACT] Click 'Save'
+[ACT] Re-open blade
+[ASSERT] Verify new value 275.00 persisted","[DOM] Blade opens with recommended price field showing current value
+[STATE] New recommended price 275.00 saved successfully
+[STATE] Value persists on re-opening blade","[API] GET /api/pricing/products/{id}/prices — confirm recommendedPrice field = 275.00","Value not saved from Product widget; field reverts on re-open; save button not visible in widget","restore original prices",C340929,None
+PRICE-036,Search pricelist by various criteria,Pricing > Search & Filter,Medium,BL-PRICE-004,"","Admin logged in to Backend
+Multiple price lists exist with various names and currencies","search_term_1=Clothing; search_term_2=elect; search_term_3=USD","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
+[ACT] Enter 'Clothing' in search field
+[ASSERT] Verify results contain pricelists with 'Clothing' in name
+[ACT] Enter 'elect' in search field
+[ASSERT] Verify results contain pricelists matching partial text 'elect'
+[ACT] Enter 'USD' in search field
+[ASSERT] Verify results contain USD currency pricelists","[STATE] Step 1: Results match pricelists containing 'Clothing'
+[STATE] Step 2: Results match partial text 'elect'
+[STATE] Step 3: Results match USD currency pricelists
+[DOM] All search results are relevant to each search term","[ADMIN] Confirm search is case-insensitive by testing uppercase/lowercase variants","No results for valid search terms; wrong results returned; search field unresponsive","none",C182896,None
+PRICE-037,Search pricelist assignment by name,Pricing > Search & Filter,Medium,BL-PRICE-004,"","Admin logged in to Backend
+Multiple price list assignments exist","search_term_1=B2B-mixed; search_term_2=B2B-MIxed-MFD","[NAV] Navigate to {{BACK_URL}} Pricing module > Price List Assignments
+[ACT] Enter 'B2B-mixed' in search field
+[ASSERT] Verify search results match assignment name
+[ACT] Enter 'B2B-MIxed-MFD' in search field (case insensitive)
+[ASSERT] Verify search results match case-insensitively","[STATE] Step 1: Results show assignment(s) containing 'B2B-mixed'
+[STATE] Step 2: Results match 'B2B-MIxed-MFD' case-insensitively","[ADMIN] Confirm search works regardless of case variation","Search is case-sensitive (no results for variant); wrong assignments returned; search field non-functional","none",C182897,None
+PRICE-038,Create and apply filter in pricing module,Pricing > Search & Filter,Medium,BL-PRICE-004,"","Admin logged in to Backend
+Multiple price lists/assignments exist","filter_name=TestFilter-01; filter_criteria=currency:USD; filter_name_2=TestFilter-02","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists or Assignments
+[ACT] Click 'Select filter' > 'Add new filter'
+[ACT] Select filter criteria (currency=USD)
+[ACT] Click 'Save & Apply'
+[ASSERT] Verify filtering applies correctly
+[ACT] Create another filter (TestFilter-02) with different criteria
+[ACT] Apply new filter
+[ASSERT] Verify second filter applies correctly","[STATE] Filter 1 applied — only USD pricelists shown
+[STATE] Filter 2 applied — correct data for second filter criteria shown
+[DOM] Correct filtering data displayed for each filter","[ADMIN] Confirm filters persist and appear in filter dropdown for reuse","Filter not saved; wrong data shown after filter apply; second filter replaces rather than supplements first","delete created price list via Admin",C182898,None
+PRICE-039,Search with wrong/no results request,Pricing > Search & Filter,Medium,BL-PRICE-004,"","Admin logged in to Backend
+Pricing module open","search_term=XXXXXXXXXNONEXISTENT9999","[NAV] Navigate to {{BACK_URL}} Pricing module
+[ACT] Enter non-existent search term 'XXXXXXXXXNONEXISTENT9999' in search field
+[ASSERT] Verify system response","[DOM] 'No data' or empty state message displayed
+[STATE] No results shown — no false positives","[CONSOLE] No JS errors when empty results rendered","No empty state message shown; JS error thrown; spinner stuck indefinitely","none",C182899,None
+PRICE-040,Filter then search within filtered data,Pricing > Search & Filter,Medium,BL-PRICE-004,"","Admin logged in to Backend
+Filter created for pricelist [PRICE-038]","filter_name=TestFilter-01; search_term=Clothing","[NAV] Navigate to {{BACK_URL}} Pricing module
+[ACT] Apply TestFilter-01 (USD filter)
+[ACT] Enter 'Clothing' in search field
+[ASSERT] Verify results show only filtered+searched data","[STATE] Search results come from filtered dataset only — no non-USD pricelists in results","[ADMIN] Confirm result count is subset of both filter and search independently applied","Search ignores active filter; non-filtered data appears in results; filter cleared on search","none",C182900,None
+PRICE-041,Search products in pricelist by multiple criteria,Pricing > Search & Filter,Medium,BL-PRICE-001,"","Admin logged in to Backend
+Price list exists with multiple products","search_sku={{TEST_SKU}}; search_color=Blue; search_size=M; search_category=Electronics; search_name=TestProduct","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists > open price list > Prices widget
+[ACT] Search by SKU: {{TEST_SKU}}
+[ASSERT] Verify results match SKU
+[ACT] Search by color: Blue
+[ASSERT] Verify results match color
+[ACT] Search by size: M
+[ASSERT] Verify results match size
+[ACT] Search by category: Electronics
+[ASSERT] Verify results match category
+[ACT] Search by name: TestProduct
+[ASSERT] Verify results match name","[STATE] Each search criterion returns matching results
+[DOM] SKU, color, size, category, and name searches all return relevant products","[ADMIN] Cross-check result count with known test data for each criterion","Some criteria return no results; wrong products returned; search not functional for property-based criteria","none",C205045,None
+PRICE-042,Settings > Export/Import page size,Pricing > Settings,Medium,BL-PRICE-004,"ECL-5.1","Admin logged in to Backend
+Admin on Settings panel","page_size_value=1","[NAV] Navigate to {{BACK_URL}} Settings > Pricing > General
+[ACT] Change 'Export/Import page size' value to 1
+[ACT] Click 'Save'
+[ASSERT] Verify changes saved
+[NAV] Navigate to Export & Import page > Export blade
+[ACT] Choose VirtoCommerce.Pricing
+[ACT] Click 'Start Export'
+[ASSERT] Verify progress bar increments in steps matching page size = 1
+[NAV] Navigate to Import blade
+[ACT] Choose VirtoCommerce.Pricing
+[ACT] Click 'Start Import'
+[ASSERT] Verify progress bar increments in steps matching page size = 1","[STATE] Setting value saved to 1
+[DOM] Progress bar updates with value increments matching page size setting
+[STATE] Both Export and Import respect the configured page size","[ADMIN] Confirm setting persists after page refresh
+[CONSOLE] No errors during export/import with custom page size","Setting not saved; progress bar not reflecting page size; export/import ignores setting","none",C242158,None
+PRICE-043,Settings > Enable event-based indexation for pricing entities,Pricing > Settings,Medium,BL-PRICE-001,"","Admin logged in to Backend","setting_name=Enable event-based indexation for pricing entities","[NAV] Navigate to {{BACK_URL}} Settings > Pricing > General
+[ACT] Enable 'Enable event-based indexation for pricing entities'
+[ACT] Click 'Save'
+[NAV] Navigate to Catalog > Category > Product ({{TEST_SKU}}) > Price widget
+[ACT] Change Min. quantity value
+[ACT] Click 'Save'
+[ACT] Reopen edit blade
+[ASSERT] Check Indexation widget
+[ASSERT] Verify system was reindexed automatically after saving change","[STATE] Setting saved as enabled
+[STATE] Indexation widget shows recent reindex event after price save
+[STATE] System was reindexed after saving change — no manual index rebuild required","[ADMIN] Check background job logs or Indexation widget for reindex timestamp","Setting not saved; auto-reindex not triggered; Indexation widget not updated","none",C242159,None
+PRICE-044,Settings > Disable event-based indexation for pricing entities,Pricing > Settings,Medium,BL-PRICE-001,"","Admin logged in to Backend","setting_name=Enable event-based indexation for pricing entities","[NAV] Navigate to {{BACK_URL}} Settings > Pricing > General
+[ACT] Disable 'Enable event-based indexation for pricing entities'
+[ACT] Click 'Save'
+[NAV] Navigate to Catalog > Category > Product ({{TEST_SKU}}) > Price widget
+[ACT] Change Min. quantity value
+[ACT] Click 'Save'
+[ACT] Reopen edit blade
+[ASSERT] Check Indexation widget
+[ASSERT] Verify system does NOT auto-reindex after saving change","[STATE] Setting saved as disabled
+[STATE] Indexation widget shows no new reindex event after price save
+[STATE] System does NOT reindex after saving change — manual index rebuild required","[ADMIN] Confirm Indexation widget timestamp unchanged after price save with setting disabled","Setting not saved; auto-reindex still triggers when disabled; Indexation widget status unclear","none",C242160,None
+PRICE-045,Settings > Enable log pricing changes,Pricing > Settings,Medium,BL-PRICE-001,"","Admin logged in to Backend","setting_name=Log pricing changes; product_sku={{TEST_SKU}}; db_table=PlatformOperationLog","[NAV] Navigate to {{BACK_URL}} Settings > Pricing > General
+[ACT] Enable 'Log pricing changes'
+[ACT] Click 'Save'
+[NAV] Navigate to Catalog > Product ({{TEST_SKU}}) > Price widget
+[ACT] Change price value
+[ACT] Save changes
+[ASSERT] Check PlatformOperationLog table
+[ASSERT] Verify new row was added with pricing change record","[STATE] Setting saved as enabled
+[STATE] New row added to PlatformOperationLog after price change
+[FORMAT] Log row contains timestamp, user, and pricing change details","[API] Query PlatformOperationLog table via DB or API endpoint — confirm new row exists with pricing operation","Setting not saved; no log row created; log row missing required fields","restore original prices",C261705,None
+PRICE-046,Settings > Disable log pricing changes,Pricing > Settings,Medium,BL-PRICE-001,"","Admin logged in to Backend","setting_name=Log pricing changes; product_sku={{TEST_SKU}}; db_table=PlatformOperationLog","[NAV] Navigate to {{BACK_URL}} Settings > Pricing > General
+[ACT] Disable 'Log pricing changes'
+[ACT] Click 'Save'
+[NAV] Navigate to Catalog > Product ({{TEST_SKU}}) > Price widget
+[ACT] Change price value
+[ACT] Save changes
+[ASSERT] Check PlatformOperationLog table
+[ASSERT] Verify new row was NOT added","[STATE] Setting saved as disabled
+[STATE] No new row added to PlatformOperationLog after price change
+[STATE] Pricing operation not logged when setting is disabled","[API] Query PlatformOperationLog table — confirm row count unchanged after price change","Setting not saved; log row still created when logging disabled; false positive log entries","restore original prices",C261704,None
+PRICE-047,Settings > Tooltips show/hide behavior,Pricing > Settings,Medium,BL-PRICE-004,"","Admin logged in to Backend","field_1=first tooltip field; field_2=second tooltip field","[NAV] Navigate to {{BACK_URL}} Settings > Pricing > General blade
+[ASSERT] Verify all tooltips are folded by default
+[ACT] Click 'Show' link for field_1
+[ASSERT] Verify tooltip for field_1 is unfolded
+[ACT] Click 'Show' link for field_2
+[ASSERT] Verify tooltip for field_2 unfolded AND field_1 auto-folded
+[ACT] Click 'Hide' link
+[ASSERT] Verify all tooltips folded","[DOM] All tooltips initially folded
+[STATE] field_1 tooltip unfolds on 'Show' click
+[STATE] field_2 tooltip unfolds; field_1 auto-folds (accordion behavior)
+[STATE] All tooltips fold when 'Hide' clicked","[CONSOLE] No JS errors during tooltip toggle operations","Tooltips all shown at once (no accordion); field_1 stays open when field_2 shown; Hide button missing","none",C338422,None
+PRICE-048,Settings > Pricing indexation date and time,Pricing > Settings,Medium,BL-PRICE-001,"","Admin logged in to Backend
+Admin on Settings panel","date_format=Jul 3 2020 12:50:14 PM; product_sku={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} Pricing settings blade > Search
+[ASSERT] Check 'Pricing indexation date and time' field — format: 'Jul 3 2020 12:50:14 PM'
+[NAV] Navigate to Catalog > Product ({{TEST_SKU}}) > Price widget
+[ACT] Change Price value; set valid from/to dates
+[ACT] Click 'Save'
+[NAV] Navigate to Search Index page > Products > Build index
+[ACT] Click 'Build'
+[WAIT] Wait for completion
+[ACT] After background job 'IndexingJobs.IndexChangesJob' completes — check Pricing indexation date/time field
+[ASSERT] Verify new indexation date/time displayed","[FORMAT] Initial date/time in format 'Jul 3 2020 12:50:14 PM'
+[STATE] After rebuild: new indexation date/time displayed in correct format
+[STATE] Timestamp updated — later than initial value","[ADMIN] Confirm timestamp is correctly formatted (not ISO 8601 or Unix timestamp format)","Timestamp not updating after rebuild; wrong date format; field blank after rebuild","restore original prices",C242161,None
+PRICE-049,Settings > Enable product price indexing,Pricing > Settings,Medium,BL-PRICE-001,"","Admin logged in to Backend
+'Enable event-based indexation for pricing entities' is ON","product_sku={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} Settings > Pricing > Search
+[ACT] Enable 'Enable product price indexing'
+[ACT] Click 'Save'
+[NAV] Navigate to Catalog > Product ({{TEST_SKU}}) > Price widget
+[ACT] Change Price value
+[ACT] Click 'Save'
+[ACT] Reopen edit blade
+[ASSERT] Check Indexation widget
+[ASSERT] Verify prices reindexed and included in search index","[STATE] Setting saved as enabled
+[STATE] Prices reindexed and included in index
+[STATE] Indexation widget confirms price data in search index","[ADMIN] Verify search index contains price data for product after save","Setting not saved; prices not included in index despite setting enabled; Indexation widget unclear","restore original prices",C242163,None
+PRICE-050,Settings > Disable product price indexing,Pricing > Settings,Medium,BL-PRICE-001,"","Admin logged in to Backend
+'Enable event-based indexation for pricing entities' is ON","product_sku={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} Settings > Pricing > Search
+[ACT] Disable 'Enable product price indexing'
+[ACT] Click 'Save'
+[NAV] Navigate to Catalog > Product ({{TEST_SKU}}) > Price widget
+[ACT] Change Price value
+[ACT] Click 'Save'
+[ACT] Reopen edit blade
+[ASSERT] Check Indexation widget
+[ASSERT] Verify prices reindexed but NOT included in search index","[STATE] Setting saved as disabled
+[STATE] Prices reindexed but NOT included in index
+[STATE] Indexation widget confirms price data excluded from search index","[ADMIN] Verify search index does NOT contain price data for product after save","Price data still in index despite setting disabled; setting not saved; ambiguous Indexation widget state","restore original prices",C242168,None
+PRICE-053,Permissions > Access only,Pricing > Permissions,High,BL-PRICE-004,"","Admin logged in to Backend
+Role_1 created with permissions: pricing:access and catalog:read
+Role_1 assigned to User_1","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; role=pricing:access+catalog:read","[NAV] Navigate to {{BACK_URL}} and login as User_1 ({{USER_EMAIL}}/{{USER_PASSWORD}})
+[ASSERT] Verify 'Pricing' module visible in Navigation
+[ACT] Open 'Pricing' blade
+[ACT] Try to open 'Price lists' tab
+[ACT] Try to open any price list
+[ASSERT] Verify price list does not open (nothing happens on click)
+[ACT] Try to open 'Price list assignments' tab
+[ACT] Try to open any assignment
+[ASSERT] Verify assignment does not open (nothing happens on click)","[STATE] Pricing module visible in Navigation
+[STATE] Pricing blade opens
+[STATE] Price lists tab opens but individual price lists cannot be opened (click has no effect)
+[STATE] Price list assignments tab opens but individual assignments cannot be opened","[API] GET /api/pricing/pricelists — should return 403 for User_1
+[CONSOLE] No JS errors when access-restricted items are clicked","Pricing module not visible; user can open price lists (over-privileged); unauthorized API access not blocked","none",C338376,None
+PRICE-054,Permissions > Read,Pricing > Permissions,High,BL-PRICE-004,"","Admin logged in to Backend
+Role_1 created with permissions: pricing:access, pricing:read, catalog:read
+Role_1 assigned to User_1","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; role=pricing:access+pricing:read+catalog:read","[NAV] Navigate to {{BACK_URL}} and login as User_1 ({{USER_EMAIL}}/{{USER_PASSWORD}})
+[ACT] Open 'Pricing' module
+[ACT] Open 'Price lists' tab
+[ACT] Open any price list
+[ASSERT] Verify all data is visible (read-only)
+[ACT] Open 'Price list assignments' tab
+[ACT] Open any assignment
+[ASSERT] Verify all data is visible (read-only)","[STATE] Price list opens and all data is visible
+[STATE] Price list assignment opens and all data is visible
+[STATE] No edit/save controls active (read-only access)","[API] GET /api/pricing/pricelists and GET /api/pricing/assignments — should return 200 for User_1
+[CONSOLE] No unauthorized access errors","User cannot open price lists; create/update buttons visible (over-privileged); API returns 403 for read calls","none",C338377,None
+PRICE-055,Permissions > Export,Pricing > Permissions,High,BL-PRICE-004,"ECL-5.1","Admin logged in to Backend
+Role_1 created with permissions: pricing:access, pricing:read, pricing:export, catalog:read
+Role_1 assigned to User_1","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; role=pricing:access+pricing:read+pricing:export+catalog:read","[NAV] Navigate to {{BACK_URL}} and login as User_1 ({{USER_EMAIL}}/{{USER_PASSWORD}})
+[ACT] Open 'Pricing' module > Price lists
+[ASSERT] Verify 'Export' button visible in header
+[ACT] Click 'Export'
+[ACT] Select provider data and properties
+[ACT] Click 'Start export'
+[ASSERT] Verify export progress and file download available
+[ACT] Open 'Price list assignment' tab
+[ASSERT] Verify 'Export' button visible in header
+[ACT] Click 'Export' and repeat export steps
+[ASSERT] Verify export completes and file downloadable","[STATE] Export button visible in header for both Price lists and Assignments
+[STATE] Export progress blade opens
+[STATE] File can be downloaded after export completes","[NETWORK] Confirm export download HTTP 200 for User_1
+[CONSOLE] No authorization errors during export","Export button not visible despite permission; export returns 403; file download fails","none",C338378,None
+PRICE-056,Permissions > Create,Pricing > Permissions,High,BL-PRICE-004,"ECL-14.1","Admin logged in to Backend
+Role_1 created with permissions: pricing:access, pricing:read, pricing:create, catalog:read
+Role_1 assigned to User_1","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; new_pricelist_name=User1-PL-001; new_assignment_name=User1-Assign-001","[NAV] Navigate to {{BACK_URL}} and login as User_1 ({{USER_EMAIL}}/{{USER_PASSWORD}})
+[ACT] Open 'Pricing' module > Price lists
+[ASSERT] Verify 'Add' button is visible and clickable
+[ACT] Click 'Add'; enter name=User1-PL-001; select currency
+[ACT] Click 'Create'
+[ASSERT] Verify new price list created
+[ACT] Open 'Price list assignments' tab
+[ASSERT] Verify 'Add' button is visible and clickable
+[ACT] Click 'Add'; enter name=User1-Assign-001; select catalog and price list
+[ACT] Click 'Create'
+[ASSERT] Verify new assignment created","[STATE] Add button visible and clickable for User_1
+[STATE] New price list 'User1-PL-001' created successfully
+[STATE] New assignment 'User1-Assign-001' created successfully","[API] POST /api/pricing/pricelists — should return 201 for User_1
+[CONSOLE] No authorization errors during create operations","Add button not visible despite permission; create returns 403; created items not appearing in list","delete created price list via Admin",C338379,None
+PRICE-057,Permissions > Update,Pricing > Permissions,High,BL-PRICE-004,"ECL-14.1","Admin logged in to Backend
+Role_1 created with permissions: pricing:access, pricing:read, pricing:update, catalog:read
+Role_1 assigned to User_1","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; updated_field=description","[NAV] Navigate to {{BACK_URL}} and login as User_1 ({{USER_EMAIL}}/{{USER_PASSWORD}})
+[ACT] Open 'Pricing' module > Price lists
+[ACT] Open any price list
+[ACT] Change description field
+[ACT] Click 'Save'
+[ASSERT] Verify all changes saved
+[ACT] Open 'Price list assignments' tab
+[ACT] Open any assignment
+[ACT] Change description field
+[ACT] Click 'Save'
+[ASSERT] Verify all changes saved","[STATE] Price list changes saved successfully for User_1
+[STATE] Assignment changes saved successfully for User_1","[API] PUT /api/pricing/pricelists/{id} — should return 200 for User_1
+[CONSOLE] No authorization errors during update operations","Save button not visible despite permission; update returns 403; changes not persisted","restore original prices",C338380,None
+PRICE-058,Permissions > Delete,Pricing > Permissions,High,BL-PRICE-004,"","Admin logged in to Backend
+Role_1 created with permissions: pricing:access, pricing:read, pricing:delete, catalog:read
+Role_1 assigned to User_1","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[NAV] Navigate to {{BACK_URL}} and login as User_1 ({{USER_EMAIL}}/{{USER_PASSWORD}})
+[ACT] Open 'Pricing' module > Price lists
+[ASSERT] Verify 'Delete' button visible in header
+[ACT] Mark a price list to delete
+[ACT] Click 'Delete'; confirm deletion
+[ASSERT] Verify price list deleted
+[ACT] Open 'Price list assignments' tab
+[ASSERT] Verify 'Delete' button visible in header
+[ACT] Mark an assignment to delete
+[ACT] Click 'Delete'; confirm deletion
+[ASSERT] Verify assignment deleted","[STATE] Delete button visible in header for both sections
+[STATE] Price list deleted successfully
+[STATE] Assignment deleted successfully","[API] DELETE /api/pricing/pricelists/{id} — should return 204 for User_1
+[CONSOLE] No authorization errors during delete operations","Delete button not visible despite permission; delete returns 403; items not removed from list after deletion","none",C338381,None
+PRICE-059,Discount stacking — coupon applies to sale price not list price,Pricing > Discount Stacking,Critical,BL-PRICE-001,"ECL-7.1","Admin logged in to Backend and Storefront
 Product_1 has list price = $100 and sale price = $70
 Coupon code SAVE10 configured for 10% discount
-Price list assigned to store with product_1","1. Navigate to Storefront as logged-in customer
-2. Add Product_1 to cart (qty=1)
-3. Verify cart shows sale price $70 as the line item price
-4. Apply coupon code SAVE10
-5. Verify discount amount in cart response
-6. Execute xAPI cart query and inspect cart.items[].placedPrice and cart.items[].discountAmount
-7. Calculate expected: discount = 10% of $70 = $7.00 (NOT 10% of $100)
-8. Verify cart.items[].extendedPrice = $63.00","1. Cart line item placedPrice = $70.00 (sale price, not list price)
-2. Coupon discount = $7.00 (10% of sale price $70)
-3. Coupon discount is NOT $10.00 (10% of list price $100)
-4. extendedPrice = $63.00
-5. Discount stacking order: sale price replaces list price first, then coupon applies to sale price",Coverage Gap Analysis BL-PRICE-001,Generated
-PRICE-060,Discount stacking — coupon applies to tier price at threshold qty,Pricing > Discount Stacking,Functional,Critical,10min,"Admin logged in to Backend and Storefront
+Price list assigned to store with product_1","product_sku={{TEST_SKU}}; list_price=100.00; sale_price=70.00; coupon_code=SAVE10; discount_pct=10","[NAV] Navigate to {{FRONT_URL}} as logged-in customer
+[ACT] Add Product_1 ({{TEST_SKU}}) to cart (qty=1)
+[ASSERT] Verify cart shows sale price $70.00 as the line item price (not $100.00)
+[ACT] Apply coupon code SAVE10
+[ASSERT] Verify discount amount in cart
+[ACT] Execute xAPI cart query and inspect items[].placedPrice and items[].discountAmount
+[MATH] Calculate expected: discount = 10% of $70 = $7.00 (NOT 10% of $100 = $10.00)
+[ASSERT] Verify items[].extendedPrice = $63.00","[STATE] Cart line item placedPrice = $70.00 (sale price)
+[MATH] Coupon discount = $7.00 (10% of $70, NOT $10.00 off list price)
+[MATH] extendedPrice = $63.00
+[STATE] Discount stacking order: sale price first, then coupon on sale price","[API] GraphQL xAPI cart query — inspect items[].placedPrice, items[].discountAmount, items[].extendedPrice
+[NETWORK] Cart update request HTTP 200","Discount calculated on list price ($10 instead of $7); extendedPrice = $60 instead of $63; placedPrice shows list price","restore original prices","Coverage Gap Analysis BL-PRICE-001,Generated"
+PRICE-060,Discount stacking — coupon applies to tier price at threshold qty,Pricing > Discount Stacking,Critical,BL-PRICE-002,"ECL-7.1","Admin logged in to Backend and Storefront
 Product_1 has list price = $100
 Tier price configured: qty >= 5 triggers price $80 per unit
 Coupon code SAVE10 configured for 10% discount
-Price list with tier pricing assigned to store","1. Navigate to Storefront as logged-in customer
-2. Add Product_1 to cart with qty = 5
-3. Verify cart shows tier price $80 per unit as the line item price
-4. Apply coupon code SAVE10
-5. Execute xAPI cart query and inspect cart.items[].placedPrice and cart.items[].discountAmount
-6. Calculate expected: discount = 10% of $80 = $8.00 per unit, total discount = $40.00
-7. Verify cart.items[].extendedPrice = $360.00 (5 x $72)","1. Cart line item placedPrice = $80.00 (tier price at qty threshold)
-2. Coupon discount per unit = $8.00 (10% of tier price $80)
-3. Coupon discount is NOT $10.00 per unit (10% of list price $100)
-4. Total line extendedPrice = $360.00
-5. Discount stacking order: tier price activates at threshold, then coupon applies to tier price",Coverage Gap Analysis BL-PRICE-001,Generated
-PRICE-061,Discount stacking — sale + tier + coupon all three layers,Pricing > Discount Stacking,Functional,Critical,15min,"Admin logged in to Backend and Storefront
+Price list with tier pricing assigned to store","product_sku={{TEST_SKU}}; list_price=100.00; tier_qty=5; tier_price=80.00; coupon_code=SAVE10; discount_pct=10","[NAV] Navigate to {{FRONT_URL}} as logged-in customer
+[ACT] Add Product_1 ({{TEST_SKU}}) to cart with qty = 5
+[ASSERT] Verify cart shows tier price $80.00 per unit (not $100.00)
+[ACT] Apply coupon code SAVE10
+[ACT] Execute xAPI cart query and inspect items[].placedPrice and items[].discountAmount
+[MATH] Calculate expected: discount per unit = 10% of $80 = $8.00; total discount = $40.00
+[ASSERT] Verify items[].extendedPrice = $360.00 (5 x $72)","[STATE] Cart placedPrice = $80.00 per unit (tier price at qty threshold)
+[MATH] Coupon discount per unit = $8.00 (10% of $80, NOT $10.00 of list price)
+[MATH] Total line extendedPrice = $360.00
+[STATE] Discount stacking: tier activates at threshold, coupon applies to tier price","[API] GraphQL xAPI cart query — inspect items[].placedPrice, items[].discountAmount, items[].extendedPrice
+[NETWORK] Cart update request HTTP 200","Coupon applied to list price ($10 per unit instead of $8); extendedPrice wrong; tier price not activating at qty=5","restore original prices","Coverage Gap Analysis BL-PRICE-001,Generated"
+PRICE-061,Discount stacking — sale + tier + coupon all three layers,Pricing > Discount Stacking,Critical,BL-PRICE-001,"ECL-7.1","Admin logged in to Backend and Storefront
 Product_1 configured with:
 - List price = $200
 - Sale price = $150
 - Tier price: qty >= 10 triggers price $120 per unit
 - Coupon SAVE20 configured for 20% discount
-Price list assigned to store","1. Navigate to Storefront as logged-in customer
-2. Add Product_1 to cart with qty = 10
-3. Verify cart shows tier price $120 per unit (tier overrides sale at threshold)
-4. Apply coupon code SAVE20
-5. Execute xAPI cart query and inspect cart.items[].placedPrice, cart.items[].discountAmount, cart.items[].extendedPrice
-6. Calculate expected: placedPrice = $120, discount = 20% of $120 = $24 per unit
-7. Verify total extendedPrice = 10 x ($120 - $24) = $960.00
-8. Verify cart.subTotal and cart.total reflect correct stacked discounts","1. placedPrice = $120.00 (tier price at qty >= 10)
-2. Coupon discount per unit = $24.00 (20% of $120 tier price)
-3. extendedPrice = $960.00 for the line
-4. All three discount layers stack correctly: sale replaces list, tier replaces sale at threshold, coupon applies to final tier price
-5. cart.subTotal and cart.total are mathematically consistent",Coverage Gap Analysis BL-PRICE-001,Generated
-PRICE-062,Tax calculated after coupon discount applied,Pricing > Tax Calculation,Functional,Critical,10min,"Admin logged in to Backend and Storefront
+Price list assigned to store","product_sku={{TEST_SKU}}; list_price=200.00; sale_price=150.00; tier_qty=10; tier_price=120.00; coupon_code=SAVE20; discount_pct=20","[NAV] Navigate to {{FRONT_URL}} as logged-in customer
+[ACT] Add Product_1 ({{TEST_SKU}}) to cart with qty = 10
+[ASSERT] Verify cart shows tier price $120.00 per unit (tier overrides sale at threshold)
+[ACT] Apply coupon code SAVE20
+[ACT] Execute xAPI cart query and inspect items[].placedPrice, items[].discountAmount, items[].extendedPrice
+[MATH] Calculate expected: placedPrice = $120; discount = 20% of $120 = $24 per unit; extendedPrice = 10 x ($120 - $24) = $960.00
+[ASSERT] Verify cart.subTotal and cart.total are mathematically consistent","[STATE] placedPrice = $120.00 (tier price at qty >= 10)
+[MATH] Coupon discount per unit = $24.00 (20% of tier price $120)
+[MATH] extendedPrice = $960.00 for the line
+[STATE] All three discount layers stack correctly: sale → tier at threshold → coupon on tier price
+[MATH] cart.subTotal and cart.total reflect correct stacked discounts","[API] GraphQL xAPI cart query — inspect subTotal, total, items[].extendedPrice, items[].discountAmount
+[NETWORK] All cart update requests HTTP 200","Any layer not applied; math errors in discount stacking; cart total inconsistent with line item totals","restore original prices","Coverage Gap Analysis BL-PRICE-001,Generated"
+PRICE-062,Tax calculated after coupon discount applied,Pricing > Tax Calculation,Critical,BL-PRICE-002,"ECL-7.1","Admin logged in to Backend and Storefront
 Product_1 has price = $100
 Tax rate = 10% configured for shipping address region
 Coupon FLAT20 configured for $20 flat discount
-Tax calculation enabled for store","1. Navigate to Storefront as logged-in customer
-2. Add Product_1 to cart (qty=1)
-3. Proceed to checkout and set shipping address to taxable region
-4. Verify tax before coupon: taxTotal should = 10% of $100 = $10.00
-5. Apply coupon code FLAT20 ($20 discount)
-6. Verify subtotal after discount = $80.00
-7. Execute xAPI cart query and inspect cart.taxTotal
-8. Calculate expected: taxTotal = 10% of $80 = $8.00
-9. Verify taxTotal is NOT $10.00 (tax on pre-discount amount)","1. Before coupon: taxTotal = $10.00 (10% of $100)
-2. After coupon: subtotal = $80.00, taxTotal = $8.00 (10% of $80)
-3. Tax is calculated AFTER discount, not before
-4. Tax base = (line total after discounts), confirming BL-PRICE-002
-5. taxTotal is NOT $10.00 after coupon application",Coverage Gap Analysis BL-PRICE-002,Generated
-PRICE-063,Tax recalculates when coupon is removed,Pricing > Tax Calculation,Functional,Critical,10min,"Admin logged in to Backend and Storefront
+Tax calculation enabled for store","product_sku={{TEST_SKU}}; price=100.00; tax_rate=0.10; coupon_code=FLAT20; coupon_discount=20.00","[NAV] Navigate to {{FRONT_URL}} as logged-in customer
+[ACT] Add Product_1 ({{TEST_SKU}}) to cart (qty=1)
+[ACT] Proceed to checkout and set shipping address to taxable region
+[ASSERT] Verify taxTotal before coupon = 10% of $100 = $10.00
+[ACT] Apply coupon code FLAT20 ($20 flat discount)
+[ASSERT] Verify subtotal after discount = $80.00
+[ACT] Execute xAPI cart query and inspect cart.taxTotal
+[MATH] Calculate expected: taxTotal = 10% of $80 = $8.00
+[ASSERT] Verify taxTotal is $8.00 (NOT $10.00 pre-discount tax)","[MATH] Before coupon: taxTotal = $10.00 (10% of $100)
+[MATH] After coupon: subtotal = $80.00; taxTotal = $8.00 (10% of $80)
+[STATE] Tax calculated AFTER discount, not before
+[MATH] Tax base = line total after discounts","[API] GraphQL xAPI cart query — inspect taxTotal before and after coupon application
+[NETWORK] All cart update requests HTTP 200","Tax not recalculated after coupon; taxTotal remains $10.00 after discount; incorrect tax base used","restore original prices","Coverage Gap Analysis BL-PRICE-002,Generated"
+PRICE-063,Tax recalculates when coupon is removed,Pricing > Tax Calculation,Critical,BL-PRICE-002,"ECL-7.1","Admin logged in to Backend and Storefront
 Product_1 has price = $100
 Tax rate = 10% configured for shipping address region
 Coupon FLAT20 applied to cart ($20 discount)
-Cart currently shows taxTotal = $8.00","1. Navigate to Storefront cart with coupon FLAT20 already applied
-2. Verify current state: subtotal = $80, taxTotal = $8.00
-3. Remove coupon code FLAT20 from cart
-4. Execute xAPI cart query and inspect cart.taxTotal
-5. Verify subtotal reverts to $100.00
-6. Calculate expected: taxTotal = 10% of $100 = $10.00
-7. Verify taxTotal has recalculated to $10.00","1. After coupon removal: subtotal = $100.00
-2. taxTotal recalculates to $10.00 (10% of $100)
-3. Tax base correctly reverts to pre-coupon amount
-4. No stale tax amount remains from discounted calculation",Coverage Gap Analysis BL-PRICE-002,Generated
-PRICE-064,Tax base uses post-tier-pricing amount,Pricing > Tax Calculation,Functional,Critical,10min,"Admin logged in to Backend and Storefront
+Cart currently shows taxTotal = $8.00","product_sku={{TEST_SKU}}; price=100.00; tax_rate=0.10; coupon_code=FLAT20","[NAV] Navigate to {{FRONT_URL}} cart with coupon FLAT20 already applied
+[ASSERT] Verify current state: subtotal = $80; taxTotal = $8.00
+[ACT] Remove coupon code FLAT20 from cart
+[ACT] Execute xAPI cart query and inspect cart.taxTotal
+[ASSERT] Verify subtotal reverts to $100.00
+[MATH] Calculate expected: taxTotal = 10% of $100 = $10.00
+[ASSERT] Verify taxTotal recalculated to $10.00","[STATE] After coupon removal: subtotal = $100.00
+[MATH] taxTotal recalculates to $10.00 (10% of $100)
+[STATE] Tax base correctly reverts to pre-coupon amount
+[STATE] No stale tax amount from discounted calculation","[API] GraphQL xAPI cart query — inspect taxTotal after coupon removal
+[NETWORK] Cart update request HTTP 200","taxTotal stays at $8.00 after coupon removal; stale tax cached; subtotal not reverting to $100","restore original prices","Coverage Gap Analysis BL-PRICE-002,Generated"
+PRICE-064,Tax base uses post-tier-pricing amount,Pricing > Tax Calculation,Critical,BL-PRICE-002,"ECL-7.1","Admin logged in to Backend and Storefront
 Product_1 has list price = $50
 Tier price: qty >= 10 triggers price $35 per unit
 Tax rate = 8% configured for shipping address region
-Tax calculation enabled for store","1. Navigate to Storefront as logged-in customer
-2. Add Product_1 to cart with qty = 10
-3. Proceed to checkout and set shipping address to taxable region
-4. Verify placedPrice = $35 per unit (tier price)
-5. Execute xAPI cart query and inspect cart.taxTotal
-6. Calculate expected: line total = 10 x $35 = $350, taxTotal = 8% of $350 = $28.00
-7. Verify taxTotal is NOT 8% of $500 ($50 x 10 = $500 at list price) = $40.00","1. Line total = $350.00 (10 x $35 tier price)
-2. taxTotal = $28.00 (8% of $350)
-3. Tax is NOT $40.00 (8% of list-price total $500)
-4. Tax base uses post-tier-pricing amount, confirming BL-PRICE-002",Coverage Gap Analysis BL-PRICE-002,Generated
+Tax calculation enabled for store","product_sku={{TEST_SKU}}; list_price=50.00; tier_qty=10; tier_price=35.00; tax_rate=0.08","[NAV] Navigate to {{FRONT_URL}} as logged-in customer
+[ACT] Add Product_1 ({{TEST_SKU}}) to cart with qty = 10
+[ACT] Proceed to checkout and set shipping address to taxable region
+[ASSERT] Verify placedPrice = $35 per unit (tier price applied)
+[ACT] Execute xAPI cart query and inspect cart.taxTotal
+[MATH] Calculate expected: line total = 10 x $35 = $350; taxTotal = 8% of $350 = $28.00
+[ASSERT] Verify taxTotal = $28.00 (NOT $40.00 which would be 8% of list-price total $500)","[MATH] Line total = $350.00 (10 x $35 tier price)
+[MATH] taxTotal = $28.00 (8% of $350)
+[STATE] Tax base uses post-tier-pricing amount
+[STATE] taxTotal is NOT $40.00 (8% of list-price total $500)","[API] GraphQL xAPI cart query — inspect taxTotal, items[].placedPrice, items[].taxTotal
+[NETWORK] All cart and checkout requests HTTP 200","Tax calculated on list price total ($40 instead of $28); tier price not applied; tax base not reflecting tier price","restore original prices","Coverage Gap Analysis BL-PRICE-002,Generated"

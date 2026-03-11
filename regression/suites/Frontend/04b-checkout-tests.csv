@@ -1,0 +1,688 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+CHK-001,Checkout - Delivery Option Selection,Checkout > Shipping,Critical,BL-CHK-001,,Products in cart,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ASSERT] Verify shipping options section visible
+[ACT] select 'Delivery' option
+[WAIT] Wait for address form to render
+[ASSERT] Verify shipping address form appears
+[ASSERT] Verify shipping method list visible","[DOM] Delivery radio/button is selected state
+[DOM] Shipping address form fields rendered (Street City State ZIP Country)
+[DOM] At least one shipping method option listed","[API] GET /storefronts/shipping-methods returns non-empty array
+[CONSOLE] No errors on delivery option selection","Delivery option not selectable; address form does not appear after selection",none,VCST-4499,Automated
+CHK-002,Checkout - Enter Shipping Address,Checkout > Shipping,High,BL-CHK-001,,"Delivery selected at checkout, user has no saved addresses","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and proceed to checkout
+[ACT] select 'Delivery' option
+[ACT] Fill 'Street' field with valid street address
+[ACT] Fill 'City' field with valid city
+[ACT] Fill 'State' field with valid state
+[ACT] Fill 'ZIP' field with valid postal code
+[ACT] Fill 'Country' field with valid country
+[ACT] click 'Continue' or 'Save Address'
+[ASSERT] Verify address saved and displayed in summary","[DOM] All address fields accept text input
+[STATE] Validation passes on all fields (no error states)
+[STATE] Address displayed in shipping summary section
+[DOM] Continue/Next step button becomes active","[API] POST address payload contains all required fields
+[CONSOLE] No validation errors in console","Form accepts invalid data without error; address not persisted after clicking Continue",none,VCST-4499,Automated
+CHK-003,Checkout - Select Saved Address,Checkout > Shipping,High,BL-CHK-001,,"User logged in with at least one saved address, products in cart","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and proceed to checkout
+[ACT] select 'Delivery' option
+[WAIT] Wait for saved addresses to load
+[ASSERT] Verify saved address dropdown or list appears
+[ACT] select existing saved address from dropdown/list
+[ASSERT] Verify address fields populated with saved address data
+[ACT] Optionally edit a field and verify change persists","[DOM] Saved address dropdown or address list rendered
+[STATE] Selecting address populates all form fields correctly
+[DOM] Edit capability present (Edit button or inline edit)","[API] GET /account/addresses returns saved addresses
+[CONSOLE] No errors when loading saved addresses","Saved addresses not listed; selecting address does not populate fields",none,VCST-4499,Automated
+CHK-004,Checkout - Address Validation,Checkout > Shipping,High,BL-CHK-001,,"User at checkout shipping address step, address form open","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and proceed to checkout shipping step
+[ACT] Leave all required address fields empty
+[ACT] click 'Continue'
+[ASSERT] Verify inline validation errors appear per field
+[ACT] Enter invalid ZIP format (e.g. ABC for US address)
+[ASSERT] Verify ZIP format error message
+[ACT] Fix all fields with valid data
+[ACT] click 'Continue'
+[ASSERT] Verify form advances to next step","[DOM] Inline error message per required empty field
+[DOM] ZIP format error shown (invalid format for country)
+[STATE] Form does not advance with validation errors
+[STATE] Error messages clear when valid data entered","[CONSOLE] No unhandled JS exceptions during validation
+[API] No API calls made when client-side validation fails","Form advances with empty required fields; no field-level error messages shown",none,VCST-4499,Automated
+CHK-005,Checkout - Shipping Method Selection,Checkout > Shipping,High,BL-CHK-002,,"Valid shipping address entered at checkout, user at shipping method step","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout shipping method step with valid address
+[ASSERT] Verify shipping method list rendered
+[ACT] select 'Ground' shipping option
+[ASSERT] Verify Ground shipping cost displayed
+[ASSERT] Verify order total updates to include shipping cost
+[ACT] select 'Air' or express shipping option
+[ASSERT] Verify cost updates to higher amount
+[ASSERT] Verify delivery estimate displayed for each method","[DOM] Shipping methods listed with name and cost
+[MATH] Order total = subtotal + selected shipping cost
+[DOM] Delivery estimate text shown per method
+[STATE] Switching method updates displayed total","[API] GET /shipping-rates or equivalent returns multiple methods
+[CONSOLE] No errors on method switch","Only one shipping method shown; total does not update when method changes",none,VCST-4499,Automated
+CHK-006,Checkout - Payment Method Selection,Checkout > Payment,Critical,BL-CHK-002,,"Shipping address and shipping method configured, user at payment step","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout payment step
+[ASSERT] Verify payment methods section rendered
+[ACT] select 'Credit Card' payment option
+[WAIT] Wait for payment form to render
+[ASSERT] Verify credit card fields visible (card number, expiry, CVV)
+[ASSERT] Verify required field indicators present","[DOM] Payment method list rendered with at least one option
+[DOM] Credit card form fields rendered on selection
+[DOM] Required field indicators visible on payment form
+[STATE] Payment method selection active state reflected","[API] GET /payment-methods returns available processors
+[CONSOLE] No errors loading payment iframe or form","No payment methods listed; payment form does not render after selection",none,VCST-4499,Automated
+CHK-007,Checkout - Order Review,Checkout > Review,High,BL-CHK-002,,"All checkout steps completed (address, shipping, payment), user at review step","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout order review step
+[ASSERT] Verify line items listed with name, quantity, price
+[ASSERT] Verify shipping address shown
+[ASSERT] Verify selected shipping method and cost shown
+[ASSERT] Verify payment method shown (masked card or method name)
+[ASSERT] Verify order totals: subtotal, shipping, tax, grand total
+[ASSERT] Verify 'Place Order' button is active/enabled
+[ACT] Verify each section has an Edit link or back navigation","[DOM] All cart line items displayed on review page
+[DOM] Shipping address and method section rendered
+[DOM] Payment method section rendered (no full card numbers)
+[MATH] Grand total = subtotal + shipping + tax - discounts
+[DOM] 'Place Order' button enabled
+[DOM] Edit link or section navigation available","[CONSOLE] No errors rendering review page
+[NETWORK] No failed requests loading review page data","'Place Order' button disabled without clear reason; line items missing from review",none,VCST-4499,Automated
+CHK-008,Checkout - Place Order,Checkout > Submission,Critical,BL-CHK-002,"ECL-1.2, ECL-14.1","All checkout info valid and reviewed, user at order review step","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout review step with all steps complete
+[ASSERT] Verify 'Place Order' button active
+[ACT] click 'Place Order'
+[WAIT] Wait for order processing indicator
+[ASSERT] Verify loading/processing indicator shown
+[KEY] Do NOT click again (double-click prevention)
+[WAIT] Wait for confirmation page to load
+[ASSERT] Verify order confirmation page displayed with order number","[STATE] Processing indicator shown immediately on click
+[NAV] Redirected to order confirmation page
+[DOM] Order number displayed on confirmation page
+[STATE] Cart emptied after successful order placement","[API] createOrderFromCart mutation response errors[] is empty
+[CONSOLE] No unhandled exceptions on order submission
+[NETWORK] POST /cart/createOrder or GraphQL mutation returns 200
+[ADMIN] Order appears in {{ADMIN_URL}}/orders with correct status","Confirmation page never loads; order number not displayed; cart not cleared after submission","Cancel order via {{ADMIN_URL}}/orders if order was placed",VCST-4499,Automated
+CHK-009,Checkout - Order Confirmation Page,Checkout > Confirmation,High,BL-ORD-001,,"Order just placed successfully, user on confirmation page","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[ASSERT] Verify order number displayed on confirmation page
+[ASSERT] Verify all ordered line items listed on confirmation
+[ASSERT] Verify shipping address shown on confirmation
+[ASSERT] Verify shipping method shown
+[ASSERT] Verify order totals shown (subtotal, shipping, tax, total)
+[ASSERT] Verify confirmation email message or notification shown
+[ASSERT] Verify order status shown as 'New'","[DOM] Order number visible and non-empty
+[DOM] All line items from cart listed
+[DOM] Shipping address matches what was entered
+[MATH] Totals consistent with cart totals
+[DOM] Email confirmation reference visible (e.g. 'A confirmation has been sent to your email')
+[STATE] Order status = New","[API] GET /account/orders/{orderId} returns order with New status
+[CONSOLE] No errors on confirmation page","Order number missing; line items not displayed on confirmation; status not shown","Cancel order via {{ADMIN_URL}}/orders if needed",VCST-4499,Automated
+CHK-010,Order History - View Orders,Orders > History,High,BL-ORD-001,,"User has at least one previous order, user logged in","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] Wait for orders list to load
+[ASSERT] Verify orders list rendered
+[ASSERT] Verify orders sorted with most recent first
+[ASSERT] Verify each order row shows: order number, date, status, total
+[ASSERT] Verify at least one order visible","[DOM] Orders list rendered with at least one row
+[DOM] Order number, date, status, total shown per row
+[STATE] Orders sorted descending by date (most recent first)
+[DOM] Link to order detail available per row","[API] GET /account/orders returns list with correct fields
+[CONSOLE] No errors loading order history","Orders list empty when orders exist; orders not sorted correctly",none,VCST-4499,Automated
+CHK-011,Order History - View Details,Orders > Detail,High,BL-ORD-001,,"At least one order exists in user's history, user logged in","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[ACT] click on an existing order to view detail
+[WAIT] Wait for order detail page to load
+[ASSERT] Verify line items displayed (name, qty, price)
+[ASSERT] Verify shipping address section shown
+[ASSERT] Verify payment info shown (masked)
+[ASSERT] Verify order status shown
+[ASSERT] Verify order total breakdown visible","[DOM] Line items with name, quantity, unit price rendered
+[DOM] Shipping address section rendered
+[DOM] Payment method shown (no full card numbers)
+[DOM] Status label visible
+[DOM] Subtotal, shipping, tax, grand total shown","[API] GET /account/orders/{orderId} returns full order detail
+[CONSOLE] No 404 or 500 errors on detail page","Order detail page shows no line items; clicking order link results in error page",none,VCST-4499,Automated
+CHK-012,Order - Pickup Details Display,Orders > Detail > Pickup,High,BL-ORD-001,,"User has a BOPIS/pickup order in order history, user logged in","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[ACT] click on a pickup/BOPIS order to view detail
+[ASSERT] Verify pickup location name and address shown
+[ASSERT] Verify store hours shown if available
+[ASSERT] Verify pickup instructions or ready-for-pickup notification shown
+[ASSERT] Verify no shipping address shown (pickup order)","[DOM] Pickup location name and address rendered
+[DOM] Store hours section present
+[DOM] Pickup instructions text visible
+[STATE] No delivery shipping address section shown for pickup order","[API] GET /account/orders/{orderId} returns fulfillmentType = pickup
+[CONSOLE] No rendering errors for pickup order type","Pickup location details missing; delivery address shown instead of pickup info",none,VCST-4499,Automated
+CHK-013,Order - Delivery Details Display,Orders > Detail > Delivery,High,BL-ORD-001,,"User has a delivery order in order history, user logged in","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[ACT] click on a delivery order to view detail
+[ASSERT] Verify shipping address section rendered
+[ASSERT] Verify carrier name shown if available
+[ASSERT] Verify tracking number shown if order has been shipped
+[ASSERT] Verify tracking link clickable for shipped orders","[DOM] Shipping address rendered correctly
+[DOM] Carrier name shown if shipment created
+[DOM] Tracking number visible for Shipped status orders
+[DOM] Tracking link opens carrier website (new tab)","[API] GET /account/orders/{orderId} returns shipmentDetails with carrier and tracking
+[CONSOLE] No errors rendering tracking info","Shipping address not shown; tracking link broken or absent for shipped order",none,VCST-4499,Automated
+CHK-014,Guest Checkout - Happy Path,Checkout > Guest,Critical,BL-CHK-005,"ECL-1.2, ECL-14.1","Store allows anonymous users (anonymousUsersAllowed: true), products available in catalog","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Open {{FRONT_URL}} in incognito/private window (not logged in)
+[NAV] Navigate to product page for {{TEST_SKU}}
+[ACT] click 'Add to Cart'
+[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] click 'Checkout' or 'Proceed to Checkout'
+[WAIT] Wait for guest checkout email step
+[ACT] Fill 'Email' field with guest email address
+[ACT] Fill shipping address (First Name, Last Name, Street, City, State, ZIP, Country)
+[ACT] select shipping method
+[ACT] Fill payment details in payment form
+[ACT] click 'Place Order'
+[WAIT] Wait for confirmation page
+[ASSERT] Verify confirmation page with order number displayed","[NAV] Guest reaches checkout without being redirected to login
+[DOM] Email field appears on guest checkout
+[DOM] Shipping form accepts all fields
+[DOM] Shipping methods listed
+[DOM] Payment form functional
+[DOM] Confirmation page shows order number
+[STATE] Cart cleared after order placement
+[STATE] No account creation required to complete purchase","[API] createOrderFromCart mutation response errors[] is empty
+[CONSOLE] No errors during guest checkout flow
+[NETWORK] No unauthorized 401 responses blocking checkout
+[ADMIN] Guest order appears in {{ADMIN_URL}}/orders","Guest redirected to login page instead of proceeding as guest; confirmation page not reached after payment","Cancel guest order via {{ADMIN_URL}}/orders",Coverage Gap Analysis,Automated
+CHK-015,Guest Checkout - New Address Entry,Checkout > Guest > Shipping,High,BL-CHK-001,,"Guest user at checkout (anonymousUsersAllowed: true), no saved addresses for guest","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Proceed to checkout as guest (not logged in)
+[ASSERT] Verify no pre-populated or saved address shown
+[ACT] Fill 'Street' field with valid street address
+[ACT] Fill 'City', 'State', 'ZIP', 'Country' with valid values
+[ACT] click 'Continue'
+[WAIT] Wait for shipping method step
+[ASSERT] Verify entered address shown in shipping summary
+[ASSERT] Verify shipping methods calculate based on entered address","[DOM] No saved address shown for guest user
+[DOM] All address fields accept manual input
+[STATE] Validation passes on valid address
+[STATE] Address carried through to shipping method and order summary steps
+[DOM] Shipping methods listed after address entry","[API] POST address for guest session returns valid response
+[CONSOLE] No errors on address submission","Saved addresses from previous sessions shown for anonymous user; shipping methods not loading after address entry",none,Coverage Gap Analysis,Automated
+CHK-016,Guest Checkout - Track Order,Orders > Guest Tracking,High,BL-ORD-001,,"Guest order successfully placed, order number and guest email noted","url={{FRONT_URL}}","[NAV] Note order number from confirmation page
+[NAV] Note email used during guest checkout
+[NAV] Navigate to order tracking page (e.g. {{FRONT_URL}}/account/orders or dedicated tracking URL)
+[ACT] Fill guest email field with order email
+[ACT] Fill order number field with order number
+[ACT] click 'Track Order' or 'Submit'
+[WAIT] Wait for tracking results
+[ASSERT] Verify correct order details displayed
+[ASSERT] Verify status clearly shown
+[ACT] Enter incorrect email with correct order number
+[ASSERT] Verify error shown for mismatch","[DOM] Tracking form accessible without login
+[DOM] Email and order number fields present
+[STATE] Correct combination returns order details and status
+[STATE] Incorrect email + order number returns error (not order data)","[API] GET /orders/track?email=...&order=... returns correct order
+[CONSOLE] No unhandled errors on tracking page","Tracking page requires login; correct guest credentials return no order; wrong credentials return order data (security issue)",none,Coverage Gap Analysis,Generated
+CHK-017,Guest Checkout - Prompt Registration After Purchase,Checkout > Guest > Post-Purchase,Medium,BL-CHK-005,,"Guest order just placed, user on confirmation page","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Complete guest checkout and land on order confirmation page
+[ASSERT] Verify 'Create Account' prompt or banner present
+[ASSERT] Verify prompt references linking order to new account
+[ACT] click 'Create Account' from confirmation page
+[WAIT] Wait for registration form
+[ASSERT] Verify registration form pre-fills guest email
+[ACT] Complete registration with valid password
+[ACT] submit registration
+[WAIT] Wait for account creation confirmation
+[NAV] Navigate to {{FRONT_URL}}/account/orders
+[ASSERT] Verify guest order appears in new account order history","[DOM] Create Account prompt visible on confirmation page
+[DOM] Prompt text references order linking
+[DOM] Registration form pre-fills guest email
+[STATE] After registration guest order appears in account history","[API] POST /account/register links guest order to new account
+[CONSOLE] No errors during account creation flow","Create Account prompt absent from confirmation; guest order missing from account after registration",none,Coverage Gap Analysis,Generated
+CHK-018,Guest Checkout - With Coupon Code,Checkout > Guest > Promotions,High,BL-CHK-002,,"Guest user at checkout (anonymousUsersAllowed: true), valid coupon code exists in system","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Proceed to checkout as guest with items in cart
+[ACT] Enter guest email address
+[ACT] Fill shipping address
+[ACT] select shipping method
+[ASSERT] Locate coupon code input field
+[ACT] Enter valid coupon code in coupon field
+[ACT] click 'Apply'
+[WAIT] Wait for discount to apply
+[ASSERT] Verify discount line item appears in order summary
+[ASSERT] Verify total reflects discounted amount
+[ACT] click 'Place Order'
+[ASSERT] Verify confirmation page shows discounted total","[DOM] Coupon input field accessible to guest users
+[STATE] Valid coupon accepted with success confirmation
+[DOM] Discount shown as separate line in order summary
+[MATH] Total = subtotal + shipping + tax - coupon discount
+[DOM] Confirmation page shows coupon discount line item","[API] createOrderFromCart mutation response errors[] is empty
+[API] Order payload contains applied coupon/promotion
+[CONSOLE] No errors on coupon application","Coupon field not shown for guests; coupon accepted but discount not reflected in total; discount disappears at confirmation","Cancel guest order via {{ADMIN_URL}}/orders",Coverage Gap Analysis,Generated
+CHK-019,Guest Checkout - Field Validation,Checkout > Guest > Validation,High,BL-CHK-001,,"Guest user at checkout email and address entry step","url={{FRONT_URL}}","[NAV] Proceed to checkout as guest (not logged in)
+[ACT] click 'Continue' without entering email
+[ASSERT] Verify 'Email is required' or equivalent error shown
+[ACT] Enter invalid email format 'notanemail'
+[ASSERT] Verify 'Enter a valid email address' error shown
+[ACT] Enter valid email address
+[ACT] Leave required address fields (Street, City, ZIP) empty
+[ACT] click 'Continue'
+[ASSERT] Verify inline error per empty required field
+[ACT] Fix each field with valid data
+[ASSERT] Verify error clears as each field is corrected
+[ACT] click 'Continue' with all valid data
+[ASSERT] Verify form advances to next step","[DOM] Email required error on empty submit
+[DOM] Email format error on invalid format
+[DOM] Per-field inline errors for required address fields
+[STATE] Form does not advance with validation errors
+[STATE] Individual errors clear when field corrected
+[NAV] Form advances after all errors resolved","[CONSOLE] No JS exceptions during validation interactions
+[API] No API calls made while client-side validation active","Form advances with invalid email; no per-field errors shown; all errors clear simultaneously instead of per field",none,Coverage Gap Analysis,Automated
+CHK-020,Guest Checkout - Register After Purchase and Order Linked,Checkout > Guest > Post-Purchase,High,BL-CHK-005,,"Guest order placed, on confirmation page with Create Account option","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Complete guest checkout successfully
+[ASSERT] Verify 'Create Account' prompt on confirmation page
+[ACT] click 'Create Account' or 'Register' from confirmation
+[ACT] Complete registration form with guest email and new password
+[ACT] submit registration form
+[WAIT] Wait for account confirmation
+[NAV] Navigate to {{FRONT_URL}}/account/orders
+[ASSERT] Verify guest order visible in order history
+[ASSERT] Verify order details match original guest order","[DOM] Create Account prompt on confirmation
+[STATE] Registration completes without error
+[STATE] Guest order linked to new account and visible in order history
+[DOM] Order details (items, totals, addresses) match original guest order","[API] POST /account/register response indicates order linking
+[CONSOLE] No errors during registration and order linking
+[ADMIN] Account created in {{ADMIN_URL}} with order linked","Guest order absent from account history after registration; registration fails when using guest email","Delete test account via {{ADMIN_URL}} if created",Coverage Gap Analysis,Generated
+CHK-021,Guest Checkout - Disabled When Anonymous Users Not Allowed,Checkout > Guest > Access Control,Critical,BL-CHK-005,,"Store configured with anonymousUsersAllowed: false, products available","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Open {{FRONT_URL}} in incognito/private window (not logged in)
+[NAV] Navigate to product page for {{TEST_SKU}}
+[ACT] click 'Add to Cart'
+[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] click 'Checkout' or 'Proceed to Checkout'
+[ASSERT] Verify user redirected to sign-in or login page
+[ASSERT] Verify prompt to log in or register
+[ASSERT] Verify cart contents preserved after redirect","[NAV] Guest redirected to login/register page (not checkout)
+[DOM] Login or register prompt displayed
+[STATE] Cart contents preserved for authenticated session
+[STATE] No guest checkout option shown when disabled","[API] Store settings endpoint reflects anonymousUsersAllowed=false
+[CONSOLE] No unexpected errors on redirect","Guest can access checkout without login when anonymousUsersAllowed=false; cart lost on redirect to login",none,Coverage Gap Analysis,Automated
+CHK-022,Order Status - New,Orders > Status,Critical,BL-ORD-001,,"User logged in, order just placed through storefront","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Complete checkout and place order via storefront
+[NAV] Navigate to {{FRONT_URL}}/account/orders
+[ACT] click on newly placed order
+[ASSERT] Verify order status displayed as 'New'
+[ASSERT] Verify status visible on both order list row and detail page
+[ASSERT] Verify status label matches configured display text","[DOM] Status label = 'New' on order list row
+[DOM] Status label = 'New' on order detail page
+[STATE] Status visible immediately after order placement without page reload","[API] GET /account/orders/{orderId} returns status = New
+[CONSOLE] No errors loading order status","Status not shown after order placement; status shows wrong value (e.g. Pending instead of New)","Cancel order via {{ADMIN_URL}}/orders",Coverage Gap Analysis,Generated
+CHK-023,Order Status - Processing,Orders > Status,High,BL-ORD-001,,"Order in New status, admin access available","url={{FRONT_URL}}, admin={{ADMIN_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Verify order in 'New' status in storefront
+[NAV] Navigate to {{ADMIN_URL}}/orders and find the order
+[ACT] Update order status to 'Processing' in admin
+[WAIT] Wait for admin status update to save
+[NAV] Return to {{FRONT_URL}}/account/orders in storefront
+[ACT] Refresh order detail page
+[ASSERT] Verify status updated to 'Processing'
+[ASSERT] Verify status transition reflected in order history or timeline","[DOM] Status = 'Processing' on order detail page
+[STATE] Status update reflected without requiring new login
+[DOM] Order history/timeline shows New → Processing transition if timeline visible","[API] GET /account/orders/{orderId} returns status = Processing after admin update
+[ADMIN] Admin order management page confirms status change saved
+[CONSOLE] No errors on status refresh","Storefront status not updated after admin change; timeline shows incorrect transition order","Cancel or revert order via {{ADMIN_URL}}/orders",Coverage Gap Analysis,Generated
+CHK-024,Order Status - Shipped with Tracking Number,Orders > Status,High,BL-ORD-001,,"Order in Processing status, admin access available","url={{FRONT_URL}}, admin={{ADMIN_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}}/orders and find order in Processing status
+[ACT] Update order status to 'Shipped' in admin
+[ACT] Add tracking number (e.g. 1Z999AA10123456784) and carrier name
+[WAIT] Wait for admin update to save
+[NAV] Navigate to {{FRONT_URL}}/account/orders in storefront
+[ACT] Refresh order detail page
+[ASSERT] Verify status shows 'Shipped'
+[ASSERT] Verify tracking number displayed
+[ASSERT] Verify carrier name displayed
+[ASSERT] Verify tracking link clickable","[DOM] Status = 'Shipped' on order detail
+[DOM] Tracking number visible
+[DOM] Carrier name visible
+[DOM] Tracking link rendered and opens carrier tracking page","[API] GET /account/orders/{orderId} returns status = Shipped with shipmentDetails
+[ADMIN] Shipment details saved correctly in admin
+[CONSOLE] No errors rendering tracking link","Tracking number not shown in storefront after admin update; tracking link broken or absent","No cleanup needed (read-only after admin update)",Coverage Gap Analysis,Generated
+CHK-025,Order Status - Completed,Orders > Status,High,BL-ORD-001,,"Order in Shipped status, admin access available","url={{FRONT_URL}}, admin={{ADMIN_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}}/orders and find order in Shipped status
+[ACT] Update order status to 'Completed' in admin
+[WAIT] Wait for save confirmation
+[NAV] Navigate to {{FRONT_URL}}/account/orders in storefront
+[ACT] Refresh order detail page
+[ASSERT] Verify status shows 'Completed'
+[ASSERT] Verify no 'Cancel' action available for completed order
+[ASSERT] Verify order history reflects Completed status","[DOM] Status = 'Completed' on order detail
+[STATE] Cancel order button absent or disabled for completed orders
+[STATE] Order history row shows Completed status","[API] GET /account/orders/{orderId} returns status = Completed
+[ADMIN] Status confirmed as Completed in admin
+[CONSOLE] No errors on completed order detail page","Completed status not reflected in storefront; cancel option still visible for completed orders","No cleanup needed",Coverage Gap Analysis,Generated
+CHK-026,Checkout Validation - Empty Required Fields,Checkout > Validation,Critical,BL-CHK-001,,"User at checkout shipping address step, all fields empty","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and proceed to checkout shipping step
+[ACT] Leave all address fields empty (do not fill any)
+[ACT] click 'Continue'
+[ASSERT] Verify inline error message appears next to each required empty field
+[ASSERT] Verify Street field shows error
+[ASSERT] Verify City field shows error
+[ASSERT] Verify ZIP/Postal field shows error
+[ASSERT] Verify Country or State field shows error
+[ASSERT] Verify form does not advance to next step","[DOM] Inline error per required empty field rendered
+[STATE] Form stays on current step (does not advance)
+[DOM] Required fields highlighted or marked in error state
+[DOM] Error messages identify which field is missing","[CONSOLE] No unhandled JS exceptions during validation
+[API] No API calls when client-side validation blocks submission","Form advances without required fields; errors shown as a single banner rather than inline per field; no error shown at all",none,Coverage Gap Analysis,Automated
+CHK-027,Checkout Validation - Invalid ZIP/Postal Code,Checkout > Validation,High,BL-CHK-001,,"User at checkout shipping address step, all fields filled except ZIP","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout shipping address step
+[ACT] Fill all address fields with valid data
+[ACT] Replace ZIP field with invalid value 'ABCDE' (for US address)
+[ACT] click 'Continue'
+[ASSERT] Verify validation error on ZIP field
+[ASSERT] Verify error indicates invalid format for selected country
+[ASSERT] Verify form does not advance
+[ACT] Replace with valid ZIP code
+[ASSERT] Verify ZIP validation error clears","[DOM] ZIP field error message rendered (invalid format for country)
+[STATE] Form does not advance with invalid ZIP
+[STATE] Error clears when valid ZIP entered
+[DOM] Country context used for ZIP format validation","[CONSOLE] No JS exceptions during ZIP validation
+[API] No address API call made with invalid ZIP","No validation on ZIP field; form accepts any value; ZIP error persists after correction",none,Coverage Gap Analysis,Automated
+CHK-028,Checkout Validation - Invalid Phone Number,Checkout > Validation,High,BL-CHK-001,,"User at checkout shipping address step, phone number field available","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout shipping address step
+[ACT] Fill all required fields with valid data
+[ACT] Enter invalid phone number '123' in phone field
+[ACT] click 'Continue'
+[ASSERT] Verify validation error on phone field
+[ASSERT] Verify error indicates invalid format
+[ACT] Enter letters 'abc-def' in phone field
+[ASSERT] Verify error still shown
+[ACT] Enter valid phone number
+[ASSERT] Verify phone error clears and form advances","[DOM] Phone field error rendered for invalid format
+[STATE] Form does not advance with invalid phone
+[STATE] Error clears on valid phone entry
+[DOM] Error message is descriptive (invalid format)","[CONSOLE] No JS exceptions during phone validation
+[API] No submission API call with invalid phone data","Phone field accepts any string without validation; error persists after valid phone entered",none,Coverage Gap Analysis,Automated
+CHK-029,Checkout Validation - Invalid Email Format,Checkout > Guest > Validation,High,BL-CHK-001,,"Guest user at checkout, on email entry step","url={{FRONT_URL}}","[NAV] Proceed to checkout as guest (not logged in)
+[ACT] Enter invalid email 'user@' in email field
+[ACT] click 'Continue'
+[ASSERT] Verify error 'Enter a valid email address' or equivalent
+[ACT] Enter 'notanemail' (no @ symbol)
+[ASSERT] Verify format validation error still shown
+[ACT] Enter 'user@domain' (no TLD)
+[ASSERT] Verify error shown
+[ACT] Enter valid email 'test@example.com'
+[ASSERT] Verify error clears
+[ACT] click 'Continue'
+[ASSERT] Verify form advances to address step","[DOM] Email format error rendered for each invalid pattern
+[STATE] Form does not advance with invalid email
+[STATE] Error clears when valid email entered
+[DOM] Error message references email validity","[CONSOLE] No JS exceptions during email validation
+[API] No API call made with invalid email","Email format not validated; form accepts 'notanemail' without error",none,Coverage Gap Analysis,Automated
+CHK-030,Checkout Validation - Fix Errors and Proceed,Checkout > Validation,Critical,BL-CHK-001,,"User at checkout shipping address step with validation errors present","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout shipping address step
+[ACT] click 'Continue' with empty fields to trigger validation errors
+[ASSERT] Verify multiple inline errors shown
+[ACT] Fix Street field with valid data
+[ASSERT] Verify Street error clears immediately
+[ACT] Fix City field with valid data
+[ASSERT] Verify City error clears
+[ACT] Fix ZIP field with valid data
+[ASSERT] Verify ZIP error clears
+[ACT] Fix remaining fields
+[ASSERT] Verify all errors cleared
+[ACT] click 'Continue'
+[ASSERT] Verify form advances to next step","[DOM] Each field's error disappears as that field is corrected
+[STATE] No residual errors on correctly filled fields
+[STATE] Form advances after all errors resolved
+[DOM] No new errors appear on valid input","[CONSOLE] No JS exceptions during sequential field correction
+[API] Successful continuation call after all validation passes","Errors only clear on re-submit (not per-field); residual errors remain on corrected fields; form fails to advance after all errors fixed",none,Coverage Gap Analysis,Automated
+CHK-031,B2B Checkout - PO Number Entry,Checkout > B2B,High,BL-CHK-004,,"Logged in as B2B org user ({{ORG_USER_EMAIL}}), cart has items","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}, admin={{ADMIN_URL}}","[NAV] Log in as {{ORG_USER_EMAIL}} and navigate to {{FRONT_URL}}/cart
+[ACT] click 'Checkout' or 'Proceed to Checkout'
+[ASSERT] Verify PO Number field visible (B2B org user context)
+[ACT] Enter PO number 'PO-2026-001' in PO Number field
+[ACT] Complete remaining checkout steps (address, shipping, payment)
+[ACT] click 'Place Order'
+[WAIT] Wait for confirmation page
+[ASSERT] Verify PO number shown on confirmation page
+[NAV] Navigate to {{FRONT_URL}}/account/orders and view order detail
+[ASSERT] Verify PO number shown on order detail page","[DOM] PO Number field visible during checkout for org user
+[DOM] PO number accepts alphanumeric input
+[DOM] PO number shown on confirmation page
+[DOM] PO number shown on account order detail
+[ADMIN] PO number stored and visible in {{ADMIN_URL}}/orders","[API] createOrderFromCart mutation response errors[] is empty
+[API] verify org context is non-null (me.organization)
+[ADMIN] Order in {{ADMIN_URL}}/orders shows PO number = PO-2026-001
+[CONSOLE] No errors submitting B2B order","PO Number field not visible for B2B user; PO number not shown on confirmation or order detail","Cancel order via {{ADMIN_URL}}/orders",Coverage Gap Analysis,Generated
+CHK-032,B2B Checkout - Net 30 Payment Terms,Checkout > B2B > Payment,High,BL-CHK-004,,"Logged in as B2B org user with Net 30 payment terms configured for org","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] Log in as {{ORG_USER_EMAIL}} and navigate to cart with items
+[ACT] click 'Checkout'
+[ACT] Complete shipping address and method steps
+[WAIT] Wait for payment method step
+[ASSERT] Verify 'Net 30' or 'On Account' payment option available
+[ACT] select 'Net 30' or 'On Account' payment method
+[ASSERT] Verify no credit card entry required
+[ACT] click 'Place Order'
+[WAIT] Wait for confirmation page
+[ASSERT] Verify order placed with appropriate status (Pending Approval or On Account)","[DOM] Net 30 / On Account option listed in payment methods
+[STATE] No credit card form shown when Net 30 selected
+[STATE] Order placed with On Account or Pending status
+[DOM] Confirmation page shows Net 30 payment method","[API] createOrderFromCart mutation response errors[] is empty
+[API] verify org context is non-null (me.organization)
+[ADMIN] Order in {{ADMIN_URL}}/orders shows Net 30 payment method
+[CONSOLE] No errors on Net 30 order placement","Net 30 option not available for eligible org; credit card required even after selecting Net 30","Cancel order via {{ADMIN_URL}}/orders",Coverage Gap Analysis,Generated
+CHK-033,B2B Checkout - Approval Workflow,Checkout > B2B > Approval,Critical,BL-CHK-003,"ECL-14.3","B2B org with approval workflow enabled, Buyer and Admin/Approver roles configured","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}, admin={{ADMIN_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] Log in as Buyer role user ({{ORG_USER_EMAIL}}) in storefront
+[ACT] Add items to cart exceeding buyer purchase limit
+[ACT] click 'Checkout' and proceed through all steps
+[ACT] click 'Place Order'
+[WAIT] Wait for order submission
+[ASSERT] Verify order status is 'Pending Approval' (not Processing)
+[ASSERT] Verify buyer sees notification that order requires approval
+[NAV] Log in as Admin/Approver in {{ADMIN_URL}}
+[NAV] Navigate to pending orders in admin
+[ASSERT] Verify order appears in approval queue
+[ACT] Approve the order in admin
+[NAV] Return to storefront as Buyer and view order
+[ASSERT] Verify order status updated to 'Processing' after approval","[STATE] Order status = Pending Approval immediately after buyer places order
+[DOM] Buyer sees approval pending notification
+[ADMIN] Order visible in approval queue for admin/approver
+[STATE] After admin approval order transitions to Processing
+[DOM] Buyer sees Processing status after admin approves","[API] createOrderFromCart mutation response errors[] is empty
+[API] verify org context is non-null (me.organization)
+[API] Order status API returns pendingApproval before admin action
+[ADMIN] Approval queue shows order after placement
+[CONSOLE] No errors during approval workflow","Order placed directly as Processing bypassing approval; approval queue not showing order for admin","Cancel or complete order via {{ADMIN_URL}}/orders",Coverage Gap Analysis,Generated
+CHK-034,B2B Checkout - Buyer Cannot Bypass Approval,Checkout > B2B > Security,Critical,"BL-CHK-003, BL-CHK-004","ECL-14.3","B2B org with approval workflow enabled, logged in as Buyer subject to approval limits","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}, back={{BACK_URL}}","[NAV] Log in as Buyer ({{ORG_USER_EMAIL}}) subject to approval workflow
+[ACT] Add items exceeding purchase limit to cart
+[ACT] Proceed through checkout normally (address, shipping, payment)
+[ACT] click 'Place Order'
+[ASSERT] Verify order status = Pending Approval (not Processing)
+[ACT] Attempt to manipulate checkout by sending direct API request to transition order status to Processing
+[ASSERT] Verify API returns error or unauthorized response
+[ASSERT] Verify order status remains Pending Approval in storefront","[STATE] Order placed with Pending Approval status by buyer
+[STATE] Direct API attempt to bypass approval returns 403 or error
+[STATE] Order status unchanged after bypass attempt
+[STATE] Approval requirement enforced server-side","[API] createOrderFromCart mutation response errors[] is empty
+[API] verify org context is non-null (me.organization)
+[API] Status transition API call by buyer returns 403/unauthorized
+[BACK_URL] Platform enforces approval server-side (not just frontend)
+[CONSOLE] No client-side bypass possible via DevTools manipulation","Buyer can place order directly as Processing bypassing approval; server accepts unauthorized status transition","Cancel order via {{ADMIN_URL}}/orders",Coverage Gap Analysis,Manual
+CHK-035,B2B Checkout - Organization Shipping Address,Checkout > B2B > Shipping,High,BL-CHK-004,,"Logged in as B2B org user, org has at least one configured shipping address","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] Log in as {{ORG_USER_EMAIL}} and add items to cart
+[ACT] click 'Checkout'
+[WAIT] Wait for shipping address step
+[ASSERT] Verify org shipping addresses listed as distinct group or clearly labeled
+[ASSERT] Verify personal user addresses also available but differentiated from org addresses
+[ACT] select an organization shipping address
+[ASSERT] Verify org address populates shipping fields
+[ACT] Proceed to shipping method step
+[ASSERT] Verify org address carried through to order summary","[DOM] Org addresses shown in separate group or with org label
+[DOM] Personal addresses differentiated from org addresses
+[STATE] Org address selection populates shipping form fields
+[STATE] Selected org address shown in order summary","[API] verify org context is non-null (me.organization)
+[API] GET /account/addresses returns org addresses distinctly
+[CONSOLE] No errors loading org address list","Org addresses not shown; personal and org addresses not differentiated; org address selection fails",none,Coverage Gap Analysis,Generated
+CHK-036,B2B Checkout - Contract Pricing Applied,Checkout > B2B > Pricing,Critical,BL-CHK-004,"ECL-4.1, ECL-14.1","B2B org with contract/tier pricing configured, products have org-specific prices in system","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}, sku={{TEST_SKU}}","[NAV] Log in as {{ORG_USER_EMAIL}}
+[NAV] Navigate to product page for {{TEST_SKU}} with org-specific contract price
+[ASSERT] Verify contract/negotiated price shown on PDP (not standard catalog price)
+[ACT] click 'Add to Cart'
+[NAV] Navigate to {{FRONT_URL}}/cart
+[ASSERT] Verify cart shows contract price for item
+[ACT] click 'Checkout'
+[ASSERT] Verify order summary at checkout shows contract price
+[ACT] click 'Place Order'
+[ASSERT] Verify confirmation shows contract price in totals","[DOM] Contract price shown on PDP (lower than or different from catalog price)
+[DOM] Cart line item shows contract price
+[MATH] Checkout order summary totals use contract price
+[DOM] Confirmation page totals reflect contract pricing","[API] createOrderFromCart mutation response errors[] is empty
+[API] verify org context is non-null (me.organization)
+[API] Order payload shows contract/org price not catalog price
+[ADMIN] Order in admin shows contract pricing applied
+[CONSOLE] No pricing calculation errors","Standard catalog price shown instead of contract price; price changes to catalog price at checkout step","Cancel order via {{ADMIN_URL}}/orders",Coverage Gap Analysis,Generated
+CHK-037,B2B Checkout - Coupon on Top of Contract Price,Checkout > B2B > Promotions,High,BL-CHK-004,"ECL-4.1, ECL-14.1","B2B org user with contract pricing configured, valid coupon code applicable to B2B users","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}, sku={{TEST_SKU}}","[NAV] Log in as {{ORG_USER_EMAIL}}
+[ACT] Add product with contract pricing to cart
+[NAV] Navigate to {{FRONT_URL}}/cart and proceed to checkout
+[ASSERT] Verify contract price shown in cart
+[ACT] Locate coupon code field
+[ACT] Enter valid coupon code
+[ACT] click 'Apply'
+[WAIT] Wait for discount to apply
+[ASSERT] Verify discount applied per configured stacking rules
+[ASSERT] Verify cart total = contract price - coupon discount + shipping + tax
+[ACT] click 'Place Order'
+[ASSERT] Verify confirmation shows coupon as separate discount line","[DOM] Coupon field accessible for B2B users
+[STATE] Valid coupon accepted
+[MATH] Total = contract price - coupon discount + shipping + tax (no double-discounting)
+[DOM] Coupon discount shown as separate line item
+[DOM] Confirmation page shows coupon discount","[API] createOrderFromCart mutation response errors[] is empty
+[API] verify org context is non-null (me.organization)
+[ADMIN] Order in admin shows coupon and contract price as separate line items
+[CONSOLE] No pricing errors with coupon + contract price combination","Coupon not accepted for B2B user; double discounting applied (coupon on already-discounted contract price incorrectly); coupon absent from confirmation","Cancel order via {{ADMIN_URL}}/orders",Coverage Gap Analysis,Generated
+CHK-038,B2B Checkout - PO Number Validation,Checkout > B2B > Validation,High,BL-CHK-004,,"Logged in as B2B org user at checkout, PO Number field visible","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] Log in as {{ORG_USER_EMAIL}} and navigate to checkout
+[ASSERT] Verify PO Number field visible
+[ACT] Leave PO Number empty (if required) and click 'Place Order'
+[ASSERT] Verify 'PO Number is required' error if field is required
+[ACT] Enter PO number exceeding max character length
+[ASSERT] Verify length validation error shown
+[ACT] Enter valid PO number within character limits
+[ASSERT] Verify error clears
+[ACT] Complete checkout
+[ASSERT] Verify order placed successfully","[DOM] PO Number required error if field required and empty
+[DOM] Length error for over-max-length input
+[STATE] Errors appear inline on PO field
+[STATE] Errors clear when valid PO entered
+[STATE] Checkout proceeds with valid PO number","[API] verify org context is non-null (me.organization)
+[CONSOLE] No unhandled exceptions during PO validation","PO field accepts empty value when required; no length validation; errors do not clear after correction",none,Coverage Gap Analysis,Generated
+CHK-039,Reorder - Add to Cart,Orders > Reorder,High,BL-ORD-002,,"User logged in, has at least one completed order in history","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[ACT] click on a completed order to view detail
+[WAIT] Wait for order detail page to load
+[ASSERT] Verify 'Reorder' button visible on order detail page
+[ACT] click 'Reorder'
+[WAIT] Wait for items to be added to cart
+[ASSERT] Verify success notification 'Items added to cart' or equivalent
+[ASSERT] Verify cart count badge updates
+[NAV] Navigate to {{FRONT_URL}}/cart
+[ASSERT] Verify reordered items present in cart with correct quantities","[DOM] 'Reorder' button visible on completed order detail
+[STATE] Success notification shown after clicking Reorder
+[DOM] Cart count updates after Reorder
+[DOM] Cart contains all line items from the reordered order with matching quantities
+[STATE] Existing cart items not replaced (items added)","[API] createOrderFromCart mutation response errors[] is empty
+[API] addItemsToCart or equivalent mutation returns success
+[CONSOLE] No errors during reorder action","Reorder button absent; items not added to cart; cart count not updated after reorder","Remove reordered items from cart",Coverage Gap Analysis,Generated
+CHK-040,Reorder - Current Prices,Orders > Reorder > Pricing,High,"BL-ORD-002, BL-CHK-002","ECL-4.1","User has completed order placed 30+ days ago with items whose prices may have changed","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[ACT] Find older order and note original prices for each item
+[ACT] click 'Reorder' on the old order
+[WAIT] Wait for items added to cart
+[NAV] Navigate to {{FRONT_URL}}/cart
+[ASSERT] Verify cart shows current catalog prices (not original order prices)
+[ASSERT] Verify no system error if prices have changed
+[ASSERT] Verify cart total reflects current pricing","[DOM] Cart item prices match current catalog prices
+[STATE] No system error thrown when historical prices differ from current
+[MATH] Cart total calculated using current prices
+[DOM] Cart functional and can proceed to checkout","[API] createOrderFromCart mutation response errors[] is empty
+[API] Product price API returns current prices
+[CONSOLE] No errors on price mismatch between historical and current","Cart shows historical prices from original order; system error when price differs; cart total using wrong price","Remove items from cart",Coverage Gap Analysis,Generated
+CHK-041,Reorder - Partial Availability,Orders > Reorder > Availability,High,BL-ORD-002,,"User has completed order containing at least one discontinued product","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[ACT] Find order containing at least one discontinued product
+[ACT] click 'Reorder'
+[WAIT] Wait for reorder processing
+[ASSERT] Verify notification about unavailable items shown (e.g. 'Some items are no longer available: [Product Name]')
+[NAV] Navigate to {{FRONT_URL}}/cart
+[ASSERT] Verify available items from order present in cart
+[ASSERT] Verify discontinued item NOT in cart
+[ASSERT] Verify cart functional with available items only","[API] createOrderFromCart mutation response errors[] is empty
+[DOM] Warning/notification lists unavailable items by name
+[DOM] Available items added to cart
+[STATE] Discontinued item absent from cart
+[STATE] Cart functional and can proceed to checkout","[API] Reorder API response includes unavailableItems list
+[CONSOLE] No unhandled errors when product discontinued
+[NETWORK] No 404 errors for available products","Discontinued item silently skipped without notification; available items not added; cart broken after partial reorder","Remove items from cart",Coverage Gap Analysis,Generated
+CHK-042,Reorder - Out of Stock Item,Orders > Reorder > Availability,Medium,BL-ORD-002,,"User has completed order containing a currently out-of-stock product","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[ACT] Find order containing out-of-stock product
+[ACT] click 'Reorder'
+[WAIT] Wait for reorder processing
+[ASSERT] Verify out-of-stock item either not added (with notification) or added with 'Out of Stock' warning
+[ASSERT] Verify notification or warning shown about out-of-stock item
+[NAV] Navigate to {{FRONT_URL}}/cart
+[ASSERT] Verify available items from order present in cart
+[ASSERT] Verify cart functional for proceeding to checkout","[API] createOrderFromCart mutation response errors[] is empty
+[STATE] Out-of-stock item either absent from cart or shows Out of Stock warning
+[DOM] Notification shown about out-of-stock item
+[DOM] Available items present in cart
+[STATE] Cart functional with available items","[API] Inventory check during reorder returns out-of-stock status
+[CONSOLE] No unhandled exceptions for out-of-stock during reorder
+[NETWORK] No unexpected 500 errors","Out-of-stock item silently added to cart as if available; no notification about stock issue; cart broken","Remove items from cart",Coverage Gap Analysis,Generated
+CHK-043,Separate Billing Address,Checkout > Billing,High,BL-CHK-002,,"User in checkout with shipping address selected, at billing or payment step","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout with shipping address and method selected
+[ASSERT] Locate billing address section
+[ASSERT] Verify 'Same as shipping address' checkbox present and checked by default
+[ACT] Uncheck 'Same as shipping address' checkbox
+[WAIT] Wait for billing address form to appear
+[ASSERT] Verify billing address form fields rendered
+[ACT] Fill billing form with a different address (different Street, City, ZIP)
+[ACT] Proceed to payment or order review step
+[ASSERT] Verify different billing address carried forward","[DOM] 'Same as shipping address' checkbox present and checked by default
+[DOM] Billing address form appears after unchecking
+[DOM] Billing form has same required fields as shipping form
+[STATE] Different billing address carried through to order summary
+[STATE] Billing form validates required fields independently","[CONSOLE] No errors when revealing billing form
+[NETWORK] No failed requests when billing form toggles","Checkbox absent; unchecking does not reveal billing form; billing form fields do not validate independently",none,Coverage Gap Analysis,Automated
+CHK-044,Billing Address Validation,Checkout > Billing > Validation,High,BL-CHK-001,,"User in checkout with 'Same as shipping address' unchecked, billing form visible","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout billing step with 'Same as shipping' unchecked
+[ACT] Leave required billing fields empty (Street, City, ZIP, Country)
+[ACT] click 'Continue' or 'Proceed to Payment'
+[ASSERT] Verify required billing field errors shown
+[ACT] Enter invalid ZIP '999' in billing ZIP field
+[ASSERT] Verify billing ZIP format error shown
+[ACT] Fix all billing fields with valid data
+[ACT] click 'Continue'
+[ASSERT] Verify form advances","[DOM] Required field errors on billing form (Street, City, ZIP, Country)
+[DOM] ZIP format error on invalid billing ZIP
+[STATE] Form does not advance with billing errors
+[STATE] Errors clear when valid billing data entered
+[NAV] Form advances after valid billing address","[CONSOLE] No JS exceptions during billing validation
+[API] No submission call made with invalid billing address","Billing form validation uses shipping form errors; billing form accepts empty required fields; form advances without valid billing address",none,Coverage Gap Analysis,Automated
+CHK-045,Billing Address Persists in Order Detail,Orders > Detail > Billing,Medium,BL-CHK-002,,"Order completed with different billing and shipping addresses, user on confirmation or in order history","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Place order with different billing and shipping addresses (use CHK-043 setup)
+[NAV] Navigate to {{FRONT_URL}}/account/orders
+[ACT] click on the just-placed order to view detail
+[ASSERT] Locate billing address section on order detail
+[ASSERT] Verify billing address labeled 'Bill To' or equivalent
+[ASSERT] Verify shipping address labeled 'Ship To' or equivalent
+[ASSERT] Verify both addresses shown distinctly and match what was entered","[DOM] Billing address section rendered on order detail
+[DOM] Shipping address section rendered on order detail
+[STATE] Billing address matches address entered at checkout
+[STATE] Shipping address matches shipping address from checkout
+[DOM] Both addresses clearly labeled and not conflated","[API] GET /account/orders/{orderId} returns both shippingAddress and billingAddress fields
+[CONSOLE] No errors rendering dual addresses on order detail","Billing address absent from order detail; billing and shipping addresses identical despite entering different ones","Cancel or archive order if needed",Coverage Gap Analysis,Generated
+CHK-046,Default Billing Same as Shipping,Checkout > Billing,Medium,BL-CHK-002,,"User at checkout billing or payment step","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout with shipping address and method configured
+[WAIT] Wait for billing address section to render
+[ASSERT] Verify 'Same as shipping address' checkbox is checked by default
+[ASSERT] Verify no separate billing form shown when checkbox is checked
+[ASSERT] Verify shipping address will be used as billing address (shown in summary or implied)
+[ACT] Proceed to order review or payment without changing billing
+[ASSERT] Verify checkout can complete with same-as-shipping billing","[DOM] 'Same as shipping address' checked by default on load
+[DOM] No billing address form shown while checkbox checked
+[STATE] Checkout proceeds without requiring separate billing entry
+[STATE] Placed order uses shipping address as billing address","[CONSOLE] No errors rendering billing section
+[API] Order payload uses shipping address as billing address when same-as-shipping selected","Billing checkbox unchecked by default causing friction; billing form shown when checkbox checked; checkout fails without separate billing entry",none,Coverage Gap Analysis,Automated
+CHK-047,Invoice Download Button,Orders > Invoice,High,BL-ORD-003,,"User logged in, has at least one completed or shipped order","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[ACT] click on a completed or shipped order to view detail
+[WAIT] Wait for order detail page to load
+[ASSERT] Verify 'Download Invoice' button or link visible on detail page
+[ASSERT] Verify button is clearly labeled and accessible
+[ACT] click 'Download Invoice'
+[WAIT] Wait for PDF download or new tab to open
+[ASSERT] Verify PDF download starts or PDF opens in new tab","[DOM] 'Download Invoice' button visible on completed/shipped order detail
+[DOM] Button clearly labeled (not generic or unlabeled icon)
+[STATE] Clicking button triggers PDF download or opens PDF in new tab
+[DOM] Button accessible without additional navigation or login step","[CONSOLE] No errors when clicking download invoice
+[NETWORK] PDF download request returns 200 (not 404 or 500)","Download Invoice button absent on completed order; button visible but clicking produces no action or 404 error",none,Coverage Gap Analysis,Generated
+CHK-048,Invoice PDF Content,Orders > Invoice > Content,High,BL-ORD-003,,"Completed order with Download Invoice button available, user on order detail page","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to completed order detail at {{FRONT_URL}}/account/orders
+[ACT] click 'Download Invoice'
+[WAIT] Wait for PDF to download
+[ACT] Open downloaded PDF file
+[ASSERT] Verify PDF renders without error
+[ASSERT] Verify line items present: product name, SKU, quantity, unit price, line total
+[ASSERT] Verify subtotal, shipping cost, tax, and grand total shown
+[ASSERT] Verify Ship To address section present
+[ASSERT] Verify Bill To address section present
+[ASSERT] Verify company/store name and contact info present
+[ASSERT] Verify order number and order date visible
+[ASSERT] Verify no placeholder text ('Lorem ipsum' etc) in PDF","[DOM] PDF renders without error (no blank or corrupt file)
+[DOM] All line items shown with name/SKU/qty/unit price/total
+[MATH] Grand total = subtotal + shipping + tax
+[FORMAT] Ship To address section present
+[FORMAT] Bill To address section present
+[FORMAT] Store name/logo/contact info present
+[DOM] Order number and date visible
+[DOM] No placeholder or template text in PDF","[NETWORK] PDF file download returns valid PDF MIME type
+[CONSOLE] No errors initiating download","PDF is blank or corrupt; missing line items; totals incorrect; Ship To or Bill To address absent; placeholder text in PDF",none,Coverage Gap Analysis,Generated
+CHK-049,Invoice Not Available for Pending Orders,Orders > Invoice > Access Control,Medium,BL-ORD-003,,"User logged in, has at least one order with Pending or Processing status","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[ACT] Find order with 'Pending' or 'Processing' status and click to view detail
+[WAIT] Wait for order detail to load
+[ASSERT] Verify 'Download Invoice' button is absent or disabled for pending/processing order
+[ACT] If button is shown, click it
+[ASSERT] Verify message 'Invoice not yet available' or equivalent shown (not a system error)
+[ASSERT] Verify no error thrown when attempting invoice access for pending order","[DOM] Download Invoice button absent or disabled for Pending/Processing orders
+[STATE] If button present, clicking shows informational message (not 500 error)
+[STATE] No exception or system error when attempting to access invoice for non-eligible order","[API] GET /orders/{orderId}/invoice returns 404 or informational response for pending orders (not 500)
+[CONSOLE] No unhandled exceptions when invoice not available","Download Invoice button shown and functional for pending orders; clicking invoice on pending order returns 500 error instead of informational message",none,Coverage Gap Analysis,Generated

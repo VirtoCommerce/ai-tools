@@ -1,190 +1,27 @@
-ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
-API-001,Catalog API - Get Products List,API > Catalog,Functional,Critical,3m,"Admin credentials available, BACK_URL accessible","1. Navigate to BACK_URL/api/catalog/products
-2. Authenticate with admin credentials
-3. Send GET request with store ID parameter
-4. Verify response status and structure","- Response returns 200 OK
-- Response contains products array
-- Each product has id, name, code, imgSrc fields
-- Pagination metadata present (totalCount)",Platform API,Automated
-API-002,Catalog API - Get Product by ID,API > Catalog,Functional,Critical,3m,"At least one product exists in catalog","1. Get product list via API-001
-2. Extract first product ID
-3. Send GET /api/catalog/products/{id}
-4. Verify full product response","- Response returns 200 OK
-- Product contains all detail fields (descriptions, prices, images, variations)
-- SEO info populated
-- Category assignments present",Platform API,Automated
-API-003,Catalog API - Search Products,API > Catalog,Functional,Critical,3m,"Products exist in catalog index","1. Send GET /api/catalog/products with keyword=laptop
-2. Verify search results
-3. Send with keyword=nonexistent_xyz
-4. Verify empty results","- Keyword search returns matching products
-- Empty search returns empty array with totalCount=0
-- Response time under 500ms",Platform API,Automated
-API-004,Pricing API - Get Product Prices,API > Pricing,Functional,Critical,3m,"Products with prices configured","1. Send GET /api/pricing/evaluate with product IDs
-2. Verify price structure
-3. Check list price and sale price
-4. Verify currency code","- Prices returned for each product
-- ListPrice and SalePrice present
-- Currency matches store configuration
-- Price tiers included if configured",Platform API,Automated
-API-005,Pricing API - Price Calculation with Quantity,API > Pricing,Functional,High,5m,"Tier pricing configured for test products","1. Request price for quantity=1
-2. Request price for quantity=10
-3. Request price for quantity=100
-4. Compare prices across quantities","- Tier pricing applies correctly
-- Higher quantities get lower per-unit price
-- Price breakdown shows tier details",Platform API,Automated
-API-006,Inventory API - Check Product Availability,API > Inventory,Functional,Critical,3m,"Products with inventory configured","1. Send GET /api/inventory/products/{id}/availability
-2. Verify stock quantity
-3. Check fulfillment center data
-4. Verify in-stock status flags","- Response includes InStockQuantity
-- FulfillmentCenter information present
-- AllowPreorder/AllowBackorder flags set correctly
-- Response time under 300ms",Platform API,Automated
-API-007,Inventory API - Reserve Stock,API > Inventory,Functional,High,5m,"Product with available stock","1. Check current stock level
-2. Send POST to reserve stock (quantity=1)
-3. Verify reservation created
-4. Check stock level decreased
-5. Release reservation
-6. Verify stock restored","- Stock reservation succeeds
-- Available quantity decreases
-- Reservation can be released
-- Stock quantity restores after release",Platform API,Automated
-API-008,Orders API - Get Orders List,API > Orders,Functional,Critical,3m,"Orders exist in the system","1. Send GET /api/order/customerOrders with admin auth
-2. Verify response structure
-3. Check pagination
-4. Filter by status","- Returns list of orders
-- Each order has number, status, total, currency
-- Pagination works (skip/take)
-- Status filter returns correct subset",Platform API,Automated
-API-009,Orders API - Get Order by ID,API > Orders,Functional,Critical,3m,"At least one order exists","1. Get order list
-2. Extract first order ID
-3. Send GET /api/order/customerOrders/{id}
-4. Verify full order details","- Order contains line items
-- Shipping info present
-- Payment info present
-- Order total matches line items + shipping - discounts
-- Timestamps populated",Platform API,Automated
-API-010,Orders API - Create Order,API > Orders,Functional,Critical,8m,"Products available, user authenticated","1. Create a cart via API
-2. Add product to cart
-3. Set shipping address
-4. Set shipping method
-5. Set payment method
-6. Create order from cart
-7. Verify order created","- Cart created successfully
-- Product added to cart
-- Shipping and payment configured
-- Order created with status 'New'
-- Order number generated",Platform API,Automated
-API-011,Customer API - Get Customer Profile,API > Customer,Functional,High,3m,"Test user account exists","1. Authenticate as test user
-2. Send GET /api/members/{userId}
-3. Verify profile data
-4. Check contact and address info","- Profile returns user details
-- Email, name, phone populated
-- Addresses collection present
-- Organization membership shown (if B2B)",Platform API,Automated
-API-012,Customer API - Update Customer Profile,API > Customer,Functional,High,5m,"Test user account exists","1. Get current profile
-2. Update first name via PUT /api/members
-3. Verify update successful
-4. Restore original value","- Update returns 200/204
-- GET returns updated value
-- Other fields unchanged
-- Audit trail updated",Platform API,Automated
-API-013,Customer API - Create Organization,API > Customer,Functional,High,5m,"Admin credentials available","1. Send POST /api/members/organizations
-2. Provide name, description, addresses
-3. Verify organization created
-4. Check organization in list","- Organization created with 200/201
-- Org appears in GET /api/members/organizations
-- Org has generated ID
-- Members list initially contains creator",Platform API,Automated
-API-014,Authentication API - Login,API > Auth,Functional,Critical,3m,"Valid user credentials available","1. Send POST /connect/token with user credentials
-2. Verify token response
-3. Check token expiration
-4. Use token for authenticated request","- Access token returned
-- Token type is Bearer
-- Expiration > 0
-- Authenticated request succeeds with token",Platform API,Automated
-API-015,Authentication API - Invalid Credentials,API > Auth,Negative,Critical,3m,"Valid URL accessible","1. Send POST /connect/token with wrong password
-2. Verify error response
-3. Send with non-existent email
-4. Verify error response","- Returns 400 Bad Request
-- Error message does not reveal if user exists
-- No access token returned
-- Response does not contain stack traces",Platform API,Automated
-API-016,Authentication API - Token Refresh,API > Auth,Functional,High,5m,"Valid refresh token obtained from login","1. Login and obtain refresh token
-2. Wait briefly
-3. Send refresh token request
-4. Verify new access token","- New access token issued
-- New refresh token issued
-- Old access token may still work until expiry
-- Authenticated requests work with new token",Platform API,Automated
-API-017,Store API - Get Store Settings,API > Store,Functional,High,3m,"STORE_ID configured, admin auth","1. Send GET /api/stores/{STORE_ID}
-2. Verify store configuration
-3. Check currency settings
-4. Check language settings","- Store data returned
-- Default currency set
-- Available currencies listed
-- Default language and available languages present
-- SEO settings populated",Platform API,Automated
-API-018,Catalog API - Create Product,API > Catalog,Functional,High,5m,"Admin credentials, catalog exists","1. Send POST /api/catalog/products with product data
-2. Provide name, code, categoryId
-3. Verify product created
-4. Get product by new ID
-5. Clean up: delete product","- Product created with 200/201
-- Product has generated ID
-- Product retrievable by ID
-- Product appears in category
-- Cleanup deletion succeeds",Platform API,Automated
-API-019,Catalog API - Update Product,API > Catalog,Functional,High,5m,"Test product exists","1. Get test product
-2. Update name and description via PUT
-3. Verify changes saved
-4. Restore original values","- PUT returns success
-- GET returns updated values
-- Other fields unchanged
-- ModifiedDate updated",Platform API,Automated
-API-020,Cart API - Create and Manage Cart,API > Cart,Functional,Critical,8m,"Products available, user auth","1. Create new cart via POST
-2. Add item to cart
-3. Update item quantity
-4. Get cart totals
-5. Remove item
-6. Delete cart","- Cart created with ID
-- Item added with correct price
-- Quantity update reflected in totals
-- Totals calculate correctly (subtotal, tax, total)
-- Item removal works
-- Cart deletion succeeds",Platform API,Automated
-API-021,Cart API - Apply Coupon,API > Cart,Functional,High,5m,"Cart with items, valid coupon code","1. Create cart and add items
-2. Get totals before coupon
-3. Apply coupon via POST
-4. Get totals after coupon
-5. Remove coupon
-6. Verify totals restored","- Coupon applies successfully
-- Discount reflected in totals
-- Coupon removal works
-- Totals restore to pre-coupon values",Platform API,Automated
-API-022,Shipping API - Get Shipping Methods,API > Shipping,Functional,High,3m,"Cart with items and shipping address","1. Create cart with items
-2. Set shipping address
-3. Request available shipping methods
-4. Verify method details","- Shipping methods returned
-- Each method has name, price, estimated delivery
-- Ground shipping available
-- Express shipping available (if configured)",Platform API,Automated
-API-023,API Error Handling - 404 Not Found,API > Errors,Negative,High,3m,"API accessible","1. Send GET /api/catalog/products/nonexistent-id
-2. Send GET /api/order/customerOrders/nonexistent-id
-3. Send GET /api/nonexistent-endpoint","- Product 404 returns structured error
-- Order 404 returns structured error
-- Unknown endpoint returns 404
-- No stack traces in responses
-- Error messages are user-friendly",Platform API,Automated
-API-024,API Error Handling - Validation Errors,API > Errors,Negative,High,3m,"API accessible with admin auth","1. Send POST /api/catalog/products with empty body
-2. Send POST with missing required fields
-3. Send POST with invalid data types","- Returns 400 Bad Request
-- Validation errors list specific fields
-- Error messages are descriptive
-- No 500 errors for validation issues",Platform API,Automated
-API-025,API Rate Limiting and Headers,API > Security,Security,Critical,5m,"API accessible","1. Send 10 rapid requests to same endpoint
-2. Check response headers for rate limit info
-3. Check CORS headers
-4. Check security headers (X-Content-Type-Options, etc.)","- Rate limit headers present (if configured)
-- CORS allows expected origins only
-- X-Content-Type-Options: nosniff present
-- No server version disclosed in headers
-- Content-Type correctly set on all responses",Platform API,Automated
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+API-001,Catalog API - Get Products List,API > Catalog,Critical,"BL-API-001; BL-API-002; BL-API-004","ECL-2.1","Admin credentials available; BACK_URL accessible","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; store_id={{STORE_ID}}","[NAV] GET {{BACK_URL}}/api/catalog/products with admin Bearer token and storeId={{STORE_ID}} query param; [WAIT] Wait for 200 response; [ASSERT] Validate response body structure; [ASSERT] Verify pagination metadata","[STATE] Response status is 200 OK; [FORMAT] Response contains products array; [FORMAT] Each product object has id, name, code, imgSrc fields; [FORMAT] Response includes totalCount pagination metadata","[API] HTTP response status 200; [NETWORK] Response time under 1000ms; [CONSOLE] No JavaScript errors in console","Non-200 status code; Missing products array in response; Absent totalCount field; 401 Unauthorized if token missing","none","Platform API",Automated
+API-002,Catalog API - Get Product by ID,API > Catalog,Critical,"BL-API-001; BL-API-004","ECL-2.1","At least one product exists in catalog","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}","[NAV] GET {{BACK_URL}}/api/catalog/products to fetch list; [ACT] Extract first product ID from response; [NAV] GET {{BACK_URL}}/api/catalog/products/{id} with extracted ID; [WAIT] Wait for 200 response; [ASSERT] Verify full product detail fields","[STATE] Response status is 200 OK; [FORMAT] Product contains descriptions, prices, images, variations fields; [FORMAT] SEO info object populated; [FORMAT] Category assignments array present","[API] HTTP response status 200; [NETWORK] Response payload size reasonable (under 500KB); [CONSOLE] No errors","Non-200 status; Missing required detail fields; Empty or null SEO info","none","Platform API",Automated
+API-003,Catalog API - Search Products,API > Catalog,Critical,"BL-API-001; BL-API-002; BL-API-004","ECL-2.1; ECL-8.1","Products exist in catalog index","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; search_keyword=laptop","[NAV] GET {{BACK_URL}}/api/catalog/products?keyword=laptop; [WAIT] Wait for response; [ASSERT] Verify matching results returned; [NAV] GET {{BACK_URL}}/api/catalog/products?keyword=nonexistent_xyz; [WAIT] Wait for response; [ASSERT] Verify empty result set","[STATE] Keyword search returns products matching 'laptop'; [STATE] Empty search keyword=nonexistent_xyz returns empty array; [MATH] totalCount=0 for no-match search; [FORMAT] Response structure consistent across both calls","[API] HTTP status 200 for both requests; [NETWORK] Response time under 500ms; [CONSOLE] No errors","Status other than 200; Matching search returns empty array; Non-matching search returns results; Response time over 500ms","none","Platform API",Automated
+API-004,Pricing API - Get Product Prices,API > Pricing,Critical,"BL-API-001; BL-API-004","ECL-2.1","Products with prices configured","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; test_sku={{TEST_SKU}}; store_id={{STORE_ID}}","[ACT] POST {{BACK_URL}}/api/pricing/evaluate with product IDs array; [WAIT] Wait for 200 response; [ASSERT] Verify price structure; [ASSERT] Check ListPrice and SalePrice; [ASSERT] Verify currency code","[FORMAT] Price objects returned for each product ID; [FORMAT] ListPrice field present and numeric; [FORMAT] SalePrice field present and numeric; [FORMAT] Currency code matches store configuration; [FORMAT] Price tiers array included if tier pricing configured","[API] HTTP status 200; [NETWORK] Response includes all requested product IDs; [ADMIN] Prices match values set in Admin pricing module","Missing ListPrice or SalePrice; Currency code mismatch; 404 for valid product IDs","none","Platform API",Automated
+API-005,Pricing API - Price Calculation with Quantity,API > Pricing,High,"BL-API-001; BL-API-004","ECL-2.1","Tier pricing configured for test products","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; test_sku={{TEST_SKU}}; qty_1=1; qty_10=10; qty_100=100","[ACT] POST {{BACK_URL}}/api/pricing/evaluate with productId={{TEST_SKU}} and quantity=1; [ASSERT] Record per-unit price at qty=1; [ACT] POST with quantity=10; [ASSERT] Record per-unit price at qty=10; [ACT] POST with quantity=100; [ASSERT] Compare prices across quantities","[MATH] Per-unit price at qty=10 is less than or equal to qty=1; [MATH] Per-unit price at qty=100 is less than or equal to qty=10; [FORMAT] Price breakdown shows tier details; [STATE] Tier pricing applied correctly","[API] HTTP status 200 for all three requests; [NETWORK] All three requests complete; [ADMIN] Tier thresholds match Admin pricing configuration","Tier pricing not applied; Higher quantity has higher per-unit price; No tier detail in breakdown","none","Platform API",Automated
+API-006,Inventory API - Check Product Availability,API > Inventory,Critical,"BL-API-001; BL-API-004","ECL-2.1","Products with inventory configured","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; test_sku={{TEST_SKU}}","[NAV] GET {{BACK_URL}}/api/inventory/products/{id}/availability with admin token; [WAIT] Wait for response; [ASSERT] Verify stock quantity field; [ASSERT] Check fulfillment center data; [ASSERT] Verify in-stock status flags","[FORMAT] Response includes InStockQuantity numeric field; [FORMAT] FulfillmentCenter object present with id and name; [FORMAT] AllowPreorder boolean flag present; [FORMAT] AllowBackorder boolean flag present; [STATE] In-stock status consistent with InStockQuantity value","[API] HTTP status 200; [NETWORK] Response time under 300ms; [ADMIN] Stock quantity matches Admin inventory module value","Response time over 300ms; Missing InStockQuantity; Missing FulfillmentCenter; 404 for valid product","none","Platform API",Automated
+API-007,Inventory API - Reserve Stock,API > Inventory,High,"BL-API-001; BL-API-003; BL-API-004","ECL-2.1","Product with available stock","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; test_sku={{TEST_SKU}}; reserve_qty=1","[NAV] GET {{BACK_URL}}/api/inventory/products/{id}/availability; [ASSERT] Record initial InStockQuantity; [ACT] POST {{BACK_URL}}/api/inventory/products/{id}/reserve with quantity=1; [WAIT] Wait for reservation confirmation; [ASSERT] Verify stock decreased; [ACT] POST to release reservation; [WAIT] Wait for release confirmation; [ASSERT] Verify stock restored","[STATE] Stock reservation POST returns 200/201; [MATH] Available quantity decreases by 1 after reservation; [STATE] Reservation ID returned in response; [STATE] Release POST returns 200/204; [MATH] Available quantity restores to initial value after release","[API] HTTP status 200/201 for reserve; 200/204 for release; [NETWORK] Both requests complete without timeout; [ADMIN] Inventory module reflects reservation and release","Reserve fails with 4xx; Quantity does not decrease after reserve; Stock not restored after release","delete created reservation via API","Platform API",Automated
+API-008,Orders API - Get Orders List,API > Orders,Critical,"BL-API-001; BL-API-002; BL-API-004","ECL-2.1","Orders exist in the system","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}","[NAV] GET {{BACK_URL}}/api/order/customerOrders with admin Bearer token; [WAIT] Wait for 200 response; [ASSERT] Verify response structure; [ASSERT] Check pagination; [ACT] GET with status filter parameter; [ASSERT] Verify filtered results","[STATE] Response status is 200 OK; [FORMAT] Each order object has number, status, total, currency fields; [STATE] Pagination works: skip/take params respected; [MATH] totalCount matches returned items count; [STATE] Status filter returns only matching orders","[API] HTTP status 200; [NETWORK] Response includes expected pagination metadata; [ADMIN] Orders visible in Admin order management panel","Non-200 status; Missing order fields; Pagination params ignored; Status filter returns incorrect orders","none","Platform API",Automated
+API-009,Orders API - Get Order by ID,API > Orders,Critical,"BL-API-001; BL-API-004","ECL-2.1","At least one order exists","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}","[NAV] GET {{BACK_URL}}/api/order/customerOrders; [WAIT] Wait for list; [ACT] Extract first order ID from response; [NAV] GET {{BACK_URL}}/api/order/customerOrders/{id}; [WAIT] Wait for 200 response; [ASSERT] Verify full order details","[FORMAT] Order contains lineItems array; [FORMAT] Shipping address and method info present; [FORMAT] Payment method info present; [MATH] Order total equals sum of lineItems + shipping - discounts; [FORMAT] createdDate and modifiedDate timestamps populated","[API] HTTP status 200; [NETWORK] Response includes complete order object; [ADMIN] Order details match Admin view of same order","Missing lineItems; Order total math mismatch; Null timestamps; Missing shipping or payment info","none","Platform API",Automated
+API-010,Orders API - Create Order,API > Orders,Critical,"BL-API-001; BL-API-003; BL-API-004","ECL-2.1","Products available; user authenticated","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; test_sku={{TEST_SKU}}","[ACT] POST {{BACK_URL}}/api/cart/carts to create cart; [WAIT] Wait for cart ID; [ACT] POST to add product {{TEST_SKU}} to cart; [ACT] PUT cart with shipping address; [ACT] PUT cart with shipping method; [ACT] PUT cart with payment method; [ACT] POST {{BACK_URL}}/api/order/customerOrders to create order from cart; [WAIT] Wait for order creation; [ASSERT] Verify order created","[STATE] Cart created with generated ID (201); [STATE] Product added to cart successfully; [STATE] Order created with status 'New'; [FORMAT] Order number generated and non-empty; [FORMAT] Order includes all configured line items and addresses","[API] HTTP 201 for cart; 200/201 for order; [NETWORK] All API calls succeed; [ADMIN] New order appears in Admin orders list","Cart creation fails; Product not added; Order creation returns 4xx/5xx; Order status not 'New'; Order number absent","delete created order via API; delete created cart via API","Platform API",Automated
+API-011,Customer API - Get Customer Profile,API > Customer,High,"BL-API-001; BL-API-003; BL-API-004","ECL-2.1","Test user account exists","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[ACT] POST {{BACK_URL}}/connect/token to authenticate as test user; [WAIT] Receive access token; [NAV] GET {{BACK_URL}}/api/members/{userId} with user Bearer token; [WAIT] Wait for 200 response; [ASSERT] Verify profile fields; [ASSERT] Check contact and address info","[FORMAT] Profile response contains email, firstName, lastName fields; [FORMAT] Phones collection present; [FORMAT] Addresses collection present; [FORMAT] Organizations array present if B2B user; [STATE] Returned userId matches authenticated user","[API] HTTP status 200; [NETWORK] Response size reasonable; [ADMIN] Profile data matches Admin customer view","Non-200 status; Missing email or name; Empty addresses for user with configured address; 403 accessing another user's profile","none","Platform API",Automated
+API-012,Customer API - Update Customer Profile,API > Customer,High,"BL-API-001; BL-API-003; BL-API-004","ECL-2.1","Test user account exists","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; original_first_name=Test; updated_first_name=UpdatedTest","[ACT] GET current profile via GET {{BACK_URL}}/api/members/{userId}; [ASSERT] Record current firstName; [ACT] PUT {{BACK_URL}}/api/members with updated firstName='UpdatedTest'; [WAIT] Wait for 200/204 response; [ACT] GET profile again; [ASSERT] Verify updated value; [ACT] PUT with original firstName to restore","[STATE] PUT returns 200 or 204 success; [FORMAT] Subsequent GET returns firstName='UpdatedTest'; [STATE] Other profile fields unchanged after update; [FORMAT] modifiedDate timestamp updated after PUT","[API] HTTP 200/204 for PUT; [NETWORK] GET after PUT returns updated value; [ADMIN] Admin customer view reflects updated name","PUT returns 4xx; GET after PUT still shows old name; Other fields modified; modifiedDate not updated","restore original profile values via API","Platform API",Automated
+API-013,Customer API - Create Organization,API > Customer,High,"BL-API-001; BL-API-003; BL-API-004","ECL-2.1","Admin credentials available","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; org_name=TestOrg_API013","[ACT] POST {{BACK_URL}}/api/members/organizations with name='TestOrg_API013', description, addresses; [WAIT] Wait for 200/201 response; [ASSERT] Verify organization created with ID; [NAV] GET {{BACK_URL}}/api/members/organizations; [ASSERT] Verify org appears in list; [ASSERT] Check members list includes creator","[STATE] POST returns 200 or 201; [FORMAT] Created org has generated non-empty id; [STATE] Org retrievable via GET /api/members/organizations list; [FORMAT] Org contains provided name and description; [STATE] Members list initially contains creator","[API] HTTP 200/201 for POST; [NETWORK] GET list includes new org; [ADMIN] Organization appears in Admin B2B organizations panel","POST returns 4xx; Created org has no ID; Org not retrievable after creation; Creator not in members list","delete created organization via API","Platform API",Automated
+API-014,Authentication API - Login,API > Auth,Critical,"BL-API-001; BL-API-003; BL-API-004","ECL-2.1","Valid user credentials available","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[ACT] POST {{BACK_URL}}/connect/token with grant_type=password, username={{USER_EMAIL}}, password={{USER_PASSWORD}}; [WAIT] Wait for token response; [ASSERT] Verify token fields; [ASSERT] Check expiration; [NAV] GET {{BACK_URL}}/api/members/{userId} with returned Bearer token; [ASSERT] Verify authenticated request succeeds","[FORMAT] Response contains access_token non-empty string; [FORMAT] token_type equals 'Bearer'; [MATH] expires_in value greater than 0; [STATE] Authenticated GET request using returned token returns 200","[API] HTTP 200 for token endpoint; [NETWORK] Token usable in Authorization header; [CONSOLE] No auth errors in console","Non-200 for valid credentials; Missing access_token; token_type not Bearer; Token rejected on authenticated request","none","Platform API",Automated
+API-015,Authentication API - Invalid Credentials,API > Auth,Critical,"BL-API-001; BL-API-003","ECL-2.1","Valid URL accessible","base_url={{BACK_URL}}; wrong_password=WrongPass123!; nonexistent_email=nouser@invalid.test","[ACT] POST {{BACK_URL}}/connect/token with valid email + wrong password; [WAIT] Wait for error response; [ASSERT] Verify error status and body; [ACT] POST {{BACK_URL}}/connect/token with nonexistent email; [WAIT] Wait for error response; [ASSERT] Verify error response","[STATE] Response returns 400 Bad Request for wrong password; [STATE] Error message does not reveal whether user exists (anti-enumeration); [STATE] No access_token in error response; [FORMAT] Response body does not contain stack traces or internal error details","[API] HTTP 400 for both invalid attempts; [NETWORK] No tokens issued; [CONSOLE] No server errors leaked to response","Status 200 returned for invalid credentials; access_token present in error response; Stack trace exposed in response body; User existence revealed in error message","none","Platform API",Automated
+API-016,Authentication API - Token Refresh,API > Auth,High,"BL-API-001; BL-API-003; BL-API-004","ECL-2.1","Valid refresh token obtained from login","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[ACT] POST {{BACK_URL}}/connect/token with password grant to obtain refresh_token; [WAIT] Record access_token and refresh_token; [ACT] POST {{BACK_URL}}/connect/token with grant_type=refresh_token and the refresh_token; [WAIT] Wait for new token response; [ASSERT] Verify new access token issued; [NAV] Authenticated GET using new access_token; [ASSERT] Verify request succeeds","[FORMAT] Refresh POST returns new access_token; [FORMAT] New refresh_token issued; [STATE] Authenticated request with new access_token returns 200; [STATE] Old access_token may still work until its expiry window","[API] HTTP 200 for refresh POST; [NETWORK] New token accepted on subsequent authenticated request; [CONSOLE] No auth errors","Refresh POST returns 4xx; No new access_token returned; New token rejected on authenticated request","none","Platform API",Automated
+API-017,Store API - Get Store Settings,API > Store,High,"BL-API-001; BL-API-004","ECL-2.1","STORE_ID configured; admin auth available","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; store_id={{STORE_ID}}","[NAV] GET {{BACK_URL}}/api/stores/{{STORE_ID}} with admin Bearer token; [WAIT] Wait for 200 response; [ASSERT] Verify store configuration fields; [ASSERT] Check currency settings; [ASSERT] Check language settings","[FORMAT] Store data returned with id, name, url; [FORMAT] defaultCurrency field set; [FORMAT] currencies array lists available currencies; [FORMAT] defaultLanguage field set; [FORMAT] languages array lists available languages; [FORMAT] seoInfo object populated","[API] HTTP status 200; [NETWORK] Response includes all store config fields; [ADMIN] Store settings match Admin Store management view","Non-200 status; Missing defaultCurrency or defaultLanguage; Empty currencies or languages arrays","none","Platform API",Automated
+API-018,Catalog API - Create Product,API > Catalog,High,"BL-API-001; BL-API-003; BL-API-004","ECL-2.1","Admin credentials available; catalog exists","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; product_name=TestProduct_API018; product_code=TEST-API018","[ACT] POST {{BACK_URL}}/api/catalog/products with name='TestProduct_API018', code='TEST-API018', categoryId; [WAIT] Wait for 200/201 response; [ASSERT] Verify product created; [NAV] GET {{BACK_URL}}/api/catalog/products/{newId}; [ASSERT] Verify product retrievable; [ACT] DELETE {{BACK_URL}}/api/catalog/products/{newId} to clean up","[STATE] POST returns 200 or 201; [FORMAT] Created product has generated non-empty id; [STATE] Product retrievable by new ID via GET; [STATE] Product appears in category product list; [STATE] DELETE for cleanup returns 200/204","[API] HTTP 200/201 for POST; [NETWORK] GET by new ID succeeds; [ADMIN] Product appears in Admin catalog","POST returns 4xx; Created product has no id; Product not retrievable after creation; Cleanup DELETE fails","delete created product via API","Platform API",Automated
+API-019,Catalog API - Update Product,API > Catalog,High,"BL-API-001; BL-API-003; BL-API-004","ECL-2.1","Test product exists","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; test_sku={{TEST_SKU}}; updated_name=UpdatedProduct_API019","[NAV] GET {{BACK_URL}}/api/catalog/products/{{TEST_SKU}} to retrieve current values; [ASSERT] Record current name and description; [ACT] PUT {{BACK_URL}}/api/catalog/products with updated name and description; [WAIT] Wait for success response; [NAV] GET product again; [ASSERT] Verify changes saved; [ACT] PUT with original values to restore","[STATE] PUT returns success (200/204); [FORMAT] Subsequent GET returns updated name and description; [STATE] Other product fields unchanged; [FORMAT] modifiedDate updated after PUT","[API] HTTP 200/204 for PUT; [NETWORK] GET after PUT reflects new values; [ADMIN] Updated product name visible in Admin catalog","PUT returns 4xx; GET still shows old name after update; Other fields changed; modifiedDate not updated","restore original product values via API","Platform API",Automated
+API-020,Cart API - Create and Manage Cart,API > Cart,Critical,"BL-API-001; BL-API-003; BL-API-004","ECL-2.1","Products available; user authenticated","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; test_sku={{TEST_SKU}}","[ACT] POST {{BACK_URL}}/api/cart/carts to create new cart; [WAIT] Receive cart ID; [ACT] POST to add {{TEST_SKU}} item to cart; [ASSERT] Verify item added with correct price; [ACT] PUT cart item with updated quantity=2; [ASSERT] Verify quantity reflected in totals; [NAV] GET cart totals; [ASSERT] Verify totals; [ACT] DELETE cart item; [ASSERT] Verify item removed; [ACT] DELETE cart","[STATE] Cart POST returns 201 with id; [FORMAT] Added item has correct price from pricing API; [MATH] Totals after quantity=2 equal 2x unit price + tax; [MATH] subtotal, tax, total fields calculate correctly; [STATE] Item removal reduces cart to empty; [STATE] Cart DELETE returns 200/204","[API] HTTP 201 for cart create; 200 for item operations; [NETWORK] Totals consistent across requests; [ADMIN] Cart visible in Admin if needed","Cart creation fails; Item price incorrect; Totals math incorrect; Item removal fails; Cart delete fails","delete created cart via API","Platform API",Automated
+API-021,Cart API - Apply Coupon,API > Cart,High,"BL-API-001; BL-API-003; BL-API-004","ECL-2.1","Cart with items; valid coupon code configured","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; test_sku={{TEST_SKU}}; coupon_code=TESTCOUPON10","[ACT] Create cart and add item {{TEST_SKU}}; [WAIT] Confirm items added; [NAV] GET cart totals before coupon; [ASSERT] Record pre-coupon total; [ACT] POST coupon code 'TESTCOUPON10' to cart; [WAIT] Wait for coupon application; [NAV] GET cart totals after coupon; [ASSERT] Verify discount applied; [ACT] DELETE coupon from cart; [ASSERT] Verify totals restored","[STATE] Coupon POST returns 200/201 success; [MATH] Post-coupon total is less than pre-coupon total; [FORMAT] Discount amount shown in totals breakdown; [STATE] Coupon removal returns 200/204; [MATH] Totals after removal match original pre-coupon values","[API] HTTP 200 for coupon operations; [NETWORK] Discount reflected in totals response; [ADMIN] Coupon usage count incremented in Admin promotions","Coupon POST returns 4xx; No discount applied to totals; Coupon removal fails; Totals not restored after removal","delete created cart via API","Platform API",Automated
+API-022,Shipping API - Get Shipping Methods,API > Shipping,High,"BL-API-001; BL-API-004","ECL-2.1","Cart with items and shipping address set","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; test_sku={{TEST_SKU}}","[ACT] Create cart and add item {{TEST_SKU}}; [ACT] PUT shipping address onto cart; [NAV] GET {{BACK_URL}}/api/cart/carts/{cartId}/availableShippingMethods; [WAIT] Wait for methods list; [ASSERT] Verify method details","[FORMAT] Response is array of shipping method objects; [FORMAT] Each method has name, price, currency fields; [FORMAT] Estimated delivery info present; [STATE] At least one shipping method returned","[API] HTTP status 200; [NETWORK] Methods list non-empty; [ADMIN] Available methods match Admin shipping configuration","Empty shipping methods array; Missing name or price on methods; 4xx error; No estimated delivery info","delete created cart via API","Platform API",Automated
+API-023,API Error Handling - 404 Not Found,API > Errors,High,"BL-API-001; BL-API-004","ECL-2.1","API accessible with admin auth","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}","[NAV] GET {{BACK_URL}}/api/catalog/products/nonexistent-id-xyz with admin token; [ASSERT] Verify 404 error response structure; [NAV] GET {{BACK_URL}}/api/order/customerOrders/nonexistent-id-xyz; [ASSERT] Verify 404 error; [NAV] GET {{BACK_URL}}/api/nonexistent-endpoint; [ASSERT] Verify 404 error","[STATE] Product 404 returns 404 status code; [FORMAT] Product 404 response has structured error object (code, message); [STATE] Order 404 returns 404 status code; [FORMAT] Order 404 response has structured error object; [STATE] Unknown endpoint returns 404; [FORMAT] No stack traces in any error response; [FORMAT] Error messages are human-readable","[API] HTTP 404 for all three requests; [NETWORK] No 500 errors triggered; [CONSOLE] No unhandled server errors","500 Internal Server Error returned instead of 404; Stack trace exposed in response; No error body returned; Error reveals internal file paths","none","Platform API",Automated
+API-024,API Error Handling - Validation Errors,API > Errors,High,"BL-API-001; BL-API-004","ECL-2.1; ECL-8.1","API accessible with admin auth","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}","[ACT] POST {{BACK_URL}}/api/catalog/products with empty JSON body {}; [ASSERT] Verify 400 response; [ACT] POST with missing required fields (no name, no code); [ASSERT] Verify validation error details; [ACT] POST with invalid data types (name as integer); [ASSERT] Verify type validation error","[STATE] Empty body POST returns 400 Bad Request; [FORMAT] Validation error response lists specific invalid field names; [FORMAT] Error messages are descriptive and actionable; [STATE] No 500 errors returned for any validation scenario","[API] HTTP 400 for all three requests; [NETWORK] No 500 errors; [CONSOLE] No server exception logs","500 returned for validation issues; Generic 'Bad Request' with no field details; No validation error body; Stack trace in response","none","Platform API",Automated
+API-025,API Rate Limiting and Headers,API > Security,Critical,"BL-API-001; BL-API-003; BL-API-004","ECL-2.1","API accessible with admin auth","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}","[ACT] Send 10 rapid sequential GET requests to {{BACK_URL}}/api/catalog/products; [ASSERT] Check rate limit response headers on each response; [ASSERT] Check CORS headers on response; [ASSERT] Check security headers: X-Content-Type-Options, X-Frame-Options; [ASSERT] Check Server header for version disclosure","[FORMAT] Rate limit headers present if rate limiting is configured (X-RateLimit-Limit, X-RateLimit-Remaining); [FORMAT] CORS Access-Control-Allow-Origin restricted to expected origins only; [FORMAT] X-Content-Type-Options: nosniff present; [STATE] Server version not disclosed in Server or X-Powered-By headers; [FORMAT] Content-Type header correctly set on all responses","[API] HTTP 200 for all 10 requests (unless rate limit triggered); [NETWORK] Response headers captured for all 10 requests; [CONSOLE] No server errors from rapid requests","Server version string in response headers; CORS allows wildcard (*) origin; X-Content-Type-Options absent; 500 errors under rapid load","none","Platform API",Automated
+API-026,Platform Modules API - Get Installed Modules,API > Platform,Critical,"BL-API-001; BL-API-003; BL-API-004","ECL-2.1","Admin credentials available; platform running","admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}","[NAV] GET {{BACK_URL}}/api/platform/modules with admin Bearer token; [WAIT] Wait for 200 response; [ASSERT] Verify modules list structure; [ASSERT] Verify required core modules present; [NAV] GET {{BACK_URL}}/health; [WAIT] Wait for health response; [ASSERT] Verify health status","[STATE] GET /api/platform/modules returns 200 OK; [FORMAT] Response is array of module objects with id, version, isInstalled fields; [STATE] Core modules (VirtoCommerce.Catalog, VirtoCommerce.Orders, VirtoCommerce.Customer) present and isInstalled=true; [STATE] GET /health returns 200 with healthy status; [FORMAT] Health response includes Modules, Cache, SQL Server statuses","[API] HTTP 200 for modules endpoint; [NETWORK] Response includes all core modules; [ADMIN] Module list matches Admin Platform > Modules view; [CONSOLE] No errors","Non-200 status for modules endpoint; Core modules absent or isInstalled=false; Health endpoint returns degraded/unhealthy; 401 Unauthorized for admin token","none","Platform API",Automated

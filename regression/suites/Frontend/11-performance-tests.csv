@@ -1,117 +1,215 @@
-ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
-PERF-LOAD-001,Modal Open Time - Few Locations,Performance > Load,Performance,Medium,5m,"- 1-5 pickup locations configured
-- DevTools Performance tab","1. Open Performance tab
-2. Start recording
-3. Open pickup modal
-4. Stop recording
-5. Measure time to interactive","- Modal opens instantly (<500ms)
-- No visible delay
-- Smooth animation",VCST-4499 TC-011,Manual
-PERF-LOAD-002,Modal Open Time - Many Locations,Performance > Load,Performance,Medium,5m,"- 10-50 pickup locations","1. Start performance recording
-2. Open pickup modal
-3. Measure time to fully loaded","- Modal loads within 1 second
-- List populated
-- Map renders",VCST-4499 TC-011,Manual
-PERF-LOAD-003,Modal Open Time - High Volume,Performance > Load,Performance,Medium,5m,"- 50-100 pickup locations","1. Start performance recording
-2. Open pickup modal
-3. Measure time
-4. Check for pagination/clustering","- Modal loads within 2 seconds
-- Pagination or clustering used
-- Acceptable performance",VCST-4499 TC-011,Manual
-PERF-SEARCH-001,Search Response Time,Performance > Search,Performance,Medium,5m,"- Pickup modal open
-- Stopwatch ready","1. Type search query
-2. Measure time until results filter
-3. Repeat with different queries","- Results appear within 500ms
-- No lag while typing
-- Debouncing effective",VCST-4499 TC-011,Manual
-PERF-FILTER-001,Filter Response Time,Performance > Filter,Performance,Medium,5m,"- Pickup modal open
-- Multiple filters available","1. Apply filter
-2. Measure time for list update
-3. Measure time for map update","- Filter applied within 500ms
-- List and map sync quickly
-- No noticeable delay",VCST-4499 TC-011,Manual
-PERF-MAP-001,Map Interaction - Pan,Performance > Map,Performance,Medium,5m,"- Map visible in modal","1. Open DevTools Performance
-2. Pan map by dragging
-3. Monitor frame rate","- Smooth 60fps panning
-- No jank or stuttering
-- Responsive to drag",VCST-4499 TC-011,Manual
-PERF-MAP-002,Map Interaction - Zoom,Performance > Map,Performance,Medium,5m,"- Map visible","1. Record performance
-2. Zoom in/out multiple times
-3. Check frame rate","- Smooth 60fps zoom
-- Tiles load quickly
-- No blank areas",VCST-4499 TC-011,Manual
-PERF-MAP-003,Map Marker Clicks,Performance > Map,Performance,Medium,5m,"- Map with markers","1. Click marker rapidly
-2. Measure info window response
-3. Click different markers","- Info windows open immediately
-- No lag on clicks
-- Smooth transitions",VCST-4499 TC-011,Manual
-PERF-MEM-001,Memory Usage - Initial,Performance > Memory,Performance,Medium,5m,"- DevTools Memory tab","1. Take heap snapshot
-2. Note initial memory
-3. Open pickup modal
-4. Take another snapshot","- Reasonable memory footprint
-- No excessive allocation
-- Memory proportional to data",VCST-4499 TC-011,Manual
-PERF-MEM-002,Memory Leak Detection,Performance > Memory,Performance,High,15m,"- DevTools Memory tab","1. Take initial snapshot
-2. Open/close modal 10 times
-3. Take snapshot after each close
-4. Compare memory growth","- No significant memory growth
-- Proper cleanup on close
-- Garbage collection effective",VCST-4499 TC-011,Manual
-PERF-MEM-003,Memory Under Load,Performance > Memory,Performance,Medium,10m,"- Long session simulation","1. Perform many operations:
-   - Multiple searches
-   - Open/close modal
-   - Switch between locations
-2. Monitor memory over time","- Memory stable over time
-- No unbounded growth
-- Page remains responsive",VCST-4499 TC-011,Manual
-PERF-NET-001,Network Request Count,Performance > Network,Performance,Medium,10m,"- DevTools Network tab","1. Clear network log
-2. Open pickup modal
-3. Perform search
-4. Count API calls
-5. Type rapidly, count calls","- Reasonable number of requests
-- Debouncing prevents excess calls
-- No redundant requests",VCST-4499 TC-011,Manual
-PERF-NET-002,Network Payload Size,Performance > Network,Performance,Medium,5m,"- DevTools Network tab","1. Open modal
-2. Check response sizes
-3. Verify compression
-4. Check for unnecessary data","- Responses appropriately sized
-- GZIP compression used
-- No bloated payloads",VCST-4499 TC-011,Manual
-PERF-ANIM-001,CSS Animation Performance,Performance > Animation,Performance,Medium,5m,"- DevTools Performance","1. Record during modal open
-2. Check for layout thrashing
-3. Verify GPU acceleration","- Animations use transforms
-- No forced reflows
-- Smooth 60fps",VCST-4499 TC-011,Manual
-PERF-PAINT-001,Paint/Layout Metrics,Performance > Rendering,Performance,Medium,10m,"- DevTools Performance","1. Record page interactions
-2. Check paint events
-3. Check layout events
-4. Identify long tasks","- Minimal paint operations
-- No unnecessary layouts
-- No tasks >50ms",VCST-4499 TC-011,Manual
-PERF-PAGE-001,Page Load - Category,Performance > Pages,Performance,High,5m,"- Lighthouse or DevTools","1. Navigate to category page
-2. Measure LCP (Largest Contentful Paint)
-3. Measure FID (First Input Delay)
-4. Measure CLS (Cumulative Layout Shift)","- LCP < 2.5s (Good)
-- FID < 100ms (Good)
-- CLS < 0.1 (Good)",Core Web Vitals,Manual
-PERF-PAGE-002,Page Load - Product,Performance > Pages,Performance,High,5m,"- Performance measurement ready","1. Navigate to product page
-2. Measure Core Web Vitals
-3. Check image loading","- Product page loads quickly
-- Images lazy load
-- Interactive quickly",Core Web Vitals,Manual
-PERF-PAGE-003,Page Load - Cart,Performance > Pages,Performance,High,5m,"- Items in cart","1. Navigate to cart
-2. Measure load time
-3. Measure time to interactive","- Cart loads within 2s
-- All items render
-- Interactions work immediately",Core Web Vitals,Manual
-PERF-API-001,API Response Times,Performance > API,Performance,High,10m,"- DevTools Network tab","1. Monitor API calls during session
-2. Note response times
-3. Identify slow endpoints","- Most responses < 500ms
-- No timeouts
-- Acceptable performance",API Performance,Manual
-PERF-SCROLL-001,Scroll Performance - Long Lists,Performance > Scroll,Performance,Medium,5m,"- Long product list
-- DevTools Performance","1. Navigate to category with many products
-2. Scroll through list
-3. Monitor frame rate","- Smooth 60fps scrolling
-- No jank
-- Virtual scrolling if needed",VCST-4499 TC-011,Manual
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+PERF-LOAD-001,Modal Open Time - Few Locations,Performance > Load,Medium,BL-PERF-001,ECL-12.1,"- 1-5 pickup locations configured
+- DevTools Performance tab open",url={{FRONT_URL}},"[ACT] Open DevTools Performance tab
+[ACT] Start performance recording
+[ACT] Click BOPIS/pickup trigger to open modal
+[ACT] Stop recording once modal is fully interactive
+[WAIT] Wait for modal animation to complete
+[ASSERT] Measure elapsed time from click to modal interactive state using performance.now()","[MATH] Modal open time < 500ms
+[DOM] Modal overlay is visible and fully rendered
+[STATE] Location list is populated (≥1 item visible)
+[STATE] Animation completes without frame drops","[NETWORK] No more than 1 API call fired to load location data
+[CONSOLE] No JavaScript errors during modal open","spinner visible >500ms; modal open time ≥500ms; console errors present",none,VCST-4499 TC-011,Manual
+PERF-LOAD-002,Modal Open Time - Many Locations,Performance > Load,Medium,BL-PERF-001,ECL-12.1,"- 10-50 pickup locations configured
+- DevTools Performance tab open",url={{FRONT_URL}},"[ACT] Start performance recording in DevTools
+[ACT] Click BOPIS/pickup trigger to open modal
+[WAIT] Wait for location list and map to fully render
+[ACT] Stop recording
+[ASSERT] Measure modal open duration using performance.now()","[MATH] Modal open time < 1000ms (1 second)
+[DOM] Location list rendered with all available entries
+[DOM] Map component rendered and interactive
+[STATE] No loading spinner remaining after 1s","[NETWORK] API response received within 800ms
+[CONSOLE] No JavaScript errors or warnings","spinner visible >1s; map tiles blank after 1s; modal open time ≥1000ms",none,VCST-4499 TC-011,Manual
+PERF-LOAD-003,Modal Open Time - High Volume,Performance > Load,Medium,BL-PERF-001,"ECL-12.1, ECL-12.2","- 50-100 pickup locations configured
+- DevTools Performance tab open",url={{FRONT_URL}},"[ACT] Start performance recording in DevTools
+[ACT] Click BOPIS/pickup trigger to open modal
+[WAIT] Wait for modal to reach interactive state
+[ACT] Stop recording
+[ASSERT] Measure elapsed open time
+[ASSERT] Inspect list for pagination controls or map for marker clustering","[MATH] Modal open time < 2000ms (2 seconds)
+[DOM] Pagination controls present OR map markers are clustered (not individual pins per location)
+[STATE] List is navigable and usable within the 2s threshold
+[STATE] No blank or broken UI state","[NETWORK] Verify API request uses limit/offset params or returns clustered data
+[CONSOLE] No errors; warn if single unbounded request returns 50-100 items without pagination","modal open time ≥2s; no pagination or clustering when >50 locations; console errors present",none,VCST-4499 TC-011,Manual
+PERF-SEARCH-001,Search Response Time,Performance > Search,Medium,BL-PERF-002,ECL-12.1,"- Pickup modal open and location list visible
+- DevTools Network tab open to monitor API calls",url={{FRONT_URL}},"[ACT] Focus the search/filter input inside the pickup modal
+[ACT] Type a search query character by character (use browser_type with delay)
+[WAIT] Wait for filtered results to appear
+[ASSERT] Measure time from last keypress to results update using performance.now()
+[ACT] Clear input and repeat with two additional queries
+[ASSERT] Count API requests fired during rapid typing to verify debouncing","[MATH] Results appear within 500ms of final keypress
+[STATE] Result list updates to match query without full page reload
+[STATE] No lag or freeze during typing
+[NETWORK] Debouncing: ≤1 API call per distinct query (not per keystroke)","[NETWORK] Monitor /api calls; confirm debounce delay ~300ms between last keystroke and API fire
+[CONSOLE] No errors during search interaction","results delay >500ms; multiple API calls per keystroke (debounce not working); console errors",none,VCST-4499 TC-011,Manual
+PERF-FILTER-001,Filter Response Time,Performance > Filter,Medium,BL-PERF-002,ECL-12.1,"- Pickup modal open
+- Multiple filter options visible (e.g., distance, availability)
+- DevTools Performance tab open",url={{FRONT_URL}},"[ACT] Start performance recording
+[ACT] Apply a filter option (e.g., select a distance or availability filter)
+[WAIT] Wait for location list to update
+[WAIT] Wait for map to update marker positions/visibility
+[ACT] Stop recording
+[ASSERT] Measure time from filter interaction to list and map update","[MATH] Filter applied and list updated within 500ms
+[MATH] Map markers updated within 500ms
+[STATE] List and map are in sync (same locations reflected in both)
+[STATE] No visible stutter or blank state during transition","[NETWORK] Single API call triggered per filter change; no duplicate requests
+[CONSOLE] No JavaScript errors during filter interaction","filter update >500ms; list and map out of sync; duplicate API calls; console errors",none,VCST-4499 TC-011,Manual
+PERF-MAP-001,Map Interaction - Pan,Performance > Map,Medium,BL-PERF-002,,- Map component visible and loaded inside pickup modal,url={{FRONT_URL}},"[ACT] Open DevTools Performance tab and start recording
+[ACT] Click and drag the map to pan in multiple directions (left, right, up, down)
+[WAIT] Continue panning for at least 3 seconds
+[ACT] Stop recording
+[ASSERT] Inspect frame rate data in the performance recording for pan duration","[MATH] Frame rate ≥ 60fps sustained during panning (no drops below 30fps)
+[STATE] Map tiles load as panning proceeds; no persistent blank tile areas
+[STATE] Map responds immediately to drag input without input lag","[CONSOLE] No JavaScript errors during map pan interaction","frame rate drops below 30fps; blank map tiles >2s; jank or stuttering visible; console errors",none,VCST-4499 TC-011,Manual
+PERF-MAP-002,Map Interaction - Zoom,Performance > Map,Medium,BL-PERF-002,,- Map component visible inside pickup modal,url={{FRONT_URL}},"[ACT] Open DevTools Performance tab and start recording
+[ACT] Zoom in using scroll wheel or pinch gesture (5 zoom levels in)
+[ACT] Zoom back out (5 zoom levels out)
+[ACT] Repeat zoom in/out cycle 3 times
+[ACT] Stop recording
+[ASSERT] Inspect frame rate across the zoom interactions","[MATH] Frame rate ≥ 60fps during zoom operations
+[STATE] Map tiles render at new zoom level within 1s; no persistent blank areas
+[STATE] Zoom controls respond immediately (no input lag)","[CONSOLE] No JavaScript errors during zoom","frame rate drops below 30fps; blank tiles >2s after zoom; zoom controls unresponsive; console errors",none,VCST-4499 TC-011,Manual
+PERF-MAP-003,Map Marker Clicks,Performance > Map,Medium,BL-PERF-002,,- Map visible with multiple location markers rendered,url={{FRONT_URL}},"[ACT] Click on a map marker rapidly
+[WAIT] Wait for info window/popup to open
+[ASSERT] Measure time from click to info window visible using performance.now()
+[ACT] Close info window and click a different marker
+[ACT] Repeat rapid marker clicking across 5 different markers
+[ASSERT] Verify transitions between info windows are smooth","[MATH] Info window opens within 200ms of marker click
+[STATE] No lag between clicking a marker and the info window appearing
+[STATE] Transitions between different markers are smooth without residual open windows
+[DOM] Info window content is fully rendered (name, address, hours visible)","[CONSOLE] No errors during rapid marker clicking","info window open time >200ms; multiple info windows open simultaneously; console errors; blank info window content",none,VCST-4499 TC-011,Manual
+PERF-MEM-001,Memory Usage - Initial,Performance > Memory,Medium,BL-PERF-004,ECL-12.2,"- DevTools Memory tab open
+- Page loaded but pickup modal not yet opened",url={{FRONT_URL}},"[ACT] Open DevTools Memory tab
+[ACT] Take a heap snapshot before opening modal (baseline)
+[ASSERT] Note total heap size from snapshot summary
+[ACT] Open pickup modal
+[WAIT] Wait for modal to fully load (list + map rendered)
+[ACT] Take a second heap snapshot
+[ASSERT] Compare delta between baseline and post-open snapshot","[MATH] Memory increase from baseline to modal-open state is proportional to data loaded (rough guide: <5MB for 1-5 locations, <20MB for 50 locations)
+[STATE] No retained detached DOM nodes visible in snapshot diff
+[STATE] Heap growth matches expected data payload size","[CONSOLE] No memory-related errors or GC warnings in console","excessive heap growth (>50MB for <50 locations); large number of detached DOM nodes in snapshot; console GC warnings","Close modal; allow GC to run; heap profiler state remains active until DevTools closed",VCST-4499 TC-011,Manual
+PERF-MEM-002,Memory Leak Detection,Performance > Memory,High,BL-PERF-004,ECL-12.2,"- DevTools Memory tab open
+- Page in stable initial state",url={{FRONT_URL}},"[ACT] Open DevTools Memory tab
+[ACT] Take initial heap snapshot (baseline)
+[ACT] Open pickup modal — wait for full render
+[ACT] Close pickup modal — wait for close animation to finish
+[ACT] Repeat open/close cycle 10 times total (record snapshot after each close)
+[ASSERT] Compare heap sizes across all 10 post-close snapshots
+[ASSERT] Check for monotonically increasing heap growth pattern (indicates leak)","[MATH] Memory after each close cycle does not grow by more than 1MB cumulatively across 10 cycles
+[STATE] No detached DOM elements accumulate across cycles in heap snapshot
+[STATE] Garbage collector reclaims modal component memory after each close","[CONSOLE] No JavaScript errors during repeated open/close cycles
+[CONSOLE] No 'Cannot read property of undefined' or event listener warnings","memory grows >10MB across 10 open/close cycles; heap size never returns to near-baseline after close; detached DOM nodes accumulate per cycle","Heap profiler state remains active in DevTools until manually closed",VCST-4499 TC-011,Manual
+PERF-MEM-003,Memory Under Load,Performance > Memory,Medium,BL-PERF-004,ECL-12.2,"- Long session simulation
+- DevTools Memory tab open",url={{FRONT_URL}},"[ACT] Take initial heap snapshot (session baseline)
+[ACT] Perform multiple searches inside the pickup modal (≥5 different queries)
+[ACT] Open and close the pickup modal 5 times
+[ACT] Switch between different pickup locations (click on 5+ different list items)
+[WAIT] Wait 30 seconds after operations to allow GC to run
+[ACT] Take a final heap snapshot
+[ASSERT] Compare final heap to baseline","[MATH] Final heap size does not exceed baseline by more than 20MB after GC
+[STATE] Page remains responsive throughout the session (no freezes or >1s hangs)
+[STATE] No JavaScript out-of-memory errors
+[STATE] Memory trend is stable (not monotonically increasing throughout operations)","[CONSOLE] No memory or performance errors in console
+[CONSOLE] No excessive GC pauses reported","final heap >20MB above baseline; page freezes or hangs during operations; out-of-memory errors; monotonically growing heap with no GC recovery","Close all modal interactions; heap profiler state remains active in DevTools",VCST-4499 TC-011,Manual
+PERF-NET-001,Network Request Count,Performance > Network,Medium,BL-PERF-002,,- DevTools Network tab open and cleared,url={{FRONT_URL}},"[ACT] Clear the DevTools Network log
+[ACT] Open the pickup modal
+[WAIT] Wait for modal to fully load
+[ASSERT] Count the number of API requests made during modal open
+[ACT] Type a search query rapidly (type 5+ characters quickly)
+[ASSERT] Count API calls fired during rapid typing
+[ACT] Apply a filter option
+[ASSERT] Count API calls fired for filter","[MATH] Modal open fires ≤2 API calls (e.g., locations list + optional config)
+[MATH] Rapid typing fires ≤1 API call per query (debouncing confirmed — not per keystroke)
+[MATH] Single filter change fires ≤1 API call
+[STATE] No redundant or duplicate requests observed (same endpoint called twice with identical params)","[NETWORK] Inspect request URLs and payloads for deduplication
+[CONSOLE] No errors related to request failures or CORS","modal open fires >5 API calls; rapid typing fires 1 call per keystroke; duplicate requests with identical params visible; console errors",none,VCST-4499 TC-011,Manual
+PERF-NET-002,Network Payload Size,Performance > Network,Medium,BL-PERF-002,,- DevTools Network tab open,url={{FRONT_URL}},"[ACT] Open the pickup modal
+[WAIT] Wait for all network requests to complete
+[ACT] Inspect each API response in the DevTools Network tab
+[ASSERT] Check Content-Encoding header for GZIP or Brotli compression
+[ASSERT] Review response payload sizes for location list API responses
+[ASSERT] Check for unnecessary data fields in the response payload (e.g., unused image assets, duplicate fields)","[FORMAT] All API responses use GZIP or Brotli compression (Content-Encoding header present)
+[MATH] Location list response payload ≤ 100KB for ≤50 locations
+[STATE] No obviously unnecessary data fields in location response (e.g., internal metadata not used by UI)
+[FORMAT] Response Content-Type is application/json","[NETWORK] Verify Content-Encoding header on all JSON responses
+[NETWORK] Check Transfer-Encoding for chunked responses on large payloads","response payload >100KB for <50 locations; no compression header on API responses; response contains obviously unused data fields; content-type mismatch",none,VCST-4499 TC-011,Manual
+PERF-ANIM-001,CSS Animation Performance,Performance > Animation,Medium,BL-PERF-002,,- DevTools Performance tab open,url={{FRONT_URL}},"[ACT] Start performance recording in DevTools
+[ACT] Trigger modal open animation (click BOPIS pickup button)
+[WAIT] Wait for open animation to complete
+[ACT] Trigger modal close animation
+[WAIT] Wait for close animation to complete
+[ACT] Stop recording
+[ASSERT] Inspect the performance flame chart for layout and paint events during animations
+[ASSERT] Check for use of CSS transforms vs layout properties","[MATH] Frame rate ≥ 60fps throughout open and close animations
+[STATE] Animations use CSS transform and opacity (GPU-composited layers) — NOT width/height/top/left changes
+[STATE] No forced synchronous layouts (layout thrashing) in flame chart
+[STATE] No long tasks (>50ms) triggered by animations","[CONSOLE] No JavaScript errors during animation cycles","frame rate <30fps during animation; layout thrashing visible in flame chart; long tasks >50ms during open/close; console errors",none,VCST-4499 TC-011,Manual
+PERF-PAINT-001,Paint/Layout Metrics,Performance > Rendering,Medium,BL-PERF-002,,- DevTools Performance tab open,url={{FRONT_URL}},"[ACT] Start DevTools Performance recording
+[ACT] Interact with the page: open modal, perform a search, apply a filter, scroll the list
+[ACT] Stop recording
+[ASSERT] Inspect paint events in the performance timeline
+[ASSERT] Inspect layout events in the performance timeline
+[ASSERT] Identify any tasks with duration >50ms (long tasks)","[MATH] No individual long tasks >50ms during standard interactions
+[STATE] Paint operations are minimal — only affected regions repaint (no full-page repaints on filter/search)
+[STATE] Layout events are scoped to modal content area (no full document reflow on search/filter)
+[STATE] No repeated unnecessary layout/paint cycles","[CONSOLE] No layout-related JavaScript errors
+[CONSOLE] No 'Forced reflow' warnings","long tasks >50ms on search/filter; full-page repaint on every search keystroke; full document reflow on filter; console layout warnings",none,VCST-4499 TC-011,Manual
+PERF-PAGE-001,Page Load - Category,Performance > Pages,High,BL-PERF-003,,"- Lighthouse extension or DevTools Lighthouse tab available
+- Category page URL known",url={{FRONT_URL}},"[NAV] Navigate to a category page: {{FRONT_URL}}/category (or equivalent)
+[WAIT] Wait for page to reach interactive state
+[ACT] Open DevTools Lighthouse tab (or use mcp__Chrome_DevTools__lighthouse_audit)
+[ACT] Run Lighthouse audit in Mobile mode with throttling enabled
+[ASSERT] Record LCP (Largest Contentful Paint) score
+[ASSERT] Record FID/INP (First Input Delay / Interaction to Next Paint) score
+[ASSERT] Record CLS (Cumulative Layout Shift) score","[MATH] LCP < 2.5s (Good threshold per Core Web Vitals)
+[MATH] FID < 100ms (Good threshold) OR INP < 200ms
+[MATH] CLS < 0.1 (Good threshold)
+[FORMAT] Lighthouse Performance score ≥ 70
+[STATE] All product images visible and not broken","[NETWORK] Verify no blocking render resources (large undeferred CSS/JS)
+[CONSOLE] No JavaScript errors during page load","LCP >4s (Poor); CLS >0.25 (Poor); FID >300ms (Poor); Lighthouse score <50; broken images on load",none,Core Web Vitals,Manual
+PERF-PAGE-002,Page Load - Product,Performance > Pages,High,BL-PERF-003,,"- Product page URL known
+- Performance measurement tooling ready (DevTools or Lighthouse)",url={{FRONT_URL}},"[NAV] Navigate to a product detail page: {{FRONT_URL}}/product-slug
+[WAIT] Wait for page to reach interactive state
+[ACT] Run Lighthouse audit or record Core Web Vitals via DevTools Performance Insights
+[ASSERT] Record LCP value (primary image or product title)
+[ASSERT] Record CLS value (check for layout shift from late-loading images)
+[ASSERT] Verify images use lazy loading for below-fold content","[MATH] LCP < 2.5s (Good)
+[MATH] CLS < 0.1 (Good) — product images must have explicit width/height attributes to prevent CLS
+[STATE] Primary product image renders within LCP threshold
+[DOM] Below-fold images have loading=""lazy"" attribute
+[STATE] Page is interactive (add-to-cart button clickable) within 3s","[NETWORK] Verify product images are served in modern format (WebP or AVIF)
+[CONSOLE] No JavaScript errors during product page load","LCP >4s; CLS >0.25 caused by image reflow; add-to-cart button not interactive within 3s; console errors",none,Core Web Vitals,Manual
+PERF-PAGE-003,Page Load - Cart,Performance > Pages,High,BL-PERF-003,,"- At least 1 item added to cart before test
+- Cart page accessible",url={{FRONT_URL}},"[NAV] Navigate to cart page: {{FRONT_URL}}/cart
+[WAIT] Wait for page load and all cart items to render
+[ACT] Record page load time using DevTools Performance or performance.now() at DOMContentLoaded and load events
+[ASSERT] Measure time from navigation start to cart items fully rendered and interactive","[MATH] Cart page loads within 2s (time to fully interactive with all items rendered)
+[DOM] All cart line items visible with correct product names, quantities, and prices
+[STATE] Cart interaction controls (quantity +/-, remove, proceed to checkout) are all clickable within 2s
+[STATE] No blank or loading placeholder states remaining after 2s","[NETWORK] Cart data API response received within 1s
+[CONSOLE] No errors during cart page load","cart loads >2s; line items missing or showing placeholders after 2s; controls not interactive within 2s; console errors","None — cart state left as-is after test",Core Web Vitals,Manual
+PERF-API-001,API Response Times,Performance > API,High,BL-PERF-003,,"- DevTools Network tab open
+- User is on storefront and will perform typical session actions",url={{FRONT_URL}},"[ACT] Open DevTools Network tab; filter to XHR/Fetch requests
+[NAV] Navigate through the storefront: home → category → product → cart
+[ACT] Perform a search query
+[ACT] Add a product to cart
+[WAIT] Allow all API calls to complete after each action
+[ASSERT] Review timing column for each API response in the Network tab
+[ASSERT] Identify any endpoints with response time >500ms","[MATH] ≥90% of API responses complete within 500ms
+[STATE] No API timeouts (no requests with status 0 or 504)
+[STATE] No failed API requests (no 4xx/5xx responses) during normal session flow
+[FORMAT] All API responses return valid JSON (no HTML error pages)","[NETWORK] Flag any endpoint responding >1000ms as a performance issue
+[CONSOLE] No network error messages in console","any API response >1000ms; 504 Gateway Timeout; 5xx errors during normal flow; HTML error page returned as API response; >10% of calls exceed 500ms",none,API Performance,Manual
+PERF-SCROLL-001,Scroll Performance - Long Lists,Performance > Scroll,Medium,BL-PERF-002,ECL-12.1,"- Category page with a large number of products loaded (≥50 items visible or via infinite scroll)
+- DevTools Performance tab open",url={{FRONT_URL}},"[NAV] Navigate to a category page with many products: {{FRONT_URL}}/category
+[WAIT] Wait for initial product grid to render
+[ACT] Start performance recording in DevTools
+[SCROLL] Scroll rapidly from top to bottom of the product list
+[SCROLL] Scroll back to top
+[ACT] Continue scrolling for at least 5 seconds total
+[ACT] Stop recording
+[ASSERT] Inspect frame rate throughout scroll session","[MATH] Frame rate ≥ 60fps sustained during scrolling (no drops below 30fps for >500ms)
+[STATE] No jank or visible stutter during scroll
+[STATE] Product images load progressively as they scroll into viewport (lazy loading)
+[STATE] If list exceeds 100 items: virtual scrolling or windowing is implemented (DOM node count stays bounded)","[CONSOLE] No JavaScript errors during scroll
+[NETWORK] Check if infinite scroll triggers additional API calls at correct scroll threshold","frame rate drops below 30fps for >500ms; severe jank or scroll freeze; all product images load simultaneously on page load (no lazy loading); DOM node count grows unboundedly with scroll; console errors",none,VCST-4499 TC-011,Manual

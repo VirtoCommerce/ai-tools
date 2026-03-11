@@ -1,337 +1,542 @@
-ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
-AUTH-001,Registration Form - Personal View,Registration > Personal,Functional,Medium,3m,"Browser open, registration page accessible","1. Navigate to registration page
-2. Select 'Personal' account type
-3. Verify all form fields display","- First Name field visible
-- Last Name field visible
-- Email field visible
-- Password fields visible
-- Terms checkbox present",regression-qa-theme-26.csv,Automated
-AUTH-002,Create Account - Personal User,Registration > Personal,Functional,Medium,5m,"Registration page open","1. Fill all required fields with valid data
-2. Use unique email address
-3. Set password meeting policy
-4. Accept terms
-5. Submit form","- Account created successfully
-- Confirmation displayed
-- Can login with credentials",regression-qa-theme-26.csv,Automated
-AUTH-003,Registration Form - Organization View,Registration > Organization,Functional,Medium,3m,"Registration page accessible","1. Navigate to registration page
-2. Select 'Organization' account type
-3. Verify organization fields appear","- Company Name field visible
-- All personal fields visible
-- Organization-specific options shown",regression-qa-theme-26.csv,Automated
-AUTH-004,Create Account - Organization,Registration > Organization,Functional,Medium,5m,"Registration page open","1. Select Organization type
-2. Fill company name and details
-3. Fill personal information
-4. Submit form","- Organization created
-- User assigned as admin
-- Organization visible in admin",regression-qa-theme-26.csv,Automated
-AUTH-005,Password Visibility Toggle,Registration > UI,Functional,Medium,2m,"Registration form open","1. Enter password in password field
-2. Click visibility toggle icon
-3. Verify password becomes visible
-4. Click toggle again
-5. Verify password masked","- Password toggles between masked/visible
-- Works for both password fields",regression-qa-theme-26.csv,Other
-AUTH-006,Validation - Personal Required Fields,Registration > Validation,Functional,Medium,5m,"Registration form open (Personal)","1. Leave all fields empty
-2. Click submit
-3. Verify validation errors
-4. Fill one field, submit
-5. Verify remaining errors","- Error shown for each empty required field
-- Clear error messages
-- Cannot submit until all filled",regression-qa-theme-26.csv,Automated
-AUTH-007,Validation - Personal Max Characters,Registration > Validation,Functional,Medium,5m,"Registration form open","1. Enter 256+ characters in First Name
-2. Enter 256+ characters in Last Name
-3. Enter very long email
-4. Submit form","- Max length enforced
-- Appropriate error messages
-- Form prevents overlong input",regression-qa-theme-26.csv,Functional
-AUTH-008,Validation - Organization Required Fields,Registration > Validation,Functional,Medium,5m,"Registration form open (Organization)","1. Select Organization type
-2. Leave all fields empty
-3. Submit form
-4. Verify all validation errors","- Company name required error
-- All personal field errors
-- Clear messaging",regression-qa-theme-26.csv,Automated
-AUTH-009,Validation - Unique Email,Registration > Validation,Functional,Medium,3m,"Existing user account in system","1. Open registration form
-2. Enter email of existing user
-3. Fill other fields
-4. Submit form","- Error: Email already registered
-- Suggests login or password reset",regression-qa-theme-26.csv,Automated
-AUTH-010,Validation - Email Format,Registration > Validation,Functional,Medium,3m,"Registration form open","1. Enter invalid email formats:
-   - 'notanemail'
-   - 'missing@domain'
-   - '@nodomain.com'
-2. Verify validation","- Invalid format rejected
-- Clear error message
-- Valid format accepted",regression-qa-theme-26.csv,Automated
-AUTH-011,Validation - Password Match,Registration > Validation,Functional,Medium,3m,"Registration form open","1. Enter password in first field
-2. Enter different password in confirm field
-3. Submit form","- Error: Passwords do not match
-- Cannot submit until matching",regression-qa-theme-26.csv,Automated
-AUTH-012,Validation - Password Policy,Registration > Validation,Functional,Medium,5m,"Registration form open","1. Enter weak password: '123'
-2. Verify rejection
-3. Enter password without uppercase
-4. Enter password without number
-5. Enter valid complex password","- Policy requirements enforced
-- Clear feedback on requirements
-- Strong password accepted",regression-qa-theme-26.csv,Automated
-AUTH-013,Email Verification - Without,Registration > Email,Functional,Medium,5m,"Email verification disabled in admin","1. Register new account
-2. Verify no verification email required
-3. Login immediately","- Account active immediately
-- No verification step
-- Can login right away",regression-qa-theme-26.csv,Other
-AUTH-014,Email Verification - Optional,Registration > Email,Functional,Medium,5m,"Optional email verification enabled","1. Register new account
-2. Verify option to verify or skip
-3. Test both paths","- Verification email sent
-- Can skip verification
-- Reminder shown if skipped",regression-qa-theme-26.csv,Other
-AUTH-015,Email Verification - Mandatory,Registration > Email,Functional,Medium,8m,"Mandatory email verification enabled","1. Register new account
-2. Attempt login before verification
-3. Verify email link
-4. Login after verification","- Cannot login before verification
-- Verification link works
-- Account active after verification",regression-qa-theme-26.csv,Automated
-AUTH-016,Login - Empty Email,Login > Validation,Functional,Medium,2m,"Login page open","1. Leave email field empty
-2. Enter password
-3. Click Sign In","- Error: Email is required
-- Cannot submit",regression-qa-theme-26.csv,Automated
-AUTH-017,Login - Invalid User,Login > Validation,Functional,Medium,2m,"Login page open","1. Enter non-existent email
-2. Enter any password
-3. Submit","- Error: Invalid credentials
-- No user information leaked",regression-qa-theme-26.csv,Automated
-AUTH-018,Login - Invalid Password,Login > Validation,Functional,Medium,2m,"Valid user exists","1. Enter valid email
-2. Enter wrong password
-3. Submit","- Error: Invalid credentials
-- Access failed count incremented",regression-qa-theme-26.csv,Automated
-AUTH-019,Login - Email Verification Required,Login > Validation,Functional,Medium,3m,"User registered but not verified","1. Enter unverified user credentials
-2. Submit login","- Error: Email verification required
-- Option to resend verification",regression-qa-theme-26.csv,Automated
-AUTH-020,Login - Temporary Lockout,Login > Security,Functional,Medium,10m,"Valid user account","1. Enter wrong password 5 times
-2. Attempt login with correct password
-3. Wait for lockout period
-4. Retry login","- Account temporarily locked after 5 failures
-- Clear lockout message
-- Can login after timeout",regression-qa-theme-26.csv,Other
-AUTH-021,Login - Admin Blocked User,Login > Security,Functional,Medium,5m,"User blocked by admin","1. Attempt login with blocked user
-2. Verify rejection","- Error: Account is locked
-- Contact admin message",regression-qa-theme-26.csv,Other
-AUTH-022,Login - Token Generation,Login > Token,Functional,Medium,3m,"Valid user, DevTools open","1. Login with valid credentials
-2. Check /connect/token response
-3. Verify token format","- JWT token generated
-- Token contains required claims
-- Refresh token present",regression-qa-theme-26.csv,Other
-AUTH-023,Login - Token Persistence,Login > Token,Functional,Medium,3m,"User logged in","1. Note current token
-2. Reload page
-3. Verify still logged in
-4. Check token refreshed","- Session persists across reload
-- Token automatically refreshed
-- No re-login required",regression-qa-theme-26.csv,Other
-AUTH-024,Logout - Token Revocation,Login > Token,Functional,Medium,3m,"User logged in, DevTools open","1. Click Logout
-2. Check /revoke/token call
-3. Attempt to use old token","- Logout completes
-- Token revoked
-- Old token rejected",regression-qa-theme-26.csv,Other
-AUTH-025,SSO - Entra ID Enabled,SSO > Azure,Functional,Medium,5m,"Entra ID configured in admin","1. Navigate to login page
-2. Verify 'Sign in with Microsoft' button
-3. Click SSO button
-4. Complete Microsoft auth
-5. Verify redirect back","- SSO button visible
-- Redirects to Microsoft
-- User created/linked
-- Logged in successfully",regression-qa-theme-26.csv,Other
-AUTH-026,SSO - Google Enabled,SSO > Google,Functional,Medium,5m,"Google SSO configured","1. Navigate to login page
-2. Verify 'Sign in with Google' button
-3. Click SSO button
-4. Complete Google auth
-5. Verify redirect back","- SSO button visible
-- Redirects to Google
-- User created/linked
-- Logged in successfully",regression-qa-theme-26.csv,Other
-AUTH-027,Login on Behalf - With Permission,Login > Admin,Functional,Medium,5m,"Admin user with 'login on behalf' permission","1. Login as admin
-2. Navigate to user management
-3. Select target user
-4. Click 'Login on behalf'
-5. Verify context switch","- Admin can impersonate user
-- User context active
-- Can return to admin",regression-qa-theme-26.csv,Other
-AUTH-028,Login on Behalf - Org Maintainer,Login > Admin,Functional,Medium,5m,"Organization maintainer account","1. Login as org maintainer
-2. Navigate to organization members
-3. Select employee
-4. Login on behalf","- Maintainer can impersonate employees
-- Limited to own organization",regression-qa-theme-26.csv,Other
-AUTH-029,Account Menu - Purchasing Group Structure,Authentication > Account Menu,Functional,Critical,3m,"User logged in with account access","1. Log in to storefront
-2. Navigate to account section (e.g. via user icon or My Account link)
-3. Locate the left rail navigation menu
-4. Verify 'Purchasing' group header is visible
-5. Verify the following items appear under Purchasing: Dashboard, Orders, Lists, Saved for Later","- 'Purchasing' group label visible in left rail
-- Dashboard link present under Purchasing
-- Orders link present under Purchasing
-- Lists link present under Purchasing
-- Saved for Later link present under Purchasing
-- Items are in correct order",VCST-4589,Manual
-AUTH-030,Account Menu - User Group Structure,Authentication > Account Menu,Functional,Critical,3m,"User logged in","1. Navigate to account left rail menu
-2. Locate 'User' group header
-3. Verify the following items appear under User: Profile, Addresses, Change Password, Saved Credit Cards","- 'User' group label visible
-- Profile link under User
-- Addresses link under User
-- Change Password link under User
-- Saved Credit Cards link under User",VCST-4589,Manual
-AUTH-031,Account Menu - Group Headers Are Non-Clickable Labels,Authentication > Account Menu,Functional,High,3m,"User logged in, account menu visible","1. Navigate to account left rail menu
-2. Click on the 'Purchasing' group header
-3. Verify no navigation occurs
-4. Click on the 'User' group header
-5. Verify no navigation occurs","- Group headers ('Purchasing', 'User', 'Marketing', 'Corporate') are not links
-- Clicking a group header does not navigate anywhere
-- Cursor style indicates non-interactive (default, not pointer)
-- Headers serve as visual section labels only",VCST-4589,Manual
-AUTH-032,Account Menu - All Navigation Items Route Correctly,Authentication > Account Menu,Functional,High,8m,"User logged in, account menu visible","1. Click 'Dashboard' in Purchasing group, verify correct page
-2. Click 'Orders' in Purchasing group, verify Order History page
-3. Click 'Lists' in Purchasing group, verify Lists page
-4. Click 'Saved for Later' in Purchasing group, verify Saved for Later page
-5. Click 'Profile' in User group, verify Profile page
-6. Click 'Addresses' in User group, verify Addresses page
-7. Click 'Change Password' in User group, verify Change Password page
-8. Click 'Saved Credit Cards' in User group, verify Saved Credit Cards page","- Each menu item navigates to the correct page
-- Page title or heading confirms correct destination
-- Left rail remains visible after navigation
-- Active menu item is highlighted",VCST-4589,Manual
-AUTH-033,Account Menu - Active State Highlighting,Authentication > Account Menu,Functional,Medium,4m,"User logged in, navigating between account pages","1. Navigate to Orders page via menu
-2. Verify 'Orders' item is highlighted/active in left rail
-3. Navigate to Profile page via menu
-4. Verify 'Profile' is now highlighted and 'Orders' is no longer active","- Currently viewed page item is visually highlighted (bold, border, or background)
-- Only one item active at a time
-- Active state updates correctly on navigation",VCST-4589,Manual
-AUTH-034,Account Menu - Mobile Responsive Layout,Authentication > Account Menu > Mobile,Functional,High,5m,"Mobile viewport (375x667), user logged in","1. Set viewport to 375x667
-2. Navigate to account section
-3. Verify left rail menu adapts for mobile (hamburger, drawer, or tabs)
-4. Open mobile menu
-5. Verify grouped structure visible on mobile
-6. Navigate to Orders via mobile menu","- Account menu accessible on mobile
-- Grouped structure maintained (Purchasing, User groups visible)
-- Touch targets adequate (44x44px minimum)
-- Menu opens/closes correctly
-- Navigation from mobile menu works",VCST-4589,Manual
-AUTH-035,Members Page Display,Authentication > Company Members,Functional,Critical,4m,"User logged in as company Admin or Maintainer, navigate to /company/members","1. Log in as a company Admin or Maintainer
-2. Navigate to /company/members (or Company > Members from account menu)
-3. Verify the member list loads
-4. Verify each member row displays: name, email, assigned role, account status (Active/Blocked)","- /company/members page loads without error
-- Member list displays all company members
-- Each member row shows: full name, email address, role (Buyer/Admin), status
-- List is sortable or filterable (if available)
-- Own account visible in the list",Coverage Gap Analysis,Generated
-AUTH-036,Invite Member - Buyer Role,Authentication > Company Members,Functional,Critical,6m,"Logged in as company Admin, on Members page","1. Click 'Invite Member' button on the Members page
-2. Enter recipient email address
-3. Select role: 'Buyer'
-4. Submit the invitation form
-5. Verify success confirmation
-6. Check that invitation appears as pending in the member list (if applicable)","- 'Invite Member' button is visible for Admin users
-- Invitation form accepts email address and role selection
-- Role options include at minimum: Buyer, Admin
-- After submission: success message 'Invitation sent' or similar
-- Invited email receives an invitation email
-- Pending invitation visible in member list (status: Invited/Pending)",Coverage Gap Analysis,Generated
-AUTH-037,Invite Member - Admin Role,Authentication > Company Members,Functional,High,6m,"Logged in as company Admin, on Members page","1. Click 'Invite Member'
-2. Enter a new recipient email address
-3. Select role: 'Admin'
-4. Submit invitation
-5. Recipient accepts invitation and logs in
-6. Verify the new Admin has admin-level permissions (can invite others, can manage members)","- Invitation with Admin role can be sent
-- Invited Admin receives invitation email
-- After accepting: new member appears in list with 'Admin' role
-- New Admin can access member management and invitation features
-- New Admin cannot exceed their own permission scope",Coverage Gap Analysis,Generated
-AUTH-038,Edit Member Role,Authentication > Company Members,Functional,High,5m,"Logged in as company Admin, at least one Buyer member exists","1. Navigate to /company/members
-2. Locate a member with 'Buyer' role
-3. Click Edit or role change option next to the member
-4. Change role from 'Buyer' to 'Admin'
-5. Save the change
-6. Verify the member list updates immediately
-7. Log in as the edited member and verify Admin permissions are active","- Edit/role-change option available per member row
-- Role dropdown or selector shows available roles
-- Saving changes updates the member's role in the list immediately
-- Changed member's permissions are updated on their next action or page load
-- Member receives notification of role change (if configured)",Coverage Gap Analysis,Generated
-AUTH-039,Block Member,Authentication > Company Members,Functional,High,5m,"Logged in as company Admin, at least one active Buyer member exists","1. Navigate to /company/members
-2. Locate an active Buyer member
-3. Click Block or Deactivate option for that member
-4. Confirm the block action in the dialog
-5. Verify member status changes to 'Blocked' in the list
-6. Attempt to log in as the blocked user","- Block/Deactivate option available for non-Admin members
-- Confirmation dialog appears: 'Block this member?'
-- After confirmation: member status changes to 'Blocked' in the list
-- Blocked member cannot sign in: receives error 'Your account has been blocked. Contact your administrator.'
-- Blocked member's existing sessions invalidated (if applicable)",Coverage Gap Analysis,Generated
-AUTH-040,Unblock Member,Authentication > Company Members,Functional,High,5m,"Logged in as company Admin, at least one Blocked member exists","1. Navigate to /company/members
-2. Locate a Blocked member
-3. Click Unblock or Activate option for that member
-4. Confirm the unblock action
-5. Verify member status returns to 'Active'
-6. Attempt to log in as the previously blocked member","- Unblock/Activate option visible for Blocked members
-- Confirmation dialog for unblock action (optional but expected)
-- After unblock: member status returns to 'Active' in the list
-- Previously blocked member can now sign in successfully
-- Member's data and history preserved after unblock",Coverage Gap Analysis,Generated
-AUTH-041,Filter Members by Role,Authentication > Company Members,Functional,Medium,4m,"Logged in as company Admin, member list has members with both Buyer and Admin roles","1. Navigate to /company/members
-2. Locate the filter control (dropdown, tabs, or checkbox)
-3. Filter by role 'Buyer' and verify only Buyer members shown
-4. Filter by role 'Admin' and verify only Admin members shown
-5. Clear filter and verify all members shown","- Role filter control is present on the Members page
-- Filtering by 'Buyer' displays only members with Buyer role
-- Filtering by 'Admin' displays only members with Admin role
-- Member count updates to reflect the filter
-- Clearing the filter restores the full member list",Coverage Gap Analysis,Generated
-AUTH-042,Search Members,Authentication > Company Members,Functional,Medium,3m,"Logged in as company Admin, at least 5 members exist with distinct names","1. Navigate to /company/members
-2. Locate the search input field
-3. Type part of a member's name (at least 3 characters)
-4. Verify results filter dynamically as text is entered
-5. Clear the search field
-6. Verify full member list restored","- Search input field is present on the Members page
-- Typing filters the member list dynamically (live search or on Enter)
-- Search matches on name and/or email address
-- No-results state shown if no members match the search term
-- Clearing search field restores the complete member list",Coverage Gap Analysis,Generated
-
-AUTH-043,Impersonation - View as Customer,Authentication > Impersonation,Functional,Medium,5m,"Admin account with impersonation permissions, target customer account exists","1. Log in to Admin SPA
-2. Navigate to customer account management
-3. Select a target customer user
-4. Initiate login-on-behalf (impersonation)
-5. Observe the storefront session that opens
-6. Verify catalog, prices, and cart reflect customer context","- Storefront opens in customer context (not admin context)
-- Catalog displays products available to that customer
-- Prices shown match the customer pricing tier
-- Customer cart is shown (not admin cart)
-- No admin-only UI elements visible in storefront",Coverage Gap Analysis,Generated
-AUTH-044,Impersonation - Switch Companies,Authentication > Impersonation,Functional,Medium,6m,"Admin account with impersonation permissions, customer belongs to multiple companies","1. Initiate impersonation of a customer who belongs to multiple companies
-2. Observe the current company context
-3. Use the company switcher in the storefront
-4. Switch to a different company
-5. Verify catalog, prices, and account context fully change","- Company switcher accessible during impersonation session
-- Switching company changes catalog and pricing context
-- Account header reflects new company name
-- Previously loaded company data does not bleed into new context
-- No console errors on company switch",Coverage Gap Analysis,Generated
-AUTH-045,Impersonation - Stop Impersonation,Authentication > Impersonation,Functional,Medium,4m,Admin currently impersonating a customer,"1. While impersonating a customer, locate the stop-impersonation control
-2. Click Stop Impersonation or equivalent
-3. Observe the resulting session
-4. Verify admin context is restored","- Stop impersonation control visible and accessible during impersonation
-- Clicking it ends the customer session
-- Admin is returned to Admin SPA or admin-authenticated state
-- No customer-specific data (cart, addresses, profile) persists in admin session
-- Session cookies/tokens reflect admin identity after stop",Coverage Gap Analysis,Generated
-AUTH-046,Impersonation - Place Order on Behalf,Authentication > Impersonation,Functional,Medium,8m,"Admin impersonating a customer, cart accessible, checkout enabled","1. Initiate impersonation of target customer
-2. Add a product to cart
-3. Proceed through checkout
-4. Complete and place the order
-5. Navigate to Order History in customer account
-6. Verify order appears attributed to the customer","- Checkout flow completes successfully during impersonation
-- Order confirmation page shown
-- Order appears in the customer Order History (not admin history)
-- Order record shows customer as the owner
-- Order can be found in Admin SPA under the customer account",Coverage Gap Analysis,Generated
-AUTH-047,Impersonation - No Persistent Side Effects,Authentication > Impersonation,Functional,Medium,6m,"Customer has items in cart before impersonation begins, admin account separate","1. Note the customer cart contents before impersonation (via admin or pre-setup)
-2. Admin initiates impersonation of the customer
-3. Admin views the cart but does NOT modify it
-4. Admin stops the impersonation session
-5. Customer logs in independently
-6. Customer verifies their cart is unchanged","- Customer cart contents are identical before and after impersonation session
-- No items added, removed, or quantity-changed by impersonation session
-- Customer saved addresses unchanged
-- Customer profile data unchanged
-- No orphaned sessions remain after impersonation ends",Coverage Gap Analysis,Generated
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+AUTH-001,Registration Form - Personal View,Registration > Personal,Medium,BL-AUTH-001,,Browser open; registration page accessible,url={{FRONT_URL}}/register,"[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Select 'Personal' account type if toggle present
+[ASSERT] Verify form renders all fields","[DOM] 'First Name' input visible
+[DOM] 'Last Name' input visible
+[DOM] 'Email' input visible
+[DOM] 'Password' input visible
+[DOM] 'Confirm Password' input visible
+[DOM] Terms/conditions checkbox present","[CONSOLE] no TypeError or JS errors
+[NETWORK] GET /register returns HTTP 200","Spinner visible >5s; console TypeError; form fields missing after load",none,regression-qa-theme-26.csv,Automated
+AUTH-002,Create Account - Personal User,Registration > Personal,Medium,BL-AUTH-001,ECL-4.1,Registration page open; unique test email available,"url={{FRONT_URL}}/register;email=testuser+{{timestamp}}@example.com;password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Select 'Personal' account type
+[ACT] Fill 'First Name': 'TestFirst'
+[ACT] Fill 'Last Name': 'TestLast'
+[ACT] Fill 'Email': testuser+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Fill 'Confirm Password': {{USER_PASSWORD}}
+[ACT] Check terms/conditions checkbox
+[ACT] Click 'Create Account'
+[WAIT] Wait for success message or redirect
+[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Fill 'Email': testuser+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'","[DOM] Success confirmation message visible after registration
+[STATE] User redirected to account page or login page
+[STATE] Login with new credentials succeeds
+[STATE] User is authenticated after login","[API] mutation errors[] is empty
+[NETWORK] POST /connect/token returns HTTP 200 after login
+[CONSOLE] no TypeError or JS errors","Spinner visible >5s; 4xx/5xx on registration endpoint; redirect to /error page; login fails after registration",Delete test account via admin after test,regression-qa-theme-26.csv,Automated
+AUTH-003,Registration Form - Organization View,Registration > Organization,Medium,BL-AUTH-001,,Registration page accessible,url={{FRONT_URL}}/register,"[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Select 'Organization' account type
+[WAIT] Wait for form to update
+[ASSERT] Verify organization-specific fields appear","[DOM] 'Company Name' input visible
+[DOM] Personal fields (First Name; Last Name; Email; Password) visible
+[DOM] Organization account type selected","[CONSOLE] no TypeError or JS errors
+[NETWORK] GET /register returns HTTP 200","Spinner visible >5s; Company Name field absent; console TypeError",none,regression-qa-theme-26.csv,Automated
+AUTH-004,Create Account - Organization,Registration > Organization,Medium,BL-AUTH-001,ECL-4.1,Registration page open; unique test email available,"url={{FRONT_URL}}/register;email=orguser+{{timestamp}}@example.com;password={{USER_PASSWORD}};org=TestOrg{{timestamp}}","[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Select 'Organization' account type
+[ACT] Fill 'Company Name': 'TestOrg{{timestamp}}'
+[ACT] Fill 'First Name': 'OrgFirst'
+[ACT] Fill 'Last Name': 'OrgLast'
+[ACT] Fill 'Email': orguser+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Fill 'Confirm Password': {{USER_PASSWORD}}
+[ACT] Check terms/conditions checkbox
+[ACT] Click 'Create Account'
+[WAIT] Wait for success or redirect","[DOM] Success confirmation shown
+[STATE] Organization created (visible in admin)
+[STATE] Registering user assigned admin role in org","[API] mutation errors[] is empty
+[ADMIN] Organization 'TestOrg{{timestamp}}' visible in admin member list
+[CONSOLE] no TypeError or JS errors","Spinner visible >5s; 4xx/5xx on registration endpoint; organization not created in admin; redirect to /error page",Delete test org and user via admin after test,regression-qa-theme-26.csv,Automated
+AUTH-005,Password Visibility Toggle,Registration > UI,Medium,BL-AUTH-001,,Registration form open,url={{FRONT_URL}}/register,"[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Fill 'Password': 'TestPassword1!'
+[ACT] Click password visibility toggle icon on Password field
+[ASSERT] Password text is now visible in field
+[ACT] Click password visibility toggle icon again
+[ASSERT] Password text is masked
+[ACT] Fill 'Confirm Password': 'TestPassword1!'
+[ACT] Click visibility toggle on Confirm Password field
+[ASSERT] Confirm password text visible
+[ACT] Click toggle again","[DOM] Password field type changes to 'text' when toggled on
+[DOM] Password field type returns to 'password' when toggled off
+[DOM] Same behavior verified for Confirm Password field","[CONSOLE] no TypeError or JS errors","Toggle icon unresponsive; field type does not change; console TypeError",none,regression-qa-theme-26.csv,Manual
+AUTH-006,Validation - Personal Required Fields,Registration > Validation,Medium,BL-AUTH-001,,Registration form open (Personal),url={{FRONT_URL}}/register,"[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Select 'Personal' account type
+[ACT] Click 'Create Account' without filling any fields
+[WAIT] Wait for validation messages
+[ACT] Fill 'First Name': 'Test'
+[ACT] Click 'Create Account' again","[DOM] Inline error message shown for each required empty field
+[DOM] Form does not submit while required fields empty
+[DOM] Error messages are descriptive and field-specific
+[DOM] After filling First Name; remaining field errors still visible","[CONSOLE] no TypeError or JS errors","Form submits despite empty required fields; no error messages shown; console TypeError",none,regression-qa-theme-26.csv,Automated
+AUTH-007,Validation - Personal Max Characters,Registration > Validation,Medium,BL-AUTH-001,,Registration form open,url={{FRONT_URL}}/register,"[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Select 'Personal' account type
+[ACT] Fill 'First Name' with 256-character string
+[ACT] Fill 'Last Name' with 256-character string
+[ACT] Fill 'Email' with a very long invalid email string
+[ACT] Click 'Create Account'","[DOM] Error message shown for First Name exceeding max length
+[DOM] Error message shown for Last Name exceeding max length
+[DOM] Field either truncates input or shows validation error
+[DOM] Form does not submit with overlong values","[CONSOLE] no TypeError or JS errors","Form accepts 256+ chars without error; no max-length validation; console TypeError",none,regression-qa-theme-26.csv,Manual
+AUTH-008,Validation - Organization Required Fields,Registration > Validation,Medium,BL-AUTH-001,,Registration form open (Organization),url={{FRONT_URL}}/register,"[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Select 'Organization' account type
+[ACT] Click 'Create Account' without filling any fields
+[WAIT] Wait for validation messages","[DOM] Error shown for 'Company Name' required field
+[DOM] Errors shown for all personal required fields (First Name; Last Name; Email; Password)
+[DOM] Form does not submit while required fields empty
+[DOM] Error messages are clear and specific","[CONSOLE] no TypeError or JS errors","Form submits without required org fields; Company Name error missing; console TypeError",none,regression-qa-theme-26.csv,Automated
+AUTH-009,Validation - Unique Email,Registration > Validation,Medium,BL-AUTH-001,ECL-4.1,"Existing user account in system; known email available","url={{FRONT_URL}}/register;email={{USER_EMAIL}}","[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Select 'Personal' account type
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill remaining required fields with valid data
+[ACT] Click 'Create Account'","[DOM] Error message indicating email already registered
+[DOM] Suggestion to log in or reset password present
+[STATE] No duplicate account created","[API] mutation errors[] is empty
+[CONSOLE] no TypeError or JS errors","Form accepts duplicate email and creates duplicate account; no error message shown; console TypeError",none,regression-qa-theme-26.csv,Automated
+AUTH-010,Validation - Email Format,Registration > Validation,Medium,BL-AUTH-001,,Registration form open,url={{FRONT_URL}}/register,"[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Select 'Personal' account type
+[ACT] Fill 'Email': 'notanemail'
+[ACT] Click 'Create Account'
+[ASSERT] Error message for invalid format shown
+[ACT] Fill 'Email': 'missing@domain'
+[ACT] Click 'Create Account'
+[ASSERT] Error message for invalid format shown
+[ACT] Fill 'Email': '@nodomain.com'
+[ACT] Click 'Create Account'
+[ASSERT] Error message for invalid format shown
+[ACT] Fill 'Email': 'valid@example.com'
+[ASSERT] No format error shown for valid email","[DOM] Each invalid format shows inline email validation error
+[DOM] Valid email format accepted without format error","[CONSOLE] no TypeError or JS errors","Invalid email format accepted; no format validation message; console TypeError",none,regression-qa-theme-26.csv,Automated
+AUTH-011,Validation - Password Match,Registration > Validation,Medium,BL-AUTH-001,,Registration form open,url={{FRONT_URL}}/register,"[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Select 'Personal' account type
+[ACT] Fill 'Password': 'TestPass1!'
+[ACT] Fill 'Confirm Password': 'DifferentPass1!'
+[ACT] Click 'Create Account'","[DOM] Error message: 'Passwords do not match' or equivalent
+[STATE] Form does not submit with mismatched passwords","[CONSOLE] no TypeError or JS errors","Form submits with mismatched passwords; no mismatch error shown; console TypeError",none,regression-qa-theme-26.csv,Automated
+AUTH-012,Validation - Password Policy,Registration > Validation,Medium,BL-AUTH-001,,Registration form open,url={{FRONT_URL}}/register,"[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Select 'Personal' account type
+[ACT] Fill 'Password': '123'
+[ACT] Click 'Create Account'
+[ASSERT] Weak password rejected with policy error
+[ACT] Fill 'Password': 'alllowercase1!'
+[ACT] Click 'Create Account'
+[ASSERT] Missing uppercase rejected
+[ACT] Fill 'Password': 'NoNumber!'
+[ACT] Click 'Create Account'
+[ASSERT] Missing number rejected
+[ACT] Fill 'Password': 'ValidPass1!'
+[ACT] Fill 'Confirm Password': 'ValidPass1!'
+[ASSERT] Strong password accepted without policy error","[DOM] Weak password '123' triggers policy error message
+[DOM] Password missing uppercase triggers error
+[DOM] Password missing number triggers error
+[DOM] 'ValidPass1!' accepted without policy errors
+[DOM] Policy requirements listed clearly in UI","[CONSOLE] no TypeError or JS errors","Weak passwords accepted; no policy feedback shown; console TypeError",none,regression-qa-theme-26.csv,Automated
+AUTH-013,Email Verification - Without,Registration > Email,Medium,BL-AUTH-001,ECL-6.1,"Email verification disabled in admin; test email available","url={{FRONT_URL}}/register;email=noverify+{{timestamp}}@example.com;password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Register new account with valid unique email
+[WAIT] Wait for success/redirect
+[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Fill 'Email': noverify+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'","[STATE] No email verification prompt shown after registration
+[STATE] Login succeeds immediately after registration
+[STATE] User is authenticated and account active","[NETWORK] POST /connect/token returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Login fails despite verification being disabled; verification prompt shown unexpectedly; console TypeError",Delete test account after test,regression-qa-theme-26.csv,Manual
+AUTH-014,Email Verification - Optional,Registration > Email,Medium,BL-AUTH-001,ECL-6.1,"Optional email verification enabled in admin","url={{FRONT_URL}}/register;email=optverify+{{timestamp}}@example.com;password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Register new account with valid unique email
+[WAIT] Wait for success or verification prompt
+[ASSERT] Option to verify or skip is presented
+[ACT] Choose to skip verification
+[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Login with new credentials
+[ASSERT] Login succeeds (skip path)","[DOM] Verification page shows option to skip or verify
+[STATE] Skipping verification allows immediate login
+[DOM] Reminder banner shown if verification was skipped","[CONSOLE] no TypeError or JS errors","No skip option presented when optional mode enabled; login blocked despite skip option; console TypeError",Delete test account after test,regression-qa-theme-26.csv,Manual
+AUTH-015,Email Verification - Mandatory,Registration > Email,Medium,BL-AUTH-001,ECL-6.1,"Mandatory email verification enabled in admin; email access available","url={{FRONT_URL}}/register;email=mandatory+{{timestamp}}@example.com;password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Register new account with valid unique email
+[WAIT] Wait for post-registration screen
+[NAV] Attempt to navigate to {{FRONT_URL}}/account/login
+[ACT] Login with new credentials before verifying email
+[ASSERT] Login is rejected with verification required error
+[ACT] Open verification link from email inbox
+[WAIT] Wait for verification confirmation
+[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Login with same credentials after verification","[STATE] Login attempt before verification is rejected
+[DOM] Error message: email verification required shown
+[DOM] Option to resend verification email present
+[STATE] Login succeeds after clicking verification link","[NETWORK] POST /connect/token returns HTTP 200 after verified login
+[CONSOLE] no TypeError or JS errors","Login succeeds before email verified; verification link broken; no resend option; console TypeError",Delete test account after test,regression-qa-theme-26.csv,Automated
+AUTH-016,Login - Empty Email,Login > Validation,Medium,BL-AUTH-002,,Login page open,url={{FRONT_URL}}/account/login,"[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Leave 'Email' field empty
+[ACT] Fill 'Password': 'AnyPassword1!'
+[ACT] Click 'Sign In'","[DOM] Inline error: 'Email is required' or equivalent shown on Email field
+[STATE] Form does not submit","[CONSOLE] no TypeError or JS errors","Form submits with empty email; no validation message; console TypeError",none,regression-qa-theme-26.csv,Automated
+AUTH-017,Login - Invalid User,Login > Validation,Medium,BL-AUTH-002,,Login page open,url={{FRONT_URL}}/account/login,"[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Fill 'Email': 'nonexistent_{{timestamp}}@example.com'
+[ACT] Fill 'Password': 'AnyPassword1!'
+[ACT] Click 'Sign In'
+[WAIT] Wait for error response","[DOM] Generic error message shown: 'Invalid credentials' or equivalent
+[STATE] No user-specific information leaked in error (no 'user not found')
+[STATE] User remains on login page","[NETWORK] POST /connect/token returns 4xx
+[CONSOLE] no TypeError or JS errors","User existence leaked in error message; 500 error returned; console TypeError",none,regression-qa-theme-26.csv,Automated
+AUTH-018,Login - Invalid Password,Login > Validation,Medium,BL-AUTH-002,ECL-14.1,"Valid user exists in system","url={{FRONT_URL}}/account/login;email={{USER_EMAIL}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': 'WrongPassword999!'
+[ACT] Click 'Sign In'
+[WAIT] Wait for error response","[DOM] Error message: 'Invalid credentials' or equivalent shown
+[STATE] Login denied
+[STATE] access_failed count incremented in platform","[NETWORK] POST /connect/token returns 4xx
+[API] mutation errors[] is empty
+[CONSOLE] no TypeError or JS errors","Login succeeds with wrong password; no error shown; console TypeError",none,regression-qa-theme-26.csv,Automated
+AUTH-019,Login - Email Verification Required,Login > Validation,Medium,BL-AUTH-001,ECL-6.1,"User registered but email not yet verified; mandatory verification enabled","url={{FRONT_URL}}/account/login;email=unverified+{{timestamp}}@example.com;password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Fill 'Email': unverified+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for response","[DOM] Error message: email verification required shown
+[DOM] Option to resend verification email present
+[STATE] Login denied until email is verified","[NETWORK] POST /connect/token returns 4xx
+[CONSOLE] no TypeError or JS errors","Unverified user allowed to log in; no verification message; console TypeError",none,regression-qa-theme-26.csv,Automated
+AUTH-020,Login - Temporary Lockout,Login > Security,Medium,BL-AUTH-004,ECL-3.1,"Valid user account; account lockout enabled after 5 failed attempts","url={{FRONT_URL}}/account/login;email={{USER_EMAIL}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': 'WrongPass1!'
+[ACT] Click 'Sign In'
+[ACT] Repeat incorrect login 4 more times (5 total)
+[ASSERT] Lockout message displayed after 5th attempt
+[ACT] Attempt login with correct credentials
+[ASSERT] Login still denied due to lockout
+[WAIT] Wait for lockout timeout period
+[ACT] Attempt login again with correct credentials","[DOM] Lockout error message shown after 5 failed attempts
+[STATE] Login with correct credentials fails during lockout period
+[STATE] Login succeeds after lockout timeout expires","[NETWORK] POST /connect/token returns 4xx during lockout
+[CONSOLE] no TypeError or JS errors","No lockout after 5 failures; lockout persists beyond timeout; correct password accepted during lockout; console TypeError",none,regression-qa-theme-26.csv,Manual
+AUTH-021,Login - Admin Blocked User,Login > Security,Medium,BL-B2B-002,,User blocked by admin in platform,url={{FRONT_URL}}/account/login,"[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Fill 'Email' with blocked user email
+[ACT] Fill 'Password' with blocked user password
+[ACT] Click 'Sign In'
+[WAIT] Wait for response","[DOM] Error message: 'Account is locked' or 'contact admin' shown
+[STATE] Login denied for blocked user","[NETWORK] POST /connect/token returns 4xx
+[CONSOLE] no TypeError or JS errors","Blocked user can log in; generic error without admin contact info; console TypeError",none,regression-qa-theme-26.csv,Manual
+AUTH-022,Login - Token Generation,Login > Token,Medium,BL-AUTH-003,ECL-6.1,"Valid user credentials; browser DevTools / network tab accessible","url={{FRONT_URL}}/account/login;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for redirect after successful login
+[ASSERT] Capture /connect/token response in network tab","[STATE] Login succeeds and user is redirected
+[FORMAT] /connect/token response contains 'access_token' (JWT format)
+[FORMAT] Response includes 'refresh_token'
+[FORMAT] Token payload contains expected claims (sub; email; roles)","[NETWORK] POST /connect/token returns HTTP 200
+[NETWORK] Response body contains access_token and refresh_token fields
+[CONSOLE] no TypeError or JS errors","POST /connect/token returns non-200; access_token missing from response; token not JWT format; console TypeError",Logout after test,regression-qa-theme-26.csv,Manual
+AUTH-023,Login - Token Persistence,Login > Token,Medium,BL-AUTH-003,ECL-6.1,"User logged in with valid session","url={{FRONT_URL}}/account/login;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Login with valid credentials
+[WAIT] Wait for successful redirect to account area
+[NAV] Reload page (F5 / browser refresh)
+[WAIT] Wait for page to load
+[ASSERT] User is still logged in after reload
+[WAIT] Wait for token refresh interval (if observable)","[STATE] User remains authenticated after page reload
+[STATE] No re-login prompt shown after reload
+[NETWORK] Token refresh request observed (if auto-refresh active)","[NETWORK] GET account page returns HTTP 200 without redirect to login
+[NETWORK] Token refresh call (if triggered) returns HTTP 200
+[CONSOLE] no TypeError or JS errors","User redirected to login after page reload; token refresh returns 4xx/5xx; console TypeError",Logout after test,regression-qa-theme-26.csv,Manual
+AUTH-024,Logout - Token Revocation,Login > Token,Medium,BL-AUTH-003,ECL-6.1,"User logged in with active session; DevTools network tab accessible","url={{FRONT_URL}}/account/login;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Login with valid credentials
+[WAIT] Wait for authenticated session
+[ACT] Note the access_token value from /connect/token response
+[ACT] Click logout button or navigate to logout
+[WAIT] Wait for logout to complete
+[ASSERT] /revoke/token call observed in network tab
+[ACT] Attempt to use old token in a direct API request to {{BACK_URL}}","[STATE] Logout completes and user is redirected to login or home page
+[STATE] Old access_token rejected by API (returns 401)
+[NETWORK] POST /revoke/token called during logout","[NETWORK] POST /revoke/token returns HTTP 200
+[NETWORK] Old token returns 401 on subsequent API call
+[CONSOLE] no TypeError or JS errors","Logout does not call /revoke/token; old token still valid after logout; console TypeError",none,regression-qa-theme-26.csv,Manual
+AUTH-025,SSO - Entra ID Enabled,SSO > Azure,Medium,BL-AUTH-005,,Entra ID SSO configured in admin; login page accessible,url={{FRONT_URL}}/account/login,"[NAV] Navigate to {{FRONT_URL}}/account/login
+[ASSERT] 'Sign in with Microsoft' button visible
+[ACT] Click 'Sign in with Microsoft'
+[WAIT] Wait for redirect to Microsoft authentication page
+[ASSERT] Microsoft login URL observed (login.microsoftonline.com)","[DOM] 'Sign in with Microsoft' button present on login page
+[NAV] Browser redirects to Microsoft OAuth endpoint
+[STATE] After completing Microsoft auth; user redirected back and logged in","[CONSOLE] no TypeError or JS errors
+[NETWORK] Redirect to Microsoft OAuth endpoint occurs","SSO button missing; redirect fails; redirect URL not Microsoft; console TypeError",Logout after test,regression-qa-theme-26.csv,Manual
+AUTH-026,SSO - Google Enabled,SSO > Google,Medium,BL-AUTH-005,,Google SSO configured in admin; login page accessible,url={{FRONT_URL}}/account/login,"[NAV] Navigate to {{FRONT_URL}}/account/login
+[ASSERT] 'Sign in with Google' button visible
+[ACT] Click 'Sign in with Google'
+[WAIT] Wait for redirect to Google authentication page
+[ASSERT] Google OAuth URL observed (accounts.google.com)","[DOM] 'Sign in with Google' button present on login page
+[NAV] Browser redirects to Google OAuth endpoint
+[STATE] After completing Google auth; user redirected back and logged in","[CONSOLE] no TypeError or JS errors
+[NETWORK] Redirect to Google OAuth endpoint occurs","SSO button missing; redirect fails; redirect not to Google; console TypeError",Logout after test,regression-qa-theme-26.csv,Manual
+AUTH-027,Login on Behalf - With Permission,Login > Admin,Medium,BL-AUTH-006; BL-AUTH-007,,Admin user with login-on-behalf permission; target customer account exists,"adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}};targetEmail={{USER_EMAIL}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[NAV] Navigate to customer/user management in Admin SPA
+[ACT] Search for and select target customer '{{USER_EMAIL}}'
+[ACT] Click 'Login on Behalf' or equivalent action
+[WAIT] Wait for storefront to open in customer context
+[ASSERT] Storefront shows customer identity","[STATE] Storefront reflects target customer context (name; org; pricing)
+[STATE] Admin can return to admin context
+[STATE] Customer-specific catalog and prices visible","[API] mutation errors[] is empty
+[CONSOLE] no TypeError or JS errors
+[NETWORK] Login-on-behalf token exchange returns HTTP 200","Impersonation fails; storefront shows admin context instead of customer; console TypeError; 4xx on impersonation endpoint",Stop impersonation and logout admin after test,regression-qa-theme-26.csv,Manual
+AUTH-028,Login on Behalf - Org Maintainer,Login > Admin,Medium,BL-AUTH-006; BL-B2B-001,,Organization maintainer account; at least one member in same org,"url={{FRONT_URL}}/account/login;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Log in as org maintainer
+[NAV] Navigate to organization members section
+[ACT] Select an employee from the same organization
+[ACT] Initiate login-on-behalf for that employee
+[WAIT] Wait for context switch
+[ASSERT] Can impersonate own org employee
+[ACT] Attempt to impersonate a user from a different organization (if accessible)
+[ASSERT] Impersonation of outside-org user is denied","[STATE] Maintainer can impersonate own org members
+[STATE] Impersonation of outside-org users is blocked
+[STATE] Impersonation limited to own organization scope","[API] mutation errors[] is empty
+[CONSOLE] no TypeError or JS errors","Maintainer impersonates users outside own org; impersonation of own org member fails; console TypeError",Stop impersonation and logout after test,regression-qa-theme-26.csv,Manual
+AUTH-029,Account Menu - Purchasing Group Structure,Authentication > Account Menu,Critical,BL-AUTH-001,,User logged in with account access; storefront account section accessible,"url={{FRONT_URL}}/account/login;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Log in with valid credentials
+[NAV] Navigate to account section via user icon or 'My Account' link
+[ASSERT] Left rail navigation menu visible
+[ASSERT] 'Purchasing' group header visible
+[ASSERT] 'Dashboard' link present under Purchasing
+[ASSERT] 'Orders' link present under Purchasing
+[ASSERT] 'Lists' link present under Purchasing
+[ASSERT] 'Saved for Later' link present under Purchasing","[DOM] 'Purchasing' group label visible in left rail
+[DOM] 'Dashboard' link present under Purchasing
+[DOM] 'Orders' link present under Purchasing
+[DOM] 'Lists' link present under Purchasing
+[DOM] 'Saved for Later' link present under Purchasing
+[DOM] Items appear in correct order","[CONSOLE] no TypeError or JS errors
+[NETWORK] Account page loads with HTTP 200","Account page inaccessible after login; Purchasing group missing; any expected link absent; console TypeError",Logout after test,VCST-4589,Manual
+AUTH-030,Account Menu - User Group Structure,Authentication > Account Menu,Critical,BL-AUTH-001,,User logged in; personal account (without org),"url={{FRONT_URL}}/account/login;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Log in with valid personal account credentials
+[NAV] Navigate to account section
+[ASSERT] Left rail navigation menu visible
+[ASSERT] 'User' group header visible
+[ASSERT] 'Profile' link present under User
+[ASSERT] 'Addresses' link present under User (personal accounts only)
+[ASSERT] 'Change Password' link present under User
+[ASSERT] 'Saved Credit Cards' link present under User","[DOM] 'User' group label visible in left rail
+[DOM] 'Profile' link under User group
+[DOM] 'Addresses' link under User group (personal account only)
+[DOM] 'Change Password' link under User group
+[DOM] 'Saved Credit Cards' link under User group","[CONSOLE] no TypeError or JS errors","User group header missing; any expected link absent; Addresses link visible for org user (known expected behavior: hidden for B2B); console TypeError",Logout after test,VCST-4589,Manual
+AUTH-031,Account Menu - Group Headers Are Non-Clickable,Authentication > Account Menu,High,BL-AUTH-001,,User logged in; account menu visible,"url={{FRONT_URL}}/account/login;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to account section after login
+[ACT] Click on 'Purchasing' group header text
+[ASSERT] No navigation occurs
+[ACT] Click on 'User' group header text
+[ASSERT] No navigation occurs
+[ASSERT] Cursor style on group headers is default (not pointer)","[STATE] Clicking 'Purchasing' header does not navigate
+[STATE] Clicking 'User' header does not navigate
+[DOM] Group header cursor style is 'default' not 'pointer'
+[DOM] Group headers have no href or are not <a> elements","[CONSOLE] no TypeError or JS errors","Group header click triggers navigation; headers styled as links with pointer cursor; console TypeError",Logout after test,VCST-4589,Manual
+AUTH-032,Account Menu - All Navigation Items Route Correctly,Authentication > Account Menu,High,BL-AUTH-001,,User logged in; account menu visible,"url={{FRONT_URL}}/account/login;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to account section after login
+[ACT] Click 'Dashboard' under Purchasing
+[ASSERT] Dashboard page loads
+[ACT] Click 'Orders' under Purchasing
+[ASSERT] Order History page loads
+[ACT] Click 'Lists' under Purchasing
+[ASSERT] Lists page loads
+[ACT] Click 'Saved for Later' under Purchasing
+[ASSERT] Saved for Later page loads
+[ACT] Click 'Profile' under User
+[ASSERT] Profile page loads
+[ACT] Click 'Addresses' under User
+[ASSERT] Addresses page loads
+[ACT] Click 'Change Password' under User
+[ASSERT] Change Password page loads
+[ACT] Click 'Saved Credit Cards' under User
+[ASSERT] Saved Credit Cards page loads","[NAV] Each menu item routes to its correct page
+[DOM] Page heading or title confirms correct destination for each
+[DOM] Left rail navigation remains visible after each navigation
+[DOM] Active item is highlighted on destination page","[CONSOLE] no TypeError or JS errors","Any menu item routes to wrong page; 404 or /error page after click; left rail disappears after navigation; console TypeError",Logout after test,VCST-4589,Manual
+AUTH-033,Account Menu - Active State Highlighting,Authentication > Account Menu,Medium,BL-AUTH-001,,User logged in; navigating between account pages,"url={{FRONT_URL}}/account/login;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to account section after login
+[ACT] Click 'Orders' in Purchasing group
+[ASSERT] 'Orders' item is highlighted/active in left rail
+[ASSERT] Other items are not highlighted
+[ACT] Click 'Profile' in User group
+[ASSERT] 'Profile' item is now highlighted
+[ASSERT] 'Orders' item is no longer highlighted","[DOM] Active item has distinct visual style (bold; border; or background)
+[DOM] Only one menu item is active at a time
+[STATE] Active state updates correctly on each navigation","[CONSOLE] no TypeError or JS errors","Multiple items highlighted simultaneously; active state not updating after navigation; no visual distinction for active item; console TypeError",Logout after test,VCST-4589,Manual
+AUTH-034,Account Menu - Mobile Responsive Layout,Authentication > Account Menu > Mobile,High,BL-AUTH-001,,Mobile viewport set to 375x667; user logged in,"url={{FRONT_URL}}/account/login;email={{USER_EMAIL}};password={{USER_PASSWORD}};viewport=375x667","[NAV] Set browser viewport to 375x667 pixels
+[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Log in with valid credentials
+[NAV] Navigate to account section
+[ASSERT] Account menu accessible on mobile (hamburger; drawer; or tabs)
+[ACT] Open mobile menu
+[ASSERT] Purchasing and User group structures visible
+[ACT] Navigate to 'Orders' via mobile menu
+[ASSERT] Orders page loads correctly on mobile","[DOM] Account menu accessible on 375px viewport
+[DOM] Grouped structure (Purchasing; User) maintained on mobile
+[DOM] Touch targets minimum 44x44px
+[STATE] Mobile menu opens and closes correctly
+[NAV] Navigation from mobile menu routes correctly","[CONSOLE] no TypeError or JS errors","Account menu inaccessible on mobile; group structure lost on mobile; touch targets below 44px; navigation from mobile menu broken; console TypeError",Logout after test,VCST-4589,Manual
+AUTH-035,Members Page Display,Authentication > Company Members,Critical,BL-B2B-001,,User logged in as company Admin or Maintainer,"url={{FRONT_URL}}/company/members;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Log in as company Admin or Maintainer
+[NAV] Navigate to {{FRONT_URL}}/company/members or via Company > Members in account menu
+[WAIT] Wait for member list to load","[DOM] /company/members page loads without error
+[DOM] Member list displays all company members
+[DOM] Each member row shows: full name; email address; role (Buyer/Admin); status (Active/Blocked)
+[STATE] Own account is visible in the list","[CONSOLE] no TypeError or JS errors
+[NETWORK] GET /company/members returns HTTP 200","Page returns 403 or 404; member list empty when members exist; member data columns missing; console TypeError",Logout after test,Coverage Gap Analysis,Automated
+AUTH-036,Invite Member - Buyer Role,Authentication > Company Members,Critical,BL-B2B-001,ECL-14.1,"Logged in as company Admin; on Members page","url={{FRONT_URL}}/company/members;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}};inviteEmail=invite+buyer+{{timestamp}}@example.com","[NAV] Navigate to {{FRONT_URL}}/account/login and log in as company Admin
+[NAV] Navigate to {{FRONT_URL}}/company/members
+[ACT] Click 'Invite Member' button
+[ACT] Fill invitation form 'Email': invite+buyer+{{timestamp}}@example.com
+[ACT] Select role: 'Buyer'
+[ACT] Submit the invitation form
+[WAIT] Wait for success confirmation
+[ASSERT] Success message shown
+[ASSERT] Invited email appears as pending in member list (if applicable)","[DOM] 'Invite Member' button visible for Admin users
+[DOM] Invitation form accepts email and role selection
+[DOM] Role options include at minimum: Buyer; Admin
+[DOM] Success message 'Invitation sent' or similar shown after submit
+[STATE] Pending invitation visible in member list","[API] mutation errors[] is empty
+[EMAIL] Invited email receives invitation email
+[CONSOLE] no TypeError or JS errors","Invite button missing for Admin; role options absent; mutation returns errors[]; no success message; console TypeError",Remove invited member after test,Coverage Gap Analysis,Automated
+AUTH-037,Invite Member - Admin Role,Authentication > Company Members,High,BL-B2B-001,ECL-14.1,"Logged in as company Admin; on Members page","url={{FRONT_URL}}/company/members;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}};inviteEmail=invite+admin+{{timestamp}}@example.com","[NAV] Navigate to {{FRONT_URL}}/account/login and log in as company Admin
+[NAV] Navigate to {{FRONT_URL}}/company/members
+[ACT] Click 'Invite Member'
+[ACT] Fill invitation form 'Email': invite+admin+{{timestamp}}@example.com
+[ACT] Select role: 'Admin'
+[ACT] Submit invitation
+[WAIT] Wait for success confirmation
+[ASSERT] Invited Admin appears in member list after accepting invitation
+[ASSERT] New Admin can access member management features","[DOM] Invitation with Admin role can be sent successfully
+[STATE] After accepting: new member appears in list with 'Admin' role
+[STATE] New Admin can invite others and manage members
+[STATE] New Admin cannot exceed own permission scope","[API] mutation errors[] is empty
+[EMAIL] Invited Admin email receives invitation
+[CONSOLE] no TypeError or JS errors","Admin role invitation blocked; mutation returns errors[]; new Admin lacks admin permissions after invite; console TypeError",Remove invited admin member after test,Coverage Gap Analysis,Automated
+AUTH-038,Edit Member Role,Authentication > Company Members,High,BL-B2B-001,ECL-14.1,"Logged in as company Admin; at least one Buyer member exists","url={{FRONT_URL}}/company/members;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/login and log in as company Admin
+[NAV] Navigate to {{FRONT_URL}}/company/members
+[ACT] Locate a member with 'Buyer' role
+[ACT] Click Edit or role change option next to that member
+[ACT] Change role from 'Buyer' to 'Admin'
+[ACT] Save the change
+[WAIT] Wait for member list to update
+[ASSERT] Member role shows 'Admin' in list
+[ASSERT] Affected member's permissions updated on next action","[DOM] Edit/role-change option available per member row
+[DOM] Role selector shows available roles (Buyer; Admin)
+[STATE] Saving updates the member's role in list immediately
+[STATE] Changed member gains Admin permissions","[API] mutation errors[] is empty
+[CONSOLE] no TypeError or JS errors","Role edit option missing; mutation returns errors[]; role not updated in list after save; permissions not updated; console TypeError",Revert member role to Buyer after test,Coverage Gap Analysis,Automated
+AUTH-039,Block Member,Authentication > Company Members,High,BL-B2B-001; BL-B2B-002,ECL-14.1,"Logged in as company Admin; at least one active Buyer member exists","url={{FRONT_URL}}/company/members;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/login and log in as company Admin
+[NAV] Navigate to {{FRONT_URL}}/company/members
+[ACT] Locate an active Buyer member
+[ACT] Click Block or Deactivate option for that member
+[ACT] Confirm the block action in the dialog
+[WAIT] Wait for status to update
+[ASSERT] Member status shows 'Blocked' in list
+[NAV] Attempt to log in as the blocked member on {{FRONT_URL}}/account/login
+[ASSERT] Login is rejected with blocked account error","[DOM] Block/Deactivate option available for non-Admin members
+[DOM] Confirmation dialog appears before blocking
+[STATE] After confirmation: member status changes to 'Blocked' in list
+[DOM] Blocked member login error: 'Your account has been blocked. Contact your administrator.'
+[STATE] Blocked member's existing sessions invalidated","[API] mutation errors[] is empty
+[NETWORK] POST /connect/token returns 4xx for blocked member
+[CONSOLE] no TypeError or JS errors","Block option missing; mutation returns errors[]; member status not updated after block; blocked member can still log in; console TypeError",Unblock member after test to restore state,Coverage Gap Analysis,Automated
+AUTH-040,Unblock Member,Authentication > Company Members,High,BL-B2B-001; BL-B2B-002,ECL-14.1,"Logged in as company Admin; at least one Blocked member exists","url={{FRONT_URL}}/company/members;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/login and log in as company Admin
+[NAV] Navigate to {{FRONT_URL}}/company/members
+[ACT] Locate a Blocked member
+[ACT] Click Unblock or Activate option for that member
+[ACT] Confirm the unblock action
+[WAIT] Wait for status to update
+[ASSERT] Member status returns to 'Active' in list
+[NAV] Attempt to log in as the previously blocked member on {{FRONT_URL}}/account/login
+[ASSERT] Login succeeds","[DOM] Unblock/Activate option visible for Blocked members
+[STATE] After unblock: member status returns to 'Active' in list
+[STATE] Previously blocked member can now sign in successfully
+[STATE] Member's data and history preserved after unblock","[API] mutation errors[] is empty
+[NETWORK] POST /connect/token returns HTTP 200 after unblock
+[CONSOLE] no TypeError or JS errors","Unblock option missing; mutation returns errors[]; status not updated after unblock; member still cannot log in after unblock; console TypeError",none,Coverage Gap Analysis,Automated
+AUTH-041,Filter Members by Role,Authentication > Company Members,Medium,BL-B2B-001,,"Logged in as company Admin; member list has both Buyer and Admin members","url={{FRONT_URL}}/company/members;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/login and log in as company Admin
+[NAV] Navigate to {{FRONT_URL}}/company/members
+[ACT] Locate role filter control (dropdown; tabs; or checkbox)
+[ACT] Filter by role 'Buyer'
+[ASSERT] Only Buyer members shown
+[ACT] Filter by role 'Admin'
+[ASSERT] Only Admin members shown
+[ACT] Clear filter
+[ASSERT] All members shown","[DOM] Role filter control present on Members page
+[STATE] Filtering by 'Buyer' shows only Buyer members
+[STATE] Filtering by 'Admin' shows only Admin members
+[DOM] Member count updates to reflect applied filter
+[STATE] Clearing filter restores full member list","[CONSOLE] no TypeError or JS errors
+[NETWORK] Members endpoint returns filtered results","Filter control missing; filter has no effect on list; clearing filter fails to restore full list; console TypeError",none,Coverage Gap Analysis,Automated
+AUTH-042,Search Members,Authentication > Company Members,Medium,BL-B2B-001,,"Logged in as company Admin; at least 5 members with distinct names","url={{FRONT_URL}}/company/members;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/login and log in as company Admin
+[NAV] Navigate to {{FRONT_URL}}/company/members
+[ACT] Locate search input field
+[ACT] Type part of a member's name (at least 3 characters)
+[WAIT] Wait for results to filter
+[ASSERT] Member list updates dynamically to show matching results
+[ACT] Clear search field
+[ASSERT] Full member list restored","[DOM] Search input field present on Members page
+[STATE] Typing filters member list dynamically (live or on Enter)
+[STATE] Search matches on name and/or email
+[DOM] No-results state shown if no members match
+[STATE] Clearing search restores complete member list","[CONSOLE] no TypeError or JS errors","Search input missing; search has no filtering effect; clearing search does not restore list; console TypeError",none,Coverage Gap Analysis,Automated
+AUTH-043,Impersonation - View as Customer,Authentication > Impersonation,Medium,BL-AUTH-006; BL-AUTH-007,ECL-14.1,"Admin account with impersonation permissions; target customer account exists","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}};targetEmail={{USER_EMAIL}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[NAV] Navigate to customer account management in Admin SPA
+[ACT] Select target customer account '{{USER_EMAIL}}'
+[ACT] Initiate login-on-behalf (impersonation)
+[WAIT] Wait for storefront context to open
+[ASSERT] Storefront reflects customer context
+[ASSERT] Catalog; prices; and cart reflect customer's account","[STATE] Storefront opens in customer context (not admin)
+[STATE] Catalog shows products available to that customer
+[STATE] Prices match the customer pricing tier
+[STATE] Customer cart is shown (not admin cart)
+[DOM] No admin-only UI elements visible in storefront","[API] mutation errors[] is empty
+[CONSOLE] no TypeError or JS errors
+[NETWORK] Impersonation token exchange returns HTTP 200","Impersonation fails; storefront shows admin context; admin UI elements visible to customer; console TypeError",Stop impersonation after test,Coverage Gap Analysis,Automated
+AUTH-044,Impersonation - Switch Companies,Authentication > Impersonation,Medium,BL-AUTH-006,ECL-14.1,"Admin with impersonation permissions; customer belongs to multiple companies","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of a customer who belongs to multiple companies
+[WAIT] Wait for storefront to load in customer context
+[ASSERT] Current company context noted
+[ACT] Use company switcher in storefront
+[ACT] Switch to a different company
+[WAIT] Wait for context to reload
+[ASSERT] Catalog; prices; and account context reflect new company","[STATE] Company switcher accessible during impersonation session
+[STATE] Switching company changes catalog and pricing context
+[DOM] Account header reflects new company name
+[STATE] Previous company data does not bleed into new context
+[CONSOLE] No console errors on company switch","[API] mutation errors[] is empty
+[CONSOLE] no TypeError or JS errors","Company switcher inaccessible during impersonation; context switch fails; previous company data bleeds through; console TypeError",Stop impersonation after test,Coverage Gap Analysis,Automated
+AUTH-045,Impersonation - Stop Impersonation,Authentication > Impersonation,Medium,BL-AUTH-006; BL-AUTH-007,,Admin currently impersonating a customer,"adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of a customer
+[WAIT] Wait for customer storefront context
+[ACT] Locate stop-impersonation control in storefront
+[ACT] Click 'Stop Impersonation' or equivalent
+[WAIT] Wait for session to revert
+[ASSERT] Admin context restored","[STATE] Stop impersonation control visible and accessible during impersonation
+[STATE] Clicking ends the customer session
+[STATE] Admin is returned to Admin SPA or admin-authenticated state
+[STATE] No customer-specific data (cart; addresses; profile) persists in admin session
+[STATE] Session cookies/tokens reflect admin identity after stop","[CONSOLE] no TypeError or JS errors
+[NETWORK] Admin token valid after stopping impersonation","Stop impersonation control missing; admin not restored after stop; customer data leaks into admin session; console TypeError",none,Coverage Gap Analysis,Automated
+AUTH-046,Impersonation - Place Order on Behalf,Authentication > Impersonation,Medium,BL-AUTH-006; BL-AUTH-007,ECL-14.1,"Admin impersonating a customer; cart accessible; checkout enabled","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of target customer
+[WAIT] Wait for customer storefront context
+[ACT] Navigate to catalog and add a product to cart
+[ACT] Proceed through checkout steps
+[ACT] Complete and place the order
+[WAIT] Wait for order confirmation
+[NAV] Navigate to Order History in customer account
+[ASSERT] Order appears attributed to customer","[STATE] Checkout flow completes successfully during impersonation
+[DOM] Order confirmation page shown after placing order
+[STATE] Order appears in the customer Order History (not admin history)
+[STATE] Order record shows customer as the owner
+[STATE] Order visible in Admin SPA under the customer account","[API] mutation errors[] is empty
+[CONSOLE] no TypeError or JS errors
+[NETWORK] Order creation endpoint returns HTTP 200","Checkout blocked during impersonation; order confirmation not shown; order attributed to admin instead of customer; console TypeError",Stop impersonation after test,Coverage Gap Analysis,Automated
+AUTH-047,Impersonation - No Persistent Side Effects,Authentication > Impersonation,Medium,BL-AUTH-006; BL-AUTH-007,,"Customer has items in cart before impersonation; admin account separate","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}};customerEmail={{USER_EMAIL}};customerPassword={{USER_PASSWORD}}","[ACT] Note customer cart contents before impersonation (via admin or pre-setup)
+[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of the customer
+[WAIT] Wait for customer storefront context
+[ACT] View the cart but do NOT modify it
+[ACT] Stop the impersonation session
+[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Log in as the customer independently
+[NAV] Navigate to cart page
+[ASSERT] Customer cart is unchanged from before impersonation","[STATE] Customer cart contents identical before and after impersonation session
+[STATE] No items added; removed; or quantity-changed during impersonation
+[STATE] Customer saved addresses unchanged
+[STATE] Customer profile data unchanged
+[STATE] No orphaned sessions remain after impersonation ends","[CONSOLE] no TypeError or JS errors
+[NETWORK] No unexpected mutations to customer data during impersonation","Cart items changed after impersonation session; customer addresses or profile modified; orphaned session detected; console TypeError",none,Coverage Gap Analysis,Automated

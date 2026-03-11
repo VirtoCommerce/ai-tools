@@ -10,10 +10,10 @@ Generate a complete test environment by creating Postman collections that seed a
 
 ## Reference
 
-Read **before** executing: `.claude/agents/knowledge/test-data-generation.md`
+Read **before** executing: `./claude/skills/testing/qa-seed-data/test-data-generation.md`
 - Entity dependency graph (creation order)
 - REST API endpoints with full request bodies
-- Naming conventions (`TEST-` prefix + date)
+- Naming conventions (`AGENT-TEST-` prefix + date)
 - Postman collection folder structure
 - Seed profiles (minimal/catalog/b2b/pricing/full)
 - Teardown rules and reverse deletion order
@@ -27,12 +27,12 @@ Read **before** executing: `.claude/agents/knowledge/test-data-generation.md`
 | `b2b` | Organization + 3 users (admin/buyer/viewer) + roles + contacts + addresses |
 | `pricing` | Price lists (USD + EUR), tiered prices, quantity breaks, multi-currency |
 | `full` | All profiles combined — complete test environment |
-| `teardown` | Delete all entities matching `TEST-*` naming convention |
+| `teardown` | Delete all entities matching `AGENT-TEST-*` naming convention |
 
 ## Workflow
 
 ### Step 1 — Read Reference
-Read `.claude/agents/knowledge/test-data-generation.md` for API endpoints and entity schemas.
+Read `./claude/skills/testing/qa-seed-data/test-data-generation.md` for API endpoints and entity schemas.
 
 ### Step 2 — Check Existing Collections
 Use `getCollections` (Postman MCP) to check if a seed/teardown collection already exists for the requested profile. If it exists, ask the user: reuse, update, or recreate.
@@ -89,9 +89,9 @@ Output a summary:
 ### Created Entities
 | Entity | ID | Name |
 |--------|-----|------|
-| Catalog | {id} | TEST-Catalog-{date} |
-| Category | {id} | TEST-Cat-{name}-{date} |
-| Product | {id} | TEST-{name}-{date} |
+| Catalog | {id} | AGENT-TEST-Catalog-{date} |
+| Category | {id} | AGENT-TEST-Cat-{name}-{date} |
+| Product | {id} | AGENT-TEST-{name}-{date} |
 | ... | ... | ... |
 
 ### Postman Collections
@@ -162,7 +162,7 @@ Scans for entities matching `TEST-*` naming convention and deletes them in safe 
 ## Notes
 
 - Never seed data into production — check `BACK_URL` against known production URLs before executing
-- Always use `TEST-` prefix — enables safe teardown without affecting real data
+- Always use `AGENT-TEST-` prefix — enables safe teardown without affecting real data
 - Store entity IDs in Postman collection variables, not environment variables (collection-scoped = isolated)
 - After `full` seed, wait for search reindex before running storefront tests (~30-60s)
 - If seed fails mid-execution, run teardown for the partial data before retrying

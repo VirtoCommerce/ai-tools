@@ -580,3 +580,70 @@ Different test scenarios need different data subsets:
 | `pricing` | Price list (USD + EUR) + tiered prices + quantity breaks | Pricing module testing |
 | `full` | All of the above combined | Full regression, integration testing |
 | `teardown` | Nothing created — only deletes entities matching `AGENT-TEST-*` pattern | Post-test cleanup |
+
+---
+
+## Seeded B2B Test Data (Ready to Use)
+
+The `b2b` seed profile was executed on **2026-03-10** and entities are **live on the platform**. Agents should use this data instead of creating new B2B entities.
+
+### Source of Truth
+
+| File | Purpose |
+|------|---------|
+| `test-data/b2b/_seed-results-orgs.json` | Live platform IDs (primary source) |
+| `test-data/b2b/organizations.csv` | Orgs with `platform_id` and `seeded` flag |
+| `test-data/b2b/contacts.csv` | Contacts with `platform_id` and `seeded` flag |
+| `test-data/b2b/users.csv` | Users with `platform_id` and `seeded` flag |
+| `test-data/b2b/load-test-data.js` | JS loader module with lookup helpers |
+
+### Seeded Entities Summary
+
+- **4 organizations** (AcmeCorp, TechFlow, BuildRight, AcmeWest) — AcmeWest is child of AcmeCorp
+- **10 contacts** — all `status: Approved`, with live `platform_id`
+- **10 users** — all `status: Approved`, password `TestPass123!`
+- **4 template orgs** + **3 template contacts/users** — `seeded=false`, need `/qa-seed-data` to create
+
+### How Agents Should Use Seeded Data
+
+**Option 1 — JS Loader (recommended for scripts):**
+```js
+import { b2b } from './test-data/b2b/load-test-data.js';
+
+const admin = b2b.credentials('Org Admin');
+// → { userName, email, password, contactName, orgKey, platformRoles }
+
+const rbac = b2b.rbacTestSet();
+// → { admin, buyer, viewer, password }
+
+const multiOrg = b2b.multiOrgTestSet();
+// → { acmeCorp, techFlow, buildRight, acmeWest, password }
+```
+
+**Option 2 — Read CSVs directly (for LLM agents):**
+Read `test-data/b2b/users.csv` and filter by `seeded=true`. Key columns:
+- `platform_id` — live entity ID
+- `user_name` / `email` — login credentials
+- `password` — `TestPass123!` for all seeded users
+- `roles` — platform role name (`Organization maintainer`, `Purchasing agent`, `Organization employee`)
+
+### Available Test Scenarios
+
+| Scenario | Users | Orgs | Loader Helper |
+|----------|-------|------|---------------|
+| RBAC (admin/buyer/viewer) | John, Sarah, Mike | AcmeCorp | `b2b.rbacTestSet()` |
+| Multi-buyer approval | Sarah + Lisa | AcmeCorp | `b2b.multiBuyerTestSet()` |
+| Multi-org switching | John vs Emily | AcmeCorp vs TechFlow | `b2b.multiOrgTestSet()` |
+| Parent-child hierarchy | John → Robert | AcmeCorp → AcmeWest | `b2b.orgHierarchy()` |
+| Multi-language/currency | Hans (de-DE, EUR) | AcmeCorp | `b2b.userByName('Hans')` |
+| Cross-org order isolation | Sarah vs David | AcmeCorp vs TechFlow | `b2b.usersForOrg()` |
+
+### B2B Auth Note
+
+B2B store uses `trustedGroups: ["store-acme"]`. Customer users **cannot** use direct `/connect/token` password-grant login. Agents must either:
+1. Use storefront SSO login flow (Playwright browser automation)
+2. Use admin API token with `memberId` context for API-level testing
+
+### Postman Collection
+
+**"VC B2B Test Data — Orgs, Contacts, Users"** in VirtoPlatform workspace — 22 requests covering full CRUD + teardown. All create templates include `status: Approved`.

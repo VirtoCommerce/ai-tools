@@ -1,171 +1,251 @@
-ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
-SEC-PCI-001,Card Number Iframe Isolation,PCI Compliance > Iframe,Security,Critical,5m,"- CyberSource payment form displayed
-- Browser DevTools open","1. Open DevTools Elements tab
-2. Navigate to card number input
-3. Identify parent iframe
-4. Check iframe src domain
-5. Verify testflex.cybersource.com
-6. Try: document.querySelector('iframe').contentDocument","- Card field hosted in iframe
-- Domain: testflex.cybersource.com
-- Cross-origin blocks access
-- DOMException on access attempt",VCST-3387 TC-SEC-001,Manual
-SEC-PCI-002,CVV Iframe Isolation,PCI Compliance > Iframe,Security,Critical,5m,"- CyberSource payment form displayed","1. Inspect CVV/security code field
-2. Verify iframe implementation
-3. Check sandbox attributes
-4. Attempt JavaScript access","- CVV in secure iframe
-- Proper sandboxing
-- Cannot access from parent page",VCST-3387 TC-SEC-002,Manual
-SEC-PCI-003,CVV Visual Masking,PCI Compliance > Display,Security,High,2m,"- CyberSource form ready","1. Enter CVV: 838
-2. Observe field display
-3. Check if digits visible
-4. Verify masking","- CVV displayed as •••
-- Actual digits never visible
-- Shoulder-surfing prevented",VCST-3387 TC-SEC-003,Manual
-SEC-PCI-004,No Card Data in Network Requests,PCI Compliance > Network,Security,Critical,10m,"- DevTools Network tab open
-- CyberSource form filled","1. Fill form with test card data
-2. Submit order
-3. Wait for all requests to complete
-4. Search all requests for '4622943127013705'
-5. Search all requests for '838'
-6. Check request payloads","- No raw card number in any request
-- No CVV in any request
-- Only tokenized data sent
-- CyberSource handles all card data",VCST-3387 TC-SEC-004,Manual
-SEC-PCI-005,No Card Data in Browser Storage,PCI Compliance > Storage,Security,Critical,5m,"- Payment form interaction complete","1. Open DevTools Application tab
-2. Check localStorage for card data
-3. Check sessionStorage
-4. Check cookies
-5. Search for partial card number","- No card numbers stored
-- No CVV stored anywhere
-- Only safe data persisted",VCST-3387 TC-SEC-005,Manual
-SEC-PCI-006,HTTPS Enforcement,PCI Compliance > Transport,Security,Critical,5m,"- Payment page loaded","1. Check browser URL bar (https)
-2. Inspect iframe sources
-3. Check Network tab for http requests
-4. Verify no mixed content warnings","- All connections HTTPS
-- Iframes use HTTPS
-- No mixed content
-- Secure padlock shown",VCST-3387 TC-SEC-006,Manual
-SEC-PCI-007,JWT Token Authentication,PCI Compliance > Auth,Security,High,3m,"- CyberSource payment selected","1. Inspect iframe src attributes
-2. Look for JWT parameter
-3. Verify token format (xxx.yyy.zzz)
-4. Note token uniqueness","- JWT present in iframe URL
-- Valid three-part structure
-- Token unique per session",VCST-3387 TC-INT-002,Manual
-SEC-AUTH-001,Session Token Security,Authentication > Tokens,Security,High,5m,"- User logged in
-- DevTools open","1. Check for access token storage
-2. Verify HttpOnly cookies where applicable
-3. Check token expiration
-4. Verify refresh mechanism","- Tokens stored securely
-- HttpOnly for sensitive cookies
-- Reasonable expiration
-- Refresh works",regression-qa-theme-26.csv,Manual
-SEC-AUTH-002,Logout Token Revocation,Authentication > Logout,Security,High,5m,"- User logged in","1. Note current access token
-2. Click logout
-3. Check /revoke endpoint called
-4. Attempt to use old token
-5. Verify rejection","- Logout revokes token
-- Old token rejected
-- Cannot reuse after logout",regression-qa-theme-26.csv,Manual
-SEC-AUTH-003,Account Lockout Protection,Authentication > Brute Force,Security,High,10m,"- Valid user account","1. Attempt login with wrong password
-2. Repeat 5 times
-3. Verify lockout message
-4. Attempt with correct password
-5. Verify still locked","- Account locks after 5 failures
-- Clear lockout message
-- Correct password also rejected
-- Lockout has timeout",regression-qa-theme-26.csv,Manual
-SEC-INPUT-001,XSS Prevention - Search,Input Validation > XSS,Security,High,5m,"- Search functionality available","1. Enter: <script>alert('XSS')</script>
-2. Execute search
-3. Verify no script execution
-4. Check results display","- Script not executed
-- Input escaped/sanitized
-- Safe display of results",security-manual,Manual
-SEC-INPUT-002,XSS Prevention - Forms,Input Validation > XSS,Security,High,5m,"- Registration or profile form","1. Enter XSS payload in name field
-2. Submit form
-3. View saved data
-4. Verify no execution","- Input sanitized
-- No script execution
-- Safe rendering",security-manual,Manual
-SEC-INPUT-003,SQL Injection Prevention,Input Validation > SQLi,Security,High,5m,"- Search functionality","1. Enter: ' OR '1'='1
-2. Execute search
-3. Verify normal handling
-4. Check for error messages","- Query handled safely
-- No SQL errors exposed
-- Normal results or empty",security-manual,Manual
-SEC-INPUT-004,Path Traversal Prevention,Input Validation > Path,Security,Medium,5m,"- File upload or URL parameters","1. Attempt ../../../etc/passwd in URLs
-2. Attempt in file names
-3. Verify rejection","- Path traversal blocked
-- Proper input validation
-- No sensitive file access",security-manual,Manual
-SEC-CSRF-001,CSRF Token Validation,CSRF Protection,Security,High,5m,"- Any form submission
-- DevTools open","1. Inspect form for CSRF token
-2. Verify token in requests
-3. Attempt to forge request without token","- CSRF tokens present
-- Server validates tokens
-- Forged requests rejected",security-manual,Manual
-SEC-CORS-001,CORS Configuration,API Security > CORS,Security,Medium,5m,"- DevTools Network tab","1. Make API request
-2. Check CORS headers
-3. Verify allowed origins","- Proper CORS headers
-- Origins restricted appropriately
-- Credentials handled correctly",security-manual,Manual
-SEC-SENSITIVE-001,No Credentials in Logs,Data Protection > Logging,Security,Critical,5m,"- Various operations performed","1. Check browser console
-2. Check Network responses
-3. Verify no passwords logged","- No passwords in console
-- No sensitive data in responses
-- Error messages sanitized",security-manual,Manual
-SEC-SENSITIVE-002,Error Message Safety,Data Protection > Errors,Security,Medium,5m,"- Cause various errors","1. Trigger authentication errors
-2. Trigger validation errors
-3. Check error messages","- No stack traces exposed
-- No internal paths shown
-- Generic safe messages",security-manual,Manual
-SEC-SESSION-001,Session expiry during checkout — re-auth preserves cart,Authentication > Session Expiry,Security,High,15min,"- Customer logged in with items in cart
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+SEC-PCI-001,Card Number Iframe Isolation,PCI Compliance > Iframe,Critical,BL-SEC-002,,- CyberSource payment form displayed
+- Browser DevTools open,,,"[NAV] Navigate to {{FRONT_URL}} cart page with a product added
+[ACT] Open DevTools Elements tab
+[ACT] Locate the card number input field in the DOM
+[ACT] Identify the parent iframe element
+[ASSERT] Verify iframe src domain is testflex.cybersource.com
+[ACT] Execute in DevTools console: document.querySelector('iframe').contentDocument","[DOM] Card number input is inside a cross-origin iframe
+[DOM] iframe src domain is testflex.cybersource.com
+[STATE] Attempting contentDocument access throws DOMException: Blocked a frame with origin from accessing a cross-origin frame","[NETWORK] No card number field value transmitted to {{BACK_URL}} in any request
+[CONSOLE] No iframe access errors other than expected cross-origin DOMException","iframe rendered without cross-origin isolation; contentDocument access succeeds; card field rendered in parent DOM instead of iframe",,VCST-3387 TC-SEC-001,Manual
+SEC-PCI-002,CVV Iframe Isolation,PCI Compliance > Iframe,Critical,BL-SEC-002,,- CyberSource payment form displayed,,,,"[NAV] Navigate to {{FRONT_URL}} cart page with a product added
+[ACT] Open DevTools Elements tab
+[ACT] Locate the CVV/security code input field
+[ASSERT] Verify CVV field is inside an iframe
+[ACT] Check sandbox attributes on the iframe element
+[ACT] Execute in DevTools console: attempt JavaScript access to CVV iframe contentDocument","[DOM] CVV field is hosted inside a cross-origin iframe
+[DOM] iframe has appropriate sandbox attributes
+[STATE] JavaScript access to CVV iframe contentDocument is blocked (DOMException)
+[STATE] Cannot read or write CVV value from parent page context","[NETWORK] CVV value does not appear in any network request to {{BACK_URL}}
+[CONSOLE] No sandbox or iframe configuration errors","CVV field accessible from parent page JavaScript; sandbox attributes missing; CVV value appears in network requests to VC servers",,VCST-3387 TC-SEC-002,Manual
+SEC-PCI-003,CVV Visual Masking,PCI Compliance > Display,High,BL-SEC-001,,- CyberSource form ready,cvv=838,,"[NAV] Navigate to {{FRONT_URL}} cart page
+[ACT] Focus CVV/security code field inside CyberSource iframe
+[ACT] Type CVV: 838
+[ASSERT] Observe the field display — verify digits are masked
+[ASSERT] Verify no digits are visible in plain text","[DOM] CVV field displays masking characters (• or *) instead of actual digits
+[STATE] Entered digits 838 are never visible as plain text in the field
+[STATE] Shoulder-surfing attack is mitigated by visual masking","[CONSOLE] No CVV value logged to browser console","CVV digits visible as plain text; masking not applied; actual digits briefly flicker before masking",,VCST-3387 TC-SEC-003,Manual
+SEC-PCI-004,No Card Data in Network Requests,PCI Compliance > Network,Critical,BL-SEC-001,,- DevTools Network tab open
+- CyberSource payment form filled,"card_number=4622943127013705;cvv=838",,"[NAV] Navigate to {{FRONT_URL}} cart page with product added
+[ACT] Open DevTools Network tab and enable recording
+[ACT] Fill CyberSource payment form with test card: 4622943127013705, CVV: 838
+[ACT] Submit the order
+[WAIT] Wait for all network requests to complete
+[ACT] Search all request payloads and headers for the string '4622943127013705'
+[ACT] Search all request payloads and headers for the string '838'
+[ASSERT] Verify no raw card data found in any request to {{BACK_URL}}","[NETWORK] String '4622943127013705' does not appear in any request URL, header, or body sent to {{BACK_URL}}
+[NETWORK] String '838' does not appear in any request sent to {{BACK_URL}}
+[NETWORK] Only tokenized/masked card data transits to VC servers
+[STATE] CyberSource tokenizes card data before any VC server interaction","[NETWORK] All POST requests to {{BACK_URL}}/api/* contain no raw PAN or CVV
+[CONSOLE] No card data logged to browser console","Raw PAN 4622943127013705 visible in any network request body or header; CVV 838 found in any request; unmasked card data in GraphQL mutation payload",,VCST-3387 TC-SEC-004,Manual
+SEC-PCI-005,No Card Data in Browser Storage,PCI Compliance > Storage,Critical,BL-SEC-001,,- Payment form interaction complete,card_number=4622943127013705;cvv=838,,"[NAV] Navigate to {{FRONT_URL}} cart page and interact with CyberSource payment form
+[ACT] Open DevTools Application tab
+[ACT] Inspect localStorage — search for '4622943127013705' and '838'
+[ACT] Inspect sessionStorage — search for card number and CVV
+[ACT] Inspect Cookies — search for card number and CVV
+[ACT] Search for partial card number (last 4 digits: 3705)
+[ASSERT] Confirm no card data found in any storage mechanism","[STATE] localStorage contains no raw card number or CVV
+[STATE] sessionStorage contains no raw card number or CVV
+[STATE] Cookies contain no raw card number or CVV
+[STATE] Even partial PAN (e.g., last 4 digits as stored value) is not present in storage","[CONSOLE] No card data written to storage via console calls","Raw PAN or CVV found in localStorage, sessionStorage, or cookies; partial card number stored in any browser storage",,VCST-3387 TC-SEC-005,Manual
+SEC-PCI-006,HTTPS Enforcement,PCI Compliance > Transport,Critical,BL-SEC-001,,- Payment page loaded,,,,"[NAV] Navigate to {{FRONT_URL}} cart page
+[ASSERT] Verify browser address bar shows https:// and secure padlock icon
+[ACT] Open DevTools Network tab
+[ACT] Inspect iframe src attributes — verify all use https://
+[ACT] Check Network tab for any http:// (non-TLS) requests
+[ASSERT] Verify no mixed content warnings in browser console or security panel","[NAV] All page URLs use https://
+[DOM] All iframe src attributes use https://
+[NETWORK] No http:// requests appear in Network tab
+[CONSOLE] No mixed content warnings
+[STATE] Browser shows secure padlock (no certificate warnings)","[NETWORK] All requests to {{BACK_URL}} use TLS (https)
+[CONSOLE] No mixed content or certificate errors in browser console","Any http:// request on the payment page; mixed content warning displayed; iframe loaded over http://; missing or invalid TLS certificate",,VCST-3387 TC-SEC-006,Manual
+SEC-PCI-007,JWT Token Authentication,PCI Compliance > Auth,High,BL-SEC-002,,- CyberSource payment selected,,,,"[NAV] Navigate to {{FRONT_URL}} cart page and select CyberSource payment
+[ACT] Open DevTools Elements tab
+[ACT] Inspect iframe src attributes for the CyberSource flex microform iframes
+[ASSERT] Locate JWT parameter in the iframe src URL
+[ASSERT] Verify token has three-part structure separated by dots (header.payload.signature)
+[ASSERT] Note token value and confirm it is unique per page load/session","[DOM] JWT parameter is present in CyberSource iframe src URL
+[FORMAT] JWT has valid three-part dot-separated structure (xxx.yyy.zzz)
+[STATE] Token is unique per session — refreshing the page generates a new token
+[STATE] Token is not reused across sessions","[NETWORK] JWT is passed as URL parameter to testflex.cybersource.com, not to {{BACK_URL}}
+[CONSOLE] No JWT value logged in plain text to browser console","JWT absent from iframe URL; malformed JWT (not three-part structure); same JWT reused across multiple sessions",,VCST-3387 TC-INT-002,Manual
+SEC-AUTH-001,Session Token Security,Authentication > Tokens,High,BL-SEC-004,,- User logged in
+- DevTools open,user={{USER_EMAIL}};password={{USER_PASSWORD}},,"[NAV] Navigate to {{FRONT_URL}} and log in with {{USER_EMAIL}} / {{USER_PASSWORD}}
+[ACT] Open DevTools Application tab — inspect Cookies, localStorage, sessionStorage
+[ASSERT] Identify access token storage location and verify HttpOnly flag on sensitive cookies
+[ASSERT] Check token expiration (exp claim if JWT, or cookie Max-Age/Expires)
+[ACT] Remain idle past token expiry or trigger a refresh action
+[ASSERT] Verify refresh mechanism obtains a new token without requiring full re-login","[STATE] Sensitive auth tokens stored in HttpOnly cookies (not accessible via document.cookie)
+[STATE] Token has a reasonable expiration (not set to never expire)
+[STATE] Token refresh mechanism works — new token issued before expiry
+[CONSOLE] No token values logged to browser console in plain text","[NETWORK] Token refresh request sent to {{BACK_URL}}/connect/token or equivalent
+[CONSOLE] No token values visible in console output","Token stored in non-HttpOnly cookie accessible by JavaScript; token has no expiry; refresh fails silently; token value logged to console",,regression-qa-theme-26.csv,Manual
+SEC-AUTH-002,Logout Token Revocation,Authentication > Logout,High,BL-SEC-004,,- User logged in,user={{USER_EMAIL}};password={{USER_PASSWORD}},,"[NAV] Navigate to {{FRONT_URL}} and log in with {{USER_EMAIL}} / {{USER_PASSWORD}}
+[ACT] Open DevTools Network tab — note current access token from request headers or cookies
+[ACT] Click logout button/link
+[WAIT] Wait for logout to complete and redirect
+[ASSERT] Verify a token revocation request was sent to {{BACK_URL}}/connect/revocation or equivalent
+[ACT] Attempt to use the captured old token in a direct API request to {{BACK_URL}}
+[ASSERT] Verify old token is rejected (401 Unauthorized)","[NETWORK] Logout triggers a POST to token revocation endpoint
+[STATE] Old access token returns 401 when used after logout
+[STATE] Session cookies are cleared after logout
+[NAV] After logout, attempting to access protected pages redirects to login","[API] Direct request to {{BACK_URL}}/api/platform/security with old token returns 401
+[NETWORK] Revocation endpoint call present in Network tab after logout","Old token accepted after logout; no revocation request sent on logout; session cookies persist with valid token after logout",,regression-qa-theme-26.csv,Manual
+SEC-AUTH-003,Account Lockout Protection,Authentication > Brute Force,High,"BL-SEC-004","ECL-3.1","- Valid user account exists",user={{USER_EMAIL}};wrong_password=WrongPass123!,,"[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Enter {{USER_EMAIL}} and an incorrect password — click Sign In
+[ACT] Repeat incorrect login attempt — 5 times total
+[WAIT] Wait for lockout message to appear
+[ASSERT] Verify lockout message is displayed after 5 failed attempts
+[ACT] Attempt to log in with the correct {{USER_PASSWORD}}
+[ASSERT] Verify account is still locked even with correct credentials
+[ASSERT] Verify lockout message indicates a timeout or account unlock procedure","[STATE] Account lockout message appears after 5 consecutive failed attempts
+[STATE] Correct password is rejected during lockout period
+[STATE] Lockout message is user-friendly (no stack trace or internal info)
+[STATE] Lockout has a defined timeout or unlock mechanism","[CONSOLE] No internal error details or stack traces in browser console
+[NETWORK] Login requests after lockout return 401/403 without exposing internal info","No lockout after 5 failures; lockout message not displayed; correct password accepted during lockout; error message exposes internal stack trace or account details",,regression-qa-theme-26.csv,Manual
+SEC-INPUT-001,XSS Prevention - Search,Input Validation > XSS,High,BL-SEC-003,ECL-5.1,- Search functionality available,xss_payload=<script>alert('XSS')</script>,,"[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click the search field
+[ACT] Type the XSS payload: <script>alert('XSS')</script>
+[ACT] Submit the search (press Enter or click search button)
+[WAIT] Wait for search results page to load
+[ASSERT] Verify no JavaScript alert dialog appears
+[ASSERT] Verify search results or empty results page renders without script execution
+[ASSERT] Inspect DOM — verify the payload is HTML-escaped in the output","[STATE] No alert() dialog appears after submitting XSS payload
+[DOM] Payload is rendered as escaped HTML (e.g., &lt;script&gt;) not as executable script
+[STATE] Search results page loads normally without script injection","[CONSOLE] No alert() or script execution events in browser console — verify zero user script executions
+[NETWORK] XSS payload is sanitized before being sent to {{BACK_URL}} search API","JavaScript alert dialog appears; script executes in browser context; DOM renders unescaped <script> tag; browser console shows script execution",,security-manual,Manual
+SEC-INPUT-002,XSS Prevention - Forms,Input Validation > XSS,High,BL-SEC-003,ECL-5.1,"- Registration or profile form accessible",xss_payload=<script>alert('XSS')</script>,,"[NAV] Navigate to {{FRONT_URL}}/account/register or profile edit page
+[ACT] Locate a text input field (e.g., First Name or display name)
+[ACT] Enter XSS payload: <script>alert('XSS')</script>
+[ACT] Submit the form
+[WAIT] Wait for form submission to complete
+[ASSERT] Verify no JavaScript alert dialog appears
+[NAV] Navigate to view the saved profile data
+[ASSERT] Verify the saved field displays escaped text, not executed script
+[ASSERT] Verify no DOM mutation from the injected payload","[STATE] No alert() executes after form submission with XSS payload
+[DOM] Saved field value is HTML-escaped in the rendered page
+[STATE] Form submission succeeds normally without server error","[CONSOLE] No alert() or script execution in browser console — zero script executions confirmed
+[NETWORK] XSS payload is sanitized in the POST request body or server response strips it","JavaScript alert executes after form submission; saved profile page renders and executes injected script; unescaped script tag appears in DOM",,security-manual,Manual
+SEC-INPUT-003,SQL Injection Prevention,Input Validation > SQLi,High,BL-SEC-003,ECL-5.1,- Search functionality available,"sqli_payload=' OR '1'='1",,"[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click the search field
+[ACT] Type SQL injection payload: ' OR '1'='1
+[ACT] Submit the search
+[WAIT] Wait for search results page
+[ASSERT] Verify search returns normal results or an empty results page
+[ASSERT] Verify no SQL error messages are displayed
+[ASSERT] Verify no database schema, table names, or query details are exposed","[STATE] Search returns normal product results or empty results — not all records
+[STATE] No SQL error message (e.g., 'syntax error', 'ORA-', 'MySQL') displayed to user
+[STATE] No database schema or internal query details exposed in the response","[NETWORK] Response from {{BACK_URL}} search API does not contain SQL error strings
+[CONSOLE] No SQL error strings in browser console output","SQL error message displayed in UI; all database records returned due to injection; database schema information visible in response or console",,security-manual,Manual
+SEC-INPUT-004,Path Traversal Prevention,Input Validation > Path,Medium,BL-SEC-003,ECL-5.1,"- Application with URL parameters or file upload accessible",path_payload=../../../etc/passwd,,"[NAV] Navigate to {{FRONT_URL}} and identify URL parameters that accept file names or paths
+[ACT] Modify a URL parameter to include path traversal payload: ../../../etc/passwd
+[ACT] If file upload available: attempt to upload a file named ../../../etc/passwd
+[WAIT] Wait for the application response
+[ASSERT] Verify the request is rejected or returns a safe error
+[ASSERT] Verify no file contents from the server filesystem are returned","[STATE] Path traversal attempt is blocked — 400, 403, or 404 response
+[STATE] No sensitive file content (e.g., /etc/passwd contents) returned in response
+[STATE] Application returns a safe, generic error message — no internal path details","[NETWORK] Response from {{BACK_URL}} for traversal attempt returns 400/403/404 — no 200 with file contents
+[CONSOLE] No internal file path or server filesystem structure in browser console","Server returns file contents from traversal path; internal server path exposed in error message; traversal payload processed without sanitization",,security-manual,Manual
+SEC-CSRF-001,CSRF Token Validation,CSRF Protection,High,BL-SEC-003,,- Any form submission available
+- DevTools open,,,,"[NAV] Navigate to {{FRONT_URL}} and open a form (e.g., login, address, or profile form)
+[ACT] Open DevTools Network tab
+[ACT] Submit the form normally and inspect the request payload
+[ASSERT] Verify a CSRF token is included in the form submission (hidden field or request header)
+[ACT] Attempt to forge the same request without the CSRF token (via DevTools or curl)
+[ASSERT] Verify the server rejects the forged request","[STATE] CSRF token is present in form submissions (as hidden field or X-CSRF-Token header)
+[NETWORK] Server rejects forged requests missing the CSRF token with 400 or 403
+[STATE] Legitimate form submission with valid CSRF token succeeds normally","[NETWORK] POST requests to {{BACK_URL}} include CSRF token in headers or body
+[API] Forged request to {{BACK_URL}} without CSRF token returns 400/403","CSRF token absent from form submissions; server accepts forged requests without token; CSRF token not validated server-side",,security-manual,Manual
+SEC-CORS-001,CORS Configuration,API Security > CORS,Medium,BL-SEC-003,,- DevTools Network tab open,,,,"[NAV] Navigate to {{FRONT_URL}}
+[ACT] Open DevTools Network tab
+[ACT] Trigger an API request (e.g., page load, search, or cart action)
+[ASSERT] Inspect the response headers for Access-Control-Allow-Origin
+[ASSERT] Verify the allowed origin is restricted to known domains (not wildcard *)
+[ASSERT] Verify Access-Control-Allow-Credentials is not set to true with wildcard origin","[NETWORK] Access-Control-Allow-Origin header restricts allowed origins to {{FRONT_URL}} and known domains
+[NETWORK] Wildcard (*) is not used with Access-Control-Allow-Credentials: true
+[STATE] Preflight OPTIONS requests return correct CORS headers","[NETWORK] All API responses from {{BACK_URL}} have appropriate CORS headers
+[CONSOLE] No CORS error messages for legitimate same-origin requests","Wildcard CORS origin (*) combined with credentials: true; arbitrary origin accepted; CORS headers missing entirely from API responses",,security-manual,Manual
+SEC-SENSITIVE-001,No Credentials in Logs,Data Protection > Logging,Critical,BL-SEC-005,,- Various operations performed including login,user={{USER_EMAIL}};password={{USER_PASSWORD}},,"[NAV] Navigate to {{FRONT_URL}} and open DevTools Console tab
+[ACT] Perform login with {{USER_EMAIL}} / {{USER_PASSWORD}}
+[ASSERT] Check browser console — verify no password values are logged
+[ACT] Open DevTools Network tab — inspect all response bodies
+[ASSERT] Verify no passwords, API keys, or secrets appear in network responses
+[ASSERT] Trigger a validation error and verify error message is sanitized","[CONSOLE] No password or credential values in browser console output
+[NETWORK] API responses from {{BACK_URL}} contain no plaintext passwords, tokens in error messages, or secret keys
+[STATE] Error messages use generic, safe language — no internal details","[CONSOLE] Zero console.log statements containing password, token, or secret substrings
+[NETWORK] All {{BACK_URL}} responses sanitized — no credential data in JSON error objects","Password visible in browser console log; credentials appear in network response body; API key or secret token exposed in error response",,security-manual,Manual
+SEC-SENSITIVE-002,Error Message Safety,Data Protection > Errors,Medium,BL-SEC-005,,- Application accessible for error triggering,,,,"[NAV] Navigate to {{FRONT_URL}} and trigger various error conditions:
+[ACT] Attempt login with invalid credentials — observe error message
+[ACT] Submit a form with invalid data — observe validation error
+[ACT] Navigate to a non-existent URL — observe 404 error
+[ASSERT] Verify no stack traces appear in any error message
+[ASSERT] Verify no internal file paths (e.g., /var/www/...) appear in errors
+[ASSERT] Verify error messages are generic and user-friendly","[STATE] Authentication error message is generic (e.g., 'Invalid credentials') — no stack trace
+[STATE] Validation errors contain no internal path or server details
+[STATE] 404 page shows generic message — no server framework or version info
+[NETWORK] API error responses from {{BACK_URL}} contain no stack traces or internal paths","[NETWORK] All {{BACK_URL}} API error responses (4xx, 5xx) contain only safe, generic error messages
+[CONSOLE] No stack traces or internal path strings in browser console","Stack trace visible in UI error message; internal server file path exposed in error; server framework version or database type revealed in error response",,security-manual,Manual
+SEC-SESSION-001,Session expiry during checkout — re-auth preserves cart,Authentication > Session Expiry,High,BL-SEC-004,ECL-6.1,"- Customer logged in with items in cart
 - Checkout flow started (shipping address entered)
-- Token expiry mechanism available (short-lived token or manual invalidation)","1. Log in as customer and add products to cart
-2. Proceed to checkout and enter shipping address
-3. Wait for session token to expire (or manually invalidate token via API/DevTools)
-4. Attempt to proceed to payment step
-5. Verify system detects expired session and prompts for re-authentication
-6. Re-authenticate with same customer credentials
-7. Verify cart contents are intact after re-authentication
-8. Verify checkout can resume from shipping/payment step
-9. Execute xAPI cart query to confirm all line items and quantities preserved","1. Expired session is detected when attempting checkout action
-2. User is prompted to re-authenticate (redirect to login or modal)
-3. After re-auth, cart contents are fully intact (same items, quantities, prices)
-4. Checkout resumes without requiring user to re-enter shipping address
-5. No data loss during session expiry and re-authentication flow",Coverage Gap Analysis BL-AUTH-001,Generated
-SEC-SESSION-002,Session re-auth during checkout — resume from last step,Authentication > Session Expiry,Security,High,15min,"- Customer logged in with items in cart
+- Token expiry mechanism available","user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}} and log in with {{USER_EMAIL}} / {{USER_PASSWORD}}
+[ACT] Add one or more products to cart
+[NAV] Navigate to {{FRONT_URL}}/checkout and enter shipping address
+[ACT] Force session expiry: open DevTools Application tab and delete auth token cookie, or wait for natural token expiry
+[ACT] Attempt to proceed to the payment step
+[WAIT] Wait for the system response to the expired session
+[ASSERT] Verify re-authentication prompt or redirect to login is shown
+[ACT] Re-authenticate with {{USER_EMAIL}} / {{USER_PASSWORD}}
+[NAV] Navigate back to {{FRONT_URL}}/checkout
+[ASSERT] Verify cart contents are intact (same items, quantities, prices)
+[ASSERT] Verify checkout can resume from the shipping/payment step without re-entering address","[STATE] Expired session is detected when attempting a checkout action
+[STATE] Re-authentication prompt or login redirect is displayed to the user
+[STATE] After re-auth, cart contains the same items, quantities, and prices as before expiry
+[STATE] Checkout step is preserved — user does not restart from the beginning
+[STATE] No data loss during the session expiry and re-authentication cycle","[API] xAPI cart query to {{BACK_URL}}/xapi/cart confirms all original line items and quantities are preserved after re-auth
+[CONSOLE] No unhandled errors or stack traces during re-auth flow
+[NETWORK] Re-authentication request to {{BACK_URL}}/connect/token succeeds with 200","Cart items lost after re-authentication; checkout restarted from the beginning after re-auth; session expiry not detected (silently fails); no re-auth prompt shown",,Coverage Gap Analysis BL-AUTH-001,Generated
+SEC-SESSION-002,Session re-auth during checkout — resume from last step,Authentication > Session Expiry,High,BL-SEC-004,ECL-6.1,"- Customer logged in with items in cart
 - Checkout flow in progress (shipping address and method selected)
-- Token expiry mechanism available","1. Log in as customer and add products to cart
-2. Proceed through checkout: enter shipping address, select shipping method
-3. Arrive at payment step
-4. Force session expiry (clear auth token from storage or wait for expiry)
-5. Attempt to submit payment or interact with payment form
-6. Verify re-authentication prompt appears
-7. Re-authenticate with same credentials
-8. Verify checkout state: shipping address still populated, shipping method still selected
-9. Verify payment step is accessible without restarting checkout
-10. Complete the order successfully","1. Re-authentication prompt appears on expired session during payment
-2. After re-auth, shipping address is still populated (not cleared)
-3. Shipping method selection is preserved
-4. User lands back on payment step (not restarted to beginning)
-5. Order can be completed successfully after session re-auth
-6. Checkout state is fully preserved across session boundary",Coverage Gap Analysis BL-AUTH-001,Generated
-SEC-SESSION-003,Session expiry does not create partial or orphan order,Authentication > Session Expiry,Security,Critical,15min,"- Customer logged in with items in cart
-- Checkout flow started
+- Token expiry mechanism available","user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}} and log in with {{USER_EMAIL}} / {{USER_PASSWORD}}
+[ACT] Add products to cart
+[NAV] Proceed through checkout: enter shipping address and select shipping method
+[NAV] Arrive at the payment step
+[ACT] Force session expiry: clear auth token from DevTools Application tab (Cookies or localStorage)
+[ACT] Attempt to interact with the payment form or submit payment
+[WAIT] Wait for the re-authentication prompt to appear
+[ASSERT] Verify re-authentication prompt is displayed
+[ACT] Re-authenticate with {{USER_EMAIL}} / {{USER_PASSWORD}}
+[ASSERT] Verify checkout state: shipping address is still populated
+[ASSERT] Verify shipping method selection is preserved
+[ASSERT] Verify payment step is accessible without restarting checkout from the beginning
+[ACT] Complete the order successfully after re-auth","[STATE] Re-authentication prompt appears when session expires on the payment step
+[STATE] Shipping address is still populated after re-auth (not cleared)
+[STATE] Shipping method selection is preserved after re-auth
+[NAV] User lands on payment step after re-auth — not restarted to checkout beginning
+[STATE] Order can be completed successfully after session re-authentication
+[STATE] Full checkout state is preserved across the session boundary","[API] xAPI cart query to {{BACK_URL}}/xapi/cart confirms cart and shipping method are intact after re-auth
+[NETWORK] Re-auth token request returns 200 and new valid token is issued
+[CONSOLE] No unhandled errors during re-auth checkout resume","Shipping address cleared after re-auth; checkout restarts from beginning; shipping method selection lost; payment step inaccessible after re-auth; order creation fails after re-auth",,Coverage Gap Analysis BL-AUTH-001,Generated
+SEC-SESSION-003,Session expiry does not create partial or orphan order,Authentication > Session Expiry,Critical,"BL-SEC-004","ECL-6.1","- Customer logged in with items in cart
+- Checkout flow started with all required information entered
 - xAPI access available for order verification
-- Token expiry mechanism available","1. Log in as customer and add products to cart
-2. Proceed to checkout and enter all required information
-3. Force session expiry immediately before order submission (clear token)
-4. Attempt to submit/place the order with expired token
-5. Verify order submission fails gracefully (not silently)
-6. Re-authenticate with same credentials
-7. Execute xAPI orders query to check for any new orders:
-   query { orders(storeId: ""${STORE_ID}"", cultureName: ""en-US"") { totalCount items { number status } } }
-8. Verify no partial or orphan order was created during the failed submission
-9. Verify cart still contains the original items
-10. Complete the order normally after re-auth","1. Order submission with expired token fails with clear error (not silent)
-2. No partial order exists in the system (no orphan order with incomplete data)
-3. No payment was captured or authorized for the failed attempt
-4. Cart remains intact with all items after session expiry
-5. Order can be completed normally after re-authentication
-6. System maintains transactional integrity — no order created until full completion",Coverage Gap Analysis BL-AUTH-001,Generated
+- Token expiry mechanism available","user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}} and log in with {{USER_EMAIL}} / {{USER_PASSWORD}}
+[ACT] Add products to cart and proceed through all checkout steps (address, shipping, payment details)
+[ACT] Force session expiry immediately before order submission: clear auth token in DevTools Application tab
+[ACT] Attempt to submit/place the order with the expired token
+[WAIT] Wait for the application response
+[ASSERT] Verify order submission fails with a clear, visible error (not silently)
+[ACT] Re-authenticate with {{USER_EMAIL}} / {{USER_PASSWORD}}
+[ACT] Execute xAPI orders query: { orders(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"") { totalCount items { number status createdDate } } }
+[ASSERT] Verify no new partial or orphan order exists for the failed submission
+[ASSERT] Verify cart still contains all original items
+[ACT] Complete the order normally after re-auth
+[ASSERT] Verify final order is created successfully and has a valid order number","[STATE] Order submission with expired token fails with a clear error message visible to the user (not a silent failure)
+[STATE] No partial or orphan order exists in the system after the failed submission
+[STATE] No payment was captured or authorized for the failed submission attempt
+[STATE] Cart remains intact with all original items after session expiry
+[STATE] Order completes normally after re-authentication
+[STATE] System maintains transactional integrity — no order record created until full successful completion","[API] xAPI query { orders(...) { totalCount items { number status } } } to {{BACK_URL}}/xapi confirms zero new orders after failed attempt
+[NETWORK] Failed order submission returns 401 — not 200 or 500
+[CONSOLE] No unhandled promise rejections or silent errors when order submission fails with expired token","Silent failure on order submission with expired token; partial order record created in system; payment charged or authorized for failed attempt; cart items lost after session expiry; duplicate order created after re-auth and retry",,Coverage Gap Analysis BL-AUTH-001,Generated

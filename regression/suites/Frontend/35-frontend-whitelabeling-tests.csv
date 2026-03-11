@@ -1,149 +1,189 @@
-ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
-FWL-001,Enable thumbnail job for favicons,Backend Jobs,Functional,Medium,3m,"White Labeling module installed; Admin access to backend","1. Navigate to Admin at ${BACK_URL}
-2. Sign in with admin credentials
-3. Navigate to Settings > Jobs
-4. Locate thumbnail generation job
-5. Enable the job
-6. Add new run for favicon generation
-7. Wait for job completion
-8. Navigate to White Labeling settings
-9. Verify favicons generated in multiple sizes","Thumbnail job enabled successfully; Favicons generated in required sizes (16x16, 32x32, 180x180, 192x192, 512x512); Favicons accessible via whiteLabelingSettings.favicons array",C389425,Not Automated
-FWL-002,Store and organization have no whitelabeling settings - default branding displayed,Store Settings,Functional,High,4m,"Store exists with White Labeling enabled but no custom settings; Organization exists with no branding configured","1. Navigate to Admin > Stores > B2B-store
-2. Open White Labeling settings tab
-3. Verify Enabled = ON but no custom logo/favicon/theme set (all empty)
-4. Navigate to Customer > Organizations > Test Org
-5. Open White Labeling settings
-6. Verify no custom branding configured (all empty)
-7. Sign in to storefront with user from Test Org
-8. Navigate to homepage at ${FRONT_URL}
-9. Inspect header logo
-10. Inspect browser tab favicon
-11. Inspect page theme colors","Default platform branding displayed: Default logo in header; Default favicon in browser tab (Virto Commerce icon); Default theme preset colors applied; No organization-specific branding",C390295,Not Automated
-FWL-003,Store has whitelabeling settings but organization does not - store defaults shown,Store Settings,Functional,High,5m,"Store has White Labeling enabled with custom logo/favicon/theme; Organization has White Labeling enabled but no custom settings","1. Navigate to Admin > Stores > B2B-store
-2. Open White Labeling settings
-3. Upload store-level logo: store-logo.png
-4. Upload store-level favicon: store-favicon.ico
-5. Set theme preset: Coffee
-6. Save store settings
-7. Navigate to Customer > Organizations > Org Without Branding
-8. Open White Labeling settings
-9. Verify Enabled = ON but no custom logo/favicon/theme
-10. Save organization settings
-11. Sign in to storefront with user from Org Without Branding
-12. Navigate to homepage
-13. Inspect header logo (should show store logo)
-14. Inspect favicon (should show store favicon)
-15. Inspect theme colors (should be Coffee preset)","Store-level branding displayed when organization has no custom settings: Store logo displayed in header; Store favicon displayed in browser tab; Coffee theme colors applied; No organization-specific overrides",C390296 VCST-1634,Not Automated
-FWL-004,Store and organization both have whitelabeling settings - organization branding overrides store,Organization Branding,Functional,Critical,6m,"Store has White Labeling with store-level logo/favicon/theme; Organization has custom logo/favicon/theme configured","1. Navigate to Admin > Stores > B2B-store
-2. Open White Labeling settings
-3. Upload store logo: store-logo.png
-4. Set theme: Default
-5. Save
-6. Navigate to Customer > Organizations > Branded Org
-7. Open White Labeling settings
-8. Verify Enabled = ON
-9. Upload organization logo: org-logo.png
-10. Upload organization favicon: org-favicon.ico
-11. Set theme preset: Coffee
-12. Configure footer links list: org-footer-links
-13. Configure main menu links list: org-main-menu
-14. Save organization settings
-15. Sign in to storefront with user from Branded Org
-16. Navigate to homepage
-17. Inspect header logo (should show org logo, not store logo)
-18. Inspect favicon (should show org favicon)
-19. Inspect theme (should be Coffee, not Default)
-20. Inspect main menu links structure
-21. Inspect footer links structure","Organization branding overrides store-level settings: Organization logo displayed in header (org-logo.png); Organization favicon in browser tab; Coffee theme applied (not Default); Organization-specific main menu links displayed; Organization-specific footer links displayed; Store branding NOT shown",C390297 VCST-1634,Not Automated
-FWL-005,Set non-existent theme preset - default theme applied as fallback,Theme Preset,Negative,Medium,3m,"Store/Organization White Labeling configured; Access to backend","1. Navigate to Admin > Customer > Organizations > Test Org
-2. Open White Labeling settings
-3. Directly set themePresetName field to non-existent value: Mercury (outdated preset)
-4. Save settings
-5. Sign in to storefront with user from Test Org
-6. Navigate to homepage
-7. Inspect page theme colors and styles
-8. Verify theme applied","Application handles non-existent preset gracefully: Default theme preset applied as fallback (NOT Mercury); No console errors related to theme loading; Page renders correctly with default colors; User is NOT shown broken/missing styles",C391195 VCST-1634,Not Automated
-FWL-006,Set custom logo and favicon for organization - displayed after sign-in,Organization Branding,Functional,Critical,5m,"Organization exists: Company1; White Labeling enabled; Custom logo and favicon assets prepared","1. Navigate to Admin > Customer > Organizations > Company1
-2. Open White Labeling settings
-3. Verify Enabled = ON
-4. Upload custom logo: company1-logo.png (PNG, 200x60px)
-5. Upload custom favicon: company1-favicon.ico (ICO, 32x32px)
-6. Save settings
-7. Open new browser tab
-8. Navigate to ${FRONT_URL}
-9. Sign in with user account from Company1 organization
-10. After successful sign-in, inspect header
-11. Inspect browser tab favicon
-12. Take screenshot for documentation","Custom branding displayed for organization user: Company1 logo visible in header (company1-logo.png); Company1 favicon displayed in browser tab; Logo is high quality (not pixelated); Favicon displays correctly in tab; Branding persists across page navigation within storefront",C389426,Not Automated
-FWL-007,Set White Labeling Enabled = OFF for organization - default logo and favicon displayed,Organization Settings,Functional,High,4m,"Organization Company1 has custom logo/favicon configured; White Labeling currently enabled","1. Navigate to Admin > Customer > Organizations > Company1
-2. Open White Labeling settings
-3. Verify custom logo and favicon are uploaded
-4. Set Enabled = OFF
-5. Save settings
-6. Sign in to storefront with Company1 user
-7. Navigate to homepage
-8. Inspect header logo
-9. Inspect browser tab favicon","When White Labeling is disabled for organization: Default Virto Commerce logo displayed in header (NOT company1-logo.png); Default favicon displayed in browser tab; Custom branding NOT applied even though assets exist; Settings are preserved but not active",C389427,Not Automated
-FWL-008,Set White Labeling Enabled = ON for organization - custom logo and favicon displayed,Organization Settings,Functional,High,4m,"Organization Company1 has custom logo/favicon configured; White Labeling currently disabled (OFF)","1. Navigate to Admin > Customer > Organizations > Company1
-2. Open White Labeling settings
-3. Verify Enabled = OFF but custom logo/favicon exist
-4. Set Enabled = ON
-5. Save settings
-6. Sign in to storefront with Company1 user
-7. Navigate to homepage
-8. Inspect header logo
-9. Inspect browser tab favicon","When White Labeling is enabled for organization: Custom company1-logo.png displayed in header; Custom company1-favicon.ico displayed in browser tab; Organization branding applied correctly; Theme preset (if configured) applied",C389428,Not Automated
-FWL-009,Store-level White Labeling = OFF - organization branding disabled regardless of org settings,Store Settings,Functional,High,5m,"Store B2B-store has White Labeling setting; Organization Company1 has custom branding configured with Enabled = ON","1. Navigate to Admin > Stores > B2B-store
-2. Open White Labeling settings
-3. Set store-level White Labeling = OFF
-4. Save store settings
-5. Navigate to Customer > Organizations > Company1
-6. Verify Company1 has Enabled = ON with custom logo/favicon
-7. Sign in to storefront with Company1 user
-8. Navigate to homepage
-9. Inspect header logo
-10. Inspect favicon
-11. Inspect theme","Store-level White Labeling OFF acts as master switch: Default platform branding displayed (NOT Company1 custom branding); Organization settings ignored when store-level WL is OFF; Default logo and favicon shown; No organization-specific branding applied; This is expected behavior (store setting overrides org settings)",C389429,Not Automated
-FWL-010,Set theme preset for organization - Coffee theme applied after sign-in,Theme Preset,Functional,High,4m,"Organization Company1 exists; White Labeling enabled; Available theme presets: Default, Coffee","1. Navigate to Admin > Customer > Organizations > Company1
-2. Open White Labeling settings
-3. Verify Enabled = ON
-4. Set Theme Preset: Coffee
-5. Save settings
-6. Sign in to storefront with Company1 user
-7. Navigate to homepage
-8. Inspect page styles and CSS variables
-9. Verify header colors
-10. Verify button styles
-11. Verify link colors
-12. Navigate to multiple pages (catalog, product, cart)
-13. Verify theme consistency","Coffee theme preset applied consistently: CSS variables updated to Coffee theme values; Header background color matches Coffee theme; Button styles use Coffee theme colors; Links use Coffee accent color; Theme persists across all pages (homepage, catalog, product, cart); No visual glitches or color flashing during navigation",C389430,Not Automated
-FWL-011,Add parent footer links for organization - displayed in storefront footer,Footer Links,Functional,High,5m,"Organization Organization1 exists; White Labeling enabled; Link list feature available","1. Navigate to Admin > Marketing > Link Lists
-2. Create new link list: footer-org1
-3. Add parent links:
-   - Title: About Us, URL: /about, Priority: 1
-   - Title: Customer Support, URL: /support, Priority: 2
-   - Title: Legal, URL: /legal, Priority: 3
-4. Save link list
-5. Navigate to Customer > Organizations > Organization1
-6. Open White Labeling settings
-7. Set Footer Link List: footer-org1
-8. Save organization settings
-9. Sign in to storefront with Organization1 user
-10. Scroll to footer
-11. Inspect footer links structure","Parent footer links displayed correctly: Three parent sections visible: About Us, Customer Support, Legal; Links displayed in priority order (1, 2, 3); Link titles match configured values; Link URLs are correct; Footer structure is well-formatted",C389431,Not Automated
-FWL-012,Add children footer links under parent - hierarchical structure displayed,Footer Links,Functional,High,6m,"Organization Organization1 has parent footer links configured (FWL-011 prerequisite)","1. Navigate to Admin > Marketing > Link Lists > footer-org1
-2. Expand parent link: Customer Support
-3. Add child links:
-   - Title: Contact Us, URL: /contact, Priority: 1
-   - Title: FAQ, URL: /faq, Priority: 2
-   - Title: Returns, URL: /returns, Priority: 3
-4. Save link list
-5. Refresh storefront (signed in as Organization1 user)
-6. Scroll to footer
-7. Inspect Customer Support section
-8. Verify child links nested under parent","Hierarchical footer structure displayed: Customer Support parent link visible; Three child links nested under Customer Support: Contact Us, FAQ, Returns; Child links indented or visually grouped under parent; Priority order respected (Contact Us first, Returns last); Clicking child links navigates correctly; Other parent sections (About Us, Legal) remain unchanged",C389432,Not Automated
-FWL-013,Verify footer links returned in whiteLabelingSettings GraphQL query,GraphQL Integration,Functional,Critical,5m,"Organization with footer links configured; GraphQL endpoint accessible at ${BACK_URL}/graphql","1. Navigate to GraphQL playground: ${BACK_URL}/graphql
-2. Execute whiteLabelingSettings query with footerLinks field:
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+FWL-001,Enable thumbnail job for favicons,Backend Jobs,Medium,BL-WL-001,,White Labeling module installed; Admin access to backend,"admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin at {{BACK_URL}}
+[ACT] 2. Sign in with admin credentials
+[NAV] 3. Navigate to Settings > Jobs
+[ACT] 4. Locate thumbnail generation job
+[ACT] 5. Enable the job
+[ACT] 6. Add new run for favicon generation
+[WAIT] 7. Wait for job completion
+[NAV] 8. Navigate to White Labeling settings
+[ASSERT] 9. Verify favicons generated in multiple sizes","[DOM] Thumbnail job status shows Enabled
+[DOM] whiteLabelingSettings.favicons array contains entries for 16x16, 32x32, 180x180, 192x192, 512x512
+[STATE] Job run completes without errors","[ADMIN] job run status shows Success
+[CONSOLE] no uncaught JS errors","Favicons not generated; Thumbnail job fails to run; Sizes missing from favicons array",restore original job state,C389425,Manual
+FWL-002,Store and organization have no whitelabeling settings - default branding displayed,Store Settings,High,BL-WL-002,,Store exists with White Labeling enabled but no custom settings; Organization exists with no branding configured,"admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > B2B-store
+[ACT] 2. Open White Labeling settings tab
+[ASSERT] 3. Verify Enabled = ON but no custom logo/favicon/theme set (all empty)
+[NAV] 4. Navigate to Customer > Organizations > Test Org
+[ACT] 5. Open White Labeling settings
+[ASSERT] 6. Verify no custom branding configured (all empty)
+[NAV] 7. Sign in to storefront with user from Test Org
+[NAV] 8. Navigate to homepage at {{FRONT_URL}}
+[ASSERT] 9. Inspect header logo
+[ASSERT] 10. Inspect browser tab favicon
+[ASSERT] 11. Inspect page theme colors","[DOM] Default platform logo displayed in header
+[DOM] Default favicon visible in browser tab (Virto Commerce icon)
+[STATE] Default theme preset colors applied
+[DOM] No organization-specific branding visible","[CONSOLE] no uncaught JS errors
+[NETWORK] logo image loads with HTTP 200","Custom logo shown instead of default; Custom favicon shown; Theme overridden unexpectedly",none,C390295,Manual
+FWL-003,Store has whitelabeling settings but organization does not - store defaults shown,Store Settings,High,BL-WL-002,,Store has White Labeling enabled with custom logo/favicon/theme; Organization has White Labeling enabled but no custom settings,"admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > B2B-store
+[ACT] 2. Open White Labeling settings
+[ACT] 3. Upload store-level logo: store-logo.png
+[ACT] 4. Upload store-level favicon: store-favicon.ico
+[ACT] 5. Set theme preset: Coffee
+[ACT] 6. Save store settings
+[NAV] 7. Navigate to Customer > Organizations > Org Without Branding
+[ACT] 8. Open White Labeling settings
+[ASSERT] 9. Verify Enabled = ON but no custom logo/favicon/theme
+[ACT] 10. Save organization settings
+[NAV] 11. Sign in to storefront with user from Org Without Branding
+[NAV] 12. Navigate to homepage
+[ASSERT] 13. Inspect header logo (should show store logo)
+[ASSERT] 14. Inspect favicon (should show store favicon)
+[ASSERT] 15. Inspect theme colors (should be Coffee preset)","[DOM] Store logo displayed in header (store-logo.png)
+[DOM] Store favicon displayed in browser tab
+[STATE] Coffee theme colors applied
+[DOM] No org-specific branding overrides present","[CONSOLE] no uncaught JS errors
+[NETWORK] logo image loads with HTTP 200","Org overrides shown when org has no branding; Default branding shown instead of store branding; Wrong theme applied","restore store to previous settings; restore org settings","C390296 VCST-1634",Manual
+FWL-004,Store and organization both have whitelabeling settings - organization branding overrides store,Organization Branding,Critical,BL-WL-001,,Store has White Labeling with store-level logo/favicon/theme; Organization has custom logo/favicon/theme configured,"admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > B2B-store
+[ACT] 2. Open White Labeling settings
+[ACT] 3. Upload store logo: store-logo.png
+[ACT] 4. Set theme: Default
+[ACT] 5. Save
+[NAV] 6. Navigate to Customer > Organizations > Branded Org
+[ACT] 7. Open White Labeling settings
+[ASSERT] 8. Verify Enabled = ON
+[ACT] 9. Upload organization logo: org-logo.png
+[ACT] 10. Upload organization favicon: org-favicon.ico
+[ACT] 11. Set theme preset: Coffee
+[ACT] 12. Configure footer links list: org-footer-links
+[ACT] 13. Configure main menu links list: org-main-menu
+[ACT] 14. Save organization settings
+[NAV] 15. Sign in to storefront with user from Branded Org
+[NAV] 16. Navigate to homepage
+[ASSERT] 17. Inspect header logo (should show org logo, not store logo)
+[ASSERT] 18. Inspect favicon (should show org favicon)
+[ASSERT] 19. Inspect theme (should be Coffee, not Default)
+[ASSERT] 20. Inspect main menu links structure
+[ASSERT] 21. Inspect footer links structure","[DOM] Organization logo displayed in header (org-logo.png, NOT store-logo.png)
+[DOM] Organization favicon displayed in browser tab
+[STATE] Coffee theme applied (NOT Default)
+[DOM] Org-specific main menu links visible
+[DOM] Org-specific footer links visible","[CONSOLE] no uncaught JS errors
+[NETWORK] org logo image loads with HTTP 200","Store logo shown instead of org logo; Store theme applied instead of org theme; Org footer/menu links missing","restore org settings to pre-test state; restore store settings","C390297 VCST-1634",Manual
+FWL-005,Set non-existent theme preset - default theme applied as fallback,Theme Preset,Medium,BL-WL-004,,Store/Organization White Labeling configured; Access to backend,"admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Test Org
+[ACT] 2. Open White Labeling settings
+[ACT] 3. Directly set themePresetName field to non-existent value: Mercury (outdated preset)
+[ACT] 4. Save settings
+[NAV] 5. Sign in to storefront with user from Test Org
+[NAV] 6. Navigate to homepage
+[ASSERT] 7. Inspect page theme colors and styles
+[ASSERT] 8. Verify theme applied","[STATE] Default theme preset applied as fallback (NOT Mercury)
+[DOM] Page renders correctly with default colors
+[DOM] No broken or missing styles visible","[CONSOLE] no theme-related JS errors or warnings
+[NETWORK] theme CSS loads with HTTP 200","Mercury theme applied (should not exist); Console errors on theme load; Broken styles or missing CSS","restore org themePresetName to valid preset","C391195 VCST-1634",Manual
+FWL-006,Set custom logo and favicon for organization - displayed after sign-in,Organization Branding,Critical,BL-WL-001,,Organization exists: Company1; White Labeling enabled; Custom logo and favicon assets prepared,"admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Company1
+[ACT] 2. Open White Labeling settings
+[ASSERT] 3. Verify Enabled = ON
+[ACT] 4. Upload custom logo: company1-logo.png (PNG, 200x60px)
+[ACT] 5. Upload custom favicon: company1-favicon.ico (ICO, 32x32px)
+[ACT] 6. Save settings
+[NAV] 7. Open new browser tab
+[NAV] 8. Navigate to {{FRONT_URL}}
+[ACT] 9. Sign in with user account from Company1 organization
+[WAIT] 10. After successful sign-in, wait for redirect to homepage
+[ASSERT] 11. Inspect header
+[ASSERT] 12. Inspect browser tab favicon","[DOM] company1-logo.png visible in header
+[DOM] company1-favicon.ico displayed in browser tab
+[DOM] Logo is properly sized (not distorted)
+[STATE] Logo links to homepage when clicked
+[DOM] Branding persists across catalog, product, cart pages","[CONSOLE] no uncaught JS errors
+[NETWORK] company1-logo.png loads with HTTP 200","Default logo shown instead of company1 logo; Broken image in header; Favicon not updated","restore org settings (remove logo/favicon)",C389426,Manual
+FWL-007,Set White Labeling Enabled = OFF for organization - default logo and favicon displayed,Organization Settings,High,BL-WL-002,,Organization Company1 has custom logo/favicon configured; White Labeling currently enabled,"admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Company1
+[ACT] 2. Open White Labeling settings
+[ASSERT] 3. Verify custom logo and favicon are uploaded
+[ACT] 4. Set Enabled = OFF
+[ACT] 5. Save settings
+[NAV] 6. Sign in to storefront with Company1 user
+[NAV] 7. Navigate to homepage
+[ASSERT] 8. Inspect header logo
+[ASSERT] 9. Inspect browser tab favicon","[DOM] Default Virto Commerce logo displayed in header (NOT company1-logo.png)
+[DOM] Default favicon displayed in browser tab
+[STATE] Custom branding NOT applied even though assets exist","[CONSOLE] no uncaught JS errors
+[NETWORK] default logo loads with HTTP 200","Custom org logo still shown when WL is OFF; Console errors when WL toggled OFF","restore org Enabled = ON",C389427,Manual
+FWL-008,Set White Labeling Enabled = ON for organization - custom logo and favicon displayed,Organization Settings,High,BL-WL-002,,Organization Company1 has custom logo/favicon configured; White Labeling currently disabled (OFF),"admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Company1
+[ACT] 2. Open White Labeling settings
+[ASSERT] 3. Verify Enabled = OFF but custom logo/favicon exist
+[ACT] 4. Set Enabled = ON
+[ACT] 5. Save settings
+[NAV] 6. Sign in to storefront with Company1 user
+[NAV] 7. Navigate to homepage
+[ASSERT] 8. Inspect header logo
+[ASSERT] 9. Inspect browser tab favicon","[DOM] Custom company1-logo.png displayed in header
+[DOM] Custom company1-favicon.ico displayed in browser tab
+[STATE] Organization branding applied correctly","[CONSOLE] no uncaught JS errors
+[NETWORK] company1-logo.png loads with HTTP 200","Default logo still shown after enabling WL; Favicon not updated; Theme preset not applied","restore org Enabled = OFF",C389428,Manual
+FWL-009,Store-level White Labeling = OFF - organization branding disabled regardless of org settings,Store Settings,High,BL-WL-002,,Store B2B-store has White Labeling setting; Organization Company1 has custom branding configured with Enabled = ON,"admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > B2B-store
+[ACT] 2. Open White Labeling settings
+[ACT] 3. Set store-level White Labeling = OFF
+[ACT] 4. Save store settings
+[NAV] 5. Navigate to Customer > Organizations > Company1
+[ASSERT] 6. Verify Company1 has Enabled = ON with custom logo/favicon
+[NAV] 7. Sign in to storefront with Company1 user
+[NAV] 8. Navigate to homepage
+[ASSERT] 9. Inspect header logo
+[ASSERT] 10. Inspect favicon
+[ASSERT] 11. Inspect theme","[DOM] Default platform branding displayed (NOT Company1 custom branding)
+[STATE] Organization settings ignored when store-level WL is OFF
+[DOM] Default logo and favicon shown","[CONSOLE] no uncaught JS errors","Org branding shown when store WL is OFF; Store WL OFF not acting as master switch","restore store White Labeling = ON",C389429,Manual
+FWL-010,Set theme preset for organization - Coffee theme applied after sign-in,Theme Preset,High,BL-WL-001,,Organization Company1 exists; White Labeling enabled; Available theme presets: Default Coffee,"admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Company1
+[ACT] 2. Open White Labeling settings
+[ASSERT] 3. Verify Enabled = ON
+[ACT] 4. Set Theme Preset: Coffee
+[ACT] 5. Save settings
+[NAV] 6. Sign in to storefront with Company1 user
+[NAV] 7. Navigate to homepage
+[ASSERT] 8. Inspect page styles and CSS variables
+[ASSERT] 9. Verify header colors
+[ASSERT] 10. Verify button styles
+[ASSERT] 11. Verify link colors
+[NAV] 12. Navigate to multiple pages (catalog, product, cart)
+[ASSERT] 13. Verify theme consistency","[DOM] CSS variables updated to Coffee theme values
+[FORMAT] Header background color matches Coffee theme spec
+[FORMAT] Button styles use Coffee theme colors
+[FORMAT] Links use Coffee accent color
+[STATE] Theme persists across homepage, catalog, product, cart pages","[CONSOLE] no uncaught JS errors or CSS errors
+[NETWORK] theme CSS loads with HTTP 200","Default theme shown instead of Coffee; Colors not matching Coffee palette; Theme inconsistent across pages; CSS flash during navigation","restore org theme to Default",C389430,Manual
+FWL-011,Add parent footer links for organization - displayed in storefront footer,Footer Links,High,BL-WL-001,,Organization Organization1 exists; White Labeling enabled; Link list feature available,"admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Marketing > Link Lists
+[ACT] 2. Create new link list: footer-org1
+[ACT] 3. Add parent links: About Us (URL: /about, Priority: 1), Customer Support (URL: /support, Priority: 2), Legal (URL: /legal, Priority: 3)
+[ACT] 4. Save link list
+[NAV] 5. Navigate to Customer > Organizations > Organization1
+[ACT] 6. Open White Labeling settings
+[ACT] 7. Set Footer Link List: footer-org1
+[ACT] 8. Save organization settings
+[NAV] 9. Sign in to storefront with Organization1 user
+[SCROLL] 10. Scroll to footer
+[ASSERT] 11. Inspect footer links structure","[DOM] Three parent sections visible: About Us, Customer Support, Legal
+[DOM] Links displayed in priority order (1, 2, 3)
+[DOM] Link titles match configured values
+[NAV] Link URLs correct: /about, /support, /legal","[CONSOLE] no uncaught JS errors
+[NETWORK] footer link list data loaded successfully","Wrong footer links shown; Priority order not respected; Footer links absent entirely","remove footer-org1 link list from org; delete link list",C389431,Manual
+FWL-012,Add children footer links under parent - hierarchical structure displayed,Footer Links,High,BL-WL-001,,"Organization Organization1 has parent footer links configured (FWL-011 prerequisite)","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Marketing > Link Lists > footer-org1
+[ACT] 2. Expand parent link: Customer Support
+[ACT] 3. Add child links: Contact Us (URL: /contact, Priority: 1), FAQ (URL: /faq, Priority: 2), Returns (URL: /returns, Priority: 3)
+[ACT] 4. Save link list
+[NAV] 5. Refresh storefront (signed in as Organization1 user)
+[SCROLL] 6. Scroll to footer
+[ASSERT] 7. Inspect Customer Support section
+[ASSERT] 8. Verify child links nested under parent","[DOM] Customer Support parent link visible
+[DOM] Three child links nested under Customer Support: Contact Us, FAQ, Returns
+[DOM] Child links indented or visually grouped under parent
+[DOM] Priority order respected (Contact Us first, Returns last)
+[NAV] Child link URLs correct when clicked","[CONSOLE] no uncaught JS errors
+[NETWORK] hierarchical link list data loads correctly","Child links not visible; Children shown under wrong parent; Priority order wrong; Other parent sections (About Us, Legal) broken","remove child links added in test; revert to parent-only structure",C389432,Manual
+FWL-013,Verify footer links returned in whiteLabelingSettings GraphQL query,GraphQL Integration,Critical,"BL-WL-001, BL-WL-002",ECL-14.1,"Organization with footer links configured; GraphQL endpoint accessible at {{BACK_URL}}/graphql","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/graphql
+[ACT] 2. Execute whiteLabelingSettings query with footerLinks field:
 query {
   whiteLabelingSettings(
     organizationId: ""<org-id>""
@@ -161,125 +201,184 @@ query {
     }
   }
 }
-3. Verify response structure
-4. Verify data matches admin configuration","GraphQL query returns footer links correctly: Response includes footerLinks array; Parent links returned with title, url, priority; Child links nested under childItems; Hierarchy preserved in response; Data matches link list configured in admin; No GraphQL errors",C389433 VCST-4637,Not Automated
-FWL-014,Set footer link list for organization - footer links displayed after sign-in,Footer Links,Functional,High,5m,"Organization Company1 exists; Footer link list configured: footer-company1","1. Navigate to Admin > Customer > Organizations > Company1
-2. Open White Labeling settings
-3. Set Footer Link List Name: footer-company1
-4. Save settings
-5. Sign in to storefront with Company1 user
-6. Navigate to homepage
-7. Scroll to footer
-8. Inspect footer links","Company1-specific footer links displayed: Footer shows links from footer-company1 link list; Links are organization-specific (not default footer); Hierarchical structure displayed correctly; Links navigate to correct URLs when clicked; Footer links persist across page navigation",C389434,Not Automated
-FWL-015,Verify administrator role has access to White Labeling logo management,User Roles,Functional,High,3m,"Administrator user account exists; White Labeling module installed","1. Sign in to Admin at ${BACK_URL} with administrator credentials
-2. Navigate to Customer > Organizations > Any Organization
-3. Open White Labeling tab
-4. Verify UI controls visible
-5. Attempt to upload logo file
-6. Attempt to upload favicon file
-7. Attempt to change theme preset
-8. Save settings","Administrator has full access to White Labeling: White Labeling tab visible in organization settings; Upload controls visible for logo, secondaryLogo, favicon; Theme preset dropdown accessible; Footer/Main Menu link list dropdowns visible; Save button enabled; Settings save successfully; No permission errors",C398718 VCST-2627,Not Automated
-FWL-016,Verify organization logo displayed in header after sign-in,Storefront Display,Functional,Critical,4m,"Organization Branded Org has custom logo configured: branded-org-logo.png; User account exists for Branded Org","1. Navigate to ${FRONT_URL}
-2. Verify default logo shown before sign-in
-3. Click Sign In
-4. Enter credentials for Branded Org user
-5. Click Sign In button
-6. Wait for redirect to homepage
-7. Inspect header navigation bar
-8. Verify logo element
-9. Take screenshot of header","Organization logo displayed after sign-in: Header shows branded-org-logo.png (NOT default logo); Logo is clear and high quality; Logo is properly sized (height matches header, no distortion); Logo is clickable and links to homepage; Logo displays on all pages after sign-in (catalog, product, cart, account)",VCST-4637,Not Automated
-FWL-017,Verify organization favicon displayed in browser tab after sign-in,Storefront Display,Functional,Critical,3m,"Organization Branded Org has custom favicon configured: branded-org-favicon.ico","1. Open new browser tab
-2. Navigate to ${FRONT_URL}
-3. Verify browser tab shows default Virto Commerce favicon before sign-in
-4. Sign in with Branded Org user
-5. Wait for redirect after sign-in
-6. Inspect browser tab icon (favicon)
-7. Navigate to different pages (catalog, product page)
-8. Verify favicon persists","Organization favicon displayed in browser tab: Tab shows branded-org-favicon.ico (NOT default favicon); Favicon displays correctly (32x32 icon visible); Favicon persists across all pages after sign-in; Favicon remains when opening new tabs within same session; Favicon is high quality (not blurry)",VCST-4637,Not Automated
-FWL-018,Verify organization secondary logo displayed (if configured),Storefront Display,Functional,Medium,3m,"Organization has secondary logo configured; White Labeling supports secondaryLogoUrl field","1. Navigate to Admin > Organizations > Org With Secondary Logo
-2. Open White Labeling settings
-3. Verify Secondary Logo URL is configured
-4. Save if needed
-5. Sign in to storefront with user from this org
-6. Navigate to pages that display secondary logo (check footer or specific components)
-7. Inspect secondary logo element","Secondary logo displayed where configured: Secondary logo image loads correctly; Image URL matches secondaryLogoUrl from settings; Logo displays in appropriate location (footer, mobile menu, or other designated area); Image quality is good (not distorted); Falls back gracefully if not configured (no broken image)",VCST-4637,Not Automated
-FWL-019,Verify theme preset colors applied to storefront after sign-in - Default theme,Theme Preset,Functional,High,5m,"Organization has theme preset: Default; User account for this organization exists","1. Navigate to Admin > Organizations > Org With Default Theme
-2. Open White Labeling settings
-3. Verify Theme Preset = Default
-4. Save
-5. Sign in to storefront with user from this org
-6. Navigate to homepage
-7. Open browser DevTools > Elements
-8. Inspect CSS variables on :root or body element
-9. Verify color values match Default theme
-10. Inspect header background color
-11. Inspect button primary color
-12. Inspect link accent color","Default theme colors applied: CSS variables match Default theme palette; Header uses Default theme colors; Buttons use Default theme primary color; Links use Default theme accent color; Product cards styled with Default theme; Footer styled with Default theme; No color conflicts or visual glitches",VCST-4637,Not Automated
-FWL-020,Verify theme preset colors applied to storefront after sign-in - Coffee theme,Theme Preset,Functional,High,5m,"Organization has theme preset: Coffee; User account for this organization exists","1. Navigate to Admin > Organizations > Org With Coffee Theme
-2. Open White Labeling settings
-3. Verify Theme Preset = Coffee
-4. Save
-5. Sign in to storefront with user from this org
-6. Navigate to homepage
-7. Open browser DevTools > Elements
-8. Inspect CSS variables
-9. Verify color values match Coffee theme (brown/cream palette)
-10. Inspect header, buttons, links
-11. Compare to Default theme (should be different)","Coffee theme colors applied: CSS variables match Coffee theme palette (browns, creams); Header uses Coffee theme colors (NOT Default); Buttons use Coffee theme primary color; Links use Coffee theme accent color; Visual difference from Default theme is obvious; Theme is cohesive and professional-looking; No color conflicts",VCST-4637,Not Automated
-FWL-021,Verify main menu links displayed in header after sign-in (NEW - VCST-4637),Main Menu Links,Functional,Critical,6m,"Organization has main menu link list configured: org-main-menu with 4 parent links and 3 with children; User account exists","1. Navigate to Admin > Marketing > Link Lists > org-main-menu
-2. Verify structure:
-   - Products (priority 1) → Laptops (1.1), Phones (1.2), Tablets (1.3)
-   - Services (priority 2)
-   - About (priority 3) → Company (3.1), Careers (3.2)
-   - Contact (priority 4)
-3. Navigate to Admin > Organizations > Org With Main Menu
-4. Set Main Menu Link List Name: org-main-menu
-5. Save
-6. Sign in to storefront with user from this org
-7. Inspect header navigation
-8. Verify main menu structure","Organization-specific main menu displayed: Four parent links visible in header navigation: Products, Services, About, Contact; Links displayed in priority order (1→4); Hovering over Products shows dropdown with 3 children: Laptops, Phones, Tablets (in priority order); Hovering over About shows dropdown with 2 children: Company, Careers; Services and Contact have no dropdowns (no children); Main menu structure matches configured link list exactly",VCST-4637,Not Automated
-FWL-022,Verify main menu links hierarchical dropdown behavior (parent + children),Main Menu Links,Functional,High,5m,"Organization with hierarchical main menu configured (FWL-021 prerequisite)","1. Sign in to storefront with user from Org With Main Menu
-2. Navigate to homepage
-3. Hover over Products parent link in header
-4. Observe dropdown menu
-5. Verify child links visible: Laptops, Phones, Tablets
-6. Hover over each child link (verify hover state)
-7. Click Laptops child link
-8. Verify navigation
-9. Return to homepage
-10. Hover over About parent link
-11. Verify dropdown with Company, Careers","Hierarchical main menu dropdown works correctly: Hovering parent link shows dropdown with children; Dropdown displays smoothly (no flicker); Child links displayed in priority order; Hovering child link shows hover state (color change, underline); Clicking child link navigates to correct URL; Dropdown closes when mouse leaves; Parent links without children have no dropdown; Desktop hover interaction is intuitive",VCST-4637,Not Automated
-FWL-023,Verify main menu links on mobile - hamburger menu with hierarchy,Main Menu Links,Functional,Critical,6m,"Organization with main menu configured; Mobile device or responsive viewport (375px width)","1. Resize browser to mobile viewport: 375px width (iPhone size)
-2. Sign in to storefront with user from Org With Main Menu
-3. Navigate to homepage
-4. Locate hamburger menu icon (☰) in mobile header
-5. Tap hamburger icon
-6. Inspect mobile menu drawer
-7. Verify main menu structure in mobile view
-8. Tap Products parent item
-9. Verify child links expand/collapse
-10. Tap Laptops child link
-11. Verify navigation","Main menu accessible on mobile: Hamburger menu icon visible in mobile header; Tapping hamburger opens mobile menu drawer; Main menu links displayed in drawer: Products, Services, About, Contact; Products has expand/collapse icon (arrow or chevron); Tapping Products expands to show children: Laptops, Phones, Tablets; Child links are indented or visually nested; Tapping child link navigates correctly; Menu drawer closes after navigation; Mobile menu is touch-friendly (adequate tap targets)",VCST-4637,Not Automated
-FWL-024,Verify main menu links navigation works correctly,Main Menu Links,Functional,High,4m,"Organization with main menu configured; Main menu links pointing to valid URLs","1. Sign in to storefront with user from Org With Main Menu
-2. Navigate to homepage
-3. Hover over Products in main menu
-4. Click Laptops child link
-5. Verify URL changes to configured URL (e.g., /category/laptops)
-6. Verify page loads correctly
-7. Return to homepage
-8. Click Services parent link (no children)
-9. Verify navigation
-10. Test all main menu links (parent and child)","Main menu navigation works: Clicking child link navigates to correct URL; Page loads successfully (no 404 errors); Clicking parent link (without children) navigates directly; Clicking parent link (with children) may navigate or open dropdown (depends on implementation); Back button returns to previous page correctly; Navigation is fast and responsive; No JavaScript errors during navigation",VCST-4637,Not Automated
-FWL-025,Verify fallback when no main menu link list configured for organization,Main Menu Links,Functional,Medium,4m,"Organization exists with White Labeling enabled but MainMenuLinkListName = NULL or empty; User account exists","1. Navigate to Admin > Organizations > Org Without Main Menu
-2. Open White Labeling settings
-3. Verify Main Menu Link List Name is empty or NULL
-4. Save
-5. Sign in to storefront with user from this org
-6. Navigate to homepage
-7. Inspect header navigation area
-8. Verify main menu display","Graceful fallback when no main menu configured: Default main menu shown OR no main menu shown (depends on implementation); Application does NOT crash or show errors; Header layout is not broken; Other navigation elements (search, cart, account) work correctly; Footer links still display if configured; User can navigate site via other means (search, footer, catalog pages)",VCST-4637,Not Automated
-FWL-026,Verify main menu links returned in whiteLabelingSettings GraphQL query (VCST-4637),GraphQL Integration,Functional,Critical,5m,"Organization with main menu configured; GraphQL endpoint accessible","1. Navigate to GraphQL playground: ${BACK_URL}/graphql
-2. Execute whiteLabelingSettings query with mainMenuLinks field:
+[ASSERT] 3. Verify response structure
+[ASSERT] 4. Verify data matches admin configuration","[DOM] Response includes footerLinks array
+[DOM] Parent links returned with title, url, priority fields
+[DOM] Child links nested under childItems array
+[DOM] Hierarchy preserved in response
+[DOM] Data matches link list configured in admin","[API] whiteLabelingSettings query returns correct footerLinks fields
+[API] errors[] is empty in GraphQL response","GraphQL errors in response; footerLinks field missing or null; childItems not returned; Data mismatch with admin config",none,"C389433 VCST-4637",Manual
+FWL-014,Set footer link list for organization - footer links displayed after sign-in,Footer Links,High,BL-WL-001,,Organization Company1 exists; Footer link list configured: footer-company1,"admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Company1
+[ACT] 2. Open White Labeling settings
+[ACT] 3. Set Footer Link List Name: footer-company1
+[ACT] 4. Save settings
+[NAV] 5. Sign in to storefront with Company1 user
+[NAV] 6. Navigate to homepage
+[SCROLL] 7. Scroll to footer
+[ASSERT] 8. Inspect footer links","[DOM] Footer shows links from footer-company1 link list
+[DOM] Links are organization-specific (not default footer)
+[DOM] Hierarchical structure displayed correctly
+[NAV] Links navigate to correct URLs when clicked
+[STATE] Footer links persist across page navigation","[CONSOLE] no uncaught JS errors
+[NETWORK] footer link data loads successfully","Default footer shown instead of org footer; Links from wrong org shown; Hierarchy broken",restore org FooterLinkListName to original,C389434,Manual
+FWL-015,Verify administrator role has access to White Labeling logo management,User Roles,High,BL-WL-001,,Administrator user account exists; White Labeling module installed,"admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Sign in to Admin at {{BACK_URL}} with administrator credentials
+[NAV] 2. Navigate to Customer > Organizations > Any Organization
+[ACT] 3. Open White Labeling tab
+[ASSERT] 4. Verify UI controls visible
+[ACT] 5. Attempt to upload logo file
+[ACT] 6. Attempt to upload favicon file
+[ACT] 7. Attempt to change theme preset
+[ACT] 8. Save settings","[DOM] White Labeling tab visible in organization settings
+[DOM] Upload controls visible for logo, secondaryLogo, favicon
+[STATE] Theme preset dropdown accessible and functional
+[DOM] Footer/Main Menu link list dropdowns visible
+[STATE] Save button enabled
+[STATE] Settings save successfully without permission errors","[ADMIN] settings saved successfully
+[CONSOLE] no permission-related JS errors","White Labeling tab hidden; Upload controls disabled; Permission errors on save",restore any changed settings,"C398718 VCST-2627",Manual
+FWL-016,Verify organization logo displayed in header after sign-in,Storefront Display,Critical,BL-WL-001,,Organization Branded Org has custom logo configured: branded-org-logo.png; User account exists for Branded Org,"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to {{FRONT_URL}}
+[ASSERT] 2. Verify default logo shown before sign-in
+[ACT] 3. Click Sign In
+[ACT] 4. Enter credentials for Branded Org user
+[ACT] 5. Click Sign In button
+[WAIT] 6. Wait for redirect to homepage
+[ASSERT] 7. Inspect header navigation bar
+[ASSERT] 8. Verify logo element","[DOM] Header shows branded-org-logo.png (NOT default logo)
+[DOM] Logo is clear and high quality (not pixelated)
+[DOM] Logo is properly sized (height matches header, no distortion)
+[NAV] Logo is clickable and links to homepage
+[STATE] Logo displays on all pages after sign-in (catalog, product, cart, account)","[CONSOLE] no uncaught JS errors
+[NETWORK] branded-org-logo.png loads with HTTP 200","Default logo still shown after sign-in; Broken image in header; Logo links to wrong URL",none,VCST-4637,Manual
+FWL-017,Verify organization favicon displayed in browser tab after sign-in,Storefront Display,Critical,BL-WL-001,,Organization Branded Org has custom favicon configured: branded-org-favicon.ico,"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open new browser tab
+[NAV] 2. Navigate to {{FRONT_URL}}
+[ASSERT] 3. Verify browser tab shows default Virto Commerce favicon before sign-in
+[ACT] 4. Sign in with Branded Org user
+[WAIT] 5. Wait for redirect after sign-in
+[ASSERT] 6. Inspect browser tab icon (favicon)
+[NAV] 7. Navigate to different pages (catalog, product page)
+[ASSERT] 8. Verify favicon persists","[DOM] Tab shows branded-org-favicon.ico (NOT default favicon)
+[DOM] Favicon displays correctly (32x32 icon visible)
+[STATE] Favicon persists across all pages after sign-in
+[STATE] Favicon remains when opening new tabs within same session","[CONSOLE] no uncaught JS errors
+[NETWORK] favicon request returns HTTP 200","Default favicon still shown after sign-in; Favicon reverts on navigation",none,VCST-4637,Manual
+FWL-018,Verify organization secondary logo displayed (if configured),Storefront Display,Medium,BL-WL-001,,Organization has secondary logo configured; White Labeling supports secondaryLogoUrl field,"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}, admin={{BACK_URL}}","[NAV] 1. Navigate to Admin > Organizations > Org With Secondary Logo
+[ACT] 2. Open White Labeling settings
+[ASSERT] 3. Verify Secondary Logo URL is configured
+[ACT] 4. Save if needed
+[NAV] 5. Sign in to storefront with user from this org
+[NAV] 6. Navigate to pages that display secondary logo (footer or specific components)
+[ASSERT] 7. Inspect secondary logo element","[DOM] Secondary logo image loads correctly
+[DOM] Image URL matches secondaryLogoUrl from settings
+[DOM] Logo displays in appropriate location (footer, mobile menu, or designated area)
+[STATE] Falls back gracefully if not configured (no broken image)","[CONSOLE] no uncaught JS errors
+[NETWORK] secondary logo image loads with HTTP 200","Broken image where secondary logo should appear; Primary logo shown in secondary logo position",none,VCST-4637,Manual
+FWL-019,Verify theme preset colors applied to storefront after sign-in - Default theme,Theme Preset,High,BL-WL-001,,Organization has theme preset: Default; User account for this organization exists,"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}, admin={{BACK_URL}}","[NAV] 1. Navigate to Admin > Organizations > Org With Default Theme
+[ACT] 2. Open White Labeling settings
+[ASSERT] 3. Verify Theme Preset = Default
+[ACT] 4. Save
+[NAV] 5. Sign in to storefront with user from this org
+[NAV] 6. Navigate to homepage
+[ASSERT] 7. Open browser DevTools > Elements
+[ASSERT] 8. Inspect CSS variables on :root or body element
+[ASSERT] 9. Verify color values match Default theme
+[ASSERT] 10. Inspect header background color
+[ASSERT] 11. Inspect button primary color
+[ASSERT] 12. Inspect link accent color","[FORMAT] CSS variables match Default theme palette
+[FORMAT] Header uses Default theme colors
+[FORMAT] Buttons use Default theme primary color
+[FORMAT] Links use Default theme accent color
+[STATE] No color conflicts or visual glitches","[CONSOLE] no CSS or JS errors","Wrong theme colors applied; Coffee theme shown when Default expected; CSS variable values don't match Default palette",none,VCST-4637,Manual
+FWL-020,Verify theme preset colors applied to storefront after sign-in - Coffee theme,Theme Preset,High,BL-WL-001,,Organization has theme preset: Coffee; User account for this organization exists,"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}, admin={{BACK_URL}}","[NAV] 1. Navigate to Admin > Organizations > Org With Coffee Theme
+[ACT] 2. Open White Labeling settings
+[ASSERT] 3. Verify Theme Preset = Coffee
+[ACT] 4. Save
+[NAV] 5. Sign in to storefront with user from this org
+[NAV] 6. Navigate to homepage
+[ASSERT] 7. Open browser DevTools > Elements
+[ASSERT] 8. Inspect CSS variables
+[ASSERT] 9. Verify color values match Coffee theme (brown/cream palette)
+[ASSERT] 10. Inspect header, buttons, links
+[ASSERT] 11. Compare to Default theme (should be different)","[FORMAT] CSS variables match Coffee theme palette (browns, creams)
+[FORMAT] Header uses Coffee theme colors (NOT Default)
+[FORMAT] Buttons use Coffee theme primary color
+[FORMAT] Links use Coffee theme accent color
+[STATE] Visual difference from Default theme is obvious
+[STATE] No color conflicts","[CONSOLE] no CSS or JS errors","Default theme shown instead of Coffee; CSS variables unchanged from Default; No visual difference between themes",none,VCST-4637,Manual
+FWL-021,Verify main menu links displayed in header after sign-in (NEW - VCST-4637),Main Menu Links,Critical,BL-WL-001,,Organization has main menu link list configured: org-main-menu with 4 parent links and 3 with children; User account exists,"admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Marketing > Link Lists > org-main-menu
+[ASSERT] 2. Verify structure: Products (priority 1) with children Laptops (1.1) Phones (1.2) Tablets (1.3); Services (priority 2); About (priority 3) with children Company (3.1) Careers (3.2); Contact (priority 4)
+[NAV] 3. Navigate to Admin > Organizations > Org With Main Menu
+[ACT] 4. Set Main Menu Link List Name: org-main-menu
+[ACT] 5. Save
+[NAV] 6. Sign in to storefront with user from this org
+[ASSERT] 7. Inspect header navigation
+[ASSERT] 8. Verify main menu structure","[DOM] Four parent links visible in header: Products, Services, About, Contact
+[DOM] Links displayed in priority order (1 to 4)
+[DOM] Hovering Products shows dropdown: Laptops, Phones, Tablets
+[DOM] Hovering About shows dropdown: Company, Careers
+[STATE] Services and Contact have no dropdowns
+[DOM] Main menu matches configured link list","[CONSOLE] no uncaught JS errors
+[API] whiteLabelingSettings query returns correct mainMenuLinks","Main menu not visible in header; Wrong links shown; Dropdown not appearing on hover; Priority order wrong",restore org MainMenuLinkListName to original,VCST-4637,Manual
+FWL-022,Verify main menu links hierarchical dropdown behavior (parent + children),Main Menu Links,High,BL-WL-001,,"Organization with hierarchical main menu configured (FWL-021 prerequisite)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with user from Org With Main Menu
+[NAV] 2. Navigate to homepage
+[ACT] 3. Hover over Products parent link in header
+[ASSERT] 4. Observe dropdown menu
+[ASSERT] 5. Verify child links visible: Laptops, Phones, Tablets
+[ACT] 6. Hover over each child link (verify hover state)
+[ACT] 7. Click Laptops child link
+[ASSERT] 8. Verify navigation
+[NAV] 9. Return to homepage
+[ACT] 10. Hover over About parent link
+[ASSERT] 11. Verify dropdown with Company, Careers","[DOM] Hovering parent link shows dropdown with children
+[STATE] Dropdown displays smoothly (no flicker)
+[DOM] Child links displayed in priority order
+[STATE] Hovering child link shows hover state (color change or underline)
+[NAV] Clicking child link navigates to correct URL
+[STATE] Dropdown closes when mouse leaves
+[STATE] Parent links without children have no dropdown","[CONSOLE] no uncaught JS errors","Dropdown not opening on hover; Wrong children shown; Navigation to wrong URL; Dropdown flickers; Hover state missing",none,VCST-4637,Manual
+FWL-023,Verify main menu links on mobile - hamburger menu with hierarchy,Main Menu Links,Critical,BL-WL-001,ECL-13.2,"Organization with main menu configured; Mobile device or responsive viewport (375px width)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Resize browser to mobile viewport: 375px width (iPhone size)
+[NAV] 2. Sign in to storefront with user from Org With Main Menu
+[NAV] 3. Navigate to homepage
+[ASSERT] 4. Locate hamburger menu icon in mobile header
+[ACT] 5. Tap hamburger icon
+[ASSERT] 6. Inspect mobile menu drawer
+[ASSERT] 7. Verify main menu structure in mobile view
+[ACT] 8. Tap Products parent item
+[ASSERT] 9. Verify child links expand/collapse
+[ACT] 10. Tap Laptops child link
+[ASSERT] 11. Verify navigation","[DOM] Hamburger menu icon visible in mobile header
+[STATE] Tapping hamburger opens mobile menu drawer
+[DOM] Main menu links listed: Products, Services, About, Contact
+[DOM] Products has expand/collapse icon
+[STATE] Tapping Products expands to show Laptops, Phones, Tablets
+[DOM] Child links are indented or visually nested
+[NAV] Tapping child link navigates correctly
+[STATE] Menu drawer closes after navigation","[CONSOLE] no uncaught JS errors","Hamburger icon missing; Drawer not opening; Children not expanding; Navigation broken on mobile; Menu not closing after tap",none,VCST-4637,Manual
+FWL-024,Verify main menu links navigation works correctly,Main Menu Links,High,BL-WL-001,,Organization with main menu configured; Main menu links pointing to valid URLs,"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with user from Org With Main Menu
+[NAV] 2. Navigate to homepage
+[ACT] 3. Hover over Products in main menu
+[ACT] 4. Click Laptops child link
+[ASSERT] 5. Verify URL changes to configured URL (e.g. /category/laptops)
+[ASSERT] 6. Verify page loads correctly
+[NAV] 7. Return to homepage
+[ACT] 8. Click Services parent link (no children)
+[ASSERT] 9. Verify navigation
+[ACT] 10. Test all main menu links (parent and child)","[NAV] Clicking child link changes URL to correct path
+[DOM] Page loads successfully (no 404 errors)
+[NAV] Clicking parent link without children navigates directly
+[NAV] Back button returns to previous page correctly
+[STATE] Navigation is fast and responsive","[CONSOLE] no JS errors during navigation","404 errors on navigation; Wrong URL after click; Page not loading; JavaScript errors on navigation",none,VCST-4637,Manual
+FWL-025,Verify fallback when no main menu link list configured for organization,Main Menu Links,Medium,BL-WL-004,,Organization exists with White Labeling enabled but MainMenuLinkListName = NULL or empty; User account exists,"admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Org Without Main Menu
+[ACT] 2. Open White Labeling settings
+[ASSERT] 3. Verify Main Menu Link List Name is empty or NULL
+[ACT] 4. Save
+[NAV] 5. Sign in to storefront with user from this org
+[NAV] 6. Navigate to homepage
+[ASSERT] 7. Inspect header navigation area
+[ASSERT] 8. Verify main menu display","[STATE] Application does NOT crash or show errors
+[DOM] Header layout is not broken
+[STATE] Other navigation elements (search, cart, account) work correctly
+[STATE] User can navigate site via search, footer, catalog pages","[CONSOLE] no uncaught JS errors","Application crash on missing main menu config; Header layout broken; Console errors about missing link list",none,VCST-4637,Manual
+FWL-026,Verify main menu links returned in whiteLabelingSettings GraphQL query (VCST-4637),GraphQL Integration,Critical,"BL-WL-001, BL-WL-002",ECL-14.1,Organization with main menu configured; GraphQL endpoint accessible,"admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/graphql
+[ACT] 2. Execute whiteLabelingSettings query with mainMenuLinks field:
 query {
   whiteLabelingSettings(
     organizationId: ""<org-id>""
@@ -297,11 +396,17 @@ query {
     }
   }
 }
-3. Verify response structure
-4. Verify data matches admin configuration
-5. Verify priority ordering","GraphQL query returns main menu links correctly: Response includes mainMenuLinks array; Parent links returned with title, url, priority fields; Child links nested under childItems array; Priority ordering is correct (1, 2, 3, 4); Hierarchy preserved in response (children under correct parent); Data matches link list configured in admin; No GraphQL errors; Field structure matches documentation",VCST-4637,Not Automated
-FWL-027,Verify pageContext query includes whiteLabelingSettings with mainMenuLinks,PageContext Integration,Functional,Critical,6m,"Organization with full branding configured (logo, favicon, theme, footer, mainMenu); pageContext query available in xFrontend","1. Navigate to GraphQL playground
-2. Execute pageContext query:
+[ASSERT] 3. Verify response structure
+[ASSERT] 4. Verify data matches admin configuration
+[ASSERT] 5. Verify priority ordering","[DOM] Response includes mainMenuLinks array
+[DOM] Parent links returned with title, url, priority fields
+[DOM] Child links nested under childItems array
+[DOM] Priority ordering is correct (1 2 3 4)
+[DOM] Hierarchy preserved in response
+[DOM] Data matches link list configured in admin","[API] whiteLabelingSettings query returns correct mainMenuLinks fields
+[API] errors[] is empty in GraphQL response","GraphQL errors in response; mainMenuLinks field missing; childItems not returned; Priority order wrong; Data mismatch with admin config",none,VCST-4637,Manual
+FWL-027,Verify pageContext query includes whiteLabelingSettings with mainMenuLinks,PageContext Integration,Critical,"BL-WL-001, BL-WL-002",ECL-14.1,"Organization with full branding configured (logo, favicon, theme, footer, mainMenu); pageContext query available in xFrontend","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to GraphQL playground
+[ACT] 2. Execute pageContext query:
 query {
   pageContext(
     storeId: ""B2B-store""
@@ -320,371 +425,555 @@ query {
     user { ... }
   }
 }
-3. Verify whiteLabelingSettings embedded in pageContext
-4. Verify mainMenuLinks field present","pageContext returns whiteLabelingSettings with mainMenuLinks: Single pageContext query returns 4 sub-objects: slugInfo, store, whiteLabelingSettings, user; whiteLabelingSettings includes logoUrl, faviconUrl, themePresetName, footerLinks, mainMenuLinks; mainMenuLinks array returned with full hierarchy; Data is consistent with separate whiteLabelingSettings query; Response is fast (~200-400ms); Frontend can use single query instead of 4 separate queries (performance optimization)",VCST-4637,Not Automated
-FWL-028,Switch organization - verify branding updates dynamically (logo and favicon),Multi-Organization,Functional,Critical,7m,"User account is member of 2 organizations: Org A (logo-a.png, favicon-a.ico, Default theme) and Org B (logo-b.png, favicon-b.ico, Coffee theme)","1. Sign in to storefront with multi-org user account
-2. Verify current organization is Org A
-3. Inspect header logo (should be logo-a.png)
-4. Inspect browser tab favicon (should be favicon-a.ico)
-5. Inspect theme colors (should be Default)
-6. Click organization switcher in header
-7. Select Org B from dropdown
-8. Wait for organization switch to complete
-9. Verify page refreshes or updates
-10. Inspect header logo (should NOW be logo-b.png)
-11. Inspect browser tab favicon (should NOW be favicon-b.ico)
-12. Inspect theme colors (should NOW be Coffee)
-13. Switch back to Org A
-14. Verify logo/favicon/theme revert to Org A branding","Organization switching updates branding dynamically: Switching from Org A to Org B updates header logo from logo-a.png to logo-b.png; Browser tab favicon updates from favicon-a.ico to favicon-b.ico; Theme updates from Default to Coffee (colors change); Branding transition is smooth (no broken images, no flash of wrong branding); Switching back to Org A restores Org A branding; Cart contents may reset (org-specific cart); All branding changes persist across page navigation after switch",Multi-Organization,Not Automated
-FWL-029,Switch organization - verify main menu links update dynamically,Multi-Organization,Functional,High,6m,"User is member of Org A (main menu: Products, Services, Contact) and Org B (main menu: Solutions, Partners, Support, Blog)","1. Sign in with multi-org user
-2. Verify current org is Org A
-3. Inspect main menu links in header: Products, Services, Contact
-4. Hover over links to verify dropdowns (if any)
-5. Switch organization to Org B
-6. Wait for refresh
-7. Inspect main menu links in header: Should NOW show Solutions, Partners, Support, Blog
-8. Verify main menu structure changed
-9. Switch back to Org A
-10. Verify main menu reverts to Products, Services, Contact","Organization switch updates main menu links: Org A displays main menu: Products, Services, Contact; Switching to Org B updates main menu to: Solutions, Partners, Support, Blog; Main menu structure reflects new organization's link list; Dropdown hierarchies update correctly (children change based on org); Switching back to Org A restores original main menu; No stale links from previous org displayed; Navigation works correctly after org switch",Multi-Organization,Not Automated
-FWL-030,Switch organization - verify footer links update dynamically,Multi-Organization,Functional,Medium,5m,"User is member of Org A (footer: About, Support, Legal) and Org B (footer: Company, Help, Policies, Careers)","1. Sign in with multi-org user (Org A)
-2. Scroll to footer
-3. Verify footer links: About, Support, Legal
-4. Switch organization to Org B
-5. Wait for refresh
-6. Scroll to footer
-7. Verify footer links updated: Company, Help, Policies, Careers
-8. Switch back to Org A
-9. Verify footer reverts","Organization switch updates footer links: Org A displays footer: About, Support, Legal; Switching to Org B updates footer to: Company, Help, Policies, Careers; Footer structure and hierarchy update correctly; Switching back restores Org A footer; No stale footer links displayed",Multi-Organization,Not Automated
-FWL-031,Switch organization - verify theme preset changes dynamically,Multi-Organization,Functional,High,5m,"User is member of Org A (Default theme) and Org B (Coffee theme)","1. Sign in with multi-org user (Org A with Default theme)
-2. Inspect page CSS variables and colors
-3. Note Default theme colors (header, buttons, links)
-4. Switch organization to Org B (Coffee theme)
-5. Wait for refresh
-6. Inspect CSS variables again
-7. Verify colors changed to Coffee theme
-8. Verify visual difference (browns/creams instead of default blue/gray)
-9. Switch back to Org A
-10. Verify theme reverts to Default","Organization switch updates theme preset: Org A displays Default theme colors; Switching to Org B applies Coffee theme (visual color change obvious); CSS variables update to Coffee theme values; Page re-renders with new theme colors; Switching back to Org A restores Default theme; Theme transition is smooth (no flicker or broken styles); No theme conflicts during transition",Multi-Organization,Not Automated
-FWL-032,Verify branding transition is smooth during organization switch (no flash of wrong branding),Multi-Organization,Performance,High,4m,"User is member of 2 organizations with distinct branding; Fast internet connection for accurate performance test","1. Sign in with multi-org user (Org A)
-2. Open browser DevTools > Network tab
-3. Switch organization to Org B
-4. Observe page reload/refresh
-5. Watch for logo/favicon loading
-6. Verify no flash of old branding during transition
-7. Measure time for branding to fully update
-8. Repeat switch 3 times (Org A ↔ Org B)","Smooth branding transition during org switch: No flash of Org A logo before Org B logo loads; No flash of Org A favicon before Org B favicon loads; Theme colors transition smoothly (no jarring color flash); Branding update completes within 1-2 seconds; Page does not show broken images or layout during transition; Loading states are handled gracefully (spinner or skeleton); User experience is professional and polished",Multi-Organization Performance,Not Automated
-FWL-033,Verify logo renders correctly on mobile viewport (375px - iPhone),Responsive Mobile,Functional,High,4m,"Organization with custom logo configured; Mobile device or browser with responsive mode","1. Sign in to storefront with branded organization user
-2. Open browser DevTools
-3. Toggle device toolbar (responsive mode)
-4. Set viewport: 375px width x 667px height (iPhone 8 size)
-5. Navigate to homepage
-6. Inspect header logo
-7. Verify logo size and positioning
-8. Test across multiple mobile pages (catalog, product, cart)","Logo renders correctly on mobile: Logo is visible in mobile header; Logo is appropriately sized for mobile (not too large, not too small); Logo is not cut off or cropped; Logo is clear and legible (not pixelated); Logo is positioned correctly in mobile header layout; Logo remains clickable (tappable) and links to homepage; Logo does not overlap other mobile header elements (hamburger menu, cart icon)",Mobile Responsive,Not Automated
-FWL-034,Verify main menu links accessible via hamburger menu on mobile,Responsive Mobile,Functional,Critical,5m,"Organization with main menu configured; Mobile viewport 375px width","1. Resize browser to mobile viewport: 375px width
-2. Sign in with branded org user
-3. Navigate to homepage
-4. Locate hamburger menu icon (☰) in top-left or top-right of mobile header
-5. Tap hamburger icon
-6. Verify mobile menu drawer opens
-7. Verify main menu links visible in drawer
-8. Verify hierarchical structure (parent/child links)
-9. Tap a parent link with children
-10. Verify children expand
-11. Tap a child link
-12. Verify navigation","Main menu accessible on mobile via hamburger: Hamburger icon visible and tappable in mobile header; Tapping hamburger opens mobile menu drawer (slides in from left or right); Main menu links listed in drawer with clear labels; Parent links with children have expand/collapse icon; Tapping parent expands to reveal children; Child links are indented or visually nested; Tapping child link navigates to correct page; Menu drawer closes after navigation; Tap targets are adequately sized (minimum 44x44px for touch); Mobile menu is easy to use",Mobile Responsive,Not Automated
-FWL-035,Verify footer links display correctly on mobile viewport,Responsive Mobile,Functional,Medium,4m,"Organization with footer links configured; Mobile viewport","1. Resize to mobile: 375px width
-2. Sign in with branded org user
-3. Scroll to bottom of page
-4. Inspect footer layout
-5. Verify footer links visible
-6. Verify hierarchical structure preserved or adapted for mobile
-7. Tap footer links to test navigation","Footer links display correctly on mobile: Footer is visible at bottom of mobile page; Footer links are readable and properly sized; Parent/child structure is preserved (or collapsed into accordion for mobile); Links are tappable (adequate tap targets); Footer does not overlap content; Footer layout is mobile-optimized (stacked vertically if needed); Tapping links navigates correctly",Mobile Responsive,Not Automated
-FWL-036,Verify theme colors applied correctly on mobile viewport,Responsive Mobile,Functional,Medium,3m,"Organization with Coffee theme configured; Mobile viewport","1. Resize to mobile: 375px width
-2. Sign in with Coffee theme org user
-3. Navigate to homepage
-4. Inspect page colors on mobile
-5. Verify header, buttons, links use Coffee theme
-6. Navigate to product page and cart
-7. Verify theme consistency on mobile","Theme colors applied correctly on mobile: Coffee theme colors visible on mobile (browns/creams); Header uses Coffee theme background; Buttons use Coffee theme primary color; Links use Coffee theme accent color; Theme is consistent across all mobile pages; No color conflicts or visual issues on mobile; Mobile-specific UI components (hamburger menu, mobile navigation) use theme colors",Mobile Responsive,Not Automated
-FWL-037,Verify logo renders correctly on tablet viewport (768px - iPad),Responsive Mobile,Functional,Medium,3m,"Organization with custom logo; Tablet device or browser responsive mode","1. Set viewport: 768px width x 1024px height (iPad size)
-2. Sign in with branded org user
-3. Navigate to homepage
-4. Inspect header logo on tablet
-5. Verify logo size and positioning
-6. Test landscape and portrait orientations","Logo renders correctly on tablet: Logo is visible and appropriately sized for tablet; Logo is clear (not pixelated); Logo positioning is correct in tablet header; Logo works in both portrait (768px) and landscape (1024px) orientations; Logo is clickable and links to homepage",Mobile Responsive,Not Automated
-FWL-038,Verify whitelabeling renders correctly in Chrome browser (desktop),Cross-Browser,Functional,High,5m,"Organization with full branding configured; Chrome browser latest version (120+)","1. Open Chrome browser (version 120 or later)
-2. Navigate to ${FRONT_URL}
-3. Sign in with branded organization user
-4. Inspect header logo
-5. Inspect browser tab favicon
-6. Inspect theme colors
-7. Inspect main menu dropdown behavior
-8. Inspect footer links
-9. Navigate to multiple pages (homepage, catalog, product, cart, account)","Whitelabeling renders correctly in Chrome: Logo displays correctly (high quality, no broken image); Favicon displays in tab; Theme colors applied correctly; Main menu dropdowns work smoothly on hover; Footer links display in correct hierarchy; No visual glitches or rendering issues; CSS is properly loaded and applied; All branding persists across pages; No console errors related to branding",Chrome Cross-Browser,Not Automated
-FWL-039,Verify whitelabeling renders correctly in Firefox browser (desktop),Cross-Browser,Functional,High,5m,"Organization with full branding configured; Firefox browser latest version (121+)","1. Open Firefox browser (version 121 or later)
-2. Navigate to ${FRONT_URL}
-3. Sign in with branded organization user
-4. Inspect logo, favicon, theme, main menu, footer
-5. Test main menu dropdown behavior (hover)
-6. Navigate across multiple pages
-7. Compare rendering to Chrome (should be identical or very similar)","Whitelabeling renders correctly in Firefox: Logo displays correctly; Favicon displays in tab; Theme colors applied; Main menu dropdowns work (hover may behave slightly differently than Chrome but still functional); Footer links display correctly; No Firefox-specific rendering issues; CSS compatibility is good; Branding works consistently across pages",Firefox Cross-Browser,Not Automated
-FWL-040,Verify whitelabeling renders correctly in Edge browser (desktop),Cross-Browser,Functional,High,5m,"Organization with full branding configured; Edge browser latest version (120+)","1. Open Edge browser (version 120 or later)
-2. Navigate to ${FRONT_URL}
-3. Sign in with branded organization user
-4. Inspect logo, favicon, theme, main menu, footer
-5. Test main menu dropdown behavior
-6. Navigate across multiple pages
-7. Compare to Chrome (Edge is Chromium-based, should be nearly identical)","Whitelabeling renders correctly in Edge: Logo displays correctly; Favicon displays in tab; Theme colors applied correctly; Main menu dropdowns work smoothly; Footer links display correctly; Rendering should be nearly identical to Chrome (both Chromium-based); No Edge-specific issues; Branding persists across pages",Edge Cross-Browser,Not Automated
-FWL-041,Verify whitelabeling renders correctly on iPhone Safari (iOS),Cross-Browser Mobile,Functional,Critical,6m,"Organization with full branding configured; iPhone device (iPhone 14/15/16) with Safari browser OR BrowserStack iOS simulator","1. Open Safari on iPhone (or BrowserStack iOS simulator)
-2. Navigate to ${FRONT_URL}
-3. Sign in with branded organization user
-4. Inspect logo in mobile header
-5. Inspect favicon in Safari tab/URL bar
-6. Test hamburger menu for main menu links
-7. Scroll to footer and inspect footer links
-8. Navigate across pages (homepage, catalog, product)","Whitelabeling renders correctly on iPhone Safari: Logo displays correctly in mobile header; Favicon visible in Safari (may appear in tab switcher or URL bar); Hamburger menu opens and displays main menu links; Footer links display correctly; Touch interactions work smoothly (tap targets adequate); Theme colors applied correctly; No iOS-specific rendering issues; No layout breaking on Safari mobile; Branding works across pages on mobile",iOS Safari Mobile,Not Automated
-FWL-042,Verify whitelabeling renders correctly on Android Chrome (mobile),Cross-Browser Mobile,Functional,High,6m,"Organization with full branding configured; Android device (Samsung Galaxy or Google Pixel) with Chrome browser OR BrowserStack Android simulator","1. Open Chrome on Android device (or BrowserStack simulator)
-2. Navigate to ${FRONT_URL}
-3. Sign in with branded organization user
-4. Inspect logo in mobile header
-5. Test hamburger menu for main menu
-6. Scroll to footer
-7. Navigate across pages","Whitelabeling renders correctly on Android Chrome: Logo displays correctly in mobile header; Hamburger menu works and shows main menu links; Footer links display correctly; Touch interactions work smoothly; Theme colors applied; No Android-specific rendering issues; Favicon may display in browser tab or address bar (Android Chrome behavior); Branding consistent across pages",Android Chrome Mobile,Not Automated
-FWL-043,Verify logo has proper alt text for accessibility,Accessibility,Functional,High,3m,"Organization with custom logo configured; Screen reader testing tool or browser accessibility inspector","1. Sign in to storefront with branded org user
-2. Navigate to homepage
-3. Right-click header logo image
-4. Inspect element in DevTools
-5. Verify <img> tag has alt attribute
-6. Verify alt text is descriptive (e.g., ""Company1 Logo"" or ""B2B-store"")
-7. Enable screen reader (NVDA, JAWS, or VoiceOver)
-8. Tab to logo element
-9. Verify screen reader announces logo with alt text","Logo has proper alt text: <img> element has alt attribute; Alt text is descriptive and meaningful (e.g., ""<Organization Name> Logo""); Alt text is NOT empty (alt=""""); Screen reader announces logo correctly when focused; Logo is keyboard accessible (can tab to it); Logo link is announced as ""link"" by screen reader; Meets WCAG 2.1 AA requirement for text alternatives",Accessibility A11Y,Not Automated
-FWL-044,Verify main menu is keyboard navigable,Accessibility,Functional,High,5m,"Organization with main menu configured; Keyboard navigation testing","1. Sign in to storefront with branded org user
-2. Navigate to homepage
-3. Use Tab key to navigate to main menu
-4. Tab through each main menu link (Products, Services, About, Contact)
-5. When focused on parent link with children (e.g., Products), press Enter or Down Arrow
-6. Verify dropdown opens
-7. Tab through child links in dropdown (Laptops, Phones, Tablets)
-8. Press Enter on a child link
-9. Verify navigation","Main menu is keyboard navigable: Tab key moves focus through main menu links sequentially; Focus indicator is visible on each link (outline or background highlight); Parent links with children can be activated via Enter or Down Arrow to open dropdown; Dropdown opens and focus moves to first child link; Tab key navigates through child links in dropdown; Enter key on child link navigates to page; Esc key closes dropdown (optional but good UX); Keyboard navigation is logical and intuitive; Meets WCAG 2.1 AA keyboard accessibility",Accessibility A11Y,Not Automated
-FWL-045,Verify footer links are keyboard navigable,Accessibility,Functional,Medium,4m,"Organization with footer links configured; Keyboard navigation testing","1. Sign in to storefront with branded org user
-2. Navigate to homepage
-3. Use Tab key to navigate through page content down to footer
-4. Continue tabbing through footer links
-5. Verify focus indicator visible on each footer link
-6. Test parent and child links (if hierarchical)
-7. Press Enter on a footer link to test navigation","Footer links are keyboard navigable: Tab key moves focus through footer links sequentially; Focus indicator is visible on each link; Parent and child links are both keyboard accessible; Enter key on link navigates to correct page; Keyboard navigation order is logical (parent → children → next parent); Meets WCAG 2.1 AA keyboard accessibility",Accessibility A11Y,Not Automated
-FWL-046,Verify focus indicators visible on all branded interactive elements,Accessibility,Functional,High,4m,"Organization with custom branding; Theme preset applied; Keyboard navigation","1. Sign in to storefront with Coffee theme org user
-2. Navigate to homepage
-3. Use Tab key to navigate through page
-4. Tab to logo (should show focus indicator)
-5. Tab to main menu links (should show focus indicator)
-6. Tab to footer links (should show focus indicator)
-7. Tab to buttons (should show focus indicator)
-8. Verify focus indicators are clearly visible against Coffee theme colors","Focus indicators visible on all interactive elements: Logo has visible focus outline when tabbed to; Main menu links show focus indicator (outline, background highlight, or underline); Footer links show focus indicator; Buttons show focus indicator; Focus indicators have sufficient contrast against Coffee theme background colors (minimum 3:1 contrast ratio); Focus indicators are NOT hidden or removed by CSS; Meets WCAG 2.1 AA focus visible requirement",Accessibility A11Y,Not Automated
-FWL-047,Verify screen reader announces main menu structure (parent and child links),Accessibility,Functional,Medium,5m,"Organization with hierarchical main menu; Screen reader: NVDA (Windows), JAWS (Windows), or VoiceOver (Mac)","1. Enable screen reader
-2. Sign in to storefront with branded org user
-3. Navigate to homepage
-4. Use screen reader navigation to reach main menu
-5. Navigate through main menu with screen reader
-6. When reaching parent link with children (Products), listen to announcement
-7. Navigate into dropdown (if supported by screen reader)
-8. Verify screen reader announces child links
-9. Verify hierarchy is conveyed (""Products menu, 3 items"" or similar)","Screen reader announces main menu structure: Screen reader announces each main menu link by title; Parent links with children are announced as ""menu"" or ""has submenu""; Screen reader indicates number of child items (optional but helpful); Navigating into dropdown, child links are announced; Hierarchy is conveyed (user understands parent/child relationship); ARIA attributes may be used: aria-haspopup, aria-expanded, role=""menu"", role=""menuitem""; Screen reader experience is usable and logical; Meets WCAG 2.1 AA for navigation landmarks and structure",Accessibility A11Y,Not Automated
-FWL-048,Verify high contrast mode compatibility with whitelabeling theme,Accessibility,Functional,Medium,4m,"Organization with Coffee theme configured; Windows High Contrast Mode or browser extension for high contrast","1. Enable Windows High Contrast Mode (Windows Settings > Ease of Access > High Contrast)
-2. Sign in to storefront with Coffee theme org user
-3. Navigate to homepage
-4. Verify logo is visible in high contrast mode
-5. Verify main menu links are visible
-6. Verify footer links are visible
-7. Verify focus indicators are visible
-8. Verify text is readable","Whitelabeling compatible with high contrast mode: Logo remains visible in high contrast mode (not disappeared); Main menu links are visible and readable; Footer links are visible and readable; Focus indicators remain visible with sufficient contrast; Theme colors may be overridden by high contrast mode (expected behavior); Text remains readable; No layout breaking; Page remains usable in high contrast mode; Meets WCAG 2.1 AA for contrast compatibility",Accessibility A11Y,Not Automated
-FWL-049,Verify pageContext query performance - single call vs multiple queries,Performance,Performance,Medium,8m,"Organization with full branding configured; GraphQL endpoint accessible; Performance testing tool (Postman, Insomnia, or browser DevTools)","1. Navigate to GraphQL playground
-2. Test 1: Execute 4 separate queries sequentially:
-   - slugInfo query (measure time)
-   - store query (measure time)
-   - whiteLabelingSettings query (measure time)
-   - user query (measure time)
-   Total time = sum of all 4
-3. Test 2: Execute single pageContext query that returns all 4 sub-objects (measure time)
-4. Compare total time: Test 1 (4 queries) vs Test 2 (1 query)
-5. Repeat test 5 times for average
-6. Calculate time savings","pageContext query is faster than 4 separate queries: 4 separate queries take ~800-1200ms total (200-300ms each); Single pageContext query takes ~400-600ms (50-70% faster); Time savings: 300-600ms (significant performance improvement); Single query reduces HTTP overhead (fewer round trips); Frontend benefits from loading branding data in one call; pageContext optimization measurable and significant; Performance improvement is consistent across multiple test runs",Performance Optimization,Not Automated
-FWL-050,Verify storefront page load time with whitelabeling enabled - under 3 seconds,Performance,Performance,Medium,5m,"Organization with full branding configured; Chrome DevTools > Network > Throttling: Fast 3G or No throttling","1. Open Chrome DevTools
-2. Navigate to Network tab
-3. Set throttling: Fast 3G (or No throttling for best-case)
-4. Clear browser cache
-5. Sign in to storefront with branded org user
-6. Navigate to homepage (measure load time from navigation start to page fully loaded)
-7. Measure: DOMContentLoaded, Load, Total time
-8. Verify logo, favicon, theme assets load within total time
-9. Repeat 3 times for average","Storefront page load with whitelabeling is performant: Total page load time < 3 seconds (with Fast 3G throttling); Logo image loads within 500ms; Favicon loads within 200ms; Theme CSS loads within 300ms; DOMContentLoaded < 1.5 seconds; Full page load (including images) < 3 seconds; Whitelabeling assets (logo, favicon, theme CSS) do not significantly slow page load; Page is usable within 2 seconds (Time to Interactive); Meets acceptable performance standards",Performance,Not Automated
-FWL-051,Verify logo image loading with lazy loading or optimization,Performance,Functional,Medium,3m,"Organization with custom logo (large file size test: 500KB PNG); Chrome DevTools Network tab","1. Sign in to storefront with branded org user
-2. Open Chrome DevTools > Network tab
-3. Filter: Images
-4. Navigate to homepage
-5. Observe logo image loading
-6. Verify image format (PNG, WebP, JPEG)
-7. Verify image size (file size in KB)
-8. Verify loading strategy (eager vs lazy)
-9. Check if image is optimized (compressed)","Logo image is optimized: Logo image format is appropriate (PNG, SVG, or WebP preferred); Logo file size is reasonable (< 100KB, ideally < 50KB); Logo loading is NOT blocking page render; Logo appears quickly after page load; If logo is large, lazy loading or progressive loading is used; Logo image is compressed (not original unoptimized upload); CDN or caching is used for logo (if applicable); Logo does not cause performance issues",Performance,Not Automated
-FWL-052,Verify favicon caching to avoid repeated requests,Performance,Functional,Low,3m,"Organization with custom favicon; Browser cache enabled; Chrome DevTools Network tab","1. Sign in to storefront with branded org user
-2. Navigate to homepage (clear cache first)
-3. Open DevTools > Network tab
-4. Observe favicon request (favicon.ico or .png)
-5. Verify response headers (Cache-Control, ETag)
-6. Navigate to another page (catalog)
-7. Observe Network tab - verify favicon is NOT requested again (served from cache)
-8. Close browser, reopen, navigate to storefront
-9. Verify favicon is served from disk cache (not re-downloaded)","Favicon is properly cached: First request for favicon returns HTTP 200 with Cache-Control header; Subsequent page navigations do NOT request favicon again (served from memory cache); After browser restart, favicon is served from disk cache (HTTP 304 or disk cache hit); Favicon is NOT re-downloaded on every page load; Caching strategy reduces network overhead; Cache headers are configured correctly (e.g., Cache-Control: max-age=86400 for 1 day)",Performance,Not Automated
-FWL-053,Verify theme CSS caching and efficient loading,Performance,Functional,Low,3m,"Organization with Coffee theme configured; Browser cache enabled; DevTools Network tab","1. Sign in to storefront with Coffee theme org user
-2. Navigate to homepage (clear cache first)
-3. Open DevTools > Network > CSS filter
-4. Observe theme-related CSS file loading
-5. Verify Cache-Control headers
-6. Navigate to product page
-7. Verify CSS is NOT re-downloaded (served from cache)
-8. Check CSS file size (should be minified)","Theme CSS is efficiently loaded and cached: Theme CSS file is minified (smaller file size); First request returns HTTP 200 with Cache-Control; Subsequent pages serve CSS from cache (no re-download); CSS is NOT inlined (unless very small); CSS file size is reasonable (< 100KB); No duplicate CSS files loaded; CSS is loaded early (in <head>) to avoid FOUC (Flash of Unstyled Content); Caching strategy is effective",Performance,Not Automated
-FWL-054,Verify no FOUC (Flash of Unstyled Content) when loading themed page,Performance,Functional,High,4m,"Organization with Coffee theme configured; Slow network throttling (DevTools > Network > Slow 3G)","1. Open Chrome DevTools
-2. Set Network throttling: Slow 3G
-3. Clear browser cache
-4. Sign in to storefront with Coffee theme org user
-5. Navigate to homepage
-6. Watch page load carefully for any flash of unstyled content
-7. Verify page loads with Coffee theme colors immediately (no flash of Default theme first)
-8. Repeat navigation to product page and cart
-9. Verify consistent behavior (no FOUC)","No FOUC when loading themed pages: Page loads with Coffee theme colors immediately (no flash of Default theme); No momentary display of unstyled HTML before CSS applies; Theme CSS is loaded in <head> before content renders; Critical CSS may be inlined to prevent FOUC; Page rendering is smooth and professional; User does NOT see ""flicker"" or color changes during page load; Meets performance and UX best practices",Performance UX,Not Automated
-FWL-055,Verify multiple concurrent organization users can access branding without conflicts,Concurrency,Functional,Medium,6m,"2 user accounts from different organizations: User A (Org A branding) and User B (Org B branding); 2 separate browser sessions (Chrome Incognito + Firefox Private)","1. Open Chrome Incognito window
-2. Navigate to ${FRONT_URL}
-3. Sign in with User A (Org A)
-4. Verify Org A branding displayed (logo-a, Coffee theme)
-5. Open Firefox Private window (separate session)
-6. Navigate to ${FRONT_URL}
-7. Sign in with User B (Org B)
-8. Verify Org B branding displayed (logo-b, Default theme)
-9. Switch between browser windows
-10. Verify each session maintains its own branding (no cross-contamination)
-11. Navigate pages in both sessions simultaneously
-12. Verify branding remains correct in each session","Concurrent users see correct organization branding: User A session displays Org A branding (logo-a, Coffee theme); User B session displays Org B branding (logo-b, Default theme); No cross-contamination between sessions (User A does NOT see Org B branding); Each session is isolated (correct branding persists); Navigating pages in one session does NOT affect the other; Server correctly serves organization-specific branding based on user context; No caching conflicts between sessions",Concurrency,Not Automated
-FWL-056,Verify branding persists after session timeout and re-login,Session Management,Functional,Medium,7m,"Organization with custom branding; Session timeout configured (or manually clear session); User account","1. Sign in to storefront with branded org user
-2. Verify branding displayed (logo, favicon, theme, main menu, footer)
-3. Wait for session timeout (or manually clear session cookie in DevTools)
-4. Attempt to navigate to protected page (e.g., account/orders)
-5. Verify redirect to sign-in page due to session timeout
-6. Sign in again with same user credentials
-7. After successful sign-in, verify branding is restored
-8. Verify logo, favicon, theme, main menu, footer all display correctly","Branding persists after session timeout and re-login: After session timeout, user is redirected to sign-in page; After re-login, organization branding is restored correctly; Logo, favicon, theme, main menu, footer all display correctly after re-login; No branding is lost due to session timeout; Branding is tied to user/organization, not just session; Re-login experience is seamless (branding applies immediately after authentication)",Session Management,Not Automated
-FWL-057,Verify branding data is not exposed in client-side code or APIs for other organizations,Security,Security,High,6m,"User account from Org A; Access to browser DevTools and Network tab","1. Sign in to storefront with Org A user
-2. Open DevTools > Network tab
-3. Navigate to homepage
-4. Inspect GraphQL or REST API calls
-5. Look for whiteLabelingSettings or pageContext responses
-6. Verify response contains ONLY Org A branding data
-7. Verify NO data for Org B, Org C, or other organizations is included
-8. Inspect page source and JavaScript
-9. Verify no hardcoded branding URLs for other organizations
-10. Attempt to query GraphQL with different organizationId (if possible)
-11. Verify access is restricted (only authenticated org data returned)","Branding data is secure and isolated: API responses contain ONLY current user's organization branding (Org A); No data for other organizations (Org B, Org C) is leaked in responses; GraphQL query with different organizationId is blocked or returns null (no unauthorized access); Page source does not contain hardcoded URLs for other orgs' logos/favicons; Client-side code does not expose branding configuration for other organizations; Branding data is properly scoped to authenticated user/organization; Meets security best practices (no information disclosure)",Security,Not Automated
-FWL-058,Verify no broken images when logo or favicon URL is invalid,Error Handling,Negative,Medium,4m,"Organization with White Labeling enabled; Manually set logoUrl to invalid URL in database or via API","1. Navigate to Admin > Organizations > Test Org
-2. Open White Labeling settings
-3. Manually enter invalid logo URL: https://invalid-cdn.example.com/nonexistent-logo.png
-4. Save settings
-5. Sign in to storefront with Test Org user
-6. Navigate to homepage
-7. Inspect header logo area
-8. Verify behavior when logo fails to load","Graceful handling of invalid logo URL: Page does NOT display broken image icon (ALT + broken image); Fallback logo is displayed (default Virto Commerce logo OR organization name text); Page layout is NOT broken (header remains intact); No console errors related to failed image load; User can still use the site (navigation works); Logo area may show placeholder or org name as text; Footer and other elements are unaffected; Application handles missing asset gracefully",Error Handling Negative,Not Automated
-FWL-059,Verify graceful handling when main menu link list does not exist,Error Handling,Negative,Medium,4m,"Organization with MainMenuLinkListName set to non-existent link list name: nonexistent-menu","1. Navigate to Admin > Organizations > Test Org
-2. Open White Labeling settings
-3. Set Main Menu Link List Name: nonexistent-menu (does not exist in Link Lists)
-4. Save settings
-5. Sign in to storefront with Test Org user
-6. Navigate to homepage
-7. Inspect header navigation area
-8. Verify main menu behavior","Graceful handling of non-existent main menu link list: Application does NOT crash or display error; Main menu may display default links OR be empty (no menu); No console errors in browser; Page layout is NOT broken; User can still navigate site via other means (search, footer, catalog); GraphQL query returns null or empty array for mainMenuLinks (not an error); Backend handles missing link list gracefully",Error Handling Negative,Not Automated
-FWL-060,Verify graceful handling when footer link list does not exist,Error Handling,Negative,Medium,4m,"Organization with FooterLinkListName set to non-existent link list name","1. Navigate to Admin > Organizations > Test Org
-2. Open White Labeling settings
-3. Set Footer Link List Name: nonexistent-footer (does not exist)
-4. Save settings
-5. Sign in to storefront with Test Org user
-6. Scroll to footer
-7. Inspect footer links area","Graceful handling of non-existent footer link list: Application does NOT crash; Footer may display default links OR be empty; No console errors; Page layout is NOT broken; User can still navigate via main menu and other methods; GraphQL query returns null or empty array for footerLinks; Backend handles missing link list gracefully",Error Handling Negative,Not Automated
-FWL-061,Verify logo upload validation - accepted file formats (PNG SVG JPEG),Logo Upload,Functional,Medium,5m,"Admin access to White Labeling settings; Test image files: logo.png, logo.svg, logo.jpg","1. Navigate to Admin > Organizations > Test Org
-2. Open White Labeling settings
-3. Test 1: Upload logo.png (valid PNG file)
-4. Verify upload succeeds
-5. Save settings
-6. Test 2: Upload logo.svg (valid SVG file)
-7. Verify upload succeeds
-8. Save settings
-9. Test 3: Upload logo.jpg (valid JPEG file)
-10. Verify upload succeeds
-11. Save settings
-12. For each upload, verify logo displays correctly on storefront","Logo upload accepts valid file formats: PNG upload succeeds; SVG upload succeeds; JPEG upload succeeds; All valid formats are accepted without errors; Uploaded logos display correctly on storefront; File format validation works as expected; No errors during upload or save",Logo Upload,Not Automated
-FWL-062,Verify logo upload validation - rejected file formats (GIF BMP TXT),Logo Upload,Negative,Medium,5m,"Admin access to White Labeling settings; Test invalid files: logo.gif, logo.bmp, logo.txt","1. Navigate to Admin > Organizations > Test Org
-2. Open White Labeling settings
-3. Test 1: Attempt to upload logo.gif (invalid format)
-4. Verify upload is REJECTED with validation error
-5. Test 2: Attempt to upload logo.bmp (invalid format)
-6. Verify upload is REJECTED
-7. Test 3: Attempt to upload logo.txt (invalid format)
-8. Verify upload is REJECTED
-9. Verify error messages are clear: e.g., ""Only PNG, SVG, and JPEG formats are allowed""
-10. Verify settings do NOT save with invalid file","Logo upload rejects invalid file formats: GIF upload is rejected with error message; BMP upload is rejected; TXT upload is rejected; Error messages are clear and user-friendly; Invalid file is NOT uploaded to server; Logo field remains empty or retains previous valid logo; Save button may be disabled until valid file is uploaded; File format validation is strict and secure",Logo Upload Negative,Not Automated
-FWL-063,Verify logo upload validation - file size limit (max 2MB),Logo Upload,Negative,Medium,4m,"Admin access; Test large logo file: logo-large.png (3MB or larger, exceeds limit)","1. Navigate to Admin > Organizations > Test Org
-2. Open White Labeling settings
-3. Attempt to upload logo-large.png (3MB file size)
-4. Verify upload is REJECTED due to file size
-5. Verify error message: ""File size exceeds 2MB limit"" or similar
-6. Attempt to upload valid-sized logo (< 2MB)
-7. Verify upload succeeds","Logo upload enforces file size limit: Files larger than 2MB are rejected (or configured limit); Error message clearly states file size limit; User is NOT able to save with oversized file; Valid-sized files (< 2MB) are accepted; File size validation prevents excessively large uploads; Validation protects server storage and performance",Logo Upload Negative,Not Automated
-FWL-064,Verify favicon upload validation - accepted file format (ICO PNG),Favicon Upload,Functional,Medium,4m,"Admin access; Test favicon files: favicon.ico, favicon.png","1. Navigate to Admin > Organizations > Test Org
-2. Open White Labeling settings
-3. Test 1: Upload favicon.ico (valid ICO file, 32x32)
-4. Verify upload succeeds
-5. Save settings
-6. Verify favicon displays in storefront browser tab
-7. Test 2: Upload favicon.png (valid PNG file, 32x32)
-8. Verify upload succeeds
-9. Verify PNG favicon displays correctly","Favicon upload accepts valid formats: ICO format accepted and uploads successfully; PNG format accepted and uploads successfully; Both formats display correctly in browser tab; Favicon validation works as expected; No errors during upload or save; Favicon is properly generated in multiple sizes (16x16, 32x32, 180x180) if thumbnail job runs",Favicon Upload,Not Automated
-FWL-065,Verify organization-specific branding applies only to that organization's users,Data Isolation,Functional,Critical,6m,"2 organizations: Org A (logo-a.png) and Org B (logo-b.png); User A from Org A; User B from Org B","1. Sign in with User A (Org A)
-2. Navigate to homepage
-3. Verify logo-a.png displayed
-4. Sign out
-5. Sign in with User B (Org B)
-6. Navigate to homepage
-7. Verify logo-b.png displayed (NOT logo-a.png)
-8. Sign out
-9. Sign in again with User A
-10. Verify logo-a.png is back (NOT logo-b.png)","Organization branding is properly isolated: User A sees ONLY Org A branding (logo-a.png); User B sees ONLY Org B branding (logo-b.png); No cross-contamination (User A never sees logo-b.png); Switching users switches branding correctly; Each organization's branding is isolated and secure; Data isolation is enforced at backend level (not just frontend); Meets multi-tenancy requirements for B2B platform",Data Isolation Security,Not Automated
-FWL-066,Verify anonymous users (not signed in) see default branding,Anonymous User,Functional,High,3m,"Anonymous access enabled; Default platform branding configured","1. Open incognito/private browser window
-2. Navigate to ${FRONT_URL} (do NOT sign in)
-3. Browse as anonymous user
-4. Inspect header logo
-5. Inspect favicon
-6. Inspect theme colors
-7. Inspect main menu (if visible)
-8. Inspect footer","Anonymous users see default branding: Default Virto Commerce logo displayed (NOT any organization's custom logo); Default favicon in browser tab; Default theme colors applied (no organization-specific theme); Main menu shows default/public links (not org-specific links); Footer shows default/public links; No organization branding is applied before user signs in; Anonymous experience is consistent and unbranded",Anonymous User,Not Automated
-FWL-067,Verify branding updates in Admin reflect on storefront without cache issues,Cache Management,Functional,High,6m,"Organization with custom branding; Admin access; Signed-in storefront session in separate browser tab","1. Open storefront in Browser Tab 1
-2. Sign in with branded org user
-3. Verify current logo displayed (logo-v1.png)
-4. Open Admin in Browser Tab 2
-5. Navigate to Organizations > Same Org > White Labeling
-6. Upload new logo (logo-v2.png)
-7. Save settings
-8. Return to storefront Tab 1
-9. Refresh page (Ctrl+F5 or hard refresh)
-10. Verify new logo (logo-v2.png) is displayed (NOT old logo-v1.png)","Branding updates reflect on storefront after refresh: After uploading new logo in Admin, storefront shows new logo after refresh; Old logo is NOT cached indefinitely (cache is invalidated or expires quickly); Hard refresh (Ctrl+F5) definitely shows new logo; Cache-Control headers allow updates to be seen within reasonable time (< 5 minutes); CDN cache is purged or expires appropriately; Users see updated branding without clearing browser cache manually; Cache management is effective for branding updates",Cache Management,Not Automated
-FWL-068,Verify branding consistency across all storefront pages (homepage catalog product cart account),Consistency,Functional,High,6m,"Organization with full branding configured; User account with items in cart and order history","1. Sign in to storefront with branded org user
-2. Verify branding on HOMEPAGE: logo, favicon, theme, main menu, footer
-3. Navigate to CATALOG page
-4. Verify same branding displayed
-5. Navigate to PRODUCT page (any product)
-6. Verify same branding displayed
-7. Add item to cart, navigate to CART page
-8. Verify same branding displayed
-9. Navigate to ACCOUNT > Orders
-10. Verify same branding displayed
-11. Navigate to ACCOUNT > Profile
-12. Verify same branding displayed","Branding is consistent across all pages: Logo, favicon, theme, main menu, footer are consistent on: Homepage, Catalog, Product page, Cart, Checkout, Account pages; No pages show default branding after sign-in; No pages show wrong organization's branding; Theme colors are consistent across all pages; Main menu and footer structure remain consistent; User experience is cohesive and professional; No branding ""flicker"" when navigating between pages",Consistency,Not Automated
+[ASSERT] 3. Verify whiteLabelingSettings embedded in pageContext
+[ASSERT] 4. Verify mainMenuLinks field present","[DOM] Single pageContext query returns slugInfo, store, whiteLabelingSettings, user sub-objects
+[DOM] whiteLabelingSettings includes logoUrl, faviconUrl, themePresetName, footerLinks, mainMenuLinks
+[DOM] mainMenuLinks array returned with full hierarchy
+[DOM] Data consistent with separate whiteLabelingSettings query
+[FORMAT] Response time approximately 200-400ms","[API] pageContext query returns whiteLabelingSettings with mainMenuLinks
+[API] errors[] is empty in GraphQL response","GraphQL errors; whiteLabelingSettings missing from pageContext; mainMenuLinks not embedded; Response time > 1000ms",none,VCST-4637,Manual
+FWL-028,Switch organization - verify branding updates dynamically (logo and favicon),Multi-Organization,Critical,BL-WL-003,,"User account is member of 2 organizations: Org A (logo-a.png, favicon-a.ico, Default theme) and Org B (logo-b.png, favicon-b.ico, Coffee theme)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with multi-org user account
+[ASSERT] 2. Verify current organization is Org A
+[ASSERT] 3. Inspect header logo (should be logo-a.png)
+[ASSERT] 4. Inspect browser tab favicon (should be favicon-a.ico)
+[ASSERT] 5. Inspect theme colors (should be Default)
+[ACT] 6. Click organization switcher in header
+[ACT] 7. Select Org B from dropdown
+[WAIT] 8. Wait for organization switch to complete
+[ASSERT] 9. Verify page refreshes or updates
+[ASSERT] 10. Inspect header logo (should NOW be logo-b.png)
+[ASSERT] 11. Inspect browser tab favicon (should NOW be favicon-b.ico)
+[ASSERT] 12. Inspect theme colors (should NOW be Coffee)
+[ACT] 13. Switch back to Org A
+[ASSERT] 14. Verify logo/favicon/theme revert to Org A branding","[DOM] Switching Org A to Org B updates header logo from logo-a.png to logo-b.png
+[DOM] Browser tab favicon updates from favicon-a.ico to favicon-b.ico
+[STATE] Theme updates from Default to Coffee
+[STATE] Switching back to Org A restores Org A branding
+[STATE] All branding changes persist across page navigation after switch","[CONSOLE] no uncaught JS errors
+[NETWORK] new logo image loads with HTTP 200 after switch","Old org logo still shown after switch; Stale branding from previous org; Theme not updating; Flash of wrong branding during transition",none,Multi-Organization,Manual
+FWL-029,Switch organization - verify main menu links update dynamically,Multi-Organization,High,BL-WL-003,,"User is member of Org A (main menu: Products, Services, Contact) and Org B (main menu: Solutions, Partners, Support, Blog)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in with multi-org user
+[ASSERT] 2. Verify current org is Org A
+[ASSERT] 3. Inspect main menu links in header: Products, Services, Contact
+[ACT] 4. Hover over links to verify dropdowns (if any)
+[ACT] 5. Switch organization to Org B
+[WAIT] 6. Wait for refresh
+[ASSERT] 7. Inspect main menu links in header: should NOW show Solutions, Partners, Support, Blog
+[ASSERT] 8. Verify main menu structure changed
+[ACT] 9. Switch back to Org A
+[ASSERT] 10. Verify main menu reverts to Products, Services, Contact","[DOM] Org A displays main menu: Products, Services, Contact
+[DOM] Switching to Org B updates main menu to: Solutions, Partners, Support, Blog
+[DOM] Switching back to Org A restores original main menu
+[STATE] No stale links from previous org displayed
+[NAV] Navigation works correctly after org switch","[CONSOLE] no uncaught JS errors","Stale main menu links from previous org; Menu not updating after switch; Navigation broken after switch",none,Multi-Organization,Manual
+FWL-030,Switch organization - verify footer links update dynamically,Multi-Organization,Medium,BL-WL-003,,"User is member of Org A (footer: About, Support, Legal) and Org B (footer: Company, Help, Policies, Careers)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in with multi-org user (Org A)
+[SCROLL] 2. Scroll to footer
+[ASSERT] 3. Verify footer links: About, Support, Legal
+[ACT] 4. Switch organization to Org B
+[WAIT] 5. Wait for refresh
+[SCROLL] 6. Scroll to footer
+[ASSERT] 7. Verify footer links updated: Company, Help, Policies, Careers
+[ACT] 8. Switch back to Org A
+[ASSERT] 9. Verify footer reverts","[DOM] Org A displays footer: About, Support, Legal
+[DOM] Switching to Org B updates footer to: Company, Help, Policies, Careers
+[STATE] Switching back restores Org A footer
+[STATE] No stale footer links displayed","[CONSOLE] no uncaught JS errors","Stale footer links from previous org; Footer not updating after switch; Wrong hierarchy displayed",none,Multi-Organization,Manual
+FWL-031,Switch organization - verify theme preset changes dynamically,Multi-Organization,High,BL-WL-003,,"User is member of Org A (Default theme) and Org B (Coffee theme)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in with multi-org user (Org A with Default theme)
+[ASSERT] 2. Inspect page CSS variables and colors
+[ASSERT] 3. Note Default theme colors (header, buttons, links)
+[ACT] 4. Switch organization to Org B (Coffee theme)
+[WAIT] 5. Wait for refresh
+[ASSERT] 6. Inspect CSS variables again
+[ASSERT] 7. Verify colors changed to Coffee theme
+[ASSERT] 8. Verify visual difference (browns/creams instead of default blue/gray)
+[ACT] 9. Switch back to Org A
+[ASSERT] 10. Verify theme reverts to Default","[FORMAT] Org A displays Default theme colors
+[FORMAT] Switching to Org B applies Coffee theme (visual color change obvious)
+[FORMAT] CSS variables update to Coffee theme values
+[FORMAT] Switching back to Org A restores Default theme
+[STATE] Theme transition is smooth (no flicker or broken styles)","[CONSOLE] no uncaught JS errors","Theme not changing after org switch; Stale theme from previous org; CSS variables not updating; Theme flicker during transition",none,Multi-Organization,Manual
+FWL-032,Verify branding transition is smooth during organization switch (no flash of wrong branding),Multi-Organization,High,BL-WL-003,,"User is member of 2 organizations with distinct branding; Fast internet connection for accurate performance test","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in with multi-org user (Org A)
+[ACT] 2. Open browser DevTools > Network tab
+[ACT] 3. Switch organization to Org B
+[ASSERT] 4. Observe page reload/refresh
+[ASSERT] 5. Watch for logo/favicon loading
+[ASSERT] 6. Verify no flash of old branding during transition
+[ASSERT] 7. Measure time for branding to fully update
+[ACT] 8. Repeat switch 3 times (Org A to Org B and back)","[STATE] No flash of Org A logo before Org B logo loads
+[STATE] No flash of Org A favicon before Org B favicon loads
+[STATE] Theme colors transition smoothly (no jarring color flash)
+[FORMAT] Branding update completes within 1-2 seconds
+[STATE] No broken images or layout during transition","[CONSOLE] no uncaught JS errors
+[NETWORK] new branding assets load with HTTP 200 within 2 seconds","Flash of wrong branding during org switch; Broken images during transition; Transition takes more than 2 seconds; Layout breaks during switch",none,"Multi-Organization Performance",Manual
+FWL-033,Verify logo renders correctly on mobile viewport (375px - iPhone),Responsive Mobile,High,BL-WL-001,ECL-13.2,"Organization with custom logo configured; Mobile device or browser with responsive mode","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded organization user
+[ACT] 2. Open browser DevTools
+[ACT] 3. Toggle device toolbar (responsive mode)
+[ACT] 4. Set viewport: 375px width x 667px height (iPhone 8 size)
+[NAV] 5. Navigate to homepage
+[ASSERT] 6. Inspect header logo
+[ASSERT] 7. Verify logo size and positioning
+[NAV] 8. Test across multiple mobile pages (catalog, product, cart)","[DOM] Logo is visible in mobile header
+[DOM] Logo is appropriately sized for mobile (not too large, not too small)
+[DOM] Logo is not cut off or cropped
+[DOM] Logo is clear and legible (not pixelated)
+[STATE] Logo is positioned correctly in mobile header layout
+[STATE] Logo remains clickable (tappable) and links to homepage
+[DOM] Logo does not overlap other mobile header elements","[CONSOLE] no uncaught JS errors","Logo missing on mobile; Logo overlapping hamburger menu; Logo pixelated on mobile; Logo not tappable",none,Mobile Responsive,Manual
+FWL-034,Verify main menu links accessible via hamburger menu on mobile,Responsive Mobile,Critical,BL-WL-001,ECL-13.2,"Organization with main menu configured; Mobile viewport 375px width","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Resize browser to mobile viewport: 375px width
+[NAV] 2. Sign in with branded org user
+[NAV] 3. Navigate to homepage
+[ASSERT] 4. Locate hamburger menu icon in top-left or top-right of mobile header
+[ACT] 5. Tap hamburger icon
+[ASSERT] 6. Verify mobile menu drawer opens
+[ASSERT] 7. Verify main menu links visible in drawer
+[ASSERT] 8. Verify hierarchical structure (parent/child links)
+[ACT] 9. Tap a parent link with children
+[ASSERT] 10. Verify children expand
+[ACT] 11. Tap a child link
+[ASSERT] 12. Verify navigation","[DOM] Hamburger icon visible and tappable in mobile header
+[STATE] Tapping hamburger opens mobile menu drawer
+[DOM] Main menu links listed in drawer with clear labels
+[DOM] Parent links with children have expand/collapse icon
+[STATE] Tapping parent expands to reveal children
+[DOM] Child links are indented or visually nested
+[NAV] Tapping child link navigates to correct page
+[STATE] Menu drawer closes after navigation","[CONSOLE] no uncaught JS errors","Hamburger icon missing; Drawer not opening; Children not expanding on tap; Menu not closing after navigation; Tap targets too small",none,Mobile Responsive,Manual
+FWL-035,Verify footer links display correctly on mobile viewport,Responsive Mobile,Medium,BL-WL-001,ECL-13.2,"Organization with footer links configured; Mobile viewport","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Resize to mobile: 375px width
+[NAV] 2. Sign in with branded org user
+[SCROLL] 3. Scroll to bottom of page
+[ASSERT] 4. Inspect footer layout
+[ASSERT] 5. Verify footer links visible
+[ASSERT] 6. Verify hierarchical structure preserved or adapted for mobile
+[ACT] 7. Tap footer links to test navigation","[DOM] Footer is visible at bottom of mobile page
+[DOM] Footer links are readable and properly sized
+[STATE] Parent/child structure is preserved or collapsed into accordion for mobile
+[STATE] Links are tappable (adequate tap targets)
+[STATE] Footer does not overlap content
+[NAV] Tapping links navigates correctly","[CONSOLE] no uncaught JS errors","Footer links not visible on mobile; Links too small to tap; Footer overlapping content; Hierarchy broken on mobile",none,Mobile Responsive,Manual
+FWL-036,Verify theme colors applied correctly on mobile viewport,Responsive Mobile,Medium,BL-WL-001,ECL-13.2,"Organization with Coffee theme configured; Mobile viewport","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Resize to mobile: 375px width
+[NAV] 2. Sign in with Coffee theme org user
+[NAV] 3. Navigate to homepage
+[ASSERT] 4. Inspect page colors on mobile
+[ASSERT] 5. Verify header, buttons, links use Coffee theme
+[NAV] 6. Navigate to product page and cart
+[ASSERT] 7. Verify theme consistency on mobile","[FORMAT] Coffee theme colors visible on mobile (browns/creams)
+[FORMAT] Header uses Coffee theme background
+[FORMAT] Buttons use Coffee theme primary color
+[FORMAT] Links use Coffee theme accent color
+[STATE] Theme is consistent across all mobile pages","[CONSOLE] no uncaught JS errors","Default theme showing on mobile; Coffee colors not applied; Theme inconsistent on mobile pages",none,Mobile Responsive,Manual
+FWL-037,Verify logo renders correctly on tablet viewport (768px - iPad),Responsive Mobile,Medium,BL-WL-001,ECL-13.2,"Organization with custom logo; Tablet device or browser responsive mode","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Set viewport: 768px width x 1024px height (iPad size)
+[NAV] 2. Sign in with branded org user
+[NAV] 3. Navigate to homepage
+[ASSERT] 4. Inspect header logo on tablet
+[ASSERT] 5. Verify logo size and positioning
+[ACT] 6. Test landscape and portrait orientations","[DOM] Logo is visible and appropriately sized for tablet
+[DOM] Logo is clear (not pixelated)
+[DOM] Logo positioning is correct in tablet header
+[STATE] Logo works in both portrait (768px) and landscape (1024px) orientations
+[STATE] Logo is clickable and links to homepage","[CONSOLE] no uncaught JS errors","Logo missing or broken on tablet; Logo distorted in landscape; Logo not clickable on tablet",none,Mobile Responsive,Manual
+FWL-038,Verify whitelabeling renders correctly in Chrome browser (desktop),Cross-Browser,High,BL-WL-001,ECL-13.1,"Organization with full branding configured; Chrome browser latest version (120+)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Chrome browser (version 120 or later)
+[NAV] 2. Navigate to {{FRONT_URL}}
+[ACT] 3. Sign in with branded organization user
+[ASSERT] 4. Inspect header logo
+[ASSERT] 5. Inspect browser tab favicon
+[ASSERT] 6. Inspect theme colors
+[ASSERT] 7. Inspect main menu dropdown behavior
+[ASSERT] 8. Inspect footer links
+[NAV] 9. Navigate to multiple pages (homepage, catalog, product, cart, account)","[DOM] Logo displays correctly (high quality, no broken image)
+[DOM] Favicon displays in tab
+[FORMAT] Theme colors applied correctly
+[STATE] Main menu dropdowns work smoothly on hover
+[DOM] Footer links display in correct hierarchy
+[STATE] All branding persists across pages","[CONSOLE] no uncaught JS errors
+[NETWORK] all branding assets load with HTTP 200","Broken logo or favicon in Chrome; CSS not loading in Chrome; Dropdown malfunction in Chrome; Console errors",none,"Chrome Cross-Browser",Manual
+FWL-039,Verify whitelabeling renders correctly in Firefox browser (desktop),Cross-Browser,High,BL-WL-001,ECL-13.1,"Organization with full branding configured; Firefox browser latest version (121+)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Firefox browser (version 121 or later)
+[NAV] 2. Navigate to {{FRONT_URL}}
+[ACT] 3. Sign in with branded organization user
+[ASSERT] 4. Inspect logo, favicon, theme, main menu, footer
+[ACT] 5. Test main menu dropdown behavior (hover)
+[NAV] 6. Navigate across multiple pages
+[ASSERT] 7. Compare rendering to Chrome (should be identical or very similar)","[DOM] Logo displays correctly
+[DOM] Favicon displays in tab
+[FORMAT] Theme colors applied
+[STATE] Main menu dropdowns work (hover may behave slightly differently than Chrome but still functional)
+[DOM] Footer links display correctly
+[STATE] No Firefox-specific rendering issues","[CONSOLE] no uncaught JS errors
+[NETWORK] all branding assets load with HTTP 200","Broken logo or favicon in Firefox; Firefox-specific CSS rendering issue; Dropdown not working on hover in Firefox",none,"Firefox Cross-Browser",Manual
+FWL-040,Verify whitelabeling renders correctly in Edge browser (desktop),Cross-Browser,High,BL-WL-001,ECL-13.1,"Organization with full branding configured; Edge browser latest version (120+)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Edge browser (version 120 or later)
+[NAV] 2. Navigate to {{FRONT_URL}}
+[ACT] 3. Sign in with branded organization user
+[ASSERT] 4. Inspect logo, favicon, theme, main menu, footer
+[ACT] 5. Test main menu dropdown behavior
+[NAV] 6. Navigate across multiple pages
+[ASSERT] 7. Compare to Chrome (Edge is Chromium-based, should be nearly identical)","[DOM] Logo displays correctly
+[DOM] Favicon displays in tab
+[FORMAT] Theme colors applied correctly
+[STATE] Main menu dropdowns work smoothly
+[DOM] Footer links display correctly
+[STATE] Rendering is nearly identical to Chrome (both Chromium-based)","[CONSOLE] no uncaught JS errors
+[NETWORK] all branding assets load with HTTP 200","Broken logo or favicon in Edge; Edge-specific rendering issue; Behavior differs significantly from Chrome",none,"Edge Cross-Browser",Manual
+FWL-041,Verify whitelabeling renders correctly on iPhone Safari (iOS),Cross-Browser Mobile,Critical,BL-WL-001,"ECL-13.1, ECL-13.2","Organization with full branding configured; iPhone device (iPhone 14/15/16) with Safari browser OR BrowserStack iOS simulator","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Safari on iPhone (or BrowserStack iOS simulator)
+[NAV] 2. Navigate to {{FRONT_URL}}
+[ACT] 3. Sign in with branded organization user
+[ASSERT] 4. Inspect logo in mobile header
+[ASSERT] 5. Inspect favicon in Safari tab/URL bar
+[ACT] 6. Test hamburger menu for main menu links
+[SCROLL] 7. Scroll to footer and inspect footer links
+[NAV] 8. Navigate across pages (homepage, catalog, product)","[DOM] Logo displays correctly in mobile header
+[DOM] Favicon visible in Safari (appears in tab switcher or URL bar)
+[STATE] Hamburger menu opens and displays main menu links
+[DOM] Footer links display correctly
+[STATE] Touch interactions work smoothly (tap targets adequate)
+[FORMAT] Theme colors applied correctly
+[STATE] No iOS-specific rendering issues","[CONSOLE] no uncaught JS errors
+[NETWORK] all branding assets load with HTTP 200","Logo broken on iOS Safari; Touch interactions not working; iOS Safari-specific CSS quirks; Favicon not updating on iOS",none,"iOS Safari Mobile",Manual
+FWL-042,Verify whitelabeling renders correctly on Android Chrome (mobile),Cross-Browser Mobile,High,BL-WL-001,"ECL-13.1, ECL-13.2","Organization with full branding configured; Android device (Samsung Galaxy or Google Pixel) with Chrome browser OR BrowserStack Android simulator","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Chrome on Android device (or BrowserStack simulator)
+[NAV] 2. Navigate to {{FRONT_URL}}
+[ACT] 3. Sign in with branded organization user
+[ASSERT] 4. Inspect logo in mobile header
+[ACT] 5. Test hamburger menu for main menu
+[SCROLL] 6. Scroll to footer
+[NAV] 7. Navigate across pages","[DOM] Logo displays correctly in mobile header
+[STATE] Hamburger menu works and shows main menu links
+[DOM] Footer links display correctly
+[STATE] Touch interactions work smoothly
+[FORMAT] Theme colors applied
+[STATE] No Android-specific rendering issues","[CONSOLE] no uncaught JS errors
+[NETWORK] all branding assets load with HTTP 200","Logo broken on Android Chrome; Touch interactions failing; Android-specific CSS issues; Hamburger menu not working",none,"Android Chrome Mobile",Manual
+FWL-043,Verify logo has proper alt text for accessibility,Accessibility,High,BL-WL-001,,Organization with custom logo configured; Screen reader testing tool or browser accessibility inspector,"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
+[NAV] 2. Navigate to homepage
+[ACT] 3. Right-click header logo image
+[ACT] 4. Inspect element in DevTools
+[ASSERT] 5. Verify <img> tag has alt attribute
+[ASSERT] 6. Verify alt text is descriptive (e.g. ""Company1 Logo"")
+[ACT] 7. Enable screen reader (NVDA, JAWS, or VoiceOver)
+[KEY] 8. Tab to logo element
+[ASSERT] 9. Verify screen reader announces logo with alt text","[DOM] <img> element has alt attribute
+[DOM] Alt text is descriptive and meaningful (e.g. ""<Organization Name> Logo"")
+[STATE] Alt text is NOT empty (alt="""")
+[STATE] Screen reader announces logo correctly when focused
+[STATE] Logo link is announced as ""link"" by screen reader","[CONSOLE] no accessibility-related JS errors","Missing alt attribute on logo image; Empty alt text; Screen reader not announcing logo",none,"Accessibility A11Y",Manual
+FWL-044,Verify main menu is keyboard navigable,Accessibility,High,BL-WL-001,,Organization with main menu configured; Keyboard navigation testing,"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
+[NAV] 2. Navigate to homepage
+[KEY] 3. Use Tab key to navigate to main menu
+[KEY] 4. Tab through each main menu link (Products, Services, About, Contact)
+[KEY] 5. When focused on parent link with children (e.g. Products), press Enter or Down Arrow
+[ASSERT] 6. Verify dropdown opens
+[KEY] 7. Tab through child links in dropdown (Laptops, Phones, Tablets)
+[KEY] 8. Press Enter on a child link
+[ASSERT] 9. Verify navigation","[STATE] Tab key moves focus through main menu links sequentially
+[STATE] Focus indicator is visible on each link
+[STATE] Parent links with children open dropdown via Enter or Down Arrow
+[STATE] Focus moves to first child link after opening dropdown
+[STATE] Tab key navigates through child links
+[NAV] Enter key on child link navigates to page","[CONSOLE] no accessibility-related JS errors","Tab focus skipping menu items; Focus indicator invisible; Dropdown not opening via keyboard; Child links not reachable via keyboard",none,"Accessibility A11Y",Manual
+FWL-045,Verify footer links are keyboard navigable,Accessibility,Medium,BL-WL-001,,Organization with footer links configured; Keyboard navigation testing,"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
+[NAV] 2. Navigate to homepage
+[KEY] 3. Use Tab key to navigate through page content down to footer
+[KEY] 4. Continue tabbing through footer links
+[ASSERT] 5. Verify focus indicator visible on each footer link
+[KEY] 6. Test parent and child links (if hierarchical)
+[KEY] 7. Press Enter on a footer link to test navigation","[STATE] Tab key moves focus through footer links sequentially
+[STATE] Focus indicator is visible on each link
+[STATE] Parent and child links are both keyboard accessible
+[NAV] Enter key on link navigates to correct page
+[STATE] Keyboard navigation order is logical (parent then children then next parent)","[CONSOLE] no accessibility-related JS errors","Footer links not reachable via Tab; Focus indicator missing; Enter key not navigating; Navigation order illogical",none,"Accessibility A11Y",Manual
+FWL-046,Verify focus indicators visible on all branded interactive elements,Accessibility,High,BL-WL-001,,Organization with custom branding; Theme preset applied; Keyboard navigation,"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with Coffee theme org user
+[NAV] 2. Navigate to homepage
+[KEY] 3. Use Tab key to navigate through page
+[KEY] 4. Tab to logo (should show focus indicator)
+[KEY] 5. Tab to main menu links (should show focus indicator)
+[KEY] 6. Tab to footer links (should show focus indicator)
+[KEY] 7. Tab to buttons (should show focus indicator)
+[ASSERT] 8. Verify focus indicators are clearly visible against Coffee theme colors","[STATE] Logo has visible focus outline when tabbed to
+[STATE] Main menu links show focus indicator (outline, background highlight, or underline)
+[STATE] Footer links show focus indicator
+[STATE] Buttons show focus indicator
+[FORMAT] Focus indicators have sufficient contrast against Coffee theme background colors (minimum 3:1 contrast ratio)
+[STATE] Focus indicators are NOT hidden or removed by CSS","[CONSOLE] no accessibility-related JS errors","Focus indicators hidden by CSS; Focus outline invisible against theme background; Insufficient contrast ratio for focus indicators",none,"Accessibility A11Y",Manual
+FWL-047,Verify screen reader announces main menu structure (parent and child links),Accessibility,Medium,BL-WL-001,,"Organization with hierarchical main menu; Screen reader: NVDA (Windows), JAWS (Windows), or VoiceOver (Mac)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Enable screen reader
+[NAV] 2. Sign in to storefront with branded org user
+[NAV] 3. Navigate to homepage
+[KEY] 4. Use screen reader navigation to reach main menu
+[KEY] 5. Navigate through main menu with screen reader
+[ASSERT] 6. When reaching parent link with children (Products), listen to announcement
+[KEY] 7. Navigate into dropdown (if supported by screen reader)
+[ASSERT] 8. Verify screen reader announces child links
+[ASSERT] 9. Verify hierarchy is conveyed","[STATE] Screen reader announces each main menu link by title
+[STATE] Parent links with children are announced as ""menu"" or ""has submenu""
+[STATE] Navigating into dropdown, child links are announced
+[STATE] Hierarchy is conveyed (user understands parent/child relationship)
+[DOM] ARIA attributes present: aria-haspopup, aria-expanded, role=""menu"", role=""menuitem""","[CONSOLE] no accessibility-related JS errors","Screen reader not announcing menu hierarchy; Missing ARIA attributes; Child links not reachable via screen reader; No indication of submenu presence",none,"Accessibility A11Y",Manual
+FWL-048,Verify high contrast mode compatibility with whitelabeling theme,Accessibility,Medium,BL-WL-001,,Organization with Coffee theme configured; Windows High Contrast Mode or browser extension for high contrast,"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Enable Windows High Contrast Mode (Windows Settings > Ease of Access > High Contrast)
+[NAV] 2. Sign in to storefront with Coffee theme org user
+[NAV] 3. Navigate to homepage
+[ASSERT] 4. Verify logo is visible in high contrast mode
+[ASSERT] 5. Verify main menu links are visible
+[ASSERT] 6. Verify footer links are visible
+[ASSERT] 7. Verify focus indicators are visible
+[ASSERT] 8. Verify text is readable","[DOM] Logo remains visible in high contrast mode (not disappeared)
+[DOM] Main menu links are visible and readable
+[DOM] Footer links are visible and readable
+[STATE] Focus indicators remain visible with sufficient contrast
+[DOM] Text remains readable
+[STATE] No layout breaking","[CONSOLE] no uncaught JS errors","Logo invisible in high contrast mode; Layout breaking in high contrast; Text unreadable; Focus indicators disappearing",none,"Accessibility A11Y",Manual
+FWL-049,Verify pageContext query performance - single call vs multiple queries,Performance,Medium,BL-WL-001,,Organization with full branding configured; GraphQL endpoint accessible; Performance testing tool (Postman or browser DevTools),"admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to GraphQL playground
+[ACT] 2. Test 1: Execute 4 separate queries sequentially: slugInfo query (measure time), store query (measure time), whiteLabelingSettings query (measure time), user query (measure time). Total time = sum of all 4.
+[ACT] 3. Test 2: Execute single pageContext query that returns all 4 sub-objects (measure time)
+[ASSERT] 4. Compare total time: Test 1 (4 queries) vs Test 2 (1 query)
+[ACT] 5. Repeat test 5 times for average
+[ASSERT] 6. Calculate time savings","[FORMAT] 4 separate queries take approximately 800-1200ms total
+[FORMAT] Single pageContext query takes approximately 400-600ms (50-70% faster)
+[FORMAT] Time savings: 300-600ms measurable
+[STATE] Single query reduces HTTP overhead (fewer round trips)","[API] pageContext query returns all 4 sub-objects in a single response
+[API] errors[] is empty in GraphQL response","pageContext query slower than separate queries; Performance improvement not measurable; Single query fails",none,"Performance Optimization",Manual
+FWL-050,Verify storefront page load time with whitelabeling enabled - under 3 seconds,Performance,Medium,BL-WL-001,,Organization with full branding configured; Chrome DevTools > Network > Throttling: Fast 3G or No throttling,"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Chrome DevTools
+[ACT] 2. Navigate to Network tab
+[ACT] 3. Set throttling: Fast 3G (or No throttling for best-case)
+[ACT] 4. Clear browser cache
+[NAV] 5. Sign in to storefront with branded org user
+[NAV] 6. Navigate to homepage (measure load time from navigation start to page fully loaded)
+[ASSERT] 7. Measure: DOMContentLoaded, Load, Total time
+[ASSERT] 8. Verify logo, favicon, theme assets load within total time
+[ACT] 9. Repeat 3 times for average","[FORMAT] Total page load time < 3 seconds (with Fast 3G throttling)
+[FORMAT] Logo image loads within 500ms
+[FORMAT] Favicon loads within 200ms
+[FORMAT] Theme CSS loads within 300ms
+[FORMAT] DOMContentLoaded < 1.5 seconds","[CONSOLE] no uncaught JS errors
+[NETWORK] all branding assets load with HTTP 200","Page load time > 3 seconds; Logo or theme causing load delay; DOMContentLoaded > 1.5 seconds",none,Performance,Manual
+FWL-051,Verify logo image loading with lazy loading or optimization,Performance,Medium,BL-WL-001,,Organization with custom logo (large file size test: 500KB PNG); Chrome DevTools Network tab,"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
+[ACT] 2. Open Chrome DevTools > Network tab
+[ACT] 3. Filter: Images
+[NAV] 4. Navigate to homepage
+[ASSERT] 5. Observe logo image loading
+[ASSERT] 6. Verify image format (PNG, WebP, JPEG)
+[ASSERT] 7. Verify image size (file size in KB)
+[ASSERT] 8. Verify loading strategy (eager vs lazy)
+[ASSERT] 9. Check if image is optimized (compressed)","[FORMAT] Logo image format is appropriate (PNG, SVG, or WebP preferred)
+[FORMAT] Logo file size < 100KB (ideally < 50KB)
+[STATE] Logo loading is NOT blocking page render
+[DOM] Logo appears quickly after page load","[CONSOLE] no uncaught JS errors
+[NETWORK] logo image loads with HTTP 200","Unoptimized logo (>500KB) blocking page load; Logo format inefficient; Logo causing render-blocking",none,Performance,Manual
+FWL-052,Verify favicon caching to avoid repeated requests,Performance,Low,BL-WL-001,,Organization with custom favicon; Browser cache enabled; Chrome DevTools Network tab,"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
+[NAV] 2. Navigate to homepage (clear cache first)
+[ACT] 3. Open DevTools > Network tab
+[ASSERT] 4. Observe favicon request (favicon.ico or .png)
+[ASSERT] 5. Verify response headers (Cache-Control, ETag)
+[NAV] 6. Navigate to another page (catalog)
+[ASSERT] 7. Verify Network tab - favicon is NOT requested again (served from cache)
+[NAV] 8. Close browser, reopen, navigate to storefront
+[ASSERT] 9. Verify favicon is served from disk cache (not re-downloaded)","[STATE] First request for favicon returns HTTP 200 with Cache-Control header
+[STATE] Subsequent page navigations do NOT request favicon again (served from memory cache)
+[STATE] After browser restart, favicon is served from disk cache (HTTP 304 or disk cache hit)
+[FORMAT] Cache headers configured correctly (e.g. Cache-Control: max-age=86400)","[CONSOLE] no uncaught JS errors
+[NETWORK] favicon Cache-Control header present","Favicon re-requested on every page navigation; No caching headers set; Favicon re-downloaded after browser restart",none,Performance,Manual
+FWL-053,Verify theme CSS caching and efficient loading,Performance,Low,BL-WL-001,,Organization with Coffee theme configured; Browser cache enabled; DevTools Network tab,"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with Coffee theme org user
+[NAV] 2. Navigate to homepage (clear cache first)
+[ACT] 3. Open DevTools > Network > CSS filter
+[ASSERT] 4. Observe theme-related CSS file loading
+[ASSERT] 5. Verify Cache-Control headers
+[NAV] 6. Navigate to product page
+[ASSERT] 7. Verify CSS is NOT re-downloaded (served from cache)
+[ASSERT] 8. Check CSS file size (should be minified)","[FORMAT] Theme CSS file is minified (smaller file size)
+[STATE] First request returns HTTP 200 with Cache-Control
+[STATE] Subsequent pages serve CSS from cache (no re-download)
+[FORMAT] CSS file size < 100KB
+[STATE] No duplicate CSS files loaded
+[STATE] CSS is loaded in <head> to avoid FOUC","[CONSOLE] no CSS errors
+[NETWORK] theme CSS Cache-Control header present","Theme CSS re-downloaded on every page; No caching headers; CSS not minified; FOUC due to late CSS loading",none,Performance,Manual
+FWL-054,Verify no FOUC (Flash of Unstyled Content) when loading themed page,Performance,High,BL-WL-001,,Organization with Coffee theme configured; Slow network throttling (DevTools > Network > Slow 3G),"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Open Chrome DevTools
+[ACT] 2. Set Network throttling: Slow 3G
+[ACT] 3. Clear browser cache
+[NAV] 4. Sign in to storefront with Coffee theme org user
+[NAV] 5. Navigate to homepage
+[ASSERT] 6. Watch page load carefully for any flash of unstyled content
+[ASSERT] 7. Verify page loads with Coffee theme colors immediately (no flash of Default theme first)
+[NAV] 8. Repeat navigation to product page and cart
+[ASSERT] 9. Verify consistent behavior (no FOUC)","[STATE] Page loads with Coffee theme colors immediately (no flash of Default theme)
+[STATE] No momentary display of unstyled HTML before CSS applies
+[STATE] Page rendering is smooth and professional
+[STATE] User does NOT see ""flicker"" or color changes during page load","[CONSOLE] no CSS errors","FOUC visible on slow network; Default theme flashing before Coffee theme applies; CSS loading too late",none,"Performance UX",Manual
+FWL-055,Verify multiple concurrent organization users can access branding without conflicts,Concurrency,Medium,BL-WL-003,,"2 user accounts from different organizations: User A (Org A branding) and User B (Org B branding); 2 separate browser sessions (Chrome Incognito + Firefox Private)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Chrome Incognito window
+[NAV] 2. Navigate to {{FRONT_URL}}
+[ACT] 3. Sign in with User A (Org A)
+[ASSERT] 4. Verify Org A branding displayed (logo-a, Coffee theme)
+[NAV] 5. Open Firefox Private window (separate session)
+[NAV] 6. Navigate to {{FRONT_URL}}
+[ACT] 7. Sign in with User B (Org B)
+[ASSERT] 8. Verify Org B branding displayed (logo-b, Default theme)
+[ACT] 9. Switch between browser windows
+[ASSERT] 10. Verify each session maintains its own branding (no cross-contamination)
+[NAV] 11. Navigate pages in both sessions simultaneously
+[ASSERT] 12. Verify branding remains correct in each session","[DOM] User A session displays Org A branding (logo-a, Coffee theme)
+[DOM] User B session displays Org B branding (logo-b, Default theme)
+[STATE] No cross-contamination between sessions
+[STATE] Navigating pages in one session does NOT affect the other","[CONSOLE] no uncaught JS errors in either session","Cross-contamination: User A sees Org B branding; Caching conflicts between sessions; Wrong logo after navigating in parallel sessions",none,Concurrency,Manual
+FWL-056,Verify branding persists after session timeout and re-login,Session Management,Medium,BL-WL-001,,Organization with custom branding; Session timeout configured (or manually clear session); User account,"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
+[ASSERT] 2. Verify branding displayed (logo, favicon, theme, main menu, footer)
+[ACT] 3. Wait for session timeout (or manually clear session cookie in DevTools)
+[NAV] 4. Attempt to navigate to protected page (e.g. account/orders)
+[ASSERT] 5. Verify redirect to sign-in page due to session timeout
+[ACT] 6. Sign in again with same user credentials
+[ASSERT] 7. After successful sign-in, verify branding is restored
+[ASSERT] 8. Verify logo, favicon, theme, main menu, footer all display correctly","[DOM] After session timeout, user is redirected to sign-in page
+[DOM] After re-login, organization logo is restored
+[DOM] After re-login, favicon is restored
+[FORMAT] After re-login, theme is restored
+[DOM] After re-login, main menu and footer are restored","[CONSOLE] no uncaught JS errors","Branding lost after re-login; Default branding showing after session timeout re-login; Main menu/footer missing after re-login",none,Session Management,Manual
+FWL-057,Verify branding data is not exposed in client-side code or APIs for other organizations,Security,High,BL-WL-001,,User account from Org A; Access to browser DevTools and Network tab,"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}, admin={{BACK_URL}}","[NAV] 1. Sign in to storefront with Org A user
+[ACT] 2. Open DevTools > Network tab
+[NAV] 3. Navigate to homepage
+[ASSERT] 4. Inspect GraphQL or REST API calls
+[ASSERT] 5. Look for whiteLabelingSettings or pageContext responses
+[ASSERT] 6. Verify response contains ONLY Org A branding data
+[ASSERT] 7. Verify NO data for Org B, Org C, or other organizations is included
+[ASSERT] 8. Inspect page source and JavaScript
+[ASSERT] 9. Verify no hardcoded branding URLs for other organizations
+[ACT] 10. Attempt to query GraphQL with different organizationId (if possible)
+[ASSERT] 11. Verify access is restricted (only authenticated org data returned)","[DOM] API responses contain ONLY current user's organization branding (Org A)
+[STATE] No data for other organizations is leaked in responses
+[STATE] GraphQL query with different organizationId is blocked or returns null
+[STATE] Page source does not contain hardcoded URLs for other orgs' logos/favicons","[API] whiteLabelingSettings returns only the authenticated org's data
+[CONSOLE] no uncaught JS errors","Org B branding data visible in Org A's API response; Cross-org data exposure; Unauthorized access to other org settings via GraphQL",none,Security,Manual
+FWL-058,Verify no broken images when logo or favicon URL is invalid,Error Handling,Medium,BL-WL-004,,Organization with White Labeling enabled; Manually set logoUrl to invalid URL in database or via API,"admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
+[ACT] 2. Open White Labeling settings
+[ACT] 3. Manually enter invalid logo URL: https://invalid-cdn.example.com/nonexistent-logo.png
+[ACT] 4. Save settings
+[NAV] 5. Sign in to storefront with Test Org user
+[NAV] 6. Navigate to homepage
+[ASSERT] 7. Inspect header logo area
+[ASSERT] 8. Verify behavior when logo fails to load","[DOM] Page does NOT display broken image icon
+[DOM] Fallback logo is displayed (default Virto Commerce logo OR organization name text)
+[STATE] Page layout is NOT broken (header remains intact)
+[STATE] User can still use the site (navigation works)
+[DOM] Footer and other elements are unaffected","[CONSOLE] no uncaught JS errors related to failed image load","Broken image icon visible in header; Header layout breaking due to missing logo; Console errors about 404 image",restore org logoUrl to valid URL,"Error Handling Negative",Manual
+FWL-059,Verify graceful handling when main menu link list does not exist,Error Handling,Medium,BL-WL-004,,Organization with MainMenuLinkListName set to non-existent link list name: nonexistent-menu,"admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
+[ACT] 2. Open White Labeling settings
+[ACT] 3. Set Main Menu Link List Name: nonexistent-menu (does not exist in Link Lists)
+[ACT] 4. Save settings
+[NAV] 5. Sign in to storefront with Test Org user
+[NAV] 6. Navigate to homepage
+[ASSERT] 7. Inspect header navigation area
+[ASSERT] 8. Verify main menu behavior","[STATE] Application does NOT crash or display error
+[DOM] Header layout is NOT broken
+[STATE] User can navigate site via search, footer, catalog
+[API] GraphQL returns null or empty array for mainMenuLinks (not an error)","[CONSOLE] no uncaught JS errors","Application crash on missing menu config; Header broken; Console errors about missing link list",restore org MainMenuLinkListName to original,"Error Handling Negative",Manual
+FWL-060,Verify graceful handling when footer link list does not exist,Error Handling,Medium,BL-WL-004,,Organization with FooterLinkListName set to non-existent link list name,"admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
+[ACT] 2. Open White Labeling settings
+[ACT] 3. Set Footer Link List Name: nonexistent-footer (does not exist)
+[ACT] 4. Save settings
+[NAV] 5. Sign in to storefront with Test Org user
+[SCROLL] 6. Scroll to footer
+[ASSERT] 7. Inspect footer links area","[STATE] Application does NOT crash
+[STATE] Footer may display default links OR be empty
+[DOM] Page layout is NOT broken
+[API] GraphQL returns null or empty array for footerLinks (not an error)","[CONSOLE] no uncaught JS errors","Application crash on missing footer config; Footer area broken; Console errors about missing link list",restore org FooterLinkListName to original,"Error Handling Negative",Manual
+FWL-061,Verify logo upload validation - accepted file formats (PNG SVG JPEG),Logo Upload,Medium,BL-WL-001,,Admin access to White Labeling settings; Test image files: logo.png logo.svg logo.jpg,"admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
+[ACT] 2. Open White Labeling settings
+[ACT] 3. Test 1: Upload logo.png (valid PNG file)
+[ASSERT] 4. Verify upload succeeds
+[ACT] 5. Save settings
+[ACT] 6. Test 2: Upload logo.svg (valid SVG file)
+[ASSERT] 7. Verify upload succeeds
+[ACT] 8. Save settings
+[ACT] 9. Test 3: Upload logo.jpg (valid JPEG file)
+[ASSERT] 10. Verify upload succeeds
+[ACT] 11. Save settings
+[ASSERT] 12. For each upload, verify logo displays correctly on storefront","[STATE] PNG upload succeeds without error
+[STATE] SVG upload succeeds without error
+[STATE] JPEG upload succeeds without error
+[DOM] Uploaded logos display correctly on storefront","[ADMIN] settings saved successfully for each format
+[CONSOLE] no file upload errors","Upload rejected for valid PNG/SVG/JPEG; Error message shown for valid formats; Logo not displaying on storefront after upload",remove uploaded logos and restore original,Logo Upload,Manual
+FWL-062,Verify logo upload validation - rejected file formats (GIF BMP TXT),Logo Upload,Medium,BL-WL-001,,Admin access to White Labeling settings; Test invalid files: logo.gif logo.bmp logo.txt,"admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
+[ACT] 2. Open White Labeling settings
+[ACT] 3. Test 1: Attempt to upload logo.gif (invalid format)
+[ASSERT] 4. Verify upload is REJECTED with validation error
+[ACT] 5. Test 2: Attempt to upload logo.bmp (invalid format)
+[ASSERT] 6. Verify upload is REJECTED
+[ACT] 7. Test 3: Attempt to upload logo.txt (invalid format)
+[ASSERT] 8. Verify upload is REJECTED
+[ASSERT] 9. Verify error messages are clear: e.g. ""Only PNG, SVG, and JPEG formats are allowed""
+[ASSERT] 10. Verify settings do NOT save with invalid file","[STATE] GIF upload is rejected with error message
+[STATE] BMP upload is rejected with error message
+[STATE] TXT upload is rejected with error message
+[DOM] Error messages are clear and user-friendly
+[STATE] Invalid file is NOT uploaded to server
+[STATE] Logo field remains empty or retains previous valid logo","[CONSOLE] no uncaught JS errors","Invalid formats accepted without error; No error message shown; Invalid file saved to server",none,"Logo Upload Negative",Manual
+FWL-063,Verify logo upload validation - file size limit (max 2MB),Logo Upload,Medium,BL-WL-001,,Admin access; Test large logo file: logo-large.png (3MB or larger exceeds limit),"admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
+[ACT] 2. Open White Labeling settings
+[ACT] 3. Attempt to upload logo-large.png (3MB file size)
+[ASSERT] 4. Verify upload is REJECTED due to file size
+[ASSERT] 5. Verify error message: ""File size exceeds 2MB limit"" or similar
+[ACT] 6. Attempt to upload valid-sized logo (< 2MB)
+[ASSERT] 7. Verify upload succeeds","[STATE] Files larger than 2MB are rejected
+[DOM] Error message clearly states file size limit
+[STATE] User is NOT able to save with oversized file
+[STATE] Valid-sized files (< 2MB) are accepted","[CONSOLE] no uncaught JS errors","Oversized file accepted without error; No error message for size limit; Valid file rejected as too large",none,"Logo Upload Negative",Manual
+FWL-064,Verify favicon upload validation - accepted file format (ICO PNG),Favicon Upload,Medium,BL-WL-001,,Admin access; Test favicon files: favicon.ico favicon.png,"admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
+[ACT] 2. Open White Labeling settings
+[ACT] 3. Test 1: Upload favicon.ico (valid ICO file, 32x32)
+[ASSERT] 4. Verify upload succeeds
+[ACT] 5. Save settings
+[ASSERT] 6. Verify favicon displays in storefront browser tab
+[ACT] 7. Test 2: Upload favicon.png (valid PNG file, 32x32)
+[ASSERT] 8. Verify upload succeeds
+[ASSERT] 9. Verify PNG favicon displays correctly","[STATE] ICO format accepted and uploads successfully
+[STATE] PNG format accepted and uploads successfully
+[DOM] Both formats display correctly in browser tab
+[DOM] Favicon is properly generated in multiple sizes (16x16, 32x32, 180x180) if thumbnail job runs","[CONSOLE] no file upload errors
+[NETWORK] favicon loads with HTTP 200 in browser tab","ICO format rejected; PNG format rejected; Favicon not showing in browser tab after upload",remove uploaded favicons and restore original,Favicon Upload,Manual
+FWL-065,Verify organization-specific branding applies only to that organization's users,Data Isolation,Critical,BL-WL-001,,"2 organizations: Org A (logo-a.png) and Org B (logo-b.png); User A from Org A; User B from Org B","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in with User A (Org A)
+[NAV] 2. Navigate to homepage
+[ASSERT] 3. Verify logo-a.png displayed
+[ACT] 4. Sign out
+[NAV] 5. Sign in with User B (Org B)
+[NAV] 6. Navigate to homepage
+[ASSERT] 7. Verify logo-b.png displayed (NOT logo-a.png)
+[ACT] 8. Sign out
+[NAV] 9. Sign in again with User A
+[ASSERT] 10. Verify logo-a.png is back (NOT logo-b.png)","[DOM] User A sees ONLY Org A branding (logo-a.png)
+[DOM] User B sees ONLY Org B branding (logo-b.png)
+[STATE] No cross-contamination (User A never sees logo-b.png)
+[STATE] Switching users switches branding correctly
+[STATE] Data isolation enforced at backend level","[CONSOLE] no uncaught JS errors","Cross-contamination: User A sees Org B logo; Branding persisting after sign-out; Wrong org branding after re-login","sign out; clear session","Data Isolation Security",Manual
+FWL-066,Verify anonymous users (not signed in) see default branding,Anonymous User,High,BL-WL-002,,Anonymous access enabled; Default platform branding configured,"storefront={{FRONT_URL}}","[NAV] 1. Open incognito/private browser window
+[NAV] 2. Navigate to {{FRONT_URL}} (do NOT sign in)
+[ASSERT] 3. Browse as anonymous user
+[ASSERT] 4. Inspect header logo
+[ASSERT] 5. Inspect favicon
+[ASSERT] 6. Inspect theme colors
+[ASSERT] 7. Inspect main menu (if visible)
+[ASSERT] 8. Inspect footer","[DOM] Default Virto Commerce logo displayed (NOT any organization's custom logo)
+[DOM] Default favicon in browser tab
+[FORMAT] Default theme colors applied (no org-specific theme)
+[DOM] Main menu shows default/public links (not org-specific links)
+[DOM] Footer shows default/public links
+[STATE] No organization branding applied before user signs in","[CONSOLE] no uncaught JS errors","Custom org logo visible before sign-in; Org-specific theme applied to anonymous session",none,Anonymous User,Manual
+FWL-067,Verify branding updates in Admin reflect on storefront without cache issues,Cache Management,High,BL-WL-001,,Organization with custom branding; Admin access; Signed-in storefront session in separate browser tab,"admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open storefront in Browser Tab 1
+[ACT] 2. Sign in with branded org user
+[ASSERT] 3. Verify current logo displayed (logo-v1.png)
+[NAV] 4. Open Admin in Browser Tab 2
+[NAV] 5. Navigate to Organizations > Same Org > White Labeling
+[ACT] 6. Upload new logo (logo-v2.png)
+[ACT] 7. Save settings
+[ACT] 8. Return to storefront Tab 1
+[KEY] 9. Refresh page (Ctrl+F5 or hard refresh)
+[ASSERT] 10. Verify new logo (logo-v2.png) is displayed (NOT old logo-v1.png)","[DOM] After uploading new logo in Admin, storefront shows new logo after hard refresh
+[STATE] Old logo is NOT cached indefinitely (cache invalidated or expires quickly)
+[FORMAT] Cache-Control headers allow updates to be seen within reasonable time (< 5 minutes)","[CONSOLE] no uncaught JS errors
+[NETWORK] new logo image loads with HTTP 200 after refresh","Old logo still shown after hard refresh; New logo not visible even after 5 minutes; Cache-Control headers missing",restore org to logo-v1.png,Cache Management,Manual
+FWL-068,Verify branding consistency across all storefront pages (homepage catalog product cart account),Consistency,High,BL-WL-001,,Organization with full branding configured; User account with items in cart and order history,"storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
+[ASSERT] 2. Verify branding on HOMEPAGE: logo, favicon, theme, main menu, footer
+[NAV] 3. Navigate to CATALOG page
+[ASSERT] 4. Verify same branding displayed
+[NAV] 5. Navigate to PRODUCT page (any product)
+[ASSERT] 6. Verify same branding displayed
+[ACT] 7. Add item to cart, navigate to CART page
+[ASSERT] 8. Verify same branding displayed
+[NAV] 9. Navigate to ACCOUNT > Orders
+[ASSERT] 10. Verify same branding displayed
+[NAV] 11. Navigate to ACCOUNT > Profile
+[ASSERT] 12. Verify same branding displayed","[DOM] Logo, favicon, theme, main menu, footer are consistent on: Homepage, Catalog, Product page, Cart, Account pages
+[STATE] No pages show default branding after sign-in
+[STATE] No pages show wrong organization's branding
+[FORMAT] Theme colors are consistent across all pages
+[DOM] Main menu and footer structure remain consistent","[CONSOLE] no uncaught JS errors","Default branding appearing on some pages after sign-in; Theme inconsistent between pages; Main menu/footer changing unexpectedly; Branding flicker on navigation",none,Consistency,Manual

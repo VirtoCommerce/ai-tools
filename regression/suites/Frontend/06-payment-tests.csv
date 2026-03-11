@@ -1,307 +1,606 @@
-ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
-PAY-CS-001,CyberSource - Valid Form Submission,CyberSource > Positive,Functional,Critical,5m,"- Checkout ready
-- CyberSource configured
-- Test card: 4622943127013705","1. Select 'Bank card (CyberSource)'
-2. Wait for form to load
-3. Enter card: 4622943127013705
-4. Enter name: John Smith
-5. Enter expiry: 09/2029
-6. Enter CVV: 838
-7. Click 'Place order'","- All fields accept input
-- No validation errors
-- Order attempts to process
-- (May fail due to API - form validated)",VCST-3387 TC-POS-001,Manual
-PAY-CS-002,CyberSource - Special Chars in Name,CyberSource > Positive,Functional,Medium,5m,"- CyberSource form ready","1. Enter name: Mary-Jane O'Connor
-2. Fill valid card details
-3. Submit
-4. Test: José García
-5. Test: Van Der Berg
-6. Test: Smith Jr.","- Hyphen accepted
-- Apostrophe accepted
-- Accented chars accepted
-- Period accepted",VCST-3387 TC-POS-004,Manual
-PAY-CS-003,CyberSource - Expiry Format Variations,CyberSource > Positive,Functional,Medium,3m,"- CyberSource form ready","1. Try format: 092029
-2. Verify auto-format to 09 / 2029
-3. Try: 09/2029
-4. Try: 09 / 2029","- All formats accepted
-- Auto-formatting works
-- MM / YYYY displayed",VCST-3387 TC-POS-005,Manual
-PAY-CS-004,CyberSource - Invalid Card Number,CyberSource > Negative,Negative,Critical,3m,"- CyberSource form ready","1. Enter invalid card: 1234567890123456
-2. Fill other fields
-3. Submit","- Validation error shown
-- Error: Invalid card number
-- Cannot submit",VCST-3387 TC-NEG-001,Manual
-PAY-CS-005,CyberSource - Empty Card Number,CyberSource > Negative,Negative,Critical,2m,"- CyberSource form ready","1. Leave card number empty
-2. Fill other fields
-3. Submit","- Error: Card number required
-- Field highlighted
-- Cannot submit",VCST-3387 TC-NEG-002,Manual
-PAY-CS-006,CyberSource - Empty Cardholder Name,CyberSource > Negative,Negative,Critical,2m,"- CyberSource form ready","1. Fill card, expiry, CVV
-2. Leave name empty
-3. Submit","- Validation error shown
-- Error: Name required
-- Cannot submit
-NOTE: Bug found - form submits without name",VCST-3387 TC-NEG-003,Manual
-PAY-CS-007,CyberSource - Expired Card,CyberSource > Negative,Negative,Critical,3m,"- CyberSource form ready","1. Enter valid card number
-2. Enter expired date: 01/2020
-3. Fill other fields
-4. Submit","- Error: Card expired
-- Cannot submit",VCST-3387 TC-NEG-004,Manual
-PAY-CS-008,CyberSource - Empty Expiry,CyberSource > Negative,Negative,Critical,2m,"- CyberSource form ready","1. Leave expiry empty
-2. Fill other fields
-3. Submit","- Error: Expiry required
-- Cannot submit",VCST-3387 TC-NEG-005,Manual
-PAY-CS-009,CyberSource - Invalid Expiry Format,CyberSource > Negative,Negative,High,3m,"- CyberSource form ready","1. Enter invalid expiry: 13/2029
-2. Try: 00/2029
-3. Try: 99/2029
-4. Submit","- Invalid months rejected
-- Clear error message",VCST-3387 TC-NEG-006,Manual
-PAY-CS-010,CyberSource - Invalid CVV Length,CyberSource > Negative,Negative,High,3m,"- CyberSource form ready","1. Enter CVV: 12 (too short)
-2. Try: 12345 (too long)
-3. Submit","- Error: CVV must be 3 digits
-- Length validation enforced",VCST-3387 TC-NEG-007,Manual
-PAY-CS-011,CyberSource - Empty CVV,CyberSource > Negative,Negative,Critical,2m,"- CyberSource form ready","1. Fill all except CVV
-2. Leave CVV empty
-3. Submit","- Error: CVV required
-- Cannot submit",VCST-3387 TC-NEG-008,Manual
-PAY-CS-012,CyberSource - Non-numeric CVV,CyberSource > Negative,Negative,Medium,2m,"- CyberSource form ready","1. Try typing 'abc' in CVV
-2. Try '8a8'
-3. Verify rejection","- Non-numeric rejected
-- Only digits accepted",VCST-3387 TC-NEG-009,Manual
-PAY-CS-013,CyberSource - Card Auto-Formatting,CyberSource > Validation,Validation,Medium,2m,"- CyberSource form ready","1. Type card without spaces
-2. Verify auto-spacing
-3. Format: #### #### #### ####","- Spaces inserted automatically
-- Cursor position maintained",VCST-3387 TC-VAL-003,Manual
-PAY-CS-014,CyberSource - Visa Detection,CyberSource > Validation,Validation,Medium,2m,"- CyberSource form ready","1. Enter Visa card: 4622943127013705
-2. Verify Visa icon highlights","- Card type detected
-- Visa icon shown
-- Other icons dimmed",VCST-3387 TC-VAL-002,Manual
-PAY-CS-015,CyberSource - CVV Masking,CyberSource > Validation,Validation,High,2m,"- CyberSource form ready","1. Enter CVV: 838
-2. Verify displayed as •••","- CVV masked
-- Security maintained",VCST-3387 TC-VAL-006,Manual
-PAY-SEC-001,Security - Card Number Iframe,Security > PCI,Security,Critical,5m,"- CyberSource form displayed
-- DevTools open","1. Open DevTools Elements
-2. Find card number field
-3. Verify in iframe
-4. Check domain: testflex.cybersource.com
-5. Try JS access: document.querySelector('iframe')","- Field in secure iframe
-- Cross-origin enforced
-- Cannot access value from parent",VCST-3387 TC-SEC-001,Manual
-PAY-SEC-002,Security - CVV Iframe,Security > PCI,Security,Critical,5m,"- CyberSource form displayed","1. Inspect CVV field
-2. Verify iframe implementation
-3. Attempt JavaScript access","- CVV in secure iframe
-- Proper sandboxing
-- Cannot access",VCST-3387 TC-SEC-002,Manual
-PAY-SEC-003,Security - No Card Data in Network,Security > PCI,Security,Critical,10m,"- DevTools Network open
-- CyberSource form ready","1. Fill form with test card
-2. Submit order
-3. Inspect ALL network requests
-4. Search for card number
-5. Search for CVV","- No raw card in requests
-- No CVV in requests
-- Only tokens/encrypted data
-- CyberSource handles tokenization",VCST-3387 TC-SEC-004,Manual
-PAY-SEC-004,Security - No Data in Storage,Security > PCI,Security,Critical,5m,"- CyberSource form filled","1. Fill card data
-2. Submit order
-3. Check localStorage
-4. Check sessionStorage
-5. Check cookies","- No card number in storage
-- No CVV stored
-- Security best practices",VCST-3387 TC-SEC-005,Manual
-PAY-SEC-005,Security - HTTPS Only,Security > PCI,Security,Critical,3m,"- Payment page loaded","1. Check page URL (https)
-2. Check iframe sources (https)
-3. Check API calls (https)
-4. Verify no mixed content","- All HTTPS
-- No mixed content warnings
-- Secure connection",VCST-3387 TC-SEC-006,Manual
-PAY-SEC-006,Security - JWT Token Auth,Security > PCI,Security,High,3m,"- CyberSource payment selected","1. Inspect iframe source URLs
-2. Look for JWT token
-3. Verify token format","- JWT present in iframe URL
-- Three-part format
-- Dynamic per session",VCST-3387 TC-INT-002,Manual
-PAY-AN-001,Authorize.Net - Payment Flow,Authorize.Net > Basic,Functional,High,8m,"- Authorize.Net configured
-- Test credentials in .env","1. Select Authorize.Net payment
-2. Enter test card from .env
-3. Enter expiry from .env
-4. Enter CVV from .env
-5. Enter cardholder name
-6. Submit payment","- Payment form works
-- Payment authorized
-- Order created",google-analytics,Manual
-PAY-DT-001,Datatrans - Payment Flow,Datatrans > Basic,Functional,High,8m,"- Datatrans configured
-- Test credentials available","1. Select Datatrans payment
-2. Follow Datatrans flow
-3. Complete payment
-4. Verify return to store","- Datatrans redirect works
-- Payment completed
-- Order confirmed",google-analytics,Manual
-PAY-SKY-001,Skyflow - Payment Flow,Skyflow > Basic,Functional,High,8m,"- Skyflow configured
-- Test VISA card in .env","1. Select Skyflow payment
-2. Enter VISA card details
-3. Submit payment
-4. Verify order","- Skyflow form works
-- Card tokenized
-- Payment processed",config.js,Manual
-PAY-UX-001,Payment Form - Field Labels,Payment > UX,Usability,Medium,3m,"- Payment form displayed","1. View all field labels
-2. Verify placeholders
-3. Check required indicators","- All fields labeled
-- Placeholders helpful
-- * for required fields",VCST-3387 TC-UX-001,Manual
-PAY-UX-002,Payment Form - Tab Order,Payment > UX,Usability,Medium,3m,"- Payment form displayed","1. Tab through all fields
-2. Verify logical order:
-   Card → Name → Expiry → CVV
-3. Tab into/out of iframes","- Logical tab order
-- No tab traps
-- Keyboard accessible",VCST-3387 TC-UX-004,Manual
-PAY-PERF-001,Payment Form - Load Time,Payment > Performance,Performance,Medium,3m,"- Checkout at payment step","1. Select credit card payment
-2. Measure time until form ready
-3. Verify iframes load","- Form loads within 2 seconds
-- Iframes initialize
-- User can interact quickly",VCST-3387 TC-PERF-001,Manual
-PAY-EDGE-001,Double-Click Submit Prevention,Payment > Edge,Edge Case,High,5m,"- Payment form filled","1. Fill valid payment form
-2. Double-click 'Place Order' rapidly
-3. Verify behavior","- Only one order created
-- Button disabled after click
-- No duplicate charges",VCST-3387 TC-EDGE-020,Manual
-PAY-DECLINE-001,Declined Card - Error Message Displayed,Payment > Declined,Functional,Critical,5m,"- Checkout at payment step
-- Payment processor configured with known decline test card","1. Fill out the payment form using a known-decline test card number (per payment processor test documentation)
-2. Fill in a valid expiry date, CVV, and cardholder name
-3. Click 'Place Order'
-4. Wait for the payment processor response","- A clear error message is displayed to the user (e.g., 'Your card was declined. Please try a different payment method.')
-- The payment form is NOT cleared — all fields retain their entered values
-- The order is NOT created
-- The user remains on the checkout payment step and can retry",Coverage Gap Analysis,Generated
-PAY-DECLINE-002,Declined Card - Retry with Different Card,Payment > Declined,Functional,Critical,8m,"- Payment declined state from PAY-DECLINE-001
-- A valid test card available for retry","1. After receiving a decline error on the first card, do not refresh the page
-2. Clear the card number field and enter a different valid test card number
-3. Update CVV if required for the new card
-4. Click 'Place Order' again","- The retry attempt is accepted without requiring a full page reload
-- The new card is processed by the payment processor
-- Payment succeeds with the valid card
-- Order confirmation page is displayed
-- Only one order is created (no duplicate from the first declined attempt)",Coverage Gap Analysis,Generated
-PAY-DECLINE-003,Declined Card - Network Timeout Recovery,Payment > Declined,Functional,High,8m,"- Checkout at payment step
-- Ability to simulate network timeout (e.g., via DevTools Network throttling or request blocking)","1. Fill out the payment form with a valid test card
-2. Using browser DevTools, simulate a network timeout or block the payment API endpoint
-3. Click 'Place Order'
-4. Observe the error handling
-5. Restore normal network conditions
-6. Retry the payment submission","- An appropriate timeout/network error message is displayed (e.g., 'Payment processing timed out. Please try again.')
-- The error message does not expose internal server details
-- The checkout form is still usable after the timeout
-- After restoring network, the retry attempt is processed successfully
-- No duplicate order is created from the timeout attempt",Coverage Gap Analysis,Generated
-PAY-DECLINE-004,Declined Card - Double-Click Prevention Still Enforced After Error,Payment > Declined,Edge Case,High,5m,"- Payment has just returned a decline error
-- User is on the payment step with the error message visible","1. After receiving a decline error message, do NOT clear the form
-2. Rapidly double-click or triple-click the 'Place Order' / 'Retry' button
-3. Observe how many payment requests are sent (monitor via DevTools Network tab)","- Only one payment request is sent per user action, even after a decline error
-- The 'Place Order' button is disabled immediately after the first click on retry
-- No duplicate payment authorization requests are sent to the payment processor
-- The button re-enables only after the response is received",Coverage Gap Analysis,Generated
-PAY-DECLINE-005,Declined Card - Cart and Progress Preserved,Payment > Declined,Functional,Critical,5m,"- User has gone through checkout (shipping + payment steps)
-- Payment has returned a decline error","1. Complete all checkout steps up to and including payment
-2. Submit a payment that will be declined
-3. Observe the cart and checkout state after the decline error
-4. Verify cart contents
-5. Verify whether checkout progress (shipping address, shipping method) is preserved","- Cart contents are not lost after a payment decline
-- All items remain in the cart with correct quantities
-- Previously entered shipping address is preserved
-- Previously selected shipping method is preserved
-- User does not need to re-enter shipping information to retry payment",Coverage Gap Analysis,Generated
-PAY-SKY-002,Skyflow - Mastercard Payment,Skyflow > Extended,Functional,High,8m,"- Skyflow configured
-- Mastercard test card available in .env (SKYFLOW_MASTERCARD)","1. Navigate to checkout and select Skyflow payment method
-2. Enter the Mastercard test card number from SKYFLOW_MASTERCARD env variable
-3. Enter the expiry date from SKYFLOW_EXPIRY env variable
-4. Enter the CVV from SKYFLOW_CVV env variable
-5. Submit payment","- Mastercard card number is accepted by the Skyflow iframe
-- Card type is detected as Mastercard (MC icon shown)
-- Payment is processed successfully
-- Order confirmation page is displayed with order number
-- Order appears in admin with Mastercard payment recorded",Coverage Gap Analysis,Generated
-PAY-SKY-003,Skyflow - Invalid Card Number Validation,Skyflow > Extended,Functional,High,3m,"- Skyflow payment form loaded at checkout","1. In the Skyflow card number field, enter an invalid card number (e.g., '1234567890123456' which fails Luhn check)
-2. Move focus out of the card number field (tab or click elsewhere)
-3. Observe validation feedback
-4. Attempt to submit the form","- Skyflow displays a validation error on the card number field ('Invalid card number' or equivalent)
-- The error appears inline within the Skyflow iframe
-- The 'Place Order' button cannot be successfully submitted with an invalid card
-- The error clears when a valid card number is entered",Coverage Gap Analysis,Generated
-PAY-SKY-004,Skyflow - Empty Fields Validation,Skyflow > Extended,Functional,High,3m,"- Skyflow payment form loaded at checkout","1. Leave all Skyflow payment fields empty (card number, expiry, CVV)
-2. Click 'Place Order' without filling in any payment details
-3. Observe error messages per field","- Each empty required field shows an individual validation error message
-- Card number field: 'Card number is required' or equivalent
-- Expiry field: 'Expiry date is required' or equivalent
-- CVV field: 'CVV is required' or equivalent
-- Form cannot be submitted until all required fields are filled",Coverage Gap Analysis,Generated
-PAY-SKY-005,Skyflow - Card Type Detection,Skyflow > Extended,Functional,Medium,3m,"- Skyflow payment form loaded at checkout","1. In the Skyflow card number field, begin entering a Visa test card number (starts with 4)
-2. Observe the card type icon displayed in or near the card field
-3. Clear the field
-4. Begin entering a Mastercard test card number (starts with 51-55 or 2221-2720)
-5. Observe the card type icon","- When a Visa card number is entered, the Visa icon/logo is highlighted or displayed
-- When a Mastercard number is entered, the Mastercard icon/logo is highlighted or displayed
-- Other card type icons are dimmed when a specific type is detected
-- Card type detection is responsive as digits are typed (not only after full entry)",Coverage Gap Analysis,Generated
-PAY-AN-002,Authorize.Net - Field Validation on Invalid Card,Authorize.Net > Extended,Functional,High,3m,"- Authorize.Net payment form loaded at checkout","1. Enter an invalid card number in the Authorize.Net card number field (e.g., '1234 5678 9012 3456' — fails Luhn check)
-2. Fill in valid expiry and CVV
-3. Attempt to submit the form","- Validation error appears on the card number field ('Invalid card number' or equivalent)
-- The form cannot be submitted with an invalid card number
-- Error message is displayed inline near the card number field
-- After entering a valid card number, the error clears",Coverage Gap Analysis,Generated
-PAY-AN-003,Authorize.Net - Empty Fields Validation,Authorize.Net > Extended,Functional,High,3m,"- Authorize.Net payment form loaded at checkout","1. Leave all payment fields empty (card number, expiry, CVV, cardholder name)
-2. Click 'Place Order' without entering any payment data
-3. Observe per-field validation errors","- Each empty required field shows an individual error message
-- Card number: 'Card number is required'
-- Expiry: 'Expiry date is required'
-- CVV: 'CVV is required'
-- Cardholder name (if required): 'Name is required'
-- Form is not submitted until all required fields have valid input",Coverage Gap Analysis,Generated
-PAY-AN-004,Authorize.Net - Transaction ID on Confirmation,Authorize.Net > Extended,Functional,Medium,8m,"- Authorize.Net configured with valid test credentials","1. Complete a full checkout using Authorize.Net test card credentials from .env
-2. Payment is authorized and order placed
-3. View the order confirmation page
-4. Navigate to account order history and view order details","- Payment is successfully authorized via Authorize.Net
-- Order confirmation page is displayed
-- Transaction ID or authorization code from Authorize.Net is visible on the confirmation page or order detail page
-- Transaction ID is also stored in the Admin order record under payment details",Coverage Gap Analysis,Generated
-PAY-AN-005,Authorize.Net - Order Visible in Admin with Payment Details,Authorize.Net > Extended,Functional,High,8m,"- Authorize.Net payment completed successfully (PAY-AN-001 passed)","1. After placing a successful order via Authorize.Net, note the order number
-2. Log in to the Admin portal
-3. Navigate to Orders and locate the order by number
-4. View the order's payment details section","- Order is present in Admin with the correct order number
-- Payment method shows Authorize.Net
-- Payment status shows as captured/authorized
-- Transaction ID from Authorize.Net is recorded in the payment details
-- Order total in Admin matches the amount authorized",Coverage Gap Analysis,Generated
-PAY-DT-002,Datatrans - OTP Flow,Datatrans > Extended,Functional,High,10m,"- Datatrans configured
-- Test card and OTP available from .env (DATATRANCE_OTP)","1. Navigate to checkout and select Datatrans payment method
-2. Enter the Datatrans test card details (card number, expiry, CVV from .env)
-3. Submit payment — observe redirect or modal for OTP/3DS
-4. When prompted, enter the OTP code from the DATATRANCE_OTP environment variable
-5. Submit the OTP
-6. Observe the return to store and order confirmation","- Datatrans payment redirect or modal opens correctly
-- OTP/3DS authentication prompt appears
-- Valid OTP from env is accepted
-- After OTP verification, payment is confirmed
-- User is returned to the store with the order confirmation page
-- Order number is displayed and order is created",Coverage Gap Analysis,Generated
-PAY-DT-003,Datatrans - Invalid OTP Recovery,Datatrans > Extended,Functional,High,8m,"- Datatrans OTP prompt is displayed during checkout","1. When prompted for the OTP, enter an incorrect OTP code (e.g., '000000')
-2. Submit the incorrect OTP
-3. Observe the error message
-4. Enter the correct OTP from the DATATRANCE_OTP environment variable
-5. Submit the correct OTP","- Invalid OTP shows an error message (e.g., 'Incorrect code. Please try again.')
-- The OTP entry form remains available for retry
-- After entering the correct OTP, payment is verified and completes successfully
-- Order confirmation page is displayed
-- No duplicate order is created from the failed OTP attempt",Coverage Gap Analysis,Generated
-PAY-DT-004,Datatrans - Card Validation,Datatrans > Extended,Functional,High,3m,"- Datatrans payment form or redirect loaded","1. Enter an invalid card number in the Datatrans card field (e.g., a number failing Luhn check)
-2. Fill other fields with valid test data
-3. Attempt to proceed with the invalid card","- Datatrans shows a validation error on the card number field
-- The error message is clear (e.g., 'Invalid card number')
-- Payment cannot proceed with an invalid card number
-- After correcting the card number to a valid test card, the error clears",Coverage Gap Analysis,Generated
-PAY-DT-005,Datatrans - Return to Store After Payment,Datatrans > Extended,Functional,Critical,10m,"- Datatrans configured, full payment flow executable","1. Proceed to checkout and select Datatrans as the payment method
-2. Complete the Datatrans payment flow including any OTP if required (use credentials from .env)
-3. After payment confirmation within Datatrans, observe the redirect back to the store
-4. Verify the order confirmation page
-5. Verify order details on the confirmation page","- After completing payment in Datatrans, the user is automatically redirected back to the storefront
-- The storefront displays the order confirmation page
-- Order number is shown on the confirmation page
-- Order items, totals, and shipping address on the confirmation match what was entered during checkout
-- Order is also visible in the user's account order history",Coverage Gap Analysis,Generated
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+PAY-CS-001,CyberSource - Valid Form Submission,CyberSource > Positive,Critical,BL-PAY-004,"ECL-14.6","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment processor configured and active
+- Browser DevTools Network tab open","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart — CyberSource payment form is on cart page
+[WAIT] Wait for CyberSource payment section to render with iframe fields
+[ACT] Select 'Bank card (CyberSource)' payment method if not pre-selected
+[ACT] Click into 'Card Number' iframe field; fill '4622943127013705'
+[ACT] Fill 'Cardholder Name' field with 'John Smith'
+[ACT] Fill 'Expiry Date' field with '09/2029'
+[ACT] Fill 'CVV' field with '838'
+[ASSERT] All fields accept input without validation errors
+[ACT] Click 'Place Order'
+[WAIT] Wait for order processing response","[DOM] All payment fields accept input without inline error messages
+[STATE] No validation error banners visible before submission
+[NAV] After successful submission user is navigated to order confirmation page
+[DOM] Order confirmation page displays order number","[API] Verify createOrderFromCart GraphQL mutation response has no errors[] entries
+[NETWORK] Confirm payment token (not raw card number) sent in request payload
+[ADMIN] Confirm order appears in admin Orders list with status reflecting payment attempt","Order confirmation page not reached; inline validation error appears unexpectedly; network request contains raw card number","Cancel order via admin if order was created","VCST-3387 TC-POS-001",Manual
+PAY-CS-002,CyberSource - Special Characters in Cardholder Name,CyberSource > Positive,Medium,BL-PAY-004,"ECL-14.6","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Expiry Date' with '09/2029'; fill 'CVV' with '838'
+[ACT] Fill 'Cardholder Name' with 'Mary-Jane O''Connor'
+[ASSERT] Name field accepts hyphen and apostrophe without error
+[ACT] Clear 'Cardholder Name'; fill with 'José García'
+[ASSERT] Accented characters accepted
+[ACT] Clear 'Cardholder Name'; fill with 'Van Der Berg'
+[ASSERT] Multiple spaces accepted
+[ACT] Clear 'Cardholder Name'; fill with 'Smith Jr.'
+[ASSERT] Period suffix accepted
+[ACT] Click 'Place Order' with final name value","[DOM] Cardholder Name field accepts hyphen, apostrophe, accented chars, periods without stripping or error
+[STATE] No validation error triggered for any of the tested name formats
+[NAV] Order submission proceeds after valid name entry","[API] createOrderFromCart GraphQL mutation errors[] is empty
+[NETWORK] Cardholder name transmitted correctly in tokenization request","Name field strips special characters silently; validation error fires on valid international name characters; form refuses to submit with accented characters","Cancel order via admin if order was created","VCST-3387 TC-POS-004",Manual
+PAY-CS-003,CyberSource - Expiry Date Format Variations,CyberSource > Positive,Medium,BL-PAY-004,"ECL-14.6","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Cardholder Name' with 'John Smith'; fill 'CVV' with '838'
+[ACT] Click 'Expiry Date' field; type '092029' (no slash)
+[ASSERT] Field auto-formats to '09/2029'
+[ACT] Clear field; type '09/2029' (with slash)
+[ASSERT] Value '09/2029' accepted as-is
+[ACT] Clear field; type '09 / 2029' (with spaces)
+[ASSERT] Field normalizes to '09/2029' or accepts padded format
+[ASSERT] All three input styles display as MM/YYYY","[FORMAT] Expiry date field displays value as MM/YYYY regardless of input style
+[DOM] No validation error shown for any accepted format variant
+[STATE] Form is submittable after each valid format entry","[API] createOrderFromCart GraphQL mutation errors[] is empty on submission","Field rejects valid expiry formats; auto-formatting breaks cursor position causing incorrect value; MM/YYYY display not achieved","Cancel order via admin if order was created","VCST-3387 TC-POS-005",Manual
+PAY-CS-004,CyberSource - Invalid Card Number Rejected,CyberSource > Negative,Critical,BL-PAY-001,"ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Click into 'Card Number' iframe field; fill '1234567890123456'
+[ACT] Fill 'Cardholder Name' with 'John Smith'; fill 'Expiry Date' with '09/2029'; fill 'CVV' with '838'
+[ACT] Click 'Place Order'
+[ASSERT] Inline validation error appears on or near 'Card Number' field
+[ASSERT] Error text contains 'Invalid card number' or equivalent
+[ASSERT] Form does not submit; user remains on cart page","[DOM] Validation error message visible adjacent to 'Card Number' field
+[STATE] 'Place Order' button does not trigger order creation
+[NAV] User remains on {{FRONT_URL}}/cart — no navigation to confirmation","[API] No createOrderFromCart GraphQL mutation is fired
+[CONSOLE] No unhandled JS exceptions from iframe communication","No error shown for clearly invalid card; form submits with Luhn-failing card number; user is navigated away from cart page","none — no order created","VCST-3387 TC-NEG-001",Manual
+PAY-CS-005,CyberSource - Empty Card Number Blocked,CyberSource > Negative,Critical,BL-PAY-001,"ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Leave 'Card Number' field empty
+[ACT] Fill 'Cardholder Name' with 'John Smith'; fill 'Expiry Date' with '09/2029'; fill 'CVV' with '838'
+[ACT] Click 'Place Order'
+[ASSERT] Inline error appears on 'Card Number' field with text 'Card number required' or equivalent
+[ASSERT] Field border or highlight indicates error state
+[ASSERT] Form does not submit","[DOM] 'Card Number' field shows required-field error message
+[STATE] Form submission blocked; no spinner or loading state triggered
+[NAV] User remains on {{FRONT_URL}}/cart","[API] No createOrderFromCart GraphQL mutation fired
+[CONSOLE] No JS errors from iframe","No error message for blank card; form submits and order created without card number; error message missing but field highlighted only","none — no order created","VCST-3387 TC-NEG-002",Manual
+PAY-CS-006,CyberSource - Empty Cardholder Name Blocked,CyberSource > Negative,Critical,BL-PAY-001,"ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart
+- Known bug: form may submit without name (document outcome)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Expiry Date' with '09/2029'; fill 'CVV' with '838'
+[ACT] Leave 'Cardholder Name' field empty
+[ACT] Click 'Place Order'
+[ASSERT] Inline validation error appears on 'Cardholder Name' with text 'Name required' or equivalent
+[ASSERT] Form does not submit
+[KEY] NOTE: Known bug — form may submit without name; document actual behavior and compare against expected","[DOM] 'Cardholder Name' field shows required validation error
+[STATE] Form blocked from submission when name is empty
+[NAV] User remains on {{FRONT_URL}}/cart","[API] No createOrderFromCart GraphQL mutation fired if validation blocks submission; if bug present and mutation fires — check errors[]
+[CONSOLE] No unhandled exceptions","Form submits successfully without cardholder name (known bug — document if still present); no error message displayed; field not highlighted","Cancel order via admin if order was placed despite empty name (known bug path)","VCST-3387 TC-NEG-003",Manual
+PAY-CS-007,CyberSource - Expired Card Rejected,CyberSource > Negative,Critical,BL-PAY-001,"ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Cardholder Name' with 'John Smith'; fill 'CVV' with '838'
+[ACT] Fill 'Expiry Date' with '01/2020' (past date)
+[ACT] Click 'Place Order'
+[ASSERT] Inline error appears on 'Expiry Date' field with text 'Card expired' or equivalent
+[ASSERT] Form does not submit","[DOM] 'Expiry Date' field shows expiry validation error message
+[STATE] Submission blocked; no order processing initiated
+[NAV] User remains on {{FRONT_URL}}/cart","[API] No createOrderFromCart GraphQL mutation fired
+[CONSOLE] No JS errors","Expired date accepted without error; form submits with past expiry; error message missing or generic","none — no order created","VCST-3387 TC-NEG-004",Manual
+PAY-CS-008,CyberSource - Empty Expiry Date Blocked,CyberSource > Negative,Critical,BL-PAY-001,"ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Cardholder Name' with 'John Smith'; fill 'CVV' with '838'
+[ACT] Leave 'Expiry Date' empty
+[ACT] Click 'Place Order'
+[ASSERT] Inline error on 'Expiry Date' field with text 'Expiry required' or equivalent
+[ASSERT] Form does not submit","[DOM] 'Expiry Date' field shows required-field error
+[STATE] Form submission blocked
+[NAV] User remains on {{FRONT_URL}}/cart","[API] No createOrderFromCart GraphQL mutation fired
+[CONSOLE] No JS errors from iframe","No error for blank expiry; form submits without expiry date; field highlighted but no readable error text","none — no order created","VCST-3387 TC-NEG-005",Manual
+PAY-CS-009,CyberSource - Invalid Expiry Month Rejected,CyberSource > Negative,High,BL-PAY-001,"ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Cardholder Name' with 'John Smith'; fill 'CVV' with '838'
+[ACT] Fill 'Expiry Date' with '13/2029' (invalid month 13)
+[ACT] Click 'Place Order'
+[ASSERT] Validation error appears; month 13 rejected
+[ACT] Clear field; fill '00/2029' (invalid month 00); click 'Place Order'
+[ASSERT] Month 00 rejected with error
+[ACT] Clear field; fill '99/2029'; click 'Place Order'
+[ASSERT] Month 99 rejected with clear error message","[DOM] 'Expiry Date' field shows validation error for each out-of-range month value
+[STATE] Form blocked for all three invalid month inputs
+[NAV] User remains on {{FRONT_URL}}/cart for all attempts","[API] No createOrderFromCart GraphQL mutation fired for any invalid expiry
+[CONSOLE] No unhandled errors","Any invalid month value accepted; field only validates on one boundary but not others; error message absent or unclear","none — no order created","VCST-3387 TC-NEG-006",Manual
+PAY-CS-010,CyberSource - Invalid CVV Length Rejected,CyberSource > Negative,High,BL-PAY-001,"ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Cardholder Name' with 'John Smith'; fill 'Expiry Date' with '09/2029'
+[ACT] Fill 'CVV' with '12' (only 2 digits); click 'Place Order'
+[ASSERT] Error on 'CVV' field: 'CVV must be 3 digits' or equivalent; form does not submit
+[ACT] Clear 'CVV'; fill '12345' (5 digits); click 'Place Order'
+[ASSERT] CVV field enforces max length — either rejects entry beyond 4 chars or shows error","[DOM] CVV field shows length validation error for both too-short and too-long inputs
+[STATE] Form blocked for invalid CVV lengths
+[NAV] User remains on {{FRONT_URL}}/cart","[API] No createOrderFromCart GraphQL mutation fired
+[CONSOLE] No unhandled iframe errors","CVV shorter than 3 digits accepted silently; field allows more than 4 characters; length error not shown to user","none — no order created","VCST-3387 TC-NEG-007",Manual
+PAY-CS-011,CyberSource - Empty CVV Blocked,CyberSource > Negative,Critical,BL-PAY-001,"ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Cardholder Name' with 'John Smith'; fill 'Expiry Date' with '09/2029'
+[ACT] Leave 'CVV' field empty
+[ACT] Click 'Place Order'
+[ASSERT] Inline error on 'CVV' field: 'CVV required' or equivalent
+[ASSERT] Form does not submit","[DOM] 'CVV' field shows required-field error message
+[STATE] Submission blocked; no order processing spinner appears
+[NAV] User remains on {{FRONT_URL}}/cart","[API] No createOrderFromCart GraphQL mutation fired
+[CONSOLE] No JS errors","No error shown for empty CVV; form submits and reaches payment processor without CVV; error present but field not focused","none — no order created","VCST-3387 TC-NEG-008",Manual
+PAY-CS-012,CyberSource - Non-numeric CVV Rejected,CyberSource > Negative,Medium,BL-PAY-001,"ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Click into 'CVV' iframe field; attempt to type 'abc'
+[ASSERT] Letters are not accepted — field remains empty or rejects non-numeric input
+[ACT] Attempt to type '8a8'
+[ASSERT] Only digit '8' and '8' appear; 'a' is filtered out
+[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Cardholder Name' with 'John Smith'; fill 'Expiry Date' with '09/2029'
+[ACT] Click 'Place Order' with non-numeric content in CVV
+[ASSERT] Validation error or rejection prevents submission","[DOM] CVV iframe field rejects alphabetic characters at input level
+[STATE] Field contains only numeric content after attempted non-numeric input
+[NAV] Form does not submit with non-numeric CVV","[API] No createOrderFromCart GraphQL mutation fired
+[CONSOLE] No unhandled iframe communication errors","Letters accepted in CVV field; alpha characters appear in masked display; form submits with non-numeric CVV","none — no order created","VCST-3387 TC-NEG-009",Manual
+PAY-CS-013,CyberSource - Card Number Auto-Formatting,CyberSource > Validation,Medium,BL-PAY-001,"ECL-14.6","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Click into 'Card Number' iframe field
+[ACT] Type '4622943127013705' without spaces (continuous digits)
+[ASSERT] Field auto-inserts spaces to display as '4622 9431 2701 3705'
+[ASSERT] Cursor position maintained correctly after auto-formatting (can continue typing naturally)","[FORMAT] Card Number field displays 16-digit number in '#### #### #### ####' format automatically
+[DOM] No validation error triggered by auto-formatting
+[STATE] Field value usable for further interaction after formatting applied","[CONSOLE] No JS errors from iframe auto-format logic","Card number displayed without spaces after typing; spaces inserted but cursor jumps to wrong position making continued typing impossible; formatting applied inconsistently","none — no order placed","VCST-3387 TC-VAL-003",Manual
+PAY-CS-014,CyberSource - Visa Card Type Detection,CyberSource > Validation,Medium,BL-PAY-001,"ECL-14.6","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Click into 'Card Number' iframe field
+[ACT] Begin entering Visa card number '4622943127013705' (starts with '4')
+[ASSERT] After first digit, Visa card icon highlights/becomes active in the card type icon row
+[ASSERT] Other card type icons (Mastercard, Amex, etc.) become dimmed or deselected
+[ACT] Complete entering '4622943127013705'
+[ASSERT] Visa icon remains highlighted; card type indicator shows 'Visa'","[DOM] Card type icon area shows Visa icon as active/highlighted after Visa BIN entered
+[STATE] Other card type icons visually de-emphasized
+[FORMAT] Card type indicator updates in real-time as digits are entered","[CONSOLE] No JS errors during BIN detection","No card type icon appears; wrong card type detected for Visa BIN; icon shows but never updates as more digits entered","none — no order placed","VCST-3387 TC-VAL-002",Manual
+PAY-CS-015,CyberSource - CVV Input Masking,CyberSource > Validation,High,BL-PAY-001,"ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Click into 'CVV' iframe field; type '838'
+[ASSERT] CVV field displays dots (•••) or asterisks (***) instead of the digits '838'
+[ASSERT] The actual value '838' is not visible in the UI at any point
+[KEY] Note: field is inside secure iframe — verify masking from parent page perspective","[DOM] CVV field shows masked characters (dots/asterisks) — actual digits never exposed in UI
+[STATE] Masking applied immediately on each character input
+[FORMAT] Input type or iframe rendering prevents plaintext display of CVV","[CONSOLE] No JS in parent page can read CVV value (cross-origin iframe restriction)
+[NETWORK] CVV not present in any network payload in cleartext","CVV digits displayed as plaintext in the field; masking applied only after focus-out; masking absent in the iframe rendering","none — no order placed","VCST-3387 TC-VAL-006",Manual
+PAY-SEC-001,CyberSource - Card Number Field in Secure Iframe,CyberSource > Security,Critical,"BL-PAY-001, BL-PAY-002","ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart
+- Browser DevTools Elements panel available","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and locate CyberSource payment section
+[ACT] Open browser DevTools → Elements panel
+[ACT] Inspect the 'Card Number' field in the DOM
+[ASSERT] Field is rendered inside an <iframe> element — not directly in the parent page DOM
+[ASSERT] iframe src domain is 'testflex.cybersource.com' (or cybersource.com equivalent for production)
+[ACT] In browser console attempt: document.querySelector('iframe').contentDocument
+[ASSERT] Access returns null or throws cross-origin security error
+[ASSERT] JavaScript from parent page cannot read 'Card Number' field value","[DOM] 'Card Number' field contained within <iframe> whose src points to cybersource.com domain
+[STATE] Cross-origin iframe policy enforced — parent JS cannot access iframe content
+[FORMAT] iframe sandbox attributes present if applicable","[NETWORK] No request from parent page origin reads card number value
+[CONSOLE] Cross-origin error thrown on attempted iframe content access (expected/correct behavior)","Card Number field found directly in parent page DOM without iframe; iframe src on same origin as storefront; no cross-origin error thrown on console access attempt","none — no order placed","VCST-3387 TC-SEC-001",Manual
+PAY-SEC-002,CyberSource - CVV Field in Secure Iframe,CyberSource > Security,Critical,"BL-PAY-001, BL-PAY-002","ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart
+- Browser DevTools Elements panel available","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and locate CyberSource CVV field
+[ACT] Open browser DevTools → Elements panel; inspect 'CVV' field
+[ASSERT] 'CVV' field is inside an <iframe> element — not in parent page DOM
+[ASSERT] iframe src is on cybersource.com domain
+[ACT] In browser console attempt: document.querySelectorAll('iframe')[1].contentDocument (or appropriate index)
+[ASSERT] Access denied — cross-origin security error thrown","[DOM] 'CVV' field contained within cross-origin <iframe>
+[STATE] iframe sandboxing prevents parent page from accessing CVV field content
+[FORMAT] Separate iframe used for CVV (may be same or different iframe from card number)","[NETWORK] No request carries raw CVV value
+[CONSOLE] Cross-origin error is thrown (expected) when parent attempts to access CVV iframe","CVV field found directly in parent DOM; single iframe serving both card and CVV but from same-origin domain; no error thrown on cross-origin access attempt","none — no order placed","VCST-3387 TC-SEC-002",Manual
+PAY-SEC-003,CyberSource - No Raw Card Data in Network Requests,CyberSource > Security,Critical,"BL-PAY-001, BL-PAY-002","ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart
+- DevTools Network tab open and recording before form interaction","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart; open DevTools Network tab; begin recording
+[ACT] Fill 'Card Number' with '4622943127013705'; fill 'CVV' with '838'; fill 'Cardholder Name' with 'John Smith'; fill 'Expiry Date' with '09/2029'
+[ACT] Click 'Place Order'
+[WAIT] Wait for all network requests to complete
+[ACT] In DevTools Network, search request payloads for '4622943127013705'
+[ASSERT] Card number NOT found in any request payload (should be replaced by token)
+[ACT] Search request payloads for '838'
+[ASSERT] CVV NOT found in any request payload
+[ACT] Check all POST request bodies for any card-related plaintext","[NETWORK] Card number '4622943127013705' absent from all request payloads
+[NETWORK] CVV '838' absent from all request payloads
+[STATE] Only tokenized references or encrypted data present in payment-related requests","[NETWORK] All payment-related requests use HTTPS (check protocol column)
+[CONSOLE] No JS errors indicating tokenization failure","Raw card number found in any network request body; CVV found in any request payload; requests made over HTTP rather than HTTPS","Cancel order via admin if order was created","VCST-3387 TC-SEC-004",Manual
+PAY-SEC-004,CyberSource - No Card Data in Browser Storage,CyberSource > Security,Critical,"BL-PAY-001, BL-PAY-002","ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart; open DevTools Application tab
+[ACT] Fill 'Card Number' with '4622943127013705'; fill 'CVV' with '838'; fill 'Cardholder Name' with 'John Smith'; fill 'Expiry Date' with '09/2029'
+[ACT] Click 'Place Order'; wait for response
+[ACT] In DevTools Application: inspect localStorage — search all keys/values for '4622943127013705'
+[ASSERT] Card number NOT in localStorage
+[ACT] Inspect sessionStorage — search for '4622943127013705'
+[ASSERT] Card number NOT in sessionStorage
+[ACT] Inspect all cookies — search values for '4622943127013705' and '838'
+[ASSERT] No cookie contains raw card number or CVV","[STATE] localStorage contains no card number or CVV values
+[STATE] sessionStorage contains no card number or CVV values
+[STATE] Cookies do not contain raw card data","[CONSOLE] No JS writes card data to storage (no localStorage.setItem calls with card data visible)
+[NETWORK] Storage not populated from any API response containing card data","Card number found in localStorage or sessionStorage; CVV stored in any browser storage mechanism; cookie value contains raw card digits","Cancel order via admin if order was created","VCST-3387 TC-SEC-005",Manual
+PAY-SEC-005,CyberSource - All Payment Pages Served Over HTTPS,CyberSource > Security,Critical,BL-PAY-006,"ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart
+- DevTools Network tab open","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; verify address bar shows 'https://'
+[ASSERT] Cart page URL uses HTTPS protocol
+[ACT] Open DevTools Network tab; filter by 'All'; examine iframe src URLs in Elements panel
+[ASSERT] All iframe src attributes use 'https://'
+[ACT] In Network tab filter requests by domain; review all API calls made from the payment section
+[ASSERT] All API requests use HTTPS (no HTTP requests)
+[ACT] Check DevTools Console for mixed-content warnings
+[ASSERT] No mixed-content warnings present","[NAV] Cart page URL begins with 'https://'
+[DOM] All iframe src attributes use 'https://'
+[NETWORK] No HTTP requests in Network tab for payment-related resources
+[CONSOLE] No mixed-content warnings in browser console","[NETWORK] Certificate valid — no SSL errors in DevTools
+[CONSOLE] No security policy violation errors","Any page, iframe, or API request uses HTTP instead of HTTPS; mixed-content browser warning appears; SSL certificate error shown","none — no order placed","VCST-3387 TC-SEC-006",Manual
+PAY-SEC-006,CyberSource - JWT Token Authentication in Iframe,CyberSource > Security,High,BL-PAY-001,"ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart
+- DevTools Elements and Network panels open","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; locate CyberSource payment iframe(s) in DevTools Elements panel
+[ACT] Examine iframe src URL attribute(s) in Elements panel
+[ASSERT] iframe src URL contains a JWT token parameter (three-part format: header.payload.signature separated by dots)
+[ACT] Copy the JWT value and verify it has exactly three dot-separated segments
+[ASSERT] JWT format valid: three segments of base64url-encoded data
+[ACT] Reload the page and inspect iframe src again
+[ASSERT] JWT token value is different from the previous session token (dynamic per session)","[FORMAT] JWT token in iframe src has exactly three dot-separated base64url-encoded segments
+[STATE] JWT is unique per page load — not reused across sessions
+[DOM] Token present in iframe src attribute before any user interaction","[NETWORK] JWT token sent in authorization-related requests
+[CONSOLE] No JWT decode errors in console","JWT token absent from iframe src; token present but reused across multiple sessions (static value); token format incorrect (fewer or more than three segments)","none — no order placed","VCST-3387 TC-INT-002",Manual
+PAY-AN-001,Authorize.Net - Complete Payment Flow,Authorize.Net,High,BL-PAY-003,"ECL-14.6, ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- Authorize.Net payment processor configured and active
+- Authorize.Net test credentials set in environment","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Select Authorize.Net as payment method if not pre-selected
+[ACT] Click 'Place Order' — this redirects to the Authorize.Net payment form at {{FRONT_URL}}/checkout/payment
+[WAIT] Wait for {{FRONT_URL}}/checkout/payment to load with Authorize.Net payment form
+[ACT] Fill 'Card Number' with '{{TEST_CARD_NUMBER}}'
+[ACT] Fill 'Expiry Date' with '{{TEST_CARD_EXP}}'
+[ACT] Fill 'CVV' with '{{TEST_CARD_CVV}}'
+[ACT] Fill 'Cardholder Name' with a test name
+[ACT] Click 'Place Order' or 'Submit Payment'
+[WAIT] Wait for payment authorization response","[NAV] After clicking 'Place Order' from cart user is redirected to {{FRONT_URL}}/checkout/payment
+[DOM] Payment form renders correctly on /checkout/payment page
+[NAV] After successful payment user navigated to order confirmation page
+[STATE] Order confirmation displays order number","[API] createOrderFromCart GraphQL mutation errors[] is empty
+[ADMIN] Order appears in admin with Authorize.Net payment method recorded
+[NETWORK] Payment request sent to Authorize.Net endpoint; no raw card data in storefront API requests","No redirect to /checkout/payment after clicking Place Order from cart; payment form does not load; order confirmation not reached; mutation returns errors[]","Cancel order via admin","google-analytics",Manual
+PAY-AN-002,Authorize.Net - Invalid Card Number Validation,Authorize.Net,High,BL-PAY-003,"ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- Authorize.Net payment form loaded at {{FRONT_URL}}/checkout/payment (reached by clicking Place Order from cart)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order' to reach Authorize.Net payment form at {{FRONT_URL}}/checkout/payment
+[WAIT] Wait for payment form to load
+[ACT] Fill 'Card Number' with '1234567890123456' (fails Luhn check)
+[ACT] Fill 'Expiry Date' with a valid future date; fill 'CVV' with a valid 3-digit value
+[ACT] Attempt to submit payment
+[ASSERT] Validation error appears on 'Card Number' field
+[ASSERT] Form does not submit with invalid card number","[DOM] 'Card Number' field shows validation error indicating invalid card
+[STATE] Payment submission blocked for Luhn-failing card number
+[NAV] User remains on {{FRONT_URL}}/checkout/payment","[API] No createOrderFromCart GraphQL mutation fired or mutation returns errors[]
+[CONSOLE] No unhandled JS exceptions","Invalid card number accepted without error; form submits and reaches payment processor with known-bad card; user navigated away from /checkout/payment unexpectedly","none — no order created","Coverage Gap Analysis",Manual
+PAY-AN-003,Authorize.Net - Empty Fields Validation,Authorize.Net,High,BL-PAY-003,"ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- Authorize.Net payment form loaded at {{FRONT_URL}}/checkout/payment","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order' to reach {{FRONT_URL}}/checkout/payment
+[WAIT] Wait for Authorize.Net payment form to fully load
+[ACT] Leave all payment fields ('Card Number', 'Expiry Date', 'CVV', 'Cardholder Name') empty
+[ACT] Click 'Place Order' or payment submit button
+[ASSERT] Each empty field shows an individual validation error message
+[ASSERT] Form is not submitted until all required fields are filled","[DOM] Per-field validation errors appear for each empty required field
+[STATE] Form submission blocked until all fields are valid
+[NAV] User remains on {{FRONT_URL}}/checkout/payment","[API] No createOrderFromCart GraphQL mutation fired
+[CONSOLE] No JS errors","Single generic error shown instead of per-field errors; form submits with empty fields; only some fields validated on empty submit","none — no order created","Coverage Gap Analysis",Manual
+PAY-AN-004,Authorize.Net - Transaction ID on Order Confirmation,Authorize.Net,Medium,BL-PAY-003,"ECL-14.6","- Logged in as registered user
+- Cart has at least one item
+- Authorize.Net payment processor configured with test credentials","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order'; complete Authorize.Net payment form on {{FRONT_URL}}/checkout/payment
+[ACT] Fill payment form with {{TEST_CARD_NUMBER}}, {{TEST_CARD_EXP}}, {{TEST_CARD_CVV}}; submit payment
+[WAIT] Wait for order confirmation page to load
+[ASSERT] Order confirmation page displays order number
+[NAV] Navigate to account order history; find the placed order
+[ASSERT] Transaction ID or payment reference is visible in order details","[NAV] User reaches order confirmation page after payment
+[DOM] Order confirmation shows order number
+[DOM] Order details page or confirmation shows transaction ID / payment reference","[API] createOrderFromCart GraphQL mutation errors[] is empty
+[ADMIN] Order in admin shows Authorize.Net transaction ID in payment details","No transaction ID visible on confirmation or order details; order confirmation page not reached; order absent from account history","Cancel order via admin","Coverage Gap Analysis",Manual
+PAY-AN-005,Authorize.Net - Order Visible in Admin with Payment Details,Authorize.Net,High,BL-PAY-003,"ECL-14.6","- Authorize.Net payment completed (PAY-AN-001 passed or equivalent)
+- Admin login credentials available","FRONT_URL={{FRONT_URL}}, ADMIN_URL={{ADMIN_URL}}, ADMIN_EMAIL={{ADMIN_EMAIL}}, ADMIN_PASSWORD={{ADMIN_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Complete Authorize.Net payment flow (navigate to {{FRONT_URL}}/cart, place order, complete payment at /checkout/payment); note the order number from confirmation
+[NAV] Open {{ADMIN_URL}} in a separate browser context; log in with {{ADMIN_EMAIL}} / {{ADMIN_PASSWORD}}
+[NAV] Navigate to Orders section; search for the order by order number
+[ACT] Open the order detail view
+[ASSERT] Order is found in admin
+[ASSERT] Payment method field shows 'Authorize.Net' or equivalent label
+[ASSERT] Transaction ID is recorded in payment section
+[MATH] Order total in admin matches the cart total from storefront","[ADMIN] Order found in admin Orders list
+[DOM] Payment method displayed as Authorize.Net
+[DOM] Transaction ID field populated in payment details
+[MATH] Order total in admin equals storefront cart total","[API] createOrderFromCart GraphQL mutation errors[] was empty at time of order creation
+[ADMIN] Order status reflects successful payment authorization","Order not found in admin; payment method label missing or incorrect; transaction ID absent; total mismatch between storefront and admin","Cancel order via admin","Coverage Gap Analysis",Manual
+PAY-DT-001,Datatrans - Complete Payment Flow,Datatrans,High,BL-PAY-003,"ECL-14.6, ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- Datatrans payment processor configured and active","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; select Datatrans payment method if not pre-selected
+[ACT] Click 'Place Order' from cart page — this redirects to Datatrans payment flow at {{FRONT_URL}}/checkout/payment
+[WAIT] Wait for Datatrans payment redirect or modal to load
+[ACT] Follow Datatrans payment form — enter required card details
+[ACT] Complete payment flow within Datatrans hosted form
+[WAIT] Wait for return redirect back to storefront
+[ASSERT] User is returned to storefront after Datatrans payment completes
+[ASSERT] Order confirmation page displayed with order number","[NAV] Clicking 'Place Order' from cart redirects to {{FRONT_URL}}/checkout/payment with Datatrans form
+[NAV] After completing Datatrans flow user is redirected back to storefront order confirmation
+[DOM] Order confirmation shows order number and summary","[API] createOrderFromCart GraphQL mutation errors[] is empty
+[ADMIN] Order appears in admin with Datatrans payment method
+[NETWORK] Datatrans redirect handled correctly — no redirect loop","No redirect to /checkout/payment after placing order; Datatrans form does not load; return redirect to storefront fails; order not created","Cancel order via admin","google-analytics",Manual
+PAY-DT-002,Datatrans - OTP Authentication Flow,Datatrans,High,BL-PAY-003,"ECL-9.1, ECL-14.6","- Logged in as registered user
+- Cart has at least one item
+- Datatrans configured
+- OTP value available from DATATRANCE_OTP environment variable","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Navigate to {{FRONT_URL}}/cart; select Datatrans; click 'Place Order'
+[WAIT] Wait for redirect to {{FRONT_URL}}/checkout/payment and Datatrans payment form
+[ACT] Enter test card number, expiry date, and CVV in Datatrans form
+[ACT] Submit card details within Datatrans form
+[WAIT] Wait for OTP prompt to appear (redirect or modal)
+[ASSERT] OTP input prompt is displayed
+[ACT] Enter OTP value from DATATRANCE_OTP environment variable
+[ACT] Submit the OTP
+[WAIT] Wait for return redirect to storefront
+[ASSERT] User redirected back to storefront order confirmation with order number","[NAV] Datatrans OTP prompt appears after card submission
+[DOM] OTP input field is visible and accepts input
+[NAV] After valid OTP submission user returns to storefront confirmation page
+[DOM] Order confirmation shows order number","[API] createOrderFromCart GraphQL mutation errors[] is empty
+[ADMIN] Order appears in admin with Datatrans payment method and status reflecting OTP-authenticated payment","OTP prompt does not appear; valid OTP rejected; return redirect to storefront fails; order confirmation not reached","Cancel order via admin","Coverage Gap Analysis",Manual
+PAY-DT-003,Datatrans - Invalid OTP Recovery,Datatrans,High,BL-PAY-003,"ECL-9.1, ECL-1.2","- Logged in as registered user
+- Cart has at least one item
+- Datatrans OTP prompt currently displayed (preceded by card entry step)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[KEY] This test begins at the Datatrans OTP prompt — reach this state by completing card entry in Datatrans form (see PAY-DT-002 for navigation)
+[ACT] At OTP input: fill OTP field with '000000' (intentionally incorrect)
+[ACT] Submit the incorrect OTP
+[WAIT] Wait for Datatrans error response
+[ASSERT] Error message displayed indicating invalid OTP
+[ASSERT] Retry mechanism available — OTP field still accessible or re-prompted
+[ACT] Fill OTP field with the correct value from DATATRANCE_OTP environment variable
+[ACT] Submit the correct OTP
+[WAIT] Wait for return redirect to storefront
+[ASSERT] Payment succeeds; user reaches order confirmation","[DOM] Error message shown after incorrect OTP submission
+[STATE] Retry mechanism available after invalid OTP (field not permanently locked)
+[NAV] Correct OTP leads to successful return to storefront
+[STATE] Only one order created — no duplicate from the failed first OTP attempt","[API] createOrderFromCart GraphQL mutation errors[] is empty on final successful submission
+[ADMIN] Single order in admin — no duplicate orders from retry scenario","No error shown for incorrect OTP; OTP field locked without retry option; duplicate orders created from retry; correct OTP rejected after previous incorrect attempt","Cancel order via admin","Coverage Gap Analysis",Manual
+PAY-DT-004,Datatrans - Card Number Validation,Datatrans,High,BL-PAY-003,"ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- Datatrans payment form loaded at {{FRONT_URL}}/checkout/payment (reached via Place Order from cart)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order'; wait for Datatrans form at {{FRONT_URL}}/checkout/payment
+[ACT] Fill card number field with a value that fails Luhn check (e.g., a sequential number that is clearly invalid)
+[ACT] Fill other fields with valid-format values (future expiry, valid CVV length)
+[ACT] Attempt to proceed / submit card details
+[ASSERT] Validation error appears on card number field
+[ASSERT] Payment cannot proceed with invalid card number","[DOM] Card number validation error displayed
+[STATE] Datatrans form blocks progression with invalid card
+[NAV] User remains on {{FRONT_URL}}/checkout/payment","[API] No createOrderFromCart GraphQL mutation fired
+[CONSOLE] No unhandled JS exceptions","Invalid card number accepted; Datatrans form submits with Luhn-failing card; no error shown on card field","none — no order created","Coverage Gap Analysis",Manual
+PAY-DT-005,Datatrans - Return to Store After Payment Completion,Datatrans,Critical,BL-PAY-003,"ECL-14.6, ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- Datatrans configured
+- OTP from DATATRANCE_OTP available","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Navigate to {{FRONT_URL}}/cart; select Datatrans; click 'Place Order'
+[WAIT] Wait for redirect to {{FRONT_URL}}/checkout/payment and Datatrans payment form
+[ACT] Complete full Datatrans payment flow including OTP from DATATRANCE_OTP
+[WAIT] Wait for automatic redirect back to storefront
+[ASSERT] User is automatically redirected to storefront after Datatrans completes (no manual action required)
+[ASSERT] Order confirmation page shows order number
+[ASSERT] Ordered items and totals on confirmation match the cart contents
+[ASSERT] Shipping address on confirmation matches the address entered during checkout
+[NAV] Navigate to account order history
+[ASSERT] Order appears in account order history","[NAV] Automatic redirect from Datatrans back to storefront without manual intervention
+[DOM] Order confirmation page shows order number, line items, totals, shipping address
+[MATH] Totals on confirmation match original cart totals
+[NAV] Order visible in account order history","[API] createOrderFromCart GraphQL mutation errors[] is empty
+[ADMIN] Order in admin with correct total and Datatrans payment method","No automatic redirect — user stranded on Datatrans page; order confirmation page missing order number; cart contents not reflected on confirmation; order absent from account history","Cancel order via admin","Coverage Gap Analysis",Manual
+PAY-SKY-001,Skyflow - Complete Payment Flow,Skyflow,High,BL-PAY-003,"ECL-14.6, ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- Skyflow payment processor configured
+- Skyflow VISA test card credentials in environment","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Navigate to {{FRONT_URL}}/cart; select Skyflow payment method if not pre-selected
+[ACT] Click 'Place Order' — this redirects to Skyflow payment form at {{FRONT_URL}}/checkout/payment
+[WAIT] Wait for {{FRONT_URL}}/checkout/payment to load with Skyflow payment form
+[ACT] Fill 'Card Number' with VISA test card from {{TEST_CARD_NUMBER}}
+[ACT] Fill 'Expiry Date' with {{TEST_CARD_EXP}}; fill 'CVV' with {{TEST_CARD_CVV}}
+[ACT] Submit payment via Skyflow form
+[WAIT] Wait for payment processing and order creation","[NAV] Clicking 'Place Order' from cart redirects to {{FRONT_URL}}/checkout/payment with Skyflow form
+[NAV] After successful payment user navigated to order confirmation
+[DOM] Order confirmation shows order number
+[STATE] Card data tokenized by Skyflow — not transmitted as raw PAN","[API] createOrderFromCart GraphQL mutation errors[] is empty
+[NETWORK] Raw VISA card number absent from all network payloads (tokenized by Skyflow)
+[ADMIN] Order in admin with Skyflow payment method and tokenized card reference","No redirect to /checkout/payment after Place Order; Skyflow form does not load; payment tokenization fails; order confirmation not reached","Cancel order via admin","config.js",Manual
+PAY-SKY-002,Skyflow - Mastercard Payment,Skyflow,High,BL-PAY-003,"ECL-14.6, ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- Skyflow configured
+- Mastercard test card available in SKYFLOW_MASTERCARD env var
+- Matching expiry in SKYFLOW_EXPIRY and CVV in SKYFLOW_CVV","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, ADMIN_URL={{ADMIN_URL}}, ADMIN_EMAIL={{ADMIN_EMAIL}}, ADMIN_PASSWORD={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; select Skyflow payment; click 'Place Order'
+[WAIT] Wait for {{FRONT_URL}}/checkout/payment with Skyflow form
+[ACT] Fill 'Card Number' with Mastercard test number from SKYFLOW_MASTERCARD environment variable
+[ACT] Fill 'Expiry Date' from SKYFLOW_EXPIRY; fill 'CVV' from SKYFLOW_CVV
+[ASSERT] Mastercard card type icon is shown/highlighted (MC BIN detected)
+[ACT] Submit payment
+[WAIT] Wait for order confirmation
+[NAV] Log in to {{ADMIN_URL}} with {{ADMIN_EMAIL}} / {{ADMIN_PASSWORD}}; locate the order
+[ASSERT] Order in admin shows Mastercard payment method or last four digits matching Mastercard","[DOM] Mastercard icon highlighted after BIN detection when Mastercard number entered
+[NAV] Order confirmation reached after Mastercard payment
+[ADMIN] Order in admin records Mastercard as payment instrument","[API] createOrderFromCart GraphQL mutation errors[] is empty
+[NETWORK] Raw Mastercard PAN absent from all network request payloads
+[ADMIN] Skyflow token (not raw PAN) stored as payment reference in order","Mastercard not detected as card type; VISA icon shown for Mastercard number; payment rejected for valid MC test card; raw card number visible in network request","Cancel order via admin","Coverage Gap Analysis",Manual
+PAY-SKY-003,Skyflow - Invalid Card Number Validation,Skyflow,High,BL-PAY-001,"ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- Skyflow payment form loaded at {{FRONT_URL}}/checkout/payment (reached via Place Order from cart)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order'; wait for Skyflow form at {{FRONT_URL}}/checkout/payment
+[ACT] Fill 'Card Number' iframe field with '1234567890123456' (fails Luhn check)
+[ACT] Tab out of the 'Card Number' field
+[ASSERT] Validation error appears inline on or below the 'Card Number' field
+[ACT] Attempt to click 'Place Order' or submit payment
+[ASSERT] Form does not submit with invalid card number
+[ACT] Clear 'Card Number' and enter a valid test card number
+[ASSERT] Validation error clears upon valid entry","[DOM] 'Card Number' Skyflow iframe field shows validation error for Luhn-failing number
+[STATE] Payment submission blocked for invalid card
+[DOM] Validation error clears when valid card number entered","[API] No createOrderFromCart GraphQL mutation fired while card is invalid
+[CONSOLE] No unhandled JS errors from Skyflow iframe","Invalid card accepted silently; validation error does not appear after tab-out; error shown but form still submittable","none — no order created","Coverage Gap Analysis",Manual
+PAY-SKY-004,Skyflow - Empty Fields Validation,Skyflow,High,BL-PAY-001,"ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- Skyflow payment form loaded at {{FRONT_URL}}/checkout/payment","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order'; wait for Skyflow form at {{FRONT_URL}}/checkout/payment
+[ACT] Leave all Skyflow payment fields ('Card Number', 'Expiry Date', 'CVV') empty
+[ACT] Click 'Place Order' or payment submit button
+[ASSERT] 'Card Number' field shows 'Card number required' or equivalent error
+[ASSERT] 'Expiry Date' field shows 'Expiry required' or equivalent error
+[ASSERT] 'CVV' field shows 'CVV required' or equivalent error
+[ASSERT] Form is not submitted — no payment request sent","[DOM] Each empty required field shows an individual validation error message
+[STATE] Form submission blocked until all required fields filled
+[NAV] User remains on {{FRONT_URL}}/checkout/payment","[API] No createOrderFromCart GraphQL mutation fired
+[CONSOLE] No JS errors from Skyflow SDK","Single generic error instead of per-field errors; some fields not validated on empty submit; form submits with empty fields","none — no order created","Coverage Gap Analysis",Manual
+PAY-SKY-005,Skyflow - Real-time Card Type Detection,Skyflow,Medium,BL-PAY-001,"ECL-14.6","- Logged in as registered user
+- Cart has at least one item
+- Skyflow payment form loaded at {{FRONT_URL}}/checkout/payment","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order'; wait for Skyflow form at {{FRONT_URL}}/checkout/payment
+[ACT] Click into 'Card Number' field; type '4' (Visa BIN prefix)
+[ASSERT] Visa icon becomes active/highlighted in card type indicator area; other icons dimmed
+[ACT] Clear field; type '51' (Mastercard BIN prefix — range 51-55)
+[ASSERT] Mastercard icon becomes active/highlighted; Visa icon dimmed
+[ACT] Continue entering remaining Mastercard digits
+[ASSERT] Mastercard icon remains active throughout entry
+[ASSERT] Detection is responsive — updates after each relevant BIN digit","[DOM] Card type icon area updates in real-time based on BIN prefix entered
+[STATE] Correct card brand icon highlighted (Visa for '4' prefix, MC for '51-55' prefix)
+[STATE] Other card type icons visually de-emphasized when a type is detected","[CONSOLE] No JS errors from Skyflow card detection logic","No card type icon shown after BIN entry; wrong card brand detected; icon updates only after full card number entered (not real-time)","none — no order placed","Coverage Gap Analysis",Manual
+PAY-UX-001,Payment Form - Field Labels and Placeholders,UX,Medium,BL-PAY-004,"ECL-14.6","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; locate CyberSource payment section
+[ACT] Observe all payment field labels without interacting
+[ASSERT] Each field has a visible label: 'Card Number', 'Cardholder Name', 'Expiry Date', 'CVV'
+[ASSERT] Placeholder text is present and descriptive in each field
+[ASSERT] Required fields are marked with asterisk (*) or equivalent required indicator","[DOM] All four payment fields have visible labels
+[DOM] Placeholder text present and readable in all fields
+[DOM] Required field indicator (* or 'required') present on mandatory fields","[CONSOLE] No rendering errors for payment section labels","Any field missing a label; placeholder text absent or generic (e.g., '...' only); required indicator absent on mandatory fields","none — no order placed","VCST-3387 TC-UX-001",Manual
+PAY-UX-002,Payment Form - Keyboard Tab Order,UX,Medium,BL-PAY-004,"ECL-14.6","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart
+- Keyboard-only navigation mode (no mouse)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; locate CyberSource payment section
+[ACT] Place focus on 'Card Number' field using keyboard (Tab from previous element)
+[KEY] Press Tab to advance through payment fields
+[ASSERT] Focus moves: Card Number → Cardholder Name → Expiry Date → CVV in logical order
+[KEY] Verify Tab moves into iframe fields correctly (focus enters iframe)
+[KEY] Verify Tab exits iframe fields correctly (focus leaves iframe to next storefront element)
+[ASSERT] No tab trap encountered — Tab always advances focus","[STATE] Tab order follows logical sequence: Card Number → Cardholder Name → Expiry Date → CVV
+[STATE] Focus enters and exits iframe fields without becoming trapped
+[DOM] Focus indicator visible on each field when focused via keyboard","[CONSOLE] No JS errors from iframe focus handling","Tab order illogical (e.g., skips fields or jumps out of order); tab trap occurs inside iframe (cannot escape with Tab); focus indicator not visible on focused field","none — no order placed","VCST-3387 TC-UX-004",Manual
+PAY-PERF-001,Payment Form - Load Time Under 2 Seconds,Performance,Medium,BL-PAY-004,"ECL-14.6","- Logged in as registered user
+- Cart has at least one item
+- Browser DevTools Performance or Network tab available
+- Clear browser cache before test","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Clear cache; navigate to {{FRONT_URL}}/cart
+[ACT] Start timing from page navigation until CyberSource payment form is fully interactive
+[WAIT] Observe payment section loading — iframe(s) must fully initialize
+[ASSERT] CyberSource payment form is interactive within 2 seconds of page load completing
+[ASSERT] All iframe fields accept input without additional waiting
+[ACT] Open DevTools Network tab; review iframe resource load times","[STATE] CyberSource payment form fields interactive within 2 seconds of cart page load
+[DOM] All payment iframe(s) initialized — fields accept clicks and input
+[NETWORK] Iframe resources load without excessive blocking time","[NETWORK] No failed resource loads for cybersource.com iframe scripts
+[CONSOLE] No timeout errors for iframe initialization","Payment form remains in loading state beyond 2 seconds; iframe fails to initialize requiring page refresh; form fields unresponsive after iframes load","none — no order placed","VCST-3387 TC-PERF-001",Manual
+PAY-EDGE-001,Double-Click Place Order Prevention,Edge Cases,High,"BL-PAY-003, BL-PAY-005","ECL-1.2, ECL-14.6","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form on {{FRONT_URL}}/cart fully filled with valid test card
+- DevTools Network tab open and recording","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart; fill CyberSource payment form completely with '4622943127013705', '09/2029', '838', 'John Smith'
+[ACT] Double-click 'Place Order' button as rapidly as possible
+[WAIT] Wait for all network requests to settle
+[ASSERT] Only ONE createOrderFromCart GraphQL mutation request is sent — not two
+[ASSERT] 'Place Order' button becomes disabled/inactive after the first click
+[ASSERT] Only one order is created — check order confirmation shows single order number
+[NAV] Navigate to account order history and verify only one new order appears","[STATE] 'Place Order' button disabled after first click — subsequent clicks have no effect
+[STATE] Only one order created — no duplicate in account order history
+[NETWORK] Only one createOrderFromCart mutation request in DevTools Network","[API] createOrderFromCart GraphQL mutation called exactly once
+[ADMIN] Single new order in admin — no duplicate orders with same cart contents and timestamp","Button remains active after first click (not disabled); two or more createOrderFromCart mutations sent; duplicate order appears in account history or admin","Cancel order(s) via admin — ensure duplicate orders also cancelled if created","VCST-3387 TC-EDGE-020",Manual
+PAY-DECLINE-001,Declined Card - Error Message Displayed,Declined Cards,Critical,"BL-PAY-005, BL-PAY-003","ECL-9.1, ECL-14.6","- Logged in as registered user
+- Cart has at least one item
+- Payment processor configured with a test card number known to produce a decline response","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[KEY] For CyberSource: payment form is on cart page. For other processors: click 'Place Order' first to reach {{FRONT_URL}}/checkout/payment
+[ACT] Fill payment form using a known-decline test card (obtain from processor test docs or .env)
+[ACT] Fill valid expiry date, CVV, and cardholder name
+[ACT] Click 'Place Order'
+[WAIT] Wait for processor decline response
+[ASSERT] Clear error message displayed — e.g., 'Your card was declined' or equivalent
+[ASSERT] Payment form fields are NOT cleared (user can correct and retry)
+[ASSERT] User remains on payment step — not navigated away
+[NAV] Navigate to account order history
+[ASSERT] No new order appears in order history","[DOM] Error message displayed with text indicating card decline (not a generic system error)
+[STATE] Payment form fields retain entered values after decline — not cleared
+[NAV] User remains on payment step after decline
+[STATE] No order created — order history unchanged","[API] createOrderFromCart GraphQL mutation errors[] contains decline-related error OR mutation is not called if processor blocks before order creation
+[ADMIN] No new order in admin for this session","No error message shown after decline; generic 'something went wrong' message without explanation; form cleared requiring full re-entry; order created despite decline (BL-PAY-005 violation)","none — no order created","Coverage Gap Analysis",Manual
+PAY-DECLINE-002,Declined Card - Retry with Different Card Succeeds,Declined Cards,Critical,"BL-PAY-005, BL-PAY-003","ECL-9.1, ECL-1.2","- Logged in as registered user
+- Cart has at least one item
+- Payment in declined state from PAY-DECLINE-001 (decline error visible, no page reload performed)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[KEY] Begin from declined state — error message visible, user on payment step, no page reload
+[ACT] Clear 'Card Number' field and enter {{TEST_CARD_NUMBER}} (valid test card)
+[ACT] Update 'CVV' field with {{TEST_CARD_CVV}}; update 'Expiry Date' if needed
+[ACT] Click 'Place Order' again
+[WAIT] Wait for payment processing response
+[ASSERT] Payment succeeds with the new card — no error message
+[NAV] User navigated to order confirmation page
+[ASSERT] Order confirmation shows order number
+[NAV] Check account order history
+[ASSERT] Exactly one new order — no duplicate from the first declined attempt","[NAV] Order confirmation reached after retry with valid card
+[DOM] Order confirmation displays order number
+[STATE] Only one order created — no duplicate from failed first attempt
+[MATH] Order total matches original cart total","[API] createOrderFromCart GraphQL mutation errors[] is empty on successful retry
+[ADMIN] Single new order in admin — no duplicate entry for this session","Retry attempt triggers page reload losing cart state; second valid card also declined; two orders created (one from declined attempt — BL-PAY-005 violation); form not accepting input after decline","Cancel order via admin","Coverage Gap Analysis",Manual
+PAY-DECLINE-003,Declined Card - Network Timeout Recovery,Declined Cards,High,"BL-PAY-003, BL-PAY-005","ECL-9.1, ECL-1.2","- Logged in as registered user
+- Cart has at least one item
+- Payment form fully filled with valid test card
+- Browser DevTools Network tab available for throttling/blocking","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Navigate to payment step with valid card details filled in
+[ACT] In DevTools Network tab: block or simulate timeout on the payment API endpoint
+[ACT] Click 'Place Order'
+[WAIT] Wait for timeout error response
+[ASSERT] Error message displayed: 'Payment timed out. Please try again.' or equivalent — no internal server error details exposed
+[ASSERT] Form remains usable — fields accessible for retry
+[ACT] In DevTools: restore network (unblock payment API)
+[ACT] Click 'Place Order' again
+[WAIT] Wait for payment response
+[ASSERT] Retry succeeds — order confirmation reached
+[NAV] Check account order history and admin for duplicate orders","[DOM] Timeout error message visible — user-friendly text without server internals exposed
+[STATE] Payment form fields remain accessible after timeout error
+[NAV] Successful retry after network restored reaches order confirmation
+[STATE] Only one order in history and admin — no duplicate from timeout","[API] Only one createOrderFromCart GraphQL mutation per user action — no automatic retries that could cause duplicates
+[CONSOLE] No internal server error details leaked to console or UI
+[ADMIN] Single order in admin after successful retry","Internal server error message exposed to user; form inaccessible after timeout requiring page refresh; duplicate order created from timeout + retry scenario; timeout produces no user feedback","Cancel order via admin; ensure no duplicate orders","Coverage Gap Analysis",Manual
+PAY-DECLINE-004,Declined Card - Double-Click Prevention After Error,Declined Cards,High,"BL-PAY-003, BL-PAY-005","ECL-1.2, ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- Payment just returned a decline error — user is on payment step with error message visible
+- DevTools Network tab open and recording","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[KEY] Begin from declined payment state — error visible, no page reload, form fields intact
+[ACT] Without clearing the form: rapidly double-click or triple-click 'Place Order'
+[WAIT] Wait for all network activity to settle
+[ASSERT] Only ONE payment request is sent per action — not multiple rapid-fire requests
+[ASSERT] 'Place Order' button is disabled immediately after first click
+[ASSERT] Button re-enables after payment response received (allowing deliberate retry)
+[ASSERT] No additional orders created beyond what the single payment request would produce","[STATE] 'Place Order' button disabled immediately after first click even following a decline
+[NETWORK] Only one payment/order request per click sequence — no duplicate requests
+[STATE] Button re-enables after response (enabling intentional retry)","[API] Only one createOrderFromCart GraphQL mutation per click sequence visible in DevTools
+[ADMIN] No duplicate orders created from rapid clicking after decline","Button not disabled after click following decline — multiple payment requests sent; multiple duplicate auth requests in Network tab; button requires page reload to re-enable after decline","none — verify no spurious orders; cancel any created via admin","Coverage Gap Analysis",Manual
+PAY-DECLINE-005,Declined Card - Cart and Checkout State Preserved,Declined Cards,Critical,"BL-PAY-005, BL-PAY-003","ECL-9.1, ECL-14.6","- Logged in as registered user
+- Cart has at least one item with specific quantity
+- All checkout steps completed through to payment (address, shipping method selected)
+- Payment submitted using a known-decline test card","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; proceed through checkout — enter shipping address, select shipping method, reach payment step
+[KEY] Note the cart contents, item quantities, shipping address, and shipping method before payment
+[ACT] Submit payment using known-decline test card; wait for decline response
+[ASSERT] Error message displayed for decline
+[ACT] Observe cart — navigate to cart page or review checkout summary
+[ASSERT] Cart still contains all original items with correct quantities
+[NAV] Review shipping address in checkout
+[ASSERT] Shipping address is preserved — not reset to default or cleared
+[NAV] Review shipping method selection
+[ASSERT] Shipping method selection preserved — not reset","[STATE] Cart items and quantities unchanged after payment decline
+[STATE] Shipping address preserved after payment decline — user need not re-enter
+[STATE] Shipping method selection preserved after payment decline
+[DOM] Checkout progress indicator shows user still in payment step (not reset to start)","[API] createOrderFromCart GraphQL mutation errors[] confirms no order created
+[ADMIN] No new order in admin for this cart session","Cart cleared after decline — items lost requiring re-add; shipping address reset requiring re-entry; shipping method cleared requiring re-selection; user navigated back to checkout start","none — no order created; verify cart state is clean for next test","Coverage Gap Analysis",Manual

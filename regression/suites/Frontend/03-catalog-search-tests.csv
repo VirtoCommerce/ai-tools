@@ -1,564 +1,849 @@
-ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
-CAT-001,Category Navigation - Main Menu,Catalog > Navigation,Functional,High,3m,"User logged in, catalog populated","1. Hover over main menu
-2. Verify category dropdown appears
-3. Click on top-level category
-4. Verify category page loads","- Menu displays categories
-- Subcategories visible on hover
-- Category page loads correctly",regression-qa-theme-26.csv,Automated
-CAT-002,Category Page - Product Grid View,Catalog > Display,Functional,High,3m,"Category with products exists","1. Navigate to category
-2. Click Grid view icon
-3. Verify product cards display","- Products shown in grid layout
-- Image, name, price visible
-- Add to cart button present",regression-qa-theme-26.csv,Automated
-CAT-003,Category Page - Product List View,Catalog > Display,Functional,High,3m,"Category with products exists","1. Navigate to category
-2. Click List view icon
-3. Verify list layout","- Products shown in list format
-- More details visible per product
-- Actions accessible",regression-qa-theme-26.csv,Automated
-CAT-004,Category - Facet Filtering,Catalog > Filters,Functional,High,5m,"Category with faceted products","1. Navigate to category with facets
-2. Click on a facet value (e.g., Brand)
-3. Verify products filter
-4. Apply additional facet
-5. Verify combined filtering","- Facet panel visible
-- Clicking facet filters results
-- Multiple facets combine
-- Result count updates",regression-qa-theme-26.csv,Automated
-CAT-005,Category - Price Range Filter,Catalog > Filters,Functional,High,5m,"Products with varying prices","1. Navigate to category
-2. Locate price range filter
-3. Set min and max values
-4. Apply filter
-5. Verify filtered results","- Price slider/inputs work
-- Results filtered to range
-- Products outside range hidden",regression-qa-theme-26.csv,Automated
-CAT-006,Category - Clear Filters,Catalog > Filters,Functional,Medium,3m,"Filters applied to category","1. Apply multiple filters
-2. Click 'Clear all' or 'Reset'
-3. Verify filters removed","- All filters cleared
-- Full product list restored
-- Filter UI reset",regression-qa-theme-26.csv,Automated
-CAT-007,Category - Sorting Options,Catalog > Sorting,Functional,Medium,5m,"Category with multiple products","1. Navigate to category
-2. Open sort dropdown
-3. Select 'Price: Low to High'
-4. Verify order
-5. Select 'Price: High to Low'
-6. Verify reverse order","- Sort options available
-- Products reorder correctly
-- Sort persists on pagination",regression-qa-theme-26.csv,Automated
-CAT-008,Category - Pagination,Catalog > Pagination,Functional,Medium,5m,"Category with 20+ products","1. Navigate to category
-2. Scroll to pagination
-3. Click page 2
-4. Verify new products load
-5. Click Previous
-6. Verify return to page 1","- Pagination controls visible
-- Pages load correctly
-- Product count consistent",regression-qa-theme-26.csv,Automated
-CAT-009,Category - Products Per Page,Catalog > Pagination,Functional,Low,3m,"Category with many products","1. Navigate to category
-2. Change 'per page' dropdown
-3. Select different value (e.g., 24)
-4. Verify more products display","- Per page options available
-- Product count changes
-- URL/state updates",regression-qa-theme-26.csv,Automated
-CAT-010,Product Detail - Basic Info,Catalog > Product,Functional,High,3m,"Product exists in catalog","1. Navigate to product detail page
-2. Verify all info displays","- Product name correct
-- Price displayed
-- Description visible
-- Images load
-- SKU shown",regression-qa-theme-26.csv,Automated
-CAT-011,Product Detail - Image Gallery,Catalog > Product,Functional,Medium,3m,"Product with multiple images","1. View product page
-2. Click thumbnail images
-3. Verify main image changes
-4. Click zoom/enlarge","- Thumbnails clickable
-- Main image updates
-- Zoom functionality works",regression-qa-theme-26.csv,Automated
-CAT-012,Product Variations - B2C Style,Catalog > Variations,Functional,High,5m,"Product with variations (size/color)","1. Navigate to configurable product
-2. Select color option
-3. Select size option
-4. Verify price updates
-5. Add to cart","- Variation selectors display
-- Price reflects selections
-- Correct variant added to cart",tests/B2C-Variations,Automated
-CAT-013,Product - Related Products,Catalog > Product,Functional,Low,3m,"Product with related items","1. View product detail page
-2. Scroll to related products
-3. Verify recommendations display","- Related products section visible
-- Products are relevant
-- Can navigate to related",regression-qa-theme-26.csv,Automated
-CAT-014,Filter Chips - Facet Filter Chip Display,Catalog > Filters > Chips,Functional,High,5m,"Category with faceted products","1. Navigate to category
-2. Apply a facet filter (e.g., Brand)
-3. Verify chip appears with filter name
-4. Verify close (×) button on chip
-5. Verify product count updates","- Chip displays with correct label
-- Close button functional
-- Product count accurate
-- Chip removal updates URL",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
-CAT-015,Filter Chips - Checkbox Control Chips (Show in stock),Catalog > Filters > Chips,Functional,High,3m,"Category page with stock filter","1. Toggle 'Show in stock' checkbox
-2. Verify chip appears labeled 'Show in stock'
-3. Verify close button removes only this filter
-4. Verify product count updates","- Chip appears/disappears with checkbox toggle
-- Individual close button works
-- Only this filter removed
-- Other filters preserved",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
-CAT-016,Filter Chips - Checkbox Control Chips (Purchased before),Catalog > Filters > Chips,Functional,High,3m,"Category page, user has purchase history","1. Toggle 'Purchased before' checkbox
-2. Verify chip appears
-3. Verify close button removes filter
-4. Verify product count updates","- Chip appears for purchased before filter
-- Removable via close button
-- Filter state syncs with checkbox
-- Product count accurate",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
-CAT-017,Filter Chips - Checkbox Control Chips (Available at branches),Catalog > Filters > Chips,Functional,High,3m,"Category page with branch selection enabled","1. Select branches in 'Available at branches'
-2. Verify chip appears with branch count
-3. Verify close button removes filter
-4. Verify product count updates","- Chip shows branch count
-- Removable via close button
-- All selected branches cleared
-- Product count accurate",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
-CAT-018,Reset Filters - Combined Facet + Checkbox Reset,Catalog > Filters > Reset,Functional,Critical,5m,"Category page with multiple filter types","1. Apply facet filter (e.g., Brand)
-2. Toggle 'Show in stock' checkbox
-3. Verify multiple chips appear
-4. Click 'Reset filters' button
-5. Verify ALL filters cleared","- All chips removed
-- All checkboxes unchecked
-- URL cleaned (no filter params)
-- Full product list restored
-- Reset button disappears when no filters",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
-CAT-019,Reset Filters - Zero Results State,Catalog > Filters > Reset,Functional,Critical,3m,"Category page with filters available","1. Apply filters until 0 products shown
-2. Verify 'No results' message displays
-3. Verify 'Reset filters' button appears prominently
-4. Click reset button
-5. Verify product list restored","- Reset button visible below no-results message
-- Button prominently displayed
-- Clicking restores full product list
-- All filters cleared",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
-CAT-020,Reset Filters - Category Page Context Preserved,Catalog > Filters > Reset,Functional,High,3m,"On category page (/printers)","1. Navigate to category page (e.g., /printers)
-2. Apply multiple filters
-3. Click 'Reset filters' button
-4. Verify still on same category page
-5. Verify category products restored","- Stays on same category page (NOT redirected to /catalog)
-- Category context preserved
-- Category products restored
-- URL shows category path",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
-CAT-021,Reset Filters - Search Results Preserve Search Term,Search > Filters > Reset,Functional,High,3m,"Search executed with term 'printer'","1. Search for 'printer'
-2. Apply filters on search results
-3. Click 'Reset filters' button
-4. Verify search term preserved
-5. Verify filters cleared","- Filters cleared
-- Search term remains in search bar
-- Search results restored (without filters)
-- URL shows search term, no filter params",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
-CAT-022,Filter Chips - Individual Close vs Reset All,Catalog > Filters > Chips,Functional,High,5m,"Category page with multiple filters","1. Apply 3+ filters (mix facet + checkbox)
-2. Close ONE chip via × button
-3. Verify only that filter removed
-4. Close another chip
-5. Use Reset button for remaining filters","- Individual close removes single filter only
-- Other filters preserved after single close
-- Reset button clears all remaining filters
-- Product count updates after each action",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
-CAT-023,Filters - Browser Back/Forward Navigation,Catalog > Filters > Navigation,Functional,Medium,5m,"Category page with filters","1. Apply filter A
-2. Apply filter B
-3. Press browser Back button
-4. Verify filter B removed
-5. Press browser Forward button
-6. Verify filter B restored","- Browser history correctly tracks facet filter URL params
-- Back button removes last filter
-- Forward button restores filter
-- Chips sync with browser navigation",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
-CAT-024,Filters - Page Refresh Preserves State,Catalog > Filters > Navigation,Functional,Medium,3m,"Category page with filters applied","1. Apply multiple filters
-2. Refresh page (F5 or Ctrl+R)
-3. Verify filters preserved from URL
-4. Verify chips render correctly
-5. Verify reset button works","- Filter state persisted via URL params
-- Chips render after refresh
-- Checkboxes checked correctly
-- Reset button functional after refresh",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
-CAT-025,Filters - Multi-select Within Facet Group,Catalog > Filters,Functional,High,5m,"Category with multi-value facets","1. Select 2+ values in same facet (e.g., Brand: HP + Epson)
-2. Verify separate chips for each value
-3. Verify facet header shows count
-4. Close one chip via × button
-5. Verify only that value removed","- Individual chips per facet value
-- Facet header shows selected count (e.g., Brand (2))
-- Individual chip removal works
-- Other values in same facet preserved
-- Product count updates",tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
-CAT-026,Facet Filter Badge - Size xs Renders Legibly,Catalog > Filters > Badge,Visual,High,3m,"Category with faceted filters, products available","1. Navigate to category page with facets
-2. Apply a facet filter (e.g. Brand)
-3. Locate the filter chip that appears
-4. Observe the badge element showing the count or filter indicator
-5. Verify the badge is readable and clearly visible","- Badge renders at xs size (smaller than previous sm)
-- Badge text is legible (not clipped or overflowing)
-- Badge has sufficient visual contrast against background
-- Badge shape and padding are correct",VCST-4623,Manual
-CAT-027,Facet Filter Badge - Double-Digit Count Uses Correct Padding,Catalog > Filters > Badge,Functional,High,3m,"Category with many filter values available","1. Navigate to category with many filterable values
-2. Apply 10 or more values from the same facet group
-3. Observe the facet header badge showing the count","- Badge shows double-digit count (e.g. '10', '12')
-- Badge width expands to fit double-digit count (px-1 dynamic padding)
-- Count not clipped or truncated
-- Badge remains proportionally correct",VCST-4623,Manual
-CAT-028,Category Selector Badge - Size xs Renders Correctly,Catalog > Category Selector > Badge,Visual,High,3m,"Category selector component visible (category navigation)","1. Navigate to a top-level category page that shows subcategory navigation
-2. Locate the category selector component
-3. Observe count badges on category items","- Category item count badges render at xs size
-- Badge count is readable
-- No layout overflow from smaller badge
-- Badge consistent in appearance across different category items",VCST-4623,Manual
-CAT-029,Facet Filter Badge - WCAG Contrast at xs Size,Catalog > Filters > Badge > Accessibility,Accessibility,High,5m,"Category with facets, browser contrast checker or DevTools","1. Navigate to category page with facets
-2. Apply a filter to show filter chip with badge
-3. Use browser DevTools or accessibility checker to measure badge text contrast ratio","- Badge text contrast ratio >= 4.5:1 against badge background (WCAG AA for normal text)
-- Contrast maintained despite xs size reduction
-- Badge meets WCAG 2.1 Level AA",VCST-4623,Manual
-SRCH-001,Search - Basic Query,Search > Basic,Functional,High,3m,"Catalog has searchable products","1. Click search bar
-2. Enter product name 'laptop'
-3. Press Enter
-4. Verify results","- Search executes
-- Results page displays
-- Matching products shown
-- Result count visible",regression-qa-theme-26.csv,Automated
-SRCH-002,Search - Suggestions Dropdown,Search > Suggestions,Functional,Medium,3m,"Search configured with suggestions","1. Click search bar
-2. Start typing 'lap'
-3. Wait for suggestions
-4. Verify dropdown appears","- Suggestions appear while typing
-- Products match partial query
-- Can click suggestion",regression-qa-theme-26.csv,Automated
-SRCH-003,Search - No Results,Search > Edge Cases,Functional,Medium,2m,"N/A","1. Enter nonsense query 'xyzabc123'
-2. Execute search
-3. Verify empty state","- No results message displayed
-- Suggests alternatives
-- No errors",regression-qa-theme-26.csv,Automated
-SRCH-004,Search - Special Characters,Search > Edge Cases,Functional,Medium,3m,"N/A","1. Search for queries with special chars:
-   - 'test & test'
-   - 'product (new)'
-   - 'item #123'
-2. Verify handling","- Special characters handled
-- No errors or crashes
-- Appropriate results",regression-qa-theme-26.csv,Automated
-SRCH-005,Search - Within Category,Search > Scoped,Functional,Medium,3m,"Inside a category page","1. Navigate to specific category
-2. Use search while in category
-3. Verify scoped results","- Search scoped to category
-- Results from current category only
-- Clear indication of scope",regression-qa-theme-26.csv,Automated
-SRCH-006,Search - Filters on Results,Search > Filters,Functional,High,5m,"Search returns multiple products","1. Execute search query
-2. Apply facet filter
-3. Apply price filter
-4. Verify combined results","- Filters available on search results
-- Filters combine correctly
-- Count updates",regression-qa-theme-26.csv,Automated
-SRCH-007,Search - Sorting Results,Search > Sorting,Functional,Medium,3m,"Search returns multiple products","1. Execute search
-2. Change sort order
-3. Verify products reorder","- Sort options on search results
-- Products sort correctly
-- Relevance option available",regression-qa-theme-26.csv,Automated
-SRCH-008,Search - History,Search > History,Functional,Low,3m,"Previous searches performed","1. Click search bar
-2. Verify recent searches show
-3. Click on history item
-4. Verify search executes","- Search history displayed
-- Can select from history
-- History clears on request",regression-qa-theme-26.csv,Automated
-SRCH-009,Organization Search - Find Org,Search > Organization,Functional,Medium,5m,"Multiple organizations exist","1. Navigate to organization search
-2. Enter organization name
-3. Verify results
-4. Click on organization","- Organization search available
-- Results match query
-- Can view org details",tests/VCST-4357-org-search,Automated
-SRCH-010,Organization Search - Filters,Search > Organization,Functional,Medium,5m,"Organizations with different attributes","1. Search organizations
-2. Apply industry filter
-3. Apply location filter
-4. Verify filtered results","- Org filters available
-- Filters work correctly
-- Combined filtering works",tests/VCST-4357-org-search,Automated
-SRCH-NEW-001,Search Bar - Click Opens Dropdown Empty State,Search > Dropdown,Functional,Critical,2m,"Storefront open at homepage; search input has no text","1. Locate the search input labeled 'Search' in main navigation
-2. Click the search input","- Dropdown opens below the input
-- 'Hints' section visible with 1+ prior search terms as clickable buttons
-- Each hint shows a search icon and query text
-- 'Start typing to search' text visible
-- 'Check all products' link visible pointing to /catalog
-- No product results shown yet
-- CONSOLE: No JavaScript errors
-- NETWORK: No failed API calls",E2E-SEARCH-005,Manual
-SRCH-NEW-002,Search Bar - Autocomplete Shows Product Previews While Typing,Search > Autocomplete,Functional,Critical,3m,"Storefront open; products matching 'hoodie' exist in catalog","1. Click the search input
-2. Type 'hoodie' one character at a time
-3. Wait for dropdown update after each character
-4. Observe final dropdown with all 6 characters typed","- 'Products' section appears in dropdown
-- Each entry: thumbnail image + product name (clickable link) + price
-- At least 4 products shown
-- 'Hints' section remains visible above Products
-- Clear (X) button appears in input
-- NETWORK: GraphQL searchProducts query fires with keyword: 'hoodie'
-- CONSOLE: No JS errors","E2E-SEARCH-005, SRCH-002",Manual
-SRCH-NEW-003,Search Bar - Hints Section Shows Prior Searches on Focus,Search > Hints,Functional,High,3m,"At least 2 prior searches exist ('laptop' and 'hoodie' are visible as hints)","1. Click the search input
-2. Observe the 'Hints' section label
-3. Observe hint items (icon + text)
-4. Click the hint button labeled 'laptop'","- Section labeled exactly 'Hints'
-- Each hint is a button with search icon and query text
-- Clicking 'laptop' populates input with 'laptop'
-- Browser navigates to /search?q=laptop
-- Search results for 'laptop' display","E2E-SEARCH-003, SRCH-008",Manual
-SRCH-NEW-004,Search Bar - Clear Button Resets Input to Empty,Search > Input Controls,Functional,High,2m,"Storefront open at any page","1. Click the search input
-2. Type 'hoodie'
-3. Verify clear (X) button appears
-4. Click the clear (X) button","- After typing: clear button visible; input contains 'hoodie'
-- After click: input is empty
-- Dropdown returns to 'Hints' state
-- Clear button disappears
-- User stays on same page",,Manual
-SRCH-NEW-005,Search Bar - Clicking Autocomplete Product Navigates to PDP,Search > Autocomplete,Functional,Critical,3m,"Storefront open at homepage; 'Vintage Colorado Hoodie' in catalog","1. Click the search input
-2. Type 'hoodie'
-3. Wait for autocomplete product results
-4. Click 'Vintage Colorado Hoodie' in the dropdown","- Browser navigates to PDP for Vintage Colorado Hoodie
-- PDP loads with correct product name
-- Search dropdown closes
-- No JavaScript errors",E2E-SEARCH-005,Manual
-SRCH-NEW-006,Search Bar - Check All Products Link Goes to Catalog,Search > Dropdown,Functional,Low,2m,"Storefront open at homepage","1. Click the search input (do not type)
-2. Verify 'Check all products' link is visible
-3. Click 'Check all products'","- Browser navigates to /catalog
-- Full product catalog page loads
-- Dropdown closes",,Manual
-SRCH-NEW-007,Search - Submit via Enter Key,Search > Submission,Functional,Critical,2m,"Storefront open at any page","1. Click the search input
-2. Type 'hoodie'
-3. Press the Enter key","- Browser navigates to /search?q=hoodie
-- Results page loads with heading showing result count
-- 'hoodie' is bold/emphasized in heading
-- Search input retains 'hoodie'
-- Products displayed in grid view by default","E2E-SEARCH-001, SRCH-001",Manual
-SRCH-NEW-008,Search - Submit via Search Button (Magnifier Icon),Search > Submission,Functional,Critical,2m,"Storefront open at any page","1. Click the search input
-2. Type 'hoodie'
-3. Click the 'Search' button (magnifier icon)","- Browser navigates to /search?q=hoodie
-- Results page loads identically to Enter key submission
-- Same products and count as SRCH-NEW-007",,Manual
-SRCH-NEW-009,Search Results - Result Count in Heading Is Accurate,Search > Results Page,Functional,High,2m,"Navigate to /search?q=hoodie","1. Navigate to /search?q=hoodie
-2. Read the page heading
-3. Count the product cards in the grid","- h1 heading shows correct result count
-- Count in heading matches actual number of product cards rendered",,Manual
-SRCH-NEW-010,Search Results - Grid and List View Toggle,Search > Results Page > Layout,Functional,High,3m,"Navigate to /search?q=hoodie (4 results)","1. Navigate to /search?q=hoodie
-2. Confirm default grid layout
-3. Click 'Switch to list view'
-4. Verify list layout
-5. Click 'Switch to grid view'
-6. Verify grid returns","- Default is grid view
-- List view: single-column format
-- Grid view: multi-column layout
-- Product count consistent across view switches
-- No JS errors during switching",,Manual
-SRCH-NEW-011,Search Results - Sort Options Change Product Order,Search > Sorting,Functional,High,5m,"Navigate to /search?q=hoodie (multiple results with varying prices)","1. Navigate to /search?q=hoodie
-2. Note sort dropdown (default: 'Featured')
-3. Select 'Price: Low to High'
-4. Record product order
-5. Select 'Price: High to Low'
-6. Verify reversed order
-7. Select alphabetical sort
-8. Verify A-Z order","- Price Low to High: ascending order
-- Price High to Low: descending order
-- Alphabetical: A-Z by name
-- Product count unchanged after each sort
-- URL updates to reflect sort",SRCH-007,Manual
-SRCH-NEW-012,Search Results - Show in Stock Checkbox Default and Toggle,Search > Filters > Checkboxes,Functional,High,3m,"Navigate to /search?q=hoodie","1. Verify 'Show in stock' is checked by default
-2. Verify chip in chip bar
-3. Uncheck 'Show in stock'
-4. Observe chip bar and results
-5. Re-check 'Show in stock'","- 'Show in stock' checked on page load
-- Chip present in chip bar
-- Unchecking removes chip; result count may change
-- Re-checking restores chip and results",,Manual
-SRCH-NEW-013,Search Results - Purchased Before Checkbox,Search > Filters > Checkboxes,Functional,Medium,3m,"User authenticated with prior purchases; navigate to /search?q=hoodie","1. Verify 'Purchased before' unchecked by default
-2. Check 'Purchased before'
-3. Verify chip appears
-4. Verify results filter to prior purchases
-5. Uncheck
-6. Verify full results return","- Defaults to unchecked
-- Checking adds chip and filters to prior purchases
-- Unchecking removes chip and restores all results",,Manual
-SRCH-NEW-014,Search Results - Sidebar Facet Filter,Search > Filters > Sidebar,Functional,High,5m,"Navigate to /search?q=hoodie; sidebar shows Color facet","1. Expand 'Color' facet group
-2. Select a color value
-3. Observe chip bar and result count
-4. Verify chip appears
-5. Click 'Close chip'
-6. Verify full results return","- Sidebar facets are expandable
-- Selecting a value creates a chip
-- Product list updates to matching items
-- Close chip removes filter and restores count",SRCH-006,Manual
-SRCH-NEW-015,Search Results - Reset Filters Preserves Search Term,Search > Filters > Reset,Functional,High,3m,"Navigate to /search?q=hoodie; apply sidebar facet filter","1. Apply a sidebar facet filter
-2. Verify 'Reset filters' button visible
-3. Click 'Reset filters'","- All filters cleared
-- Search term 'hoodie' remains in header input
-- URL retains ?q=hoodie; filter params removed
-- Full result set restored",CAT-021,Manual
-SRCH-NEW-016,Search - No Results State UI Validation,Search > No Results,Functional,Critical,2m,"Storefront is accessible","1. Navigate to /search?q=xyzqwerty9876543","- h1 shows sorry message with query term bold
-- 'There are no results found' message visible
-- 'Reset search' button visible
-- No product cards or sidebar filters shown
-- No 'Did you mean...?' suggestion","E2E-SEARCH-004, SRCH-003",Manual
-SRCH-NEW-017,Search - Reset Search Button Clears Query,Search > No Results,Functional,High,2m,"On no-results page /search?q=xyzqwerty9876543","1. Verify no-results state
-2. Click 'Reset search'","- Search input cleared
-- User redirected from no-results page
-- No JavaScript errors",,Manual
-SRCH-NEW-018,Search - Whitespace-Only Query Handling,Search > Edge Cases,Functional,High,2m,"Storefront open at any page","1. Click search input
-2. Type '   ' (3 spaces)
-3. Press Enter","- Submission blocked or user lands on no-results/catalog page
-- No crash or JS error
-- No 5xx response",,Manual
-SRCH-NEW-019,Search - Very Long Query (200+ Characters),Search > Edge Cases,Functional,Medium,2m,"Storefront open at any page","1. Type 200 repeated 'a' characters
-2. Press Enter","- Input accepts long string or enforces max-length
-- No JS or server error
-- URL is properly URL-encoded",,Manual
-SRCH-NEW-020,Search - XSS Script Injection in Input,Search > Security,Security,Critical,3m,"Storefront is accessible","1. Type: <script>alert('xss')</script>
-2. Press Enter
-3. Check for alert dialog
-4. Check console","- No alert dialog appears
-- Script not executed
-- URL encodes input
-- Heading displays query as literal text",E2E-SEC-002,Manual
-SRCH-NEW-021,Search - SQL Injection Attempt,Search > Security,Security,High,2m,"Storefront is accessible","1. Type: ' OR '1'='1
-2. Press Enter","- No database error or stack trace
-- Query handled gracefully
-- API returns 200
-- No console errors",E2E-SEC-002,Manual
-SRCH-NEW-022,Search - Special Characters Are URL-Encoded Correctly,Search > Edge Cases,Functional,High,3m,"Storefront open at any page","1. Search for 'hoodie & jeans'
-2. Search for 'product (new)'
-3. Search for 'item #123'","- Ampersand, parentheses, hash properly URL-encoded
-- All searches load without errors
-- Heading shows decoded query text",SRCH-004,Manual
-SRCH-NEW-023,Search - Direct URL Navigation with Query Parameter,Search > URL Navigation,Functional,High,2m,"Storefront is accessible","1. Navigate directly to /search?q=hoodie in a new tab","- Results page loads without prior homepage visit
-- Search input pre-populated with 'hoodie'
-- Correct results displayed
-- Filters and sort functional",E2E-SEARCH-001,Manual
-SRCH-NEW-024,Search - Empty Query Parameter Loads Catalog,Search > URL Navigation,Functional,Medium,2m,"Storefront is accessible","1. Navigate to /search?q=","- Page loads without error
-- Products displayed (catalog-style)
-- Search input empty",,Manual
-SRCH-NEW-025,Search Bar - Keyboard-Only Navigation,Search > Accessibility,Accessibility,High,5m,"Storefront open; keyboard-only operation","1. Tab to search input
-2. Verify focus indicator
-3. Type 'hoodie'
-4. Arrow Down into dropdown
-5. Navigate hints with Arrow keys
-6. Enter on hint item
-7. Escape to close without submitting","- Search reachable via Tab
-- Visible focus indicator
-- Arrow keys navigate dropdown
-- Enter executes search from hint
-- Escape closes dropdown
-- No keyboard trap","WCAG 2.1 AA 2.1.1, 2.4.3",Manual
-SRCH-NEW-026,Search Bar - ARIA Roles and Labels,Search > Accessibility,Accessibility,High,5m,"Storefront open; DevTools Accessibility panel available","1. Inspect search input role and name
-2. Inspect Barcode scan button name
-3. Inspect Search button name
-4. Inspect clear (X) button name
-5. Inspect dropdown container role","- Input: role=searchbox, name=Search
-- Buttons have correct accessible names
-- Dropdown uses role=listbox or equivalent
-- All interactive elements have accessible names","WCAG 2.1 AA 4.1.2",Manual
-SRCH-NEW-027,Search - Autocomplete Response Time Under 2 Seconds,Search > Performance,Performance,Medium,5m,"DevTools Network tab open","1. Type 'hoodie' in search input
-2. Measure time to autocomplete appearance
-3. Check GraphQL request duration","- Autocomplete results within 2 seconds
-- GraphQL call under 1500ms
-- No loading spinner over 2 seconds",,Manual
-SRCH-NEW-028,Search - Results Page Load Time Under 3 Seconds,Search > Performance,Performance,Medium,5m,"DevTools Network tab open; no throttling","1. Navigate to /search?q=hoodie (fresh)
-2. Measure time to full render","- Full render within 3 seconds
-- Heading visible within 2 seconds
-- No major layout shift
-- All requests return 200",,Manual
-SRCH-NEW-029,Search Bar - Firefox Compatibility,Search > Cross-Browser,Compatibility,Medium,5m,"Firefox via playwright-firefox","1. Open homepage in Firefox
-2. Search for 'hoodie'
-3. Verify autocomplete and results page","- Search works identically to Chrome
-- No Firefox-specific errors or layout breaks",,Manual
-SRCH-NEW-030,Search Bar - Edge Compatibility,Search > Cross-Browser,Compatibility,Medium,5m,"Edge via playwright-edge","1. Open homepage in Edge
-2. Search for 'hoodie'
-3. Verify autocomplete and results page","- Identical behavior to Chrome
-- No Edge-specific issues",,Manual
-SRCH-NEW-031,Search Bar - Mobile Viewport 375px,Search > Mobile,Functional,High,5m,"Chrome DevTools emulation at 375px","1. Set viewport to 375px
-2. Verify search input visible
-3. Tap search input
-4. Type 'hoodie'
-5. Verify autocomplete readable
-6. Tap a product","- Search functional at 375px
-- Dropdown fits within viewport
-- Product names readable
-- Navigation to PDP works",,Manual
-SRCH-NEW-032,Search - Mobile Results Page Layout 375px,Search > Mobile,Functional,High,5m,"375px viewport; navigate to /search?q=hoodie","1. Verify heading readable
-2. Verify 1-2 column grid
-3. Verify sort accessible
-4. Verify filters accessible
-5. Verify touch targets >= 44x44px","- Heading readable
-- Grid adapts to 1-2 columns
-- Sort/filters accessible without horizontal scroll
-- Touch targets meet minimum size",,Manual
-SRCH-NEW-033,Search - GA4 search Event Fires on Query Submission,Search > Analytics,Functional,Medium,5m,"DevTools Console open; GTM configured","1. Run window.dataLayer to confirm
-2. Search for 'hoodie'
-3. Check dataLayer for search event","- search event found with search_term: 'hoodie'
-- No GA4 or GTM errors",E2E-GA-004,Manual
-SRCH-NEW-034,Search - GA4 view_search_results Event on Results Page,Search > Analytics,Functional,Medium,5m,"DevTools Console open","1. Navigate to /search?q=hoodie
-2. Check dataLayer for view_search_results event","- view_search_results event found with search_term: 'hoodie'
-- No GA4 or GTM errors",E2E-GA-004,Manual
-SRCH-NEW-035,Search to Cart - Full End-to-End Flow,Search > E2E,Functional,Critical,10m,"User authenticated; cart at known state","1. Search for 'hoodie' via Enter
-2. Locate 'Vintage Colorado Hoodie' ($54.00)
-3. Click '+' to add to cart
-4. Verify cart badge increments
-5. Navigate to cart
-6. Verify product in cart at correct price","- Search finds product
-- Add-to-cart works from search results
-- Cart shows correct product, price, quantity
-- No errors during entire flow","E2E-SEARCH-001, BL-CART",Manual
-SRCH-NEW-036,Search - Browser Back Returns to Results Page,Search > Navigation,Functional,High,3m,"User navigated from search results to a PDP","1. Navigate to /search?q=hoodie
-2. Click a product to open PDP
-3. Click browser Back button","- Returns to /search?q=hoodie
-- Same results displayed
-- Search input still shows 'hoodie'
-- Product cards visible",E2E-SEARCH-001,Manual
-
-CAT-035,Brands Page Loads,Catalog > Brands,Functional,Medium,3m,"Store has brand data configured, brands page enabled","1. Navigate to /Brands
-2. Verify page loads completely
-3. Check for brand list or grid layout
-4. Check browser console for JavaScript errors","- /Brands page loads without errors
-- Brand list or grid displayed
-- Each brand entry shows brand name (and logo/image if configured)
-- No JavaScript console errors
-- Page title or heading confirms Brands context",Coverage Gap Analysis,Generated
-CAT-036,Brand Navigation,Catalog > Brands,Functional,Medium,4m,"Brands page loaded, at least one brand with products exists","1. Navigate to /Brands
-2. Click on a brand entry
-3. Verify the resulting product listing page
-4. Verify all listed products belong to the selected brand","- Clicking brand navigates to a brand-filtered product listing page
-- Page heading or breadcrumb shows selected brand name
-- All displayed products are associated with that brand
-- Facet filters available on the brand result page
-- URL reflects brand filter context",Coverage Gap Analysis,Generated
-CAT-037,Brand Product Count,Catalog > Brands,Functional,Medium,4m,"Brands page loaded, brands have known product counts","1. Navigate to /Brands
-2. Locate a brand entry that shows a product count badge or label
-3. Note the displayed count
-4. Click on the brand
-5. Count or compare the number of products in the resulting listing","- Brand entry shows product count (e.g., 24 products)
-- Clicking the brand opens listing with matching product count
-- Product count on brand listing matches count displayed on Brands page
-- Count updates if product availability changes (zero-count brands hidden or marked)",Coverage Gap Analysis,Generated
-CAT-030,Add to Compare,Catalog > Compare,Functional,High,4m,"User on a category page, product comparison feature enabled, at least 2 comparable products visible","1. Navigate to a category page with product cards
-2. Locate the 'Compare' icon or checkbox on a product card
-3. Click 'Compare' on the first product
-4. Verify the product is added to the compare bar at the bottom or side of the page
-5. Verify the compare bar count increments to 1","- 'Compare' icon or checkbox is visible on product card (hover or always shown)
-- Clicking adds the product to the compare bar
-- Compare bar appears or updates at the bottom of the page
-- Compare bar shows the added product's name/thumbnail
-- Compare bar count shows 1",Coverage Gap Analysis,Generated
-CAT-031,Compare Page Display,Catalog > Compare,Functional,High,5m,"2 or more products added to the compare bar","1. Add 2 or more products to compare via category page
-2. Click 'Compare' in the compare bar or navigate to /compare
-3. Verify the compare page loads
-4. Verify products are displayed side by side
-5. Verify specs/attributes are shown in rows for comparison","- Compare page loads at /compare or similar URL
-- Products are displayed in a side-by-side column layout
-- Product names, images, and prices are shown at the top of each column
-- Specification attributes (e.g., size, weight, material, warranty) are listed in rows
-- Differences between products are visually highlighted (if feature supported)
-- Each product has an 'Add to Cart' button on the compare page",Coverage Gap Analysis,Generated
-CAT-032,Compare Limit,Catalog > Compare,Functional,Medium,4m,"Category page with the compare feature active, currently comparing the maximum allowed products","1. Add products to compare until the maximum is reached (check for a limit, typically 3 or 4)
-2. Attempt to add one more product beyond the limit
-3. Verify a limit message is displayed
-4. Verify the extra product is not added","- System enforces a maximum number of comparable products (e.g., 3 or 4)
-- Attempting to add beyond the limit shows a message: 'You can compare up to X products' or similar
-- The over-limit product is not added to the compare bar
-- Compare bar still shows only the allowed maximum number of products",Coverage Gap Analysis,Generated
-CAT-033,Remove from Compare,Catalog > Compare,Functional,Medium,3m,"2 or more products added to compare, on /compare page","1. Navigate to the compare page with 2+ products
-2. Locate the remove button (X or Remove) on one product column
-3. Click remove on one product
-4. Verify the removed product's column disappears
-5. Verify remaining products are still displayed","- Remove/close button is available per product on the compare page
-- Clicking remove eliminates that product's column from the comparison
-- Remaining products are still shown correctly
-- Compare bar count decrements to reflect the removal
-- If only 1 product remains, the page may show a prompt to add more for comparison",Coverage Gap Analysis,Generated
-CAT-034,Compare Empty State,Catalog > Compare,Functional,Medium,3m,"No products added to compare (fresh session or after clearing)","1. Navigate to /compare with no products in the compare bar (clear compare if needed)
-2. Observe the empty state on the compare page","- Compare page loads without error even with no products
-- Empty state UI is shown with a message: 'No products to compare' or similar
-- A call-to-action is displayed: 'Browse catalog' or 'Add products to compare' link
-- No broken layout or JavaScript errors
-- User can easily navigate back to catalog to add products",Coverage Gap Analysis,Generated
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+CAT-001,Category Navigation - Main Menu,Catalog > Navigation,High,BL-CAT-001,,User logged in; catalog populated,url={{FRONT_URL}},"[NAV] Navigate to {{FRONT_URL}}
+[ACT] Hover over main menu navigation
+[WAIT] Wait for category dropdown to appear
+[ASSERT] Verify dropdown is visible
+[ACT] Click on a top-level category
+[WAIT] Wait for category page to load
+[ASSERT] Verify category page content","[DOM] Main menu displays top-level categories
+[DOM] Subcategory items visible on hover
+[NAV] Category page loads with correct URL slug
+[DOM] Category heading matches selected category","[NETWORK] GET category page returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Spinner >5s; dropdown not appearing; category page returns 4xx; console TypeError",none,regression-qa-theme-26.csv,Automated
+CAT-002,Category Page - Product Grid View,Catalog > Display,High,BL-CAT-001,,Category with products exists,url={{FRONT_URL}},"[NAV] Navigate to any category page on {{FRONT_URL}}
+[ACT] Click 'Grid view' icon
+[WAIT] Wait for layout to update
+[ASSERT] Verify product cards display in grid","[DOM] Products shown in multi-column grid layout
+[DOM] Each card shows image, name, and price
+[DOM] Add to cart button present on each card","[NETWORK] no 4xx/5xx on category page request
+[CONSOLE] no TypeError or JS errors","Products not displaying; grid layout broken; images not loading; console TypeError",none,regression-qa-theme-26.csv,Automated
+CAT-003,Category Page - Product List View,Catalog > Display,High,BL-CAT-001,,Category with products exists,url={{FRONT_URL}},"[NAV] Navigate to any category page on {{FRONT_URL}}
+[ACT] Click 'List view' icon
+[WAIT] Wait for layout to update
+[ASSERT] Verify list layout renders","[DOM] Products shown in single-column list format
+[DOM] More detail visible per product compared to grid
+[DOM] Action buttons (Add to cart) accessible in list view","[NETWORK] no 4xx/5xx on layout toggle request
+[CONSOLE] no TypeError or JS errors","List layout not switching; products missing in list view; actions inaccessible; console TypeError",none,regression-qa-theme-26.csv,Automated
+CAT-004,Category - Facet Filtering,Catalog > Filters,High,BL-CAT-002,,Category with faceted products exists,url={{FRONT_URL}},"[NAV] Navigate to a category with facets on {{FRONT_URL}}
+[ASSERT] Verify facet panel is visible in sidebar
+[ACT] Click on a facet value (e.g., Brand)
+[WAIT] Wait for product list to update
+[ASSERT] Verify products are filtered; result count updates
+[ACT] Apply an additional facet value from another group
+[WAIT] Wait for product list to update
+[ASSERT] Verify combined AND filtering — result set narrower","[DOM] Facet panel visible with multiple facet groups
+[DOM] Clicking a facet value filters the product list
+[MATH] Multiple facets combine with AND logic — result count <= each individual filter count
+[DOM] Result count label updates after each filter action","[NETWORK] no 4xx/5xx on filter request
+[CONSOLE] no TypeError or JS errors","Spinner >5s after filter click; facet panel not rendering; result count unchanged after filter; console TypeError",none,regression-qa-theme-26.csv,Automated
+CAT-005,Category - Price Range Filter,Catalog > Filters,High,BL-CAT-002,,Products with varying prices exist in category,url={{FRONT_URL}},"[NAV] Navigate to a category page on {{FRONT_URL}}
+[ASSERT] Locate price range filter (slider or min/max inputs)
+[ACT] Set minimum price value
+[ACT] Set maximum price value
+[ACT] Apply or confirm the price range filter
+[WAIT] Wait for product list to update
+[ASSERT] Verify all displayed products fall within the specified range","[DOM] Price range slider or input fields present
+[MATH] All displayed product prices are within the set min/max range
+[DOM] Products outside price range are not shown
+[DOM] Result count updates to reflect filtered set","[NETWORK] no 4xx/5xx on price filter request
+[CONSOLE] no TypeError or JS errors","Price filter controls not rendering; products outside range still visible; result count unchanged; console TypeError",none,regression-qa-theme-26.csv,Automated
+CAT-006,Category - Clear Filters,Catalog > Filters,Medium,BL-CAT-004,,Filters applied to a category page,url={{FRONT_URL}},"[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Apply multiple filters (e.g., facet + price range)
+[WAIT] Wait for filtered results to load
+[ACT] Click 'Clear all' or 'Reset filters' button
+[WAIT] Wait for full product list to restore
+[ASSERT] Verify all filters are cleared and full list is shown","[DOM] All filter chips removed from chip bar
+[DOM] Full unfiltered product list restored
+[DOM] Filter sidebar UI reset — no values selected
+[STATE] URL cleaned of filter parameters","[NETWORK] no 4xx/5xx on reset request
+[CONSOLE] no TypeError or JS errors","Reset button not visible; filters remain after reset; products not restored; URL still contains filter params; console TypeError",none,regression-qa-theme-26.csv,Automated
+CAT-007,Category - Sorting Options,Catalog > Sorting,Medium,BL-CAT-005,,Category with multiple products,url={{FRONT_URL}},"[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Open sort dropdown
+[ASSERT] Verify sort options are present
+[ACT] select 'Price: Low to High' from sort dropdown
+[WAIT] Wait for products to reorder
+[ASSERT] Verify ascending price order
+[ACT] select 'Price: High to Low' from sort dropdown
+[WAIT] Wait for products to reorder
+[ASSERT] Verify descending price order
+[NAV] Click to page 2 of pagination
+[ASSERT] Verify sort order persists on page 2","[DOM] Sort dropdown visible with multiple options
+[STATE] Products reorder correctly for each sort selection
+[MATH] 'Price: Low to High' — first product price <= last product price
+[MATH] 'Price: High to Low' — first product price >= last product price
+[STATE] Sort state persists across pagination","[NETWORK] no 4xx/5xx on sort change request
+[CONSOLE] no TypeError or JS errors","Sort dropdown not rendering; products not reordering; sort not persisting on pagination; console TypeError",none,regression-qa-theme-26.csv,Automated
+CAT-008,Category - Pagination,Catalog > Pagination,Medium,BL-CAT-005,,Category with 20+ products,url={{FRONT_URL}},"[NAV] Navigate to a category page with 20+ products on {{FRONT_URL}}
+[SCROLL] Scroll to pagination controls
+[ASSERT] Verify pagination controls are visible
+[ACT] Click page 2
+[WAIT] Wait for new products to load
+[ASSERT] Verify new product set is displayed
+[ACT] Click Previous button
+[WAIT] Wait for page 1 to reload
+[ASSERT] Verify return to first page products","[DOM] Pagination controls visible at bottom of product list
+[DOM] Page 2 shows different products from page 1
+[DOM] Previous button returns to page 1 product set
+[MATH] Total product count consistent across pages","[NETWORK] no 4xx/5xx on pagination request
+[CONSOLE] no TypeError or JS errors","Pagination controls not rendering; same products on page 2; Previous not navigating back; console TypeError",none,regression-qa-theme-26.csv,Automated
+CAT-009,Category - Products Per Page,Catalog > Pagination,Low,BL-CAT-005,,Category with many products,url={{FRONT_URL}},"[NAV] Navigate to a category page on {{FRONT_URL}}
+[ASSERT] Locate 'per page' or items-per-page dropdown
+[ACT] Change 'per page' value (e.g., select 24)
+[WAIT] Wait for product list to update
+[ASSERT] Verify product count matches selected value","[DOM] Per-page selector visible with multiple options
+[MATH] Visible product card count matches selected per-page value
+[STATE] URL or state updates to reflect new per-page setting","[NETWORK] no 4xx/5xx on per-page change request
+[CONSOLE] no TypeError or JS errors","Per-page selector not rendering; product count unchanged after change; console TypeError",none,regression-qa-theme-26.csv,Automated
+CAT-010,Product Detail - Basic Info,Catalog > Product,High,BL-CAT-006,,Product exists in catalog,url={{FRONT_URL}},"[NAV] Navigate to any product detail page (PDP) on {{FRONT_URL}}
+[ASSERT] Verify all required product information is displayed","[DOM] Product name displayed and correct
+[DOM] Price displayed (not zero, not placeholder)
+[DOM] Product description visible
+[DOM] At least one product image loaded
+[DOM] SKU value shown","[NETWORK] GET product detail page returns HTTP 200
+[CONSOLE] no TypeError or JS errors","PDP returns 4xx/5xx; product name missing; price shows 0 or placeholder; images fail to load; SKU absent; console TypeError",none,regression-qa-theme-26.csv,Automated
+CAT-011,Product Detail - Image Gallery,Catalog > Product,Medium,BL-CAT-006,,Product with multiple images,url={{FRONT_URL}},"[NAV] Navigate to a product detail page with multiple images on {{FRONT_URL}}
+[ASSERT] Verify thumbnail strip is visible
+[ACT] Click a thumbnail image
+[WAIT] Wait for main image to change
+[ASSERT] Verify main image updates to match clicked thumbnail
+[ACT] Click zoom or enlarge button on main image
+[WAIT] Wait for zoom/modal to open
+[ASSERT] Verify zoom functionality works","[DOM] Thumbnail strip visible with multiple images
+[STATE] Clicking thumbnail updates the main image
+[DOM] Zoom/enlarge control present
+[STATE] Zoom or modal opens on click","[NETWORK] image requests return HTTP 200
+[CONSOLE] no TypeError or JS errors","Thumbnails not clickable; main image not updating; zoom control absent; images return 4xx; console TypeError",none,regression-qa-theme-26.csv,Automated
+CAT-012,Product Variations - B2C Style,Catalog > Variations,High,BL-CAT-006,,Product with size and color variations,url={{FRONT_URL}},"[NAV] Navigate to a configurable product page on {{FRONT_URL}}
+[ASSERT] Verify variation selectors (color, size) are visible
+[ACT] Select a color option
+[WAIT] Wait for price/availability to update
+[ACT] Select a size option
+[WAIT] Wait for selection to register
+[ASSERT] Verify price reflects selected combination
+[ACT] Click 'Add to cart'
+[WAIT] Wait for cart confirmation","[DOM] Color and size selectors rendered
+[DOM] Price updates to reflect selected variant
+[STATE] Correct SKU variant added to cart (not base product)","[NETWORK] no 4xx/5xx on variant selection or add-to-cart
+[CONSOLE] no TypeError or JS errors","Variation selectors missing; price not updating on selection; wrong variant in cart; add-to-cart fails; console TypeError","Remove added item from cart after test",tests/B2C-Variations,Automated
+CAT-013,Product - Related Products,Catalog > Product,Low,BL-CAT-001,,Product with related items configured,url={{FRONT_URL}},"[NAV] Navigate to a product detail page on {{FRONT_URL}}
+[SCROLL] Scroll down to related products section
+[ASSERT] Verify related products section is visible
+[ACT] Click on a related product
+[WAIT] Wait for related product PDP to load
+[ASSERT] Verify navigation to related product","[DOM] Related products section visible below main product info
+[DOM] Related product cards show image and name
+[NAV] Clicking a related product navigates to its PDP","[NETWORK] GET related product requests return HTTP 200
+[CONSOLE] no TypeError or JS errors","Related products section absent; section empty when products exist; navigation to related product fails; console TypeError",none,regression-qa-theme-26.csv,Automated
+CAT-014,Filter Chips - Facet Filter Chip Display,Catalog > Filters > Chips,High,BL-CAT-002,,Category with faceted products,"url={{FRONT_URL}}; filter=Brand","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ASSERT] Verify facet panel is visible
+[ACT] Click on a facet value (e.g., Brand: HP)
+[WAIT] Wait for chip bar to update
+[ASSERT] Verify chip appears with correct filter label
+[ASSERT] Verify close (×) button is present on the chip
+[ASSERT] Verify product count updates","[DOM] Chip appears in chip bar with correct filter label
+[DOM] Close (×) button visible on chip
+[MATH] Product count updates after chip applied
+[STATE] URL contains filter parameter matching chip value","[NETWORK] no 4xx/5xx on filter request
+[CONSOLE] no TypeError or JS errors","Chip not appearing after filter click; chip label incorrect; close button absent; product count not updating; URL missing filter param; console TypeError",none,tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-015,Filter Chips - Checkbox Control Chips (Show in stock),Catalog > Filters > Chips,High,BL-CAT-002,,Category page with stock filter available,"url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Toggle 'Show in stock' checkbox to ON
+[WAIT] Wait for chip bar to update
+[ASSERT] Verify chip labeled 'Show in stock' appears
+[ACT] Click close button on 'Show in stock' chip
+[WAIT] Wait for results to update
+[ASSERT] Verify chip is removed and only this filter was cleared
+[ASSERT] Verify any other active filters are preserved","[DOM] Chip labeled 'Show in stock' appears when checkbox is toggled ON
+[STATE] Chip disappears when checkbox toggled OFF or close button clicked
+[STATE] Only 'Show in stock' filter removed; other filters preserved
+[MATH] Product count updates on each toggle","[NETWORK] no 4xx/5xx on filter request
+[CONSOLE] no TypeError or JS errors","Chip not appearing when checkbox toggled; chip removal also removes other filters; product count unchanged; console TypeError",none,tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-016,Filter Chips - Checkbox Control Chips (Purchased before),Catalog > Filters > Chips,High,BL-CAT-002,"ECL-3.1","Category page with stock filter; user has purchase history","url={{FRONT_URL}}; email={{USER_EMAIL}}; password={{USER_PASSWORD}}","[NAV] Navigate to a category page on {{FRONT_URL}} as authenticated user
+[ACT] Toggle 'Purchased before' checkbox to ON
+[WAIT] Wait for chip bar to update
+[ASSERT] Verify chip labeled 'Purchased before' appears
+[ASSERT] Verify product count updates to prior purchases
+[ACT] Click close button on 'Purchased before' chip
+[WAIT] Wait for results to restore
+[ASSERT] Verify chip removed; filter state syncs with unchecked checkbox","[DOM] Chip appears for 'Purchased before' when toggled
+[STATE] Checkbox reflects chip state (checked ↔ chip present)
+[MATH] Product count reflects filtered set
+[STATE] Removing chip unchecks the checkbox","[NETWORK] no 4xx/5xx on filter request
+[CONSOLE] no TypeError or JS errors","Chip not appearing for authenticated user; chip and checkbox state out of sync; product count unchanged; console TypeError",none,tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-017,Filter Chips - Checkbox Control Chips (Available at branches),Catalog > Filters > Chips,High,BL-CAT-002,,Category page with branch selection enabled,"url={{FRONT_URL}}","[NAV] Navigate to a category page with branch filter on {{FRONT_URL}}
+[ACT] Select one or more branches in 'Available at branches'
+[WAIT] Wait for chip bar to update
+[ASSERT] Verify chip appears showing branch count (e.g., 'Branches (2)')
+[ACT] Click close button on the branch chip
+[WAIT] Wait for results to restore
+[ASSERT] Verify chip removed; all selected branches cleared; product count restored","[DOM] Chip shows selected branch count
+[STATE] Closing chip clears all selected branches simultaneously
+[MATH] Product count updates after branch selection and after removal","[NETWORK] no 4xx/5xx on filter request
+[CONSOLE] no TypeError or JS errors","Branch chip not appearing; chip count not matching selected branches; chip removal only clears one branch; console TypeError",none,tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-018,Reset Filters - Combined Facet + Checkbox Reset,Catalog > Filters > Reset,Critical,BL-CAT-004,,Category page with multiple filter types available,"url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Apply a facet filter (e.g., Brand: HP)
+[WAIT] Wait for chip to appear
+[ACT] Toggle 'Show in stock' checkbox to ON
+[WAIT] Wait for second chip to appear
+[ASSERT] Verify both filter chips are present
+[ACT] Click 'Reset filters' button
+[WAIT] Wait for all filters to clear
+[ASSERT] Verify ALL chips removed; all checkboxes unchecked; full product list restored","[DOM] All chips removed from chip bar after reset
+[STATE] All checkboxes unchecked after reset
+[STATE] URL cleaned — no filter parameters remain
+[MATH] Full unfiltered product count restored
+[DOM] 'Reset filters' button disappears when no filters active","[NETWORK] no 4xx/5xx on reset request
+[CONSOLE] no TypeError or JS errors","Any chip remaining after reset; any checkbox still checked after reset; URL still has filter params; product count not fully restored; console TypeError",none,tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-019,Reset Filters - Zero Results State,Catalog > Filters > Reset,Critical,BL-CAT-004,,Category page with filters available,"url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Apply filters until 0 products are shown
+[WAIT] Wait for empty state UI
+[ASSERT] Verify 'No results' message is displayed
+[ASSERT] Verify 'Reset filters' button is prominently visible
+[ACT] Click 'Reset filters'
+[WAIT] Wait for full product list to restore
+[ASSERT] Verify product list restored; all filters cleared","[DOM] 'No results' / empty state message displayed when 0 products match
+[DOM] 'Reset filters' button visible and prominent below no-results message
+[MATH] Full product count restored after reset
+[STATE] All filter chips and checkboxes cleared","[NETWORK] no 4xx/5xx on reset request
+[CONSOLE] no TypeError or JS errors","No-results message not showing; Reset button missing from empty state; products not restoring after reset; console TypeError",none,tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-020,Reset Filters - Category Page Context Preserved,Catalog > Filters > Reset,High,BL-CAT-004,,On a category page (e.g., /printers),"url={{FRONT_URL}}/printers","[NAV] Navigate to a category page (e.g., {{FRONT_URL}}/printers)
+[ACT] Apply multiple filters
+[WAIT] Wait for filtered results
+[ACT] Click 'Reset filters' button
+[WAIT] Wait for full category products to restore
+[ASSERT] Verify still on same category page (not redirected to /catalog)
+[ASSERT] Verify category-specific products are shown","[NAV] URL still contains category path after reset (not redirected to /catalog)
+[DOM] Category heading unchanged after reset
+[MATH] Full category product count restored
+[STATE] No filter chips or params in URL","[NETWORK] no 4xx/5xx on reset request
+[CONSOLE] no TypeError or JS errors","Reset redirects to /catalog instead of staying on category; category products not restored; console TypeError",none,tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-021,Reset Filters - Search Results Preserve Search Term,Search > Filters > Reset,High,"BL-CAT-004, BL-SEARCH-001",,Search executed with term 'printer',"url={{FRONT_URL}}; query=printer","[NAV] Navigate to {{FRONT_URL}} and search for 'printer'
+[WAIT] Wait for search results page
+[ACT] Apply one or more filters on search results
+[WAIT] Wait for filtered results
+[ACT] Click 'Reset filters' button
+[WAIT] Wait for filter reset
+[ASSERT] Verify search term 'printer' remains in search bar
+[ASSERT] Verify URL retains ?q=printer with no filter params
+[ASSERT] Verify full search result set is restored","[STATE] Search input still contains 'printer' after filter reset
+[NAV] URL contains ?q=printer; filter params removed
+[MATH] Full search result count restored (not redirected to homepage or /catalog)
+[DOM] No filter chips in chip bar","[NETWORK] no 4xx/5xx on reset request
+[CONSOLE] no TypeError or JS errors","Search term cleared from input after reset; redirect away from search results; filter params remain in URL; console TypeError",none,tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-022,Filter Chips - Individual Close vs Reset All,Catalog > Filters > Chips,High,BL-CAT-002,,Category page with multiple filters available,"url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Apply 3 or more filters (mix of facet and checkbox)
+[WAIT] Wait for all chips to appear
+[ACT] Click the × close button on ONE chip
+[WAIT] Wait for results to update
+[ASSERT] Verify only that one filter was removed; others preserved
+[ACT] Click × on a second chip
+[WAIT] Wait for results to update
+[ASSERT] Verify only that second filter removed
+[ACT] Click 'Reset filters' for remaining filters
+[ASSERT] Verify all remaining filters cleared","[STATE] Individual × button removes exactly one filter; all others preserved
+[MATH] Product count updates after each individual close
+[STATE] 'Reset filters' button clears all remaining filters in one action","[NETWORK] no 4xx/5xx on each filter removal
+[CONSOLE] no TypeError or JS errors","Closing one chip removes multiple filters; product count not updating after individual close; Reset not clearing all remaining; console TypeError",none,tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-023,Filters - Browser Back/Forward Navigation,Catalog > Filters > Navigation,Medium,BL-CAT-003,,Category page with filters,"url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Apply filter A
+[WAIT] Wait for chip and URL param
+[ACT] Apply filter B
+[WAIT] Wait for chip and URL param for filter B
+[KEY] Press browser Back button
+[WAIT] Wait for filter B to be removed
+[ASSERT] Verify filter B chip is gone; filter A chip remains
+[KEY] Press browser Forward button
+[WAIT] Wait for filter B to be restored
+[ASSERT] Verify filter B chip reappears","[STATE] Browser back removes the most recently applied filter
+[STATE] Browser forward restores the filter
+[STATE] Chips sync correctly with browser history navigation
+[STATE] URL params match chip state at each step","[NETWORK] no 4xx/5xx on history navigation
+[CONSOLE] no TypeError or JS errors","Back button removes all filters instead of just the last; chips not syncing with URL state after history navigation; console TypeError",none,tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-024,Filters - Page Refresh Preserves State,Catalog > Filters > Navigation,Medium,BL-CAT-003,,Category page with filters applied,"url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Apply multiple filters
+[WAIT] Wait for chips and URL params to be set
+[KEY] Press F5 (or Ctrl+R) to refresh the page
+[WAIT] Wait for page to reload
+[ASSERT] Verify filter chips render correctly after reload
+[ASSERT] Verify checkboxes are in correct checked state
+[ASSERT] Verify 'Reset filters' button works after reload","[STATE] Filter chips present after page refresh (state persisted via URL params)
+[STATE] Checkboxes reflect correct checked state after reload
+[DOM] Reset button functional after refresh","[NETWORK] no 4xx/5xx on page reload
+[CONSOLE] no TypeError or JS errors","Chips not rendering after refresh; checkboxes losing state after refresh; Reset not working after refresh; console TypeError",none,tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-025,Filters - Multi-select Within Facet Group,Catalog > Filters,High,BL-CAT-002,,Category with multi-value facets,"url={{FRONT_URL}}","[NAV] Navigate to a category page with multi-value facets on {{FRONT_URL}}
+[ACT] Select 2 or more values within the same facet group (e.g., Brand: HP + Epson)
+[WAIT] Wait for chips to appear
+[ASSERT] Verify separate chip for each selected value
+[ASSERT] Verify facet group header shows count (e.g., 'Brand (2)')
+[ACT] Click × close button on one of the chips
+[WAIT] Wait for results to update
+[ASSERT] Verify only that value removed; other value in same facet preserved","[DOM] Individual chips per facet value (not one combined chip)
+[DOM] Facet group header shows selected count (e.g., 'Brand (2)')
+[STATE] Removing one chip does not remove other values in same facet group
+[MATH] Product count updates after each chip change","[NETWORK] no 4xx/5xx on multi-select filter requests
+[CONSOLE] no TypeError or JS errors","Chips not appearing for each selected value; facet header not showing count; closing one chip removes all values in group; console TypeError",none,tests/Sprint26-03/VCST-4122-reset-filters-button,Manual
+CAT-026,Facet Filter Badge - Size xs Renders Legibly,Catalog > Filters > Badge,High,BL-CAT-002,,Category with faceted filters and products available,"url={{FRONT_URL}}","[NAV] Navigate to a category page with facets on {{FRONT_URL}}
+[ACT] Apply a facet filter (e.g., Brand)
+[WAIT] Wait for filter chip with badge to appear
+[ASSERT] Locate the badge element on the filter chip
+[ASSERT] Verify badge is readable and visually distinct","[DOM] Badge renders at xs size (smaller than sm variant)
+[DOM] Badge text is legible — not clipped or overflowing container
+[DOM] Badge has sufficient visual contrast against background
+[DOM] Badge shape and padding appear correct at xs size","[CONSOLE] no TypeError or JS errors","Badge text clipped or overflowing; badge not visible against background; badge absent from chip; console TypeError",none,VCST-4623,Manual
+CAT-027,Facet Filter Badge - Double-Digit Count Uses Correct Padding,Catalog > Filters > Badge,High,BL-CAT-002,,Category with many filter values available,"url={{FRONT_URL}}","[NAV] Navigate to a category page with many filterable values on {{FRONT_URL}}
+[ACT] Apply 10 or more values from the same facet group
+[WAIT] Wait for facet header badge to update
+[ASSERT] Verify badge shows double-digit count correctly","[DOM] Badge shows double-digit count (e.g., '10', '12')
+[DOM] Badge width expands to fit double-digit number (dynamic px-1 padding)
+[DOM] Count not clipped or truncated
+[DOM] Badge proportionally correct at double-digit count","[CONSOLE] no TypeError or JS errors","Badge truncating double-digit count; badge overflow at 10+; count not matching applied filters; console TypeError",none,VCST-4623,Manual
+CAT-028,Category Selector Badge - Size xs Renders Correctly,Catalog > Category Selector > Badge,High,BL-CAT-001,,Category selector component visible in category navigation,"url={{FRONT_URL}}","[NAV] Navigate to a top-level category page that shows subcategory navigation on {{FRONT_URL}}
+[ASSERT] Locate the category selector component
+[ASSERT] Observe count badges on category items
+[ASSERT] Verify badges render consistently across multiple category items","[DOM] Category item count badges render at xs size
+[DOM] Badge count is readable (not clipped)
+[DOM] No layout overflow caused by smaller badge size
+[DOM] Badge appearance consistent across different category items","[CONSOLE] no TypeError or JS errors","Badges overflowing category item containers; badge count not readable; inconsistent badge size across items; console TypeError",none,VCST-4623,Manual
+CAT-029,Facet Filter Badge - WCAG Contrast at xs Size,Catalog > Filters > Badge > Accessibility,High,BL-CAT-002,,Category with facets; DevTools or accessibility checker available,"url={{FRONT_URL}}","[NAV] Navigate to a category page with facets on {{FRONT_URL}}
+[ACT] Apply a filter to display a filter chip with badge
+[WAIT] Wait for chip with badge to render
+[ACT] Open browser DevTools Accessibility panel or contrast checker
+[ASSERT] Measure badge text contrast ratio against badge background","[DOM] Badge text contrast ratio >= 4.5:1 against badge background (WCAG AA for normal text)
+[DOM] Contrast maintained at xs badge size despite reduced padding
+[DOM] Badge meets WCAG 2.1 Level AA criterion 1.4.3","[CONSOLE] no TypeError or JS errors","Contrast ratio below 4.5:1; badge failing WCAG AA; DevTools flagging color contrast issue; console TypeError",none,VCST-4623,Manual
+CAT-030,Add to Compare,Catalog > Compare,High,BL-CAT-007,,Category page with product comparison enabled; at least 2 comparable products visible,"url={{FRONT_URL}}","[NAV] Navigate to a category page with product cards on {{FRONT_URL}}
+[ASSERT] Verify 'Compare' icon or checkbox is visible on product card (hover or always shown)
+[ACT] Click 'Compare' on the first product
+[WAIT] Wait for compare bar to appear or update
+[ASSERT] Verify compare bar appears with added product
+[ASSERT] Verify compare bar count increments to 1","[DOM] 'Compare' control visible on product card
+[DOM] Compare bar appears at bottom or side of page after first selection
+[DOM] Compare bar shows added product name or thumbnail
+[MATH] Compare bar count shows 1","[NETWORK] no 4xx/5xx on compare add request
+[CONSOLE] no TypeError or JS errors","Compare control not visible on product cards; compare bar not appearing; compare count not incrementing; console TypeError",none,Coverage Gap Analysis,Generated
+CAT-031,Compare Page Display,Catalog > Compare,High,BL-CAT-007,,2 or more products added to the compare bar,"url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Add 2 or more products to compare bar
+[ACT] Click 'Compare' in compare bar or navigate to /compare
+[WAIT] Wait for compare page to load
+[ASSERT] Verify products displayed side by side
+[ASSERT] Verify spec/attribute rows are shown for comparison","[NAV] Compare page loads at /compare or similar URL
+[DOM] Products displayed in side-by-side column layout
+[DOM] Product name, image, and price shown at top of each column
+[DOM] Specification attribute rows listed for comparison
+[DOM] Each product has an 'Add to Cart' button","[NETWORK] GET /compare returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Compare page returns 4xx; products not in side-by-side layout; attributes missing; Add to Cart absent; console TypeError",none,Coverage Gap Analysis,Generated
+CAT-032,Compare Limit,Catalog > Compare,Medium,BL-CAT-007,,Category page with compare active; currently at maximum allowed products,"url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Add products to compare until the maximum limit is reached
+[ASSERT] Verify compare bar shows maximum count
+[ACT] Attempt to add one more product beyond the limit
+[WAIT] Wait for limit message
+[ASSERT] Verify limit message is displayed
+[ASSERT] Verify extra product is not added to compare bar","[DOM] System shows limit message (e.g., 'You can compare up to X products')
+[STATE] Over-limit product not added to compare bar
+[MATH] Compare bar still shows only the allowed maximum","[NETWORK] no 5xx on over-limit attempt
+[CONSOLE] no TypeError or JS errors","No limit message shown; over-limit product added silently; compare bar count exceeds maximum; console TypeError",none,Coverage Gap Analysis,Generated
+CAT-033,Remove from Compare,Catalog > Compare,Medium,BL-CAT-007,,2 or more products added to compare; on /compare page,"url={{FRONT_URL}}/compare","[NAV] Navigate to the compare page at {{FRONT_URL}}/compare
+[ASSERT] Verify remove button (X or Remove) visible per product column
+[ACT] Click remove on one product
+[WAIT] Wait for that product column to disappear
+[ASSERT] Verify remaining products still displayed
+[ASSERT] Verify compare bar count decrements","[DOM] Remove/close button available per product column on compare page
+[STATE] Removed product column disappears from comparison
+[DOM] Remaining products still shown correctly
+[MATH] Compare bar count decrements by 1 after removal","[NETWORK] no 4xx/5xx on remove request
+[CONSOLE] no TypeError or JS errors","Remove button not visible; removing one product removes all; remaining products layout broken; compare count not updating; console TypeError",none,Coverage Gap Analysis,Generated
+CAT-034,Compare Empty State,Catalog > Compare,Medium,BL-CAT-007,,No products in compare (fresh session or after clearing),"url={{FRONT_URL}}/compare","[NAV] Navigate to {{FRONT_URL}}/compare with no products in compare bar
+[ASSERT] Verify empty state UI is shown","[DOM] Compare page loads without JavaScript error
+[DOM] Empty state message shown (e.g., 'No products to compare')
+[DOM] Call-to-action present ('Browse catalog' or 'Add products to compare' link)
+[NAV] CTA link navigates back to catalog
+[DOM] No broken layout","[NETWORK] GET /compare returns HTTP 200 (not 4xx)
+[CONSOLE] no TypeError or JS errors","Compare page returns 4xx on empty state; no empty state message; CTA link broken; layout broken without products; console TypeError",none,Coverage Gap Analysis,Generated
+CAT-035,Brands Page Loads,Catalog > Brands,Medium,BL-CAT-001,,Store has brand data configured; brands page enabled,"url={{FRONT_URL}}/Brands","[NAV] Navigate to {{FRONT_URL}}/Brands
+[WAIT] Wait for page to load completely
+[ASSERT] Verify brand list or grid is displayed
+[ASSERT] Check browser console for JavaScript errors","[NAV] /Brands page loads without errors (HTTP 200)
+[DOM] Brand list or grid displayed
+[DOM] Each brand entry shows brand name (and logo/image if configured)
+[DOM] Page title or heading confirms Brands context","[NETWORK] GET /Brands returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Brands page returns 4xx/5xx; brand list empty when brands exist; brand images failing to load; console TypeError",none,Coverage Gap Analysis,Generated
+CAT-036,Brand Navigation,Catalog > Brands,Medium,BL-CAT-001,,Brands page loaded; at least one brand with products exists,"url={{FRONT_URL}}/Brands","[NAV] Navigate to {{FRONT_URL}}/Brands
+[ASSERT] Verify at least one brand entry is visible
+[ACT] Click on a brand entry
+[WAIT] Wait for brand product listing page to load
+[ASSERT] Verify page heading or breadcrumb shows selected brand name
+[ASSERT] Verify all listed products belong to the selected brand","[NAV] Clicking brand navigates to a brand-filtered product listing page
+[DOM] Page heading or breadcrumb shows selected brand name
+[STATE] All displayed products associated with the selected brand
+[DOM] Facet filters available on brand result page
+[STATE] URL reflects brand filter context","[NETWORK] GET brand listing page returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Brand entry not clickable; brand listing page returns 4xx; non-brand products appearing in brand listing; console TypeError",none,Coverage Gap Analysis,Generated
+CAT-037,Brand Product Count,Catalog > Brands,Medium,BL-CAT-001,,Brands page loaded; brands have known product counts,"url={{FRONT_URL}}/Brands","[NAV] Navigate to {{FRONT_URL}}/Brands
+[ASSERT] Locate a brand entry showing a product count badge or label
+[ASSERT] Note the displayed count value
+[ACT] Click on that brand
+[WAIT] Wait for brand product listing page
+[ASSERT] Count or compare product cards on the listing page to displayed count","[MATH] Product count on brand entry matches actual products in brand listing
+[DOM] Brand entry shows product count (e.g., '24 products')
+[STATE] Zero-count brands hidden or marked as unavailable if feature configured","[NETWORK] GET brand listing returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Product count on Brands page does not match listing count; brand count not showing; console TypeError",none,Coverage Gap Analysis,Generated
+SRCH-001,Search - Basic Query,Search > Basic,High,BL-SEARCH-001,ECL-14.2,Catalog has searchable products,"url={{FRONT_URL}}; query=laptop","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click search bar
+[ACT] fill 'Search': 'laptop'
+[KEY] press [Enter]
+[WAIT] Wait for results page to load
+[ASSERT] Verify results page displays products","[NAV] Browser navigates to search results page (e.g., /search?q=laptop)
+[DOM] Matching products displayed in grid
+[DOM] Result count visible
+[STATE] Search input retains 'laptop'","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Spinner >5s; 0 products returned unexpectedly; results page not loading; 4xx on searchProducts; console TypeError",none,regression-qa-theme-26.csv,Automated
+SRCH-002,Search - Suggestions Dropdown,Search > Suggestions,Medium,BL-SEARCH-002,ECL-14.2,Search configured with suggestions enabled,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click search bar
+[ACT] fill 'Search': 'lap' (partial query)
+[WAIT] Wait for suggestions dropdown
+[ASSERT] Verify dropdown appears with suggestions","[DOM] Suggestions dropdown appears below search input
+[DOM] Suggestion items match partial query 'lap'
+[STATE] Clicking a suggestion populates input and executes search","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 for suggestion query
+[CONSOLE] no TypeError or JS errors","Suggestions dropdown not appearing; suggestions unrelated to query; clicking suggestion not executing search; console TypeError",none,regression-qa-theme-26.csv,Automated
+SRCH-003,Search - No Results,Search > Edge Cases,Medium,"BL-SEARCH-003",,No preconditions — nonsense query,"url={{FRONT_URL}}; query=xyzabc123","[NAV] Navigate to {{FRONT_URL}}
+[ACT] fill 'Search': 'xyzabc123'
+[KEY] press [Enter]
+[WAIT] Wait for results page
+[ASSERT] Verify empty state / no results UI","[DOM] No results message displayed (not blank page, not error page)
+[DOM] Suggestions or alternatives shown if available
+[STATE] No JavaScript errors or crashes","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 (not 5xx)
+[CONSOLE] no TypeError or JS errors","No-results message absent; page showing 500 error; console TypeError on empty result set",none,regression-qa-theme-26.csv,Automated
+SRCH-004,Search - Special Characters,Search > Edge Cases,Medium,"BL-SEARCH-003",ECL-8.1,No preconditions,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] fill 'Search': 'test & test'; [KEY] press [Enter]; [WAIT]
+[ASSERT] Verify no errors; results or empty state shown
+[NAV] Navigate back; [ACT] fill 'Search': 'product (new)'; [KEY] press [Enter]; [WAIT]
+[ASSERT] Verify no errors
+[NAV] Navigate back; [ACT] fill 'Search': 'item #123'; [KEY] press [Enter]; [WAIT]
+[ASSERT] Verify no errors","[STATE] Special characters (& ( ) #) handled without errors or crashes
+[STATE] Results page or no-results state shown for each query
+[DOM] No error page or stack trace displayed","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 for each query
+[CONSOLE] no TypeError or JS errors","Any query causing 5xx or JS crash; console TypeError; error page shown instead of results/no-results",none,regression-qa-theme-26.csv,Automated
+SRCH-005,Search - Within Category,Search > Scoped,Medium,BL-SEARCH-001,,Inside a specific category page,"url={{FRONT_URL}}","[NAV] Navigate to a specific category page on {{FRONT_URL}}
+[ACT] Use the search bar while on the category page
+[ACT] fill 'Search': 'product'; [KEY] press [Enter]
+[WAIT] Wait for scoped results
+[ASSERT] Verify results are scoped to current category","[DOM] Search results scoped to the current category context
+[DOM] Clear indication of search scope (e.g., within category label)
+[STATE] Products from outside the category not in results","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 with category scope
+[CONSOLE] no TypeError or JS errors","Results not scoped to category; products from all categories shown; no scope indicator; console TypeError",none,regression-qa-theme-26.csv,Automated
+SRCH-006,Search - Filters on Results,Search > Filters,High,"BL-SEARCH-001, BL-CAT-002",,Search returns multiple products,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a search query that returns 5+ products
+[WAIT] Wait for results page
+[ACT] Apply a facet filter from the sidebar
+[WAIT] Wait for filtered results
+[ACT] Apply a price range filter
+[WAIT] Wait for combined results
+[ASSERT] Verify combined filter/search results are correct","[DOM] Facet filters available in sidebar on search results page
+[MATH] Combined filters narrow result set (AND logic)
+[MATH] Result count updates after each filter","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 with filters applied
+[NETWORK] no 4xx/5xx on filter request
+[CONSOLE] no TypeError or JS errors","Sidebar filters absent on search results page; filters not narrowing results; result count unchanged after filter; 4xx on filtered search; console TypeError",none,regression-qa-theme-26.csv,Automated
+SRCH-007,Search - Sorting Results,Search > Sorting,Medium,"BL-CAT-005, BL-SEARCH-001",,Search returns multiple products with varying prices,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a search returning multiple products
+[WAIT] Wait for results page
+[ACT] select 'Price: Low to High' from sort dropdown
+[WAIT] Wait for reorder
+[ASSERT] Verify ascending price order
+[ACT] select 'Relevance' from sort dropdown (if available)
+[WAIT] Wait for reorder
+[ASSERT] Verify relevance ordering","[DOM] Sort dropdown visible on search results page
+[STATE] Products reorder correctly for price sort
+[MATH] 'Price: Low to High' — first product price <= last product price
+[DOM] 'Relevance' sort option available","[NETWORK] no 4xx/5xx on sort change
+[CONSOLE] no TypeError or JS errors","Sort dropdown absent on search results; products not reordering; console TypeError",none,regression-qa-theme-26.csv,Automated
+SRCH-008,Search - History,Search > History,Low,BL-SEARCH-002,,Previous searches performed in this session,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} (ensure prior searches exist in session)
+[ACT] Click search bar
+[ASSERT] Verify recent search history is displayed
+[ACT] Click on a history item
+[WAIT] Wait for search to execute
+[ASSERT] Verify search executes with that term","[DOM] Search history items displayed when search bar focused
+[STATE] Clicking a history item executes the search
+[STATE] History can be cleared on request","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 on history item click
+[CONSOLE] no TypeError or JS errors","History not showing prior searches; history item click not executing search; console TypeError",none,regression-qa-theme-26.csv,Automated
+SRCH-009,Organization Search - Find Org,Search > Organization,Medium,BL-SEARCH-001,,Multiple organizations exist; user has org search access,"url={{FRONT_URL}}; email={{ORG_USER_EMAIL}}; password={{ORG_USER_PASSWORD}}","[NAV] Navigate to organization search on {{FRONT_URL}}
+[ACT] fill organization name search field with a known org name
+[KEY] press [Enter]
+[WAIT] Wait for results
+[ASSERT] Verify results match the query
+[ACT] Click on an organization result
+[WAIT] Wait for org detail/profile to load","[DOM] Organization search results match the entered query
+[NAV] Clicking on org result navigates to org detail page
+[DOM] Org detail page loads without error","[NETWORK] search request returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Org search returning no results for known org; org detail page returning 4xx; console TypeError",none,tests/VCST-4357-org-search,Automated
+SRCH-010,Organization Search - Filters,Search > Organization,Medium,BL-SEARCH-001,,Organizations with different attributes exist; user has org search access,"url={{FRONT_URL}}; email={{ORG_USER_EMAIL}}; password={{ORG_USER_PASSWORD}}","[NAV] Navigate to organization search on {{FRONT_URL}}
+[ACT] Search organizations (generic query or browse)
+[WAIT] Wait for results
+[ACT] Apply industry filter
+[WAIT] Wait for filtered results
+[ACT] Apply location filter
+[WAIT] Wait for combined results
+[ASSERT] Verify filtered results contain only matching orgs","[DOM] Organization filter options visible (industry, location)
+[STATE] Applying filters narrows org result set
+[MATH] Combined filters use AND logic","[NETWORK] filter requests return HTTP 200
+[CONSOLE] no TypeError or JS errors","Org filters not available; filters not narrowing results; combined filter returning wrong set; console TypeError",none,tests/VCST-4357-org-search,Automated
+SRCH-NEW-001,Search Bar - Click Opens Dropdown Empty State,Search > Dropdown,Critical,BL-SEARCH-002,,Storefront open at homepage; search input has no text,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ASSERT] Locate the search input labeled 'Search' in main navigation
+[ACT] Click the search input
+[WAIT] Wait for dropdown to appear","[DOM] Dropdown opens below the search input
+[DOM] 'Hints' section visible with 1+ prior search terms as clickable buttons
+[DOM] Each hint shows a search icon and query text
+[DOM] 'Start typing to search' text or prompt visible
+[DOM] 'Check all products' link visible pointing to /catalog
+[STATE] No product results in dropdown yet (empty query)","[NETWORK] no failed API calls triggered on input focus
+[CONSOLE] no TypeError or JS errors","Dropdown not opening on click; Hints section absent; 'Check all products' link missing; console TypeError on focus",none,E2E-SEARCH-005,Manual
+SRCH-NEW-002,Search Bar - Autocomplete Shows Product Previews While Typing,Search > Autocomplete,Critical,BL-SEARCH-002,ECL-14.2,"Storefront open; products matching 'hoodie' exist in catalog","url={{FRONT_URL}}; query=hoodie","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click the search input
+[ACT] fill 'Search': 'hoodie' (type one character at a time)
+[WAIT] Wait for dropdown to update after each character
+[ASSERT] Observe final dropdown state with all 6 characters typed","[DOM] 'Products' section appears in dropdown
+[DOM] Each product entry shows thumbnail image, product name (clickable link), and price
+[DOM] At least 4 products shown in autocomplete
+[DOM] 'Hints' section remains visible above Products section
+[DOM] Clear (X) button appears in input when text is present","[NETWORK] POST /xapi/graphql (searchProducts) fires with keyword: 'hoodie'
+[CONSOLE] no TypeError or JS errors","Autocomplete products not appearing after typing; fewer than expected products shown; Hints section disappearing; no GraphQL call fired; console TypeError","N/A","E2E-SEARCH-005, SRCH-002",Manual
+SRCH-NEW-003,Search Bar - Hints Section Shows Prior Searches on Focus,Search > Hints,High,BL-SEARCH-002,,At least 2 prior searches exist in session history (e.g., 'laptop' and 'hoodie' visible as hints),"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} (ensure prior searches 'laptop' and 'hoodie' in session)
+[ACT] Click the search input
+[ASSERT] Observe 'Hints' section label and hint items
+[ASSERT] Verify each hint is a button with search icon and query text
+[ACT] Click the hint button labeled 'laptop'
+[WAIT] Wait for navigation","[DOM] Section labeled exactly 'Hints'
+[DOM] Each hint is a button with a search icon and query text
+[NAV] Clicking 'laptop' hint populates input with 'laptop' and navigates to /search?q=laptop
+[DOM] Search results for 'laptop' displayed","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 for 'laptop'
+[CONSOLE] no TypeError or JS errors","Hints section absent when prior searches exist; hint buttons not clickable; clicking hint not navigating; console TypeError","N/A","E2E-SEARCH-003, SRCH-008",Manual
+SRCH-NEW-004,Search Bar - Clear Button Resets Input to Empty,Search > Input Controls,High,BL-SEARCH-002,,Storefront open at any page,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click the search input
+[ACT] fill 'Search': 'hoodie'
+[WAIT] Wait for clear (X) button to appear
+[ASSERT] Verify clear button is visible and input contains 'hoodie'
+[ACT] Click the clear (X) button
+[WAIT] Wait for input to clear
+[ASSERT] Verify input is empty and dropdown returns to Hints state","[STATE] After typing: clear (X) button visible; input contains 'hoodie'
+[STATE] After clicking clear: input is empty
+[STATE] Dropdown returns to 'Hints' state (prior searches) after clearing
+[DOM] Clear button disappears when input is empty
+[STATE] User stays on same page (no navigation)","[CONSOLE] no TypeError or JS errors","Clear button not appearing after typing; clear button not emptying input; dropdown not reverting to Hints state; navigation triggered by clear; console TypeError",none,,Manual
+SRCH-NEW-005,Search Bar - Clicking Autocomplete Product Navigates to PDP,Search > Autocomplete,Critical,BL-SEARCH-002,,"Storefront open at homepage; 'Vintage Colorado Hoodie' exists in catalog","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click the search input
+[ACT] fill 'Search': 'hoodie'
+[WAIT] Wait for autocomplete product results in dropdown
+[ASSERT] Verify product results visible
+[ACT] Click 'Vintage Colorado Hoodie' in the dropdown
+[WAIT] Wait for PDP to load","[NAV] Browser navigates to PDP for Vintage Colorado Hoodie
+[DOM] PDP loads with correct product name
+[STATE] Search dropdown closes after product click","[NETWORK] GET product PDP returns HTTP 200
+[CONSOLE] no TypeError or JS errors","PDP not loading after clicking autocomplete result; wrong product PDP opened; dropdown not closing; console TypeError",none,E2E-SEARCH-005,Manual
+SRCH-NEW-006,Search Bar - Check All Products Link Goes to Catalog,Search > Dropdown,Low,BL-CAT-001,,Storefront open at homepage,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click the search input (do not type anything)
+[WAIT] Wait for dropdown to open
+[ASSERT] Verify 'Check all products' link is visible
+[ACT] Click 'Check all products'
+[WAIT] Wait for catalog page to load","[NAV] Browser navigates to /catalog
+[DOM] Full product catalog page loads
+[STATE] Search dropdown closes after link click","[NETWORK] GET /catalog returns HTTP 200
+[CONSOLE] no TypeError or JS errors","'Check all products' link absent from dropdown; link navigating to wrong page; catalog page returning 4xx; console TypeError",none,,Manual
+SRCH-NEW-007,Search - Submit via Enter Key,Search > Submission,Critical,"BL-SEARCH-001, BL-SEARCH-005",,Storefront open at any page,"url={{FRONT_URL}}; query=hoodie","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click the search input
+[ACT] fill 'Search': 'hoodie'
+[KEY] press [Enter]
+[WAIT] Wait for results page to load
+[ASSERT] Verify results page content","[NAV] Browser navigates to /search?q=hoodie
+[DOM] Results page heading shows result count with 'hoodie' bold/emphasized
+[STATE] Search input retains 'hoodie' on results page
+[DOM] Products displayed in grid view by default","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Results page not loading on Enter; wrong URL (not /search?q=hoodie); heading not showing result count; products not in grid view; console TypeError",none,"E2E-SEARCH-001, SRCH-001",Manual
+SRCH-NEW-008,Search - Submit via Search Button (Magnifier Icon),Search > Submission,Critical,"BL-SEARCH-001, BL-SEARCH-005",,Storefront open at any page,"url={{FRONT_URL}}; query=hoodie","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click the search input
+[ACT] fill 'Search': 'hoodie'
+[ACT] Click the 'Search' button (magnifier icon)
+[WAIT] Wait for results page to load
+[ASSERT] Verify results page identical to Enter key submission","[NAV] Browser navigates to /search?q=hoodie
+[DOM] Results page loads with same products and count as SRCH-NEW-007","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Magnifier button not clickable; different results from Enter key; console TypeError",none,,Manual
+SRCH-NEW-009,Search Results - Result Count in Heading Is Accurate,Search > Results Page,High,BL-SEARCH-001,,"Navigate to /search?q=hoodie","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+[WAIT] Wait for results page to fully render
+[ASSERT] Read the h1 page heading
+[ASSERT] Count the product cards rendered in the grid","[DOM] h1 heading shows a result count number
+[MATH] Count in heading matches actual number of visible product cards","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Heading count mismatches visible card count; heading missing count; console TypeError",none,,Manual
+SRCH-NEW-010,Search Results - Grid and List View Toggle,Search > Results Page > Layout,High,BL-CAT-001,,"Navigate to /search?q=hoodie; 4+ results expected","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+[WAIT] Wait for results
+[ASSERT] Confirm default grid layout (multi-column)
+[ACT] Click 'Switch to list view'
+[WAIT] Wait for layout to change
+[ASSERT] Verify list layout (single-column format)
+[ACT] Click 'Switch to grid view'
+[WAIT] Wait for layout to change
+[ASSERT] Verify grid layout returns","[STATE] Default view is grid (multi-column)
+[DOM] List view: single-column format with products stacked
+[DOM] Grid view: multi-column layout
+[MATH] Product count consistent across view switches","[CONSOLE] no TypeError or JS errors during switching","Products lost on view switch; count changing between views; JS error on toggle; console TypeError",none,,Manual
+SRCH-NEW-011,Search Results - Sort Options Change Product Order,Search > Sorting,High,"BL-CAT-005, BL-SEARCH-001",,"Navigate to /search?q=hoodie; multiple results with varying prices","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+[WAIT] Wait for results
+[ASSERT] Note current sort dropdown value (default: 'Featured')
+[ACT] select 'Price: Low to High' from sort dropdown
+[WAIT] Wait for reorder; record product order
+[ACT] select 'Price: High to Low' from sort dropdown
+[WAIT] Wait for reorder
+[ASSERT] Verify reversed price order
+[ACT] Select alphabetical sort option
+[WAIT] Wait for reorder
+[ASSERT] Verify A-Z ordering","[MATH] 'Price: Low to High': first product price <= last product price
+[MATH] 'Price: High to Low': first product price >= last product price
+[STATE] Alphabetical sort: products in A-Z name order
+[MATH] Product count unchanged after each sort
+[STATE] URL updates to reflect current sort selection","[NETWORK] no 4xx/5xx on sort change
+[CONSOLE] no TypeError or JS errors","Product order unchanged after sort selection; count changing after sort; URL not updating; console TypeError",none,SRCH-007,Manual
+SRCH-NEW-012,Search Results - Show in Stock Checkbox Default and Toggle,Search > Filters > Checkboxes,High,BL-CAT-002,,"Navigate to /search?q=hoodie","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+[WAIT] Wait for results page
+[ASSERT] Verify 'Show in stock' checkbox is checked by default
+[ASSERT] Verify corresponding chip is present in chip bar
+[ACT] Uncheck 'Show in stock'
+[WAIT] Wait for results to update
+[ASSERT] Verify chip removed from chip bar; result count may change
+[ACT] Re-check 'Show in stock'
+[WAIT] Wait for results to restore
+[ASSERT] Verify chip returns and results restored","[STATE] 'Show in stock' is checked on page load by default
+[DOM] Chip for 'Show in stock' present in chip bar by default
+[STATE] Unchecking removes chip; result count may change to include out-of-stock
+[STATE] Re-checking restores chip and original result set","[NETWORK] no 4xx/5xx on checkbox toggle
+[CONSOLE] no TypeError or JS errors","Checkbox not checked by default; chip absent on page load; chip not appearing/disappearing on toggle; console TypeError",none,,Manual
+SRCH-NEW-013,Search Results - Purchased Before Checkbox,Search > Filters > Checkboxes,Medium,BL-CAT-002,ECL-3.1,"User authenticated with prior purchases; navigate to /search?q=hoodie","url={{FRONT_URL}}/search?q=hoodie; email={{USER_EMAIL}}; password={{USER_PASSWORD}}","[NAV] Log in and navigate to {{FRONT_URL}}/search?q=hoodie
+[WAIT] Wait for results
+[ASSERT] Verify 'Purchased before' is unchecked by default
+[ACT] Check 'Purchased before'
+[WAIT] Wait for results to filter
+[ASSERT] Verify chip appears; results filtered to prior purchases
+[ACT] Uncheck 'Purchased before'
+[WAIT] Wait for results to restore
+[ASSERT] Verify chip removed; full results return","[STATE] 'Purchased before' unchecked by default
+[STATE] Checking adds chip and filters to previously purchased products
+[STATE] Unchecking removes chip and restores all results","[NETWORK] no 4xx/5xx on checkbox toggle
+[CONSOLE] no TypeError or JS errors","'Purchased before' not available for authenticated user; chip not appearing on check; results not filtered to prior purchases; console TypeError",none,,Manual
+SRCH-NEW-014,Search Results - Sidebar Facet Filter,Search > Filters > Sidebar,High,"BL-CAT-002, BL-SEARCH-001",,"Navigate to /search?q=hoodie; sidebar shows Color facet","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+[WAIT] Wait for results and sidebar
+[ACT] Expand 'Color' facet group in sidebar
+[ACT] Select a color value
+[WAIT] Wait for chip bar and result count to update
+[ASSERT] Verify chip appears for selected color
+[ASSERT] Verify product list updates to matching items only
+[ACT] Click close (×) on the color chip
+[WAIT] Wait for full results to restore
+[ASSERT] Verify chip removed; full result count restored","[DOM] Sidebar facets expandable
+[DOM] Selecting a facet value creates a chip in chip bar
+[MATH] Product list updates to only show matching color items
+[STATE] Closing chip removes filter and restores original count","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 with facet filter
+[NETWORK] no 4xx/5xx on filter request
+[CONSOLE] no TypeError or JS errors","Sidebar facets not expandable; chip not appearing after facet selection; product count not changing; chip close not restoring results; console TypeError",none,SRCH-006,Manual
+SRCH-NEW-015,Search Results - Reset Filters Preserves Search Term,Search > Filters > Reset,High,"BL-CAT-004, BL-SEARCH-001",,"Navigate to /search?q=hoodie; apply sidebar facet filter","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+[ACT] Apply a sidebar facet filter
+[WAIT] Wait for chip and filter param in URL
+[ASSERT] Verify 'Reset filters' button is visible
+[ACT] Click 'Reset filters'
+[WAIT] Wait for filters to clear
+[ASSERT] Verify search term 'hoodie' remains in header input
+[ASSERT] Verify URL retains ?q=hoodie with no filter params
+[ASSERT] Verify full result set restored","[STATE] Search input still contains 'hoodie' after reset
+[NAV] URL contains ?q=hoodie; all filter params removed
+[MATH] Full search result count restored after reset
+[DOM] No filter chips in chip bar","[NETWORK] no 4xx/5xx on reset request
+[CONSOLE] no TypeError or JS errors","Search term cleared after reset; redirect to homepage or /catalog; filter params remain in URL; console TypeError",none,CAT-021,Manual
+SRCH-NEW-016,Search - No Results State UI Validation,Search > No Results,Critical,"BL-SEARCH-003",,"Storefront is accessible","url={{FRONT_URL}}/search?q=xyzqwerty9876543","[NAV] Navigate to {{FRONT_URL}}/search?q=xyzqwerty9876543
+[WAIT] Wait for no-results page to load
+[ASSERT] Verify heading shows sorry message with query term bold
+[ASSERT] Verify 'There are no results found' message visible
+[ASSERT] Verify 'Reset search' button visible
+[ASSERT] Verify no product cards displayed
+[ASSERT] Verify no sidebar filters displayed","[DOM] h1 shows sorry/no-results message with the query term displayed (bold or highlighted)
+[DOM] 'There are no results found' message visible
+[DOM] 'Reset search' button present
+[STATE] No product cards or sidebar filter panel shown","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 (not 5xx)
+[CONSOLE] no TypeError or JS errors","Error page instead of no-results UI; product cards appearing for nonsense query; Reset search button absent; console TypeError",none,"E2E-SEARCH-004, SRCH-003",Manual
+SRCH-NEW-017,Search - Reset Search Button Clears Query,Search > No Results,High,BL-SEARCH-003,,"On no-results page /search?q=xyzqwerty9876543","url={{FRONT_URL}}/search?q=xyzqwerty9876543","[NAV] Navigate to {{FRONT_URL}}/search?q=xyzqwerty9876543
+[WAIT] Wait for no-results page
+[ASSERT] Verify no-results state is shown
+[ACT] Click 'Reset search' button
+[WAIT] Wait for action to complete","[STATE] Search input cleared after clicking Reset search
+[NAV] User redirected away from no-results page (to homepage or /catalog)","[CONSOLE] no TypeError or JS errors","'Reset search' button not clickable; input not cleared after reset; still on no-results page after reset; console TypeError",none,,Manual
+SRCH-NEW-018,Search - Whitespace-Only Query Handling,Search > Edge Cases,High,BL-SEARCH-003,,Storefront open at any page,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click search input
+[ACT] fill 'Search': '   ' (3 spaces)
+[KEY] press [Enter]
+[WAIT] Wait for result","[STATE] Submission is blocked (nothing happens) OR user lands on no-results/catalog page
+[STATE] No JavaScript crash or error page","[NETWORK] no 5xx response triggered by whitespace query
+[CONSOLE] no TypeError or JS errors","JS crash on whitespace submit; 5xx server error; redirect to error page; console TypeError",none,,Manual
+SRCH-NEW-019,Search - Very Long Query (200+ Characters),Search > Edge Cases,Medium,BL-SEARCH-003,,Storefront open at any page,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click search input
+[ACT] Type 200 repeated 'a' characters in the search input
+[KEY] press [Enter]
+[WAIT] Wait for response","[STATE] Input accepts long string or enforces max-length gracefully
+[STATE] No JS or server error
+[STATE] URL is properly URL-encoded","[NETWORK] no 5xx response for long query
+[CONSOLE] no TypeError or JS errors","JS error on long input; 5xx server error; URL encoding failing; console TypeError",none,,Manual
+SRCH-NEW-020,Search - XSS Script Injection in Input,Search > Security,Critical,BL-SEARCH-004,"ECL-5.1","Storefront is accessible","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click search input
+[ACT] fill 'Search': '<script>alert(''xss'')</script>'
+[KEY] press [Enter]
+[WAIT] Wait for results page
+[ASSERT] Check for alert dialog
+[ASSERT] Check console for script execution","[STATE] No alert dialog appears
+[STATE] Script not executed in browser
+[STATE] URL encodes the input as literal text
+[DOM] Heading displays query as literal escaped text (not rendered HTML)","[NETWORK] no 5xx responses triggered by XSS payload
+[CONSOLE] no script execution errors
+[CONSOLE] no TypeError or JS errors","Alert dialog appearing (script executed); heading rendering HTML instead of escaping it; 5xx from server; console TypeError",none,E2E-SEC-002,Manual
+SRCH-NEW-021,Search - SQL Injection Attempt,Search > Security,High,BL-SEARCH-004,"ECL-5.1","Storefront is accessible","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click search input
+[ACT] fill 'Search': ''' OR ''1''=''1'
+[KEY] press [Enter]
+[WAIT] Wait for response","[STATE] No database error or stack trace shown
+[STATE] Query handled gracefully — no-results or results page
+[STATE] API returns HTTP 200","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 (not 500)
+[NETWORK] no 5xx responses
+[CONSOLE] no script execution errors
+[CONSOLE] no TypeError or JS errors","Database error or stack trace visible in page; 5xx from server; JS crash; console TypeError",none,E2E-SEC-002,Manual
+SRCH-NEW-022,Search - Special Characters Are URL-Encoded Correctly,Search > Edge Cases,High,BL-SEARCH-003,ECL-8.1,Storefront open at any page,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] fill 'Search': 'hoodie & jeans'; [KEY] press [Enter]; [WAIT]
+[ASSERT] Verify URL encodes '&' correctly; page loads without error
+[NAV] Navigate back; [ACT] fill 'Search': 'product (new)'; [KEY] press [Enter]; [WAIT]
+[ASSERT] Verify parentheses properly encoded; heading shows decoded query
+[NAV] Navigate back; [ACT] fill 'Search': 'item #123'; [KEY] press [Enter]; [WAIT]
+[ASSERT] Verify hash properly encoded; page loads without error","[STATE] Ampersand URL-encoded as %26 in query string
+[STATE] Parentheses URL-encoded correctly
+[STATE] Hash URL-encoded correctly
+[DOM] All searches load without errors — results or no-results state
+[DOM] Heading shows decoded query text (human-readable)","[NETWORK] no 4xx/5xx for any special-char query
+[CONSOLE] no TypeError or JS errors","Any special-char query causing error page; URL malformed (unencoded chars breaking URL); heading showing raw URL-encoded text; console TypeError",none,SRCH-004,Manual
+SRCH-NEW-023,Search - Direct URL Navigation with Query Parameter,Search > URL Navigation,High,BL-SEARCH-001,,Storefront is accessible,"url={{FRONT_URL}}/search?q=hoodie","[NAV] Open a new tab and navigate directly to {{FRONT_URL}}/search?q=hoodie (no prior homepage visit)
+[WAIT] Wait for results page to load
+[ASSERT] Verify results page loaded correctly
+[ASSERT] Verify search input is pre-populated with 'hoodie'
+[ASSERT] Verify filters and sort are functional","[NAV] Results page loads without requiring homepage visit first
+[STATE] Search input pre-populated with 'hoodie' from URL parameter
+[DOM] Correct products and count displayed
+[DOM] Filters and sort controls functional","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Page not loading from direct URL; search input not pre-populated; products not showing; console TypeError",none,E2E-SEARCH-001,Manual
+SRCH-NEW-024,Search - Empty Query Parameter Loads Catalog,Search > URL Navigation,Medium,BL-SEARCH-003,,Storefront is accessible,"url={{FRONT_URL}}/search?q=","[NAV] Navigate to {{FRONT_URL}}/search?q= (empty q parameter)
+[WAIT] Wait for page to load","[NAV] Page loads without JavaScript or server error
+[DOM] Products displayed (catalog-style browse or empty search state)
+[STATE] Search input is empty","[NETWORK] page returns HTTP 200 (not 4xx/5xx)
+[CONSOLE] no TypeError or JS errors","Page returning 4xx/5xx for empty q param; JS error on empty query; console TypeError",none,,Manual
+SRCH-NEW-025,Search Bar - Keyboard-Only Navigation,Search > Accessibility,High,BL-SEARCH-002,,Storefront open; keyboard-only operation (no mouse),"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[KEY] press [Tab] repeatedly until search input is focused
+[ASSERT] Verify visible focus indicator on search input
+[ACT] Type 'hoodie'
+[KEY] press [Arrow Down] to move into dropdown
+[KEY] Navigate hints with [Arrow Up]/[Arrow Down] keys
+[KEY] press [Enter] on a hint item to execute that search
+[NAV] Navigate back; re-focus search; type 'hoodie'
+[KEY] press [Escape] to close dropdown without submitting","[STATE] Search input reachable via Tab key
+[DOM] Visible focus indicator on search input
+[STATE] Arrow keys navigate through dropdown items
+[STATE] Enter key on hint item executes the search
+[STATE] Escape closes dropdown without navigating
+[STATE] No keyboard trap — Tab out of dropdown works","[CONSOLE] no TypeError or JS errors","Search input not reachable via Tab; no visible focus indicator; Arrow keys not working in dropdown; Escape not closing dropdown; keyboard trap present; console TypeError",none,"WCAG 2.1 AA 2.1.1, 2.4.3",Manual
+SRCH-NEW-026,Search Bar - ARIA Roles and Labels,Search > Accessibility,High,BL-SEARCH-002,,Storefront open; DevTools Accessibility panel available,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click search input and open DevTools Accessibility panel
+[ASSERT] Inspect search input role and accessible name
+[ASSERT] Inspect magnifier/Search button accessible name
+[ASSERT] Inspect clear (X) button accessible name
+[ASSERT] Inspect dropdown container role and structure","[DOM] Input has role=searchbox and accessible name='Search'
+[DOM] Magnifier/Search button has a non-empty accessible name
+[DOM] Clear (X) button has an accessible name (e.g., 'Clear search')
+[DOM] Dropdown uses role=listbox or equivalent ARIA pattern
+[DOM] All interactive elements have non-empty accessible names","[CONSOLE] no TypeError or JS errors","Input missing role=searchbox; any interactive element lacking accessible name; dropdown missing ARIA role; console TypeError",none,"WCAG 2.1 AA 4.1.2",Manual
+SRCH-NEW-027,Search - Autocomplete Response Time Under 2 Seconds,Search > Performance,Medium,BL-SEARCH-002,,DevTools Network tab open,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Open DevTools Network tab
+[ACT] fill 'Search': 'hoodie'
+[WAIT] Wait for autocomplete results to appear
+[ASSERT] Measure time from first keystroke to autocomplete appearance
+[ASSERT] Check GraphQL searchProducts request duration in Network tab","[STATE] Autocomplete results appear within 2 seconds of first keystroke
+[STATE] GraphQL searchProducts request duration under 1500ms
+[STATE] No loading spinner visible for more than 2 seconds","[NETWORK] measure request duration via DevTools — searchProducts call under 1500ms
+[CONSOLE] no TypeError or JS errors","Autocomplete taking >2 seconds; GraphQL call >1500ms; spinner persisting >2s; console TypeError",none,,Manual
+SRCH-NEW-028,Search - Results Page Load Time Under 3 Seconds,Search > Performance,Medium,BL-SEARCH-001,,DevTools Network tab open; no throttling applied,"url={{FRONT_URL}}/search?q=hoodie","[NAV] Open DevTools Network tab; navigate to {{FRONT_URL}}/search?q=hoodie (fresh load, no cache)
+[WAIT] Wait for full page render
+[ASSERT] Measure total page render time
+[ASSERT] Verify heading visible within 2 seconds","[STATE] Full page render within 3 seconds
+[DOM] Heading with result count visible within 2 seconds of navigation
+[STATE] No major Cumulative Layout Shift (CLS)
+[NETWORK] All page requests return HTTP 200","[NETWORK] measure request duration via DevTools — page load under 3s
+[CONSOLE] no TypeError or JS errors","Full render exceeding 3 seconds; heading not visible within 2s; major layout shift; any request returning 4xx/5xx; console TypeError",none,,Manual
+SRCH-NEW-029,Search Bar - Firefox Compatibility,Search > Cross-Browser,Medium,BL-SEARCH-001,,Firefox browser via playwright-firefox,"url={{FRONT_URL}}","[NAV] Open {{FRONT_URL}} in Firefox (playwright-firefox)
+[ACT] fill 'Search': 'hoodie'
+[KEY] press [Enter]
+[WAIT] Wait for results page
+[ASSERT] Verify autocomplete worked before submission
+[ASSERT] Verify results page identical to Chrome behavior","[STATE] Search behavior identical to Chromium baseline
+[DOM] No Firefox-specific layout breaks or rendering differences","[CONSOLE] no TypeError or JS errors in Firefox console","Any Firefox-specific JS error; layout broken in Firefox; autocomplete not working in Firefox; console TypeError",none,,Manual
+SRCH-NEW-030,Search Bar - Edge Compatibility,Search > Cross-Browser,Medium,BL-SEARCH-001,,Edge browser via playwright-edge,"url={{FRONT_URL}}","[NAV] Open {{FRONT_URL}} in Edge (playwright-edge)
+[ACT] fill 'Search': 'hoodie'
+[KEY] press [Enter]
+[WAIT] Wait for results page
+[ASSERT] Verify behavior identical to Chrome baseline","[STATE] Search behavior identical to Chromium baseline
+[DOM] No Edge-specific layout or functionality issues","[CONSOLE] no TypeError or JS errors in Edge console","Any Edge-specific JS error; layout broken in Edge; search not submitting; console TypeError",none,,Manual
+SRCH-NEW-031,Search Bar - Mobile Viewport 375px,Search > Mobile,High,BL-SEARCH-002,,Chrome DevTools viewport emulation at 375px width,"url={{FRONT_URL}}","[NAV] Set viewport to 375px wide; navigate to {{FRONT_URL}}
+[ASSERT] Verify search input is visible at 375px
+[ACT] Tap/click search input
+[ACT] fill 'Search': 'hoodie'
+[WAIT] Wait for autocomplete
+[ASSERT] Verify dropdown fits within viewport (no horizontal overflow)
+[ACT] Tap a product in autocomplete
+[WAIT] Wait for PDP to load","[DOM] Search input visible and usable at 375px viewport
+[DOM] Autocomplete dropdown fits within viewport width
+[DOM] Product names in dropdown readable at mobile size
+[NAV] Tapping a product navigates to PDP correctly","[CONSOLE] no TypeError or JS errors","Search input invisible or inaccessible at 375px; dropdown overflowing viewport; product names truncated unreadably; navigation to PDP failing; console TypeError",none,,Manual
+SRCH-NEW-032,Search - Mobile Results Page Layout 375px,Search > Mobile,High,BL-SEARCH-001,,375px viewport; navigate to /search?q=hoodie,"url={{FRONT_URL}}/search?q=hoodie","[NAV] Set viewport to 375px; navigate to {{FRONT_URL}}/search?q=hoodie
+[WAIT] Wait for results page
+[ASSERT] Verify heading is readable at 375px
+[ASSERT] Verify grid adapts to 1-2 column layout
+[ASSERT] Verify sort dropdown is accessible without horizontal scroll
+[ASSERT] Verify filter controls accessible
+[ASSERT] Verify interactive touch targets >= 44x44px","[DOM] Heading readable at 375px
+[DOM] Grid adapts to 1-2 column layout (not 3+ columns squished)
+[DOM] Sort dropdown and filter controls accessible without horizontal scrolling
+[DOM] Touch target sizes meet minimum 44x44px","[CONSOLE] no TypeError or JS errors","Heading cut off at 375px; grid not adapting to mobile columns; horizontal scroll required; touch targets smaller than 44x44px; console TypeError",none,,Manual
+SRCH-NEW-033,Search - GA4 search Event Fires on Query Submission,Search > Analytics,Medium,"BL-SEARCH-005",,"DevTools Console open; GTM or GA4 configured on storefront","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Open DevTools Console tab
+[ASSERT] Run window.dataLayer in console to confirm dataLayer exists
+[ACT] fill 'Search': 'hoodie'
+[KEY] press [Enter]
+[WAIT] Wait for results page
+[ASSERT] Check dataLayer in console for search event","[STATE] dataLayer array exists and is accessible
+[STATE] A 'search' event entry found in dataLayer with search_term: 'hoodie'","[CONSOLE] dataLayer.push called with event: 'search' and search_term: 'hoodie'
+[CONSOLE] no GA4 or GTM errors
+[CONSOLE] no TypeError or JS errors","No dataLayer push on search submission; search event missing search_term; GTM error in console; console TypeError",none,E2E-GA-004,Manual
+SRCH-NEW-034,Search - GA4 view_search_results Event on Results Page,Search > Analytics,Medium,"BL-SEARCH-005",,"DevTools Console open; GA4 configured on storefront","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+[WAIT] Wait for results page to fully load
+[ASSERT] Open DevTools Console
+[ASSERT] Check dataLayer for view_search_results event","[STATE] A 'view_search_results' event found in dataLayer with search_term: 'hoodie'","[CONSOLE] dataLayer.push called with event: 'view_search_results' and search_term: 'hoodie'
+[CONSOLE] no GA4 or GTM errors
+[CONSOLE] no TypeError or JS errors","No view_search_results event in dataLayer; event missing search_term param; GTM error; console TypeError",none,E2E-GA-004,Manual
+SRCH-NEW-035,Search to Cart - Full End-to-End Flow,Search > E2E,Critical,"BL-SEARCH-001, BL-CAT-006",,User authenticated; cart at a known state (empty or tracked),"url={{FRONT_URL}}; email={{USER_EMAIL}}; password={{USER_PASSWORD}}; query=hoodie","[NAV] Log in and navigate to {{FRONT_URL}}
+[ACT] fill 'Search': 'hoodie'
+[KEY] press [Enter]
+[WAIT] Wait for search results page
+[ASSERT] Locate 'Vintage Colorado Hoodie' ($54.00) in results
+[ACT] Click '+' or 'Add to cart' button on the product card
+[WAIT] Wait for cart badge to increment
+[ASSERT] Verify cart badge count increments
+[NAV] Navigate to cart page
+[WAIT] Wait for cart to load
+[ASSERT] Verify 'Vintage Colorado Hoodie' in cart at $54.00 with quantity 1","[NAV] Search finds product on results page
+[DOM] 'Vintage Colorado Hoodie' visible at $54.00
+[MATH] Cart badge increments by 1 after add-to-cart
+[DOM] Cart page shows correct product name, price ($54.00), and quantity (1)","[NETWORK] POST add-to-cart returns HTTP 200
+[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Search not finding product; Add to cart fails; cart badge not incrementing; cart showing wrong price; cart empty after add; console TypeError","Remove 'Vintage Colorado Hoodie' from cart after test","E2E-SEARCH-001, BL-CART",Manual
+SRCH-NEW-036,Search - Browser Back Returns to Results Page,Search > Navigation,High,BL-SEARCH-001,,User navigated from search results to a PDP,"url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+[WAIT] Wait for results page
+[ACT] Click a product card to open its PDP
+[WAIT] Wait for PDP to load
+[KEY] Click browser Back button
+[WAIT] Wait for search results to reload","[NAV] Browser returns to /search?q=hoodie after Back
+[DOM] Same result set displayed as before navigating to PDP
+[STATE] Search input still shows 'hoodie'
+[DOM] Product cards visible","[NETWORK] no 4xx/5xx on back navigation
+[CONSOLE] no TypeError or JS errors","Browser Back going to homepage instead of search results; search input cleared; products not re-rendering; console TypeError",none,E2E-SEARCH-001,Manual
