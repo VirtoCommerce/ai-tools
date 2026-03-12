@@ -58,7 +58,7 @@ Check which MCP servers are configured and reachable:
 Quick checks on test infrastructure:
 - `config/test-suites.json` exists and is valid JSON
 - `regression/suites/` has CSV files matching the manifest
-- `docs/prompts/test-runner-agent.md` template exists
+- `.claude/agents/qa/test-runner-agent.md` agent exists
 - `reports/` directory exists (create if missing)
 
 ---

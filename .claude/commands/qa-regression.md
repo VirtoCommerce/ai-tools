@@ -47,7 +47,7 @@ With 3 browser slots (playwright-chrome, playwright-firefox, playwright-edge):
 1. Pick next 3 pending suites (P0 first, then P1, then P2)
 2. Assign each a browser slot
 3. Launch all 3 as parallel Task calls using the agent type from the manifest
-4. Fill in `docs/prompts/test-runner-agent.md` template with suite parameters
+4. Fill in `.claude/agents/qa/test-runner-agent.md` template with suite parameters
 
 ### Step 5 — Monitor, Retry, Continue
 - Wait for batch to complete

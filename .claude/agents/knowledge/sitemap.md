@@ -76,6 +76,7 @@ All account pages require authentication. Account sidebar is organized into 4 gr
 ### Marketing
 | Page | URL | Description |
 |------|-----|-------------|
+| Coupons & promotions | `/account/coupons` | All coupons & promotions (coupon cards with code, description, expiry) |
 | Notifications | `/account/notifications` | User notifications |
 | Points History | `/account/points-history` | Loyalty points history |
 
@@ -257,17 +258,106 @@ The platform supports 3 product display types, visible in the `/products-with-op
 
 ---
 
-## 7. External Links
+## 7. Admin SPA (BACK_URL)
+
+Admin SPA is an Angular-based single-page application with blade navigation (panels slide in from right). All routes use hash-based URLs (`#!/`).
+
+### System Pages
+
+| Page | URL | Description |
+|------|-----|-------------|
+| Login | `{BACK_URL}` | Admin login page |
+| Dashboard | `{BACK_URL}/#!/workspace` | Main workspace dashboard |
+| System Info | `{BACK_URL}/#!/workspace/systeminfo` | Platform version, module versions |
+| Modules | `{BACK_URL}/#!/workspace/modules` | Installed modules list |
+| Swagger | `{BACK_URL}/docs/index.html` | REST API documentation |
+| GraphiQL | `{BACK_URL}/ui/graphiql` | GraphQL query explorer |
+| Hangfire | `{BACK_URL}/hangfire` | Background jobs dashboard |
+
+### Module Admin Pages (blade-based)
+
+| Module | Menu Path | Key Blades | Suite |
+|--------|-----------|-----------|-------|
+| **Catalog** | Catalog → Categories / Products / Properties | Category list, Product detail, Properties | 16 |
+| **Pricing** | Pricing → Price Lists / Assignments | Price list grid, Price assignment blade | 19 |
+| **Orders** | Orders → All Orders / Payment Requests | Order list, Order detail, Payment blade | 20 |
+| **Customers** | Contacts → Organizations / Members | Org list, Member detail, Roles | 21 |
+| **Inventory** | Inventory → Fulfillment Centers / Stock | FC list, Stock blade | 22 |
+| **Marketing** | Marketing → Promotions / Coupons / Content | Promo list, Coupon detail, Content items | 23 |
+| **Notifications** | Notifications → Templates / Layouts / Push | Template editor, Layout grid, Push messages | 24, 33 |
+| **CMS** | Content → Pages / Menus / Blog | Page list, Menu editor, Blog posts | 25 |
+| **Search** | Search → Indexing / Configuration | Index status, Config blade | 26 |
+| **Assets** | Assets → Blob Storage | Asset browser, Upload blade | 27 |
+| **Platform** | Settings → Users / Roles / Permissions / Languages | User grid, Role editor, Permission matrix | 17, 28 |
+| **Store** | Stores → Store detail | Store settings blade (payments, shipping, SEO) | 18 |
+| **Import/Export** | Data Import/Export | Import wizard, Export config | 29 |
+| **Shipping** | Shipping → Methods / BOPIS | Method list, BOPIS config | 30 |
+| **SEO** | Marketing → SEO / Redirects | SEO settings, Redirect rules | 31 |
+| **White Labeling** | Settings → Branding / Themes | Theme editor, Logo upload | 32 |
+| **Image Tools** | Assets → Thumbnails | Thumbnail config | 34 |
+| **Security** | Settings → Security / OAuth | Security settings, OAuth clients | 08 |
+
+### Admin UI Patterns
+
+- **Blade navigation**: Panels slide in from right, stack horizontally. Close with X or toolbar button
+- **Grid pattern**: Searchable, sortable, paginated grids (toolbar: Add, Delete, Export, Refresh)
+- **Form pattern**: Detail blade with fields, toolbar (Save, Cancel), validation errors inline
+- **Notifications**: Toast messages (success green, error red) appear top-right after save/delete
+
+---
+
+## 8. REST API Endpoints (BACK_URL)
+
+| Module | Base Path | Key Operations |
+|--------|-----------|---------------|
+| **Auth** | `/connect/token` | `POST` — OAuth2 token (password, refresh_token grants) |
+| **Platform** | `/api/platform/` | `GET modules`, `GET healthcheck`, `GET settings`, `POST pushnotifications` |
+| **Catalog** | `/api/catalog/` | `GET/POST products`, `GET/POST categories`, `GET properties` |
+| **Pricing** | `/api/pricing/` | `POST evaluate`, `GET/POST pricelists`, `GET/POST assignments` |
+| **Orders** | `/api/order/` | `GET/POST customerOrders`, `GET customerOrders/{id}`, `POST payments` |
+| **Customers** | `/api/members/` | `GET/POST organizations`, `GET/POST contacts`, `GET {id}` |
+| **Inventory** | `/api/inventory/` | `GET products/{id}/availability`, `POST reserve`, `POST release` |
+| **Marketing** | `/api/marketing/` | `GET/POST promotions`, `GET/POST coupons` |
+| **Notifications** | `/api/notifications/` | `GET/POST templates`, `POST send` |
+| **Content** | `/api/content/` | `GET/POST pages`, `GET/POST menus` |
+| **Search** | `/api/search/` | `POST index`, `GET status` |
+| **Assets** | `/api/assets/` | `POST upload`, `GET blob`, `DELETE` |
+| **Shipping** | `/api/shipping/` | `GET methods`, `POST evaluate` |
+| **SEO** | `/api/seo/` | `GET slugs`, `POST redirects` |
+
+**Common patterns**: Pagination via `skip/take` + `totalCount`. Auth via Bearer token. Errors: 400 validation, 401 unauth, 403 forbidden, 404 not found.
+
+---
+
+## 9. GraphQL xAPI Endpoints
+
+**Endpoint:** `{BACK_URL}/xapi/graphql` (storefront) or `{BACK_URL}/graphql` (admin)
+**Explorer:** `{BACK_URL}/ui/graphiql`
+
+| Module | Key Queries | Key Mutations |
+|--------|-----------|--------------|
+| **xCatalog** | `products`, `product`, `categories`, `properties` | — (read-only) |
+| **xCart** | `cart` | `addItem`, `removeCartItem`, `changeCartItemQuantity`, `addCoupon`, `removeCoupon`, `addOrUpdateCartShipment`, `addOrUpdateCartPayment`, `validateCoupon` |
+| **xOrder** | `orders`, `order` | `createOrderFromCart`, `changeOrderStatus` |
+| **xProfile** | `me`, `organization`, `contact` | `createContact`, `updateContact`, `createOrganization`, `inviteUser` |
+| **xCMS** | `pages`, `menus` | — (read-only from storefront) |
+| **Quote** | `quoteRequest`, `quoteRequests` | `createQuoteFromCart`, `changeQuoteComment`, `approveQuoteRequest` |
+
+**Critical rule:** HTTP 200 ≠ success. Always check `response.data.errors[]`. All queries require `storeId`, `cultureName`, `currencyCode` context.
+
+---
+
+## 10. External Links
 
 | Platform | URL | Description |
 |----------|-----|-------------|
-| Virto Commerce Admin | https://vcst-qa.govirto.com/ | Admin platform |
+| Virto Commerce Admin | `{BACK_URL}` | Admin platform (from env var) |
 | Virto Commerce | https://virtocommerce.com | Main website |
 | Builder.io | https://www.builder.io/ | Visual development platform |
 
 ---
 
-## 8. Menu Structure
+## 11. Menu Structure
 
 ### Top Header Bar
 
@@ -347,7 +437,7 @@ Available via the "All products" button, includes:
 
 ---
 
-## 9. Site Features
+## 12. Site Features
 
 ### User Features
 - Multi-language support (14 languages, added español)
@@ -388,7 +478,7 @@ Available via the "All products" button, includes:
 
 ---
 
-## 10. Technical Information
+## 13. Technical Information
 
 ### Platform
 - **Platform:** Virto Commerce (ASP.NET)
@@ -411,20 +501,28 @@ Available via the "All products" button, includes:
 
 ---
 
-## 11. Total Page Count Estimate
+## 14. Total Page Count Estimate
 
 | Type | Count | Notes |
 |------|-------|-------|
-| Static Pages | ~16 | Homepage, sign-up, contacts, catalog, checkout/payment, forgot-password, soda, etc. |
+| **Storefront** | | |
+| Static Pages | ~16 | Homepage, sign-up, contacts, catalog, checkout/payment, etc. |
 | Account Pages | 13 | Dashboard, orders, lists, profile, company info/members, etc. |
 | Main Categories | ~35 | Including subcategories and test categories |
 | Category IDs | 7 | Named ID-based categories |
 | Products | 4 visible | Thousands more in catalog |
 | Languages | 14 | All pages × 14 languages |
+| **Admin SPA** | | |
+| System Pages | 7 | Login, dashboard, system info, modules, Swagger, GraphiQL, Hangfire |
+| Module Pages | 18 | Catalog, Pricing, Orders, Customers, Inventory, Marketing, etc. |
+| **API Layer** | | |
+| REST Endpoints | ~14 modules | Auth, platform, catalog, pricing, orders, customers, etc. |
+| GraphQL Modules | 6 | xCatalog, xCart, xOrder, xProfile, xCMS, Quote |
 
-**Estimated Total Unique Pages (English only):** 79+
-**Estimated Total with All Languages:** 1,106+ (79 × 14)
-**Estimated Product Pages:** 5,000+
+**Estimated Storefront Pages (English only):** 79+
+**Estimated with All Languages:** 1,106+ (79 × 14)
+**Estimated Admin Pages:** ~25 (system + module blades)
+**Estimated API Surface:** ~80+ endpoints across 14 REST modules + 6 GraphQL modules
 
 ---
 

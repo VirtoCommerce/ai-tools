@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic QA — AI-Driven Testing for Virto Commerce</title>
+<style>
+/* ===== Design tokens ===== */
+:root {
+  --bg: #EDE9E3;
+  --slide-bg: #FFFFFF;
+  --code-bg: #F5F2EC;
+  --text: #1A1714;
+  --text-2: #5C5852;
+  --text-3: #9C9891;
+  --accent: #C5603E;
+  --accent2: #A84F31;
+  --accent-soft: rgba(197,96,62,0.10);
+  --accent-mid: rgba(197,96,62,0.22);
+  --green: #2E7D5A;
+  --green-soft: rgba(46,125,90,0.10);
+  --blue: #2959A8;
+  --blue-soft: rgba(41,89,168,0.10);
+  --border: rgba(0,0,0,0.08);
+  --r: 10px;
+  --r2: 16px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.04);
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 17px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== Slide engine ===== */
+.deck { position: relative; width: 100%; height: 100%; }
+
+.slide {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.slide.active { opacity: 1; pointer-events: auto; }
+
+.slide-inner {
+  width: min(1140px, 92vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--slide-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 48px 56px 44px;
+  box-shadow: var(--shadow);
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) transparent;
+}
+.slide-inner::-webkit-scrollbar { width: 5px; }
+.slide-inner::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+
+/* ===== Nav ===== */
+.nav {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 10px; align-items: center;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: 40px;
+  padding: 8px 18px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  z-index: 100;
+}
+.nav button {
+  background: none; border: none; cursor: pointer;
+  font-size: 18px; color: var(--text-2); padding: 4px 8px;
+  border-radius: 6px; transition: background 0.15s;
+}
+.nav button:hover { background: var(--accent-soft); color: var(--accent); }
+#counter { font-size: 13px; color: var(--text-3); min-width: 54px; text-align: center; font-variant-numeric: tabular-nums; }
+
+.slide-num {
+  position: absolute; top: 18px; right: 22px;
+  font-size: 12px; color: var(--text-3); letter-spacing: 0.04em;
+}
+
+/* ===== Typography ===== */
+.eyebrow {
+  font-size: 12px; font-weight: 600; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--accent);
+  margin-bottom: 10px;
+}
+
+h1 { font-size: clamp(30px, 3.2vw, 44px); font-weight: 800; line-height: 1.15; letter-spacing: -0.025em; }
+h2 { font-size: clamp(24px, 2.6vw, 34px); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; color: var(--accent); margin-bottom: 6px; }
+h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+
+.sub { font-size: 18px; color: var(--text-2); margin-top: 10px; line-height: 1.5; }
+.caption { font-size: 13px; color: var(--text-3); }
+
+/* ===== Layout helpers ===== */
+.cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.cols-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.cols-65-35 { display: grid; grid-template-columns: 1.8fr 1fr; gap: 24px; }
+.cols-35-65 { display: grid; grid-template-columns: 1fr 1.8fr; gap: 24px; }
+.mt8 { margin-top: 8px; }
+.mt16 { margin-top: 16px; }
+.mt24 { margin-top: 24px; }
+.mt32 { margin-top: 32px; }
+
+/* ===== Cards ===== */
+.card {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 18px 20px;
+}
+.card.accent { border-color: var(--accent-mid); background: var(--accent-soft); }
+.card.green { border-color: rgba(46,125,90,0.25); background: var(--green-soft); }
+.card.blue { border-color: rgba(41,89,168,0.25); background: var(--blue-soft); }
+
+/* ===== Big stat ===== */
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.stat {
+  background: var(--code-bg); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 18px 16px; text-align: center;
+}
+.stat-num { font-size: 32px; font-weight: 800; color: var(--accent); line-height: 1; }
+.stat-label { font-size: 12px; color: var(--text-2); margin-top: 4px; }
+
+/* ===== Tables ===== */
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+th {
+  background: var(--code-bg);
+  text-align: left; font-weight: 600; font-size: 12px;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 9px 14px; color: var(--text-2);
+  border-bottom: 1px solid var(--border);
+}
+td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(0,0,0,0.02); }
+
+/* ===== Code blocks ===== */
+pre {
+  background: var(--code-bg); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px 18px;
+  font-family: var(--mono); font-size: 13px; line-height: 1.6;
+  overflow-x: auto; color: var(--text);
+}
+code { font-family: var(--mono); font-size: 0.9em; color: var(--accent); }
+
+/* ===== Badges ===== */
+.badge {
+  display: inline-block; padding: 2px 9px; border-radius: 20px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.badge-accent { background: var(--accent-soft); color: var(--accent); }
+.badge-green { background: var(--green-soft); color: var(--green); }
+.badge-blue { background: var(--blue-soft); color: var(--blue); }
+.badge-gray { background: var(--code-bg); color: var(--text-2); border: 1px solid var(--border); }
+
+/* ===== Flow arrows ===== */
+.flow {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.flow-step {
+  background: var(--code-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 14px; font-size: 13.5px; font-weight: 500;
+}
+.flow-arrow { color: var(--accent); font-size: 16px; flex-shrink: 0; }
+
+/* ===== Title slide ===== */
+.title-slide .slide-inner {
+  background: linear-gradient(135deg, #1A1714 0%, #2a2420 50%, #3a2e28 100%);
+  color: #fff; border-color: rgba(255,255,255,0.08);
+}
+.title-slide h1 { color: #fff; font-size: clamp(34px, 4vw, 54px); }
+.title-slide .sub { color: rgba(255,255,255,0.65); }
+.title-slide .eyebrow { color: var(--accent); }
+.title-tagline {
+  margin-top: 32px;
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.title-tag {
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 30px; padding: 6px 16px; font-size: 13px; color: rgba(255,255,255,0.75);
+}
+.hero-accent { color: var(--accent); }
+
+/* ===== Check/Cross lists ===== */
+.checklist { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.checklist li { display: flex; gap: 10px; align-items: flex-start; font-size: 14.5px; }
+.checklist li::before { content: "✓"; color: var(--green); font-weight: 700; flex-shrink: 0; }
+.checklist li.bad::before { content: "✗"; color: #B03A3A; }
+.checklist li.new::before { content: "★"; color: var(--accent); }
+
+/* ===== Comparison columns ===== */
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.compare-col { border-radius: var(--r); padding: 20px; }
+.compare-col.old { background: rgba(176,58,58,0.06); border: 1px solid rgba(176,58,58,0.2); }
+.compare-col.new-col { background: var(--green-soft); border: 1px solid rgba(46,125,90,0.25); }
+.compare-col h3 { font-size: 14px; margin-bottom: 12px; }
+.compare-col.old h3 { color: #B03A3A; }
+.compare-col.new-col h3 { color: var(--green); }
+
+/* ===== Timeline ===== */
+.timeline { display: flex; flex-direction: column; gap: 0; }
+.tl-item { display: flex; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.tl-item:last-child { border-bottom: none; }
+.tl-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 6px; }
+.tl-dot.green { background: var(--green); }
+.tl-dot.blue { background: var(--blue); }
+.tl-dot.gray { background: var(--text-3); border: 2px dashed var(--text-3); background: none; }
+.tl-content h4 { font-size: 14.5px; font-weight: 600; }
+.tl-content p { font-size: 13.5px; color: var(--text-2); margin-top: 2px; }
+
+/* ===== Agent grid ===== */
+.agent-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.agent-card {
+  background: var(--code-bg); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 12px 10px; text-align: center;
+}
+.agent-card .role { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+.agent-card .name { font-size: 12px; font-weight: 600; }
+.agent-card.opus { border-color: var(--accent-mid); background: var(--accent-soft); }
+.agent-card.sonnet { border-color: rgba(41,89,168,0.2); background: var(--blue-soft); }
+
+/* ===== Progress bar ===== */
+.progress-track {
+  height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+}
+.progress-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+
+/* ===== Roadmap phase ===== */
+.phase-row { display: grid; grid-template-columns: 90px 1fr; gap: 16px; align-items: start; }
+.phase-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; padding: 4px 10px;
+  border-radius: 20px; text-align: center; white-space: nowrap;
+}
+.phase-now { background: var(--accent-soft); color: var(--accent); }
+.phase-q2 { background: var(--blue-soft); color: var(--blue); }
+.phase-q3 { background: var(--green-soft); color: var(--green); }
+.phase-future { background: var(--code-bg); color: var(--text-2); border: 1px dashed var(--border); }
+.phase-items { display: flex; flex-wrap: wrap; gap: 8px; }
+.phase-item {
+  background: var(--code-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 12px; font-size: 13px;
+}
+
+/* ===== Keyboard shortcut hint ===== */
+.key-hint {
+  position: fixed; top: 20px; right: 20px;
+  font-size: 12px; color: var(--text-3);
+}
+.key-hint kbd {
+  background: var(--slide-bg); border: 1px solid var(--border);
+  border-radius: 4px; padding: 1px 6px; font-family: var(--mono);
+  font-size: 11px;
+}
+
+/* ===== Separator line ===== */
+.rule { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+/* ===== Quote ===== */
+.blockquote {
+  border-left: 3px solid var(--accent); padding-left: 18px;
+  margin: 16px 0; font-style: italic; color: var(--text-2); font-size: 16px;
+}
+</style>
+</head>
+<body>
+
+<div class="key-hint"><kbd>←</kbd> <kbd>→</kbd> navigate &nbsp;|&nbsp; <kbd>S</kbd> speaker notes</div>
+
+<div class="deck">
+
+<!-- ========== SLIDE 1: TITLE ========== -->
+<div class="slide title-slide active" id="s1">
+  <div class="slide-num">1 / 18</div>
+  <div class="slide-inner">
+    <div class="eyebrow">Virto Commerce · QA Engineering · 2026</div>
+    <h1>Agentic QA<br><span class="hero-accent">AI-Driven Testing</span></h1>
+    <div class="sub">Natural language replaces brittle scripts.<br>14 specialized agents. 1,546 test cases. Zero code required.</div>
+    <div class="title-tagline">
+      <span class="title-tag">🤖 14 AI Agents</span>
+      <span class="title-tag">🧪 36 Test Suites</span>
+      <span class="title-tag">⚡ 3 Parallel Browsers</span>
+      <span class="title-tag">🔄 CI/CD (Planned)</span>
+      <span class="title-tag">🛡️ Self-Healing</span>
+    </div>
+    <div style="margin-top:36px; padding-top:24px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:40px;">
+      <div>
+        <div style="font-size:11px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.1em;">Platform</div>
+        <div style="color:rgba(255,255,255,0.85); font-size:15px; margin-top:3px;">Virto Commerce B2B</div>
+      </div>
+      <div>
+        <div style="font-size:11px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.1em;">Presentation</div>
+        <div style="color:rgba(255,255,255,0.85); font-size:15px; margin-top:3px;">~15 minutes</div>
+      </div>
+      <div>
+        <div style="font-size:11px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.1em;">Date</div>
+        <div style="color:rgba(255,255,255,0.85); font-size:15px; margin-top:3px;">March 2026</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 2: THE PROBLEM / BEFORE-AFTER ========== -->
+<div class="slide" id="s2">
+  <div class="slide-num">2 / 18</div>
+  <div class="slide-inner">
+    <div class="eyebrow">The Problem We Solve</div>
+    <h2>Traditional Automation vs. Agentic QA</h2>
+
+    <div class="compare mt16">
+      <div class="compare-col old">
+        <h3>❌ Traditional Test Automation</h3>
+        <ul class="checklist">
+          <li class="bad">Requires Playwright/Selenium engineering skills</li>
+          <li class="bad">Breaks on every CSS class / selector change</li>
+          <li class="bad">High maintenance cost — devs, not QA, fix tests</li>
+          <li class="bad">Adding a test suite = writing hundreds of lines of code</li>
+          <li class="bad">Can't reason about business logic violations</li>
+          <li class="bad">No contextual understanding — only matches patterns</li>
+        </ul>
+      </div>
+      <div class="compare-col new-col">
+        <h3>✅ Agentic QA</h3>
+        <ul class="checklist">
+          <li>Plain English prompts — no coding required</li>
+          <li>Self-healing — agents find elements by context, not selectors</li>
+          <li>Low maintenance — update the prompt, not the test code</li>
+          <li>Adding a test suite = adding a CSV file</li>
+          <li>Agents apply business invariants (BL-* rules) to every test</li>
+          <li>Contextual reasoning: "this price is wrong because…"</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mt20">
+      <div class="compare">
+        <pre style="margin:0; font-size:12px;">// Traditional Playwright script (140 lines)
+await page.goto('/login');
+await page.fill('[data-id="email"]', user);
+await page.fill('[data-id="pass"]', pass);
+await page.click('.submit-btn-v2'); // breaks when renamed
+await expect(page).toHaveURL('/dashboard');
+// ... 135 more lines of fragile code</pre>
+        <pre style="margin:0; font-size:12px; border-color:rgba(46,125,90,0.3);">// Agentic test instruction (3 lines)
+"Sign in to the storefront using the QA test
+account. Verify the dashboard loads and the
+cart icon shows correct item count."</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 3: PROJECT OVERVIEW ========== -->
+<div class="slide" id="s3">
+  <div class="slide-num">3 / 18</div>
+  <div class="slide-inner">
+    <div class="eyebrow">Project Overview</div>
+    <h2>What Is the Agentic QA System?</h2>
+    <div class="sub" style="margin-bottom:24px;">An LLM-powered testing platform where AI agents execute test cases through real browsers — no test code, no fragile selectors.</div>
+
+    <div class="cols-3">
+      <div class="card accent">
+        <div style="font-size:22px; margin-bottom:8px;">🧠</div>
+        <h3>AI-Native</h3>
+        <p style="font-size:13.5px; color:var(--text-2);">Tests are plain English prompts executed by Claude through MCP browser tools. The LLM reasons about what to click, what to verify, and what constitutes a bug.</p>
+      </div>
+      <div class="card blue">
+        <div style="font-size:22px; margin-bottom:8px;">🏗️</div>
+        <h3>Modular Architecture</h3>
+        <p style="font-size:13.5px; color:var(--text-2);">14 specialized agents, 36 CSV test suites, 18 methodology skills, and 12 shared knowledge files — all coordinated by an orchestrator.</p>
+      </div>
+      <div class="card" style="border-color:rgba(197,96,62,0.2); background:rgba(197,96,62,0.04);">
+        <div style="font-size:22px; margin-bottom:8px;">⚙️</div>
+        <h3>CI Pipeline <span class="badge badge-accent" style="vertical-align:middle; margin-left:6px;">Planned</span></h3>
+        <p style="font-size:13.5px; color:var(--text-2);">GitHub Actions triggers daily smoke tests and weekly full regression. Docker container + Claude Agent SDK run suites headlessly with Teams notifications.</p>
+      </div>
+    </div>
+
+    <div class="mt24">
+      <div class="card" style="padding:16px 20px;">
+        <div class="cols-65-35" style="align-items:center; gap:32px;">
+          <div>
+            <h3 style="margin-bottom:8px;">Scope: Virto Commerce B2B e-commerce platform</h3>
+            <div class="flow" style="flex-wrap:wrap; gap:8px;">
+              <span class="badge badge-accent">Storefront</span>
+              <span class="badge badge-blue">Admin SPA</span>
+              <span class="badge badge-green">REST API</span>
+              <span class="badge badge-accent">GraphQL xAPI</span>
+              <span class="badge badge-blue">Checkout / Payment</span>
+              <span class="badge badge-green">B2B Multi-org</span>
+              <span class="badge badge-gray">GA4 Tracking</span>
+              <span class="badge badge-gray">WCAG 2.1 AA</span>
+              <span class="badge badge-gray">Storybook (55 components)</span>
+            </div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:36px; font-weight:800; color:var(--accent); line-height:1;">~1,546</div>
+            <div style="font-size:13px; color:var(--text-2); margin-top:4px;">test cases across<br>36 suites</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 4: ARCHITECTURE ========== -->
+<div class="slide" id="s4">
+  <div class="slide-num">4 / 18</div>
+  <div class="slide-inner">
+    <div class="eyebrow">Architecture</div>
+    <h2>Three Testing Modes, One Foundation</h2>
+
+    <div class="cols-3 mt16">
+      <div class="card accent">
+        <div class="badge badge-accent" style="margin-bottom:10px;">Interactive</div>
+        <h3>Engineer in IDE</h3>
+        <div class="flow" style="flex-direction:column; gap:4px; margin-top:8px;">
+          <div class="flow-step" style="font-size:12.5px;">Claude Code CLI</div>
+          <div class="flow-arrow" style="text-align:center;">↓</div>
+          <div class="flow-step" style="font-size:12.5px;">14 Specialized Agents</div>
+          <div class="flow-arrow" style="text-align:center;">↓</div>
+          <div class="flow-step" style="font-size:12.5px;">9 MCP Servers</div>
+          <div class="flow-arrow" style="text-align:center;">↓</div>
+          <div class="flow-step" style="font-size:12.5px;">3 Real Browsers</div>
+        </div>
+      </div>
+      <div class="card blue">
+        <div class="badge badge-blue" style="margin-bottom:10px;">Agent Teams</div>
+        <h3>Autonomous Regression</h3>
+        <div class="flow" style="flex-direction:column; gap:4px; margin-top:8px;">
+          <div class="flow-step" style="font-size:12.5px;">autonomous-orchestrator</div>
+          <div class="flow-arrow" style="text-align:center;">↓</div>
+          <div class="flow-step" style="font-size:12.5px;">TeamCreate API</div>
+          <div class="flow-arrow" style="text-align:center;">↓</div>
+          <div class="flow-step" style="font-size:12.5px;">Token bucket (3+1 slots)</div>
+          <div class="flow-arrow" style="text-align:center;">↓</div>
+          <div class="flow-step" style="font-size:12.5px;">Exponential backoff</div>
+        </div>
+      </div>
+      <div class="card" style="border-color:rgba(197,96,62,0.2); background:rgba(197,96,62,0.04);">
+        <div class="badge badge-accent" style="margin-bottom:10px;">CI Pipeline · Planned</div>
+        <h3>GitHub Actions</h3>
+        <div class="flow" style="flex-direction:column; gap:4px; margin-top:8px;">
+          <div class="flow-step" style="font-size:12.5px;">Docker Container</div>
+          <div class="flow-arrow" style="text-align:center;">↓</div>
+          <div class="flow-step" style="font-size:12.5px;">Claude Agent SDK</div>
+          <div class="flow-arrow" style="text-align:center;">↓</div>
+          <div class="flow-step" style="font-size:12.5px;">Headless Chromium</div>
+          <div class="flow-arrow" style="text-align:center;">↓</div>
+          <div class="flow-step" style="font-size:12.5px;">Teams notification</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt16" style="padding:14px 20px;">
+      <div style="font-size:12px; font-weight:600; color:var(--text-2); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;">Shared Foundation — used by all three modes</div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <span class="badge badge-gray">config/test-suites.json (36 suites)</span>
+        <span class="badge badge-gray">regression/suites/ (CSV test cases)</span>
+        <span class="badge badge-gray">.claude/agents/ (agent definitions)</span>
+        <span class="badge badge-gray">agents/knowledge/ (12 knowledge files)</span>
+        <span class="badge badge-gray">.claude/skills/ (18 methodology skills)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 5: BY THE NUMBERS ========== -->
+<div class="slide" id="s5">
+  <div class="slide-num">5 / 18</div>
+  <div class="slide-inner">
+    <div class="eyebrow">System Scale</div>
+    <h2>Agentic QA at a Glance</h2>
+
+    <div class="stat-grid mt16">
+      <div class="stat">
+        <div class="stat-num">14</div>
+        <div class="stat-label">Specialized AI Agents<br>(10 QA + 4 BA)</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">36</div>
+        <div class="stat-label">Test Suites<br>(15 frontend + 21 backend)</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">1,546</div>
+        <div class="stat-label">Test Cases<br>(643 frontend + 903 backend)</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">9</div>
+        <div class="stat-label">MCP Server Integrations<br>(browsers + Figma + Azure + …)</div>
+      </div>
+    </div>
+
+    <div class="cols-2 mt24" style="gap:16px;">
+      <div class="card green" style="padding:16px 20px;">
+        <div style="font-size:13px; color:var(--green); font-weight:600; margin-bottom:8px;">🧠 Intelligence Layer</div>
+        <div style="font-size:14px; color:var(--text-2);">18 methodology skills (ISTQB · WCAG · SBTM) · 12 shared knowledge files · BL-* business rules enforcement</div>
+      </div>
+      <div class="card blue" style="padding:16px 20px;">
+        <div style="font-size:13px; color:var(--blue); font-weight:600; margin-bottom:8px;">🔄 Coverage Selection</div>
+        <div style="font-size:14px; color:var(--text-2);"><span class="badge badge-accent">smoke</span> 12 tests &nbsp;<span class="badge badge-blue">critical</span> ~120 tests &nbsp;<span class="badge badge-green">sprint</span> ~800 tests &nbsp;<span class="badge badge-gray">full</span> ~1,546 tests</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 6: AGENT TEAMS ========== -->
+<div class="slide" id="s6">
+  <div class="slide-num">6 / 18</div>
+  <div class="slide-inner" style="padding:28px 36px 20px;">
+    <div class="eyebrow">Agent Teams</div>
+    <h2 style="margin-bottom:16px;">14 Specialized Agents — Four-Layer Architecture</h2>
+
+    <!-- Orchestrators -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--blue); margin-bottom:8px; padding-left:4px;">🎯 Orchestrators — coordinate the team</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+        <div class="card" style="padding:14px 16px; border-left:3px solid #6B7BB8;">
+          <div style="font-size:14px; font-weight:700; color:#3D4B8A; margin-bottom:4px;">qa-lead-orchestrator</div>
+          <div style="font-size:13px; color:var(--text-2);">JIRA workflow · go/no-go decisions · delegates to specialists</div>
+        </div>
+        <div class="card" style="padding:14px 16px; border-left:3px solid #6B7BB8;">
+          <div style="font-size:14px; font-weight:700; color:#3D4B8A; margin-bottom:4px;">regression-orchestrator</div>
+          <div style="font-size:13px; color:var(--text-2);">36-suite parallel runs · browser pool · retry & fallback</div>
+        </div>
+        <div class="card" style="padding:14px 16px; border-left:3px solid #6B7BB8;">
+          <div style="font-size:14px; font-weight:700; color:#3D4B8A; margin-bottom:4px;">autonomous-orchestrator</div>
+          <div style="font-size:13px; color:var(--text-2);">Agent Teams API · token bucket · exponential backoff</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Execution Specialists -->
+    <div>
+      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); margin-bottom:8px; padding-left:4px;">🔬 Execution Specialists — each gets its own browser</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px;">
+        <div class="card" style="padding:14px 16px; background:#fff8f5; border-left:3px solid var(--accent);">
+          <div style="font-size:14px; font-weight:700; color:var(--accent); margin-bottom:4px;">qa-frontend-expert</div>
+          <div style="font-size:13px; color:var(--text-2); margin-bottom:8px;">Storefront · checkout · cart · mobile</div>
+          <div class="badge badge-accent">🌐 Chrome</div>
+        </div>
+        <div class="card" style="padding:14px 16px; background:#fff8f5; border-left:3px solid var(--accent);">
+          <div style="font-size:14px; font-weight:700; color:var(--accent); margin-bottom:4px;">qa-backend-expert</div>
+          <div style="font-size:13px; color:var(--text-2); margin-bottom:8px;">REST API · GraphQL · Admin SPA</div>
+          <div class="badge badge-accent">⚡ Edge</div>
+        </div>
+        <div class="card" style="padding:14px 16px; background:#fff8f5; border-left:3px solid var(--accent);">
+          <div style="font-size:14px; font-weight:700; color:var(--accent); margin-bottom:4px;">qa-testing-expert</div>
+          <div style="font-size:13px; color:var(--text-2); margin-bottom:8px;">UI testing · Figma comparison · HAR</div>
+          <div class="badge badge-accent">🦊 Firefox</div>
+        </div>
+        <div class="card" style="padding:14px 16px; background:#fff8f5; border-left:3px solid var(--accent);">
+          <div style="font-size:14px; font-weight:700; color:var(--accent); margin-bottom:4px;">ui-ux-expert</div>
+          <div style="font-size:13px; color:var(--text-2); margin-bottom:8px;">Storybook · WCAG 2.1 AA · design</div>
+          <div class="badge badge-accent">🔧 DevTools</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:12px 18px; margin-top:14px; display:flex; gap:24px; align-items:center;">
+      <div style="font-size:13px; color:var(--text-2);">+ <strong>4 BA agents</strong>: system-analyzer · api-specialist · story-writer · doc-writer</div>
+      <div style="font-size:13px; color:var(--text-2);">+ <strong>test-management-specialist</strong>: test plans · RTM · coverage matrix</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 7: COMMANDS ========== -->
+<div class="slide" id="s7">
+  <div class="slide-num">7 / 18</div>
+  <div class="slide-inner">
+    <div class="eyebrow">One-Command Interface</div>
+    <h2>10 Slash Commands — Full QA Lifecycle from the IDE</h2>
+    <div class="sub" style="margin-bottom:18px;">Type a command in VS Code or Cursor — the system does the rest. No scripts, no dashboards, no context switching.</div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px;">
+      <div class="card accent" style="padding:18px 20px;">
+        <div style="font-family:var(--mono); font-size:15px; font-weight:700; color:var(--accent); margin-bottom:6px;">/qa-smoke</div>
+        <div style="font-size:14px; color:var(--text-2);">12 P0 tests in 2 parallel tracks</div>
+        <div style="font-size:13px; color:var(--green); margin-top:6px; font-weight:600;">→ GO / NO-GO in ~15 min</div>
+      </div>
+      <div class="card" style="padding:18px 20px;">
+        <div style="font-family:var(--mono); font-size:15px; font-weight:700; color:var(--text); margin-bottom:6px;">/qa-test VCST-XXXX</div>
+        <div style="font-size:14px; color:var(--text-2);">Read JIRA ticket → dispatch agents → file bugs</div>
+        <div style="font-size:13px; color:var(--text-3); margin-top:6px;">Closes the ticket automatically</div>
+      </div>
+      <div class="card" style="padding:18px 20px;">
+        <div style="font-family:var(--mono); font-size:15px; font-weight:700; color:var(--text); margin-bottom:6px;">/qa-regression sprint</div>
+        <div style="font-size:14px; color:var(--text-2);">26 suites · ~800 tests · 3 browsers in parallel</div>
+        <div style="font-size:13px; color:var(--text-3); margin-top:6px;">Also: smoke · critical · full · custom IDs</div>
+      </div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+      <div class="card" style="padding:18px 20px;">
+        <div style="font-family:var(--mono); font-size:15px; font-weight:700; color:var(--text); margin-bottom:6px;">/qa-bug [description]</div>
+        <div style="font-size:14px; color:var(--text-2);">Reproduce · HAR + screenshots · file JIRA</div>
+        <div style="font-size:13px; color:var(--text-3); margin-top:6px;">P0–P3 severity + root cause analysis</div>
+      </div>
+      <div class="card blue" style="padding:18px 20px;">
+        <div style="font-family:var(--mono); font-size:15px; font-weight:700; color:var(--blue); margin-bottom:6px;">/qa-status &nbsp;<span style="font-size:11px; font-weight:400; color:var(--text-3);">auto</span></div>
+        <div style="font-size:14px; color:var(--text-2);">Live dashboard: runs · JIRA queue · env health</div>
+        <div style="font-size:13px; color:var(--text-3); margin-top:6px;">No browser required · read-only</div>
+      </div>
+      <div class="card green" style="padding:18px 20px;">
+        <div style="font-family:var(--mono); font-size:15px; font-weight:700; color:var(--green); margin-bottom:6px;">/qa-env-check &nbsp;<span style="font-size:11px; font-weight:400; color:var(--text-3);">auto</span></div>
+        <div style="font-size:14px; color:var(--text-2);">Validate 33 env vars · endpoints · MCP servers</div>
+        <div style="font-size:13px; color:var(--text-3); margin-top:6px;">Run before every presentation</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 8: POWER FEATURE 1 — MCP ========== -->
+<div class="slide" id="s8">
+  <div class="slide-num">8 / 18</div>
+  <div class="slide-inner">
+    <div class="eyebrow">Power Feature #1</div>
+    <h2>9 MCP Servers — Claude's Eyes, Hands & Memory</h2>
+    <div style="display:flex; align-items:center; gap:6px; flex-wrap:nowrap; margin-bottom:16px; padding:14px 18px; background:var(--code-bg); border:1px solid var(--border); border-radius:10px;">
+      <div style="text-align:center; flex-shrink:0; padding:0 4px;">
+        <div style="font-size:20px;">👨‍💻</div>
+        <div style="font-size:10px; color:var(--text-3); margin-top:2px; font-weight:600;">Engineer</div>
+        <div style="font-size:10px; color:var(--text-3);">types command</div>
+      </div>
+      <div style="color:var(--text-3); font-size:18px; flex-shrink:0; padding:0 4px;">→</div>
+      <div style="background:var(--accent-soft); border:2px solid var(--accent-mid); border-radius:10px; padding:10px 16px; text-align:center; flex-shrink:0;">
+        <div style="font-size:22px;">🧠</div>
+        <div style="font-size:12px; font-weight:800; color:var(--accent); margin-top:2px;">Claude</div>
+        <div style="font-size:10px; color:var(--text-2);">Reasons · Plans</div>
+        <div style="font-size:10px; color:var(--text-2);">Executes · Judges</div>
+      </div>
+      <div style="color:var(--text-3); font-size:18px; flex-shrink:0; padding:0 4px;">↔</div>
+      <div style="background:var(--blue-soft); border:1.5px solid rgba(41,89,168,0.25); border-radius:10px; padding:10px 14px; text-align:center; flex:1; min-width:0;">
+        <div style="font-size:11px; font-weight:700; color:var(--blue); margin-bottom:6px; letter-spacing:0.04em;">9 MCP SERVERS</div>
+        <div style="display:flex; gap:4px; flex-wrap:wrap; justify-content:center;">
+          <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">playwright ×3</span>
+          <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">DevTools</span>
+          <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">figma</span>
+          <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">github</span>
+          <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">postman</span>
+          <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">context7</span>
+          <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">azure</span>
+        </div>
+        <div style="font-size:10px; color:var(--text-3); margin-top:6px;">Claude's eyes, hands &amp; memory</div>
+      </div>
+      <div style="color:var(--text-3); font-size:18px; flex-shrink:0; padding:0 4px;">→</div>
+      <div style="display:flex; flex-direction:column; gap:4px; flex-shrink:0;">
+        <span style="font-size:11px; background:var(--accent-soft); border:1px solid var(--accent-mid); border-radius:5px; padding:3px 9px; color:var(--accent); font-weight:600;">🌐 Chrome</span>
+        <span style="font-size:11px; background:var(--blue-soft); border:1px solid rgba(41,89,168,0.25); border-radius:5px; padding:3px 9px; color:var(--blue); font-weight:600;">🦊 Firefox</span>
+        <span style="font-size:11px; background:var(--green-soft); border:1px solid rgba(46,125,90,0.25); border-radius:5px; padding:3px 9px; color:var(--green); font-weight:600;">⚡ Edge</span>
+      </div>
+      <div style="color:var(--text-3); font-size:18px; flex-shrink:0; padding:0 4px;">→</div>
+      <div style="background:var(--green-soft); border:1.5px solid rgba(46,125,90,0.25); border-radius:10px; padding:10px 12px; text-align:center; flex-shrink:0;">
+        <div style="font-size:20px;">📋</div>
+        <div style="font-size:11px; font-weight:700; color:var(--green); margin-top:2px;">Reports</div>
+        <div style="font-size:10px; color:var(--text-2);">Screenshots</div>
+        <div style="font-size:10px; color:var(--text-2);">HAR · JIRA</div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:14px; margin-top:8px;">
+      <div class="card" style="padding:16px; text-align:center;">
+        <div style="font-size:26px; margin-bottom:8px;">🌐</div>
+        <div style="font-weight:700; margin-bottom:6px;">Browser Automation</div>
+        <div style="font-size:12.5px; color:var(--text-2);">Chrome · Firefox · Edge run in parallel with full HAR capture and screenshot evidence</div>
+      </div>
+      <div class="card blue" style="padding:16px; text-align:center;">
+        <div style="font-size:26px; margin-bottom:8px;">🎨</div>
+        <div style="font-weight:700; margin-bottom:6px;">Design Comparison</div>
+        <div style="font-size:12.5px; color:var(--text-2);">Figma MCP compares live UI screenshots pixel-by-pixel against design specs</div>
+      </div>
+      <div class="card" style="padding:16px; text-align:center;">
+        <div style="font-size:26px; margin-bottom:8px;">🔗</div>
+        <div style="font-weight:700; margin-bottom:6px;">API & Code</div>
+        <div style="font-size:12.5px; color:var(--text-2);">Postman runs API collections · GitHub searches code and reviews PRs automatically</div>
+      </div>
+      <div class="card green" style="padding:16px; text-align:center;">
+        <div style="font-size:26px; margin-bottom:8px;">☁️</div>
+        <div style="font-weight:700; margin-bottom:6px;">Cloud & Docs</div>
+        <div style="font-size:12.5px; color:var(--text-2);">Azure App Insights for error logs · Context7 for live VC documentation lookup</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 9: POWER FEATURE 2 — SELF-HEALING ========== -->
+<div class="slide" id="s9">
+  <div class="slide-num">9 / 18</div>
+  <div class="slide-inner">
+    <div class="eyebrow">Power Feature #2</div>
+    <h2>Business Rules & Edge Case Libraries</h2>
+    <div class="sub" style="margin-bottom:20px;">All agents share a central <code>business-logic.md</code> — testable platform invariants (BL-* IDs). Violations are flagged as bugs automatically. Update once, all agents benefit.</div>
+
+    <div class="cols-2 mt16">
+      <div>
+        <h3 style="color:var(--accent); margin-bottom:10px;">Business Logic Invariants (BL-* Rules)</h3>
+        <table style="font-size:13px; margin-bottom:14px;">
+          <tr><th>Rule ID</th><th>Domain</th><th>Invariant</th></tr>
+          <tr><td><code>BL-PRICE-001</code></td><td>Pricing</td><td>Discount stacking must never exceed 100%</td></tr>
+          <tr><td><code>BL-PRICE-002</code></td><td>Pricing</td><td>Sale price must always be lower than list price</td></tr>
+          <tr><td><code>BL-CART-004</code></td><td>Cart</td><td>Out-of-stock items must not be purchasable</td></tr>
+          <tr><td><code>BL-ORD-001</code></td><td>Orders</td><td>Order cancellation must reverse inventory</td></tr>
+          <tr><td><code>BL-AUTH-002</code></td><td>Auth</td><td>Unauthenticated users redirected to login</td></tr>
+          <tr><td><code>BL-B2B-003</code></td><td>B2B</td><td>Org users can't see other org's data</td></tr>
+          <tr><td><code>BL-CHECKOUT-001</code></td><td>Checkout</td><td>Address validated before payment step</td></tr>
+          <tr><td><code>BL-SEARCH-001</code></td><td>Search</td><td>Facet counts must match actual result count</td></tr>
+        </table>
+
+        <div class="card green" style="padding:12px 16px;">
+          <div style="font-size:13.5px; color:var(--green);">Agents don't just pass/fail — they <strong>explain why</strong> in business terms: <em>"BL-PRICE-001 violated — applied coupon caused net price below $0."</em></div>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="color:var(--blue); margin-bottom:10px;">Edge Case Library (ECL-* Patterns)</h3>
+        <div class="card blue" style="padding:12px 16px; margin-bottom:14px;">
+          <div style="font-size:13px; color:var(--text-2); margin-bottom:8px;"><strong>13 generic</strong> e-commerce edge case categories + <strong>7 VC-specific</strong> patterns (ECL-* IDs). Cross-referenced to BL-* invariants. Every generated test case cites both.</div>
+          <table style="font-size:12.5px;">
+            <tr><th>ECL ID</th><th>Category</th><th>Example</th></tr>
+            <tr><td><code>ECL-1.1</code></td><td>Payment</td><td>Expired credit card at checkout</td></tr>
+            <tr><td><code>ECL-2.3</code></td><td>Pricing</td><td>Zero-price product in cart</td></tr>
+            <tr><td><code>ECL-3.1</code></td><td>Inventory</td><td>Last item reserved during checkout</td></tr>
+            <tr><td><code>ECL-5.1</code></td><td>Concurrency</td><td>Concurrent cart modification by two sessions</td></tr>
+            <tr><td><code>ECL-7.2</code></td><td>B2B / Auth</td><td>Org role boundary — viewer attempts purchase</td></tr>
+          </table>
+        </div>
+
+        <div class="card accent" style="padding:12px 16px;">
+          <div style="font-size:13px; margin-bottom:6px; font-weight:600;">How they work together</div>
+          <div class="flow" style="gap:6px; font-size:12.5px;">
+            <div class="flow-step">JIRA ticket</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">Auto-detect BL-* + ECL-*</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step" style="background:var(--green-soft); border-color:rgba(46,125,90,0.2);">Test cases with cited rules</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 10: POWER FEATURE 3 — PARALLEL REGRESSION ========== -->
+<div class="slide" id="s10">
+  <div class="slide-num">10 / 18</div>
+  <div class="slide-inner">
+    <div class="eyebrow">Power Feature #3</div>
+    <h2>Parallel Regression with Automated Quality Gates</h2>
+
+    <div class="cols-65-35 mt16">
+      <div>
+        <div style="margin-bottom:18px;">
+          <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-2); margin-bottom:8px;">Parallel Browser Pool — Simultaneous Suite Execution</div>
+          <div style="display:flex; flex-direction:column; gap:5px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <div style="width:92px; font-size:12px; font-weight:700; color:var(--accent); flex-shrink:0;">🌐 Chrome</div>
+              <div style="flex:3; height:28px; background:var(--accent-soft); border:1px solid var(--accent-mid); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--accent); font-weight:600;">Suite 01 · Smoke</div>
+              <div style="flex:2; height:28px; background:var(--accent-soft); border:1px solid var(--accent-mid); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--accent);">Suite 04 · Cart</div>
+              <div style="flex:2; height:28px; background:var(--accent-soft); border:1px solid var(--accent-mid); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--accent);">Suite 07 · Perf</div>
+              <div style="flex:1; height:28px; background:transparent; border:1px dashed var(--border); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--text-3);">…</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <div style="width:92px; font-size:12px; font-weight:700; color:var(--blue); flex-shrink:0;">🦊 Firefox</div>
+              <div style="flex:2; height:28px; background:var(--blue-soft); border:1px solid rgba(41,89,168,0.25); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--blue);">Suite 02 · Auth</div>
+              <div style="flex:3; height:28px; background:var(--blue-soft); border:1px solid rgba(41,89,168,0.25); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--blue); font-weight:600;">Suite 05 · Checkout</div>
+              <div style="flex:2; height:28px; background:var(--blue-soft); border:1px solid rgba(41,89,168,0.25); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--blue);">Suite 06 · Payment</div>
+              <div style="flex:1; height:28px; background:transparent; border:1px dashed var(--border); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--text-3);">…</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <div style="width:92px; font-size:12px; font-weight:700; color:var(--green); flex-shrink:0;">⚡ Edge</div>
+              <div style="flex:2; height:28px; background:var(--green-soft); border:1px solid rgba(46,125,90,0.25); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--green);">Suite 03 · Catalog</div>
+              <div style="flex:2; height:28px; background:var(--green-soft); border:1px solid rgba(46,125,90,0.25); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--green);">Suite 08 · Security</div>
+              <div style="flex:3; height:28px; background:var(--green-soft); border:1px solid rgba(46,125,90,0.25); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--green); font-weight:600;">Suite 14 · Platform API</div>
+              <div style="flex:1; height:28px; background:transparent; border:1px dashed var(--border); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--text-3);">…</div>
+            </div>
+          </div>
+          <div style="font-size:11px; color:var(--text-3); margin-top:5px; text-align:center;">All 3 slots active simultaneously — orchestrator queues remaining suites as slots free up</div>
+        </div>
+
+        <table style="font-size:13.5px;">
+          <tr><th>Selection</th><th>Suites</th><th>Tests</th><th>Use Case</th></tr>
+          <tr>
+            <td><span class="badge badge-accent">smoke</span></td>
+            <td>1</td><td>~12</td><td>Daily pre-deploy</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-blue">critical</span></td>
+            <td>4 (P0)</td><td>~120</td><td>Pre-release P0 gate</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-green">sprint</span></td>
+            <td>26</td><td>~800</td><td>Sprint release gate</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-gray">full</span></td>
+            <td>36</td><td>~1,546</td><td>Production release</td>
+          </tr>
+        </table>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:12px;">Quality Gate Verdicts</h3>
+        <div class="card green" style="padding:12px 14px; margin-bottom:8px;">
+          <div style="font-weight:700; color:var(--green);">✅ APPROVED</div>
+          <div style="font-size:12.5px; color:var(--text-2); margin-top:3px;">≥95% pass rate · 0 P0 bugs · safe to deploy</div>
+        </div>
+        <div class="card" style="padding:12px 14px; margin-bottom:8px; border-color:rgba(180,140,0,0.3); background:rgba(180,140,0,0.06);">
+          <div style="font-weight:700; color:#8B6E00;">⚠️ CONDITIONAL</div>
+          <div style="font-size:12.5px; color:var(--text-2); margin-top:3px;">P2/P3 issues only · deploy with tracked follow-ups</div>
+        </div>
+        <div class="card" style="padding:12px 14px; border-color:rgba(176,58,58,0.3); background:rgba(176,58,58,0.06);">
+          <div style="font-weight:700; color:#B03A3A;">🚫 BLOCKED</div>
+          <div style="font-size:12.5px; color:var(--text-2); margin-top:3px;">P0/P1 failure · No deployment, regardless of schedule</div>
+        </div>
+
+        <div class="card blue mt16" style="padding:10px 14px;">
+          <div style="font-size:12.5px; color:var(--blue);">Retry logic: max 2 retries, browser fallback chain<br>chrome → firefox → edge</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 11: POWER FEATURE 4 — CI/CD ========== -->
+<div class="slide" id="s11">
+  <div class="slide-num">11 / 18</div>
+  <div class="slide-inner">
+    <div class="eyebrow">CI/CD Pipeline · Planned</div>
+    <h2>Full CI/CD Automation Pipeline</h2>
+
+    <div class="cols-65-35 mt16">
+      <div>
+        <div class="card" style="padding:16px 20px; margin-bottom:16px;">
+          <pre style="background:none; border:none; padding:0; font-size:12.5px;">GitHub Actions (schedule / manual trigger)
+      │
+      ▼
+Docker Container (Playwright + Node.js 18+)
+      │
+      ▼
+Claude Agent SDK — run-regression.ts
+      │
+      ├─── Budget tracking ($5 smoke / $80 full)
+      ├─── Suite batching (max 3 parallel)
+      │
+      ▼
+Headless Chromium — execute CSV test suites
+      │
+      ▼
+reports/regression/ci-YYYY-MM-DD/
+      │
+      ▼
+Teams Adaptive Card notification → QA channel</pre>
+        </div>
+
+        <div class="cols-2" style="gap:12px;">
+          <div class="card" style="padding:12px 14px;">
+            <div style="font-size:12px; color:var(--text-2); font-weight:600; margin-bottom:4px;">Daily Smoke</div>
+            <div style="font-size:13px;">Mon–Fri 6:00 AM UTC<br>Suite 01 · $5 budget</div>
+          </div>
+          <div class="card" style="padding:12px 14px;">
+            <div style="font-size:12px; color:var(--text-2); font-weight:600; margin-bottom:4px;">Weekly Full</div>
+            <div style="font-size:13px;">Sunday 2:00 AM UTC<br>All 36 suites · $80</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:12px;">CI Key Features</h3>
+        <ul class="checklist" style="gap:8px;">
+          <li style="font-size:13.5px;">Budget-controlled per-suite allocation</li>
+          <li style="font-size:13.5px;">90-day rolling regression history</li>
+          <li style="font-size:13.5px;">Artifacts with 30-day retention</li>
+          <li style="font-size:13.5px;">Manual trigger: any selection, any env</li>
+          <li style="font-size:13.5px;">Teams webhook Adaptive Card</li>
+          <li style="font-size:13.5px;">Suite-by-suite breakdown in report</li>
+        </ul>
+
+        <div class="card accent mt16" style="padding:14px 16px;">
+          <pre style="background:none; border:none; padding:0; font-size:11.5px; color:var(--accent);"># One command to run any scope
+docker run --env-file .env \
+  -e SUITE_SELECTION=critical \
+  -e TEST_ENVIRONMENT=qa \
+  vc-regression</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 12: KNOWLEDGE + SKILLS — POWER FEATURE #5 ========== -->
+<div class="slide" id="s12">
+  <div class="slide-num">12 / 18</div>
+  <div class="slide-inner">
+    <div class="eyebrow">Power Feature #5</div>
+    <h2>Shared Knowledge + 18 Methodology Skills</h2>
+
+    <div class="cols-2 mt16">
+      <div>
+        <h3 style="margin-bottom:14px;">12 Shared Knowledge Files</h3>
+        <p style="font-size:14px; color:var(--text-2); margin-bottom:16px;">All QA agents consult these files simultaneously. Update once — all agents benefit.</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div class="card" style="padding:12px 14px;">
+            <div style="font-size:18px; margin-bottom:4px;">📋</div>
+            <div style="font-size:13px; font-weight:600; margin-bottom:2px;">Business Rules</div>
+            <div style="font-size:12px; color:var(--text-2);">Testable BL-* invariants enforced on every test</div>
+          </div>
+          <div class="card" style="padding:12px 14px;">
+            <div style="font-size:18px; margin-bottom:4px;">🎯</div>
+            <div style="font-size:13px; font-weight:600; margin-bottom:2px;">Edge Case Library</div>
+            <div style="font-size:12px; color:var(--text-2);">13 generic + 7 VC-specific ECL-* patterns</div>
+          </div>
+          <div class="card" style="padding:12px 14px;">
+            <div style="font-size:18px; margin-bottom:4px;">🗺️</div>
+            <div style="font-size:13px; font-weight:600; margin-bottom:2px;">Platform Patterns</div>
+            <div style="font-size:12px; color:var(--text-2);">Storefront sitemap · admin flows · browser quirks</div>
+          </div>
+          <div class="card" style="padding:12px 14px;">
+            <div style="font-size:18px; margin-bottom:4px;">⚡</div>
+            <div style="font-size:13px; font-weight:600; margin-bottom:2px;">Performance Thresholds</div>
+            <div style="font-size:12px; color:var(--text-2);">LCP · CLS · API latency · debug signals</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:14px;">18 Skills — Encoded Methodology</h3>
+        <div class="card accent" style="padding:14px 16px; margin-bottom:10px;">
+          <div style="font-size:13px; font-weight:600; margin-bottom:6px;">🧪 Testing Skills (8)</div>
+          <div style="font-size:13px; color:var(--text-2);">Storybook · Accessibility (WCAG) · Design review · Test plans · Checklists · API testing · Coverage gap · Seed data</div>
+        </div>
+        <div class="card blue" style="padding:14px 16px; margin-bottom:10px;">
+          <div style="font-size:13px; font-weight:600; color:var(--blue); margin-bottom:6px;">📐 QA Methodology Skills (9)</div>
+          <div style="font-size:13px; color:var(--text-2);">ISTQB lifecycle · Bug investigation · Evidence capture · Defect workflow · Test design · AI test generation · Risk matrix · Metrics · SBTM</div>
+        </div>
+        <div class="card green" style="padding:14px 16px;">
+          <div style="font-size:13px; font-weight:600; color:var(--green); margin-bottom:4px;">📚 /vc-docs — auto-invocable</div>
+          <div style="font-size:13px; color:var(--text-2);">Semantic search over live Virto Commerce documentation via Context7</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 13: TEST CASE GENERATION ========== -->
+<div class="slide" id="s13">
+  <div class="slide-num">13 / 18</div>
+  <div class="slide-inner">
+    <div class="eyebrow">AI-Generated Test Cases</div>
+    <h2>/qa-test-cases-generator — From Ticket to Test Suite Automatically</h2>
+    <div class="sub" style="margin-bottom:18px;">One skill derives structured, agent-executable test cases from a JIRA ticket, BDD scenario, domain checklist, or legacy suite — in the enriched 15-column CSV format.</div>
+
+    <div class="flow" style="margin-bottom:20px; font-size:13.5px;">
+      <div class="flow-step">JIRA Ticket<br><span style="font-size:11px; color:var(--text-3);">VCST-XXXX</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="background:var(--accent-soft); border-color:var(--accent-mid);">Parse ACs<br><span style="font-size:11px; color:var(--text-3);">+ detect layers</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="background:var(--blue-soft); border-color:rgba(41,89,168,0.25);">Generate Cases<br><span style="font-size:11px; color:var(--text-3);">BL-* + ECL-* refs</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="background:var(--green-soft); border-color:rgba(46,125,90,0.25);">Route to Agent<br><span style="font-size:11px; color:var(--text-3);">by layer type</span></div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+      <div>
+        <h3 style="margin-bottom:12px;">Works with any input</h3>
+        <ul class="checklist">
+          <li><code>VCST-XXXX</code> — JIRA ticket → parse acceptance criteria</li>
+          <li><code>domain</code> — checklist → 1–3 cases per item</li>
+          <li><code>suite NN</code> — existing CSV → find gaps → fill them</li>
+          <li><code>from-checklist cart</code> — happy path + negative per item</li>
+          <li><code>from-bdd "Given…"</code> — BDD scenario → structured test case</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="margin-bottom:12px;">What every generated case includes</h3>
+        <ul class="checklist">
+          <li><strong style="color:var(--accent);">BL-* rule reference</strong> — business invariant enforced</li>
+          <li><strong style="color:var(--blue);">ECL-* edge case pattern</strong> — known failure scenario</li>
+          <li>Typed step tags: <code>[NAV]</code> <code>[ACT]</code> <code>[WAIT]</code></li>
+          <li>Typed assertions: <code>[DOM]</code> <code>[STATE]</code> <code>[MATH]</code></li>
+          <li>At least 2 failure signals — ready for agent execution</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 14: TEST DATA GENERATION ========== -->
+<div class="slide" id="s14">
+  <div class="slide-num">14 / 18</div>
+  <div class="slide-inner">
+    <div class="eyebrow">Test Infrastructure</div>
+    <h2>/qa-seed-data — Full Test Environment in One Command</h2>
+    <div class="sub" style="margin-bottom:18px;">Generates a complete test environment via Postman MCP: catalogs, products, pricing, B2B organizations, users — then tears it all down safely when done.</div>
+
+    <div class="flow" style="margin-bottom:20px; font-size:13px;">
+      <div class="flow-step">Pick profile<br><span style="font-size:11px; color:var(--text-3);">minimal / b2b / full</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="background:var(--blue-soft); border-color:rgba(41,89,168,0.25);">Postman MCP<br><span style="font-size:11px; color:var(--text-3);">builds &amp; runs collection</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="background:var(--green-soft); border-color:rgba(46,125,90,0.25);">Test data ready<br><span style="font-size:11px; color:var(--text-3);">AGENT-TEST-* prefix</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">Run tests</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="background:var(--accent-soft); border-color:var(--accent-mid);">Teardown<br><span style="font-size:11px; color:var(--text-3);">safe cleanup</span></div>
+    </div>
+
+    <table style="font-size:13px;">
+      <tr><th>Profile</th><th>Creates</th><th>Use Case</th></tr>
+      <tr>
+        <td><span class="badge badge-gray">minimal</span></td>
+        <td>1 catalog · 1 product · price · inventory</td>
+        <td>Smoke tests, API connectivity</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">catalog</span></td>
+        <td>3-level category tree · 5 products · multi-currency prices</td>
+        <td>Search, browse, cart tests</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-accent">b2b</span></td>
+        <td>1 organization · 3 users (admin/buyer/viewer) · roles</td>
+        <td>B2B multi-org, RBAC tests</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-gray">pricing</span></td>
+        <td>2 price lists (USD+EUR) · tiered prices · quantity breaks</td>
+        <td>Pricing module tests</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-green">full</span></td>
+        <td>All profiles combined — complete test environment</td>
+        <td>Full regression run</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-gray">teardown</span></td>
+        <td>Deletes all <code>AGENT-TEST-*</code> entities in reverse order</td>
+        <td>Post-test cleanup</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ========== SLIDE 15: LIVE FLOW — QA-TEST ========== -->
+<div class="slide" id="s15">
+  <div class="slide-num">15 / 18</div>
+  <div class="slide-inner">
+    <div class="eyebrow">End-to-End Flow</div>
+    <h2>/qa-test VCST-XXXX — From Ticket to Verdict</h2>
+    <div class="sub" style="margin-bottom:20px;">One command reads the JIRA ticket, dispatches the right agents, executes all acceptance criteria, files bugs with evidence, and closes the ticket.</div>
+
+    <div class="timeline mt16" style="max-width:680px; margin-left:auto; margin-right:auto;">
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-content">
+          <h4>Step 1: Read JIRA Ticket</h4>
+          <p>Atlassian MCP fetches title, description, acceptance criteria · identifies feature scope: storefront / admin / API</p>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot blue"></div>
+        <div class="tl-content">
+          <h4>Step 2: Dispatch Specialists</h4>
+          <p>qa-frontend-expert (Chrome) → storefront ACs · qa-backend-expert (Edge) → API + admin ACs · run in parallel</p>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot blue"></div>
+        <div class="tl-content">
+          <h4>Step 3: Execute Tests</h4>
+          <p>Navigate to feature · verify each AC through real browser · capture screenshots + HAR · check console for errors</p>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-content">
+          <h4>Step 4: File Bugs (if any)</h4>
+          <p>Failed AC → bug report with P0–P3 severity · screenshots · HAR · BL-* rule reference · auto-created in JIRA</p>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot green"></div>
+        <div class="tl-content">
+          <h4>Step 5: Close the Ticket</h4>
+          <p>All ACs pass → transition ticket to "Testing Complete" · link evidence · notify team. Bugs found → block release.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 16: BENEFITS & IMPACT ========== -->
+<div class="slide" id="s16">
+  <div class="slide-num">16 / 18</div>
+  <div class="slide-inner">
+    <div class="eyebrow">Value Delivered</div>
+    <h2>Strong Sides of AI-Driven Testing</h2>
+
+    <div class="cols-3 mt16">
+      <div class="card green" style="padding:16px 18px;">
+        <div style="font-size:20px; margin-bottom:8px;">🔧</div>
+        <h3 style="color:var(--green);">Zero Maintenance</h3>
+        <p style="font-size:13.5px; color:var(--text-2); margin-top:6px;">UI changes don't break tests. Agents adapt through contextual reasoning, not brittle selectors. Self-healing by design.</p>
+      </div>
+      <div class="card accent" style="padding:16px 18px;">
+        <div style="font-size:20px; margin-bottom:8px;">⚡</div>
+        <h3>Speed at Scale</h3>
+        <p style="font-size:13.5px; color:var(--text-2); margin-top:6px;">3 browsers run in parallel. A full sprint regression of ~800 tests runs automatically — no manual coordination.</p>
+      </div>
+      <div class="card blue" style="padding:16px 18px;">
+        <div style="font-size:20px; margin-bottom:8px;">🧠</div>
+        <h3 style="color:var(--blue);">Business Awareness</h3>
+        <p style="font-size:13.5px; color:var(--text-2); margin-top:6px;">Agents don't just detect failures — they reason about why in business terms. BL-* invariants are enforced automatically.</p>
+      </div>
+      <div class="card" style="padding:16px 18px;">
+        <div style="font-size:20px; margin-bottom:8px;">📋</div>
+        <h3>No Coding Required</h3>
+        <p style="font-size:13.5px; color:var(--text-2); margin-top:6px;">QA engineers write prompts, not Playwright scripts. Adding a test = adding a CSV row. No developer involvement needed.</p>
+      </div>
+      <div class="card" style="padding:16px 18px;">
+        <div style="font-size:20px; margin-bottom:8px;">🔗</div>
+        <h3>Full JIRA Loop</h3>
+        <p style="font-size:13.5px; color:var(--text-2); margin-top:6px;">Agents read tickets, execute tests, file bugs with evidence, and transition statuses — the full QA lifecycle without leaving the IDE.</p>
+      </div>
+      <div class="card" style="padding:16px 18px;">
+        <div style="font-size:20px; margin-bottom:8px;">📐</div>
+        <h3>Methodology Built-in</h3>
+        <p style="font-size:13.5px; color:var(--text-2); margin-top:6px;">18 skills encode ISTQB, SBTM, WCAG 2.1 AA, risk-based testing, and BDD. Best practices are the default, not optional.</p>
+      </div>
+    </div>
+
+    <div class="card" style="padding:14px 20px; margin-top:16px;">
+      <div class="cols-3" style="gap:0;">
+        <div style="text-align:center; border-right:1px solid var(--border); padding:4px 0;">
+          <div style="font-size:24px; font-weight:800; color:var(--accent);">~0</div>
+          <div style="font-size:12px; color:var(--text-2);">Selector maintenance<br>incidents per sprint</div>
+        </div>
+        <div style="text-align:center; border-right:1px solid var(--border); padding:4px 0;">
+          <div style="font-size:24px; font-weight:800; color:var(--green);">15 min</div>
+          <div style="font-size:12px; color:var(--text-2);">From command to<br>GO/NO-GO verdict</div>
+        </div>
+        <div style="text-align:center; padding:4px 0;">
+          <div style="font-size:24px; font-weight:800; color:var(--blue);">1 CSV row</div>
+          <div style="font-size:12px; color:var(--text-2);">Cost of adding<br>a new test case</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 17: ROADMAP ========== -->
+<div class="slide" id="s17">
+  <div class="slide-num">17 / 18</div>
+  <div class="slide-inner">
+    <div class="eyebrow">Future Development</div>
+    <h2>Roadmap — What's Next for Agentic QA</h2>
+
+    <div class="cols-2 mt16" style="gap:28px;">
+      <div>
+        <div class="timeline">
+          <div class="tl-item">
+            <div class="tl-dot green"></div>
+            <div class="tl-content">
+              <h4><span class="badge badge-green" style="margin-right:6px;">Shipped ✓</span> AI Test Case Generator</h4>
+              <p><code>/qa-test-cases-generator</code> — derives enriched CSV test cases from JIRA tickets, user stories, checklists, or legacy suites automatically</p>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot green"></div>
+            <div class="tl-content">
+              <h4><span class="badge badge-green" style="margin-right:6px;">Shipped ✓</span> Agent Teams Mode</h4>
+              <p>Autonomous regression with TeamCreate API, token bucket management, exponential backoff, and JIRA integration</p>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot blue"></div>
+            <div class="tl-content">
+              <h4><span class="badge badge-blue" style="margin-right:6px;">Q2 2026</span> Multi-Browser CI</h4>
+              <p>Expand CI from single headless Chromium to full 3-browser pool (Chrome + Firefox + Edge) for cross-browser regression in GitHub Actions</p>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot blue"></div>
+            <div class="tl-content">
+              <h4><span class="badge badge-blue" style="margin-right:6px;">Q2 2026</span> Visual Regression Baselines</h4>
+              <p>Persistent Storybook component snapshots per version. Automated pixel-diff comparison with Figma design specs for all 55 components</p>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot blue"></div>
+            <div class="tl-content">
+              <h4><span class="badge badge-blue" style="margin-right:6px;">Q2 2026</span> Sprint Coverage Reports</h4>
+              <p>Automated mapping: which code changes (PRs) affect which test suites. Auto-select regression scope based on git diff analysis</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="timeline">
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--accent);"></div>
+            <div class="tl-content">
+              <h4><span class="badge badge-accent" style="margin-right:6px;">Q3 2026</span> Mobile Testing</h4>
+              <p>BrowserStack integration for real device testing — iOS Safari (iPhone 15 Pro), Android Chrome (Samsung Galaxy S24). Critical for B2C checkout flows</p>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--accent);"></div>
+            <div class="tl-content">
+              <h4><span class="badge badge-accent" style="margin-right:6px;">Q3 2026</span> Self-Updating Suites</h4>
+              <p>Regression suites that evolve automatically — agent analyzes code changes, identifies gaps, and proposes new test cases to the QA team for review</p>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot gray"></div>
+            <div class="tl-content">
+              <h4><span class="badge badge-gray" style="margin-right:6px;">Future</span> Performance Regression</h4>
+              <p>Automated Core Web Vitals tracking: LCP, CLS, FID baselines per release. Alert when performance degrades beyond threshold</p>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot gray"></div>
+            <div class="tl-content">
+              <h4><span class="badge badge-gray" style="margin-right:6px;">Future</span> Test Impact Analysis</h4>
+              <p>ML-based prediction of which test suites are most likely to fail given a specific code change — prioritize testing effort intelligently</p>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot gray"></div>
+            <div class="tl-content">
+              <h4><span class="badge badge-gray" style="margin-right:6px;">Future</span> Multi-Tenant Testing</h4>
+              <p>Parallel testing across multiple VC storefronts / white-label brands with shared test logic and brand-specific assertion rules</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card accent" style="padding:12px 20px; margin-top:16px; display:flex; align-items:center; gap:16px;">
+      <div style="font-size:20px;">🚀</div>
+      <div style="font-size:14px;"><strong>Vision:</strong> A fully autonomous QA system that continuously tests, learns from failures, updates its own test cases, and provides real-time quality signals — with zero manual scripting.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 18: RAG + VECTOR SEARCH (PLANNED) ========== -->
+<div class="slide" id="s18">
+  <div class="slide-num">18 / 18</div>
+  <div class="slide-inner">
+    <div class="eyebrow">Future Architecture · Planned</div>
+    <h2>RAG + Vector Search — Scalable Agent Memory</h2>
+    <div class="sub" style="margin-bottom:18px;">Replace static knowledge file loading with semantic retrieval — agents query a vector store and receive only what's relevant, cutting token waste and enabling test intelligence at scale.</div>
+
+    <div class="cols-2">
+      <div>
+        <h3 style="margin-bottom:12px;">The Problem: Static Context Loading</h3>
+        <div class="compare-col old" style="margin-bottom:16px; padding:14px 16px;">
+          <ul class="checklist" style="gap:5px;">
+            <li class="bad" style="font-size:13px;">12 knowledge files injected into every agent — ~100 KB per call</li>
+            <li class="bad" style="font-size:13px;">BL-* pricing rules loaded even when testing auth flows</li>
+            <li class="bad" style="font-size:13px;">1,546 test cases in CSV — no semantic search across them</li>
+            <li class="bad" style="font-size:13px;">Bug deduplication is manual — agents can't check past reports</li>
+            <li class="bad" style="font-size:13px;">Knowledge grows → context bloat → higher cost, slower reasoning</li>
+          </ul>
+        </div>
+
+        <div class="card blue" style="padding:10px 14px; margin-top:0;">
+          <div style="font-size:12.5px; color:var(--blue);"><strong>Context7 is already RAG</strong> — <code>/vc-docs</code> does semantic retrieval over live VC documentation. The full RAG layer extends this pattern to all internal knowledge.</div>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:12px;">Value Delivered</h3>
+        <div class="timeline">
+          <div class="tl-item">
+            <div class="tl-dot blue"></div>
+            <div class="tl-content">
+              <h4>Focused context → lower token cost</h4>
+              <p>Agent receives 3–5 relevant BL-* rules instead of 80+. Less noise, sharper reasoning. Token budget goes further per run.</p>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot"></div>
+            <div class="tl-content">
+              <h4>Test case deduplication</h4>
+              <p><code>/qa-test-cases-generator</code> queries the vector store before writing — surfaces semantically similar existing cases, prevents duplicate coverage.</p>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot"></div>
+            <div class="tl-content">
+              <h4>Bug similarity search</h4>
+              <p>Before filing a JIRA ticket, agent checks embeddings of past bug reports — eliminates duplicates and auto-links related issues.</p>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot green"></div>
+            <div class="tl-content">
+              <h4>Smart test impact analysis</h4>
+              <p>Embed git diff → semantic match against test cases → auto-select the right regression scope. No manual suite mapping needed.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:14px 16px; margin-top:12px;">
+          <div style="font-size:12px; color:var(--text-2); font-weight:600; margin-bottom:12px; text-transform:uppercase; letter-spacing:0.06em;">Static Loading vs RAG — Context Efficiency</div>
+          <!-- Context size bar -->
+          <div style="margin-bottom:10px;">
+            <div style="font-size:11px; color:var(--text-3); margin-bottom:5px;">Context size per agent call</div>
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+              <div style="width:44px; font-size:10px; color:#B03A3A; text-align:right; flex-shrink:0; font-weight:600;">Static</div>
+              <div style="flex:1; height:18px; background:rgba(176,58,58,0.12); border-radius:4px; position:relative; overflow:visible;">
+                <div style="width:100%; height:100%; background:rgba(176,58,58,0.35); border-radius:4px;"></div>
+                <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:10px; color:#B03A3A; font-weight:700; white-space:nowrap;">~100 KB always</span>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <div style="width:44px; font-size:10px; color:var(--green); text-align:right; flex-shrink:0; font-weight:600;">RAG</div>
+              <div style="flex:1; height:18px; background:var(--green-soft); border-radius:4px; position:relative;">
+                <div style="width:5%; height:100%; background:rgba(46,125,90,0.4); border-radius:4px;"></div>
+                <span style="position:absolute; left:8px; top:50%; transform:translateY(-50%); font-size:10px; color:var(--green); font-weight:700;">~5 KB relevant</span>
+              </div>
+            </div>
+          </div>
+          <!-- BL-* rules bar -->
+          <div style="margin-bottom:10px;">
+            <div style="font-size:11px; color:var(--text-3); margin-bottom:5px;">BL-* rules loaded per agent</div>
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+              <div style="width:44px; font-size:10px; color:#B03A3A; text-align:right; flex-shrink:0; font-weight:600;">Static</div>
+              <div style="flex:1; height:18px; background:rgba(176,58,58,0.12); border-radius:4px; position:relative; overflow:visible;">
+                <div style="width:100%; height:100%; background:rgba(176,58,58,0.35); border-radius:4px;"></div>
+                <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:10px; color:#B03A3A; font-weight:700;">80+ rules (all domains)</span>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <div style="width:44px; font-size:10px; color:var(--green); text-align:right; flex-shrink:0; font-weight:600;">RAG</div>
+              <div style="flex:1; height:18px; background:var(--green-soft); border-radius:4px; position:relative;">
+                <div style="width:6%; height:100%; background:rgba(46,125,90,0.4); border-radius:4px;"></div>
+                <span style="position:absolute; left:8px; top:50%; transform:translateY(-50%); font-size:10px; color:var(--green); font-weight:700;">3–5 relevant rules</span>
+              </div>
+            </div>
+          </div>
+          <!-- Dedup row -->
+          <div style="display:flex; gap:6px; align-items:stretch;">
+            <div style="flex:1; padding:6px 10px; background:rgba(176,58,58,0.06); border:1px solid rgba(176,58,58,0.2); border-radius:6px; font-size:11px; text-align:center; color:#B03A3A;">Duplicate tests<br>manual check</div>
+            <div style="display:flex; align-items:center; color:var(--accent); font-size:18px;">→</div>
+            <div style="flex:1; padding:6px 10px; background:var(--green-soft); border:1px solid rgba(46,125,90,0.25); border-radius:6px; font-size:11px; text-align:center; color:var(--green);">Auto-detected by<br>vector similarity</div>
+            <div style="display:flex; align-items:center; color:var(--text-3); font-size:14px; padding:0 4px;">·</div>
+            <div style="flex:1; padding:6px 10px; background:rgba(176,58,58,0.06); border:1px solid rgba(176,58,58,0.2); border-radius:6px; font-size:11px; text-align:center; color:#B03A3A;">Duplicate bugs<br>engineer effort</div>
+            <div style="display:flex; align-items:center; color:var(--accent); font-size:18px;">→</div>
+            <div style="flex:1; padding:6px 10px; background:var(--green-soft); border:1px solid rgba(46,125,90,0.25); border-radius:6px; font-size:11px; text-align:center; color:var(--green);">Zero — embedding<br>auto-links issues</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /.deck -->
+
+<!-- ===== Navigation ===== -->
+<div class="nav">
+  <button onclick="go(-1)" title="Previous (←)">‹</button>
+  <span id="counter">1 / 18</span>
+
+  <button onclick="go(1)" title="Next (→)">›</button>
+</div>
+
+<script>
+let cur = 0;
+const slides = document.querySelectorAll('.slide');
+const counter = document.getElementById('counter');
+const total = slides.length;
+
+function show(n) {
+  slides[cur].classList.remove('active');
+  cur = (n + total) % total;
+  slides[cur].classList.add('active');
+  counter.textContent = `${cur + 1} / ${total}`;
+  // Reset scroll position
+  slides[cur].querySelector('.slide-inner').scrollTop = 0;
+}
+
+function go(d) { show(cur + d); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); go(1); }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); go(-1); }
+  if (e.key === 'Home') { e.preventDefault(); show(0); }
+  if (e.key === 'End') { e.preventDefault(); show(total - 1); }
+});
+
+// Touch swipe support
+let touchX = 0;
+document.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchX;
+  if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+}, { passive: true });
+</script>
+</body>
+</html>

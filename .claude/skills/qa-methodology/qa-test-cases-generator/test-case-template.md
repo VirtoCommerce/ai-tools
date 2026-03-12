@@ -91,12 +91,14 @@ Each step on its own line, prefixed with a type tag.
 
 **Step type tags:**
 
+> These tags apply to **Storefront UI** tests. For other layers see: REST API → `[HTTP]` `[AUTH]` `[SETUP]` `[TEARDOWN]`; GraphQL → `[GQL]` `[VAR]` `[AUTH]` `[SETUP]` `[TEARDOWN]`; Admin UI → `[BLADE]` `[GRID]` `[SAVE]` `[WIDGET]`. Full definitions in the Layer-Specific Formats section below.
+
 | Tag | Meaning | Agent Action |
 |-----|---------|-------------|
 | `[NAV]` | Navigate to URL | `browser_navigate` |
 | `[ACT]` | User action: click, fill, select, hover | `browser_click`, `browser_fill`, `browser_select_option` |
 | `[WAIT]` | Wait for condition before proceeding | `browser_wait_for` |
-| `[ASSERT]` | Inline assertion within a step sequence | `browser_snapshot` + evaluate |
+| `[ASSERT]` | Mid-flow inline check — gate before continuing (e.g. verify precondition mid-sequence). NOT a final assertion. Final pass/fail verdicts go in the `Assertions` column. | `browser_snapshot` + evaluate |
 | `[SCROLL]` | Scroll to element or position | `browser_evaluate` scroll |
 | `[KEY]` | Press keyboard key | `browser_press_key` |
 
@@ -122,11 +124,13 @@ Explicit, checkable predicates. Each on its own line, prefixed with assertion ta
 
 **Assertion target tags:**
 
+> These tags apply to **Storefront UI** tests. For other layers: REST API → `[STATUS]` `[BODY]` `[SCHEMA]` `[HEADER]` `[PERF]`; GraphQL → `[ERRORS]` `[DATA]` `[NULL]` `[COUNT]` `[MATH]` `[PERF]`; Admin UI → `[TOAST]` `[FORM]` `[BLADE]` `[GRID]`. Full definitions in the Layer-Specific Formats section below.
+
 | Tag | Checks |
 |-----|--------|
 | `[DOM]` | Element visible, text content, attribute value, enabled/disabled state |
 | `[STATE]` | Application state (logged in, item in cart, order created) |
-| `[MATH]` | Numeric calculation verification |
+| `[MATH]` | Numeric calculation verification (also used in GraphQL layer) |
 | `[FORMAT]` | Display format (2 decimal places, date format, etc.) |
 | `[NAV]` | Current URL matches expected path |
 
@@ -159,7 +163,7 @@ Examples:
 [API] addItem mutation returns HTTP 200, errors[] is empty
 [API] cart.items contains sku={{TEST_SKU}} after add
 [CONSOLE] no TypeError or JS errors during add action
-[NETWORK] no 4xx/5xx on /xapi/graphql during checkout
+[NETWORK] no 4xx/5xx on /graphql during checkout
 [ADMIN] order appears in admin with status 'New'
 [EMAIL] order confirmation email received within 60s
 ```
@@ -174,7 +178,7 @@ Comma-separated list of observable signals.
 
 Examples:
 - `Spinner visible >5s`
-- `4xx/5xx on /xapi/graphql (addItem mutation)`
+- `4xx/5xx on /graphql (addItem mutation)`
 - `console.error with TypeError`
 - `Cart badge unchanged after 3s`
 - `errors[] non-empty in GraphQL response`
@@ -221,7 +225,7 @@ BL-CART-001,
 [DOM] cart icon badge increments by 1
 [STATE] product appears in cart (mini-cart or cart page)
 [FORMAT] all prices display with exactly 2 decimal places",
-"[API] POST /xapi/graphql (addItem mutation) returns HTTP 200
+"[API] POST /graphql (addItem mutation) returns HTTP 200
 [API] addItem response errors[] is empty (not just HTTP 200)
 [API] cart.items contains item with sku={{TEST_SKU}}
 [CONSOLE] no TypeError or JS errors during add action
@@ -231,6 +235,163 @@ BL-CART-001,
 VCST-4499,
 Automated
 ```
+
+---
+
+## Layer-Specific Formats
+
+The base 15-column structure stays the same across all layers. What changes is the **step tags**, **assertion tags**, and **cross-layer check patterns** used inside the columns.
+
+### Layer: REST API
+
+Tests executed via Postman MCP or `browser_evaluate` (fetch). No browser UI interaction.
+
+**Step tags (Steps column):**
+
+| Tag | Meaning | Agent Action |
+|-----|---------|-------------|
+| `[HTTP]` | Send HTTP request (method + endpoint + body) | Postman MCP `runCollection` or `browser_evaluate` fetch |
+| `[AUTH]` | Authenticate and store token | POST to `/connect/token`, save Bearer token |
+| `[SETUP]` | Create prerequisite data via API | POST to create test entity |
+| `[TEARDOWN]` | Delete test data via API | DELETE to clean up |
+| `[WAIT]` | Wait for async processing | Poll or delay |
+
+**Assertion tags (Assertions column):**
+
+| Tag | Checks |
+|-----|--------|
+| `[STATUS]` | HTTP status code (200, 201, 400, 401, 404) |
+| `[BODY]` | Response body field exists, has expected value/type |
+| `[SCHEMA]` | Response matches expected JSON structure |
+| `[HEADER]` | Response header present/correct (CORS, Content-Type, security headers) |
+| `[PERF]` | Response time within threshold |
+
+**Cross-layer (Cross_Layer_Checks column):**
+
+| Tag | Checks |
+|-----|--------|
+| `[DB]` | Data persisted — verify via GET after POST/PUT |
+| `[SEARCH]` | If indexed entity, verify search returns it after reindex lag |
+| `[ADMIN]` | Entity visible in Admin SPA after API create/update |
+| `[EVENT]` | Platform event fired (check via `/api/platform/pushnotifications`) |
+
+**Worked example:** see `test-case-examples.md` → REST API — API-042
+
+---
+
+### Layer: GraphQL xAPI
+
+Tests executed via Postman MCP or `browser_evaluate` (fetch to `/graphql`). Key rule: **HTTP 200 ≠ success** — always check `errors[]`.
+
+**Step tags (Steps column):**
+
+| Tag | Meaning | Agent Action |
+|-----|---------|-------------|
+| `[GQL]` | Execute GraphQL query or mutation | POST to `{{BACK_URL}}/graphql` with query + variables |
+| `[AUTH]` | Authenticate (get Bearer token or use storefront cookie) | Token endpoint or login mutation |
+| `[SETUP]` | Create prerequisite data (cart, user, product) | GraphQL mutations or REST API |
+| `[TEARDOWN]` | Clean up created data | Delete mutations or REST API |
+| `[WAIT]` | Wait for async processing (reindex, event) | Poll or delay |
+| `[VAR]` | Extract value from previous response for next step | Save `id` from mutation response |
+
+**Assertion tags (Assertions column):**
+
+| Tag | Checks |
+|-----|--------|
+| `[ERRORS]` | `errors[]` is empty (or contains expected error for negative tests) |
+| `[DATA]` | Response `data` field has expected structure and values |
+| `[NULL]` | Specific field is null or non-null as expected |
+| `[COUNT]` | `totalCount` or array length matches expectation |
+| `[MATH]` | Calculated field (totals, subtotals) matches formula |
+| `[PERF]` | Query execution time within threshold |
+
+**Cross-layer (Cross_Layer_Checks column):**
+
+| Tag | Checks |
+|-----|--------|
+| `[ROUNDTRIP]` | Mutation → Query confirms data persisted correctly |
+| `[STOREFRONT]` | Storefront UI reflects the GraphQL state change |
+| `[ADMIN]` | Admin SPA shows the entity/change |
+| `[CONSOLE]` | No JS errors if testing via browser |
+| `[EVENT]` | Platform events/notifications triggered |
+
+**Worked example:** see `test-case-examples.md` → GraphQL xAPI — GQL-042
+
+---
+
+### Layer: Admin UI
+
+Tests executed via Playwright MCP (Edge or Chrome) against Admin SPA (`{{BACK_URL}}`). Admin uses blade navigation pattern — blades slide in from right.
+
+**Step tags (Steps column):**
+
+| Tag | Meaning | Agent Action |
+|-----|---------|-------------|
+| `[NAV]` | Navigate to Admin URL or menu item | `browser_navigate` to `{{BACK_URL}}/...` |
+| `[BLADE]` | Wait for blade to open/close | `browser_wait_for` blade container |
+| `[ACT]` | Click, fill, select in Admin form | `browser_click`, `browser_fill` |
+| `[GRID]` | Interact with Admin grid (search, sort, filter, paginate) | Grid-specific selectors |
+| `[WIDGET]` | Interact with Admin widget (dashboard card, chart) | Widget-specific selectors |
+| `[SAVE]` | Click Save/OK in blade and wait for confirmation | Save + wait for success notification |
+| `[WAIT]` | Wait for loading spinner, data refresh | `browser_wait_for` |
+| `[KEY]` | Keyboard shortcut in Admin | `browser_press_key` |
+
+**Assertion tags (Assertions column):**
+
+| Tag | Checks |
+|-----|--------|
+| `[DOM]` | Element visible, text content, form field value |
+| `[BLADE]` | Correct blade title, blade count, blade closed |
+| `[GRID]` | Row count, cell value, sort order, filter applied |
+| `[TOAST]` | Success/error notification message |
+| `[FORM]` | Field value persisted after save, validation error shown |
+| `[NAV]` | Current URL or breadcrumb matches expected |
+
+**Cross-layer (Cross_Layer_Checks column):**
+
+| Tag | Checks |
+|-----|--------|
+| `[API]` | REST/GraphQL confirms admin change persisted |
+| `[STOREFRONT]` | Storefront reflects admin change (after reindex if catalog) |
+| `[CONSOLE]` | No JS errors in Admin SPA console |
+| `[NETWORK]` | No failed API calls (4xx/5xx) in network tab |
+| `[SEARCH]` | Search index updated after catalog/pricing changes (30-60s lag) |
+
+**Worked example:** see `test-case-examples.md` → Admin UI — ADM-042
+
+---
+
+### Layer: E2E Cross-Layer Flow
+
+End-to-end tests that span multiple layers. These are the highest-value tests — they verify the full user journey across storefront, API, and admin.
+
+**Step tags:** Combine tags from all layers. Prefix each block with a layer marker:
+
+| Marker | Scope |
+|--------|-------|
+| `--- STOREFRONT ---` | Steps in the customer-facing storefront |
+| `--- API ---` | Direct API/GraphQL verification steps |
+| `--- ADMIN ---` | Steps in the Admin SPA |
+
+Within each block, use that layer's step tags (`[NAV]`/`[ACT]` for UI, `[HTTP]`/`[GQL]` for API, `[BLADE]`/`[GRID]` for Admin).
+
+**Assertion tags:** Use all layer assertion tags. Every E2E case MUST have assertions from at least 2 different layers.
+
+**Worked example:** see `test-case-examples.md` → E2E Cross-Layer — E2E-042
+
+---
+
+### Layer Detection Rules
+
+When generating test cases, determine the layer from context:
+
+| Signal | Layer |
+|--------|-------|
+| REST endpoint (`/api/...`), HTTP methods, Postman | **REST API** |
+| GraphQL query/mutation, xAPI, `errors[]` | **GraphQL xAPI** |
+| Admin SPA, blade, back-office CRUD, module management | **Admin UI** |
+| User journey spanning storefront + API + admin | **E2E Cross-Layer** |
+| Storefront-only UI flow | Use the **base format** (existing step tags) |
 
 ---
 
@@ -279,16 +440,4 @@ Include at least 2 failure signals per test — typically: timeout signal + API 
 
 ---
 
-## Migration from Legacy Format
-
-| Legacy Column | New Column(s) | Notes |
-|---------------|--------------|-------|
-| `Type` | — | Removed |
-| `Estimate` | — | Removed |
-| `Preconditions` | `Preconditions` + `Test_Data` | Split: prose → Preconditions; `{{VAR}}` bindings → Test_Data |
-| `Steps` | `Steps` + `Assertions` | Split: actions → Steps (with type tags); expected outcomes → Assertions |
-| `Expected Result` | `Assertions` + `Cross_Layer_Checks` | UI assertions → Assertions; API/console → Cross_Layer_Checks |
-| — | `Business_Rule` | New — map to BL-* from `business-logic.md` |
-| — | `Edge_Case_Refs` | New — map to ECL sections |
-| — | `Failure_Signals` | New — early warning patterns |
-| — | `Cleanup` | New — state restoration |
+> **Migrating from legacy TestRail format?** See `test-case-examples.md` → Migration from Legacy Format.

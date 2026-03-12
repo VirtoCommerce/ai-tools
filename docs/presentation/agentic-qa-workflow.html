@@ -5,27 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Agentic QA: LLM-Driven Testing for Virto Commerce</title>
 <style>
-/* ===== Anthropic-inspired design tokens ===== */
+/* ===== Anthropic light mode design tokens ===== */
 :root {
-  --bg-primary: #131314;
-  --bg-slide: #1a1a1c;
-  --bg-code: #232326;
-  --bg-table-header: #1f1f22;
-  --bg-table-row: rgba(255,255,255,0.02);
-  --bg-table-row-alt: rgba(255,255,255,0.05);
-  --text-primary: #faf9f0;
-  --text-secondary: #b0afa6;
-  --text-muted: #78776e;
-  --accent: #d97757;
-  --accent-hover: #e08a6d;
-  --accent-subtle: rgba(217,119,87,0.15);
-  --border: rgba(255,255,255,0.08);
-  --border-accent: rgba(217,119,87,0.3);
+  --bg-primary: #EDE9E3;
+  --bg-slide: #FFFFFF;
+  --bg-code: #F2EFE9;
+  --bg-table-header: #F5F2EC;
+  --bg-table-row: rgba(0,0,0,0.015);
+  --bg-table-row-alt: rgba(0,0,0,0.04);
+  --text-primary: #1A1714;
+  --text-secondary: #5C5852;
+  --text-muted: #9C9891;
+  --accent: #C5603E;
+  --accent-hover: #A84F31;
+  --accent-subtle: rgba(197,96,62,0.1);
+  --border: rgba(0,0,0,0.09);
+  --border-accent: rgba(197,96,62,0.28);
   --radius: 8px;
   --radius-lg: 12px;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
-  --shadow: 0 2px 12px rgba(0,0,0,0.4);
+  --shadow: 0 2px 16px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
 }
 
 /* ===== Reset & base ===== */
@@ -192,7 +192,7 @@ html, body {
   display: none;
   margin-top: 24px;
   padding: 16px 20px;
-  background: rgba(217,119,87,0.08);
+  background: rgba(197,96,62,0.07);
   border: 1px solid var(--border-accent);
   border-radius: var(--radius);
   font-size: 14px;
@@ -228,7 +228,7 @@ body.show-notes .speaker-notes { display: block; }
 }
 .slide-icon:hover {
   opacity: 1;
-  filter: drop-shadow(0 0 8px var(--accent)) drop-shadow(0 0 20px rgba(217,119,87,0.4));
+  filter: drop-shadow(0 0 8px var(--accent)) drop-shadow(0 0 20px rgba(197,96,62,0.35));
   animation: cli-spin 1.2s linear infinite;
 }
 .slide-icon svg {
@@ -376,7 +376,7 @@ body:focus-within .nav-controls { opacity: 1; }
         
         <h1 class="slide-title">Agenda</h1>
         
-        <div class="slide-content"><ol><li>Why Agentic QA? The problem we solve</li><li>By the Numbers</li><li>Architecture: Two Modes, One Foundation</li><li>MCP Servers — Claude's "Hands and Eyes"</li><li>Agent Teams (11 agents, 2 teams)</li><li>Four-Layer Prompt Architecture</li><li>Browser Isolation &amp; Orchestration</li><li>Regression Pipeline &amp; Quality Gates</li><li>CI/CD, Commands &amp; Skills</li><li>Knowledge Layer &amp; Skill Graph</li><li>Agent Routing: Skills vs Knowledge</li><li>Live: Smoke Test in Action</li><li>Benefits &amp; Roadmap</li></ol>
+        <div class="slide-content"><ol><li>Why Agentic QA? The problem we solve</li><li>By the Numbers</li><li>Architecture: Two Modes, One Foundation</li><li>MCP Servers — Claude's "Hands and Eyes"</li><li>Agent Teams (14 agents, 2 teams)</li><li>Four-Layer Prompt Architecture</li><li>Browser Isolation &amp; Orchestration</li><li>Regression Pipeline &amp; Quality Gates</li><li>CI/CD, Commands &amp; Skills</li><li>Knowledge Layer &amp; Skill Graph</li><li>Agent Routing: Skills vs Knowledge</li><li>Live: Smoke Test in Action</li><li>Benefits &amp; Roadmap</li></ol>
 <p><strong>Total presentation ~40 min | Live demo +20 min | Q&amp;A +10 min</strong></p></div>
         <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
     <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -400,7 +400,7 @@ body:focus-within .nav-controls { opacity: 1; }
         
         <h1 class="slide-title">Why Agentic QA?</h1>
         
-        <div class="slide-content"><table><thead><tr><th>Challenge</th><th>Traditional Automation</th><th>Agentic QA</th></tr></thead><tbody><tr><td>Selector changes</td><td>Tests break</td><td>Agents adapt (self-healing)</td></tr><tr><td>Skill requirement</td><td>Developer-level coding</td><td>Natural language prompts</td></tr><tr><td>Maintenance cost</td><td>High (brittle scripts)</td><td>Low (prompt updates)</td></tr><tr><td>Cross-browser</td><td>Separate configs per browser</td><td>One prompt, 3 browsers</td></tr><tr><td>Scale</td><td>Hard to grow test suites</td><td>1,274 tests, 36 suites</td></tr></tbody></table>
+        <div class="slide-content"><table><thead><tr><th>Challenge</th><th>Traditional Automation</th><th>Agentic QA</th></tr></thead><tbody><tr><td>Selector changes</td><td>Tests break</td><td>Agents adapt (self-healing)</td></tr><tr><td>Skill requirement</td><td>Developer-level coding</td><td>Natural language prompts</td></tr><tr><td>Maintenance cost</td><td>High (brittle scripts)</td><td>Low (prompt updates)</td></tr><tr><td>Cross-browser</td><td>Separate configs per browser</td><td>One prompt, 3 browsers</td></tr><tr><td>Scale</td><td>Hard to grow test suites</td><td>~1,546 tests, 36 suites</td></tr></tbody></table>
 <pre><code>Traditional:                         Agentic:
 await page.goto('/login');           "Sign in to the storefront
 await page.fill('#email', '...');    with the test user and verify
@@ -429,7 +429,7 @@ assert(page.url()).contains('/dashboard');</code></pre></div>
         
         <h1 class="slide-title">Agentic QA at a Glance</h1>
         
-        <div class="slide-content"><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody><tr><td>AI Agents</td><td>11 (7 QA + 4 BA)</td></tr><tr><td>Regression Suites</td><td>36 (15 frontend + 21 backend)</td></tr><tr><td>Total Test Cases</td><td>1,274 (492 frontend + 782 backend)</td></tr><tr><td>Slash Commands</td><td>9</td></tr><tr><td>Skills (methodology libraries)</td><td>18 across 3 categories</td></tr><tr><td>MCP Servers</td><td>9 (6 project + 3 user-level)</td></tr><tr><td>Shared Knowledge Files</td><td>8 cross-agent references</td></tr><tr><td>Max Concurrent Browsers</td><td>3</td></tr><tr><td>CI Schedule</td><td>Daily smoke + weekly full regression</td></tr></tbody></table></div>
+        <div class="slide-content"><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody><tr><td>AI Agents</td><td>14 (10 QA + 4 BA)</td></tr><tr><td>Regression Suites</td><td>36 (15 frontend + 21 backend)</td></tr><tr><td>Total Test Cases</td><td>~1,546 (~643 frontend + 903 backend)</td></tr><tr><td>Slash Commands</td><td>10</td></tr><tr><td>Skills (methodology libraries)</td><td>18 across 3 categories</td></tr><tr><td>MCP Servers</td><td>9 (6 project + 3 user-level)</td></tr><tr><td>Shared Knowledge Files</td><td>12 cross-agent references</td></tr><tr><td>Max Concurrent Browsers</td><td>3</td></tr><tr><td>CI Schedule</td><td>Daily smoke + weekly full regression</td></tr></tbody></table></div>
         <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
     <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
     <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -458,7 +458,7 @@ assert(page.url()).contains('/dashboard');</code></pre></div>
 |       |                                        |    |       |                              |
 |  Claude Code CLI                               |    |  Docker container                    |
 |       |                                        |    |       |                              |
-|  11 Specialized Agents                         |    |  Claude Agent SDK                    |
+|  14 Specialized Agents                         |    |  Claude Agent SDK                    |
 |       |                                        |    |  (run-regression.ts)                 |
 |  9 MCP Servers                                 |    |       |                              |
 |  (3 browsers + DevTools + JIRA + Figma + ...)  |    |  Headless Chromium (single browser)  |
@@ -472,7 +472,7 @@ assert(page.url()).contains('/dashboard');</code></pre></div>
                     |  config/test-suites.json (36 suites)   |
                     |  regression/suites/ (CSV test cases)   |
                     |  .claude/agents/ (agent definitions)   |
-                    |  .claude/agents/knowledge/ (8 files)   |
+                    |  .claude/agents/knowledge/ (12 files)  |
                     +----------------------------------------+</code></pre></div>
         <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
     <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -521,10 +521,10 @@ assert(page.url()).contains('/dashboard');</code></pre></div>
       <div class="slide-inner">
         <div class="slide-number">7 / 20</div>
         
-        <h1 class="slide-title">11 Specialized Agents — Two Teams</h1>
-        
-        <div class="slide-content"><p><strong>QA Team (7 agents):</strong></p>
-<table><thead><tr><th>Agent</th><th>Model</th><th>Role</th></tr></thead><tbody><tr><td><strong>qa-lead-orchestrator</strong></td><td>Sonnet</td><td>Coordinates team, manages JIRA workflow, makes go/no-go decisions</td></tr><tr><td><strong>qa-frontend-expert</strong></td><td>Opus</td><td>Storefront testing, checkout flows, mobile, cross-browser</td></tr><tr><td><strong>qa-backend-expert</strong></td><td>Opus</td><td>REST APIs, GraphQL xAPI, Admin SPA, module CRUD, RBAC</td></tr><tr><td><strong>qa-testing-expert</strong></td><td>Opus</td><td>Interactive execution, Figma comparison, console/network debugging</td></tr><tr><td><strong>ui-ux-expert</strong></td><td>Sonnet</td><td>Storybook (55 components), WCAG 2.1 AA accessibility, design system</td></tr><tr><td><strong>test-management-specialist</strong></td><td>Sonnet</td><td>Test planning, case writing, 18 domain checklists, coverage tracking</td></tr><tr><td><strong>regression-orchestrator</strong></td><td>Sonnet</td><td>36-suite regression, parallel batching, browser fallback, quality gates</td></tr></tbody></table>
+        <h1 class="slide-title">14 Specialized Agents — Two Teams</h1>
+
+        <div class="slide-content"><p><strong>QA Team (10 agents):</strong></p>
+<table><thead><tr><th>Agent</th><th>Model</th><th>Role</th></tr></thead><tbody><tr><td><strong>qa-lead-orchestrator</strong></td><td>Sonnet</td><td>Coordinates team, manages JIRA workflow, makes go/no-go decisions</td></tr><tr><td><strong>qa-frontend-expert</strong></td><td>Opus</td><td>Storefront testing, checkout flows, mobile, cross-browser</td></tr><tr><td><strong>qa-backend-expert</strong></td><td>Opus</td><td>REST APIs, GraphQL xAPI, Admin SPA, module CRUD, RBAC</td></tr><tr><td><strong>qa-testing-expert</strong></td><td>Opus</td><td>Interactive execution, Figma comparison, console/network debugging</td></tr><tr><td><strong>ui-ux-expert</strong></td><td>Sonnet</td><td>Storybook (55 components), WCAG 2.1 AA accessibility, design system</td></tr><tr><td><strong>test-management-specialist</strong></td><td>Sonnet</td><td>Test planning, case writing, 18 domain checklists, coverage tracking</td></tr><tr><td><strong>regression-orchestrator</strong></td><td>Sonnet</td><td>36-suite regression, parallel batching, browser fallback, quality gates</td></tr><tr><td><strong>autonomous-regression-orchestrator</strong></td><td>Sonnet</td><td>Agent Teams regression: token bucket, exponential backoff, failure recovery, JIRA integration</td></tr><tr><td><strong>autonomous-test-runner</strong></td><td>—</td><td>Parameterized template for Agent Teams mode suite execution</td></tr><tr><td><strong>test-runner-agent</strong></td><td>—</td><td>Parameterized template for standard suite execution (used by regression-orchestrator)</td></tr></tbody></table>
 <p><strong>BA Team (4 agents):</strong></p>
 <table><thead><tr><th>Agent</th><th>Model</th><th>Role</th></tr></thead><tbody><tr><td><strong>ba-system-analyzer</strong></td><td>Sonnet</td><td>Repo structure, module inventory, user flows, pain points</td></tr><tr><td><strong>ba-api-specialist</strong></td><td>Sonnet</td><td>API surface analysis via Postman/Swagger</td></tr><tr><td><strong>ba-story-writer</strong></td><td>Sonnet</td><td>Agile user stories with BDD acceptance criteria</td></tr><tr><td><strong>ba-doc-writer</strong></td><td>Sonnet</td><td>User docs, admin guides, API quick-start</td></tr></tbody></table></div>
         <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -539,7 +539,7 @@ assert(page.url()).contains('/dashboard');</code></pre></div>
     <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
     <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
     <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
-  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> Opus models are used for the 3 specialist testing agents that need deep reasoning (frontend, backend, testing). Sonnet models handle coordination, planning, and documentation where speed matters more than depth. Each agent has a focused role — no agent tries to do everything.</div></div>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> Opus models are used for the 3 specialist testing agents that need deep reasoning (frontend, backend, testing). Sonnet models handle coordination, planning, and documentation where speed matters more than depth. The two template agents (autonomous-test-runner, test-runner-agent) are parameterized — they have no fixed model and are instantiated per suite run. Each agent has a focused role — no agent tries to do everything.</div></div>
       </div>
     </section>
 
@@ -694,7 +694,7 @@ agents)   progress) BL-*)    reject)
   8. Consolidate final report
   9. Evaluate quality gates --&gt; APPROVED | CONDITIONAL | BLOCKED</code></pre>
 <p><strong>Selection Groups:</strong></p>
-<table><thead><tr><th>Selection</th><th>Suites</th><th>Tests</th><th>Use Case</th></tr></thead><tbody><tr><td><code class="inline">smoke</code></td><td>01</td><td>~12</td><td>Daily pre-deploy validation</td></tr><tr><td><code class="inline">critical</code></td><td>01, 06, 08, 14</td><td>~120</td><td>P0 gate before any release</td></tr><tr><td><code class="inline">sprint</code></td><td>26 suites</td><td>~600</td><td>Sprint release gate</td></tr><tr><td><code class="inline">full</code></td><td>All 36</td><td>1,274</td><td>Production release gate</td></tr><tr><td><code class="inline">frontend</code></td><td>01-13, 35-36</td><td>492</td><td>Frontend-only regression</td></tr><tr><td><code class="inline">backend</code></td><td>14-34</td><td>782</td><td>Backend-only regression</td></tr></tbody></table></div>
+<table><thead><tr><th>Selection</th><th>Suites</th><th>Tests</th><th>Use Case</th></tr></thead><tbody><tr><td><code class="inline">smoke</code></td><td>01</td><td>~12</td><td>Daily pre-deploy validation</td></tr><tr><td><code class="inline">critical</code></td><td>01, 06, 08, 14</td><td>~120</td><td>P0 gate before any release</td></tr><tr><td><code class="inline">sprint</code></td><td>26 suites</td><td>~800</td><td>Sprint release gate</td></tr><tr><td><code class="inline">full</code></td><td>All 36</td><td>~1,546</td><td>Production release gate</td></tr><tr><td><code class="inline">frontend</code></td><td>01-13, 35-36</td><td>~643</td><td>Frontend-only regression</td></tr><tr><td><code class="inline">backend</code></td><td>14-34</td><td>~903</td><td>Backend-only regression</td></tr></tbody></table></div>
         <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
     <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
     <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -786,12 +786,12 @@ agents)   progress) BL-*)    reject)
       <div class="slide-inner">
         <div class="slide-number">14 / 20</div>
         
-        <h1 class="slide-title">9 Commands + 18 Skills</h1>
-        
+        <h1 class="slide-title">10 Commands + 18 Skills</h1>
+
         <div class="slide-content"><p><strong>Commands (action-oriented, execute immediately):</strong></p>
-<table><thead><tr><th>Command</th><th>Purpose</th></tr></thead><tbody><tr><td><code class="inline">/qa-smoke</code></td><td>Daily GO/NO-GO smoke test (~15 min)</td></tr><tr><td><code class="inline">/qa-test VCST-XXXX</code></td><td>Test a JIRA ticket, feature, or PR</td></tr><tr><td><code class="inline">/qa-regression [scope]</code></td><td>Run regression suites in parallel</td></tr><tr><td><code class="inline">/qa-status</code></td><td>Dashboard: run status, JIRA queue, env health</td></tr><tr><td><code class="inline">/qa-bug [description]</code></td><td>Reproduce, document, file bug to JIRA</td></tr><tr><td><code class="inline">/qa-exploratory [area]</code></td><td>Guided exploratory testing session</td></tr><tr><td><code class="inline">/qa-env-check</code></td><td>Validate environment health</td></tr><tr><td><code class="inline">/ba-analyze [scope]</code></td><td>Business analysis coordination</td></tr><tr><td><code class="inline">/ba-stories [feature]</code></td><td>Generate BDD user stories</td></tr></tbody></table>
+<table><thead><tr><th>Command</th><th>Purpose</th></tr></thead><tbody><tr><td><code class="inline">/qa-smoke</code></td><td>Daily GO/NO-GO smoke test (~15 min)</td></tr><tr><td><code class="inline">/qa-test VCST-XXXX</code></td><td>Test a JIRA ticket, feature, or PR</td></tr><tr><td><code class="inline">/qa-regression [scope]</code></td><td>Run regression suites in parallel</td></tr><tr><td><code class="inline">/qa-status</code></td><td>Dashboard: run status, JIRA queue, env health</td></tr><tr><td><code class="inline">/qa-bug [description]</code></td><td>Reproduce, document, file bug to JIRA</td></tr><tr><td><code class="inline">/qa-exploratory [area]</code></td><td>Guided exploratory testing session</td></tr><tr><td><code class="inline">/qa-env-check</code></td><td>Validate environment health</td></tr><tr><td><code class="inline">/qa-coverage-generation [scope]</code></td><td>Parallel coverage generation across domain batches with CI support</td></tr><tr><td><code class="inline">/ba-analyze [scope]</code></td><td>Business analysis coordination</td></tr><tr><td><code class="inline">/ba-stories [feature]</code></td><td>Generate BDD user stories</td></tr></tbody></table>
 <p><strong>Skills (methodology libraries, 3 categories):</strong></p>
-<table><thead><tr><th>Category</th><th>Count</th><th>Skills</th></tr></thead><tbody><tr><td><strong>vc-knowledge</strong></td><td>4</td><td>/vc-docs, /vc-module, /vc-api, /vc-frontend</td></tr><tr><td><strong>testing</strong></td><td>6</td><td>/qa-storybook, /qa-accessibility, /qa-design, /qa-plan, /qa-checklist, /qa-api</td></tr><tr><td><strong>qa-methodology</strong></td><td>8</td><td>/qa-process, /qa-investigate, /qa-evidence, /qa-defect, /qa-test-design, /qa-risk, /qa-metrics, /qa-sbtm</td></tr></tbody></table></div>
+<table><thead><tr><th>Category</th><th>Count</th><th>Skills</th></tr></thead><tbody><tr><td><strong>vc-knowledge</strong></td><td>1</td><td>/vc-docs (auto-invocable)</td></tr><tr><td><strong>testing</strong></td><td>8</td><td>/qa-storybook, /qa-accessibility, /qa-design, /qa-plan, /qa-checklist, /qa-api, /qa-coverage-gap, /qa-seed-data</td></tr><tr><td><strong>qa-methodology</strong></td><td>9</td><td>/qa-process, /qa-investigate, /qa-evidence, /qa-defect, /qa-test-design, /qa-test-cases-generator, /qa-risk, /qa-metrics, /qa-sbtm</td></tr></tbody></table></div>
         <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
     <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
     <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -812,10 +812,10 @@ agents)   progress) BL-*)    reject)
       <div class="slide-inner">
         <div class="slide-number">15 / 20</div>
         
-        <h1 class="slide-title">8 Shared Knowledge Files</h1>
-        
+        <h1 class="slide-title">12 Shared Knowledge Files</h1>
+
         <div class="slide-content"><p>All QA agents consult shared reference files in <code class="inline">.claude/agents/knowledge/</code>:</p>
-<table><thead><tr><th>File</th><th>Content</th><th>Used By</th></tr></thead><tbody><tr><td><strong>business-logic.md</strong></td><td>Testable business invariants with BL-* IDs (pricing, cart, checkout, auth, orders)</td><td>All QA agents</td></tr><tr><td><strong>platform-patterns.md</strong></td><td>Storefront, admin SPA, API implementation patterns</td><td>frontend, backend, testing</td></tr><tr><td><strong>browser-quirks.md</strong></td><td>Chrome/Firefox/Edge behavioral differences and workarounds</td><td>frontend, testing</td></tr><tr><td><strong>debugging-signals.md</strong></td><td>Console error patterns, network failure signals, HAR interpretation</td><td>frontend, backend, testing</td></tr><tr><td><strong>performance-thresholds.md</strong></td><td>LCP, CLS, API latency targets, Core Web Vitals</td><td>frontend, testing</td></tr><tr><td><strong>catalog.md</strong></td><td>B2B catalog structure, product types, xCatalog GraphQL</td><td>frontend, backend</td></tr><tr><td><strong>store-settings.md</strong></td><td>Multi-currency, feature flags, payment processor config</td><td>frontend, backend</td></tr><tr><td><strong>white-labeling.md</strong></td><td>Branding overrides, themes, custom domains</td><td>frontend, ui-ux</td></tr></tbody></table></div>
+<table><thead><tr><th>File</th><th>Content</th><th>Used By</th></tr></thead><tbody><tr><td><strong>business-logic.md</strong></td><td>Testable business invariants with BL-* IDs (pricing, cart, checkout, auth, orders)</td><td>All QA agents</td></tr><tr><td><strong>platform-patterns.md</strong></td><td>Storefront, admin SPA, API implementation patterns</td><td>frontend, backend, testing</td></tr><tr><td><strong>browser-quirks.md</strong></td><td>Chrome/Firefox/Edge behavioral differences and workarounds</td><td>frontend, testing</td></tr><tr><td><strong>debugging-signals.md</strong></td><td>Console error patterns, network failure signals, HAR interpretation</td><td>frontend, backend, testing</td></tr><tr><td><strong>performance-thresholds.md</strong></td><td>LCP, CLS, API latency targets, Core Web Vitals</td><td>frontend, testing</td></tr><tr><td><strong>catalog.md</strong></td><td>B2B catalog structure, product types, xCatalog GraphQL</td><td>frontend, backend</td></tr><tr><td><strong>store-settings.md</strong></td><td>Multi-currency, feature flags, payment processor config</td><td>frontend, backend</td></tr><tr><td><strong>white-labeling.md</strong></td><td>Branding overrides, themes, custom domains</td><td>frontend, ui-ux</td></tr><tr><td><strong>e-commerce-edge-cases-library.md</strong></td><td>13 generic + 7 VC-specific edge case categories (ECL-* IDs with BL-* cross-references)</td><td>All QA agents</td></tr><tr><td><strong>module-suite-map.md</strong></td><td>Module-to-suite mapping: which suites cover which VC modules</td><td>lead, test-mgmt, regression</td></tr><tr><td><strong>sitemap.md</strong></td><td>Full storefront sitemap (March 2026) — all routes and page hierarchy</td><td>frontend, testing</td></tr><tr><td><strong>products.md</strong></td><td>Product types, xAPI fields, configurable sections, test data</td><td>frontend, backend</td></tr></tbody></table></div>
         <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
     <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
     <line x1="6.7" y1="14" x2="41.3" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -896,8 +896,8 @@ agents)   progress) BL-*)    reject)
                     │  | 9 more rows...    | ...          |        │
                     └───────────────────────────────────────────────┘
 
-  AUTO-INVOCABLE    /vc-docs  /vc-module  /vc-api  /vc-frontend  ←── Mechanism 3
-  (4 skills)        Claude calls these automatically when needed       No gate
+  AUTO-INVOCABLE    /vc-docs                                      ←── Mechanism 3
+  (1 skill)         Claude calls this automatically when needed        No gate
 
   SYSTEM GUIDE      .claude/ROUTING.md                            ←── Mechanism 4
                     Decision tree: "I want to..." → use this          For humans
@@ -905,7 +905,7 @@ agents)   progress) BL-*)    reject)
 
   FORMAL MAP        Agent → Skill Map in skills/README.md         ←── Mechanism 5
                     Explicit binding per agent role                    Cross-reference</code></pre>
-<table><thead><tr><th>Mechanism</th><th>Type</th><th>Example</th></tr></thead><tbody><tr><td><strong>1. Hardcoded refs</strong></td><td>Always loaded</td><td><code class="inline">test-management-specialist</code> loads <code class="inline">business-logic.md</code> + 15 reference files at every startup</td></tr><tr><td><strong>2. Conditional table</strong></td><td>On-demand</td><td>"Writing test cases?" → load <code class="inline">/qa-plan</code> → <code class="inline">e2e-scenario-catalog.md</code></td></tr><tr><td><strong>3. Auto-invocable</strong></td><td>Automatic</td><td>Agent hits unknown URL → Claude auto-calls <code class="inline">/vc-frontend</code> → gets sitemap</td></tr><tr><td><strong>4. ROUTING.md</strong></td><td>System guide</td><td>"I want a checklist" → use <code class="inline">/qa-checklist</code> (Skill)</td></tr><tr><td><strong>5. Agent→Skill Map</strong></td><td>Cross-reference</td><td><code class="inline">test-management-specialist</code> → qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-risk, qa-process</td></tr></tbody></table>
+<table><thead><tr><th>Mechanism</th><th>Type</th><th>Example</th></tr></thead><tbody><tr><td><strong>1. Hardcoded refs</strong></td><td>Always loaded</td><td><code class="inline">test-management-specialist</code> loads <code class="inline">business-logic.md</code> + 15 reference files at every startup</td></tr><tr><td><strong>2. Conditional table</strong></td><td>On-demand</td><td>"Writing test cases?" → load <code class="inline">/qa-plan</code> → <code class="inline">e2e-scenario-catalog.md</code></td></tr><tr><td><strong>3. Auto-invocable</strong></td><td>Automatic</td><td>Agent hits unknown VC concept → Claude auto-calls <code class="inline">/vc-docs</code> → gets documentation</td></tr><tr><td><strong>4. ROUTING.md</strong></td><td>System guide</td><td>"I want a checklist" → use <code class="inline">/qa-checklist</code> (Skill)</td></tr><tr><td><strong>5. Agent→Skill Map</strong></td><td>Cross-reference</td><td><code class="inline">test-management-specialist</code> → qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-risk, qa-process</td></tr></tbody></table>
 <p><strong>Key insight:</strong> Knowledge files = memory (always available). Skills = reference books (loaded when needed).</p></div>
         <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
     <line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -919,7 +919,7 @@ agents)   progress) BL-*)    reject)
     <path d="M36 18 L40 18 M36 18 L36 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
     <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1"/>
     <circle cx="24" cy="24" r="1.5" fill="currentColor" opacity="0.5"/>
-  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> This is the glue that makes 18 skills and 8 knowledge files work together without chaos. Agents don't guess — each agent prompt has hardcoded references (always loaded) and a conditional routing table (loaded on-demand by situation). Four VC knowledge skills are auto-invocable — Claude calls them without explicit instruction. The ROUTING.md file serves as a system-level decision tree for both humans and agents. The test-management-specialist is the best example: it has 16 hardcoded reference files and a 13-row conditional skill table — more than any other agent, because test planning touches every methodology.</div></div>
+  </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> This is the glue that makes 18 skills and 8 knowledge files work together without chaos. Agents don't guess — each agent prompt has hardcoded references (always loaded) and a conditional routing table (loaded on-demand by situation). One VC knowledge skill (/vc-docs via Context7) is auto-invocable — Claude calls it without explicit instruction. The vc-module, vc-api, and vc-frontend skills were retired; their content moved into the shared knowledge files (sitemap.md, products.md, module-suite-map.md) and the qa-api testing skill. The ROUTING.md file serves as a system-level decision tree for both humans and agents. The test-management-specialist is the best example: it has 16 hardcoded reference files and a 13-row conditional skill table — more than any other agent, because test planning touches every methodology.</div></div>
       </div>
     </section>
 
@@ -1000,7 +1000,7 @@ agents)   progress) BL-*)    reject)
         
         <h1 class="slide-title">What's Next</h1>
         
-        <div class="slide-content"><table><thead><tr><th>Initiative</th><th>Description</th></tr></thead><tbody><tr><td><strong>Multi-browser CI</strong></td><td>Extend CI from single headless Chromium to 3-browser pool</td></tr><tr><td><strong>Visual regression baselines</strong></td><td>Persistent Storybook component snapshots for automated comparison</td></tr><tr><td><strong>BrowserStack integration</strong></td><td>Cloud-based mobile device testing (iOS Safari, Android Chrome)</td></tr><tr><td><strong>AI-generated test cases</strong></td><td>Derive test cases automatically from JIRA acceptance criteria</td></tr><tr><td><strong>Sprint coverage reports</strong></td><td>Automated mapping of code changes to affected test suites</td></tr><tr><td><strong>Self-updating suites</strong></td><td>Regression suites that evolve based on code change analysis</td></tr></tbody></table></div>
+        <div class="slide-content"><table><thead><tr><th>Initiative</th><th>Description</th></tr></thead><tbody><tr><td><strong>Multi-browser CI</strong></td><td>Extend CI from single headless Chromium to 3-browser pool</td></tr><tr><td><strong>Visual regression baselines</strong></td><td>Persistent Storybook component snapshots for automated comparison</td></tr><tr><td><strong>BrowserStack integration</strong></td><td>Cloud-based mobile device testing (iOS Safari, Android Chrome)</td></tr><tr><td><strong>AI-generated test cases</strong></td><td>✓ Shipped — <code class="inline">/qa-test-cases-generator</code> derives enriched CSV test cases from JIRA tickets, features, checklists, or legacy suites</td></tr><tr><td><strong>Sprint coverage reports</strong></td><td>Automated mapping of code changes to affected test suites</td></tr><tr><td><strong>Self-updating suites</strong></td><td>Regression suites that evolve based on code change analysis</td></tr></tbody></table></div>
         <div class="notes-row"><div class="slide-icon slide-icon--spin-slow"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
     <path d="m3.127 10.604 3.135-1.76.053-.153-.053-.085H6.11l-.525-.032-1.791-.048-1.554-.065-1.505-.08-.38-.081L0 7.832l.036-.234.32-.214.455.04 1.009.069 1.513.105 1.097.064 1.626.17h.259l.036-.105-.089-.065-.068-.064-1.566-1.062-1.695-1.121-.887-.646-.48-.327-.243-.306-.104-.67.435-.48.585.04.15.04.593.456 1.267.981 1.654 1.218.242.202.097-.068.012-.049-.109-.181-.9-1.626-.96-1.655-.428-.686-.113-.411a2 2 0 0 1-.068-.484l.496-.674L4.446 0l.662.089.279.242.411.94.666 1.48 1.033 2.014.302.597.162.553.06.17h.105v-.097l.085-1.134.157-1.392.154-1.792.052-.504.25-.605.497-.327.387.186.319.456-.045.294-.19 1.23-.37 1.93-.243 1.29h.142l.161-.16.654-.868 1.097-1.372.484-.545.565-.601.363-.287h.686l.505.751-.226.775-.707.895-.585.759-.839 1.13-.524.904.048.072.125-.012 1.897-.403 1.024-.186 1.223-.21.553.258.06.263-.218.536-1.307.323-1.533.307-2.284.54-.028.02.032.04 1.029.098.44.024h1.077l2.005.15.525.346.315.424-.053.323-.807.411-3.631-.863-.872-.218h-.12v.073l.726.71 1.331 1.202 1.667 1.55.084.383-.214.302-.226-.032-1.464-1.101-.565-.497-1.28-1.077h-.084v.113l.295.432 1.557 2.34.08.718-.112.234-.404.141-.444-.08-.911-1.28-.94-1.44-.759-1.291-.093.053-.448 4.821-.21.246-.484.186-.403-.307-.214-.496.214-.98.258-1.28.21-1.016.19-1.263.112-.42-.008-.028-.092.012-.953 1.307-1.448 1.957-1.146 1.227-.274.109-.477-.247.045-.44.266-.39 1.586-2.018.956-1.25.617-.723-.004-.105h-.036l-4.212 2.736-.75.096-.324-.302.04-.496.154-.162 1.267-.871z"/>
   </svg></div><span class="spinner-label"></span><div class="speaker-notes"><strong>Notes:</strong> The current system is a strong foundation. The roadmap focuses on expanding coverage (mobile, multi-browser CI), reducing manual effort (AI-generated tests, self-updating suites), and improving feedback loops (sprint coverage reports).</div></div>

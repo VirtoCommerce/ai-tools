@@ -32,8 +32,8 @@ Autonomously improves test coverage by identifying gaps between application feat
 2. **Read feature inventory** from:
    - `.claude/agents/knowledge/business-logic.md` — business invariants
    - `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md` — 105 E2E scenarios
-   - `.claude/skills/vc-knowledge/vc-frontend/sitemap.md` — storefront pages
-   - `.claude/skills/vc-knowledge/vc-api/xapi-query-ref.md` — API endpoints
+   - `.claude/agents/knowledge/sitemap.md` — storefront pages
+   - `.claude/skills/testing/qa-api/xapi-query-ref.md` — API endpoints
    - `.claude/skills/testing/qa-checklist/domain-checklists.md` — 18 domain checklists
 3. **Map every test case** to its feature domain using Section column and title keywords
 4. **Identify gaps**: features/flows that exist in the app but have zero or insufficient test cases
@@ -104,8 +104,8 @@ Autonomously improves test coverage by identifying gaps between application feat
 |-----------|-------|-------------|
 | Upstream | `/qa-plan` | E2E scenario catalog provides expected coverage |
 | Upstream | `/qa-checklist` | Domain checklists define expected test areas |
-| Upstream | `/vc-frontend` | Sitemap provides page inventory |
-| Upstream | `/vc-api` | API reference provides endpoint inventory |
+| Upstream | `agents/knowledge/sitemap.md` | Sitemap provides page inventory |
+| Upstream | `/qa-api ref` | API reference provides endpoint inventory |
 | Downstream | `/qa-test` | Generated test cases can be executed via /qa-test |
 | Downstream | `/qa-regression` | Updated suites feed into regression runs |
 | Downstream | `/qa-metrics` | Coverage metrics updated post-generation |

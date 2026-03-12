@@ -1,24 +1,14 @@
 # .claude/skills/ — Skill Directory
 
-> 19 skills organized in 3 category groups. Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
+> 18 skills organized in 3 category groups. Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
 
 ## Directory Structure
 
 ```
 .claude/skills/
-├── vc-knowledge/                    # VC Knowledge (4) — auto-invocable, read-only
-│   ├── vc-docs/
-│   │   └── SKILL.md                 # Documentation lookup via Context7
-│   ├── vc-module/
-│   │   ├── SKILL.md                 # Module analysis and test suite mapping
-│   │   └── module-suite-map.md
-│   ├── vc-api/
-│   │   ├── SKILL.md                 # xAPI & REST API reference
-│   │   └── xapi-query-ref.md
-│   └── vc-frontend/
-│       ├── SKILL.md                 # Storefront reference: URLs, navigation, product types, account structure
-│       ├── sitemap.md               # Full site map (updated March 2026)
-│       └── products.md              # Product types, xAPI fields, configurable sections, test data
+├── vc-knowledge/                    # VC Knowledge (1) — auto-invocable, read-only
+│   └── vc-docs/
+│       └── SKILL.md                 # Documentation lookup via Context7
 │
 ├── testing/                         # Testing (8) — manual invocation
 │   ├── qa-storybook/
@@ -42,15 +32,22 @@
 │   │   └── checklist-creation-guide.md
 │   ├── qa-api/
 │   │   ├── SKILL.md                 # REST API & GraphQL xAPI testing
-│   │   └── test-cases-api-graphql.md
+│   │   ├── xapi-query-ref.md        # Ready-to-use GraphQL queries, mutations, and REST request templates
+│   │   ├── test-cases-api-graphql.md
+│   │   └── api-test-case-patterns.md # Coverage checklists and writing guide for generating new test cases
 │   ├── qa-coverage-gap/
 │   │   ├── SKILL.md                 # Autonomous test coverage gap analysis
 │   │   ├── coverage-gap-methodology.md
 │   │   └── feature-domain-map.md
 │   └── qa-seed-data/
-│       └── SKILL.md                 # Test data generation via Postman MCP (uses knowledge/test-data-generation.md)
+│       ├── SKILL.md                 # Test data generation via Postman MCP
+│       └── test-data-generation.md  # Data generation methodology and Postman collection reference
 │
-├── qa-methodology/                  # QA Methodology (8) — cross-team practices
+├── qa-methodology/                  # QA Methodology (9) — cross-team practices
+│   ├── qa-test-cases-generator/
+│   │   ├── SKILL.md                 # Generate agent-native test cases in enriched CSV format
+│   │   ├── test-case-template.md    # Enriched CSV column spec with step type tags
+│   │   └── test-case-examples.md    # Concrete examples per layer (companion to template)
 │   ├── qa-investigate/
 │   │   ├── SKILL.md                 # Bug investigation (5 phases)
 │   │   └── bug-investigation-flow.md
@@ -83,16 +80,15 @@
 └── README.md                        # This file
 ```
 
-## VC Knowledge (4) — `vc-knowledge/`
+## VC Knowledge (1) — `vc-knowledge/`
 
 Auto-invocable, read-only reference skills. No side effects.
 
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
 | `/vc-docs` | Documentation lookup via Context7 | -- (Context7 MCP) |
-| `/vc-module` | Module -> test suite mapping, dependencies, API surface | module-suite-map.md |
-| `/vc-api` | xAPI & REST API query/mutation reference | xapi-query-ref.md |
-| `/vc-frontend` | Storefront reference: page URLs, navigation, product types, account structure, test data | sitemap.md |
+
+> **Note:** Module suite mapping (`module-suite-map.md`), storefront sitemap (`sitemap.md`), and product type reference (`products.md`) are now in `.claude/agents/knowledge/` and accessed directly by agents. xAPI & REST API reference (`xapi-query-ref.md`) is now in `testing/qa-api/` — use `/qa-api ref <module>` to look up queries.
 
 ## Testing (8) — `testing/`
 
@@ -105,13 +101,13 @@ Manual invocation, delegates to specialist agents.
 | `/qa-design` | ui-ux-expert | design-system-consistency.md, ux-heuristic-evaluation.md |
 | `/qa-plan` | test-management-specialist | e2e-scenario-catalog.md |
 | `/qa-checklist` | test-management-specialist | domain-checklists.md, checklist-creation-guide.md |
-| `/qa-api` | qa-backend-expert | test-cases-api-graphql.md |
+| `/qa-api` | qa-backend-expert | xapi-query-ref.md, test-cases-api-graphql.md, api-test-case-patterns.md |
 | `/qa-coverage-gap` | test-management-specialist | coverage-gap-methodology.md, feature-domain-map.md |
 | `/qa-seed-data` | qa-backend-expert | `knowledge/test-data-generation.md` (agent knowledge file) |
 
-## QA Methodology (8) — `qa-methodology/`
+## QA Methodology (9) — `qa-methodology/`
 
-Manual invocation, cross-team best practices. Process framework, reactive (post-bug), and proactive (pre-testing) methodology.
+Manual invocation, cross-team best practices. Process framework, reactive (post-bug), proactive (pre-testing), and generation methodology.
 
 ### Process Framework
 
@@ -136,10 +132,16 @@ Manual invocation, cross-team best practices. Process framework, reactive (post-
 | `/qa-metrics` | Quality metrics & gates: pass rate, defect density, DRE, coverage, gate enforcement | quality-metrics-catalog.md, quality-gates.md |
 | `/qa-sbtm` | Session-based exploratory testing: SBTM charters, CRISP/SFDPOT heuristics, tours, debrief | session-based-testing.md |
 
+### Generation
+
+| Skill | Purpose | Supporting Files |
+|-------|---------|-----------------|
+| `/qa-test-cases-generator` | Generate agent-native test cases in enriched CSV format from JIRA tickets, features, checklists, or legacy suites | test-case-template.md, test-case-examples.md |
+
 ## Dependency Graph
 
 ```
-vc-module, vc-api --> supplement with vc-docs (Context7)
+qa-api (ref mode) --> supplement with vc-docs (Context7)
 qa-process --> orchestrates all qa-methodology skills (the umbrella lifecycle)
 qa-process (Analyze) --> feeds into qa-test-design (test condition → test case)
 qa-process (Close) --> feeds back into qa-process (Plan) via retrospective loop
@@ -156,6 +158,8 @@ qa-risk --> informs qa-sbtm (charter prioritization)
 qa-metrics --> enforced by regression-orchestrator (gate evaluation)
 qa-sbtm --> references qa-risk (high-risk areas), qa-test-design (error guessing)
 qa-coverage-gap --> references qa-plan (E2E catalog), qa-checklist (domain coverage)
+qa-test-cases-generator --> references qa-test-design (derivation techniques), qa-checklist (domain items)
+qa-coverage-gap --> feeds into qa-test-cases-generator (generates missing cases)
 qa-storybook, qa-accessibility, qa-design --> delegate to ui-ux-expert agent
 qa-plan --> delegates to test-management-specialist agent
 qa-api --> delegates to qa-backend-expert agent
@@ -165,7 +169,7 @@ Learning loop: qa-investigate (bug) --> qa-defect (triage) --> qa-risk (update) 
 
 ## Agent -> Skill Map
 
-> **Note:** All QA agents also reference auto-invocable `vc-knowledge` skills (`vc-docs`, `vc-module`, `vc-api`, `vc-frontend`) via their Skills Integration tables. These are omitted from the map below for brevity.
+> **Note:** All QA agents also reference the auto-invocable `vc-knowledge` skill (`/vc-docs`) and may access knowledge files in `agents/knowledge/` directly. These are omitted from the map below for brevity.
 
 | Agent | Skills Referenced |
 |-------|-----------------|
@@ -174,7 +178,7 @@ Learning loop: qa-investigate (bug) --> qa-defect (triage) --> qa-risk (update) 
 | qa-backend-expert | qa-api, qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm |
 | qa-testing-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm, qa-design, qa-plan, qa-api |
 | ui-ux-expert | qa-storybook, qa-accessibility, qa-design, qa-evidence, qa-investigate, qa-defect |
-| test-management-specialist | qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-risk, qa-process, qa-sbtm, qa-metrics |
+| test-management-specialist | qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-test-cases-generator, qa-risk, qa-process, qa-sbtm, qa-metrics |
 | regression-orchestrator | qa-metrics (gate enforcement after runs) |
 | autonomous-regression-orchestrator | — (orchestration only, no skill references) |
 

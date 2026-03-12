@@ -44,7 +44,7 @@ Browser: playwright-chrome
 Frontend URL: {FRONT_URL}
 Output: reports/regression/{RUN_ID}/suite-01-trackA-results.json
 
-Follow the test-runner-agent protocol in docs/prompts/test-runner-agent.md.
+Follow the test-runner-agent protocol in .claude/agents/qa/test-runner-agent.md.
 Execute all 12 smoke test cases (SMK-001 through SMK-012) as a customer journey.
 Capture evidence on failures. Write structured JSON results to the output file.
 ```

@@ -113,8 +113,8 @@ Reliability order: `data-testid` > `aria-label` > semantic HTML > text content >
 |------|---------------|
 | Frontend suites | `regression/suites/Frontend/*.csv` (suites 01-13, 35-36) |
 | E2E Scenario Catalog | `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md` |
-| Storefront Sitemap | `.claude/skills/vc-knowledge/vc-frontend/sitemap.md` |
-| Product Types & Properties | `.claude/skills/vc-knowledge/vc-frontend/products.md` |
+| Storefront Sitemap | `.claude/agents/knowledge/sitemap.md` |
+| Product Types & Properties | `.claude/agents/knowledge/products.md` |
 
 ### Escalation Triggers (in addition to shared triggers)
 

@@ -38,8 +38,8 @@ Create `.env` (33 vars). Validate: `npm run env:check`. Access: `import { env } 
 ## Repository Structure
 
 ```
-├── .claude/agents/       # 12 agents in qa/ + ba/ subfolders, knowledge/ for shared refs
-├── .claude/skills/       # 21 skills (vc-knowledge, testing, qa-methodology)
+├── .claude/agents/       # 14 agents in qa/ + ba/ subfolders, knowledge/ for shared refs
+├── .claude/skills/       # 18 skills (vc-knowledge, testing, qa-methodology)
 ├── .claude/commands/     # 10 slash commands
 ├── .claude/rules/        # Reference docs (agents, regression, skills, MCP)
 ├── config/               # Playwright MCP configs + test-suites.json manifest
@@ -78,8 +78,8 @@ Registration/Auth, Catalog/Facets, Cart (variations, BOPIS), Search, Addresses, 
 
 ## Detailed References
 
-- `.claude/rules/agents.md` — 12 agents, browser assignments, delegation rules
+- `.claude/rules/agents.md` — 14 agents, browser assignments, delegation rules
 - `.claude/rules/regression.md` — 3 testing modes, CI pipeline, suite manifest, selection groups
-- `.claude/rules/skills-commands.md` — 10 commands + 20 skills with arguments
+- `.claude/rules/skills-commands.md` — 10 commands + 18 skills with arguments
 - `.claude/rules/mcp-browsers.md` — MCP servers, browser rules, Storybook setup
 - Virto Commerce docs: Context7 library `/virtocommerce/vc-docs` (resolve-library-id → query-docs)

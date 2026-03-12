@@ -40,7 +40,7 @@ Orders ──► Payment, Shipping, Inventory, Notifications
 Cart (xAPI) ──► Catalog, Pricing, Shipping, Marketing
 ```
 
-**Impact analysis** — full mapping: `.claude/skills/vc-knowledge/vc-module/module-suite-map.md`
+**Impact analysis** — full mapping: `.claude/agents/knowledge/module-suite-map.md`
 
 ### Module Lifecycle
 

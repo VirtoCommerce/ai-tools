@@ -128,7 +128,7 @@ Sources to check:
 
 ### Step 2: Map Changes to Modules and Suites
 
-Use the module-to-suite mapping in `vc-knowledge/vc-module/module-suite-map.md` to identify which regression suites cover each changed module. If a change spans multiple modules, include all affected suites.
+Use the module-to-suite mapping in `agents/knowledge/module-suite-map.md` to identify which regression suites cover each changed module. If a change spans multiple modules, include all affected suites.
 
 ### Step 3: Score Risk
 

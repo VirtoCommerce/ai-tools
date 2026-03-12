@@ -14,12 +14,12 @@ Load a prompt template from `docs/prompts/`, execute via MCP browser tools with 
 1. `regression-orchestrator` agent reads `config/test-suites.json` manifest
 2. Resolves suite selection (`smoke`, `critical`, `sprint`, `full`, or comma-separated IDs)
 3. Assigns suites to browser pool slots (3 slots: chrome, firefox, edge)
-4. Spawns sub-agents using `docs/prompts/test-runner-agent.md` template with substituted parameters (`{{SUITE_ID}}`, `{{BROWSER_SERVER}}`, `{{ENVIRONMENT_URL}}`, `{{OUTPUT_FILE}}`, etc.)
+4. Spawns sub-agents using `.claude/agents/qa/test-runner-agent.md` template with substituted parameters (`{{SUITE_ID}}`, `{{BROWSER_SERVER}}`, `{{ENVIRONMENT_URL}}`, `{{OUTPUT_FILE}}`, etc.)
 5. Each sub-agent gets an isolated browser context, executes all test cases from its CSV, writes JSON results
 6. Orchestrator collects results, handles retries with browser fallback chain, produces consolidated report
 
 ### 3. Autonomous Interactive Regression (Agent Teams)
-`autonomous-regression-orchestrator` creates a team of child agents using Agent Teams API (TeamCreate, SendMessage, TaskCreate). Each child gets an isolated browser context, fresh authentication, and exponential backoff (30s→60s→120s). The orchestrator manages a 3+1 token bucket (3 browser + 1 reporting agent), tracks failures in `results/{RUN_ID}/failures.json`, retries failed suites with browser fallback chain (max 3 attempts), and produces a consolidated report with quality gate evaluation and optional JIRA ticket creation via Atlassian MCP.
+`autonomous-regression-orchestrator` creates a team of child agents using Agent Teams API (TeamCreate, SendMessage). Each child gets an isolated browser context, fresh authentication, and exponential backoff (30s→60s→120s). The orchestrator manages a 3+1 token bucket (3 browser + 1 reporting agent), tracks failures in `results/{RUN_ID}/failures.json`, retries failed suites with browser fallback chain (max 3 attempts), and produces a consolidated report with quality gate evaluation and optional JIRA ticket creation via Atlassian MCP.
 
 **Invoke:** `/qa-regression critical --autonomous` or use `autonomous-regression-orchestrator` agent directly.
 **Results:** `results/{RUN_ID}/` (regression-report.md, summary.json, failures.json, per-suite results)
@@ -81,6 +81,7 @@ Suite selection accepts the same group names as above, or comma-separated IDs (`
 ## Prompt Templates
 
 Key prompt templates in `docs/prompts/`:
-- `test-runner-agent.md` - Suite execution template with parameterized placeholders (`{{SUITE_ID}}`, `{{BROWSER_SERVER}}`, `{{ENVIRONMENT_URL}}`, `{{OUTPUT_FILE}}`, etc.) for regression orchestrator
 - `How to test Builder.io.md` - Builder.io, Virto Pages & vc-frontend testing
 - `story-testing.md` - Story-level testing prompt
+
+> **Note:** `test-runner-agent.md` is now an agent definition at `.claude/agents/qa/test-runner-agent.md`, not a prompt template.

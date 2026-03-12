@@ -45,7 +45,7 @@ Suite selection (one of): `smoke`, `critical` (01,06,08,14), `sprint` (26 suites
 
 Dispatch up to 3 sub-agents per batch (matching browser slots). For each:
 - **subagent_type**: `agent` field from manifest (`qa-testing-expert`, `qa-frontend-expert`, `qa-backend-expert`)
-- **prompt**: Fill `docs/prompts/test-runner-agent.md` template with: `{{RUN_ID}}`, `{{SUITE_ID}}`, `{{SUITE_NAME}}`, `{{SUITE_CSV_PATH}}`, `{{BROWSER_SERVER}}`, `{{ENVIRONMENT_URL}}` (FRONT_URL), `{{BACKEND_URL}}` (BACK_URL), `{{OUTPUT_FILE}}` (`reports/regression/{RUN_ID}/suite-{ID}-results.json`)
+- **prompt**: Fill `.claude/agents/qa/test-runner-agent.md` template with: `{{RUN_ID}}`, `{{SUITE_ID}}`, `{{SUITE_NAME}}`, `{{SUITE_CSV_PATH}}`, `{{BROWSER_SERVER}}`, `{{ENVIRONMENT_URL}}` (FRONT_URL), `{{BACKEND_URL}}` (BACK_URL), `{{OUTPUT_FILE}}` (`reports/regression/{RUN_ID}/suite-{ID}-results.json`)
 
 Launch all 3 in a SINGLE message with 3 Agent tool calls for parallel execution.
 

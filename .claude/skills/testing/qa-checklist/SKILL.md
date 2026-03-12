@@ -124,4 +124,4 @@ Reference: `.claude/skills/testing/qa-checklist/domain-checklists.md`
 | `/qa-test-design` | Checklist items can be expanded using EP, BVA, decision tables |
 | `/qa-risk` | High-risk domains get more granular checklist items |
 | `/qa-sbtm` | Checklists serve as starting point for exploratory session charters |
-| `/vc-frontend` | Sitemap provides URLs and product types for UI exploration |
+| `agents/knowledge/sitemap.md` | Sitemap provides URLs and product types for UI exploration |

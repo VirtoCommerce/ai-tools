@@ -1,7 +1,7 @@
 # Store Settings — Agent Reference
 
 QA testing knowledge for the Virto Commerce Store Settings module.
-For API schema (StoreResponseType, StoreSettingsType, GraphQL queries, REST endpoints) see `.claude/skills/vc-knowledge/vc-api/xapi-query-ref.md` → **Store Settings** section.
+For API schema (StoreResponseType, StoreSettingsType, GraphQL queries, REST endpoints) see `.claude/skills/testing/qa-api/xapi-query-ref.md` → **Store Settings** section.
 
 ## What It Does
 

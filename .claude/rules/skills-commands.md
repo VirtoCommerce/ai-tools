@@ -17,18 +17,15 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|module <name>]` | No | Business analysis (full/flows/api/docs/stories/module) |
 | `/ba-stories` | `feature name \| VCST-XXXX` | No | Generate Agile user stories with BDD acceptance criteria |
 
-## Skills (21) — `.claude/skills/` (grouped by category)
+## Skills (18) — `.claude/skills/` (grouped by category)
 
 Skills are slash commands with supporting reference files, organized into 3 category directories. Each skill has a `SKILL.md` with `[Category]` tag in the description. See `.claude/skills/README.md` for full reference.
 
-**`vc-knowledge/` — Virto Commerce Knowledge (4) — auto-invocable:**
+**`vc-knowledge/` — Virto Commerce Knowledge (1) — auto-invocable:**
 
 | Skill | Arguments | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|
 | `/vc-docs` | `topic \| module \| concept` | Documentation lookup via Context7 | — (uses Context7 MCP) |
-| `/vc-module` | `module name \| suite ID` | Module analysis and test suite mapping | `module-suite-map.md` |
-| `/vc-api` | `xCart \| xCatalog \| REST` | xAPI & REST API query reference | `xapi-query-ref.md` |
-| `/vc-frontend` | `page \| URL \| product type \| account \| menu \| sitemap` | Storefront reference: page URLs, navigation, product types, account structure, test data | `sitemap.md` |
 
 **`testing/` — Testing (8) — manual invocation:**
 
@@ -39,7 +36,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/qa-design` | `component \| page \| flow` | Design system consistency & UX heuristics | `design-system-consistency.md`, `ux-heuristic-evaluation.md` |
 | `/qa-plan` | `feature \| domain \| VCST-XXXX` | Test plans from E2E scenario catalog (105 scenarios) | `e2e-scenario-catalog.md` |
 | `/qa-checklist` | `domain \| feature \| VCST-XXXX \| new <domain>` | Test case writing checklists (18 domains + Bug Fix Verification, 158 items) | `domain-checklists.md`, `checklist-creation-guide.md` |
-| `/qa-api` | `endpoint \| module \| graphql` | REST API & GraphQL xAPI testing | `test-cases-api-graphql.md` |
+| `/qa-api` | `ref <module> \| test <scope> \| cases <scope>` | REST API & GraphQL xAPI — reference lookup, test execution, and test case generation | `xapi-query-ref.md`, `test-cases-api-graphql.md`, `api-test-case-patterns.md` |
 | `/qa-coverage-gap` | `analyze \| generate \| validate \| full \| domain <name> \| suite <ID>` | Autonomous test coverage gap analysis and generation (4-cycle pipeline) | `coverage-gap-methodology.md`, `feature-domain-map.md` |
 | `/qa-seed-data` | `minimal \| catalog \| b2b \| pricing \| full \| teardown` | Generate test data via Postman MCP: catalogs, products, pricing, inventory, users, orgs | `test-data-generation.md` (knowledge file) |
 
@@ -61,4 +58,4 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 
 `/qa-smoke`, `/qa-test VCST-1234`, `/qa-storybook Button`, `/vc-docs dynamic properties`, or use agents directly: `"Use qa-frontend-expert to test checkout"`
 
-**Frontmatter fields:** `description` (shown in `/` menu with `[Category]` tag), `argument-hint` (autocomplete hint), `disable-model-invocation: true` (prevents Claude from auto-triggering). Only read-only commands/skills (`/qa-status`, `/qa-env-check`, `/vc-docs`, `/vc-module`, `/vc-api`, `/vc-frontend`) allow model invocation.
+**Frontmatter fields:** `description` (shown in `/` menu with `[Category]` tag), `argument-hint` (autocomplete hint), `disable-model-invocation: true` (prevents Claude from auto-triggering). Only read-only commands/skills (`/qa-status`, `/qa-env-check`, `/vc-docs`) allow model invocation.

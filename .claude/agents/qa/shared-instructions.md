@@ -134,8 +134,8 @@ Skills are methodology libraries with supporting reference files. Read the suppo
 | Triaging a defect | `/qa-defect` | `defect-lifecycle-workflow.md` |
 | Sign-off | `/qa-evidence` | `sign-off-templates.md` |
 | VC documentation | `/vc-docs` | Context7 MCP |
-| Module mapping | `/vc-module` | `module-suite-map.md` |
-| xAPI queries | `/vc-api` | `xapi-query-ref.md` |
+| Module mapping | `agents/knowledge/module-suite-map.md` | direct file reference |
+| xAPI queries | `/qa-api ref <module>` | `xapi-query-ref.md` |
 
 ## Environment Variables (from .env)
 

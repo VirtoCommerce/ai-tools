@@ -23,7 +23,7 @@
 2. By the Numbers
 3. Architecture: Two Modes, One Foundation
 4. MCP Servers — Claude's "Hands and Eyes"
-5. Agent Teams (11 agents, 2 teams)
+5. Agent Teams (14 agents, 2 teams)
 6. Four-Layer Prompt Architecture
 7. Browser Isolation & Orchestration
 8. Regression Pipeline & Quality Gates
@@ -49,7 +49,7 @@
 | Skill requirement | Developer-level coding | Natural language prompts |
 | Maintenance cost | High (brittle scripts) | Low (prompt updates) |
 | Cross-browser | Separate configs per browser | One prompt, 3 browsers |
-| Scale | Hard to grow test suites | 1,274 tests, 36 suites |
+| Scale | Hard to grow test suites | ~1,546 tests, 36 suites |
 
 ```
 Traditional:                         Agentic:
@@ -70,13 +70,13 @@ assert(page.url()).contains('/dashboard');
 
 | Metric | Value |
 |--------|-------|
-| AI Agents | 11 (7 QA + 4 BA) |
+| AI Agents | 14 (10 QA + 4 BA) |
 | Regression Suites | 36 (15 frontend + 21 backend) |
-| Total Test Cases | 1,274 (492 frontend + 782 backend) |
-| Slash Commands | 9 |
+| Total Test Cases | ~1,546 (~643 frontend + 903 backend) |
+| Slash Commands | 10 |
 | Skills (methodology libraries) | 18 across 3 categories |
 | MCP Servers | 9 (6 project + 3 user-level) |
-| Shared Knowledge Files | 8 cross-agent references |
+| Shared Knowledge Files | 12 cross-agent references |
 | Max Concurrent Browsers | 3 |
 | CI Schedule | Daily smoke + weekly full regression |
 
@@ -95,7 +95,7 @@ assert(page.url()).contains('/dashboard');
 |       |                                        |    |       |                              |
 |  Claude Code CLI                               |    |  Docker container                    |
 |       |                                        |    |       |                              |
-|  11 Specialized Agents                         |    |  Claude Agent SDK                    |
+|  14 Specialized Agents                         |    |  Claude Agent SDK                    |
 |       |                                        |    |  (run-regression.ts)                 |
 |  9 MCP Servers                                 |    |       |                              |
 |  (3 browsers + DevTools + JIRA + Figma + ...)  |    |  Headless Chromium (single browser)  |
@@ -109,7 +109,7 @@ assert(page.url()).contains('/dashboard');
                     |  config/test-suites.json (36 suites)   |
                     |  regression/suites/ (CSV test cases)   |
                     |  .claude/agents/ (agent definitions)   |
-                    |  .claude/agents/knowledge/ (8 files)   |
+                    |  .claude/agents/knowledge/ (12 files)  |
                     +----------------------------------------+
 ```
 
@@ -148,9 +148,9 @@ MCP (Model Context Protocol) turns Claude from a text generator into an agent th
 
 ## Slide 7: Agent Team Structure
 
-**Title:** 11 Specialized Agents — Two Teams
+**Title:** 14 Specialized Agents — Two Teams
 
-**QA Team (7 agents):**
+**QA Team (10 agents):**
 
 | Agent | Model | Role |
 |-------|-------|------|
@@ -161,6 +161,9 @@ MCP (Model Context Protocol) turns Claude from a text generator into an agent th
 | **ui-ux-expert** | Sonnet | Storybook (55 components), WCAG 2.1 AA accessibility, design system |
 | **test-management-specialist** | Sonnet | Test planning, case writing, 18 domain checklists, coverage tracking |
 | **regression-orchestrator** | Sonnet | 36-suite regression, parallel batching, browser fallback, quality gates |
+| **autonomous-regression-orchestrator** | Sonnet | Agent Teams regression: token bucket, exponential backoff, failure recovery, JIRA integration |
+| **autonomous-test-runner** | — | Parameterized template for Agent Teams mode suite execution |
+| **test-runner-agent** | — | Parameterized template for standard suite execution (used by regression-orchestrator) |
 
 **BA Team (4 agents):**
 
@@ -171,7 +174,7 @@ MCP (Model Context Protocol) turns Claude from a text generator into an agent th
 | **ba-story-writer** | Sonnet | Agile user stories with BDD acceptance criteria |
 | **ba-doc-writer** | Sonnet | User docs, admin guides, API quick-start |
 
-**Speaker notes:** Opus models are used for the 3 specialist testing agents that need deep reasoning (frontend, backend, testing). Sonnet models handle coordination, planning, and documentation where speed matters more than depth. Each agent has a focused role — no agent tries to do everything.
+**Speaker notes:** Opus models are used for the 3 specialist testing agents that need deep reasoning (frontend, backend, testing). Sonnet models handle coordination, planning, and documentation where speed matters more than depth. The two template agents (autonomous-test-runner, test-runner-agent) are parameterized — they have no fixed model and are instantiated per suite run. Each agent has a focused role — no agent tries to do everything.
 
 ---
 
@@ -316,10 +319,10 @@ agents)   progress) BL-*)    reject)
 |-----------|--------|-------|----------|
 | `smoke` | 01 | ~12 | Daily pre-deploy validation |
 | `critical` | 01, 06, 08, 14 | ~120 | P0 gate before any release |
-| `sprint` | 26 suites | ~600 | Sprint release gate |
-| `full` | All 36 | 1,274 | Production release gate |
-| `frontend` | 01-13, 35-36 | 492 | Frontend-only regression |
-| `backend` | 14-34 | 782 | Backend-only regression |
+| `sprint` | 26 suites | ~800 | Sprint release gate |
+| `full` | All 36 | ~1,546 | Production release gate |
+| `frontend` | 01-13, 35-36 | ~643 | Frontend-only regression |
+| `backend` | 14-34 | ~903 | Backend-only regression |
 
 **Speaker notes:** The regression-orchestrator reads the manifest, groups suites into batches of 3 (matching the browser pool), and dispatches sub-agents in parallel. P0 suites run first. If a suite fails, it retries with the next browser in the fallback chain. The result is a consolidated report with a quality gate verdict.
 
@@ -394,7 +397,7 @@ agents)   progress) BL-*)    reject)
 
 ## Slide 14: Commands & Skills Ecosystem
 
-**Title:** 9 Commands + 18 Skills
+**Title:** 10 Commands + 18 Skills
 
 **Commands (action-oriented, execute immediately):**
 
@@ -407,6 +410,7 @@ agents)   progress) BL-*)    reject)
 | `/qa-bug [description]` | Reproduce, document, file bug to JIRA |
 | `/qa-exploratory [area]` | Guided exploratory testing session |
 | `/qa-env-check` | Validate environment health |
+| `/qa-coverage-generation [scope]` | Parallel coverage generation across domain batches with CI support |
 | `/ba-analyze [scope]` | Business analysis coordination |
 | `/ba-stories [feature]` | Generate BDD user stories |
 
@@ -414,9 +418,9 @@ agents)   progress) BL-*)    reject)
 
 | Category | Count | Skills |
 |----------|-------|--------|
-| **vc-knowledge** | 4 | /vc-docs, /vc-module, /vc-api, /vc-frontend |
-| **testing** | 6 | /qa-storybook, /qa-accessibility, /qa-design, /qa-plan, /qa-checklist, /qa-api |
-| **qa-methodology** | 8 | /qa-process, /qa-investigate, /qa-evidence, /qa-defect, /qa-test-design, /qa-risk, /qa-metrics, /qa-sbtm |
+| **vc-knowledge** | 1 | /vc-docs (auto-invocable) |
+| **testing** | 8 | /qa-storybook, /qa-accessibility, /qa-design, /qa-plan, /qa-checklist, /qa-api, /qa-coverage-gap, /qa-seed-data |
+| **qa-methodology** | 9 | /qa-process, /qa-investigate, /qa-evidence, /qa-defect, /qa-test-design, /qa-test-cases-generator, /qa-risk, /qa-metrics, /qa-sbtm |
 
 **Speaker notes:** Commands trigger agent workflows. Skills inject methodology knowledge. For example, `/qa-test VCST-1234` triggers the lead orchestrator to analyze the ticket and dispatch specialists. `/qa-checklist checkout` loads the checkout domain checklist (158 items across 18 domains) to guide test case writing.
 
@@ -424,7 +428,7 @@ agents)   progress) BL-*)    reject)
 
 ## Slide 15: Knowledge Sharing Layer
 
-**Title:** 8 Shared Knowledge Files
+**Title:** 12 Shared Knowledge Files
 
 All QA agents consult shared reference files in `.claude/agents/knowledge/`:
 
@@ -438,6 +442,10 @@ All QA agents consult shared reference files in `.claude/agents/knowledge/`:
 | **catalog.md** | B2B catalog structure, product types, xCatalog GraphQL | frontend, backend |
 | **store-settings.md** | Multi-currency, feature flags, payment processor config | frontend, backend |
 | **white-labeling.md** | Branding overrides, themes, custom domains | frontend, ui-ux |
+| **e-commerce-edge-cases-library.md** | 13 generic + 7 VC-specific edge case categories (ECL-* IDs with BL-* cross-references) | All QA agents |
+| **module-suite-map.md** | Module-to-suite mapping: which suites cover which VC modules | lead, test-mgmt, regression |
+| **sitemap.md** | Full storefront sitemap (March 2026) — all routes and page hierarchy | frontend, testing |
+| **products.md** | Product types, xAPI fields, configurable sections, test data | frontend, backend |
 
 **Speaker notes:** Business-logic.md is the most important file — it contains testable invariants like "discount stacking must never exceed 100%" (BL-PRICE-001) or "order cancellation must reverse inventory" (BL-ORD-002). Every QA agent consults this file to know what constitutes a real bug vs. expected behavior.
 
@@ -495,8 +503,8 @@ All QA agents consult shared reference files in `.claude/agents/knowledge/`:
                     │  | 9 more rows...    | ...          |        │
                     └───────────────────────────────────────────────┘
 
-  AUTO-INVOCABLE    /vc-docs  /vc-module  /vc-api  /vc-frontend  ←── Mechanism 3
-  (4 skills)        Claude calls these automatically when needed       No gate
+  AUTO-INVOCABLE    /vc-docs                                      ←── Mechanism 3
+  (1 skill)         Claude calls this automatically when needed        No gate
 
   SYSTEM GUIDE      .claude/ROUTING.md                            ←── Mechanism 4
                     Decision tree: "I want to..." → use this          For humans
@@ -510,13 +518,13 @@ All QA agents consult shared reference files in `.claude/agents/knowledge/`:
 |-----------|------|---------|
 | **1. Hardcoded refs** | Always loaded | `test-management-specialist` loads `business-logic.md` + 15 reference files at every startup |
 | **2. Conditional table** | On-demand | "Writing test cases?" → load `/qa-plan` → `e2e-scenario-catalog.md` |
-| **3. Auto-invocable** | Automatic | Agent hits unknown URL → Claude auto-calls `/vc-frontend` → gets sitemap |
+| **3. Auto-invocable** | Automatic | Agent hits unknown VC concept → Claude auto-calls `/vc-docs` → gets documentation |
 | **4. ROUTING.md** | System guide | "I want a checklist" → use `/qa-checklist` (Skill) |
 | **5. Agent→Skill Map** | Cross-reference | `test-management-specialist` → qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-risk, qa-process |
 
 **Key insight:** Knowledge files = memory (always available). Skills = reference books (loaded when needed).
 
-**Speaker notes:** This is the glue that makes 18 skills and 8 knowledge files work together without chaos. Agents don't guess — each agent prompt has hardcoded references (always loaded) and a conditional routing table (loaded on-demand by situation). Four VC knowledge skills are auto-invocable — Claude calls them without explicit instruction. The ROUTING.md file serves as a system-level decision tree for both humans and agents. The test-management-specialist is the best example: it has 16 hardcoded reference files and a 13-row conditional skill table — more than any other agent, because test planning touches every methodology.
+**Speaker notes:** This is the glue that makes 18 skills and 12 knowledge files work together without chaos. Agents don't guess — each agent prompt has hardcoded references (always loaded) and a conditional routing table (loaded on-demand by situation). One VC knowledge skill (/vc-docs via Context7) is auto-invocable — Claude calls it without explicit instruction. The vc-module, vc-api, and vc-frontend skills were retired; their content moved into the shared knowledge files (sitemap.md, products.md, module-suite-map.md) and the qa-api testing skill. The ROUTING.md file serves as a system-level decision tree for both humans and agents. The test-management-specialist is the best example: it has 16 hardcoded reference files and a 13-row conditional skill table — more than any other agent, because test planning touches every methodology.
 
 ---
 
@@ -588,7 +596,7 @@ All QA agents consult shared reference files in `.claude/agents/knowledge/`:
 | **Multi-browser CI** | Extend CI from single headless Chromium to 3-browser pool |
 | **Visual regression baselines** | Persistent Storybook component snapshots for automated comparison |
 | **BrowserStack integration** | Cloud-based mobile device testing (iOS Safari, Android Chrome) |
-| **AI-generated test cases** | Derive test cases automatically from JIRA acceptance criteria |
+| **AI-generated test cases** | ✓ Shipped — `/qa-test-cases-generator` derives enriched CSV test cases from JIRA tickets, features, checklists, or legacy suites |
 | **Sprint coverage reports** | Automated mapping of code changes to affected test suites |
 | **Self-updating suites** | Regression suites that evolve based on code change analysis |
 
@@ -596,4 +604,4 @@ All QA agents consult shared reference files in `.claude/agents/knowledge/`:
 
 ---
 
-*Generated: 2026-03-05 | Repository: vc-mcp-testing-module*
+*Updated: 2026-03-12 | Repository: vc-mcp-testing-module*

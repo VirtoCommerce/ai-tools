@@ -66,7 +66,7 @@ When consolidating agent reports, always ask: "Were business invariants from bus
 - **Orders** changes → must: 20 → should: 01, 04, 06, 15, 30
 - **Platform Core** changes → must: 14, 17, 28 → should: 01, 02, 08
 - **Pricing** changes → must: 19 → should: 04, 15
-- Full mapping: `.claude/skills/vc-knowledge/vc-module/module-suite-map.md`
+- Full mapping: `.claude/agents/knowledge/module-suite-map.md`
 
 ### Quality Gate Thresholds (non-negotiable)
 

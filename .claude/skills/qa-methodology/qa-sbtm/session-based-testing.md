@@ -163,6 +163,33 @@ SFDPOT evaluates system dimensions: Structure, Function, Data, Platform, Operati
 4. Are timestamps consistent across client and server?
 5. Does performance degrade over time (data accumulation, log growth)?
 
+### Feature Flags (extended Time sub-dimension)
+
+Feature flags control feature availability by state (on/off), date range, or audience. Treat each flag as a separate dimension — test the full lifecycle, not just the "enabled" path.
+
+**On/Off state transitions:**
+1. Is the feature completely hidden (not just disabled) when the flag is off?
+2. Does toggling the flag take effect immediately or require a cache flush / deployment?
+3. Does a user mid-session see a behavior change if the flag is toggled while they are active?
+4. Are all flag dependents consistent — UI, API, and admin all reflect the same flag state?
+5. Can a flag be turned off per store while remaining on globally (store-level override)?
+6. Is there a fallback/default state when the flag configuration is missing or corrupted?
+
+**Start date / End date boundaries:**
+1. Is the feature inactive **one second before** the start date (boundary — off at `T-1s`)?
+2. Does the feature activate **exactly at** the start date — not a day early, not a day late?
+3. Is the timezone used for evaluation consistent — server UTC, store timezone, or user local?
+4. Is the feature deactivated **exactly at** the end date, or does it remain active through end-of-day?
+5. What happens when `start_date == end_date` (same day window — valid or degenerate case)?
+6. What happens when `start_date > end_date` (inverted range — error, ignored, or always-off)?
+7. Does the UI show a countdown or "coming soon" state before start, or just disappear?
+8. After the end date passes, is the feature hidden, shown as expired, or accessible via direct URL?
+
+**Flag combinations (multi-flag interactions):**
+1. When two flags control overlapping functionality, which takes precedence?
+2. Does disabling a parent feature flag also disable all child/dependent flags?
+3. Can a user be in conflicting flag groups simultaneously (A/B test + org-level flag)?
+
 ---
 
 ## 5. Exploration Patterns (Tours)
@@ -445,3 +472,43 @@ These four charters are pre-built for common Virto Commerce exploratory scenario
 - Expired auth tokens (use token from 25 hours ago — error message? status code?)
 - Rate limiting behavior (send 100 requests in 1 second — does rate limit engage?)
 - Mixed valid/invalid items in batch operations (bulk add 5 products, 2 with invalid SKUs)
+
+### Charter E: Feature Flag Lifecycle
+
+```
+## Exploratory Session Charter
+- **Charter ID:** EXP-{YYYY-MM-DD}-FLAG
+- **Type:** Feature
+- **Mission:** Explore feature flags (store settings, module toggles, date-bounded promotions)
+  to discover state inconsistencies, boundary failures, and combination conflicts
+- **Focus Area:** Store settings, Admin feature toggles, Promotion/coupon validity windows
+- **Heuristic:** SFDPOT (Time + Operations focus), Feature Flags sub-dimension
+- **Tour:** Feature + Claims
+- **Time Box:** 30 minutes
+- **Risk Level:** High (flag misconfiguration silently disables revenue-critical features)
+- **Environment:** BACK_URL (Admin SPA) + FRONT_URL (Storefront)
+```
+
+**Test Ideas — On/Off State:**
+- Disable a storefront feature in Admin (e.g., "Coupons enabled") → verify storefront hides the section AND the API returns no data
+- Enable the same feature → verify it reappears without a page reload requirement
+- Toggle a flag mid-session: user is on the coupons page; admin disables coupons; user refreshes — what happens?
+- Disable a module-level flag for one store only; verify second store is unaffected
+- Check for cache effects: toggle flag, immediately navigate to storefront — stale data visible?
+
+**Test Ideas — Start Date / End Date Boundaries:**
+- Create a promotion with `start_date = T+1 day` → confirm it is NOT visible or applicable today
+- Set system clock (or use a dated coupon code) to exactly `T+0 00:00:00` → confirm activation at exact boundary
+- Set `end_date = today 23:59:59` → verify feature is active at 23:59:58 and inactive at 00:00:00 next day
+- Create a promotion with `start_date == end_date` (single-day window) → does it activate and expire correctly?
+- Create a promotion with `start_date > end_date` (inverted) → how does Admin validate it? How does storefront handle it?
+- Verify timezone interpretation: if Admin timezone is UTC+3 and server is UTC, confirm which clock controls activation
+- Apply a coupon code for a not-yet-started promotion → expected: "promo not yet active" error, not "invalid code"
+- Apply a coupon code one day after `end_date` → expected: "promo expired" error distinguishable from "invalid code"
+
+**Test Ideas — Flag Combinations:**
+- Two promotions active simultaneously, both applying to the same cart item — which discount wins?
+- A store-level "Promotions enabled = off" flag vs. an individual promotion that is "active" — which takes precedence?
+- B2B org-specific pricing flag off + storefront promotion flag on — what price does the cart show?
+- Disable a parent module flag (Marketing) — verify all child toggles (Coupons, Loyalty, Banners) are also inactive
+- A/B test flag for new checkout design + feature flag for new payment method — test all four combinations (both on, both off, A on/B off, A off/B on)

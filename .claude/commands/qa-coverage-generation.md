@@ -35,29 +35,39 @@ Run gap analysis once, centrally (do NOT delegate this):
 1. Read all suite CSVs from `regression/suites/Frontend/` and `regression/suites/Backend/`
 2. Read feature inventory from:
    - `.claude/agents/knowledge/business-logic.md`
+   - `.claude/agents/knowledge/e-commerce-edge-cases-library.md`
    - `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md`
-   - `.claude/skills/vc-knowledge/vc-frontend/sitemap.md`
-   - `.claude/skills/vc-knowledge/vc-api/xapi-query-ref.md`
+   - `.claude/agents/knowledge/sitemap.md`
+   - `.claude/skills/testing/qa-api/xapi-query-ref.md`
+   - `.claude/agents/knowledge/module-suite-map.md`
    - `.claude/skills/testing/qa-checklist/domain-checklists.md`
+   - `.claude/skills/testing/qa-api/test-cases-api-graphql.md`
    - `.claude/skills/testing/qa-coverage-gap/feature-domain-map.md`
-3. Produce a gap inventory: list of `{domain, feature, gapCategory, priorityScore, targetSuite}` entries
+3. Produce a gap inventory: list of `{domain, feature, gapCategory, priorityScore, applicableLayers[], targetSuites[]}` entries
+   - For each gap, determine applicable layers: does the feature have REST endpoints? → `api`. GraphQL ops? → `graphql`. Admin UI? → `admin`. Storefront? → `storefront`. Spans ≥2? → `e2e`
 4. Write `reports/coverage/gap-inventory-YYYY-MM-DD.json`
 
-### Step 2 — Domain Batching
+### Step 2 — Domain Batching & Layer Assignment
 
-Group gaps into 3 parallel batches by domain affinity (minimize cross-suite conflicts):
+Group gaps into 3 parallel batches by domain affinity. Each batch generates **layer-specific test cases** using `--layer`:
 
-| Batch | Agent | Domains | Rationale |
-|-------|-------|---------|-----------|
-| **Batch A** (Revenue) | `qa-frontend-expert` | CART, CHECKOUT, PAYMENT, ORDERS | Revenue-critical storefront flows |
-| **Batch B** (Identity & B2B) | `qa-backend-expert` | AUTH, B2B-ORG, B2B-MEMBERS, QUOTES, LISTS, DASHBOARD | Account and B2B domain cluster |
-| **Batch C** (Platform) | `qa-testing-expert` | CATALOG, SEARCH, BOPIS, CONFIG, CMS, SECURITY, API-REST, API-GQL, ADMIN-* | Platform and infrastructure |
+| Batch | Agent | Domains | Layers Generated |
+|-------|-------|---------|-----------------|
+| **Batch A** (Revenue) | `qa-frontend-expert` | CART, CHECKOUT, PAYMENT, ORDERS | `storefront` + `graphql` + `e2e` |
+| **Batch B** (Identity & B2B) | `qa-backend-expert` | AUTH, B2B-ORG, B2B-MEMBERS, QUOTES, LISTS, DASHBOARD | `api` + `graphql` + `admin` + `e2e` |
+| **Batch C** (Platform) | `qa-testing-expert` | CATALOG, SEARCH, BOPIS, CONFIG, CMS, SECURITY, API-REST, API-GQL, ADMIN-* | `api` + `graphql` + `admin` |
+
+**Layer coverage rules per batch:**
+- Each gap is analyzed for applicable layers (REST API, GraphQL, Admin UI, Storefront, E2E)
+- Sub-agents use `/qa-test-cases-generator <domain> --layer <layers>` to generate layer-specific cases
+- Layer-appropriate tags are enforced: API→`[HTTP]`/`[STATUS]`, GraphQL→`[GQL]`/`[ERRORS]`, Admin→`[BLADE]`/`[GRID]`, E2E→`--- LAYER ---` markers
+- Cases route to correct suites by layer: API→Suite 14+, GraphQL→Suite 15, Admin→Suite 16-34, Storefront→Suite 01-13, E2E→Suite 00
 
 Filter batches based on the requested scope:
 - `p0`: Only gaps with priorityScore >= 8.0
 - `p1`: Only gaps with priorityScore >= 5.0
 - `full`: All gaps
-- `domain <name>`: Skip batching, delegate to single agent
+- `domain <name>`: Skip batching, delegate to single agent with `--layer all`
 
 ### Step 3 — Generate Run ID
 
@@ -71,14 +81,15 @@ For each active batch:
    - The batch's assigned agent type
    - The filtered gap inventory for that batch's domains
    - Instructions to generate test cases following `coverage-gap-methodology.md` rules
+   - Format contract: `.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md` (layer-specific tags)
    - Target suite CSV paths from `config/test-suites.json`
    - Output path: `reports/coverage/{RUN_ID}/batch-{A|B|C}-results.json`
 
 2. Each sub-agent executes:
-   - For each gap in its batch: generate test cases in TestRail CSV format
-   - Append generated cases to the appropriate suite CSV
-   - If `--validate` or interactive mode: validate P0 cases via browser (sub-agent uses its own browser slot)
-   - Write per-batch results JSON: `{domain, casesGenerated, casesValidated, suitesModified}`
+   - For each gap: determine applicable layers, then generate test cases per layer using enriched CSV format with layer-specific tags
+   - Route cases to correct suite CSVs by layer (API→Backend/14+, GraphQL→Backend/15, Admin→Backend/16-34, Storefront→Frontend/01-13, E2E→Suite 00)
+   - If interactive mode: validate P0 cases via browser (sub-agent uses its own browser slot)
+   - Write per-batch results JSON: `{domain, layer, casesGenerated, casesValidated, suitesModified}`
 
 3. Browser assignment (interactive mode only):
 
@@ -117,15 +128,24 @@ Write `reports/coverage/{RUN_ID}/coverage-generation-report.md`:
 - **Suites modified:** [list]
 - **New suite coverage:** before% -> after%
 
-## Batch Results
-| Batch | Agent | Domains | Gaps | Cases Generated | Validated | Duration |
-|-------|-------|---------|------|-----------------|-----------|----------|
-| A | qa-frontend-expert | CART, CHECKOUT, ... | N | N | N/M | Xm |
-| B | qa-backend-expert | AUTH, B2B, ... | N | N | N/M | Xm |
-| C | qa-testing-expert | CATALOG, SEARCH, ... | N | N | N/M | Xm |
+## Layer Coverage Matrix
+| Layer | Cases Generated | Target Suites | Tags Used |
+|-------|----------------|---------------|-----------|
+| REST API | N | 14, ... | [HTTP]/[STATUS]/[BODY] |
+| GraphQL xAPI | N | 15 | [GQL]/[ERRORS]/[DATA] |
+| Admin UI | N | 16-34 | [BLADE]/[GRID]/[SAVE] |
+| Storefront UI | N | 01-13 | [NAV]/[ACT]/[DOM] |
+| E2E Cross-Layer | N | 00 | --- LAYER --- markers |
 
-## Generated Test Cases by Domain
-[Per-domain breakdown with case IDs and target suites]
+## Batch Results
+| Batch | Agent | Domains | Layers | Gaps | Cases | Validated | Duration |
+|-------|-------|---------|--------|------|-------|-----------|----------|
+| A | qa-frontend-expert | CART, CHECKOUT, ... | storefront, graphql, e2e | N | N | N/M | Xm |
+| B | qa-backend-expert | AUTH, B2B, ... | api, graphql, admin, e2e | N | N | N/M | Xm |
+| C | qa-testing-expert | CATALOG, SEARCH, ... | api, graphql, admin | N | N | N/M | Xm |
+
+## Generated Test Cases by Domain × Layer
+[Per-domain breakdown: domain → layers → case IDs → target suites]
 
 ## Validation Failures
 [Any P0 cases that failed validation — needs-review items]
@@ -217,7 +237,8 @@ When a single domain is requested (`domain <name>`), this command delegates dire
 - Gap analysis (Step 1) runs centrally, never in sub-agents (avoids redundant reads)
 - Each sub-agent gets an isolated browser slot — never share browsers
 - CI mode never opens browsers — Cycles 1-2 only
-- All generated test cases must follow `coverage-gap-methodology.md` quality checklist
+- All generated test cases must use layer-specific tags from `test-case-template.md` (Layer-Specific Formats section)
+- Sub-agents must use `/qa-test-cases-generator --layer` to produce correctly tagged cases per layer
 - If a batch fails, retry once with a different browser from fallback chain
 - Write all outputs to `reports/coverage/{RUN_ID}/`, never to root
 - Update `config/test-suites.json` test counts after generation

@@ -1,8 +1,8 @@
 # Agents Reference
 
-12 agents in `.claude/agents/qa/` and `.claude/agents/ba/` across two teams. See `.claude/agents/README.md` for full documentation. QA agents use a **four-layer prompt architecture** — business logic (invariants), domain knowledge (judgment), skill set (technique), and design decisions (constraints). Shared reference files in `.claude/agents/knowledge/`: `business-logic.md`, `platform-patterns.md`, `browser-quirks.md`, `debugging-signals.md`, `performance-thresholds.md`, `catalog.md`, `store-settings.md`, `white-labeling.md`, `e-commerce-edge-cases-library.md`, `test-case-template.md` (10 files) — these are cross-agent knowledge bases that agents should consult during testing. `business-logic.md` — testable business invariants: pricing, cart, checkout, orders, auth, B2B, catalog, cross-domain. `e-commerce-edge-cases-library.md` — 13 generic + 7 VC-specific edge case categories with BL-* cross-references (ECL-* IDs). `test-case-template.md` — enriched CSV column spec with step type tags, assertion predicates, and cross-layer checks; use when writing or migrating test cases.
+14 agents in `.claude/agents/qa/` and `.claude/agents/ba/` across two teams, plus `shared-instructions.md`. See `.claude/agents/README.md` for full documentation. QA agents use a **four-layer prompt architecture** — business logic (invariants), domain knowledge (judgment), skill set (technique), and design decisions (constraints). Shared reference files in `.claude/agents/knowledge/`: `business-logic.md`, `platform-patterns.md`, `browser-quirks.md`, `debugging-signals.md`, `performance-thresholds.md`, `catalog.md`, `store-settings.md`, `white-labeling.md`, `e-commerce-edge-cases-library.md`, `module-suite-map.md`, `sitemap.md`, `products.md` (12 files) — these are cross-agent knowledge bases that agents should consult during testing. `business-logic.md` — testable business invariants: pricing, cart, checkout, orders, auth, B2B, catalog, cross-domain. `e-commerce-edge-cases-library.md` — 13 generic + 7 VC-specific edge case categories with BL-* cross-references (ECL-* IDs). `module-suite-map.md` — module-to-suite mapping. `sitemap.md` — full storefront sitemap (March 2026). `products.md` — product types, xAPI fields, configurable sections, test data. Note: `test-case-template.md` (enriched CSV column spec) lives in `skills/qa-methodology/qa-test-cases-generator/`, not in knowledge/.
 
-## QA Team (8 agents)
+## QA Team (10 agents + shared-instructions)
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
@@ -14,6 +14,8 @@
 | **ui-ux-expert** | sonnet | Storybook component testing, WCAG 2.1 AA accessibility, design system |
 | **regression-orchestrator** | sonnet | Parallel regression + smoke mode, retries, browser fallback, consolidated reports |
 | **autonomous-regression-orchestrator** | sonnet | Agent Teams regression: token bucket, exponential backoff, failure recovery, JIRA integration |
+| **autonomous-test-runner** | — | Parameterized template for Agent Teams mode suite execution (used by autonomous-regression-orchestrator) |
+| **test-runner-agent** | — | Parameterized template for standard suite execution (used by regression-orchestrator) |
 
 ## BA Team (4 agents)
 

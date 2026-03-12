@@ -15,9 +15,9 @@ Two agent teams for the Virto Commerce platform: **QA** (quality assurance) and 
 
 ---
 
-## Agent Inventory (12 agents)
+## Agent Inventory (14 agents + shared instructions)
 
-### QA Team (8 agents)
+### QA Team (10 agents + shared-instructions)
 
 | Agent | Model | Color | Purpose |
 |-------|-------|-------|---------|
@@ -29,6 +29,8 @@ Two agent teams for the Virto Commerce platform: **QA** (quality assurance) and 
 | **test-management-specialist** | sonnet | purple | Test planning, case writing, coverage tracking |
 | **regression-orchestrator** | sonnet | orange | Parallel regression + smoke mode, retries, reports |
 | **autonomous-regression-orchestrator** | sonnet | orange | Agent Teams regression: token bucket, failure recovery, JIRA integration |
+| **autonomous-test-runner** | sonnet | orange | Standalone autonomous test execution agent |
+| **test-runner-agent** | sonnet | orange | Parameterized suite runner (used by regression orchestrator) |
 
 ### BA Team (4 agents)
 
@@ -41,7 +43,7 @@ Two agent teams for the Virto Commerce platform: **QA** (quality assurance) and 
 
 ---
 
-## Slash Commands (9)
+## Slash Commands (10)
 
 ### QA Commands
 
@@ -50,6 +52,7 @@ Two agent teams for the Virto Commerce platform: **QA** (quality assurance) and 
 | `/qa-smoke` | Daily pre-deploy smoke (12 P0 tests, GO/NO-GO) | ~15 min |
 | `/qa-test VCST-XXXX` | Test a JIRA ticket, feature, or PR | varies |
 | `/qa-regression [scope]` | Run regression suites (smoke/critical/sprint/full) | varies |
+| `/qa-coverage-generation [scope]` | Orchestrated parallel coverage generation with CI support | varies |
 | `/qa-status` | Dashboard: run status, JIRA queue, env health | < 30 sec |
 | `/qa-bug [description]` | Reproduce, document, and optionally file a JIRA bug | ~5 min |
 | `/qa-exploratory [area]` | Guided exploratory testing session with heuristics | ~20 min |
@@ -163,13 +166,13 @@ QA agents use a **four-layer prompt architecture**:
 3. **Skill Set** (technique) — how to find what's broken
 4. **Design Decisions** (constraints) — tools and boundaries
 
-Shared knowledge files in `knowledge/` (8 files): `business-logic.md`, `platform-patterns.md`, `browser-quirks.md`, `debugging-signals.md`, `performance-thresholds.md`, `catalog.md`, `store-settings.md`, `white-labeling.md`.
+Shared knowledge files in `knowledge/` (12 files): `business-logic.md`, `platform-patterns.md`, `browser-quirks.md`, `debugging-signals.md`, `performance-thresholds.md`, `catalog.md`, `store-settings.md`, `white-labeling.md`, `e-commerce-edge-cases-library.md`, `module-suite-map.md`, `sitemap.md`, `products.md`.
 
 ---
 
 ## Customizing Agents
 
-Agents are organized in subfolders: `.claude/agents/qa/` (8 QA agents + `shared-instructions.md`) and `.claude/agents/ba/` (4 BA agents). Shared knowledge files are in `.claude/agents/knowledge/`. Each agent is a Markdown file with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior.
+Agents are organized in subfolders: `.claude/agents/qa/` (10 QA agents + `shared-instructions.md`) and `.claude/agents/ba/` (4 BA agents). Shared knowledge files are in `.claude/agents/knowledge/` (12 files). Each agent is a Markdown file with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior.
 
 ---
 
