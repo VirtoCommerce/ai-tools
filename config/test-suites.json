@@ -415,8 +415,8 @@
       "name": "Configurable Products Tests",
       "file": "regression/suites/Frontend/36-configurable-products-tests.csv",
       "priority": "P1",
-      "testCount": 62,
-      "estimatedMinutes": 120,
+      "testCount": 133,
+      "estimatedMinutes": 200,
       "agent": "qa-frontend-expert",
       "tags": ["frontend", "configurable-products", "configurations", "e2e", "cart", "checkout", "admin", "security", "negative-testing", "edge-cases"]
     },

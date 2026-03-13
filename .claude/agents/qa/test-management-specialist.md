@@ -53,6 +53,7 @@ Every feature decomposes into testable layers. Each layer has its own output for
 |----------|-----------|
 | Business invariants (76 rules) | `.claude/agents/knowledge/business-logic.md` |
 | Edge Cases Library | `.claude/agents/knowledge/e-commerce-edge-cases-library.md` — ECL-* IDs |
+| Test Design Examples (toggles/flags) | `.claude/skills/qa-methodology/qa-test-design/examples/` — 9 files: EP, BVA, Pairwise ×2, Decision Table ×2, State Transition, Classification Tree, Error Guessing (real QA products CFG-001–CFG-010) |
 | Domain Checklists (18 domains) | `.claude/skills/testing/qa-checklist/domain-checklists.md` |
 | Test Case Template (15-col CSV) | `.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md` |
 | xAPI & REST API Reference | `/qa-api ref` — query signatures, mutation args, store settings, auth flow |
@@ -86,11 +87,14 @@ Output: validated test cases, new scenario proposals, test data requirements, bu
 |-----------|------|---------|
 | **Equivalence Partitioning** | Input fields | Valid / invalid / empty email |
 | **Boundary Value Analysis** | Quantities, prices | qty=0, 1, max-1, max, max+1 |
-| **Decision Tables** | Complex rules | guest vs registered × delivery vs pickup |
-| **State Transitions** | Lifecycles | Order: Pending→Authorized→Captured |
+| **Decision Tables** | Complex rules with multiple conditions | Configurable section type × sale price × promo type |
+| **State Transitions** | Lifecycles & runtime toggle changes | Order states; admin toggles mid-session |
+| **Pairwise / Combinatorial** | Many toggles/flags, full combo infeasible | Product type × section × stock × promo (2,160 → ~30 cases) |
+| **Classification Tree** | Structured coverage of product type hierarchy | Type → Section → Pricing → Availability branches |
 | **Error Guessing** | Known failures | Double-click submit, back after payment |
 
 Full reference: `.claude/skills/qa-methodology/qa-test-design/test-design-techniques.md`
+**Applied examples:** `.claude/skills/qa-methodology/qa-test-design/examples/` — 9 per-technique files mapped to real QA products CFG-001–CFG-010
 
 ### Layer → Agent Delegation (include in every report)
 
@@ -153,7 +157,8 @@ BLOCKED ❌ → escalate to qa-lead
 1. **Look up docs** — Context7 (`/virtocommerce/vc-docs`), JIRA ticket ACs, Figma, scope/dependencies
 2. **Decompose into layers** — Which layers apply? (API, GraphQL, Admin, Storefront, E2E). Record in test plan
 3. **Explore per layer (MANDATORY)** — Run `/qa-sbtm <feature>` first to create a time-boxed exploratory charter and surface unknown unknowns before writing any test cases. Then explore per layer: Storefront labels, Admin blades, API schemas, GraphQL operations. Use `/qa-api ref <module>` to get exact mutation/query signatures before writing test steps
-4. **Create test plan** — Save to `tests/SprintXX-XX/VCST-XXXX/test-plan.md` with **Layer Coverage Matrix**:
+4. **Apply test design techniques (MANDATORY)** — Run `/qa-test-design <feature>` to systematically derive test conditions before writing cases. This step identifies factors, selects techniques (pairwise for toggles/flags, decision tables for business rules, state transitions for lifecycles), and produces structured test conditions that feed directly into step 6. Skip this step only for trivial bug-fix verifications with < 3 test cases.
+5. **Create test plan** — Save to `tests/SprintXX-XX/VCST-XXXX/test-plan.md` with **Layer Coverage Matrix**:
    ```
    | Layer | Applicable? | # Cases | Assigned Agent | Target Suite |
    |-------|-------------|---------|---------------|-------------|
@@ -163,18 +168,19 @@ BLOCKED ❌ → escalate to qa-lead
    | Storefront | Yes/No | N | qa-frontend-expert | Suite NN |
    | E2E | Yes/No | N | frontend + backend | Suite 00 |
    ```
-5. **Generate test cases per layer** — use the right tool per layer:
+6. **Generate test cases per layer** — use the right tool per layer, applying test conditions from step 4:
    - **REST API layer**: `/qa-api cases REST <module>` — reads `api-test-case-patterns.md` for coverage checklist + `xapi-query-ref.md` for endpoint signatures
    - **GraphQL layer**: `/qa-api cases <xModule> <operation>` — reads patterns + query signatures; applies `[GQL]`/`[ERRORS]`/`[ROUNDTRIP]` tags; always includes `errors[]` check
    - **Admin UI / Storefront / E2E layers**: `/qa-test-cases-generator VCST-XXXX --layer admin|storefront|e2e`
    - All cases: enriched 15-column CSV with **layer-specific tags** from `test-case-template.md`
    - Domain checklists as input. REAL labels from step 3. P0: happy + negative, P1: errors + edge cases
    - Minimum per API/GraphQL operation: 1 happy path + 2 negative cases (missing auth, invalid input)
-6. **Ensure test data** — Missing data? Use `/qa-seed-data`. Document `{{VAR}}` bindings in Test_Data column
-7. **Organize into suites** — API→Backend (14-34), GraphQL→Suite 15, Admin→module suite, Storefront→Frontend (01-13), E2E→Suite 00
-8. **Create RTM** — Per-layer coverage: "AC-1 covered by API-042, GQL-042, E2E-042". Target >=95%. Requirement = fully covered only when ALL applicable layers have cases
-9. **Validate (MANDATORY)** — P0/P1 per layer: UI in Playwright, API via Postman/curl, GraphQL in GraphiQL. Fix mismatches
-10. **Deliver Feature Test Matrix** — Test plan path, cases by layer × priority, coverage %, delegation per layer, JIRA links
+   - Each test case must record which technique produced it (EP, BVA, Decision Table, Pairwise, State Transition, Classification Tree, Error Guessing) for traceability
+7. **Ensure test data** — Missing data? Use `/qa-seed-data`. Document `{{VAR}}` bindings in Test_Data column
+8. **Organize into suites** — API→Backend (14-34), GraphQL→Suite 15, Admin→module suite, Storefront→Frontend (01-13), E2E→Suite 00
+9. **Create RTM** — Per-layer coverage: "AC-1 covered by API-042, GQL-042, E2E-042". Target >=95%. Requirement = fully covered only when ALL applicable layers have cases
+10. **Validate (MANDATORY)** — P0/P1 per layer: UI in Playwright, API via Postman/curl, GraphQL in GraphiQL. Fix mismatches
+11. **Deliver Feature Test Matrix** — Test plan path, cases by layer × priority, coverage %, delegation per layer, JIRA links
 
 ### Cross-Layer Verification Checklist (every P0/P1 E2E case)
 

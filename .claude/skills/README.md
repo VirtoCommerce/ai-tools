@@ -1,6 +1,6 @@
 # .claude/skills/ — Skill Directory
 
-> 18 skills organized in 3 category groups. Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
+> 19 skills organized in 3 category groups. Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
 
 ## Directory Structure
 
@@ -39,6 +39,9 @@
 │   │   ├── SKILL.md                 # Autonomous test coverage gap analysis
 │   │   ├── coverage-gap-methodology.md
 │   │   └── feature-domain-map.md
+│   ├── qa-postman/
+│   │   ├── SKILL.md                 # Postman MCP collection builder
+│   │   └── postman-collection-guide.md  # Variables, auth, endpoints, chaining, examples
 │   └── qa-seed-data/
 │       ├── SKILL.md                 # Test data generation via Postman MCP
 │       └── test-data-generation.md  # Data generation methodology and Postman collection reference
@@ -90,7 +93,7 @@ Auto-invocable, read-only reference skills. No side effects.
 
 > **Note:** Module suite mapping (`module-suite-map.md`), storefront sitemap (`sitemap.md`), and product type reference (`products.md`) are now in `.claude/agents/knowledge/` and accessed directly by agents. xAPI & REST API reference (`xapi-query-ref.md`) is now in `testing/qa-api/` — use `/qa-api ref <module>` to look up queries.
 
-## Testing (8) — `testing/`
+## Testing (9) — `testing/`
 
 Manual invocation, delegates to specialist agents.
 
@@ -102,6 +105,7 @@ Manual invocation, delegates to specialist agents.
 | `/qa-plan` | test-management-specialist | e2e-scenario-catalog.md |
 | `/qa-checklist` | test-management-specialist | domain-checklists.md, checklist-creation-guide.md |
 | `/qa-api` | qa-backend-expert | xapi-query-ref.md, test-cases-api-graphql.md, api-test-case-patterns.md |
+| `/qa-postman` | qa-backend-expert | postman-collection-guide.md |
 | `/qa-coverage-gap` | test-management-specialist | coverage-gap-methodology.md, feature-domain-map.md |
 | `/qa-seed-data` | qa-backend-expert | `knowledge/test-data-generation.md` (agent knowledge file) |
 
@@ -142,6 +146,8 @@ Manual invocation, cross-team best practices. Process framework, reactive (post-
 
 ```
 qa-api (ref mode) --> supplement with vc-docs (Context7)
+qa-postman --> prerequisite for qa-api (test mode) and qa-seed-data (collection building)
+qa-seed-data --> references qa-postman (collection/environment creation patterns)
 qa-process --> orchestrates all qa-methodology skills (the umbrella lifecycle)
 qa-process (Analyze) --> feeds into qa-test-design (test condition → test case)
 qa-process (Close) --> feeds back into qa-process (Plan) via retrospective loop
@@ -175,8 +181,8 @@ Learning loop: qa-investigate (bug) --> qa-defect (triage) --> qa-risk (update) 
 |-------|-----------------|
 | qa-lead-orchestrator | qa-risk, qa-metrics, qa-process, qa-defect, qa-evidence, qa-investigate, qa-checklist |
 | qa-frontend-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm, qa-design, qa-plan |
-| qa-backend-expert | qa-api, qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm |
-| qa-testing-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm, qa-design, qa-plan, qa-api |
+| qa-backend-expert | qa-api, qa-postman, qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm |
+| qa-testing-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm, qa-design, qa-plan, qa-api, qa-postman |
 | ui-ux-expert | qa-storybook, qa-accessibility, qa-design, qa-evidence, qa-investigate, qa-defect |
 | test-management-specialist | qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-test-cases-generator, qa-risk, qa-process, qa-sbtm, qa-metrics |
 | regression-orchestrator | qa-metrics (gate enforcement after runs) |

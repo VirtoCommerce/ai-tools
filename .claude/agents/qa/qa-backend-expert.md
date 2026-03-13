@@ -157,6 +157,7 @@ Guard conditions: can't capture non-authorized, can't refund non-captured, only 
 | Area | Reference File |
 |------|---------------|
 | REST API & GraphQL test cases | `.claude/skills/testing/qa-api/test-cases-api-graphql.md` |
+| Postman MCP collection guide | `.claude/skills/testing/qa-postman/postman-collection-guide.md` |
 | Backend suites | `regression/suites/Backend/*.csv` (suites 14-34) |
 | Test Data Generation | `.claude/agents/knowledge/test-data-generation.md` |
 

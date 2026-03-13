@@ -17,7 +17,7 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|module <name>]` | No | Business analysis (full/flows/api/docs/stories/module) |
 | `/ba-stories` | `feature name \| VCST-XXXX` | No | Generate Agile user stories with BDD acceptance criteria |
 
-## Skills (18) — `.claude/skills/` (grouped by category)
+## Skills (19) — `.claude/skills/` (grouped by category)
 
 Skills are slash commands with supporting reference files, organized into 3 category directories. Each skill has a `SKILL.md` with `[Category]` tag in the description. See `.claude/skills/README.md` for full reference.
 
@@ -27,7 +27,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 |-------|-----------|---------|-----------------|
 | `/vc-docs` | `topic \| module \| concept` | Documentation lookup via Context7 | — (uses Context7 MCP) |
 
-**`testing/` — Testing (8) — manual invocation:**
+**`testing/` — Testing (9) — manual invocation:**
 
 | Skill | Arguments | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|
@@ -38,6 +38,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/qa-checklist` | `domain \| feature \| VCST-XXXX \| new <domain>` | Test case writing checklists (18 domains + Bug Fix Verification, 158 items) | `domain-checklists.md`, `checklist-creation-guide.md` |
 | `/qa-api` | `ref <module> \| test <scope> \| cases <scope>` | REST API & GraphQL xAPI — reference lookup, test execution, and test case generation | `xapi-query-ref.md`, `test-cases-api-graphql.md`, `api-test-case-patterns.md` |
 | `/qa-coverage-gap` | `analyze \| generate \| validate \| full \| domain <name> \| suite <ID>` | Autonomous test coverage gap analysis and generation (4-cycle pipeline) | `coverage-gap-methodology.md`, `feature-domain-map.md` |
+| `/qa-postman` | `create <purpose> \| env <profile> \| run <collection> \| list \| examples` | Postman MCP collections — create, configure, and run with proper variables, auth, and endpoints | `postman-collection-guide.md` |
 | `/qa-seed-data` | `minimal \| catalog \| b2b \| pricing \| full \| teardown` | Generate test data via Postman MCP: catalogs, products, pricing, inventory, users, orgs | `test-data-generation.md` (knowledge file) |
 
 **`qa-methodology/` — QA Methodology (9) — manual invocation:**

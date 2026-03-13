@@ -17,7 +17,7 @@ Apply formal test design techniques to systematically derive test cases with max
 
 ## Execution
 
-1. **Read the techniques reference:** Load `test-design-techniques.md` from this skill folder for full technique descriptions, selection guide, and VC-specific examples.
+1. **Read the techniques reference:** Load `test-design-techniques.md` from this skill folder for full technique descriptions, selection guide, and generic VC examples. Then load relevant files from `examples/` subfolder for applied examples with real QA product mappings (9 files: `ep-configurable-sections.md`, `bva-configurable-boundaries.md`, `pairwise-product-toggles.md`, `pairwise-store-settings.md`, `decision-table-promo-configurable.md`, `decision-table-b2b-visibility.md`, `state-transition-mid-session.md`, `classification-tree-products.md`, `error-guessing-configurable.md`).
 
 2. **Identify the feature scope:**
    - If a JIRA ticket is provided, fetch details via Atlassian MCP

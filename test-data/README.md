@@ -161,7 +161,10 @@ Personal user accounts for authentication and authorization testing. Additional 
 Legacy B2B company data for special character testing and search. For seeded orgs with platform IDs, use `b2b/` instead.
 
 ### 3. Products (products/)
-Product catalog data including standard and configurable products.
+Product catalog data including standard products, variant templates, and configurable products.
+- `test-products.csv` — 100 standard products for general testing
+- `configurable-products.csv` — 10 QA environment configurable products with section types, slugs, and IDs (used by Suite 36)
+- `products-full.csv` — Full product definitions for seeding
 
 ### 4. Addresses (addresses/)
 US shipping and billing addresses.
@@ -222,7 +225,7 @@ Each test should:
 | 06-payment-tests | payment/, products/ |
 | 10-localization-tests | localization/, products/ |
 | 32-whitelabeling-tests | white-labeling/ |
-| 36-configurable-products | products/configurable-products.csv |
+| 36-configurable-products | products/configurable-products.csv, promotions/coupons.csv, uploads/, b2b/users.csv |
 | VCST-4590-coupons | promotions/ |
 
 ---

@@ -39,7 +39,7 @@ Create `.env` (33 vars). Validate: `npm run env:check`. Access: `import { env } 
 
 ```
 ├── .claude/agents/       # 14 agents in qa/ + ba/ subfolders, knowledge/ for shared refs
-├── .claude/skills/       # 18 skills (vc-knowledge, testing, qa-methodology)
+├── .claude/skills/       # 19 skills (vc-knowledge, testing, qa-methodology)
 ├── .claude/commands/     # 10 slash commands
 ├── .claude/rules/        # Reference docs (agents, regression, skills, MCP)
 ├── config/               # Playwright MCP configs + test-suites.json manifest
