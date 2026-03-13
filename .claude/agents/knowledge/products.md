@@ -125,7 +125,7 @@ Configurable products use `productConfiguration` xAPI query. Structure:
 Product
   └── configurationSections[]
         ├── id, name, description
-        ├── type: "Product" | "Text" | "File"
+        ├── type: "Product" | "Variation" | "Text" | "File"
         ├── isRequired: Boolean
         └── options[]
               ├── id, quantity
@@ -138,8 +138,25 @@ Product
 | Type | Admin setup | Storefront behavior |
 |------|-------------|---------------------|
 | **Product** | Select a product as option | User picks from product option list; adds to cart with parent |
+| **Variation** | Select from parent product's own variations (color/size combos) | User picks a specific variant (e.g., Color: Red, Size: M) as a configuration option; shows variation-level properties instead of standalone product names |
 | **Text** | Custom text field or predefined values list | User types custom message or selects predefined text (used for engravings, greetings, monograms) |
 | **File** | File upload field (accepts configurable MIME types) | User uploads file (logo, image, PDF) for print-on-demand use cases |
+
+### Variation Section Type (VCST-4765)
+
+The **Variation** type is new in VCST-4765. Unlike **Product** sections (which reference standalone child products from the catalog), **Variation** sections reference the parent product's own variations created via the admin Variations widget.
+
+**Prerequisites:**
+- Parent product must have variations defined first (admin Variations widget shows >0 variations)
+- Variation section is then created on the Configuration blade
+- Options are sourced from the product's own variations (not external products)
+
+**Key differences from Product sections:**
+- Product sections: options are standalone catalog products with their own SKU, price, inventory
+- Variation sections: options are the parent product's variation SKUs (e.g., BIKE-RED-M, BIKE-BLUE-L)
+- Variation options inherit pricing from their variation-level price list entries
+
+**Test product:** "Bike with options" (SKU: ZER-64605169, ID: f16d3e8f-6c86-4679-bcfd-100a0b164421) in QA environment has 2 variations (BIKE-RED-M, BIKE-BLUE-L) and a Variation section named "Choose your bike variant".
 
 **Required vs optional:**
 - `isRequired: true` → User must select/fill this section before adding to cart

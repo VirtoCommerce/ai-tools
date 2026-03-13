@@ -23,8 +23,8 @@ This repository contains QA testing documentation and MCP-driven testing for the
 
 ```
 vc-mcp-testing-module/
-├── .claude/agents/            # Claude Code agent configurations (12 agents: 8 QA + 4 BA)
-│   └── knowledge/             # 8 shared reference files (business-logic, platform-patterns, etc.)
+├── .claude/agents/            # Claude Code agent configurations (14 agents: 10 QA + 4 BA)
+│   └── knowledge/             # 12 shared reference files (business-logic, platform-patterns, etc.)
 ├── .github/workflows/         # GitHub Actions (regression.yml)
 │
 ├── config/                    # MCP browser configurations + suite manifest
@@ -156,14 +156,16 @@ npm run ci:notify        # Send Teams notification
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| **qa-lead** | sonnet | Orchestrates testing, delegates to specialists, JIRA workflow |
+| **qa-lead-orchestrator** | sonnet | Orchestrates testing, delegates to specialists, JIRA workflow |
+| **qa-frontend-expert** | opus | Customer storefront, checkout, mobile, cross-browser |
 | **qa-backend-expert** | opus | Platform APIs, GraphQL xAPI, Admin SPA, background jobs |
-| **qa-frontend-expert** | opus | Customer storefront, checkout, mobile |
 | **qa-testing-expert** | opus | Interactive UI testing, Figma comparison, debugging |
 | **test-management-specialist** | sonnet | Test planning, coverage tracking, TestRail artifacts |
 | **ui-ux-expert** | sonnet | Storybook, WCAG 2.1 AA accessibility, design system |
 | **regression-orchestrator** | sonnet | Parallel regression execution, retries, consolidated reports |
 | **autonomous-regression-orchestrator** | sonnet | Agent Teams regression: token bucket, failure recovery, JIRA integration |
+| **autonomous-test-runner** | — | Parameterized template for Agent Teams mode suite execution |
+| **test-runner-agent** | — | Parameterized template for standard suite execution |
 | **ba-system-analyzer** | sonnet | BA: Repo structure, module inventory, user flows |
 | **ba-api-specialist** | sonnet | BA: API surface analysis via Postman/Swagger |
 | **ba-story-writer** | sonnet | BA: Agile user stories with BDD acceptance criteria |

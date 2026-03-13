@@ -198,11 +198,11 @@ console.log(env.SKYFLOW_VISA);
 
 ## Step 5: MCP Server Configuration
 
-MCP servers provide browser automation, API testing, and more. The `.mcp.json` file is **tracked in git** but may need OS-specific adjustments.
+MCP servers provide browser automation, API testing, and more. The `.mcp.json` file is **gitignored** — you must create it locally after cloning.
 
-### 5.1 Verify `.mcp.json` in the project root
+### 5.1 Create `.mcp.json` in the project root
 
-The repository includes a `.mcp.json` with 3 Playwright browsers + Postman:
+Create a `.mcp.json` file with 3 Playwright browsers + Postman:
 
 ```json
 {
@@ -334,6 +334,7 @@ npm run ci:critical      # Run critical P0 suites (01, 06, 08, 14)
 npm run ci:frontend      # Run all frontend suites (01-13, 35-36)
 npm run ci:backend       # Run all backend suites (14-34)
 npm run ci:full          # Run full regression (all 36 suites, $80 budget)
+npm run ci:coverage      # Coverage generation pipeline
 npm run ci:notify        # Send Teams notification (requires TEAMS_WEBHOOK_URL)
 ```
 
@@ -341,7 +342,7 @@ npm run ci:notify        # Send Teams notification (requires TEAMS_WEBHOOK_URL)
 
 ## Slash Commands & Skills
 
-### Slash Commands (9)
+### Slash Commands (10)
 
 Available via `/command-name` in Claude Code chat:
 
@@ -354,22 +355,21 @@ Available via `/command-name` in Claude Code chat:
 | `/qa-bug` | `description \| VCST-XXXX \| screenshot` | Reproduce, document, and optionally file a JIRA bug |
 | `/qa-exploratory` | `[checkout\|catalog\|B2B\|mobile\|new]` | Guided exploratory testing session with heuristics |
 | `/qa-env-check` | `[vars\|endpoints\|mcp]` | Validate env vars, endpoints, MCP servers, test infra |
+| `/qa-coverage-generation` | `[p0\|p1\|full\|domain <name>\|ci-dry-run]` | Orchestrated parallel coverage generation with CI support |
 | `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|module <name>]` | Business analysis (full/flows/api/docs/stories/module) |
 | `/ba-stories` | `feature name \| VCST-XXXX` | Generate Agile user stories with BDD acceptance criteria |
 
-### Skills (16)
+### Skills (18)
 
 Organized in 3 categories under `.claude/skills/`:
 
-**Virto Commerce Knowledge (auto-invocable):**
+**Virto Commerce Knowledge (1 — auto-invocable):**
 
 | Skill | Purpose |
 |-------|---------|
 | `/vc-docs` | Documentation lookup via Context7 |
-| `/vc-module` | Module analysis and test suite mapping |
-| `/vc-api` | xAPI & REST API query reference |
 
-**Testing (manual invocation):**
+**Testing (8 — manual invocation):**
 
 | Skill | Purpose |
 |-------|---------|
@@ -377,9 +377,12 @@ Organized in 3 categories under `.claude/skills/`:
 | `/qa-accessibility` | WCAG 2.1 AA accessibility audit |
 | `/qa-design` | Design system consistency & UX heuristics |
 | `/qa-plan` | Test plans from E2E scenario catalog (105 scenarios) |
+| `/qa-checklist` | Domain checklists (18 domains, 158 items) |
 | `/qa-api` | REST API & GraphQL xAPI testing |
+| `/qa-coverage-gap` | Autonomous coverage gap analysis and test generation |
+| `/qa-seed-data` | Generate test data via Postman MCP |
 
-**QA Methodology (manual invocation):**
+**QA Methodology (9 — manual invocation):**
 
 | Skill | Purpose |
 |-------|---------|
@@ -388,6 +391,7 @@ Organized in 3 categories under `.claude/skills/`:
 | `/qa-evidence` | Evidence capture & report formatting |
 | `/qa-defect` | Defect management lifecycle & JIRA workflow |
 | `/qa-test-design` | Test case derivation techniques (EP, BVA, decision tables) |
+| `/qa-test-cases-generator` | Generate agent-native test cases in enriched CSV format |
 | `/qa-risk` | Risk-based test prioritization (5x5 matrix) |
 | `/qa-metrics` | Quality metrics & gates |
 | `/qa-sbtm` | Session-based exploratory testing |
@@ -401,15 +405,14 @@ vc-mcp-testing-module/
 ├── INDEX.md                 # Top-level repo navigation hub
 ├── CLAUDE.md                # Claude Code project instructions (tracked)
 ├── .claude/
-│   ├── agents/              # Claude Code agent definitions (11 agents, tracked)
-│   │   └── knowledge/       # Shared agent reference files
-│   ├── skills/              # Skills grouped by category (16 skills, tracked)
-│   │   ├── vc-knowledge/    # VC docs, module analysis, API reference
-│   │   ├── testing/         # Storybook, accessibility, design, plan, API
-│   │   └── qa-methodology/  # Process, investigation, evidence, test design, etc.
-│   ├── commands/            # Slash commands (9 commands, tracked)
+│   ├── agents/              # Claude Code agent definitions (14 agents, tracked)
+│   │   └── knowledge/       # 12 shared agent reference files
+│   ├── skills/              # Skills grouped by category (18 skills, tracked)
+│   │   ├── vc-knowledge/    # VC documentation lookup
+│   │   ├── testing/         # Storybook, accessibility, design, plan, checklist, API, coverage, seed-data
+│   │   └── qa-methodology/  # Process, investigation, evidence, defect, test design, risk, metrics, etc.
+│   ├── commands/            # Slash commands (10 commands, tracked)
 │   └── ROUTING.md           # Decision tree: when to use which command/skill/agent
-├── .mcp.json                # MCP server configuration (tracked, OS-specific)
 ├── config/                  # Playwright MCP browser configs + test-suites.json (tracked)
 │   ├── mcp-playwright-chrome.config.json
 │   ├── mcp-playwright-edge.config.json
@@ -424,7 +427,7 @@ vc-mcp-testing-module/
 │   ├── prompts/             # LLM prompt templates for QA automation
 │   └── workshop/            # Team onboarding workshop
 ├── regression/
-│   └── suites/              # 36 regression test suites (1,274 test cases, CSV)
+│   └── suites/              # 36 regression test suites (~1,546 test cases, CSV)
 │       ├── Frontend/        # 15 suites (01-13, 35-36)
 │       └── Backend/         # 21 suites (14-34)
 ├── test-data/               # Centralized test data
@@ -439,9 +442,9 @@ vc-mcp-testing-module/
 ├── package.json             # Project dependencies and scripts
 ```
 
-**Tracked in git:** `.claude/agents/`, `.claude/skills/`, `.claude/commands/`, `.mcp.json`, `config/`, `CLAUDE.md`
+**Tracked in git:** `.claude/agents/`, `.claude/skills/`, `.claude/commands/`, `config/`, `CLAUDE.md`
 
-**Gitignored:** `settings.json`, `.env`, `test-results/`, `.serena/`, `.playwright-mcp/`, `ci/`, `.github/`
+**Gitignored:** `.mcp.json`, `settings.json`, `.env`, `test-results/`, `.serena/`, `.playwright-mcp/`, `ci/`, `.github/`
 
 ---
 
@@ -498,9 +501,9 @@ Claude Code will:
 
 ## Claude Code Agents
 
-11 specialized agents in `.claude/agents/` (tracked in git) across two teams.
+14 specialized agents in `.claude/agents/` (tracked in git) across two teams, plus `shared-instructions.md`.
 
-### QA Team (7 agents)
+### QA Team (10 agents)
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
@@ -511,6 +514,9 @@ Claude Code will:
 | **test-management-specialist** | sonnet | Test planning, test case writing, coverage tracking, TestRail artifacts |
 | **ui-ux-expert** | sonnet | Storybook component testing, WCAG 2.1 AA accessibility, design system |
 | **regression-orchestrator** | sonnet | Parallel regression, retries, browser fallback, consolidated reports |
+| **autonomous-regression-orchestrator** | sonnet | Agent Teams regression: token bucket, failure recovery, JIRA integration |
+| **autonomous-test-runner** | — | Parameterized template for Agent Teams mode suite execution |
+| **test-runner-agent** | — | Parameterized template for standard suite execution |
 
 ### BA Team (4 agents)
 
@@ -548,7 +554,7 @@ Max 3 concurrent browser agents. BA agents do not require browsers.
 
 ## Regression Test Suites
 
-36 test suites (15 frontend + 21 backend) in `regression/suites/` with **1,274 total test cases** (492 frontend + 782 backend) in TestRail-compatible CSV format. Authoritative suite definitions live in `config/test-suites.json`.
+36 test suites (15 frontend + 21 backend) in `regression/suites/` with **~1,546 total test cases** (~643 frontend + ~903 backend) in TestRail-compatible CSV format. Authoritative suite definitions live in `config/test-suites.json`.
 
 ### Frontend Suites (01-13, 35-36)
 

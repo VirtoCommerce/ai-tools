@@ -1,6 +1,6 @@
 # Agentic QA Quick Reference
 
-## 1. Commands
+## 1. Commands (10)
 
 | Command | Arguments | Auto | Example |
 |---------|-----------|:----:|---------|
@@ -11,23 +11,21 @@
 | `/qa-bug` | `description \| VCST-XXXX \| screenshot` | No | `/qa-bug Cart shows $0 total` |
 | `/qa-exploratory` | `[checkout\|catalog\|B2B\|mobile\|new]` | No | `/qa-exploratory checkout` |
 | `/qa-env-check` | `[vars\|endpoints\|mcp]` | Yes | `/qa-env-check mcp` |
+| `/qa-coverage-generation` | `[p0\|p1\|full\|domain <name>\|ci-dry-run]` | No | `/qa-coverage-generation p0` |
 | `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|module <name>]` | No | `/ba-analyze flows` |
 | `/ba-stories` | `feature name \| VCST-XXXX` | No | `/ba-stories checkout redesign` |
 
 ---
 
-## 2. Skills (19)
+## 2. Skills (18)
 
-### vc-knowledge (4) — auto-invocable
+### vc-knowledge (1) — auto-invocable
 
 | Skill | Purpose |
 |-------|---------|
 | `/vc-docs` | Virto Commerce documentation via Context7 |
-| `/vc-module` | Module analysis and test suite mapping |
-| `/vc-api` | xAPI & REST API query reference |
-| `/vc-frontend` | Storefront URLs, navigation, product types, test data |
 
-### testing (7) — manual invocation
+### testing (8) — manual invocation
 
 | Skill | Purpose | Delegates To |
 |-------|---------|--------------|
@@ -38,8 +36,9 @@
 | `/qa-checklist` | Domain checklists (18 domains, 158 items) | test-management-specialist |
 | `/qa-api` | REST API & GraphQL xAPI testing | qa-backend-expert |
 | `/qa-coverage-gap` | Autonomous coverage gap analysis and test generation | test-management-specialist |
+| `/qa-seed-data` | Generate test data via Postman MCP | qa-backend-expert |
 
-### qa-methodology (8) — manual invocation
+### qa-methodology (9) — manual invocation
 
 | Skill | Purpose |
 |-------|---------|
@@ -48,13 +47,14 @@
 | `/qa-evidence` | Evidence capture policy, output paths, sign-off templates |
 | `/qa-defect` | Defect lifecycle, JIRA bug workflow (16 statuses), triage |
 | `/qa-test-design` | EP, BVA, decision tables, state transitions, pairwise |
+| `/qa-test-cases-generator` | Generate agent-native test cases in enriched CSV format |
 | `/qa-risk` | 5x5 risk matrix, severity/priority, test depth allocation |
 | `/qa-metrics` | Pass rate, defect density, DRE, quality gates enforcement |
 | `/qa-sbtm` | Session-based exploratory testing, CRISP/SFDPOT, tours |
 
 ---
 
-## 3. Agents (12)
+## 3. Agents (14)
 
 | Agent | Model | Browser | Role |
 |-------|-------|---------|------|
@@ -66,6 +66,8 @@
 | **test-management-specialist** | Sonnet | — | Test planning, case writing, coverage tracking |
 | **regression-orchestrator** | Sonnet | — | Parallel regression, quality gates |
 | **autonomous-regression-orchestrator** | Sonnet | — | Agent Teams regression, failure recovery, JIRA |
+| **autonomous-test-runner** | — | assigned | Parameterized template for Agent Teams suite execution |
+| **test-runner-agent** | — | assigned | Parameterized template for standard suite execution |
 | **ba-system-analyzer** | Sonnet | — | Architecture, module inventory, user flows |
 | **ba-api-specialist** | Sonnet | — | API surface via Postman/Swagger |
 | **ba-story-writer** | Sonnet | — | BDD user stories with acceptance criteria |
@@ -141,10 +143,10 @@
 | Path | Purpose |
 |------|---------|
 | `CLAUDE.md` | Project knowledge base for Claude Code |
-| `.claude/agents/` | 12 agent definitions (.md files) |
-| `.claude/agents/knowledge/` | 8 shared knowledge files |
-| `.claude/skills/` | 19 skills in 3 category directories |
-| `.claude/commands/` | 9 slash commands |
+| `.claude/agents/` | 14 agent definitions (.md files) |
+| `.claude/agents/knowledge/` | 12 shared knowledge files |
+| `.claude/skills/` | 18 skills in 3 category directories |
+| `.claude/commands/` | 10 slash commands |
 | `.claude/ROUTING.md` | Decision tree: when to use which command/skill/agent |
 | `config/test-suites.json` | Regression suite manifest (source of truth) |
 | `regression/suites/Frontend/` | 16 frontend CSV suites |
