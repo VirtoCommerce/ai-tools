@@ -1,6 +1,6 @@
-# Speaker Notes — Agentic QA: AI-Driven Testing (EN)
+# Speaker Notes — Agentic QA: AI-Driven Testing v2 (EN)
 
-Presentation: `agentic-qa-workflow.html` · 20 slides · ~20 minutes
+Presentation: `agentic-qa-v2.html` · 18 slides · ~17 minutes
 Style: conversational, confident, technically precise. Lead with the "so what", back it up with specifics.
 
 ---
@@ -11,251 +11,232 @@ Welcome everyone. Today I want to show you something that changes how we think a
 
 This is our **Agentic QA system** — instead of writing Playwright scripts, we write plain English prompts, and AI agents execute real tests in real browsers. 14 specialized agents, ~1,546 test cases, zero code required.
 
-The key shift here: QA engineers stop being script writers and start being test strategists. The AI handles the mechanics. We handle the thinking.
+Five key characteristics are visible right on the screen: 14 AI agents, 36 test suites, 3 parallel browsers, CI/CD automation (planned), and self-healing. This is not a concept — it's running in production right now.
 
 *[~45 sec]*
 
 ---
 
-## Slide 2 — Agenda
+## Slide 2 — The Problem and the Solution
 
-We'll cover 13 topics in roughly 20 minutes. If you're here for a quick overview, pay most attention to slides 3–7. If you want to understand the operational details, slides 8–17 are where the depth is. The live demo at the end takes 20 more minutes — we'll decide together whether to run it.
+Let me show you the problem we solved. On the left — traditional Playwright automation: requires engineering skills, breaks on every CSS class rename, high maintenance cost, can't reason about business logic.
 
-A few navigation tips: press **S** to show or hide these speaker notes during the talk, **L** to switch the spinner label language between English and Russian, and arrow keys or spacebar to advance slides.
+On the right — Agentic QA: natural language prompts, self-healing through contextual understanding, adding a suite = adding a CSV file, agents apply BL-* invariants to every test.
 
-*[~30 sec]*
-
----
-
-## Slide 3 — Why Agentic QA?
-
-Let me show you the problem we solved. On the left — traditional Playwright automation. It's fragile. Every CSS class rename, every UI refactor breaks a selector. You end up with developers maintaining test infrastructure instead of shipping features.
-
-On the right — Agentic QA. Instead of `await page.click('.submit-btn-v2')`, you write "click the Place Order button". The agent finds the button by context, not by selector. When the button's class changes tomorrow, the test still works.
-
-Look at the code comparison. Multiple lines of fragile script vs. three lines of natural language that do the same thing. This is not a minor improvement — it's a different paradigm.
+Look at the code comparison at the bottom: 140 lines of fragile script vs. 3 lines of natural language that do the same thing. This is not just an improvement — it's a different paradigm. When `.submit-btn-v2` gets renamed tomorrow, the traditional test breaks. The agentic test simply finds the button by context — search priority: `data-testid` → ARIA labels → visible text → position.
 
 *[~55 sec]*
 
 ---
 
-## Slide 4 — Agentic QA at a Glance
+## Slide 3 — Project Overview
 
-Let me give you the scale. **14 agents** in two teams. **36 test suites**, ~1,546 cases. **9 MCP servers** that give agents eyes and hands. **18 methodology skills** encoding ISTQB, WCAG, SBTM, and risk-based testing.
+The system tests the Virto Commerce B2B e-commerce platform — storefront, admin SPA, REST API, GraphQL, checkout, payments, B2B multi-org, and accessibility.
 
-Two things I want to highlight: the budget model — daily smoke runs cost about **$5**, a full weekly regression **$80**. That's the entire cost of running comprehensive automated testing. And the CI schedule: smoke runs every weekday morning at 6 AM UTC, full regression every Sunday night.
+Three words describe its essence: **AI-Native** (tests are prompts, not code — the LLM reasons about what to click and what to verify), **Modular** (36 CSV suites, 14 agents, 18 skills — each can be improved independently), **CI-integrated** (GitHub Actions runs everything on schedule with Teams notifications — planned).
 
-*[~45 sec]*
-
----
-
-## Slide 5 — Two Testing Modes, One Shared Foundation
-
-Now that you have the numbers, let's talk about how the system actually works. There are two operating modes.
-
-**Interactive mode** — what engineers use every day. You type a command in VS Code or Cursor. The agent stack (14 agents, 9 MCP servers, 3 browsers) springs into action. JIRA integration, Figma comparison, DevTools inspection — everything available.
-
-**CI mode** — runs headless in Docker, triggered by GitHub Actions on a schedule. Single Chromium, Agent SDK orchestration, Teams notification at the end.
-
-The key insight: both modes read from the same `config/test-suites.json`, same CSV suites, same agent definitions. One test suite format, two runtimes. You write a test case once and it runs in both.
-
-*[~70 sec]*
-
----
-
-## Slide 6 — 9 MCP Servers — Claude's "Hands and Eyes"
-
-MCP — Model Context Protocol — is what transforms Claude from a text generator into a testing agent. Without MCP, it can only describe what to do. With MCP, it opens real browsers, clicks real buttons, exports real HAR files, and reads real JIRA tickets.
-
-The 6 project-level servers are in `.mcp.json` — everyone on the team gets them automatically when they clone the repo. The 3 user-level servers (Chrome DevTools, Atlassian, Figma) need to be configured once per machine in IDE settings.
-
-The practical impact: agents can diff a screenshot against a Figma design, query Azure App Insights for errors that appeared during a test, and run a Postman collection to seed test data — all in one uninterrupted test run.
-
-*[~60 sec]*
-
----
-
-## Slide 7 — 14 Specialized Agents — Two Teams
-
-Here's who actually does the work. The QA team has 10 agents organized by function.
-
-The three **Opus-powered** specialists — frontend-expert, backend-expert, testing-expert — do the actual testing. They use heavy reasoning to understand UI context, interpret API responses, and formulate bug reports. Sonnet handles everything that needs speed over depth: orchestration, planning, documentation.
-
-The two **template agents** — autonomous-test-runner and test-runner-agent — are parameterized. They have no fixed identity. The orchestrator instantiates one per suite run, injects the suite CSV and browser assignment, and the agent executes. This is how we parallelize without duplicating agent definitions.
-
-The **BA team** is separate — it reads code and produces business artifacts (stories, API docs, user flows) without needing browser access.
-
-*[~70 sec]*
-
----
-
-## Slide 8 — How Agents "Think" — Four Decision Layers
-
-Every QA agent's prompt definition follows a consistent four-layer structure. This is what makes agents trustworthy rather than just capable.
-
-**Layer 1 — Business Logic**: shared across all agents. `business-logic.md` is the single source of truth for what constitutes correct behavior. BL-PRICE-001 says discounts can't exceed 100%. BL-CART-004 says out-of-stock items can't be purchased. Every agent knows these rules.
-
-**Layer 2 — Domain Knowledge**: agent-specific expertise. The frontend expert knows about Vue component patterns, the backend expert knows about REST conventions and GraphQL pagination.
-
-**Layer 3 — Skill Set**: the technique layer — how to find what's broken. Selector strategy (data-testid first), evidence capture (HAR + console + screenshot), API test ordering (health check before business flows).
-
-**Layer 4 — Design Decisions**: constraints and tools. Which browser, which MCP server, what's the turn budget. This is where isolation rules are enforced.
-
-*[~60 sec]*
-
----
-
-## Slide 9 — 3 Concurrent Browsers, Zero Interference
-
-This is a hard constraint. If two agents share a browser session, one agent's navigation destroys the other's context — cookies reset, auth lost, cart cleared. Every agent gets its own isolated Playwright MCP server with separate cookies, storage, and viewport.
-
-The three Playwright servers (chrome, firefox, edge) form the browser pool. The orchestrator tracks which slots are occupied and assigns the next available one when a suite is dispatched. If the primary slot is busy, it falls back through the chain.
-
-One important Windows-specific rule: WebKit is not supported on Windows. Never attempt to install or use it — fall back to Edge immediately.
-
-*[~45 sec]*
-
----
-
-## Slide 10 — Lead Delegates, Never Executes
-
-The lead orchestrator is a coordinator, not an executor. It reads the JIRA ticket, decides which specialists to dispatch based on what's changed, monitors their progress, and makes the final go/no-go call based on quality gates. It never touches a browser itself.
-
-The five workflows cover the full QA lifecycle: new feature testing from a JIRA ticket, PR review from GitHub, module verification after an install, release testing via the regression orchestrator, and bug fix verification. Each workflow dispatches a different combination of specialists.
-
-The important design decision here: concentration of authority without concentration of execution. One agent decides, multiple agents act in parallel.
-
-*[~55 sec]*
-
----
-
-## Slide 11 — 36 Suites, Parallel Batching, Quality Gates
-
-Four selection keywords cover every scenario: **smoke** before every deployment, **critical** before any release, **sprint** before a sprint ship, **full** before production.
-
-The pipeline sorts P0 suites first — if anything critical is broken, you know within the first batch rather than waiting for 30 more suites to finish. Suites run in batches of 3 to match the 3-browser pool. Failures retry up to twice with browser fallback before being marked as blocked.
-
-The regression orchestrator writes a `run-ID/` directory with per-suite results, a `summary.json`, and a consolidated `regression-report.md` with the final verdict.
-
-*[~60 sec]*
-
----
-
-## Slide 12 — Non-Negotiable Thresholds
-
-These gates are enforced automatically. No subjective decisions, no schedule pressure overrides.
-
-The strictest gate is **smoke**: 100% pass rate, 0 P0 bugs, 0 P1 bugs. If the daily smoke fails, the day's deployment is blocked until it's fixed. This gate is intentionally strict because smoke tests only cover P0 revenue flows — if something in that set fails, there is no acceptable excuse to ship.
-
-**BLOCKED** means no deployment, period. Even if the release is urgent. Even if it's Friday. Even if stakeholders are pushing. The gate exists precisely for those moments.
-
-*[~45 sec]*
-
----
-
-## Slide 13 — Docker + GitHub Actions + Teams
-
-The CI pipeline is zero-touch once configured. Docker ensures reproducibility — the same container image runs in every environment. The Agent SDK orchestrates suites with the same logic as interactive mode, just without a human in the loop.
-
-Budget management is explicit: each suite gets a minimum $2 allocation, the global budget is tracked per-run, and the orchestrator stops dispatching new suites if the budget is exhausted. This prevents a runaway regression from costing hundreds of dollars.
-
-The Teams Adaptive Card notification is the final handoff to humans — it contains pass/fail counts, bugs found, suite-by-suite breakdown, and a link to the full report. Everything else is automated.
-
-*[~55 sec]*
-
----
-
-## Slide 14 — 10 Commands + 18 Skills
-
-Commands and skills are two different abstractions. Commands **trigger workflows** — they dispatch agents, run tests, file bugs, and transition JIRA tickets. Skills **inject methodology** — they load structured reference material that guides how agents reason.
-
-The most important commands for daily use: `/qa-smoke` before every deployment, `/qa-test VCST-XXXX` for feature testing, `/qa-regression sprint` before sprint releases.
-
-Two commands are auto-invocable: `/qa-status` and `/qa-env-check`. They trigger themselves when you open the project — you always have a current picture of environment health without asking for it.
-
-The 18 skills cover the full ISTQB testing lifecycle, divided into three categories. `testing/` skills operate browsers and tools. `qa-methodology/` skills encode processes and frameworks. `vc-knowledge/` has one skill — `/vc-docs` — that pulls live Virto Commerce documentation via Context7.
-
-*[~65 sec]*
-
----
-
-## Slide 15 — 12 Shared Knowledge Files
-
-The knowledge layer is what makes agents consistent across the team. Every QA agent loads these 12 files as part of its context.
-
-`business-logic.md` is the most critical — it contains testable invariants that define what "correct behavior" means. BL-PRICE-001: discount stacking must never exceed 100%. BL-ORD-002: order cancellation must reverse inventory. When an agent detects a violation, it cites the rule number in its report — which gives developers an exact starting point for investigation.
-
-The four recently added files — `e-commerce-edge-cases-library.md`, `module-suite-map.md`, `sitemap.md`, and `products.md` — replace what used to be four separate skills (`/vc-module`, `/vc-api`, `/vc-frontend`). Moving this content into the knowledge layer means agents no longer need to invoke a skill to get basic platform information — it's always in context.
-
-*[~55 sec]*
-
----
-
-## Slide 16 — How Methodology Skills Connect
-
-The 9 methodology skills are not independent — they form a dependency graph rooted at `qa-process` (the ISTQB 7-phase lifecycle umbrella).
-
-The important pattern is the **continuous loop** at the bottom: investigate → defect → risk → SBTM → metrics and back. When an agent finds a bug, it follows the investigation skill to isolate root cause, the defect skill to file it correctly in JIRA, the risk skill to assess the impact on the test plan, and the metrics skill to update quality indicators. This loop runs automatically in the background of every test execution.
-
-Test design and planning feed forward into checklist creation. Checklists feed into test case generation. Generation feeds into execution. Execution produces evidence. Evidence feeds metrics. Everything is connected.
-
-*[~45 sec]*
-
----
-
-## Slide 17 — How Agents Know What to Load and When
-
-This is the glue that keeps 18 skills and 12 knowledge files from being chaos.
-
-**Mechanism 1** — hardcoded references in the agent prompt. The `test-management-specialist` loads `business-logic.md` and 15 other files at every startup, regardless of what task it's doing. This is long-term memory.
-
-**Mechanism 2** — the conditional routing table. Each agent prompt has a "situation → skill" table: "Writing test cases? Load `/qa-plan` and `e2e-scenario-catalog.md`." This is on-demand memory.
-
-**Mechanism 3** — auto-invocable. `/vc-docs` is the only skill Claude calls without being asked. If it hits an unknown Virto Commerce concept during testing, it automatically calls `/vc-docs` to fetch current documentation from Context7. No gate, no prompt required.
-
-**Mechanisms 4 and 5** — `ROUTING.md` and the agent→skill map in `skills/README.md` — serve as human-readable decision trees for both new team members and agents that need to orient themselves in an unfamiliar task.
+The number to remember: **~1,546 test cases** in 36 suites — 643 frontend scenarios and 903 backend scenarios. Maintaining this manually is impossible. With our system — virtually zero maintenance.
 
 *[~50 sec]*
 
 ---
 
-## Slide 18 — End-to-End: `/qa-smoke`
+## Slide 4 — Architecture
 
-Let me walk you through what actually happens when you type `/qa-smoke`.
+Now that you've seen what and why, let me show you how it works. Three testing modes, one shared foundation.
 
-The orchestrator reads Suite 01, generates a run ID, and dispatches two agents **simultaneously** — Track A (qa-frontend-expert, Chrome) runs 12 storefront smoke tests: sign in, browse catalog, add to cart, apply coupon, checkout. Track B (qa-backend-expert, Edge) runs admin health checks: modules active, APIs responding, GraphQL working.
+**Interactive mode**: engineer types a command in the IDE → Claude Code CLI → 14 agents → 9 MCP servers → 3 real browsers. Best for sprint testing, debugging, testing specific tickets.
 
-Both tracks complete in ~15 minutes. The orchestrator collects results and applies verdict rules. If any checkout test fails — **NO-GO**, no exceptions. If the admin SPA won't load — **NO-GO**. If all 12 pass — **GO**, safe to deploy.
+**Agent Teams mode**: fully autonomous — `autonomous-orchestrator` creates a team via TeamCreate API, manages a token bucket (3 browser slots + 1 reporter), applies exponential backoff on failures, automatically creates JIRA tickets for bugs.
 
-This is the daily ritual. One command, two parallel agents, a consolidated verdict. No manual coordination, no dashboard, no context switching.
+**CI pipeline** (planned): Docker container → Claude Agent SDK → Headless Chromium → Teams notification. Triggered on a GitHub Actions schedule with no human involvement.
 
-*[~75 sec]*
+The key point at the bottom: all three modes read from the **same** `test-suites.json`, CSV suites, agent definitions, and knowledge files. One set of tests — three ways to run them.
+
+*[~65 sec]*
 
 ---
 
-## Slide 19 — What Agentic QA Delivers
+## Slide 5 — By the Numbers
 
-The biggest wins are self-healing and the removal of coding expertise as a barrier.
+Here's the scale. **14 agents** in two teams (10 QA + 4 BA). **36 suites**, ~1,546 cases (643 frontend + 903 backend). **9 MCP servers** that give agents eyes, hands, and memory.
 
-**Self-healing** means the QA team is not woken up at 2 AM when a developer renames a CSS class. Tests adapt. The time that used to go into maintaining brittle selectors now goes into writing more test coverage.
+Below — two important blocks. The intelligence layer: **18 skills** with methodology — ISTQB, WCAG, SBTM, risk-based testing, plus **12 knowledge files** that agents consult collectively, including BL-* business rules.
 
-**Business-aware failures** mean developers understand bugs without a QA walkthrough. "BL-PRICE-001 violated: coupon reduced order total below $0" is actionable. "AssertionError at line 47" is not.
+Coverage groups: **smoke** — 12 tests before deployment, **critical** — ~120 P0 tests, **sprint** — ~800 tests, **full** — all ~1,546 cases. Choose the right level with a single command.
 
-**No coding required** means the QA discipline is open to everyone on the team — product managers can add acceptance tests, designers can add visual regression cases, junior QAs can add dozens of test cases in an afternoon without writing a single line of JavaScript.
+*[~45 sec]*
+
+---
+
+## Slide 6 — Agent Teams
+
+Here's who actually does the work. 14 agents across four layers.
+
+**Orchestrators**: three agents coordinate, plan, and route work. `qa-lead-orchestrator` reads JIRA tickets, makes GO/NO-GO decisions. `regression-orchestrator` runs parallel suites with a browser pool. `autonomous-orchestrator` manages Agent Teams mode with a 3+1 token bucket.
+
+**Execution Specialists**: four **Opus-powered** agents with deep browser reasoning. Notice the browsers — each agent gets its own isolated browser. `qa-frontend-expert` — Chrome, `qa-backend-expert` — Edge, `qa-testing-expert` — Firefox, `ui-ux-expert` — Chrome DevTools.
+
+At the bottom: **4 BA agents** for business analysis without browser access, and **test-management-specialist** for test plans, RTM, and coverage matrix.
+
+*[~70 sec]*
+
+---
+
+## Slide 7 — Commands
+
+Ten commands — the entire interface for the full QA lifecycle. Type a command in the terminal — the system does the rest.
+
+**Top row**: `/qa-smoke` — 12 P0 tests, two parallel tracks, GO/NO-GO verdict in 15 minutes. `/qa-test VCST-XXXX` — reads the JIRA ticket, dispatches the right specialists, files bugs with evidence, transitions the ticket status. `/qa-regression sprint` — parallel run of 26 suites in batches of 3.
+
+**Bottom row**: `/qa-bug` — reproduces, collects HAR and screenshots, files JIRA with P0–P3 severity. `/qa-status` and `/qa-env-check` — **auto-invocable**, triggered when you open the project. You always have an up-to-date picture of environment health without explicitly asking.
+
+*[~65 sec]*
+
+---
+
+## Slide 8 — 9 MCP Servers
+
+MCP — Model Context Protocol — is what transforms Claude from a text generator into a testing agent. Without MCP, it can only describe what to do. With MCP — it opens real browsers, clicks real buttons, compares Figma designs, queries Azure, and exports HAR files.
+
+At the top of the slide is the full flow: engineer types a command → Claude reasons and plans → 9 MCP servers provide tool access → 3 browsers in parallel → reports, screenshots, HAR, JIRA.
+
+Four categories below: **Browser Automation** — Chrome, Firefox, Edge plus DevTools for tracing. **Design Comparison** — Figma MCP for pixel-diff. **API & Code** — Postman + GitHub. **Cloud & Docs** — Azure App Insights + Context7 for documentation.
 
 *[~60 sec]*
 
 ---
 
-## Slide 20 — What's Next
+## Slide 9 — Business Rules & Edge Cases
 
-Two things already shipped and in daily use: **AI-generated test cases** (`/qa-test-cases-generator`) and **Agent Teams mode** (`autonomous-regression-orchestrator`).
+Two mechanisms that make the system truly intelligent.
 
-The Q2 2026 priorities focus on breadth: multi-browser CI (Chrome + Firefox + Edge, not just headless Chromium), visual regression baselines for all 55 Storybook components, and sprint coverage reports that auto-select which test suites to run based on what code changed in the PR.
+**BL-* Business Invariants** (left): all agents share `business-logic.md`. BL-PRICE-001: discounts can't exceed 100%. BL-CART-004: out-of-stock items can't be purchased. BL-AUTH-002: unauthenticated users are redirected to login. When an agent detects a violation, it doesn't just fail the test — it explains: "BL-PRICE-001 violated — coupon reduced the price below $0."
 
-Q3 2026 adds depth: real-device mobile testing via BrowserStack (iOS Safari, Android Chrome), and self-updating suites that propose new test cases when code changes are detected.
+**ECL-* Edge Case Library** (right): 13 generic + 7 VC-specific patterns cross-referenced to BL-*. Every generated test case cites both BL-* and ECL-*.
 
-The long-term vision: a system that tests continuously, learns from failures, and maintains its own test suite. Zero manual scripting. Real-time quality signals. The QA team focused entirely on judgment.
+Bottom right — the flow: JIRA ticket → auto-detect BL-* + ECL-* → test cases with cited rules.
+
+*[~60 sec]*
+
+---
+
+## Slide 10 — Parallel Regression
+
+Four keywords: **smoke, critical, sprint, full**. Selection groups for every scenario. Smoke — 1 suite (~12 tests) before every deployment. Critical — 4 P0 suites (~120 tests) before any release. Sprint — 26 suites (~800 tests) before a sprint release. Full — all 36 (~1,546 tests) before production.
+
+At the top of the slide — the browser pool visualization: three Chrome/Firefox/Edge lanes executing suites simultaneously. The orchestrator sorts P0 suites first — if something critical is broken, you know immediately rather than waiting for 30 other suites.
+
+Quality gates (right) are automatic:
+- **APPROVED** — ≥95% pass rate, 0 P0 bugs — safe to deploy
+- **CONDITIONAL** — P2/P3 only — deploy with tracked follow-ups
+- **BLOCKED** — P0/P1 failure — **no deployment, regardless of schedule**
+
+On failure — retry up to 2 times with fallback chain: chrome → firefox → edge.
+
+*[~60 sec]*
+
+---
+
+## Slide 11 — CI/CD Automation (Planned)
+
+Note — this pipeline is in the planning stage. The architecture is already designed.
+
+GitHub Actions will run daily smoke Monday through Friday at 6:00 AM UTC ($5 budget, Suite 01), full regression every Sunday at 2:00 AM UTC ($80 budget, all 36 suites). Manual trigger available for any scope, any environment via `workflow_dispatch`.
+
+Left — pipeline visualization: Docker ensures a clean reproducible environment → Claude Agent SDK manages orchestration → Headless Chromium executes tests → reports to `reports/regression/ci-YYYY-MM-DD/` → Adaptive Card to Teams.
+
+Right — key features: budget control, 90-day rolling history, 30-day artifact retention. One-line command to run: `docker run --env-file .env -e SUITE_SELECTION=critical vc-regression`.
+
+*[~55 sec]*
+
+---
+
+## Slide 12 — Knowledge Base + Skills
+
+Each agent is smart partly because of the shared knowledge base. On the left — **12 files**: business rules (BL-*), edge case library (ECL-*), platform patterns, sitemap, performance thresholds. Update one file — all 14 agents instantly learn the new rule.
+
+On the right — **18 skills** in three categories. `testing/` — 8 skills for working with browsers and tools: Storybook, Accessibility, Design review, Test plans, Checklists, API testing, Coverage gap, Seed data. `qa-methodology/` — 9 process skills: ISTQB, SBTM, risk matrix, metrics. `vc-knowledge/` — 1 skill `/vc-docs`, auto-invoked via Context7 for unfamiliar concepts.
+
+Important point: this is institutional knowledge that doesn't leave when an employee does. New team member? From day one they have access to the same methodology.
+
+*[~55 sec]*
+
+---
+
+## Slide 13 — Test Case Generation
+
+This is one of the most powerful features: `/qa-test-cases-generator` creates test cases automatically from a JIRA ticket, BDD scenario, domain checklist, or legacy TestRail suite.
+
+At the top — the flow: JIRA ticket → parse acceptance criteria + detect layers → generate cases with BL-* and ECL-* references → route to the appropriate agent.
+
+Left — five input formats: `VCST-XXXX`, `domain`, `suite NN`, `from-checklist`, `from-bdd`. Right — what every case includes: **BL-* reference** to a business invariant, **ECL-* pattern** for an edge case, typed step tags (`[NAV]`, `[ACT]`, `[WAIT]`), assertion tags (`[DOM]`, `[STATE]`, `[MATH]`), and at least 2 failure signals. Generate once — cases are ready for agent execution without modification.
+
+*[~60 sec]*
+
+---
+
+## Slide 14 — Test Data Generation
+
+Before running tests, you need data. `/qa-seed-data` creates a complete test environment via Postman MCP — catalogs, products, pricing, B2B organizations, users — in one command.
+
+At the top — the flow: pick a profile → Postman MCP builds and runs a collection → test data with AGENT-TEST-* prefix → run tests → safe teardown.
+
+Six profiles in the table: **minimal** — 1 product for smoke, **catalog** — 3-level tree + 5 products + multi-currency, **b2b** — organization with 3 roles, **pricing** — two price lists with tiered prices, **full** — everything combined, **teardown** — deletes only AGENT-TEST-* entities.
+
+Safety rule: all entities are created with the `AGENT-TEST-{date}` prefix. Teardown only deletes entities with that name — production data is never touched.
+
+*[~55 sec]*
+
+---
+
+## Slide 15 — End-to-End Flow: /qa-test
+
+Let me walk you through what actually happens when you type `/qa-test VCST-XXXX`.
+
+Five steps on the timeline:
+
+**Step 1** — read the JIRA ticket via Atlassian MCP: title, description, acceptance criteria, determine scope — storefront, admin, or API.
+
+**Step 2** — dispatch specialists: qa-frontend-expert (Chrome) takes storefront ACs, qa-backend-expert (Edge) — API and admin ACs. They run in parallel.
+
+**Step 3** — execution: navigate to the feature, verify each AC through a real browser, screenshots + HAR + console.
+
+**Step 4** — if anything fails: bug report with P0–P3 severity, screenshots, HAR, BL-* rule reference, auto-created in JIRA.
+
+**Step 5** — all ACs pass → ticket transitions to "Testing Complete" with evidence linked. Bugs found → release blocked.
+
+*[~65 sec]*
+
+---
+
+## Slide 16 — Benefits
+
+Six strong sides, three of them especially important.
+
+**Zero maintenance** — UI changes don't break tests. Self-healing means the QA team isn't woken up at 2 AM every time someone refactors a button. Time that used to go into maintaining brittle selectors now goes into writing more coverage.
+
+**Business awareness** — agents don't just detect failures, they explain them in business terms. "BL-PRICE-001 violated" tells the developer where to look. "AssertionError at line 47" tells them nothing.
+
+**No coding required** — the QA discipline is open to the whole team. Product managers can add acceptance tests, designers can add visual regression cases, junior QAs can write 50 test cases in a single day. Zero entry barrier.
+
+The three numbers at the bottom speak for themselves: **~0** selector maintenance incidents per sprint, **15 minutes** from command to verdict, **1 CSV row** — the cost of adding a new test case.
+
+*[~60 sec]*
+
+---
+
+## Slide 17 — Roadmap
+
+Two items already shipped and in daily use: **AI test case generator** (`/qa-test-cases-generator`) and **Agent Teams mode** — both running in production right now.
+
+**Q2 2026** — three directions: multi-browser CI (expanding from single headless Chromium to Chrome + Firefox + Edge), visual regression baselines (persistent snapshots of all 55 Storybook components with pixel-diff against Figma), sprint coverage reports (automatic mapping: which PR changes affect which suites, auto-select regression scope).
+
+**Q3 2026**: mobile testing via BrowserStack (iOS Safari iPhone 15 Pro, Android Chrome Samsung Galaxy S24 — critical for B2C checkout), self-updating suites (agent analyzes code changes, identifies gaps, proposes new test cases for team review).
+
+**Future**: performance regression (Core Web Vitals baselines per release, LCP/CLS alerts), test impact analysis (ML prediction of which suites are most likely to fail), multi-tenant testing.
+
+**Long-term vision**: a fully autonomous QA system. Continuous testing. Learns from failures. Updates its own test suite. Zero manual scripting.
 
 Thank you — questions?
 
@@ -263,16 +244,48 @@ Thank you — questions?
 
 ---
 
+## Slide 18 — RAG + Vector Search (Planned)
+
+This last slide is not something that works today. It's the next architectural step we're planning to implement.
+
+On the left — the problem: right now every agent loads all 12 knowledge files at startup — about 100 KB of text. Even when testing only authentication, the agent reads all pricing rules, all ECL-* patterns, the entire sitemap. This is wasteful and doesn't scale. Below — an important detail: Context7 is **already** RAG. The `/vc-docs` skill does semantic retrieval over VC documentation. We're extending this pattern to the entire knowledge base.
+
+On the right — four specific values:
+- **Lower token cost** — ~100 KB context → ~5 KB of only what's relevant
+- **Test case deduplication** — before generating, check semantic similarity against 1,546 existing cases
+- **Bug similarity search** — before creating JIRA, check embeddings of past bug reports
+- **Smart test impact analysis** — embed git diff → semantic match against test cases
+
+At the bottom — the visualization: Static Loading (~100 KB always) vs RAG (~5 KB relevant). A 20x difference.
+
+*[~60 sec]*
+
+---
+
 ## Timing Guide
 
 | Slides | Topic | Time |
 |--------|-------|------|
-| 1–4 | Title + Agenda + Why + Numbers | ~3 min |
-| 5–7 | Architecture + MCP + Agents | ~3.5 min |
-| 8–10 | Decision Layers + Browsers + Delegation | ~2.5 min |
-| 11–13 | Regression + Gates + CI | ~2.5 min |
-| 14–17 | Commands + Knowledge + Skills + Routing | ~3.5 min |
-| 18–20 | Live Flow + Benefits + Roadmap | ~3.5 min |
-| **Total** | | **~19 min** |
+| 1–3 | Title + Problem + Overview | ~2.5 min |
+| 4–7 | Architecture + Numbers + Agents + Commands | ~4 min |
+| 8–9 | MCP + Business Rules/ECL-* | ~2 min |
+| 10–11 | Regression + CI/CD | ~2 min |
+| 12–14 | Knowledge/Skills + Case Generation + Test Data | ~3 min |
+| 15–16 | End-to-End Flow + Benefits | ~2 min |
+| 17 | Roadmap | ~1 min |
+| 18 | RAG + Vector Search (Planned) | ~1 min |
+| **Total** | | **~17.5 min** |
 
-*Trim slides 2 (Agenda), 9 (Browsers), or 16 (Methodology graph) if running short. Extend slides 7 (Agents), 14 (Commands), or 18 (Live flow) if you have extra time or Q&A.*
+*Trim slide 13 (case generation) or slide 14 (test data) if running short. Slide 18 (RAG) can be shown briefly in 30 sec or skipped for a lightning talk. Extend slide 6 (agents) or slide 15 (end-to-end flow) if you have extra time or Q&A.*
+
+---
+
+## Presentation Tips
+
+**For a 10-minute lightning talk**: slides 1, 2, 5, 6, 8, 10, 16, 17. Skip slides 11–14 and 18.
+
+**For a technical audience**: spend more time on slides 9 (BL-* + ECL-* rules), 13 (case generation), 4 (three modes), and 18 (RAG architecture). These are what produce the "wow" effect for developers.
+
+**For management**: focus on slides 5 (numbers), 16 (benefits + three KPIs), and 17 (roadmap). Skip slides 9, 12–14, and 18.
+
+**Before a live demo**: verify `.env` is configured, Chrome is closed (user data dir conflict), and run `/qa-env-check` before the presentation.
