@@ -43,6 +43,8 @@ Run gap analysis once, centrally (do NOT delegate this):
    - `.claude/skills/testing/qa-checklist/domain-checklists.md`
    - `.claude/skills/testing/qa-api/test-cases-api-graphql.md`
    - `.claude/skills/testing/qa-coverage-gap/feature-domain-map.md`
+   - `.claude/skills/qa-methodology/qa-test-design/SKILL.md`
+   - `.claude/skills/qa-methodology/qa-test-cases-generator/SKILL.md`
 3. Produce a gap inventory: list of `{domain, feature, gapCategory, priorityScore, applicableLayers[], targetSuites[]}` entries
    - For each gap, determine applicable layers: does the feature have REST endpoints? → `api`. GraphQL ops? → `graphql`. Admin UI? → `admin`. Storefront? → `storefront`. Spans ≥2? → `e2e`
 4. Write `reports/coverage/gap-inventory-YYYY-MM-DD.json`

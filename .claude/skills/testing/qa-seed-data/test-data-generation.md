@@ -41,11 +41,13 @@ Create top-down, delete bottom-up. Numbers indicate execution order.
 All endpoints require `Authorization: Bearer {{authToken}}`.
 Base: `{{baseUrl}}` = `BACK_URL` env variable.
 
+**Verify before using:** Check Swagger UI at `{{baseUrl}}/docs/index.html` for current endpoint signatures. For GraphQL verification requests (08-Verify folder), run introspection first — see `qa-postman` guide §API Discovery.
+
 ### Authentication
 
 | Action | Method | Endpoint | Body |
 |--------|--------|----------|------|
-| Get token | POST | `/connect/token` | `grant_type=password&username={{admin}}&password={{adminPassword}}&scope=openid offline_access` (form-urlencoded) |
+| Get token | POST | `/connect/token` | `grant_type=password&username={{admin}}&password={{adminPassword}}&scope=offline_access` (form-urlencoded) |
 
 Response: `{ "access_token": "...", "expires_in": 3600 }`
 
@@ -424,6 +426,80 @@ After triggering reindex, poll `/api/search/indexes/tasks` until completion befo
 
 ---
 
+## Batch API Patterns (Performance)
+
+Use these batch patterns to reduce the number of API calls. A `full` seed with batch calls uses ~15-20 requests instead of ~35+.
+
+### Batch Prices — Single Request for All Products
+
+`PUT /api/products/prices` accepts an **array** of ProductPrice objects. Set prices for ALL products in one call instead of per-product:
+
+```json
+// PUT /api/products/prices — ALL prices in one request
+[
+  {
+    "productId": "{{productId1}}",
+    "prices": [
+      { "pricelistId": "{{priceListId}}", "list": 99.99, "sale": 89.99, "minQuantity": 1, "currency": "USD" },
+      { "pricelistId": "{{priceListId}}", "list": 84.99, "minQuantity": 5, "currency": "USD" },
+      { "pricelistId": "{{priceListId}}", "list": 74.99, "minQuantity": 10, "currency": "USD" }
+    ]
+  },
+  {
+    "productId": "{{productId2}}",
+    "prices": [
+      { "pricelistId": "{{priceListId}}", "list": 49.99, "minQuantity": 1, "currency": "USD" }
+    ]
+  },
+  {
+    "productId": "{{variationId1}}",
+    "prices": [
+      { "pricelistId": "{{priceListId}}", "list": 109.99, "minQuantity": 1, "currency": "USD" }
+    ]
+  }
+]
+```
+
+**Test script:**
+```javascript
+pm.test('All prices set', () => pm.response.to.have.status(200));
+```
+
+### Batch Inventory — Multiple FFCs per Product
+
+`PUT /api/inventory/products/{{productId}}` accepts an **array** of inventory entries. Set stock across multiple fulfillment centers in one call per product:
+
+```json
+// PUT /api/inventory/products/{{productId1}}
+[
+  { "fulfillmentCenterId": "{{ffcId1}}", "productId": "{{productId1}}", "inStockQuantity": 100, "reservedQuantity": 0 },
+  { "fulfillmentCenterId": "{{ffcId2}}", "productId": "{{productId1}}", "inStockQuantity": 50, "reservedQuantity": 0 }
+]
+```
+
+For multiple products, you still need one call per product — but each call handles all FFCs for that product.
+
+### Batch Reindex — All Document Types at Once
+
+```json
+// POST /api/search/indexes/index — single call for all types
+[
+  { "documentType": "CatalogProduct", "rebuild": true },
+  { "documentType": "Category", "rebuild": true },
+  { "documentType": "MemberDocument", "rebuild": true }
+]
+```
+
+### Request Count Comparison
+
+| Profile | Without batching | With batching | Savings |
+|---------|-----------------|---------------|---------|
+| `minimal` | ~12 requests | ~8 requests | 33% |
+| `catalog` | ~25 requests | ~14 requests | 44% |
+| `full` | ~38 requests | ~20 requests | 47% |
+
+---
+
 ## Naming Convention
 
 All test entities use a `AGENT-TEST-` prefix + date stamp for easy identification and cleanup:
@@ -441,110 +517,78 @@ All test entities use a `AGENT-TEST-` prefix + date stamp for easy identificatio
 
 ---
 
-## Postman Collection Structure
+## Seed Request Manifest (Full Profile)
 
-### Seed Collection
+Exact requests per folder. Each request chains its output ID to subsequent requests via collection variables (see `qa-postman` guide §9 for chaining patterns).
 
-```
-📁 VC Test Data Seed
-├── 📁 00-Auth
-│   └── Get OAuth2 Token (test: pm.collectionVariables.set("authToken", ...))
-├── 📁 01-Infrastructure (verify existing)
-│   ├── Get Store Config (verify store exists, extract storeId, catalogId)
-│   └── List Fulfillment Centers (extract ffcId)
-├── 📁 02-Catalog
-│   ├── Create Physical Catalog (test: set {{catalogId}})
-│   ├── Assign Catalog to Store (GET store → PUT with catalog={{catalogId}} — required for pricing)
-│   ├── Create Virtual Catalog (test: set {{virtualCatalogId}})
-│   ├── Create Root Category (test: set {{rootCategoryId}})
-│   └── Create Subcategory (test: set {{subCategoryId}})
-├── 📁 03-Products
-│   ├── Create Physical Product - Full Fields (test: set {{productId1}})
-│   ├── Create Digital Product (test: set {{productId2}})
-│   ├── Create Configurable Product Parent (test: set {{configurableId}})
-│   ├── Create Variation - Color Black (test: set {{variationId1}})
-│   ├── Create Variation - Color White (test: set {{variationId2}})
-│   ├── Create Variation - Size Large (test: set {{variationId3}})
-│   └── Upload Product Image + Link (uses {{productId1}})
-├── 📁 04-Pricing
-│   ├── Create Price List USD (test: set {{priceListId}})
-│   ├── Create Price List EUR (test: set {{priceListIdEUR}})
-│   ├── Assign PL to Store (uses {{priceListId}}, {{catalogId}})
-│   ├── Set Prices - Standard Product (tiered: qty 1/5/10)
-│   ├── Set Prices - Digital Product
-│   └── Set Prices - All Variations
-├── 📁 05-Inventory
-│   ├── Set Stock - Standard Product (inStockQuantity: 100)
-│   ├── Set Stock - Low Stock Product (inStockQuantity: 2)
-│   ├── Set Stock - Out of Stock Product (inStockQuantity: 0)
-│   └── Set Stock - All Variations
-├── 📁 06-Organizations & Users
-│   ├── Create Organization (test: set {{orgId}})
-│   ├── Create Contact - Org Admin (test: set {{contactId1}})
-│   ├── Create Contact - Buyer (test: set {{contactId2}})
-│   ├── Create User Account - Org Admin (test: set {{userId1}})
-│   ├── Create User Account - Buyer (test: set {{userId2}})
-│   ├── Create Custom Test Role (test: set {{roleId}})
-│   ├── Assign Role to Buyer
-│   └── Add Addresses to Contacts
-├── 📁 07-Search Reindex
-│   ├── Trigger Product Index Rebuild
-│   ├── Trigger Member Index Rebuild
-│   └── Poll Index Status Until Complete
-└── 📁 08-Verify
-    ├── Verify Product via REST (GET, assert 200 + all fields)
-    ├── Verify Product via xCatalog GraphQL (storefront visibility)
-    ├── Verify Prices Applied (xCatalog product price)
-    ├── Verify Inventory (availabilityData)
-    ├── Verify Organization via REST
-    └── Verify User Login (obtain token with test user credentials)
-```
-
-### Teardown Collection
-
-Delete in **reverse dependency order**. Run even if tests fail.
+### Seed — Creation Order
 
 ```
-📁 VC Test Data Teardown
-├── 📁 00-Auth
-│   └── Get OAuth2 Token
-├── 📁 01-Users & Roles
-│   ├── Delete User Account - Buyer
-│   ├── Delete User Account - Org Admin
-│   ├── Delete Custom Role
-│   ├── Delete Contact - Buyer
-│   └── Delete Contact - Org Admin
-├── 📁 02-Organizations
-│   └── Delete Organization
-├── 📁 03-Inventory
-│   └── Clear Inventory (set inStockQuantity: 0 for all test products)
-├── 📁 04-Pricing
-│   ├── Delete Prices
-│   ├── Delete Price List Assignments
-│   ├── Delete Price List USD
-│   └── Delete Price List EUR
-├── 📁 05-Products
-│   ├── Delete Variations (all {{variationId*}})
-│   ├── Delete Products (all {{productId*}})
-├── 📁 06-Catalog
-│   ├── Restore Store Catalog (PUT store with original catalogId saved during seed)
-│   ├── Delete Subcategory
-│   ├── Delete Root Category
-│   ├── Delete Virtual Catalog
-│   └── Delete Physical Catalog
-├── 📁 07-Search Reindex
-│   └── Trigger Reindex (clear deleted entities from index)
-└── 📁 08-Verify Cleanup
-    ├── GET Product → assert 404
-    ├── GET Organization → assert 404
-    └── Search xCatalog → assert product not found
+00-Auth           → Get OAuth2 Token → sets authToken
+01-Infrastructure → Get Store Config → extracts storeId, original catalogId
+                  → List Fulfillment Centers → extracts ffcId
+02-Catalog        → Create Physical Catalog → catalogId
+                  → Assign Catalog to Store (GET store → PUT with catalog — required for pricing)
+                  → Create Virtual Catalog → virtualCatalogId
+                  → Create Root Category → rootCategoryId
+                  → Create Subcategory → subCategoryId
+03-Products       → Create Physical Product (full fields) → productId1
+                  → Create Digital Product → productId2
+                  → Create Configurable Product → configurableId
+                  → Create Variation (Black) → variationId1
+                  → Create Variation (White) → variationId2
+                  → Create Variation (Large) → variationId3
+                  → Upload Product Image + Link (uses productId1)
+04-Pricing        → Create Price List USD → priceListId
+                  → Create Price List EUR → priceListIdEUR
+                  → Assign PL to Store (uses priceListId + catalogId)
+                  → Batch Set All Prices (single request — see §Batch API Patterns)
+05-Inventory      → Batch Set Stock per product (see §Batch API Patterns)
+                    - Standard: inStockQuantity 100
+                    - Low stock: inStockQuantity 2
+                    - Out of stock: inStockQuantity 0
+                    - All variations
+06-Orgs-Users     → Create Organization → orgId
+                  → Create Contact (Org Admin) → contactId1
+                  → Create Contact (Buyer) → contactId2
+                  → Create User Account (Org Admin) → userId1
+                  → Create User Account (Buyer) → userId2
+                  → Create Custom Test Role → roleId
+                  → Assign Role to Buyer
+                  → Add Addresses to Contacts
+07-Reindex        → Trigger All Document Types (single request — see §Batch API Patterns)
+                  → Poll Status Until Complete (5s interval)
+08-Verify         → GET Product (assert 200 + fields)
+                  → GET Organization (assert 200)
+                  → Verify User Login (obtain token with test creds)
+```
+
+### Teardown — Reverse Deletion Order
+
+Delete in **reverse dependency order**. Run even if seed tests fail.
+
+```
+00-Auth           → Get OAuth2 Token
+01-Users & Roles  → Delete User Buyer → Delete User Org Admin
+                  → Delete Custom Role
+                  → Delete Contact Buyer → Delete Contact Org Admin
+02-Organizations  → Delete Organization
+03-Inventory      → Clear Stock (set inStockQuantity: 0 for all test products)
+04-Pricing        → Delete Prices → Delete Assignments
+                  → Delete Price List USD → Delete Price List EUR
+05-Products       → Delete Variations (all) → Delete Products (all)
+06-Catalog        → Restore Store Catalog (PUT with original catalogId from seed)
+                  → Delete Subcategory → Delete Root Category
+                  → Delete Virtual Catalog → Delete Physical Catalog
+07-Reindex        → Trigger Reindex (clear deleted entities from index)
+08-Verify         → GET Product → assert 404
+                  → GET Organization → assert 404
 ```
 
 **Teardown rules:**
 - Store all created entity IDs in collection variables during seed phase
 - After each DELETE, GET the entity and assert 404
 - If a DELETE returns 500, log orphaned ID in test results for manual cleanup
-- Never skip teardown — use `postman.setNextRequest("teardown-folder")` on failure if needed
 - Trigger search reindex after cleanup to clear storefront
 
 ---
@@ -568,18 +612,29 @@ These exist in the environment — read them, don't recreate:
 
 ---
 
-## Seed Profiles
+---
 
-Different test scenarios need different data subsets:
+## Performance Rules
 
-| Profile | What Gets Created | Use Case |
-|---------|-------------------|----------|
-| `minimal` | 1 catalog + 1 category + 1 product + price + inventory | Quick smoke, single-entity CRUD |
-| `catalog` | Catalog + 3 categories (tree) + 5 products (3 types) + prices + inventory | Catalog/search testing |
-| `b2b` | Organization + 3 users (admin/buyer/viewer) + roles + contacts + addresses | B2B, RBAC, org management |
-| `pricing` | Price list (USD + EUR) + tiered prices + quantity breaks | Pricing module testing |
-| `full` | All of the above combined | Full regression, integration testing |
-| `teardown` | Nothing created — only deletes entities matching `AGENT-TEST-*` pattern | Post-test cleanup |
+### Build Once, Run Many
+The single biggest optimization: **don't rebuild Postman collections every time.** Use `getCollections` to find existing `VC Seed — {Profile}` collections and `runCollection` immediately. Only build when the collection doesn't exist or needs structural changes.
+
+### One `createCollection` Call, Not N `createCollectionRequest` Calls
+When building a new collection, include ALL folders and requests inline in a single `createCollection` call (per `qa-postman` guide §6). This is 1 MCP round-trip instead of 20-30+. Never use `createCollectionRequest` for seed collections.
+
+### Use Batch APIs
+See §Batch API Patterns above. Key wins:
+- **Prices:** 1 call for all products (not N calls)
+- **Reindex:** 1 call for all document types (not 3 separate calls)
+
+### Minimize Verification Requests
+For `minimal` profile, skip GraphQL storefront verification — REST API check is sufficient. Full verification is only needed for `catalog` and `full` profiles where storefront visibility matters.
+
+### Reindex Polling
+Poll `/api/search/indexes/tasks` every 5 seconds (not faster). Typical reindex times:
+- After `minimal` seed: ~10-15s
+- After `catalog` seed: ~20-30s
+- After `full` seed: ~30-45s
 
 ---
 

@@ -987,6 +987,40 @@ Replace `VALUE_FROM_*` with actual values read from `.env` at execution time.
 
 ---
 
+## API Discovery — Swagger & GraphQL Introspection
+
+**Always verify endpoints and schemas before building collections.** Don't assume field names from memory or documentation — the live API is the source of truth.
+
+### Swagger / OpenAPI (REST endpoints)
+
+| Resource | URL |
+|----------|-----|
+| Swagger UI | `{{baseUrl}}/docs/index.html` |
+| OpenAPI JSON | `{{baseUrl}}/docs/VirtoCommerce.Platform/swagger.json` |
+
+Use Swagger to:
+- Discover available REST endpoints and their parameters
+- Verify request/response schemas before building Postman requests
+- Check which fields are required vs optional
+- Find module-specific APIs (each VC module exposes its own swagger doc)
+
+### GraphQL Introspection (xAPI)
+
+**MANDATORY:** Before writing any GraphQL query or mutation, run introspection to verify exact field names and types. VC xAPI field names don't always match docs or conventions.
+
+**Introspection endpoint:** `POST {{baseUrl}}/graphql`
+
+| Pattern | Query | Use Case |
+|---------|-------|----------|
+| Check input fields | `{ __type(name: "InputAddItemType") { inputFields { name type { name } } } }` | Before writing mutations |
+| Check output fields | `{ __type(name: "CartType") { fields { name type { name kind ofType { name } } } } }` | Before writing queries |
+| List all mutations | `{ __schema { mutationType { fields { name args { name type { name } } } } } }` | Discover available mutations |
+| List all queries | `{ __schema { queryType { fields { name args { name type { name } } } } } }` | Discover available queries |
+
+**In Postman:** Add an introspection request as the first item in any GraphQL test folder to verify the schema before running actual test queries.
+
+---
+
 ## Endpoint Quick Reference
 
 Common Virto Commerce API endpoints for building collections. Full reference in `qa-seed-data/test-data-generation.md`.
@@ -995,6 +1029,7 @@ Common Virto Commerce API endpoints for building collections. Full reference in 
 |-----------|--------|----------|
 | Auth token | POST | `{{baseUrl}}/connect/token` |
 | Health check | GET | `{{baseUrl}}/health` |
+| **Swagger UI** | GET | `{{baseUrl}}/docs/index.html` |
 | Get store | GET | `{{baseUrl}}/api/stores/{{storeId}}` |
 | Search stores | POST | `{{baseUrl}}/api/stores/search` |
 | Create catalog | POST | `{{baseUrl}}/api/catalog/catalogs` |
@@ -1008,4 +1043,4 @@ Common Virto Commerce API endpoints for building collections. Full reference in 
 | Create member | POST | `{{baseUrl}}/api/members` |
 | Create user | POST | `{{baseUrl}}/api/platform/security/users/create` |
 | Reindex | POST | `{{baseUrl}}/api/search/indexes/index` |
-| GraphQL xAPI | POST | `{{baseUrl}}/graphql` |
+| **GraphQL xAPI** | POST | `{{baseUrl}}/graphql` |

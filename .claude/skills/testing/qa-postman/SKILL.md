@@ -100,7 +100,8 @@ Creates a purpose-built collection. The guide has ready-to-use patterns for:
 - **CRUD testing** — create/read/update/delete with chained entity IDs
 - **GraphQL testing** — xAPI queries and mutations with error checking
 - **Smoke testing** — lightweight health check across critical endpoints
-- **Seed data** — entity creation with dependency ordering (defer to `/qa-seed-data` for full profiles)
+
+**For test data seeding** — use `/qa-seed-data` instead. It provides entity dependency ordering, API request bodies, batch patterns, and seed profiles. It delegates all Postman mechanics (auth, variables, collection structure) back to this skill's guide.
 
 ## Mode: `env`
 

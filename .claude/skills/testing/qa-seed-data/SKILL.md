@@ -5,17 +5,15 @@ argument-hint: "[minimal|catalog|b2b|pricing|full|teardown]"
 
 # /qa-seed-data — Test Data Generation & Teardown
 
-Generate a complete test environment by creating Postman collections that seed all required entities via REST API, or tear down previously created test data.
+Generate a complete test environment by seeding all required entities via REST API, or tear down previously created test data.
+
+**Postman mechanics:** This skill uses Postman MCP for collection building and execution. For auth patterns, variable scoping, collection structure, common mistakes, and tool signatures — read `/qa-postman` guide (`postman-collection-guide.md`) first. This skill only covers **what** to seed and **in what order**, not how Postman MCP works.
 
 ## Reference
 
-Read **before** executing: `./claude/skills/testing/qa-seed-data/test-data-generation.md`
-- Entity dependency graph (creation order)
-- REST API endpoints with full request bodies
-- Naming conventions (`AGENT-TEST-` prefix + date)
-- Postman collection folder structure
-- Seed profiles (minimal/catalog/b2b/pricing/full)
-- Teardown rules and reverse deletion order
+Read **before** executing:
+1. `./claude/skills/testing/qa-postman/postman-collection-guide.md` — Postman MCP mechanics (§1-12)
+2. `./claude/skills/testing/qa-seed-data/test-data-generation.md` — Entity graph, API endpoints, request bodies, batch patterns, naming
 
 ## Arguments
 
@@ -31,52 +29,47 @@ Read **before** executing: `./claude/skills/testing/qa-seed-data/test-data-gener
 ## Workflow
 
 ### Step 1 — Read Reference
-Read `./claude/skills/testing/qa-seed-data/test-data-generation.md` for API endpoints and entity schemas.
+Read `test-data-generation.md` for entity dependency graph, API endpoints, request bodies, and batch patterns.
 
-### Step 2 — Check Existing Collections
-Use `getCollections` (Postman MCP) to check if a seed/teardown collection already exists for the requested profile. If it exists, ask the user: reuse, update, or recreate.
+### Step 2 — Fast Path: Reuse Existing Collection
+Use `getCollections` to check if a seed collection already exists for the requested profile.
 
-### Step 3 — Create Environment
-Use `createEnvironment` (Postman MCP) to set up variables:
+**Collection naming:** `VC Seed — {Profile}` (e.g., `VC Seed — Minimal`, `VC Seed — Full`)
 
-| Variable | Source |
-|----------|--------|
-| `baseUrl` | `BACK_URL` from `.env` |
-| `storeId` | `STORE_ID` from `.env` |
-| `admin` | `ADMIN` from `.env` |
-| `adminPassword` | `ADMIN_PASSWORD` from `.env` |
-| `authToken` | (set by first request's test script) |
-| `catalogId`, `categoryId`, `productId`, etc. | (set by seed requests' test scripts) |
+| Exists? | Action |
+|---------|--------|
+| **Yes** | Skip to Step 5 — `runCollection` immediately. No rebuild needed. |
+| **Yes, but outdated** | Use `putCollection` to update in-place (1 call). |
+| **No** | Continue to Step 3. |
 
-### Step 4 — Build Seed Collection
-Use `createCollection` + `createCollectionRequest` (Postman MCP) to build the collection incrementally:
+**This is the #1 speed optimization.** Building should only happen once per profile.
 
-1. **Auth folder** — OAuth2 token request with test script to extract and store token
-2. **Infrastructure folder** — GET store, GET fulfillment centers (verify + extract IDs)
-3. **Entity folders** — one folder per entity group, ordered by dependency graph
-4. **Verify folder** — GET requests to confirm all entities exist and are accessible
+### Step 3 — Environment
+Reuse existing `VC QA Environment` or create one per `qa-postman` guide (§4-5). Entity IDs go in **collection variables** (not environment).
 
-Each request must include:
-- **Pre-request script:** set Authorization header from `{{authToken}}`
-- **Test script:** assert status code (200/201), extract and store entity IDs in collection variables
-- **GraphQL requests:** use `graphql` dataMode with proper query + variables
+### Step 4 — Build Collection (Single Call)
+**Use one `createCollection` call with ALL requests inline** (per `qa-postman` guide §6). Never use `createCollectionRequest` for seed collections — that's N MCP round-trips instead of 1.
 
-### Step 5 — Build Teardown Collection
-Separate collection that deletes in reverse dependency order:
-1. Users & roles
-2. Contacts & organizations
-3. Inventory (set to 0)
-4. Prices, assignments, price lists
-5. Variations, products
-6. Categories, catalogs
-7. Search reindex
-8. Verify deletion (assert 404)
+**Seed collection folder structure** (entity order from `test-data-generation.md` §Entity Dependency Graph):
 
-### Step 6 — Execute
-Run the seed collection using `runCollection` with the created environment. Report results.
+```
+00-Auth           → OAuth2 token (per qa-postman §8)
+01-Infrastructure → GET store, GET FFCs (verify + extract IDs)
+02-Catalog        → Physical catalog, virtual catalog, categories
+03-Products       → Products by type, variations, images
+04-Pricing        → Price list + batch prices (single request — see §Batch API Patterns)
+05-Inventory      → Batch inventory per product (see §Batch API Patterns)
+06-Orgs-Users     → Organization, contacts, users, roles (if profile includes B2B)
+07-Reindex        → Trigger all document types in 1 call + poll status
+08-Verify         → GET assertions to confirm entities exist
+```
 
-### Step 7 — Report
-Output a summary:
+**Teardown collection:** same single-call approach, reverse dependency order (see `test-data-generation.md` §Teardown Collection).
+
+### Step 5 — Execute
+`runCollection(collectionId, environmentId)` — see `qa-postman` guide (§11) for ID format and result interpretation.
+
+### Step 6 — Report
 
 ```
 ## Test Data Seed Report
@@ -84,13 +77,13 @@ Output a summary:
 **Profile:** {profile}
 **Environment:** {BACK_URL}
 **Timestamp:** {ISO timestamp}
+**Build:** {new | reused existing}
+**Duration:** ~{X}s
 
 ### Created Entities
 | Entity | ID | Name |
 |--------|-----|------|
 | Catalog | {id} | AGENT-TEST-Catalog-{date} |
-| Category | {id} | AGENT-TEST-Cat-{name}-{date} |
-| Product | {id} | AGENT-TEST-{name}-{date} |
 | ... | ... | ... |
 
 ### Postman Collections
@@ -99,12 +92,19 @@ Output a summary:
 
 ### Verification
 - [ ] Products visible via REST API
-- [ ] Products visible via xCatalog GraphQL
 - [ ] Prices applied correctly
 - [ ] Inventory levels set
-- [ ] Users can authenticate
 - [ ] Search index updated
 ```
+
+## Expected Timing
+
+| Profile | Build (first run) | Build (reuse) | Execute | Reindex | Total |
+|---------|-------------------|---------------|---------|---------|-------|
+| `minimal` | ~10s | 0s | ~5s | ~15s | **~20-30s** |
+| `catalog` | ~15s | 0s | ~15s | ~30s | **~30-60s** |
+| `b2b` | ~10s | 0s | ~10s | ~15s | **~25-35s** |
+| `full` | ~20s | 0s | ~30s | ~45s | **~50-95s** |
 
 ## Profile Details
 
@@ -145,7 +145,7 @@ Pricing module deep test:
 Everything combined. Use before full regression runs.
 
 ### `teardown`
-Scans for entities matching `TEST-*` naming convention and deletes them in safe order. Also:
+Scans for entities matching `AGENT-TEST-*` naming convention and deletes them in safe order. Also:
 - Triggers search reindex after deletion
 - Verifies cleanup (GET → assert 404)
 - Reports any orphaned entities that failed to delete
@@ -162,6 +162,6 @@ Scans for entities matching `TEST-*` naming convention and deletes them in safe 
 
 - Never seed data into production — check `BACK_URL` against known production URLs before executing
 - Always use `AGENT-TEST-` prefix — enables safe teardown without affecting real data
-- Store entity IDs in Postman collection variables, not environment variables (collection-scoped = isolated)
 - After `full` seed, wait for search reindex before running storefront tests (~30-60s)
 - If seed fails mid-execution, run teardown for the partial data before retrying
+- For Postman troubleshooting (auth errors, variable resolution, ID format) — see `qa-postman` guide §12
