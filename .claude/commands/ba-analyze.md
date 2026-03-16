@@ -15,10 +15,11 @@ You are the **BA Orchestrator** for a Virto Commerce project. When invoked, you 
 
 **Scope options:**
 - `/ba-analyze` — Full system analysis (default)
-- `/ba-analyze flows` — User flow analysis only
-- `/ba-analyze api` — API analysis and docs only
+- `/ba-analyze flows` — User flow analysis only (includes live UI exploration)
+- `/ba-analyze api` — API analysis and docs only (includes Swagger UI + GitHub search)
 - `/ba-analyze docs` — Generate/update user documentation only
-- `/ba-analyze module <name>` — Analyze a specific VC module
+- `/ba-analyze module <name>` — Analyze a specific VC module (searches GitHub repos + live UI)
+- `/ba-analyze ui` — Live UI-only analysis (storefront + admin panel exploration)
 
 ---
 
@@ -33,8 +34,10 @@ Tell the user what you're about to analyze and what outputs they'll receive. Ask
 Before launching subagents, collect available inputs:
 - Check if a GitHub repo URL or local path is available in context
 - Check if Postman collection files exist (`.json` in project, or environment vars `POSTMAN_API_KEY`, `POSTMAN_COLLECTION_ID`)
-- Check for any VC platform URL in environment (`VC_PLATFORM_URL`)
+- Resolve environment URLs: `FRONT_URL` (storefront), `BACK_URL` (admin/platform) from `.env`
 - Note the Virto Commerce version if detectable (check `appsettings.json`, `global.json`, or package files)
+- Confirm GitHub MCP is available (needed for searching VirtoCommerce module repos)
+- Confirm browser MCP servers are available (needed for live UI analysis)
 
 ### Step 3 — Launch Subagents
 Use the Task tool to run specialist agents. Agent types match the `.claude/agents/` definitions:
@@ -48,10 +51,17 @@ Launch agents 1 and 2 **in parallel** (single message with 2 Task calls). Agent 
 
 **Conditional execution:**
 - If scope is `stories` or `stories <flow>`: run **ba-system-analyzer** then **ba-story-writer** only
-- If scope is `flows`: run **ba-system-analyzer** + **ba-story-writer** (skip api specialist)
-- If scope is `api`: run **ba-api-specialist** only
+- If scope is `flows`: run **ba-system-analyzer** (with UI analysis) + **ba-story-writer** (skip api specialist)
+- If scope is `api`: run **ba-api-specialist** only (with GitHub search + Swagger UI)
+- If scope is `ui`: run **ba-system-analyzer** with UI analysis only (skip code/GitHub analysis)
+- If scope is `module <name>`: run **ba-system-analyzer** (focused GitHub search for that module) + **ba-api-specialist** (module API surface)
 - If scope is `docs`: run all agents (docs need full context)
 - Default (full): run all four agents
+
+**Pass these env vars to subagents:**
+- `front_url` = `FRONT_URL` from `.env` (for storefront UI analysis)
+- `back_url` = `BACK_URL` from `.env` (for admin panel UI analysis)
+- `module_scope` = module name (when scope is `module <name>`)
 
 ### Step 4 — Synthesize & Deliver Report
 Combine all subagent outputs into the final structured report (see Output Format below).

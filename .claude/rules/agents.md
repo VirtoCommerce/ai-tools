@@ -21,15 +21,21 @@
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| **ba-system-analyzer** | sonnet | Repo structure, module inventory, user flows, pain points |
-| **ba-api-specialist** | sonnet | API surface via Postman/Swagger, health assessment |
+| **ba-system-analyzer** | sonnet | Repo structure, GitHub module search, live UI exploration (storefront + admin), user flows, pain points |
+| **ba-api-specialist** | sonnet | API surface via Postman/Swagger, GitHub module code, live Swagger UI, health assessment |
 | **ba-story-writer** | sonnet | Agile user stories with BDD acceptance criteria, DoD, test scenarios |
 | **ba-doc-writer** | sonnet | User docs, admin guides, API quick-start, UX improvement specs |
+
+**BA agent tools:**
+- All BA agents use **GitHub MCP** to search VirtoCommerce module repos (`org:VirtoCommerce vc-module-*`)
+- `ba-system-analyzer` and `ba-api-specialist` use browsers for live UI analysis (see assignments below)
+- `ba-story-writer` and `ba-doc-writer` do not require browsers or GitHub (they consume other agents' output)
 
 ## Parallel Execution — Browser Assignments
 
 Each agent MUST use its own separate browser session. Agents sharing a browser will interfere with each other (navigation, cookies, state).
 
+### QA Team Browsers
 | Agent | Playwright MCP Server | Alternative |
 |-------|----------------------|-------------|
 | **qa-frontend-expert** | `playwright-chrome` | |
@@ -38,7 +44,13 @@ Each agent MUST use its own separate browser session. Agents sharing a browser w
 | **ui-ux-expert** | `Chrome DevTools MCP` | (no webkit on Windows) |
 | **test-management-specialist** | `playwright-chrome` (sequential, not parallel with frontend) | |
 
-BA agents do not require browsers. Max 3 concurrent browser agents. Never use WebKit on Windows.
+### BA Team Browsers
+| Agent | Playwright MCP Server | Purpose |
+|-------|----------------------|---------|
+| **ba-system-analyzer** | `playwright-firefox` | Storefront + admin UI exploration |
+| **ba-api-specialist** | `playwright-edge` | Swagger UI browsing |
+
+**Important:** BA browsers should NOT run in parallel with QA browsers on the same server. When BA and QA agents run simultaneously, schedule them on different browser slots. Max 3 concurrent browser agents total (QA + BA combined). Never use WebKit on Windows.
 
 ## Agent Delegation
 
