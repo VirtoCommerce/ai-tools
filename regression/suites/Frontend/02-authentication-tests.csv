@@ -540,3 +540,252 @@ AUTH-047,Impersonation - No Persistent Side Effects,Authentication > Impersonati
 [STATE] Customer profile data unchanged
 [STATE] No orphaned sessions remain after impersonation ends","[CONSOLE] no TypeError or JS errors
 [NETWORK] No unexpected mutations to customer data during impersonation","Cart items changed after impersonation session; customer addresses or profile modified; orphaned session detected; console TypeError",none,Coverage Gap Analysis,Automated
+AUTH-048,Session Expiry During Checkout - Cart Preserved After Re-Auth,Session > Checkout Recovery,Critical,BL-AUTH-001,"ECL-1.2, ECL-4.2","User logged in; product in stock; checkout page accessible","email={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for redirect to account or home page
+[NAV] Navigate to {{FRONT_URL}}/product/{{TEST_SKU}}
+[WAIT] Wait for product page to load
+[ACT] Click 'Add to Cart'
+[WAIT] Wait for cart badge to increment
+[ASSERT] Cart badge shows at least 1 item
+[NAV] Navigate to {{FRONT_URL}}/cart
+[WAIT] Wait for cart page to load
+[ASSERT] Cart contains {{TEST_SKU}}
+[ACT] Click 'Proceed to Checkout' or equivalent
+[WAIT] Wait for checkout page to load
+[ASSERT] Checkout page renders with shipping/billing sections
+[ACT] Clear all cookies and local storage via browser console to simulate session expiry
+[NAV] Reload the checkout page
+[WAIT] Wait for redirect to login page
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for redirect after re-authentication
+[NAV] Navigate to {{FRONT_URL}}/cart
+[WAIT] Wait for cart page to load","[STATE] After session expiry user is redirected to login page
+[STATE] After re-authentication cart still contains {{TEST_SKU}}
+[STATE] Cart item quantities are preserved after re-auth
+[DOM] Cart total matches pre-expiry total
+[STATE] Checkout is resumable after re-authentication
+[NAV] User can navigate back to checkout after re-login","[API] cart query returns items including sku={{TEST_SKU}} after re-auth
+[NETWORK] POST /connect/token returns HTTP 200 on re-login
+[CONSOLE] no TypeError or JS errors
+[NETWORK] no 4xx/5xx on /graphql after re-auth","Session expiry does not redirect to login; cart empty after re-authentication; checkout page shows error after re-login; 4xx/5xx on cart query after re-auth; console TypeError","Remove {{TEST_SKU}} from cart after test",E2E-AUTH-001,Automated
+AUTH-049,Concurrent Sessions - Both Active Independently,Session > Concurrent,High,BL-AUTH-003,ECL-4.2,"Valid user account; two browser contexts available","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}}","[NAV] In Browser A: Navigate to {{FRONT_URL}}/account/login
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for redirect to account or home page
+[ASSERT] User authenticated in Browser A
+[NAV] In Browser B: Navigate to {{FRONT_URL}}/account/login
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for redirect to account or home page
+[ASSERT] User authenticated in Browser B
+[NAV] In Browser A: Navigate to {{FRONT_URL}}/account
+[WAIT] Wait for account page to load
+[ASSERT] Browser A still authenticated
+[NAV] In Browser A: Click logout
+[WAIT] Wait for logout to complete
+[NAV] In Browser B: Navigate to {{FRONT_URL}}/account
+[WAIT] Wait for account page to load","[STATE] Both Browser A and Browser B are authenticated simultaneously
+[STATE] Browser A session is independent of Browser B
+[STATE] After logout in Browser A user is redirected to login/home
+[STATE] Browser B remains authenticated after Browser A logs out
+[NAV] Browser B can still access /account after Browser A logout","[NETWORK] POST /connect/token returns HTTP 200 in both browsers
+[CONSOLE] no TypeError or JS errors in either browser
+[NETWORK] Browser B GET /account returns HTTP 200 after Browser A logout","Login in Browser B invalidates Browser A session; Browser B loses session after Browser A logout; 4xx on account page in either browser; console TypeError",Logout from both browser contexts after test,E2E-AUTH-007,Semi-Automated
+AUTH-050,Remember Me - Session Persistence Across Browser Restart,Session > Persistence,High,BL-AUTH-003,ECL-4.2,"Login page accessible; 'Remember me' checkbox present on login form","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ASSERT] 'Remember me' checkbox visible on login form
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Check 'Remember me' checkbox
+[ACT] Click 'Sign In'
+[WAIT] Wait for successful login redirect
+[ASSERT] User is authenticated
+[ACT] Close the browser tab
+[ACT] Open a new browser tab (same context/profile)
+[NAV] Navigate to {{FRONT_URL}}/account
+[WAIT] Wait for page to load","[STATE] After closing and reopening browser user is still authenticated
+[DOM] Account page loads without redirect to login
+[STATE] User name/email visible in header confirming auth state
+[NAV] URL remains /account (not redirected to /account/login)","[NETWORK] GET /account returns HTTP 200 without 302 redirect to login
+[CONSOLE] no TypeError or JS errors","User redirected to login after reopening browser despite Remember Me; session cookie expired prematurely; console TypeError",Logout after test,E2E-AUTH-006,Semi-Automated
+AUTH-051,Remember Me - Session Does Not Persist Without Checkbox,Session > Persistence,Medium,BL-AUTH-003,ECL-4.2,"Login page accessible; 'Remember me' checkbox present","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ASSERT] 'Remember me' checkbox is unchecked by default
+[ACT] Click 'Sign In' without checking 'Remember me'
+[WAIT] Wait for successful login redirect
+[ASSERT] User is authenticated
+[ACT] Close the browser context entirely (clear session cookies)
+[ACT] Open a new browser context
+[NAV] Navigate to {{FRONT_URL}}/account
+[WAIT] Wait for page to load","[STATE] Without 'Remember me' user is NOT authenticated after browser restart
+[NAV] User is redirected to login page from /account
+[STATE] Session-only cookies are cleared on browser close","[NETWORK] GET /account returns 302 redirect to login
+[CONSOLE] no TypeError or JS errors","User remains authenticated without Remember Me after browser restart; session cookie persists as permanent cookie; console TypeError",none,E2E-AUTH-006,Semi-Automated
+AUTH-052,Password Reset - Forgot Password UI Flow,Password Reset > UI,High,BL-AUTH-002,ECL-4.2,"Login page accessible; valid user email in system","email={{USER_EMAIL}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ASSERT] 'Forgot Password' or 'Reset Password' link visible on login page
+[ACT] Click 'Forgot Password' link
+[WAIT] Wait for forgot password page to load
+[ASSERT] Forgot password form with email input visible
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Click 'Submit' or 'Send Reset Link'
+[WAIT] Wait for confirmation message","[DOM] 'Forgot Password' link present on login page
+[NAV] Clicking link navigates to forgot password page (URL contains 'forgot' or 'reset')
+[DOM] Email input field visible on reset page
+[DOM] Submit button visible and enabled
+[DOM] Success message shown after submission: 'check your email' or equivalent
+[STATE] No error message shown for valid email","[NETWORK] POST to password reset endpoint returns HTTP 200
+[CONSOLE] no TypeError or JS errors
+[NETWORK] No 4xx/5xx on reset request","Forgot Password link missing on login page; reset page does not load; submission returns error for valid email; 4xx/5xx on reset endpoint; console TypeError",none,E2E-AUTH-004,Automated
+AUTH-053,Password Reset - Non-Existent Email,Password Reset > Validation,Medium,BL-AUTH-002,"ECL-4.2, ECL-14.1","Forgot password page accessible","front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Click 'Forgot Password' link
+[WAIT] Wait for forgot password page to load
+[ACT] Fill 'Email': nonexistent_{{timestamp}}@example.com
+[ACT] Click 'Submit' or 'Send Reset Link'
+[WAIT] Wait for response","[DOM] Same generic success message shown as for valid email (no user enumeration)
+[STATE] No indication whether email exists in system (security best practice)
+[DOM] No error message revealing 'user not found'","[NETWORK] POST to password reset endpoint returns HTTP 200 (same as valid email)
+[CONSOLE] no TypeError or JS errors","Different response for non-existent email vs valid email (user enumeration vulnerability); error message reveals user existence; console TypeError",none,E2E-AUTH-004,Automated
+AUTH-054,Email Case Sensitivity - Login with Different Case,Login > Email Handling,Medium,BL-AUTH-001,ECL-4.1,"Valid user account with known email; login page accessible","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Fill 'Email': {{USER_EMAIL}} converted to UPPERCASE
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for login response
+[ASSERT] Login succeeds with uppercase email
+[ACT] Click logout
+[WAIT] Wait for logout
+[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Fill 'Email': {{USER_EMAIL}} with mIxEd CaSe
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for login response","[STATE] Login succeeds regardless of email case (uppercase)
+[STATE] Login succeeds regardless of email case (mixed case)
+[STATE] Authenticated user profile shows original registered email
+[NAV] User redirected to account after successful login","[NETWORK] POST /connect/token returns HTTP 200 for both case variants
+[CONSOLE] no TypeError or JS errors","Login fails with different email casing; different behavior for uppercase vs lowercase; console TypeError",Logout after test,,Automated
+AUTH-055,Password with Leading and Trailing Spaces,Login > Password Handling,Medium,BL-AUTH-001,ECL-4.2,"Valid user account with known password; login page accessible","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': ' {{USER_PASSWORD}} ' (with leading and trailing spaces)
+[ACT] Click 'Sign In'
+[WAIT] Wait for login response
+[ASSERT] Note whether login succeeds or fails (document behavior)
+[NAV] Navigate to {{FRONT_URL}}/account/login (if needed)
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': '  ' (spaces only)
+[ACT] Click 'Sign In'
+[WAIT] Wait for validation or error response","[STATE] Password with spaces: either trimmed (login succeeds) or preserved (login fails) - document actual behavior
+[DOM] Spaces-only password shows validation error or login failure
+[STATE] Form does not submit with spaces-only password as valid","[NETWORK] POST /connect/token response observed for space-padded password
+[CONSOLE] no TypeError or JS errors","Spaces-only password accepted as valid; inconsistent trimming behavior between registration and login; console TypeError",none,,Automated
+AUTH-056,Special Characters in Name Fields During Registration,Registration > Data Integrity,Medium,BL-AUTH-001,ECL-7.2,"Registration page accessible; unique test email available","front_url={{FRONT_URL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Select 'Personal' account type
+[ACT] Fill 'First Name': ""O'Brien""
+[ACT] Fill 'Last Name': 'Müller'
+[ACT] Fill 'Email': specialname+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Fill 'Confirm Password': {{USER_PASSWORD}}
+[ACT] Check terms/conditions checkbox
+[ACT] Click 'Create Account'
+[WAIT] Wait for success or error
+[ASSERT] Registration succeeds without error
+[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Fill 'Email': specialname+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for redirect
+[NAV] Navigate to {{FRONT_URL}}/account/profile
+[WAIT] Wait for profile page to load","[STATE] Registration completes successfully with special characters in names
+[DOM] Profile page displays ""O'Brien"" correctly (apostrophe preserved)
+[DOM] Profile page displays 'Müller' correctly (umlaut preserved)
+[STATE] No data corruption or encoding issues in stored names
+[DOM] Name displayed in header/greeting matches registered name","[API] mutation errors[] is empty
+[CONSOLE] no TypeError or JS errors
+[NETWORK] POST registration endpoint returns HTTP 200","Registration fails with special characters; names display with encoding artifacts (Ã¼ instead of ü); apostrophe causes SQL injection or XSS; console TypeError",Delete test account via admin after test,,Automated
+AUTH-057,Token Replay After Logout - API Rejection,Session > Token Security,High,BL-AUTH-003,ECL-4.3,"Valid user account; ability to capture network requests","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}};back_url={{BACK_URL}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for successful login
+[ACT] Capture the access_token from /connect/token response in network tab
+[ASSERT] access_token captured successfully
+[ACT] Click logout button
+[WAIT] Wait for logout to complete
+[ASSERT] User is redirected to login or home page
+[ACT] Execute fetch request to {{BACK_URL}}/graphql with captured token in Authorization header
+[WAIT] Wait for API response","[STATE] Logout completes and user session is terminated
+[STATE] API call with old token returns 401 Unauthorized
+[STATE] Old token cannot access protected resources after logout
+[STATE] Token revocation is immediate (not delayed)","[NETWORK] POST /revoke/token called during logout returns HTTP 200
+[NETWORK] API call with revoked token returns HTTP 401
+[API] GraphQL response with old token returns authentication error
+[CONSOLE] no TypeError or JS errors","Old token still accepted after logout (token not revoked); API returns 200 with old token; logout does not call revocation endpoint; console TypeError",none,,Semi-Automated
+AUTH-058,RBAC - Customer Cannot Access Admin API,Authorization > RBAC,High,BL-AUTH-005,ECL-4.3,"Valid customer (non-admin) account; backend URL accessible","email={{USER_EMAIL}};password={{USER_PASSWORD}};back_url={{BACK_URL}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/account/login
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for successful login
+[ACT] Capture the access_token from /connect/token response
+[ACT] Execute fetch to {{BACK_URL}}/api/platform/settings with Authorization: Bearer {customer_token}
+[WAIT] Wait for API response
+[ASSERT] API returns 401 or 403
+[ACT] Execute fetch to {{BACK_URL}}/api/platform/security/users with Authorization: Bearer {customer_token}
+[WAIT] Wait for API response
+[ASSERT] API returns 401 or 403
+[ACT] Execute fetch to {{BACK_URL}}/api/platform/modules with Authorization: Bearer {customer_token}
+[WAIT] Wait for API response","[STATE] Customer token rejected by /api/platform/settings (401 or 403)
+[STATE] Customer token rejected by /api/platform/security/users (401 or 403)
+[STATE] Customer token rejected by /api/platform/modules (401 or 403)
+[STATE] No admin data exposed to customer-role token","[NETWORK] All admin API calls return 401 or 403 for customer token
+[API] No admin data leaked in response body
+[CONSOLE] no TypeError or JS errors","Admin API returns 200 for customer token (privilege escalation); admin data visible in response body; any admin endpoint accessible to customer; console TypeError",Logout after test,,Semi-Automated
+AUTH-059,RBAC - Anonymous Cannot Access Authenticated Endpoints,Authorization > RBAC,High,BL-AUTH-005,ECL-4.3,"No active session; backend URL accessible","back_url={{BACK_URL}};front_url={{FRONT_URL}}","[ACT] Execute fetch to {{BACK_URL}}/graphql with query { me { id email } } without Authorization header
+[WAIT] Wait for API response
+[ASSERT] Response returns null user or authentication error
+[ACT] Execute fetch to {{BACK_URL}}/api/platform/settings without Authorization header
+[WAIT] Wait for API response
+[ASSERT] API returns 401
+[ACT] Execute fetch to {{BACK_URL}}/graphql with mutation { addCartItem(...) } without Authorization header
+[WAIT] Wait for API response","[STATE] Anonymous GraphQL query for 'me' returns null or auth error
+[STATE] Anonymous REST call to /api/platform/settings returns 401
+[STATE] Anonymous mutation attempt is rejected or creates anonymous-scoped cart only
+[STATE] No authenticated user data exposed without token","[NETWORK] REST admin endpoints return 401 for anonymous requests
+[API] GraphQL 'me' query returns null data or errors[] for anonymous
+[CONSOLE] no TypeError or JS errors","Admin API accessible without auth token; authenticated user data returned to anonymous request; mutations execute with full privileges anonymously; console TypeError",none,,Automated
+AUTH-060,Protected Route Redirect - Unauthenticated Access to Account Pages,Authorization > Route Protection,High,BL-AUTH-006,ECL-4.2,"No active session; storefront accessible","front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/account (no login)
+[WAIT] Wait for redirect
+[ASSERT] Redirected to login page
+[NAV] Navigate to {{FRONT_URL}}/account/orders (no login)
+[WAIT] Wait for redirect
+[ASSERT] Redirected to login page
+[NAV] Navigate to {{FRONT_URL}}/checkout (no login)
+[WAIT] Wait for redirect
+[ASSERT] Redirected to login page
+[NAV] Navigate to {{FRONT_URL}}/company/members (no login)
+[WAIT] Wait for redirect","[NAV] /account redirects to login page
+[NAV] /account/orders redirects to login page
+[NAV] /checkout redirects to login page
+[NAV] /company/members redirects to login page
+[DOM] Login form visible after each redirect
+[STATE] No account data visible before authentication","[NETWORK] GET /account returns 302 redirect to login
+[NETWORK] GET /account/orders returns 302 redirect to login
+[CONSOLE] no TypeError or JS errors","Protected page renders without redirect; account data visible to unauthenticated user; 500 error instead of redirect; console TypeError",none,,Automated
+AUTH-061,Protected Route Redirect - Return to Original Page After Login,Authorization > Route Protection,High,BL-AUTH-006,ECL-4.2,"Valid user account; no active session","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/account/orders (no login)
+[WAIT] Wait for redirect to login page
+[ASSERT] Redirected to login page
+[ASSERT] Login URL contains return URL parameter pointing to /account/orders
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for redirect after login
+[ASSERT] User is redirected to originally requested page (/account/orders)","[NAV] After login user is redirected to /account/orders (not to home or dashboard)
+[DOM] Orders page content visible after redirect
+[STATE] Return URL parameter preserved through login flow
+[STATE] User does not land on default post-login page when return URL exists","[NETWORK] POST /connect/token returns HTTP 200
+[NETWORK] Final redirect targets /account/orders
+[CONSOLE] no TypeError or JS errors","User redirected to home instead of original page after login; return URL lost during authentication; 404 on return redirect; console TypeError",Logout after test,,Automated

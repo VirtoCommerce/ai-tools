@@ -55,8 +55,8 @@
       "name": "Authentication Tests",
       "file": "regression/suites/Frontend/02-authentication-tests.csv",
       "priority": "P1",
-      "testCount": 34,
-      "estimatedMinutes": 30,
+      "testCount": 61,
+      "estimatedMinutes": 45,
       "agent": "qa-frontend-expert",
       "tags": ["auth", "security", "sprint"]
     },
@@ -65,8 +65,8 @@
       "name": "Catalog & Search Tests",
       "file": "regression/suites/Frontend/03-catalog-search-tests.csv",
       "priority": "P1",
-      "testCount": 75,
-      "estimatedMinutes": 55,
+      "testCount": 101,
+      "estimatedMinutes": 75,
       "agent": "qa-frontend-expert",
       "tags": ["catalog", "search", "sprint"]
     },

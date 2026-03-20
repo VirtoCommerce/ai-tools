@@ -141,8 +141,8 @@ And logs a warning-level server event, does NOT show a broken UI state
 ### Technical Notes
 
 **API endpoints involved:**
-- `POST /xapi/graphql` — `products` query: add `effectiveMinPrice` field to `ProductType`
-- `POST /xapi/graphql` — `productConfiguration` query: used to compute effective price at index time
+- `POST /graphql` — `products` query: add `effectiveMinPrice` field to `ProductType`
+- `POST /graphql` — `productConfiguration` query: used to compute effective price at index time
 
 **VC modules affected:**
 - `VirtoCommerce.Xapi` — add `effectiveMinPrice` to `ProductType` schema and resolver
@@ -287,7 +287,7 @@ And no JavaScript error is thrown in the browser console
 ### Technical Notes
 
 **API endpoints involved:**
-- `POST /xapi/graphql` — `products` query: `sort` parameter must be passed on every request, including filter-triggered re-queries
+- `POST /graphql` — `products` query: `sort` parameter must be passed on every request, including filter-triggered re-queries
 - No API changes required; this is a frontend-only fix
 
 **VC modules affected:**
@@ -458,7 +458,7 @@ And no JavaScript error is thrown in the console
 ### Technical Notes
 
 **API endpoints involved:**
-- `POST /xapi/graphql` — `productConfiguration` query: no changes required for MVP (client-side sort only)
+- `POST /graphql` — `productConfiguration` query: no changes required for MVP (client-side sort only)
 - Future: add `sort` argument to `ConfigurationSection.options` field resolver
 
 **VC modules affected:**

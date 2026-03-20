@@ -1,19 +1,26 @@
-coupon_id,promo_id,code,max_uses_total,max_uses_per_customer,expiration_date,is_edge_case,edge_case_type,precondition,test_purpose,used_by
-COU-001,P01,QA10OFF,0,0,,false,,,Primary coupon — unlimited uses — 10% off cart,CPN-001 CPN-003 CPN-004 CPN-005 CPN-007 CPN-008 CPN-028 CPN-029 CPN-033 CPN-037 CPN-038 CPN-044 CPN-045 CPN-048
-COU-002,P02,QA,0,0,,false,,,Simple 5% coupon — unlimited uses,CPN-002 CPN-006 CPN-009 CPN-011 CPN-013 CPN-016 CPN-017 CPN-018 CPN-046
-COU-003,P03,SUPER,0,0,,false,,,20% off coupon — used in exclusivity and priority tests,CPN-042 CPN-046
-COU-004,P04,AIR,0,0,,false,,,Shipping discount coupon — 10% off shipping cost,CPN-012
-COU-005,P05,AGENT,0,0,,false,,,Welcome/registration coupon — 15% off,CPN-032
-COU-006,P06,E2E-COUPON,0,0,,false,,,Fixed $5 off — end-to-end checkout test,CPN-033 CPN-034
-COU-007,P07,WINE,0,0,,false,,,Category-scoped coupon — Wine products only,CPN-030
-COU-008,P08,PRIVATE4590,0,0,,false,,,Private coupon — not shown on storefront but manually enterable,CPN-027 CPN-035
-COU-009,P09,EXPIRED-TEST,0,0,,false,,,Coupon on inactive promotion — must be rejected,CPN-014
-COU-010,P15,QA-LIMITED,1,0,,true,max_total_uses,Use once as USER_EMAIL before test — Total use count must equal 1,Max 1 total use — second attempt must be rejected,CPN-039
-COU-011,P15,QA-PERCUST,100,1,,true,max_per_customer,Use once as USER_EMAIL before test — per-customer count must be 1,Max 1 use per customer — same user second attempt rejected,CPN-039
-COU-012,P15,QA-EXPDATE,0,0,tomorrow,true,coupon_expiry_future,,Coupon-level expiry set to tomorrow — must still work today,CPN-040
-COU-013,P15,QA-CPNEXPIRED,0,0,yesterday,true,coupon_expiry_past,,Coupon-level expiry in past — must be rejected even if promotion is active,CPN-040
-COU-014,P15,VALIDCODE123,0,0,,true,alphanumeric,,Valid alphanumeric-only code — must be accepted,CPN-041
-COU-015,P15,QA-MAXED,1,0,,true,maxed_out,Use once as USER_EMAIL before test — then total use count = max use number = 1,Pre-used coupon at total limit — second use must be rejected,CPN-039
-COU-016,P01,IMPORT-TEST1,0,0,,true,bulk_import,Import via Admin CSV upload — do not create manually,Bulk import test coupon 1,CPN-047
-COU-017,P01,IMPORT-TEST2,0,0,,true,bulk_import,Import via Admin CSV upload — do not create manually,Bulk import test coupon 2,CPN-047
-COU-018,P01,IMPORT-TEST3,0,0,,true,bulk_import,Import via Admin CSV upload — do not create manually,Bulk import test coupon 3,CPN-047
+coupon_id,promo_id,promo_name,code,gql_id,end_date,label,description,is_public,is_edge_case,edge_case_type,precondition,test_purpose,used_by
+COU-001,P01,QA Coupon English Name,QA10OFF,d763872c-d5ed-4bc4-99de-271324ef74ed,2026-12-31,,QA Coupon English Description,true,false,,,Primary coupon — unlimited uses — 10% off cart,CPN-001 CPN-003 CPN-004 CPN-005 CPN-007 CPN-008 CPN-013 CPN-028 CPN-029 CPN-033 CPN-037 CPN-038 CPN-044 CPN-045 CPN-048
+COU-002,P02,QA COUPON TOP,QA,0782f615-a1db-4ed5-9a04-b59beb9f81c2,,,top 20 $,true,false,,,Simple top-$20 coupon — unlimited uses,CPN-002 CPN-006 CPN-011 CPN-016 CPN-046
+COU-003,P03,20% OFF,SUPER,750bcee0-7241-4759-8994-7724ecbd6542,2026-12-31,,Super 20% discount for exclusivity and priority testing,true,false,,,20% off coupon — used in exclusivity and priority tests,CPN-042 CPN-046
+COU-004,P04,Coupon on discount for shipping,AIR,e1d82455-180b-4e6d-bae7-34645cf4035e,2026-12-31,,Coupon on discount for shipping,true,false,,,Shipping discount coupon — off shipping cost,CPN-009 CPN-006 CPN-012
+COU-005,P05,Register and get 15% for all,AGENT,c22f87ed-435e-4328-879c-4f87fcbafad8,2026-12-31,,For new customer get a 15% discount for all items,true,false,,,Welcome/registration coupon — 15% off,CPN-032 CPN-006
+COU-006,P06,[E2E Test] Coupon,E2E-COUPON,ea2ce7d6-f0ee-43f6-bdad-132a8edf5b61,2026-12-31,,E2E test coupon — $5 fixed dollar off cart,true,false,,,Fixed $5 off — end-to-end checkout test,CPN-033 CPN-034 CPN-006
+COU-007,P07,Wine Discount,WINE,b88c34f1-e1ac-4d37-8ee8-06dfbf087882,2026-12-31,,10% off Wine category products,true,false,,,Category-scoped coupon — Wine products only,CPN-030 CPN-006
+COU-008,P08,PRIVATE4590,PRIVATE4590,,,,Private coupon — not shown on storefront but manually enterable,false,false,,,Private coupon — IsPublic=false — must NOT appear on coupons page,CPN-027 CPN-035
+COU-009,P09,EXPIRED-TEST,EXPIRED-TEST,,,,Coupon on inactive promotion — must be rejected,false,false,,,Coupon on inactive promotion — must be rejected,CPN-014
+COU-010,P01,QA Coupon English Name,QA-LIMITED,d763872c-d5ed-4bc4-99de-271324ef74ed,,,,Max 1 total use — second attempt must be rejected,true,true,max_total_uses,Use once as USER_EMAIL before test — Total use count must equal 1,Max 1 total use — second attempt must be rejected,CPN-039
+COU-011,P01,QA Coupon English Name,QA-PERCUST,d763872c-d5ed-4bc4-99de-271324ef74ed,,,,Max 1 use per customer — same user second attempt rejected,true,true,max_per_customer,Use once as USER_EMAIL before test — per-customer count must be 1,Max 1 use per customer — same user second attempt rejected,CPN-039
+COU-012,P01,QA Coupon English Name,QA-EXPDATE,d763872c-d5ed-4bc4-99de-271324ef74ed,,,,Coupon-level expiry set to tomorrow — must still work today,true,true,coupon_expiry_future,,Coupon-level expiry set to tomorrow — must still work today,CPN-040
+COU-013,P01,QA Coupon English Name,QA-CPNEXPIRED,d763872c-d5ed-4bc4-99de-271324ef74ed,,,,Coupon-level expiry in past — must be rejected even if promotion is active,true,true,coupon_expiry_past,,Coupon-level expiry in past — must be rejected even if promotion is active,CPN-040
+COU-014,P01,QA Coupon English Name,VALIDCODE123,d763872c-d5ed-4bc4-99de-271324ef74ed,,,,Valid alphanumeric-only code — must be accepted,true,true,alphanumeric,,Valid alphanumeric-only code — must be accepted,CPN-041
+COU-015,P01,QA Coupon English Name,QA-MAXED,d763872c-d5ed-4bc4-99de-271324ef74ed,,,,Pre-used coupon at total limit — second use must be rejected,true,true,maxed_out,Use once as USER_EMAIL before test — then total use count = max use number = 1,Pre-used coupon at total limit — second use must be rejected,CPN-039
+COU-016,P01,QA Coupon English Name,IMPORT-TEST1,d763872c-d5ed-4bc4-99de-271324ef74ed,,,,Bulk import test coupon 1,true,true,bulk_import,Import via Admin CSV upload — do not create manually,Bulk import test coupon 1,CPN-047
+COU-017,P01,QA Coupon English Name,IMPORT-TEST2,d763872c-d5ed-4bc4-99de-271324ef74ed,,,,Bulk import test coupon 2,true,true,bulk_import,Import via Admin CSV upload — do not create manually,Bulk import test coupon 2,CPN-047
+COU-018,P01,QA Coupon English Name,IMPORT-TEST3,d763872c-d5ed-4bc4-99de-271324ef74ed,,,,Bulk import test coupon 3,true,true,bulk_import,Import via Admin CSV upload — do not create manually,Bulk import test coupon 3,CPN-047
+COU-019,P10,QA Fixed Dollar Off - EN,FIXED5,33d8e1a0-8e85-4245-9013-360d36d18f58,2026-12-31,,Fixed $5 dollar off cart subtotal -  EN,true,false,,,Fixed $5 off — secondary coupon for combination/stack tests,CPN-029 CPN-046
+COU-020,P11,QA Free Shipping,FREESHIP,6a43e19f-40b7-47ff-b3e3-8979a6f126a8,2026-12-31,,Free shipping — $999 off shipping cost,true,false,,,Free shipping coupon — verify shipping cost becomes $0,CPN-012
+COU-021,P12,QA Cart Threshold,THRESH50,e3ef39d1-1e91-4a0a-af4a-9761b1e4291c,2026-12-31,,10% off cart when subtotal >= $50,true,false,,,Cart threshold coupon — only applies when cart >= $50,CPN-028 CPN-029
+COU-022,P13,QA Exclusivity Test - Globally Exclusive,EXCLUSIVE10,d970f0bc-7abd-4255-be64-ee1de8708d11,2026-12-31,,Globally exclusive — blocks all other coupons,true,false,,,Globally exclusive coupon — used in exclusivity tests,CPN-042
+COU-023,P14,QA Category Percent,"CAT20#%$$^%%$&^%",f61031c2-d6ce-48e9-87a7-d670a754b157,2026-12-31,,20% off specific product category,true,true,special_chars,Coupon code contains special characters — exists in live env,Coupon with special chars in code — verify it works in copy and apply,CPN-041 CPN-L01
+COU-024,P15,Test 100%,super,320499a8-74f8-4afe-9f75-b8731df00ed8,,,,(lowercase) test coupon — may be duplicate of SUPER,true,true,case_sensitivity,,Lowercase coupon code — verify case handling on storefront,CPN-015
+COU-025,P16,Wine as a gift,wine,e4ccb0c0-baf5-4bab-bb9b-fd383c2b6f97,,,COTE SOLEIL Merlot 0.75L: Elegance in Every Sip,true,true,case_sensitivity,,Lowercase coupon code for wine gift promotion,CPN-015

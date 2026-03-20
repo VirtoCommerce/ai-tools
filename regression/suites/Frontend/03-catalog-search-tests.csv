@@ -394,7 +394,7 @@ SRCH-001,Search - Basic Query,Search > Basic,High,BL-SEARCH-001,ECL-14.2,Catalog
 [ASSERT] Verify results page displays products","[NAV] Browser navigates to search results page (e.g., /search?q=laptop)
 [DOM] Matching products displayed in grid
 [DOM] Result count visible
-[STATE] Search input retains 'laptop'","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200
+[STATE] Search input retains 'laptop'","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Spinner >5s; 0 products returned unexpectedly; results page not loading; 4xx on searchProducts; console TypeError",none,regression-qa-theme-26.csv,Automated
 SRCH-002,Search - Suggestions Dropdown,Search > Suggestions,Medium,BL-SEARCH-002,ECL-14.2,Search configured with suggestions enabled,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search bar
@@ -402,7 +402,7 @@ SRCH-002,Search - Suggestions Dropdown,Search > Suggestions,Medium,BL-SEARCH-002
 [WAIT] Wait for suggestions dropdown
 [ASSERT] Verify dropdown appears with suggestions","[DOM] Suggestions dropdown appears below search input
 [DOM] Suggestion items match partial query 'lap'
-[STATE] Clicking a suggestion populates input and executes search","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 for suggestion query
+[STATE] Clicking a suggestion populates input and executes search","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for suggestion query
 [CONSOLE] no TypeError or JS errors","Suggestions dropdown not appearing; suggestions unrelated to query; clicking suggestion not executing search; console TypeError",none,regression-qa-theme-26.csv,Automated
 SRCH-003,Search - No Results,Search > Edge Cases,Medium,"BL-SEARCH-003",,No preconditions — nonsense query,"url={{FRONT_URL}}; query=xyzabc123","[NAV] Navigate to {{FRONT_URL}}
 [ACT] fill 'Search': 'xyzabc123'
@@ -410,7 +410,7 @@ SRCH-003,Search - No Results,Search > Edge Cases,Medium,"BL-SEARCH-003",,No prec
 [WAIT] Wait for results page
 [ASSERT] Verify empty state / no results UI","[DOM] No results message displayed (not blank page, not error page)
 [DOM] Suggestions or alternatives shown if available
-[STATE] No JavaScript errors or crashes","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 (not 5xx)
+[STATE] No JavaScript errors or crashes","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 (not 5xx)
 [CONSOLE] no TypeError or JS errors","No-results message absent; page showing 500 error; console TypeError on empty result set",none,regression-qa-theme-26.csv,Automated
 SRCH-004,Search - Special Characters,Search > Edge Cases,Medium,"BL-SEARCH-003",ECL-8.1,No preconditions,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] fill 'Search': 'test & test'; [KEY] press [Enter]; [WAIT]
@@ -420,7 +420,7 @@ SRCH-004,Search - Special Characters,Search > Edge Cases,Medium,"BL-SEARCH-003",
 [NAV] Navigate back; [ACT] fill 'Search': 'item #123'; [KEY] press [Enter]; [WAIT]
 [ASSERT] Verify no errors","[STATE] Special characters (& ( ) #) handled without errors or crashes
 [STATE] Results page or no-results state shown for each query
-[DOM] No error page or stack trace displayed","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 for each query
+[DOM] No error page or stack trace displayed","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for each query
 [CONSOLE] no TypeError or JS errors","Any query causing 5xx or JS crash; console TypeError; error page shown instead of results/no-results",none,regression-qa-theme-26.csv,Automated
 SRCH-005,Search - Within Category,Search > Scoped,Medium,BL-SEARCH-001,,Inside a specific category page,"url={{FRONT_URL}}","[NAV] Navigate to a specific category page on {{FRONT_URL}}
 [ACT] Use the search bar while on the category page
@@ -428,7 +428,7 @@ SRCH-005,Search - Within Category,Search > Scoped,Medium,BL-SEARCH-001,,Inside a
 [WAIT] Wait for scoped results
 [ASSERT] Verify results are scoped to current category","[DOM] Search results scoped to the current category context
 [DOM] Clear indication of search scope (e.g., within category label)
-[STATE] Products from outside the category not in results","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 with category scope
+[STATE] Products from outside the category not in results","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with category scope
 [CONSOLE] no TypeError or JS errors","Results not scoped to category; products from all categories shown; no scope indicator; console TypeError",none,regression-qa-theme-26.csv,Automated
 SRCH-006,Search - Filters on Results,Search > Filters,High,"BL-SEARCH-001, BL-CAT-002",,Search returns multiple products,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a search query that returns 5+ products
 [WAIT] Wait for results page
@@ -438,7 +438,7 @@ SRCH-006,Search - Filters on Results,Search > Filters,High,"BL-SEARCH-001, BL-CA
 [WAIT] Wait for combined results
 [ASSERT] Verify combined filter/search results are correct","[DOM] Facet filters available in sidebar on search results page
 [MATH] Combined filters narrow result set (AND logic)
-[MATH] Result count updates after each filter","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 with filters applied
+[MATH] Result count updates after each filter","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with filters applied
 [NETWORK] no 4xx/5xx on filter request
 [CONSOLE] no TypeError or JS errors","Sidebar filters absent on search results page; filters not narrowing results; result count unchanged after filter; 4xx on filtered search; console TypeError",none,regression-qa-theme-26.csv,Automated
 SRCH-007,Search - Sorting Results,Search > Sorting,Medium,"BL-CAT-005, BL-SEARCH-001",,Search returns multiple products with varying prices,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a search returning multiple products
@@ -460,7 +460,7 @@ SRCH-008,Search - History,Search > History,Low,BL-SEARCH-002,,Previous searches 
 [WAIT] Wait for search to execute
 [ASSERT] Verify search executes with that term","[DOM] Search history items displayed when search bar focused
 [STATE] Clicking a history item executes the search
-[STATE] History can be cleared on request","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 on history item click
+[STATE] History can be cleared on request","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 on history item click
 [CONSOLE] no TypeError or JS errors","History not showing prior searches; history item click not executing search; console TypeError",none,regression-qa-theme-26.csv,Automated
 SRCH-009,Organization Search - Find Org,Search > Organization,Medium,BL-SEARCH-001,,Multiple organizations exist; user has org search access,"url={{FRONT_URL}}; email={{ORG_USER_EMAIL}}; password={{ORG_USER_PASSWORD}}","[NAV] Navigate to organization search on {{FRONT_URL}}
 [ACT] fill organization name search field with a known org name
@@ -501,7 +501,7 @@ SRCH-NEW-002,Search Bar - Autocomplete Shows Product Previews While Typing,Searc
 [DOM] Each product entry shows thumbnail image, product name (clickable link), and price
 [DOM] At least 4 products shown in autocomplete
 [DOM] 'Hints' section remains visible above Products section
-[DOM] Clear (X) button appears in input when text is present","[NETWORK] POST /xapi/graphql (searchProducts) fires with keyword: 'hoodie'
+[DOM] Clear (X) button appears in input when text is present","[NETWORK] POST /graphql (searchProducts) fires with keyword: 'hoodie'
 [CONSOLE] no TypeError or JS errors","Autocomplete products not appearing after typing; fewer than expected products shown; Hints section disappearing; no GraphQL call fired; console TypeError","N/A","E2E-SEARCH-005, SRCH-002",Manual
 SRCH-NEW-003,Search Bar - Hints Section Shows Prior Searches on Focus,Search > Hints,High,BL-SEARCH-002,,At least 2 prior searches exist in session history (e.g., 'laptop' and 'hoodie' visible as hints),"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} (ensure prior searches 'laptop' and 'hoodie' in session)
 [ACT] Click the search input
@@ -511,7 +511,7 @@ SRCH-NEW-003,Search Bar - Hints Section Shows Prior Searches on Focus,Search > H
 [WAIT] Wait for navigation","[DOM] Section labeled exactly 'Hints'
 [DOM] Each hint is a button with a search icon and query text
 [NAV] Clicking 'laptop' hint populates input with 'laptop' and navigates to /search?q=laptop
-[DOM] Search results for 'laptop' displayed","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 for 'laptop'
+[DOM] Search results for 'laptop' displayed","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for 'laptop'
 [CONSOLE] no TypeError or JS errors","Hints section absent when prior searches exist; hint buttons not clickable; clicking hint not navigating; console TypeError","N/A","E2E-SEARCH-003, SRCH-008",Manual
 SRCH-NEW-004,Search Bar - Clear Button Resets Input to Empty,Search > Input Controls,High,BL-SEARCH-002,,Storefront open at any page,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
@@ -552,7 +552,7 @@ SRCH-NEW-007,Search - Submit via Enter Key,Search > Submission,Critical,"BL-SEAR
 [ASSERT] Verify results page content","[NAV] Browser navigates to /search?q=hoodie
 [DOM] Results page heading shows result count with 'hoodie' bold/emphasized
 [STATE] Search input retains 'hoodie' on results page
-[DOM] Products displayed in grid view by default","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200
+[DOM] Products displayed in grid view by default","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Results page not loading on Enter; wrong URL (not /search?q=hoodie); heading not showing result count; products not in grid view; console TypeError",none,"E2E-SEARCH-001, SRCH-001",Manual
 SRCH-NEW-008,Search - Submit via Search Button (Magnifier Icon),Search > Submission,Critical,"BL-SEARCH-001, BL-SEARCH-005",,Storefront open at any page,"url={{FRONT_URL}}; query=hoodie","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
@@ -560,13 +560,13 @@ SRCH-NEW-008,Search - Submit via Search Button (Magnifier Icon),Search > Submiss
 [ACT] Click the 'Search' button (magnifier icon)
 [WAIT] Wait for results page to load
 [ASSERT] Verify results page identical to Enter key submission","[NAV] Browser navigates to /search?q=hoodie
-[DOM] Results page loads with same products and count as SRCH-NEW-007","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200
+[DOM] Results page loads with same products and count as SRCH-NEW-007","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Magnifier button not clickable; different results from Enter key; console TypeError",none,,Manual
 SRCH-NEW-009,Search Results - Result Count in Heading Is Accurate,Search > Results Page,High,BL-SEARCH-001,,"Navigate to /search?q=hoodie","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results page to fully render
 [ASSERT] Read the h1 page heading
 [ASSERT] Count the product cards rendered in the grid","[DOM] h1 heading shows a result count number
-[MATH] Count in heading matches actual number of visible product cards","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200
+[MATH] Count in heading matches actual number of visible product cards","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Heading count mismatches visible card count; heading missing count; console TypeError",none,,Manual
 SRCH-NEW-010,Search Results - Grid and List View Toggle,Search > Results Page > Layout,High,BL-CAT-001,,"Navigate to /search?q=hoodie; 4+ results expected","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results
@@ -634,7 +634,7 @@ SRCH-NEW-014,Search Results - Sidebar Facet Filter,Search > Filters > Sidebar,Hi
 [ASSERT] Verify chip removed; full result count restored","[DOM] Sidebar facets expandable
 [DOM] Selecting a facet value creates a chip in chip bar
 [MATH] Product list updates to only show matching color items
-[STATE] Closing chip removes filter and restores original count","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 with facet filter
+[STATE] Closing chip removes filter and restores original count","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with facet filter
 [NETWORK] no 4xx/5xx on filter request
 [CONSOLE] no TypeError or JS errors","Sidebar facets not expandable; chip not appearing after facet selection; product count not changing; chip close not restoring results; console TypeError",none,SRCH-006,Manual
 SRCH-NEW-015,Search Results - Reset Filters Preserves Search Term,Search > Filters > Reset,High,"BL-CAT-004, BL-SEARCH-001",,"Navigate to /search?q=hoodie; apply sidebar facet filter","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
@@ -659,7 +659,7 @@ SRCH-NEW-016,Search - No Results State UI Validation,Search > No Results,Critica
 [ASSERT] Verify no sidebar filters displayed","[DOM] h1 shows sorry/no-results message with the query term displayed (bold or highlighted)
 [DOM] 'There are no results found' message visible
 [DOM] 'Reset search' button present
-[STATE] No product cards or sidebar filter panel shown","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 (not 5xx)
+[STATE] No product cards or sidebar filter panel shown","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 (not 5xx)
 [CONSOLE] no TypeError or JS errors","Error page instead of no-results UI; product cards appearing for nonsense query; Reset search button absent; console TypeError",none,"E2E-SEARCH-004, SRCH-003",Manual
 SRCH-NEW-017,Search - Reset Search Button Clears Query,Search > No Results,High,BL-SEARCH-003,,"On no-results page /search?q=xyzqwerty9876543","url={{FRONT_URL}}/search?q=xyzqwerty9876543","[NAV] Navigate to {{FRONT_URL}}/search?q=xyzqwerty9876543
 [WAIT] Wait for no-results page
@@ -700,7 +700,7 @@ SRCH-NEW-021,Search - SQL Injection Attempt,Search > Security,High,BL-SEARCH-004
 [KEY] press [Enter]
 [WAIT] Wait for response","[STATE] No database error or stack trace shown
 [STATE] Query handled gracefully — no-results or results page
-[STATE] API returns HTTP 200","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200 (not 500)
+[STATE] API returns HTTP 200","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 (not 500)
 [NETWORK] no 5xx responses
 [CONSOLE] no script execution errors
 [CONSOLE] no TypeError or JS errors","Database error or stack trace visible in page; 5xx from server; JS crash; console TypeError",none,E2E-SEC-002,Manual
@@ -723,7 +723,7 @@ SRCH-NEW-023,Search - Direct URL Navigation with Query Parameter,Search > URL Na
 [ASSERT] Verify filters and sort are functional","[NAV] Results page loads without requiring homepage visit first
 [STATE] Search input pre-populated with 'hoodie' from URL parameter
 [DOM] Correct products and count displayed
-[DOM] Filters and sort controls functional","[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200
+[DOM] Filters and sort controls functional","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Page not loading from direct URL; search input not pre-populated; products not showing; console TypeError",none,E2E-SEARCH-001,Manual
 SRCH-NEW-024,Search - Empty Query Parameter Loads Catalog,Search > URL Navigation,Medium,BL-SEARCH-003,,Storefront is accessible,"url={{FRONT_URL}}/search?q=","[NAV] Navigate to {{FRONT_URL}}/search?q= (empty q parameter)
 [WAIT] Wait for page to load","[NAV] Page loads without JavaScript or server error
@@ -835,7 +835,7 @@ SRCH-NEW-035,Search to Cart - Full End-to-End Flow,Search > E2E,Critical,"BL-SEA
 [DOM] 'Vintage Colorado Hoodie' visible at $54.00
 [MATH] Cart badge increments by 1 after add-to-cart
 [DOM] Cart page shows correct product name, price ($54.00), and quantity (1)","[NETWORK] POST add-to-cart returns HTTP 200
-[NETWORK] POST /xapi/graphql (searchProducts) returns HTTP 200
+[NETWORK] POST /graphql (searchProducts) returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Search not finding product; Add to cart fails; cart badge not incrementing; cart showing wrong price; cart empty after add; console TypeError","Remove 'Vintage Colorado Hoodie' from cart after test","E2E-SEARCH-001, BL-CART",Manual
 SRCH-NEW-036,Search - Browser Back Returns to Results Page,Search > Navigation,High,BL-SEARCH-001,,User navigated from search results to a PDP,"url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results page
@@ -847,3 +847,262 @@ SRCH-NEW-036,Search - Browser Back Returns to Results Page,Search > Navigation,H
 [STATE] Search input still shows 'hoodie'
 [DOM] Product cards visible","[NETWORK] no 4xx/5xx on back navigation
 [CONSOLE] no TypeError or JS errors","Browser Back going to homepage instead of search results; search input cleared; products not re-rendering; console TypeError",none,E2E-SEARCH-001,Manual
+CAT-038,B2B Virtual Catalog Navigation - Org User Sees Assigned Products,Catalog > Virtual Catalog,High,"BL-CAT-002, BL-CAT-005",,Org user logged in; virtual catalog assigned to org with subset of products; physical catalog has additional products not in virtual catalog,"url={{FRONT_URL}}; email={{ORG_USER_EMAIL}}; password={{ORG_USER_PASSWORD}}","[NAV] Log in as org user at {{FRONT_URL}} using {{ORG_USER_EMAIL}} / {{ORG_USER_PASSWORD}}
+[NAV] Navigate to main catalog page
+[WAIT] Wait for product listing to load
+[ASSERT] Verify only products assigned to the org's virtual catalog are displayed
+[ACT] Search for a product known to exist in the physical catalog but NOT in the virtual catalog
+[WAIT] Wait for search results
+[ASSERT] Verify the excluded product does not appear in results
+[ACT] Search for a product known to exist in the virtual catalog
+[WAIT] Wait for search results
+[ASSERT] Verify the included product appears in results","[DOM] Product listing shows only products from the virtual catalog assigned to the org
+[STATE] Products outside the virtual catalog are not visible in search or browse
+[DOM] Product cards display correct prices from org-specific price list
+[MATH] Product count matches expected virtual catalog assignment","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with correct catalog scope
+[API] Verify storeId and catalogId in GraphQL request match org's virtual catalog
+[CONSOLE] no TypeError or JS errors","Products from physical catalog leaking into virtual catalog view; org user seeing full catalog instead of virtual subset; search returning products outside virtual catalog scope; console TypeError",none,"E2E-CAT-007, GAP-CS-01",Generated
+CAT-039,Virtual Catalog Inheritance - Physical Catalog Products Appear in Virtual View,Catalog > Virtual Catalog,High,"BL-CAT-002, BL-CAT-005",,Admin has configured a virtual catalog that inherits products from a physical catalog; org user has access to the virtual catalog,"url={{FRONT_URL}}; email={{ORG_USER_EMAIL}}; password={{ORG_USER_PASSWORD}}","[NAV] Log in as org user at {{FRONT_URL}}
+[NAV] Navigate to a category that exists in the virtual catalog (inherited from physical)
+[WAIT] Wait for category page to load
+[ASSERT] Verify products from the physical catalog appear under the virtual catalog category
+[ASSERT] Verify product details (name, price, image) match the physical catalog source
+[ACT] Click on an inherited product to open its PDP
+[WAIT] Wait for PDP to load
+[ASSERT] Verify PDP loads with correct product information
+[ASSERT] Verify breadcrumbs reflect the virtual catalog category hierarchy (not physical)","[DOM] Inherited products display in the virtual catalog category listing
+[DOM] Product name, price, and image match the physical catalog source data
+[NAV] PDP loads successfully for inherited products
+[DOM] Breadcrumbs show virtual catalog path, not physical catalog path
+[STATE] URL reflects virtual catalog category structure","[NETWORK] GET product PDP returns HTTP 200
+[API] GraphQL product query returns catalogId matching virtual catalog
+[CONSOLE] no TypeError or JS errors","Inherited products missing from virtual catalog; product details differing from physical source; breadcrumbs showing physical catalog path; PDP returning 4xx; console TypeError",none,"E2E-CAT-007, GAP-CS-01",Generated
+CAT-040,PDP SEO - Meta Tags and Open Graph Tags,Catalog > SEO,Medium,BL-CAT-006,,Product exists with SEO info configured (meta title and description set in admin),"url={{FRONT_URL}}","[NAV] Navigate to a product detail page on {{FRONT_URL}} (e.g., a product with known SEO data)
+[WAIT] Wait for PDP to fully render
+[ACT] Open browser DevTools Elements panel
+[ASSERT] Inspect <head> section for meta tags
+[ASSERT] Verify meta title tag matches product name or configured SEO title
+[ASSERT] Verify meta description tag is present and non-empty
+[ASSERT] Verify canonical URL tag is present and points to correct PDP URL
+[ASSERT] Verify og:title, og:description, og:image, og:url tags are present
+[ASSERT] Verify og:image points to a valid product image URL","[DOM] <title> or meta[name=title] matches product SEO title
+[DOM] meta[name=description] is present with meaningful content (not empty or placeholder)
+[DOM] link[rel=canonical] present with href matching current PDP URL (no query params)
+[DOM] meta[property=og:title] present and matches product name
+[DOM] meta[property=og:description] present and non-empty
+[DOM] meta[property=og:image] present with valid image URL
+[DOM] meta[property=og:url] present and matches canonical URL","[NETWORK] og:image URL returns HTTP 200 (image is accessible)
+[CONSOLE] no TypeError or JS errors","Meta title missing or showing generic site title; meta description empty; canonical URL absent or pointing to wrong page; og:tags missing; og:image returning 404; console TypeError",none,"Checklist #4 SEO, GAP-CS-02",Generated
+CAT-041,Category Page SEO - JSON-LD BreadcrumbList and Canonical URL,Catalog > SEO,Medium,"BL-CAT-001, BL-CAT-006",,Category page exists with at least one level of subcategory hierarchy,"url={{FRONT_URL}}","[NAV] Navigate to a subcategory page on {{FRONT_URL}} (e.g., a category with parent > child structure)
+[WAIT] Wait for page to fully render
+[ACT] Open browser DevTools Elements panel
+[ASSERT] Inspect <head> for canonical URL
+[ASSERT] Search for <script type=application/ld+json> in page source
+[ASSERT] Verify JSON-LD contains @type: BreadcrumbList
+[ASSERT] Verify breadcrumb items match the visible breadcrumb trail on page
+[ASSERT] Verify each breadcrumb item has name and item (URL) properties","[DOM] link[rel=canonical] present with href matching current category URL
+[DOM] JSON-LD script tag present with @type: BreadcrumbList
+[DOM] BreadcrumbList itemListElement array has correct number of items matching visible breadcrumbs
+[DOM] Each itemListElement has @type: ListItem, position (integer), name, and item (URL)
+[DOM] Breadcrumb positions are sequential starting from 1
+[FORMAT] JSON-LD is valid JSON (no parse errors)","[NETWORK] GET category page returns HTTP 200
+[CONSOLE] no JSON parse errors from structured data
+[CONSOLE] no TypeError or JS errors","Canonical URL missing or pointing to wrong category; JSON-LD absent from page; BreadcrumbList items not matching visible breadcrumbs; JSON-LD parse errors; console TypeError",none,"Checklist #4 SEO, GAP-CS-02",Generated
+CAT-042,Multi-Level Category Navigation with Breadcrumbs,Catalog > Navigation,Medium,BL-CAT-001,,Category hierarchy exists with at least 3 levels (top-level > subcategory > sub-subcategory),"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} main catalog page
+[ACT] Click on a top-level category in the navigation menu
+[WAIT] Wait for top-level category page to load
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level Category]
+[ASSERT] Verify URL slug matches category name
+[ACT] Click on a subcategory within the top-level category
+[WAIT] Wait for subcategory page to load
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level] > [Subcategory]
+[ASSERT] Verify URL updates to include subcategory slug
+[ACT] Click on a sub-subcategory if available
+[WAIT] Wait for sub-subcategory page to load
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level] > [Sub] > [Sub-Sub]
+[ACT] Click the top-level breadcrumb link
+[WAIT] Wait for navigation
+[ASSERT] Verify navigation back to top-level category page","[DOM] Breadcrumb trail updates correctly at each navigation level
+[NAV] URL slug updates to reflect current category hierarchy at each level
+[DOM] Category heading matches the currently selected category at each level
+[DOM] Each breadcrumb item is a clickable link (except the current page)
+[NAV] Clicking a breadcrumb ancestor navigates to that level
+[DOM] Products displayed are relevant to the current category level","[NETWORK] GET each category page returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Breadcrumbs not updating at deeper levels; URL not reflecting category hierarchy; breadcrumb links not navigable; heading mismatching current category; console TypeError",none,"Checklist #3, GAP-CS-03",Generated
+CAT-043,Empty Category Handling - No Products Message,Catalog > Navigation,Medium,"BL-CAT-004, BL-CAT-001","ECL-3.1",A category exists with zero products assigned (or all products are deactivated/out of stock),"url={{FRONT_URL}}","[NAV] Navigate to a category page with no products on {{FRONT_URL}}
+[WAIT] Wait for page to fully render
+[ASSERT] Verify a 'No products found' or equivalent empty state message is displayed
+[ASSERT] Verify the page does NOT show a blank/empty content area with no explanation
+[ASSERT] Verify the filter panel is hidden or shows no filter options
+[ASSERT] Verify pagination controls are not displayed
+[ASSERT] Check browser console for JavaScript errors","[DOM] Empty state message visible (e.g., 'No products found' or 'No items in this category')
+[DOM] No blank page — user understands why no products are shown
+[DOM] Filter panel is either hidden or disabled (no filterable values)
+[DOM] No pagination controls displayed for empty result set
+[DOM] Category heading still shows correct category name
+[NAV] Breadcrumbs still functional for navigation back","[NETWORK] GET category page returns HTTP 200 (not 4xx)
+[CONSOLE] no TypeError or JS errors
+[CONSOLE] no Vue hydration warnings","Blank page with no message; filter panel showing options for zero products; pagination showing for empty set; JS errors on empty category; console TypeError",none,"Checklist #3, ECL-3.1, GAP-CS-04",Generated
+CAT-044,Configurable Product PDP - Required Sections Present,Catalog > Configurable Product,High,BL-CAT-006,,Configurable product exists with multiple configuration sections (Product, Text, File types),"url={{FRONT_URL}}/products-with-options/configurable-caps-shirts/configurable-hat","[NAV] Navigate to {{FRONT_URL}}/products-with-options/configurable-caps-shirts/configurable-hat
+[WAIT] Wait for PDP to fully load
+[ASSERT] Verify product name 'Configurable Hat' is displayed
+[ASSERT] Verify price is displayed (not zero or placeholder)
+[ASSERT] Verify product description section is visible
+[ASSERT] Verify configuration sections are rendered below product info
+[ASSERT] Verify each required configuration section shows a label and selection options
+[ASSERT] Verify 'Customize' or 'Configure' call-to-action is present
+[SCROLL] Scroll down to verify all sections are rendered
+[ASSERT] Verify total price updates as configuration options are selected","[DOM] Product name displayed correctly
+[DOM] Base price displayed (not $0 or placeholder)
+[DOM] Configuration sections rendered with labels matching admin-defined section names
+[DOM] Required sections marked with required indicator (asterisk or similar)
+[DOM] Optional sections show 'None' as a selectable option
+[DOM] Product images loaded
+[STATE] Total price dynamically updates when options are selected","[NETWORK] POST /graphql (productConfiguration) returns HTTP 200
+[NETWORK] All image requests return HTTP 200
+[CONSOLE] no TypeError or JS errors","Configuration sections not rendering; price showing $0; required sections not marked; options not loading; total price not updating; console TypeError","N/A","E2E-CAT-005, GAP-CS-05",Generated
+CAT-045,Configurable Product - Variation Selection Updates Price and SKU,Catalog > Configurable Product,High,BL-CAT-006,,Configurable product with variation section exists; test product: 'Bike with options' (SKU: ZER-64605169),"url={{FRONT_URL}}; product_id=f16d3e8f-6c86-4679-bcfd-100a0b164421","[NAV] Navigate to the 'Bike with options' PDP on {{FRONT_URL}} (or search for 'Bike with options')
+[WAIT] Wait for PDP and configuration sections to load
+[ASSERT] Verify the variation configuration section is present (e.g., 'Choose your bike variant')
+[ACT] Select the first variation option (e.g., BIKE-RED-M)
+[WAIT] Wait for price and details to update
+[ASSERT] Verify price updates to reflect the selected variation's price
+[ASSERT] Verify SKU or variant identifier updates
+[ACT] Select the second variation option (e.g., BIKE-BLUE-L)
+[WAIT] Wait for price and details to update
+[ASSERT] Verify price changes to the second variation's price
+[ASSERT] Verify SKU updates to the second variation
+[ACT] Click 'Add to cart' with the selected configuration
+[WAIT] Wait for cart confirmation
+[ASSERT] Verify cart shows the configured product with correct variation and price","[DOM] Variation section displays available options from parent product's variations
+[STATE] Selecting a variation updates the displayed price to that variation's price
+[STATE] SKU or variant label changes on selection
+[MATH] Price difference between variations matches expected price list values
+[DOM] Cart line item shows configured product with correct variation details
+[STATE] Cart total reflects the configured product's price","[NETWORK] POST /graphql (productConfiguration) returns correct variation data
+[NETWORK] POST add-to-cart returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Variation section not showing options; price not updating on selection; wrong SKU displayed; cart showing base product instead of configured variant; console TypeError","Remove configured product from cart after test","E2E-CAT-005, VCST-4765, GAP-CS-05",Generated
+CAT-046,PDP Tabs - Description and Specifications and Reviews,Catalog > Product,Medium,BL-CAT-006,,Product exists with description content and specification properties defined,"url={{FRONT_URL}}","[NAV] Navigate to a product detail page on {{FRONT_URL}} that has description, specifications, and reviews
+[WAIT] Wait for PDP to fully load
+[ASSERT] Verify tab navigation is present (Description, Specifications, Reviews or similar)
+[ACT] Click the 'Description' tab
+[WAIT] Wait for content to render
+[ASSERT] Verify description content is visible and non-empty
+[ACT] Click the 'Specifications' tab
+[WAIT] Wait for content to render
+[ASSERT] Verify specifications table/list is visible with property name-value pairs
+[ACT] Click the 'Reviews' tab
+[WAIT] Wait for content to render
+[ASSERT] Verify reviews section is visible (reviews list or empty state with prompt to write review)","[DOM] Tab navigation visible with at least Description and Specifications tabs
+[DOM] Description tab shows product description HTML content (not empty)
+[DOM] Specifications tab shows property name-value pairs in structured format
+[DOM] Reviews tab shows review list or 'No reviews yet' empty state
+[STATE] Only one tab content area visible at a time
+[STATE] Active tab has visual indicator (highlighted, underlined, or bold)","[NETWORK] no 4xx/5xx when switching tabs
+[CONSOLE] no TypeError or JS errors
+[CONSOLE] no Vue hydration warnings on tab switch","Tabs not rendering; description content empty; specifications not loading; reviews tab crashing; multiple tab contents visible simultaneously; console TypeError",none,"E2E-CAT-005, GAP-CS-06",Generated
+SRCH-NEW-037,Search Typo Tolerance - Misspelled Query Returns Results,Search > Fuzzy Matching,High,"BL-SRCH-002","ECL-3.1",Catalog has products matching 'laptop' and 'hoodie',"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click search input
+[ACT] fill 'Search': 'laptp'
+[KEY] press [Enter]
+[WAIT] Wait for results page
+[ASSERT] Verify results page shows products related to 'laptop' OR a 'Did you mean' suggestion
+[NAV] Navigate back to {{FRONT_URL}}
+[ACT] Click search input
+[ACT] fill 'Search': 'hoddie'
+[KEY] press [Enter]
+[WAIT] Wait for results page
+[ASSERT] Verify results page shows products related to 'hoodie' OR a 'Did you mean' suggestion","[STATE] Misspelled 'laptp' returns laptop-related products or shows a correction suggestion
+[STATE] Misspelled 'hoddie' returns hoodie-related products or shows a correction suggestion
+[DOM] Results page does not show a blank error page for typos
+[DOM] If 'Did you mean' is shown, the suggestion is clickable and navigates to corrected results","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for both typo queries
+[CONSOLE] no TypeError or JS errors","Both typo queries returning 0 results with no suggestion; error page for misspelled queries; 'Did you mean' link not functional; console TypeError",none,"E2E-SEARCH-004, GAP-CS-07",Generated
+SRCH-NEW-038,Search Partial Word Match - Short Query Returns Relevant Products,Search > Fuzzy Matching,High,"BL-SRCH-002","ECL-3.1",Catalog has products with 'hoodie' in their name,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click search input
+[ACT] fill 'Search': 'hoo'
+[WAIT] Wait for autocomplete dropdown to appear
+[ASSERT] Verify autocomplete shows products containing 'hoo' (e.g., hoodie products)
+[KEY] press [Enter]
+[WAIT] Wait for search results page
+[ASSERT] Verify results page displays products with names containing 'hoo'
+[ASSERT] Verify result count is greater than 0","[DOM] Autocomplete dropdown shows hoodie-related products for partial query 'hoo'
+[DOM] Search results page displays products matching the partial term
+[MATH] Result count > 0 for partial query
+[STATE] Products in results contain 'hoo' in name or are relevance-matched","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with results
+[CONSOLE] no TypeError or JS errors","Partial query 'hoo' returning 0 results; autocomplete not showing matches; results page empty for valid partial match; console TypeError",none,"E2E-SEARCH-004, GAP-CS-07",Generated
+SRCH-NEW-039,Facet Count Accuracy - Badge Count Matches Product Count,Search > Facets,High,"BL-SRCH-001","ECL-3.2",Category page with faceted filters showing product counts in parentheses,"url={{FRONT_URL}}","[NAV] Navigate to a category page with facet filters on {{FRONT_URL}}
+[WAIT] Wait for facet panel to load
+[ASSERT] Locate a facet group (e.g., Brand) with count values in parentheses
+[ASSERT] Note the count shown next to a specific facet value (e.g., 'HP (12)')
+[ACT] Click on that facet value to apply the filter
+[WAIT] Wait for product list to update
+[ASSERT] Count the product cards displayed on the page (across all pagination pages if needed)
+[ASSERT] Verify the product card count matches the facet count from the sidebar","[MATH] Facet count in parentheses matches the actual number of products displayed after filtering
+[DOM] Facet values show non-zero counts in parentheses
+[DOM] After filtering, result count in page header matches facet count
+[STATE] No mismatch between facet badge count, header result count, and actual visible products","[NETWORK] POST /graphql returns consistent totalCount matching facet aggregation
+[CONSOLE] no TypeError or JS errors","Facet count showing 12 but only 8 products displayed; header count differing from facet count; facet counts not updating after filter application; console TypeError",none,"ECL-3.2, GAP-CS-08",Generated
+SRCH-NEW-040,Cross-Layer Search Consistency - Storefront Matches API Data,Search > Cross-Layer,High,"BL-SRCH-003","ECL-14.2",Product exists in catalog with known name and price; API access available,"url={{FRONT_URL}}; query=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+[WAIT] Wait for search results page to load
+[ASSERT] Locate 'Vintage Colorado Hoodie' in search results
+[ASSERT] Note the displayed price on the product card
+[ASSERT] Note the displayed product name exactly as shown
+[ACT] Open browser DevTools Network tab
+[ACT] Inspect the GraphQL searchProducts response payload
+[ASSERT] Verify the product name in the API response matches what is displayed on the storefront
+[ASSERT] Verify the price in the API response matches what is displayed on the storefront","[DOM] Product name on storefront card matches API response name field exactly
+[MATH] Product price on storefront matches API response price.actual.amount
+[STATE] No data transformation errors between API and UI rendering
+[DOM] Product image on card is loaded (not broken placeholder)","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
+[API] Response payload product.name matches DOM product name
+[API] Response payload product.price.actual.amount matches DOM displayed price
+[CONSOLE] no TypeError or JS errors","Product name on UI differs from API response; price on UI differs from API response (rounding or currency mismatch); API returning stale data; console TypeError",none,"BL-SRCH-003, ECL-14.2, GAP-CS-09",Generated
+SRCH-NEW-041,Sort Plus Filter Interaction - Sort Persists After Facet Application,Search > Sort + Filter,Medium,"BL-CAT-005","ECL-3.2",Category page with products and sortable/filterable options,"url={{FRONT_URL}}","[NAV] Navigate to a category page with multiple products on {{FRONT_URL}}
+[ACT] Open sort dropdown and select 'Price: High to Low'
+[WAIT] Wait for products to reorder
+[ASSERT] Verify products are sorted by price descending
+[ASSERT] Note the current sort dropdown value shows 'Price: High to Low'
+[ACT] Apply a facet filter (e.g., select a Brand value)
+[WAIT] Wait for filtered and sorted results to load
+[ASSERT] Verify sort dropdown still shows 'Price: High to Low'
+[ASSERT] Verify filtered products remain in price descending order
+[ACT] Remove the facet filter by clicking the chip close button
+[WAIT] Wait for full results to restore
+[ASSERT] Verify sort order is still 'Price: High to Low' after filter removal","[STATE] Sort selection 'Price: High to Low' persists after applying a facet filter
+[MATH] Filtered products maintain descending price order
+[STATE] Sort dropdown value unchanged after filter apply and remove
+[MATH] After filter removal, full product set is still sorted by price descending","[NETWORK] no 4xx/5xx on sort + filter combination requests
+[CONSOLE] no TypeError or JS errors","Sort resetting to default after applying filter; products not in correct order after filter; sort dropdown value changing unexpectedly; console TypeError",none,"BL-CAT-005, ECL-3.2, GAP-CS-10",Generated
+SRCH-NEW-042,Price Range Boundary Precision - Exact Boundary Value Filtering,Search > Price Filter,Medium,"BL-CAT-002","ECL-3.2",Category page with products at known price points; products exist at exact boundary values,"url={{FRONT_URL}}","[NAV] Navigate to a category page with price filter on {{FRONT_URL}}
+[WAIT] Wait for page and price filter to load
+[ASSERT] Locate the price range filter (slider or min/max inputs)
+[ACT] Set minimum price to a known product's exact price (e.g., $54.00 for Vintage Colorado Hoodie)
+[ACT] Set maximum price to the same value ($54.00)
+[ACT] Apply the price filter
+[WAIT] Wait for filtered results
+[ASSERT] Verify products priced at exactly $54.00 appear in results
+[ACT] Set minimum price to $54.01 (one cent above)
+[ACT] Apply the updated filter
+[WAIT] Wait for results to update
+[ASSERT] Verify products at $54.00 are now excluded from results","[MATH] Products at exactly the boundary price ($54.00) are included when min=$54.00 and max=$54.00
+[MATH] Products at $54.00 are excluded when min=$54.01
+[DOM] Price filter correctly handles exact boundary values
+[STATE] No off-by-one errors in price range filtering","[NETWORK] POST /graphql returns correct filtered results for boundary values
+[CONSOLE] no TypeError or JS errors","Products at exact boundary excluded when they should be included; products outside range appearing in results; off-by-one cent errors; console TypeError",none,"BL-CAT-002, ECL-3.2, GAP-CS-11",Generated
+SRCH-NEW-043,Cross-Facet AND Logic - Multiple Facet Groups Combine Correctly,Search > Facets,Medium,"BL-CAT-002","ECL-3.2",Category page with multiple facet groups (e.g., Brand and Color) with overlapping product sets,"url={{FRONT_URL}}","[NAV] Navigate to a category page with multiple facet groups on {{FRONT_URL}}
+[WAIT] Wait for facet panel to load
+[ACT] Select a value from the first facet group (e.g., a specific Brand)
+[WAIT] Wait for filtered results; note the result count as Count_A
+[ACT] Select a value from a second facet group (e.g., a specific Color)
+[WAIT] Wait for combined filtered results; note the result count as Count_AB
+[ASSERT] Verify Count_AB <= Count_A (AND logic narrows results)
+[ASSERT] Verify all displayed products match BOTH the selected Brand AND the selected Color
+[ACT] Remove the second facet filter (Color) by clicking its chip close button
+[WAIT] Wait for results to update
+[ASSERT] Verify result count returns to Count_A
+[ASSERT] Verify only the Brand filter remains active","[MATH] Count_AB <= Count_A (cross-facet AND logic narrows the result set)
+[DOM] All displayed products after both filters match Brand AND Color criteria
+[STATE] Removing one cross-facet filter restores the single-facet result count
+[MATH] No products appear that match only one of the two criteria
+[DOM] Chip bar shows chips for both active facets","[NETWORK] POST /graphql returns filtered results with correct AND combination
+[CONSOLE] no TypeError or JS errors","Cross-facet returning OR logic (count increases or stays same); products matching only one criterion appearing; removing one facet not restoring single-facet count; console TypeError",none,"BL-CAT-002, ECL-3.2, GAP-CS-12",Generated

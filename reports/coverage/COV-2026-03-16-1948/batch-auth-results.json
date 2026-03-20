@@ -1,0 +1,24 @@
+{
+  "domain": "AUTH",
+  "suite": "02",
+  "gapsAnalyzed": 10,
+  "casesGenerated": 14,
+  "layer": "storefront",
+  "suitesModified": ["02"],
+  "newCaseIds": [
+    "AUTH-048",
+    "AUTH-049",
+    "AUTH-050",
+    "AUTH-051",
+    "AUTH-052",
+    "AUTH-053",
+    "AUTH-054",
+    "AUTH-055",
+    "AUTH-056",
+    "AUTH-057",
+    "AUTH-058",
+    "AUTH-059",
+    "AUTH-060",
+    "AUTH-061"
+  ]
+}

@@ -1,7 +1,6 @@
 ---
 description: "Reproduce a bug, capture evidence, write a structured report, and optionally create a JIRA ticket."
 argument-hint: "bug description | VCST-XXXX | screenshot path"
-disable-model-invocation: true
 ---
 
 # /qa-bug — File a Bug Report
@@ -19,15 +18,19 @@ Create a structured bug report from a description, screenshot, or observed issue
 
 ## Step 1 — Gather Bug Details
 
+> **Skills:** Use `/qa-investigate` for structured 5-phase investigation (reproduce → isolate layer → gather evidence → root cause → hand off). Use `/qa-evidence` for capture rules and naming conventions.
+
 **If description provided:**
 - Use the qa-testing-expert (Task tool, `subagent_type: qa-testing-expert`) to reproduce the bug
+- Follow the `/qa-investigate` flow: reproduce → isolate layer (frontend/backend/infra) → gather evidence
 - Agent navigates to the storefront, follows the described scenario
-- Captures: screenshot, console errors, network requests, HAR file
+- Captures: screenshot, console errors, network requests, HAR file (per `/qa-evidence` policy)
 - Records exact steps to reproduce (STR)
 
 **If JIRA ticket provided:**
 - Fetch ticket details via Atlassian MCP
 - Use qa-testing-expert to reproduce based on ticket description
+- Follow `/qa-investigate` common VC patterns (P1–P8) to isolate the layer
 - Add QA evidence to the ticket as a comment
 
 **If screenshot provided:**
@@ -36,7 +39,36 @@ Create a structured bug report from a description, screenshot, or observed issue
 
 ---
 
-## Step 2 — Write Bug Report
+## Step 2 — Research Source Code & Logs
+
+> **Tools:** GitHub MCP (`search_code`, `get_file_contents`), Azure MCP (`applicationinsights`), `/qa-investigate` isolation phase.
+
+After reproducing the bug, research the root cause before writing the report:
+
+**Source code research (GitHub MCP):**
+- Search `VirtoCommerce/vc-frontend` for the affected component/page (use `search_code` with relevant keywords from error messages, URL paths, or component names)
+- If the bug is backend-related, search the relevant module repo (`org:VirtoCommerce vc-module-*`) — use `/qa-investigate` layer isolation to determine which module
+- Check recent commits and PRs in the affected file for recent changes that may have introduced the regression
+- Look for related issues/PRs: `search_issues` with error text or feature keywords
+
+**Application Insights logs (Azure MCP):**
+- Query **vcst-qa** (platform) or **vcst-qa-storefront** (storefront) Application Insights via `applicationinsights` tool
+- Search for exceptions, failed requests, or dependency failures matching the bug timeframe
+- Use error messages, request URLs, or operation IDs from HAR/network captures as query filters
+- Check for correlated server-side errors (e.g., 500s behind a frontend error)
+- Resource group: `vcst`, Subscription: `973d0b8c-44bf-438d-a4b7-1c4162d3ccba`
+
+**What to capture:**
+- Relevant source code snippet (file path + line range) showing the suspected root cause
+- Application Insights exception details or failed request traces
+- Recent git commits that may have introduced the regression
+- Add findings to the bug report under a **Root Cause Analysis** section
+
+---
+
+## Step 3 — Write Bug Report
+
+> **Skills:** Use `/qa-evidence compact|detailed` for report verbosity tier. Use `/qa-defect classify` for defect type taxonomy and root cause categories.
 
 Generate a report in `reports/bugs/` using this naming convention:
 `BUG-{Short-Description}.md` or `BUG-{Short-Description}-VCST-XXXX.md` (if a JIRA ticket is known)
@@ -49,6 +81,8 @@ Generate a report in `reports/bugs/` using this naming convention:
 **Component:** [Cart | Checkout | Catalog | Search | Payment | Admin | ...]
 **Browser:** [Browser + version]
 **Environment:** [URL]
+**USER_EMAIL**: .env
+**USER_PASSWORD**: .env
 **Date:** YYYY-MM-DD
 **Reported By:** QA Agent
 
@@ -69,6 +103,12 @@ Generate a report in `reports/bugs/` using this naming convention:
 - Network errors: [list or "none"]
 - HAR file: [path or "not captured"]
 
+## Root Cause Analysis
+- Source file: [GitHub file path + line range, or "not identified"]
+- Suspected cause: [description of the code/config issue]
+- Recent changes: [relevant commit SHAs or PRs, or "none found"]
+- App Insights: [exception type/message, failed request trace, or "no server-side errors"]
+
 ## Impact
 [Who is affected and how severely]
 
@@ -78,7 +118,9 @@ Generate a report in `reports/bugs/` using this naming convention:
 
 ---
 
-## Step 3 — Create JIRA Ticket (optional)
+## Step 4 — Create JIRA Ticket (optional)
+
+> **Skills:** Use `/qa-defect triage VCST-XXXX` for triage routing (duplicate check, classification, assignment). Use `/qa-risk` to assess severity if unclear.
 
 Ask the user: "Create a JIRA ticket for this bug?"
 
@@ -88,6 +130,7 @@ If yes, use Atlassian MCP (`createJiraIssue`):
 - Summary: from bug title
 - Description: full report content in markdown
 - Priority: mapped from severity (Critical→Highest, High→High, Medium→Medium, Low→Low)
+- Follow `/qa-defect workflow` for correct JIRA Bug Workflow status transitions
 
 Report the ticket key back to the user.
 

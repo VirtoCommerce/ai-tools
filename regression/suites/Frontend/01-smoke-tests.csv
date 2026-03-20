@@ -48,7 +48,7 @@ SMK-004,"Sign In — Organization User","Smoke > Authentication",Critical,"BL-AU
 [ACT] click 'Sign In'
 [WAIT] redirect to homepage","[DOM] organization name visible in header or account area
 [DOM] B2B navigation items visible: Quotes, Company Members (or equivalent)
-[STATE] company context active (not personal account context)","[API] /xapi/graphql (me query) returns organization field populated with org name
+[STATE] company context active (not personal account context)","[API] /graphql (me query) returns organization field populated with org name
 [CONSOLE] no errors
 [NETWORK] no 4xx on page load","Login succeeds but organization context absent (me.organization is null), B2B features missing, org name not shown — may require page refresh (ECL-14.3)","none",regression-qa-theme-26.csv,Automated
 SMK-005,"Catalog — Category Navigation","Smoke > Catalog",Critical,BL-CAT-001,"ECL-3.2, ECL-3.3","User logged in as {{USER_EMAIL}}, at least one category with products exists","email={{USER_EMAIL}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/catalog
@@ -59,7 +59,7 @@ SMK-005,"Catalog — Category Navigation","Smoke > Catalog",Critical,BL-CAT-001,
 [WAIT] filtered product list loads","[DOM] products listed with names, prices, images
 [DOM] breadcrumbs show: Home > [Category] > [Subcategory]
 [DOM] product count label visible (e.g., '24 items')
-[DOM] facet/filter panel available","[API] /xapi/graphql (categories + products query) returns items array non-empty
+[DOM] facet/filter panel available","[API] /graphql (categories + products query) returns items array non-empty
 [CONSOLE] no JS errors during category navigation
 [NETWORK] no 4xx on catalog queries","Category loads with 0 products (unless truly empty), breadcrumbs missing, console 4xx on catalog query, facets absent","none",regression-qa-theme-26.csv,Automated
 SMK-006,"Search — Basic Query","Smoke > Search",Critical,BL-SEARCH-001,"ECL-3.1, ECL-3.2, ECL-3.3","User logged in, products exist in catalog, search index healthy","email={{USER_EMAIL}}, front_url={{FRONT_URL}}, search_term=laptop","[NAV] {{FRONT_URL}}
@@ -69,7 +69,7 @@ SMK-006,"Search — Basic Query","Smoke > Search",Critical,BL-SEARCH-001,"ECL-3.
 [WAIT] search results page loads","[DOM] search results page title contains search term
 [DOM] at least 1 product result visible
 [DOM] result count label visible (e.g., 'X results for laptop')
-[DOM] filter panel available on results page","[API] /xapi/graphql (products query with filter term) returns items array non-empty
+[DOM] filter panel available on results page","[API] /graphql (products query with filter term) returns items array non-empty
 [CONSOLE] no search-related errors
 [NETWORK] no 4xx on search request","Zero results for known-existing term (search index down), filter panel absent, result count shows 0 while products visible, console errors","none",regression-qa-theme-26.csv,Automated
 SMK-007,"Add to Cart — Single Product","Smoke > Cart",Critical,BL-CART-001,"ECL-2.1, ECL-7.3","User logged in as {{USER_EMAIL}}, product {{TEST_SKU}} in stock","email={{USER_EMAIL}}, sku={{TEST_SKU}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/product/{{TEST_SKU}}
@@ -79,7 +79,7 @@ SMK-007,"Add to Cart — Single Product","Smoke > Cart",Critical,BL-CART-001,"EC
 [WAIT] success notification visible OR cart badge increments","[DOM] toast/notification contains 'added' or 'cart' text
 [DOM] cart icon badge increments by 1
 [STATE] product appears in mini-cart or cart page
-[FORMAT] all prices display with exactly 2 decimal places","[API] POST /xapi/graphql (addItem mutation) returns HTTP 200
+[FORMAT] all prices display with exactly 2 decimal places","[API] POST /graphql (addItem mutation) returns HTTP 200
 [API] addItem response errors[] is empty
 [API] cart.items contains item with sku={{TEST_SKU}}
 [CONSOLE] no TypeError or JS errors during add action
@@ -161,7 +161,7 @@ SMK-012,"Order Confirmation — Verify Details","Smoke > Orders",Critical,BL-ORD
 [ASSERT] most recent order in list matches the just-placed order number","[DOM] order number generated and displayed (e.g., format 'CO[digits]')
 [DOM] all ordered products listed on confirmation page with names
 [DOM] confirmation subtotal matches cart subtotal (within rounding)
-[DOM] order appears in /account/orders list","[API] GET /xapi/graphql (order query by orderId) returns correct items and totals
+[DOM] order appears in /account/orders list","[API] GET /graphql (order query by orderId) returns correct items and totals
 [CONSOLE] no errors on confirmation page (especially on analytics events)
 [NETWORK] GA4 purchase event fired if analytics tracking enabled","Confirmation page missing order number, totals mismatch vs cart, order absent from history, duplicate order if page refreshed (ECL-11.1)","none",VCST-4499,Automated
 SMK-013,"Search to Cart — End-to-End Flow","Smoke > Search",Critical,"BL-SEARCH-001, BL-CART-001, BL-PRICE-001","ECL-3.3, ECL-2.1, ECL-7.3","User logged in as {{USER_EMAIL}}, cart empty, 'Vintage Colorado Hoodie' ($54.00) exists in catalog","email={{USER_EMAIL}}, front_url={{FRONT_URL}}, search_term=hoodie, product_name=Vintage Colorado Hoodie, expected_price=54.00","[NAV] {{FRONT_URL}}

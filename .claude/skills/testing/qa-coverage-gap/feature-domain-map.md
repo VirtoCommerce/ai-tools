@@ -21,7 +21,7 @@ This file maps every known application feature to its expected test coverage. Us
 | Password reset | 3+ | Suite 02 | Covered |
 | SSO (Azure/Google) | 2+ | Suite 02 | Covered |
 | Account menu navigation | 3+ | Suite 02 | Covered |
-| Session management (concurrent, expiry) | 3+ | Suite 02, 08 | Partial |
+| Session management (concurrent, expiry) | 3+ | Suite 02, 08 | Covered |
 | Email verification flows | 3+ | Suite 02 | Covered |
 
 ### CATALOG — Catalog & Product Discovery
@@ -31,9 +31,9 @@ This file maps every known application feature to its expected test coverage. Us
 | Faceted filtering | 5+ | Suite 03 | Covered |
 | Product detail page | 5+ | Suite 03 | Covered |
 | Sorting & pagination | 3+ | Suite 03 | Covered |
-| Product comparison | 3+ | None | **GAP** |
-| Brands page | 1+ | None | **GAP** |
-| Virtual catalogs (B2B) | 3+ | None | **GAP** |
+| Product comparison | 3+ | Suite 03 | Covered |
+| Brands page | 1+ | Suite 03 | Covered |
+| Virtual catalogs (B2B) | 3+ | Suite 03 | Covered |
 
 ### SEARCH — Search
 | Feature | Expected Tests | Current Suites | Status |

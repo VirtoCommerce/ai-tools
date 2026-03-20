@@ -1,0 +1,489 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+DM-001,Dark Mode Toggle — Auto/Dark/Light Cycle,Dark Mode Activation > Toggle,Critical,,,Mercury theme active on storefront; dark mode toggle visible in header or settings menu,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[WAIT] page fully loaded
+[ACT] locate dark mode toggle control (sun/moon icon or theme switcher)
+[ACT] click toggle once (expect: switch to dark mode)
+[WAIT] html.dark class applied to document root
+[ACT] click toggle again (expect: switch to light mode or auto)
+[WAIT] html.dark class removed
+[ACT] click toggle again (expect: complete cycle back to auto/initial state)
+[WAIT] mode stabilizes","[DOM] html element has class 'dark' after first click
+[DOM] html element does NOT have class 'dark' after second click
+[DOM] body background color matches dark color token (#141415 for mercury) when dark active
+[DOM] toggle icon changes state visually on each click
+[STATE] correct mode is reflected across the full viewport (no un-toggled regions)","[CONSOLE] no JS errors during toggle cycle
+[NETWORK] no failed requests triggered by toggle","Toggle unresponsive after click; html.dark not applied within 2s; background color unchanged; console TypeError on toggle",none,VCST-4702,Manual
+DM-002,Dark Mode Persistence — localStorage Across Page Reload,Dark Mode Activation > Persistence,Critical,,,Dark mode is active (html.dark class present),front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] activate dark mode via toggle
+[WAIT] html.dark class applied
+[ACT] open browser DevTools > Application > localStorage
+[ASSERT] localStorage key for theme/color-scheme preference is set to 'dark'
+[ACT] reload the page (F5)
+[WAIT] page fully loaded","[DOM] html.dark class present on document root after reload (no flash of light mode)
+[STATE] localStorage entry persists the dark preference
+[DOM] toggle icon shows correct active-dark state after reload","[CONSOLE] no errors during reload
+[NETWORK] no 4xx/5xx requests on reload","Flash of light mode before dark applied (FOUT); localStorage key missing after toggle; html.dark absent after reload",none,VCST-4702,Manual
+DM-003,Dark Mode — html.dark Class Application Verification,Dark Mode Activation > Class Application,High,,,Mercury theme; dark mode toggle available,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] activate dark mode
+[WAIT] dark mode active
+[ACT] open DevTools > Elements panel","[DOM] <html> element has class 'dark'
+[DOM] CSS variables under :root.dark or .dark scope override light values
+[DOM] --color-primary token resolves to dark-mode value (not light-mode value)
+[DOM] body background-color computed value matches mercury.dark.json body bg (#141415)","[CONSOLE] no CSS errors or unresolved custom properties","html.dark not applied; CSS variables not overriding; computed background still matches light mode",none,VCST-4702,Manual
+DM-004,Dark Mode — color-scheme Meta Tag,Dark Mode Activation > Meta,Medium,,,Dark mode active on storefront,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] activate dark mode
+[WAIT] dark mode active
+[ACT] inspect <head> in DevTools Elements panel","[DOM] <meta name='color-scheme'> present with value 'dark' OR <meta> updates to reflect dark
+[DOM] Browser scrollbar and native UI controls render in dark style","[CONSOLE] no warnings about color-scheme meta","meta tag absent; native controls still render in light style",none,VCST-4702,Manual
+DM-005,Homepage — Dark Mode Full Page Render,Pages > Homepage,Critical,,,Mercury dark mode active; homepage accessible,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] activate dark mode
+[WAIT] page fully rendered in dark mode","[DOM] hero section background matches dark token (not white/light)
+[DOM] all text elements have sufficient contrast against dark background
+[DOM] promotional banners/images render without white halos or light background artifacts
+[DOM] call-to-action buttons visible with correct dark-variant colors
+[DOM] no 'flash' of white background visible on load
+[STATE] page layout intact — no elements hidden or misaligned","[CONSOLE] no CSS errors or JS errors
+[NETWORK] no failed asset requests","White background flash; light-mode background tokens visible; invisible text on dark bg; CTA buttons have wrong colors",none,VCST-4702,Manual
+DM-006,Catalog / Category Listing — Dark Mode,Pages > Catalog,High,,,Mercury dark mode active; at least one catalog category with products,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/catalog (or a valid category URL)
+[ACT] activate dark mode if not already active
+[WAIT] category page rendered","[DOM] page background dark (#141415 or token equivalent)
+[DOM] product cards have dark background — no white cards on dark page
+[DOM] product titles readable (text color #e9edf2 or token equivalent)
+[DOM] price labels use dark price color token (#c9c9cc)
+[DOM] filter sidebar and facet controls render in dark palette
+[DOM] breadcrumbs visible against dark background
+[DOM] 'Add to Cart' / action buttons use correct dark-mode button variants
+[DOM] pagination controls styled for dark mode","[CONSOLE] no JS/CSS errors
+[NETWORK] no failed requests","Product card backgrounds remain white; price text invisible; filter panel light-mode styling visible",none,VCST-4702,Manual
+DM-007,Product Detail Page — Dark Mode,Pages > PDP,Critical,,,Mercury dark mode active; a product with images and variations exists,front_url={{FRONT_URL}},"[NAV] a product detail page URL at {{FRONT_URL}}
+[ACT] activate dark mode
+[WAIT] PDP fully rendered","[DOM] page background dark
+[DOM] product title text readable against dark background
+[DOM] product image area does not show white frame or halo
+[DOM] price displayed with dark price color token
+[DOM] product description text readable
+[DOM] variation selectors (size/color chips) render in dark chip variants
+[DOM] 'Add to Cart' button styled with dark solid/primary variant
+[DOM] quantity input styled for dark mode (VcInput dark variant)
+[DOM] product tabs (Description/Reviews/etc.) use VcTabSwitch dark focus styling
+[DOM] pickup/store availability link uses accent-700 (#91bfd4) link color","[CONSOLE] no errors
+[NETWORK] no 4xx/5xx","White background visible behind product images; price invisible; variation chips look like light mode; Add to Cart button wrong color",none,VCST-4702,Manual
+DM-008,Cart Page — Dark Mode,Pages > Cart,Critical,,,Mercury dark mode active; at least one item in cart,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/cart
+[ACT] activate dark mode
+[WAIT] cart page rendered with items","[DOM] cart page background dark
+[DOM] cart line items on dark card/row backgrounds
+[DOM] item names and prices readable in dark mode
+[DOM] quantity steppers (VcInput) rendered in dark variant
+[DOM] 'Remove' buttons use correct dark styling
+[DOM] order summary panel has dark background and readable text
+[DOM] 'Proceed to Checkout' button uses dark solid primary variant
+[DOM] coupon/promo input field styled dark (placeholder visible)
+[DOM] shipping estimate section readable in dark mode","[CONSOLE] no errors
+[NETWORK] no 4xx/5xx","Cart items list white background; quantity inputs light-mode styling; checkout button not visible on dark bg",none,VCST-4702,Manual
+DM-009,Checkout Page — Dark Mode,Pages > Checkout,Critical,,,Mercury dark mode active; cart with items; user logged in,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/checkout
+[ACT] activate dark mode
+[WAIT] checkout page rendered","[DOM] checkout page background dark
+[DOM] step headers/breadcrumb readable
+[DOM] address form fields use dark VcInput styling (focus ring visible at 0.8 opacity)
+[DOM] checkboxes and radio buttons use dark focus variants
+[DOM] shipping method options readable on dark backgrounds
+[DOM] order summary sidebar dark background with readable text
+[DOM] 'Place Order' / 'Continue' buttons use dark solid primary
+[DOM] payment section background dark (if CyberSource: focus rings visible)","[CONSOLE] no errors
+[NETWORK] no 4xx/5xx","Form fields invisible or unreadable; radio buttons/checkboxes styling broken; order summary white background",none,VCST-4702,Manual
+DM-010,Checkout Page — Payment Inputs Dark Mode (CyberSource),Pages > Checkout > Payment,High,,,Mercury dark mode; CyberSource payment processor configured; checkout at payment step,front_url={{FRONT_URL}},"[NAV] proceed to payment step of checkout at {{FRONT_URL}}
+[ACT] activate dark mode (if not active)
+[WAIT] payment form rendered
+[ACT] click into card number field","[DOM] CyberSource iframe fields have dark background (not white iframe on dark page)
+[DOM] card number input focus ring visible at correct dark opacity
+[DOM] card expiry and CVV fields also styled in dark
+[DOM] field label text readable","[CONSOLE] no iframe cross-origin errors
+[NETWORK] CyberSource scripts load without error","White iframes breaking dark layout; focus ring invisible; card fields text invisible",none,VCST-4702,Manual
+DM-011,Checkout Page — Datatrans Payment Inputs Dark Mode,Pages > Checkout > Payment,High,,,Mercury dark mode; Datatrans payment processor configured; checkout at payment step,front_url={{FRONT_URL}},"[NAV] proceed to Datatrans payment step at {{FRONT_URL}}
+[ACT] activate dark mode
+[WAIT] payment form rendered
+[ACT] click into payment input field","[DOM] Datatrans input focus ring styled with dark-mode colors (dark/molecules/payment-inputs.scss rules applied)
+[DOM] field text readable in dark mode
+[DOM] background of payment container is dark","[CONSOLE] no errors
+[NETWORK] no 4xx/5xx","Payment inputs remain light-mode styled; focus rings invisible; broken layout",none,VCST-4702,Manual
+DM-012,Search Results Page — Dark Mode,Pages > Search,High,,,Mercury dark mode active; search index healthy,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/search?query=shirt (or valid search term)
+[ACT] activate dark mode
+[WAIT] search results rendered","[DOM] search results page background dark
+[DOM] search result product cards have dark backgrounds
+[DOM] product names and prices readable
+[DOM] filter/facet sidebar dark styled
+[DOM] search input in header styled dark (autofill override applied)
+[DOM] 'No results' state (if applicable) readable on dark background","[CONSOLE] no errors
+[NETWORK] no failed search requests","Product cards white; filter panel light-mode; autofill fields show white background despite dark mode",none,VCST-4702,Manual
+DM-013,Account Dashboard — Dark Mode,Pages > Account,High,,,Mercury dark mode; user logged in as {{USER_EMAIL}},front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/account
+[ACT] activate dark mode
+[WAIT] account dashboard rendered","[DOM] account page background dark
+[DOM] sidebar navigation links readable (link color #91bfd4 accent-700)
+[DOM] account overview widgets/cards dark background
+[DOM] navigation menu items use VcMenuItem dark hover and active states
+[DOM] all buttons styled with dark variants","[CONSOLE] no errors","Account cards white; sidebar links invisible; nav items hover state wrong color",none,VCST-4702,Manual
+DM-014,Login / Registration Page — Dark Mode,Pages > Login/Registration,High,,,Mercury dark mode active; user not logged in,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/account/login
+[ACT] activate dark mode
+[WAIT] login form rendered
+[ACT] click on email input field","[DOM] page background dark
+[DOM] login form container has dark background (not white card on dark page)
+[DOM] email input VcInput dark variant applied (focus ring 0.8 opacity on focus)
+[DOM] password input dark variant
+[DOM] input placeholder text visible against dark input background
+[DOM] 'Sign In' button dark solid primary variant
+[DOM] 'Register' / sign-up link uses accent-700 link color
+[NAV] navigate to /account/register — same dark styling on registration form","[CONSOLE] no errors","Login form white on dark page; input placeholders invisible; Sign In button wrong color",none,VCST-4702,Manual
+DM-015,Order History Page — Dark Mode,Pages > Order History,Medium,,,Mercury dark mode; user logged in with existing orders,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/account/orders
+[ACT] activate dark mode
+[WAIT] orders list rendered","[DOM] orders page background dark
+[DOM] order list rows have dark backgrounds with readable text
+[DOM] order status badges use VcBadge dark variant (solid/outline)
+[DOM] order date, total, and status text readable
+[DOM] 'View Details' links use accent-700 link color
+[DOM] pagination controls dark styled","[CONSOLE] no errors","Order rows white; badges light-mode styled; status text invisible",none,VCST-4702,Manual
+DM-016,Addresses Page — Dark Mode (Personal Accounts Only),Pages > Addresses,Medium,,,Mercury dark mode; personal account user logged in (no org); addresses exist,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/account/addresses
+[ACT] activate dark mode
+[WAIT] addresses page rendered","[DOM] addresses page background dark
+[DOM] address cards have dark backgrounds
+[DOM] address text (name, street, city) readable on dark background
+[DOM] 'Add Address' button uses dark solid primary
+[DOM] 'Edit' and 'Delete' buttons styled in dark
+[DOM] address form modal/panel dark background when opened","[CONSOLE] no errors","Address cards white; form modal light-mode; buttons wrong variant",none,VCST-4702,Manual
+DM-017,Wishlist / Compare Page — Dark Mode,Pages > Wishlist/Compare,Medium,,,Mercury dark mode; wishlist feature enabled; items in wishlist,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/wishlist
+[ACT] activate dark mode
+[WAIT] wishlist rendered","[DOM] wishlist page background dark
+[DOM] product cards on wishlist dark styled
+[DOM] 'Move to Cart' / action buttons dark variants
+[DOM] compare table (if applicable) readable on dark background
+[DOM] empty state message readable in dark mode","[CONSOLE] no errors","Wishlist cards white; compare table light-mode styling",none,VCST-4702,Manual
+DM-018,Contact Page — Dark Mode,Pages > Contact,Low,,,Mercury dark mode; contact page accessible,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/contact (or applicable URL)
+[ACT] activate dark mode
+[WAIT] contact page rendered","[DOM] page background dark
+[DOM] contact form inputs use VcInput dark variant
+[DOM] textarea dark styled
+[DOM] 'Submit' button dark solid primary
+[DOM] form labels readable on dark background","[CONSOLE] no errors","Form inputs white; labels invisible; submit button wrong color",none,VCST-4702,Manual
+DM-019,404 Page — Dark Mode,Pages > 404,Low,,,Mercury dark mode; navigate to non-existent page,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/this-page-does-not-exist-404-test
+[ACT] activate dark mode (or navigate with dark active)
+[WAIT] 404 page rendered","[DOM] 404 page background dark
+[DOM] error message text readable on dark background
+[DOM] 'Go back' / 'Home' link uses accent-700 link color
+[DOM] illustration/graphic does not show white halo","[CONSOLE] no errors (only expected 404 network response)","404 page white background; link text invisible; image white halo",none,VCST-4702,Manual
+DM-020,Header Top Bar — Dark Mode Colors,Layout > Header Top Bar,Critical,,,Mercury dark mode active,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] activate dark mode
+[WAIT] header rendered","[DOM] header top bar background matches mercury.dark token (#151b20)
+[DOM] top bar text color matches token (#d6dee9)
+[DOM] links in top bar use accent-700 link color (#91bfd4)
+[DOM] link hover state visible with correct dark hover color
+[DOM] active link state styled correctly (no leftover light-mode active color)","[CONSOLE] no errors","Top bar background still light (#f8f9fa or similar); text color wrong; links invisible",none,VCST-4702,Manual
+DM-021,Header Bottom Bar — Dark Mode Colors,Layout > Header Bottom Bar,Critical,,,Mercury dark mode active,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] activate dark mode
+[WAIT] header rendered","[DOM] header bottom bar background matches mercury.dark token (#232c32)
+[DOM] bottom bar text color matches token (#e9edf2)
+[DOM] navigation links visible and using correct dark colors
+[DOM] logo readable on dark header
+[DOM] search bar input styled dark (placeholder visible)
+[DOM] cart icon and badge visible on dark background
+[DOM] account icon visible on dark background","[CONSOLE] no errors","Bottom nav bar light background; navigation links invisible; search input white",none,VCST-4702,Manual
+DM-022,Footer Top — Dark Mode Colors,Layout > Footer Top,High,,,Mercury dark mode active,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] activate dark mode
+[WAIT] footer rendered (scroll if necessary)","[DOM] footer top section background matches mercury.dark token (#151b20)
+[DOM] footer top text color matches token (#e9edf2)
+[DOM] footer navigation links use accent-700 link color
+[DOM] link hover states visible","[CONSOLE] no errors","Footer top background remains light; footer text invisible",none,VCST-4702,Manual
+DM-023,Footer Bottom — Dark Mode Colors,Layout > Footer Bottom,High,,,Mercury dark mode active,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] activate dark mode
+[WAIT] footer rendered","[DOM] footer bottom background matches mercury.dark token (#232c32)
+[DOM] footer bottom text color matches token (#d6dee9)
+[DOM] copyright and secondary links readable
+[DOM] social icons (if present) visible on dark background","[CONSOLE] no errors","Footer bottom background light; text invisible",none,VCST-4702,Manual
+DM-024,Mobile Menu — Dark Mode Background and Text,Layout > Mobile Menu,Critical,,,Mercury dark mode; viewport width <= 768px (mobile),front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] resize browser to mobile width (375px or 414px)
+[ACT] activate dark mode
+[WAIT] mobile header rendered
+[ACT] tap/click hamburger menu icon to open mobile menu
+[WAIT] mobile menu fully open","[DOM] mobile menu background matches mercury.dark token (#080b0e)
+[DOM] mobile menu text color matches token (#f2f7f7)
+[DOM] navigation links visible and readable
+[DOM] icons in mobile menu visible on dark background
+[DOM] nested navigation items readable
+[DOM] close (X) button visible","[CONSOLE] no errors during menu open/close","Mobile menu still renders with light background; text invisible on dark bg; icons invisible",none,VCST-4702,Manual
+DM-025,Mobile Settings Menu — Currency Header Text Color,Layout > Mobile Settings Menu,High,,,Mercury dark mode; mobile viewport; settings menu accessible in mobile menu,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}} at mobile width
+[ACT] activate dark mode
+[ACT] open mobile menu
+[ACT] tap/click Settings option (currency/language switcher section)
+[WAIT] settings panel rendered","[DOM] currency section header text uses --mobile-menu-text-color CSS variable (NOT hardcoded 'text-additional-50')
+[DOM] header text readable on mobile menu dark background (#080b0e)
+[DOM] active currency selection does NOT have wrong color class (conditional color class removed in this PR)
+[DOM] language/currency options readable
+[DOM] radio button focus rings use dark variant (opacity 0.8)","[CONSOLE] no errors","Currency header text invisible (hardcoded class from old code bleeding through); active currency wrong color; radio buttons light-mode styled",none,VCST-4702,Manual
+DM-026,Breadcrumbs — Dark Mode,Layout > Breadcrumbs,Medium,,,Mercury dark mode; a category or product page with breadcrumb trail,front_url={{FRONT_URL}},"[NAV] navigate to a category or PDP at {{FRONT_URL}}
+[ACT] activate dark mode
+[WAIT] page rendered with breadcrumbs","[DOM] breadcrumb text readable on dark background
+[DOM] breadcrumb links use accent-700 link color
+[DOM] separator characters visible
+[DOM] current page (non-link) breadcrumb item readable","[CONSOLE] no errors","Breadcrumb text invisible; links wrong color; separator hidden",none,VCST-4702,Manual
+DM-027,Sidebar Navigation — Dark Mode,Layout > Sidebar Navigation,Medium,,,Mercury dark mode; account pages with sidebar nav,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/account
+[ACT] activate dark mode
+[WAIT] sidebar rendered","[DOM] sidebar background dark
+[DOM] nav items use VcMenuItem dark hover/active colors
+[DOM] active menu item has correct dark active background (NOT the same light-mode accent)
+[DOM] nav item text readable
+[DOM] nav item hover state visible on mouse hover","[CONSOLE] no errors","Sidebar background white; nav items no hover effect in dark; active item not highlighted",none,VCST-4702,Manual
+DM-028,VcBadge — Solid Variant × 8 Colors in Dark Mode,Atoms > VcBadge > Solid,High,,,Mercury dark mode; Storybook or page with VcBadge components visible,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}} (or Storybook URL for VcBadge stories)
+[ACT] activate dark mode
+[WAIT] dark mode active","[DOM] VcBadge solid variant for each of 8 colors (primary, secondary, success, warning, danger, info, neutral, accent) has correct dark background color per dark/atoms/vc-badge.scss tokens
+[DOM] badge text uses cream/light color for readability against dark badge background
+[DOM] no badge appears as white/light colored solid badge on dark page","[CONSOLE] no CSS variable resolution errors","Any badge color appears as light-colored solid; badge text invisible on dark badge",none,VCST-4702,Manual
+DM-029,VcBadge — Outline Variant × 8 Colors in Dark Mode,Atoms > VcBadge > Outline,High,,,Mercury dark mode; VcBadge outline variants visible,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}} or Storybook
+[ACT] activate dark mode","[DOM] VcBadge outline variant for all 8 colors renders with visible border using dark-mode border color token
+[DOM] badge background is transparent/dark (not white)
+[DOM] badge text readable","[CONSOLE] no errors","Outline badges show white background; border invisible on dark page",none,VCST-4702,Manual
+DM-030,VcBadge — Solid-Light Variant × 8 Colors in Dark Mode,Atoms > VcBadge > Solid-Light,Medium,,,Mercury dark mode; VcBadge solid-light variants visible,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}} or Storybook
+[ACT] activate dark mode","[DOM] VcBadge solid-light variant for all 8 colors has a muted/tinted dark background per dark token
+[DOM] badge text readable on each solid-light dark background","[CONSOLE] no errors","Solid-light badges appear with white/light tint instead of dark tint",none,VCST-4702,Manual
+DM-031,VcInput — Focus Ring in Dark Mode,Atoms > VcInput,Critical,,,Mercury dark mode; a page with text input fields (login/checkout/search),front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/account/login
+[ACT] activate dark mode
+[WAIT] page rendered
+[ACT] click into email input field","[DOM] focus ring visible on focused VcInput field in dark mode
+[DOM] focus ring opacity is approximately 0.8 (per dark/atoms/vc-input.scss)
+[DOM] focus ring color is distinguishable from dark background","[CONSOLE] no errors","Focus ring invisible on dark background; focus ring opacity 1.0 (too harsh) or 0 (invisible)",none,VCST-4702,Manual
+DM-032,VcInput — Placeholder Color in Dark Mode,Atoms > VcInput > Placeholder,High,,,Mercury dark mode; input fields with placeholder text,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/account/login
+[ACT] activate dark mode
+[WAIT] login form rendered — email field should show placeholder","[DOM] placeholder text visible against dark input background (not invisible)
+[DOM] placeholder color uses dark/globals.scss placeholder override token (NOT default browser gray)
+[DOM] placeholder text not same color as input background","[CONSOLE] no errors","Placeholder text invisible (same color as dark background); placeholder shows default browser gray that's too dark",none,VCST-4702,Manual
+DM-033,VcInput — Autofill Override in Dark Mode,Atoms > VcInput > Autofill,High,,,Mercury dark mode; browser autofill saved for email/password,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/account/login
+[ACT] activate dark mode
+[WAIT] login form rendered
+[ACT] trigger browser autofill on email field (e.g. by typing first letter to invoke suggestions, then selecting saved value)
+[WAIT] autofill applied","[DOM] autofilled field does NOT show browser's default yellow/blue autofill background
+[DOM] autofilled field background matches dark theme input background (per dark/globals.scss autofill override using -webkit-box-shadow inset)
+[DOM] autofilled text readable in dark mode","[CONSOLE] no errors","Autofill override broken — field shows browser default yellow/white autofill background on dark page",none,VCST-4702,Manual
+DM-034,VcInput — Disabled Autofill Override in Dark Mode,Atoms > VcInput > Autofill Disabled,Medium,,,Mercury dark mode; disabled input with autofill history,front_url={{FRONT_URL}},"[NAV] page with a disabled input that could be autofilled at {{FRONT_URL}}
+[ACT] activate dark mode","[DOM] disabled autofilled field does NOT show browser yellow/white autofill background
+[DOM] disabled field appearance consistent with dark disabled input styling","[CONSOLE] no errors","Disabled autofill shows white background on dark page",none,VCST-4702,Manual
+DM-035,VcCheckbox — Focus Ring in Dark Mode,Atoms > VcCheckbox,High,,,Mercury dark mode; a page with checkboxes (checkout/filters),front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/catalog (facet checkboxes)
+[ACT] activate dark mode
+[WAIT] page rendered with checkboxes
+[ACT] Tab to a checkbox to focus it","[DOM] checkbox focus ring visible in dark mode
+[DOM] focus ring opacity approximately 0.8 (per dark/atoms/vc-checkbox.scss)
+[DOM] focus ring color distinguishable from dark background","[CONSOLE] no errors","Checkbox focus ring invisible in dark mode; focus indicator absent (WCAG issue)",none,VCST-4702,Manual
+DM-036,VcRadioButton — Focus Ring in Dark Mode,Atoms > VcRadioButton,High,,,Mercury dark mode; a page with radio buttons (settings/shipping selection),front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/checkout (shipping method selection)
+[ACT] activate dark mode
+[WAIT] shipping options with radio buttons rendered
+[ACT] Tab to a radio button to focus it","[DOM] radio button focus ring visible in dark mode
+[DOM] focus ring opacity approximately 0.8 (per dark/atoms/vc-radio-button.scss)","[CONSOLE] no errors","Radio button focus ring invisible in dark mode",none,VCST-4702,Manual
+DM-037,VcTabSwitch — Focus Ring in Dark Mode,Atoms > VcTabSwitch,Medium,,,Mercury dark mode; a page with tab navigation (PDP product tabs),front_url={{FRONT_URL}},"[NAV] a PDP at {{FRONT_URL}}
+[ACT] activate dark mode
+[WAIT] product tabs rendered (Description / Specifications / Reviews)
+[ACT] Tab key to navigate to a tab switch control","[DOM] focused tab switch shows visible focus ring in dark mode
+[DOM] focus ring opacity approximately 0.8 (per dark/atoms/vc-tab-switch.scss)","[CONSOLE] no errors","Tab switch focus ring invisible in dark mode",none,VCST-4702,Manual
+DM-038,VcSlider — Ring Offset Color in Dark Mode,Atoms > VcSlider,Medium,,,Mercury dark mode; a page with a slider (price range filter),front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/catalog (or any page with price range slider)
+[ACT] activate dark mode
+[WAIT] slider rendered
+[ACT] Tab to slider thumb to focus it","[DOM] slider thumb focus ring offset color matches dark background (no white ring offset halo)
+[DOM] ring offset visually 'cuts into' dark background cleanly","[CONSOLE] no errors","Slider thumb shows white ring offset on dark background (old light-mode ring-offset-white value)",none,VCST-4702,Manual
+DM-039,VcButton — Solid Variant × 8 Colors in Dark Mode,Molecules > VcButton > Solid,Critical,,,Mercury dark mode; buttons of all 8 solid color variants visible on storefront or Storybook,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}} (or Storybook VcButton stories)
+[ACT] activate dark mode
+[WAIT] dark mode active","[DOM] solid primary button has correct dark background color and cream/light text
+[DOM] solid secondary, success, warning, danger, info, neutral, accent variants all have correct dark background colors
+[DOM] button text readable on each solid dark background
+[DOM] button hover state shows correct dark hover background (NOT light-mode hover color)","[CONSOLE] no CSS errors","Any solid button variant appears with wrong/light-mode background; button text invisible on dark background",VCST-4702,Manual
+DM-040,VcButton — Outline Variant × 8 Colors (Typo Bug Check),Molecules > VcButton > Outline,Critical,,,Mercury dark mode; outline buttons visible; KNOWN BUG: $colors typo in vc-button.scss lines 37/43/49/55,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}} (or Storybook VcButton outline variants)
+[ACT] activate dark mode
+[WAIT] dark mode active","[DOM] outline button for each of 8 colors has a visible border using the dark-mode border color token
+[DOM] outline button background is transparent/dark (not white)
+[DOM] outline button text readable
+[DOM] 7 of 8 colors MAY be broken if $colors typo is unfixed — document which colors fail","[CONSOLE] CSS variable resolution warnings expected if $colors typo unfixed","Outline button for colors 2-8 show wrong/missing border; background not transparent; KNOWN BUG: $colors typo expected to break most variants (P1 bug)",VCST-4702,Manual
+DM-041,VcButton — No-Border Variant × 8 Colors in Dark Mode (Typo Bug Check),Molecules > VcButton > No-Border,High,,,Mercury dark mode; no-border buttons; KNOWN BUG: $colors typo,front_url={{FRONT_URL}},"[NAV] pages with no-border button variants
+[ACT] activate dark mode","[DOM] no-border button text readable on dark background
+[DOM] no-border button background dark/transparent
+[DOM] hover state visible
+[DOM] document which colors fail due to $colors typo","[CONSOLE] no unexpected errors","No-border button text invisible on dark background; hover state broken for most colors (typo)",VCST-4702,Manual
+DM-042,VcButton — No-Background Variant × 8 Colors in Dark Mode (Typo Bug Check),Molecules > VcButton > No-Background,High,,,Mercury dark mode; no-background button variants,front_url={{FRONT_URL}},"[NAV] pages with no-background button variants
+[ACT] activate dark mode","[DOM] no-background button text readable
+[DOM] completely transparent background
+[DOM] document which colors fail due to $colors typo","[CONSOLE] no errors","Button text invisible; background not transparent",VCST-4702,Manual
+DM-043,VcButton — Solid-Light Variant × 8 Colors in Dark Mode (Typo Bug Check),Molecules > VcButton > Solid-Light,High,,,Mercury dark mode; solid-light button variants,front_url={{FRONT_URL}},"[NAV] pages with solid-light button variants
+[ACT] activate dark mode","[DOM] solid-light button has muted/tinted dark background
+[DOM] button text readable
+[DOM] document which colors fail due to $colors typo","[CONSOLE] no errors","Solid-light button appears with white/light background; text invisible",VCST-4702,Manual
+DM-044,VcButton — Disabled State in Dark Mode,Molecules > VcButton > Disabled,High,,,Mercury dark mode; disabled buttons on page,front_url={{FRONT_URL}},"[NAV] pages with disabled button states (e.g. 'Add to Cart' before options selected)
+[ACT] activate dark mode","[DOM] disabled button has correct dark disabled background (muted/grayed)
+[DOM] disabled button text readable (not invisible)
+[DOM] disabled button NOT same color as enabled button
+[DOM] cursor: not-allowed visible on hover","[CONSOLE] no errors","Disabled button invisible on dark bg; disabled state indistinguishable from enabled",none,VCST-4702,Manual
+DM-045,VcButton — Focus Ring × 8 Colors in Dark Mode,Molecules > VcButton > Focus,High,,,Mercury dark mode; focusable buttons,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/account/login
+[ACT] activate dark mode
+[WAIT] page rendered with buttons
+[ACT] Tab to the Sign In button to focus it","[DOM] focused button shows visible focus ring in dark mode
+[DOM] focus ring color/opacity correct for dark (per dark/molecules/vc-button.scss)
+[DOM] focus ring visible for each of 8 color variants","[CONSOLE] no errors","Button focus ring invisible in dark mode; focus indicator missing (WCAG A11y issue)",none,VCST-4702,Manual
+DM-046,VcChip — Solid Variant in Dark Mode,Molecules > VcChip > Solid,High,,,Mercury dark mode; chips visible (facet selections / tags),front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/catalog (apply a filter to create active facet chip)
+[ACT] activate dark mode","[DOM] active filter chips have dark solid background
+[DOM] chip text uses cream/light color (per dark/molecules/vc-chip.scss)
+[DOM] chip icon (remove X) uses cream/light color
+[DOM] chip readable on dark page background","[CONSOLE] no errors","Chip shows light background; chip text or icon invisible on dark chip",none,VCST-4702,Manual
+DM-047,VcChip — Solid-Light Variant in Dark Mode,Molecules > VcChip > Solid-Light,Medium,,,Mercury dark mode; solid-light chip variants visible,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}} or Storybook
+[ACT] activate dark mode","[DOM] solid-light chips have muted dark tinted background
+[DOM] chip text readable on solid-light dark background","[CONSOLE] no errors","Solid-light chip shows white background in dark mode",none,VCST-4702,Manual
+DM-048,VcChip — Outline Focus Ring × 8 Colors in Dark Mode,Molecules > VcChip > Focus,Medium,,,Mercury dark mode; chip with keyboard focus,front_url={{FRONT_URL}},"[NAV] page with chips
+[ACT] activate dark mode
+[ACT] Tab to a chip element","[DOM] focused chip has visible focus outline in dark mode (per dark/molecules/vc-chip.scss)
+[DOM] focus outline color correct for each of 8 colors
+[DOM] focus indicator distinguishable from chip background","[CONSOLE] no errors","Chip focus ring invisible in dark; focus indicator absent (WCAG issue)",none,VCST-4702,Manual
+DM-049,VcAlert — Solid Success Variant in Dark Mode,Molecules > VcAlert > Success,High,,,Mercury dark mode; a success alert visible (e.g. after add to cart notification),front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] activate dark mode
+[ACT] add a product to cart to trigger success notification
+[WAIT] success alert/toast appears","[DOM] success alert has dark solid success background color (per dark/molecules/vc-alert.scss)
+[DOM] alert text uses cream/light color
+[DOM] alert icon uses cream/light color
+[DOM] alert readable on dark page","[CONSOLE] no errors","Alert shows light green background on dark page; text/icon invisible on dark success bg",none,VCST-4702,Manual
+DM-050,VcAlert — Solid Warning Variant in Dark Mode,Molecules > VcAlert > Warning,Medium,,,Mercury dark mode; a warning alert visible,front_url={{FRONT_URL}},"[NAV] trigger a warning state on {{FRONT_URL}} (e.g. out of stock warning, low inventory)
+[ACT] activate dark mode","[DOM] warning alert dark solid background per token
+[DOM] warning text and icon use cream/light color
+[DOM] alert readable","[CONSOLE] no errors","Warning alert shows yellow/light background on dark page",none,VCST-4702,Manual
+DM-051,VcAlert — Solid Danger Variant in Dark Mode,Molecules > VcAlert > Danger,High,,,Mercury dark mode; a danger/error alert visible (e.g. validation error),front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/account/login
+[ACT] activate dark mode
+[ACT] attempt to submit login form with wrong credentials
+[WAIT] error alert displayed","[DOM] danger alert has dark solid danger background color
+[DOM] error text uses cream/light color
+[DOM] error icon uses cream/light color","[CONSOLE] no errors (alert display errors only, not system errors)","Error alert shows light red background on dark page; text/icon invisible",none,VCST-4702,Manual
+DM-052,VcAlert — Solid Info Variant in Dark Mode,Molecules > VcAlert > Info,Medium,,,Mercury dark mode; an info alert visible,front_url={{FRONT_URL}},"[NAV] page with info alerts at {{FRONT_URL}}
+[ACT] activate dark mode","[DOM] info alert has dark solid info background color
+[DOM] info text and icon use cream/light color","[CONSOLE] no errors","Info alert shows light blue background on dark page",none,VCST-4702,Manual
+DM-053,VcMenuItem — Hover Background in Dark Mode,Molecules > VcMenuItem,Critical,,,Mercury dark mode; dropdown menus or navigation menus with VcMenuItem,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] activate dark mode
+[WAIT] page rendered
+[ACT] hover over a navigation menu item (header nav link)","[DOM] hovered menu item shows correct dark hover background color (per dark/molecules/vc-menu-item.scss)
+[DOM] hover background NOT a light/white color
+[DOM] hover text color readable on dark hover background","[CONSOLE] no errors","Menu item hover shows white/light background on dark page; hover text invisible",none,VCST-4702,Manual
+DM-054,VcMenuItem — Active Background in Dark Mode,Molecules > VcMenuItem,Critical,,,Mercury dark mode; menu with active/selected item,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/account (sidebar nav should show active item)
+[ACT] activate dark mode
+[WAIT] sidebar with active menu item rendered","[DOM] active menu item has correct dark active background color (per dark/molecules/vc-menu-item.scss)
+[DOM] active background NOT light/white
+[DOM] active item distinguishable from non-active items in dark mode","[CONSOLE] no errors","Active menu item shows white/light background; indistinguishable from hover state",none,VCST-4702,Manual
+DM-055,VcMenuItem — Non-Active bg-additional-50 Base (Light Regression),Molecules > VcMenuItem,High,,,Light mode OR dark mode; verifying the bg-additional-50 base class change from PR,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] ensure light mode active (or toggle to light)
+[WAIT] navigation menu rendered
+[ACT] view a non-hovered non-active menu item","[DOM] non-active non-hovered menu item has correct base background using bg-additional-50 class (moved to __inner base in PR)
+[DOM] base background NOT removed or transparent when it should be bg-additional-50
+[DOM] disabled menu item does NOT have double background (duplicate removed in PR)","[CONSOLE] no errors","Non-active items have wrong/missing base background; disabled items show doubled background",none,VCST-4702,Manual
+DM-056,VcMenuItem — Focus Color × 8 Colors in Dark Mode,Molecules > VcMenuItem,High,,,Mercury dark mode; focusable menu items,front_url={{FRONT_URL}},"[NAV] page with menu items
+[ACT] activate dark mode
+[ACT] Tab to a menu item","[DOM] focused menu item shows visible focus ring/color in dark mode
+[DOM] focus color applies for each of 8 color variants
+[DOM] disabled menu item focus indicator correctly styled","[CONSOLE] no errors","Menu item focus ring invisible in dark; focus indicator absent",none,VCST-4702,Manual
+DM-057,VcNavButton — Ring Offset Color in Dark Mode,Molecules > VcNavButton,Medium,,,Mercury dark mode; nav buttons visible (breadcrumb nav or pagination),front_url={{FRONT_URL}},"[NAV] page with nav buttons at {{FRONT_URL}}
+[ACT] activate dark mode
+[ACT] Tab to a nav button to focus it","[DOM] focused nav button ring offset color matches dark background (no white halo)
+[DOM] ring offset visually clean on dark surface","[CONSOLE] no errors","Nav button shows white ring offset halo on dark background",none,VCST-4702,Manual
+DM-058,VcProductActionsButton — Focus Color × 8 Colors in Dark Mode,Molecules > VcProductActionsButton,High,,,Mercury dark mode; product listing page with product action buttons (wishlist/compare/quick-view),front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/catalog
+[ACT] activate dark mode
+[WAIT] product grid rendered
+[ACT] Tab to a product actions button (wishlist / compare icon)","[DOM] focused product action button shows correct dark focus color for each of 8 color variants
+[DOM] focus color distinguishable from dark card background","[CONSOLE] no errors","Product action button focus ring invisible on dark; focus indicator absent",none,VCST-4702,Manual
+DM-059,VcProductActionsButton — Inactive Focus (neutral-700) in Dark Mode,Molecules > VcProductActionsButton > Inactive,Medium,,,Mercury dark mode; inactive product action button,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/catalog
+[ACT] activate dark mode
+[ACT] Tab to an inactive product action button","[DOM] inactive product action button focus uses neutral-700 color (per dark/molecules/vc-product-actions-button.scss)
+[DOM] neutral-700 focus visible on dark card background","[CONSOLE] no errors","Inactive button focus shows wrong/invisible color",none,VCST-4702,Manual
+DM-060,Payment Inputs — CyberSource Focus Ring in Dark Mode,Molecules > Payment Inputs > CyberSource,High,,,Mercury dark mode; CyberSource payment configured; checkout at payment step,front_url={{FRONT_URL}},"[NAV] reach checkout payment step at {{FRONT_URL}}
+[ACT] activate dark mode
+[WAIT] CyberSource payment form rendered in iframe
+[ACT] click into card number field","[DOM] CyberSource card number input shows focus ring in dark mode (per dark/molecules/payment-inputs.scss)
+[DOM] focus ring color correct for dark
+[DOM] focus ring visible against dark input background","[CONSOLE] no cross-origin iframe errors","CyberSource focus ring invisible in dark; iframe blocked",none,VCST-4702,Manual
+DM-061,Payment Inputs — Datatrans Focus Ring in Dark Mode,Molecules > Payment Inputs > Datatrans,High,,,Mercury dark mode; Datatrans payment configured; checkout at payment step,front_url={{FRONT_URL}},"[NAV] reach Datatrans checkout payment step at {{FRONT_URL}}
+[ACT] activate dark mode
+[WAIT] Datatrans payment inputs rendered
+[ACT] click into first payment input","[DOM] Datatrans input shows focus ring in dark mode (per dark/molecules/payment-inputs.scss)
+[DOM] focus ring color correct for dark","[CONSOLE] no errors","Datatrans focus ring invisible in dark",none,VCST-4702,Manual
+DM-062,Product Pickup Locations Link — Accent-700 in Dark Mode,Pages > PDP > Pickup,High,,,Mercury dark mode; a product with store pickup option available,front_url={{FRONT_URL}},"[NAV] PDP with pickup option at {{FRONT_URL}}
+[ACT] activate dark mode
+[WAIT] pickup option/link visible","[DOM] product pickup link uses --color-accent-700 (#91bfd4) color (per dark/pages/product-pickup.scss)
+[DOM] link readable and distinguishable on dark background
+[DOM] link hover state visible","[CONSOLE] no errors","Pickup link shows wrong color (light-mode accent); link invisible on dark background",none,VCST-4702,Manual
+DM-063,Skyflow Payment Label — lineHeight 1.25rem (Light + Dark),Pages > Checkout > Skyflow,Medium,,,Skyflow payment processor configured; checkout at payment step,front_url={{FRONT_URL}},"[NAV] reach Skyflow checkout payment step at {{FRONT_URL}}
+[WAIT] Skyflow payment form rendered
+[ACT] inspect base label element in DevTools","[DOM] Skyflow payment base label has lineHeight: '1.25rem' applied (from payment-processing-skyflow.vue change)
+[DOM] label text not clipped or overlapping in both light AND dark mode
+[DOM] lineHeight consistent between light and dark toggle","[CONSOLE] no errors","Label text clipped or overlapping; lineHeight absent in computed styles",none,VCST-4702,Manual
+DM-064,WCAG AA — Body Text Contrast Ratio in Dark Mode,Accessibility > WCAG,Critical,,,Mercury dark mode active,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] activate dark mode
+[WAIT] page rendered
+[ACT] run Chrome DevTools accessibility contrast check on body text (or use Lighthouse audit)","[DOM] body text (#e9edf2) against body background (#141415) meets WCAG AA minimum 4.5:1 contrast ratio
+[DOM] contrast ratio measured and documented","[CONSOLE] no accessibility errors","Body text contrast below 4.5:1; WCAG AA failure",none,VCST-4702,Manual
+DM-065,WCAG AA — Link Color Contrast Ratio in Dark Mode,Accessibility > WCAG,Critical,,,Mercury dark mode active,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] activate dark mode
+[ACT] inspect link colors via DevTools accessibility panel","[DOM] accent-700 link color (#91bfd4) against dark backgrounds passes WCAG AA 4.5:1
+[DOM] link contrast ratio measured and documented","[CONSOLE] no a11y errors","Link color (#91bfd4) contrast ratio below 4.5:1 on dark background",none,VCST-4702,Manual
+DM-066,WCAG AA — Primary Button Text Contrast (KNOWN P2 Bug),Accessibility > WCAG > Button,High,,,Mercury dark mode; KNOWN BUG: primary button contrast 3.43:1 fails WCAG AA,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] activate dark mode
+[ACT] inspect primary 'Add to Cart' or 'Sign In' button contrast ratio via DevTools","[DOM] measure actual contrast ratio of primary button text vs button background in dark mode
+[DOM] document contrast ratio — EXPECTED: 3.43:1 (FAILS WCAG AA 4.5:1 minimum)
+[DOM] flag as P2 bug if unfixed","[CONSOLE] no errors","Contrast ratio below 4.5:1 — THIS IS A KNOWN P2 BUG. Document value and flag for design fix.",none,VCST-4702,Manual
+DM-067,WCAG AA — Disabled Text Contrast in Dark Mode,Accessibility > WCAG,Medium,,,Mercury dark mode; disabled form elements or buttons visible,front_url={{FRONT_URL}},"[NAV] page with disabled elements at {{FRONT_URL}}
+[ACT] activate dark mode
+[ACT] inspect disabled button/input contrast via DevTools","[DOM] disabled text has minimum 3:1 contrast (WCAG AA relaxed for disabled elements)
+[DOM] disabled state visually distinguishable","[CONSOLE] no errors","Disabled text completely invisible on dark background",none,VCST-4702,Manual
+DM-068,WCAG AA — Focus Indicator Visibility Across Dark Mode,Accessibility > WCAG > Focus,Critical,,,Mercury dark mode; keyboard navigation,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] activate dark mode
+[ACT] use Tab key to navigate through interactive elements (buttons, inputs, links, checkboxes)","[DOM] every interactive element shows a visible focus indicator in dark mode
+[DOM] focus ring visible on: VcInput (0.8 opacity), VcCheckbox (0.8 opacity), VcRadioButton (0.8 opacity), VcButton, VcChip, VcMenuItem
+[DOM] no element is focusable but visually invisible when focused","[CONSOLE] no errors","Any focusable element shows no visible focus indicator (WCAG 2.4.7 failure)",none,VCST-4702,Manual
+DM-069,WCAG AA — Mobile Menu Contrast in Dark Mode,Accessibility > WCAG > Mobile,High,,,Mercury dark mode; mobile viewport; mobile menu open,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}} at mobile width
+[ACT] activate dark mode
+[ACT] open mobile menu","[DOM] mobile menu text (#f2f7f7) against mobile menu background (#080b0e) meets WCAG AA 4.5:1
+[DOM] navigation links readable
+[DOM] icons have sufficient contrast","[CONSOLE] no errors","Mobile menu text contrast below 4.5:1",none,VCST-4702,Manual
+DM-070,Cross-Browser — Chrome Dark Mode Rendering,Cross-Browser > Chrome,High,,,Mercury theme; dark mode toggle available; Chrome browser,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}} in Chrome (playwright-chrome)
+[ACT] activate dark mode
+[WAIT] full page rendered
+[ACT] navigate through homepage / catalog / PDP","[DOM] dark mode colors render correctly in Chrome (chromium)
+[DOM] no Chrome-specific CSS variable resolution issues
+[DOM] autofill override works in Chrome (-webkit-box-shadow approach)
+[DOM] all dark color tokens applied correctly","[CONSOLE] no Chrome-specific CSS errors
+[NETWORK] no failed asset requests in Chrome","Dark mode fails to apply in Chrome; specific color tokens not resolved; autofill override broken",none,VCST-4702,Manual
+DM-071,Cross-Browser — Firefox Dark Mode Rendering,Cross-Browser > Firefox,High,,,Mercury theme; dark mode toggle; Firefox browser,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}} in Firefox (playwright-firefox)
+[ACT] activate dark mode
+[WAIT] full page rendered","[DOM] dark mode colors render correctly in Firefox
+[DOM] no Firefox-specific CSS issues with CSS custom properties
+[DOM] focus rings render correctly in Firefox (Firefox has own focus ring rendering)
+[DOM] autofill override works in Firefox","[CONSOLE] no Firefox-specific errors","Dark mode colors incorrect in Firefox; focus rings different/broken; autofill override not working in Firefox",none,VCST-4702,Manual
+DM-072,Cross-Browser — Edge Dark Mode Rendering,Cross-Browser > Edge,High,,,Mercury theme; dark mode toggle; Edge browser,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}} in Edge (playwright-edge)
+[ACT] activate dark mode
+[WAIT] full page rendered","[DOM] dark mode colors render correctly in Edge (Chromium-based)
+[DOM] no Edge-specific CSS issues
+[DOM] autofill override works in Edge (same -webkit-box-shadow approach as Chrome)","[CONSOLE] no errors in Edge","Dark mode fails specifically in Edge; Edge-specific rendering differences",none,VCST-4702,Manual
+DM-073,Light Mode Regression — VcMenuItem Base bg-additional-50,Light Mode Regression,Critical,,,Light mode active (NOT dark mode); navigation menus with VcMenuItem,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] ensure light mode active (html.dark class absent)
+[WAIT] navigation menus rendered
+[ACT] hover over a navigation menu item","[DOM] non-active non-hovered menu item has bg-additional-50 base background in light mode (moved from :not(:disabled) to base __inner class in PR)
+[DOM] this change must NOT visually break light mode menu item appearance
+[DOM] light mode menu item background looks same as before PR","[CONSOLE] no CSS regressions","Menu item base background visually changed in light mode compared to pre-PR baseline; items look different",none,VCST-4702,Manual
+DM-074,Light Mode Regression — Skyflow lineHeight Addition,Light Mode Regression,High,,,Light mode; Skyflow payment at checkout,front_url={{FRONT_URL}},"[NAV] Skyflow checkout payment step at {{FRONT_URL}} in light mode
+[WAIT] Skyflow payment form rendered","[DOM] Skyflow label has lineHeight: '1.25rem' in light mode
+[DOM] label text not clipped — no visual regression introduced in light mode
+[DOM] light mode Skyflow form appearance same as pre-PR baseline","[CONSOLE] no errors","Skyflow label text clipped in light mode after PR change",none,VCST-4702,Manual
+DM-075,Light Mode Regression — Toggle Dark to Light No Artifacts,Light Mode Regression,Critical,,,Start in dark mode; then toggle back to light mode,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[ACT] activate dark mode
+[WAIT] dark mode fully applied
+[ACT] navigate to catalog, PDP, cart pages in dark mode
+[ACT] toggle back to light mode
+[WAIT] light mode fully applied (html.dark class removed)","[DOM] no dark-mode CSS artifacts remain after switching back to light (no elements stuck with dark colors)
+[DOM] page background returns to light theme colors
+[DOM] all text, buttons, inputs, menus return to light-mode colors
+[DOM] localStorage updated to reflect light preference","[CONSOLE] no CSS transition errors
+[NETWORK] no unexpected requests on toggle","Dark-mode colors persist on some elements after toggling to light; partial application of light mode; CSS variable reset incomplete",none,VCST-4702,Manual
+DM-076,Default Dark Preset — darkPresets Map Registration,Dark Mode Activation > Preset Registration,High,,,Default theme preset; dark mode toggle,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}} configured with default theme (not mercury)
+[ACT] activate dark mode","[DOM] default theme dark preset colors applied (from default.dark.json — 140 tokens)
+[DOM] dark mode applies correct token overrides for default theme
+[DOM] no fallback to mercury dark colors","[CONSOLE] no errors","Default dark preset not loading; dark mode falls back to mercury colors on default theme",none,VCST-4702,Manual
+DM-077,Mercury Dark Preset — darkPresets Map Registration,Dark Mode Activation > Preset Registration,Critical,,,Mercury theme preset; dark mode toggle,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}} configured with mercury theme
+[ACT] activate dark mode","[DOM] mercury theme dark preset colors applied (from mercury.dark.json — 140 tokens)
+[DOM] correct mercury dark body bg (#141415), text (#e9edf2), header colors applied
+[DOM] all 140 tokens available as CSS custom properties","[CONSOLE] no errors; no missing CSS variable warnings","Mercury dark preset not loading; tokens missing; default colors not overriding",none,VCST-4702,Manual
+DM-078,Coffee Dark Preset — darkPresets Map Registration,Dark Mode Activation > Preset Registration,Medium,,,Coffee theme preset; dark mode toggle,front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}} configured with coffee theme
+[ACT] activate dark mode","[DOM] coffee theme dark preset colors applied (coffee registered in darkPresets map in index.ts)
+[DOM] dark mode shows coffee theme dark palette (not mercury or default palette)","[CONSOLE] no errors","Coffee dark preset not loading; wrong palette applied",none,VCST-4702,Manual

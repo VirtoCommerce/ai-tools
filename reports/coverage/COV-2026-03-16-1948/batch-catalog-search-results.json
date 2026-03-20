@@ -1,0 +1,42 @@
+{
+  "domain": "CATALOG_SEARCH",
+  "suite": "03",
+  "gapsAnalyzed": 12,
+  "casesGenerated": 18,
+  "layer": "storefront",
+  "suitesModified": ["03"],
+  "newCaseIds": [
+    "CAT-038",
+    "CAT-039",
+    "CAT-040",
+    "CAT-041",
+    "CAT-042",
+    "CAT-043",
+    "CAT-044",
+    "CAT-045",
+    "CAT-046",
+    "SRCH-NEW-037",
+    "SRCH-NEW-038",
+    "SRCH-NEW-039",
+    "SRCH-NEW-040",
+    "SRCH-NEW-041",
+    "SRCH-NEW-042",
+    "SRCH-NEW-043"
+  ],
+  "gapCoverage": {
+    "GAP-CS-01": { "cases": ["CAT-038", "CAT-039"], "count": 2, "priority": "P1" },
+    "GAP-CS-02": { "cases": ["CAT-040", "CAT-041"], "count": 2, "priority": "P2" },
+    "GAP-CS-03": { "cases": ["CAT-042"], "count": 1, "priority": "P2" },
+    "GAP-CS-04": { "cases": ["CAT-043"], "count": 1, "priority": "P2" },
+    "GAP-CS-05": { "cases": ["CAT-044", "CAT-045"], "count": 2, "priority": "P1" },
+    "GAP-CS-06": { "cases": ["CAT-046"], "count": 1, "priority": "P2" },
+    "GAP-CS-07": { "cases": ["SRCH-NEW-037", "SRCH-NEW-038"], "count": 2, "priority": "P1" },
+    "GAP-CS-08": { "cases": ["SRCH-NEW-039"], "count": 1, "priority": "P1" },
+    "GAP-CS-09": { "cases": ["SRCH-NEW-040"], "count": 1, "priority": "P1" },
+    "GAP-CS-10": { "cases": ["SRCH-NEW-041"], "count": 1, "priority": "P2" },
+    "GAP-CS-11": { "cases": ["SRCH-NEW-042"], "count": 1, "priority": "P2" },
+    "GAP-CS-12": { "cases": ["SRCH-NEW-043"], "count": 1, "priority": "P2" }
+  },
+  "generatedAt": "2026-03-16T19:48:00Z",
+  "automationStatus": "Generated"
+}

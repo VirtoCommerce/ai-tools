@@ -912,3 +912,59 @@ BOPIS-076,Cross-Layer: Cart API Shows $0 Shipping,BOPIS > Cart > Cross-Layer,Hig
 [NETWORK] cart API shipments[].price = 0 verified in Network tab
 [ADMIN] if order placed, verify stored order has $0 shipping in Admin
 [CONSOLE] no TypeError or JS errors during cart load after pickup confirmed","Cart API shipments[].price > 0 despite pickup confirmed; Total in API includes shipping; Storefront display inconsistent with API response","Clear pickup location or remove items from cart",checklist-K,Manual
+BOPIS-077,Country Dropdown Stays Open During Multi-Select,BOPIS > Cart > Filters,Critical,BL-BOPIS-003,"ECL-14.2","PickPoints modal open; Locations in multiple countries configured","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] open Country filter dropdown
+[WAIT] dropdown opens showing country checkboxes
+[ASSERT] dropdown is in expanded/open state
+[ACT] click first country checkbox using mouse
+[WAIT] checkbox checked
+[ASSERT] dropdown remains open after first selection
+[ACT] click second country checkbox using mouse
+[WAIT] checkbox checked
+[ASSERT] dropdown remains open after second selection
+[ACT] click third country checkbox using mouse
+[WAIT] checkbox checked
+[ASSERT] dropdown remains open after third selection
+[ASSERT] all three country chips/tags visible","[DOM] dropdown element has expanded/open attribute after each checkbox click
+[STATE] dropdown does not close between checkbox selections
+[DOM] selected country chips visible outside dropdown
+[STATE] no need to reopen dropdown between selections","[CONSOLE] no TypeError or JS errors during multi-select
+[NETWORK] filter API returns 2xx after each selection","Dropdown closes after each checkbox click forcing user to reopen; Dropdown flickers or re-renders between selections; Click intercepted by underlying element (z-index issue)","Close modal; navigate away",VCST-4775,Manual
+BOPIS-078,All Filter Checkboxes Clickable — No Pointer Interception,BOPIS > Cart > Filters,Critical,BL-BOPIS-003,"ECL-14.2","PickPoints modal open; Locations in multiple countries/states/cities configured; VCST-4775 regression guard","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] open Country filter dropdown
+[ACT] click EACH country checkbox one by one using real mouse clicks (not JavaScript)
+[ASSERT] every country checkbox responds to mouse click
+[ACT] close Country dropdown
+[ACT] select Country: USA
+[ACT] open State filter dropdown
+[ACT] click EACH state checkbox one by one using real mouse clicks
+[ASSERT] every state checkbox responds to mouse click
+[ACT] close State dropdown
+[ACT] open City filter dropdown
+[ACT] click EACH city checkbox one by one using real mouse clicks
+[ASSERT] every city checkbox responds to mouse click
+[ASSERT] no click intercepted by underlying vc-radio-button__input elements in any filter","[DOM] every checkbox in Country, State, and City filters toggles on mouse click — no unresponsive items
+[STATE] selected count matches clicked count for each filter
+[DOM] no pointer-events interception from underlying vc-radio-button__input elements (z-index isolation correct)
+[DOM] filter chips appear correctly for all selected items across all filters","[CONSOLE] no TypeError or JS errors during checkbox interactions
+[NETWORK] no failed requests during multi-select","Some checkboxes unresponsive to mouse click in any filter (Country, State, or City); Click lands on underlying radio button instead of checkbox (z-index/pointer-events bug); Fewer chips than expected after clicking all checkboxes","Close modal; navigate away",VCST-4775,Manual
+BOPIS-079,Select All Countries Shows Complete Location List,BOPIS > Cart > Filters,High,BL-BOPIS-003,"ECL-14.2","PickPoints modal open; Locations in multiple countries configured","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] note total number of locations displayed (unfiltered count)
+[ACT] open Country filter dropdown
+[ACT] select ALL countries one by one
+[WAIT] filter applied with all countries selected
+[ASSERT] location count with all countries selected equals unfiltered count
+[ASSERT] all locations visible in the list (no missing locations)
+[ACT] reset all filters
+[WAIT] filters cleared
+[ASSERT] location count matches the pre-filter count","[STATE] selecting all countries produces same result count as no filter applied (logical equivalence)
+[STATE] no locations missing when all countries selected vs unfiltered
+[DOM] location list identical between all-selected and unfiltered states
+[MATH] count(all countries selected) == count(unfiltered)","[CONSOLE] no TypeError or JS errors during select-all operation
+[NETWORK] filter API returns complete location set when all countries selected","Fewer locations shown with all countries selected than with no filter (missing locations); All-countries count != unfiltered count; Specific countries' locations missing from results (e.g., USA locations absent)","Close modal; navigate away",VCST-4775,Manual

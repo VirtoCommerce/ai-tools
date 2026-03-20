@@ -449,7 +449,7 @@ CFG-CA-005,Mark Configuration Section as Required and Verify Storefront Enforcem
 [STATE] Quantity set to 1
 [STATE] Validation error: Please select a required option or similar; item NOT added to cart
 [STATE] Option selected
-[STATE] Item successfully added to cart","[API] POST /xapi/graphql — cart mutation — verify required option enforced
+[STATE] Item successfully added to cart","[API] POST /graphql — cart mutation — verify required option enforced
 [CONSOLE] No validation errors in console
 [NETWORK] Cart API rejects add without required option","Required option not enforced; item added to cart without selection; accordion label not updated",restore section to optional via Admin,"TP_CONFIGURABLE_PRODUCTS_001, CONFIG-002",Manual
 CFG-CA-006,Edit Existing Configuration Option Price and Verify on Storefront,Catalog > Configurable Products > Edit,High,BL-CAT-001; BL-CAT-003,"","QA Test Configurable Product exists with options. Admin logged in. Note current price of first option ($25.00).","oldPrice=25.00; newPrice=30.00; frontUrl={{FRONT_URL}}; adminUrl={{BACK_URL}}","[NAV] Open first option in Admin

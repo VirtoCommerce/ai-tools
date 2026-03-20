@@ -458,7 +458,7 @@ These four charters are pre-built for common Virto Commerce exploratory scenario
 - **Tour:** Data
 - **Time Box:** 30 minutes
 - **Risk Level:** High (API serves all frontend clients)
-- **Environment:** FRONT_URL/xapi/graphql and BACK_URL/api
+- **Environment:** FRONT_URL/graphql and BACK_URL/api
 ```
 
 **Test Ideas:**

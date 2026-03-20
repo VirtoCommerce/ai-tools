@@ -1,0 +1,517 @@
+{
+  "profile": "full",
+  "dateStamp": "20260317",
+  "prefix": "SEED-20260317",
+  "target": "https://vcst-qa.govirto.com",
+  "storeId": "B2B-store",
+  "created": {
+    "catalogs": [
+      {
+        "id": "38d756fe-7ce6-4371-8e3d-28ade2120445",
+        "name": "SEED-20260317-B2B-Electronics",
+        "csvId": "CAT-PHYS-001"
+      },
+      {
+        "id": "0b2a1e79-ec08-4aa6-8bb5-c585e5550650",
+        "name": "SEED-20260317-B2B-Industrial",
+        "csvId": "CAT-PHYS-002"
+      },
+      {
+        "id": "b31bd4f0-ffbb-4772-b246-1b1e304736e2",
+        "name": "SEED-20260317-B2B-Office",
+        "csvId": "CAT-PHYS-003"
+      },
+      {
+        "id": "f2c5ac97-9a75-40c7-bccf-06f178980635",
+        "name": "SEED-20260317-B2B-mixed",
+        "csvId": "CAT-VIRT-001"
+      },
+      {
+        "id": "39b31c74-c361-4b66-8c69-ef7be2c811a8",
+        "name": "SEED-20260317-B2B-Electronics-Only",
+        "csvId": "CAT-VIRT-002"
+      }
+    ],
+    "categories": [
+      {
+        "id": "2555226a-e50d-4aff-b6c8-8e9b25bdc6c2",
+        "name": "SEED-20260317-Electronics",
+        "csvId": "CCAT-001"
+      },
+      {
+        "id": "b4dbbf5d-03fe-4a84-99ab-ca72db9aec50",
+        "name": "SEED-20260317-Industrial Supplies",
+        "csvId": "CCAT-011"
+      },
+      {
+        "id": "e18df577-af6d-4ab0-9a97-84618a0b164b",
+        "name": "SEED-20260317-Office Supplies",
+        "csvId": "CCAT-020"
+      },
+      {
+        "id": "be0e2f26-f87c-4fb3-8ed1-cf1f316997ed",
+        "name": "SEED-20260317-Inactive Category",
+        "csvId": "CCAT-030"
+      },
+      {
+        "id": "afaf55a2-49fb-4c1f-b53b-427cd6afb777",
+        "name": "SEED-20260317-Networking Equipment",
+        "csvId": "CCAT-002"
+      },
+      {
+        "id": "6ba1cfab-9d3d-43e8-b378-41033dd1bbf9",
+        "name": "SEED-20260317-Computers & Laptops",
+        "csvId": "CCAT-005"
+      },
+      {
+        "id": "5d9c7ff9-16ec-4baf-8812-f9eea5cc7878",
+        "name": "SEED-20260317-Peripherals",
+        "csvId": "CCAT-008"
+      },
+      {
+        "id": "97aff72b-0156-49a8-beaa-2a92f3f48d64",
+        "name": "SEED-20260317-Safety Equipment",
+        "csvId": "CCAT-012"
+      },
+      {
+        "id": "21c21c89-db62-465a-b9aa-7a252a1eba15",
+        "name": "SEED-20260317-Tools & Hardware",
+        "csvId": "CCAT-015"
+      },
+      {
+        "id": "26f9e0fc-ec55-41b2-b358-02172ddef1e5",
+        "name": "SEED-20260317-Material Handling",
+        "csvId": "CCAT-019"
+      },
+      {
+        "id": "cf6fefa5-b3e8-4c36-90f6-36c648b204d3",
+        "name": "SEED-20260317-Paper & Printing",
+        "csvId": "CCAT-021"
+      },
+      {
+        "id": "d52ea6c5-596c-4fb1-8541-5a7fb32d75e5",
+        "name": "SEED-20260317-Furniture",
+        "csvId": "CCAT-022"
+      },
+      {
+        "id": "00f4baf4-cb0d-4062-a3c7-e8e07b2c0197",
+        "name": "SEED-20260317-Breakroom Supplies",
+        "csvId": "CCAT-025"
+      },
+      {
+        "id": "c3e5acbf-c202-40c3-acde-483d5c8cad67",
+        "name": "SEED-20260317-Technology Accessories",
+        "csvId": "CCAT-026"
+      },
+      {
+        "id": "5601e0ce-5d6d-421f-8f92-fa2471b2761b",
+        "name": "SEED-20260317-Audio & Video",
+        "csvId": "CCAT-027"
+      },
+      {
+        "id": "73710a6e-9105-44f4-a314-a58d93e25bed",
+        "name": "SEED-20260317-Routers & Switches",
+        "csvId": "CCAT-003"
+      },
+      {
+        "id": "622edd95-f644-448b-b39e-2dc725cc052b",
+        "name": "SEED-20260317-Cables & Adapters",
+        "csvId": "CCAT-004"
+      },
+      {
+        "id": "0f6e979f-5b4d-498c-9861-a6cc82748c06",
+        "name": "SEED-20260317-Laptops",
+        "csvId": "CCAT-006"
+      },
+      {
+        "id": "8f67037a-8f70-4222-891b-b126ff804711",
+        "name": "SEED-20260317-Desktops & Workstations",
+        "csvId": "CCAT-007"
+      },
+      {
+        "id": "6e660ae1-dd89-4511-8a20-b7a069ff86e4",
+        "name": "SEED-20260317-Monitors & Displays",
+        "csvId": "CCAT-009"
+      },
+      {
+        "id": "f82b4d7e-acd5-43a1-9cef-fedc866e54ff",
+        "name": "SEED-20260317-Input Devices",
+        "csvId": "CCAT-010"
+      },
+      {
+        "id": "bcf4289c-abe4-4760-8ead-e72ab079c8a1",
+        "name": "SEED-20260317-Personal Protective Equipment",
+        "csvId": "CCAT-013"
+      },
+      {
+        "id": "79a03bd0-7210-448b-8a8c-19c68bddbe24",
+        "name": "SEED-20260317-First Aid & Medical",
+        "csvId": "CCAT-014"
+      },
+      {
+        "id": "6169c3a8-7ad7-4e6c-9a9b-1f79e9aea9e1",
+        "name": "SEED-20260317-Power Tools",
+        "csvId": "CCAT-016"
+      },
+      {
+        "id": "fac7a385-691d-42f1-bf0c-5f55c1e48503",
+        "name": "SEED-20260317-Hand Tools",
+        "csvId": "CCAT-017"
+      },
+      {
+        "id": "5cd3c501-2cc4-4089-8a0a-6818a2eae8db",
+        "name": "SEED-20260317-Fasteners & Hardware",
+        "csvId": "CCAT-018"
+      },
+      {
+        "id": "790e79d9-45fb-4fb1-af79-e7963897b6ec",
+        "name": "SEED-20260317-Desks & Tables",
+        "csvId": "CCAT-023"
+      },
+      {
+        "id": "0857fb89-1e07-4bbc-b2bc-21cd6b9ac4f7",
+        "name": "SEED-20260317-Chairs & Seating",
+        "csvId": "CCAT-024"
+      },
+      {
+        "id": "da492cd0-6bf3-4a96-a1d8-ea3cccd2d4cf",
+        "name": "SEED-20260317-Conference Systems",
+        "csvId": "CCAT-028"
+      },
+      {
+        "id": "e1b19408-ee5e-4631-bf2b-728ade77e64c",
+        "name": "SEED-20260317-Headsets & Speakers",
+        "csvId": "CCAT-029"
+      }
+    ],
+    "products": [
+      {
+        "id": "8b105d9e-504f-453c-b37e-9a1e6a6f845a",
+        "sku": "CISCO-SW24-001",
+        "name": "SEED-20260317-Cisco Catalyst 24-Port Managed Switch",
+        "csvId": "BPROD-001",
+        "isVariation": false
+      },
+      {
+        "id": "5d7335de-c15b-46d9-b106-61163728231b",
+        "sku": "CISCO-SW48-001",
+        "name": "SEED-20260317-Cisco Catalyst 48-Port Managed Switch",
+        "csvId": "BPROD-002",
+        "isVariation": false
+      },
+      {
+        "id": "f9257593-eeb1-4c97-a1a0-4a1bd7ad19b0",
+        "sku": "UBNT-AP-001",
+        "name": "SEED-20260317-Ubiquiti UniFi AP Wi-Fi 6",
+        "csvId": "BPROD-003",
+        "isVariation": false
+      },
+      {
+        "id": "614c84ce-6538-4edc-bd9e-0d6a4bcae5cb",
+        "sku": "CAT6-PATCH-001",
+        "name": "SEED-20260317-Cat6 Ethernet Patch Cable 10ft",
+        "csvId": "BPROD-004",
+        "isVariation": false
+      },
+      {
+        "id": "c2536be0-6ffa-45d0-9ca7-6d2d69c5a9d2",
+        "sku": "CAT6-PATCH-025",
+        "name": "SEED-20260317-Cat6 Ethernet Patch Cable 25ft",
+        "csvId": "BPROD-005",
+        "isVariation": false
+      },
+      {
+        "id": "31844b07-08f0-4e91-8843-715cee599dff",
+        "sku": "DELL-LAT-001",
+        "name": "SEED-20260317-Dell Latitude 5540 Business Laptop",
+        "csvId": "BPROD-006",
+        "isVariation": false
+      },
+      {
+        "id": "21f4afb5-07b1-4a7c-a312-0c538ec46c68",
+        "sku": "DELL-LAT-001-32-1TB",
+        "name": "SEED-20260317-Dell Latitude 5540 — 32GB/1TB",
+        "csvId": "BPROD-007",
+        "isVariation": false
+      },
+      {
+        "id": "e588591e-e5f7-49cc-ad20-2ae0e8fdbee9",
+        "sku": "DELL-LAT-001-8-256",
+        "name": "SEED-20260317-Dell Latitude 5540 — 8GB/256GB",
+        "csvId": "BPROD-008",
+        "isVariation": false
+      },
+      {
+        "id": "3aee1d81-b07c-47b2-a2f4-56b7ca3208bc",
+        "sku": "HP-Z2-001",
+        "name": "SEED-20260317-HP Z2 Tower G9 Workstation",
+        "csvId": "BPROD-009",
+        "isVariation": false
+      },
+      {
+        "id": "d564b643-282b-4f2d-8fd0-8363f0cf7e5f",
+        "sku": "LG-27UK850-001",
+        "name": "SEED-20260317-LG 27UK850 4K UHD Monitor",
+        "csvId": "BPROD-010",
+        "isVariation": false
+      },
+      {
+        "id": "9199f45e-00e7-4885-8463-88e533eee724",
+        "sku": "SAMSUNG-34-001",
+        "name": "SEED-20260317-Samsung 34-inch Ultrawide Curved Monitor",
+        "csvId": "BPROD-011",
+        "isVariation": false
+      },
+      {
+        "id": "b6b6a2d0-d21e-4399-a7db-6cbbc30ac5ca",
+        "sku": "LOGI-MX-001",
+        "name": "SEED-20260317-Logitech MX Master 3S Wireless Mouse",
+        "csvId": "BPROD-012",
+        "isVariation": false
+      },
+      {
+        "id": "dd767451-8a2a-4df0-a9e8-108b5034e6ca",
+        "sku": "LOGI-KB-001",
+        "name": "SEED-20260317-Logitech MX Keys S Wireless Keyboard",
+        "csvId": "BPROD-015",
+        "isVariation": false
+      },
+      {
+        "id": "42c065f6-d99d-4b5b-9efe-dc8b5a1de6ed",
+        "sku": "3M-PPE-HARDHAT-001",
+        "name": "SEED-20260317-3M Hard Hat H-700 Series",
+        "csvId": "BPROD-016",
+        "isVariation": false
+      },
+      {
+        "id": "77319f05-01c9-40e9-9ff4-2c7869c8ad3d",
+        "sku": "FAK-OSHA-001",
+        "name": "SEED-20260317-OSHA First Aid Kit — 50 Person",
+        "csvId": "BPROD-020",
+        "isVariation": false
+      },
+      {
+        "id": "9b8edddf-968c-4bea-886f-a4bad43ada34",
+        "sku": "DEWALT-DCD771-001",
+        "name": "SEED-20260317-DeWalt 20V MAX Cordless Drill/Driver",
+        "csvId": "BPROD-021",
+        "isVariation": false
+      },
+      {
+        "id": "7b0b3a22-8172-4d54-89d8-7b44fad054e6",
+        "sku": "MAKITA-XFD131-001",
+        "name": "SEED-20260317-Makita 18V LXT Brushless Drill Kit",
+        "csvId": "BPROD-022",
+        "isVariation": false
+      },
+      {
+        "id": "e83eb48f-456d-46e8-a8d9-ab7008674d47",
+        "sku": "BOSCH-WRENCH-001",
+        "name": "SEED-20260317-Bosch 12-Piece Ratcheting Wrench Set",
+        "csvId": "BPROD-023",
+        "isVariation": false
+      },
+      {
+        "id": "e7c5339f-984a-4101-bf9d-c2f57b045cc6",
+        "sku": "HEX-BOLT-001",
+        "name": "SEED-20260317-Hex Bolt M10x40 Grade 8.8 (Box of 100)",
+        "csvId": "BPROD-024",
+        "isVariation": false
+      },
+      {
+        "id": "6691f40e-8d90-4414-b69a-0779a94e4fcc",
+        "sku": "PJACK-001",
+        "name": "SEED-20260317-Pallet Jack 5500 lb Capacity",
+        "csvId": "BPROD-025",
+        "isVariation": false
+      },
+      {
+        "id": "cf350635-15f7-493e-9cd5-71689bf104d1",
+        "sku": "HAMM-A4-001",
+        "name": "SEED-20260317-HP LaserJet Pro A4 Printer Paper (Case of 5000)",
+        "csvId": "BPROD-026",
+        "isVariation": false
+      },
+      {
+        "id": "cfa3075b-51ce-4105-af77-09049c9abfe1",
+        "sku": "HP-TONER-001",
+        "name": "SEED-20260317-HP 58A LaserJet Toner Cartridge Black",
+        "csvId": "BPROD-027",
+        "isVariation": false
+      },
+      {
+        "id": "5994f5c4-84c4-4cdc-9663-9c4d76e0e76f",
+        "sku": "STLCASE-LEAP-001",
+        "name": "SEED-20260317-Steelcase Leap V2 Ergonomic Chair",
+        "csvId": "BPROD-028",
+        "isVariation": false
+      },
+      {
+        "id": "0a618a8f-2550-4aa1-89f5-6c06ee41742c",
+        "sku": "HMILL-DESK-001",
+        "name": "SEED-20260317-Herman Miller Nevi Sit-Stand Desk",
+        "csvId": "BPROD-032",
+        "isVariation": false
+      },
+      {
+        "id": "823862f5-93b6-4b11-b3c6-b2354f5f0ecc",
+        "sku": "LOGI-RALLY-001",
+        "name": "SEED-20260317-Logitech Rally Plus Conference System",
+        "csvId": "BPROD-033",
+        "isVariation": false
+      },
+      {
+        "id": "cfd9655a-11d5-4926-9970-9b74c967007d",
+        "sku": "MS-TEAMS-HEADSET",
+        "name": "SEED-20260317-Microsoft Teams Certified Headset",
+        "csvId": "BPROD-034",
+        "isVariation": false
+      },
+      {
+        "id": "f46ae2a8-16dd-4fbe-ab9c-8f971029bc71",
+        "sku": "COFFEE-KEURIG-001",
+        "name": "SEED-20260317-Keurig K-Elite Commercial Brewer",
+        "csvId": "BPROD-035",
+        "isVariation": false
+      },
+      {
+        "id": "3d71374b-ec67-40b1-b908-08a87954cd28",
+        "sku": "DOCK-TB4-001",
+        "name": "SEED-20260317-Thunderbolt 4 Docking Station Universal",
+        "csvId": "BPROD-036",
+        "isVariation": false
+      },
+      {
+        "id": "91b266b5-ee42-4cbe-bad6-0a6010c372ca",
+        "sku": "DIGITAL-LICENSE-001",
+        "name": "SEED-20260317-Microsoft 365 Business Standard — Annual",
+        "csvId": "BPROD-037",
+        "isVariation": false
+      },
+      {
+        "id": "50f6d177-5c9c-4d96-bbb7-9d6da36407fa",
+        "sku": "WARRANTY-EXT-001",
+        "name": "SEED-20260317-Extended Warranty — 2 Year",
+        "csvId": "BPROD-038",
+        "isVariation": false
+      },
+      {
+        "id": "2838d0d4-ac25-4fc9-ac20-06844d91405e",
+        "sku": "OOS-PRODUCT-001",
+        "name": "SEED-20260317-Cisco Meraki MR46 Access Point [OUT OF STOCK]",
+        "csvId": "BPROD-039",
+        "isVariation": false
+      },
+      {
+        "id": "b040d5a2-973b-4b50-96c4-a04574855bdc",
+        "sku": "INACTIVE-PROD-001",
+        "name": "SEED-20260317-Discontinued Network Switch [INACTIVE]",
+        "csvId": "BPROD-040",
+        "isVariation": false
+      },
+      {
+        "id": "fdd57150-5d84-4d3a-94f3-0c385f2ca7e0",
+        "sku": "BULK-PAPER-001",
+        "name": "SEED-20260317-Copy Paper — Pallet (40 Cases)",
+        "csvId": "BPROD-041",
+        "isVariation": false
+      },
+      {
+        "id": "cb51a0b6-f834-48bc-860f-7133d3d4474c",
+        "sku": "MIN-PRICE-001",
+        "name": "SEED-20260317-Cable Tie 100-Pack",
+        "csvId": "BPROD-042",
+        "isVariation": false
+      },
+      {
+        "id": "9d4388a6-46ab-45c4-a1cd-1251fdb7ae37",
+        "sku": "LOGI-MX-001-GY",
+        "name": "SEED-20260317-Logitech MX Master 3S — Pale Gray",
+        "csvId": "BPROD-013",
+        "isVariation": true
+      },
+      {
+        "id": "40b2fcae-6094-414a-858b-72840a6afc6b",
+        "sku": "LOGI-MX-001-WH",
+        "name": "SEED-20260317-Logitech MX Master 3S — White",
+        "csvId": "BPROD-014",
+        "isVariation": true
+      },
+      {
+        "id": "a271852c-bb7b-4293-8dbb-9db44e5c455f",
+        "sku": "3M-PPE-HARDHAT-WH",
+        "name": "SEED-20260317-3M Hard Hat H-700 — White",
+        "csvId": "BPROD-017",
+        "isVariation": true
+      },
+      {
+        "id": "29cbeab6-5e54-4bbd-a086-793be8a7fa36",
+        "sku": "3M-PPE-HARDHAT-YL",
+        "name": "SEED-20260317-3M Hard Hat H-700 — Yellow",
+        "csvId": "BPROD-018",
+        "isVariation": true
+      },
+      {
+        "id": "207e0797-3a64-45cf-9773-8874f5dca13e",
+        "sku": "3M-PPE-HARDHAT-BL",
+        "name": "SEED-20260317-3M Hard Hat H-700 — Blue",
+        "csvId": "BPROD-019",
+        "isVariation": true
+      },
+      {
+        "id": "c3fbd47a-b7e2-4b64-956b-42fd5088b69c",
+        "sku": "STLCASE-LEAP-BK",
+        "name": "SEED-20260317-Steelcase Leap V2 — Black Fabric",
+        "csvId": "BPROD-029",
+        "isVariation": true
+      },
+      {
+        "id": "0d9539f5-a04e-4cad-8524-0793316bce98",
+        "sku": "STLCASE-LEAP-NY",
+        "name": "SEED-20260317-Steelcase Leap V2 — Navy Fabric",
+        "csvId": "BPROD-030",
+        "isVariation": true
+      },
+      {
+        "id": "ce6f47b3-1248-4387-b64d-59c99d13372a",
+        "sku": "STLCASE-LEAP-MS",
+        "name": "SEED-20260317-Steelcase Leap V2 — Mesh Back",
+        "csvId": "BPROD-031",
+        "isVariation": true
+      }
+    ],
+    "priceLists": [
+      {
+        "id": "6000aed1-96b5-42db-bf75-a2f9a57a9fd0",
+        "name": "SEED-20260317-B2B Standard USD",
+        "csvId": "PL-USD-001",
+        "currency": "USD"
+      },
+      {
+        "id": "1110edb8-6c88-4e87-b626-3a2959e4635a",
+        "name": "SEED-20260317-B2B Standard EUR",
+        "csvId": "PL-EUR-001",
+        "currency": "EUR"
+      },
+      {
+        "id": "21d8bf77-ca40-416b-a21c-a9791d0b9fba",
+        "name": "SEED-20260317-B2B Volume Discount USD",
+        "csvId": "PL-USD-002",
+        "currency": "USD"
+      },
+      {
+        "id": "3a22e7ed-21ba-453e-b9df-cb496af5b944",
+        "name": "SEED-20260317-VIP Customer USD",
+        "csvId": "PL-USD-003",
+        "currency": "USD"
+      },
+      {
+        "id": "f3326061-64ff-47f7-b024-1a69545e13d8",
+        "name": "SEED-20260317-Clearance USD",
+        "csvId": "PL-USD-004",
+        "currency": "USD"
+      }
+    ]
+  },
+  "storeOriginalCatalog": "fc596540864a41bf8ab78734ee7353a3"
+}

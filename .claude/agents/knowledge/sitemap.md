@@ -331,7 +331,7 @@ Admin SPA is an Angular-based single-page application with blade navigation (pan
 
 ## 9. GraphQL xAPI Endpoints
 
-**Endpoint:** `{BACK_URL}/xapi/graphql` (storefront) or `{BACK_URL}/graphql` (admin)
+**Endpoint:** `{BACK_URL}/graphql` (storefront) or `{BACK_URL}/graphql` (admin)
 **Explorer:** `{BACK_URL}/ui/graphiql`
 
 | Module | Key Queries | Key Mutations |

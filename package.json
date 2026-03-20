@@ -11,7 +11,13 @@
     "ci:backend": "SUITE_SELECTION=backend npx tsx ci/run-regression.ts",
     "ci:frontend": "SUITE_SELECTION=frontend npx tsx ci/run-regression.ts",
     "ci:full": "SUITE_SELECTION=full MAX_BUDGET_USD=80 npx tsx ci/run-regression.ts",
-    "ci:notify": "npx tsx ci/notify-teams.ts"
+    "ci:notify": "npx tsx ci/notify-teams.ts",
+    "seed": "node scripts/seed-test-data.js",
+    "seed:minimal": "node scripts/seed-test-data.js minimal",
+    "seed:catalog": "node scripts/seed-test-data.js catalog",
+    "seed:full": "node scripts/seed-test-data.js full",
+    "seed:teardown": "node scripts/seed-test-data.js teardown",
+    "seed:dry-run": "node scripts/seed-test-data.js catalog --dry-run --verbose"
   },
   "repository": {
     "type": "git",
