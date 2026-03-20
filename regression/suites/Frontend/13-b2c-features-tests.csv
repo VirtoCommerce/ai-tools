@@ -900,3 +900,114 @@ B2C-POINTS-002,Points After Order,B2C Features > Loyalty,Medium,BL-B2C-003,,"Use
 [MATH] Points credited matches expected earn rate for the order total
 [FORMAT] Points balance updated to reflect new total
 [FORMAT] Transaction timestamp reflects order date","[CONSOLE] no uncaught JS errors","Points balance not increasing after order; new transaction not appearing in history; points calculation not matching expected earn rate",none,Coverage Gap Analysis,Generated
+B2C-CONFIG-018,Edit Configured Product in Cart - Reopen Configurator with Previous Selections,B2C Features > Configurations,High,BL-B2C-001,ECL-7.1,"User logged in; configurable product already in cart with specific options selected (e.g., Section 1: Option A, Section 2: Option B)",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU_CONFIGURABLE}},"1. [NAV] Navigate to cart at {{FRONT_URL}}/cart
+2. [ASSERT] Verify configured product is listed with its selected options summary
+3. [ACT] Click the 'Edit' button on the configured cart line item
+4. [ASSERT] Verify configurator reopens (product configurator page or modal)
+5. [ASSERT] Verify all previously selected options are pre-populated: Section 1 shows Option A selected, Section 2 shows Option B selected
+6. [ASSERT] Verify the running total reflects the previously-saved configuration price
+7. [ACT] Change Section 1 selection from Option A to Option C
+8. [ASSERT] Verify running total updates to reflect Option C's price delta
+9. [ACT] Click 'Add to Cart' or 'Save' to confirm the updated configuration
+10. [NAV] Navigate to cart
+11. [ASSERT] Verify cart line shows updated configuration (Option C, new price)","[DOM] 'Edit' button or link visible on configured cart line item
+[STATE] Configurator reopens pre-populated with previously saved selections - not blank/default state
+[STATE] Section 1 pre-selected to Option A, Section 2 pre-selected to Option B (matching saved config)
+[MATH] Running total on reopen matches cart line price from before edit
+[MATH] Changing Section 1 to Option C updates running total by the correct price delta
+[DOM] After saving: cart line shows Option C selected (not the original Option A)
+[FORMAT] Updated cart line price matches new configuration total","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors
+[NETWORK] no 4xx or 5xx on configurator load or cart update",Edit button missing from configured cart line; configurator reopens with default/empty selections instead of saved ones; running total on reopen shows wrong price; price not updating after option change; cart not reflecting updated configuration after save,remove item from cart,E2E-CONFIG-005,Manual
+B2C-CONFIG-019,Edit Configured Product in Cart - Price Reflects New Configuration,B2C Features > Configurations,High,BL-B2C-001,ECL-7.1,"User logged in; configurable product in cart; original config price known (e.g., $725 = base $500 + Section 1 $100 + Section 2 $125)",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU_CONFIGURABLE}};original_price=725,"1. [NAV] Navigate to {{FRONT_URL}}/cart
+2. [ASSERT] Note original configured cart line price (e.g., $725)
+3. [ACT] Click 'Edit' on the configured cart line
+4. [ASSERT] Configurator opens with original selections pre-loaded
+5. [ACT] Change Section 2 option to a cheaper alternative (e.g., from $125 to $50 delta)
+6. [ASSERT] Verify running total updates: new total = $500 + $100 + $50 = $650
+7. [ACT] Save the updated configuration
+8. [NAV] Navigate to cart
+9. [ASSERT] Verify cart line price changed from $725 to $650
+10. [ASSERT] Verify cart subtotal recalculated accordingly","[MATH] Running total in configurator updates immediately when option changed: $650 vs original $725
+[FORMAT] Cart line price after save shows $650 (not original $725)
+[MATH] Cart subtotal reflects price difference: reduced by $75
+[DOM] Cart line option summary updated to reflect new Section 2 selection
+[STATE] Quantity unchanged after edit (still 1)","[API] mutation errors[] is empty on cart update
+[CONSOLE] no uncaught JS errors
+[NETWORK] cart update request returns 200",Cart price unchanged after editing configuration; running total not updating in configurator; cart subtotal not recalculating; original price persisting instead of updated price,remove item from cart,E2E-CONFIG-005,Manual
+B2C-VAR-012,Unavailable Variant Combinations - Incompatible Options Disabled,B2C Features > Variations,Medium,BL-B2C-001,ECL-7.1,"Product page with size and color variations where some combos are unavailable (e.g., XL in Red is out of stock or not offered)",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU_VARIANTS}},"1. [NAV] Navigate to a product with size and color variant selectors
+2. [ASSERT] Verify both size and color selectors are visible
+3. [ACT] Select size 'XL'
+4. [ASSERT] Verify that color options unavailable in XL (e.g., Red) are visually disabled or crossed-out
+5. [ASSERT] Verify available colors for XL remain selectable
+6. [ACT] Attempt to click a disabled color option (Red)
+7. [ASSERT] Verify click is blocked or a tooltip/message explains unavailability
+8. [ACT] Select a different size (e.g., M)
+9. [ASSERT] Verify Red becomes available again for size M
+10. [ASSERT] Verify Add to Cart is only enabled when a valid combination is fully selected","[DOM] Unavailable variant options are visually indicated: greyed out, crossed-out, or with a disabled state
+[STATE] Clicking a disabled option does nothing OR shows a tooltip such as 'Not available in XL/Red'
+[STATE] Available options for the selected size are clearly interactive and not disabled
+[DOM] When size changes, color availability dynamically updates - Red re-enables for M
+[STATE] Add to Cart button remains disabled until a fully valid combination is selected
+[DOM] No 'Add to Cart' enabled state for an unavailable XL/Red combo","[API] mutation errors[] is empty if any availability lookup is made
+[CONSOLE] no uncaught JS errors
+[NETWORK] no 4xx errors on variant availability check",Disabled options not visually distinct from available ones; clicking disabled option adds unavailable variant to cart; color availability not updating when size changes; Add to Cart enabled for an unavailable combination,none,VCST-4547,Manual
+B2C-LIST-020,Saved for Later Page - View and Move Items Back to Cart,B2C Features > Lists,Medium,BL-B2C-002,,User logged in; at least one product has been saved for later from the cart (appears in /account/saved-for-later),url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"1. [NAV] Navigate to {{FRONT_URL}}/account/saved-for-later
+2. [ASSERT] Verify page loads with heading 'Saved for Later' or equivalent
+3. [ASSERT] Verify saved product is listed with: product image, name, price, and 'Move to Cart' action
+4. [ACT] Click 'Move to Cart' on a saved item
+5. [ASSERT] Verify item removed from Saved for Later list
+6. [ASSERT] Verify success toast or inline confirmation: e.g., 'Item moved to cart'
+7. [NAV] Navigate to {{FRONT_URL}}/cart
+8. [ASSERT] Verify item now appears in cart","[DOM] /account/saved-for-later page loads without errors
+[DOM] Saved item shows product image, name, and price
+[DOM] 'Move to Cart' button or action visible per item
+[STATE] After Move to Cart: item removed from Saved for Later list immediately
+[DOM] Toast or confirmation: 'Item moved to cart' (or equivalent)
+[DOM] Moved item appears in /cart with correct product details
+[STATE] Cart item count in header increments by 1 after move","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors
+[NETWORK] no 4xx on saved-for-later page load or move-to-cart action",Page returns 404 or 500; saved items not listed; Move to Cart button missing; item not removed from saved-for-later after action; item not appearing in cart after move,remove item from cart,Coverage Gap Analysis,Manual
+B2C-LIST-021,Saved for Later Page - Remove Item and Empty State,B2C Features > Lists,Medium,BL-B2C-002,,User logged in; at least one item in Saved for Later; empty state to be triggered,url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"1. [NAV] Navigate to {{FRONT_URL}}/account/saved-for-later
+2. [ASSERT] Verify at least one saved item is displayed
+3. [ACT] Click the remove or delete action on the saved item
+4. [ACT] Confirm removal if a confirmation dialog appears
+5. [ASSERT] Verify item removed from list
+6. [ASSERT] If list is now empty: verify empty state message is shown (e.g., 'No items saved for later' or similar call to action)","[DOM] Remove action (trash icon or 'Remove' link) visible per saved item
+[STATE] After removal: item no longer shown in list
+[DOM] List updates without full page reload
+[DOM] When all items removed: empty state shown with descriptive message (not a blank page)
+[DOM] Empty state may include a CTA such as 'Continue Shopping' or 'Browse Catalog'","[CONSOLE] no uncaught JS errors
+[NETWORK] no 4xx on remove action",Remove action missing; item persisting after removal; blank page shown instead of empty state message; page reload required after removal,none,Coverage Gap Analysis,Manual
+B2C-LIST-022,List View - Pagination or Load More for Large Lists,B2C Features > Lists,Medium,BL-B2C-002,ECL-14.2,User logged in; a list exists containing more than 10 products (trigger pagination or load-more),url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"1. [NAV] Navigate to {{FRONT_URL}}/account/lists
+2. [ACT] Open a list that contains 11 or more products
+3. [ASSERT] Observe how the product grid is presented - look for a 'Load More' button, infinite scroll trigger, or page navigation controls
+4. [SCROLL] Scroll to the bottom of the current product grid
+5. [ACT] If 'Load More' is visible: click it. If infinite scroll: continue scrolling.
+6. [ASSERT] Verify additional products load (11th item and beyond become visible)
+7. [ASSERT] Verify no duplicate products appear in the list","[DOM] Products beyond the initial page/batch visible after Load More or scroll
+[DOM] No duplicate product entries after loading subsequent batches
+[STATE] Total displayed product count eventually matches list item count
+[DOM] If paginated: page indicator or 'Page X of Y' shown
+[DOM] If Load More: button text changes or disappears after all items loaded (e.g., 'No more items')
+[FORMAT] Product count badge on list matches total items across all pages","[CONSOLE] no uncaught JS errors
+[NETWORK] pagination/load-more request returns 200 with non-empty data
+[API] errors[] empty on list products query",List truncated at 10 items with no way to see more; duplicate products after loading more; Load More button not appearing when more items exist; item count badge not matching visible items,none,Coverage Gap Analysis,Manual
+B2C-ORG-011,Org Switch Triggers White-Label Branding Update,B2C Features > Organization,Medium,BL-B2C-004,,"Multi-org user logged in; Org A and Org B configured with different white-label branding (different logo, favicon, or theme color)",url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}},"1. [NAV] Log in as a multi-org user; confirm Org A is active
+2. [ASSERT] Note Org A branding: logo in header, favicon in browser tab, and primary/accent theme color
+3. [ACT] Open the org switcher (account menu dropdown)
+4. [ASSERT] Verify org switcher shows radio buttons and search input
+5. [ACT] Select Org B from the switcher
+6. [WAIT] Wait for page to reload or update
+7. [ASSERT] Verify logo in header has changed to Org B's logo
+8. [ASSERT] Verify favicon in browser tab has changed to Org B's favicon
+9. [ASSERT] Verify primary/accent theme color reflects Org B's white-label colors
+10. [ACT] Switch back to Org A
+11. [ASSERT] Verify Org A branding (logo, favicon, colors) is restored","[DOM] Header logo element src or alt text changes after switching to Org B (Org B logo displayed, not Org A logo)
+[DOM] Browser tab favicon updated to Org B favicon after switch
+[STATE] Theme color (CSS variables or inline styles) reflects Org B's configured brand colors
+[STATE] Switching back to Org A restores Org A logo, favicon, and theme colors
+[DOM] No broken image or missing logo during or after the switch
+[FORMAT] Branding update occurs without requiring manual page refresh","[CONSOLE] no uncaught JS errors
+[NETWORK] logo and favicon assets load with 200 status for Org B
+[CONSOLE] no 404s on Org B brand asset requests",Logo not changing after org switch; favicon unchanged; theme colors unchanged after switch; Org A logo persisting while Org B active; broken image in header after switch; branding change requiring manual refresh,none,Coverage Gap Analysis,Manual

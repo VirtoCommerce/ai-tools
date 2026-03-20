@@ -968,3 +968,178 @@ BOPIS-079,Select All Countries Shows Complete Location List,BOPIS > Cart > Filte
 [DOM] location list identical between all-selected and unfiltered states
 [MATH] count(all countries selected) == count(unfiltered)","[CONSOLE] no TypeError or JS errors during select-all operation
 [NETWORK] filter API returns complete location set when all countries selected","Fewer locations shown with all countries selected than with no filter (missing locations); All-countries count != unfiltered count; Specific countries' locations missing from results (e.g., USA locations absent)","Close modal; navigate away",VCST-4775,Manual
+BOPIS-080,Guest BOPIS Checkout — Select Pickup and Complete Order,BOPIS > Guest Checkout,High,BL-BOPIS-001,"ECL-14.1","Guest session (not logged in); Products in cart with BOPIS-eligible items; At least one pickup location configured","url={{FRONT_URL}};sku={{TEST_SKU}};guest_email={{GUEST_EMAIL}}","[NAV] {{FRONT_URL}}/cart
+[ASSERT] user is not authenticated (no account menu)
+[ACT] click 'Pickup' radio button in delivery options
+[ACT] click 'Select pickup location'
+[WAIT] pickup location modal opens
+[ACT] select a pickup location from the list
+[ACT] click 'Select' then 'Confirm'
+[WAIT] modal closes; selected pickup location shown in cart
+[ACT] click 'Checkout' or 'Proceed to Checkout'
+[WAIT] checkout page loads
+[ACT] enter guest email address {{GUEST_EMAIL}} in email field
+[ACT] fill in required guest contact fields (name, phone if required)
+[ACT] click 'Place Order' or 'Submit Order'
+[WAIT] order confirmation page loads","[DOM] pickup location name and address shown in cart summary before checkout
+[DOM] checkout page does not force account creation before proceeding
+[DOM] order confirmation page displays pickup location details (store name, address)
+[DOM] order confirmation shows fulfillment type as 'Pickup' (not 'Delivery' or 'Shipping')
+[STATE] no shipping address section visible on order confirmation
+[FORMAT] confirmation email or on-screen confirmation references pickup location","[CONSOLE] no JS errors during guest checkout flow
+[NETWORK] POST /cart/checkout returns 2xx; no 4xx auth errors blocking guest
+[API] order created with fulfillment type = pickup; no shipping address attached","Guest blocked at checkout with 'Login required' message; Pickup location details missing from order confirmation; Shipping address section appears on confirmation; Order confirmation shows wrong fulfillment type","Navigate to account creation page if needed; otherwise no cleanup required","Coverage Gap Analysis",Generated
+BOPIS-081,Guest BOPIS Order — Post-Purchase Account Registration,BOPIS > Guest Checkout,High,BL-BOPIS-001,"ECL-14.1","Guest BOPIS order completed (see BOPIS-080); Order confirmation page still open; Registration option available post-purchase","url={{FRONT_URL}};sku={{TEST_SKU}};guest_email={{GUEST_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
+[ACT] complete guest BOPIS checkout (select pickup location, enter email, place order)
+[WAIT] order confirmation page loads with pickup details
+[ASSERT] 'Create an account' or 'Register' link/prompt visible on confirmation page
+[ACT] click 'Create an account' link
+[WAIT] registration form or page loads with email pre-filled from guest order
+[ACT] enter password {{USER_PASSWORD}} and any additional required fields
+[ACT] submit registration form
+[WAIT] account created and user logged in
+[NAV] navigate to {{FRONT_URL}}/account/orders
+[WAIT] order history page loads","[DOM] post-purchase registration prompt visible on order confirmation page
+[DOM] registration form pre-fills guest email address
+[STATE] after registration, user is authenticated
+[DOM] completed BOPIS order appears in order history after registration
+[DOM] order in history shows pickup location details, not a shipping address
+[STATE] guest order is associated with the newly created account","[CONSOLE] no JS errors during account creation flow
+[NETWORK] registration POST returns 2xx; account creation successful
+[API] guest order linked to new account in platform — order visible via account orders endpoint","Post-purchase registration prompt missing; Email not pre-filled in registration form; BOPIS order not visible in order history after registration; Order history shows shipping address instead of pickup location","Delete test account after case execution","Coverage Gap Analysis",Generated
+BOPIS-082,Change Pickup Location Mid-Checkout — Address Updates on Order Review,BOPIS > Checkout,High,BL-BOPIS-004,"ECL-14.2","Authenticated user; Cart with BOPIS-eligible items; At least two distinct pickup locations configured (Location A and Location B)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] select 'Pickup' delivery option
+[ACT] click 'Select pickup location'
+[WAIT] pickup modal opens
+[ACT] select Location A from list
+[ACT] click 'Select' then 'Confirm'
+[WAIT] Location A shown in cart
+[ACT] click 'Checkout' or 'Proceed to Checkout'
+[WAIT] checkout/order review page loads
+[ASSERT] Location A address shown in pickup details section
+[ACT] click 'Change' or 'Edit' pickup location link on checkout page
+[WAIT] pickup modal reopens
+[ACT] select Location B from list
+[ACT] click 'Select' then 'Confirm'
+[WAIT] modal closes
+[ASSERT] checkout page now shows Location B address","[DOM] Location A address visible on order review before change
+[DOM] Location B name and address replaces Location A on order review after change
+[STATE] no stale Location A data visible anywhere on checkout page
+[STATE] order summary reflects the updated pickup location
+[FORMAT] pickup address format matches Location B's configured address (street, city, state, zip)","[CONSOLE] no JS errors when switching locations mid-checkout
+[NETWORK] cart update request returns 2xx after location change; response body contains Location B identifier
+[API] cart query returns updated fulfillmentCenterId matching Location B after change","Stale Location A address still showing after Location B selected; Checkout page not refreshing pickup details; Network request to update pickup location returns 4xx/5xx; Duplicate or conflicting address entries visible","Clear cart or return to cart page","Coverage Gap Analysis",Generated
+BOPIS-083,Change From Pickup to Delivery Mid-Checkout — Shipping Form Appears,BOPIS > Checkout,High,BL-BOPIS-004,"ECL-14.2","Authenticated user; Cart with items; Pickup location already selected; Delivery/shipping option available","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] select 'Pickup' delivery option
+[ACT] select any available pickup location and confirm
+[WAIT] pickup location shown in cart
+[ACT] click 'Checkout' or 'Proceed to Checkout'
+[WAIT] checkout page loads showing pickup details
+[ASSERT] shipping address section is NOT visible
+[ACT] locate delivery method selector on checkout page
+[ACT] switch from 'Pickup' to 'Delivery' or 'Ship to Address'
+[WAIT] checkout page updates
+[ASSERT] shipping address form appears
+[ASSERT] pickup location section is no longer shown
+[ACT] enter a valid shipping address
+[ASSERT] shipping cost line item appears in order summary","[DOM] pickup location section disappears after switching to delivery
+[DOM] shipping address form fields rendered and editable after switching to delivery
+[STATE] previously selected pickup location is deselected/cleared
+[MATH] order total updates to include shipping cost (shipping cost > $0 or free shipping rule shown)
+[DOM] 'Shipping' or delivery-related label replaces 'Pickup' label in order summary","[CONSOLE] no JS errors during fulfillment type switch
+[NETWORK] cart update request returns 2xx when switching to delivery; cart no longer has fulfillmentCenterId set
+[API] cart response shows delivery/shipping fulfillment type, pickup location cleared","Shipping address form does not appear after switching to delivery; Pickup location section still visible after switching; Shipping cost not added to order total; Cart API still shows pickup fulfillment type after switch","Clear cart","Coverage Gap Analysis",Generated
+BOPIS-084,BOPIS with Product Discount Coupon — Discount Applied to Subtotal,BOPIS > Promotions,Medium,BL-BOPIS-002,"ECL-13.1","Authenticated user; Cart with BOPIS-eligible product; Valid product discount coupon code available (e.g., percentage or fixed off product)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}};coupon={{COUPON_CODE_PRODUCT}}","[NAV] {{FRONT_URL}}/cart
+[ACT] add product {{TEST_SKU}} to cart
+[ACT] select 'Pickup' delivery option
+[ACT] select and confirm a pickup location
+[WAIT] pickup location confirmed; cart shows $0.00 shipping
+[ACT] locate coupon/promo code input field
+[ACT] enter product discount coupon code {{COUPON_CODE_PRODUCT}}
+[ACT] click 'Apply'
+[WAIT] coupon applied; discount reflected in cart
+[ASSERT] discount line item visible in order summary
+[ASSERT] subtotal reduced by the coupon discount amount
+[ASSERT] shipping remains $0.00","[MATH] subtotal after discount = original subtotal - discount amount (correct arithmetic)
+[DOM] discount line item labeled with coupon code or promotion name
+[STATE] coupon accepted without error; no 'coupon not valid for pickup' error shown
+[MATH] shipping line = $0.00 (unchanged; pickup has no shipping cost)
+[DOM] order total = discounted subtotal + taxes (no shipping added)","[CONSOLE] no JS errors during coupon application
+[NETWORK] coupon apply API returns 2xx; response body contains discount amount
+[API] cart query confirms promotion applied with correct discount value; fulfillment type still pickup","Coupon rejected with 'not applicable' error for pickup orders; Discount amount not deducted from subtotal; Shipping cost erroneously added after coupon applied; Order total calculation incorrect","Remove coupon; clear cart","Coverage Gap Analysis",Generated
+BOPIS-085,BOPIS with Free-Shipping Coupon — No Error and $0 Shipping Unchanged,BOPIS > Promotions,Medium,BL-BOPIS-002,"ECL-13.1","Authenticated user; Cart with BOPIS-eligible product; Valid free-shipping coupon code available","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}};coupon={{COUPON_CODE_FREE_SHIP}}","[NAV] {{FRONT_URL}}/cart
+[ACT] add product {{TEST_SKU}} to cart
+[ACT] select 'Pickup' delivery option
+[ACT] select and confirm a pickup location
+[WAIT] pickup location confirmed; cart shows $0.00 shipping
+[ACT] enter free-shipping coupon code {{COUPON_CODE_FREE_SHIP}} in coupon field
+[ACT] click 'Apply'
+[WAIT] system processes coupon
+[ASSERT] no error message displayed
+[ASSERT] coupon accepted or silently has no effect on shipping (already $0)
+[ASSERT] shipping remains $0.00
+[ASSERT] order subtotal is unchanged (free-shipping coupon does not alter product prices)","[STATE] free-shipping coupon does not produce an error or 'invalid coupon' message on a pickup order
+[MATH] shipping line = $0.00 both before and after coupon application
+[MATH] order subtotal unchanged after applying free-shipping coupon (no product discount)
+[DOM] no negative shipping amount or unexpected line items in order summary","[CONSOLE] no JS errors or uncaught exceptions during coupon application
+[NETWORK] coupon apply API returns 2xx (not 4xx); no error in response body
+[API] cart query confirms $0 shipping; free-shipping promotion recorded but has no monetary effect on pickup","Free-shipping coupon triggers error 'coupon not valid' for pickup; Shipping line shows negative amount; Subtotal incorrectly modified by free-shipping coupon; Coupon system blocks pickup checkout","Remove coupon; clear cart","Coverage Gap Analysis",Generated
+BOPIS-086,Multiple Items Assigned to Different Pickup Locations in One Order,BOPIS > Multi-Location,Medium,BL-BOPIS-005,"ECL-14.3","Authenticated user; At least two BOPIS-eligible products available; At least two distinct pickup store locations configured; Platform supports per-item pickup location assignment","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku1={{TEST_SKU}};sku2={{TEST_SKU_2}}","[NAV] {{FRONT_URL}}/cart
+[ACT] add product {{TEST_SKU}} to cart
+[ACT] add product {{TEST_SKU_2}} to cart
+[WAIT] both items visible in cart
+[ACT] for item 1 ({{TEST_SKU}}): select 'Pickup' and assign to Store A
+[WAIT] Store A confirmed for item 1
+[ACT] for item 2 ({{TEST_SKU_2}}): select 'Pickup' and assign to Store B
+[WAIT] Store B confirmed for item 2
+[ASSERT] cart shows two different pickup locations (one per item)
+[ACT] click 'Checkout' or 'Proceed to Checkout'
+[WAIT] order review/checkout page loads
+[ASSERT] checkout shows both pickup locations with their respective items
+[ACT] complete checkout and place order
+[WAIT] order confirmation page loads","[DOM] cart displays distinct pickup location for each item (Store A for item 1, Store B for item 2)
+[DOM] checkout order review section lists both pickup locations with associated line items
+[DOM] order confirmation page shows per-item pickup details (Store A → item 1, Store B → item 2)
+[STATE] no conflicting or merged pickup location entry (each item retains its assigned location)","[CONSOLE] no JS errors when assigning multiple pickup locations
+[NETWORK] cart update requests for each item return 2xx; no conflict errors
+[API] order created with two fulfillment groups — each with correct store and item assignment","Platform does not support per-item pickup (test becomes N/A — document as such); Only one pickup location shown for both items; Item 2 pickup location overrides item 1 assignment; Order confirmation collapses both items into single pickup entry","Clear cart after test","Coverage Gap Analysis",Generated
+BOPIS-087,Pickup Location Modal — Load-More / Pagination with 10+ Locations,BOPIS > Location Selector,Medium,BL-BOPIS-007,"ECL-14.2","Authenticated user; Cart with BOPIS-eligible items; 10 or more pickup locations configured in the system","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[ACT] select 'Pickup' delivery option
+[ACT] click 'Select pickup location'
+[WAIT] pickup location modal opens
+[ASSERT] note initial visible location count in list
+[SCROLL] scroll to bottom of location list inside modal
+[WAIT] load-more button appears OR additional locations load automatically (infinite scroll)
+[ACT] if load-more button present: click 'Load more' or 'Show more locations'
+[WAIT] additional locations rendered in list
+[SCROLL] scroll further; repeat load-more if paginated
+[WAIT] all locations loaded
+[ASSERT] total accessible locations equals expected count (all 10+ locations visible)
+[ACT] select a location from the later pages/scroll position
+[ACT] click 'Select' then 'Confirm'
+[WAIT] modal closes with selected location shown in cart","[DOM] location list renders at least 10 location entries after load-more / full scroll
+[STATE] load-more button or infinite scroll trigger works at least once without error
+[DOM] locations loaded in subsequent pages/scroll are selectable (not read-only or broken)
+[DOM] selected location from later pages confirmed in cart correctly
+[STATE] no duplicate location entries after loading more","[CONSOLE] no JS errors during scroll or load-more action
+[NETWORK] location list API (or paginated endpoint) returns 2xx for subsequent page requests; page/offset params increment correctly","Only initial batch of locations visible with no way to see more; Load-more button present but clicking it produces no action; Locations from later pages appear duplicated; Network request for next page returns 4xx/5xx","Close modal; navigate away","Coverage Gap Analysis",Generated
+BOPIS-088,Completed BOPIS Order Appears Correctly in Order History,BOPIS > Order History,Medium,BL-BOPIS-006,"ECL-14.1","Authenticated user who has previously completed at least one BOPIS pickup order; Order is in 'Processing' or 'Completed' status","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[ACT] log in with credentials {{USER_EMAIL}} / {{USER_PASSWORD}}
+[WAIT] authenticated; account menu visible
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] order history page loads with list of past orders
+[ACT] locate the most recent BOPIS/pickup order in the list
+[ASSERT] order list entry indicates fulfillment type 'Pickup' (icon, label, or tag)
+[ACT] click on the BOPIS order to open order details
+[WAIT] order detail page loads
+[ASSERT] pickup location name and address shown in order details
+[ASSERT] no 'Shipping Address' or delivery address section displayed
+[ASSERT] fulfillment type label reads 'Pickup' or equivalent
+[ASSERT] no shipping carrier or tracking number section visible","[DOM] order history list entry shows pickup indicator (label, icon, or 'Pickup' tag)
+[DOM] order detail page contains pickup location name and full address
+[STATE] no shipping address section rendered on BOPIS order detail page
+[STATE] no shipping carrier / tracking number section visible
+[FORMAT] fulfillment type label text matches 'Pickup', 'Store Pickup', or equivalent configured label
+[DOM] store hours or contact info may be shown alongside pickup location (if platform supports it)","[CONSOLE] no JS errors loading order detail page
+[NETWORK] order detail API returns 2xx; response includes fulfillment type and pickup location fields
+[API] order query returns fulfillmentType = 'Pickup' and fulfillmentCenter details; shippingAddress field is null or absent","Shipping address section visible on BOPIS order detail; Fulfillment type shows 'Delivery' or 'Shipping' instead of 'Pickup'; Pickup location name/address missing from order details; Tracking number section incorrectly shown","Log out if needed","Coverage Gap Analysis",Generated

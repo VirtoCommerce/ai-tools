@@ -3,8 +3,8 @@
     "version": "2.0",
     "description": "Regression test suite manifest for parallel orchestration (Frontend + Backend)",
     "generated": "2026-02-23",
-    "totalSuites": 42,
-    "csvFormat": "TestRail CSV (ID, Title, Section, Type, Priority, Estimate, Preconditions, Steps, Expected Result, References, Automation Status)"
+    "totalSuites": 45,
+    "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)"
   },
   "defaults": {
     "preferredBrowser": "playwright-chrome",
@@ -41,12 +41,22 @@
   ],
   "suites": [
     {
+      "id": "00",
+      "name": "Full Regression Release (Master Suite)",
+      "file": "regression/suites/Frontend/00-full-regression-release.csv",
+      "priority": "P0",
+      "testCount": 90,
+      "estimatedMinutes": 240,
+      "agent": "qa-frontend-expert",
+      "tags": ["release", "master", "p0", "e2e", "cross-layer", "revenue-critical"]
+    },
+    {
       "id": "01",
       "name": "Smoke Tests",
       "file": "regression/suites/Frontend/01-smoke-tests.csv",
       "priority": "P0",
-      "testCount": 14,
-      "estimatedMinutes": 23,
+      "testCount": 19,
+      "estimatedMinutes": 35,
       "agent": "qa-testing-expert",
       "tags": ["smoke", "daily", "pre-deploy"]
     },
@@ -65,8 +75,8 @@
       "name": "Catalog & Search Tests",
       "file": "regression/suites/Frontend/03-catalog-search-tests.csv",
       "priority": "P1",
-      "testCount": 101,
-      "estimatedMinutes": 75,
+      "testCount": 117,
+      "estimatedMinutes": 90,
       "agent": "qa-frontend-expert",
       "tags": ["catalog", "search", "sprint"]
     },
@@ -75,8 +85,8 @@
       "name": "Cart Tests",
       "file": "regression/suites/Frontend/04a-cart-tests.csv",
       "priority": "P1",
-      "testCount": 48,
-      "estimatedMinutes": 25,
+      "testCount": 70,
+      "estimatedMinutes": 38,
       "agent": "qa-frontend-expert",
       "tags": ["cart", "revenue-critical", "sprint"]
     },
@@ -85,8 +95,8 @@
       "name": "Checkout Tests",
       "file": "regression/suites/Frontend/04b-checkout-tests.csv",
       "priority": "P1",
-      "testCount": 74,
-      "estimatedMinutes": 35,
+      "testCount": 63,
+      "estimatedMinutes": 40,
       "agent": "qa-frontend-expert",
       "tags": ["checkout", "revenue-critical", "sprint"]
     },
@@ -95,8 +105,8 @@
       "name": "Orders & Quotes Tests",
       "file": "regression/suites/Frontend/04c-orders-quotes-tests.csv",
       "priority": "P1",
-      "testCount": 21,
-      "estimatedMinutes": 15,
+      "testCount": 35,
+      "estimatedMinutes": 25,
       "agent": "qa-frontend-expert",
       "tags": ["orders", "quotes", "sprint"]
     },
@@ -105,8 +115,8 @@
       "name": "BOPIS Pickup Tests",
       "file": "regression/suites/Frontend/05-bopis-pickup-tests.csv",
       "priority": "P1",
-      "testCount": 36,
-      "estimatedMinutes": 30,
+      "testCount": 88,
+      "estimatedMinutes": 55,
       "agent": "qa-frontend-expert",
       "tags": ["bopis", "pickup", "sprint"]
     },
@@ -115,8 +125,8 @@
       "name": "Payment Tests",
       "file": "regression/suites/Frontend/06-payment-tests.csv",
       "priority": "P0",
-      "testCount": 28,
-      "estimatedMinutes": 40,
+      "testCount": 54,
+      "estimatedMinutes": 50,
       "agent": "qa-testing-expert",
       "tags": ["payment", "revenue-critical", "daily"]
     },
@@ -185,8 +195,8 @@
       "name": "B2C Features Tests",
       "file": "regression/suites/Frontend/13-b2c-features-tests.csv",
       "priority": "P1",
-      "testCount": 55,
-      "estimatedMinutes": 60,
+      "testCount": 96,
+      "estimatedMinutes": 75,
       "agent": "qa-frontend-expert",
       "tags": ["b2c", "variations", "wishlists", "ship-to", "configurations"]
     },
@@ -385,10 +395,10 @@
       "name": "Push Messages Tests",
       "file": "regression/suites/Backend/33-push-messages-tests.csv",
       "priority": "P2",
-      "testCount": 16,
-      "estimatedMinutes": 20,
+      "testCount": 25,
+      "estimatedMinutes": 35,
       "agent": "qa-backend-expert",
-      "tags": ["backend", "push-messages", "notifications", "api", "drafts"]
+      "tags": ["backend", "push-messages", "notifications", "api", "drafts", "storefront"]
     },
     {
       "id": "34",
@@ -459,14 +469,35 @@
       "estimatedMinutes": 25,
       "agent": "qa-backend-expert",
       "tags": ["backend", "channels", "catalog-publishing", "completeness", "data-quality"]
+    },
+    {
+      "id": "41",
+      "name": "Coupons & Promotions Tests",
+      "file": "regression/suites/Frontend/41-coupons-promotions-tests.csv",
+      "priority": "P1",
+      "testCount": 54,
+      "estimatedMinutes": 45,
+      "agent": "qa-frontend-expert",
+      "tags": ["frontend", "marketing", "coupons", "promotions", "storefront", "admin", "graphql", "e2e", "sprint"]
+    },
+    {
+      "id": "42",
+      "name": "xMarketing Module Tests",
+      "file": "regression/suites/Backend/42-xmarketing-tests.csv",
+      "priority": "P1",
+      "testCount": 38,
+      "estimatedMinutes": 55,
+      "agent": "qa-backend-expert",
+      "tags": ["backend", "marketing", "promotions", "coupons", "dynamic-content", "graphql", "xapi", "rest-api", "admin", "security", "performance", "sprint"]
     }
   ],
   "selections": {
     "smoke": ["01"],
     "critical": ["01", "06", "08", "14"],
-    "sprint": ["01", "02", "03", "04a", "04b", "04c", "05", "06", "08", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "29", "30", "31", "35", "36", "37", "38", "39"],
-    "full": ["01", "02", "03", "04a", "04b", "04c", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40"],
-    "frontend": ["01", "02", "03", "04a", "04b", "04c", "05", "06", "07", "08", "09", "10", "11", "12", "13", "35", "36"],
-    "backend": ["14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "37", "38", "39", "40"]
+    "release": ["00"],
+    "sprint": ["01", "02", "03", "04a", "04b", "04c", "05", "06", "08", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "29", "30", "31", "35", "36", "37", "38", "39", "41", "42"],
+    "full": ["00", "01", "02", "03", "04a", "04b", "04c", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42"],
+    "frontend": ["01", "02", "03", "04a", "04b", "04c", "05", "06", "07", "08", "09", "10", "11", "12", "13", "35", "36", "41"],
+    "backend": ["14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "37", "38", "39", "40", "42"]
   }
 }

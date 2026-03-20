@@ -1,6 +1,6 @@
 # Skills & Commands Reference
 
-## Slash Commands (10) — `.claude/commands/`
+## Slash Commands (12) — `.claude/commands/`
 
 All commands have YAML frontmatter with `description`, `argument-hint`, and invocation control. Commands with side effects use `disable-model-invocation: true` to prevent accidental auto-triggering.
 
@@ -14,10 +14,12 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/qa-exploratory` | `[checkout\|catalog\|B2B\|mobile\|new]` | No | Guided exploratory testing session with heuristics |
 | `/qa-env-check` | `[vars\|endpoints\|mcp]` | **Yes** | Validate env vars, endpoints, MCP servers, test infra |
 | `/qa-coverage-generation` | `[p0\|p1\|full\|domain <name>\|ci-dry-run]` | No | Orchestrated parallel coverage generation across domain batches with CI support |
+| `/qa-test-lifecycle` | `suite <ID> \| domain <name> \| VCST-XXXX \| diff \| --skip-generate \| --skip-verify` | No | Full test case lifecycle: analyze → generate → review → fix → verify → approve. Delegates to test-management-specialist + qa-testing-expert |
+| `/qa-verify-fix` | `VCST-XXXX` | No | Verify a bug fix: fetch ticket, reproduce STR, confirm fix, regression checks, transition JIRA |
 | `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|ui\|module <name>]` | No | Business analysis with GitHub search + live UI (full/flows/api/docs/stories/ui/module) |
 | `/ba-stories` | `feature name \| VCST-XXXX` | No | Generate Agile user stories with BDD acceptance criteria |
 
-## Skills (19) — `.claude/skills/` (grouped by category)
+## Skills (20) — `.claude/skills/` (grouped by category)
 
 Skills are slash commands with supporting reference files, organized into 3 category directories. Each skill has a `SKILL.md` with `[Category]` tag in the description. See `.claude/skills/README.md` for full reference.
 
@@ -27,7 +29,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 |-------|-----------|---------|-----------------|
 | `/vc-docs` | `topic \| module \| concept` | Documentation lookup via Context7 | — (uses Context7 MCP) |
 
-**`testing/` — Testing (9) — manual invocation:**
+**`testing/` — Testing (10) — manual invocation:**
 
 | Skill | Arguments | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|
@@ -35,11 +37,12 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/qa-accessibility` | `page URL \| component \| full` | WCAG 2.1 AA accessibility audit (POUR principles) | `wcag-accessibility-checklist.md` |
 | `/qa-design` | `component \| page \| flow` | Design system consistency & UX heuristics | `design-system-consistency.md`, `ux-heuristic-evaluation.md` |
 | `/qa-plan` | `feature \| domain \| VCST-XXXX` | Test plans from E2E scenario catalog (105 scenarios) | `e2e-scenario-catalog.md` |
-| `/qa-checklist` | `domain \| feature \| VCST-XXXX \| new <domain>` | Test case writing checklists (18 domains + Bug Fix Verification, 158 items) | `domain-checklists.md`, `checklist-creation-guide.md` |
+| `/qa-checklist` | `domain \| feature \| VCST-XXXX \| new <domain>` | Test case writing checklists (23 domains + Bug Fix Verification, 279 items) | `domain-checklists.md`, `graphql-checklist.md`, `checklist-creation-guide.md` |
 | `/qa-api` | `ref <module> \| test <scope> \| cases <scope>` | REST API & GraphQL xAPI — reference lookup, test execution, and test case generation | `xapi-query-ref.md`, `test-cases-api-graphql.md`, `api-test-case-patterns.md` |
 | `/qa-coverage-gap` | `analyze \| generate \| validate \| full \| domain <name> \| suite <ID>` | Autonomous test coverage gap analysis and generation (4-cycle pipeline) | `coverage-gap-methodology.md`, `feature-domain-map.md` |
 | `/qa-postman` | `create <purpose> \| env <profile> \| run <collection> \| list \| examples` | Postman MCP collections — create, configure, and run with proper variables, auth, and endpoints | `postman-collection-guide.md` |
 | `/qa-seed-data` | `minimal \| catalog \| b2b \| pricing \| full \| teardown` | Generate test data via Postman MCP: catalogs, products, pricing, inventory, users, orgs | `test-data-generation.md` (knowledge file) |
+| `/qa-review-tests` | `suite <ID> \| file <path> \| diff \| all \| domain <name> \| --verify \| --fix` | Review test cases: 8-dimension quality analysis (structure, determinism, completeness, testability, data validity, BL/ECL coverage, duplication, env verification). Delegates live verification to qa-testing-expert | `review-criteria.md` |
 
 **`qa-methodology/` — QA Methodology (9) — manual invocation:**
 

@@ -1,0 +1,109 @@
+{
+  "phase": 5,
+  "agent": "qa-testing-expert",
+  "browser": "playwright-firefox",
+  "timestamp": "2026-03-20T16:50:00Z",
+  "environmentHealth": "healthy",
+  "results": [
+    {
+      "caseId": "PUSH-017",
+      "target": "Notifications page - list display",
+      "url": "https://vcst-qa-storefront.govirto.com/account/notifications",
+      "result": "VERIFIED",
+      "details": "Notifications page loads at /account/notifications. Shows heading 'Notifications 17' with total count badge. Lists 10 notifications per page with message text and timestamps (e.g., 'Feb 9, 2026, 3:13 PM'). Accessible from header bell button dropdown ('View all notifications') and sidebar link under Marketing section.",
+      "screenshot": "reports/test-lifecycle/TLC-2026-03-20-1630/phase5-notifications-page.png",
+      "consoleErrors": []
+    },
+    {
+      "caseId": "PUSH-018",
+      "target": "Notifications page - pagination",
+      "url": "https://vcst-qa-storefront.govirto.com/account/notifications",
+      "result": "VERIFIED",
+      "details": "Pagination is present at bottom of notifications list. Shows page numbers (1, 2, 3, 4) with Previous (disabled on page 1) and Next buttons. 17 total notifications across 4 pages, 10 per page on page 1. Standard numbered pagination with arrow navigation.",
+      "screenshot": "reports/test-lifecycle/TLC-2026-03-20-1630/phase5-notifications-page.png",
+      "consoleErrors": []
+    },
+    {
+      "caseId": "PUSH-019",
+      "target": "Read/unread state visual distinction",
+      "url": "https://vcst-qa-storefront.govirto.com/account/notifications",
+      "result": "VERIFIED",
+      "details": "Unread notifications have a blue dot indicator on the left side and show 'Mark as read' button. Read notifications have no dot and show 'Mark as unread' button. Unread items appear with a slightly different background color (highlighted). Toggle 'Show unread only' filter is available at the top. Visual distinction is clear between read and unread states.",
+      "screenshot": "reports/test-lifecycle/TLC-2026-03-20-1630/phase5-notifications-page.png",
+      "consoleErrors": []
+    },
+    {
+      "caseId": "PUSH-020",
+      "target": "Notification bell icon / unread count badge in header",
+      "url": "https://vcst-qa-storefront.govirto.com/",
+      "result": "CHANGED",
+      "details": "Header has a 'Notifications' button with a bell icon, but NO unread count badge is displayed next to it. Compare with Cart which shows '2' badge. The bell opens a dropdown popover showing recent notifications with 'Show unread only' toggle, 'Clear all', and 'View all notifications' buttons. The bell icon itself does not indicate unread count -- test cases expecting a numeric badge on the bell may need adjustment. The dropdown does show unread status per notification item.",
+      "screenshot": "reports/test-lifecycle/TLC-2026-03-20-1630/phase5-homepage-header.png",
+      "consoleErrors": []
+    },
+    {
+      "caseId": "PUSH-021",
+      "target": "Mark all as read functionality",
+      "url": "https://vcst-qa-storefront.govirto.com/account/notifications",
+      "result": "VERIFIED",
+      "details": "Three-dot menu (kebab menu) in top-right corner of notifications page contains 'Mark all as read' and 'Mark all as unread' buttons. Both options are available. In the header dropdown, a 'Clear all' button is also present. The full page provides bulk mark read/unread via the kebab menu.",
+      "screenshot": "reports/test-lifecycle/TLC-2026-03-20-1630/phase5-mark-all-menu.png",
+      "consoleErrors": []
+    },
+    {
+      "caseId": "PUSH-022",
+      "target": "Notification detail / expand on click",
+      "url": "https://vcst-qa-storefront.govirto.com/account/notifications",
+      "result": "CHANGED",
+      "details": "Clicking a notification does NOT expand it or navigate to a dedicated detail view. Instead, each notification row acts as a 'Mark as read/unread' toggle button. If the notification contains a hyperlink in its body text, clicking the link navigates to that URL (e.g., clicking the link in 'Third notification with link' navigated to /printers). There is no separate notification detail page -- the full notification text is displayed inline in the list. Test cases expecting an expand/detail view need to be adjusted to reflect this inline-only display with read/unread toggle behavior.",
+      "screenshot": "reports/test-lifecycle/TLC-2026-03-20-1630/phase5-notifications-page.png",
+      "consoleErrors": []
+    },
+    {
+      "caseId": "PUSH-023",
+      "target": "Notification with link to related entity",
+      "url": "https://vcst-qa-storefront.govirto.com/account/notifications",
+      "result": "VERIFIED",
+      "details": "Notification 'Third notification with link - C410567' contains an inline hyperlink to 'https://vcst-qa-storefront.govirto.com/printers'. Clicking the link successfully navigates to the /printers catalog page. Links are rendered as clickable anchors within notification body text. Not all notifications have links -- depends on notification content/type.",
+      "screenshot": "reports/test-lifecycle/TLC-2026-03-20-1630/phase5-notifications-page.png",
+      "consoleErrors": []
+    },
+    {
+      "caseId": "PUSH-024",
+      "target": "Targeting isolation (security - cross-user visibility)",
+      "url": "N/A",
+      "result": "SKIPPED",
+      "details": "Cannot verify cross-user notification isolation in a single browser session. Requires two authenticated sessions with different users to confirm User A cannot see User B's notifications. Recommend multi-session test execution.",
+      "screenshot": null,
+      "consoleErrors": []
+    },
+    {
+      "caseId": "PUSH-025",
+      "target": "Empty state display",
+      "url": "https://vcst-qa-storefront.govirto.com/account/notifications",
+      "result": "BLOCKED",
+      "details": "Current user has 17 notifications, so empty state cannot be observed. The 'Show unread only' toggle could potentially show empty state if all are marked as read, but verifying this would require modifying data (marking all as read then toggling filter). The 'Clear all' button in the dropdown could also clear notifications but would be destructive to test data. Recommend testing with a fresh user account that has no notifications.",
+      "screenshot": null,
+      "consoleErrors": []
+    }
+  ],
+  "summary": {
+    "verified": 6,
+    "changed": 2,
+    "broken": 0,
+    "blocked": 1,
+    "skipped": 1
+  },
+  "findings": {
+    "PUSH-020_noUnreadBadge": "The notification bell icon in the header does NOT display an unread count badge. Cart icon shows count (2) but Notifications bell shows no numeric indicator. Test cases assuming a badge count on the bell need adjustment.",
+    "PUSH-022_noDetailView": "No expand/detail view exists for notifications. Items display inline with full text. Clicking toggles read/unread state. Embedded links within notification body are clickable and navigate to target URLs.",
+    "uiComponents": {
+      "headerDropdown": "Bell button opens popover with: notification list, 'Show unread only' toggle, three-dot menu, 'Clear all' button, 'View all notifications' button",
+      "fullPage": "Account sidebar > Marketing > Notifications. Shows heading with count badge (17), 'Show unread only' toggle, three-dot kebab menu (Mark all as read/unread), notification list with per-item read/unread toggle, pagination",
+      "readUnreadIndicator": "Blue dot on left side for unread; no dot for read. Button label changes between 'Mark as read' and 'Mark as unread'",
+      "pagination": "Numbered pages (1-4) with Previous/Next arrow buttons, 10 items per page"
+    },
+    "webSocket": "WebSocket connection is established on page load (likely for real-time push notification delivery via Firebase)",
+    "consoleHealth": "0 JS errors on notifications page. Only warnings are standard HTML attribute value warnings and WebSocket lifecycle messages."
+  }
+}

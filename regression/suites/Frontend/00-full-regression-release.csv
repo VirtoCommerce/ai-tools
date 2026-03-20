@@ -1,1777 +1,805 @@
 ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
-FR-REG-001,User Registration - Personal Account,Full Regression > Authentication > Registration,Functional,Critical,5m,"Browser open, QA environment: https://vcst-qa-storefront.govirto.com, cleared cache/cookies","1. Navigate to storefront homepage
+FRR-001,User Registration - Personal Account,Full Regression > Authentication > Registration,Functional,Critical,5m,"Browser open, QA environment: FRONT_URL, cleared cache/cookies","1. Navigate to storefront homepage
 2. Click 'Sign Up' in header
 3. Select 'Personal' account type
-4. Fill required fields:
-   - First Name: Test
-   - Last Name: User
-   - Email: testuser-{timestamp}@example.com
-   - Password: TestP@ss123!
-   - Confirm Password: TestP@ss123!
+4. Fill required fields: First Name, Last Name, Email: testuser-{timestamp}@example.com, Password: TestP@ss123!
 5. Accept terms and conditions
 6. Click 'Create Account' button
-7. Verify confirmation page displays
-8. Check email for confirmation
-9. Log in with new credentials","- Registration form submits successfully
-- Confirmation page displays 'Registration successful' message
-- Confirmation email received within 2 minutes
+7. Verify confirmation page displays","- Registration form submits successfully
+- Confirmation page displays success message
 - User can sign in with new credentials
 - Account visible in Admin panel under Customers
 - Profile displays correct personal information",C410417,Automated
-FR-REG-002,User Registration - Organization Account,Full Regression > Authentication > Registration,Functional,Critical,7m,"Browser open, QA environment accessible","1. Navigate to registration page
+FRR-002,User Registration - Organization Account,Full Regression > Authentication > Registration,Functional,Critical,7m,"Browser open, QA environment accessible","1. Navigate to registration page
 2. Select 'Organization' account type
-3. Fill required fields:
-   - Company Name: Test Organization {timestamp}
-   - First Name: Admin
-   - Last Name: User
-   - Email: orgadmin-{timestamp}@example.com
-   - Password: OrgP@ss123!
-   - Confirm Password: OrgP@ss123!
+3. Fill required fields: Company Name, Admin name, Email, Password
 4. Accept terms and conditions
-5. Click 'Create Account' button
-6. Verify organization creation
-7. Log in with new credentials
-8. Verify organization context","- Organization account created successfully
+5. Click 'Create Account'
+6. Log in with new credentials
+7. Verify organization context","- Organization account created successfully
 - Company appears in Organizations list in Admin
 - User assigned as organization administrator
 - Organization name visible in storefront header
-- B2B features accessible (Company Members, Quick Order)
-- User can switch between organizations if multiple exist",C410418,Automated
-FR-AUTH-001,Sign In - Personal User,Full Regression > Authentication > Sign In,Functional,Critical,3m,"Valid personal user account exists: USER_EMAIL from .env","1. Navigate to https://vcst-qa-storefront.govirto.com
+- B2B features accessible: Company Members, Quick Order",C410418,Automated
+FRR-003,Sign In - Personal User,Full Regression > Authentication > Sign In,Functional,Critical,3m,"Valid personal user account: USER_EMAIL from .env","1. Navigate to FRONT_URL
 2. Click 'Sign In' in header
-3. Enter email: USER_EMAIL
-4. Enter password: USER_PASSWORD
-5. Click 'Sign In' button
-6. Verify successful authentication","- User authenticated successfully
-- Redirected to homepage or dashboard
+3. Enter email: USER_EMAIL and password: USER_PASSWORD
+4. Click 'Sign In' button
+5. Verify successful authentication","- User authenticated successfully
 - User name displayed in header
 - Cart icon accessible
-- Wishlist accessible
 - Account menu shows Logout option
 - No error messages displayed",C410420,Automated
-FR-AUTH-002,Sign In - Organization User,Full Regression > Authentication > Sign In,Functional,Critical,4m,"Valid organization user account exists","1. Navigate to sign-in page
-2. Enter organization user email
-3. Enter password
-4. Click 'Sign In' button
-5. Verify organization context active
-6. Check B2B features available","- User logged in with organization context
+FRR-004,Sign In - Organization User,Full Regression > Authentication > Sign In,Functional,Critical,4m,"Valid organization user account exists","1. Navigate to sign-in page
+2. Enter organization user email and password
+3. Click 'Sign In'
+4. Verify organization context active
+5. Check B2B features available","- User logged in with organization context
 - Organization name visible in header
-- Organization selector displays (if multiple orgs)
 - B2B features accessible: Quick Order, Company Members, Quotes
-- Cart specific to organization
-- Pricing reflects organization contracts (if configured)",C410421,Automated
-FR-AUTH-003,Forgot Password Flow,Full Regression > Authentication > Password,Functional,High,8m,"Valid user account exists","1. Navigate to sign-in page
+- Pricing reflects organization contracts if configured
+- Cart specific to organization (BL-B2B-001)",C410421,Automated
+FRR-005,Forgot Password - Reset Flow,Full Regression > Authentication > Password,Functional,High,8m,"Valid user account exists","1. Navigate to sign-in page
 2. Click 'Forgot Password?' link
 3. Enter registered email address
-4. Click 'Send Reset Link' button
+4. Click 'Send Reset Link'
 5. Check email for password reset link
-6. Click reset link (opens in new tab)
-7. Enter new password twice
-8. Click 'Reset Password' button
-9. Verify reset successful
-10. Log in with new password","- Reset link email received within 2 minutes
-- Reset link opens password reset form
-- Password accepts strong passwords (8+ chars, uppercase, lowercase, number, special)
-- Password reset completes successfully
-- Confirmation message: 'Password reset successful'
-- Can sign in with new password
-- Old password no longer works
-- Reset link expires after use (cannot reuse)",C410440,Manual
-FR-AUTH-004,Sign Out,Full Regression > Authentication > Sign Out,Functional,High,2m,"User logged in","1. Click on user name/account menu in header
-2. Click 'Sign Out' or 'Log Out'
+6. Click reset link and enter new password
+7. Log in with new password
+8. Verify old password no longer works","- Reset link email received within 2 minutes
+- Password reset form accepts strong passwords
+- Password reset completes with confirmation message
+- Can sign in with new password; old password rejected
+- Reset link expires after use (BL-AUTH-003)",C410440,Manual
+FRR-006,Sign Out and Session Revocation,Full Regression > Authentication > Sign Out,Functional,High,2m,"User logged in","1. Click user name/account menu in header
+2. Click 'Sign Out'
 3. Verify sign-out completed
-4. Attempt to access protected pages","- User signed out successfully
-- Redirected to homepage or sign-in page
+4. Attempt to access /account/orders directly","- User signed out successfully
 - Account menu no longer shows user name
-- Cart cleared (or saved for next login)
-- Attempting to access account pages redirects to sign-in
-- Session token revoked",C410423,Automated
-FR-CAT-001,Catalog Browsing - Category Navigation,Full Regression > Catalog > Navigation,Functional,Critical,5m,"User logged in","1. Navigate to main catalog from header menu
-2. Hover over main category (e.g., 'Snacks')
+- Attempting account pages redirects to sign-in
+- Session token revoked (protected API calls return 401)",C410423,Automated
+FRR-007,Account Lockout After Failed Login Attempts,Full Regression > Authentication > Security,Security,Critical,10m,"Valid user account exists","1. Navigate to sign-in page
+2. Enter correct email with wrong password 5 times in succession
+3. Attempt 6th login with correct credentials
+4. Verify lockout behavior","- Account locked after N consecutive failures (platform default: 5)
+- Even correct credentials rejected during lockout with generic message
+- Lockout message does not reveal whether account exists
+- Successful login prior to threshold resets failure counter (BL-AUTH-003)",FR-AUTH-003,Manual
+FRR-008,Catalog Browsing - Category Navigation,Full Regression > Catalog > Navigation,Functional,Critical,5m,"User logged in","1. Navigate to main catalog from header menu
+2. Hover over main category
 3. Verify subcategories display
-4. Click on subcategory (e.g., 'Chips & Pretzels')
+4. Click on subcategory
 5. Verify category page loads
-6. Check breadcrumbs
-7. Verify product listing displays","- Main categories load in header/menu
+6. Check breadcrumbs and product listing","- Main categories load in header/menu
 - Subcategories display on hover/click
 - Category page loads with correct products
-- Breadcrumbs show: Home > Snacks > Chips & Pretzels
-- Product count displayed (e.g., '24 products')
-- Facets/filters display on left sidebar
-- Products show image, name, price, Add to Cart button",C410460,Automated
-FR-CAT-002,Product Faceted Filters - Apply Multiple Filters,Full Regression > Catalog > Filters,Functional,Critical,7m,"User on category page with filterable products","1. Navigate to category with filters (e.g., 'Electronics')
+- Breadcrumbs show correct hierarchy
+- Product count displayed
+- Facets/filters display in sidebar
+- Products show image, name, price, Add to Cart",C410460,Automated
+FRR-009,Catalog - Faceted Filters (Multi-Filter Apply),Full Regression > Catalog > Filters,Functional,Critical,7m,"User on category page with filterable products","1. Navigate to category page
 2. Verify facets display (Brand, Price, Size, Color)
-3. Select filter: Brand = 'Sony'
-4. Verify results filter
-5. Add filter: Price range $100-$500
-6. Verify results further refined
-7. Add filter: Size = 'Medium'
-8. Verify chip badges display for active filters
-9. Click X on one chip to remove filter
-10. Verify results update","- Facets display with available filter values
+3. Select Brand filter
+4. Verify results update and count changes
+5. Apply Price range filter
+6. Verify chip badges show active filters
+7. Click X on one chip to remove it
+8. Verify no-results case with conflicting filters","- Facets display available values
 - Applying filter updates product listing immediately
 - Product count updates after each filter
 - Multiple filters work together (AND logic)
 - Chip badges display for active filters
-- Removing filter chip updates results
-- Filter state persists on page refresh
-- No products case shows 'No products match your filters' message",C410470,Automated
-FR-CAT-003,Product Faceted Filters - Reset Filters,Full Regression > Catalog > Filters,Functional,High,3m,"Multiple filters applied to product listing","1. Apply 3+ filters to category page
-2. Verify filtered results display
-3. Click 'Reset Filters' or 'Clear All' button
-4. Verify all filters cleared","- 'Reset Filters' button is visible when filters active
-- Clicking reset removes all filters
-- Product listing returns to full unfiltered state
-- Chip badges disappear
-- Product count returns to total
-- Facet selections cleared",C410472,Automated
-FR-CAT-004,Product Sorting,Full Regression > Catalog > Sorting,Functional,High,4m,"User on category page with multiple products","1. Navigate to category page
-2. Locate sort dropdown (usually top-right)
-3. Select 'Price: Low to High'
-4. Verify products sorted by price ascending
-5. Select 'Price: High to Low'
-6. Verify products sorted descending
-7. Select 'Name: A-Z'
-8. Verify alphabetical sort","- Sort options available: Price (Low-High, High-Low), Name (A-Z, Z-A), Newest, Most Popular
-- Sorting applies immediately without page reload
-- Product order updates correctly
-- Pagination resets to page 1 on sort change
-- Sort selection persists on pagination",C410475,Automated
-FR-CAT-005,Product Pagination,Full Regression > Catalog > Pagination,Functional,High,5m,"Category page with >20 products","1. Navigate to category with many products
-2. Verify pagination controls display at bottom
-3. Note products on page 1
-4. Click 'Next' or page '2'
-5. Verify new products load
-6. Verify page indicator updates
-7. Click 'Previous' to return to page 1
-8. Verify original products display","- Pagination displays when products exceed page size (typically 20)
-- Page numbers visible (1, 2, 3... or dropdown)
-- 'Next' and 'Previous' buttons functional
-- Current page highlighted
-- URL updates with page parameter (e.g., ?page=2)
-- Products do not duplicate across pages
-- Scroll to top on page change",C410476,Automated
-FR-SEARCH-001,Product Search - Basic Query,Full Regression > Search > Basic,Functional,Critical,4m,"User logged in, products exist in catalog","1. Click on search bar in header
-2. Enter search term 'laptop'
-3. Press Enter or click search icon
-4. Verify search results page loads
-5. Verify results match search term
-6. Verify result count displayed","- Search results page displays
-- Results contain products matching 'laptop' in name or description
-- Result count shows (e.g., '12 results for laptop')
-- Products display same as category page (image, name, price, Add to Cart)
-- Filters available to refine search
-- Breadcrumbs show: Home > Search Results
-- Search term visible in search bar",C410480,Automated
-FR-SEARCH-002,Product Search - Search Suggestions,Full Regression > Search > Suggestions,Functional,High,3m,"User on homepage with search bar focused","1. Click on search bar (do not type yet)
-2. Verify dropdown appears (search history or suggestions)
-3. Start typing 'lapt'
-4. Verify autocomplete suggestions appear
-5. Click on suggested product or term
-6. Verify navigation to product/results","- Dropdown appears on search bar focus
-- Suggestions update as user types (after 2-3 characters)
-- Suggestions include: Products, Categories, Recent Searches
-- Clicking suggestion navigates to product detail or search results
-- ESC key closes suggestion dropdown
-- Clicking outside closes dropdown",C410482,Automated
-FR-SEARCH-003,Product Search - No Results,Full Regression > Search > Edge Cases,Negative,Medium,3m,"User on search page","1. Enter nonsense search term: 'xyzabc123notfound'
+- Removing chip updates results
+- Facet counts match filtered results (BL-SRCH-001)
+- Empty state shows 'No products match' message",C410470,Automated
+FRR-010,Catalog - Sort Products,Full Regression > Catalog > Sorting,Functional,High,4m,"User on category page with multiple products","1. Navigate to category page
+2. Select 'Price: Low to High' in sort dropdown
+3. Verify products sorted ascending
+4. Select 'Price: High to Low'
+5. Verify descending sort
+6. Apply a filter and verify sort persists","- Sort options available: Price (Low-High, High-Low), Name (A-Z, Z-A), Newest
+- Sorting applies immediately
+- Sort order maintained after filter applied (ECL-3.2)
+- Pagination resets to page 1 on sort change",C410475,Automated
+FRR-011,Product Search - Basic Query and Suggestions,Full Regression > Search > Basic,Functional,Critical,4m,"User logged in, products exist in catalog","1. Click on search bar in header
+2. Start typing 'lapt'
+3. Verify autocomplete suggestions appear
+4. Press Enter to search 'laptop'
+5. Verify search results page loads with result count
+6. Verify filters available to refine","- Suggestions update after 2-3 characters
+- Search results page displays matching products
+- Result count shown
+- Products display with image, name, price, Add to Cart
+- Filters available on search results
+- Breadcrumbs: Home > Search Results (BL-SRCH-004)",C410480,Automated
+FRR-012,Product Search - No Results Handling,Full Regression > Search > Edge Cases,Negative,High,3m,"User on search page","1. Enter nonsense search term: 'xyzabc123notfound'
 2. Press Enter
-3. Verify no results handling","- Search executes without error
-- Message displays: 'No results found for xyzabc123notfound'
+3. Verify no results handling
+4. Verify search term visible in bar","- 'No results found for xyzabc123notfound' message shown
 - Suggestions shown: 'Try different keywords' or 'Browse categories'
-- Search bar remains filled with term
-- Option to clear search and browse catalog",C410484,Manual
-FR-SEARCH-004,Product Search - Special Characters,Full Regression > Search > Edge Cases,Negative,Medium,3m,"User on search page","1. Enter search with special characters: 'laptop & monitor'
+- Page layout intact (no broken grid)
+- Search bar filled with term
+- No 500 errors (BL-SRCH-002)",C410484,Manual
+FRR-013,Product Search - Special Characters and XSS,Full Regression > Search > Security,Security,Critical,4m,"User on search page","1. Enter: '<script>alert()</script>' in search
 2. Press Enter
-3. Verify search handles special chars
-4. Try search: '<script>alert()</script>'
-5. Verify XSS protection","- Special characters in normal queries handled gracefully
-- Results return products matching terms (ignoring special chars like &)
-- XSS attempts sanitized (no script execution)
+3. Enter: 'laptop & monitor'
+4. Verify search handles both queries","- XSS attempts sanitized (no script execution)
+- Special characters handled gracefully
 - No server errors
-- Search query escaped in URL",C410485,Manual
-FR-CART-001,Add to Cart - From Product Page,Full Regression > Cart > Add,Functional,Critical,3m,"User logged in, product available","1. Navigate to product detail page (e.g., 'Wireless Headphones')
-2. Verify product details load (name, image, price, description)
-3. Verify quantity selector (default: 1)
-4. Verify 'Add to Cart' button visible and enabled
-5. Click 'Add to Cart' button
-6. Verify success notification
-7. Verify cart icon updates","- Product detail page loads fully
+- Query escaped in URL (BL-SRCH-005)",C410485,Manual
+FRR-014,Search Index Lag - Admin Change Reflects Within 120s,Full Regression > Search > Consistency,Functional,High,10m,"Admin access, product in catalog","1. Update product name in Admin
+2. Immediately search on storefront (may show old name - expected within 60s)
+3. Verify direct product URL shows new name immediately
+4. Wait 120 seconds
+5. Re-run search
+6. Verify new name appears in results","- PDP (direct URL) shows updated name immediately (live data)
+- Search results update within 120s after reindex
+- After 120s no stale data remains (BL-CAT-003, BL-CROSS-009)",BL-CAT-003,Manual
+FRR-015,Add to Cart - From Product Page,Full Regression > Cart > Add,Functional,Critical,3m,"User logged in, product available","1. Navigate to product detail page
+2. Verify product details load (name, image, price)
+3. Verify quantity selector defaults to 1
+4. Click 'Add to Cart'
+5. Verify success notification
+6. Verify cart icon count increments","- Product detail page loads fully
 - 'Add to Cart' button enabled (if in stock)
-- Clicking button adds product to cart
-- Success notification: 'Wireless Headphones added to cart'
-- Cart icon count increments by 1
-- Mini-cart preview displays (optional, may slide in)
+- Success notification shows product name
+- Cart icon count increments
 - Product visible in cart",CART-001,Automated
-FR-CART-002,Add to Cart - Product Variations,Full Regression > Cart > Add,Functional,High,5m,"Configurable product with variations available","1. Navigate to product with variations (e.g., T-Shirt with Size and Color)
-2. Verify variation selectors display
-3. Select Size: Medium
-4. Select Color: Blue
-5. Verify price updates (if variant pricing exists)
-6. Click 'Add to Cart'
-7. View cart
-8. Verify correct variant added","- Variation selectors (dropdown or swatches) display
-- Selecting variation updates selection state
-- Price updates if variant has different price
-- Stock status updates per variant
-- 'Add to Cart' disabled until all required variations selected
-- Cart displays: 'T-Shirt - Medium, Blue'
-- Correct SKU and variant in cart",CART-004,Automated
-FR-CART-003,View Cart - Display Items,Full Regression > Cart > View,Functional,Critical,3m,"Products in cart","1. Add 2-3 different products to cart
-2. Click cart icon in header
-3. Verify mini-cart displays
-4. Click 'View Cart' button
-5. Verify full cart page loads","- Mini-cart dropdown displays items (up to 3-5)
-- Mini-cart shows: Product name, image, quantity, line price
-- Mini-cart shows subtotal
-- 'View Cart' button present
-- Full cart page displays all items
-- Full cart shows: Product image, name, SKU, quantity selector, line total, remove button
-- Subtotal, tax, shipping placeholder, grand total displayed",CART-005,Automated
-FR-CART-004,Update Cart Quantity - Increase,Full Regression > Cart > Update,Functional,High,3m,"Product in cart","1. Navigate to full cart page
-2. Locate product quantity selector
-3. Click '+' button or enter higher number (e.g., 5)
-4. Verify quantity updates
-5. Verify line total recalculates
-6. Verify cart totals update","- Quantity selector allows increase (+ button or direct input)
-- Quantity updates immediately or on blur
-- Line total = Unit Price x Quantity
-- Subtotal updates
-- Cart grand total updates
-- Stock validation (cannot exceed available stock)
-- Error message if quantity exceeds stock: 'Only X available'",CART-006,Automated
-FR-CART-005,Update Cart Quantity - Decrease,Full Regression > Cart > Update,Functional,High,3m,"Product in cart with quantity > 1","1. Navigate to cart page
-2. Find product with quantity >= 2
-3. Click '-' button
-4. Verify quantity decreases by 1
-5. Verify totals update
-6. Decrease to quantity 1
-7. Verify cannot decrease below 1 (or removes item)","- Quantity decreases by 1 each click
-- Line total and cart totals update
-- Cannot decrease below 1 (button disabled or grayed)
-- Alternative: Decreasing to 0 removes item (depends on implementation)
-- Totals recalculate correctly",CART-007,Automated
-FR-CART-006,Remove Item from Cart,Full Regression > Cart > Remove,Functional,High,2m,"Multiple products in cart","1. Navigate to cart page
-2. Locate remove/delete icon or button (usually X or trash icon)
-3. Click remove on one item
-4. Verify confirmation (optional) or immediate removal
-5. Verify item removed from cart
-6. Verify totals update","- Remove button/icon visible for each item
-- Clicking remove deletes item immediately or after confirmation
-- Item disappears from cart
+FRR-016,Add to Cart - Product Variations (Correct SKU),Full Regression > Cart > Add,Functional,Critical,6m,"Configurable product with variations. DevTools Network tab open.","1. Navigate to product with size and color variations
+2. Verify 'Add to Cart' disabled until all required options selected
+3. Select Size: Medium and Color: Blue
+4. Click 'Add to Cart'
+5. In Network tab: locate addItem GraphQL mutation
+6. Verify request payload SKU matches Blue/M variant
+7. View cart and verify line item shows 'Color: Blue, Size: M'","- 'Add to Cart' disabled until all required attributes selected
+- Selecting options enables the button
+- addItem mutation sends correct variant SKU (not parent SKU)
+- Cart line item displays variant attributes: 'Color: Blue, Size: M'
+- Price matches selected variant
+- Cart badge increments (BL-CAT-006)",C411059,Manual
+FRR-017,Add Same SKU Twice - Quantity Increments (No Duplicate Line),Full Regression > Cart > Quantity,Functional,High,4m,"User logged in, product available","1. Navigate to product detail page
+2. Click 'Add to Cart' (qty=1)
+3. Return to listing page
+4. Add same product again
+5. View cart","- Cart shows 1 line item with qty=2, not 2 separate lines
+- Quantity incremented on re-add
+- Line total = unit price x 2 (BL-CART-007)",BL-CART-007,Automated
+FRR-018,Cart - View and Update Quantities,Full Regression > Cart > View,Functional,Critical,5m,"Multiple products in cart","1. Add 2-3 products to cart
+2. Navigate to full cart page
+3. Verify cart displays all items with image, name, SKU, qty, line total
+4. Click '+' to increase quantity of one item
+5. Verify line total and subtotal recalculate
+6. Click '-' to decrease quantity
+7. Decrease to 0 and verify item removed","- Full cart shows all items with image, name, qty selector, line total
+- Subtotal, shipping placeholder, grand total displayed
+- Line total = unit price x quantity (BL-PRICE-008)
+- Subtotal updates on quantity change
+- Decreasing to 0 removes item or minus button disabled at 1",CART-005,Automated
+FRR-019,Cart - Remove Item,Full Regression > Cart > Remove,Functional,High,2m,"Multiple products in cart","1. Navigate to cart
+2. Click remove/trash icon on one item
+3. Verify item removed
+4. Verify totals recalculate
+5. Remove all items and verify empty state","- Item disappears from cart immediately
 - Cart totals recalculate
-- If cart becomes empty: 'Your cart is empty' message displays
-- Option to continue shopping",CART-009,Automated
-FR-CART-007,Cart - Save for Later,Full Regression > Cart > Save for Later,Functional,Medium,4m,"Products in cart","1. Navigate to cart page
-2. Locate 'Save for Later' link/button on cart item
-3. Click 'Save for Later'
-4. Verify item moves to 'Saved for Later' section below cart
-5. Verify cart totals update (item removed from active cart)
-6. Click 'Move to Cart' on saved item
-7. Verify item returns to active cart","- 'Save for Later' option available for each cart item
-- Clicking moves item to separate 'Saved for Later' section
-- Item removed from active cart (totals update)
-- 'Saved for Later' section displays below cart with saved items
-- 'Move to Cart' button available on saved items
-- Saved items persist across sessions",VCST-3928,Automated
-FR-CART-008,Cart - Promo Code Application,Full Regression > Cart > Promo,Functional,High,5m,"Valid promo code available (e.g., SAVE10)","1. Add products to cart
-2. Navigate to cart page
-3. Locate promo/coupon code field
-4. Enter valid code: SAVE10
-5. Click 'Apply' button
-6. Verify discount applied
-7. Verify cart total reduced","- Promo code input field visible
-- Entering code and clicking Apply processes code
-- Valid code applies discount
-- Discount line appears: 'Promo Code (SAVE10): -$10.00'
-- Grand total reduced by discount amount
-- Success message: 'Promo code applied successfully'
-- Code displayed in cart (with option to remove)
-- Can only apply one code at a time (or multiple, depending on rules)",CART-011,Manual
-FR-CART-009,Cart - Invalid Promo Code,Full Regression > Cart > Promo,Negative,Medium,3m,"On cart page","1. Navigate to cart page
-2. Enter invalid promo code: INVALID123
-3. Click 'Apply'
-4. Verify error handling","- Error message displays: 'Invalid promo code' or 'Code not found'
-- No discount applied
-- Cart totals unchanged
-- Promo field remains visible to try again",CART-012,Manual
-FR-CART-010,Can't Add to Cart - Price N/A or Zero,Full Regression > Cart > Product Validation,Functional,High,5m,"Product_1 in stock with price set to 0 or removed in Admin","1. In Admin: Catalog > Product_1 > Price widget > set price to 0 or remove price
-2. Go to storefront > navigate to Product_1
-3. Observe price display and Add to Cart button state
-4. Attempt to add product to cart","- Price shows as N/A or $0.00
-- Add to Cart button is inactive/disabled
-- Product cannot be added to cart
-- No console errors",C410689,Manual
-FR-CART-011,Can't Add to Cart - Can't Be Purchased Flag,Full Regression > Cart > Product Validation,Functional,High,5m,"Product_1 in stock with price assigned, Admin access available","1. In Admin: Catalog > Product_1 > switch off 'Can be purchased' toggle
-2. Go to storefront > navigate to Product_1
-3. Observe Add to Cart button state
-4. Attempt to add product to cart","- Add to Cart button is inactive/disabled
-- Product cannot be added to cart
-- Product is still visible in catalog",C410690,Manual
-FR-CART-012,Can't Add to Cart - Product Not Visible,Full Regression > Cart > Product Validation,Functional,High,5m,"Product_1 in stock with price assigned, Admin access available","1. In Admin: Catalog > Product_1 > switch off 'Visible' toggle
-2. Go to storefront > navigate to category containing Product_1
-3. Search for Product_1
-4. Try direct URL access to Product_1","- Product is not displayed in category listing
-- Product is not found in search results
-- Direct URL returns 404 or redirects
-- Product cannot be added to cart",C410691,Manual
-FR-CART-013,Can't Add to Cart - Out of Stock (FFC = 0),Full Regression > Cart > Product Validation,Functional,Critical,5m,"Product_1 in stock with price assigned, Admin access available","1. In Admin: Catalog > Product_1 > Fulfillment center widget > set 0 for all available FFCs
-2. Go to storefront > navigate to Product_1
+- If cart empty: 'Your cart is empty' message with continue shopping link",CART-009,Automated
+FRR-020,Cart - Stock Limit Enforced (Max Qty = Available Stock),Full Regression > Cart > Validation,Functional,Critical,5m,"Product with limited stock (e.g., 5 units available)","1. Navigate to product with limited stock
+2. Enter quantity 999 in quantity input field
+3. Attempt to add to cart","- Quantity capped to available stock or error shown: 'Only X available'
+- Order cannot exceed available inventory
+- '+' button disabled at stock limit (BL-CART-001)",C411201,Manual
+FRR-021,Cart - Out-of-Stock Product Cannot Be Added,Full Regression > Cart > Validation,Functional,Critical,5m,"Admin access. Product with all FFC inventory set to 0.","1. In Admin: set all fulfillment center stock to 0 for a product
+2. Navigate to product on storefront
 3. Observe stock label and Add to Cart button
-4. Attempt to add product to cart","- Red label 'Out of stock' is shown
-- Add to Cart button is inactive/disabled
-- Product cannot be added to cart",C410692,Manual
-FR-CART-014,Quantity Increment (+) Button on Catalog Page,Full Regression > Cart > Product Validation,Functional,High,3m,"User on Catalog page, product has available stock","1. Locate a product with +/- buttons on catalog page
-2. Click + button to add product to cart
-3. Click + again to increment quantity
-4. Verify cart counter updates","- Product is added to cart on first click
-- Quantity increases by 1 on subsequent clicks (respecting min/max rules)
-- Cart counter updates in real-time",C411195,Manual
-FR-CART-015,Quantity Decrement (-) Button on Catalog Page,Full Regression > Cart > Product Validation,Functional,High,3m,"Product in catalog has min qty = 3","1. Add product to cart using + button (qty reaches 3)
-2. Click - once to decrease quantity
-3. Continue clicking - until quantity reaches 0","- Quantity decreases by 1 per click
-- At quantity 0: product is removed from cart
-- (-) button is disabled when quantity is 0",C411196,Manual
-FR-CART-016,Quantity +/- Buttons on Product Detail Page,Full Regression > Cart > Product Validation,Functional,High,3m,"User on product details page, stock available","1. Click + to set quantity = 2
-2. Click Add to Cart
-3. Verify cart contents","- 2 items added to cart
-- Cart counter updated
-- +/- buttons respect min/max/pack rules",C411197,Manual
-FR-CART-017,Stock Limit - Quantity Capped at Available Stock,Full Regression > Cart > Product Validation,Functional,High,3m,"Product with limited stock (e.g., 5 units)","1. Navigate to product with limited stock
-2. Click + button repeatedly past available stock
-3. Observe quantity behavior","- Quantity stops increasing at maximum available stock
-- + button becomes disabled at stock limit
-- No error in console",C411201,Manual
-FR-CART-018,Min-Max Quantity Validation,Full Regression > Cart > Product Validation,Functional,High,3m,"Product with min qty and max qty configured","1. Enter a quantity below the minimum allowed
-2. Enter a quantity above the maximum allowed
-3. Observe auto-correction behavior","- Below-min input is auto-corrected to minimum
-- Above-max input is auto-corrected to maximum
-- System prevents invalid quantities",C411204,Manual
-FR-CART-019,Pack Size Validation - Invalid Pack Quantity,Full Regression > Cart > Product Validation,Functional,High,3m,"Product sold in packs of 3 or 6","1. Enter quantity not matching pack size (e.g., pack of 6, enter 7)
-2. Try to confirm/add to cart
-3. Observe validation behavior","- Value rounded/adjusted to nearest valid pack size
-- Error or warning shown if validation is strict
-- System prevents non-pack quantities",C411205,Manual
-FR-CART-020,Catalog Page - Min Quantity Auto-Correction,Full Regression > Cart > Product Validation,Functional,High,3m,"Product has min qty = 1 or pack = 3","1. Manually set input field below min (e.g., 0 or 2)
-2. Click outside input field (blur)
-3. Observe value","- Value auto-corrected to minimum pack quantity
-- No console errors",C411206,Manual
-FR-CART-021,Catalog Page - Max Quantity Auto-Correction,Full Regression > Cart > Product Validation,Functional,High,3m,"Product has defined max = 10","1. Enter 15 in input field
-2. Confirm input (blur or Enter)
-3. Observe value","- Value corrected to max allowed (10)
-- + button disabled at max",C411207,Manual
-FR-CART-022,Catalog Page - Pack Quantity Rounding,Full Regression > Cart > Product Validation,Functional,High,3m,"Product sold in packs of 3","1. Enter quantity = 5
-2. Try to confirm
-3. Observe rounding","- Value rounded/adjusted to nearest valid pack (e.g., 6)
-- Error/warning shown if validation is strict",C411208,Manual
-FR-CART-023,Product Variations - Default Min Quantity per Variation,Full Regression > Cart > Product Validation,Functional,Medium,3m,"Product has variations with different min values","1. Select variation A (min = 1)
-2. Observe default quantity
-3. Select variation B (min = 3)
-4. Observe default quantity update","- Input field updates to correct min for each variation
-- Switching variations resets quantity to variation's min",C411209,Manual
-FR-CART-024,Variation Table - Min-Max/Stock/Pack Validation,Full Regression > Cart > Product Validation,Functional,High,5m,"Product with variations displayed in table layout","1. Enter quantity below min for a variation
-2. Enter quantity above max for a variation
-3. Enter quantity above stock for a variation
-4. Enter invalid pack size quantity","- System prevents invalid input for each case
-- Appropriate error message shown per variation
-- Valid quantities are accepted",C411202,Manual
-FR-CART-025,Product Page - Manual Quantity Input Field,Full Regression > Cart > Product Validation,Functional,High,3m,"User on product details page, stock available","1. Enter custom quantity (e.g., 7) in input field
-2. Click Add to Cart
-3. Verify cart contents","- Custom quantity accepted if valid
-- Correct quantity added to cart
-- Cart total reflects entered quantity",C411183,Manual
-FR-CART-026,Product Variations - Invalid Quantity for Variation,Full Regression > Cart > Product Validation,Functional,High,3m,"Variation requires pack of 5","1. Enter quantity = 7 for the variation
-2. Click Add to Cart
-3. Observe validation","- System rejects invalid pack quantity
-- Error/warning message displayed
-- Product not added with invalid quantity",C411184,Manual
-FR-CART-027,Clear Input Field - Reset Behavior,Full Regression > Cart > Product Validation,Functional,High,3m,"Product on page, input allows manual editing","1. Delete all characters in quantity input field (leave empty)
-2. Click outside (blur)
-3. Observe field behavior","- +/- buttons are disabled when field has focus
-- Field resets to previous valid quantity (e.g., 1 or pack size) on blur
-- No console errors",C411186,Manual
-FR-CHECKOUT-001,Checkout - Standard Delivery,Full Regression > Checkout > Delivery,Functional,Critical,10m,"Products in cart, shipping addresses configured","1. Navigate to cart
-2. Click 'Checkout' or 'Proceed to Checkout'
-3. Verify checkout page loads
-4. Select 'Delivery' option (vs. Pickup)
-5. Select or add shipping address
-6. Select shipping method (e.g., Ground - 5-7 days)
-7. Select payment method (e.g., Credit Card)
-8. Review order summary
-9. Click 'Place Order'
-10. Verify order confirmation","- Checkout page loads with progress indicator
-- Delivery option selectable
-- Address form displays (or address selector if saved addresses exist)
+4. Attempt to add via xAPI if UI blocks","- 'Out of stock' or 'Sold out' label shown on PDP and listing
+- 'Add to Cart' disabled/hidden
+- xAPI addToCart returns error for zero-stock product (BL-CAT-001)",C410692,Manual
+FRR-022,Cart - Price N/A Prevents Purchase ($0 Guard),Full Regression > Cart > Validation,Functional,Critical,5m,"Admin access. Product with price removed or set to 0.","1. In Admin: remove price from product (delete price list entry)
+2. Navigate to product on storefront
+3. Observe price and Add to Cart state","- Product shows 'Unavailable' or N/A price — NOT $0.00
+- 'Add to Cart' button disabled
+- Product cannot be purchased at $0 (BL-CROSS-001, BL-CROSS-012)",C410689,Manual
+FRR-023,Cart - Promo Code Valid Application,Full Regression > Cart > Promo,Functional,High,5m,"Valid promo code available (e.g., SAVE10). Products in cart.","1. Add products to cart
+2. Navigate to cart
+3. Enter valid code: SAVE10
+4. Click 'Apply'
+5. Verify discount applied
+6. Verify discount calculated on sale price not list price","- Valid code applies discount
+- Discount line appears: 'Promo Code (SAVE10): -$X.XX'
+- Percentage coupon applies to already-discounted (sale) price, not list price
+- Grand total reduced correctly (BL-CART-003, BL-PRICE-001)",CART-011,Manual
+FRR-024,Cart - Invalid Promo Code Rejected,Full Regression > Cart > Promo,Negative,Medium,3m,"On cart page with products","1. Navigate to cart
+2. Enter invalid code: INVALID123
+3. Click 'Apply'
+4. Verify error","- Error message: 'Invalid promo code' or 'Code not found'
+- No discount applied
+- Cart totals unchanged",CART-012,Manual
+FRR-025,Cart - Pack Size Validation,Full Regression > Cart > Validation,Functional,High,3m,"Product sold in packs of 6","1. Navigate to product with pack size = 6
+2. Enter quantity = 7
+3. Attempt to add to cart","- Quantity rejected or auto-rounded to nearest pack (6 or 12)
+- Stepper increments by pack size (BL-CART-006)",C411205,Manual
+FRR-026,Cart - Currency Switch Recalculates All Prices,Full Regression > Cart > Currency,Functional,Critical,7m,"Multi-currency configured. Products in cart.","1. Add items to cart in USD
+2. Switch currency to EUR (or other configured currency)
+3. Verify all cart line items recalculate to EUR prices
+4. Verify shipping and tax also in EUR
+5. Check a product not in new currency's price list","- All prices switch to new currency's price list (not exchange rate conversion)
+- Cart subtotal, shipping, tax all in new currency
+- Products without new-currency prices show 'Unavailable' or removed
+- No mixed-currency state in cart (BL-CART-004, BL-CROSS-004)",BL-CART-004,Manual
+FRR-027,Cart - Persistence Across Sign-Out / Sign-In,Full Regression > Cart > Persistence,Functional,High,5m,"User logged in with items in cart","1. Add 3 products to cart
+2. Sign out
+3. Sign back in
+4. Verify cart restored","- Cart restored with same items and quantities after re-login
+- No items lost on sign-out/sign-in cycle (BL-CART-008)",BL-CART-008,Manual
+FRR-028,Checkout - Standard Delivery - Full Flow,Full Regression > Checkout > Delivery,Functional,Critical,10m,"Products in cart, shipping addresses configured","1. Navigate to cart
+2. Click 'Checkout'
+3. Select 'Delivery' option
+4. Select or add shipping address
+5. Select shipping method
+6. Select payment method
+7. Review order summary
+8. Click 'Place Order'
+9. Verify order confirmation page","- Checkout page loads with progress indicator
+- Address form or selector displays
 - Shipping methods display with cost and estimated delivery
-- Payment methods display (Credit Card, PayPal, etc.)
+- Payment methods available
 - Order summary shows: Items, Subtotal, Shipping, Tax, Grand Total
-- 'Place Order' button enabled
+- Grand total = subtotal + shipping + tax - discounts (BL-CHK-006)
 - Order processes successfully
 - Confirmation page displays order number
-- Confirmation email sent",SMK-009,Automated
-FR-CHECKOUT-002,Checkout - BOPIS Pickup Location Selection,Full Regression > Checkout > Pickup,Functional,Critical,12m,"Products in cart, pickup locations configured","1. Navigate to cart
+- Cart cleared after order",SMK-009,Automated
+FRR-029,Checkout - BOPIS Pickup Location Selection,Full Regression > Checkout > Pickup,Functional,Critical,12m,"Products in cart, pickup locations configured","1. Navigate to cart
 2. Click 'Checkout'
 3. Select 'Pickup' option
 4. Click 'Select pickup location'
-5. Verify pickup location modal opens
-6. Verify map displays with location markers
-7. Verify location list displays
-8. Enter search term or use current location
-9. Click on location in list or marker on map
-10. Verify location details display
-11. Click 'Select' or 'Choose this location'
-12. Verify modal closes
-13. Verify selected location displays in checkout
-14. Complete checkout","- 'Pickup' option available in checkout
-- Clicking 'Select pickup location' opens modal
-- Modal displays map (Google Maps) with markers
-- Location list displays with details: Name, Address, Phone, Hours, Availability
-- Search bar available to filter locations
-- 'Use my location' button for geolocation
-- Clicking location highlights marker and shows info window
-- 'Select' button in info window or list item
-- Selected location displays in checkout: Name, Address
-- No shipping cost applied
-- Order confirmation shows pickup location
-- Pickup instructions in confirmation email",SMK-010,Automated
-FR-CHECKOUT-003,Checkout - Shipping Address - Add New,Full Regression > Checkout > Address,Functional,High,8m,"User in checkout flow","1. Proceed to checkout
-2. Select 'Delivery' option
-3. Click 'Add New Address' or 'Enter Address'
-4. Fill address form:
-   - First Name: John
-   - Last Name: Doe
-   - Address Line 1: 123 Test Street
-   - Address Line 2: Apt 4B
-   - City: Testville
-   - State: California
-   - ZIP: 90210
-   - Country: United States
-   - Phone: +1-555-123-4567
-5. Check 'Save this address' (if option exists)
-6. Click 'Continue' or 'Use This Address'
-7. Verify address accepted
-8. Complete checkout","- Address form displays with all required fields
-- Form validates input (ZIP format, phone format, required fields)
-- State dropdown populated based on Country selection
-- 'Save this address' checkbox available
-- Clicking Continue validates and accepts address
-- Address displays in order summary
-- If saved, address appears in account addresses
-- Order confirmation shows correct shipping address",CART-013,Manual
-FR-CHECKOUT-004,Checkout - Payment - Credit Card,Full Regression > Checkout > Payment,Functional,Critical,8m,"Checkout at payment step, test credit card available","1. Proceed through checkout to payment step
-2. Select 'Bank card' or 'Credit Card' payment method
-3. Verify payment form loads (CyberSource, Authorize.Net, or Skyflow)
-4. Enter test card details:
-   - Card Number: 4622943127013705 (CyberSource) or 4111111111111111 (Test)
-   - Name: John Doe
-   - Expiry: 12/2029
-   - CVV: 123
-5. Verify billing address (same as shipping or different)
-6. Click 'Place Order'
-7. Verify payment processing
-8. Verify order confirmation","- Payment method selector displays available options
-- Credit card form loads (may be iframe or direct form)
-- Card number field formats input (adds spaces)
-- Card brand detected (Visa, MasterCard, etc. icon appears)
-- Expiry date validates format (MM/YYYY)
-- CVV field masks input (3-4 digits)
-- Billing address auto-filled from shipping (or option to use different)
-- 'Place Order' button processes payment
-- Loading indicator shows during processing
-- Order confirmation displays order number
-- Payment status: Authorized or Completed
-- Confirmation email sent",PAY-CS-001,Manual
-FR-CHECKOUT-005,Checkout - Order Review Before Placement,Full Regression > Checkout > Review,Functional,High,5m,"User at final checkout step before placing order","1. Proceed through all checkout steps
-2. Arrive at final review/place order page
-3. Verify order summary displays:
-   - Items with images, names, quantities, prices
-   - Shipping address
-   - Shipping method and cost
-   - Payment method (last 4 digits of card)
-   - Subtotal, Shipping, Tax, Grand Total
-4. Verify 'Place Order' button
-5. Verify can navigate back to edit sections","- Order summary displays all order details
-- Items listed with thumbnails
-- Shipping address correct
-- Shipping method and cost shown
-- Payment method shown (secure, no full card number)
-- All costs itemized
-- Grand total highlighted
-- 'Place Order' button prominent
-- 'Edit' links available to modify address, payment, etc.
-- Order total matches expectations",CART-015,Manual
-FR-CHECKOUT-006,Order Confirmation Page,Full Regression > Checkout > Confirmation,Functional,Critical,3m,"Order just placed successfully","1. Complete order checkout
-2. Verify order confirmation page displays
-3. Verify order number present
-4. Verify order details match
-5. Verify actions available (print, track, continue shopping)","- Confirmation page displays immediately after order placement
-- Success message: 'Thank you for your order!' or 'Order placed successfully'
-- Order number displayed prominently: 'Order #CO-123456'
-- Order details summary:
-  - Items ordered
-  - Shipping address
-  - Shipping method
-  - Payment method
-  - Total amount
-- Estimated delivery date shown (for delivery)
-- Pickup instructions shown (for pickup orders)
-- Actions available: 'Print Order', 'Track Order', 'Continue Shopping'
-- Cart cleared (empty)
-- Order appears in account Order History",SMK-012,Automated
-FR-CHECKOUT-007,Order Confirmation Email,Full Regression > Checkout > Confirmation,Functional,Critical,5m,"Order just placed","1. Complete checkout and place order
-2. Note order number
-3. Check email inbox (email used for order)
-4. Locate order confirmation email
-5. Verify email content
-6. Click tracking link (if applicable)","- Confirmation email received within 5 minutes
-- Email subject: 'Order Confirmation - #CO-123456'
-- Email contains:
-  - Order number
-  - Order date
-  - Items ordered (with images, names, quantities, prices)
-  - Shipping/Pickup address
-  - Shipping method
-  - Total amount paid
-  - Estimated delivery/pickup date
-  - Tracking link (once shipped)
-  - Contact information for support
-- Email formatted professionally (HTML, branded)
-- Tracking link functional (if order shipped)",CART-016,Manual
-FR-ORDER-001,Order History - View Orders List,Full Regression > Orders > History,Functional,High,4m,"User logged in with previous orders","1. Log in to account
-2. Navigate to 'My Account' or 'Orders'
-3. Click 'Order History' or 'My Orders'
-4. Verify orders list displays","- Order History page loads
-- Orders listed in reverse chronological order (newest first)
-- Each order displays: Order Number, Date, Status, Total
-- Order status badge (New, Processing, Shipped, Completed)
-- 'View Details' link/button for each order
-- Pagination or infinite scroll if many orders
-- Filter/search options available",CART-017,Manual
-FR-ORDER-002,Order History - View Order Details,Full Regression > Orders > History,Functional,High,5m,"User logged in, order exists","1. Navigate to Order History
-2. Click 'View Details' on an order
-3. Verify order details page loads","- Order details page displays
-- Order number and date shown
-- Order status badge
-- Items listed with images, names, quantities, prices
-- Shipping/Pickup address shown
-- Shipping method and tracking number (if shipped)
-- Payment method (last 4 digits)
-- Order totals: Subtotal, Shipping, Tax, Total
-- Actions available: 'Reorder', 'Track Shipment', 'Print Invoice', 'Request Return'",CART-018,Manual
-FR-ORDER-003,Order History - Reorder,Full Regression > Orders > Reorder,Functional,Medium,5m,"User logged in, completed order exists","1. Navigate to Order History
-2. Select completed order
-3. Click 'Reorder All' button
-4. Verify products added to cart","- 'Reorder All' button available for completed orders
-- Clicking button adds all items from order to cart
-- Success notification: 'X items added to cart'
-- Redirected to cart or mini-cart updates
-- Items in cart match order (quantities correct)
-- If any items out of stock or unavailable: warning message displayed",CART-019,Manual
-FR-ORDER-004,Order Tracking,Full Regression > Orders > Tracking,Functional,Medium,4m,"Order shipped with tracking number","1. Navigate to Order Details for shipped order
-2. Verify tracking number displayed
-3. Click 'Track Shipment' link
-4. Verify tracking page or carrier site opens","- Tracking number visible once order status is 'Shipped'
-- 'Track Shipment' link or button available
-- Clicking link opens carrier tracking page (UPS, FedEx, USPS, etc.)
-- Tracking number auto-populated
-- Alternative: In-app tracking displays shipment status",CART-020,Manual
-FR-ORDER-005,Order Status Updates,Full Regression > Orders > Status,Functional,High,5m,"Order in various statuses","1. Place new order (status: New)
-2. Wait for admin to process (status: Processing)
-3. Wait for shipment (status: Shipped)
-4. Verify status updates in Order History
-5. Check for status notification emails","- Order status badge updates in Order History
-- Status progression: New → Processing → Shipped → Completed
-- Status change emails sent at each stage
-- Estimated delivery date updates
-- Tracking number added when shipped",CART-021,Manual
-FR-BOPIS-001,BOPIS - Pickup Location Map Display,Full Regression > BOPIS > Map,Functional,Critical,8m,"Cart has products, multiple pickup locations exist","1. Add products to cart
-2. Navigate to cart
-3. Select 'Pickup' option
-4. Click 'Select pickup location'
-5. Verify map modal opens
-6. Verify map displays correctly
-7. Verify markers for all locations
-8. Zoom in/out on map
-9. Pan map
-10. Verify map stability","- Map modal opens smoothly
-- Google Maps loads fully
-- Markers display for all available pickup locations
-- Markers clustered if many locations close together
-- Map interactive (zoom with +/- buttons or scroll, pan with drag)
-- Map dimensions stable (no jumping or resizing)
-- Current location marker (if geolocation enabled)
-- Map centered on user location or region",BOPIS-001,Automated
-FR-BOPIS-002,BOPIS - Search Pickup Locations,Full Regression > BOPIS > Search,Functional,High,6m,"Pickup location modal open","1. Open pickup location selector
-2. Locate search bar
-3. Enter city name (e.g., 'San Francisco')
-4. Verify locations filter
-5. Verify map updates
-6. Enter ZIP code (e.g., '94102')
-7. Verify further filtering
-8. Clear search using X button
-9. Verify all locations return","- Search bar visible at top of modal
-- Placeholder text: 'Search by city, ZIP, or address'
-- Typing filters location list in real-time
-- Map re-centers to search area
-- Markers update to show filtered locations
-- Search by city, ZIP, address, or location name
-- Autocomplete suggestions (optional)
-- Clear button (X) visible when search has text
-- Clearing search returns all locations",BOPIS-002,Automated
-FR-BOPIS-003,BOPIS - Filter Pickup Locations,Full Regression > BOPIS > Filters,Functional,High,6m,"Pickup location modal open with filterable locations","1. Open pickup location selector
-2. Verify filter options display
-3. Apply filter: 'Open Now'
-4. Verify locations filter to only open locations
-5. Apply filter: 'In Stock' (product available)
-6. Verify further filtering
-7. Clear filters
-8. Verify all locations return","- Filter options display: 'Open Now', 'In Stock', 'Distance' (if geolocation)
-- Filters apply to location list immediately
-- Map markers update to show filtered locations
-- Location count updates (e.g., 'Showing 5 of 12 locations')
-- Multiple filters work together (AND logic)
-- 'Clear Filters' button visible when filters active
-- Clearing filters restores all locations",VCST-3865,Automated
-FR-BOPIS-004,BOPIS - Select Pickup Location,Full Regression > BOPIS > Selection,Functional,Critical,5m,"Pickup location modal open","1. Open pickup location modal
-2. Click on location in list
-3. Verify marker highlights on map
-4. Verify info window opens on map
-5. Click 'Select' in info window
-6. Verify modal closes
-7. Verify location selected in checkout","- Clicking location in list highlights it
-- Corresponding map marker changes color/icon
-- Map pans to center on selected location
-- Info window opens on marker showing: Location Name, Address, Phone, Hours, Availability
-- 'Select' button in info window
-- Clicking 'Select' closes modal
-- Selected location displays in checkout/cart
-- Location name and address shown
-- 'Change Location' option available",BOPIS-003,Automated
-FR-BOPIS-005,BOPIS - Mobile Pickup Flow,Full Regression > BOPIS > Mobile,Functional,Critical,10m,"Mobile device (iPhone Safari or Chrome Android), cart has products","1. Add products to cart on mobile
-2. Navigate to cart
-3. Select 'Pickup' option
-4. Click 'Select pickup location'
-5. Verify mobile modal/page opens
-6. Verify map displays (possibly list-first layout)
-7. Interact with map (pinch zoom, tap marker)
-8. Select location
-9. Verify checkout completes on mobile","- Pickup option works on mobile
-- Pickup location selector optimized for mobile
-- Map displays (may be smaller or below list)
-- Touch interactions work: pinch zoom, tap markers, swipe
-- Location list scrollable
-- Select button easily tappable (44x44px minimum)
-- Modal close button accessible
-- No horizontal scrolling required
-- Form fields appropriately sized for mobile keyboards",BOPIS-004,Manual
-FR-PAYMENT-001,Payment - CyberSource - Valid Card,Full Regression > Payment > CyberSource,Functional,Critical,5m,"Checkout at payment step, CyberSource configured","1. Proceed to payment step
+5. Verify map modal opens with location list
+6. Select a pickup location
+7. Complete checkout without shipping address","- 'Pickup' option available at checkout
+- Map modal shows markers for all pickup locations
+- Location details shown: Name, Address, Phone, Hours, Availability
+- No shipping cost applied for pickup
+- Shipping address step skipped
+- Order confirmation shows pickup location and instructions
+- Billing address still required (BL-SHIP-002)",SMK-010,Automated
+FRR-030,Checkout - Shipping Methods Update on Address Change,Full Regression > Checkout > Shipping,Functional,Critical,8m,"Checkout with delivery selected","1. Enter domestic shipping address
+2. Note available shipping methods and rates
+3. Change to international address
+4. Verify shipping methods refresh
+5. Verify previously selected method deselected if unavailable","- Shipping methods update when address changes
+- Rates recalculate for new destination
+- Method unavailable for new address is deselected with notification
+- BOPIS option disappears for distant addresses (BL-CHK-005, BL-SHIP-001)",BL-CHK-005,Manual
+FRR-031,Checkout - Free Shipping Threshold Recalculates on Cart Change,Full Regression > Checkout > Shipping,Functional,High,6m,"Store configured with free shipping threshold (e.g., $100). Cart near threshold.","1. Add items totaling $90 to cart
+2. Note shipping cost ($10 standard)
+3. Add item worth $20 (total $110)
+4. Verify shipping becomes $0 (free)
+5. Apply coupon reducing total to $95
+6. Verify free shipping removed","- Shipping recalculates each time cart changes
+- Free shipping triggered at threshold on subtotal after discounts
+- Coupon reducing below threshold removes free shipping (BL-SHIP-003)",BL-SHIP-003,Manual
+FRR-032,Checkout - Order Total Formula Verified,Full Regression > Checkout > Totals,Functional,Critical,5m,"User at final checkout review step before placing order","1. Proceed through all checkout steps
+2. At order review page, manually calculate: sum(line totals) + shipping + tax - discounts
+3. Compare manual calculation to displayed grand total
+4. After placing order, compare to confirmation page total
+5. Verify Admin order shows same total","- Grand total = subtotal + shipping + tax - cart discounts exactly
+- Tax calculated on post-discount subtotal (BL-PRICE-002)
+- No unexplained discrepancies >= $0.01 (BL-PRICE-008, BL-CHK-006)
+- Checkout total matches confirmation page
+- Confirmation matches Admin order detail",CART-015,Manual
+FRR-033,Checkout - Place Order (Double-Submit Prevention),Full Regression > Checkout > Idempotency,Functional,Critical,5m,"User at final checkout step with payment ready","1. Complete all checkout steps
+2. Click 'Place Order'
+3. Immediately click 'Place Order' again (rapid double-click)
+4. Wait for processing
+5. Check Admin for orders","- Only 1 order created (not 2)
+- Button disabled/loading state after first click
+- No duplicate orders in Admin
+- No double inventory decrement (BL-CHK-002, BL-CROSS-010)",BL-CHK-002,Manual
+FRR-034,Checkout - Payment Credit Card (CyberSource),Full Regression > Payment > CyberSource,Functional,Critical,8m,"Checkout at payment step, CyberSource configured","1. Proceed to payment step
 2. Select 'Bank card (CyberSource)'
 3. Wait for CyberSource iframe to load
-4. Enter card: 4622943127013705
-5. Enter name: John Smith
-6. Enter expiry: 09/2029
-7. Enter CVV: 838
-8. Click 'Place order'","- CyberSource payment form loads in iframe
-- All fields accept input
-- No validation errors
-- Submitting attempts to authorize payment
-- (Test environment may reject, but form validation passes)
-- If successful: Order placed, confirmation shown
-- If declined: Clear error message shown",PAY-CS-001,Manual
-FR-PAYMENT-002,Payment - CyberSource - Invalid Card,Full Regression > Payment > CyberSource,Negative,High,3m,"CyberSource payment form ready","1. Enter invalid card number: 1234567890123456
+4. Enter: card 4622943127013705, name John Smith, expiry 09/2029, CVV 838
+5. Click 'Place Order'","- CyberSource iframe loads (PCI-compliant, isolated)
+- Card fields accept input
+- No raw card data in HTML or browser storage
+- Payment authorized or clear decline message shown
+- If success: order confirmation with order number
+- If declined: user can retry without losing cart (BL-CHK-004)",PAY-CS-001,Manual
+FRR-035,Payment - Authorize.Net Valid Card,Full Regression > Payment > AuthorizeNet,Functional,Critical,5m,"Checkout at payment step, Authorize.Net configured","1. Select 'Bank card (Authorize.Net)'
+2. Enter test card: 4111111111111111, expiry 12/2025, CVV 123
+3. Submit payment","- Authorize.Net form loads
+- Card accepted
+- Payment processes
+- Order confirmation or decline message shown",PAY-AN-001,Manual
+FRR-036,Payment - Datatrans Valid Card (3D Secure),Full Regression > Payment > Datatrans,Functional,High,8m,"Checkout at payment step, Datatrans configured","1. Select 'Bank card (Datatrans)'
+2. Enter test card: 4242424242424242, expiry 12/2025, CVV 123
+3. Enter OTP if prompted: DATATRANS_OTP from .env
+4. Complete payment","- Datatrans form loads (may redirect to /checkout/payment)
+- OTP field appears if 3D Secure enabled
+- Correct OTP authorizes payment
+- Order placed with confirmation",PAY-DT-001,Manual
+FRR-037,Payment - Skyflow Valid Card (PCI Tokenization),Full Regression > Payment > Skyflow,Functional,High,5m,"Checkout at payment step, Skyflow configured","1. Select 'Bank card (Skyflow)'
+2. Enter: SKYFLOW_VISA, expiry SKYFLOW_EXPIRY, CVV SKYFLOW_CVV from .env
+3. Submit payment","- Skyflow secure form loads
+- Card data tokenized before submission
+- Only token sent to server (no raw PAN in requests)
+- Order confirmation on success (BL-CHK-004)",PAY-SK-001,Manual
+FRR-038,Payment - Invalid Card Rejected with Clear Error,Full Regression > Payment > Negative,Negative,High,3m,"Payment form ready (any processor)","1. Enter invalid card: 1234567890123456
 2. Fill other fields with valid data
 3. Attempt to submit","- Real-time validation on card number field
-- Error message: 'Invalid card number' or card icon shows X
-- Submit button disabled or error shown on submission
-- No payment attempted with invalid card",PAY-CS-004,Manual
-FR-PAYMENT-003,Payment - Authorize.Net - Valid Card,Full Regression > Payment > AuthorizeNet,Functional,Critical,5m,"Checkout at payment step, Authorize.Net configured","1. Select 'Bank card (Authorize.Net)'
-2. Enter test card: 4111111111111111
-3. Enter name: Test User
-4. Enter expiry: 12/2025
-5. Enter CVV: 123
-6. Submit payment","- Authorize.Net form loads
-- Card details accepted
-- Payment processes
-- Order confirmation or decline message",PAY-AN-001,Manual
-FR-PAYMENT-004,Payment - Datatrans - Valid Card,Full Regression > Payment > Datatrans,Functional,High,8m,"Checkout at payment step, Datatrans configured, Datatrans test card available","1. Select 'Bank card (Datatrans)'
-2. Enter Datatrans test card: 4242424242424242
-3. Enter expiry: 12/2025
-4. Enter CVV: 123
-5. Enter OTP if prompted (from .env: DATATRANS_OTP)
-6. Submit payment","- Datatrans payment form loads (may redirect)
-- Card details accepted
-- OTP field appears if 3D Secure enabled
-- Entering correct OTP authorizes payment
-- Returns to confirmation page
-- Order placed successfully",PAY-DT-001,Manual
-FR-PAYMENT-005,Payment - Skyflow - Valid Card,Full Regression > Payment > Skyflow,Functional,High,5m,"Checkout at payment step, Skyflow configured","1. Select 'Bank card (Skyflow)'
-2. Enter Skyflow test card (from .env): SKYFLOW_VISA
-3. Enter expiry: SKYFLOW_EXPIRY
-4. Enter CVV: SKYFLOW_CVV
-5. Submit payment","- Skyflow secure form loads (PCI-compliant)
-- Card details tokenized
-- Payment processes
-- Order confirmation on success",PAY-SK-001,Manual
-FR-MULTI-ORG-001,Multi-Organization - Switch Organizations,Full Regression > B2B > Multi-Org,Functional,High,5m,"User belongs to multiple organizations","1. Log in as user with multiple organizations
-2. Locate organization selector in header
-3. Click organization name or selector dropdown
-4. Verify list of organizations displays
-5. Select different organization
-6. Verify switch completes
-7. Verify cart and context update","- Organization selector visible in header (dropdown or menu)
-- Clicking opens list of all user's organizations
-- Selecting organization switches context immediately
-- Page refreshes or updates with new org context
-- Cart displays products for selected organization (org-specific cart)
-- Pricing reflects organization contracts
-- Organization name updates in header
-- Company Members page shows members of new organization",FR-MULTI-ORG-001,Manual
-FR-MULTI-ORG-002,Multi-Organization - Organization-Specific Cart,Full Regression > B2B > Multi-Org,Functional,High,7m,"User in Org A with items in cart","1. Add products to cart while in Org A
-2. Note cart items
-3. Switch to Org B
-4. View cart
-5. Verify cart is separate (empty or has Org B items)
+- Error message: 'Invalid card number'
+- No payment attempted
+- User can correct and retry without losing checkout state",PAY-CS-004,Manual
+FRR-039,Payment - Secure Data Handling (PCI Compliance Check),Full Regression > Payment > Security,Security,Critical,8m,"Checkout at payment step, DevTools open","1. Inspect payment form
+2. Verify credit card fields in iframe
+3. Submit payment
+4. Inspect network requests
+5. Check browser storage (localStorage, sessionStorage, cookies)","- Payment form uses iframe (PCI DSS scope reduction)
+- No raw card number in HTML
+- No card data stored in browser storage
+- Only tokenized data sent to server
+- All communication over HTTPS
+- No mixed content warnings (BL-CHK-004)",FR-SECURITY-005,Manual
+FRR-040,Order Confirmation Page - Cross-Layer Verification,Full Regression > Orders > Confirmation,Functional,Critical,10m,"Order just placed successfully","1. Complete checkout and place order
+2. Capture order number from confirmation page
+3. Verify confirmation page content
+4. Check email inbox for confirmation
+5. Navigate to account Order History
+6. In Admin: verify order exists with matching total
+7. Verify cart is empty after order","- Confirmation page shows order number prominently
+- Success message displayed
+- Order details: items, shipping address, shipping method, payment, total
+- Cart cleared (BL-CROSS-005)
+- Confirmation email received within 5 minutes with matching data (BL-NOTIF-001, BL-NOTIF-002)
+- Order appears in account Order History
+- Admin order total matches confirmation total (BL-CHK-006)",SMK-012,Automated
+FRR-041,GA4 Purchase Event Fires on Order Confirmation,Full Regression > Analytics > GA4,Analytics,Critical,8m,"GA4 configured, Network tab open, DevTools console open","1. Complete checkout and place order
+2. On confirmation page, open DevTools > Network tab
+3. Filter for 'google-analytics.com' or 'gtag' events
+4. Find 'purchase' event
+5. Inspect event parameters","- purchase event fires exactly once on confirmation page load
+- event.transaction_id matches displayed order number
+- event.value matches order total (revenue)
+- event.currency matches order currency
+- event.tax, event.shipping included
+- event.items array contains all ordered products with correct item_id, price, quantity
+- No GA errors in console (BL-CROSS-005)",FR-GA-004,Manual
+FRR-042,GA4 Add to Cart and Begin Checkout Events,Full Regression > Analytics > GA4,Analytics,High,6m,"GA4 configured, Network tab open","1. Navigate to product page
+2. Click 'Add to Cart'
+3. Verify 'add_to_cart' GA4 event in Network tab
+4. Navigate to cart and click Checkout
+5. Verify 'begin_checkout' event fired","- add_to_cart event: currency, value, items[item_id, item_name, price, quantity]
+- begin_checkout event: currency, value, items array with all cart products
+- Both events visible in Network tab
+- Data accurate (matches product/cart values)",FR-GA-002,Manual
+FRR-043,Order History - View and Reorder,Full Regression > Orders > History,Functional,High,6m,"User logged in with previous orders","1. Navigate to account > Orders
+2. Verify orders listed newest-first with status, date, total
+3. Click 'View Details' on an order
+4. Verify all order details present
+5. Click 'Reorder All'
+6. Verify products added to cart","- Orders listed in reverse chronological order
+- Each order: Order Number, Date, Status badge, Total
+- Order details: items, address, shipping, payment, totals
+- Actions: Reorder, Track Shipment, Print Invoice
+- Reorder adds all items to cart
+- Out-of-stock items on reorder show warning",CART-017,Manual
+FRR-044,Order Status State Machine - Admin Processing,Full Regression > Orders > Status,Functional,High,8m,"Placed order in Admin","1. Place order in storefront
+2. In Admin: open the order
+3. Attempt to change payment: Pending → Captured (skipping Authorized)
+4. Verify illegal transition rejected
+5. Process through valid states: Pending → Authorized → Captured
+6. Ship via: New → PickPack → Sent (with tracking number)
+7. Verify storefront order status updates","- Illegal state transitions rejected (cannot capture before authorize)
+- Valid transitions accepted in correct order
+- Shipment requires tracking number for 'Sent' state
+- Order status updates visible in storefront Order History
+- Audit log records each transition with actor and timestamp (BL-ORD-001, BL-ORD-006)",BL-ORD-001,Manual
+FRR-045,BOPIS - Pickup Location Map, Filter, and Select,Full Regression > BOPIS > Map,Functional,Critical,10m,"Cart has products, multiple pickup locations exist","1. Add products to cart and select Pickup at checkout
+2. Open pickup location modal
+3. Verify map loads with markers for all locations
+4. Enter city name in search bar and verify locations filter
+5. Apply 'Open Now' filter
+6. Click on a location in list and verify marker highlights
+7. Click 'Select' on a location
+8. Verify modal closes and selected location shows in checkout","- Google Maps loads with location markers
+- Map interactive (zoom, pan)
+- Search filters list and re-centers map
+- Filters apply to location list (AND logic)
+- Clicking location highlights marker and opens info window
+- Info window shows: Name, Address, Phone, Hours, Availability
+- 'Select' closes modal
+- Selected location displayed in checkout with 'Change Location' option",BOPIS-001,Automated
+FRR-046,BOPIS - Mobile Pickup Flow,Full Regression > BOPIS > Mobile,Functional,Critical,10m,"Mobile viewport (375x812px or iPhone), cart has products","1. Resize to mobile viewport
+2. Add products to cart
+3. Select Pickup at checkout
+4. Open pickup location selector
+5. Interact with map (pinch zoom, tap markers)
+6. Select location
+7. Complete checkout","- Pickup location selector optimized for mobile
+- Touch interactions work: pinch zoom, tap markers
+- Location list scrollable
+- Select button tappable (44x44px minimum)
+- No horizontal scrolling required
+- Checkout completes on mobile",BOPIS-004,Manual
+FRR-047,B2B - Multi-Organization Cart Isolation,Full Regression > B2B > Multi-Org,Functional,Critical,8m,"User belongs to 2+ organizations","1. Log in as user with multiple organizations
+2. Switch to Org A using org selector in header
+3. Add 3 products to cart while in Org A
+4. Switch to Org B
+5. Verify Org B cart is separate (empty or different items)
 6. Add products to Org B cart
 7. Switch back to Org A
-8. Verify Org A cart preserved","- Each organization has separate cart
-- Cart items tied to organization context
-- Switching orgs switches cart
-- Cart A items do not appear in Cart B
-- Cart items persist when switching back
-- Checkout processes order for current organization
-- Order history separate per organization",FR-MULTI-ORG-002,Manual
-FR-B2B-001,Quick Order Entry,Full Regression > B2B > Quick Order,Functional,High,8m,"B2B user logged in with organization context","1. Navigate to 'Quick Order' page (usually in account menu)
-2. Verify Quick Order form displays
-3. Enter SKUs and quantities:
+8. Verify Org A cart intact","- Organization selector shows all user's orgs
+- Switching org switches cart context
+- Org A's items NOT visible in Org B
+- Cart items persist when switching back to Org A
+- Pricing reflects each org's contract prices (BL-B2B-001, BL-CART-005)",FR-MULTI-ORG-002,Manual
+FRR-048,B2B - Organization Context Swap (All 6 Dimensions),Full Regression > B2B > Context Swap,Functional,Critical,10m,"User member of 2+ organizations with different configs (prices, theme if WL enabled)","1. Log in as Org A member
+2. Note: cart items, visible addresses, product prices, white-label theme
+3. Switch to Org B
+4. Verify cart changed to Org B's cart
+5. Verify addresses changed to Org B's address book
+6. Verify prices changed to Org B's price list
+7. Verify theme updated if white labeling enabled
+8. Switch back to Org A and verify all contexts restored","- Cart swaps atomically to new org's cart
+- Addresses from Org A not visible under Org B
+- Prices reflect Org B's contract list (BL-B2B-002)
+- Theme/branding updates if white labeling enabled
+- Quotes scope to current org
+- Switching back restores all Org A's context (BL-CROSS-008)",BL-CROSS-008,Manual
+FRR-049,B2B - Organization-Specific (Contract) Pricing,Full Regression > B2B > Pricing,Functional,Critical,6m,"Org A has a custom price list with Product X at $50. Store default has Product X at $75.","1. Sign in as Org A member
+2. Navigate to Product X
+3. Note displayed price
+4. Sign out and sign in as a non-org (personal) user
+5. Navigate to Product X
+6. Note displayed price","- Org A member sees contract price: $50
+- Non-org user sees store default price: $75
+- Org A member adds to cart — cart uses $50
+- Non-org user's cart uses $75
+- Product not in Org A's price list falls back to store default (BL-PRICE-007, BL-B2B-002)",BL-PRICE-007,Manual
+FRR-050,B2B - Quick Order Entry,Full Regression > B2B > Quick Order,Functional,High,8m,"B2B user logged in with organization context","1. Navigate to Quick Order page
+2. Enter valid SKUs and quantities:
    - Row 1: SKU-001, Qty: 10
    - Row 2: SKU-002, Qty: 5
-4. Click 'Add to Cart'
-5. Verify products added to cart","- Quick Order page accessible from main menu or account menu
-- Form displays rows with SKU input and Quantity input
-- Can enter multiple rows (typically 5-10 visible, more on request)
-- Typing SKU validates against catalog (may show product name)
+   - Row 3: INVALID-SKU, Qty: 1
+3. Click 'Add to Cart'","- Quick Order form displays with SKU and Quantity rows
+- Valid SKUs validate against catalog (product name shown)
 - Invalid SKU shows error: 'Product not found'
-- 'Add to Cart' button adds all valid rows to cart
-- Success message: 'X items added to cart'
-- Invalid rows highlighted with errors",FR-B2B-001,Manual
-FR-B2B-002,Company Members Management,Full Regression > B2B > Company,Functional,Medium,8m,"Organization admin logged in","1. Navigate to 'Company Members' page
-2. Verify members list displays
+- Valid rows added to cart
+- Invalid rows highlighted
+- Cart updates with correct quantities",FR-B2B-001,Manual
+FRR-051,B2B - Company Members Management,Full Regression > B2B > Company,Functional,High,8m,"Organization admin logged in","1. Navigate to Company Members page
+2. Verify members list with Name, Email, Role, Status
 3. Click 'Invite Member' button
-4. Enter email: newmember@example.com
-5. Select role: Employee
-6. Click 'Send Invitation'
-7. Verify invitation sent
-8. Check email for invitation
-9. (As new member) Accept invitation and register","- Company Members page lists all organization members
-- Member details: Name, Email, Role, Status (Active, Pending)
-- 'Invite Member' button visible for admins
-- Invitation form: Email, Role (Admin, Employee, Buyer)
+4. Enter email: newmember@example.com and select role: Employee
+5. Click 'Send Invitation'
+6. Verify invitation email received","- Members list shows all org members
+- 'Invite Member' button visible for org admins
 - Invitation sent successfully
 - Invitation email received with registration link
-- New member can register and join organization
-- New member appears in Company Members list
-- Admins can edit roles or remove members",FR-B2B-002,Manual
-FR-ACCESSIBILITY-001,Keyboard Navigation - Full Site,Full Regression > Accessibility > Keyboard,Accessibility,High,15m,"Browser open, keyboard only (no mouse)","1. Navigate to storefront homepage using only keyboard
-2. Tab through header links
-3. Verify focus indicators visible
-4. Tab through main content
-5. Navigate to category page
-6. Tab through product cards
-7. Enter into cart and checkout using keyboard only
-8. Verify all interactive elements reachable","- All interactive elements reachable via Tab key
-- Focus indicators visible (outline or highlight)
-- Tab order logical (left-to-right, top-to-bottom)
-- Can navigate menus with arrow keys
-- Enter key activates buttons/links
-- Escape key closes modals/dropdowns
-- Skip links available ('Skip to main content')
-- No keyboard traps (can always tab out)",FR-ACCESS-001,Manual
-FR-ACCESSIBILITY-002,Screen Reader Compatibility,Full Regression > Accessibility > Screen Reader,Accessibility,High,20m,"Screen reader installed (NVDA, JAWS, or VoiceOver)","1. Enable screen reader
-2. Navigate storefront
-3. Verify all content announced
-4. Test form fields (labels announced)
-5. Test buttons (purpose announced)
-6. Test images (alt text read)
-7. Test product listing (product info structured)
-8. Complete checkout flow with screen reader","- All text content read by screen reader
-- Form labels associated with inputs (announced together)
-- Buttons have descriptive labels (not just 'Click here')
-- Images have alt text (decorative images have empty alt)
-- Headings structured (H1, H2, H3 hierarchy)
-- ARIA labels where needed
-- Dynamic content changes announced (cart updates, errors)
-- Checkout form fully accessible",FR-ACCESS-002,Manual
-FR-ACCESSIBILITY-003,WCAG Color Contrast,Full Regression > Accessibility > Color,Accessibility,Medium,10m,"Browser with contrast checker extension or tool","1. Navigate to storefront
-2. Check text color contrast against backgrounds
-3. Use contrast checker tool
-4. Verify all text meets WCAG AA standards (4.5:1 for normal text, 3:1 for large text)
-5. Check button text contrast
-6. Check link contrast
-7. Check error message contrast","- All body text has contrast ratio >= 4.5:1
-- Large text (18pt+) has contrast ratio >= 3:1
-- Buttons readable (sufficient contrast)
-- Links distinguishable (color + underline, not color alone)
-- Error messages high contrast (red with sufficient darkness)
-- Focus indicators sufficient contrast
-- No reliance on color alone to convey information",FR-ACCESS-003,Manual
-FR-LOCALIZATION-001,Language Switching,Full Regression > Localization > Language,Functional,Medium,5m,"Multi-language site configured","1. Navigate to storefront
-2. Locate language selector (usually header or footer)
-3. Click language selector
-4. Verify list of languages displays
-5. Select 'Deutsch' (German)
-6. Verify page reloads in German
-7. Verify UI elements translated
-8. Switch to 'Français' (French)
-9. Verify French translations","- Language selector visible and accessible
-- All configured languages listed (13 languages: EN, DE, FR, ES, NO, SV, PL, IT, PT, JA, ZH, FI, RU)
-- Selecting language switches UI language immediately
-- UI elements translated: Navigation, buttons, labels, messages, errors
-- Product catalog content may remain in default language (depends on data)
-- Language selection persists across pages
-- URL updates with language parameter (e.g., /de/products)",FR-LOCAL-001,Manual
-FR-LOCALIZATION-002,Currency Display,Full Regression > Localization > Currency,Functional,Medium,4m,"Multi-currency configured","1. Navigate to storefront
-2. Locate currency selector (if available)
-3. Note default currency (e.g., USD)
-4. Select different currency (e.g., EUR)
-5. Verify prices update
-6. Add product to cart
-7. Verify cart prices in selected currency
-8. Proceed to checkout
-9. Verify totals in selected currency","- Currency selector visible (may be combined with language selector)
-- Available currencies listed (USD, EUR, GBP, etc.)
-- Selecting currency converts all prices
-- Conversion rate applied correctly
-- Cart and checkout use selected currency
-- Order confirmation shows selected currency
-- Currency symbol displayed correctly ($ vs € vs £)",FR-LOCAL-002,Manual
-FR-LOCALIZATION-003,Date and Number Formats,Full Regression > Localization > Formats,Functional,Low,3m,"Locale set to different regions","1. Switch to US English (en-US)
-2. Note date format on order history (MM/DD/YYYY)
-3. Note number format (1,234.56)
-4. Switch to German (de-DE)
-5. Verify date format changes (DD.MM.YYYY)
-6. Verify number format changes (1.234,56)","- Dates formatted per locale (US: MM/DD/YYYY, EU: DD/MM/YYYY)
-- Numbers formatted per locale (US: 1,234.56, EU: 1.234,56)
-- Currency formatted per locale (US: $1,234.56, EU: 1.234,56 €)
-- Time formatted per locale (12-hour vs 24-hour)",FR-LOCAL-003,Manual
-FR-PERFORMANCE-001,Page Load Time - Homepage,Full Regression > Performance > Load Time,Performance,Medium,5m,"Browser DevTools open, Network tab","1. Clear browser cache
-2. Navigate to storefront homepage
-3. Measure page load time (DOMContentLoaded and Load events)
-4. Verify load time acceptable
-5. Check Core Web Vitals","- Homepage loads in < 3 seconds (DOMContentLoaded)
-- Fully loaded in < 5 seconds
-- Core Web Vitals meet thresholds:
-  - LCP (Largest Contentful Paint) < 2.5s
-  - FID (First Input Delay) < 100ms
-  - CLS (Cumulative Layout Shift) < 0.1
-- No console errors impacting performance
-- Images lazy load
-- Critical CSS inlined",FR-PERF-001,Manual
-FR-PERFORMANCE-002,Page Load Time - Category Page,Full Regression > Performance > Load Time,Performance,Medium,5m,"Network tab open","1. Clear cache
-2. Navigate to category page with 20+ products
-3. Measure load time
-4. Verify acceptable performance","- Category page loads in < 3 seconds
-- Product images lazy load (below fold not loaded until scroll)
-- No excessive API calls (consolidated requests)
-- Filters load quickly
-- Pagination or infinite scroll smooth",FR-PERF-002,Manual
-FR-PERFORMANCE-003,Page Load Time - Product Page,Full Regression > Performance > Load Time,Performance,Medium,4m,"Network tab open","1. Clear cache
-2. Navigate to product detail page
-3. Measure load time
-4. Verify images load progressively","- Product page loads in < 2.5 seconds
-- Main product image loads first (prioritized)
-- Thumbnail gallery loads after
-- Product description visible quickly
-- Add to Cart button interactive quickly
-- No layout shift as images load",FR-PERF-003,Manual
-FR-PERFORMANCE-004,Cart and Checkout Performance,Full Regression > Performance > Load Time,Performance,Medium,6m,"Products in cart","1. Add 10 items to cart
-2. Navigate to cart page
-3. Measure load time
-4. Update quantity
-5. Measure update response time
-6. Proceed to checkout
-7. Measure checkout page load","- Cart page loads in < 2 seconds
-- Cart updates (quantity change) reflect in < 1 second
-- Checkout page loads in < 3 seconds
-- Payment form loads in < 2 seconds (iframe may add delay)
-- No blocking operations
-- Smooth transitions",FR-PERF-004,Manual
-FR-PERFORMANCE-005,API Response Times,Full Regression > Performance > API,Performance,Medium,8m,"Browser DevTools Network tab open, monitoring API calls","1. Navigate site and perform actions
-2. Monitor API response times in Network tab
-3. Filter for XHR/Fetch requests
-4. Note response times for:
-   - Product catalog API
-   - Search API
-   - Cart API
-   - Checkout API
-5. Verify acceptable response times","- Catalog API responses < 500ms
-- Search API responses < 300ms
-- Cart API updates < 200ms
-- Checkout API calls < 500ms
-- No API timeout errors (30s+ wait)
-- Error responses handled gracefully with user-friendly messages",FR-PERF-005,Manual
-FR-BROWSER-001,Cross-Browser - Chrome (Desktop),Full Regression > Browser > Chrome,Compatibility,Critical,15m,"Chrome browser latest version (Windows or Mac)","1. Open Chrome
-2. Navigate to storefront
-3. Execute critical path:
-   - Register/Login
-   - Browse catalog
-   - Search products
-   - Add to cart
-   - Update cart
-   - Checkout (delivery and pickup)
-   - Place order
-4. Verify all functionality works
-5. Note any visual or functional issues","- All functionality works in Chrome
-- Layout renders correctly
-- No JavaScript errors in Console
-- Forms work properly
-- Images display correctly
-- Payment forms load
-- No browser-specific bugs
-- Performance acceptable
-- DevTools shows no critical errors",FR-BROWSER-001,Automated
-FR-BROWSER-002,Cross-Browser - Safari (Desktop),Full Regression > Browser > Safari,Compatibility,Critical,15m,"Safari browser latest version (macOS)","1. Open Safari on Mac
-2. Navigate to storefront
-3. Execute critical path (same as Chrome)
-4. Verify all functionality
-5. Note Safari-specific issues","- All functionality works in Safari
-- Layout consistent with Chrome (minor differences acceptable)
-- No JavaScript errors
-- Forms work (especially date pickers, file uploads)
-- Payment forms work (iframes load)
-- No WebKit-specific bugs
-- Geolocation prompts work (BOPIS)
-- No CORS issues",FR-BROWSER-002,Manual
-FR-BROWSER-003,Cross-Browser - Firefox (Desktop),Full Regression > Browser > Firefox,Compatibility,High,15m,"Firefox browser latest version","1. Open Firefox
-2. Navigate to storefront
-3. Execute critical path
-4. Verify functionality
-5. Note Firefox-specific issues","- All functionality works in Firefox
-- Layout renders correctly (may have slight font rendering differences)
-- No JavaScript errors
-- Forms work correctly
-- Payment forms load
-- No Gecko-specific bugs
-- Performance comparable to Chrome",FR-BROWSER-003,Manual
-FR-BROWSER-004,Cross-Browser - Edge (Desktop),Full Regression > Browser > Edge,Compatibility,High,15m,"Edge browser latest version (Windows)","1. Open Edge
-2. Navigate to storefront
-3. Execute critical path
-4. Verify functionality","- All functionality works in Edge
-- Layout consistent (Edge uses Chromium engine, similar to Chrome)
-- No errors
-- Forms work
-- Payment forms load
-- No Edge-specific issues",FR-BROWSER-004,Manual
-FR-BROWSER-005,Cross-Browser - Mobile Safari (iOS),Full Regression > Browser > Mobile,Compatibility,Critical,20m,"iPhone (physical device or simulator) with latest iOS Safari","1. Open Safari on iPhone
-2. Navigate to storefront mobile site
-3. Execute critical path on mobile:
-   - Register/Login
-   - Browse catalog (touch interactions)
-   - Search products
-   - Add to cart
-   - View cart
-   - Checkout (test pickup location map on mobile)
-   - Complete order
-4. Verify mobile-specific functionality:
-   - Touch targets adequate (44x44px)
-   - Pinch zoom works (or disabled intentionally)
-   - No horizontal scrolling
-   - Forms work with iOS keyboard
-   - Dropdown selectors work
-5. Note iOS-specific issues","- Mobile site loads and functions on iOS Safari
-- Layout responsive (adapts to iPhone screen sizes)
-- Touch interactions smooth (tap, swipe, pinch)
-- No accidental zooms (viewport meta tag configured)
-- Forms work with iOS keyboard (type='tel', 'email' trigger correct keyboards)
-- Date pickers use iOS native picker
-- Select dropdowns use iOS native picker
-- BOPIS map works on mobile (touch zoom, tap markers)
-- Payment forms work (may redirect)
-- No iOS-specific bugs (e.g., position: fixed issues)
-- Performance acceptable on mobile network
-- Images optimized for mobile",FR-BROWSER-005,Manual
-FR-BROWSER-006,Cross-Browser - Chrome Mobile (Android),Full Regression > Browser > Mobile,Compatibility,High,20m,"Android phone with Chrome","1. Open Chrome on Android
-2. Navigate to storefront
-3. Execute critical path on mobile
-4. Verify Android-specific functionality
-5. Note Android-specific issues","- Mobile site works on Chrome Android
-- Layout responsive
-- Touch interactions work
-- Forms work with Android keyboard
-- BOPIS map works
-- Payment forms work
-- No Android-specific bugs
-- Performance acceptable",FR-BROWSER-006,Manual
-FR-B2C-VAR-101,B2C Variation Layout - Options Section Displayed (B2C Property Set),Full Regression > B2C Variations > Display,Functional,Critical,5m,"Admin access available. Product with VirtoFrontend_UI_Layout=B2C catalog property set. Product has 2+ active variations with variation properties (Color/Size/Fabric). Storefront at ${FRONT_URL}.","1. Navigate to the B2C variation product PDP
-2. Verify the 'Options' section is visible on the page
-3. Verify the standard variation list view is NOT displayed
-4. Verify the standard variation table view is NOT displayed
-5. Verify the VirtoFrontend_UI_Layout property is NOT visible in the product specifications section
-6. Count the option groups and verify they match the variation properties defined (e.g., Color, Size)","- 'Options' section renders on PDP
-- Standard variation list/table is hidden (not rendered in DOM)
-- VirtoFrontend_UI_Layout=B2C property not shown to customer in specs
-- Number of option groups matches variation properties defined on product
-- Each option group has a label matching the property name (e.g., 'Color', 'Size')
-- No console errors on page load",C411031,Manual
-FR-B2C-VAR-102,B2C Variation Layout - Standard Layout Shown When B2C Property Absent,Full Regression > B2C Variations > Display,Functional,High,4m,"Product with VirtoFrontend_UI_Layout=B2B (or property absent). Product has 2+ variations.","1. Navigate to PDP of product with B2B layout (or no layout property)
-2. Verify the 'Options' section is NOT displayed
-3. Verify the standard variation list or table view IS displayed
-4. Verify variations are listed with their names, prices, and Add to Cart controls","- Options section is not rendered (B2C selector absent)
-- Standard variation list or table view is visible
-- Variation rows show: variation name, price, stock indicator, quantity input, Add to Cart
-- No console errors",C411032,Manual
-FR-B2C-VAR-103,B2C Color Swatches - Render and Visual Accuracy,Full Regression > B2C Variations > Color Swatches,Functional,Critical,5m,"B2C product with color variations. Swatches configured with hex color values or color images.","1. Navigate to B2C variation product PDP with color options
-2. Locate the color option group
-3. Observe each color swatch renders as a colored circle/square (not just a text label)
-4. Hover over each swatch on desktop
-5. Verify tooltip shows the color name
-6. Verify swatch background color matches the variation's configured color","- Color swatches render as visual color indicators (CSS background or image)
-- Each swatch is a distinct, recognizable color matching configuration
-- Tooltip appears on hover showing color name (e.g., 'Navy Blue')
-- Swatches are minimum 32x32px clickable area (44x44px preferred for accessibility)
-- All configured colors present with none missing
-- No broken/transparent swatches for configured colors",C411048 C411049,Manual
-FR-B2C-VAR-104,B2C Option Selection - Select State and Single-Select Enforcement,Full Regression > B2C Variations > Selection,Functional,Critical,5m,"B2C variation product PDP loaded. At least 2 options per group available.","1. Navigate to B2C variation PDP
-2. Click first color swatch (e.g., 'Blue')
-3. Verify Blue shows selected state (border highlight, checkmark, or background change)
-4. Click second color swatch (e.g., 'Red')
-5. Verify Red shows selected state and Blue is now deselected
-6. If size options also present: click Size 'M'
-7. Verify M shows selected state; click Size 'L'
-8. Verify L selected, M deselected
-9. Verify only one value per option group is selected at any time","- Clicking option shows visible selected state (border, checkmark, or background)
-- Clicking a second option in the same group deselects the first
-- Only one value selectable per option group at any time (single-select per group)
-- Selection state is visually clear and distinguishable from unselected state
-- No console errors on selection",C411037,Manual
-FR-B2C-VAR-105,B2C Option Selection - Add to Cart Disabled Until All Required Options Selected,Full Regression > B2C Variations > Selection,Functional,Critical,5m,"B2C variation product with 2 required option groups (Color + Size). PDP loaded, no options selected.","1. Navigate to B2C variation PDP with Color and Size option groups
-2. Verify 'Add to Cart' button is disabled (greyed out, not clickable) with no options selected
-3. Select Color: Blue only (Size not yet selected)
-4. Verify 'Add to Cart' remains disabled
-5. Select Size: M (both options now selected)
-6. Verify 'Add to Cart' button becomes enabled
-7. Deselect or change to unavailable combination if possible
-8. Verify 'Add to Cart' disables again or remains enabled correctly","- 'Add to Cart' disabled before any option selected
-- 'Add to Cart' disabled after only partial selection (1 of 2 required groups)
-- 'Add to Cart' enabled only when all required option groups have a selection
-- Guidance text visible when attempting interaction without full selection (e.g., 'Please select a size')
-- No JS errors when clicking disabled 'Add to Cart'",C411046 C411041,Manual
-FR-B2C-VAR-106,B2C Price Update on Variation Selection,Full Regression > B2C Variations > Price,Functional,Critical,6m,"B2C variation product with variants that have different prices. At least 2 variants with distinct prices.","1. Navigate to B2C variation PDP
-2. Note the initial price displayed (From $X or default)
-3. Select the first option (e.g., Color: Blue, variant price $29.99)
-4. Observe price update
-5. Select a different option (e.g., Color: Red, variant price $34.99)
-6. Observe price update
-7. If variant has salePrice + listPrice: observe both prices displayed
-8. Verify price format (2 decimal places)","- Price updates immediately on each option selection (no page reload)
-- After selecting Blue: price shows $29.99
-- After selecting Red: price shows $34.99
-- If salePrice and listPrice exist: salePrice shown as primary, listPrice shown with strikethrough
+- After joining, member appears in list
+- Admins can edit roles or remove members (BL-B2B-005)",FR-B2B-002,Manual
+FRR-052,B2B - Quote Request Flow,Full Regression > B2B > Quotes,Functional,High,10m,"B2B user with 'Quotes' feature enabled in store settings","1. Add products to cart
+2. Click 'Request Quote' button
+3. Add message/notes and submit quote request
+4. Verify quote appears in account > Quote Requests
+5. In Admin: review and approve quote with adjusted price
+6. Return to storefront: open approved quote
+7. Click 'Convert to Order'
+8. Complete checkout at quoted price","- 'Request Quote' button visible (feature enabled in store)
+- Quote submitted with cart items and message
+- Quote appears in account Quote Requests with status 'New'
+- Admin can approve with price adjustments
+- Approved quote shows in storefront with seller price
+- Convert to Order creates checkout at quoted prices
+- Expired quotes cannot be converted (BL-B2B-003)",BL-B2B-003,Manual
+FRR-053,B2B - Member Role Feature Visibility,Full Regression > B2B > Roles,Functional,High,6m,"Org Admin and Org Buyer accounts available","1. Sign in as Org Admin
+2. Verify: Members, Quotes, Orders, Approval menu items visible
+3. Sign out; sign in as Org Buyer
+4. Verify: Orders and Lists visible; 'Members' NOT visible
+5. Sign out; sign in as view-only member (no purchasing role)
+6. Verify: no cart/checkout access","- Org Admin sees all B2B features
+- Buyer sees Orders and Lists but not member management
+- View-only member cannot add to cart or checkout (BL-B2B-005)",BL-B2B-005,Manual
+FRR-054,Tiered/Volume Pricing - Tier Activates at Threshold,Full Regression > Pricing > Tiers,Functional,Critical,6m,"Product configured with tier pricing: 1-9 units = $10, 10+ units = $8","1. Navigate to product with tier pricing
+2. Add 9 units to cart
+3. Verify price = $10/unit (line total = $90)
+4. Add 1 more unit (qty=10)
+5. Verify price drops to $8/unit for ALL 10 units
+6. Verify line total = $80 (not $90+$8)","- Price changes at exact threshold quantity
+- All units in the line use the same tier price (no split pricing)
+- Line total = qty x tier price
+- 'From $X' on listing matches lowest tier (BL-PRICE-004)",BL-PRICE-004,Manual
+FRR-055,Order Placement Side Effects - Inventory and Email,Full Regression > Orders > Side Effects,Functional,Critical,10m,"Product with known stock count. Order about to be placed.","1. Note current stock count for product in Admin
+2. Place order for 2 units
+3. Verify confirmation page shows order number
+4. In Admin: check product inventory (should decrease by 2)
+5. Check email inbox for confirmation email
+6. Verify email content matches order (number, items, total, shipping address)","- Inventory decremented by ordered quantity immediately after order
+- Exactly 1 confirmation email received (not 0, not 2)
+- Email content matches Admin order detail (BL-NOTIF-001, BL-NOTIF-002)
+- Order appears in customer Order History
+- Cart is cleared
+- All side effects complete — no partial execution (BL-CROSS-005)",BL-CROSS-005,Manual
+FRR-056,Minimum Order Amount Enforcement,Full Regression > Checkout > Validation,Functional,High,6m,"Store configured with minimum order amount (e.g., $50)","1. Add items totaling $40 to cart
+2. Proceed to checkout
+3. Verify 'Place Order' blocked
+4. Add more items to exceed $50
+5. Verify checkout unblocked","- 'Place Order' disabled or blocked when below minimum
+- Message shown: 'Minimum order is $50, you need $10 more'
+- Minimum checked against subtotal after discounts, not grand total
+- Checkout unblocks when minimum met (BL-CHK-007)",BL-CHK-007,Manual
+FRR-057,Session Expiry During Checkout - Cart Preserved,Full Regression > Checkout > Session,Functional,High,8m,"User in checkout flow, ability to expire session (e.g., clear auth token)","1. Start checkout with items in cart
+2. Manually expire session (clear auth cookies/token or wait for timeout)
+3. Attempt to proceed to next step
+4. Re-authenticate when prompted
+5. Verify cart intact and checkout resumable","- Cart contents preserved after session expiry
+- Redirected to sign-in after session expires
+- After re-login: cart intact with same items
+- Checkout resumes from last step (BL-AUTH-001)",BL-AUTH-001,Manual
+FRR-058,Product Catalog - Out-of-Stock Visibility,Full Regression > Catalog > Stock,Functional,Critical,5m,"Product with stock = 0 in all FFCs","1. Navigate to product PDP and listing
+2. Verify stock label
+3. Verify Add to Cart state
+4. Verify product still visible (not hidden)","- 'Sold out' or 'Out of stock' label shown on PDP and listing
+- 'Add to Cart' disabled
+- Product remains visible in catalog (not hidden)
+- 'Add to Cart' enabled when stock restored (BL-CAT-001)",BL-CAT-001,Manual
+FRR-059,Product Catalog - Hidden Product Not Searchable,Full Regression > Catalog > Visibility,Functional,High,5m,"Admin access. Product_1 with 'Visible' toggle available.","1. In Admin: set product 'Visible' = false
+2. Search for product on storefront
+3. Navigate category containing product
+4. Try direct URL access","- Product absent from category listing
+- Product not found in search results
+- Direct URL returns 404 or redirect
+- Admin confirms product still exists (BL-CAT-004)",C410691,Manual
+FRR-060,Configurable Product - All Required Sections Must Be Filled,Full Regression > Catalog > Configurable,Functional,Critical,8m,"Configurable product with 2+ required configuration sections","1. Open configurable product PDP
+2. Verify 'Add to Cart' disabled with no selections
+3. Fill first required section only
+4. Verify 'Add to Cart' still disabled
+5. Fill all required sections
+6. Verify 'Add to Cart' enabled
+7. Leave optional section empty
+8. Verify 'Add to Cart' still enabled","- 'Add to Cart' disabled until all required sections completed
+- Partial completion keeps button disabled
+- Optional sections do not block cart add
+- Cart shows configuration details (BL-CAT-006)",B2C-CONFIG-001,Manual
+FRR-061,B2C Variations - Option Display and Add to Cart (Correct SKU),Full Regression > B2C Variations > Display,Functional,Critical,8m,"Product with VirtoFrontend_UI_Layout=B2C property. 2+ color and size options.","1. Navigate to B2C variation product PDP
+2. Verify 'Options' section (not standard variation list) displayed
+3. Verify color swatches render as visual colored indicators
+4. Verify 'Add to Cart' disabled with no selections
+5. Select Color: Blue (only); verify button still disabled
+6. Select Size: M (both selected); verify button enabled
+7. Click 'Add to Cart'
+8. In Network tab: verify addItem mutation sends Blue/M variant SKU","- 'Options' section renders (not standard list/table)
+- Color swatches are visual (not text-only)
+- Single-select per option group enforced
+- 'Add to Cart' enabled only when all required groups selected
+- Correct variant SKU in API request (not parent SKU)
+- Cart line shows 'Color: Blue, Size: M' (BL-CAT-006, C411046)",C411031,Manual
+FRR-062,B2C Variations - Price and Stock Update on Selection,Full Regression > B2C Variations > Price,Functional,Critical,6m,"B2C product with variants having different prices and stock levels","1. Navigate to B2C variation PDP
+2. Select in-stock variant — note price and 'In stock' label
+3. Select out-of-stock variant
+4. Verify price, stock indicator, and button state update
+5. Verify SKU code on page updates to selected variant","- Price updates immediately on selection (no reload)
+- Stock indicator shows per-variant stock (not aggregate)
+- Out-of-stock variant: 'Out of stock' label, 'Add to Cart' disabled
 - All prices display exactly 2 decimal places (BL-PRICE-003)
-- Price matches expected variant price from catalog configuration
-- No console errors",C411052 B2C-VAR-006,Manual
-FR-B2C-VAR-107,B2C Stock Indicator and SKU Update on Variation Selection,Full Regression > B2C Variations > Stock,Functional,Critical,5m,"B2C variation product with variants that have different stock levels. One variant in stock, one out of stock or low stock.","1. Navigate to B2C variation PDP
-2. Select an in-stock variation option
-3. Verify stock indicator shows 'In stock' or equivalent for that variant
-4. Verify SKU code on page updates to the selected variant's SKU
-5. Select an out-of-stock or low-stock variation option (if available)
-6. Verify stock indicator updates accordingly
-7. Verify 'Add to Cart' is disabled for out-of-stock selection","- Stock indicator updates per variant selection (not aggregate across all variants)
-- In-stock variant: 'In stock' badge/label visible
-- Out-of-stock variant: 'Out of stock' label shown; 'Add to Cart' disabled
-- Low-stock variant: 'Low stock' or '3 remaining' shown (if configured)
-- SKU code on PDP updates to selected variant's SKU (not parent SKU)
-- No console errors",C411052 B2C-VAR-007,Manual
-FR-B2C-VAR-108,B2C Variation Image Gallery Updates on Selection,Full Regression > B2C Variations > Images,Functional,Critical,5m,"B2C variation product with color-specific images assigned to variants.","1. Navigate to B2C variation PDP
-2. Note the default main product image shown before selection
-3. Select Color: Blue
-4. Verify main product image updates to the Blue variant's image
-5. Verify thumbnail gallery updates to show Blue variant images
-6. Select Color: Red
-7. Verify main image updates to Red variant image
-8. Verify thumbnails update to Red variant images
-9. Click a thumbnail to verify it sets the main image","- Main product image changes to variant-specific image on selection (no reload)
-- Thumbnail gallery updates to show images assigned to selected variant
-- Thumbnails from other variants are replaced (not accumulated)
-- Clicking thumbnail sets it as the main image (gallery behavior intact)
-- If no variant-specific image: parent product default image shown (no broken image icon)
-- No console errors or flicker during image switch",C411051 B2C-VAR-002,Manual
-FR-B2C-VAR-109,B2C Add to Cart - Correct Variant SKU Sent to Cart API,Full Regression > B2C Variations > Cart,Functional,Critical,8m,"B2C variation product. Browser DevTools Network tab open. User authenticated. Cart empty.","1. Open browser DevTools > Network tab; filter for GraphQL or /graphql requests
-2. Navigate to B2C variation PDP
-3. Select a specific variant (e.g., Color: Blue, Size: M)
-4. Note the expected variant SKU for Blue+M (look up in Admin or product specs)
-5. Click 'Add to Cart'
-6. In Network tab: locate the addItem GraphQL mutation request
-7. Inspect the request payload: verify the productId or SKU field matches the Blue+M variant SKU
-8. Navigate to /cart
-9. Verify cart line item shows 'Product Name — Color: Blue, Size: M'","- addItem mutation sent with correct variant SKU (not parent product SKU)
-- Request payload productId/SKU matches the selected Blue+M combination
-- Cart line item shows variant attribute details: 'Color: Blue, Size: M'
-- Cart item price matches the selected variant's price
-- Cart quantity = 1 (or quantity set by stepper)
-- No 4xx/5xx errors in network requests
-- Success notification shown
-- Cart badge increments",C411059 D2C-VAR-005,Manual
-FR-B2C-VAR-110,B2C Unavailable Variation Options - Greyed Out and Cannot Add,Full Regression > B2C Variations > Unavailable,Functional,Critical,6m,"B2C variation product where some variations are out of stock. At least one out-of-stock variant exists.","1. Navigate to B2C variation PDP
-2. Identify which option values have out-of-stock variants
-3. Verify those options appear greyed out, disabled, or marked with a visual unavailability indicator
-4. Attempt to click a greyed-out option
-5. Verify it cannot be selected
-6. Select an in-stock option; then check if any size/color combinations become unavailable
-7. Verify incompatible combinations disable remaining options (cross-option unavailability)","- Out-of-stock variation options are visually distinct (greyed, strikethrough, or 'Out of Stock' badge)
-- Clicking a disabled option has no effect (selection does not change)
-- Selecting one attribute disables incompatible combinations in other attribute groups
-- 'Add to Cart' button remains disabled when selected combination is out of stock
-- No console errors when clicking disabled options",C411038 B2C-VAR-007,Manual
-FR-B2C-VAR-111,B2C Variation - Cart Line Shows Variant Attributes Not Parent Name,Full Regression > B2C Variations > Cart,Functional,High,5m,"B2C variation product added to cart with specific option selection (e.g., Color: Navy, Size: L).","1. Add a B2C variation product to cart with specific selections (Color: Navy, Size: L)
-2. Navigate to /cart
-3. Locate the cart line item for the product
-4. Verify the line item displays variant attribute details
-5. Navigate to checkout and verify order summary line item
-6. Complete order and verify confirmation page shows variant details","- Cart line item shows: 'Product Name' with variant attributes listed (e.g., Color: Navy / Size: L)
-- Parent product name alone is NOT the only information shown
-- Checkout order summary shows same variant details
-- Order confirmation page shows same variant details
-- Variant attributes are human-readable labels (not internal property codes)
-- No console errors",B2C-VAR-005,Manual
-FR-B2C-VAR-112,B2C Variation - Unavailable Combination Matrix Reflects Admin Changes,Full Regression > B2C Variations > Unavailable,Functional,High,8m,"Admin access. B2C variation product with admin ability to remove or deactivate a specific variation.","1. In Admin: Catalog > Product > Variations > deactivate or remove one specific variant (e.g., Blue/XL)
-2. Navigate to B2C variation PDP on storefront (clear cache if needed)
-3. Verify Blue/XL combination is no longer available as a selectable option
-4. Verify other Blue variants (S, M, L) remain available if still active
-5. Re-activate the Blue/XL variant in Admin
-6. Refresh storefront and verify Blue/XL option is available again","- Deactivated variant no longer appears as selectable option on storefront (after cache/reindex)
-- Other variants in the same color/size groups remain available
-- Re-activating variant restores it to the option matrix
-- No stale combinations remain after admin changes propagate
-- No console errors",C411036,Manual
-FR-B2C-VAR-113,B2C Variation - Shareable URL Deep Links to Correct Variant,Full Regression > B2C Variations > URL,Functional,High,6m,"B2C variation product with URL-encoding of variation selection implemented (VCST-4530).","1. Navigate to B2C variation PDP
-2. Select a specific variant (Color: Red, Size: M)
-3. Observe URL in browser address bar for query parameters or slug changes
-4. Copy the full URL
-5. Open a new incognito browser window
-6. Paste and navigate to the copied URL
-7. Verify the correct options (Red, M) are pre-selected on page load
-8. Verify price and image match the Red/M variant","- URL updates to encode the selected variation (query params or path)
-- Sharing the URL in a new browser pre-selects the correct options
-- Pre-selected state shows correct variant price
-- Pre-selected state shows correct variant image
-- No redirect to base product URL (shareable link preserved)
-- No console errors on direct variation URL load",VCST-4530,Manual
-FR-B2C-VAR-114,B2C Variation - Mobile Touch Interactions with Color Swatches,Full Regression > B2C Variations > Mobile,Functional,High,6m,"Mobile viewport 375x812px. B2C variation product with color swatches and size selectors.","1. Resize browser to 375x812px (or use DevTools mobile emulation)
-2. Navigate to B2C variation PDP
-3. Verify Options section is visible and not obscured
-4. Verify color swatches are large enough to tap (minimum 44x44px touch target)
-5. Tap a color swatch and verify selection state changes
-6. Verify no horizontal overflow from option groups
-7. Tap a size button and verify selection state
-8. Verify 'Add to Cart' is enabled after full selection
-9. Tap 'Add to Cart' and verify success","- Options section renders correctly in mobile viewport
-- Color swatches have sufficient touch target size (44x44px minimum)
-- Tapping swatch registers correct selection without requiring precise tap
-- Option groups stack vertically without horizontal scrolling
-- Size buttons readable and tappable at mobile size
-- Full variation selection + add to cart flow completes on mobile
-- No layout overflow or hidden options due to mobile viewport",C411062 B2C-VAR-009,Manual
-FR-B2C-VAR-115,B2C Variation - Rapid Option Switching Resolves to Final State,Full Regression > B2C Variations > Edge Cases,Functional,High,5m,"B2C variation product with at least 3 color options. PDP loaded.","1. Navigate to B2C variation PDP
-2. Rapidly click: Blue swatch, then Red swatch, then Green swatch in quick succession (within 1-2 seconds)
-3. Wait 1 second after last click
-4. Verify the final displayed state (price, image, SKU, selected swatch)
-5. Verify the final state matches Green (the last click)
-6. Add to cart
-7. Verify cart contains the Green variant, not Blue or Red","- After rapid clicks, UI settles on the last-clicked option (Green)
-- Price reflects Green variant price
-- Image reflects Green variant image
-- No stale state from intermediate selections (Blue or Red) visible
-- Cart add sends Green variant SKU
-- No console errors from race conditions or duplicate API calls
-- No duplicate network requests that cause conflicting state",J1-EDGE-CASE,Manual
-FR-SECURITY-001,SQL Injection Prevention,Full Regression > Security > Injection,Security,Critical,10m,"User on search or form page","1. Attempt SQL injection in search: laptop' OR '1'='1
-2. Attempt in login form: admin' OR '1'='1' --
-3. Attempt in registration email field
-4. Verify no SQL execution
-5. Verify inputs sanitized","- SQL injection attempts fail gracefully
+- SKU on PDP reflects selected variant (not parent)",C411052,Manual
+FRR-063,B2C Variations - Image Gallery Updates on Color Selection,Full Regression > B2C Variations > Images,Functional,High,5m,"B2C product with color-specific images assigned to variants","1. Navigate to B2C variation PDP
+2. Select Color: Blue
+3. Verify main image and thumbnail gallery update to Blue images
+4. Select Color: Red
+5. Verify gallery switches to Red images
+6. Click thumbnail to set as main image","- Main image changes to variant-specific image on selection
+- Thumbnail gallery shows images for selected variant only
+- Thumbnails from other variants replaced (not accumulated)
+- Clicking thumbnail sets it as main image
+- No broken image icons if no variant-specific image (shows parent)",C411051,Manual
+FRR-064,B2C Variations - Shareable URL Deep Links to Correct Variant,Full Regression > B2C Variations > URL,Functional,High,6m,"B2C variation product with URL encoding of variation selection","1. Navigate to B2C variation PDP
+2. Select Color: Red, Size: M
+3. Copy current URL (should have query params encoding selection)
+4. Open URL in incognito window
+5. Verify Red/M pre-selected on page load","- URL encodes variant selection (query params or path)
+- Opening URL pre-selects correct options
+- Price and image match the Red/M variant
+- Shareable link preserved (not redirected to base product)
+- (VCST-4530)",VCST-4530,Manual
+FRR-065,Wishlist / Lists - Add Product and Add to Cart from List,Full Regression > B2C > Lists,Functional,Critical,6m,"User logged in, wishlist exists","1. Navigate to product detail page
+2. Click 'Add to List' or heart icon
+3. Select list: 'Wishlist'
+4. Verify success notification and heart icon fills
+5. Navigate to My Lists > open wishlist
+6. Verify product appears with image, name, price
+7. Click 'Add to Cart' from list
+8. Click 'Add All to Cart'","- 'Add to List' button/icon visible on PDP
+- Product added to selected list
+- Product visible in list with correct details
+- Individual and bulk 'Add to Cart' from list both work
+- Out-of-stock items skipped with warning on 'Add All'
+- Products remain in list after adding to cart",B2C-LIST-005,Automated
+FRR-066,Ship-To - Select and Add Addresses,Full Regression > B2C > Ship To,Functional,Critical,7m,"User logged in with saved addresses","1. Add products to cart and proceed to checkout
+2. Verify default address pre-selected
+3. Click 'Change Address' and select different saved address
+4. Verify shipping costs may update for new address region
+5. Navigate to Account > Addresses and add new address with all required fields","- Default address pre-selected in checkout
+- Address selector shows all saved addresses
+- Changing address updates shipping section
+- New address form validates required fields (ZIP format, phone)
+- Saved address appears in address list (BL-CHK-003)",B2C-SHIP-006,Automated
+FRR-067,Coupons - Valid Coupon Applied (Storefront End-to-End),Full Regression > Coupons > Apply,Functional,Critical,8m,"Valid coupon exists in Admin (e.g., WELCOME10 - 10% off). Products in cart.","1. Add eligible products to cart
+2. Navigate to /account/coupons to view available coupons
+3. Go to cart and enter coupon code: WELCOME10
+4. Click Apply
+5. Verify discount applied and shown as line item
+6. Proceed to checkout and verify coupon persists
+7. Place order and verify order total reflects coupon","- Coupon input field visible on cart page
+- Valid coupon applies discount
+- Discount line shows: 'WELCOME10: -$X.XX'
+- Coupon persists through checkout flow
+- Order total reduced correctly
+- /account/coupons page shows available coupons (BL-CART-003, BL-PRICE-001)",VCST-4590,Manual
+FRR-068,Coupons - Case-Insensitive Code Acceptance,Full Regression > Coupons > Validation,Functional,High,3m,"Valid coupon code exists (e.g., SAVE10)","1. Enter coupon code in all lowercase: 'save10'
+2. Click Apply","- Coupon accepted regardless of case (lowercase/uppercase)
+- Same discount applied as with uppercase code (ECL-1.3)",ECL-1.3,Manual
+FRR-069,Coupons - Expired Coupon Rejected with Clear Message,Full Regression > Coupons > Validation,Negative,High,3m,"Expired coupon code available (past expiry date)","1. Enter expired coupon code in cart
+2. Click Apply","- Error: 'Coupon expired' or 'Coupon not valid'
+- No discount applied
+- Cart total unchanged (ECL-1.3)",ECL-1.3,Manual
+FRR-070,Coupons - Only One Coupon Per Cart (Single-Use Enforcement),Full Regression > Coupons > Validation,Negative,High,4m,"Two valid coupon codes available. Cart with products.","1. Apply first valid coupon code
+2. Attempt to apply second coupon code","- First coupon applied successfully
+- Second coupon rejected with message: 'Only one coupon allowed' (if single-coupon store)
+- Or second coupon replaces first (if replacement behavior)
+- No double-discount (BL-CART-003)",BL-CART-003,Manual
+FRR-071,Coupons - Coupon Removed from Cart,Full Regression > Coupons > Removal,Functional,High,3m,"Coupon applied to cart","1. Apply valid coupon to cart
+2. Locate 'Remove coupon' option
+3. Click to remove
+4. Verify coupon removed and total restored","- Applied coupon shows with 'Remove' option
+- Clicking Remove removes discount
+- Cart total restored to pre-coupon amount
+- Coupon code field available again",VCST-4590,Manual
+FRR-072,Security - SQL Injection Prevention,Full Regression > Security > Injection,Security,Critical,5m,"User on search and login pages","1. Enter in search: laptop' OR '1'='1
+2. Enter in login email: admin' OR '1'='1' --
+3. Verify no SQL execution","- Inputs sanitized server-side
 - No database errors exposed to user
 - Generic error messages (no stack traces)
-- Input sanitized server-side
-- No data leakage
-- Application remains stable",FR-SECURITY-001,Manual
-FR-SECURITY-002,XSS (Cross-Site Scripting) Prevention,Full Regression > Security > XSS,Security,Critical,10m,"User on any form or input page","1. Attempt XSS in search: <script>alert('XSS')</script>
-2. Attempt in product review: <img src=x onerror=alert('XSS')>
-3. Attempt in registration name field
-4. Verify scripts not executed
-5. Verify inputs escaped","- XSS attempts fail (no script execution)
-- Scripts displayed as text or stripped
-- Output encoding applied
+- Application remains stable (BL-SRCH-005)",FR-SECURITY-001,Manual
+FRR-073,Security - XSS Prevention,Full Regression > Security > XSS,Security,Critical,5m,"User on any input page","1. Enter in search: <script>alert('XSS')</script>
+2. Enter in registration name: <img src=x onerror=alert('XSS')>
+3. Submit and verify","- XSS attempts fail — no script execution
+- Inputs displayed as text or stripped
 - No alert dialogs appear
-- Console shows no script execution
-- Content Security Policy (CSP) headers present",FR-SECURITY-002,Manual
-FR-SECURITY-003,CSRF Protection,Full Regression > Security > CSRF,Security,High,8m,"User logged in, CSRF tokens implemented","1. Inspect form submission (e.g., add to cart)
-2. Verify CSRF token present in request
-3. Attempt to replay request without token
-4. Verify request rejected
-5. Attempt with invalid token","- CSRF tokens present in forms and AJAX requests
-- Tokens validated server-side
-- Requests without valid token rejected (403 Forbidden)
-- Tokens unique per session
-- Tokens expire after use or timeout",FR-SECURITY-003,Manual
-FR-SECURITY-004,Password Strength Enforcement,Full Regression > Security > Password,Security,High,5m,"User on registration page","1. Attempt weak password: '123456'
-2. Attempt password: 'password'
-3. Attempt without uppercase
-4. Attempt without number
-5. Attempt without special char
-6. Use strong password: 'MyP@ssw0rd!'
-7. Verify requirements enforced","- Weak passwords rejected
-- Password requirements displayed:
-  - Minimum 8 characters
-  - At least 1 uppercase letter
-  - At least 1 lowercase letter
-  - At least 1 number
-  - At least 1 special character
+- CSP headers present",FR-SECURITY-002,Manual
+FRR-074,Security - RBAC: Unauthorized Action Blocked (Admin),Full Regression > Security > Authorization,Security,Critical,8m,"Admin user with restricted role (read-only on Catalog)","1. Create role with only 'read' permission on Catalog
+2. Assign to user and sign in as that user in Admin
+3. Verify Create and Delete buttons absent in Catalog blade
+4. Attempt POST /api/catalog/products directly
+5. Add 'create' permission
+6. Verify button appears","- Create/Delete buttons absent for read-only role
+- Direct API call returns 403 Forbidden
+- Adding permission makes button appear
+- Zero-permission escalation possible via UI (BL-AUTH-005)",BL-AUTH-005,Manual
+FRR-075,Security - Password Strength Enforcement,Full Regression > Security > Password,Security,High,5m,"User on registration page","1. Attempt weak password: '123456'
+2. Attempt without uppercase: 'mypassword1!'
+3. Use strong password: 'MyP@ssw0rd!'","- Weak passwords rejected with specific feedback
+- Requirements shown: 8+ chars, uppercase, lowercase, number, special char
 - Real-time validation feedback
-- Strong password accepted
-- Password strength indicator displayed (weak/medium/strong)",FR-SECURITY-004,Manual
-FR-SECURITY-005,Secure Payment Data Handling,Full Regression > Security > PCI,Security,Critical,10m,"Checkout at payment step","1. Inspect payment form
-2. Verify credit card fields in iframe (not direct HTML)
-3. Verify no card data in browser storage (localStorage, cookies)
-4. Submit payment
-5. Inspect network requests
-6. Verify card data tokenized (not raw)
-7. Verify HTTPS used","- Payment form uses iframe (CyberSource, Skyflow, etc.)
-- Credit card fields isolated (PCI DSS scope reduction)
-- No raw card data in HTML
-- No card data stored in browser
-- Card data tokenized before submission
-- Only token sent to server
-- All payment communication over HTTPS (SSL/TLS)
-- No mixed content warnings
-- CSP headers enforce HTTPS",FR-SECURITY-005,Manual
-FR-SECURITY-006,Session Timeout,Full Regression > Security > Session,Security,Medium,15m,"User logged in","1. Log in to account
-2. Remain idle for configured timeout period (e.g., 30 minutes)
-3. Attempt to perform action (e.g., add to cart)
-4. Verify session expired
-5. Verify redirect to login","- Session expires after configured idle time
-- Attempting action after timeout triggers re-authentication
-- Warning shown: 'Your session has expired. Please log in again.'
-- Redirected to login page
-- After re-login, can resume activity
-- Sensitive pages (checkout) timeout sooner",FR-SECURITY-006,Manual
-FR-GA-001,Google Analytics - Page Views,Full Regression > Analytics > GA4,Analytics,Medium,5m,"Google Analytics 4 configured, browser DevTools Network tab open","1. Navigate to storefront homepage
-2. Open browser DevTools > Network tab
-3. Filter for 'google-analytics.com' or 'gtag' requests
-4. Navigate to category page
-5. Verify GA page_view event sent
-6. Navigate to product page
-7. Verify GA page_view event sent","- GA4 script loads on all pages
-- page_view event fired on each page navigation
-- Event includes parameters: page_title, page_location, page_path
-- No GA errors in console
-- Events visible in GA DebugView (if testing)
-- User properties tracked: user_id (if logged in), session_id",FR-GA-001,Manual
-FR-GA-002,Google Analytics - Add to Cart Event,Full Regression > Analytics > GA4,Analytics,Medium,5m,"GA4 configured, Network tab open","1. Navigate to product page
-2. Click 'Add to Cart'
-3. Verify in Network tab:
-   - GA event 'add_to_cart' sent
-4. Inspect event parameters
-5. Verify correct product data sent","- add_to_cart event fires on successful cart add
-- Event parameters include:
-  - currency (USD, EUR, etc.)
-  - value (product price)
-  - items array:
-    - item_id (SKU)
-    - item_name (product name)
-    - item_category (category)
-    - price (unit price)
-    - quantity (quantity added)
-- Event visible in GA DebugView
-- Data accurate",FR-GA-002,Manual
-FR-GA-003,Google Analytics - Begin Checkout Event,Full Regression > Analytics > GA4,Analytics,Medium,4m,"GA4 configured, products in cart","1. Navigate to cart
-2. Click 'Checkout' or 'Proceed to Checkout'
-3. Verify 'begin_checkout' event sent
-4. Inspect event parameters","- begin_checkout event fires when checkout starts
-- Event parameters include:
-  - currency
-  - value (cart total)
-  - items array (all cart items with details)
-- Event visible in GA DebugView",FR-GA-003,Manual
-FR-GA-004,Google Analytics - Purchase Event,Full Regression > Analytics > GA4,Analytics,Critical,8m,"GA4 configured, checkout completed","1. Complete checkout and place order
-2. Reach order confirmation page
-3. Verify 'purchase' event sent
-4. Inspect event parameters
-5. Verify transaction ID present","- purchase event fires on confirmation page load
-- Event parameters include:
-  - transaction_id (order number)
-  - currency
-  - value (order total)
-  - tax (tax amount)
-  - shipping (shipping cost)
-  - items array (all ordered items)
-- Transaction ID unique
-- Event visible in GA DebugView
-- Purchase data accurate (matches order)
-- Revenue tracking functional in GA",FR-GA-004,Manual
-FR-GA-005,Google Analytics - Search Event,Full Regression > Analytics > GA4,Analytics,Medium,4m,"GA4 configured","1. Use search bar to search for 'laptop'
-2. Verify 'search' event sent
-3. Inspect search_term parameter","- search event fires on search submission
-- Event parameter search_term includes query: 'laptop'
-- Event visible in GA DebugView
-- Search tracking functional",FR-GA-005,Manual
-FR-REGRESSION-001,Regression - No Breaking Changes in Core Flows,Full Regression > Regression > Core,Regression,Critical,30m,"Full environment setup, previous release documentation","1. Execute all critical path tests (Registration, Login, Catalog, Search, Cart, Checkout, Payment, Order)
-2. Compare behavior with previous release
-3. Verify no unexpected changes
-4. Verify bug fixes included
-5. Verify new features work
-6. Verify existing features unchanged (unless intentionally modified)","- All P0 critical flows work
-- No regressions introduced (existing functionality still works)
-- Bug fixes from previous release verified
-- New features functional
-- Existing features behave consistently
-- No new bugs in core areas
-- Performance not degraded
-- Security not compromised",FR-REGRESSION-001,Manual
-FR-B2C-VAR-001,Product Variations - Multi-Attribute Selection,Full Regression > B2C > Variations,Functional,Critical,6m,"Product with size and color variations","1. Navigate to configurable product (e.g., T-Shirt)
-2. Verify size selector displays (S, M, L, XL)
-3. Verify color selector displays (swatches)
-4. Select Size: M
-5. Verify color options update (only colors available in M)
-6. Select Color: Blue
-7. Verify product image updates to blue variant
-8. Verify price updates if variant-specific pricing
-9. Verify stock status displays
-10. Click Add to Cart
-11. View cart
-12. Verify correct variant in cart","- Both size and color selectors visible
-- Selecting size filters available colors (only valid combinations)
-- Color swatches show actual colors
-- Main product image updates to selected color variant
-- Variant-specific pricing displays if applicable
-- Stock status per variant: In Stock / Low Stock / Out of Stock
-- Add to Cart disabled until all required attributes selected
-- Cart displays: Product Name - Size: M, Color: Blue
-- Correct variant SKU and price in cart
-- Can add multiple variants as separate line items",B2C-VAR-003,Automated
-FR-B2C-VAR-002,Product Variations - Out of Stock Handling,Full Regression > B2C > Variations,Negative,High,4m,"Product with some variants out of stock","1. Navigate to configurable product
-2. Locate variant that is out of stock (e.g., Size XL in Red)
-3. Attempt to select out of stock variant
-4. Verify out of stock indication
-5. Verify Add to Cart disabled
-6. Select different in-stock variant
-7. Verify Add to Cart enabled
-8. Add to cart successfully","- Out of stock variants visible but disabled or grayed out
-- Clicking out of stock variant shows message: 'This variant is out of stock'
-- Add to Cart button disabled or shows 'Out of Stock'
-- Clear stock status badge per variant
-- Selecting in-stock variant enables Add to Cart
-- Alternative: 'Notify me when available' option
-- Cannot add out of stock variant to cart",B2C-VAR-004,Manual
-FR-B2C-LIST-001,Add Product to Wishlist/List,Full Regression > B2C > Lists,Functional,Critical,4m,"User logged in, wishlist/list exists","1. Navigate to product detail page
-2. Locate 'Add to List' button or heart icon
-3. Click Add to List
-4. Verify list selector displays
-5. Select list: 'Wishlist' or 'Summer Essentials'
-6. Click Add
-7. Verify success notification
-8. Navigate to My Lists
-9. Open selected list
-10. Verify product appears in list","- 'Add to List' or heart icon visible on product page
-- Clicking opens list selector modal/dropdown
-- All user's lists displayed
-- Option to create new list inline
-- Success notification: 'Added to Wishlist'
-- Heart icon fills or changes color
-- Product added to selected list with correct details
-- List displays: Product image, name, price, stock status
-- Can access list from account menu
-- Product remains in list across sessions",B2C-LIST-002,Automated
-FR-B2C-LIST-002,Add to Cart from Wishlist,Full Regression > B2C > Lists,Functional,High,4m,"User viewing list with products","1. Navigate to My Lists
-2. Open wishlist with products
-3. Locate product in list
-4. Click 'Add to Cart' on individual product
-5. Verify success notification
-6. Verify cart updates
-7. Click 'Add All to Cart' button
-8. Verify all list items added to cart","- Each product in list has 'Add to Cart' button
-- Can add individual products one at a time
-- Success notification per add
-- Cart icon count updates
-- 'Add All to Cart' button adds entire list at once
-- Batch add shows summary: 'X items added to cart'
-- Products remain in list after adding to cart (not removed)
-- Out of stock items skipped with warning: 'Some items unavailable'
-- Can proceed to checkout from cart",B2C-LIST-005,Automated
-FR-B2C-LIST-003,Share Wishlist via Public Link,Full Regression > B2C > Lists,Functional,Medium,5m,"User has list with products","1. Open wishlist
-2. Click Share button
-3. Verify share options display
-4. Click 'Get Public Link'
-5. Copy generated link
-6. Open link in incognito window or different browser
-7. Verify list accessible without login
-8. Verify list is read-only","- Share button visible in list view
-- Share modal shows options: Public Link, Email
-- Public link generated successfully
-- Link is shareable URL (permanent or temporary)
-- Opening link shows list contents
-- List displays: Name, items (images, names, prices)
-- Visitor cannot edit list
-- Visitor can add items to their own cart (if logged in)
-- Share privacy setting: Public or Private list",B2C-LIST-009,Manual
-FR-B2C-SHIP-001,Ship To - Select Address in Checkout,Full Regression > B2C > Ship To,Functional,Critical,4m,"User logged in with multiple saved addresses, in checkout","1. Add products to cart
-2. Proceed to checkout
-3. Verify Shipping Address section displays
-4. Verify default address pre-selected
-5. Click 'Change Address' or address selector
-6. Verify address dropdown/modal opens
-7. Verify all saved addresses listed
-8. Select different address
-9. Verify selection updates in checkout
-10. Complete checkout","- Default shipping address pre-selected automatically
-- 'Change Address' link or selector visible
-- Clicking opens address selector
-- All saved addresses displayed with full details
-- Can select from existing addresses
-- Selected address updates shipping section immediately
-- Order summary reflects selected address
-- Shipping costs may update based on address region
-- Option to 'Add New Address' inline
-- Selected address used for order",B2C-SHIP-006,Automated
-FR-B2C-SHIP-002,Ship To - Add New Address,Full Regression > B2C > Ship To,Functional,High,5m,"User logged in, on Addresses page","1. Navigate to Account > Addresses
-2. Click 'Add New Address' button
-3. Fill address form:
-   - First Name: Jane
-   - Last Name: Doe
-   - Street: 456 Elm Street
-   - Apt/Suite: Unit 5
-   - City: Chicago
-   - State: Illinois
-   - ZIP: 60601
-   - Phone: 555-234-5678
-4. Check 'Set as default' (optional)
-5. Click Save
-6. Verify address added to list","- 'Add New Address' button prominent
-- Form displays all required fields
-- Address Line 1 required, Line 2 optional
-- State dropdown populated (US states or provinces)
-- ZIP code validation (5 or 9 digits for US)
-- Phone number validation (10 digits)
-- 'Set as default' checkbox available
-- Form validates before submission
-- Success message: 'Address added successfully'
-- New address appears in address list
-- If set as default, badge shows 'Default'",B2C-SHIP-002,Automated
-FR-B2C-SHIP-003,Ship To - Edit and Delete Address,Full Regression > B2C > Ship To,Functional,High,5m,"Multiple saved addresses exist","1. Navigate to Addresses
-2. Locate non-default address
-3. Click Edit
-4. Modify street address
-5. Modify phone number
-6. Click Save
-7. Verify updates applied
-8. Click Delete on different address
-9. Verify confirmation prompt
-10. Confirm deletion
-11. Verify address removed","- Edit button/icon available per address
-- Edit form pre-filled with current data
-- Can modify any field
-- Changes save successfully
-- Delete option available (except on default if only one)
-- Confirmation prompt: 'Delete this address?'
-- Address removed from list
-- Cannot delete default without setting another as default first
-- Historical orders preserve deleted addresses",B2C-SHIP-003,Automated
-FR-B2C-CONFIG-001,Product Configuration - Configure and Add to Cart,Full Regression > B2C > Configurations,Functional,Critical,8m,"Product with configuration options (e.g., custom laptop, engraved jewelry)","1. Navigate to configurable product
-2. Verify configuration options display
-3. Select required options:
-   - Option 1: Processor - Intel i7 (+$100)
-   - Option 2: RAM - 16GB (+$50)
-   - Option 3: Storage - 512GB SSD (+$75)
-4. Verify price updates with each selection
-5. Verify running total shows:
-   Base: $500 + $100 + $50 + $75 = $725
-6. Select optional add-on: Extended Warranty (+$50)
-7. Verify total updates to $775
-8. Click Add to Cart
-9. View cart
-10. Verify configured product in cart","- Configuration interface displays (dropdowns, radio buttons, or visual selectors)
-- Each option shows: Name, available choices, price modifier
-- Selecting option updates running total immediately
-- Price breakdown displayed:
-  - Base price
-  - Each option modifier (+/- amounts)
-  - Running total
-- Required options marked with asterisk or 'Required'
-- Add to Cart disabled until all required options selected
-- Cart displays configured product with all selections
-- Cart shows: Base product + configuration details
-- Price in cart matches configured total
-- Configuration editable in cart (optional, depends on implementation)",B2C-CONFIG-001,Manual
-FR-B2C-CONFIG-002,Product Configuration - Custom Text Input,Full Regression > B2C > Configurations,Functional,High,5m,"Product with text customization (e.g., engraving)","1. Navigate to engravable product (jewelry, trophy)
-2. Locate text input field: 'Engraving (max 20 characters)'
-3. Enter text: 'Congratulations!'
-4. Verify character count: 16/20
-5. Verify preview updates (if available)
-6. Attempt to enter 25 characters
-7. Verify blocked or validation error
-8. Reduce to valid length
-9. Add to cart
-10. View cart
-11. Verify custom text shown","- Text input field visible with label
-- Character limit specified and enforced
-- Real-time character counter shown
-- Cannot exceed maximum length
-- Visual preview of customization (optional)
-- Validation error if invalid characters (e.g., special symbols not allowed)
-- Cart displays: Product + Custom Text: 'Congratulations!'
-- Engraving fee included in price
-- Custom text preserved through checkout
-- Order confirmation shows custom text for fulfillment",B2C-CONFIG-004,Manual
-FR-B2C-CONFIG-003,Product Configuration - Dependent Options,Full Regression > B2C > Configurations,Functional,High,5m,"Product with dependent configuration options","1. Navigate to product with dependent options
-2. Select Color: Blue
-3. Verify Size dropdown updates (only sizes available in Blue)
-4. Verify unavailable sizes disabled or hidden
-5. Select Size: M
-6. Verify Material options appear (only materials for Blue+M)
-7. Complete configuration
-8. Verify valid combination accepted
-9. Add to cart","- Configuration options have dependencies
-- Selecting parent option (Color) filters child options (Size)
-- Only valid combinations available
-- Unavailable options grayed out or hidden
-- Cannot select impossible combinations
-- Helpful text: 'Size XL not available in Blue'
-- Configuration logic prevents errors
-- Valid combination adds to cart successfully
-- Complex configurations handled smoothly",B2C-CONFIG-006,Manual
-FR-BOPIS-006,BOPIS - Feature Flag Disabled Hides Pickup Option,Full Regression > BOPIS > Toggle,Functional,High,3m,"BOPIS module deactivated in store settings","1. Deactivate BOPIS in store settings
-2. Navigate to cart with products
-3. Observe delivery method options
-4. Check DOM for pickup elements","- 'Pickup' option does not appear in delivery options
-- No trace of pickup in DOM
-- Only 'Shipping/Delivery' option available",C410938,Manual
-FR-BOPIS-007,BOPIS - Availability Label: Today (Main FFC Match),Full Regression > BOPIS > Availability,Functional,Critical,5m,"Product assigned to Main_1 FFC, location L1 has Main FC = Main_1","1. Add BOPIS-eligible product to cart
-2. Select Pickup > open PickPoints modal
-3. Find location L1 in list
-4. Observe availability label","- Location L1 shows 'Today' label
-- No 'Transfer' or 'Global' label present
-- Location is selectable",C412653,Manual
-FR-BOPIS-008,BOPIS - Availability Label: Transfer (Transfer FFC Match),Full Regression > BOPIS > Availability,Functional,High,5m,"Product assigned to Transfer_1 FFC, location L3 has Transfer FC = Transfer_1, EnableGlobalTransfer = FALSE","1. Add product to cart
-2. Select Pickup > open PickPoints modal
-3. Find location L3
-4. Observe availability label","- Location L3 shows transfer duration label (e.g., 'Transfer (2-3 days)')
-- Location is selectable",C412656,Manual
-FR-BOPIS-009,BOPIS - Availability Label: Global Transfer,Full Regression > BOPIS > Availability,Functional,High,5m,"Product assigned to Main_1 FFC, location L2 has no Main FC, EnableGlobalTransfer = TRUE","1. Add product to cart
-2. Select Pickup > open PickPoints modal
-3. Find location L2
-4. Observe availability label","- Location L2 shows 'Global Transfer (1 week)' label
-- Location remains selectable",C412655,Manual
-FR-BOPIS-010,BOPIS - Availability Label: Not Available (No Match + Global OFF),Full Regression > BOPIS > Availability,Functional,High,5m,"Product assigned to Transfer_1 FFC, location L4 has Main FC only, EnableGlobalTransfer = FALSE","1. Add product to cart
-2. Select Pickup > open PickPoints modal
-3. Find location L4
-4. Attempt to select it","- Location L4 displayed as 'Not available' (greyed/disabled)
-- Cannot be selected for pickup",C412654,Manual
-FR-BOPIS-011,BOPIS - No Valid Pickup Locations for Product,Full Regression > BOPIS > Availability,Functional,High,5m,"Product P5 with EnableGlobalTransfer = FALSE has no compatible locations","1. Add product P5 to cart
-2. Select Pickup
-3. Open PickPoints modal","- Message: 'There are no available pickup points for these products'
-- Pickup radio option blocked or shows error
-- User prompted to select another shipping method",C412691,Manual
-FR-BOPIS-012,BOPIS - Mixed Cart: Delivery + Pickup Items,Full Regression > BOPIS > Mixed Cart,Functional,High,8m,"Cart has BOPIS-eligible product and delivery-only product","1. Add BOPIS-eligible product and delivery-only product to cart
-2. Observe delivery options per item
-3. Select Pickup for eligible item, Shipping for delivery-only item
-4. Proceed to checkout","- BOPIS-eligible item shows 'Pickup' toggle; delivery-only shows only 'Shipping'
-- Each item maintains independent delivery selection
-- Totals: no shipping cost on pickup item, shipping cost on delivery item
-- Checkout summary shows both fulfillment methods",checklist-D,Manual
-FR-BOPIS-013,BOPIS - Cart Totals: Zero Shipping Cost for Pickup,Full Regression > BOPIS > Totals,Functional,Critical,5m,"Product in cart with Pickup selected and location confirmed","1. Confirm pickup location in cart
-2. Observe order summary
-3. Check shipping line
-4. Verify total calculation","- Shipping line shows $0.00 or 'Free'
-- Total = subtotal + tax only (no shipping)
-- No stale shipping amount from previous delivery selection",C413982,Manual
-FR-BOPIS-014,BOPIS - Switch Delivery to Pickup Clears Shipping,Full Regression > BOPIS > Switch,Functional,High,5m,"Cart with delivery address and shipping method selected","1. Select 'Shipping' and choose address + method (note shipping cost)
-2. Switch to 'Pickup'
-3. Observe cart state
-4. Select and confirm pickup location","- Shipping method selection cleared
-- Shipping address form hidden
-- 'Select pickup location' prompt appears
-- Shipping cost removed from total",BOPIS-027,Manual
-FR-BOPIS-015,BOPIS - Switch Pickup to Delivery Clears Location,Full Regression > BOPIS > Switch,Functional,High,5m,"Cart with pickup location confirmed","1. With pickup confirmed, switch to 'Shipping'
-2. Observe cart state","- Pickup location selection cleared
-- Shipping address form/selector reappears
-- Shipping cost re-applied when method selected",BOPIS-027,Manual
-FR-BOPIS-016,BOPIS - Quantity Change Revalidates Pickup Availability,Full Regression > BOPIS > Revalidation,Functional,High,5m,"Pickup location confirmed, product has limited branch stock","1. With pickup location confirmed, increase item quantity significantly
-2. Observe availability label/status
-3. Check for error or re-selection prompt","- Availability label refreshes for new quantity
-- If qty exceeds branch stock: error shown or location flagged
-- Order cannot proceed silently with insufficient stock at pickup branch",checklist-H,Manual
-FR-BOPIS-017,BOPIS - Facet Filter: Country + State + City (Multi-Level),Full Regression > BOPIS > Filters,Functional,High,5m,"Pickup modal open, locations in multiple countries/states/cities","1. Open PickPoints modal from cart
-2. Select Country: USA
-3. Select State: New York
-4. Select City: New York City
-5. Verify filtered results","- Each filter level narrows results
-- Map updates to filtered locations
-- Filter chips shown for each level
-- Results match all applied filters",C413522,Manual
-FR-BOPIS-018,BOPIS - Multi-Select Filters (Multiple Countries),Full Regression > BOPIS > Filters,Functional,High,5m,"Pickup modal open, locations in multiple countries","1. Open Country dropdown
-2. Select USA and Canada
-3. Observe results","- Both country chips displayed
-- Results from both countries returned
-- Deselecting one updates results correctly",C413527,Manual
-FR-BOPIS-019,BOPIS - Search with Special Characters,Full Regression > BOPIS > Search,Functional,Medium,3m,"Pickup modal open","1. Search for location with apostrophe (e.g., 'St. Patrick's')
-2. Search for location with ampersand (e.g., '5th Ave & 50th')
-3. Search with whitespace only","- Apostrophe and ampersand handled correctly
-- Matching locations found
-- Whitespace-only search restores all results",C413551,Manual
-FR-BOPIS-020,BOPIS - Reset All Filters,Full Regression > BOPIS > Filters,Functional,High,3m,"Pickup modal with multiple filters and search applied","1. Apply Country + State + keyword search
-2. Click 'Reset filters' or 'Clear all'
-3. Observe results","- All filter chips removed
-- Search bar cleared
-- Full pickup location list restored
-- Map shows all markers",C413525,Manual
-FR-BOPIS-021,BOPIS - Cross-Layer: Storefront → xAPI → Admin Order,Full Regression > BOPIS > Cross-Layer,Integration,Critical,10m,"Complete BOPIS order placed","1. Place order with Pickup fulfillment
-2. Query xAPI: order shipments
-3. Open Admin > Orders > find the order
-4. Verify pickup details","- xAPI shows shipments[].fulfillmentCenterId = selected pickup location
-- Admin order detail shows pickup location name, address
-- No shipping cost in stored order
-- Fulfillment method = Pickup",checklist-K,Manual
-FR-PAYMENT-006,Declined Card → Retry with Valid Card → Order Confirmed,Full Regression > Payment > Retry,Functional,Critical,8m,"User authenticated, cart with product, Skyflow payment configured, valid and invalid card numbers available","1. Add product to cart and proceed to checkout
-2. Fill shipping address and select shipping method
-3. At payment step, enter a declined card number
-4. Click 'Place Order'
-5. Observe error message
-6. Clear card fields and enter valid Skyflow Visa card
-7. Click 'Place Order' again
-8. Verify order confirmation page
-9. In Admin > Orders, verify only ONE order exists for this transaction","- Declined card shows clear error: 'Your card was declined' or similar
-- Payment form remains accessible for retry (not locked)
-- Entering valid card and resubmitting succeeds
-- Order confirmation page displays with order number
-- Admin shows exactly one order (no duplicate from failed attempt)
-- No console errors during retry flow
-- Cart is cleared after successful order",BL-CHK-004,Manual
-FR-PAYMENT-007,Double-Click Place Order Prevention (Idempotency),Full Regression > Payment > Idempotency,Functional,Critical,5m,"User authenticated, cart with product, at order review step, payment details entered","1. Complete checkout up to order review step
-2. Rapidly double-click 'Place Order' button
-3. Wait for order processing
-4. Verify order confirmation page
-5. In Admin > Orders, count orders from this session
-6. Verify only one order was created","- First click triggers order placement; button becomes disabled or shows spinner
-- Second click is ignored (button disabled or idempotency key prevents duplicate)
-- Only ONE order created in Admin
-- No duplicate charges on payment processor
-- Order confirmation shows single order number
-- No 5xx errors in network tab from concurrent submissions",BL-CHK-002,Manual
-FR-CHECKOUT-008,Guest Checkout - Full Flow Without Sign-In,Full Regression > Checkout > Guest,Functional,Critical,10m,"Anonymous user (not signed in), store allows guest checkout, cart empty","1. As anonymous user, navigate to catalog
-2. Add a product to cart
-3. Click 'Proceed to Checkout'
-4. Verify guest checkout option available (email entry without account creation)
-5. Enter guest email address
-6. Fill shipping address
-7. Select shipping method
-8. Enter payment details (Skyflow Visa)
-9. Review order summary
-10. Click 'Place Order'
-11. Verify order confirmation page with order number","- Guest checkout option available without forced registration
-- Email field accepts valid email
-- Shipping address form works for guest
-- Payment processing succeeds for guest
-- Order confirmation page shows order number
-- Confirmation email sent to guest email
-- Order visible in Admin > Orders
-- Guest cannot view order history (no account)",BL-CHK-001,Manual
-FR-MULTI-ORG-003,Organization Switch - Full Context Isolation,Full Regression > Multi-Org > Context,Functional,Critical,8m,"User assigned to two organizations (Org A and Org B) with different catalogs/prices, signed in as Org A","1. Sign in as multi-org user (default Org A)
-2. Add a product to cart; note Org A price
-3. Switch to Org B using org selector
-4. Verify cart is empty or shows Org B cart (not Org A items)
-5. Verify product prices reflect Org B pricing
-6. Verify shipping addresses are Org B addresses (not Org A)
-7. Switch back to Org A
-8. Verify Org A cart is intact with original items and prices","- Org switch updates entire context: cart, prices, addresses, catalog
-- Org A cart items do NOT appear in Org B context
-- Org B prices may differ from Org A (tier/contract pricing)
-- Shipping addresses are org-specific
-- Switching back to Org A restores Org A cart intact
-- No data leakage between organizations
-- Org name/logo in header updates on switch",BL-B2B-001,Manual
-FR-WL-001,White Labeling - Org Branding Displayed After Sign-In,Full Regression > White Labeling > Branding,Functional,Critical,5m,"B2B org user with White Labeling Enabled = ON in Admin, org has custom logo and theme configured","1. Sign in as B2B org user with White Labeling enabled
-2. After sign-in, observe header area for org logo
-3. Verify org logo replaces or overlays store default logo
-4. Verify theme colors match org preset (if configured)
-5. Check browser tab for custom favicon (if configured)
-6. Navigate to multiple pages and verify branding persists","- Org-specific logo displayed in header (not store default)
-- Theme colors match org configuration
-- Favicon updates to org favicon (if set)
-- Branding persists across page navigation
-- Branding loads without flash of default branding
-- Sign out returns to default store branding",BL-B2B-006,Manual
-FR-CONFIG-004,Configurable Product - Configure → Add to Cart → Order Confirmed,Full Regression > Configurable Products > E2E,Integration,Critical,10m,"Configurable product exists with at least one required option group and price modifiers, user authenticated","1. Navigate to configurable product PDP
-2. Verify configuration options are displayed
-3. Select an upgrade option (e.g., +$50 option)
-4. Verify price updates dynamically (base + modifier)
-5. Click 'Add to Cart'
-6. Navigate to cart and verify configured product with options listed
-7. Proceed to checkout
-8. Complete payment
-9. Verify order confirmation shows configured product with selected options
-10. In Admin > Orders, verify order line shows configuration details and correct price","- Configuration options render correctly on PDP
-- Price updates dynamically as options are selected
-- Cart line shows product name + selected configuration options
-- Cart price = base price + sum of option modifiers
-- Checkout preserves configuration details
-- Order confirmation lists configured options
-- Admin order shows configuration details and correct total
-- No console errors during configuration flow",BL-CAT-006,Manual
-FR-AUTH-005,Session Expiry Mid-Checkout - Cart Preserved After Re-Login,Full Regression > Auth > Session,Functional,Critical,8m,"User authenticated, product in cart, checkout started, session timeout configured","1. Sign in and add product to cart
-2. Begin checkout (fill shipping address)
-3. Wait for session to expire (or manually expire via Admin/clear auth token)
-4. Attempt to proceed to payment step
-5. Verify redirect to sign-in page
-6. Sign back in with same credentials
-7. Verify return to checkout with cart intact
-8. Complete the order","- Session expiry triggers redirect to sign-in (not a crash or blank page)
-- Sign-in page shows friendly message: 'Session expired, please sign in again'
-- After re-login, user returns to checkout (not homepage)
-- Cart contents preserved (same items, quantities, prices)
-- Shipping address entered before expiry is preserved (or easily re-selectable)
-- Can complete order after re-authentication
-- No duplicate cart items from session restore",BL-AUTH-001,Manual
-FR-CART-028,Coupon Applies to Sale Price Not List Price,Full Regression > Cart > Pricing,Functional,Critical,6m,"Product with active sale price (e.g., list $100, sale $80), valid coupon code that gives percentage or fixed discount","1. Navigate to product with sale price
-2. Verify sale price displayed (e.g., $80 with strikethrough $100)
-3. Add to cart
-4. In cart, verify item price = sale price ($80)
-5. Apply valid coupon code (e.g., 10% off)
-6. Verify discount calculated on sale price: 10% of $80 = $8
-7. Verify cart total = $80 - $8 = $72 (not $100 - $10 = $90)
-8. Open DevTools > Network > inspect cart GraphQL query
-9. Verify placedPrice in response = $80 (sale price)","- Coupon discount calculated on sale/placed price, not list price
-- Cart shows: List price (strikethrough), Sale price, Coupon discount, Final total
-- Discount amount = percentage × sale price (not list price)
-- GraphQL cart.items[].placedPrice = sale price
-- No double-discounting (coupon on top of already-reduced price is correct)
-- Removing coupon restores to sale price (not list price)",BL-PRICE-001,Manual
-FR-SEO-001,SEO - Canonical URL and Meta Tags on PDP and Category Page,Full Regression > SEO > Meta,Functional,High,5m,"Storefront accessible, browser DevTools available","1. Navigate to a category page
-2. Open DevTools > Elements tab
-3. Find <link rel='canonical'> in <head>
-4. Verify canonical URL matches current page URL
-5. Find <title> tag and verify it contains category name
-6. Find <meta name='description'> and verify non-empty
-7. Navigate to a product detail page
-8. Repeat canonical URL check
-9. Verify <title> contains product name
-10. Verify <meta name='description'> contains product info","- <link rel='canonical'> present on every page
-- Canonical URL matches the current clean URL (no query params like ?page=1)
-- <title> tag populated: category name or product name included
-- <meta name='description'> non-empty, contains relevant content
-- No duplicate canonical tags
-- No noindex tag on public pages
-- Open Graph tags present (og:title, og:image, og:url) for social sharing",BL-SEO-001,Manual
-FR-WL-002,White Labeling - Branding Updates on Organization Switch,Full Regression > White Labeling > Switch,Functional,High,8m,"User assigned to two orgs: Org A (WL ON, custom logo A) and Org B (WL ON, custom logo B)","1. Sign in as multi-org user (default Org A)
-2. Verify Org A branding: logo A in header, Org A theme colors
-3. Switch to Org B via org selector
-4. Verify logo updates to Org B logo (no page reload required)
-5. Verify theme colors update to Org B preset
-6. Verify favicon updates (if different per org)
-7. Verify main menu links update to Org B menu configuration
-8. Navigate to multiple pages under Org B context
-9. Switch back to Org A and verify branding reverts","- Org switch triggers branding update without full page reload
-- No flash of wrong branding during switch (Org A logo briefly visible under Org B)
-- Logo, theme, favicon, menu all update to target org
-- Branding persists across navigation within org context
-- Switching back fully restores previous org branding
-- No console errors during branding switch
-- DOM does not retain stale branding elements from previous org",BL-CROSS-008,Manual
+- Strong password accepted",FR-SECURITY-004,Manual
+FRR-076,Security - Session Timeout Triggers Re-Authentication,Full Regression > Security > Session,Security,High,15m,"User logged in","1. Log in to account
+2. Wait for or simulate session timeout
+3. Attempt to perform action","- Session expires after configured idle time
+- Attempting action triggers re-authentication prompt
+- Re-login restores session without data loss (BL-AUTH-001)",FR-SECURITY-006,Manual
+FRR-077,White Labeling - Organization Theme Override,Full Regression > White Labeling > Org Override,Functional,High,6m,"White labeling feature enabled. Org B has a different logo/theme configured.","1. Sign in as Org B member
+2. Verify storefront shows Org B logo and branding
+3. Disable White Labeling feature in Admin store settings
+4. Refresh storefront
+5. Verify store default branding shown","- Org B member sees Org B theme (logo, colors)
+- Disabling White Labeling feature → store default shown regardless of org setting
+- Re-enabling → org theme returns (BL-B2B-006, BL-CROSS-006)",BL-B2B-006,Manual
+FRR-078,Accessibility - Keyboard Navigation (Full Site),Full Regression > Accessibility > Keyboard,Accessibility,High,15m,"Browser open, keyboard only (no mouse)","1. Navigate storefront using only keyboard (Tab, Enter, Escape, Arrow keys)
+2. Tab through header, main content, category page
+3. Navigate to cart and checkout using keyboard only
+4. Verify all interactive elements reachable","- All interactive elements reachable via Tab
+- Focus indicators visible on all focused elements
+- Tab order logical (left-to-right, top-to-bottom)
+- Menus navigable with arrow keys
+- Enter activates buttons/links; Escape closes modals
+- Skip links available ('Skip to main content')
+- No keyboard traps (WCAG 2.1 AA)",FR-ACCESS-001,Manual
+FRR-079,Accessibility - Screen Reader Compatibility (Key Flows),Full Regression > Accessibility > Screen Reader,Accessibility,High,15m,"Screen reader installed (NVDA or JAWS)","1. Enable screen reader
+2. Navigate catalog: verify product info announced
+3. Test form fields (labels announced with inputs)
+4. Test add to cart (success announced)
+5. Navigate checkout form with screen reader","- Product names, prices, stock status announced correctly
+- Form labels associated with inputs
+- Buttons have descriptive labels
+- Dynamic cart updates announced
+- Error messages announced",FR-ACCESS-002,Manual
+FRR-080,Performance - Homepage and Category Page Load Time,Full Regression > Performance > Load Time,Performance,High,8m,"Browser DevTools open, Network tab active, cache cleared","1. Clear cache
+2. Navigate to storefront homepage
+3. Measure DOMContentLoaded and Load events
+4. Navigate to category page with 20+ products
+5. Measure load time","- Homepage DOMContentLoaded < 3s, fully loaded < 5s
+- LCP < 2.5s, CLS < 0.1
+- Category page loads < 3s
+- No console errors impacting performance
+- Images lazy load below fold (BL-CROSS-009 for data, performance threshold for UX)",FR-PERF-001,Manual
+FRR-081,Cross-Browser - Chrome Critical Path,Full Regression > Browser > Chrome,Compatibility,Critical,15m,"Chrome browser latest version","1. Execute full critical path in Chrome: Login → Catalog → Search → Add to Cart → Checkout → Place Order
+2. Verify all functionality works
+3. Check console for errors","- All critical flows work in Chrome
+- No JavaScript errors in console
+- Layout renders correctly
+- Payment forms load
+- No browser-specific bugs",FR-BROWSER-001,Automated
+FRR-082,Cross-Browser - Firefox Critical Path,Full Regression > Browser > Firefox,Compatibility,High,15m,"Firefox browser latest version","1. Execute critical path in Firefox: Login → Add to Cart → Checkout → Place Order
+2. Note Firefox-specific issues","- All functionality works in Firefox
+- Layout consistent (minor font rendering differences acceptable)
+- Forms work correctly
+- Payment forms load",FR-BROWSER-003,Manual
+FRR-083,Cross-Browser - Mobile Safari (iOS) Critical Path,Full Regression > Browser > Mobile,Compatibility,Critical,15m,"iPhone with latest iOS Safari (physical or simulator)","1. Execute critical path on iOS Safari: Login → Browse → Add to Cart → Checkout → Place Order
+2. Test mobile-specific: touch targets, no horizontal scroll, iOS keyboard forms
+3. Test BOPIS map (pinch zoom, tap markers)","- All critical flows work on iOS Safari
+- Touch interactions smooth (tap, swipe, pinch)
+- No accidental zooms
+- Payment form redirects work correctly
+- BOPIS map functional on mobile
+- No iOS-specific bugs (position: fixed, etc.)",FR-BROWSER-005,Manual
+FRR-084,Cross-Browser - Chrome Android Critical Path,Full Regression > Browser > Mobile,Compatibility,High,12m,"Android phone with Chrome","1. Execute critical path on Chrome Android: Login → Add to Cart → Checkout → Place Order","- Critical flows work on Android Chrome
+- Touch interactions work
+- Forms work with Android keyboard
+- Payment forms load and process",FR-BROWSER-006,Manual
+FRR-085,Localization - Language Switching,Full Regression > Localization > Language,Functional,High,5m,"Multi-language site configured","1. Locate language selector in header/footer
+2. Select 'Deutsch' (German)
+3. Verify UI elements translated
+4. Switch to 'Français'
+5. Verify French translations","- Language selector lists all 14 configured languages
+- UI elements translated: Navigation, buttons, labels, messages
+- Language persists across pages
+- URL updates with locale prefix (e.g., /de/catalog)",FR-LOCAL-001,Manual
+FRR-086,Localization - Currency Selection and Cart Prices,Full Regression > Localization > Currency,Functional,High,5m,"Multi-currency configured","1. Select non-default currency (e.g., EUR)
+2. Verify all prices update to EUR price list
+3. Add product to cart
+4. Verify cart and checkout use EUR
+5. Verify order confirmation in EUR","- Currency selector shows all configured currencies
+- Prices switch to currency-specific price list (not exchange rate conversion)
+- Cart, checkout, and confirmation all use selected currency (BL-PRICE-005, BL-CART-004)",FR-LOCAL-002,Manual
+FRR-087,Feature Flag Toggle - Immediate Effect Without Restart,Full Regression > Platform > Feature Flags,Functional,High,6m,"Admin access to store settings. 'quotesEnabled' flag available.","1. Ensure quotesEnabled = true in store settings
+2. Verify 'Request Quote' button visible on storefront
+3. Toggle quotesEnabled = false in Admin
+4. Refresh storefront (no server restart)
+5. Verify 'Request Quote' button disappears
+6. Toggle back to true and verify button returns","- Flag change takes effect on next page load (no restart needed)
+- Storefront reads flags from xAPI on each page load
+- Quote button appears/disappears based on flag state (BL-CROSS-006)",BL-CROSS-006,Manual
+FRR-088,Price List Deletion - Products Show Unavailable Not $0,Full Regression > Catalog > Price Integrity,Functional,Critical,8m,"Product with price only from one price list. Admin access.","1. Note product URL on storefront (in-stock, purchasable)
+2. In Admin: delete the price list associated with this product
+3. Navigate to product on storefront (clear cache if needed)
+4. Verify price display and Add to Cart state
+5. Verify via xAPI: products query returns null price","- Product shows 'Unavailable' or N/A — NOT $0.00
+- 'Add to Cart' button disabled
+- Cannot add to cart via UI or API
+- Existing orders retain historical prices unchanged
+- Recreating price list restores availability (BL-CROSS-001, BL-CROSS-012)",BL-CROSS-001,Manual
+FRR-089,Cart Price Uses Live Data Not Cached Search Price,Full Regression > Catalog > Price Sync,Functional,Critical,8m,"Admin access. Product with a price visible on storefront.","1. Note current product price on storefront listing ($X)
+2. In Admin: increase price by $10
+3. Immediately (within 60s) add the product to cart
+4. Verify cart uses NEW price not cached listing price
+5. Wait 120s and verify search listing also shows new price","- Cart/checkout always uses server-side (current) price
+- Cart does NOT use stale cached search index price
+- After reindex (120s): listing price matches cart price
+- Price change propagated within consistency window (BL-CROSS-002)",BL-CROSS-002,Manual
+FRR-090,End-to-End - Complete Purchase Flow (Full Cross-Layer Verification),Full Regression > E2E > Complete Flow,Functional,Critical,25m,"All layers accessible: storefront, Admin, email, DevTools","1. Register new user (or sign in with test account)
+2. Browse catalog and search for product
+3. Add product to cart (verify correct SKU via Network tab)
+4. Apply valid promo code
+5. Proceed to checkout with delivery address
+6. Select shipping method
+7. Enter payment details and place order
+8. On confirmation page: note order number, verify GA4 purchase event fires
+9. Verify email received with correct order data
+10. In Admin: verify order exists with matching total
+11. Verify inventory decremented
+12. Verify cart is cleared on storefront","STOREFRONT: Confirmation page shows correct order number and total
+EMAIL: Confirmation received within 5 minutes, content matches order
+ADMIN: Order exists with matching total, status New, inventory decremented
+GA4: purchase event fired with correct transaction_id, value, items
+CART: Cleared after order placed
+CONSOLE: No JS errors on any step
+NETWORK: No 4xx/5xx errors during order flow
+All six side effects complete — no partial execution (BL-CROSS-005, BL-CHK-006, BL-NOTIF-001)",SMK-E2E,Manual

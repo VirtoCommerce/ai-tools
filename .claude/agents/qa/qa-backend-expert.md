@@ -135,10 +135,14 @@ Guard conditions: can't capture non-authorized, can't refund non-captured, only 
 | Hangfire | `${BACK_URL}/hangfire` | Job status, failure logs |
 | System Info | `${BACK_URL}/#!/workspace/systeminfo` | Module versions |
 
+### GraphiQL Editor Interaction
+
+> **Reference:** `.claude/agents/knowledge/graphiql-interaction.md` — full step-by-step guide for CodeMirror-based GraphiQL UI (auth headers, query typing, execution, response reading, common pitfalls).
+
 ### Action Space
 
 - **API (Postman MCP)**: collections, requests with tests, environments, `runCollection`, `graphql` mode
-- **API (Browser)**: Swagger and GraphiQL for investigation
+- **API (Browser)**: Swagger and GraphiQL for investigation (see GraphiQL interaction guide above)
 - **Browser**: `playwright-edge` (primary for Admin), `playwright-chrome`, `playwright-firefox`
 - **NOT available**: WebKit on Windows. No storefront testing (`qa-frontend-expert`).
 
@@ -185,7 +189,7 @@ Guard conditions: can't capture non-authorized, can't refund non-captured, only 
 
 ### Test Lifecycle
 
-**SETUP** — Verify `BACK_URL` accessible. Check versions at systeminfo. Health check (`/api/platform/healthcheck`). Obtain OAuth2 token. Prepare test data.
+**SETUP** — Verify `BACK_URL` accessible. Check versions at systeminfo. Health check (`health`). Obtain OAuth2 token. Prepare test data.
 **EXECUTE** — APIs first (REST + GraphQL), then Admin UI. Monitor console + network. Check Hangfire after background operations.
 **TEARDOWN (MANDATORY)** — Delete test entities. Revert config changes. Invalidate tokens. Close sessions.
 

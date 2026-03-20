@@ -54,7 +54,8 @@ Every feature decomposes into testable layers. Each layer has its own output for
 | Business invariants (76 rules) | `.claude/agents/knowledge/business-logic.md` |
 | Edge Cases Library | `.claude/agents/knowledge/e-commerce-edge-cases-library.md` — ECL-* IDs |
 | Test Design Examples (toggles/flags) | `.claude/skills/qa-methodology/qa-test-design/examples/` — 9 files: EP, BVA, Pairwise ×2, Decision Table ×2, State Transition, Classification Tree, Error Guessing (real QA products CFG-001–CFG-010) |
-| Domain Checklists (18 domains) | `.claude/skills/testing/qa-checklist/domain-checklists.md` |
+| Domain Checklists (22 UI domains) | `.claude/skills/testing/qa-checklist/domain-checklists.md` |
+| GraphQL xAPI Checklist (34 items) | `.claude/skills/testing/qa-checklist/graphql-checklist.md` — xCatalog, xCart, xOrder, xProfile, xQuote, xCMS, xFrontend + New Query/Mutation Verification |
 | Test Case Template (15-col CSV) | `.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md` |
 | xAPI & REST API Reference | `/qa-api ref` — query signatures, mutation args, store settings, auth flow |
 | API Test Case Patterns | `.claude/skills/testing/qa-api/api-test-case-patterns.md` — coverage checklists, step/assertion tags, per-domain test ID patterns, negative test patterns, worked skeletons |
@@ -170,7 +171,7 @@ BLOCKED ❌ → escalate to qa-lead
    ```
 6. **Generate test cases per layer** — use the right tool per layer, applying test conditions from step 4:
    - **REST API layer**: `/qa-api cases REST <module>` — reads `api-test-case-patterns.md` for coverage checklist + `xapi-query-ref.md` for endpoint signatures
-   - **GraphQL layer**: `/qa-api cases <xModule> <operation>` — reads patterns + query signatures; applies `[GQL]`/`[ERRORS]`/`[ROUNDTRIP]` tags; always includes `errors[]` check
+   - **GraphQL layer**: `/qa-api cases <xModule> <operation>` — reads patterns + query signatures; applies `[GQL]`/`[ERRORS]`/`[ROUNDTRIP]` tags; always includes `errors[]` check. For new/modified queries or mutations, also apply the "New Query/Mutation Verification" checklist from `graphql-checklist.md` (schema, required/optional fields, permissions, response structure)
    - **Admin UI / Storefront / E2E layers**: `/qa-test-cases-generator VCST-XXXX --layer admin|storefront|e2e`
    - All cases: enriched 15-column CSV with **layer-specific tags** from `test-case-template.md`
    - Domain checklists as input. REAL labels from step 3. P0: happy + negative, P1: errors + edge cases

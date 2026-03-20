@@ -1106,3 +1106,258 @@ SRCH-NEW-043,Cross-Facet AND Logic - Multiple Facet Groups Combine Correctly,Sea
 [MATH] No products appear that match only one of the two criteria
 [DOM] Chip bar shows chips for both active facets","[NETWORK] POST /graphql returns filtered results with correct AND combination
 [CONSOLE] no TypeError or JS errors","Cross-facet returning OR logic (count increases or stays same); products matching only one criterion appearing; removing one facet not restoring single-facet count; console TypeError",none,"BL-CAT-002, ECL-3.2, GAP-CS-12",Generated
+CAT-047,All Products Dropdown - Displays All Top-Level Categories,Catalog > Navigation,High,BL-CAT-001,,Storefront populated with multiple top-level categories; main navigation rendered,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ASSERT] Locate 'All Products' or equivalent top-level navigation item in the main menu
+[ACT] Hover over or click 'All Products' to open the dropdown
+[WAIT] Wait for the dropdown to fully render
+[ASSERT] Verify the dropdown is visible and lists category items
+[ASSERT] Count visible category links in the dropdown
+[ASSERT] Verify each category item has a text label and a clickable href","[DOM] 'All Products' dropdown is visible after hover/click
+[DOM] At least 3 top-level category links are displayed in the dropdown
+[DOM] Each category item shows a text label matching a known category name
+[DOM] Each category item has a non-empty href pointing to /catalog/... or equivalent slug URL
+[STATE] Dropdown does not show blank or placeholder items","[NETWORK] GET {{FRONT_URL}} returns HTTP 200
+[NETWORK] no 4xx/5xx on menu data request
+[CONSOLE] no TypeError or JS errors","Dropdown not opening; dropdown empty with no categories; category items with empty or # href; console TypeError on hover",none,"Coverage Gap Analysis; GAP-CS-13",Generated
+CAT-048,All Products Dropdown - Category Link Navigates to Correct Category Page,Catalog > Navigation,High,BL-CAT-001,,Storefront populated; at least one named top-level category accessible from 'All Products' dropdown,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Hover over or click 'All Products' in the main navigation to open the dropdown
+[WAIT] Wait for dropdown to appear
+[ASSERT] Identify a specific category in the dropdown (note its label)
+[ACT] Click the identified category link
+[WAIT] Wait for the category page to load
+[ASSERT] Verify the URL matches the expected category slug
+[ASSERT] Verify the page heading matches the clicked category name
+[ASSERT] Verify the breadcrumb shows the correct category hierarchy","[NAV] URL after click contains the correct category slug matching the label clicked
+[DOM] Page heading matches the category name selected from the dropdown
+[DOM] Breadcrumbs show: Home > [Category Name]
+[DOM] Product grid or product listing is rendered on the category page
+[STATE] Active/highlighted state on the category in navigation (if applicable)","[NETWORK] GET category page returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Category page returning 404; URL slug not matching the dropdown label; page heading mismatching clicked category; breadcrumbs absent; console TypeError",none,"Coverage Gap Analysis; GAP-CS-13",Generated
+CAT-049,Category SEO Slug URL Resolves Correctly,Catalog > Navigation,Medium,BL-CAT-001,,A category with a configured SEO-friendly slug exists in the catalog,"url={{FRONT_URL}}","[NAV] Navigate to a category page using its SEO slug URL (e.g., {{FRONT_URL}}/catalog/clothing)
+[WAIT] Wait for the page to fully load
+[ASSERT] Verify page loads with HTTP 200 (no redirect to an error page)
+[ASSERT] Verify the URL remains as the slug URL (no redirect to an ID-based URL)
+[ASSERT] Verify the category heading matches the expected category name
+[ASSERT] Verify products are listed on the category page
+[ACT] Open browser DevTools and check the link[rel=canonical] tag value
+[ASSERT] Verify the canonical URL matches the slug URL","[NAV] Slug URL resolves to the correct category page without redirect to an ID-based URL
+[DOM] Category heading matches the known category name for the slug
+[DOM] Products are displayed on the page
+[DOM] link[rel=canonical] href equals the current slug URL (not an ID-based URL)
+[STATE] No 301/302 redirect from slug to ID URL","[NETWORK] GET slug URL returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Slug URL returning 404; slug redirecting to an ID-based URL; canonical pointing to a different URL; heading not matching expected category; console TypeError",none,"Coverage Gap Analysis; GAP-CS-14",Generated
+CAT-050,In-Stock Product PDP - Availability Badge and Add to Cart Enabled,Catalog > Product,High,"BL-CAT-006, BL-CART-002",,An in-stock product with inventory > 0 exists; user authenticated or guest session active,"url={{FRONT_URL}}","[NAV] Navigate to a product detail page for a known in-stock product on {{FRONT_URL}}
+[WAIT] Wait for the PDP to fully load
+[ASSERT] Verify an availability indicator (e.g., 'In stock' or green badge) is displayed near the product price or title
+[ASSERT] Verify the 'Add to Cart' button is visible and enabled (not grayed out or disabled)
+[ACT] Click the 'Add to Cart' button
+[WAIT] Wait for cart confirmation (mini-cart or toast or badge increment)
+[ASSERT] Verify the cart badge count increments by 1","[DOM] Availability indicator visible and shows in-stock status
+[STATE] 'Add to Cart' button is enabled (not disabled attribute or grayed out)
+[MATH] Cart badge increments by 1 after clicking 'Add to Cart'
+[DOM] No 'Out of stock' or 'Unavailable' label visible","[NETWORK] POST add-to-cart returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Availability indicator absent; 'Add to Cart' button shown as disabled for in-stock product; cart badge not incrementing; add-to-cart returning 4xx; console TypeError","Remove added product from cart after test","Coverage Gap Analysis; GAP-CS-15",Generated
+CAT-051,Out-of-Stock Product PDP - Unavailable Indicator and Add to Cart Disabled,Catalog > Product,High,"BL-CAT-006, BL-CART-002",ECL-2.1,An out-of-stock product (inventory = 0 or availability = false) exists in the catalog,"url={{FRONT_URL}}","[NAV] Navigate to a product detail page for a known out-of-stock product on {{FRONT_URL}}
+[WAIT] Wait for the PDP to fully load
+[ASSERT] Verify an out-of-stock indicator is displayed (e.g., 'Out of stock' or 'Unavailable')
+[ASSERT] Verify the 'Add to Cart' button is either absent or disabled or replaced with an alternative CTA
+[ASSERT] Verify the product price is still displayed even if unavailable
+[ACT] Attempt to click the 'Add to Cart' button if visible but disabled
+[ASSERT] Verify no item is added to the cart (cart badge unchanged)","[DOM] Out-of-stock indicator clearly visible near product title or price
+[STATE] 'Add to Cart' button is disabled or absent for out-of-stock product
+[MATH] Cart badge count does not change after attempting add-to-cart on disabled button
+[DOM] Product price still displayed (not hidden)
+[STATE] No way to add the out-of-stock product to cart through the PDP","[NETWORK] no add-to-cart POST fired when button is disabled
+[CONSOLE] no TypeError or JS errors","Out-of-stock indicator absent; 'Add to Cart' enabled for out-of-stock product; cart badge incrementing for out-of-stock product; console TypeError",none,"Coverage Gap Analysis; GAP-CS-15; ECL-2.1",Generated
+CAT-052,Currency Switch on Category Page Updates All Product Prices,Catalog > Pricing,Critical,"BL-PRICE-005, BL-CAT-006",ECL-3.1,"Multiple currencies configured; category has products with prices in at least 2 currencies; currency switcher visible","url={{FRONT_URL}}","[NAV] Navigate to a category listing page on {{FRONT_URL}}
+[WAIT] Wait for product cards to load
+[ASSERT] Note the current currency symbol and prices of the first 3 product cards
+[ACT] Locate the currency switcher (header or footer) and select an alternative currency (e.g., switch from USD to EUR)
+[WAIT] Wait for the page to reload or re-render with updated prices
+[ASSERT] Verify the currency symbol has changed to the selected currency
+[ASSERT] Verify the prices on all visible product cards have updated to currency-specific prices (not exchange-rate converted values)
+[ASSERT] Verify the updated prices match the expected values from the configured price list for that currency","[DOM] Currency symbol in product cards changes to the selected currency after switch
+[STATE] Prices are updated to currency-specific price list values not exchange-rate conversions
+[MATH] At least 3 product cards show prices in the new currency
+[DOM] Currency switcher reflects the currently selected currency","[NETWORK] graphql request includes new currency code after switch
+[NETWORK] no 4xx/5xx on currency switch
+[CONSOLE] no TypeError or JS errors","Currency symbol unchanged after switch; prices not updating after currency change; prices showing exchange-rate conversion instead of price-list values; console TypeError",none,"Coverage Gap Analysis; GAP-CS-16; ECL-3.1",Generated
+CAT-053,Currency Switch on PDP Updates Product Price to Price List Value,Catalog > Pricing,Critical,"BL-PRICE-005, BL-CAT-006",ECL-3.1,"Multiple currencies configured; product has prices defined in at least 2 currency price lists; currency switcher visible","url={{FRONT_URL}}","[NAV] Navigate to a product detail page on {{FRONT_URL}}
+[WAIT] Wait for PDP to fully render
+[ASSERT] Note the current currency and displayed price (e.g., USD $54.00)
+[ACT] Locate the currency switcher and select an alternative currency (e.g., EUR)
+[WAIT] Wait for the PDP to update
+[ASSERT] Verify the price now shows in the selected currency per the EUR price list
+[ASSERT] Verify the currency symbol in the price matches the selected currency
+[ASSERT] Verify the 'Add to Cart' button is still functional after currency switch","[DOM] Price on PDP updates to the currency-specific price list value after switch
+[STATE] The price reflects the exact value from the alternative currency price list not a calculated exchange rate
+[DOM] Currency symbol adjacent to price matches the selected currency
+[STATE] 'Add to Cart' button remains enabled and functional after currency change","[NETWORK] POST /graphql (product) includes new currencyCode in variables after switch
+[CONSOLE] no TypeError or JS errors","PDP price not updating after currency switch; price showing exchange-rate conversion; currency symbol not matching selected currency; Add to Cart broken after switch; console TypeError",none,"Coverage Gap Analysis; GAP-CS-16; ECL-3.1",Generated
+CAT-054,Product With No Price in Selected Currency Shows Correct Unavailability State,Catalog > Pricing,Critical,"BL-PRICE-005, BL-CAT-006",ECL-3.1,"A product exists that has a USD price but no price defined in the EUR price list; currency switcher visible","url={{FRONT_URL}}","[NAV] Navigate to the PDP of a product with a USD price but no EUR price defined
+[WAIT] Wait for PDP to load in default currency (USD)
+[ASSERT] Verify product is available with a USD price and 'Add to Cart' enabled
+[ACT] Switch currency to EUR using the currency switcher
+[WAIT] Wait for the page to update
+[ASSERT] Verify the product either shows a 'Not available in this currency' state OR hides the price and disables 'Add to Cart'
+[ASSERT] Verify no placeholder price like $0.00 or 0.00 is shown for the unavailable currency","[STATE] Product not priced in the selected currency is clearly marked as unavailable or price-hidden
+[DOM] No zero-value placeholder price displayed for a product with no price in selected currency
+[STATE] 'Add to Cart' button is disabled or absent when no price is defined for the currency
+[DOM] Meaningful message or indicator communicates the product is not available in the selected currency","[NETWORK] no add-to-cart POST for zero-price product
+[CONSOLE] no TypeError or JS errors","Product showing zero price for a currency with no price list entry; 'Add to Cart' enabled for zero-price product; no indication to user that product is unavailable in selected currency; console TypeError",none,"Coverage Gap Analysis; GAP-CS-16; ECL-3.1",Generated
+CAT-055,Recently Viewed Products Section Appears on PDP After Browsing Multiple Products,Catalog > Product,Medium,,,User visits at least 2 different product PDPs in the same session; recently viewed feature enabled in storefront config,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[NAV] Navigate to the first product detail page (Product A)
+[WAIT] Wait for PDP to load
+[SCROLL] Scroll down to check if 'Recently Viewed' section exists (may be empty for first product)
+[NAV] Navigate to a second product detail page (Product B)
+[WAIT] Wait for PDP to load
+[SCROLL] Scroll down the PDP to find the 'Recently Viewed' section
+[ASSERT] Verify 'Recently Viewed' or equivalent section is now visible
+[ASSERT] Verify Product A appears in the recently viewed section
+[ACT] Click on Product A in the recently viewed section
+[WAIT] Wait for PDP of Product A to load
+[ASSERT] Verify navigation to Product A PDP was successful","[DOM] 'Recently Viewed' section appears on the PDP after visiting at least 2 products
+[DOM] Previously visited product listed in the recently viewed section with name and image
+[NAV] Clicking a recently viewed item navigates to that product PDP
+[STATE] Currently viewed product is NOT listed in its own recently viewed section","[NETWORK] no 4xx/5xx on recently viewed data request
+[CONSOLE] no TypeError or JS errors","Recently viewed section absent after visiting multiple products; visited products not appearing in section; clicking recently viewed item fails to navigate; current product appearing in its own recently viewed list; console TypeError",none,"Coverage Gap Analysis; GAP-CS-17",Generated
+CAT-056,Catalog Listing Page Renders Correctly at 768px Tablet Viewport,Catalog > Responsive,Medium,BL-CAT-001,,Category with products exists; storefront accessible,"url={{FRONT_URL}}","[NAV] Navigate to a category listing page on {{FRONT_URL}}
+[ACT] Resize the browser viewport to 768x1024 (tablet portrait)
+[WAIT] Wait for layout to reflow
+[ASSERT] Verify the product grid adapts to the tablet viewport (typically 2-column grid at 768px)
+[ASSERT] Verify product card images names and prices are fully visible with no overflow or clipping
+[ASSERT] Verify the navigation menu is accessible (hamburger or condensed menu)
+[ASSERT] Verify facet/filter panel is accessible (collapsed drawer or sidebar condensed)
+[SCROLL] Scroll down to verify entire product listing is accessible
+[ASSERT] Verify pagination controls are visible and functional","[DOM] Product grid displays in tablet-appropriate layout at 768px
+[DOM] Product cards are fully visible with no image cropping text overflow or price truncation
+[DOM] Navigation accessible at 768px
+[DOM] Facet/filter controls accessible (not off-screen)
+[DOM] Pagination controls visible and not overlapping content
+[STATE] No horizontal scroll bar visible at 768px width","[NETWORK] no 4xx/5xx on category page at tablet viewport
+[CONSOLE] no TypeError or JS errors","Product grid overflowing at 768px; product cards clipped or inaccessible; navigation menu not accessible; horizontal scrollbar visible; pagination hidden off-screen; console TypeError",none,"Coverage Gap Analysis; GAP-CS-20",Generated
+CAT-057,Out-of-Stock PDP Display - Clear Unavailability Messaging,Catalog > Product,High,"BL-CART-002, BL-CAT-006",ECL-2.1,An out-of-stock product with inventory = 0 exists and is accessible via PDP URL,"url={{FRONT_URL}}","[NAV] Navigate to the PDP of a known out-of-stock product on {{FRONT_URL}}
+[WAIT] Wait for PDP to fully load
+[ASSERT] Verify an out-of-stock or unavailability message is prominently displayed (e.g., 'Out of stock' or 'Currently unavailable' or 'Sold out')
+[ASSERT] Verify the 'Add to Cart' button is disabled or replaced with an alternative CTA
+[ASSERT] Verify the product name image description and specifications are still visible
+[ASSERT] Verify no quantity input field allows selecting quantities or that the input is disabled
+[SCROLL] Scroll through the full PDP to check for any UI elements that incorrectly suggest the product is purchasable","[DOM] Clear out-of-stock label displayed near the product title or price area or main CTA zone
+[STATE] 'Add to Cart' button disabled or replaced with non-purchase CTA
+[DOM] Product name image and description fully visible despite out-of-stock status
+[STATE] Quantity selector disabled or absent for out-of-stock product
+[DOM] No misleading 'In stock' or 'Available' label present","[NETWORK] no add-to-cart POST request fired for out-of-stock product
+[CONSOLE] no TypeError or JS errors","Out-of-stock message absent; 'Add to Cart' enabled for zero-inventory product; product information hidden; quantity input active for out-of-stock product; console TypeError",none,"Coverage Gap Analysis; GAP-CS-21; ECL-2.1",Generated
+CAT-058,Low Stock Indicator Displayed When Product Quantity Is Near Threshold,Catalog > Product,High,"BL-CART-002, BL-CAT-006",ECL-2.1,"A product with low inventory (e.g., 1-5 units remaining) exists; low stock warning configured in store settings","url={{FRONT_URL}}","[NAV] Navigate to the PDP of a product with known low inventory on {{FRONT_URL}}
+[WAIT] Wait for PDP to fully load
+[ASSERT] Verify a low stock warning message is displayed (e.g., 'Only 3 left!' or 'Low stock' or 'Limited availability')
+[ASSERT] Verify the 'Add to Cart' button is enabled (product still purchasable)
+[ASSERT] Verify the low stock message shows the remaining quantity or a qualitative indicator
+[ASSERT] Verify the warning message is visually distinct (e.g., amber color or warning icon)","[DOM] Low stock warning message visible on PDP when inventory is at or below configured threshold
+[STATE] 'Add to Cart' button remains enabled when product is low stock but not zero
+[DOM] Warning message communicates urgency (quantity count or low stock label)
+[DOM] Warning message is visually distinct from standard product information","[NETWORK] product availability data returned in GraphQL response includes low-stock signal
+[CONSOLE] no TypeError or JS errors","Low stock warning absent when inventory below threshold; 'Add to Cart' incorrectly disabled for low-stock non-zero product; warning message not visually distinct; console TypeError",none,"Coverage Gap Analysis; GAP-CS-21; ECL-2.1",Generated
+SRCH-NEW-044,Search Results Pagination - Controls Visible and Functional for Large Result Sets,Search > Pagination,High,BL-SEARCH-001,,Search query returns 100+ products across multiple pages; pagination enabled in storefront config,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and search for a broad term returning 100+ products
+[KEY] press [Enter]
+[WAIT] Wait for search results page to load
+[ASSERT] Verify a result count is displayed (e.g., 'Showing 1-24 of 124 results')
+[ASSERT] Verify pagination controls are visible (page numbers or Previous/Next or Load More)
+[ACT] Click 'Next' or page 2 in the pagination controls
+[WAIT] Wait for the next page of results to load
+[ASSERT] Verify the URL or page state reflects page 2
+[ASSERT] Verify different products are shown on page 2
+[ASSERT] Verify 'Previous' or page 1 link is now active/visible
+[ACT] Click 'Previous' or page 1 to return to the first page
+[WAIT] Wait for results to reload
+[ASSERT] Verify first-page products are restored","[DOM] Result count displayed showing total items across pages
+[DOM] Pagination controls visible when total results exceed one page
+[STATE] Page 2 shows a different set of products than page 1
+[NAV] URL updates to reflect the current page
+[STATE] 'Previous' control active on page 2 and disabled or absent on page 1
+[STATE] First page products restored after clicking 'Previous'","[NETWORK] POST /graphql (searchProducts) fires with updated skip or page param on pagination click
+[NETWORK] no 4xx/5xx on pagination requests
+[CONSOLE] no TypeError or JS errors","Pagination controls absent for 100+ result query; page 2 showing same products as page 1; URL not reflecting page change; 'Previous' not navigating back; console TypeError",none,"Coverage Gap Analysis; GAP-CS-18",Generated
+SRCH-NEW-045,Search Results Pagination Preserves Search Term and Active Filters,Search > Pagination,High,BL-SEARCH-001,,"Multiple products matching a search term with at least one applicable facet filter; results span 2+ pages","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a search that returns 2+ pages of results
+[KEY] press [Enter]
+[WAIT] Wait for search results page
+[ASSERT] Verify results are shown with pagination
+[ACT] Apply a facet filter from the sidebar (e.g., select a Brand)
+[WAIT] Wait for filtered and paginated results
+[ASSERT] Verify search term is still in the search input
+[ASSERT] Note result count for filtered page 1
+[ACT] Click page 2 or 'Next' in pagination
+[WAIT] Wait for page 2 of filtered results
+[ASSERT] Verify search input still contains the original search term
+[ASSERT] Verify the applied facet filter chip is still active (not cleared)
+[ASSERT] Verify the URL contains both the search term and the filter parameter","[STATE] Search term persists in search input across pagination pages
+[STATE] Applied facet filter remains active when navigating to page 2
+[DOM] Filter chip visible in the active-filters bar on page 2
+[NAV] URL contains both search query param and filter param on page 2
+[STATE] Products on page 2 are consistent with the active search and filter combination","[NETWORK] POST /graphql (searchProducts) on page 2 includes both keyword and filter parameters
+[CONSOLE] no TypeError or JS errors","Search term cleared when navigating to page 2; filter chips removed on pagination; URL losing filter params; page 2 showing unfiltered results; console TypeError",none,"Coverage Gap Analysis; GAP-CS-18",Generated
+SRCH-NEW-046,Search by Exact SKU Returns Correct Product,Search > SKU Search,High,BL-SEARCH-001,ECL-14.2,"Product with known SKU exists in catalog; SKU known from test data (e.g., ZER-64605169)","url={{FRONT_URL}}; sku={{PRODUCT_SKU}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click the search input
+[ACT] fill 'Search': the exact SKU value (e.g., 'ZER-64605169')
+[KEY] press [Enter]
+[WAIT] Wait for search results page to load
+[ASSERT] Verify at least 1 product appears in results
+[ASSERT] Verify the product matching the searched SKU is in the results
+[ASSERT] Verify the product name displayed matches the expected product for that SKU
+[ACT] Click the product to open its PDP
+[WAIT] Wait for PDP to load
+[ASSERT] Verify PDP shows the correct SKU identifier matching the searched value","[DOM] Search results contain the product with the searched SKU
+[DOM] Product name in results matches the expected product for that SKU
+[NAV] PDP for the SKU-matched product loads correctly
+[STATE] SKU identifier visible on the PDP matches the searched SKU","[NETWORK] POST /graphql (searchProducts) with SKU query returns HTTP 200 with product data
+[CONSOLE] no TypeError or JS errors","SKU search returning 0 results for a valid in-catalog SKU; wrong product returned for SKU search; PDP not loading after clicking SKU search result; console TypeError",none,"Coverage Gap Analysis; GAP-CS-19; ECL-14.2",Generated
+SRCH-NEW-047,Partial Numeric Search Returns Relevant Products or Graceful Empty State,Search > SKU Search,High,BL-SEARCH-001,ECL-14.2,"Products with numeric characters in their name or SKU exist in catalog; at least one product has a numeric SKU segment","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click the search input
+[ACT] fill 'Search': a 4-6 digit numeric string that is a substring of a known product SKU (e.g., '6460')
+[WAIT] Wait for autocomplete dropdown to appear
+[ASSERT] Verify the autocomplete dropdown shows products or hints related to the numeric query
+[KEY] press [Enter]
+[WAIT] Wait for search results page to load
+[ASSERT] Verify the results page loads without error (not a blank page or 500 error)
+[ASSERT] Verify result count >= 0 with meaningful state (results found or no-results empty state)","[DOM] Autocomplete shows product suggestions or hints for numeric partial query
+[STATE] Search results page loads without JS errors for a pure numeric query
+[DOM] Results or empty state shown with no error page or 5xx for numeric query
+[STATE] Numeric-only query handled gracefully by the search engine","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for numeric query
+[NETWORK] no 5xx server errors for numeric-only search
+[CONSOLE] no TypeError or JS errors","Numeric query causing 500 error; autocomplete crashing on numeric input; search results page blank for numeric query; console TypeError on numeric input",none,"Coverage Gap Analysis; GAP-CS-19; ECL-14.2",Generated
+SRCH-NEW-048,Search Results Next and Previous Page Navigation Controls Work Correctly,Search > Pagination,High,"BL-SEARCH-001, BL-CAT-005",,Search returns 2+ pages of results; pagination enabled,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and perform a broad search returning 2+ pages
+[KEY] press [Enter]
+[WAIT] Wait for search results page
+[ASSERT] Verify result count exceeds 1 page worth of results
+[ASSERT] Verify pagination controls rendered: 'Previous' and page numbers and 'Next'
+[ASSERT] Verify 'Previous' is disabled or absent on page 1
+[ACT] Click 'Next' or page number 2
+[WAIT] Wait for page 2 to load
+[ASSERT] Verify 'Previous' is now enabled on page 2
+[ASSERT] Verify page 2 indicator is active in the pagination control
+[ACT] Click 'Previous' to return to page 1
+[WAIT] Wait for page 1 to reload
+[ASSERT] Verify page 1 indicator is active and 'Previous' is again disabled or absent","[DOM] Pagination controls with Previous and page numbers and Next visible for 2+ page result set
+[STATE] 'Previous' disabled or absent on first page; enabled on page 2
+[STATE] Active page indicator updates correctly when navigating pages
+[STATE] Correct page content shown after each navigation action
+[DOM] 'Next' button visible and enabled when more pages exist","[NETWORK] POST /graphql (searchProducts) fires with updated offset or page on each navigation
+[NETWORK] no 4xx/5xx on pagination requests
+[CONSOLE] no TypeError or JS errors","'Previous' active on first page; 'Next' absent even when results span multiple pages; page indicator not updating; same products on both pages; console TypeError",none,"Coverage Gap Analysis; GAP-CS-22",Generated
+SRCH-NEW-049,Sort Persists Across Search Pagination Pages,Search > Pagination,High,"BL-SEARCH-001, BL-CAT-005",,Search returns 2+ pages of results; sort options available on search results page,"url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and perform a search returning 2+ pages
+[KEY] press [Enter]
+[WAIT] Wait for search results page
+[ASSERT] Verify sort dropdown is present
+[ACT] Select 'Price: Low to High' from the sort dropdown
+[WAIT] Wait for products to reorder
+[ASSERT] Verify first product has lowest price in the visible set
+[ASSERT] Note the sort dropdown value shows 'Price: Low to High'
+[ACT] Click 'Next' or page 2 in pagination
+[WAIT] Wait for page 2 to load
+[ASSERT] Verify sort dropdown on page 2 still shows 'Price: Low to High'
+[ASSERT] Verify all products on page 2 have prices greater than or equal to the last product on page 1
+[ASSERT] Verify the URL contains both the sort parameter and the page parameter","[STATE] Sort selection 'Price: Low to High' persists when navigating to page 2
+[MATH] Prices on page 2 are >= the last price on page 1 confirming ascending order maintained across pages
+[DOM] Sort dropdown on page 2 reflects the same sort as page 1
+[NAV] URL on page 2 includes both sort and page parameters","[NETWORK] POST /graphql (searchProducts) on page 2 includes both sort and page/offset params
+[CONSOLE] no TypeError or JS errors","Sort dropdown resetting to default when moving to page 2; prices on page 2 not continuing the ascending order; URL losing sort param on pagination; console TypeError",none,"Coverage Gap Analysis; GAP-CS-22",Generated

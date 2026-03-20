@@ -1,0 +1,38 @@
+{
+  "batch": "orders-quotes",
+  "gaps": 10,
+  "casesGenerated": 14,
+  "suiteModifications": {
+    "04c": {
+      "added": 14,
+      "newIds": [
+        "ORD-007",
+        "ORD-008",
+        "ORD-009",
+        "ORD-010",
+        "ORD-011",
+        "ORD-012",
+        "ORD-013",
+        "ORD-014",
+        "ORD-015",
+        "ORD-016",
+        "ORD-017",
+        "ORD-018",
+        "QUOTE-016",
+        "QUOTE-017"
+      ]
+    }
+  },
+  "gapCoverage": {
+    "GAP-OQ-01": { "ids": ["ORD-007", "ORD-008"], "description": "Reorder with existing cart items - merge behavior" },
+    "GAP-OQ-02": { "ids": ["ORD-009", "ORD-010"], "description": "Return/RMA request - full and partial" },
+    "GAP-OQ-03": { "ids": ["ORD-011", "ORD-012"], "description": "Order cancellation by buyer - New and Shipped states" },
+    "GAP-OQ-04": { "ids": ["ORD-013"], "description": "Order confirmation page full details" },
+    "GAP-OQ-05": { "ids": ["ORD-014"], "description": "Invoice/PDF download from order detail" },
+    "GAP-OQ-06": { "ids": ["ORD-015", "ORD-016"], "description": "Order search by number and pagination" },
+    "GAP-OQ-07": { "ids": ["ORD-017"], "description": "Order date range filter" },
+    "GAP-OQ-08": { "ids": ["QUOTE-016"], "description": "RFQ quantity editing before submission" },
+    "GAP-OQ-09": { "ids": ["QUOTE-017"], "description": "Quote search by quote ID" },
+    "GAP-OQ-10": { "ids": ["ORD-018"], "description": "Order status - Processing state reflected on storefront" }
+  }
+}

@@ -713,3 +713,375 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] cannot proceed to checkout with zero-quantity items","[API] removeCartItem or changeCartItemQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors after zero-qty input
 [NETWORK] no 4xx/5xx","zero-qty item remains without error; checkout proceeds with qty=0; API accepts qty=0; page crashes on zero input",Remove all test items from cart,Coverage Gap Analysis,Automated
+CART-049,Currency Switch - Cart Prices Recalculate Using New Price List,Cart > Currency,Critical,BL-CART-004,"ECL-4.1, ECL-14.4","User logged in; products in cart with prices in multiple currencies; store supports at least two currencies (e.g., USD and EUR)","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add 2-3 products to cart
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] note all unit prices, line totals, subtotal, shipping, and tax in current currency (e.g., USD)
+[ACT] locate currency selector (header or footer)
+[ACT] switch currency to EUR (or second supported currency)
+[WAIT] wait for cart page to reload/recalculate
+[ASSERT] verify all unit prices updated to EUR price list values (not just USD converted)
+[ASSERT] verify line totals recalculated
+[ASSERT] verify subtotal, shipping, and tax all display in EUR","[DOM] currency symbol changes from $ to EUR/other on all price elements
+[MATH] each line total = new currency unit price x quantity (2 decimal places)
+[MATH] subtotal = sum of all line totals in new currency
+[STATE] prices reflect new currency's price list (not a simple exchange rate conversion)
+[FORMAT] all monetary values display correct currency symbol","[API] getCart query returns prices in new currency after switch
+[NETWORK] no 4xx/5xx on currency switch request
+[CONSOLE] no JS errors during currency recalculation","prices still show old currency after switch; line totals not recalculated; subtotal mismatch; currency symbol not updated; shipping/tax still in old currency",Switch currency back to original; remove items from cart,Coverage Gap Analysis,Generated
+CART-050,Currency Switch - Product Without Price in New Currency Flagged,Cart > Currency,Critical,BL-CART-004,"ECL-4.1, ECL-7.3, ECL-14.4","User logged in; cart contains at least one product that has no price defined in the target currency; store supports multiple currencies","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add products to cart including one product known to lack a price in the target currency
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify all items display with valid prices in current currency
+[ACT] switch currency to target currency where one product has no price
+[WAIT] wait for cart to recalculate
+[ASSERT] verify product without price is flagged with warning or removed from cart
+[ASSERT] verify remaining products display correct prices in new currency
+[ASSERT] verify cart totals only include valid items","[DOM] product without new-currency price shows warning message or is removed
+[STATE] cart does not display $0.00 or blank price for the missing-price product
+[DOM] remaining items show correct new-currency prices
+[MATH] subtotal excludes flagged/removed item
+[STATE] checkout blocked if flagged item remains in cart","[API] getCart query returns validation warning for product without price in new currency
+[CONSOLE] no JS errors during currency switch
+[NETWORK] no 4xx/5xx","product shows $0.00 price instead of warning; no indication of missing price; cart totals include zero-price item; checkout proceeds with invalid pricing",Switch currency back to original; remove items from cart,Coverage Gap Analysis,Generated
+CART-051,Currency Switch - Subtotal Shipping Tax All in New Currency,Cart > Currency,High,BL-CART-004,"ECL-4.1, ECL-14.4","User logged in; products in cart; shipping method selected; store supports multiple currencies","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add products to cart
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify Order Summary shows subtotal, shipping cost, tax, and total in current currency
+[ASSERT] note all Order Summary amounts
+[ACT] switch currency to second supported currency
+[WAIT] wait for cart to fully recalculate
+[ASSERT] verify subtotal in new currency
+[ASSERT] verify shipping cost in new currency
+[ASSERT] verify tax amount in new currency
+[ASSERT] verify grand total in new currency
+[ASSERT] verify all amounts use same currency symbol","[MATH] subtotal = sum of all line totals in new currency
+[MATH] grand total = subtotal + shipping + tax (all in new currency)
+[FORMAT] all Order Summary values use same currency symbol (no mixed currencies)
+[DOM] shipping cost recalculated (not just symbol change)
+[DOM] tax amount recalculated for new currency context","[API] getCart query returns shipping, tax, and totals all in new currency
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","mixed currency symbols in Order Summary; shipping still in old currency; tax not recalculated; grand total arithmetic mismatch",Switch currency back to original; remove items from cart,Coverage Gap Analysis,Generated
+CART-052,Cart Isolation - Org A Items Not Visible in Org B Cart,Cart > B2B > Org Isolation,Critical,BL-CART-005,"ECL-14.3","User is member of at least two B2B organizations (Org A and Org B); user logged in","url={{FRONT_URL}}
+org_user={{ORG_USER_EMAIL}}
+org_password={{ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{ORG_USER_EMAIL}}
+[ACT] ensure current organization context is Org A
+[ACT] add 2 products to cart (Product X qty 1, Product Y qty 2) in Org A context
+[ASSERT] verify cart badge shows 2 items (or 3 total qty)
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] note Org A cart contents
+[ACT] switch organization context to Org B (via org selector in header or account settings)
+[WAIT] wait for org switch to complete and cart to refresh
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify Org B cart is empty or contains only Org B-specific items (no Product X or Product Y from Org A)","[STATE] Org B cart does not contain Org A items (Product X and Product Y absent)
+[DOM] cart badge updated to reflect Org B cart count (0 or Org B-only items)
+[STATE] org context switch does not contaminate cart data
+[DOM] no Org A product names visible in Org B cart","[API] getCart query returns cart scoped to current org context
+[API] verify me.organization reflects Org B after switch
+[CONSOLE] no JS errors during org switch
+[NETWORK] no 4xx/5xx","Org A items appear in Org B cart; cart badge shows Org A count after switch; Product X or Y visible in Org B",Switch back to Org A; remove test items from both carts,Coverage Gap Analysis,Generated
+CART-053,Cart Isolation - Org A Items Restored After Switching Back,Cart > B2B > Org Isolation,High,BL-CART-005,"ECL-14.3","User is member of at least two B2B organizations; Org A cart has items from CART-052 setup","url={{FRONT_URL}}
+org_user={{ORG_USER_EMAIL}}
+org_password={{ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{ORG_USER_EMAIL}} in Org A context
+[ASSERT] verify Org A cart contains Product X qty 1 and Product Y qty 2
+[ACT] switch organization context to Org B
+[WAIT] wait for org switch to complete
+[ASSERT] verify Org B cart (empty or Org B items only)
+[ACT] switch organization context back to Org A
+[WAIT] wait for org switch to complete and cart to refresh
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify Org A cart restored with Product X qty 1 and Product Y qty 2
+[ASSERT] verify cart badge shows correct Org A count","[STATE] Org A cart fully restored after round-trip org switch (A → B → A)
+[DOM] Product X qty 1 and Product Y qty 2 present in cart
+[MATH] cart subtotal matches original Org A subtotal
+[DOM] cart badge reflects Org A item count
+[STATE] no data loss from org switching","[API] getCart query returns Org A cart contents after switching back
+[API] verify me.organization reflects Org A
+[CONSOLE] no JS errors during org switch cycle
+[NETWORK] no 4xx/5xx","Org A cart empty after round-trip switch; items lost; quantities changed; subtotal mismatch after switching back",Remove test items from both org carts,Coverage Gap Analysis,Generated
+CART-054,Pack Size Enforcement - Quantity Stepper Increments by Pack Size,Cart > Pack Size,Medium,BL-CART-006,"ECL-3.1","User logged in; product with pack size / MOQ configured (e.g., pack size = 6); product available in store","url={{FRONT_URL}}/product/{{PACK_SIZE_SKU}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/product/{{PACK_SIZE_SKU}}
+[ASSERT] verify product detail page loads with pack size information visible (e.g., 'Sold in packs of 6')
+[ACT] click '+' (Increase quantity) button
+[WAIT] wait for quantity to update
+[ASSERT] verify spinbutton shows pack size value (e.g., 6) not 1
+[ACT] click '+' again
+[ASSERT] verify quantity increments by pack size (e.g., 6 → 12)
+[ACT] click '-' (Decrease quantity) once
+[ASSERT] verify quantity decrements by pack size (e.g., 12 → 6)
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify cart line item quantity is a multiple of pack size","[DOM] initial increment sets quantity to pack size (6), not 1
+[DOM] each subsequent '+' click adds pack size (6 → 12 → 18)
+[DOM] each '-' click decrements by pack size (18 → 12 → 6)
+[STATE] cart quantity is always a multiple of pack size
+[MATH] line total = unit price x quantity (where qty is multiple of pack size)","[API] addItem or changeCartItemQuantity mutation enforces pack size multiples
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","stepper increments by 1 instead of pack size; quantity not a multiple of pack size in cart; no pack size info on PDP",Remove item from cart,Coverage Gap Analysis,Generated
+CART-055,Pack Size Enforcement - Manual Non-Multiple Entry Rejected,Cart > Pack Size,Medium,BL-CART-006,"ECL-3.1, ECL-4.1","User logged in; product with pack size configured (e.g., pack size = 6) in cart","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with pack-size product in cart
+[ACT] click on spinbutton 'Product quantity' field to focus
+[KEY] Ctrl+A to select all text
+[ACT] type '7' (non-multiple of pack size 6)
+[KEY] press Tab to commit input
+[WAIT] wait for validation response
+[ASSERT] verify quantity rejected or auto-rounded to nearest valid multiple (6 or 12)
+[ACT] type '0' in quantity field
+[KEY] press Tab
+[ASSERT] verify zero rejected (minimum = pack size)
+[ACT] type '13' in quantity field
+[KEY] press Tab
+[ASSERT] verify auto-rounded to 12 or 18, or validation error shown","[STATE] non-multiple quantity (7) rejected or rounded to nearest valid multiple
+[STATE] zero quantity rejected (minimum is one pack = 6)
+[STATE] quantity 13 rounded to 12 or 18, or error shown with valid options
+[DOM] validation message indicates pack size constraint if error shown
+[MATH] line total always reflects a valid pack-size-multiple quantity","[API] changeCartItemQuantity mutation returns pack size validation error for non-multiples
+[CONSOLE] no JS errors on invalid pack size input
+[NETWORK] no 4xx/5xx","non-multiple quantity accepted (7 units in cart); zero accepted for pack-size product; no validation message about pack size constraint",Remove item from cart,Coverage Gap Analysis,Generated
+CART-056,Select Subset of Cart Items for Partial Checkout,Cart > Selection,Medium,,"ECL-14.1","User logged in; cart contains 3+ different products","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add 3+ different products to cart
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify all items displayed with selection checkboxes (if available)
+[ACT] deselect one or more items (uncheck checkbox or equivalent UI control)
+[ASSERT] verify Order Summary totals update to reflect only selected items
+[ASSERT] verify deselected items remain in cart but excluded from totals
+[ACT] click 'Proceed to Checkout'
+[WAIT] wait for checkout page to load
+[ASSERT] verify only selected items appear in checkout order summary
+[ASSERT] verify deselected items NOT in checkout","[DOM] item selection controls (checkboxes) visible for each cart line item
+[STATE] deselecting an item excludes it from Order Summary totals
+[MATH] subtotal = sum of only selected items' line totals
+[STATE] deselected items remain in cart (not removed)
+[DOM] checkout order summary contains only selected items
+[STATE] deselected items absent from checkout","[API] checkout mutation payload includes only selected item IDs
+[CONSOLE] no JS errors during selection/deselection
+[NETWORK] no 4xx/5xx","no selection controls available; deselecting does not update totals; all items sent to checkout regardless of selection; deselected items removed from cart instead of preserved",none (items remain in cart),Coverage Gap Analysis,Generated
+CART-057,Cart Merge - Anonymous Then Register,Cart > Merge,High,BL-CART-006,"ECL-7.3, ECL-14.1","Product available in stock; user is not yet registered; browsing store anonymously","url={{FRONT_URL}}","[NAV] navigate to {{FRONT_URL}} without signing in (guest session)
+[ACT] add Product_1 to cart with qty=2
+[ASSERT] verify cart badge shows 2
+[ACT] navigate to registration page
+[ACT] register a new account with valid credentials
+[WAIT] wait for registration and auto-login to complete
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify Product_1 present in cart with qty=2
+[ASSERT] verify cart badge shows correct count","[STATE] guest cart items preserved after registration and auto-login
+[DOM] Product_1 listed with qty=2 in cart
+[STATE] cart badge reflects merged item count
+[MATH] cart subtotal matches expected value for qty=2","[API] mergeCarts or equivalent mutation response errors[] is empty
+[CONSOLE] no JS errors during registration and cart merge
+[NETWORK] no 4xx/5xx during merge","guest items lost after registration; cart empty for new account; qty mismatch after merge",Remove items from cart; delete test account if needed,C389651,Manual
+CART-058,Cart Merge - No Duplicate SKUs,Cart > Merge,High,"BL-CART-006, BL-CART-007","ECL-7.3, ECL-14.1","Same Product A exists in both anonymous cart and registered user cart; user currently signed out","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
+[ACT] add Product A to cart with qty=2
+[ACT] sign out
+[NAV] navigate to {{FRONT_URL}} as guest
+[ACT] add same Product A to cart with qty=1 as guest
+[ACT] sign in with {{USER_EMAIL}}
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify exactly one line item for Product A
+[ASSERT] verify qty=3 (sum of 2+1)
+[ASSERT] verify no duplicate line items","[STATE] single line item for Product A (no duplicates)
+[DOM] quantity shows 3 (merged sum)
+[MATH] line total = unit price x 3
+[MATH] cart subtotal correct for merged quantity","[API] mergeCarts mutation response errors[] is empty
+[CONSOLE] no JS errors on sign-in and cart page
+[NETWORK] no 4xx/5xx during merge","duplicate line items created for same SKU; qty not summed (shows 1 or 2 instead of 3); two separate entries in cart",Remove items from cart,C398783,Manual
+CART-059,Cart Merge - Currency Mismatch,Cart > Merge,High,"BL-CART-006, BL-CART-004","ECL-4.1, ECL-7.3, ECL-14.4","Store supports multiple currencies (USD and EUR); anonymous cart has products in USD; registered user default currency is EUR","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest with USD currency
+[ACT] add products to cart in USD as anonymous user
+[ASSERT] verify guest cart shows USD prices
+[ACT] sign in as {{USER_EMAIL}} whose default currency is EUR
+[WAIT] wait for cart merge and currency switch
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify all products merged into single currency cart
+[ASSERT] verify prices display in customer default currency (EUR)
+[ASSERT] if product unavailable in EUR, verify warning message shown","[STATE] all products from both carts present after merge
+[DOM] prices displayed in customer default currency (EUR)
+[STATE] products without EUR price show warning 'This product is no longer available for purchase' or similar
+[MATH] cart totals calculated in single currency","[API] mergeCarts mutation response errors[] is empty
+[CONSOLE] no JS errors during currency merge
+[NETWORK] no 4xx/5xx","mixed currencies in merged cart; USD prices shown instead of EUR; products silently dropped without warning; cart totals in wrong currency",Remove items from cart,C398784,Manual
+CART-060,Cart Merge - Persists After Logout and Re-login,Cart > Merge,High,BL-CART-006,"ECL-7.3, ECL-14.1","Anonymous user adds products; user logs in (merge happens); merged cart established","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
+[ACT] add Product B to cart as guest
+[ACT] sign in as {{USER_EMAIL}} (triggers merge)
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] note merged cart contents (items, quantities, subtotal)
+[ACT] sign out
+[ACT] sign in again with {{USER_EMAIL}}
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify merged cart persists with same items and quantities
+[ASSERT] verify no items lost or duplicated after logout/login cycle","[STATE] merged cart contents identical after logout/re-login
+[DOM] all items present with correct quantities
+[MATH] cart subtotal matches pre-logout value
+[STATE] no duplicate or missing items","[API] getCart query returns same items after re-login
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","merged items lost after logout; cart empty on re-login; items duplicated after re-login; subtotal mismatch",Remove items from cart,C398785,Manual
+CART-061,Cart Merge - Different Product Types,Cart > Merge,Medium,"BL-CART-006, BL-CART-007","ECL-7.3, ECL-14.1","Anonymous cart has simple products; registered user cart has configurable/variation products","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
+[ACT] add a configurable product (with size/color variant selected) to cart
+[ACT] sign out
+[NAV] navigate to {{FRONT_URL}} as guest
+[ACT] add a simple product to cart as guest
+[ACT] sign in as {{USER_EMAIL}}
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify both simple and configurable products present
+[ASSERT] verify configurable product retains variant attributes (size, color)
+[ASSERT] verify no missing or mismatched products","[STATE] simple product from guest cart present in merged cart
+[STATE] configurable product from user cart present with correct variant attributes
+[DOM] variant attributes (size, color) displayed correctly on configurable product
+[STATE] no missing or mismatched products after merge","[API] mergeCarts mutation response errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","configurable product loses variant attributes after merge; simple product missing; product types confused or swapped",Remove items from cart,C398786,Manual
+CART-062,Cart Merge - Smart Merge Failure Handling,Cart > Merge,Medium,BL-CART-006,"ECL-7.3, ECL-14.2","Products in USD cart; simulate merge failure scenario (e.g. network interruption during merge)","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
+[ACT] add products to USD cart as anonymous user
+[ACT] sign in as {{USER_EMAIL}}
+[WAIT] wait for merge attempt
+[ASSERT] if merge fails, verify clear error message displayed
+[ASSERT] verify original user cart remains unaffected (no data loss)
+[ASSERT] verify user can retry or navigate to cart without crash
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify cart is in a consistent state (either merged or pre-merge user cart intact)","[DOM] clear error message displayed if merge fails (not a blank page or 500)
+[STATE] user cart data not corrupted by failed merge
+[STATE] cart page accessible and functional after merge failure
+[STATE] user can continue shopping or retry","[API] merge failure returns informative error (not 500)
+[CONSOLE] no unhandled JS exceptions
+[NETWORK] no cascading failures after merge error","page crashes on merge failure; cart data corrupted; no error message shown; user stuck on broken page; cart inaccessible after failed merge",none (verify cart state),C396997,Manual
+CART-063,Cart Merge Selection - Empty Cart + Selected All (ON),Cart > Merge > Selection,Medium,BL-CART-006,"ECL-14.1","Default 'Selected for checkout' = ON in store settings; Cart1 (user) is empty; Cart2 (guest) has items with all selected","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and ensure cart is empty
+[ACT] sign out
+[NAV] navigate to {{FRONT_URL}} as guest
+[ACT] add 2-3 products to cart as guest (all auto-selected for checkout)
+[ACT] sign in as {{USER_EMAIL}}
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify all guest items present in merged cart
+[ASSERT] verify all items have 'selected for checkout' state = ON
+[ASSERT] verify Proceed to Checkout button active","[STATE] all guest items merged into user cart
+[DOM] all item checkboxes checked (selected for checkout)
+[STATE] Proceed to Checkout enabled
+[MATH] Order Summary totals include all items","[API] getCart returns all items with selectedForCheckout=true
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","items not selected after merge; Proceed to Checkout disabled; items missing from merged cart",Remove items from cart,C389850,Manual
+CART-064,Cart Merge Selection - Both Selected All (ON),Cart > Merge > Selection,Medium,BL-CART-006,"ECL-14.1","Default 'Selected for checkout' = ON; Cart1 (user) has items all selected; Cart2 (guest) has items all selected","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart (all selected)
+[ACT] sign out
+[NAV] add different items to cart as guest (all selected)
+[ACT] sign in as {{USER_EMAIL}}
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify items from both carts present
+[ASSERT] verify all items remain selected for checkout
+[ASSERT] verify Order Summary reflects all items","[STATE] items from both carts merged
+[DOM] all items checked/selected for checkout
+[MATH] Order Summary subtotal = sum of all merged items
+[STATE] no items deselected after merge","[API] getCart returns all items with selectedForCheckout=true
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","some items deselected after merge; Order Summary only includes partial items; items missing",Remove items from cart,C389851,Manual
+CART-065,Cart Merge Selection - Both Unselected All (ON),Cart > Merge > Selection,Medium,BL-CART-006,"ECL-14.1","Default 'Selected for checkout' = ON; Cart1 (user) has items all manually unselected; Cart2 (guest) has items all manually unselected","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart
+[ACT] unselect all items in cart (uncheck checkboxes)
+[ACT] sign out
+[NAV] add items to cart as guest and unselect all
+[ACT] sign in as {{USER_EMAIL}}
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify items from both carts present
+[ASSERT] verify selection state after merge (check if unselected state preserved or reset to default ON)
+[ASSERT] verify Proceed to Checkout behavior with selection state","[STATE] items from both carts merged
+[DOM] selection state consistent with merge logic (either all unselected preserved or reset to default ON)
+[STATE] Order Summary totals reflect only selected items
+[STATE] Proceed to Checkout button state matches selection","[API] getCart returns items with correct selectedForCheckout values
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","items missing after merge; selection state inconsistent; Order Summary incorrect",Remove items from cart,C389852,Manual
+CART-066,Cart Merge Selection - Selected + Unselected (ON),Cart > Merge > Selection,Medium,BL-CART-006,"ECL-14.1","Default 'Selected for checkout' = ON; Cart1 (user) has all items selected; Cart2 (guest) has all items unselected","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart (keep selected)
+[ACT] sign out
+[NAV] add items to cart as guest then unselect all
+[ACT] sign in as {{USER_EMAIL}}
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify items from both carts present
+[ASSERT] verify user cart items retain selected state
+[ASSERT] verify guest cart items selection state after merge
+[ASSERT] verify Order Summary reflects only selected items","[STATE] user cart items selected; guest items selection per merge rules
+[MATH] Order Summary subtotal = sum of selected items only
+[DOM] checkboxes reflect correct per-item selection state
+[STATE] mixed selection state handled correctly","[API] getCart returns correct per-item selectedForCheckout values
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","all items forced to same selection state; Order Summary wrong; selection states swapped",Remove items from cart,C389853,Manual
+CART-067,Cart Merge Selection - Mixed + Mixed (ON),Cart > Merge > Selection,Medium,BL-CART-006,"ECL-14.1","Default 'Selected for checkout' = ON; Cart1 (user) has mix of selected and unselected; Cart2 (guest) has mix of selected and unselected","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add 3+ items to cart
+[ACT] unselect some items (create mixed state)
+[ACT] sign out
+[NAV] add 3+ items to cart as guest
+[ACT] unselect some guest items (create mixed state)
+[ACT] sign in as {{USER_EMAIL}}
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify all items from both carts present
+[ASSERT] verify per-item selection state after merge
+[ASSERT] verify Order Summary reflects only selected items","[STATE] items from both carts merged with correct per-item selection
+[MATH] Order Summary = sum of only selected items
+[DOM] each item checkbox reflects its individual selection state
+[STATE] no blanket select/deselect override on merge","[API] getCart returns correct per-item selectedForCheckout values
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","all items forced selected or deselected; per-item state lost; Order Summary miscalculated",Remove items from cart,C389854,Manual
+CART-068,Cart Merge Selection - Empty + Unselected All (OFF),Cart > Merge > Selection,Medium,BL-CART-006,"ECL-14.1","Default 'Selected for checkout' = OFF; Cart1 (user) is empty; Cart2 (guest) has items all unselected","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and ensure cart is empty
+[ACT] sign out
+[NAV] add items to cart as guest (default unselected per OFF setting)
+[ACT] sign in as {{USER_EMAIL}}
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify guest items present in merged cart
+[ASSERT] verify items are unselected (per OFF default)
+[ASSERT] verify Proceed to Checkout blocked or warns about no selected items","[STATE] guest items merged into user cart
+[DOM] all items unchecked (unselected for checkout per OFF default)
+[STATE] Proceed to Checkout disabled or shows warning
+[MATH] Order Summary shows $0 or no items selected message","[API] getCart returns items with selectedForCheckout=false
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","items auto-selected despite OFF setting; Proceed to Checkout active with no selection",Remove items from cart,C389916,Manual
+CART-069,Cart Merge Selection - Both Selected All (OFF),Cart > Merge > Selection,Medium,BL-CART-006,"ECL-14.1","Default 'Selected for checkout' = OFF; Cart1 (user) has items manually selected; Cart2 (guest) has items manually selected","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items, manually select all
+[ACT] sign out
+[NAV] add items as guest, manually select all
+[ACT] sign in as {{USER_EMAIL}}
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify items from both carts present
+[ASSERT] verify manually selected state preserved after merge
+[ASSERT] verify Order Summary includes all items","[STATE] items from both carts merged
+[DOM] all items checked (manually selected state preserved)
+[MATH] Order Summary subtotal = sum of all items
+[STATE] manual selection override of OFF default preserved","[API] getCart returns items with selectedForCheckout=true
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","manually selected items reset to unselected after merge; Order Summary empty despite selections",Remove items from cart,C389917,Manual
+CART-070,Cart Merge Selection - Mixed + Mixed (OFF),Cart > Merge > Selection,Medium,BL-CART-006,"ECL-14.1","Default 'Selected for checkout' = OFF; Cart1 (user) has mix of selected/unselected; Cart2 (guest) has mix of selected/unselected","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add 3+ items
+[ACT] manually select some, leave others unselected
+[ACT] sign out
+[NAV] add 3+ items as guest
+[ACT] manually select some, leave others unselected
+[ACT] sign in as {{USER_EMAIL}}
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify all items from both carts present
+[ASSERT] verify per-item selection state after merge
+[ASSERT] verify Order Summary reflects only selected items","[STATE] all items merged with correct per-item selection
+[MATH] Order Summary = sum of only selected items
+[DOM] each item checkbox reflects individual state
+[STATE] OFF default does not override manually selected items","[API] getCart returns correct per-item selectedForCheckout values
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","per-item selection lost; all forced to unselected; Order Summary wrong",Remove items from cart,C389920,Manual

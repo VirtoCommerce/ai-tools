@@ -13,6 +13,7 @@
 
 Additional MCP servers (configured at user level or in IDE settings, not in `.mcp.json`):
 - **Chrome DevTools MCP** - Console logs, network requests, performance tracing, HAR export
+- **Azure MCP** - Azure Application Insights, resource health, monitoring, and diagnostics
 - **Atlassian MCP** - JIRA integration for test case management and bug reporting
 - **Figma MCP** - Visual comparison testing against design specs
 

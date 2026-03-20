@@ -65,7 +65,9 @@ You are one of up to 3 concurrent browser agents. Strict isolation is mandatory:
 | `References` | JIRA / sprint ticket IDs | Include in bug reports |
 | `Automation_Status` | Automated/Manual/Semi-Automated | Record in results |
 
-- Substitute all `{{VAR}}` placeholders in `Test_Data`, `Steps`, `Assertions`, and `Cross_Layer_Checks` using environment variables before execution
+- **Read `test-data/users/agent-user-pool.csv`** — find the row where `server_name` matches `{{BROWSER_SERVER}}`. Store the resolved credentials (personal_email/personal_password for storefront suites, b2b_email/b2b_password for B2B suites).
+- Substitute all `{{VAR}}` placeholders in `Test_Data`, `Steps`, `Assertions`, and `Cross_Layer_Checks` using the resolved slot credentials and environment variables before execution
+- If the pool CSV is missing or `seeded` is `false`, fall back to `.env` variables (`USER_EMAIL`/`USER_PASSWORD`). Log: `"⚠ Agent user pool not available for {{BROWSER_SERVER}}, falling back to .env credentials"`
 - Count total test cases and note the sections
 
 ### 1.2 Environment Verification
@@ -76,7 +78,7 @@ You are one of up to 3 concurrent browser agents. Strict isolation is mandatory:
 
 ### 1.3 Authentication
 - Navigate to the sign-in page
-- Sign in using test user credentials from environment variables (`USER_EMAIL` / `USER_PASSWORD`)
+- Sign in using the **slot-assigned credentials** from the agent user pool (see 1.1). Each browser slot has a dedicated user to prevent session conflicts during parallel execution.
 - Verify successful authentication (user name displayed, dashboard/home loaded)
 - **If authentication fails:** Write results with all tests as BLOCKED, note auth error in `errors`, send failure message to orchestrator
 

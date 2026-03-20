@@ -1,0 +1,308 @@
+---
+description: "[Testing] Review test cases for quality, determinism, completeness, data validity, coverage gaps, duplication, and live environment verification. Delegates browser verification to qa-testing-expert."
+argument-hint: "suite <ID> | file <path> | diff | all | domain <name> | --verify | --fix"
+---
+
+# /qa-review-tests — Test Case Review & Quality Verification
+
+Review test cases against quality criteria to catch issues before regression runs: vague steps, missing preconditions, stale test data, coverage gaps, cross-suite duplication, and live environment verification. Delegates browser-based verification to `qa-testing-expert` agent.
+
+## Usage
+```
+/qa-review-tests suite 04c              # Review a specific suite by ID (static analysis)
+/qa-review-tests file regression/suites/Frontend/04c-orders-quotes-tests.csv
+/qa-review-tests diff                   # Review only git-changed test cases
+/qa-review-tests all                    # Review all 36 suites (summary mode)
+/qa-review-tests domain checkout        # Review all suites touching a domain
+/qa-review-tests suite 04c --fix        # Review + auto-fix issues (asks before writing)
+/qa-review-tests suite 04c --verify     # Static review + live environment verification via qa-testing-expert
+/qa-review-tests suite 04c --verify --fix  # Full review + fix + verify
+```
+
+## Supporting Files
+
+- **review-criteria.md** — Full review criteria catalog with severity levels, check descriptions, and examples of good vs bad patterns.
+
+## Review Dimensions (8)
+
+| # | Dimension | What It Catches | Severity | Mode |
+|---|-----------|----------------|----------|------|
+| 1 | **Structure** | Malformed CSV, missing columns, empty required fields, invalid ID format | Blocker | Static |
+| 2 | **Determinism** | Vague steps that two agents would execute differently; ambiguous assertions | Critical | Static |
+| 3 | **Completeness** | Missing preconditions, empty assertions, no failure signals, missing cleanup | High | Static |
+| 4 | **Testability** | Assertions that can't be objectively verified ("looks correct", "works properly") | High | Static |
+| 5 | **Data Validity** | Referenced `{{VAR}}` bindings that don't exist in `.env`, hardcoded URLs/credentials, stale SKUs/product refs | High | Static |
+| 6 | **BL/ECL Coverage** | Missing `Business_Rule` refs, missing `Edge_Case_Refs` for relevant domains, uncovered BL-* invariants | Medium | Static |
+| 7 | **Duplication** | Overlapping test cases within the suite or across suites testing the same scenario | Medium | Static |
+| 8 | **Environment Verification** | Steps reference UI elements/pages/flows that don't exist or have changed in the live environment | Critical | Live (`--verify`) |
+
+Dimensions 1-7 are **static analysis** (no browser needed). Dimension 8 requires `--verify` flag and delegates to `qa-testing-expert` agent for live browser verification.
+
+## Execution
+
+### Step 0: Load References
+
+Read these files to inform the review:
+1. **`review-criteria.md`** — detailed criteria for each dimension (this skill folder)
+2. **`test-case-template.md`** — the format contract (from `qa-test-cases-generator` skill)
+3. **`business-logic.md`** — BL-* invariants to check coverage against
+4. **`e-commerce-edge-cases-library.md`** — ECL-* patterns to check coverage against
+5. **`test-data/`** directory — to validate referenced products/orgs exist
+
+### Step 1: Determine Scope
+
+| Argument | Action |
+|----------|--------|
+| `suite NN` | Read `config/test-suites.json` → find suite → read its CSV file |
+| `file <path>` | Read the CSV file directly |
+| `diff` | Run `git diff --name-only` → filter for `regression/suites/**/*.csv` → review only changed/added rows |
+| `all` | Read all 36 suite CSVs → produce summary-level review (top issues per suite, not line-by-line) |
+| `domain <name>` | Map domain to suites via `config/test-suites.json` tags → review those suites |
+
+### Step 2: Parse & Validate Structure (Dimension 1)
+
+For each CSV file:
+1. Verify header row matches the 15-column enriched format OR the legacy 11-column format
+2. For each row, check:
+   - **ID** present and follows `PREFIX-NNN` pattern
+   - **ID uniqueness** — no duplicate IDs within the file
+   - **Title** non-empty
+   - **Priority** is one of: `Critical`, `High`, `Medium`, `Low`
+   - **Steps** non-empty
+   - **Assertions** non-empty (enriched format) or **Expected Result** non-empty (legacy)
+   - **No unescaped commas** inside fields that break CSV parsing
+3. Count total cases, cases per section, cases per priority
+
+### Step 3: Review Each Test Case (Dimensions 2-6)
+
+For every test case row, evaluate:
+
+#### Determinism (Dimension 2)
+- [ ] Every step uses a type tag (`[NAV]`, `[ACT]`, `[WAIT]`, `[SCROLL]`, `[KEY]`, `[ASSERT]`)
+- [ ] Steps reference specific UI elements by label or selector, not generic descriptions
+- [ ] No ambiguous verbs: "check", "ensure", "validate" without specifying HOW
+- [ ] `[WAIT]` follows every `[ACT]` that triggers a state change
+- [ ] No compound steps (two actions in one line)
+
+#### Completeness (Dimension 3)
+- [ ] `Preconditions` describe the required starting state
+- [ ] `Test_Data` has `key={{VAR}}` bindings for all env-dependent values used in steps
+- [ ] `Assertions` has at least 2 tagged assertions
+- [ ] `Cross_Layer_Checks` present for any test that involves a mutation
+- [ ] `Failure_Signals` has at least 2 signals (timeout + API/console)
+- [ ] `Cleanup` specifies state restoration or explicitly says `none`
+- [ ] Every GraphQL mutation has `errors[] is empty` in Cross_Layer_Checks
+
+#### Testability (Dimension 4)
+- [ ] No vague predicates: "page loads correctly", "works as expected", "displays properly"
+- [ ] Every `[DOM]` assertion specifies WHAT element and WHAT property/text
+- [ ] Every `[MATH]` assertion includes the formula
+- [ ] Every `[STATE]` assertion specifies the expected value
+- [ ] Assertions are falsifiable — an agent can unambiguously determine PASS or FAIL
+
+#### Data Validity (Dimension 5)
+- [ ] All `{{VAR}}` tokens are from the known env variable set (see `test-case-template.md`)
+- [ ] No hardcoded URLs (e.g., `https://vcst-qa-storefront...`) — must use `{{FRONT_URL}}`
+- [ ] No hardcoded credentials — must use `{{USER_EMAIL}}`, `{{USER_PASSWORD}}`
+- [ ] Referenced products/SKUs exist in `test-data/` or use `{{TEST_SKU}}`
+- [ ] Referenced org users use `{{ORG_USER_EMAIL}}` not hardcoded emails
+
+#### BL/ECL Coverage (Dimension 6)
+- [ ] `Business_Rule` column populated with valid `BL-*` IDs (unless pure UI test)
+- [ ] `BL-*` IDs exist in `business-logic.md`
+- [ ] `Edge_Case_Refs` populated for domains that have ECL patterns
+- [ ] For P0/Critical cases: at least one `BL-*` rule mapped
+- [ ] Cross-reference: are there BL-* invariants for this domain with no test cases covering them?
+
+### Step 4: Cross-Suite Duplication Check (Dimension 7)
+
+Compare test cases across suites in the same domain:
+1. Extract (Title, Section, Steps summary) tuples from all suites in scope
+2. Flag cases where two different suites test the same scenario (>80% step overlap)
+3. Flag cases where the same BL-* invariant is tested identically in multiple suites (acceptable if different layers)
+4. Note: duplication across layers (storefront vs API vs admin) is EXPECTED and NOT a finding
+
+### Step 5: Generate Review Report
+
+Output a structured report:
+
+```markdown
+## Test Case Review Report
+
+**Scope:** [suite/file/diff/all]
+**Date:** {{currentDate}}
+**Total Cases Reviewed:** N
+**Format:** [enriched 15-col | legacy 11-col | mixed]
+
+### Summary
+
+| Dimension | Findings | Blocker | Critical | High | Medium |
+|-----------|----------|---------|----------|------|--------|
+| Structure | N | ... | ... | ... | ... |
+| Determinism | N | ... | ... | ... | ... |
+| Completeness | N | ... | ... | ... | ... |
+| Testability | N | ... | ... | ... | ... |
+| Data Validity | N | ... | ... | ... | ... |
+| BL/ECL Coverage | N | ... | ... | ... | ... |
+| Duplication | N | ... | ... | ... | ... |
+| Env Verification | N | ... | ... | ... | ... |
+| **Total** | **N** | **X** | **X** | **X** | **X** |
+
+### Verdict: [PASS | PASS WITH WARNINGS | NEEDS FIXES]
+
+[PASS = 0 blockers, 0 critical; PASS WITH WARNINGS = 0 blockers, <=3 critical; NEEDS FIXES = any blocker or >3 critical]
+
+### Findings by Severity
+
+#### Blockers (must fix before regression run)
+| Case ID | Dimension | Issue | Suggested Fix |
+|---------|-----------|-------|---------------|
+| ... | ... | ... | ... |
+
+#### Critical (should fix before regression run)
+| Case ID | Dimension | Issue | Suggested Fix |
+|---------|-----------|-------|---------------|
+
+#### High (fix when convenient)
+| Case ID | Dimension | Issue | Suggested Fix |
+|---------|-----------|-------|---------------|
+
+#### Medium (informational)
+| Case ID | Dimension | Issue | Suggested Fix |
+|---------|-----------|-------|---------------|
+
+### Coverage Gaps
+
+BL-* invariants in this domain with no corresponding test cases:
+- BL-XXX-NNN: [rule description] — **no test case found**
+
+ECL-* patterns relevant to this domain but not referenced:
+- ECL-X.X: [pattern] — **not covered**
+
+### Duplication Candidates
+
+| Case A | Case B | Suite A | Suite B | Overlap | Recommendation |
+|--------|--------|---------|---------|---------|----------------|
+| ... | ... | ... | ... | ~85% | Consolidate into Case A |
+
+### Environment Verification (--verify only)
+
+| Case ID | URL | Check | Result | Screenshot | Notes |
+|---------|-----|-------|--------|------------|-------|
+| QUOTE-001 | /cart | 'Request Quote' button | VERIFIED | — | — |
+| ORD-009 | /account/orders/{id} | 'Return' button | CHANGED | env-ord009.png | Button renamed to 'Request Return' |
+| ... | ... | ... | ... | ... | ... |
+
+Pages visited: N | Elements checked: N | Flows walked: N
+Verified: N | Changed: N | Broken: N | Blocked: N
+
+### Statistics
+
+- Cases by priority: Critical: N | High: N | Medium: N | Low: N
+- Cases with BL-* mapping: N/N (X%)
+- Cases with ECL-* refs: N/N (X%)
+- Cases with >=2 failure signals: N/N (X%)
+- Cases with cleanup defined: N/N (X%)
+- Average assertions per case: X.X
+```
+
+### Step 6: Environment Verification (`--verify` flag, Dimension 8)
+
+When `--verify` is specified, delegate live browser verification to the **`qa-testing-expert`** agent (`playwright-firefox`). This step runs AFTER the static review (Steps 2-5) is complete.
+
+**What `qa-testing-expert` verifies:**
+
+1. **Page reachability** — Navigate to each unique URL referenced in Steps/Preconditions, confirm pages load (no 404, no 500, no redirect loops)
+2. **UI element existence** — For P0/Critical cases, verify that key UI elements referenced in Steps and Assertions actually exist on the page:
+   - Buttons mentioned in `[ACT] click 'Button Name'` steps
+   - Form fields mentioned in `[ACT] fill 'Field Name'` steps
+   - Navigation links mentioned in `[NAV]` steps (sidebar links, menu items)
+   - Status badges, labels, or text mentioned in `[DOM]` assertions
+3. **Flow walkability** — For the top 3-5 highest-priority cases, walk through the first 3-4 steps to verify the happy path is reachable (not a full test execution — just confirming the flow still works)
+4. **Precondition validity** — Verify precondition state exists:
+   - Required user accounts can log in
+   - Referenced pages/sections exist in the account area
+   - Features mentioned in preconditions are enabled (e.g., "RFQ feature enabled", "return/RMA feature enabled")
+5. **Console/network baseline** — Capture console errors and failed network requests on each visited page as baseline health signal
+
+**Delegation protocol:**
+
+```
+Delegate to: qa-testing-expert (playwright-firefox)
+Input: List of (case_id, url, elements_to_check, steps_to_walk) from static review
+Output: Per-case verification result:
+  - VERIFIED: page loads, elements found, flow reachable
+  - CHANGED: page loads but expected element missing or renamed → include screenshot
+  - BROKEN: page returns error, redirect loop, or critical JS errors
+  - BLOCKED: precondition cannot be met (user can't log in, feature disabled)
+```
+
+**Verification scope limits:**
+- Max 20 unique pages per review (deduplicate across cases)
+- Max 5 full flow walkthroughs (P0/Critical cases only)
+- Timeout: 60s per page, 5 min total verification budget
+- Screenshot on every CHANGED or BROKEN finding
+
+**Environment verification findings feed into the review report** as Dimension 8 rows with their own severity:
+- **BROKEN** → Blocker (test case will fail on execution — fix steps or preconditions)
+- **CHANGED** → Critical (element renamed or moved — update selectors/labels)
+- **BLOCKED** → High (precondition issue — may be environment-specific, not a test case defect)
+- **VERIFIED** → No finding (test case is environment-compatible)
+
+### Step 7: Auto-Fix Mode (`--fix` flag)
+
+When `--fix` is specified:
+1. Present the review report first (Step 5)
+2. For each Blocker and Critical finding, propose a specific fix
+3. **Ask for confirmation** before modifying any CSV file
+4. Apply fixes to the CSV, preserving all existing IDs and non-affected columns
+5. Re-run structure validation (Step 2) on the fixed file to confirm no regressions
+6. Show a before/after diff of changes made
+
+Fixable issues (auto-fix supported):
+- Missing type tags on steps → infer and add tags
+- Missing `errors[]` check → add to Cross_Layer_Checks
+- Hardcoded URLs → replace with `{{VAR}}` equivalents
+- Empty `Failure_Signals` → generate from Assertions + Cross_Layer_Checks
+- Missing `Cleanup` → infer from test actions (mutations → cleanup, read-only → `none`)
+
+Non-fixable issues (flagged for manual review):
+- Vague assertions → requires domain knowledge to make specific
+- Missing preconditions → requires understanding of test flow
+- Duplicate test cases → requires human decision on which to keep
+- Missing BL-*/ECL-* refs → requires domain analysis
+
+## Rules
+
+- **Read-only by default** — never modify CSV files without the `--fix` flag AND explicit user confirmation
+- **No false positives on legacy format** — if the CSV uses the legacy 11-column format, only check dimensions 1, 2, 4, and 7 (skip enriched-only columns)
+- **Severity reflects real impact** — a missing `[WAIT]` after a mutation is Critical (causes flaky tests), a missing ECL ref is Medium (informational)
+- **Actionable findings only** — every finding must include a specific suggested fix, not just "this is wrong"
+- **Preserve IDs** — never suggest renumbering or changing test case IDs
+- **Cross-suite duplication is expected across layers** — only flag duplication within the same layer/type
+
+## Agent Delegation
+
+| Agent | Role in Review | When |
+|-------|---------------|------|
+| **qa-testing-expert** | Live environment verification (Dimension 8) — navigates pages, checks elements, walks flows | `--verify` flag |
+
+The `qa-testing-expert` uses `playwright-firefox` for browser verification. This is its standard browser assignment — no conflict with other agents during review. The static review (Dimensions 1-7) does NOT require any agent delegation or browser.
+
+**Workflow:**
+1. Static review completes first (Dimensions 1-7)
+2. If `--verify` flag is set, extract verification targets from the static review findings
+3. Delegate to `qa-testing-expert` with the list of pages, elements, and flows to check
+4. Merge environment verification results into the final report
+
+## Integration with Other Skills
+
+| Skill | Relationship |
+|-------|-------------|
+| `/qa-test-cases-generator` | Review generated cases before appending to suites |
+| `/qa-coverage-gap` | Review newly generated gap-fill cases |
+| `/qa-checklist` | Checklists define expected coverage — review checks against them |
+| `/qa-regression` | Run review before regression to catch issues early |
+| `/qa-metrics` | Review findings feed into quality metrics |
+| `/qa-env-check` | Run env check before `--verify` to ensure environment is healthy |
+| `test-case-template.md` | The format contract that review validates against |

@@ -144,8 +144,21 @@ Skills are methodology libraries with supporting reference files. Read the suppo
 | Storefront | `FRONT_URL` |
 | Admin SPA | `BACK_URL` |
 | Admin creds | `ADMIN` / `ADMIN_PASSWORD` |
-| User creds | `USER_EMAIL` / `USER_PASSWORD` |
-| User2 creds | `USER2_EMAIL` / `USER2_PASSWORD` |
+| User creds (fallback) | `USER_EMAIL` / `USER_PASSWORD` |
+| User2 creds (fallback) | `USER2_EMAIL` / `USER2_PASSWORD` |
+
+## Agent User Pool (Parallel Isolation)
+
+When running in parallel, each browser slot uses a **dedicated test user** to prevent session/cart/order conflicts. Read `test-data/users/agent-user-pool.csv` and match on your assigned `{{BROWSER_SERVER}}`:
+
+| Browser Server | Personal User | B2B User (org) |
+|---------------|---------------|----------------|
+| `playwright-chrome` | `qa-agent-slot1@virtocommerce.com` | `test-john.mitchell-...@test-agent.com` (AcmeCorp) |
+| `playwright-firefox` | `qa-agent-slot2@virtocommerce.com` | `test-emily.johnson-...@test-agent.com` (TechFlow) |
+| `playwright-edge` | `qa-agent-slot3@virtocommerce.com` | `test-carlos.rodriguez-...@test-agent.com` (BuildRight) |
+
+**Resolution order:** agent-user-pool.csv → `.env` fallback. If pool users are not seeded (`seeded=false`), fall back to `.env` and log a warning.
+**Seeding:** `test-data/users/seed-agent-users.md` — run once to create personal users on the platform.
 | Store | `STORE_ID` |
 | Payment (Skyflow) | `SKYFLOW_VISA`, `SKYFLOW_MASTERCARD`, `SKYFLOW_EXPIRY`, `SKYFLOW_CVV` |
 

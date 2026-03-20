@@ -1,0 +1,21 @@
+{
+  "batch": "bopis-pickup",
+  "gaps": 6,
+  "casesGenerated": 9,
+  "suiteModifications": {
+    "05": {
+      "added": 9,
+      "newIds": [
+        "BOPIS-080",
+        "BOPIS-081",
+        "BOPIS-082",
+        "BOPIS-083",
+        "BOPIS-084",
+        "BOPIS-085",
+        "BOPIS-086",
+        "BOPIS-087",
+        "BOPIS-088"
+      ]
+    }
+  }
+}

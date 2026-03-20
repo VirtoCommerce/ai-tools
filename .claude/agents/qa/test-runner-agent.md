@@ -85,15 +85,22 @@ Each line in the `Cross_Layer_Checks` column:
 
 ### Variable Substitution
 
-Before executing any test case, substitute all `{{VAR}}` placeholders in `Test_Data`, `Steps`, `Assertions`, and `Cross_Layer_Checks` with values from environment variables:
+Before executing any test case, substitute all `{{VAR}}` placeholders in `Test_Data`, `Steps`, `Assertions`, and `Cross_Layer_Checks` with values from environment variables or the agent user pool:
+
+**User credentials — resolve from agent user pool first, fall back to .env:**
+
+```
+{{USER_EMAIL}}        → agent pool lookup by {{BROWSER_SERVER}} → personal_email (fallback: process.env.USER_EMAIL)
+{{USER_PASSWORD}}     → agent pool lookup by {{BROWSER_SERVER}} → personal_password (fallback: process.env.USER_PASSWORD)
+{{ORG_USER_EMAIL}}    → agent pool lookup by {{BROWSER_SERVER}} → b2b_email (fallback: process.env.ORG_USER_EMAIL)
+{{ORG_USER_PASSWORD}} → agent pool lookup by {{BROWSER_SERVER}} → b2b_password (fallback: process.env.ORG_USER_PASSWORD)
+```
+
+**Other variables — from .env:**
 
 ```
 {{FRONT_URL}}         → process.env.FRONT_URL
 {{BACK_URL}}          → process.env.BACK_URL
-{{USER_EMAIL}}        → process.env.USER_EMAIL
-{{USER_PASSWORD}}     → process.env.USER_PASSWORD
-{{ORG_USER_EMAIL}}    → process.env.ORG_USER_EMAIL
-{{ORG_USER_PASSWORD}} → process.env.ORG_USER_PASSWORD
 {{TEST_CARD_NUMBER}}  → process.env.TEST_CARD_NUMBER
 {{TEST_CARD_EXP}}     → process.env.TEST_CARD_EXP
 {{TEST_CARD_CVV}}     → process.env.TEST_CARD_CVV
@@ -103,14 +110,29 @@ Before executing any test case, substitute all `{{VAR}}` placeholders in `Test_D
 {{CURRENCY_CODE}}     → process.env.CURRENCY_CODE
 ```
 
+### Agent User Pool Resolution
+
+Each browser slot has a **dedicated test user** to prevent session/cart/order conflicts during parallel execution. Read `test-data/users/agent-user-pool.csv` and match on `server_name` = `{{BROWSER_SERVER}}`:
+
+| Browser Server | Personal User | B2B User |
+|---------------|---------------|----------|
+| `playwright-chrome` | `qa-agent-slot1@virtocommerce.com` | `test-john.mitchell-20260310@test-agent.com` (AcmeCorp) |
+| `playwright-firefox` | `qa-agent-slot2@virtocommerce.com` | `test-emily.johnson-20260310@test-agent.com` (TechFlow) |
+| `playwright-edge` | `qa-agent-slot3@virtocommerce.com` | `test-carlos.rodriguez-20260310@test-agent.com` (BuildRight) |
+
+**Why:** When agents run in parallel, sharing the same user causes cart pollution, order history bleed, and flaky authentication failures. Each agent gets its own user so tests are fully isolated.
+
+**Fallback:** If the pool CSV is missing or the `seeded` column is `false`, fall back to `.env` variables (`USER_EMAIL`/`USER_PASSWORD`). Log a warning: `"⚠ Agent user pool not available for {{BROWSER_SERVER}}, falling back to .env credentials"`.
+
 ---
 
 ## Phase 1: Setup
 
 ### 1.1 Read Test Suite
 - Read the CSV file at `{{SUITE_CSV_PATH}}`
+- **Read `test-data/users/agent-user-pool.csv`** — find the row where `server_name` matches `{{BROWSER_SERVER}}`. Store the resolved credentials for use in variable substitution and authentication.
 - Parse all test cases using the enriched column format above
-- Substitute all `{{VAR}}` placeholders in each test case using environment variables
+- Substitute all `{{VAR}}` placeholders in each test case using the resolved credentials and environment variables
 - Count total test cases and note the sections
 
 ### 1.2 Environment Verification
@@ -121,7 +143,7 @@ Before executing any test case, substitute all `{{VAR}}` placeholders in `Test_D
 
 ### 1.3 Authentication
 - Navigate to the sign-in page
-- Sign in using `USER_EMAIL` / `USER_PASSWORD`
+- Sign in using the **slot-assigned credentials** from the agent user pool (personal or B2B, depending on suite type)
 - Verify successful authentication (user name displayed, dashboard/home loaded)
 - Check `browser_network_requests` — no 401 on auth API calls
 

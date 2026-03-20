@@ -604,3 +604,173 @@ PAY-DECLINE-005,Declined Card - Cart and Checkout State Preserved,Declined Cards
 [STATE] Shipping method selection preserved after payment decline
 [DOM] Checkout progress indicator shows user still in payment step (not reset to start)","[API] createOrderFromCart GraphQL mutation errors[] confirms no order created
 [ADMIN] No new order in admin for this cart session","Cart cleared after decline — items lost requiring re-add; shipping address reset requiring re-entry; shipping method cleared requiring re-selection; user navigated back to checkout start","none — no order created; verify cart state is clean for next test","Coverage Gap Analysis",Manual
+PAY-3DS-001,CyberSource 3DS - Challenge Flow Completed Successfully,CyberSource > 3D Secure,High,"BL-PAY-003, BL-PAY-004","ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment processor configured and active
+- 3DS-enrolled test card available (obtain from CyberSource test card documentation — e.g. a card that triggers a challenge window)
+- Browser DevTools Network tab open","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_3DS_CARD={{TEST_3DS_CARD}}, TEST_3DS_EXP={{TEST_3DS_EXP}}, TEST_3DS_CVV={{TEST_3DS_CVV}}, TEST_3DS_PASSWORD={{TEST_3DS_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart — CyberSource payment form is on cart page
+[WAIT] Wait for CyberSource payment section to render with Flex Microform iframe fields
+[ACT] Select 'Bank card (CyberSource)' payment method if not pre-selected
+[ACT] Fill 'Card Number' iframe field with {{TEST_3DS_CARD}} (3DS-enrolled test card)
+[ACT] Fill 'Cardholder Name' with 'John Smith'; fill 'Expiry Date' with {{TEST_3DS_EXP}}; fill 'CVV' with {{TEST_3DS_CVV}}
+[ACT] Click 'Place Order'
+[WAIT] Wait for 3DS challenge modal or popup to appear (Verified by Visa or Mastercard SecureCode window)
+[ASSERT] 3DS authentication dialog is visible — prompts for OTP or password
+[ACT] Enter the 3DS authentication credential {{TEST_3DS_PASSWORD}} in the challenge dialog
+[ACT] Submit the challenge dialog
+[WAIT] Wait for authentication result and order processing to complete
+[ASSERT] Order confirmation page is displayed after successful 3DS authentication","[DOM] 3DS challenge dialog appears after clicking 'Place Order' — not skipped or bypassed
+[STATE] Challenge dialog prompts for Verified by Visa / SecureCode credential
+[NAV] After successful challenge completion user is navigated to order confirmation page
+[DOM] Order confirmation shows order number and ordered items","[API] createOrderFromCart GraphQL mutation response has no errors[] entries after 3DS completion
+[NETWORK] 3DS authentication token (payer_auth_enroll_reply or equivalent) present in CyberSource request — not raw card data
+[ADMIN] Order in admin Orders list with status reflecting successful 3DS-authenticated payment","3DS challenge dialog never appears — authentication silently bypassed; challenge dialog appears but cannot be interacted with (blocked by popup blocker or iframe sandbox); order fails after successful challenge completion; raw card data visible in network payloads","Cancel order via admin if order was created","Checklist #9 item 4; ECL-9.1; BL-PAY-003; BL-PAY-004",Manual
+PAY-3DS-002,CyberSource 3DS - Failed Authentication Blocked,CyberSource > 3D Secure,High,"BL-PAY-003, BL-PAY-004","ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment processor configured and active
+- 3DS-enrolled test card available that triggers a challenge
+- Incorrect 3DS password/OTP known for the test card","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_3DS_CARD={{TEST_3DS_CARD}}, TEST_3DS_EXP={{TEST_3DS_EXP}}, TEST_3DS_CVV={{TEST_3DS_CVV}}, TEST_3DS_WRONG_PASSWORD={{TEST_3DS_WRONG_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; fill CyberSource payment form with 3DS-enrolled card {{TEST_3DS_CARD}}, expiry {{TEST_3DS_EXP}}, CVV {{TEST_3DS_CVV}}
+[ACT] Click 'Place Order'
+[WAIT] Wait for 3DS challenge dialog to appear
+[ASSERT] 3DS challenge dialog is present
+[ACT] Enter the incorrect 3DS password {{TEST_3DS_WRONG_PASSWORD}} in the challenge dialog
+[ACT] Submit the challenge dialog
+[WAIT] Wait for authentication failure response
+[ASSERT] 3DS authentication failure message displayed — e.g., 'Authentication failed' or equivalent
+[ASSERT] Order is NOT created — user remains on cart or receives error
+[ACT] Navigate to account order history
+[ASSERT] No new order appears in order history","[DOM] Error message displayed indicating 3DS authentication failure — not a generic system error
+[STATE] No order created after failed 3DS authentication
+[NAV] User remains on cart page or is returned to cart page — not navigated to order confirmation
+[STATE] Payment form accessible for retry with correct credentials or a different card","[API] createOrderFromCart GraphQL mutation either not called or returns errors[] for 3DS failure
+[CONSOLE] No unhandled JS exceptions from 3DS SDK / CyberSource iframe communication
+[ADMIN] No new order in admin for this session","Order created despite failed 3DS authentication (BL-PAY-003 violation); no error message shown to user after authentication failure; user stranded on 3DS dialog with no way to cancel or retry; order history shows duplicate or phantom order","none — no order expected; verify no phantom order in admin","Checklist #9 item 4; ECL-9.1; BL-PAY-003; BL-PAY-004",Manual
+PAY-GUEST-001,Guest Checkout - CyberSource Payment Completes Without Account,Guest Checkout,High,"BL-PAY-003, BL-CHK-005","ECL-14.1","- User is NOT logged in (anonymous / guest session)
+- Guest checkout enabled in store settings
+- Cart has at least one item added as guest
+- CyberSource payment processor configured and active","FRONT_URL={{FRONT_URL}}, GUEST_EMAIL=guest-{{TIMESTAMP}}@test.example.com, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Open a fresh incognito/private browser window; navigate to {{FRONT_URL}}
+[ASSERT] User is not logged in — no user name or account icon in header
+[ACT] Add at least one product to cart
+[NAV] Navigate to {{FRONT_URL}}/cart
+[WAIT] Wait for CyberSource payment form to render in the guest cart view
+[ACT] Enter guest email GUEST_EMAIL in the guest checkout email field (if prompted)
+[ACT] Fill shipping address fields with valid test address data
+[ACT] Fill 'Card Number' iframe field with '4622943127013705'
+[ACT] Fill 'Cardholder Name' with 'Guest User'; fill 'Expiry Date' with '09/2029'; fill 'CVV' with '838'
+[ACT] Click 'Place Order'
+[WAIT] Wait for order processing response","[DOM] CyberSource payment form renders correctly for unauthenticated / guest session — no authentication wall
+[NAV] After successful payment guest user is navigated to order confirmation page
+[DOM] Order confirmation page shows order number and ordered items
+[STATE] No account registration required to complete payment","[API] createOrderFromCart GraphQL mutation response has no errors[] entries
+[NETWORK] Payment token (not raw card number) sent in request payload for guest session
+[ADMIN] Order appears in admin Orders list with guest email and correct payment method","CyberSource payment form fails to render for guest users; guest is forced to create an account before payment form appears; order confirmation not reached without registration; raw card data in network payload for guest session","none — guest order; no cleanup required unless test order removal is standard practice","ECL-14.1; BL-PAY-003; BL-CHK-005",Manual
+PAY-GUEST-002,Guest Checkout - Payment Validation Same as Authenticated User,Guest Checkout,High,"BL-PAY-003, BL-CHK-005","ECL-14.1, ECL-9.1","- User is NOT logged in (anonymous / guest session)
+- Guest checkout enabled in store settings
+- Cart has at least one item added as guest
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}","[NAV] Open a fresh incognito/private browser window; add product to cart; navigate to {{FRONT_URL}}/cart
+[ASSERT] User is not logged in — guest context confirmed
+[WAIT] Wait for CyberSource payment form to render
+[ACT] Leave 'Card Number' field empty; click 'Place Order'
+[ASSERT] Inline validation error appears on 'Card Number' field — same as authenticated user behavior
+[ACT] Fill 'Card Number' with '1234567890123456' (Luhn-failing); click 'Place Order'
+[ASSERT] 'Invalid card number' or equivalent error displayed
+[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Expiry Date' with a past date (e.g., '01/2020'); click 'Place Order'
+[ASSERT] Expired date validation error displayed on 'Expiry Date' field
+[ACT] Fill valid card details: '4622943127013705', '09/2029', '838'; leave 'Cardholder Name' empty; click 'Place Order'
+[ASSERT] Validation error for missing cardholder name (or form submits — document behavior)","[DOM] Each validation error appears at field level for guest users — not a single generic error
+[STATE] Form does not submit with any invalid guest payment input
+[NAV] Guest user remains on cart page after each validation failure","[API] No createOrderFromCart GraphQL mutation fired for any invalid payment attempt
+[CONSOLE] No JS errors from CyberSource iframe during guest validation flows","Validation skipped for guest users while enforced for authenticated users; generic top-level error replaces field-level errors in guest context; form submits with invalid card in guest session","none — no order created","ECL-14.1; ECL-9.1; BL-PAY-003; BL-CHK-005",Manual
+PAY-SAVED-001,Saved Card - Returning User Pays Without Re-entering Card Details,Saved Cards,High,"BL-PAY-003, BL-PAY-001","ECL-14.6","- Logged in as registered user who has previously completed a successful CyberSource payment
+- A saved/tokenized card exists in the user's account (from prior payment)
+- Cart has at least one item
+- CyberSource payment processor configured and active","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{RETURNING_USER_EMAIL}}, USER_PASSWORD={{RETURNING_USER_PASSWORD}}","[NAV] Log in as {{RETURNING_USER_EMAIL}} / {{RETURNING_USER_PASSWORD}} — a user with a previously saved card
+[ACT] Add at least one item to cart
+[NAV] Navigate to {{FRONT_URL}}/cart
+[WAIT] Wait for CyberSource payment section to render
+[ASSERT] Previously saved card is displayed in the payment section — e.g., 'Visa ending in XXXX' or equivalent masked card reference
+[ACT] Select the saved card option (if not pre-selected)
+[ASSERT] Card number, expiry, and CVV fields are NOT fully displayed or editable — only masked card info shown
+[ACT] Enter CVV only if prompted (some processors require CVV re-entry for saved cards)
+[ACT] Click 'Place Order'
+[WAIT] Wait for order processing response
+[ASSERT] Order confirmation page displayed — payment succeeded using saved card","[DOM] Saved card displayed in payment section with masked card number (e.g., '•••• •••• •••• 3705')
+[STATE] Full card number and expiry fields not re-shown or editable when saved card selected
+[NAV] Order confirmation reached after clicking 'Place Order' with saved card
+[DOM] Order confirmation shows order number","[API] createOrderFromCart GraphQL mutation response has no errors[] entries
+[NETWORK] Network request uses stored token — raw card PAN (4622943127013705) absent from all payloads
+[ADMIN] Order in admin shows payment method as stored card / tokenized reference","Saved card not shown after prior successful payment; user forced to re-enter full card details; raw card number visible in network payload for saved-card payment; order fails when using saved card but succeeds when entering card manually","Cancel order via admin if created","Checklist #9 item 12; ECL-14.6; BL-PAY-003; BL-PAY-001",Manual
+PAY-SWITCH-001,Payment Method Switch - Form Resets When Switching Processors,Payment Method Switching,Medium,BL-PAY-004,"ECL-7.1","- Logged in as registered user
+- Cart has at least one item
+- At least two payment processors enabled (e.g., CyberSource and another method such as Skyflow or manual/PO)
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart; confirm at least two payment method options are visible
+[ACT] Select 'Bank card (CyberSource)' payment method
+[WAIT] Wait for CyberSource Flex Microform iframe fields to render
+[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Cardholder Name' with 'John Smith'; fill 'Expiry Date' with '09/2029'; fill 'CVV' with '838'
+[ASSERT] All four CyberSource fields contain entered data
+[ACT] Switch to a different payment method (e.g., select 'Purchase Order' or another available option)
+[WAIT] Wait for the payment form area to update
+[ASSERT] CyberSource form fields are hidden or cleared — previously entered card data is not persisted in DOM
+[ACT] Switch back to 'Bank card (CyberSource)'
+[WAIT] Wait for CyberSource form to re-render
+[ASSERT] Card fields are empty — no previously entered values retained after switching away and back","[DOM] CyberSource payment fields cleared / iframes re-initialized after switching away and returning
+[STATE] No stale card data persisted in any input field after payment method switch
+[STATE] The alternative payment method form renders correctly when its option is selected","[CONSOLE] No JS errors from CyberSource Flex Microform during form reset and re-initialization
+[NETWORK] No payment tokenization request fired when switching payment methods (only on Place Order)","Previously entered card data still present in iframe fields after switching away (data leak); switching causes JS error breaking payment form; switching back to CyberSource shows empty form but Place Order fires with stale token","none — no order created","ECL-7.1; BL-PAY-004",Manual
+PAY-MANUAL-001,Manual Payment - Purchase Order Placed with Pending Payment Status,Manual Payments,Medium,BL-PAY-003,"","- Logged in as registered B2B user (organization member with PO payment permission)
+- Cart has at least one item
+- 'Purchase Order' or 'Wire Transfer' (manual/offline) payment method enabled in store settings
+- Admin access available to verify order status","FRONT_URL={{FRONT_URL}}, BACK_URL={{BACK_URL}}, USER_EMAIL={{B2B_USER_EMAIL}}, USER_PASSWORD={{B2B_USER_PASSWORD}}, ADMIN_EMAIL={{ADMIN_EMAIL}}, ADMIN_PASSWORD={{ADMIN_PASSWORD}}, PO_NUMBER=PO-TEST-{{TIMESTAMP}}","[NAV] Log in as {{B2B_USER_EMAIL}} / {{B2B_USER_PASSWORD}}; add at least one item to cart
+[NAV] Navigate to {{FRONT_URL}}/cart
+[WAIT] Wait for payment methods to render
+[ACT] Select 'Purchase Order' or 'Wire Transfer' (manual/offline payment method)
+[ASSERT] PO reference number field appears (if applicable) — fill with PO_NUMBER
+[ASSERT] No card number, CVV, or expiry date fields are shown for manual payment
+[ACT] Click 'Place Order'
+[WAIT] Wait for order confirmation response
+[ASSERT] Order confirmation page displayed with order number
+[ASSERT] Payment status on confirmation indicates 'Pending Payment' or equivalent (not 'Paid')
+[NAV] Log in to {{BACK_URL}} admin with {{ADMIN_EMAIL}} / {{ADMIN_PASSWORD}}; locate the order in Orders list
+[ASSERT] Order in admin shows payment status as 'Pending' or 'Awaiting Payment'
+[ASSERT] Order status allows fulfilment workflow to proceed (not blocked at payment)","[DOM] Manual payment option selectable without triggering card input fields
+[NAV] Order confirmation page reached after selecting manual payment and clicking 'Place Order'
+[DOM] Order confirmation indicates pending/offline payment status — not shown as 'Paid'
+[ADMIN] Order in admin with payment status 'Pending' or 'New' (not 'Paid')","[API] createOrderFromCart GraphQL mutation errors[] is empty for manual payment flow
+[ADMIN] Order payment method recorded as Purchase Order / Wire Transfer in admin order details","Manual payment option not shown to B2B user; form incorrectly shows card input fields for manual payment; order placed but shows 'Paid' status immediately (BL-PAY-003 violation); order not visible in admin after placement","Cancel order via admin","Checklist #9 item 11; BL-PAY-003",Manual
+PAY-XLAY-001,Cross-Layer - Order Total at Checkout Matches Gateway Charge Amount,Cross-Layer Verification,Medium,"BL-CHK-006, BL-PAY-003","ECL-14.6","- Logged in as registered user
+- Cart has at least one item with a known price (record the expected total)
+- CyberSource payment processor active
+- Browser DevTools Network tab open and recording
+- Admin access available","FRONT_URL={{FRONT_URL}}, BACK_URL={{BACK_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, ADMIN_EMAIL={{ADMIN_EMAIL}}, ADMIN_PASSWORD={{ADMIN_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart; record the displayed order total (subtotal + shipping + taxes)
+[ASSERT] Displayed total matches expected value based on cart contents
+[ACT] Fill CyberSource payment form: '4622943127013705', 'John Smith', '09/2029', '838'
+[ACT] In DevTools Network tab start recording; click 'Place Order'
+[WAIT] Wait for order confirmation page
+[ACT] In DevTools Network tab locate the CyberSource tokenization / payment authorization request; inspect the 'amount' or 'orderAmount' field in the request payload
+[ASSERT] Amount in payment gateway request equals the total displayed in the cart
+[NAV] On order confirmation page: record the total displayed
+[ASSERT] Confirmation page total matches the cart total recorded before payment
+[NAV] Log in to {{BACK_URL}} admin; locate the order; open order details
+[ASSERT] Order total in admin matches the cart and confirmation totals","[MATH] Amount in CyberSource payment request payload equals displayed cart total (to 2 decimal places)
+[MATH] Order confirmation total equals cart total — no rounding or truncation
+[MATH] Admin order total equals confirmation total — consistent across all three surfaces","[NETWORK] CyberSource payment request 'amount' field value matches storefront displayed total
+[API] createOrderFromCart GraphQL mutation totalPrice equals displayed cart total
+[ADMIN] Order total in admin details matches storefront and network payload amounts","Amount in network request differs from displayed total (overcharge or undercharge — BL-CHK-006 violation); confirmation total differs from cart total; admin order total differs from payment amount; rounding inconsistency causes 1-cent discrepancy","Cancel order via admin","ECL-14.6; BL-CHK-006; BL-PAY-003",Manual
+PAY-SKTOK-001,Skyflow Tokenization - Raw Card PAN Absent from All Network Requests,Skyflow > Tokenization,Medium,"BL-PAY-001, BL-PAY-002","ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- Skyflow payment processor configured
+- Browser DevTools Network tab open and recording ALL requests (including XHR/Fetch)
+- Test card number known for verification: 4622943127013705","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart; select Skyflow payment method; open DevTools Network tab and start recording
+[ACT] Click 'Place Order' — this redirects to {{FRONT_URL}}/checkout/payment with Skyflow form
+[WAIT] Wait for Skyflow payment form to load at {{FRONT_URL}}/checkout/payment
+[ACT] Fill Skyflow 'Card Number' iframe field with '4622943127013705'; fill 'Expiry Date' with '09/2029'; fill 'CVV' with '838'
+[ACT] Submit payment via Skyflow form
+[WAIT] Wait for order processing to complete
+[ACT] In DevTools Network tab: filter requests by XHR/Fetch; search all request payloads for the string '4622943127013705'
+[ASSERT] Raw card number '4622943127013705' is NOT present in any request payload, URL parameter, or response body
+[ACT] Locate the Skyflow tokenization request in Network tab; inspect the token value sent to the Virto Commerce backend
+[ASSERT] Token format is a UUID or alphanumeric reference — NOT the raw card PAN
+[ASSERT] Order confirmation page reached after successful Skyflow payment","[NETWORK] String '4622943127013705' absent from all captured network request payloads and URLs
+[NETWORK] Skyflow token (UUID or alphanumeric) present in the request sent to Virto Commerce backend instead of raw PAN
+[NAV] Order confirmation reached — tokenization did not block payment flow","[API] createOrderFromCart GraphQL mutation errors[] is empty
+[ADMIN] Order in admin shows Skyflow token or masked card reference — not raw PAN","Raw card number '4622943127013705' found in any network request payload (BL-PAY-001 / BL-PAY-002 violation); Skyflow token not present in backend request; tokenization request fails causing order to not complete; token format is full PAN rather than opaque reference","Cancel order via admin","Checklist #9 item 10; ECL-9.1; BL-PAY-001; BL-PAY-002",Manual

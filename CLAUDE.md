@@ -18,9 +18,9 @@ npm install              # Install dependencies
 npm run env:check        # Verify all required env vars (33 total)
 npm run ci:smoke         # Smoke tests only (suite 01)
 npm run ci:critical      # P0 suites (01, 06, 08, 14)
-npm run ci:frontend      # Frontend suites (01-13, 35-36)
-npm run ci:backend       # Backend suites (14-34)
-npm run ci:full          # Full regression (all 36 suites)
+npm run ci:frontend      # Frontend suites (01-13, 35-36, 41)
+npm run ci:backend       # Backend suites (14-34, 37-40, 42)
+npm run ci:full          # Full regression (all 45 suites)
 npm run ci:regression    # Run CI regression via Claude Agent SDK
 npm run ci:coverage      # Coverage generation pipeline
 npm run ci:notify        # Teams notification (requires TEAMS_WEBHOOK_URL)
@@ -38,14 +38,14 @@ Create `.env` (33 vars). Validate: `npm run env:check`. Access: `import { env } 
 ## Repository Structure
 
 ```
-├── .claude/agents/       # 14 agents in qa/ + ba/ subfolders, knowledge/ for shared refs
-├── .claude/skills/       # 19 skills (vc-knowledge, testing, qa-methodology)
-├── .claude/commands/     # 10 slash commands
+├── .claude/agents/       # 14 agents in qa/ + ba/ subfolders, knowledge/ (14 files) for shared refs
+├── .claude/skills/       # 20 skills (vc-knowledge, testing, qa-methodology)
+├── .claude/commands/     # 12 slash commands
 ├── .claude/rules/        # Reference docs (agents, regression, skills, MCP)
 ├── config/               # Playwright MCP configs + test-suites.json manifest
 ├── ci/                   # CI regression — Docker + Claude Agent SDK (gitignored)
 ├── docs/prompts/         # LLM prompt templates
-├── regression/suites/    # 36 CSV suites (~1,546 cases): Frontend/ + Backend/
+├── regression/suites/    # 45 CSV suites (~2,052 cases): Frontend/ + Backend/
 ├── tests/                # Test cases by sprint/JIRA ticket
 ├── reports/              # Bug reports + regression reports
 ├── test-data/            # Orgs, search queries, uploads
@@ -80,6 +80,6 @@ Registration/Auth, Catalog/Facets, Cart (variations, BOPIS), Search, Addresses, 
 
 - `.claude/rules/agents.md` — 14 agents, browser assignments, delegation rules
 - `.claude/rules/regression.md` — 3 testing modes, CI pipeline, suite manifest, selection groups
-- `.claude/rules/skills-commands.md` — 10 commands + 18 skills with arguments
+- `.claude/rules/skills-commands.md` — 12 commands + 20 skills with arguments
 - `.claude/rules/mcp-browsers.md` — MCP servers, browser rules, Storybook setup
 - Virto Commerce docs: Context7 library `/virtocommerce/vc-docs` (resolve-library-id → query-docs)

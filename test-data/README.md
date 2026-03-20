@@ -21,7 +21,9 @@ test-data/
 │   ├── _seed-results-orgs.json     # Live platform IDs (source of truth)
 │   └── seed-report-20260310.md     # Human-readable seed report
 ├── users/                           # Personal user accounts
-│   └── test-users.csv
+│   ├── test-users.csv              # 50 personal user templates
+│   ├── agent-user-pool.csv         # 3 dedicated users for parallel agents (1 per browser slot)
+│   └── seed-agent-users.md         # REST API seeding scripts for agent pool users
 ├── organizations/                   # B2B organizations (legacy, special chars)
 │   ├── sample-organizations.csv    # Special character testing
 │   ├── search-test-data.csv        # Organization search test cases
@@ -156,6 +158,9 @@ B2B organizations, contacts, and users with **live platform IDs**. Primary test 
 
 ### 2. Users (users/)
 Personal user accounts for authentication and authorization testing. Additional credentials stored in `.env` (USER_EMAIL, USER2_EMAIL, USER_VIRTO, ADMIN).
+- `test-users.csv` — 50 personal user templates (not seeded by default)
+- `agent-user-pool.csv` — **3 dedicated users for parallel agent testing** (1 per browser slot). Prevents session/cart/order conflicts when agents run simultaneously. See `seed-agent-users.md` for seeding instructions.
+- `seed-agent-users.md` — REST API scripts to create agent pool users on the platform
 
 ### 3. Organizations (organizations/)
 Legacy B2B company data for special character testing and search. For seeded orgs with platform IDs, use `b2b/` instead.

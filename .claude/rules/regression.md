@@ -29,17 +29,17 @@ Load a prompt template from `docs/prompts/`, execute via MCP browser tools with 
 
 Central configuration for regression orchestration. Defines:
 - **Browser pool**: 3 slots (playwright-chrome, playwright-firefox, playwright-edge) with fallback chain
-- **Suite definitions**: 36 suites (15 frontend + 21 backend) with id, name, CSV file path, priority, test count, assigned agent type, and tags
-- **Selection groups**: `smoke` (01), `critical` (01,06,08,14), `sprint` (26 suites), `full` (all 36), `frontend` (01-13,35-36), `backend` (14-34)
+- **Suite definitions**: 45 suites (19 frontend + 26 backend) with id, name, CSV file path, priority, test count, assigned agent type, and tags
+- **Selection groups**: `smoke` (01), `critical` (01,06,08,14), `release` (00), `sprint` (33 suites), `full` (all 45), `frontend` (01-13,35-36,41), `backend` (14-34,37-40,42)
 - **Defaults**: max 3 parallel agents, 2 retries, 30s retry delay, HAR capture enabled
 
 ## Regression Test Suites
 
-36 modular suites + 1 master suite in `regression/suites/` (Frontend/ + Backend/) in TestRail CSV format (`ID, Title, Section, Type, Priority, Estimate, Preconditions, Steps, Expected Result, References, Automation Status`). Full definitions in `config/test-suites.json`. **Total: ~1,546 test cases** (~643 frontend + 903 backend).
+45 modular suites + 1 master suite in `regression/suites/` (Frontend/ + Backend/) in enriched agent-native CSV format (`ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status`). Full definitions in `config/test-suites.json`. **Total: ~2,052 test cases** (~1,078 frontend + ~974 backend).
 
 - **Suite 00** (`Frontend/00-full-regression-release.csv`): Master suite — 90 consolidated P0/P1 test cases for major releases
-- **Frontend** (suites 01-13, 35-36): Smoke, Auth, Catalog, Cart, BOPIS, Payment, GA4, Security, A11y, i18n, Perf, Browser Compat, B2C, White Labeling, Configurable Products
-- **Backend** (suites 14-34): Platform API, GraphQL xAPI, Catalog/Store/Pricing/Orders/Customer/Inventory/Marketing/Notifications/CMS/Search/Assets/Settings Admin, CSV Import/Export, Shipping, SEO, White Labeling, Push Messages, Image Tools
+- **Frontend** (suites 01-13, 35-36, 41): Smoke, Auth, Catalog, Cart (04a), Checkout (04b), Orders & Quotes (04c), BOPIS, Payment, GA4, Security, A11y, i18n, Perf, Browser Compat, B2C, White Labeling, Configurable Products, Coupons & Promotions
+- **Backend** (suites 14-34, 37-40, 42): Platform API, GraphQL xAPI, Catalog/Store/Pricing/Orders/Customer/Inventory/Marketing/Notifications/CMS/Search/Assets/Settings Admin, CSV Import/Export, Shipping, SEO, White Labeling, Push Messages, Image Tools, Returns, Contracts, Loyalty, Channels & Data Quality, xMarketing
 - **P0 suites**: 01 (Smoke), 06 (Payment), 08 (Security), 14 (Platform API)
 
 ### Selection Groups
@@ -48,10 +48,11 @@ Central configuration for regression orchestration. Defines:
 |-----------|--------|----------|
 | `smoke` | 01 | Daily validation before deployment |
 | `critical` | 01, 06, 08, 14 | P0 suites only |
-| `sprint` | 26 suites (01-06, 08, 14-27, 29-31, 35-36) | Before sprint release |
-| `full` | All 36 | Before production release |
-| `frontend` | 01-13, 35-36 | Frontend-only regression |
-| `backend` | 14-34 | Backend-only regression |
+| `release` | 00 | Master suite for major releases |
+| `sprint` | 33 suites (01-06, 08, 14-27, 29-31, 35-39, 41-42) | Before sprint release |
+| `full` | All 45 | Before production release |
+| `frontend` | 01-13, 35-36, 41 (18 suites) | Frontend-only regression |
+| `backend` | 14-34, 37-40, 42 (26 suites) | Backend-only regression |
 
 ## CI Regression Testing
 
