@@ -87,26 +87,37 @@ Parse the change source to extract a structured change inventory:
 2. Query Context7 (`/virtocommerce/vc-docs`) for the module's latest documentation — extract API endpoints, configuration options, recent changes
 3. If a specific version is known: check GitHub releases via `gh api repos/VirtoCommerce/vc-module-<name>/releases/latest`
 
-**For diff (`diff`) — detect deployed platform + storefront changes:**
+**For diff (`diff`) — detect deployed platform + theme changes:**
 
-**Backend (platform modules):**
-1. Fetch deployed module versions: `curl -sk {BACK_URL}/api/platform/modules`
-2. Compare against `reports/full-cycle/last-modules.json` (if exists)
-3. If modules changed → identify which modules updated → map to backend suites using `module-suite-map.md`
+The QA environment is defined by files in the deploy repo `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`):
 
-**Frontend (storefront):**
-4. Fetch storefront build info: navigate to `{FRONT_URL}` and check for:
-   - HTML meta tag `<meta name="version">` or build hash in page source
-   - Asset URLs (JS/CSS bundles contain hash — e.g., `app.abc123.js`)
-   - Or fetch `{FRONT_URL}/version.json` or `{FRONT_URL}/_nuxt/builds/meta/` if available
-5. Compare asset hashes against `reports/full-cycle/last-frontend.json` (if exists)
-6. If frontend changed → map to frontend suites: 01 (smoke), 02-13 (functional), 35-36 (WL, configurable)
+**Step 1 — Fetch current deploy state via GitHub MCP:**
+1. `backend/packages.json` — platform version + all module IDs and versions
+2. `theme/artifact.json` — theme package URL with version (e.g., `vc-theme-b2b-vue-2.44.0-alpha.2262`)
 
-**Both:**
-7. If no version files exist → save current state and default to smoke suites (01) as baseline
-8. Save current versions to `reports/full-cycle/last-modules.json` and `reports/full-cycle/last-frontend.json`
-9. Also check `git diff --name-only` for changes to test files in this repo (updated suites, new test data)
-10. Merge backend + frontend affected suites (deduplicate)
+Use GitHub MCP: `get_file_contents` with `owner: "VirtoCommerce"`, `repo: "vc-deploy-dev"`, `branch: "vcst-qa"` for each file.
+
+**Step 2 — Compare against last known state:**
+- Compare with `reports/full-cycle/last-deploy-state.json` (if exists)
+- Diff module versions: identify which modules have new versions
+- Diff theme version: if changed → theme/UI deployment
+
+**Step 3 — Map changes to suites:**
+
+| What changed | Affected suites |
+|-------------|----------------|
+| Backend module version changed | Map module name to suites via `module-suite-map.md` |
+| `PlatformVersion` changed | All suites (platform upgrade) — run `critical` selection |
+| Theme version changed | Frontend suites: 01-13, 35 (WL) |
+| Nothing changed | No sync needed — skip |
+
+**Step 4 — Save current state:**
+- Write `reports/full-cycle/last-deploy-state.json` with both files' content
+- If no previous state existed → save current and default to smoke (01) as baseline
+
+**Step 5 — Also check test repo changes:**
+- `git diff --name-only` for changes to test files in this repo (updated suites, new test data)
+- Merge with deploy-detected affected suites (deduplicate)
 
 **For changelog (`changelog <version>`):**
 1. Query Context7 for release notes / changelog for the specified version

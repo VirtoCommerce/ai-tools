@@ -19,24 +19,21 @@ You do NOT have browser access. All analysis is static (file-based + git-based).
 
 Based on the change source provided:
 
-**If `diff` (scheduled CI — detect platform + storefront changes):**
+**If `diff` (scheduled CI — detect deployed changes via deploy repo):**
 
-Backend:
-1. Fetch deployed module versions: `curl -sk {BACK_URL}/api/platform/modules`
-2. Compare against `reports/full-cycle/last-modules.json` (if exists)
-3. If modules changed → map updated modules to backend suites via `module-suite-map.md`
+Fetch current deploy state from `VirtoCommerce/vc-deploy-dev` branch `vcst-qa` via GitHub MCP:
 
-Frontend:
-4. Fetch storefront page: `curl -sk {FRONT_URL}` and extract asset hashes from JS/CSS bundle URLs (e.g., `app.abc123.js`)
-5. Compare against `reports/full-cycle/last-frontend.json` (if exists)
-6. If frontend changed → affected suites: 01 (smoke), 02-13 (functional), 35-36, 41
+1. Read `backend/packages.json` → platform version + all module IDs/versions
+2. Read `theme/artifact.json` → theme package version
+3. Compare against `reports/full-cycle/last-deploy-state.json` (if exists)
+4. Diff module versions → map changed modules to suites via `module-suite-map.md`
+5. If `PlatformVersion` changed → run `critical` selection (platform upgrade)
+6. If theme version changed → frontend suites: 01-13, 35
+7. If no previous state → save current, default to smoke (01)
+8. Save current state to `reports/full-cycle/last-deploy-state.json`
+9. Also check `git diff --name-only` for test file changes in this repo
 
-Both:
-7. If no version files exist → save current state, default to smoke (01)
-8. Save versions to `reports/full-cycle/last-modules.json` and `reports/full-cycle/last-frontend.json`
-9. Merge backend + frontend affected suites (deduplicate)
-
-This detects deployments without needing access to VC source repos.
+This detects deployments without needing access to VC source repos or live environment.
 
 **If `PR #NNN` (manual trigger):**
 ```bash
