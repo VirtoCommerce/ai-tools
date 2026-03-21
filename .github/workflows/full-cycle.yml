@@ -1,0 +1,334 @@
+name: Full Test Cycle (Sync → Lifecycle → Regression)
+
+on:
+  # Trigger on PR merge to main
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+  # Scheduled: after daily deploy
+  schedule:
+    - cron: '0 8 * * 1-5'  # Mon-Fri at 8:00 AM UTC
+
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      change_source:
+        description: 'Change source: "PR #123", "module orders", "changelog 3.850.0", "diff"'
+        required: true
+        default: 'diff'
+        type: string
+      skip_sync:
+        description: 'Skip Phase 1 (sync)'
+        required: false
+        default: false
+        type: boolean
+      skip_lifecycle:
+        description: 'Skip Phase 2 (lifecycle review)'
+        required: false
+        default: false
+        type: boolean
+      skip_regression:
+        description: 'Skip Phase 3 (regression)'
+        required: false
+        default: false
+        type: boolean
+      suite_selection:
+        description: 'Override regression scope (empty = auto-detect from sync)'
+        required: false
+        default: ''
+        type: string
+      environment:
+        description: 'Test environment'
+        required: false
+        default: 'qa'
+        type: choice
+        options:
+          - qa
+          - staging
+      budget:
+        description: 'Max budget (USD) for all phases'
+        required: false
+        default: '20.0'
+        type: string
+      model:
+        description: 'Claude model'
+        required: false
+        default: 'claude-sonnet-4-5-20250929'
+        type: choice
+        options:
+          - claude-sonnet-4-5-20250929
+          - claude-opus-4-6
+
+concurrency:
+  group: full-cycle-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+# ─────────────────────────────────────────────────────────────
+# Phase 1 (Sync) + Phase 2 (Lifecycle): run on host via run-full-cycle.ts
+#   No browser needed — Agent SDK with file tools only
+#   Commits updated test cases to main
+#
+# Phase 3 (Regression): run in Docker via run-regression.ts
+#   Needs Playwright browser in Docker container
+#   Uses affected suites from Phase 1 output
+# ─────────────────────────────────────────────────────────────
+
+jobs:
+  sync-and-lifecycle:
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      affected_suites: ${{ steps.run.outputs.affected_suites }}
+      cycle_verdict: ${{ steps.run.outputs.verdict }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Determine change source
+        id: source
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "value=PR #${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "value=diff" >> $GITHUB_OUTPUT
+          else
+            echo "value=${{ inputs.change_source }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run sync + lifecycle phases
+        id: run
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CHANGE_SOURCE: ${{ steps.source.outputs.value }}
+          SKIP_SYNC: ${{ inputs.skip_sync || 'false' }}
+          SKIP_LIFECYCLE: ${{ inputs.skip_lifecycle || 'false' }}
+          SKIP_REGRESSION: 'true'
+          TEST_ENVIRONMENT: ${{ inputs.environment || 'qa' }}
+          MAX_BUDGET_USD: ${{ inputs.budget || '20.0' }}
+          MODEL: ${{ inputs.model || 'claude-sonnet-4-5-20250929' }}
+          FRONT_URL: ${{ secrets.FRONT_URL }}
+          BACK_URL: ${{ secrets.BACK_URL }}
+        run: |
+          # Run phases 1+2 only (regression skipped — it needs Docker)
+          npx tsx ci/run-full-cycle.ts || true
+
+          # Extract affected suites from sync result
+          REPORT_DIR=$(ls -td reports/full-cycle/CYCLE-* 2>/dev/null | head -1)
+          if [ -n "$REPORT_DIR" ] && [ -f "$REPORT_DIR/phase1-sync-result.json" ]; then
+            SUITES=$(jq -r '.affectedSuites | join(",")' "$REPORT_DIR/phase1-sync-result.json")
+            echo "affected_suites=$SUITES" >> $GITHUB_OUTPUT
+          else
+            echo "affected_suites=" >> $GITHUB_OUTPUT
+          fi
+
+          if [ -n "$REPORT_DIR" ] && [ -f "$REPORT_DIR/cycle-summary.json" ]; then
+            VERDICT=$(jq -r '.verdict' "$REPORT_DIR/cycle-summary.json")
+            echo "verdict=$VERDICT" >> $GITHUB_OUTPUT
+          else
+            echo "verdict=UNKNOWN" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit test case updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet regression/suites/ config/test-suites.json 2>/dev/null; then
+            git add regression/suites/ config/test-suites.json
+            git commit -m "ci: sync test cases — ${{ steps.source.outputs.value }}
+
+          Affected suites: ${{ steps.run.outputs.affected_suites || 'none' }}
+
+          Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
+            git push
+          else
+            echo "No test case changes to commit"
+          fi
+
+      - name: Upload sync/lifecycle artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sync-lifecycle-results
+          path: reports/full-cycle/
+          retention-days: 60
+
+  regression:
+    needs: sync-and-lifecycle
+    if: |
+      always() &&
+      needs.sync-and-lifecycle.result == 'success' &&
+      (needs.sync-and-lifecycle.outputs.affected_suites != '' || inputs.suite_selection != '') &&
+      inputs.skip_regression != true
+    runs-on: ubuntu-latest
+    timeout-minutes: 480
+
+    env:
+      SUITE_SELECTION: ${{ inputs.suite_selection || needs.sync-and-lifecycle.outputs.affected_suites || 'smoke' }}
+      TEST_ENVIRONMENT: ${{ inputs.environment || 'qa' }}
+      MODEL: ${{ inputs.model || 'claude-sonnet-4-5-20250929' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Pull latest changes
+        run: git pull --rebase origin ${{ github.ref_name }} || true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Calculate regression budget
+        id: budget
+        run: |
+          TOTAL="${{ inputs.budget || '20.0' }}"
+          BUDGET=$(echo "$TOTAL" | awk '{printf "%.1f", $1 * 0.5}')
+          echo "value=$BUDGET" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ci/Dockerfile
+          tags: vc-regression:latest
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run regression
+        id: regression
+        run: |
+          echo "=== Running suites: ${{ env.SUITE_SELECTION }} ==="
+          echo "Budget: \$${{ steps.budget.outputs.value }}"
+
+          docker run --rm \
+            --shm-size=2gb \
+            -e ANTHROPIC_API_KEY="${{ secrets.ANTHROPIC_API_KEY }}" \
+            -e SUITE_SELECTION="${{ env.SUITE_SELECTION }}" \
+            -e TEST_ENVIRONMENT="${{ env.TEST_ENVIRONMENT }}" \
+            -e MAX_BUDGET_USD="${{ steps.budget.outputs.value }}" \
+            -e MAX_TURNS="100" \
+            -e MODEL="${{ env.MODEL }}" \
+            -e MAX_PARALLEL="3" \
+            -e SUITE_TIMEOUT_MS="600000" \
+            -e FRONT_URL="${{ secrets.FRONT_URL }}" \
+            -e BACK_URL="${{ secrets.BACK_URL }}" \
+            -e VIRTO_START_FRONT="${{ secrets.VIRTO_START_FRONT }}" \
+            -e VIRTO_START_BACK="${{ secrets.VIRTO_START_BACK }}" \
+            -e ADMIN="${{ secrets.ADMIN }}" \
+            -e ADMIN_PASSWORD="${{ secrets.ADMIN_PASSWORD }}" \
+            -e USER_EMAIL="${{ secrets.USER_EMAIL }}" \
+            -e USER_PASSWORD="${{ secrets.USER_PASSWORD }}" \
+            -e USER2_EMAIL="${{ secrets.USER2_EMAIL }}" \
+            -e USER2_PASSWORD="${{ secrets.USER2_PASSWORD }}" \
+            -e USER_VIRTO="${{ secrets.USER_VIRTO }}" \
+            -e USER_VIRTO_PASSWORD="${{ secrets.USER_VIRTO_PASSWORD }}" \
+            -e STORE_ID="${{ secrets.STORE_ID }}" \
+            -e SKYFLOW_VISA="${{ secrets.SKYFLOW_VISA }}" \
+            -e SKYFLOW_MASTERCARD="${{ secrets.SKYFLOW_MASTERCARD }}" \
+            -e SKYFLOW_EXPIRY="${{ secrets.SKYFLOW_EXPIRY }}" \
+            -e SKYFLOW_CVV="${{ secrets.SKYFLOW_CVV }}" \
+            -e CYBERSOURCE_CARD="${{ secrets.CYBERSOURCE_CARD }}" \
+            -e CYBERSOURCE_EXPIRY="${{ secrets.CYBERSOURCE_EXPIRY }}" \
+            -e CYBERSOURCE_CVV="${{ secrets.CYBERSOURCE_CVV }}" \
+            -e AUTHORIZNET_CARD="${{ secrets.AUTHORIZNET_CARD }}" \
+            -e AUTHORIZNET_EXPIRY="${{ secrets.AUTHORIZNET_EXPIRY }}" \
+            -e AUTHORIZNET_CVV="${{ secrets.AUTHORIZNET_CVV }}" \
+            -e DATATRANCE_MASTERCARD="${{ secrets.DATATRANCE_MASTERCARD }}" \
+            -e DATATRANCE_EXPIRY="${{ secrets.DATATRANCE_EXPIRY }}" \
+            -e DATATRANCE_CVV="${{ secrets.DATATRANCE_CVV }}" \
+            -e DATATRANCE_OTP="${{ secrets.DATATRANCE_OTP }}" \
+            -v ${{ github.workspace }}/test-results:/app/test-results \
+            -v ${{ github.workspace }}/reports:/app/reports \
+            vc-regression || EXIT_CODE=$?
+
+          EXIT_CODE=${EXIT_CODE:-0}
+          if [ $EXIT_CODE -eq 2 ]; then
+            echo "::warning::Some suites hit budget/turn limits"
+          elif [ $EXIT_CODE -eq 1 ]; then
+            echo "::error::Regression has real test failures"
+          fi
+
+      - name: Write step summary
+        if: always()
+        run: |
+          SUMMARY_FILE=$(find reports/regression -name "summary.json" -type f 2>/dev/null | sort -r | head -1)
+          if [ -n "$SUMMARY_FILE" ]; then
+            echo "### Regression Results" >> $GITHUB_STEP_SUMMARY
+            echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Pass Rate | $(jq -r '.passRate // 0' "$SUMMARY_FILE")% |" >> $GITHUB_STEP_SUMMARY
+            echo "| Passed | $(jq -r '.passed // 0' "$SUMMARY_FILE") |" >> $GITHUB_STEP_SUMMARY
+            echo "| Failed | $(jq -r '.failed // 0' "$SUMMARY_FILE") |" >> $GITHUB_STEP_SUMMARY
+            echo "| Cost | \$$(jq -r '.totalCostUsd // 0' "$SUMMARY_FILE") |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload regression artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-results
+          path: |
+            test-results/
+            reports/regression/
+          retention-days: 60
+
+  notify:
+    needs: [sync-and-lifecycle, regression]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Write cycle summary
+        run: |
+          echo "### Full Cycle Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Phase | Status | Details |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Sync + Lifecycle | ${{ needs.sync-and-lifecycle.result }} | Suites: ${{ needs.sync-and-lifecycle.outputs.affected_suites || 'none' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Regression | ${{ needs.regression.result || 'skipped' }} | Selection: ${{ inputs.suite_selection || needs.sync-and-lifecycle.outputs.affected_suites || 'none' }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Send Teams notification
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          RUN_STATUS: ${{ needs.regression.result || needs.sync-and-lifecycle.result }}
+          GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TRIGGER: ${{ github.event_name }}
+          SUITE_SELECTION: ${{ needs.sync-and-lifecycle.outputs.affected_suites || inputs.suite_selection || 'none' }}
+          TEST_ENVIRONMENT: ${{ inputs.environment || 'qa' }}
+        run: npx tsx ci/notify-teams.ts

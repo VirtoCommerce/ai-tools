@@ -2,9 +2,9 @@
   "runId": "REG-2026-03-21-1615",
   "selection": "02,03,04c,13",
   "trigger": "COV-2026-03-21-1550 coverage generation pipeline (retry of blocked REG-2026-03-21-1600)",
-  "status": "running",
+  "status": "completed",
   "startedAt": "2026-03-21T16:15:00.000Z",
-  "completedAt": null,
+  "completedAt": "2026-03-21T21:30:00.000Z",
   "environment": {
     "frontUrl": "https://vcst-qa-storefront.govirto.com",
     "backUrl": "https://vcst-qa.govirto.com"
@@ -63,19 +63,38 @@
     },
     "03": {
       "name": "Catalog & Search Tests",
-      "status": "running",
+      "status": "completed",
       "browser": "playwright-chrome",
       "slot": 1,
       "batch": 2,
       "priority": "P1",
       "attempts": 1,
       "outputFile": "reports/regression/REG-2026-03-21-1615/suite-03-results.json",
-      "result": null
+      "result": {
+        "passed": 78,
+        "failed": 1,
+        "blocked": 50,
+        "skipped": 1,
+        "passRate": "98.7%"
+      }
     }
   },
   "retryLog": [],
   "previousRun": {
     "runId": "REG-2026-03-21-1600",
     "blockerReason": "All browser slots blocked by open browser windows on host — user has now closed all windows"
+  },
+  "summary": {
+    "totalSuites": 4,
+    "passedSuites": 4,
+    "failedSuites": 0,
+    "totalCases": 447,
+    "passed": 281,
+    "failed": 10,
+    "blocked": 134,
+    "skipped": 22,
+    "executableCases": 291,
+    "overallPassRate": "96.6%",
+    "qualityGateVerdict": "APPROVED_WITH_CONDITIONS"
   }
 }

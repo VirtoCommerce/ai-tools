@@ -3,8 +3,6 @@ node_modules
 .playwright-mcp/
 .vscode/
 settings.json
-ci
-.github/
 test-results/
 results/
 .claude/settings.local.json
