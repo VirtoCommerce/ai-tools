@@ -16,6 +16,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. When invoke
 /qa-test-lifecycle diff                   # Pipeline for git-changed test cases only
 /qa-test-lifecycle suite 06 --skip-generate   # Review existing cases only (skip gap analysis + generation)
 /qa-test-lifecycle suite 04c --skip-verify    # Static review + fix only (no browser verification)
+/qa-test-lifecycle suite 14 --layer api       # Only analyze/generate/review API-layer cases
 ```
 
 ## Flags
@@ -25,6 +26,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. When invoke
 | `--skip-generate` | Skip Phases 1-2 (Analyze + Generate) — start directly at Phase 3 (Review) |
 | `--skip-verify` | Skip Phase 5 (Environment Verification) — no browser needed |
 | `--auto-fix` | Apply auto-fixable issues without asking for each one (still shows diff summary) |
+| `--layer <name>` | Scope to a specific layer: `api`, `graphql`, `admin`, `storefront`, `e2e`. Filters gap detection, generation, and review to cases matching the layer |
 | `--report-only` | Run all phases but don't modify any files — output report only |
 
 ---
@@ -66,7 +68,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. When invoke
 |-------|-------|---------|---------|
 | 1. Analyze | `test-management-specialist` | Not needed | Coverage gap detection, checklist comparison, BL-* mapping |
 | 2. Generate | `test-management-specialist` | Not needed | Test case creation using enriched CSV format, layer-specific tags |
-| 3. Review | `test-management-specialist` | Not needed | 7-dimension static quality review |
+| 3. Review | `test-management-specialist` | Not needed | 7-dimension static quality review (Dim 1-7) |
 | 4. Fix | `test-management-specialist` | Not needed | Auto-fix structural issues, present manual items |
 | 5. Verify | `qa-testing-expert` | `playwright-firefox` | Live environment verification (Dimension 8) |
 | 6. Approve | Orchestrator (you) | Not needed | Quality gate evaluation, final verdict |
@@ -92,7 +94,10 @@ Input:
     - .claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md
     - .claude/agents/knowledge/business-logic.md
     - .claude/agents/knowledge/e-commerce-edge-cases-library.md
+    - .claude/agents/knowledge/products.md
     - .claude/skills/testing/qa-checklist/domain-checklists.md
+    - .claude/skills/testing/qa-coverage-gap/feature-domain-map.md
+  - context7: query `/virtocommerce/vc-docs` for domain-specific module behavior
 
 Output: structured JSON with:
   - gapInventory: [{domain, feature, priority, layers}]
@@ -136,12 +141,20 @@ Output: per-case verification:
    - Domain checklist(s) from `domain-checklists.md` / `graphql-checklist.md`
    - BL-* invariants from `business-logic.md` for the domain
    - ECL-* patterns from `e-commerce-edge-cases-library.md`
-4. **Identify gaps:**
+   - Expected coverage from `feature-domain-map.md` for the domain
+   - Product types and test data from `.claude/agents/knowledge/products.md`
+4. **Query Virto Commerce documentation via Context7** for the target domain(s):
+   - Use `mcp__context7__resolve-library-id` with `libraryName: "virtocommerce"` → `/virtocommerce/vc-docs`
+   - Query `mcp__context7__query-docs` with domain-relevant topics (e.g., "cart xAPI mutations", "order workflow", "catalog properties") and `tokens: 8000`
+   - Extract module behavior, API contracts, and configuration options not captured in local knowledge files
+   - Flag features documented in VC docs but missing from existing test cases
+5. **Identify gaps:**
    - Checklist items with no corresponding test case
    - BL-* invariants with no test case mapping
    - ECL-* patterns relevant but not referenced
+   - Features documented in VC docs (from Context7) but not tested
    - For JIRA tickets: acceptance criteria not covered
-5. **Score gaps** by business impact (P0/P1/P2)
+6. **Score gaps** by business impact (P0/P1/P2)
 
 **Gate:** If 0 gaps found → skip Phase 2, proceed to Phase 3.
 
@@ -151,23 +164,25 @@ Output: per-case verification:
 
 `test-management-specialist` performs:
 
-1. Generate test cases for each gap using the enriched 15-column format
-2. Apply **minimum effective set** principle:
+1. **Deduplication pre-check** — before generating, read the target suite CSV and all related suites in the same manifest domain. Check for semantic duplicates: cases with matching Title+Section or Steps covering the same scenario. Skip generation for already-covered gaps.
+2. **Query Context7** (`/virtocommerce/vc-docs`) for domain-specific details: API field names, validation rules, GraphQL mutation signatures, module config options. Use these to write accurate Steps and Assertions.
+3. Generate test cases for each remaining gap using the enriched 15-column format (target: 1-3 cases per gap based on complexity)
+4. Apply **minimum effective set** principle:
    - Each case must have a clear bug hypothesis
    - Happy path + most likely negative + known edge cases only
-3. Use layer-specific tags from `test-case-template.md`:
+5. Use layer-specific tags from `test-case-template.md`:
    - Storefront: `[NAV]`/`[ACT]`/`[WAIT]` + `[DOM]`/`[STATE]`
    - API: `[HTTP]`/`[AUTH]` + `[STATUS]`/`[BODY]`
    - GraphQL: `[GQL]`/`[VAR]` + `[ERRORS]`/`[DATA]`
    - Admin: `[BLADE]`/`[GRID]`/`[SAVE]` + `[TOAST]`/`[FORM]`
    - E2E: `--- LAYER ---` markers with multi-layer assertions
-4. **Present to user** as Feature Test Matrix for approval before proceeding
+6. **Present to user** as Feature Test Matrix for approval before proceeding
 
 ---
 
-### Phase 3 — Review (8-Dimension Static Analysis)
+### Phase 3 — Review (7-Dimension Static Analysis)
 
-`test-management-specialist` performs `/qa-review-tests` logic (Dimensions 1-7):
+`test-management-specialist` performs `/qa-review-tests` logic (Dimensions 1-7, static only — Dimension 8 Environment is Phase 5):
 
 1. **Structure** — CSV format, IDs, required fields
 2. **Determinism** — Step tags, specific element refs, no ambiguity
@@ -350,13 +365,16 @@ Write to `reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`:
 
 ## Rules
 
+- Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
 - **Agent delegation is mandatory** — do NOT run Phases 1-4 directly in the orchestrator; always dispatch to `test-management-specialist`
 - **Never modify files without confirmation** unless `--auto-fix` is set
 - **Phase order is strict** — each phase depends on the previous (except skipped phases)
 - **Present generated cases to user** at Phase 2 → 3 boundary for approval
-- **One browser at a time** — Phase 5 uses `playwright-firefox` via `qa-testing-expert`; no parallel browser sessions during lifecycle run
+- **One browser at a time** — Phase 5 uses `playwright-firefox` (fallback: `playwright-edge`) via `qa-testing-expert`; no parallel browser sessions during lifecycle run
 - **Preserve all existing test case IDs** — never renumber or reuse
 - **Environment issues ≠ test case defects** — BROKEN/BLOCKED from Phase 5 may be env problems. Flag for investigation, don't auto-fix blindly.
 - **Quality gate is advisory** — deliver the verdict but the user makes the final go/no-go
 - **Report always written** — even with `--report-only`, produce the full report
 - **Read URLs from .env** via `config.js`, never hardcode
+- **Always query Context7** (`/virtocommerce/vc-docs`) in Phase 1 to enrich gap detection with up-to-date VC module behavior
+- **Deduplication before generation** — Phase 2 must check target and related suite CSVs for semantic duplicates before creating new cases

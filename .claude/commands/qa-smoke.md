@@ -21,6 +21,12 @@ Run Suite 01 smoke tests for daily pre-deployment validation. Executes two paral
 
 You are the smoke test orchestrator running in the main context. Spawn sub-agents directly — do NOT delegate to another orchestrator agent.
 
+### Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
+
+1. **Environment health** — run `/qa-env-check endpoints` (or inline: `curl -sk {BACK_URL}/health`). If unhealthy, warn user and ask whether to proceed.
+2. **Duplicate check** — scan `reports/regression/` for a `SMOKE-*` run from today. If found, warn user and show previous verdict.
+3. **Context7 query** — resolve `/virtocommerce/vc-docs`, query `"storefront cart checkout smoke"` with `tokens: 8000`. Check for recent module behavior changes that could affect smoke tests.
+
 ### Step 1 — Read Suite & Prepare Run
 
 1. Read `config/test-suites.json` to get Suite 01 details (CSV path, test count)
@@ -124,6 +130,9 @@ Output verdict, pass rate, bugs found, and report path to the user.
 
 ## Rules
 
+- Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
+- Track A: `playwright-chrome` (fallback: `playwright-firefox`). Track B: `playwright-edge` (fallback: `playwright-chrome`)
 - Never use WebKit — not supported on Windows
 - Never assign both tracks to the same browser server
 - Read all URLs from config.js / .env — never hardcode
+- If a browser fails to launch, retry with fallback browser (max 1 retry per track)

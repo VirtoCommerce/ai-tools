@@ -1085,3 +1085,111 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add 3+ items
 [STATE] OFF default does not override manually selected items","[API] getCart returns correct per-item selectedForCheckout values
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx","per-item selection lost; all forced to unselected; Order Summary wrong",Remove items from cart,C389920,Manual
+CART-073,Cart Transfer - Guest Cart to New Account With Empty Cart,Cart > Persistence > Transfer,High,BL-CART-008,"ECL-2.1","A registered user account exists with empty cart; user is currently signed out","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
+[ACT] add 2 products to guest cart with different quantities
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify 2 items in guest cart with correct quantities
+[ACT] sign in as {{USER_EMAIL}} (account has empty cart)
+[WAIT] wait for cart transfer
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify same 2 products transferred with original quantities
+[ASSERT] verify cart subtotal is correct","[STATE] guest cart fully transferred to authenticated user cart
+[DOM] 2 line items present with correct quantities
+[MATH] subtotal matches pre-sign-in guest cart total","[API] getCart returns transferred guest items
+[CONSOLE] no JS errors during transfer
+[NETWORK] no 4xx/5xx on cart operations","guest cart items lost; quantities reset; empty cart shown after sign-in",Remove items from cart,Coverage Gap Analysis,Manual
+CART-074,Cart Persistence - Empty Cart Stays Empty After Sign-Out/Sign-In,Cart > Persistence,Medium,BL-CART-008,"ECL-2.1","User logged in with empty cart","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in as {{USER_EMAIL}}
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify cart is empty (0 items or empty state message)
+[ACT] sign out
+[WAIT] wait for sign-out to complete
+[ACT] sign in again as {{USER_EMAIL}}
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify cart is still empty - no phantom items appeared
+[ASSERT] verify cart badge shows 0 or is hidden","[STATE] cart remains empty after sign-out/sign-in cycle
+[DOM] empty cart state displayed; no unexpected line items
+[DOM] cart badge count = 0 or badge hidden","[API] getCart returns empty lineItems array
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","phantom items appear in cart after sign-in; cart count badge shows nonzero value; error message instead of empty state",None,Coverage Gap Analysis,Manual
+CART-076,Stale Cart Price Warning - Admin Price Change During Session,Cart > Price > Stale,Critical,BL-PRICE-001,"ECL-2.3","User logged in with item in cart; admin access available to change product price","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+admin_url={{BACK_URL}}
+admin_email={{ADMIN_EMAIL}}
+admin_password={{ADMIN_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in as {{USER_EMAIL}}
+[ACT] add a product to cart and note the unit price shown
+[NAV] navigate to {{BACK_URL}} admin panel
+[ACT] change the price of the same product in the price list
+[NAV] navigate back to {{FRONT_URL}}/cart
+[ACT] refresh the cart page
+[WAIT] wait for cart to reload with updated prices
+[ASSERT] verify cart shows updated price or a price-changed notification
+[ASSERT] verify line total recalculated based on new price","[STATE] cart price updated to reflect admin price change
+[DOM] price warning or updated price visible on cart page
+[MATH] line total = new unit price x quantity","[API] getCart returns updated unitPrice from current price list
+[CONSOLE] no JS errors on price refresh
+[NETWORK] cart API call returns fresh price data","stale/cached price shown after admin change; no warning displayed; line total uses old price; checkout proceeds with wrong price",Revert price in admin; remove cart items,Coverage Gap Analysis,Manual
+CART-077,Checkout Recalculates Totals to Reflect Current Prices,Cart > Price > Recalculation,Critical,BL-PRICE-001,"ECL-2.3","User logged in with item in cart; prices are current","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with items
+[ASSERT] note the current cart subtotal
+[ACT] proceed to checkout (select delivery and shipping)
+[WAIT] wait for checkout page to load order summary
+[ASSERT] verify checkout order summary subtotal uses current prices (not cached)
+[ASSERT] verify line item prices on checkout match cart page prices
+[ASSERT] verify total = subtotal + shipping + tax - discounts","[MATH] checkout subtotal = sum of (current unit price x quantity) for all items
+[STATE] no price discrepancy between cart and checkout
+[DOM] order summary displays correct line prices","[API] checkout API returns recalculated totals
+[CONSOLE] no JS errors during checkout transition
+[NETWORK] no 4xx/5xx","checkout shows different total than cart; cached prices used at checkout; price mismatch between cart and order summary",Clear cart,Coverage Gap Analysis,Manual
+CART-078,Tier Price Update When Quantity Drops Below Threshold,Cart > Price > Tier,High,BL-PRICE-004,"ECL-2.3","User logged in; product has tier pricing configured (e.g., qty >= 10 = $8/unit; qty < 10 = $10/unit)","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+tier_product_sku={{TIER_PRICED_SKU}}","[NAV] navigate to {{FRONT_URL}}/product/{{TIER_PRICED_SKU}}
+[ACT] set quantity to tier threshold (e.g., 10) and add to cart
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify tier price is applied (e.g., $8/unit)
+[ASSERT] verify line total = tier price x quantity
+[ACT] reduce quantity below tier threshold (e.g., change to 5)
+[WAIT] wait for cart to recalculate
+[ASSERT] verify unit price reverts to standard price (e.g., $10/unit)
+[ASSERT] verify line total recalculated with standard price","[MATH] tier price applied when qty >= threshold; standard price when qty < threshold
+[STATE] price updates dynamically on quantity change
+[DOM] unit price display changes when quantity crosses tier boundary","[API] changeCartItemQuantity mutation returns updated unitPrice
+[CONSOLE] no JS errors on quantity change
+[NETWORK] no 4xx/5xx on price recalculation","price stays at tier rate after reducing below threshold; line total not recalculated; unit price display stale",Reset cart item quantity or remove,Coverage Gap Analysis,Manual
+CART-081,Cart Validation - Removed/Unavailable Product in Cart,Cart > Validation,High,BL-CART-001,"ECL-2.1","User logged in; product was added to cart then removed/deactivated via admin","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+admin_url={{BACK_URL}}
+admin_email={{ADMIN_EMAIL}}
+admin_password={{ADMIN_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and add a product to cart
+[NAV] navigate to {{BACK_URL}} admin and deactivate/unpublish the product
+[NAV] navigate back to {{FRONT_URL}}/cart
+[ACT] refresh cart page
+[ASSERT] verify unavailable product shows error indicator or is flagged
+[ASSERT] verify checkout is blocked with clear message about unavailable product
+[ACT] remove the unavailable item from cart
+[ASSERT] verify cart updates and checkout becomes available (if other valid items exist)","[DOM] unavailable product marked with error/warning state
+[DOM] checkout blocked until unavailable item removed
+[STATE] removing unavailable item unblocks checkout","[API] getCart returns validation errors for unavailable product
+[CONSOLE] no JS errors
+[NETWORK] no 5xx","unavailable product shown as normal; checkout proceeds; no error message; cart crashes on load",Reactivate product in admin; remove from cart,Coverage Gap Analysis,Manual
+CART-082,Cart Validation - Multiple Simultaneous Errors Displayed,Cart > Validation > Multiple,Medium,BL-CART-001,"ECL-2.1","User logged in; cart has one out-of-stock item AND one item with quantity exceeding available stock","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart containing: 1 out-of-stock item + 1 over-max-quantity item
+[ASSERT] verify BOTH validation errors are shown simultaneously (not just the first)
+[ASSERT] verify each error message is associated with the correct line item
+[ASSERT] verify checkout is blocked
+[ACT] resolve one error (remove out-of-stock item)
+[ASSERT] verify first error cleared but second error still shown
+[ACT] resolve second error (adjust quantity)
+[ASSERT] verify all errors cleared and checkout unblocked","[DOM] multiple error messages displayed simultaneously on different line items
+[DOM] each error is item-specific not a single generic message
+[STATE] checkout unblocks only after ALL validation errors resolved","[API] getCart returns multiple validation errors
+[CONSOLE] no JS errors
+[NETWORK] no 5xx","only one error shown at a time; generic error replaces item-specific errors; fixing one error hides the other; checkout unblocks with remaining errors",Remove test items from cart,Coverage Gap Analysis,Manual

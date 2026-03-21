@@ -16,6 +16,11 @@ Create a structured bug report from a description, screenshot, or observed issue
 
 ---
 
+## Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
+
+1. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected area (e.g., `"cart pricing calculations"`, `"order status workflow"`) with `tokens: 8000`. Verify expected behavior before concluding it's a bug — the observed behavior may be by design.
+2. **Duplicate check** — scan `reports/bugs/` for existing bug reports with the same component/title in the last 48 hours. If found, warn user and show existing report.
+
 ## Step 1 — Gather Bug Details
 
 > **Skills:** Use `/qa-investigate` for structured 5-phase investigation (reproduce → isolate layer → gather evidence → root cause → hand off). Use `/qa-evidence` for capture rules and naming conventions.
@@ -137,7 +142,10 @@ Report the ticket key back to the user.
 ---
 
 ## Rules
+- Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
 - Always reproduce the bug before filing — never file unverified bugs
 - Always include evidence (screenshot + console + network)
-- Use the qa-testing-expert agent for reproduction (gets a browser via playwright-firefox)
+- Use the qa-testing-expert agent for reproduction: `playwright-firefox` (fallback: `playwright-edge`)
+- Always query Context7 in Step 0 to verify expected behavior — don't file bugs for intended behavior
 - Ask before creating JIRA tickets (explicit permission required)
+- If a new regression is found during investigation, escalate via `/qa-bug` (separate report)

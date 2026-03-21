@@ -22,6 +22,7 @@ npm run ci:frontend      # Frontend suites (01-13, 35-36, 41)
 npm run ci:backend       # Backend suites (14-34, 37-40, 42)
 npm run ci:full          # Full regression (all 45 suites)
 npm run ci:regression    # Run CI regression via Claude Agent SDK
+npm run ci:cycle         # Full cycle: sync → lifecycle → regression
 npm run ci:coverage      # Coverage generation pipeline
 npm run ci:notify        # Teams notification (requires TEAMS_WEBHOOK_URL)
 ```

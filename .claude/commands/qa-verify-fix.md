@@ -16,6 +16,12 @@ Pick up a READY FOR TEST bug ticket, verify the fix on the live environment, and
 
 ---
 
+## Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
+
+1. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, warn user — fix may not be deployed or env may be stale.
+2. **Duplicate check** — scan `tests/{SPRINT}/VCST-XXXX/` for a verification run in the last 4 hours. If found, warn user and show previous verdict.
+3. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected module/feature (e.g., `"order status transitions"`, `"cart price recalculation"`) with `tokens: 8000`. Understand expected post-fix behavior to set correct assertions.
+
 ## Step 1 — Fetch Ticket & Understand the Bug
 
 **Resolve current sprint** — check if `tests/Sprint-current` exists → use it. Otherwise list `tests/` and pick the latest `SprintXX-XX` folder. This becomes `{SPRINT}` for all output paths.
@@ -229,15 +235,19 @@ Output to the user: verdict, STR result, checklist score, regressions found, JIR
 
 ## Rules
 
+- Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, error handling, and JIRA transitions
+- Browser fallback: chrome→firefox, edge→chrome, firefox→edge (max 1 retry)
 - Never use WebKit — not supported on Windows
 - Never assign two agents to the same browser server simultaneously
 - Read all URLs from config.js / .env — never hardcode
 - Max 3 concurrent browser agents
 - Always reproduce the original bug first before confirming the fix
 - STR must pass 3 consecutive times — 2/3 is not sufficient (marks as intermittent)
+- Always query Context7 in Step 0 to understand expected post-fix behavior
 - Ask the user before any JIRA transition
 - If Atlassian MCP is unavailable, skip JIRA transitions but still execute the full verification
 - If the fix is not deployed, stop immediately — do not test against the old code
 - If an agent fails with an internal error, fall back to working directly rather than retrying
 - For multi-ticket verification (`VCST-1234 VCST-1235`), process sequentially — each ticket gets its own full flow
+- If verification reveals a NEW regression (FIX OK but adjacent feature broken), escalate via `/qa-bug` with evidence from the verification run
 - Cross-reference with `/qa-defect verify` protocol (section 7 of `defect-lifecycle-workflow.md`) for the canonical verification steps

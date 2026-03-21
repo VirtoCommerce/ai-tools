@@ -774,3 +774,178 @@ PAY-SKTOK-001,Skyflow Tokenization - Raw Card PAN Absent from All Network Reques
 [NETWORK] Skyflow token (UUID or alphanumeric) present in the request sent to Virto Commerce backend instead of raw PAN
 [NAV] Order confirmation reached — tokenization did not block payment flow","[API] createOrderFromCart GraphQL mutation errors[] is empty
 [ADMIN] Order in admin shows Skyflow token or masked card reference — not raw PAN","Raw card number '4622943127013705' found in any network request payload (BL-PAY-001 / BL-PAY-002 violation); Skyflow token not present in backend request; tokenization request fails causing order to not complete; token format is full PAN rather than opaque reference","Cancel order via admin","Checklist #9 item 10; ECL-9.1; BL-PAY-001; BL-PAY-002",Manual
+PAY-DECLINE-006,Declined Card Recovery - CyberSource Error Then Retry With Valid Card,Payment > Decline > Recovery,Critical,BL-CHK-004,"ECL-1.1","User logged in; items in cart; at checkout payment step; CyberSource payment processor active","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+declined_card=4000000000000002
+valid_card={{TEST_CARD_NUMBER}}","[NAV] navigate to {{FRONT_URL}}/cart and complete checkout to payment step
+[ACT] enter declined test card number in CyberSource payment form on cart page
+[ACT] fill expiry date and CVV
+[ACT] click Place Order
+[WAIT] wait for payment processing
+[ASSERT] verify declined/error message displayed clearly
+[ASSERT] verify cart contents still visible and intact
+[ASSERT] verify shipping address and method still selected
+[ACT] clear declined card details and enter valid card number
+[ACT] click Place Order again
+[WAIT] wait for payment processing
+[ASSERT] verify order confirmation page reached with valid order number","[DOM] decline error message clearly visible
+[STATE] cart and shipping preserved after decline
+[DOM] payment form accepts new card entry after decline
+[NAV] order confirmation reached on retry","[API] first payment attempt returns decline error
+[API] second payment attempt succeeds
+[CONSOLE] no unhandled JS errors during decline or retry
+[NETWORK] no 5xx errors","cart emptied after decline; shipping address lost; payment form unresponsive after decline; cannot re-enter card details; second attempt also fails despite valid card",Cancel test order via admin,Coverage Gap Analysis,Manual
+PAY-DECLINE-007,Multiple Consecutive Declines Preserve Checkout State,Payment > Decline > Multiple,High,BL-CHK-004,"ECL-1.1","User logged in; at checkout payment step; multiple declined test cards available","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+declined_card=4000000000000002","[NAV] complete checkout to payment step with shipping address filled
+[ACT] enter declined card and attempt payment
+[WAIT] wait for decline message
+[ASSERT] verify decline error shown; cart and addresses preserved
+[ACT] enter another declined card and attempt payment again
+[WAIT] wait for second decline message
+[ASSERT] verify second decline error shown
+[ASSERT] verify shipping address STILL populated (not cleared)
+[ASSERT] verify cart items and quantities unchanged
+[ASSERT] verify billing address (if separate) still populated","[STATE] shipping address preserved after multiple declines
+[STATE] cart items unchanged after multiple declines
+[STATE] billing address preserved if entered separately
+[DOM] decline error messages shown for each attempt","[API] multiple decline responses received without state corruption
+[CONSOLE] no JS errors accumulating across retries
+[NETWORK] no 5xx","addresses cleared after second decline; cart modified; checkout session invalidated; error messages accumulate and overlap; form becomes unresponsive",Cancel any test orders via admin,Coverage Gap Analysis,Manual
+PAY-DECLINE-008,After Decline User Can Switch Payment Method Entirely,Payment > Decline > Method Switch,High,BL-CHK-004,"ECL-1.1","User logged in; at checkout; multiple payment methods available; first attempt declined","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+declined_card=4000000000000002","[NAV] complete checkout to payment step
+[ACT] select first payment method (e.g., CyberSource)
+[ACT] enter declined card details and attempt payment
+[WAIT] wait for decline error
+[ASSERT] verify decline error shown
+[ACT] select a different payment method (e.g., Authorize.Net or manual payment)
+[ASSERT] verify payment form changes to the new method
+[ASSERT] verify cart and shipping still intact after method switch
+[ACT] complete payment with the alternative method
+[ASSERT] verify order confirmation reached","[DOM] payment method selector still functional after decline
+[DOM] new payment form rendered for alternative method
+[STATE] checkout state preserved during method switch","[API] new payment method used in final order creation
+[CONSOLE] no JS errors during method switch
+[NETWORK] no 5xx","payment method selector locked after decline; cannot switch methods; previous method form persists; checkout state lost during switch",Cancel test order via admin,Coverage Gap Analysis,Manual
+PAY-SKY-006,Skyflow Payment Form Renders on Checkout Payment Page,Payment > Skyflow > Form Render,Critical,BL-PAY-004,"ECL-1.1","User logged in; items in cart; Skyflow payment processor configured; checkout completed to payment step","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with items
+[ACT] complete checkout steps (address + shipping)
+[ACT] click Place Order
+[WAIT] wait for redirect to {{FRONT_URL}}/checkout/payment
+[ASSERT] verify Skyflow payment form renders on /checkout/payment page
+[ASSERT] verify card number field is present (likely in iframe)
+[ASSERT] verify expiry date field is present
+[ASSERT] verify CVV field is present
+[ASSERT] verify submit/pay button is visible","[DOM] Skyflow payment form visible on /checkout/payment
+[DOM] card number input field present (may be iframe)
+[DOM] expiry and CVV fields present
+[DOM] submit button visible and enabled","[NETWORK] Skyflow SDK/iframe loaded successfully
+[CONSOLE] no JS errors on payment page load
+[NETWORK] no 4xx/5xx on page load","Skyflow form does not render; blank payment page; missing fields; JS error prevents form load; wrong payment page URL",None - no order placed,Coverage Gap Analysis,Manual
+PAY-SKY-007,Skyflow Invalid Card Number Rejected With Error,Payment > Skyflow > Validation,High,BL-PAY-004,"ECL-1.1","Skyflow payment form rendered on /checkout/payment","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to Skyflow payment form at /checkout/payment
+[ACT] enter invalid card number (e.g., 1234567890123456)
+[ACT] fill valid expiry date and CVV
+[ACT] click submit/pay button
+[WAIT] wait for validation response
+[ASSERT] verify error message indicates invalid card number
+[ASSERT] verify no order created
+[ASSERT] verify user can correct the card number","[DOM] error message visible for invalid card number
+[STATE] no order placed with invalid card
+[DOM] card number field editable after error","[NETWORK] no successful payment transaction
+[CONSOLE] no unhandled JS errors
+[NETWORK] no 5xx","invalid card accepted; no error message; order created with invalid card; form crashes on validation; generic error without card-specific message",None,Coverage Gap Analysis,Manual
+PAY-SKY-008,Skyflow Empty Required Fields Blocked,Payment > Skyflow > Empty Fields,High,BL-PAY-004,"ECL-1.1","Skyflow payment form rendered on /checkout/payment","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to Skyflow payment form at /checkout/payment
+[ACT] leave all payment fields empty (card number + expiry + CVV)
+[ACT] click submit/pay button
+[ASSERT] verify validation errors shown for all required empty fields
+[ASSERT] verify form submission blocked
+[ASSERT] verify no order or payment attempt made","[DOM] validation errors visible for empty required fields
+[STATE] form submission prevented
+[DOM] no loading/processing state triggered","[NETWORK] no payment request sent with empty fields
+[CONSOLE] no JS errors
+[NETWORK] no outbound payment API call","form submits with empty fields; no validation errors shown; payment request sent with empty data; single generic error instead of field-level errors",None,Coverage Gap Analysis,Manual
+PAY-SKY-009,Skyflow Successful Payment Redirects to Confirmation,Payment > Skyflow > Success Flow,Critical,BL-CHK-004,"ECL-1.1","Skyflow payment form rendered on /checkout/payment; valid test card available","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+skyflow_card={{SKYFLOW_VISA}}
+skyflow_exp={{SKYFLOW_EXPIRY}}
+skyflow_cvv={{SKYFLOW_CVV}}","[NAV] navigate to Skyflow payment form at /checkout/payment
+[ACT] enter valid test card number in Skyflow card field
+[ACT] enter valid expiry date
+[ACT] enter valid CVV
+[ACT] click submit/pay button
+[WAIT] wait for payment processing
+[ASSERT] verify redirect to order confirmation page
+[ASSERT] verify order number displayed on confirmation
+[ASSERT] verify order status indicates payment received","[NAV] redirect from /checkout/payment to confirmation page
+[DOM] order number visible on confirmation
+[STATE] order created successfully with Skyflow payment","[API] createOrderFromCart mutation succeeds
+[CONSOLE] no JS errors during payment flow
+[NETWORK] no 5xx; successful payment response","stuck on payment page; redirect fails; order not created; payment processed but no confirmation; blank confirmation page",Cancel test order via admin,Coverage Gap Analysis,Manual
+PAY-AN-006,Authorize.Net Form Renders on Checkout Payment Page,Payment > Authorize.Net > Form Render,Critical,BL-PAY-004,"ECL-1.1","User logged in; items in cart; Authorize.Net payment processor configured","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with items
+[ACT] complete checkout steps (address + shipping)
+[ACT] click Place Order
+[WAIT] wait for redirect to {{FRONT_URL}}/checkout/payment
+[ASSERT] verify Authorize.Net payment form renders on /checkout/payment page
+[ASSERT] verify card number field present
+[ASSERT] verify expiry date field present
+[ASSERT] verify CVV field present
+[ASSERT] verify submit/pay button visible","[DOM] Authorize.Net payment form visible on /checkout/payment
+[DOM] all required card fields present
+[DOM] submit button visible and enabled","[NETWORK] Authorize.Net SDK/form loaded
+[CONSOLE] no JS errors on payment page
+[NETWORK] no 4xx/5xx on page load","form does not render; blank payment page; missing fields; wrong payment processor form shown",None,Coverage Gap Analysis,Manual
+PAY-AN-007,Authorize.Net Invalid Card Rejected With Error,Payment > Authorize.Net > Validation,High,BL-PAY-004,"ECL-1.1","Authorize.Net payment form rendered on /checkout/payment","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to Authorize.Net payment form at /checkout/payment
+[ACT] enter invalid card number (e.g., 0000000000000000)
+[ACT] fill valid expiry and CVV
+[ACT] click submit/pay
+[WAIT] wait for validation response
+[ASSERT] verify error message for invalid card
+[ASSERT] verify no order created
+[ASSERT] verify form remains editable for correction","[DOM] error message visible for invalid card
+[STATE] no order placed
+[DOM] form fields editable after error","[NETWORK] no successful payment transaction
+[CONSOLE] no unhandled JS errors
+[NETWORK] no 5xx","invalid card accepted; no error; order created; form crashes",None,Coverage Gap Analysis,Manual
+PAY-AN-008,Authorize.Net Empty Required Fields Blocked,Payment > Authorize.Net > Empty Fields,High,BL-PAY-004,"ECL-1.1","Authorize.Net payment form rendered on /checkout/payment","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to Authorize.Net payment form at /checkout/payment
+[ACT] leave all payment fields empty
+[ACT] click submit/pay
+[ASSERT] verify validation errors for all empty required fields
+[ASSERT] verify form submission blocked
+[ASSERT] verify no payment request sent","[DOM] validation errors visible for empty fields
+[STATE] submission prevented
+[DOM] no loading state triggered","[NETWORK] no payment API call with empty data
+[CONSOLE] no JS errors
+[NETWORK] no outbound POST","form submits with empty fields; no validation; payment attempted with empty data",None,Coverage Gap Analysis,Manual
+PAY-AN-009,Authorize.Net Successful Payment Redirects to Confirmation,Payment > Authorize.Net > Success Flow,Critical,BL-CHK-004,"ECL-1.1","Authorize.Net form rendered; valid test card available","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+authnet_card={{AUTHORIZNET_CARD}}
+authnet_exp={{AUTHORIZNET_EXPIRY}}
+authnet_cvv={{AUTHORIZNET_CVV}}","[NAV] navigate to Authorize.Net payment form at /checkout/payment
+[ACT] enter valid test card number
+[ACT] enter valid expiry date and CVV
+[ACT] click submit/pay
+[WAIT] wait for payment processing
+[ASSERT] verify redirect to order confirmation page
+[ASSERT] verify order number displayed
+[ASSERT] verify order status indicates successful payment","[NAV] redirect from /checkout/payment to confirmation
+[DOM] order number visible on confirmation
+[STATE] order successfully created","[API] order creation succeeds
+[CONSOLE] no JS errors
+[NETWORK] no 5xx; successful payment response","stuck on payment page; no redirect; order not created; payment processed but no confirmation",Cancel test order via admin,Coverage Gap Analysis,Manual

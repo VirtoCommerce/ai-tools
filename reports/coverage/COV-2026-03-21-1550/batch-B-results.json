@@ -1,0 +1,69 @@
+{
+  "batch": "B",
+  "agent": "qa-backend-expert",
+  "domains": ["B2B-ORG", "B2B-MEMBERS", "LISTS", "DASHBOARD", "ADMIN-IMPERSONATION"],
+  "gapsAddressed": [
+    "GAP-F07",
+    "GAP-F08",
+    "GAP-F09",
+    "GAP-F10",
+    "GAP-F11",
+    "GAP-F12",
+    "GAP-F13",
+    "GAP-F14",
+    "GAP-F15",
+    "GAP-F16",
+    "GAP-F17",
+    "GAP-F18",
+    "GAP-F23",
+    "GAP-F25",
+    "GAP-F26",
+    "GAP-F27"
+  ],
+  "casesGenerated": 66,
+  "suitesModified": ["13", "02"],
+  "newIds": {
+    "b2c-org": "B2C-ORG-012 to B2C-ORG-038",
+    "b2c-mbr": "B2C-MBR-001 to B2C-MBR-018",
+    "b2c-list": "B2C-LIST-023 to B2C-LIST-034",
+    "b2c-dash": "B2C-DASH-006 to B2C-DASH-008",
+    "auth-imp": "AUTH-062 to AUTH-065"
+  },
+  "casesByPriority": {
+    "Critical": 12,
+    "High": 30,
+    "Medium": 20,
+    "Low": 4
+  },
+  "casesByDomain": {
+    "B2B-ORG": 27,
+    "B2B-MEMBERS": 18,
+    "LISTS": 12,
+    "DASHBOARD": 3,
+    "ADMIN-IMPERSONATION": 4
+  },
+  "casesByGap": {
+    "GAP-F07": 13,
+    "GAP-F08": 4,
+    "GAP-F09": 3,
+    "GAP-F10": 4,
+    "GAP-F11": 3,
+    "GAP-F12": 3,
+    "GAP-F13": 5,
+    "GAP-F14": 4,
+    "GAP-F15": 5,
+    "GAP-F16": 3,
+    "GAP-F17": 3,
+    "GAP-F18": 4,
+    "GAP-F23": 4,
+    "GAP-F25": 3,
+    "GAP-F26": 3,
+    "GAP-F27": 3
+  },
+  "outputFiles": {
+    "suite13Append": "reports/coverage/COV-2026-03-21-1550/batch-B-suite13-append.csv",
+    "suite02Append": "reports/coverage/COV-2026-03-21-1550/batch-B-suite02-append.csv"
+  },
+  "appendInstructions": "Append batch-B-suite13-append.csv to the end of regression/suites/Frontend/13-b2c-features-tests.csv and batch-B-suite02-append.csv to the end of regression/suites/Frontend/02-authentication-tests.csv. Ensure no blank line between existing content and appended rows.",
+  "timestamp": "2026-03-21T15:50:00Z"
+}

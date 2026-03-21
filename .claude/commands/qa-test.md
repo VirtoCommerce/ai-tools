@@ -20,6 +20,12 @@ Analyze scope, dispatch specialist agents, collect results, and produce a verdic
 
 ## Execution
 
+### Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
+
+1. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, warn user.
+2. **Duplicate check** — scan `tests/{SPRINT}/` for the same ticket tested in the last 2 hours. If found, warn user and show previous results.
+3. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected feature's domain (e.g., `"cart xAPI mutations"`, `"order processing workflow"`) with `tokens: 8000`. Pass findings to agents in Step 3.
+
 ### Step 1 — Analyze Scope
 
 **Resolve current sprint** — check if `tests/Sprint-current` exists → use it. Otherwise list `tests/` and pick the latest `SprintXX-XX` folder. This becomes `{SPRINT}` for all output paths. Create the folder if it doesn't exist.
@@ -194,10 +200,13 @@ Output to the user: verdict, coverage summary, business rules verified, bugs fou
 
 ## Rules
 
+- Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, error handling, and JIRA transitions
 - Never use WebKit — not supported on Windows
 - Never assign two agents to the same browser server simultaneously
 - Read all URLs from config.js / .env — never hardcode
 - Max 3 concurrent browser agents
+- Browser fallback: chrome→firefox, edge→chrome, firefox→edge (max 1 retry)
 - If an agent fails with an internal error, fall back to working directly rather than retrying the same delegation
 - If Atlassian MCP is unavailable, skip JIRA transitions and ask user for ticket details manually
 - Always load `business-logic.md` for the affected domains — agents must know what rules to verify
+- Always query Context7 in Step 0 — pass findings to agents so they test against current module behavior

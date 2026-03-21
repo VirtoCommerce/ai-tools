@@ -906,3 +906,227 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checko
 [STATE] correcting a field clears that field's error without clearing other fields","[API] no order or billing payload sent while validation errors are present
 [CONSOLE] no JS errors during field-level validation
 [NETWORK] no outbound POST on failed validation","single generic error shown for entire form instead of field-level errors; form submits despite invalid fields; fixing one field clears all others' errors; no validation triggered on submit","Clear test cart; no order placed",Coverage Gap Analysis,Generated
+CHK-066,Guest Checkout - No Saved Addresses Available,Checkout > Guest > Address,High,BL-CHK-005,"ECL-4.4, ECL-1.2","Guest checkout enabled; anonymous user at checkout step","url={{FRONT_URL}}","[NAV] navigate to {{FRONT_URL}}/cart as anonymous user with items
+[ACT] proceed to checkout
+[ASSERT] verify no saved address dropdown or selector is shown
+[ASSERT] verify empty address form is displayed for manual entry
+[ACT] fill all required address fields manually
+[ASSERT] verify address accepted and shipping methods appear","[DOM] no saved address selector visible for guest
+[DOM] blank address form rendered
+[STATE] manual address entry is the only option for guest","[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","saved addresses from another user shown; address selector appears for guest; error on address form render",None,Coverage Gap Analysis,Manual
+CHK-067,Guest Checkout - Order Confirmation Without Order History Link,Checkout > Guest > Confirmation,Medium,BL-CHK-005,"ECL-4.4","Guest checkout completed; on order confirmation page","url={{FRONT_URL}}","[NAV] complete guest checkout flow (add item > checkout > payment)
+[WAIT] wait for order confirmation page
+[ASSERT] verify order number is displayed on confirmation page
+[ASSERT] verify NO link to order history or account dashboard is shown
+[ASSERT] verify email confirmation message displayed (order details sent to email)","[DOM] order number visible on confirmation page
+[DOM] no 'View Order History' or 'My Account' link present for guest
+[DOM] email confirmation notice displayed","[CONSOLE] no JS errors on confirmation page
+[NETWORK] no 4xx/5xx","order history link shown to guest (would 404 or error); no order number displayed; confirmation page is blank",None,Coverage Gap Analysis,Manual
+CHK-068,Guest Checkout - Same Email as Existing Account,Checkout > Guest > Email Conflict,High,BL-CHK-005,"ECL-4.4, ECL-1.2","Guest checkout enabled; email matches an existing registered account","url={{FRONT_URL}}
+existing_user_email={{USER_EMAIL}}","[NAV] navigate to {{FRONT_URL}} as anonymous user
+[ACT] add product to cart and proceed to checkout
+[ACT] enter {{USER_EMAIL}} (existing account email) in guest email field
+[ACT] complete shipping address and payment
+[ASSERT] verify system displays an informational message about existing account
+[ASSERT] verify no unhandled error or crash","[STATE] checkout does not crash on email conflict
+[DOM] informational message about existing account displayed
+[DOM] no generic/500 error page","[CONSOLE] no unhandled JS errors
+[NETWORK] no 5xx errors on email validation","unhandled error on email conflict; checkout crashes; order created under wrong account; silent failure",None,Coverage Gap Analysis,Manual
+CHK-069,B2B Checkout - PO Number Field Visible and Saved,Checkout > B2B > PO Number,High,BL-CHK-001,"ECL-7.1, BL-ORD-001","User logged in as B2B org buyer; items in cart; PO number field configured for the store","url={{FRONT_URL}}
+user={{ORG_USER_EMAIL}}
+password={{ORG_USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in as B2B buyer {{ORG_USER_EMAIL}}
+[ACT] add product to cart
+[NAV] navigate to {{FRONT_URL}}/cart
+[ACT] proceed to checkout
+[ASSERT] verify PO Number field is visible in checkout form
+[ACT] enter PO number 'PO-TEST-12345'
+[ACT] complete checkout (address + shipping + payment)
+[WAIT] wait for order confirmation
+[ASSERT] verify PO number 'PO-TEST-12345' displayed on order confirmation page
+[NAV] navigate to order details in account
+[ASSERT] verify PO number shown in order details","[DOM] PO Number input field visible at checkout
+[DOM] PO number displayed on confirmation page
+[STATE] PO number persisted and visible in order details","[API] createOrderFromCart includes purchaseOrderNumber field
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","PO Number field missing for B2B buyer; PO number not saved with order; PO number not shown on confirmation; field shown for non-B2B users",Cancel test order via admin,Coverage Gap Analysis,Manual
+CHK-070,B2B Checkout - PO Number Optional (Proceeds Without),Checkout > B2B > PO Number,Medium,BL-CHK-001,"ECL-7.1","User logged in as B2B org buyer; PO number field is optional","url={{FRONT_URL}}
+user={{ORG_USER_EMAIL}}
+password={{ORG_USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in as B2B buyer
+[ACT] add product to cart and proceed to checkout
+[ASSERT] verify PO Number field is visible but not marked as required
+[ACT] leave PO Number field empty
+[ACT] complete checkout
+[WAIT] wait for order confirmation
+[ASSERT] verify order placed successfully without PO number
+[ASSERT] verify no validation error for empty PO field","[STATE] checkout completes without PO number when field is optional
+[DOM] no validation error on empty PO field
+[DOM] order confirmation reached","[API] createOrderFromCart succeeds with empty/null purchaseOrderNumber
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","checkout blocked without PO number; validation error on optional field; order fails to create",Cancel test order via admin,Coverage Gap Analysis,Manual
+CHK-071,B2B Checkout - Order Appears in Organization Order History,Checkout > B2B > Order History,High,BL-CHK-001,"ECL-7.1, BL-ORD-001","User logged in as B2B org buyer; order placed via B2B checkout","url={{FRONT_URL}}
+user={{ORG_USER_EMAIL}}
+password={{ORG_USER_PASSWORD}}
+admin_url={{ADMIN_URL}}","[NAV] navigate to {{FRONT_URL}} and log in as B2B buyer
+[ACT] add product to cart and complete full checkout
+[WAIT] wait for order confirmation; note the order number
+[NAV] navigate to organization order history page
+[ASSERT] verify the new order appears in the organization order list
+[ASSERT] verify order details accessible from org order history
+[NAV] navigate to {{ADMIN_URL}}
+[ACT] search for the order by number
+[ASSERT] verify order is associated with the B2B organization","[STATE] order visible in org order history (not just personal)
+[DOM] order listed in organization orders section
+[DOM] order details page accessible","[API] searchOrders with organizationId returns the order
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","order missing from org history; order only in personal history; order not linked to organization in admin",Cancel test order via admin,Coverage Gap Analysis,Manual
+CHK-072,B2B Checkout - Cost Center/Department Field,Checkout > B2B > Cost Center,Low,BL-CHK-001,"ECL-7.1","User logged in as B2B org buyer; cost center/department field configured","url={{FRONT_URL}}
+user={{ORG_USER_EMAIL}}
+password={{ORG_USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in as B2B buyer
+[ACT] add product to cart and proceed to checkout
+[ASSERT] verify cost center or department field is visible if configured
+[ACT] select or enter a cost center value
+[ACT] complete checkout
+[ASSERT] verify cost center value appears on order confirmation","[DOM] cost center field visible at checkout (if configured)
+[STATE] selected cost center persisted with order","[API] order payload includes cost center metadata
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","cost center field missing when configured; value not saved; field shown when not configured",Cancel test order via admin,Coverage Gap Analysis,Manual
+CHK-074,Billing Address Persists Through Payment Retry,Checkout > Address > Billing Persistence,High,"BL-CHK-003, BL-CHK-004","ECL-1.1","User logged in; separate billing address entered; payment fails on first attempt","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to checkout with items in cart
+[ACT] fill shipping address
+[ACT] uncheck 'Billing same as shipping' and fill different billing address
+[ACT] proceed to payment
+[ACT] enter invalid payment details to trigger a decline/failure
+[WAIT] wait for payment error message
+[ASSERT] verify billing address fields still populated after payment failure
+[ASSERT] verify shipping address still populated
+[ACT] correct payment details and retry
+[ASSERT] verify both addresses still correct on order confirmation","[STATE] billing address not cleared after payment failure
+[STATE] shipping address preserved through retry
+[DOM] both address forms retain entered values","[API] payment retry sends same billing/shipping addresses
+[CONSOLE] no JS errors during payment retry
+[NETWORK] no 5xx on retry","billing address cleared after decline; shipping address lost; user forced to re-enter addresses; addresses swapped",Cancel test order via admin,Coverage Gap Analysis,Manual
+CHK-075,Order Confirmation Shows Both Shipping and Billing Addresses,Checkout > Confirmation > Addresses,Medium,BL-CHK-003,"ECL-1.1","Order placed with different shipping and billing addresses","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] complete checkout with separate shipping and billing addresses
+[WAIT] wait for order confirmation page
+[ASSERT] verify shipping address section displays the shipping address
+[ASSERT] verify billing address section displays the billing address
+[ASSERT] verify the two addresses are different (not duplicated)
+[NAV] navigate to order details in account
+[ASSERT] verify both addresses shown in order detail view","[DOM] distinct shipping address section on confirmation
+[DOM] distinct billing address section on confirmation
+[STATE] addresses match what was entered at checkout","[CONSOLE] no JS errors on confirmation page
+[NETWORK] no 4xx/5xx","only one address shown; billing shows shipping address; addresses section missing; addresses swapped",Cancel test order via admin,Coverage Gap Analysis,Manual
+CHK-076,Checkout Field Validation - US Address Requires ZIP and State,Checkout > Validation > Address,High,BL-CHK-003,"ECL-4.1","User at checkout address step; country selector available","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to checkout with items in cart
+[ACT] select United States as country
+[ACT] fill street and city but leave ZIP and State empty
+[ACT] click Continue or submit address
+[ASSERT] verify validation error for missing ZIP code
+[ASSERT] verify validation error for missing State
+[ACT] fill ZIP with valid US ZIP and select State
+[ASSERT] verify validation errors clear
+[ACT] change country to a non-US country that does not require ZIP
+[ACT] leave ZIP empty
+[ACT] submit address
+[ASSERT] verify no ZIP validation error for non-US country (if ZIP not required)","[DOM] ZIP validation error shown for US address without ZIP
+[DOM] State validation error shown for US address without State
+[STATE] validation rules change based on selected country","[CONSOLE] no JS errors during validation
+[NETWORK] no 4xx/5xx","no validation for missing US ZIP; State not required for US; same validation rules applied to all countries; validation error does not clear",None,Coverage Gap Analysis,Manual
+CHK-077,Checkout Field Validation - Special Characters in Name Fields,Checkout > Validation > Names,Medium,BL-CHK-003,"ECL-4.1","User at checkout address step","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to checkout with items in cart
+[ACT] enter name with apostrophe: O'Connor
+[ACT] enter name with accent: García
+[ACT] enter name with spaces: van der Berg
+[ACT] enter name with umlaut: Müller
+[ACT] fill remaining address fields with valid data
+[ACT] submit address
+[ASSERT] verify all special character names accepted without validation error — NameValidationPattern allows \p{L}\p{M}\s'\-\.
+[ASSERT] verify names displayed correctly in address summary (not escaped or mangled)","[DOM] no validation errors on special character names
+[DOM] names render correctly with original characters in summary
+[STATE] address saved successfully with special characters
+[STATE] InputValidationOptions NameValidationPattern permits valid Unicode names (apostrophes, accents, umlauts, hyphens, spaces)","[API] address payload contains unescaped special characters
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx on address save
+[API] updateMemberAddresses mutation returns no validation errors for valid special characters","apostrophe rejected; accented characters stripped; name truncated; NameValidationPattern false-positive rejects valid Unicode characters; InputValidationOptions blocks legitimate names",None,"Synced: PR #130 vc-module-profile-experience-api (2026-03-21)",Manual
+CHK-078,Checkout Field Validation - Long Address Line Handled,Checkout > Validation > Long Input,Low,BL-CHK-003,"ECL-4.1","User at checkout address step","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to checkout with items in cart
+[ACT] enter a very long address line (>100 characters) in Street field
+[ACT] fill remaining address fields with valid data
+[ACT] submit address
+[ASSERT] verify address accepted OR clear max-length validation shown (not a crash)
+[ASSERT] verify long address displayed correctly without truncation in summary","[DOM] long address either accepted or shows clear length validation
+[DOM] no layout break or overflow from long address text
+[STATE] no crash or unhandled error","[CONSOLE] no JS errors
+[NETWORK] no 5xx on address save","address silently truncated; layout breaks; unhandled error; field accepts but order fails later",None,Coverage Gap Analysis,Manual
+CHK-081,Order Total Formula - Subtotal Plus Shipping Plus Tax Minus Discounts,Checkout > Totals > Formula,Critical,BL-CHK-006,"ECL-2.3","User at checkout with items in cart; shipping selected; tax applicable","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to checkout with multiple items in cart
+[ACT] select delivery and fill shipping address
+[ACT] select a shipping method
+[WAIT] wait for order summary to fully calculate
+[ASSERT] verify subtotal = sum of all line item totals
+[ASSERT] verify shipping cost displayed and non-negative
+[ASSERT] verify tax amount displayed
+[ASSERT] verify total = subtotal + shipping + tax - discounts
+[ACT] note the exact total amount","[MATH] total = subtotal + shipping + tax - discounts
+[MATH] subtotal = sum(unit price x quantity) for each line item
+[DOM] all cost components visible in order summary","[API] checkout API response totals match displayed values
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","total does not equal component sum; missing tax or shipping in calculation; negative total; rounding error > $0.01",Clear cart,Coverage Gap Analysis,Manual
+CHK-082,Order Confirmation Total Matches Checkout Total,Checkout > Totals > Confirmation Match,High,BL-CHK-006,"ECL-2.3","User completing checkout; on payment step","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] complete checkout to final step
+[ACT] note the order total displayed at checkout
+[ACT] place the order
+[WAIT] wait for order confirmation page
+[ASSERT] verify order total on confirmation page matches checkout total exactly
+[ASSERT] verify subtotal and shipping and tax match checkout values","[MATH] confirmation total = checkout total (exact match)
+[DOM] all line items match between checkout and confirmation
+[STATE] no price recalculation between checkout submit and confirmation","[API] order response total matches checkout total
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","confirmation total differs from checkout; extra charges appear; tax recalculated differently; rounding discrepancy",Cancel test order via admin,Coverage Gap Analysis,Manual
+CHK-083,Admin Order Total Matches Storefront Confirmation,Checkout > Totals > Admin Match,High,BL-CHK-006,"ECL-2.3","Order placed and confirmed on storefront","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+admin_url={{ADMIN_URL}}","[NAV] complete checkout and note order total and order number from confirmation
+[NAV] navigate to {{ADMIN_URL}} admin panel
+[ACT] search for the order by order number
+[ASSERT] verify admin order total matches storefront confirmation total
+[ASSERT] verify admin shows same subtotal and shipping and tax
+[ASSERT] verify line item prices match","[MATH] admin total = storefront confirmation total
+[STATE] no discrepancy between storefront and admin order data","[API] admin order detail API returns same totals
+[CONSOLE] no admin console errors
+[NETWORK] no 4xx/5xx","admin total differs from storefront; line item prices mismatch; tax calculated differently in admin; order not found in admin",Cancel test order via admin,Coverage Gap Analysis,Manual
+CHK-084,Minimum Order Amount - Cart Below Minimum Blocks Checkout,Checkout > Minimum Order,High,BL-CHK-007,"ECL-1.3","Minimum order amount configured in store settings (e.g., $50); user logged in","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in
+[ACT] add a low-priced product to cart (total below minimum order amount)
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify message indicating minimum order amount not met (e.g., 'Minimum order is $50')
+[ASSERT] verify checkout/Place Order button is disabled or blocked
+[ACT] attempt to proceed to checkout
+[ASSERT] verify user cannot advance past cart to checkout","[DOM] minimum order warning message visible
+[DOM] checkout button disabled or not clickable
+[STATE] checkout flow blocked for below-minimum cart","[API] cart validation returns minimum order error
+[CONSOLE] no JS errors
+[NETWORK] no 5xx","checkout proceeds below minimum; no warning message; button enabled despite below-minimum total; generic error without specifying minimum amount",Remove items from cart,Coverage Gap Analysis,Manual
+CHK-085,Minimum Order Amount - Adding Items to Exceed Minimum Unblocks,Checkout > Minimum Order,Medium,BL-CHK-007,"ECL-1.3","Cart currently below minimum order amount; minimum order message displayed","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with below-minimum total
+[ASSERT] verify minimum order warning is shown and checkout is blocked
+[ACT] add more items or increase quantity to exceed minimum order amount
+[WAIT] wait for cart to recalculate
+[ASSERT] verify minimum order warning disappears
+[ASSERT] verify checkout button becomes enabled/clickable
+[ACT] proceed to checkout
+[ASSERT] verify checkout flow accessible","[DOM] warning removed after exceeding minimum
+[DOM] checkout button enabled
+[STATE] checkout unblocked when total >= minimum","[API] cart validation passes after exceeding minimum
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","warning persists after exceeding minimum; checkout still blocked; page refresh required to clear warning",Remove items from cart,Coverage Gap Analysis,Manual

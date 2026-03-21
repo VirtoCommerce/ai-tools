@@ -1,0 +1,149 @@
+{
+  "batch": "A",
+  "agent": "qa-frontend-expert",
+  "domains": ["CART", "CHECKOUT", "PAYMENT"],
+  "layers": ["storefront", "graphql", "e2e"],
+  "gaps": [
+    {
+      "gapId": "GAP-001",
+      "title": "Cart persistence across sign-out/sign-in",
+      "casesGenerated": 5,
+      "caseIds": ["CART-071", "CART-072", "CART-073", "CART-074", "CART-075"],
+      "targetSuite": "04a",
+      "businessRules": ["BL-CART-008"],
+      "edgeCases": ["ECL-1.2", "ECL-4.4"]
+    },
+    {
+      "gapId": "GAP-002",
+      "title": "Price change during session / stale cart",
+      "casesGenerated": 3,
+      "caseIds": ["CART-076", "CART-077", "CART-078"],
+      "targetSuite": "04a",
+      "businessRules": ["BL-PRICE-001", "BL-CART-004"],
+      "edgeCases": ["ECL-2.3"]
+    },
+    {
+      "gapId": "GAP-003",
+      "title": "Cart validation errors block checkout",
+      "casesGenerated": 4,
+      "caseIds": ["CART-079", "CART-080", "CART-081", "CART-082"],
+      "targetSuite": "04a",
+      "businessRules": ["BL-CART-001", "BL-CART-002"],
+      "edgeCases": ["ECL-2.1"]
+    },
+    {
+      "gapId": "GAP-004",
+      "title": "Guest checkout flow",
+      "casesGenerated": 5,
+      "caseIds": ["CHK-064", "CHK-065", "CHK-066", "CHK-067", "CHK-068"],
+      "targetSuite": "04b",
+      "businessRules": ["BL-CHK-001"],
+      "edgeCases": ["ECL-4.4", "ECL-1.2"]
+    },
+    {
+      "gapId": "GAP-005",
+      "title": "B2B checkout with PO number",
+      "casesGenerated": 4,
+      "caseIds": ["CHK-069", "CHK-070", "CHK-071", "CHK-072"],
+      "targetSuite": "04b",
+      "businessRules": ["BL-CHK-001", "BL-ORD-001"],
+      "edgeCases": ["ECL-7.1"]
+    },
+    {
+      "gapId": "GAP-006",
+      "title": "Billing != shipping address",
+      "casesGenerated": 3,
+      "caseIds": ["CHK-073", "CHK-074", "CHK-075"],
+      "targetSuite": "04b",
+      "businessRules": ["BL-CHK-003", "BL-CHK-004"],
+      "edgeCases": ["ECL-1.1"]
+    },
+    {
+      "gapId": "GAP-007",
+      "title": "Checkout field validation",
+      "casesGenerated": 3,
+      "caseIds": ["CHK-076", "CHK-077", "CHK-078"],
+      "targetSuite": "04b",
+      "businessRules": ["BL-CHK-003"],
+      "edgeCases": ["ECL-4.1"]
+    },
+    {
+      "gapId": "GAP-008",
+      "title": "Double-submit prevention",
+      "casesGenerated": 2,
+      "caseIds": ["CHK-079", "CHK-080"],
+      "targetSuite": "04b",
+      "businessRules": ["BL-CHK-002"],
+      "edgeCases": ["ECL-1.1"]
+    },
+    {
+      "gapId": "GAP-009",
+      "title": "Declined card recovery",
+      "casesGenerated": 3,
+      "caseIds": ["PAY-DECLINE-006", "PAY-DECLINE-007", "PAY-DECLINE-008"],
+      "targetSuite": "06",
+      "businessRules": ["BL-CHK-004"],
+      "edgeCases": ["ECL-1.1"]
+    },
+    {
+      "gapId": "GAP-010",
+      "title": "Skyflow expanded coverage",
+      "casesGenerated": 4,
+      "caseIds": ["PAY-SKY-006", "PAY-SKY-007", "PAY-SKY-008", "PAY-SKY-009"],
+      "targetSuite": "06",
+      "businessRules": ["BL-PAY-004"],
+      "edgeCases": ["ECL-1.1"]
+    },
+    {
+      "gapId": "GAP-011",
+      "title": "Authorize.Net expanded coverage",
+      "casesGenerated": 4,
+      "caseIds": ["PAY-AN-006", "PAY-AN-007", "PAY-AN-008", "PAY-AN-009"],
+      "targetSuite": "06",
+      "businessRules": ["BL-PAY-004"],
+      "edgeCases": ["ECL-1.1"]
+    },
+    {
+      "gapId": "GAP-017",
+      "title": "Order total formula verification",
+      "casesGenerated": 3,
+      "caseIds": ["CHK-081", "CHK-082", "CHK-083"],
+      "targetSuite": "04b",
+      "businessRules": ["BL-CHK-006"],
+      "edgeCases": ["ECL-2.3"]
+    },
+    {
+      "gapId": "GAP-018",
+      "title": "Minimum order amount enforcement",
+      "casesGenerated": 2,
+      "caseIds": ["CHK-084", "CHK-085"],
+      "targetSuite": "04b",
+      "businessRules": ["BL-CHK-007"],
+      "edgeCases": ["ECL-1.3"]
+    }
+  ],
+  "totalCasesGenerated": 45,
+  "suitesModified": ["04a", "04b", "06"],
+  "suiteDetails": {
+    "04a": {
+      "file": "regression/suites/Frontend/04a-cart-tests.csv",
+      "previousLastId": "CART-070",
+      "newIdRange": "CART-071 to CART-082",
+      "casesAdded": 12
+    },
+    "04b": {
+      "file": "regression/suites/Frontend/04b-checkout-tests.csv",
+      "previousLastId": "CHK-063",
+      "newIdRange": "CHK-064 to CHK-085",
+      "casesAdded": 22
+    },
+    "06": {
+      "file": "regression/suites/Frontend/06-payment-tests.csv",
+      "previousLastId": "PAY-SKTOK-001",
+      "newIdRange": "PAY-DECLINE-006 to PAY-AN-009",
+      "casesAdded": 11
+    }
+  },
+  "generatedAt": "2026-03-21T13:37:00Z",
+  "runId": "COV-2026-03-21-1337"
+}

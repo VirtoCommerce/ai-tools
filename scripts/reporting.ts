@@ -247,16 +247,16 @@ function generateReport(runId: string, resultsDir: string): void {
   };
 
   for (const sr of suiteResults) {
-    totals.cases += sr.totalCases;
-    totals.passed += sr.passed;
-    totals.failed += sr.failed;
-    totals.blocked += sr.blocked;
-    totals.skipped += sr.skipped;
-    totals.bugs.push(...sr.bugs);
-    totals.rateLimitHits += sr.rateLimitHits;
-    totals.selfRecoveries += sr.selfRecoveries.length;
+    totals.cases += sr.totalCases ?? 0;
+    totals.passed += sr.passed ?? 0;
+    totals.failed += sr.failed ?? 0;
+    totals.blocked += sr.blocked ?? 0;
+    totals.skipped += sr.skipped ?? 0;
+    totals.bugs.push(...(sr.bugs ?? []));
+    totals.rateLimitHits += sr.rateLimitHits ?? 0;
+    totals.selfRecoveries += (sr.selfRecoveries ?? []).length;
 
-    if (sr.errors.length === 0 && sr.failed === 0 && sr.blocked === 0) {
+    if ((sr.errors ?? []).length === 0 && (sr.failed ?? 0) === 0 && (sr.blocked ?? 0) === 0) {
       totals.suitesPassed++;
     } else {
       totals.suitesFailed++;
@@ -352,7 +352,7 @@ function generateReport(runId: string, resultsDir: string): void {
 
     for (const bug of totals.bugs) {
       const suite = suiteResults.find((sr) =>
-        sr.bugs.some((b) => b.id === bug.id)
+        (sr.bugs ?? []).some((b) => b.id === bug.id)
       );
       md += `| ${bug.id} | ${suite?.suiteId || "?"} | ${bug.severity} | ${bug.title} | ${bug.testCaseId} |\n`;
     }
@@ -367,7 +367,7 @@ function generateReport(runId: string, resultsDir: string): void {
       md += `- **Steps to Reproduce:**\n${bug.stepsToReproduce}\n`;
       md += `- **Expected:** ${bug.expected}\n`;
       md += `- **Actual:** ${bug.actual}\n`;
-      if (bug.consoleErrors.length > 0) {
+      if ((bug.consoleErrors ?? []).length > 0) {
         md += `- **Console Errors:** ${bug.consoleErrors.join("; ")}\n`;
       }
       md += "\n";
@@ -397,7 +397,7 @@ function generateReport(runId: string, resultsDir: string): void {
     md += `- **Duration:** ${sr.startedAt} — ${sr.completedAt}\n`;
     md += `- **Pass Rate:** ${sr.passRate}\n\n`;
 
-    if (sr.testCases.length > 0) {
+    if ((sr.testCases ?? []).length > 0) {
       md += `| ID | Title | Priority | Status | Notes |\n`;
       md += `|----|-------|----------|--------|-------|\n`;
       for (const tc of sr.testCases) {
@@ -409,7 +409,7 @@ function generateReport(runId: string, resultsDir: string): void {
       md += "\n";
     }
 
-    if (sr.errors.length > 0) {
+    if ((sr.errors ?? []).length > 0) {
       md += `**Errors:** ${sr.errors.join("; ")}\n\n`;
     }
   }
@@ -461,7 +461,7 @@ function generateJiraPayloads(runId: string, resultsDir: string): void {
   const payloads: JiraPayload[] = [];
 
   for (const sr of suiteResults) {
-    for (const bug of sr.bugs) {
+    for (const bug of (sr.bugs ?? [])) {
       // Only auto-create tickets for Critical and High severity
       if (bug.severity !== "Critical" && bug.severity !== "High") continue;
 
@@ -487,7 +487,7 @@ function generateJiraPayloads(runId: string, resultsDir: string): void {
         "",
       ];
 
-      if (bug.consoleErrors.length > 0) {
+      if ((bug.consoleErrors ?? []).length > 0) {
         description.push("h3. Console Errors");
         description.push("{code}");
         description.push(...bug.consoleErrors);

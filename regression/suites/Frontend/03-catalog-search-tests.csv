@@ -1361,3 +1361,136 @@ SRCH-NEW-049,Sort Persists Across Search Pagination Pages,Search > Pagination,Hi
 [DOM] Sort dropdown on page 2 reflects the same sort as page 1
 [NAV] URL on page 2 includes both sort and page parameters","[NETWORK] POST /graphql (searchProducts) on page 2 includes both sort and page/offset params
 [CONSOLE] no TypeError or JS errors","Sort dropdown resetting to default when moving to page 2; prices on page 2 not continuing the ascending order; URL losing sort param on pagination; console TypeError",none,"Coverage Gap Analysis; GAP-CS-22",Generated
+CAT-059,Breadcrumb Resets When Navigating from Subcategory Back to Parent via Main Menu,Catalog > Navigation > Breadcrumb State,High,BL-CAT-001,"ECL-14.1","Category hierarchy exists with at least 2 levels; user can navigate subcategory then return to parent via main menu","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click on a top-level category in the main navigation menu
+[WAIT] Wait for top-level category page to load
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level Category]
+[ACT] Click on a subcategory link within the top-level category page
+[WAIT] Wait for subcategory page to load
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level Category] > [Subcategory]
+[ACT] Click on the top-level category link in the main navigation menu (not the breadcrumb)
+[WAIT] Wait for top-level category page to load
+[ASSERT] Verify URL updated to top-level category URL (subcategory segment absent)
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level Category] (subcategory name must be absent)
+[ASSERT] Verify category heading matches top-level category name","[DOM] breadcrumb trail contains exactly 2 items: Home + Top-Level Category
+[DOM] subcategory name absent from breadcrumb after navigating to parent
+[NAV] URL matches top-level category URL (no subcategory slug)
+[DOM] category page heading matches top-level category name","[CONSOLE] no Vue hydration warnings or TypeError
+[NETWORK] GET top-level category page returns HTTP 200
+[NETWORK] no 4xx/5xx on navigation","breadcrumb still shows subcategory name after navigating to parent; URL correct but breadcrumb stale; heading correct but breadcrumb wrong (VCST-4728 regression check)",none,VCST-4728,Manual
+CAT-060,Breadcrumb Resets When Using Browser Back Button from Subcategory to Parent,Catalog > Navigation > Breadcrumb State,High,BL-CAT-001,"ECL-14.1","Category hierarchy with at least 2 levels; user on subcategory page reached via forward navigation","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click on a top-level category in the main navigation menu
+[WAIT] Wait for top-level category page to load
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level Category]
+[ACT] Click on a subcategory
+[WAIT] Wait for subcategory page to fully load
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level Category] > [Subcategory]
+[ACT] Press browser Back button
+[WAIT] Wait for browser to navigate to previous page (top-level category)
+[ASSERT] Verify URL is the top-level category URL
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level Category]
+[ASSERT] Verify category heading matches top-level category","[DOM] breadcrumb contains exactly 2 items: Home + Top-Level Category
+[DOM] subcategory name absent from breadcrumb
+[NAV] URL is top-level category URL
+[DOM] heading matches top-level category name","[CONSOLE] no hydration errors or TypeError after back navigation
+[NETWORK] no 4xx/5xx triggered by back navigation","breadcrumb still shows subcategory name after browser Back; URL correct but breadcrumb stale — direct reproduction of VCST-4728",none,VCST-4728,Manual
+CAT-061,Breadcrumb Reflects Correct Path When Navigating Between Sibling Subcategories,Catalog > Navigation > Breadcrumb State,Medium,BL-CAT-001,"ECL-14.1","Category hierarchy with one parent and at least 2 sibling subcategories","url={{FRONT_URL}}","[NAV] Navigate to a subcategory page (e.g., Home > [Parent] > [Subcategory A])
+[WAIT] Wait for page to load
+[ASSERT] Verify breadcrumb shows: Home > [Parent] > [Subcategory A]
+[ACT] Click on the parent category in the main navigation menu
+[WAIT] Wait for parent category page to load
+[ACT] Click on a different sibling subcategory (e.g., [Subcategory B])
+[WAIT] Wait for sibling subcategory page to load
+[ASSERT] Verify breadcrumb shows: Home > [Parent] > [Subcategory B]
+[ASSERT] Verify [Subcategory A] is absent from the breadcrumb","[DOM] breadcrumb shows Home > [Parent] > [New Sibling] — no trace of previous sibling
+[DOM] breadcrumb has exactly 3 items matching the new navigation path
+[NAV] URL reflects the new sibling subcategory slug","[CONSOLE] no TypeError or hydration warnings
+[NETWORK] no 4xx/5xx","breadcrumb shows blend of both paths; previous subcategory name persists; breadcrumb shows 4 items instead of 3; heading correct but breadcrumb wrong",none,VCST-4728,Manual
+CAT-062,Breadcrumb Determinism on Rapid Forward-Back-Forward Navigation,Catalog > Navigation > Breadcrumb State,Medium,BL-CAT-001,"ECL-1.2, ECL-14.1","Category hierarchy with at least 2 levels; user can navigate quickly","url={{FRONT_URL}}","[NAV] Navigate to a top-level category on {{FRONT_URL}}
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level Category]
+[ACT] Click into a subcategory
+[WAIT] Wait for page to load
+[ACT] Click the top-level category in main navigation
+[WAIT] Wait for page to load
+[ACT] Click the same subcategory again
+[WAIT] Wait 1 second for all navigation and state to settle
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level Category] > [Subcategory] (final destination)
+[ASSERT] Verify breadcrumb does not show intermediate stale state
+[ASSERT] Verify URL matches subcategory","[DOM] breadcrumb shows 3 items: Home > [Top-Level Category] > [Subcategory] matching final destination
+[DOM] no intermediate stale breadcrumb state visible
+[NAV] URL is subcategory URL
+[DOM] heading matches subcategory name","[CONSOLE] no race condition errors or uncaught exceptions
+[NETWORK] no 4xx/5xx","breadcrumb flickers between states; breadcrumb shows parent instead of subcategory after rapid navigation; heading correct but breadcrumb stale",none,VCST-4728,Manual
+CAT-COMP-001,Add Product to Compare from PDP,Catalog > Product Comparison,High,,"ECL-7.1","User logged in as {{USER_EMAIL}}; multiple products exist in catalog","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to a product detail page on {{FRONT_URL}}
+[WAIT] PDP fully loaded with product details
+[ACT] Click 'Compare' button or toggle on PDP
+[WAIT] Compare indicator appears (badge or checkmark on button)","[DOM] Compare button/toggle shows active/selected state
+[STATE] Product added to compare list (compare indicator visible)
+[DOM] Compare bar or floating widget appears at bottom of page showing 1 item","[API] no GraphQL errors during compare operation
+[CONSOLE] no uncaught JS errors","Compare button missing or disabled; compare indicator does not appear after 3s; no visual feedback on click","Clear compare selection",Coverage Gap Analysis,Generated
+CAT-COMP-002,Add Second Product and View Compare Bar,Catalog > Product Comparison,High,,"ECL-7.1","User logged in; one product already in compare","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to a different product detail page
+[WAIT] PDP fully loaded
+[ACT] Click 'Compare' button on second product
+[WAIT] Compare bar updates to show 2 products","[DOM] Compare bar shows 2 product thumbnails or names
+[STATE] Both products listed in compare bar
+[DOM] 'Compare' action button in bar is enabled (minimum 2 products met)","[API] no GraphQL errors
+[CONSOLE] no uncaught JS errors","Compare bar does not update; second product not added; compare action button still disabled with 2 products","Clear compare selection",Coverage Gap Analysis,Generated
+CAT-COMP-003,Navigate to Compare Page,Catalog > Product Comparison,High,,,"User logged in; 2+ products in compare bar","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[ACT] Click 'Compare' button in the compare bar
+[WAIT] Compare page loads
+[ASSERT] Verify compare page displays products side-by-side","[NAV] URL contains /compare or similar comparison path
+[DOM] Products displayed in columns with images and names
+[DOM] Product properties/attributes shown in aligned rows for comparison
+[DOM] Prices displayed for each product","[API] no GraphQL errors on compare page load
+[CONSOLE] no uncaught JS errors
+[NETWORK] no 4xx/5xx on page load","Compare page blank; products not displayed side-by-side; 404 on compare URL","Clear compare selection",Coverage Gap Analysis,Generated
+CAT-COMP-004,Compare Product Properties Side-by-Side,Catalog > Product Comparison,High,,,"User on compare page with 2+ products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to compare page with 2+ products
+[WAIT] Compare table/grid fully rendered
+[SCROLL] Scroll through property rows
+[ASSERT] Verify all shared properties are aligned across columns","[DOM] Product names displayed as column headers
+[DOM] Product images visible for each product
+[DOM] Properties (brand, size, color, etc.) aligned in rows
+[DOM] Prices shown with correct formatting
+[FORMAT] All prices display with exactly 2 decimal places","[API] no GraphQL errors
+[CONSOLE] no uncaught JS errors","Properties misaligned between products; missing product images; prices not displayed; empty property rows","Clear compare selection",Coverage Gap Analysis,Generated
+CAT-COMP-005,Remove Product from Comparison,Catalog > Product Comparison,High,,,"User on compare page with 2+ products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to compare page with 3 products
+[WAIT] All 3 products displayed
+[ACT] Click 'Remove' or 'X' on the middle product
+[WAIT] Product removed from comparison grid","[DOM] Removed product no longer shown in compare grid
+[STATE] 2 remaining products still displayed correctly
+[DOM] Properties re-aligned for remaining products
+[DOM] Compare bar updated to show 2 items","[API] no GraphQL errors
+[CONSOLE] no uncaught JS errors","Removed product still visible; remaining products misaligned; page crashes on remove; compare bar count not updated","Clear compare selection",Coverage Gap Analysis,Generated
+CAT-COMP-006,Max Products Limit Enforcement,Catalog > Product Comparison,Medium,,,"User logged in; catalog has 6+ products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to category listing on {{FRONT_URL}}
+[ACT] Add 5 products to compare via PDP or listing checkboxes
+[WAIT] Compare bar shows 5 products
+[NAV] Navigate to a 6th product PDP
+[ACT] Click 'Compare' button on 6th product
+[WAIT] Wait for response","[DOM] Error message or tooltip shown indicating max compare limit reached
+[STATE] 6th product NOT added to compare
+[DOM] Compare bar still shows exactly 5 products","[API] no GraphQL errors
+[CONSOLE] no uncaught JS errors","6th product added without limit; no error message shown; compare bar shows 6 items","Clear compare selection",Coverage Gap Analysis,Generated
+CAT-COMP-007,Compare from Catalog Listing - Select Products,Catalog > Product Comparison,High,,,"User logged in; category page with multiple products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[WAIT] Product grid loaded
+[ACT] Check compare checkbox on first product card
+[WAIT] Compare indicator shown on card
+[ACT] Check compare checkbox on second product card
+[WAIT] Compare bar appears with 2 products","[DOM] Compare checkbox/button visible on product cards
+[STATE] First product card shows selected/compare state
+[STATE] Second product card shows selected/compare state
+[DOM] Compare bar appears at bottom with 2 products listed","[API] no GraphQL errors
+[CONSOLE] no uncaught JS errors","Compare checkbox missing on product cards; compare bar does not appear after selecting 2 products","Clear compare selection",Coverage Gap Analysis,Generated
+CAT-COMP-008,Compare from Catalog Listing - Navigate to Compare Page,Catalog > Product Comparison,High,,,"User on category page with 2 products selected for compare","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to category page
+[ACT] Select 2 products for compare via checkboxes
+[WAIT] Compare bar visible with 2 products
+[ACT] Click 'Compare' button in compare bar
+[WAIT] Compare page loads","[NAV] URL navigates to compare page
+[DOM] Both selected products displayed on compare page
+[DOM] Properties aligned for comparison","[API] no GraphQL errors
+[CONSOLE] no uncaught JS errors
+[NETWORK] no 4xx/5xx","Compare page does not load; selected products not shown on compare page; 404 error","Clear compare selection",Coverage Gap Analysis,Generated
+CAT-COMP-009,Clear All from Compare,Catalog > Product Comparison,Medium,,,"User has 2+ products in compare","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[ACT] With products in compare bar click 'Clear All' or 'Remove All'
+[WAIT] Compare bar clears
+[ASSERT] Verify no products in compare","[DOM] Compare bar disappears or shows empty state
+[STATE] No products in compare list
+[DOM] Compare indicators removed from all product cards/PDPs","[API] no GraphQL errors
+[CONSOLE] no uncaught JS errors","Compare bar still shows products after clear; compare indicators persist on cards; clear button missing","none",Coverage Gap Analysis,Generated

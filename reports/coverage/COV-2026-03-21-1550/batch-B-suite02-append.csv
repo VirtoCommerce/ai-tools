@@ -1,0 +1,63 @@
+AUTH-062,Impersonation - Switch Companies While Impersonating,Authentication > Impersonation,Medium,BL-AUTH-006; BL-AUTH-007,ECL-14.1,"Admin impersonating a customer who belongs to multiple companies; storefront loaded in impersonation context","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of a customer belonging to multiple companies
+[WAIT] Wait for storefront to load in impersonation context
+[ASSERT] Verify impersonation banner visible
+[ASSERT] Note current company context (name in org switcher)
+[ACT] Open the company/org switcher in the storefront
+[ACT] Select a different company
+[WAIT] Wait for company context to update
+[ASSERT] Verify org switcher shows new company name
+[ASSERT] Verify catalog and prices reflect new company context
+[ASSERT] Verify impersonation banner still visible after company switch","[STATE] Company switcher accessible during impersonation session
+[STATE] Company context changes successfully while maintaining impersonation
+[DOM] Impersonation banner persists through company switch
+[DOM] Org switcher shows updated company name
+[STATE] Prices and catalog reflect new company context","[API] organization switch mutation succeeds during impersonation
+[CONSOLE] no TypeError or JS errors
+[NETWORK] no 4xx on company switch during impersonation","Company switcher inaccessible during impersonation; company switch breaks impersonation session; impersonation banner disappears after switch; previous company data persists; console TypeError",Stop impersonation after test,Coverage Gap Analysis,Generated
+AUTH-063,Impersonation - Stop Impersonation Returns to Admin State,Authentication > Impersonation,Medium,BL-AUTH-006; BL-AUTH-007,,"Admin currently impersonating a customer; impersonation session active","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of a customer
+[WAIT] Wait for storefront to load in impersonation context
+[ASSERT] Verify impersonation banner visible in storefront
+[ACT] Locate stop-impersonation control (banner button or link)
+[ACT] Click Stop Impersonation
+[WAIT] Wait for context to change
+[ASSERT] Verify redirected to admin panel or admin context restored
+[ASSERT] Verify no customer data leaks into admin session
+[ASSERT] Verify admin panel is fully functional after stopping","[STATE] Stop impersonation control visible and accessible
+[STATE] After stopping: admin context fully restored (not customer storefront)
+[DOM] Admin panel loads correctly after stopping impersonation
+[STATE] No customer session data persists in admin context
+[STATE] Admin authentication token still valid","[NETWORK] Admin token valid after stopping impersonation
+[CONSOLE] no TypeError or JS errors","Stop impersonation control missing; admin not restored after stop; customer data leaks into admin session; admin panel broken after stopping; console TypeError",none,Coverage Gap Analysis,Generated
+AUTH-064,Impersonation - Banner Visible Throughout Browsing,Authentication > Impersonation,Medium,BL-AUTH-006,,"Admin impersonating a customer; storefront loaded","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of a customer
+[WAIT] Wait for storefront to load in impersonation context
+[ASSERT] Verify impersonation banner visible on homepage
+[NAV] Navigate to a category page
+[ASSERT] Verify impersonation banner still visible
+[NAV] Navigate to a product detail page
+[ASSERT] Verify impersonation banner still visible
+[NAV] Navigate to cart page
+[ASSERT] Verify impersonation banner still visible
+[NAV] Navigate to account/orders page
+[ASSERT] Verify impersonation banner still visible on all account pages","[DOM] Impersonation banner visible on homepage
+[DOM] Impersonation banner visible on category page
+[DOM] Impersonation banner visible on product page
+[DOM] Impersonation banner visible on cart page
+[DOM] Impersonation banner visible on account pages
+[DOM] Banner includes customer name or identifier and stop button","[CONSOLE] no TypeError or JS errors
+[NETWORK] no 4xx on any page navigation during impersonation","Impersonation banner disappears on some pages; banner missing on cart or checkout; banner not showing customer identity; console TypeError",Stop impersonation after test,Coverage Gap Analysis,Generated
+AUTH-065,Impersonation - Impersonated User Cannot Impersonate Others,Authentication > Impersonation,High,BL-AUTH-006; BL-AUTH-005,ECL-4.3,"Admin impersonating a customer who has admin-like role in their org; storefront loaded","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of a customer
+[WAIT] Wait for storefront to load in impersonation context
+[ASSERT] Verify impersonation banner visible
+[NAV] Attempt to navigate to admin panel URL ({{ADMIN_URL}})
+[ASSERT] Verify admin access is denied or redirected to storefront
+[ASSERT] Verify no impersonation controls available in the impersonated session
+[ASSERT] Verify impersonated user cannot access login-on-behalf API endpoints","[STATE] Impersonated user cannot access admin panel
+[STATE] No nested impersonation possible (impersonate-while-impersonating blocked)
+[STATE] Admin URL redirects to storefront or shows access denied
+[STATE] Login-on-behalf API returns 401/403 for impersonated token","[API] login-on-behalf endpoint rejects impersonated user token
+[CONSOLE] no TypeError or JS errors
+[NETWORK] admin panel returns 401 or 403 for impersonated session","Impersonated user can access admin panel; nested impersonation possible; admin API accessible from impersonated session; privilege escalation via impersonation chain; console TypeError",Stop impersonation after test,Coverage Gap Analysis,Generated

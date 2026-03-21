@@ -1,39 +1,81 @@
 {
-  "runId": "REG-2026-03-09-FE",
-  "selection": "frontend",
-  "agentOverride": "qa-frontend-expert",
-  "startedAt": "2026-03-09T17:22:00Z",
-  "completedAt": "2026-03-10T00:30:00Z",
-  "status": "completed",
-  "totalSuites": 15,
-  "completed": 15,
-  "passed": 13,
-  "failed": 2,
-  "blocked": 0,
-  "cancelled": 0,
-  "currentBatch": 5,
-  "totalBatches": 5,
+  "runId": "REG-2026-03-21-1615",
+  "selection": "02,03,04c,13",
+  "trigger": "COV-2026-03-21-1550 coverage generation pipeline (retry of blocked REG-2026-03-21-1600)",
+  "status": "running",
+  "startedAt": "2026-03-21T16:15:00.000Z",
+  "completedAt": null,
   "environment": {
     "frontUrl": "https://vcst-qa-storefront.govirto.com",
-    "backUrl": "https://vcst-qa.govirto.com",
-    "version": "2.43.0-alpha.2254",
-    "verified": true
+    "backUrl": "https://vcst-qa.govirto.com"
   },
   "suites": {
-    "01": { "status": "completed", "browser": "playwright-chrome", "batch": 1, "attempt": 1, "execPassRate": "100%", "passed": 10, "failed": 0, "blocked": 4, "skipped": 2 },
-    "06": { "status": "completed", "browser": "playwright-firefox", "batch": 1, "attempt": 1, "execPassRate": "94.4%", "passed": 17, "failed": 1, "blocked": 14, "skipped": 13 },
-    "08": { "status": "completed", "browser": "playwright-edge", "batch": 1, "attempt": 1, "execPassRate": "94.4%", "passed": 17, "failed": 0, "blocked": 3, "skipped": 1 },
-    "02": { "status": "completed", "browser": "playwright-chrome", "batch": 2, "attempt": 1, "execPassRate": "100%", "passed": 30, "failed": 0, "skipped": 17 },
-    "03": { "status": "completed", "browser": "playwright-firefox", "batch": 2, "attempt": 1, "execPassRate": "93.1%", "passed": 27, "failed": 0, "ambiguous": 2, "skipped": 35 },
-    "04": { "status": "completed", "browser": "playwright-edge", "batch": 2, "attempt": 1, "execPassRate": "96.9%", "passed": 31, "failed": 0, "skipped": 1 },
-    "05": { "status": "completed", "browser": "playwright-chrome", "batch": 3, "attempt": 1, "execPassRate": "98.1%", "passed": 52, "failed": 1, "skipped": 23 },
-    "09": { "status": "completed", "browser": "playwright-firefox", "batch": 3, "attempt": 1, "execPassRate": "59%", "passed": 13, "failed": 5, "skipped": 0 },
-    "12": { "status": "completed", "browser": "playwright-edge", "batch": 3, "attempt": 1, "execPassRate": "100%", "passed": 10, "failed": 0, "skipped": 11 },
-    "13": { "status": "completed", "browser": "playwright-chrome", "batch": 4, "attempt": 2, "execPassRate": "100%", "passed": 24, "failed": 0, "skipped": 8 },
-    "35": { "status": "completed", "browser": "playwright-firefox", "batch": 4, "attempt": 2, "execPassRate": "72.3%", "passed": 34, "failed": 3, "blocked": 8, "skipped": 23 },
-    "36": { "status": "completed", "browser": "playwright-edge", "batch": 4, "attempt": 2, "execPassRate": "100%", "passed": 14, "failed": 0, "blocked": 29, "skipped": 2 },
-    "07": { "status": "completed", "browser": "playwright-firefox", "batch": 5, "attempt": 1, "execPassRate": "90.5%", "passed": 19, "failed": 2, "skipped": 2 },
-    "10": { "status": "completed", "browser": "playwright-edge", "batch": 5, "attempt": 3, "execPassRate": "100%", "passed": 26, "failed": 0, "skipped": 0 },
-    "11": { "status": "completed", "browser": "playwright-chrome", "batch": 5, "attempt": 1, "execPassRate": "65%", "passed": 13, "failed": 3, "skipped": 0 }
+    "04c": {
+      "name": "Orders & Quotes Tests",
+      "status": "completed",
+      "browser": "playwright-chrome",
+      "slot": 1,
+      "batch": 1,
+      "priority": "P1",
+      "attempts": 1,
+      "outputFile": "reports/regression/REG-2026-03-21-1615/suite-04c-results.json",
+      "result": {
+        "passed": 61,
+        "failed": 4,
+        "blocked": 16,
+        "skipped": 0,
+        "passRate": "75.3%"
+      }
+    },
+    "13": {
+      "name": "B2C Features Tests",
+      "status": "completed",
+      "browser": "playwright-firefox",
+      "slot": 2,
+      "batch": 1,
+      "priority": "P1",
+      "attempts": 1,
+      "outputFile": "reports/regression/REG-2026-03-21-1615/suite-13-results.json",
+      "result": {
+        "passed": 98,
+        "failed": 3,
+        "blocked": 52,
+        "skipped": 15,
+        "passRate": "58.3%"
+      }
+    },
+    "02": {
+      "name": "Authentication Tests",
+      "status": "completed",
+      "browser": "playwright-edge",
+      "slot": 3,
+      "batch": 1,
+      "priority": "P1",
+      "attempts": 1,
+      "outputFile": "reports/regression/REG-2026-03-21-1615/suite-02-results.json",
+      "result": {
+        "passed": 44,
+        "failed": 2,
+        "blocked": 16,
+        "skipped": 6,
+        "passRate": "64.7%"
+      }
+    },
+    "03": {
+      "name": "Catalog & Search Tests",
+      "status": "running",
+      "browser": "playwright-chrome",
+      "slot": 1,
+      "batch": 2,
+      "priority": "P1",
+      "attempts": 1,
+      "outputFile": "reports/regression/REG-2026-03-21-1615/suite-03-results.json",
+      "result": null
+    }
+  },
+  "retryLog": [],
+  "previousRun": {
+    "runId": "REG-2026-03-21-1600",
+    "blockerReason": "All browser slots blocked by open browser windows on host — user has now closed all windows"
   }
 }

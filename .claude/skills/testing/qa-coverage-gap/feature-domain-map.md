@@ -2,6 +2,36 @@
 
 This file maps every known application feature to its expected test coverage. Used by the gap analysis to identify missing areas.
 
+## Original Source: TestRail Exports
+
+The `test-suites ( export from Test-rail )/` directory contains the **canonical test case inventory** exported from TestRail. These are the authoritative original test cases that the regression suites were derived from. During gap analysis, compare regression suites against these exports to detect:
+- Test cases present in TestRail but missing from regression suites
+- Test intent or coverage depth lost during migration to agent-native CSV format
+- Section/domain mappings that may have shifted
+
+| Export Directory | Content |
+|-----------------|---------|
+| `Frontend/Frontend26-02.csv.csv` | Latest frontend export (Sprint 26-02) — registration, catalog, cart, checkout, orders, BOPIS, payment, B2B |
+| `Frontend/frontend-26-01.csv` | Previous frontend baseline (Sprint 26-01) |
+| `Frontend/suites/` | 12 categorized suites: auth, catalog, product details, cart, checkout, BOPIS, orders, lists, B2B, analytics, UI/UX, l10n |
+| `Backend (admin site)/` | 20 module exports: Catalog, Store, Pricing, Inventory, Marketing, Notifications, Orders, Customer, Platform, Shipping, Search, Assets, CMS, SEO, WhiteLabeling, Push Messages, Image Tools, CSV Import/Export, Elastic Search |
+| `E2E/configurable-products/` | E2E configurable product import |
+| `Frontend/ga4-test-data.csv` | GA4 analytics test data |
+
+## Feature → Manifest Domain Mapping
+
+Feature domains in this file map to `domain` field values in `config/test-suites.json`:
+
+| Feature Domain(s) | Manifest Domain | Selection |
+|-------------------|----------------|-----------|
+| AUTH | auth-security | `domain:auth-security` |
+| CATALOG, SEARCH, COMPARE | catalog-search | `domain:catalog-search` |
+| CART, CHECKOUT, PAYMENT, ORDERS, BOPIS | purchase-flow | `domain:purchase-flow` |
+| QUOTES, B2B-ORG, B2B-MEMBERS, LISTS, DASHBOARD | customer-b2b | `domain:customer-b2b` |
+| NOTIFICATIONS, ADMIN-IMPERSONATION | cross-cutting | `domain:cross-cutting` |
+
+Use manifest domain selections for regression scoping: when a feature domain has gaps, run the corresponding `domain:*` selection to validate existing coverage.
+
 ## Coverage Thresholds
 
 | Priority | Minimum Cases | Must Include |

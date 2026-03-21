@@ -22,7 +22,7 @@
 | **SEO** | 31 | Marketing → SEO, Redirects | `/api/seo/` | — |
 | **White Labeling** | 32, 35 | Settings → Branding, Themes | — | — |
 | **Image Tools** | 34 | Assets → Thumbnails | `/api/image-tools/` | — |
-| **Cart** | 04 | — (storefront-only) | — | xCart |
+| **Cart** | 04a, 04b, 04c | — (storefront-only) | — | xCart |
 | **Authentication** | 02, 08 | Settings → Security, OAuth | `/connect/token` | — |
 | **Payment** | 06 | Orders → Payments | `/api/payments/` | — |
 | **Analytics** | 07 | — (GA4 tracking) | — | — |
@@ -39,7 +39,9 @@
 | 01 (Smoke) | Cross-module: Auth, Catalog, Cart, Checkout, Payment |
 | 02 (Auth) | Authentication, Platform Core |
 | 03 (Catalog & Search) | Catalog, Search |
-| 04 (Cart & Checkout) | Cart, Orders, Shipping |
+| 04a (Cart) | Cart, Marketing (coupons) |
+| 04b (Checkout) | Cart, Orders, Shipping, Payment |
+| 04c (Orders & Quotes) | Orders, Quotes |
 | 05 (BOPIS) | Shipping, Inventory |
 | 06 (Payment) | Payment (Skyflow, CyberSource, Authorize.Net, Datatrance) |
 | 07 (Analytics) | Analytics (GA4) |
@@ -72,6 +74,29 @@
 | 34 (Image Tools) | Image Tools |
 | 35 (Frontend WL) | White Labeling (frontend) |
 | 36 (Config Products) | Catalog (configurable products) |
+| 37 (Returns) | Orders (returns, RMA) |
+| 38 (Contracts) | Customers, Pricing (B2B contracts) |
+| 39 (Loyalty) | Customers (loyalty rewards) |
+| 40 (Channels) | Catalog (publishing, data quality) |
+| 41 (Coupons & Promos) | Marketing (storefront coupons, promotions) |
+| 42 (xMarketing) | Marketing (xAPI dynamic content, GraphQL) |
+
+## Domain Groups
+
+Suites are grouped into 10 business domains in `config/test-suites.json`. Use `domain:<name>` selections for domain-scoped regression runs.
+
+| Domain | Suites | Description |
+|--------|--------|-------------|
+| `purchase-flow` | 04a, 04b, 04c, 05, 06, 19, 20, 22, 30, 37 | Revenue path: cart → checkout → payment → orders → shipping → inventory → returns |
+| `catalog-search` | 03, 16, 26, 29, 36 | Product discovery: catalog, search, configurable products, indexing, import/export |
+| `auth-security` | 02, 08, 14, 17 | Authentication, authorization, platform API, security |
+| `marketing` | 23, 41, 42 | Promotions, coupons, dynamic content, xMarketing |
+| `content-cms` | 25, 27, 34 | CMS, page builder, assets, image tools |
+| `customer-b2b` | 13, 21, 38, 39 | Customer management, B2C features, contracts, loyalty |
+| `platform-config` | 15, 18, 28, 40 | GraphQL xAPI, store config, core settings, channels |
+| `communication` | 24, 33 | Notifications and push messages |
+| `branding` | 31, 32, 35 | SEO, white labeling (backend + frontend) |
+| `cross-cutting` | 00, 01, 07, 09, 10, 11, 12 | Smoke, analytics, a11y, i18n, performance, browser compat |
 
 ## Module Dependencies
 
@@ -90,9 +115,9 @@ When a module changes, test these suites:
 | Changed Module | Must Run | Should Run |
 |---------------|----------|------------|
 | Catalog | 03, 16, 36 | 01, 15, 26, 29 |
-| Orders | 20 | 01, 04, 06, 15, 30 |
-| Cart (xAPI) | 04 | 01, 05, 06, 15, 23 |
-| Payment | 06 | 01, 04, 20 |
+| Orders | 20 | 01, 04a, 04b, 04c, 06, 15, 30, 37 |
+| Cart (xAPI) | 04a | 01, 04b, 05, 06, 15, 23, 41 |
+| Payment | 06 | 01, 04b, 20 |
 | Platform Core | 14, 17, 28 | 01, 02, 08 |
 | Search | 26 | 01, 03, 16 |
 | Authentication | 02, 08 | 01, 14 |

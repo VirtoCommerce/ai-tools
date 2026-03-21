@@ -357,3 +357,55 @@ GQL-029,xCart - Product Without New Currency Price Flagged After Currency Switch
 [STATE] BL-GQL-003 + BL-CROSS-004: Products without price list in new currency become unavailable","[NETWORK] HTTP 200 on all mutations and queries
 [API] productB EUR price absence confirmed via Admin pricing
 [CONSOLE] No errors","errors[] non-empty on currency switch; productB shows 0.00 EUR (silent invalid price); productB shows USD amount with EUR currency code; cart totals include invalid productB price","delete cart","Coverage Gap Analysis BL-CROSS-004 BL-PRICE-005",Generated
+GQL-030,xProfile - createOrganization Mutation Validates Org Name (InputValidationOptions),GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"GraphQL endpoint accessible at {{BACK_URL}}; user authenticated","storeId={{STORE_ID}}; authToken={{USER_TOKEN}}; valid_org_name=AT&T Corp. #1; invalid_org_name=<script>alert(1)</script>Org","[NAV] Navigate to {{BACK_URL}}/graphql
+[ACT] Set Authorization header: Bearer {{USER_TOKEN}}
+[ACT] Execute createOrganization mutation with valid business name: mutation { createOrganization(command: { name: ""AT&T Corp. #1"" storeId: ""{{STORE_ID}}"" }) { id name } }
+[ASSERT] Verify errors[] empty — OrganizationNameValidationPattern allows digits, &, #, /, commas, parens
+[ASSERT] Verify organization.name = ""AT&T Corp. #1""
+[ACT] Execute createOrganization with XSS payload: mutation { createOrganization(command: { name: ""<script>alert(1)</script>Org"" storeId: ""{{STORE_ID}}"" }) { id name } }
+[ASSERT] Verify errors[] contains validation error — OrganizationNameValidationPattern rejects < and >
+[ASSERT] Verify no organization created with XSS name","[STATE] errors[] empty for valid business name (BL-GQL-001)
+[STATE] OrganizationNameValidationPattern ^[\p{L}\p{M}\p{N}\s'\-\.&#/,()]+$ permits &, #, digits
+[STATE] Organization created with exact business name including &
+[STATE] errors[] non-empty for XSS payload — validation rejects <, > characters
+[STATE] No organization created with script tags in name","[NETWORK] HTTP 200 on both mutations
+[API] Organization query confirms valid org exists; XSS org does not exist
+[CONSOLE] No errors","Valid business name with & rejected (false positive); XSS payload accepted as org name; no validation error in errors[]; org created with <script> in name","delete valid test org via admin API","VCST-4691 PR #130",Generated
+GQL-031,xProfile - updateContact Mutation Rejects HTML in Phone and Address Fields,GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"GraphQL endpoint accessible at {{BACK_URL}}; existing contact; user authenticated","storeId={{STORE_ID}}; authToken={{USER_TOKEN}}; contactId=existing_contact_id","[NAV] Navigate to {{BACK_URL}}/graphql
+[ACT] Set Authorization header: Bearer {{USER_TOKEN}}
+[ACT] Execute updateContact mutation with HTML in phone: mutation { updateContact(command: { id: ""{{contactId}}"" storeId: ""{{STORE_ID}}"" phones: [""<img src=x onerror=alert(1)>""] }) { id phones } }
+[ASSERT] Verify errors[] contains validation error — EnableNoHtmlTagsValidation rejects HTML tags in phone field
+[ASSERT] Verify contact phone unchanged
+[ACT] Execute updateContact with valid phone: mutation { updateContact(command: { id: ""{{contactId}}"" storeId: ""{{STORE_ID}}"" phones: [""+1-555-0123""] }) { id phones } }
+[ASSERT] Verify errors[] empty — valid phone accepted
+[ASSERT] Verify contact.phones contains +1-555-0123","[STATE] errors[] non-empty for HTML in phone field — EnableNoHtmlTagsValidation active (BL-GQL-001)
+[STATE] Phone field unchanged after rejected HTML payload
+[STATE] errors[] empty for valid phone number
+[STATE] Valid phone stored correctly","[NETWORK] HTTP 200 on both mutations
+[API] Contact query confirms phone unchanged after rejection; updated after valid input
+[CONSOLE] No errors","HTML tags accepted in phone field; <img> tag stored as phone number; no validation error; EnableNoHtmlTagsValidation not applied to phone","none","VCST-4691 PR #130",Generated
+GQL-032,xProfile - updateMemberAddresses Rejects Script Injection in Address Fields,GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"GraphQL endpoint accessible at {{BACK_URL}}; existing member with address; user authenticated","storeId={{STORE_ID}}; authToken={{USER_TOKEN}}; memberId=existing_member_id","[NAV] Navigate to {{BACK_URL}}/graphql
+[ACT] Set Authorization header: Bearer {{USER_TOKEN}}
+[ACT] Execute updateMemberAddresses with XSS in city: mutation { updateMemberAddresses(command: { memberId: ""{{memberId}}"" addresses: [{ city: ""<script>alert(1)</script>"" line1: ""123 Main St"" countryCode: ""US"" countryName: ""United States"" }] }) { id } }
+[ASSERT] Verify errors[] contains validation error — EnableNoHtmlTagsValidation rejects HTML in city field
+[ACT] Execute updateMemberAddresses with XSS in line1: mutation { updateMemberAddresses(command: { memberId: ""{{memberId}}"" addresses: [{ city: ""New York"" line1: ""<img onerror=alert(1)>"" countryCode: ""US"" countryName: ""United States"" }] }) { id } }
+[ASSERT] Verify errors[] contains validation error — HTML tags rejected in address line
+[ACT] Execute with valid address: mutation { updateMemberAddresses(command: { memberId: ""{{memberId}}"" addresses: [{ city: ""New York"" line1: ""123 Main St"" countryCode: ""US"" countryName: ""United States"" }] }) { id } }
+[ASSERT] Verify errors[] empty — valid address accepted","[STATE] errors[] non-empty for HTML in city and line1 fields (BL-GQL-001)
+[STATE] EnableNoHtmlTagsValidation rejects <script> and <img> tags in address fields
+[STATE] Address unchanged after rejected payloads
+[STATE] errors[] empty for valid address — accepted and stored","[NETWORK] HTTP 200 on all mutations
+[API] Member address query confirms no XSS stored; valid address stored correctly
+[CONSOLE] No errors","HTML tags accepted in city or address line fields; <script> stored in address; no validation error; address saved with XSS payload","none","VCST-4691 PR #130",Generated
+GQL-033,xProfile - updatePersonalData Validates Name Fields,GraphQL > xProfile,Medium,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"GraphQL endpoint accessible at {{BACK_URL}}; user authenticated with profile","storeId={{STORE_ID}}; authToken={{USER_TOKEN}}","[NAV] Navigate to {{BACK_URL}}/graphql
+[ACT] Set Authorization header: Bearer {{USER_TOKEN}}
+[ACT] Execute updatePersonalData with XSS in firstName: mutation { updatePersonalData(command: { storeId: ""{{STORE_ID}}"" personalData: { firstName: ""<svg onload=alert(1)>"" lastName: ""Test"" } }) { succeeded } }
+[ASSERT] Verify errors[] contains validation error — NameValidationPattern rejects <, >, = in name fields
+[ACT] Execute with valid Unicode name: mutation { updatePersonalData(command: { storeId: ""{{STORE_ID}}"" personalData: { firstName: ""François"" lastName: ""O'Brien-Müller"" } }) { succeeded } }
+[ASSERT] Verify errors[] empty — valid Unicode names with accents, apostrophes, hyphens accepted
+[ASSERT] Verify succeeded = true","[STATE] errors[] non-empty for SVG payload in firstName — NameValidationPattern rejects non-letter characters (BL-GQL-001)
+[STATE] Profile name unchanged after rejected XSS payload
+[STATE] errors[] empty for valid Unicode names — accents (ç, ö), apostrophes, hyphens all permitted
+[STATE] Profile updated successfully with François O'Brien-Müller","[NETWORK] HTTP 200 on both mutations
+[API] Profile query confirms name unchanged after rejection; updated after valid input
+[CONSOLE] No errors","SVG payload accepted as firstName; XSS stored in profile name; valid Unicode names (accents, apostrophes) rejected as false positive; no validation error for HTML in name","none","VCST-4691 PR #130",Generated

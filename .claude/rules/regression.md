@@ -1,6 +1,6 @@
 # Regression & CI Reference
 
-## Architecture: Three Testing Modes
+## Architecture: Four Testing Modes
 
 ### 1. Interactive MCP-Driven Testing (Primary)
 Load a prompt template from `docs/prompts/`, execute via MCP browser tools with DevTools monitoring. After each flow: export HAR, capture console logs, take screenshots. Generate bug reports in `reports/bugs/`.
@@ -24,6 +24,13 @@ Load a prompt template from `docs/prompts/`, execute via MCP browser tools with 
 **Invoke:** `/qa-regression critical --autonomous` or use `autonomous-regression-orchestrator` agent directly.
 **Results:** `results/{RUN_ID}/` (regression-report.md, summary.json, failures.json, per-suite results)
 **Reporting module:** `scripts/reporting.ts` (generate reports, JIRA payloads, status updates)
+
+### 4. Full Test Cycle CI Pipeline (Sync → Lifecycle → Regression)
+`ci/run-full-cycle.ts` orchestrates a 3-phase pipeline triggered by code changes. Phase 1 (SYNC) detects stale test cases from PRs/diffs/module updates using `/qa-sync-tests` logic + Context7, updates Steps/Assertions, and generates cases for new behavior. Phase 2 (LIFECYCLE) runs 7-dimension static quality review on affected suites. Phase 3 (REGRESSION) delegates to `ci/run-regression.ts` to execute the affected suites. Each phase has independent skip flags and budget allocation (30%/20%/50% of total budget). Results go to `reports/full-cycle/{RUN_ID}/`.
+
+**Invoke:** `CHANGE_SOURCE="PR #123" npm run ci:cycle` or via `.github/workflows/full-cycle.yml`
+**Triggers:** PR merge to main (auto), daily schedule (Mon-Fri 8AM UTC), manual dispatch
+**npm scripts:** `ci:cycle` (full), `ci:cycle:pr` (PR-driven), `ci:cycle:sync-only` (Phase 1 only), `ci:cycle:no-sync` (skip Phase 1)
 
 ## Test Suite Manifest: `config/test-suites.json`
 

@@ -33,6 +33,12 @@ When `--autonomous` is specified, delegate to `autonomous-regression-orchestrato
 
 ## Execution Pipeline
 
+### Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
+
+1. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, abort — regression on a broken env wastes budget.
+2. **Duplicate check** — check `reports/regression/test-run-status.json` for an active run with the same suite selection. If found, block — wait for current run to complete.
+3. **Context7 query** (for `sprint` and `full` selections) — resolve `/virtocommerce/vc-docs`, query `"platform release notes recent changes"` with `tokens: 8000`. Flag any API contract changes that may cause false failures in existing test cases. Consider running `/qa-sync-tests` first if breaking changes detected.
+
 ### Step 1 — Read Manifest
 Read `config/test-suites.json` to load suite definitions, browser pool, and selection groups. Resolve the requested selection into suite IDs.
 
@@ -95,9 +101,11 @@ Never assign two agents to the same browser. Never use WebKit on Windows.
 ---
 
 ## Rules
+- Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
 - Never execute tests yourself — delegate via Task tool
 - Never share browser slots between concurrent agents
 - Priority order: P0 before P1 before P2
 - Always write test-run-status.json (external tools monitor it)
 - Read URLs from .env via `config.js`, never hardcode
-- If >50% suites fail, flag as critical_failure
+- If >50% suites fail, flag as critical_failure — suggest `/qa-sync-tests` to check for stale test cases
+- If a browser fails to launch, retry with fallback chain (see Browser Pool table above)

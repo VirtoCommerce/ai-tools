@@ -633,7 +633,8 @@ B2C-ORG-002,Switch Org - Pricing Update,B2C Features > Organization,Critical,BL-
 2. [NAV] Navigate to a product with org-specific contract pricing
 3. [ASSERT] Note the price shown for Org A
 4. [ACT] Open org switcher and select Org B
-5. [NAV] Navigate to the same product
+5. [WAIT] Wait for org context to update (header/org name reflects Org B)
+6. [NAV] Navigate to the same product
 6. [ASSERT] Verify price updated to Org B's contract price","[FORMAT] After switching to Org B, product price reflects Org B's contract/tier pricing
 [FORMAT] Price is different from Org A's price
 [STATE] Pricing update occurs without requiring page reload or re-login
@@ -642,11 +643,13 @@ B2C-ORG-003,Switch Org - Cart Isolation,B2C Features > Organization,Critical,BL-
 2. [ACT] Add 2 specific products to cart under Org A
 3. [ASSERT] Note the Org A cart items
 4. [ACT] Open org switcher and switch to Org B
+[WAIT] Wait for org context to update (header/org name reflects Org B)
 5. [NAV] Navigate to cart
 6. [ASSERT] Verify Org A cart items are NOT present in Org B cart
 7. [ACT] Add a different product to Org B cart
 8. [ACT] Switch back to Org A
-9. [NAV] Navigate to cart
+9. [WAIT] Wait for org context to update (header/org name reflects Org A)
+10. [NAV] Navigate to cart
 10. [ASSERT] Verify original 2 Org A items are still present","[DOM] Switching to Org B shows Org B's cart (not Org A's items)
 [DOM] Org B cart starts empty or shows Org B's own cart
 [DOM] After switching back to Org A, original 2 items still in cart
@@ -657,6 +660,7 @@ B2C-ORG-004,Switch Org - Addresses Update,B2C Features > Organization,High,BL-B2
 2. [NAV] Navigate to account addresses or ship-to selector
 3. [ASSERT] Note the addresses available for Org A
 4. [ACT] Switch to Org B using org switcher
+[WAIT] Wait for org context to update (header/org name reflects Org B)
 5. [NAV] Navigate to account addresses or ship-to selector
 6. [ASSERT] Verify addresses shown belong to Org B","[DOM] Addresses after switching to Org B are Org B's addresses
 [DOM] Org A addresses not shown while Org B is active
@@ -666,7 +670,8 @@ B2C-ORG-005,Switch Org - Lists Scope,B2C Features > Organization,High,BL-B2C-004
 2. [NAV] Navigate to My Lists
 3. [ASSERT] Note lists available for Org A
 4. [ACT] Switch to Org B
-5. [NAV] Navigate to My Lists
+5. [WAIT] Wait for org context to update (header/org name reflects Org B)
+6. [NAV] Navigate to My Lists
 6. [ASSERT] Verify only Org B's lists are shown","[DOM] After switching to Org B, only lists associated with Org B are displayed
 [DOM] Org A lists not visible while Org B is active
 [DOM] Shared lists within an org are scoped to that org only
@@ -693,15 +698,18 @@ B2C-ORG-008,Switch Org - Navigation Reset,B2C Features > Organization,Medium,BL-
 2. [NAV] Navigate to a deep category page or checkout flow
 3. [ASSERT] Note the breadcrumb trail
 4. [ACT] Switch to Org B using org switcher
+[WAIT] Wait for org context to update (header/org name reflects Org B)
 5. [ASSERT] Verify page state and navigation after switch","[NAV] After switching orgs, user redirected to neutral page (homepage or catalog root) rather than remaining on Org A context page
 [DOM] Breadcrumbs reset to reflect Org B
 [DOM] No stale Org A navigation state visible
 [STATE] In-progress flows (e.g., checkout) exited cleanly","[CONSOLE] no uncaught JS errors","User remains on Org A context page after switch; breadcrumbs still show Org A path; stale Org A state visible",none,Coverage Gap Analysis,Generated
 B2C-ORG-009,Switch Back - Cart Intact,B2C Features > Organization,Critical,BL-B2C-004,ECL-7.1,"Multi-org user, items in Org A cart, currently viewing Org B","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in as Org A and add 3 specific products to Org A cart
 2. [ACT] Switch to Org B
-3. [ACT] Optionally add a different item to Org B cart
-4. [ACT] Switch back to Org A
-5. [NAV] Navigate to cart
+3. [WAIT] Wait for org context to update (header/org name reflects Org B)
+4. [ACT] Optionally add a different item to Org B cart
+5. [ACT] Switch back to Org A
+6. [WAIT] Wait for org context to update (header/org name reflects Org A)
+7. [NAV] Navigate to cart
 6. [ASSERT] Verify all 3 original Org A items present with correct quantities","[DOM] Switching away from Org A and back preserves Org A cart intact
 [DOM] All originally added items still present after returning
 [DOM] Quantities and selected variants unchanged
@@ -1003,7 +1011,8 @@ B2C-ORG-011,Org Switch Triggers White-Label Branding Update,B2C Features > Organ
 8. [ASSERT] Verify favicon in browser tab has changed to Org B's favicon
 9. [ASSERT] Verify primary/accent theme color reflects Org B's white-label colors
 10. [ACT] Switch back to Org A
-11. [ASSERT] Verify Org A branding (logo, favicon, colors) is restored","[DOM] Header logo element src or alt text changes after switching to Org B (Org B logo displayed, not Org A logo)
+11. [WAIT] Wait for org context to update (header/org name reflects Org A)
+12. [ASSERT] Verify Org A branding (logo, favicon, colors) is restored","[DOM] Header logo element src or alt text changes after switching to Org B (Org B logo displayed, not Org A logo)
 [DOM] Browser tab favicon updated to Org B favicon after switch
 [STATE] Theme color (CSS variables or inline styles) reflects Org B's configured brand colors
 [STATE] Switching back to Org A restores Org A logo, favicon, and theme colors
@@ -1011,3 +1020,601 @@ B2C-ORG-011,Org Switch Triggers White-Label Branding Update,B2C Features > Organ
 [FORMAT] Branding update occurs without requiring manual page refresh","[CONSOLE] no uncaught JS errors
 [NETWORK] logo and favicon assets load with 200 status for Org B
 [CONSOLE] no 404s on Org B brand asset requests",Logo not changing after org switch; favicon unchanged; theme colors unchanged after switch; Org A logo persisting while Org B active; broken image in header after switch; branding change requiring manual refresh,none,Coverage Gap Analysis,Manual
+B2C-NOTIF-008,Notification Bell Badge - Unread Count,B2C Features > Notifications,High,,,"User logged in as {{USER_EMAIL}} with unread notifications","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in and navigate to {{FRONT_URL}}
+2. [WAIT] Page fully loaded with navigation bar
+3. [ASSERT] Verify notification bell icon visible in header/nav
+4. [ASSERT] Verify unread count badge displayed on bell icon","[DOM] Notification bell icon visible in navigation bar
+[DOM] Badge shows numeric count > 0
+[FORMAT] Badge count is a positive integer","[API] no GraphQL errors on page load
+[CONSOLE] no uncaught JS errors","Bell icon missing; badge not displayed; badge shows 0 when notifications exist",none,Coverage Gap Analysis,Generated
+B2C-NOTIF-009,Notification Dropdown - View Recent,B2C Features > Notifications,High,,,"User logged in with notifications","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}} and sign in
+2. [WAIT] Navigation loaded
+3. [ACT] Click notification bell icon
+4. [WAIT] Notification dropdown opens","[DOM] Dropdown displays list of recent notifications
+[DOM] Each notification shows title/message and date/time
+[DOM] Unread notifications visually distinguished from read","[API] notifications query returns 200
+[CONSOLE] no uncaught JS errors","Dropdown empty despite notifications; dropdown does not open; notifications missing dates",none,Coverage Gap Analysis,Generated
+B2C-NOTIF-010,Mark Individual Notification as Read,B2C Features > Notifications,High,,,"User logged in with unread notifications","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}} and sign in
+2. [ACT] Click notification bell to open dropdown
+3. [WAIT] Dropdown with unread notifications visible
+4. [ASSERT] Note current unread badge count
+5. [ACT] Click on an unread notification
+6. [WAIT] Notification marked as read","[DOM] Clicked notification visual style changes to read state
+[DOM] Badge count decrements by 1
+[STATE] Notification no longer highlighted as unread","[API] markAsRead mutation returns 200 with empty errors[]
+[CONSOLE] no uncaught JS errors","Badge count unchanged after click; notification still shows as unread",none,Coverage Gap Analysis,Generated
+B2C-NOTIF-011,Mark All Notifications as Read,B2C Features > Notifications,High,,,"User logged in with multiple unread notifications","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}} and sign in
+2. [ACT] Click notification bell to open dropdown
+3. [WAIT] Dropdown shows multiple unread notifications
+4. [ACT] Click Mark all as read link/button
+5. [WAIT] All notifications update to read state","[DOM] All notifications show read visual state
+[DOM] Badge disappears or shows 0
+[STATE] No unread notifications remaining","[API] markAllAsRead mutation returns 200 with empty errors[]
+[CONSOLE] no uncaught JS errors","Some notifications still unread; badge still shows count",none,Coverage Gap Analysis,Generated
+B2C-NOTIF-005,Empty Notifications State,B2C Features > Notifications,Medium,,,"User logged in with no notifications","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in as user with no notifications
+2. [WAIT] Navigation loaded
+3. [ACT] Click notification bell icon
+4. [WAIT] Dropdown opens","[DOM] Dropdown shows No notifications or empty state message
+[DOM] No badge on bell icon
+[DOM] Empty state is styled properly","[CONSOLE] no uncaught JS errors","Dropdown shows error; blank dropdown with no message",none,Coverage Gap Analysis,Generated
+B2C-NOTIF-006,Subscribe to Back-in-Stock Alert,B2C Features > Back in Stock,High,,,"User logged in; product is out of stock","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to an out-of-stock product PDP on {{FRONT_URL}}
+2. [WAIT] PDP loaded with out-of-stock indicator
+3. [ASSERT] Verify Add to Cart is disabled
+4. [ACT] Click Notify When Available button
+5. [WAIT] Subscription confirmation appears","[DOM] Notify When Available button visible on out-of-stock PDP
+[DOM] Confirmation message displayed after subscribing
+[STATE] User subscribed to back-in-stock alert","[API] subscription mutation returns 200 with empty errors[]
+[CONSOLE] no uncaught JS errors","Notify button missing on out-of-stock product; no confirmation after click",none,Coverage Gap Analysis,Generated
+B2C-NOTIF-007,Back-in-Stock Subscription Indicator,B2C Features > Back in Stock,Medium,,,"User logged in; already subscribed to back-in-stock alert","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to product PDP where user already subscribed
+2. [WAIT] PDP loaded
+3. [ASSERT] Verify subscription indicator shown
+4. [ACT] Attempt to subscribe again","[DOM] Button shows subscribed state (disabled or text changed)
+[STATE] Cannot subscribe again to same product","[CONSOLE] no uncaught JS errors","Button still shows Notify for already-subscribed product; duplicate subscription allowed",none,Coverage Gap Analysis,Generated
+B2C-LOY-001,Loyalty Points Balance Display,B2C Features > Loyalty,Medium,,,"User logged in with loyalty points balance","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in and navigate to account dashboard or loyalty page
+2. [WAIT] Page loaded
+3. [ASSERT] Verify loyalty points section visible
+4. [ASSERT] Verify points balance displayed","[DOM] Loyalty section visible on account/dashboard page
+[DOM] Points balance displayed as numeric value
+[FORMAT] Points formatted consistently","[API] loyalty query returns 200 with balance data
+[CONSOLE] no uncaught JS errors","Loyalty section missing; points balance shows 0 incorrectly",none,Coverage Gap Analysis,Generated
+B2C-LOY-002,Loyalty Points Transaction History,B2C Features > Loyalty,Medium,,,"User logged in with loyalty points history","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to loyalty page or points history section
+2. [WAIT] History loaded
+3. [ASSERT] Verify transaction list displays recent entries","[DOM] Transaction list shows entries with date and type and amount
+[DOM] Earn transactions show positive points
+[DOM] Redeem transactions show negative points
+[FORMAT] Dates formatted consistently","[API] loyalty history query returns 200
+[CONSOLE] no uncaught JS errors","History empty despite transactions; earn/redeem not distinguished",none,Coverage Gap Analysis,Generated
+B2C-LOY-003,Loyalty Points Earning After Purchase,B2C Features > Loyalty,Medium,BL-PRICE-001,,"User logged in; loyalty program active; recent order placed","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in to {{FRONT_URL}} as {{USER_EMAIL}} (account must have a recent completed order)
+2. [NAV] Navigate to loyalty page or account dashboard loyalty section
+3. [WAIT] Page loaded
+4. [ASSERT] Verify points earned for the recent order appear","[DOM] New transaction entry shows points earned
+[DOM] Points balance updated to include new earnings
+[STATE] Order reference visible in loyalty transaction","[API] loyalty query shows updated balance after purchase
+[CONSOLE] no uncaught JS errors","Points not credited after purchase; balance unchanged; no transaction entry for order",none,Coverage Gap Analysis,Generated
+B2C-ORG-012,Org Search Bar Appears for >10 Organizations,B2C Features > Organization,High,BL-B2C-004,,"Multi-org user belonging to 11 or more organizations","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as a user with 11+ org memberships
+2. [ACT] Open the org switcher dropdown
+3. [ASSERT] Verify a search bar / text input appears inside the switcher
+4. [ASSERT] Verify all organizations are listed below the search bar","[DOM] Search input field visible inside org switcher dropdown
+[DOM] Organization list displayed below search input
+[STATE] All 11+ organizations visible (with scroll if needed)","[API] organization query returns 11+ results
+[CONSOLE] no uncaught JS errors","Search bar missing for user with 11+ orgs; org list truncated without search; switcher fails to open",none,C413993-C414010,Generated
+B2C-ORG-013,Org Search Bar Hidden for <=10 Organizations,B2C Features > Organization,Medium,BL-B2C-004,,"Multi-org user belonging to exactly 10 or fewer organizations","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as a user with 10 or fewer org memberships
+2. [ACT] Open the org switcher dropdown
+3. [ASSERT] Verify NO search bar is shown inside the switcher
+4. [ASSERT] Verify all organizations are listed directly","[DOM] No search input field inside org switcher
+[DOM] All organizations listed directly without search
+[STATE] Org count is 10 or fewer","[CONSOLE] no uncaught JS errors","Search bar incorrectly showing for <=10 orgs; org list missing",none,C413993-C414010,Generated
+B2C-ORG-014,Org Search - Boundary: Exactly 10 vs 11 Organizations,B2C Features > Organization,Medium,BL-B2C-004,ECL-14.2,"Two test accounts: one with exactly 10 orgs and one with exactly 11 orgs","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as user with exactly 10 orgs
+2. [ACT] Open org switcher
+3. [ASSERT] Verify NO search bar displayed
+4. [ACT] Log out
+5. [NAV] Log in as user with exactly 11 orgs
+6. [ACT] Open org switcher
+7. [ASSERT] Verify search bar IS displayed","[DOM] 10-org user: no search input in switcher
+[DOM] 11-org user: search input visible in switcher
+[STATE] Boundary condition at 10/11 correctly implemented","[CONSOLE] no uncaught JS errors","Search bar present at 10 orgs (should not be); search bar missing at 11 orgs (should be present); inconsistent boundary behavior",none,C413993-C414010,Generated
+B2C-ORG-015,Org Search - Full Name Match,B2C Features > Organization,High,BL-B2C-004,,"Multi-org user with 11+ orgs; known org name","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+2. [ACT] Open org switcher
+3. [ACT] Type full org name in search input
+4. [ASSERT] Verify matching org appears in filtered list
+5. [ASSERT] Verify non-matching orgs are hidden","[DOM] Search results show only matching organization
+[DOM] Non-matching organizations hidden from list
+[STATE] Search filters in real-time as user types","[API] organization search returns matching results
+[CONSOLE] no uncaught JS errors","Full name search returns no results; non-matching orgs still visible; search not filtering",none,C413993-C414010,Generated
+B2C-ORG-016,Org Search - Partial Name Match,B2C Features > Organization,High,BL-B2C-004,,"Multi-org user with 11+ orgs","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+2. [ACT] Open org switcher
+3. [ACT] Type first 3 characters of an org name in search input
+4. [ASSERT] Verify all orgs containing the partial text appear in results
+5. [ASSERT] Verify orgs not containing the text are hidden","[DOM] Results include all organizations whose name contains the partial text
+[DOM] Results filtered in real-time
+[STATE] Partial match works as substring or prefix search","[CONSOLE] no uncaught JS errors","Partial search returns no results; only exact matches shown; search requires full name to work",none,C413993-C414010,Generated
+B2C-ORG-017,Org Search - Case Insensitive,B2C Features > Organization,Medium,BL-B2C-004,,"Multi-org user with 11+ orgs; known org name","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+2. [ACT] Open org switcher
+3. [ACT] Type org name in lowercase
+4. [ASSERT] Verify matching org appears
+5. [ACT] Clear search and type in UPPERCASE
+6. [ASSERT] Verify same matching org appears","[DOM] Lowercase search returns same results as original case
+[DOM] Uppercase search returns same results as original case
+[STATE] Search is case-insensitive","[CONSOLE] no uncaught JS errors","Case-sensitive search: lowercase fails to find uppercase org name; inconsistent results between cases",none,C413993-C414010,Generated
+B2C-ORG-018,Org Search - No Results Found State,B2C Features > Organization,Medium,BL-B2C-004,,"Multi-org user with 11+ orgs","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+2. [ACT] Open org switcher
+3. [ACT] Type a non-existent org name (e.g. ZZZ_NONEXISTENT_999)
+4. [ASSERT] Verify empty results state is shown","[DOM] No organization items shown in filtered list
+[DOM] Empty state message displayed (e.g. No organizations found)
+[DOM] No blank or broken layout","[CONSOLE] no uncaught JS errors","Blank area instead of empty state message; dropdown closes when no results; JS error on empty search results",none,C413993-C414010,Generated
+B2C-ORG-019,Org Search - Clear Search Restores Full List,B2C Features > Organization,Medium,BL-B2C-004,,"Multi-org user with 11+ orgs","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+2. [ACT] Open org switcher
+3. [ACT] Type a search term that filters to 1-2 results
+4. [ASSERT] Verify filtered results shown
+5. [ACT] Clear the search input (backspace or clear button)
+6. [ASSERT] Verify full organization list is restored","[DOM] After clearing search: all organizations visible again
+[STATE] Organization count matches original full list
+[DOM] Search input is empty after clearing","[CONSOLE] no uncaught JS errors","Clearing search does not restore full list; some orgs missing after clearing; search input not clearable",none,C413993-C414010,Generated
+B2C-ORG-020,Org Search - Special Characters in Query,B2C Features > Organization,Medium,BL-B2C-004,ECL-7.2,"Multi-org user with 11+ orgs","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+2. [ACT] Open org switcher
+3. [ACT] Type special characters in search (e.g. & or apostrophe)
+4. [ASSERT] Verify search handles special characters without error
+5. [ASSERT] Verify matching orgs with special characters in name appear if they exist","[DOM] Search with special characters does not cause JS error
+[DOM] Orgs with special characters in name are findable
+[STATE] No XSS or injection behavior","[CONSOLE] no uncaught JS errors","JS error when typing special characters; search breaks with ampersand or apostrophe; XSS vulnerability",none,C413993-C414010,Generated
+B2C-ORG-021,Org Search - Leading/Trailing Spaces Handling,B2C Features > Organization,Low,BL-B2C-004,,"Multi-org user with 11+ orgs","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+2. [ACT] Open org switcher
+3. [ACT] Type org name with leading and trailing spaces
+4. [ASSERT] Verify matching org still appears in results","[DOM] Leading/trailing spaces are trimmed or ignored in search
+[STATE] Results match as if spaces were trimmed","[CONSOLE] no uncaught JS errors","Spaces cause no-results state when org exists; search breaks with whitespace-only input",none,C413993-C414010,Generated
+B2C-ORG-022,Org Selection After Filtering via Search,B2C Features > Organization,High,BL-B2C-004,,"Multi-org user with 11+ orgs","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+2. [ACT] Open org switcher
+3. [ACT] Type partial org name to filter results
+4. [ACT] Click on a filtered org to select it
+5. [WAIT] Wait for page to reload or update
+6. [ASSERT] Verify selected org is now active
+7. [ASSERT] Verify org switcher shows new org name","[STATE] Clicked org becomes the active organization
+[DOM] Org switcher control shows newly selected org name
+[DOM] Page context updates to new org (pricing and cart)","[API] organization switch mutation succeeds
+[CONSOLE] no uncaught JS errors","Clicking filtered org does not switch; org switcher still shows old org; page context not updating after selection from filtered list",none,C413993-C414010,Generated
+B2C-ORG-023,Org Search - Keyboard Navigation in Dropdown,B2C Features > Organization,Low,BL-B2C-004,,"Multi-org user with 11+ orgs","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+2. [ACT] Open org switcher
+3. [ACT] Type partial search to filter results
+4. [KEY] Press Arrow Down to highlight first result
+5. [KEY] Press Arrow Down again to move to second result
+6. [KEY] Press Enter to select highlighted org
+7. [ASSERT] Verify selected org is now active","[STATE] Arrow keys navigate through org list items
+[DOM] Currently highlighted item has visual focus indicator
+[STATE] Enter key selects the highlighted organization","[CONSOLE] no uncaught JS errors","Arrow keys do not navigate dropdown items; Enter does not select highlighted item; no visual focus indicator",none,C413993-C414010,Generated
+B2C-ORG-024,Org Search - Placeholder Text and Styling,B2C Features > Organization,Low,BL-B2C-004,,"Multi-org user with 11+ orgs","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+2. [ACT] Open org switcher
+3. [ASSERT] Verify search input has placeholder text
+4. [ASSERT] Verify search input styling is consistent with design system","[DOM] Search input has meaningful placeholder text
+[DOM] Search input styling matches design system (font and border)
+[FORMAT] Placeholder text is descriptive","[CONSOLE] no uncaught JS errors","Missing placeholder text; search input unstyled or inconsistent with design system",none,C413993-C414010,Generated
+B2C-ORG-025,Cart Isolation - Items in Org A Not Visible in Org B,B2C Features > Organization,Critical,BL-B2C-004; BL-CART-004,ECL-7.1,"Multi-org user; Org A and Org B configured; empty carts in both orgs","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in as multi-org user and confirm Org A is active
+2. [NAV] Navigate to a product page
+3. [ACT] Add product to cart (qty 2)
+4. [ASSERT] Verify cart badge shows 2 items
+5. [ACT] Open org switcher and switch to Org B
+[WAIT] Wait for org context to update (header/org name reflects Org B)
+6. [WAIT] Wait for org context to update
+7. [NAV] Navigate to cart page
+8. [ASSERT] Verify Org B cart is empty","[DOM] Cart badge shows 0 or no badge after switching to Org B
+[DOM] Cart page shows empty cart message for Org B
+[STATE] Items added in Org A are not present in Org B cart","[API] cart query for Org B returns empty items array
+[CONSOLE] no uncaught JS errors","Org A cart items visible in Org B; cart badge not resetting on org switch; shared cart between organizations",clear cart in Org A,Coverage Gap Analysis,Generated
+B2C-ORG-026,Cart Isolation - Org A Cart Intact After Round-Trip Switch,B2C Features > Organization,Critical,BL-B2C-004; BL-CART-004,ECL-7.1,"Multi-org user; product added to Org A cart","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in as multi-org user and confirm Org A is active
+2. [ACT] Add 3 items of a product to cart in Org A
+3. [ASSERT] Verify cart badge shows 3
+4. [ACT] Switch to Org B via org switcher
+[WAIT] Wait for org context to update (header/org name reflects Org B)
+5. [WAIT] Wait for context update
+6. [ACT] Switch back to Org A via org switcher
+[WAIT] Wait for org context to update (header/org name reflects Org A)
+7. [WAIT] Wait for context update
+8. [NAV] Navigate to cart page
+9. [ASSERT] Verify Org A cart still has 3 items of the original product","[STATE] Org A cart quantity preserved after round-trip to Org B
+[DOM] Cart line shows same product and quantity (3) as before switch
+[MATH] Cart total matches pre-switch total for Org A","[API] cart query for Org A returns original items and quantities
+[CONSOLE] no uncaught JS errors","Cart empty after round-trip switch; quantity changed; wrong product in cart after switching back",clear cart in Org A,Coverage Gap Analysis,Generated
+B2C-ORG-027,Cart Isolation - Org-Specific Pricing in Cart,B2C Features > Organization,Critical,BL-B2C-004; BL-PRICE-007,,"Multi-org user; Org A and Org B have different contract prices for the same product","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in as multi-org user; confirm Org A is active
+2. [NAV] Navigate to product page and note Org A price
+3. [ACT] Add product to cart
+4. [NAV] Navigate to cart and note the line item price
+5. [ACT] Switch to Org B via org switcher
+[WAIT] Wait for org context to update (header/org name reflects Org B)
+6. [NAV] Navigate to same product page
+7. [ASSERT] Verify product price reflects Org B contract price (different from Org A)
+8. [ACT] Add product to Org B cart
+9. [NAV] Navigate to cart
+10. [ASSERT] Verify Org B cart line uses Org B pricing","[MATH] Org A cart line price matches Org A contract price
+[MATH] Org B cart line price matches Org B contract price
+[STATE] Prices are org-specific not shared","[API] cart query returns correct pricing per org context
+[CONSOLE] no uncaught JS errors","Same price shown for both orgs; Org A price persisting in Org B cart; cart total using wrong org pricing",clear carts in both orgs,Coverage Gap Analysis,Generated
+B2C-ORG-028,Cart Isolation - Coupon in Org A Not Visible in Org B,B2C Features > Organization,High,BL-B2C-004; BL-CART-004,,"Multi-org user; valid coupon code for Org A","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}};coupon={{TEST_COUPON}}","1. [NAV] Log in as multi-org user; confirm Org A is active
+2. [ACT] Add product to cart
+3. [ACT] Apply coupon code in Org A cart
+4. [ASSERT] Verify coupon applied and discount shown
+5. [ACT] Switch to Org B via org switcher
+[WAIT] Wait for org context to update (header/org name reflects Org B)
+6. [NAV] Navigate to Org B cart page
+7. [ASSERT] Verify no coupon is applied in Org B cart","[DOM] Coupon discount visible in Org A cart
+[DOM] No coupon or discount line in Org B cart
+[STATE] Coupon scope is per-organization","[API] cart query for Org B shows no applied coupons
+[CONSOLE] no uncaught JS errors","Coupon from Org A visible in Org B cart; discount applied to wrong org; coupon leaking between org contexts",clear carts and remove coupon,Coverage Gap Analysis,Generated
+B2C-ORG-029,Org-Specific Pricing - Contract Price for Org Member,B2C Features > Organization,Critical,BL-B2C-004; BL-PRICE-007,,"Org user logged in; product has org-specific contract price different from store default","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in as org member
+2. [NAV] Navigate to product page for {{TEST_SKU}}
+3. [ASSERT] Verify displayed price is the org contract price (not store default)
+4. [ASSERT] Verify price label or badge indicates contract/special pricing if applicable","[DOM] Product price shown is the org-specific contract price
+[STATE] Price differs from store default price
+[FORMAT] Price formatted correctly with currency symbol","[API] product query returns org-specific price in response
+[CONSOLE] no uncaught JS errors","Store default price shown instead of contract price; no price differentiation for org member; incorrect price calculation",none,Coverage Gap Analysis,Generated
+B2C-ORG-030,Org-Specific Pricing - Price Changes on Org Switch,B2C Features > Organization,Critical,BL-B2C-004; BL-PRICE-007,,"Multi-org user; same product has different prices in Org A vs Org B","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in as multi-org user; confirm Org A is active
+2. [NAV] Navigate to product page for {{TEST_SKU}}
+3. [ASSERT] Note Org A product price
+4. [ACT] Switch to Org B via org switcher
+[WAIT] Wait for org context to update (header/org name reflects Org B)
+5. [WAIT] Wait for context update
+6. [NAV] Navigate to same product page
+7. [ASSERT] Verify price has changed to Org B contract price","[MATH] Org A price differs from Org B price for same product
+[DOM] Price updates after org switch without manual refresh
+[STATE] Product page reflects current org pricing context","[API] product query returns different price after org switch
+[CONSOLE] no uncaught JS errors","Same price shown for both orgs; price not updating after org switch; stale price from previous org",none,Coverage Gap Analysis,Generated
+B2C-ORG-031,Org-Specific Pricing - Non-Org User Sees Default Price,B2C Features > Organization,High,BL-B2C-004; BL-PRICE-007,,"Personal (non-org) user account; same product as org pricing tests","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in as personal (non-org) user
+2. [NAV] Navigate to product page for {{TEST_SKU}}
+3. [ASSERT] Verify displayed price is the store default price
+4. [ASSERT] Verify no contract/org-specific pricing label shown","[DOM] Price shown is the store default (list) price
+[STATE] No org-specific pricing applied for personal user
+[DOM] No contract price badge or label visible","[API] product query returns default price without org context
+[CONSOLE] no uncaught JS errors","Org contract price shown to non-org user; wrong price tier applied; pricing context leaking from previous session",none,Coverage Gap Analysis,Generated
+B2C-ORG-032,Ship-To Shows Only Current Org Addresses,B2C Features > Organization,High,BL-B2C-004; BL-B2C-003,,"Multi-org user; Org A and Org B each have distinct shipping addresses","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user; confirm Org A is active
+2. [NAV] Navigate to Account > Addresses or Ship To selector
+3. [ASSERT] Verify only Org A addresses are shown
+4. [ASSERT] Verify no Org B addresses appear in the list","[DOM] Address list contains only addresses belonging to Org A
+[STATE] Org B addresses are not visible in Org A context
+[DOM] Address count matches Org A address count","[API] addresses query returns only Org A scoped addresses
+[CONSOLE] no uncaught JS errors","Org B addresses visible in Org A context; mixed addresses from multiple orgs; address scope not filtered by current org",none,Coverage Gap Analysis,Generated
+B2C-ORG-033,Ship-To - Switching Org Updates Address List,B2C Features > Organization,High,BL-B2C-004; BL-B2C-003,,"Multi-org user; Org A and Org B have different addresses","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user; confirm Org A is active
+2. [NAV] Navigate to Account > Addresses
+3. [ASSERT] Note Org A addresses
+4. [ACT] Switch to Org B via org switcher
+[WAIT] Wait for org context to update (header/org name reflects Org B)
+5. [WAIT] Wait for context update
+6. [NAV] Navigate to Account > Addresses
+7. [ASSERT] Verify address list now shows Org B addresses (different from Org A)","[DOM] Address list after switch contains Org B addresses only
+[STATE] Org A addresses no longer visible
+[DOM] Address entries reflect Org B location data","[API] addresses query after org switch returns Org B addresses
+[CONSOLE] no uncaught JS errors","Org A addresses persisting after switch to Org B; address list not updating on org switch; stale address data",none,Coverage Gap Analysis,Generated
+B2C-ORG-034,Ship-To - New Address Scoped to Current Org,B2C Features > Organization,High,BL-B2C-004; BL-B2C-003,,"Multi-org user; Org A active","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user; confirm Org A is active
+2. [NAV] Navigate to Account > Addresses
+3. [ACT] Click Add New Address
+4. [ACT] Fill address form with test data
+5. [ACT] Save the address
+6. [ASSERT] Verify new address appears in Org A address list
+7. [ACT] Switch to Org B
+8. [WAIT] Wait for org context to update (header/org name reflects Org B)
+9. [NAV] Navigate to Account > Addresses
+9. [ASSERT] Verify the new address is NOT in Org B address list","[DOM] New address visible in Org A address list after save
+[STATE] New address NOT visible in Org B context
+[STATE] Address is scoped to Org A only","[API] addresses query for Org B does not include newly created Org A address
+[CONSOLE] no uncaught JS errors","New address visible in both orgs; address not scoped to current org; address leaking across organizations",delete test address,Coverage Gap Analysis,Generated
+B2C-ORG-035,Ship-To - Default Address Per Org,B2C Features > Organization,Medium,BL-B2C-004; BL-B2C-003,,"Multi-org user; Org A and Org B each have a different default address","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user; confirm Org A is active
+2. [NAV] Navigate to Account > Addresses
+3. [ASSERT] Verify Org A default address is marked with Default badge
+4. [ACT] Switch to Org B
+5. [WAIT] Wait for org context to update (header/org name reflects Org B)
+6. [NAV] Navigate to Account > Addresses
+7. [ASSERT] Verify Org B has its own different default address marked","[DOM] Org A default address has Default indicator
+[DOM] Org B default address has Default indicator and is different from Org A
+[STATE] Each org maintains its own default address independently","[CONSOLE] no uncaught JS errors","Same default address for both orgs; no default address after switch; default not persisting per org",none,Coverage Gap Analysis,Generated
+B2C-ORG-036,Default Org Loaded on Sign-In,B2C Features > Organization,High,BL-B2C-004,,"Multi-org user with a default organization configured","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to login page
+2. [ACT] Sign in with multi-org credentials
+3. [WAIT] Wait for redirect to home or account page
+4. [ASSERT] Verify org switcher shows the default org name
+5. [ASSERT] Verify page context (pricing and addresses) reflects default org","[DOM] Org switcher displays the configured default organization name
+[STATE] Default org is active immediately after sign-in
+[STATE] No org selection prompt shown when default is configured","[API] initial page load context reflects default org
+[CONSOLE] no uncaught JS errors","No default org loaded; org selection prompt shown despite default configured; wrong org active after sign-in",none,Coverage Gap Analysis,Generated
+B2C-ORG-037,No Default Org - Org Selector Shown on Sign-In,B2C Features > Organization,Medium,BL-B2C-004,,"Multi-org user with NO default organization configured","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to login page
+2. [ACT] Sign in with multi-org credentials (no default org)
+3. [WAIT] Wait for redirect
+4. [ASSERT] Verify org selector/prompt is displayed
+5. [ACT] Select an organization from the selector
+6. [ASSERT] Verify selected org becomes active","[DOM] Org selection prompt or modal shown after sign-in
+[STATE] User must select an org before proceeding
+[DOM] After selection: org switcher shows chosen org name","[CONSOLE] no uncaught JS errors","No org selector shown; random org auto-selected; blank page after sign-in without default org",none,Coverage Gap Analysis,Generated
+B2C-ORG-038,Default Org Persists Across Sign-Out/Sign-In,B2C Features > Organization,Medium,BL-B2C-004,,"Multi-org user with default org configured","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Sign in as multi-org user
+2. [ASSERT] Note the default org loaded
+3. [ACT] Sign out
+4. [WAIT] Wait for sign-out
+5. [NAV] Sign in again with same credentials
+6. [ASSERT] Verify same default org is loaded as before","[STATE] Default org is the same across sign-out/sign-in cycles
+[DOM] Org switcher shows same org name after re-login
+[STATE] Default org setting persists server-side","[CONSOLE] no uncaught JS errors","Different org loaded after re-login; default org setting lost; org selector shown despite default configured",none,Coverage Gap Analysis,Generated
+B2C-MBR-001,View Company Members List,B2C Features > Members,High,BL-B2C-004,,"Org admin user logged in; organization has at least 3 members","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as organization admin
+2. [NAV] Navigate to /company/members or Company > Members
+3. [ASSERT] Verify members list page loads
+4. [ASSERT] Verify list shows member name and email and role and status columns","[DOM] Members list page loads without errors
+[DOM] Table/list shows: name and email and role and status for each member
+[DOM] At least 3 members visible
+[FORMAT] Role labels are readable (e.g. Admin or Purchaser or Approver)","[API] organization members query returns member data
+[CONSOLE] no uncaught JS errors","Members page returns 404; empty list when members exist; missing columns in member data",none,Coverage Gap Analysis,Generated
+B2C-MBR-002,Search Members by Name or Email,B2C Features > Members,Medium,BL-B2C-004,,"Org admin user logged in; organization has 5+ members","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/members
+2. [ACT] Type a member name in search input
+3. [ASSERT] Verify filtered results show matching members
+4. [ACT] Clear search and type a member email
+5. [ASSERT] Verify filtered results show matching member","[DOM] Search input visible on members page
+[DOM] Results filtered by name search
+[DOM] Results filtered by email search
+[STATE] Search works for both name and email fields","[CONSOLE] no uncaught JS errors","Search not filtering results; search input missing; search only works for name but not email",none,Coverage Gap Analysis,Generated
+B2C-MBR-003,Members List Pagination,B2C Features > Members,Medium,BL-B2C-004,ECL-14.2,"Org admin user; organization has >10 members","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/members
+2. [ASSERT] Verify initial page shows first batch of members
+3. [SCROLL] Scroll to bottom of list
+4. [ACT] Click Load More or pagination control
+5. [ASSERT] Verify additional members are loaded
+6. [ASSERT] Verify no duplicate members","[DOM] Pagination or load-more control visible when >10 members
+[DOM] Additional members loaded after action
+[DOM] No duplicate entries across pages
+[STATE] Total visible members matches org member count","[CONSOLE] no uncaught JS errors","Members truncated with no pagination; duplicate members after loading more; pagination control missing",none,Coverage Gap Analysis,Generated
+B2C-MBR-004,Invite Member - Open Form,B2C Features > Members,High,BL-B2C-004,,"Org admin user logged in","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/members
+2. [ACT] Click Invite Member or Add Member button
+3. [ASSERT] Verify invite form opens
+4. [ASSERT] Verify form has email and first name and last name and role fields","[DOM] Invite member form or modal opens
+[DOM] Email input field visible
+[DOM] First name and last name fields visible
+[DOM] Role selector (dropdown or radio) visible","[CONSOLE] no uncaught JS errors","Invite button missing; form does not open; required fields missing from invite form",none,Coverage Gap Analysis,Generated
+B2C-MBR-005,Invite Member - Submit Invitation,B2C Features > Members,High,BL-B2C-004,,"Org admin user; invite form open","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}};invite_email=invite+{{timestamp}}@example.com","1. [NAV] Navigate to /company/members
+2. [ACT] Click Invite Member
+3. [ACT] Fill email: invite+{{timestamp}}@example.com
+4. [ACT] Fill first name: Invited
+5. [ACT] Fill last name: Member
+6. [ACT] Select role: Purchaser
+7. [ACT] Click Send Invitation or Submit
+8. [ASSERT] Verify success message displayed
+9. [ASSERT] Verify invited member appears in members list with Invited or Pending status","[DOM] Success toast or confirmation message after sending invitation
+[DOM] New member appears in list with pending/invited status
+[STATE] Invitation sent to specified email","[API] invite member mutation succeeds
+[CONSOLE] no uncaught JS errors","Invitation fails with error; no success message; invited member not appearing in list; wrong status shown",none,Coverage Gap Analysis,Generated
+B2C-MBR-006,Invite Member - Email Notification Sent,B2C Features > Members,Medium,BL-B2C-004,,"Org admin user; invitation just submitted","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/members
+2. [ACT] Send invitation to a test email
+3. [ASSERT] Verify success confirmation
+4. [ASSERT] Check that invitation notification was triggered (via API or notification log)","[STATE] Email invitation triggered after submission
+[DOM] Success message references email being sent","[API] notification or email sending event triggered
+[CONSOLE] no uncaught JS errors","No email sent; invitation recorded but notification not triggered; email to wrong address",none,Coverage Gap Analysis,Generated
+B2C-MBR-007,Invite Member - New Member Sign-In via Invitation Link,B2C Features > Members,High,BL-B2C-004,,"Invitation sent; invitation link/email available","url={{FRONT_URL}};invite_email=invite+{{timestamp}}@example.com;password={{USER_PASSWORD}}","1. [NAV] Navigate to the invitation acceptance link (from email)
+2. [ASSERT] Verify registration or password setup form loads
+3. [ACT] Set password for the new account
+4. [ACT] Submit the form
+5. [ASSERT] Verify new member can sign in
+6. [NAV] Navigate to /company/members as the admin
+7. [ASSERT] Verify member status changed from Pending to Active","[DOM] Invitation link leads to password setup or registration page
+[STATE] New member can sign in after setting password
+[DOM] Member status updated in members list to Active","[API] member status updated after acceptance
+[CONSOLE] no uncaught JS errors","Invitation link expired or invalid; password setup fails; member status not updating to Active",delete test member,Coverage Gap Analysis,Generated
+B2C-MBR-008,Edit Member Role,B2C Features > Members,High,BL-B2C-004,,"Org admin user; member exists with Purchaser role","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/members
+2. [ACT] Click on a member to view details
+3. [ASSERT] Verify member detail view or edit form opens
+4. [ACT] Change role from Purchaser to Admin
+5. [ACT] Save changes
+6. [ASSERT] Verify success message
+7. [ASSERT] Verify role updated in members list","[DOM] Member detail view shows current role
+[DOM] Role dropdown allows changing role
+[STATE] Role change saved successfully
+[DOM] Members list reflects updated role","[API] member role update mutation succeeds
+[CONSOLE] no uncaught JS errors","Role change not saving; no edit capability for roles; wrong role shown after update",revert role change,Coverage Gap Analysis,Generated
+B2C-MBR-009,Admin vs Purchaser Access Differences,B2C Features > Members,High,BL-B2C-004,,"Two accounts: org admin and org purchaser","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org admin
+2. [NAV] Navigate to /company/members
+3. [ASSERT] Verify admin sees Invite Member button and can edit roles
+4. [ACT] Log out
+5. [NAV] Log in as org purchaser
+6. [NAV] Navigate to /company/members
+7. [ASSERT] Verify purchaser does NOT see Invite Member button
+8. [ASSERT] Verify purchaser cannot edit member roles","[DOM] Admin: Invite Member button visible; role editing available
+[DOM] Purchaser: Invite Member button hidden; role editing disabled or hidden
+[STATE] Access differences enforce role-based permissions","[CONSOLE] no uncaught JS errors","Purchaser can invite members (privilege escalation); purchaser can edit roles; no access difference between admin and purchaser",none,Coverage Gap Analysis,Generated
+B2C-MBR-010,Block Member - Member Cannot Sign In,B2C Features > Members,High,BL-B2C-004,,"Org admin user; active member to be blocked","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org admin
+2. [NAV] Navigate to /company/members
+3. [ACT] Select a member and click Block or Deactivate action
+4. [ACT] Confirm blocking action
+5. [ASSERT] Verify member status changes to Blocked or Inactive
+6. [ACT] Log out
+7. [NAV] Attempt to sign in as the blocked member
+8. [ASSERT] Verify sign-in is denied with appropriate message","[DOM] Member status updated to Blocked in members list
+[STATE] Blocked member login attempt is rejected
+[DOM] Error message shown: account blocked or deactivated","[API] member block mutation succeeds
+[CONSOLE] no uncaught JS errors","Blocked member can still sign in; no status change visible; blocking action fails silently",unblock test member,Coverage Gap Analysis,Generated
+B2C-MBR-011,Unblock Member - Member Can Sign In Again,B2C Features > Members,High,BL-B2C-004,,"Org admin user; member currently blocked","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org admin
+2. [NAV] Navigate to /company/members
+3. [ACT] Select the blocked member and click Unblock or Activate
+4. [ACT] Confirm unblocking
+5. [ASSERT] Verify member status changes to Active
+6. [ACT] Log out
+7. [NAV] Sign in as the unblocked member
+8. [ASSERT] Verify sign-in succeeds","[DOM] Member status updated to Active in members list
+[STATE] Unblocked member can sign in successfully
+[STATE] Member has access to their org context","[API] member unblock mutation succeeds
+[CONSOLE] no uncaught JS errors","Unblocked member still cannot sign in; status not updating; unblock action fails",none,Coverage Gap Analysis,Generated
+B2C-MBR-012,Blocked Member Status Visible in List,B2C Features > Members,Medium,BL-B2C-004,,"Org admin user; at least one blocked member exists","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org admin
+2. [NAV] Navigate to /company/members
+3. [ASSERT] Verify blocked member shows distinct status indicator
+4. [ASSERT] Verify status label reads Blocked or Inactive
+5. [ASSERT] Verify active members have Active status","[DOM] Blocked members have visible Blocked or Inactive status badge
+[DOM] Active members have Active status badge
+[FORMAT] Status indicators use distinct colors or styling","[CONSOLE] no uncaught JS errors","No status differentiation between active and blocked members; status column missing; same styling for all statuses",none,Coverage Gap Analysis,Generated
+B2C-MBR-013,Delegated Purchasing - Purchaser Order Goes to Approval,B2C Features > Members,Critical,BL-B2C-004,,"Org with approval workflow enabled; purchaser account with order amount threshold","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in as org purchaser
+2. [ACT] Add products to cart exceeding approval threshold
+3. [NAV] Proceed to checkout
+4. [ACT] Complete checkout flow
+5. [ASSERT] Verify order status shows Pending Approval (not Confirmed)
+6. [ASSERT] Verify purchaser sees order in their orders list with pending status","[STATE] Order created with Pending Approval status
+[DOM] Order status label shows Pending Approval or equivalent
+[DOM] Order visible in purchaser's orders list","[API] order query returns status PendingApproval
+[CONSOLE] no uncaught JS errors","Order auto-confirmed without approval; wrong status shown; order not visible in purchaser's list",none,Coverage Gap Analysis,Generated
+B2C-MBR-014,Delegated Purchasing - Approver Sees Pending Orders,B2C Features > Members,Critical,BL-B2C-004,,"Org approver account; at least one order pending approval","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org approver
+2. [NAV] Navigate to pending approvals or orders requiring approval
+3. [ASSERT] Verify pending order(s) are listed
+4. [ASSERT] Verify order details accessible: product and amount and purchaser name","[DOM] Pending approvals page/section loads
+[DOM] Pending order(s) listed with order details
+[DOM] Purchaser name visible on pending order
+[FORMAT] Order amount displayed correctly","[API] pending approvals query returns orders
+[CONSOLE] no uncaught JS errors","No pending orders visible to approver; approvals page missing; order details incomplete",none,Coverage Gap Analysis,Generated
+B2C-MBR-015,Delegated Purchasing - Approve Order,B2C Features > Members,Critical,BL-B2C-004,,"Org approver; pending order exists","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org approver
+2. [NAV] Navigate to pending approvals
+3. [ACT] Click Approve on a pending order
+4. [ACT] Confirm approval
+5. [ASSERT] Verify order status changes to Approved or Processing
+6. [NAV] Log in as purchaser
+7. [ASSERT] Verify order status updated in purchaser's order list","[STATE] Order status changes from Pending Approval to Approved
+[DOM] Approval success message displayed
+[DOM] Purchaser sees updated order status","[API] order approval mutation succeeds
+[CONSOLE] no uncaught JS errors","Approval action fails; order status unchanged; purchaser not notified; wrong status after approval",none,Coverage Gap Analysis,Generated
+B2C-MBR-016,Delegated Purchasing - Reject Order,B2C Features > Members,High,BL-B2C-004,,"Org approver; pending order exists","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org approver
+2. [NAV] Navigate to pending approvals
+3. [ACT] Click Reject on a pending order
+4. [ACT] Optionally add rejection reason
+5. [ACT] Confirm rejection
+6. [ASSERT] Verify order status changes to Rejected
+7. [NAV] Log in as purchaser
+8. [ASSERT] Verify order shows Rejected status in purchaser's orders","[STATE] Order status changes to Rejected
+[DOM] Rejection success message displayed
+[DOM] Purchaser sees Rejected status on order","[API] order rejection mutation succeeds
+[CONSOLE] no uncaught JS errors","Rejection action fails; order still shows Pending; purchaser not seeing rejection; rejection reason lost",none,Coverage Gap Analysis,Generated
+B2C-MBR-017,Delegated Purchasing - Amount Threshold Triggers Approval,B2C Features > Members,High,BL-B2C-004,,"Org with approval threshold; purchaser account","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in as org purchaser
+2. [ACT] Add products to cart totaling BELOW threshold
+3. [ACT] Complete checkout
+4. [ASSERT] Verify order is confirmed immediately (no approval needed)
+5. [ACT] Add products to cart totaling ABOVE threshold
+6. [ACT] Complete checkout
+7. [ASSERT] Verify order goes to Pending Approval","[STATE] Below-threshold order: confirmed immediately
+[STATE] Above-threshold order: requires approval
+[MATH] Threshold boundary correctly applied","[API] below-threshold order status is Confirmed; above-threshold is PendingApproval
+[CONSOLE] no uncaught JS errors","All orders go to approval regardless of amount; threshold not enforced; below-threshold order stuck in pending",none,Coverage Gap Analysis,Generated
+B2C-MBR-018,Company Members Count Display,B2C Features > Members,Medium,BL-B2C-004,,"Org admin; organization has known number of members","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org admin
+2. [NAV] Navigate to /company/members
+3. [ASSERT] Verify member count is displayed
+4. [ASSERT] Verify count matches actual visible members","[DOM] Member count shown on page (header or footer)
+[MATH] Displayed count matches number of members in list
+[FORMAT] Count formatted properly","[CONSOLE] no uncaught JS errors","Member count missing; count does not match actual members; count not updating after invite/block",none,Coverage Gap Analysis,Generated
+B2C-LIST-023,Shared List - Team Member Can View Shared Items,B2C Features > Shared Lists,High,BL-B2C-002,,"Shared list created by User A with products; User B is a member of the same organization","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Log in as User B (different org member from list creator)
+2. [NAV] Navigate to /account/lists
+3. [ASSERT] Verify shared list is visible in User B's lists
+4. [ACT] Open the shared list
+5. [ASSERT] Verify all products from shared list are visible with correct details","[DOM] Shared list appears in User B's list page
+[DOM] Shared list shows shared indicator (icon or label)
+[DOM] Products in shared list visible with name and price and image
+[STATE] User B can view all items added by User A","[API] shared list query returns items for User B
+[CONSOLE] no uncaught JS errors","Shared list not visible to team member; products missing from shared list; shared indicator absent",none,Coverage Gap Analysis,Generated
+B2C-LIST-024,Shared List - Edit Items Visible to Other Members,B2C Features > Shared Lists,High,BL-B2C-002,,"Shared list accessible to both User A and User B","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in as User A (list owner)
+2. [NAV] Open the shared list
+3. [ACT] Add a new product to the shared list
+4. [ASSERT] Verify product added successfully
+5. [ACT] Log out
+6. [NAV] Log in as User B (org member)
+7. [NAV] Open the same shared list
+8. [ASSERT] Verify newly added product is visible to User B","[DOM] Product added by User A appears in shared list for User B
+[STATE] Changes to shared list are visible to other members on refresh
+[DOM] Product details (name and price) match across both users","[CONSOLE] no uncaught JS errors","New product not visible to User B; changes not syncing between users; shared list showing stale data",none,Coverage Gap Analysis,Generated
+B2C-LIST-025,Shared List - Remove Shared Access,B2C Features > Shared Lists,Medium,BL-B2C-002,,"Shared list with User B having access; User A is list owner","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Log in as User A (list owner)
+2. [NAV] Open the shared list settings
+3. [ACT] Change list visibility from Shared to Private
+4. [ACT] Save changes
+5. [ACT] Log out
+6. [NAV] Log in as User B
+7. [NAV] Navigate to /account/lists
+8. [ASSERT] Verify the list is NO longer visible to User B","[STATE] After changing to Private: list removed from User B's view
+[DOM] User B's lists page does not show the now-private list
+[STATE] List still accessible to User A (owner)","[CONSOLE] no uncaught JS errors","List still visible to User B after making private; access revocation not taking effect; list disappearing for owner too",none,Coverage Gap Analysis,Generated
+B2C-LIST-026,Shared List - Shared Indicator Displayed,B2C Features > Shared Lists,Medium,BL-B2C-002,,"User has both shared and private lists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Log in and navigate to /account/lists
+2. [ASSERT] Verify shared lists have a shared indicator (icon or badge or label)
+3. [ASSERT] Verify private lists do NOT have the shared indicator
+4. [ASSERT] Verify indicator styling is distinct and readable","[DOM] Shared lists display shared icon or Shared label
+[DOM] Private lists have no shared indicator or show Private label
+[FORMAT] Indicators are visually distinct between shared and private","[CONSOLE] no uncaught JS errors","No visual distinction between shared and private lists; shared indicator missing; wrong indicator on private list",none,Coverage Gap Analysis,Generated
+B2C-LIST-027,Bulk Order Page - Accessible from Navigation,B2C Features > Bulk Order,High,BL-B2C-001,,"User logged in; bulk order feature enabled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Log in to storefront
+2. [NAV] Look for Bulk Order or Quick Order link in main navigation or account menu
+3. [ACT] Click the navigation link
+4. [ASSERT] Verify /bulk-order page loads","[DOM] Bulk Order / Quick Order link visible in navigation
+[NAV] Link navigates to /bulk-order
+[DOM] Bulk order page loads with SKU input form","[CONSOLE] no uncaught JS errors","Bulk order link missing from navigation; link leads to 404; page does not load",none,Coverage Gap Analysis,Generated
+B2C-LIST-028,Bulk Order - CSV File Upload,B2C Features > Bulk Order,High,BL-B2C-001,,"User on /bulk-order page; CSV file with valid SKUs and quantities prepared","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to /bulk-order
+2. [ASSERT] Verify file upload option is available (drag-and-drop or file picker)
+3. [ACT] Upload a CSV file with 3 rows of SKU and quantity pairs
+4. [WAIT] Wait for file processing
+5. [ASSERT] Verify products from CSV populated in bulk order form
+6. [ASSERT] Verify quantities match CSV values","[DOM] File upload area or button visible on bulk order page
+[DOM] After upload: products populated in form rows
+[STATE] SKUs and quantities match CSV content
+[DOM] Product names resolved from uploaded SKUs","[CONSOLE] no uncaught JS errors","File upload option missing; CSV not processed; products not populating from file; quantities wrong after upload",none,Coverage Gap Analysis,Generated
+B2C-LIST-029,Quick Order - SKU Autocomplete Suggestions,B2C Features > Bulk Order,Medium,BL-B2C-001,,"User on /bulk-order page; valid product SKU prefix known","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order
+2. [ACT] Start typing the first 3 characters of a known SKU
+3. [WAIT] Wait for autocomplete suggestions to appear
+4. [ASSERT] Verify dropdown shows matching products
+5. [ACT] Click on the suggested product
+6. [ASSERT] Verify SKU and product name populated in the row","[DOM] Autocomplete dropdown appears after typing 3+ characters
+[DOM] Suggestions show product name and SKU
+[STATE] Clicking suggestion populates the row with correct SKU and product info","[CONSOLE] no uncaught JS errors","No autocomplete suggestions; suggestions not matching typed text; clicking suggestion does not populate row",none,Coverage Gap Analysis,Generated
+B2C-LIST-030,Quick Order - Non-Existent SKU Clear Error,B2C Features > Bulk Order,Medium,BL-B2C-001,,"User on /bulk-order page","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to /bulk-order
+2. [ACT] Type INVALID_SKU_999 in SKU input
+3. [KEY] Press Enter or Tab to submit the SKU
+4. [ASSERT] Verify clear error message shown for invalid SKU","[DOM] Error message displayed for non-existent SKU
+[DOM] Error indicates SKU not found or product unavailable
+[STATE] Row does not accept invalid SKU as valid entry","[CONSOLE] no uncaught JS errors","No error for invalid SKU; form accepts non-existent SKU silently; JS error instead of user-friendly message",none,Coverage Gap Analysis,Generated
+B2C-LIST-031,Quick Order - Clear Form Resets All Entries,B2C Features > Bulk Order,Medium,BL-B2C-001,,"User on /bulk-order page with 3+ rows filled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order
+2. [ACT] Enter 3 valid SKUs with quantities
+3. [ASSERT] Verify 3 rows populated
+4. [ACT] Click Clear or Reset button (if available)
+5. [ASSERT] Verify all rows are cleared/reset to empty state","[DOM] All SKU input rows cleared after reset
+[DOM] Quantities reset to default (0 or 1)
+[STATE] Form returned to initial empty state","[CONSOLE] no uncaught JS errors","Clear button missing; some rows not cleared; quantities persisting after reset",none,Coverage Gap Analysis,Generated
+B2C-LIST-032,Add Entire List to Cart - All Items Added,B2C Features > Lists,High,BL-B2C-002,,"User logged in; list exists with 3+ products all in stock","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to /account/lists
+2. [ACT] Open a list with 3+ products
+3. [ACT] Click Add All to Cart button
+4. [WAIT] Wait for cart update
+5. [ASSERT] Verify all products from list added to cart
+6. [NAV] Navigate to cart
+7. [ASSERT] Verify all list items present in cart","[DOM] Add All to Cart button visible on list page
+[STATE] All 3+ products added to cart after clicking
+[DOM] Cart page shows all items from the list
+[MATH] Cart item count matches list item count","[API] addToCart mutations succeed for all items
+[CONSOLE] no uncaught JS errors","Not all items added; some items missing from cart; Add All button missing; partial add without notification",clear cart after test,Coverage Gap Analysis,Generated
+B2C-LIST-033,Add List to Cart - Out of Stock Item Partial Add,B2C Features > Lists,High,BL-B2C-002,,"User logged in; list contains mix of in-stock and out-of-stock products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to /account/lists
+2. [ACT] Open a list that has both in-stock and out-of-stock items
+3. [ACT] Click Add All to Cart
+4. [ASSERT] Verify in-stock items added to cart
+5. [ASSERT] Verify notification about out-of-stock items not added
+6. [NAV] Navigate to cart
+7. [ASSERT] Verify only in-stock items are in cart","[STATE] In-stock items added successfully
+[DOM] Notification or warning about out-of-stock items shown
+[DOM] Cart contains only in-stock items from the list
+[STATE] Out-of-stock items NOT in cart","[API] cart contains only in-stock items
+[CONSOLE] no uncaught JS errors","Out-of-stock items added to cart; no notification about skipped items; all items blocked due to one OOS item",clear cart after test,Coverage Gap Analysis,Generated
+B2C-LIST-034,Add List to Cart - Preserves Quantities,B2C Features > Lists,Medium,BL-B2C-002,,"User logged in; list with products that have set quantities","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to /account/lists
+2. [ACT] Open a list with products
+3. [ACT] Note quantity for each item (default is 1 unless list supports qty)
+4. [ACT] Click Add All to Cart
+5. [NAV] Navigate to cart
+6. [ASSERT] Verify quantities in cart match list quantities","[MATH] Cart quantities match list quantities for each item
+[DOM] Each cart line item quantity correct
+[STATE] No quantity duplication or loss during transfer","[CONSOLE] no uncaught JS errors","Quantities changed during add-to-cart; all items added with qty 1 regardless of list qty; quantity data lost",clear cart after test,Coverage Gap Analysis,Generated
+B2C-DASH-006,Recent Orders Widget - Last 5 Orders with Correct Data,B2C Features > Dashboard,Medium,BL-B2C-003,,"User signed in; has 5 or more previous orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in and navigate to /account/dashboard
+2. [ASSERT] Verify recent orders widget/section is visible
+3. [ASSERT] Verify widget shows up to 5 most recent orders
+4. [ASSERT] Verify each order shows: order number and date and total and status
+5. [ASSERT] Verify orders are sorted most-recent first","[DOM] Recent orders section visible on dashboard
+[DOM] Up to 5 orders displayed
+[FORMAT] Each order shows: order number and date and total amount and status
+[STATE] Orders sorted by date descending (most recent first)","[API] orders query returns recent orders
+[CONSOLE] no uncaught JS errors","Recent orders widget missing; more than 5 orders shown; wrong sort order; missing data fields in order entries",none,Coverage Gap Analysis,Generated
+B2C-DASH-007,Dashboard - Spend Display Accuracy,B2C Features > Dashboard,Medium,BL-B2C-003,,"User signed in; has orders in current month/quarter","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in and navigate to /account/dashboard
+2. [ASSERT] Verify spend summary widget/section is visible
+3. [ASSERT] Verify monthly or quarterly spend amount is displayed
+4. [ASSERT] Verify spend amount is formatted with currency symbol","[DOM] Spend summary section visible on dashboard
+[FORMAT] Spend amount displayed with correct currency symbol and formatting
+[STATE] Amount reflects orders placed in the displayed period","[API] spend data matches order totals for period
+[CONSOLE] no uncaught JS errors","Spend widget missing; amount showing $0 when orders exist; currency formatting incorrect; wrong time period calculation",none,Coverage Gap Analysis,Generated
+B2C-DASH-008,Dashboard - Quick Navigation Links Functional,B2C Features > Dashboard,Medium,BL-B2C-003,,"User signed in; dashboard accessible","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in and navigate to /account/dashboard
+2. [ASSERT] Verify quick navigation links/buttons are visible (e.g. Orders and Lists and Addresses)
+3. [ACT] Click Orders link
+4. [ASSERT] Verify navigation to /account/orders
+5. [NAV] Go back to dashboard
+6. [ACT] Click Lists link
+7. [ASSERT] Verify navigation to /account/lists","[DOM] Quick navigation links visible on dashboard
+[NAV] Orders link navigates to /account/orders
+[NAV] Lists link navigates to /account/lists
+[DOM] All links are functional (no dead links)","[CONSOLE] no uncaught JS errors","Navigation links missing; links lead to 404; dead links on dashboard; broken navigation after clicking link",none,Coverage Gap Analysis,Generated

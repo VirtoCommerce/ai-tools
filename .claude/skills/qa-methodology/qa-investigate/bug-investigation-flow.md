@@ -10,13 +10,23 @@
 ```
 BUG REPORTED / SUSPECTED
         │
-   ┌────▼─────┐      ┌──────────┐     ┌───────────┐     ┌────────────┐     ┌──────────────┐
+   ┌────▼─────┐     ┌──────────┐     ┌───────────┐     ┌────────────┐     ┌──────────────┐
    │ REPRODUCE │────►│ ISOLATE  │────►│  GATHER   │────►│ IDENTIFY   │────►│ DOCUMENT &   │
    │           │     │  LAYER   │     │ EVIDENCE  │     │ ROOT CAUSE │     │  HAND OFF    │
    └───────────┘     └──────────┘     └───────────┘     └────────────┘     └──────────────┘
     Confirm it's       Frontend?        Screenshots,      Pattern match      Bug report or
     real & get STR     Backend?         console, network,  against known     handoff to
                        Infra?           HAR, DOM state     VC patterns       another agent
+                                              │
+                                     ┌────────┴────────┐
+                                     ▼                  ▼
+                              ┌─────────────┐   ┌──────────────┐
+                              │ SOURCE CODE │   │ APP INSIGHTS │
+                              │ (GitHub)    │   │ (Azure)      │
+                              └─────────────┘   └──────────────┘
+                               §8: Search VC     §9: KQL queries,
+                               module repos,     exceptions, deps,
+                               trace logic       request traces
 ```
 
 **Key rule:** Never file a bug you cannot reproduce. If you can't reproduce after exhausting the checklist in Section 2, document the failed reproduction attempt and escalate.
@@ -221,7 +231,342 @@ When the storefront displays incorrect data:
 
 ---
 
-## 8. Flaky vs. Real Bug
+## 8. Source Code Investigation via GitHub
+
+When browser-based debugging is insufficient or you need to understand **why** the code behaves a certain way, investigate the source code directly using GitHub MCP tools. This covers both **backend modules** (C#/.NET) and the **frontend storefront** (Vue/TypeScript).
+
+### When to Use Source Code Investigation
+
+- API returns unexpected data and you need to understand the business logic
+- Error messages are cryptic — find the exact throw site to understand conditions
+- Feature works differently than documented — check actual implementation
+- Need to determine if a behavior is "by design" or a bug
+- Hunting for race conditions, missing null checks, or incorrect LINQ queries
+- UI component renders wrong data, wrong layout, or has broken interactions
+- Vue reactivity issue — need to trace composable / store logic
+- SSR hydration mismatch or build-time vs. runtime behavior
+
+### Investigation Workflow
+
+```
+SYMPTOM IDENTIFIED (API layer / UI behavior)
+        │
+   ┌────┴────────────────────────────┐
+   │                                 │
+   ▼                                 ▼
+BACKEND?                         FRONTEND?
+   │                                 │
+   ┌────▼──────────┐            ┌────▼──────────┐
+   │ FIND THE MODULE│            │ FIND THE PAGE/ │
+   │ → vc-module-*  │            │ COMPONENT      │
+   └────┬───────────┘            │ → vc-frontend  │
+        │                        └────┬───────────┘
+   ┌────▼─────────────┐         ┌────▼─────────────┐
+   │ SEARCH THE CODE  │         │ SEARCH THE CODE  │
+   │ controller/service│         │ page/composable/ │
+   └────┬─────────────┘         │ component/store  │
+        │                        └────┬─────────────┘
+   ┌────▼──────────────┐        ┌────▼──────────────┐
+   │ TRACE THE LOGIC   │        │ TRACE THE LOGIC   │
+   │ service → domain  │        │ composable → API  │
+   │ → repo → events   │        │ → store → template │
+   └───────────────────┘        └───────────────────┘
+```
+
+### 8A. Backend Modules (C#/.NET — `vc-module-*`)
+
+### Step 1: Identify the Module
+
+| Clue | How to Find Module |
+|---|---|
+| API endpoint path (e.g., `/api/pricing/...`) | Module name maps to path segment → `vc-module-pricing` |
+| GraphQL operation name (e.g., `SearchProducts`) | xAPI module → `vc-module-x-catalog`, `vc-module-x-order`, etc. |
+| Error in `extensions.code` | Search error code string across VirtoCommerce org |
+| Admin SPA section | Check `.claude/agents/knowledge/module-suite-map.md` |
+| Feature domain | Consult `module-suite-map.md` or search `org:VirtoCommerce vc-module-*` |
+
+### Step 2: Search the Code
+
+Use **GitHub MCP** `search_code` to find relevant source files:
+
+```
+# Find a specific error message
+search_code: "Price not found" org:VirtoCommerce
+
+# Find a controller/endpoint
+search_code: "[Route(\"api/pricing\")] org:VirtoCommerce vc-module-pricing"
+
+# Find a GraphQL resolver
+search_code: "class SearchProductsQuery" org:VirtoCommerce
+
+# Find business logic by domain term
+search_code: "ApplyPromotionReward" org:VirtoCommerce vc-module-marketing
+
+# Find configuration/settings
+search_code: "ModuleConstants" org:VirtoCommerce vc-module-catalog
+```
+
+### Step 3: Trace the Logic Chain
+
+Follow the typical Virto Commerce code path:
+
+1. **Controller / GraphQL resolver** → entry point, request validation, authorization
+2. **Service layer** (`I*Service` / `*Service`) → orchestration, business rules
+3. **Domain model** → entities, value objects, invariants
+4. **Repository / data access** → queries, EF Core mappings
+5. **Events / handlers** → side effects, cross-module integration
+
+**What to look for:**
+- Null checks (or missing null checks) on the data path
+- Authorization attributes (`[Authorize]`, policy checks)
+- LINQ queries with `.Where()` / `.FirstOrDefault()` — filter conditions that might exclude expected data
+- Event handlers that modify data after the main operation
+- Caching (`IMemoryCache`, `IPlatformMemoryCache`) — stale data source
+- Background job registration (`IRecurringJobManager`) — timing/scheduling issues
+
+### Step 4: Document Findings
+
+When source code investigation reveals the root cause, include in the bug report:
+- **Repository**: `VirtoCommerce/vc-module-{name}`
+- **File path**: e.g., `src/VirtoCommerce.PricingModule.Data/Services/PricingService.cs`
+- **Line/method**: The specific method and approximate line where the bug lives
+- **Code evidence**: Brief quote of the problematic code (e.g., missing null check, wrong condition)
+- **Suggested fix direction**: What the code should do instead (without writing the fix)
+
+### Common Code Patterns to Watch
+
+| Pattern | What Could Go Wrong |
+|---|---|
+| `FirstOrDefault()` without null check | `NullReferenceException` when entity not found |
+| `Where(x => x.StoreId == storeId)` | Missing or wrong store scope filtering |
+| `[Authorize(Policy = "...")]` | Too restrictive or wrong policy for the use case |
+| `_cache.GetOrCreateExclusive(...)` | Stale cache serving outdated data |
+| `await _eventPublisher.Publish(...)` | Event handler throwing breaks the main flow |
+| `decimal` vs `Money` type conversions | Rounding errors in pricing/tax calculations |
+
+### 8B. Frontend Storefront (Vue 3 / TypeScript — `vc-frontend`)
+
+The storefront is a **Nuxt 3 / Vue 3** application in `VirtoCommerce/vc-frontend`. It uses the Composition API, Pinia stores, and calls the platform via GraphQL xAPI.
+
+### Step 1: Identify the Page or Component
+
+| Clue | Where to Look in `vc-frontend` |
+|---|---|
+| Route/URL path (e.g., `/cart`, `/checkout/payment`) | `client-app/pages/` — file-based routing (Nuxt convention) |
+| Component visible in DOM (e.g., `ProductCard`, `AddToCart`) | `client-app/shared/` or `client-app/modules/` |
+| Feature area (catalog, cart, checkout) | `client-app/modules/{feature}/` — each module has its own components, composables, stores |
+| Shared UI element (buttons, modals, inputs) | `client-app/shared/ui/` or `client-app/shared/components/` |
+| Layout (header, footer, sidebar) | `client-app/shared/layout/` |
+| Builder.io / CMS content | `client-app/modules/cms/` or Builder.io integration files |
+
+### Step 2: Search the Frontend Code
+
+Use **GitHub MCP** `search_code` scoped to the frontend repo:
+
+```
+# Find a Vue component by name
+search_code: "defineComponent" "ProductCard" repo:VirtoCommerce/vc-frontend
+
+# Find a composable (business logic hook)
+search_code: "useCart" repo:VirtoCommerce/vc-frontend
+
+# Find a GraphQL query/mutation
+search_code: "gql`" "addCartItem" repo:VirtoCommerce/vc-frontend
+
+# Find a Pinia store
+search_code: "defineStore" "cart" repo:VirtoCommerce/vc-frontend
+
+# Find route/page definition
+search_code: "definePageMeta" "checkout" repo:VirtoCommerce/vc-frontend
+
+# Find API call or fetch wrapper
+search_code: "useFetch" OR "useAsyncData" repo:VirtoCommerce/vc-frontend
+
+# Find error handling
+search_code: "catch" "ValidationError" repo:VirtoCommerce/vc-frontend
+```
+
+### Step 3: Trace the Frontend Logic Chain
+
+Follow the typical `vc-frontend` code path:
+
+1. **Page** (`pages/*.vue`) → route entry, `definePageMeta`, layout selection, top-level data fetching
+2. **Module components** (`modules/{feature}/components/`) → feature-specific UI, event handlers
+3. **Composables** (`modules/{feature}/composables/use*.ts`) → business logic, API calls, state management
+4. **GraphQL operations** (`modules/{feature}/api/graphql/`) → `.graphql` files with queries/mutations
+5. **Pinia stores** (`modules/{feature}/stores/`) → shared state across components
+6. **Shared components** (`shared/components/`, `shared/ui/`) → reusable UI primitives
+7. **Types** (`modules/{feature}/types/`) → TypeScript interfaces for API responses and component props
+
+**What to look for:**
+- `ref()` / `computed()` reactivity — is the value updating when it should?
+- `watch()` / `watchEffect()` — missing watchers or wrong dependency tracking
+- GraphQL query variables — wrong variables passed, missing fields in query
+- `async/await` in composables — unhandled promise rejections, race conditions
+- `v-if` / `v-show` conditions — component hidden due to wrong condition
+- SSR vs. client-only code — `<ClientOnly>` wrappers, `onMounted` vs. `onServerPrefetch`
+- Route middleware/guards — redirect logic blocking navigation
+- i18n keys — missing or wrong translation key (`$t('...')`)
+- Event bus / `emit` — parent not listening to child event, wrong event name
+
+### Step 4: Document Findings
+
+When frontend source code investigation reveals the root cause:
+- **Repository**: `VirtoCommerce/vc-frontend`
+- **File path**: e.g., `client-app/modules/checkout/composables/useCheckout.ts`
+- **Line/method**: The specific function and approximate line
+- **Code evidence**: Brief quote (e.g., missing `await`, wrong computed dependency)
+- **Suggested fix direction**: What should change (without writing the full fix)
+
+### Common Frontend Patterns to Watch
+
+| Pattern | What Could Go Wrong |
+|---|---|
+| `ref()` assigned in `setup()` but not returned | Template can't access the reactive value |
+| `computed()` depending on non-reactive source | Value never updates after initial render |
+| `watch(prop, handler)` without `{ immediate: true }` | Handler doesn't fire on initial load |
+| GraphQL query missing a field | Data exists in API but component shows `undefined` |
+| `useFetch()` without error handling | Silent failure, component renders empty |
+| `v-if="items.length"` on async data | Flash of empty state before data loads |
+| `$t('key')` with wrong key path | Shows raw key string instead of translated text |
+| `useRoute().query` parsed as string | Number comparison fails (`"1" !== 1`) |
+| Missing `<ClientOnly>` on browser-dependent code | SSR hydration mismatch error |
+| `emit('update:modelValue')` not declared in `defineEmits` | Event silently dropped in production |
+
+---
+
+## 9. Application Insights Investigation
+
+Use **Azure Application Insights** to investigate server-side errors, performance issues, and runtime behavior that cannot be observed from the browser alone. Two App Insights resources are available:
+- **vcst-qa** — Platform backend (REST API, modules, background jobs)
+- **vcst-qa-storefront** — Storefront frontend server (SSR, middleware)
+
+### When to Use Application Insights
+
+- 5xx errors from API with no useful response body
+- Intermittent failures that don't reproduce locally
+- Performance degradation (slow endpoints, timeouts)
+- Background job failures not visible in Hangfire UI
+- Correlation between frontend errors and backend exceptions
+- Deployment-related regressions (compare before/after metrics)
+
+### Investigation Workflow
+
+```
+BUG WITH SERVER-SIDE COMPONENT
+        │
+   ┌────▼──────────┐     ┌─────────────────┐     ┌──────────────────┐
+   │ CHECK FAILURES │────►│ QUERY LOGS      │────►│ CORRELATE &      │
+   │   BLADE        │     │  & EXCEPTIONS   │     │  ROOT-CAUSE      │
+   └────────────────┘     └─────────────────┘     └──────────────────┘
+    Failure rate,          KQL queries for          Operation ID →
+    top exceptions,        specific errors,         full request
+    affected operations    time ranges              trace chain
+```
+
+### Access Points
+
+| Resource | Portal Link | Purpose |
+|---|---|---|
+| vcst-qa failures | Azure Portal → vcst resource group → vcst-qa → Failures blade | Platform API exceptions |
+| vcst-qa-storefront search | Azure Portal → vcst resource group → vcst-qa-storefront → Search | Storefront server logs |
+| vcst-qa live metrics | Azure Portal → vcst-qa → Live Metrics | Real-time request/failure stream |
+
+### Key KQL Queries
+
+Use **Azure MCP** `applicationinsights` tool or the Azure Portal Logs blade.
+
+**Find exceptions for a specific API endpoint:**
+```kql
+requests
+| where timestamp > ago(1h)
+| where url contains "/api/pricing"
+| where success == false
+| project timestamp, url, resultCode, duration, operation_Id
+| order by timestamp desc
+| take 20
+```
+
+**Get full exception details:**
+```kql
+exceptions
+| where timestamp > ago(1h)
+| where operation_Name contains "SearchProducts"
+| project timestamp, problemId, outerMessage, innermostMessage, details, operation_Id
+| order by timestamp desc
+| take 10
+```
+
+**Trace a specific request end-to-end (using operation ID from network tab):**
+```kql
+union requests, dependencies, exceptions, traces
+| where operation_Id == "OPERATION_ID_FROM_NETWORK_TAB"
+| order by timestamp asc
+| project timestamp, itemType, name, resultCode, success, message, outerMessage
+```
+
+**Find slow operations:**
+```kql
+requests
+| where timestamp > ago(24h)
+| where duration > 3000
+| summarize count(), avg(duration), max(duration) by operation_Name
+| order by count_ desc
+| take 20
+```
+
+**Check dependency failures (SQL, Redis, Elasticsearch, external services):**
+```kql
+dependencies
+| where timestamp > ago(1h)
+| where success == false
+| summarize count() by type, target, name, resultCode
+| order by count_ desc
+```
+
+**Compare error rates before/after deployment:**
+```kql
+requests
+| where timestamp > ago(48h)
+| summarize
+    failures = countif(success == false),
+    total = count(),
+    failRate = round(100.0 * countif(success == false) / count(), 2)
+    by bin(timestamp, 1h)
+| order by timestamp asc
+```
+
+### Correlating Browser Errors with Server Logs
+
+1. **Get the operation ID** from the browser network tab — look for `Request-Id` or `traceparent` header in the failed request
+2. **Query App Insights** with that operation ID to get the full server-side trace
+3. **Check dependencies** — was it a SQL timeout? Redis failure? External API error?
+4. **Read the exception chain** — `outerMessage` is the wrapper; `innermostMessage` is usually the actual cause
+
+### What to Include in Bug Reports
+
+When App Insights reveals server-side details, add to the bug report:
+- **Operation ID**: For the failing request (enables others to trace it)
+- **Exception type & message**: From the `exceptions` table
+- **Dependency failures**: If the root cause is a downstream service (SQL, Redis, ES)
+- **Request duration**: If performance-related
+- **Time window**: When the issue was observed (UTC timestamps)
+- **Affected operation**: The `operation_Name` (controller action or GraphQL operation)
+
+### Common Server-Side Patterns
+
+| App Insights Signal | Likely Cause | Next Step |
+|---|---|---|
+| `SqlException` in dependencies | Database timeout or deadlock | Check query complexity, table locks |
+| `ElasticsearchException` | Search index unavailable or query too complex | Check ES cluster health, rebuild index |
+| `RedisConnectionException` | Cache layer down | Check Redis health, verify connection string |
+| `TaskCanceledException` with duration > 30s | Request timeout | Find the slow dependency in the trace |
+| Spike in exceptions after deployment | Regression introduced | Compare exception types before/after deploy timestamp |
+| `NullReferenceException` in module code | Missing data or unchecked null | Use source code investigation (Section 8) to find the exact line |
+
+---
+
+## 10. Flaky vs. Real Bug
 
 | Signal | Likely Flaky | Likely Real Bug |
 |---|---|---|
@@ -238,7 +583,7 @@ When the storefront displays incorrect data:
 
 ---
 
-## 9. Investigation Handoff Protocol
+## 11. Investigation Handoff Protocol
 
 When your investigation reveals the bug is in another agent's domain, hand off with full context.
 

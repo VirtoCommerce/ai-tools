@@ -1,6 +1,6 @@
 # Skills & Commands Reference
 
-## Slash Commands (12) — `.claude/commands/`
+## Slash Commands (13) — `.claude/commands/`
 
 All commands have YAML frontmatter with `description`, `argument-hint`, and invocation control. Commands with side effects use `disable-model-invocation: true` to prevent accidental auto-triggering.
 
@@ -15,6 +15,7 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/qa-env-check` | `[vars\|endpoints\|mcp]` | **Yes** | Validate env vars, endpoints, MCP servers, test infra |
 | `/qa-coverage-generation` | `[p0\|p1\|full\|domain <name>\|ci-dry-run]` | No | Orchestrated parallel coverage generation across domain batches with CI support |
 | `/qa-test-lifecycle` | `suite <ID> \| domain <name> \| VCST-XXXX \| diff \| --skip-generate \| --skip-verify` | No | Full test case lifecycle: analyze → generate → review → fix → verify → approve. Delegates to test-management-specialist + qa-testing-expert |
+| `/qa-sync-tests` | `PR #NNN \| VCST-XXXX \| module <name> \| diff \| changelog <version>` | No | Sync test cases with code changes: detect stale/broken cases, update steps/assertions, generate for new behavior |
 | `/qa-verify-fix` | `VCST-XXXX` | No | Verify a bug fix: fetch ticket, reproduce STR, confirm fix, regression checks, transition JIRA |
 | `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|ui\|module <name>]` | No | Business analysis with GitHub search + live UI (full/flows/api/docs/stories/ui/module) |
 | `/ba-stories` | `feature name \| VCST-XXXX` | No | Generate Agile user stories with BDD acceptance criteria |
@@ -60,6 +61,6 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 
 ## Usage
 
-`/qa-smoke`, `/qa-test VCST-1234`, `/qa-storybook Button`, `/vc-docs dynamic properties`, or use agents directly: `"Use qa-frontend-expert to test checkout"`
+`/qa-smoke`, `/qa-test VCST-1234`, `/qa-sync-tests PR #123`, `/qa-storybook Button`, `/vc-docs dynamic properties`, or use agents directly: `"Use qa-frontend-expert to test checkout"`
 
 **Frontmatter fields:** `description` (shown in `/` menu with `[Category]` tag), `argument-hint` (autocomplete hint), `disable-model-invocation: true` (prevents Claude from auto-triggering). Only read-only commands/skills (`/qa-status`, `/qa-env-check`, `/vc-docs`) allow model invocation.

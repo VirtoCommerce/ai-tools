@@ -1,0 +1,14 @@
+{
+  "batch": "C",
+  "agent": "qa-testing-expert",
+  "domains": ["COMPARE", "NOTIFICATIONS", "LOYALTY"],
+  "gapsAddressed": ["GAP-F19", "GAP-F20", "GAP-F24", "GAP-F29", "GAP-F32"],
+  "casesGenerated": 19,
+  "suitesModified": ["03", "13"],
+  "newIds": {
+    "compare": "CAT-COMP-001 to CAT-COMP-009",
+    "notifications": "B2C-NOTIF-001 to B2C-NOTIF-007",
+    "loyalty": "B2C-LOY-001 to B2C-LOY-003"
+  },
+  "casesByPriority": {"Critical": 0, "High": 13, "Medium": 6}
+}

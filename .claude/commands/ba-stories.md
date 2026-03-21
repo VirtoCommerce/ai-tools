@@ -63,7 +63,11 @@ Output a summary to user:
 ---
 
 ## Rules
+- Follow `.claude/templates/agent-dispatch.md` for dispatch conventions and error handling
+- **Prerequisite:** Run `/ba-analyze [scope]` first for best results. If no recent analysis exists (check `reports/ba/`), warn user that stories will be based on limited context.
+- Always query Context7 (`/virtocommerce/vc-docs`) for technical feasibility of the feature before generating stories
 - Always include at least 1 negative/error acceptance criterion per story
 - Use specific VC actors (not "a user")
+- Acceptance criteria format: Given [precondition], When [action], Then [expected result]
 - Check for story smells before finalizing (too big, vague actor, no error AC, etc.)
 - If JIRA ticket: offer to create sub-tasks from the generated stories

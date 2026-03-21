@@ -8,6 +8,15 @@ Compare the complete feature inventory (from sitemap, API reference, business lo
 - An API endpoint has zero test cases exercising it
 - A business invariant has no test case verifying it
 - A user flow from the E2E scenario catalog has no corresponding regression test
+- A test case exists in the **TestRail exports** (`test-suites ( export from Test-rail )/`) but has no counterpart in the regression suites — this indicates a migration gap
+
+### 1b. TestRail Cross-Reference
+Compare current regression suites against the original TestRail exports to detect migration gaps:
+1. Read TestRail exports from `test-suites ( export from Test-rail )/Frontend/` and `Backend (admin site)/`
+2. For each TestRail test case (by Title + Section), check if a corresponding case exists in `regression/suites/`
+3. Flag cases present in TestRail but absent from regression suites as `MIGRATION_GAP` category
+4. Flag cases where TestRail steps are richer (more assertions, more edge cases) than the regression version as `SHALLOW_MIGRATION`
+5. Use TestRail original test intent to inform gap generation — preserve the original tester's coverage design
 
 ### 2. Coverage Depth Assessment
 Even when test cases exist, assess depth:
@@ -41,6 +50,8 @@ Even when test cases exist, assess depth:
 | `MISSING_INTEGRATION` | Feature works alone, not tested in flow | Search tested, but not "search → add to cart → checkout" |
 | `MISSING_CROSS_DOMAIN` | No cascade verification | Admin price change not verified on storefront |
 | `STALE_COVERAGE` | Tests exist but may be outdated | Test references removed UI element |
+| `MIGRATION_GAP` | Test exists in TestRail export but missing from regression suites | TestRail has "C389061 Registration form > PERSONAL" but no match in Suite 02 |
+| `SHALLOW_MIGRATION` | Regression case exists but lost depth vs TestRail original | TestRail has 5 steps with assertions, regression has 2 steps |
 
 ## Test Case Generation Rules
 

@@ -789,3 +789,126 @@ AUTH-061,Protected Route Redirect - Return to Original Page After Login,Authoriz
 [STATE] User does not land on default post-login page when return URL exists","[NETWORK] POST /connect/token returns HTTP 200
 [NETWORK] Final redirect targets /account/orders
 [CONSOLE] no TypeError or JS errors","User redirected to home instead of original page after login; return URL lost during authentication; 404 on return redirect; console TypeError",Logout after test,,Automated
+AUTH-062,Impersonation - Switch Companies While Impersonating,Authentication > Impersonation,Medium,BL-AUTH-006; BL-AUTH-007,ECL-14.1,"Admin impersonating a customer who belongs to multiple companies; storefront loaded in impersonation context","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of a customer belonging to multiple companies
+[WAIT] Wait for storefront to load in impersonation context
+[ASSERT] Verify impersonation banner visible
+[ASSERT] Note current company context (name in org switcher)
+[ACT] Open the company/org switcher in the storefront
+[ACT] Select a different company
+[WAIT] Wait for company context to update
+[ASSERT] Verify org switcher shows new company name
+[ASSERT] Verify catalog and prices reflect new company context
+[ASSERT] Verify impersonation banner still visible after company switch","[STATE] Company switcher accessible during impersonation session
+[STATE] Company context changes successfully while maintaining impersonation
+[DOM] Impersonation banner persists through company switch
+[DOM] Org switcher shows updated company name
+[STATE] Prices and catalog reflect new company context","[API] organization switch mutation succeeds during impersonation
+[CONSOLE] no TypeError or JS errors
+[NETWORK] no 4xx on company switch during impersonation","Company switcher inaccessible during impersonation; company switch breaks impersonation session; impersonation banner disappears after switch; previous company data persists; console TypeError",Stop impersonation after test,Coverage Gap Analysis,Generated
+AUTH-063,Impersonation - Stop Impersonation Returns to Admin State,Authentication > Impersonation,Medium,BL-AUTH-006; BL-AUTH-007,,"Admin currently impersonating a customer; impersonation session active","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of a customer
+[WAIT] Wait for storefront to load in impersonation context
+[ASSERT] Verify impersonation banner visible in storefront
+[ACT] Locate stop-impersonation control (banner button or link)
+[ACT] Click Stop Impersonation
+[WAIT] Wait for context to change
+[ASSERT] Verify redirected to admin panel or admin context restored
+[ASSERT] Verify no customer data leaks into admin session
+[ASSERT] Verify admin panel is fully functional after stopping","[STATE] Stop impersonation control visible and accessible
+[STATE] After stopping: admin context fully restored (not customer storefront)
+[DOM] Admin panel loads correctly after stopping impersonation
+[STATE] No customer session data persists in admin context
+[STATE] Admin authentication token still valid","[NETWORK] Admin token valid after stopping impersonation
+[CONSOLE] no TypeError or JS errors","Stop impersonation control missing; admin not restored after stop; customer data leaks into admin session; admin panel broken after stopping; console TypeError",none,Coverage Gap Analysis,Generated
+AUTH-064,Impersonation - Banner Visible Throughout Browsing,Authentication > Impersonation,Medium,BL-AUTH-006,,"Admin impersonating a customer; storefront loaded","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of a customer
+[WAIT] Wait for storefront to load in impersonation context
+[ASSERT] Verify impersonation banner visible on homepage
+[NAV] Navigate to a category page
+[ASSERT] Verify impersonation banner still visible
+[NAV] Navigate to a product detail page
+[ASSERT] Verify impersonation banner still visible
+[NAV] Navigate to cart page
+[ASSERT] Verify impersonation banner still visible
+[NAV] Navigate to account/orders page
+[ASSERT] Verify impersonation banner still visible on all account pages","[DOM] Impersonation banner visible on homepage
+[DOM] Impersonation banner visible on category page
+[DOM] Impersonation banner visible on product page
+[DOM] Impersonation banner visible on cart page
+[DOM] Impersonation banner visible on account pages
+[DOM] Banner includes customer name or identifier and stop button","[CONSOLE] no TypeError or JS errors
+[NETWORK] no 4xx on any page navigation during impersonation","Impersonation banner disappears on some pages; banner missing on cart or checkout; banner not showing customer identity; console TypeError",Stop impersonation after test,Coverage Gap Analysis,Generated
+AUTH-065,Impersonation - Impersonated User Cannot Impersonate Others,Authentication > Impersonation,High,BL-AUTH-006; BL-AUTH-005,ECL-4.3,"Admin impersonating a customer who has admin-like role in their org; storefront loaded","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of a customer
+[WAIT] Wait for storefront to load in impersonation context
+[ASSERT] Verify impersonation banner visible
+[NAV] Attempt to navigate to admin panel URL ({{ADMIN_URL}})
+[ASSERT] Verify admin access is denied or redirected to storefront
+[ASSERT] Verify no impersonation controls available in the impersonated session
+[ASSERT] Verify impersonated user cannot access login-on-behalf API endpoints","[STATE] Impersonated user cannot access admin panel
+[STATE] No nested impersonation possible (impersonate-while-impersonating blocked)
+[STATE] Admin URL redirects to storefront or shows access denied
+[STATE] Login-on-behalf API returns 401/403 for impersonated token","[API] login-on-behalf endpoint rejects impersonated user token
+[CONSOLE] no TypeError or JS errors
+[NETWORK] admin panel returns 401 or 403 for impersonated session","Impersonated user can access admin panel; nested impersonation possible; admin API accessible from impersonated session; privilege escalation via impersonation chain; console TypeError",Stop impersonation after test,Coverage Gap Analysis,Generated
+AUTH-066,Registration - HTML Tags Rejected in Personal Name Fields,Registration > Input Validation,High,BL-AUTH-001,ECL-5.1,"Registration page accessible; unique test email available","front_url={{FRONT_URL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Select 'Personal' account type
+[ACT] Fill 'First Name': '<b>Bold</b>Name'
+[ACT] Fill 'Last Name': 'Test<script>alert(1)</script>'
+[ACT] Fill 'Email': htmlname+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Fill 'Confirm Password': {{USER_PASSWORD}}
+[ACT] Check terms/conditions checkbox
+[ACT] Click 'Create Account'
+[WAIT] Wait for server response
+[ASSERT] Verify registration is REJECTED with validation error — NameValidationPattern only allows Unicode letters, spaces, apostrophes, hyphens, dots
+[ASSERT] Verify no account was created
+[ACT] Clear name fields
+[ACT] Fill 'First Name': 'Test&amp;Name'
+[ACT] Fill 'Last Name': 'User<img>'
+[ACT] Click 'Create Account'
+[ASSERT] Verify rejection again — HTML entities and tags not in allow-list","[STATE] Registration rejected for names containing HTML tags or entities
+[STATE] NameValidationPattern ^[\p{L}\p{M}\s'\-\.]+$ rejects <, >, &, (, ) characters
+[DOM] Validation error message visible to user
+[STATE] No account created with HTML in name fields","[NETWORK] POST registration returns validation error (not 200)
+[CONSOLE] no TypeError or JS errors
+[API] No new user account exists with HTML tag names","Registration succeeds with HTML tags in name; <script> stored as first name; no validation error shown; account created with XSS payload in name",none,VCST-4691 PR #130,Manual
+AUTH-067,Registration - Org Name Allows Business Characters (3M AT&T H&M),Registration > Input Validation,High,BL-AUTH-001,ECL-7.2,"Registration page accessible; unique test email available","front_url={{FRONT_URL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Select 'For business' / Organization account type
+[ACT] Fill 'Company Name': 'AT&T Corp.'
+[ACT] Fill 'First Name': 'Test'
+[ACT] Fill 'Last Name': 'User'
+[ACT] Fill 'Email': orgbiz+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Fill 'Confirm Password': {{USER_PASSWORD}}
+[ACT] Check terms/conditions checkbox
+[ACT] Click 'Create Account'
+[WAIT] Wait for success or error
+[ASSERT] Verify registration succeeds — OrganizationNameValidationPattern allows digits, &, #, /, commas, parens
+[ACT] Log in with new account
+[NAV] Navigate to organization profile
+[ASSERT] Verify org name 'AT&T Corp.' displayed correctly","[STATE] Registration succeeds with business-legal characters in org name
+[STATE] OrganizationNameValidationPattern ^[\p{L}\p{M}\p{N}\s'\-\.&#/,()]+$ permits &, #, /, digits
+[DOM] Org name displayed correctly without encoding artifacts
+[STATE] Organization created with exact name submitted","[NETWORK] POST registration returns 200 success
+[CONSOLE] no TypeError or JS errors
+[API] Organization query returns name 'AT&T Corp.' exactly","Org name rejected; ampersand stripped or encoded; org name truncated; OrganizationNameValidationPattern false-positive rejects valid business name","Delete test org and user via admin after test",VCST-4691 PR #130,Manual
+AUTH-068,Registration - HTML/Script Tags Rejected in Org Name,Registration > Input Validation,High,BL-AUTH-001,ECL-5.1,"Registration page accessible; unique test email available","front_url={{FRONT_URL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/register
+[ACT] Select 'For business' / Organization account type
+[ACT] Fill 'Company Name': '<script>alert(1)</script>Org'
+[ACT] Fill 'First Name': 'Test'
+[ACT] Fill 'Last Name': 'User'
+[ACT] Fill 'Email': orgxss+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Fill 'Confirm Password': {{USER_PASSWORD}}
+[ACT] Check terms/conditions checkbox
+[ACT] Click 'Create Account'
+[WAIT] Wait for server response
+[ASSERT] Verify registration is REJECTED — OrganizationNameValidationPattern rejects < and > characters
+[ASSERT] Verify no organization was created with XSS payload","[STATE] Registration rejected for org name containing script tags
+[STATE] OrganizationNameValidationPattern rejects <, > characters even though & is allowed
+[DOM] Validation error message visible to user
+[STATE] No organization created with XSS payload in name","[NETWORK] POST registration returns validation error (not 200)
+[CONSOLE] no TypeError or JS errors
+[API] No new organization exists with script tag in name","Registration succeeds with script tags in org name; XSS stored as org name; no validation error shown; org created with executable payload",none,VCST-4691 PR #130,Manual

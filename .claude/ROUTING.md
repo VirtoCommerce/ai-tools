@@ -12,14 +12,18 @@ Quick decision tree for commands, skills, and agents.
 | **Generate coverage report** | `/qa-coverage-generation [p0\|p1\|full\|domain\|ci-dry-run]` | Command |
 | **Test a JIRA ticket/feature/PR** | `/qa-test VCST-XXXX` | Command |
 | **Run exploratory testing session** | `/qa-exploratory [checkout\|catalog\|B2B\|mobile]` | Command |
+| **Full test case lifecycle** | `/qa-test-lifecycle suite <ID> \| domain <name> \| diff` | Command |
+| **Verify a bug fix** | `/qa-verify-fix VCST-XXXX` | Command |
 | **Get a test checklist for a domain** | `/qa-checklist domain` | Skill |
 | **Generate test cases** | `/qa-test-cases-generator VCST-XXXX \| domain \| suite ID` | Skill |
 | **Generate test seed data** | `/qa-seed-data [minimal\|catalog\|b2b\|pricing\|full\|teardown]` | Skill |
 | **Analyze test coverage gaps** | `/qa-coverage-gap analyze` | Skill |
+| **Review test case quality** | `/qa-review-tests suite <ID> \| file <path> \| diff` | Skill |
+| **Create Postman collections** | `/qa-postman create <purpose> \| run <collection>` | Skill |
 | **File or investigate a bug** | `/qa-bug description` | Command |
 | **Check environment health** | `/qa-env-check` | Command |
 | **See QA dashboard** | `/qa-status` | Command |
-| **Run business analysis** | `/ba-analyze [full\|flows\|api\|docs]` | Command |
+| **Run business analysis** | `/ba-analyze [full\|flows\|api\|docs\|stories\|ui\|module]` | Command |
 | **Generate user stories** | `/ba-stories feature-name` | Command |
 
 ## By Category
@@ -30,17 +34,21 @@ Quick decision tree for commands, skills, and agents.
 - `/qa-regression` — Run regression suites in parallel (add `--autonomous` for Agent Teams mode with failure recovery + JIRA)
 - `/qa-exploratory` — Guided exploratory session
 - `/qa-bug` — Reproduce and document bugs
+- `/qa-verify-fix` — Verify a bug fix: reproduce original bug, confirm fix, run regression checks, transition JIRA
+- `/qa-test-lifecycle` — Full test case lifecycle: analyze → generate → review → fix → verify → approve
 - `/qa-coverage-generation` — Orchestrated parallel coverage generation across domain batches with CI support
 
 ### Plan Tests (Skills — methodology reference)
 - `/qa-plan` — Test plans from E2E scenario catalog
-- `/qa-checklist` — Test case writing checklists (18 domains, 158 items)
+- `/qa-checklist` — Test case writing checklists (23 domains + Bug Fix Verification, 279 items)
 - `/qa-test-design` — Test case derivation (EP, BVA, decision tables)
 - `/qa-test-cases-generator` — Generate agent-native test cases in enriched CSV format from JIRA tickets, features, checklists, or legacy suites
 - `/qa-risk` — Risk-based prioritization (5x5 matrix)
 - `/qa-sbtm` — SBTM charters, heuristics, tours, debrief
 - `/qa-coverage-gap` — Autonomous coverage gap analysis and test case generation
 - `/qa-seed-data` — Generate test data via Postman MCP: catalogs, products, pricing, inventory, users, orgs
+- `/qa-review-tests` — Review test cases: 8-dimension quality analysis (structure, determinism, completeness, testability, data validity, BL/ECL coverage, duplication, env verification)
+- `/qa-postman` — Postman MCP collections: create, configure, and run with proper variables, auth, and endpoints
 
 ### QA Methodology (Skills — process frameworks)
 - `/qa-process` — ISTQB 7-phase lifecycle
@@ -80,6 +88,7 @@ Quick decision tree for commands, skills, and agents.
 - `ba-doc-writer` — User docs, admin guides, API quick-start
 
 ### Knowledge Base (shared agent references in `agents/knowledge/`)
+- `api-auth.md` — Platform API OAuth2 authentication (token endpoint, credentials, headers)
 - `business-logic.md` — Testable business invariants: pricing, cart, checkout, orders, auth, B2B, catalog
 - `e-commerce-edge-cases-library.md` — 13 generic + 7 VC-specific edge case categories (ECL-* IDs)
 - `platform-patterns.md` — Platform architecture patterns and conventions
@@ -92,6 +101,7 @@ Quick decision tree for commands, skills, and agents.
 - `module-suite-map.md` — Module-to-suite mapping and dependencies
 - `sitemap.md` — Full storefront sitemap (March 2026)
 - `products.md` — Product types, xAPI fields, configurable sections, test data
+- `graphiql-interaction.md` — Step-by-step CodeMirror editor interaction guide for GraphiQL UI
 
 ## Cross-References
 
@@ -100,9 +110,11 @@ Quick decision tree for commands, skills, and agents.
 | `/qa-exploratory` | `/qa-sbtm` | Command runs sessions; skill provides methodology |
 | `/qa-smoke` | `/qa-plan` | Smoke uses E2E scenario catalog for P0 selection |
 | `/qa-regression` | `/qa-metrics` | Regression results feed into quality gates |
+| `/qa-regression` | `/qa-coverage-gap` | Coverage gap analysis validates suite completeness before regression runs |
 | `/qa-bug` | `/qa-investigate`, `/qa-defect` | Bug command uses investigation flow + defect templates |
 | `/qa-test` | `/qa-test-design`, `/qa-checklist`, `/qa-risk` | Test derives cases, applies domain checklists, and prioritizes based on risk |
-| `/qa-regression` | `/qa-coverage-gap` | Coverage gap analysis validates suite completeness before regression runs |
-| `/qa-coverage-generation` | `/qa-coverage-gap`, `/qa-test-cases-generator` | Coverage generation uses gap analysis + test case generator |
 | `/qa-test` | `/qa-test-cases-generator` | Test command can use generator for new test cases |
+| `/qa-test-lifecycle` | `/qa-coverage-gap`, `/qa-review-tests` | Lifecycle uses gap analysis + quality review |
+| `/qa-verify-fix` | `/qa-investigate`, `/qa-checklist` | Fix verification uses investigation flow + Bug Fix Verification checklist |
+| `/qa-coverage-generation` | `/qa-coverage-gap`, `/qa-test-cases-generator` | Coverage generation uses gap analysis + test case generator |
 | `/qa-seed-data` | `/qa-test`, `/qa-regression` | Seed data prepares test prerequisites for test runs |
