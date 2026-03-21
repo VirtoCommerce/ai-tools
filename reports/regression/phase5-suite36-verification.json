@@ -1,0 +1,91 @@
+{
+  "phase": 5,
+  "suite": "36-configurable-products-tests",
+  "timestamp": "2026-03-21T19:50:00.000Z",
+  "environment": "QA",
+  "browser": "playwright-firefox",
+  "summary": {
+    "totalChecked": 8,
+    "verified": 4,
+    "changed": 4,
+    "broken": 0,
+    "blocked": 0
+  },
+  "results": [
+    {
+      "id": "PAGE-001",
+      "check": "Bike with options PDP",
+      "url": "/products-with-options/configurations/bike-with-options",
+      "status": "CHANGED",
+      "details": "URL in test cases is WRONG. Test case specifies '/products-with-options/configurations/build-the-bike-of-your-dreams/bike-with-options' which returns 404. Correct URL is '/products-with-options/configurations/bike-with-options' (no 'build-the-bike-of-your-dreams' intermediate segment). The page loads correctly at the correct URL. Configuration widget present with 'Configure the parameters' section containing 4 accordion sections: Text, Test, Choose your bike variant, Produts (with typo). The test case expected 5 radio options (Rear wheel, Engine, Seat, Pedals, None) which do NOT exist -- the widget uses accordion sections with radio/text inputs inside. Base price shown in Product Variations section is $350.00. Qty stepper and Add to cart (via increment) present. UPDATE TEST CASES: fix URL, update expected configuration widget structure, update expected price display location."
+    },
+    {
+      "id": "PAGE-002",
+      "check": "Configurable Hat PDP",
+      "url": "/products-with-options/configurable-caps-shirts/configurable-hat",
+      "status": "VERIFIED",
+      "details": "Page loads correctly. Shows heading 'Configurable Hat', SKU #YER-80407217, price $10.00, qty stepper, in stock (4554 units), 'Create your own configuration' button. No 'Configure the parameters' accordion section on this product -- simpler layout than Bike. 0 JS errors."
+    },
+    {
+      "id": "PAGE-003",
+      "check": "Products with options category page",
+      "url": "/products-with-options",
+      "status": "VERIFIED",
+      "details": "Category page loads with subcategory sidebar: Variations with options, Configurations, Configurable caps & shirts. Sort by, grid/list view, in-stock filter all present. 0 JS errors."
+    },
+    {
+      "id": "PAGE-004",
+      "check": "Cart page",
+      "url": "/cart",
+      "status": "VERIFIED",
+      "details": "Cart loads correctly. After adding Bike with options: shows item at $350.00, qty 1, subtotal $350.00, tax $70.00, total $420.00. Order summary formula verified: $350.00 - $0.00 + $0.00 + $70.00 = $420.00. Shipping details, payment details, promo code, Place order button (disabled pending required fields) all present. 0 JS errors."
+    },
+    {
+      "id": "PAGE-005",
+      "check": "Homepage",
+      "url": "/",
+      "status": "VERIFIED",
+      "details": "Homepage loads without errors. Title 'QA & Home'. Main navigation includes 'Products with options' menu item. 0 JS errors, 2 warnings (benign attribute value warnings)."
+    },
+    {
+      "id": "FLOW-006",
+      "check": "Option selection + price update on Bike PDP",
+      "url": "/products-with-options/configurations/bike-with-options",
+      "status": "CHANGED",
+      "details": "Test case expects radio options for Rear wheel ($526), Seat ($365), None ($350) that update price in real-time. ACTUAL: The configuration widget has accordion sections (Text, Test, Choose your bike variant, Produts) with radio inputs inside each section. The 'Text' section has 'Custom option' radio + text input and 'None' radio. The base variation shows $350.00 in the Product Variations list. There is no visible dynamic price update when toggling configuration options -- the price appears fixed at $350.00 for the base variation. The expected price values ($365, $526) and option names (Rear wheel, Engine, Seat, Pedals) from the test case do not match the current product configuration. TEST CASE NEEDS FULL REWRITE of option names, price expectations, and interaction model."
+    },
+    {
+      "id": "FLOW-007",
+      "check": "Add configured product to cart",
+      "url": "/products-with-options/configurations/bike-with-options",
+      "status": "CHANGED",
+      "details": "Add-to-cart works but the interaction model differs from test case expectations. There is no 'Add to Cart' button -- instead, the qty stepper increment button (in Product Variations section) directly adds to cart. Clicking increment changed qty from 0 to 1, cart badge updated to '1', sidebar 'Variations in cart' updated to 1, 'in Cart' indicator appeared. The flow works correctly but test case steps need updating to match actual UX (increment qty stepper, not click Add to Cart button). Anonymous add-to-cart is functional."
+    },
+    {
+      "id": "FLOW-008",
+      "check": "Accordion behavior on configuration widget",
+      "url": "/products-with-options/configurations/bike-with-options",
+      "status": "CHANGED",
+      "details": "Accordion sections present: Text (expanded by default, shows radio group with Custom option + None), Test (collapsed), Choose your bike variant (collapsed), Produts (collapsed, shows 'Pillow 50X60' as current selection). Clicking 'Choose your bike variant' toggled it to [active] state but no visible content expansion was observed in the accessibility tree (may need scroll or animation completion). The 'Produts' section header has a typo ('Produts' instead of 'Products'). Section labels visible. Accordion toggle works but may have animation/visibility nuances. TEST CASE should document actual section names and note the typo."
+    }
+  ],
+  "consoleBaseline": {
+    "totalJsErrors": 0,
+    "errorsByPage": {
+      "/": { "errors": 0, "warnings": 2, "note": "Benign 'attribute value' warnings" },
+      "/products-with-options": { "errors": 0, "warnings": 2, "note": "Benign attribute value warnings" },
+      "/products-with-options/configurations/bike-with-options": { "errors": 0, "warnings": 17, "note": "Attribute value warnings + blocked resource warnings (external images). One 'appears to use a tracker URL' warning." },
+      "/products-with-options/configurable-caps-shirts/configurable-hat": { "errors": 0, "warnings": 4, "note": "Attribute value warnings" },
+      "/cart": { "errors": 0, "warnings": 7, "note": "Attribute value warnings + resource loading warning" }
+    },
+    "networkIssues": [
+      {
+        "url": "/assets/presets/jensen.json",
+        "status": 404,
+        "severity": "Low",
+        "note": "Theme preset file not found. Known Coffee theme artifact -- not blocking functionality."
+      }
+    ]
+  },
+  "verdict": "Environment is HEALTHY for Suite 36 execution. All 5 pages are reachable and functional. Zero JS errors across all pages. However, 4 of 8 checks are CHANGED -- the test cases contain outdated data that must be corrected before regression execution: (1) Bike PDP URL is wrong (404 at old URL, works at correct URL without 'build-the-bike-of-your-dreams' segment), (2) Configuration widget structure differs significantly from test case expectations (accordion sections with Text/Test/Choose variant/Produts instead of 5 radio options for bike parts), (3) Price update behavior differs (no dynamic price update observed on option toggle), (4) Add-to-cart uses qty stepper increment rather than a dedicated button. The Configurable Hat PDP, category page, homepage, and cart all work as expected. Recommend updating test cases before running Suite 36 regression."
+}

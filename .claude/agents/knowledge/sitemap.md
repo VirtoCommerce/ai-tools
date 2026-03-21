@@ -44,6 +44,7 @@ The site now supports **14 languages** with locale-specific URLs:
 ### Static Pages
 | Page | URL | Description |
 |------|-----|-------------|
+| Sign In | `/sign-in` | User login page |
 | Sign Up | `/sign-up` | User registration page |
 | Contacts | `/contacts` | Contact information page |
 | Catalog | `/catalog` | Main catalog page |
@@ -52,8 +53,8 @@ The site now supports **14 languages** with locale-specific URLs:
 | Find a Branch | `/branch/vendor-fulfillment` | Branch locator |
 | Bulk Order | `/bulk-order` | Bulk order page |
 | Compare | `/compare` | Product comparison page |
-| Cart | `/cart` | Shopping cart page |
-| Checkout Payment | `/checkout/payment` | Checkout payment step |
+| Cart | `/cart` | Shopping cart / checkout page (combined — `/checkout` redirects here) |
+| Checkout Payment | `/checkout/payment` | Checkout payment step (non-CyberSource processors only) |
 | Forgot Password | `/forgot-password` | Password recovery page |
 | Soda | `/soda` | Soda category / promo landing *(new)* |
 
@@ -188,20 +189,31 @@ The platform supports 3 product display types, visible in the `/products-with-op
 
 #### 1. Configurable Products
 - **CTA:** "Customize" button
-- **Description:** User configures custom properties, file uploads, or specific options before adding to cart. No pre-set variants.
-- **Category:** `/products-with-options/configurable-caps-shirts/` (8 products)
-- **Examples:**
+- **Description:** User configures custom properties, file uploads, or specific options before adding to cart. Uses an accordion-style configuration widget.
+- **Categories:** `/products-with-options/configurable-caps-shirts/` (8 products) and `/products-with-options/configurations/` (3 products)
 
-| Product | URL | Price | Notes |
-|---------|-----|-------|-------|
-| Configurable Hat | `/products-with-options/configurable-caps-shirts/configurable-hat` | $15 | |
-| Custom T-shirt | `/products-with-options/configurable-caps-shirts/custom-t-shirt` | $12 | |
-| Vintage Colorado Hoodie | `/products-with-options/configurable-caps-shirts/hoodie` | $54 | Product color: Malachite, in stock 2333 |
-| Hoodie Base (File non required) | `/products-with-options/configurable-caps-shirts/physical` | $300 | File upload option |
-| Hoodie Base (File required) | `/products-with-options/configurable-caps-shirts/physical-1703` | $250 ~~$300~~ (-17%) | File upload required |
-| Base product EN | `/products-with-options/configurable-caps-shirts/111111` | $1,999 ~~$2,000~~ | Custom text properties (Custom1, Custom2, Custom3) |
-| Product No variations | `/products-with-options/configurable-caps-shirts/product-no-variations` | $900 ~~$1,000~~ (-10%) | Color: Beige, 9999+ stock |
-| Product No B2C Layout | `/products-with-options/configurable-caps-shirts/product-no-b2c-layout-master` | From $300 | 2 variations |
+**Configurable Caps & Shirts** (`/products-with-options/configurable-caps-shirts/`):
+
+| Product | URL | Notes |
+|---------|-----|-------|
+| Configurable Hat | `/products-with-options/configurable-caps-shirts/configurable-hat` | 4 optional sections (Product, Product, Text, File) |
+| Custom T-shirt | `/products-with-options/configurable-caps-shirts/custom-t-shirt` | 4 sections; first Product section required |
+| Vintage Colorado Hoodie | `/products-with-options/configurable-caps-shirts/hoodie` | Physical type (no config widget); Color: Malachite |
+| Hoodie Base (File non required) | `/products-with-options/configurable-caps-shirts/physical` | 1 optional File section; Color: Chili Red |
+| Hoodie Base (File required) | `/products-with-options/configurable-caps-shirts/physical-1703` | 1 required File section; sale price |
+| Base product EN | `/products-with-options/configurable-caps-shirts/111111` | 3 required sections + 3 variations |
+| Product No variations | `/products-with-options/configurable-caps-shirts/product-no-variations` | Simple physical; Color: Beige |
+| Product No B2C Layout | `/products-with-options/configurable-caps-shirts/product-no-b2c-layout-master` | 2 variations |
+
+**Configurations** (`/products-with-options/configurations/`):
+
+| Product | URL | Notes |
+|---------|-----|-------|
+| Bike with options | `/products-with-options/configurations/bike-with-options` | Accordion sections: Text, Choose your bike variant (Variation — renders empty, known bug), Produts (Product, required). 2 variations. |
+| Off-Road Bike | `/products-with-options/configurations/off-road-bike` | 2 Variation sections (both empty, known bug) + 1 Text section. 2 variations. |
+| Test Bike With Options | `/products-with-options/configurations/test-bike-with-options` | 3 required sections (Product + Text + Product); VCST-4765 test product |
+
+> **Do not assert exact prices** — they change frequently in the QA environment.
 
 #### 2. Products with Variations
 - **CTA:** "N variations" link + "Show on a separate page" icon
@@ -233,6 +245,7 @@ The platform supports 3 product display types, visible in the `/products-with-op
 |-------------|-----|-------|
 | Variations with options | `/products-with-options/variations-of-jeans` | 7 |
 | Configurable caps & shirts | `/products-with-options/configurable-caps-shirts` | 8 |
+| Configurations | `/products-with-options/configurations` | 3 (bike-with-options, off-road-bike, test-bike-with-options) |
 
 ### Sample Product Pages (from Homepage — March 2026)
 
@@ -538,6 +551,15 @@ Available via the "All products" button, includes:
 
 ---
 
+## Changelog (vs. March 4, 2026 rev 2)
+
+| Change | Details |
+|--------|---------|
+| Sign-in route added to static pages | `/sign-in` was missing from the Static Pages table |
+| Cart/checkout combined page noted | `/checkout` redirects to `/cart`; `/checkout/payment` is for non-CyberSource processors only |
+| Configurations subcategory added | `/products-with-options/configurations` (3 products: bike-with-options, off-road-bike, test-bike-with-options) was missing |
+| Configurable products table updated | Separated into two subcategories; removed hardcoded prices; added accordion widget note |
+
 ## Changelog (vs. March 4, 2026 rev 1)
 
 | Change | Details |
@@ -567,6 +589,6 @@ Available via the "All products" button, includes:
 
 ---
 
-**Last Updated:** March 4, 2026 (rev 2)
+**Last Updated:** March 21, 2026 (rev 3)
 **Tool Used:** Playwright Browser Automation (Firefox) + Chrome DevTools MCP
-**Coverage:** Homepage, navigation menus, language selector, account pages, dashboard sidebar
+**Coverage:** Homepage, navigation menus, language selector, account pages, dashboard sidebar, configurable products subcategories

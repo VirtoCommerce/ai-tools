@@ -1,7 +1,7 @@
 # VC Product Reference
 
 **Source:** Virto Commerce xAPI docs (Context7 `/virtocommerce/vc-docs`) + QA storefront observation
-**Updated:** March 4, 2026
+**Updated:** March 21, 2026
 
 ---
 
@@ -156,7 +156,7 @@ The **Variation** type is new in VCST-4765. Unlike **Product** sections (which r
 - Variation sections: options are the parent product's variation SKUs (e.g., BIKE-RED-M, BIKE-BLUE-L)
 - Variation options inherit pricing from their variation-level price list entries
 
-**Test product:** "Bike with options" (SKU: ZER-64605169, ID: f16d3e8f-6c86-4679-bcfd-100a0b164421) in QA environment has 2 variations (BIKE-RED-M, BIKE-BLUE-L) and a Variation section named "Choose your bike variant".
+**Test product:** "Bike with options" (SKU: ZER-64605169, ID: f16d3e8f-6c86-4679-bcfd-100a0b164421) in QA environment has 2 variations and a Variation section named "Choose your bike variant". The configuration widget uses accordion sections (Text, Choose your bike variant, Produts — note the typo). The Variation section currently renders empty (known bug). PDP URL: `/products-with-options/configurations/bike-with-options`.
 
 **Required vs optional:**
 - `isRequired: true` → User must select/fill this section before adding to cart
@@ -183,18 +183,30 @@ On the storefront: Full description shown in the "Description" tab; Quick Review
 
 ## 8. Sample Products in QA Environment
 
-### Configurable Products (`/products-with-options/configurable-caps-shirts/`)
+### Configurable Caps & Shirts (`/products-with-options/configurable-caps-shirts/`)
 
-| Product | URL slug | Price | Notable properties |
-|---------|----------|-------|-------------------|
-| Configurable Hat | `configurable-hat` | $15 | Configurable sections |
-| Custom T-shirt | `custom-t-shirt` | $12 | Configurable sections |
-| Vintage Colorado Hoodie | `hoodie` | $54 | Color: Malachite, stock 2333 |
-| Hoodie Base (File optional) | `physical` | $300 | File upload section (not required) |
-| Hoodie Base (File required) | `physical-1703` | $250 ~~$300~~ | File upload required |
-| Base product EN | `111111` | $1,999 ~~$2,000~~ | Text properties: Custom1, Custom2, Custom3 |
-| Product No variations | `product-no-variations` | $900 ~~$1,000~~ | Color: Beige, stock 9999+ |
-| Product No B2C Layout | `product-no-b2c-layout-master` | From $300 | 2 variations |
+| Product | URL slug | Notable properties |
+|---------|----------|--------------------|
+| Configurable Hat | `configurable-hat` | 4 optional sections: Product, Product, Text, File |
+| Custom T-shirt | `custom-t-shirt` | 4 sections (1 required Product); typo "T-short" |
+| Vintage Colorado Hoodie | `hoodie` | Non-configurable (Physical type); Color: Malachite |
+| Hoodie Base (File optional) | `physical` | 1 optional File section; Color: Chili Red |
+| Hoodie Base (File required) | `physical-1703` | 1 required File section; sale price |
+| Base product EN | `111111` | 3 required sections (File+Text+Product) + 3 variations |
+| Product No variations | `product-no-variations` | Simple physical; Color: Beige |
+| Product No B2C Layout | `product-no-b2c-layout-master` | 2 variations |
+
+> **Note:** Do not assert exact prices — they change frequently in the QA environment. Use the `price` xAPI field at runtime.
+
+### Configurations (`/products-with-options/configurations/`)
+
+| Product | URL slug | Notable properties |
+|---------|----------|--------------------|
+| Bike with options | `bike-with-options` | Accordion sections: Text, Choose your bike variant (Variation — renders empty, known bug), Produts (Product, required; typo in name). Has 2 variations. |
+| Off-Road Bike | `off-road-bike` | 2 Variation sections (both render empty, known bug) + 1 Text section; has 2 variations |
+| Test Bike With Options | `test-bike-with-options` | 3 required sections (Product + Text + Product); VCST-4765 test product |
+
+> **Important:** The `/products-with-options/configurations/` subcategory was introduced alongside the Variation section type feature (VCST-4765). Products here have accordion-style configuration widgets, not the older radio-button style.
 
 ### Variation-based Products (`/products-with-options/variations-of-jeans/jeans/`)
 

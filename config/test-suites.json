@@ -545,8 +545,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 133,
-      "estimatedMinutes": 200,
+      "testCount": 139,
+      "estimatedMinutes": 210,
       "agent": "qa-frontend-expert",
       "tags": ["frontend", "configurable-products", "configurations", "e2e", "cart", "checkout", "admin", "security", "negative-testing", "edge-cases"]
     },
