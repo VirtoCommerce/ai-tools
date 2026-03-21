@@ -51,8 +51,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P0",
-      "testCount": 90,
-      "estimatedMinutes": 240,
+      "testCount": 100,
+      "estimatedMinutes": 270,
       "agent": "qa-frontend-expert",
       "tags": ["release", "master", "p0", "e2e", "cross-layer", "revenue-critical"]
     },

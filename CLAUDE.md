@@ -41,12 +41,12 @@ Create `.env` (33 vars). Validate: `npm run env:check`. Access: `import { env } 
 ```
 ├── .claude/agents/       # 14 agents in qa/ + ba/ subfolders, knowledge/ (14 files) for shared refs
 ├── .claude/skills/       # 20 skills (vc-knowledge, testing, qa-methodology)
-├── .claude/commands/     # 12 slash commands
+├── .claude/commands/     # 13 slash commands
 ├── .claude/rules/        # Reference docs (agents, regression, skills, MCP)
 ├── config/               # Playwright MCP configs + test-suites.json manifest
 ├── ci/                   # CI regression — Docker + Claude Agent SDK (gitignored)
 ├── docs/prompts/         # LLM prompt templates
-├── regression/suites/    # 45 CSV suites (~2,052 cases): Frontend/ + Backend/
+├── regression/suites/    # 45 CSV suites (~2,271 cases): Frontend/ + Backend/
 ├── tests/                # Test cases by sprint/JIRA ticket
 ├── reports/              # Bug reports + regression reports
 ├── test-data/            # Orgs, search queries, uploads
@@ -80,7 +80,7 @@ Registration/Auth, Catalog/Facets, Cart (variations, BOPIS), Search, Addresses, 
 ## Detailed References
 
 - `.claude/rules/agents.md` — 14 agents, browser assignments, delegation rules
-- `.claude/rules/regression.md` — 3 testing modes, CI pipeline, suite manifest, selection groups
-- `.claude/rules/skills-commands.md` — 12 commands + 20 skills with arguments
+- `.claude/rules/regression.md` — 4 testing modes, CI pipeline, suite manifest, selection groups
+- `.claude/rules/skills-commands.md` — 13 commands + 20 skills with arguments
 - `.claude/rules/mcp-browsers.md` — MCP servers, browser rules, Storybook setup
 - Virto Commerce docs: Context7 library `/virtocommerce/vc-docs` (resolve-library-id → query-docs)

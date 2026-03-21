@@ -29,7 +29,7 @@ SMK-002,"Registration — Organization Account","Smoke > Registration",Critical,
 [ADMIN] user assigned as organization admin role
 [CONSOLE] no errors during submission
 [NETWORK] no 4xx/5xx","Organization account type option missing from selector, company name field not shown after selecting org type, org not created in admin, B2B nav absent","Delete test org via admin if needed",regression-qa-theme-26.csv,Automated
-SMK-003,"Sign In — Personal User","Smoke > Authentication",Critical,"BL-AUTH-001, BL-AUTH-003","ECL-4.2","Valid personal user account exists: {{USER_EMAIL}} / {{USER_PASSWORD}}","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/login
+SMK-003,"Sign In — Personal User","Smoke > Authentication",Critical,"BL-AUTH-001, BL-AUTH-003","ECL-4.2","Valid personal user account exists: {{USER_EMAIL}} / {{USER_PASSWORD}}","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-in
 [WAIT] login form visible
 [ACT] fill 'Email': {{USER_EMAIL}}
 [ACT] fill 'Password': {{USER_PASSWORD}}
@@ -45,7 +45,7 @@ SMK-003,"Sign In — Personal User","Smoke > Authentication",Critical,"BL-AUTH-0
 [GQL] me query returns userId and email non-null
 [CONSOLE] no 401 or authentication errors
 [NETWORK] no 4xx on subsequent page load API calls","Invalid credentials error on valid credentials, redirect loop, spinner stuck >5s, 'OrgName / UserName' button absent, Dashboard link missing from header","none",regression-qa-theme-26.csv,Automated
-SMK-004,"Sign In — Organization User","Smoke > Authentication",Critical,"BL-AUTH-001, BL-B2B-001","ECL-4.2, ECL-14.3","Valid organization user account exists: {{ORG_USER_EMAIL}} / {{ORG_USER_PASSWORD}}","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/login
+SMK-004,"Sign In — Organization User","Smoke > Authentication",Critical,"BL-AUTH-001, BL-B2B-001","ECL-4.2, ECL-14.3","Valid organization user account exists: {{ORG_USER_EMAIL}} / {{ORG_USER_PASSWORD}}","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-in
 [WAIT] login form visible
 [ACT] fill 'Email': {{ORG_USER_EMAIL}}
 [ACT] fill 'Password': {{ORG_USER_PASSWORD}}
@@ -199,7 +199,7 @@ SMK-013,"Account — Manage Shipping Address","Smoke > Addresses",Critical,"BL-C
 [GQL] me query after add shows new address in addresses array
 [CONSOLE] no errors during address add
 [NETWORK] no 4xx/5xx on address save","'Addresses' link absent for personal user (check not org account — ECL-14.3), address form validation errors on valid address, address not appearing in list after save, 4xx/5xx on address API","Delete test address if not the default",VCST-4499,Automated
-SMK-014,"B2B — Organization Switch Isolates Cart","Smoke > B2B Multi-org",Critical,"BL-B2B-001, BL-CROSS-008","ECL-14.3","User logged in as {{ORG_USER_EMAIL}} who belongs to at least 2 organizations, at least one product in cart as first org","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, sku={{TEST_SKU}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/login
+SMK-014,"B2B — Organization Switch Isolates Cart","Smoke > B2B Multi-org",Critical,"BL-B2B-001, BL-CROSS-008","ECL-14.3","User logged in as {{ORG_USER_EMAIL}} who belongs to at least 2 organizations, at least one product in cart as first org","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, sku={{TEST_SKU}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-in
 [ACT] fill 'Email': {{ORG_USER_EMAIL}}
 [ACT] fill 'Password': {{ORG_USER_PASSWORD}}
 [ACT] click 'Sign In'

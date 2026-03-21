@@ -1,6 +1,6 @@
 # Archive
 
-Historical sprint test cases from Sprints 25-19 through 25-22. These are kept for reference and audit trail purposes.
+Historical sprint test cases from Sprints 25-19 through 26-04. These are kept for reference and audit trail purposes.
 
 ## Contents
 
@@ -9,7 +9,10 @@ archive/sprints/
 ├── VCST_Sprint_25-19/
 ├── VCST_Sprint_25-20/
 ├── VCST_Sprint_25-21/
-└── VCST_Sprint_25-22/
+├── VCST_Sprint_25-22/
+├── Sprint26-02/
+├── Sprint26-03/
+└── Sprint26-04/
 ```
 
 ## Retention Policy

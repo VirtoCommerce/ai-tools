@@ -274,7 +274,7 @@ CHK-021,Guest Checkout - Disabled When Anonymous Users Not Allowed,Checkout > Gu
 [ACT] click 'Checkout' or 'Proceed to Checkout'
 [ASSERT] Verify user redirected to sign-in or login page
 [ASSERT] Verify prompt to log in or register
-[ASSERT] Verify cart contents preserved after redirect","[NAV] Guest redirected to login/register page (not checkout)
+[ASSERT] Verify cart contents preserved after redirect","[NAV] Guest redirected to sign-in/sign-up page (not checkout)
 [DOM] Login or register prompt displayed
 [STATE] Cart contents preserved for authenticated session
 [STATE] No guest checkout option shown when disabled","[API] Store settings endpoint reflects anonymousUsersAllowed=false

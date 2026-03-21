@@ -20,6 +20,7 @@ Quick decision tree for commands, skills, and agents.
 | **Analyze test coverage gaps** | `/qa-coverage-gap analyze` | Skill |
 | **Review test case quality** | `/qa-review-tests suite <ID> \| file <path> \| diff` | Skill |
 | **Create Postman collections** | `/qa-postman create <purpose> \| run <collection>` | Skill |
+| **Sync tests with code changes** | `/qa-sync-tests PR #NNN \| VCST-XXXX \| module <name> \| diff` | Command |
 | **File or investigate a bug** | `/qa-bug description` | Command |
 | **Check environment health** | `/qa-env-check` | Command |
 | **See QA dashboard** | `/qa-status` | Command |
@@ -36,6 +37,7 @@ Quick decision tree for commands, skills, and agents.
 - `/qa-bug` — Reproduce and document bugs
 - `/qa-verify-fix` — Verify a bug fix: reproduce original bug, confirm fix, run regression checks, transition JIRA
 - `/qa-test-lifecycle` — Full test case lifecycle: analyze → generate → review → fix → verify → approve
+- `/qa-sync-tests` — Sync test cases with code changes: detect stale/broken cases, update steps/assertions, generate for new behavior
 - `/qa-coverage-generation` — Orchestrated parallel coverage generation across domain batches with CI support
 
 ### Plan Tests (Skills — methodology reference)

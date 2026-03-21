@@ -42,7 +42,7 @@ Central configuration for regression orchestration. Defines:
 
 ## Regression Test Suites
 
-45 modular suites + 1 master suite in `regression/suites/` (Frontend/ + Backend/) in enriched agent-native CSV format (`ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status`). Full definitions in `config/test-suites.json`. **Total: ~2,052 test cases** (~1,078 frontend + ~974 backend).
+45 modular suites + 1 master suite in `regression/suites/` (Frontend/ + Backend/) in enriched agent-native CSV format (`ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status`). Full definitions in `config/test-suites.json`. **Total: ~2,271 test cases** (~1,175 frontend + ~1,096 backend).
 
 - **Suite 00** (`Frontend/00-full-regression-release.csv`): Master suite — 90 consolidated P0/P1 test cases for major releases
 - **Frontend** (suites 01-13, 35-36, 41): Smoke, Auth, Catalog, Cart (04a), Checkout (04b), Orders & Quotes (04c), BOPIS, Payment, GA4, Security, A11y, i18n, Perf, Browser Compat, B2C, White Labeling, Configurable Products, Coupons & Promotions

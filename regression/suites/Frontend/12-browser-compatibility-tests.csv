@@ -132,12 +132,12 @@ BROWSER-FIREFOX-001,Firefox Desktop - Full Flow,Firefox > Desktop,High,"BL-COMPA
 [STATE] no Firefox-specific JavaScript errors in browser console","[CONSOLE] no JS errors (especially no CSP violations or Firefox-specific exception types)
 [NETWORK] all requests 2xx
 [API] xAPI calls succeed","JS error in browser console; layout broken or overflow at any viewport; CSS flexbox/grid rendering defect specific to Firefox; payment iframe unresponsive","Remove test order via admin if created",VCST-4499 TC-013,Manual
-BROWSER-FIREFOX-002,Firefox Desktop - Form Handling,Firefox > Desktop,High,"BL-COMPAT-001,BL-COMPAT-002",ECL-13.1,"Firefox latest version; {{FRONT_URL}} accessible; user account credentials available","url={{FRONT_URL}};browser=Firefox Latest;os=Windows 11;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/login
+BROWSER-FIREFOX-002,Firefox Desktop - Form Handling,Firefox > Desktop,High,"BL-COMPAT-001,BL-COMPAT-002",ECL-13.1,"Firefox latest version; {{FRONT_URL}} accessible; user account credentials available","url={{FRONT_URL}};browser=Firefox Latest;os=Windows 11;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/sign-in
 [WAIT] login form visible
 [ACT] fill Email and Password fields using Firefox autofill if available, then clear and type manually
 [ACT] submit login form
 [WAIT] authenticated homepage
-[NAV] {{FRONT_URL}}/account/register
+[NAV] {{FRONT_URL}}/account/sign-up
 [ACT] fill registration form fields and observe Firefox-specific autocomplete suggestions
 [WAIT] autocomplete dropdown (if shown)
 [ACT] submit form (cancel if testing only form rendering)

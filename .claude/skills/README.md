@@ -1,6 +1,6 @@
 # .claude/skills/ — Skill Directory
 
-> 19 skills organized in 3 category groups. Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
+> 20 skills organized in 3 category groups. Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
 
 ## Directory Structure
 
@@ -10,7 +10,7 @@
 │   └── vc-docs/
 │       └── SKILL.md                 # Documentation lookup via Context7
 │
-├── testing/                         # Testing (8) — manual invocation
+├── testing/                         # Testing (10) — manual invocation
 │   ├── qa-storybook/
 │   │   ├── SKILL.md                 # Storybook visual regression
 │   │   ├── visual-regression-testing.md
@@ -28,7 +28,8 @@
 │   │   └── e2e-scenario-catalog.md
 │   ├── qa-checklist/
 │   │   ├── SKILL.md                 # Test case writing checklist creation
-│   │   ├── domain-checklists.md     # 18 domain checklists + Bug Fix Verification (158 items)
+│   │   ├── domain-checklists.md     # 23 domain checklists + Bug Fix Verification (279 items)
+│   │   ├── graphql-checklist.md     # GraphQL-specific test checklist
 │   │   └── checklist-creation-guide.md
 │   ├── qa-api/
 │   │   ├── SKILL.md                 # REST API & GraphQL xAPI testing
@@ -42,9 +43,12 @@
 │   ├── qa-postman/
 │   │   ├── SKILL.md                 # Postman MCP collection builder
 │   │   └── postman-collection-guide.md  # Variables, auth, endpoints, chaining, examples
-│   └── qa-seed-data/
-│       ├── SKILL.md                 # Test data generation via Postman MCP
-│       └── test-data-generation.md  # Data generation methodology and Postman collection reference
+│   ├── qa-seed-data/
+│   │   ├── SKILL.md                 # Test data generation via Postman MCP
+│   │   └── test-data-generation.md  # Data generation methodology and Postman collection reference
+│   └── qa-review-tests/
+│       ├── SKILL.md                 # Test case quality review (8-dimension analysis)
+│       └── review-criteria.md       # 8-dimension review criteria reference
 │
 ├── qa-methodology/                  # QA Methodology (9) — cross-team practices
 │   ├── qa-test-cases-generator/
@@ -93,7 +97,7 @@ Auto-invocable, read-only reference skills. No side effects.
 
 > **Note:** Module suite mapping (`module-suite-map.md`), storefront sitemap (`sitemap.md`), and product type reference (`products.md`) are now in `.claude/agents/knowledge/` and accessed directly by agents. xAPI & REST API reference (`xapi-query-ref.md`) is now in `testing/qa-api/` — use `/qa-api ref <module>` to look up queries.
 
-## Testing (9) — `testing/`
+## Testing (10) — `testing/`
 
 Manual invocation, delegates to specialist agents.
 
@@ -103,11 +107,12 @@ Manual invocation, delegates to specialist agents.
 | `/qa-accessibility` | ui-ux-expert | wcag-accessibility-checklist.md |
 | `/qa-design` | ui-ux-expert | design-system-consistency.md, ux-heuristic-evaluation.md |
 | `/qa-plan` | test-management-specialist | e2e-scenario-catalog.md |
-| `/qa-checklist` | test-management-specialist | domain-checklists.md, checklist-creation-guide.md |
+| `/qa-checklist` | test-management-specialist | domain-checklists.md, graphql-checklist.md, checklist-creation-guide.md |
 | `/qa-api` | qa-backend-expert | xapi-query-ref.md, test-cases-api-graphql.md, api-test-case-patterns.md |
 | `/qa-postman` | qa-backend-expert | postman-collection-guide.md |
 | `/qa-coverage-gap` | test-management-specialist | coverage-gap-methodology.md, feature-domain-map.md |
 | `/qa-seed-data` | qa-backend-expert | `knowledge/test-data-generation.md` (agent knowledge file) |
+| `/qa-review-tests` | test-management-specialist + qa-testing-expert | review-criteria.md |
 
 ## QA Methodology (9) — `qa-methodology/`
 

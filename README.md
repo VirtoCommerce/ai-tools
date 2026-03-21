@@ -372,7 +372,7 @@ Located in `docs/prompts/`:
 
 ## Commands, Skills & Agents
 
-### Slash Commands (12)
+### Slash Commands (13)
 
 Type `/command-name` in Claude Code chat. See `.claude/rules/skills-commands.md` for full argument reference.
 
@@ -387,6 +387,7 @@ Type `/command-name` in Claude Code chat. See `.claude/rules/skills-commands.md`
 | `/qa-env-check` | Validate env vars, endpoints, MCP servers |
 | `/qa-coverage-generation` | Parallel coverage generation pipeline |
 | `/qa-test-lifecycle` | Full test case lifecycle: analyze → generate → review → verify |
+| `/qa-sync-tests` | Sync test cases with code changes (PR, ticket, module, diff) |
 | `/qa-verify-fix` | Verify a bug fix with regression checks |
 | `/ba-analyze` | Business analysis with GitHub search + live UI |
 | `/ba-stories` | Generate Agile user stories with BDD criteria |
@@ -444,12 +445,12 @@ vc-mcp-testing-module/
 ├── .claude/
 │   ├── agents/              # 14 agent definitions (qa/ + ba/) + knowledge/ (14 reference files)
 │   ├── skills/              # 20 skills across 3 categories
-│   ├── commands/            # 12 slash commands
+│   ├── commands/            # 13 slash commands
 │   └── rules/               # Reference docs (agents, regression, skills, MCP)
 ├── config/                  # Playwright browser configs + test-suites.json manifest
 ├── ci/                      # CI regression infrastructure (gitignored)
 ├── docs/prompts/            # LLM prompt templates
-├── regression/suites/       # 45 CSV suites (~2,052 test cases)
+├── regression/suites/       # 45 CSV suites (~2,271 test cases)
 │   ├── Frontend/            # 19 suites (00-13, 35-36, 41)
 │   └── Backend/             # 26 suites (14-34, 37-40, 42)
 ├── tests/                   # Test cases by sprint/JIRA ticket
@@ -467,7 +468,7 @@ vc-mcp-testing-module/
 
 ## Regression Test Suites
 
-45 suites (19 frontend + 26 backend) with **~2,052 test cases** in enriched agent-native CSV format. Authoritative definitions in `config/test-suites.json`.
+45 suites (19 frontend + 26 backend) with **~2,271 test cases** in enriched agent-native CSV format. Authoritative definitions in `config/test-suites.json`.
 
 ### Selection Groups
 
@@ -486,9 +487,9 @@ vc-mcp-testing-module/
 | Suite | Tests | Domain |
 |-------|-------|--------|
 | 01 — Smoke Tests | 19 | Core flows end-to-end |
-| 06 — Payment Tests | 54 | Skyflow, CyberSource, Authorize.Net, Datatrance |
-| 08 — Security Tests | 21 | PCI compliance, input validation |
-| 14 — Platform API Tests | 25 | REST API health |
+| 06 — Payment Tests | 65 | Skyflow, CyberSource, Authorize.Net, Datatrance |
+| 08 — Security Tests | 32 | PCI compliance, input validation |
+| 14 — Platform API Tests | 33 | REST API health |
 
 ### CSV Column Format
 
@@ -505,22 +506,22 @@ References, Automation_Status
 
 | # | Suite | Tests | Priority |
 |---|-------|-------|----------|
-| 00 | Full Regression Release (Master) | 90 | P0 |
+| 00 | Full Regression Release (Master) | 100 | P0 |
 | 01 | Smoke Tests | 19 | P0 |
-| 02 | Authentication Tests | 61 | P1 |
-| 03 | Catalog & Search Tests | 117 | P1 |
-| 04a | Cart Tests | 70 | P1 |
-| 04b | Checkout Tests | 63 | P1 |
-| 04c | Orders & Quotes Tests | 35 | P1 |
+| 02 | Authentication Tests | 68 | P1 |
+| 03 | Catalog & Search Tests | 130 | P1 |
+| 04a | Cart Tests | 77 | P1 |
+| 04b | Checkout Tests | 80 | P1 |
+| 04c | Orders & Quotes Tests | 81 | P1 |
 | 05 | BOPIS Pickup Tests | 88 | P1 |
-| 06 | Payment Tests | 54 | P0 |
+| 06 | Payment Tests | 65 | P0 |
 | 07 | Google Analytics Tests | 24 | P2 |
-| 08 | Security Tests | 21 | P0 |
+| 08 | Security Tests | 32 | P0 |
 | 09 | Accessibility Tests | 23 | P1 |
-| 10 | Localization Tests | 21 | P2 |
+| 10 | Localization Tests | 26 | P2 |
 | 11 | Performance Tests | 20 | P2 |
 | 12 | Browser Compatibility Tests | 21 | P1 |
-| 13 | B2C Features Tests | 96 | P1 |
+| 13 | B2C Features Tests | 166 | P1 |
 | 35 | Frontend White Labeling Tests | 68 | P1 |
 | 36 | Configurable Products Tests | 133 | P1 |
 | 41 | Coupons & Promotions Tests | 54 | P1 |
@@ -529,27 +530,27 @@ References, Automation_Status
 
 | # | Suite | Tests | Priority |
 |---|-------|-------|----------|
-| 14 | Platform API Tests | 25 | P0 |
-| 15 | GraphQL xAPI Tests | 29 | P1 |
-| 16 | Catalog Admin Tests | 48 | P1 |
-| 17 | Platform Core Tests | 65 | P1 |
+| 14 | Platform API Tests | 33 | P0 |
+| 15 | GraphQL xAPI Tests | 33 | P1 |
+| 16 | Catalog Admin Tests | 78 | P1 |
+| 17 | Platform Core Tests | 80 | P1 |
 | 18 | Store Admin Tests | 65 | P1 |
-| 19 | Pricing Admin Tests | 64 | P1 |
-| 20 | Orders Admin Tests | 80 | P1 |
-| 21 | Customer Admin Tests | 72 | P1 |
+| 19 | Pricing Admin Tests | 62 | P1 |
+| 20 | Orders Admin Tests | 90 | P1 |
+| 21 | Customer Admin Tests | 84 | P1 |
 | 22 | Inventory Admin Tests | 43 | P1 |
-| 23 | Marketing Admin Tests | 74 | P1 |
-| 24 | Notifications Admin Tests | 52 | P1 |
-| 25 | CMS & Page Builder Tests | 55 | P1 |
-| 26 | Search & Indexing Tests | 40 | P1 |
+| 23 | Marketing Admin Tests | 89 | P1 |
+| 24 | Notifications Admin Tests | 64 | P1 |
+| 25 | CMS & Page Builder Tests | 75 | P1 |
+| 26 | Search & Indexing Tests | 46 | P1 |
 | 27 | Assets Module Tests | 24 | P1 |
 | 28 | Core Settings Tests | 14 | P2 |
 | 29 | CSV Export Import Tests | 18 | P1 |
-| 30 | Shipping Module Tests | 15 | P1 |
+| 30 | Shipping Module Tests | 20 | P1 |
 | 31 | SEO Module Tests | 20 | P1 |
-| 32 | White Labeling Tests | 15 | P2 |
+| 32 | White Labeling Tests | 40 | P2 |
 | 33 | Push Messages Tests | 25 | P2 |
-| 34 | Image Tools Tests | 20 | P2 |
+| 34 | Image Tools Tests | 28 | P2 |
 | 37 | Returns Admin Tests | 22 | P1 |
 | 38 | Contracts Admin Tests | 18 | P1 |
 | 39 | Loyalty Admin Tests | 18 | P1 |

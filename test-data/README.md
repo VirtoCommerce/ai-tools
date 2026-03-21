@@ -2,7 +2,7 @@
 
 **Purpose:** Centralized test data for all Virto Commerce B2B e-commerce regression testing.
 
-**Last Updated:** 2026-03-02
+**Last Updated:** 2026-03-21
 
 ---
 
@@ -225,7 +225,7 @@ Each test should:
 | 01-smoke-tests | users/, products/, payment/ |
 | 02-authentication-tests | users/, organizations/ |
 | 03-catalog-search-tests | products/, search-queries/ |
-| 04-cart-checkout-tests | products/, addresses/, payment/ |
+| 04a/04b/04c-cart-checkout-orders | products/, addresses/, payment/ |
 | 05-bopis-pickup-tests | bopis/, products/, addresses/ |
 | 06-payment-tests | payment/, products/ |
 | 10-localization-tests | localization/, products/ |
