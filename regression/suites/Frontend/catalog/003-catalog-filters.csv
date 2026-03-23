@@ -1,0 +1,211 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"CAT-004","Category - Facet Filtering","Catalog > Filters","High","BL-CAT-002","","Category with faceted products exists","url={{FRONT_URL}}","[NAV] Navigate to a category with facets on {{FRONT_URL}}
+[ASSERT] Verify facet panel is visible in sidebar
+[ACT] Click on a facet value (e.g., Brand)
+[WAIT] Wait for product list to update
+[ASSERT] Verify products are filtered; result count updates
+[ACT] Apply an additional facet value from another group
+[WAIT] Wait for product list to update
+[ASSERT] Verify combined AND filtering — result set narrower","[DOM] Facet panel visible with multiple facet groups
+[DOM] Clicking a facet value filters the product list
+[MATH] Multiple facets combine with AND logic — result count <= each individual filter count
+[DOM] Result count label updates after each filter action","[NETWORK] no 4xx/5xx on filter request
+[CONSOLE] no TypeError or JS errors","Spinner >5s after filter click; facet panel not rendering; result count unchanged after filter; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"CAT-005","Category - Price Range Filter","Catalog > Filters","High","BL-CAT-002","","Products with varying prices exist in category","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ASSERT] Locate price range filter (slider or min/max inputs)
+[ACT] Set minimum price value
+[ACT] Set maximum price value
+[ACT] Apply or confirm the price range filter
+[WAIT] Wait for product list to update
+[ASSERT] Verify all displayed products fall within the specified range","[DOM] Price range slider or input fields present
+[MATH] All displayed product prices are within the set min/max range
+[DOM] Products outside price range are not shown
+[DOM] Result count updates to reflect filtered set","[NETWORK] no 4xx/5xx on price filter request
+[CONSOLE] no TypeError or JS errors","Price filter controls not rendering; products outside range still visible; result count unchanged; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"CAT-006","Category - Clear Filters","Catalog > Filters","Medium","BL-CAT-004","","Filters applied to a category page","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Apply multiple filters (e.g., facet + price range)
+[WAIT] Wait for filtered results to load
+[ACT] Click 'Clear all' or 'Reset filters' button
+[WAIT] Wait for full product list to restore
+[ASSERT] Verify all filters are cleared and full list is shown","[DOM] All filter chips removed from chip bar
+[DOM] Full unfiltered product list restored
+[DOM] Filter sidebar UI reset — no values selected
+[STATE] URL cleaned of filter parameters","[NETWORK] no 4xx/5xx on reset request
+[CONSOLE] no TypeError or JS errors","Reset button not visible; filters remain after reset; products not restored; URL still contains filter params; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"CAT-008","Category - Pagination","Catalog > Pagination","Medium","BL-CAT-005","","Category with 20+ products","url={{FRONT_URL}}","[NAV] Navigate to a category page with 20+ products on {{FRONT_URL}}
+[SCROLL] Scroll to pagination controls
+[ASSERT] Verify pagination controls are visible
+[ACT] Click page 2
+[WAIT] Wait for new products to load
+[ASSERT] Verify new product set is displayed
+[ACT] Click Previous button
+[WAIT] Wait for page 1 to reload
+[ASSERT] Verify return to first page products","[DOM] Pagination controls visible at bottom of product list
+[DOM] Page 2 shows different products from page 1
+[DOM] Previous button returns to page 1 product set
+[MATH] Total product count consistent across pages","[NETWORK] no 4xx/5xx on pagination request
+[CONSOLE] no TypeError or JS errors","Pagination controls not rendering; same products on page 2; Previous not navigating back; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"CAT-009","Category - Products Per Page","Catalog > Pagination","Low","BL-CAT-005","","Category with many products","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ASSERT] Locate 'per page' or items-per-page dropdown
+[ACT] Change 'per page' value (e.g., select 24)
+[WAIT] Wait for product list to update
+[ASSERT] Verify product count matches selected value","[DOM] Per-page selector visible with multiple options
+[MATH] Visible product card count matches selected per-page value
+[STATE] URL or state updates to reflect new per-page setting","[NETWORK] no 4xx/5xx on per-page change request
+[CONSOLE] no TypeError or JS errors","Per-page selector not rendering; product count unchanged after change; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"CAT-014","Filter Chips - Facet Filter Chip Display","Catalog > Filters > Chips","High","BL-CAT-002","","Category with faceted products","url={{FRONT_URL}}; filter=Brand","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ASSERT] Verify facet panel is visible
+[ACT] Click on a facet value (e.g., Brand: HP)
+[WAIT] Wait for chip bar to update
+[ASSERT] Verify chip appears with correct filter label
+[ASSERT] Verify close (×) button is present on the chip
+[ASSERT] Verify product count updates","[DOM] Chip appears in chip bar with correct filter label
+[DOM] Close (×) button visible on chip
+[MATH] Product count updates after chip applied
+[STATE] URL contains filter parameter matching chip value","[NETWORK] no 4xx/5xx on filter request
+[CONSOLE] no TypeError or JS errors","Chip not appearing after filter click; chip label incorrect; close button absent; product count not updating; URL missing filter param; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
+"CAT-015","Filter Chips - Checkbox Control Chips (Show in stock)","Catalog > Filters > Chips","High","BL-CAT-002","","Category page with stock filter available","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Toggle 'Show in stock' checkbox to ON
+[WAIT] Wait for chip bar to update
+[ASSERT] Verify chip labeled 'Show in stock' appears
+[ACT] Click close button on 'Show in stock' chip
+[WAIT] Wait for results to update
+[ASSERT] Verify chip is removed and only this filter was cleared
+[ASSERT] Verify any other active filters are preserved","[DOM] Chip labeled 'Show in stock' appears when checkbox is toggled ON
+[STATE] Chip disappears when checkbox toggled OFF or close button clicked
+[STATE] Only 'Show in stock' filter removed; other filters preserved
+[MATH] Product count updates on each toggle","[NETWORK] no 4xx/5xx on filter request
+[CONSOLE] no TypeError or JS errors","Chip not appearing when checkbox toggled; chip removal also removes other filters; product count unchanged; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
+"CAT-016","Filter Chips - Checkbox Control Chips (Purchased before)","Catalog > Filters > Chips","High","BL-CAT-002","ECL-3.1","Category page with stock filter; user has purchase history","url={{FRONT_URL}}; email={{USER_EMAIL}}; password={{USER_PASSWORD}}","[NAV] Navigate to a category page on {{FRONT_URL}} as authenticated user
+[ACT] Toggle 'Purchased before' checkbox to ON
+[WAIT] Wait for chip bar to update
+[ASSERT] Verify chip labeled 'Purchased before' appears
+[ASSERT] Verify product count updates to prior purchases
+[ACT] Click close button on 'Purchased before' chip
+[WAIT] Wait for results to restore
+[ASSERT] Verify chip removed; filter state syncs with unchecked checkbox","[DOM] Chip appears for 'Purchased before' when toggled
+[STATE] Checkbox reflects chip state (checked ↔ chip present)
+[MATH] Product count reflects filtered set
+[STATE] Removing chip unchecks the checkbox","[NETWORK] no 4xx/5xx on filter request
+[CONSOLE] no TypeError or JS errors","Chip not appearing for authenticated user; chip and checkbox state out of sync; product count unchanged; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
+"CAT-017","Filter Chips - Checkbox Control Chips (Available at branches)","Catalog > Filters > Chips","High","BL-CAT-002","","Category page with branch selection enabled","url={{FRONT_URL}}","[NAV] Navigate to a category page with branch filter on {{FRONT_URL}}
+[ACT] Select one or more branches in 'Available at branches'
+[WAIT] Wait for chip bar to update
+[ASSERT] Verify chip appears showing branch count (e.g., 'Branches (2)')
+[ACT] Click close button on the branch chip
+[WAIT] Wait for results to restore
+[ASSERT] Verify chip removed; all selected branches cleared; product count restored","[DOM] Chip shows selected branch count
+[STATE] Closing chip clears all selected branches simultaneously
+[MATH] Product count updates after branch selection and after removal","[NETWORK] no 4xx/5xx on filter request
+[CONSOLE] no TypeError or JS errors","Branch chip not appearing; chip count not matching selected branches; chip removal only clears one branch; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
+"CAT-018","Reset Filters - Combined Facet + Checkbox Reset","Catalog > Filters > Reset","Critical","BL-CAT-004","","Category page with multiple filter types available","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Apply a facet filter (e.g., Brand: HP)
+[WAIT] Wait for chip to appear
+[ACT] Toggle 'Show in stock' checkbox to ON
+[WAIT] Wait for second chip to appear
+[ASSERT] Verify both filter chips are present
+[ACT] Click 'Reset filters' button
+[WAIT] Wait for all filters to clear
+[ASSERT] Verify ALL chips removed; all checkboxes unchecked; full product list restored","[DOM] All chips removed from chip bar after reset
+[STATE] All checkboxes unchecked after reset
+[STATE] URL cleaned — no filter parameters remain
+[MATH] Full unfiltered product count restored
+[DOM] 'Reset filters' button disappears when no filters active","[NETWORK] no 4xx/5xx on reset request
+[CONSOLE] no TypeError or JS errors","Any chip remaining after reset; any checkbox still checked after reset; URL still has filter params; product count not fully restored; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
+"CAT-019","Reset Filters - Zero Results State","Catalog > Filters > Reset","Critical","BL-CAT-004","","Category page with filters available","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Apply filters until 0 products are shown
+[WAIT] Wait for empty state UI
+[ASSERT] Verify 'No results' message is displayed
+[ASSERT] Verify 'Reset filters' button is prominently visible
+[ACT] Click 'Reset filters'
+[WAIT] Wait for full product list to restore
+[ASSERT] Verify product list restored; all filters cleared","[DOM] 'No results' / empty state message displayed when 0 products match
+[DOM] 'Reset filters' button visible and prominent below no-results message
+[MATH] Full product count restored after reset
+[STATE] All filter chips and checkboxes cleared","[NETWORK] no 4xx/5xx on reset request
+[CONSOLE] no TypeError or JS errors","No-results message not showing; Reset button missing from empty state; products not restoring after reset; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
+"CAT-020","Reset Filters - Category Page Context Preserved","Catalog > Filters > Reset","High","BL-CAT-004","","On a category page (e.g."," /printers)","url={{FRONT_URL}}/printers","[NAV] Navigate to a category page (e.g., {{FRONT_URL}}/printers)
+[ACT] Apply multiple filters
+[WAIT] Wait for filtered results
+[ACT] Click 'Reset filters' button
+[WAIT] Wait for full category products to restore
+[ASSERT] Verify still on same category page (not redirected to /catalog)
+[ASSERT] Verify category-specific products are shown","[NAV] URL still contains category path after reset (not redirected to /catalog)
+[DOM] Category heading unchanged after reset
+[MATH] Full category product count restored
+[STATE] No filter chips or params in URL","[NETWORK] no 4xx/5xx on reset request
+[CONSOLE] no TypeError or JS errors","Reset redirects to /catalog instead of staying on category; category products not restored; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button"
+"CAT-022","Filter Chips - Individual Close vs Reset All","Catalog > Filters > Chips","High","BL-CAT-002","","Category page with multiple filters available","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Apply 3 or more filters (mix of facet and checkbox)
+[WAIT] Wait for all chips to appear
+[ACT] Click the × close button on ONE chip
+[WAIT] Wait for results to update
+[ASSERT] Verify only that one filter was removed; others preserved
+[ACT] Click × on a second chip
+[WAIT] Wait for results to update
+[ASSERT] Verify only that second filter removed
+[ACT] Click 'Reset filters' for remaining filters
+[ASSERT] Verify all remaining filters cleared","[STATE] Individual × button removes exactly one filter; all others preserved
+[MATH] Product count updates after each individual close
+[STATE] 'Reset filters' button clears all remaining filters in one action","[NETWORK] no 4xx/5xx on each filter removal
+[CONSOLE] no TypeError or JS errors","Closing one chip removes multiple filters; product count not updating after individual close; Reset not clearing all remaining; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
+"CAT-023","Filters - Browser Back/Forward Navigation","Catalog > Filters > Navigation","Medium","BL-CAT-003","","Category page with filters","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Apply filter A
+[WAIT] Wait for chip and URL param
+[ACT] Apply filter B
+[WAIT] Wait for chip and URL param for filter B
+[KEY] Press browser Back button
+[WAIT] Wait for filter B to be removed
+[ASSERT] Verify filter B chip is gone; filter A chip remains
+[KEY] Press browser Forward button
+[WAIT] Wait for filter B to be restored
+[ASSERT] Verify filter B chip reappears","[STATE] Browser back removes the most recently applied filter
+[STATE] Browser forward restores the filter
+[STATE] Chips sync correctly with browser history navigation
+[STATE] URL params match chip state at each step","[NETWORK] no 4xx/5xx on history navigation
+[CONSOLE] no TypeError or JS errors","Back button removes all filters instead of just the last; chips not syncing with URL state after history navigation; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
+"CAT-024","Filters - Page Refresh Preserves State","Catalog > Filters > Navigation","Medium","BL-CAT-003","","Category page with filters applied","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Apply multiple filters
+[WAIT] Wait for chips and URL params to be set
+[KEY] Press F5 (or Ctrl+R) to refresh the page
+[WAIT] Wait for page to reload
+[ASSERT] Verify filter chips render correctly after reload
+[ASSERT] Verify checkboxes are in correct checked state
+[ASSERT] Verify 'Reset filters' button works after reload","[STATE] Filter chips present after page refresh (state persisted via URL params)
+[STATE] Checkboxes reflect correct checked state after reload
+[DOM] Reset button functional after refresh","[NETWORK] no 4xx/5xx on page reload
+[CONSOLE] no TypeError or JS errors","Chips not rendering after refresh; checkboxes losing state after refresh; Reset not working after refresh; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
+"CAT-025","Filters - Multi-select Within Facet Group","Catalog > Filters","High","BL-CAT-002","","Category with multi-value facets","url={{FRONT_URL}}","[NAV] Navigate to a category page with multi-value facets on {{FRONT_URL}}
+[ACT] Select 2 or more values within the same facet group (e.g., Brand: HP + Epson)
+[WAIT] Wait for chips to appear
+[ASSERT] Verify separate chip for each selected value
+[ASSERT] Verify facet group header shows count (e.g., 'Brand (2)')
+[ACT] Click × close button on one of the chips
+[WAIT] Wait for results to update
+[ASSERT] Verify only that value removed; other value in same facet preserved","[DOM] Individual chips per facet value (not one combined chip)
+[DOM] Facet group header shows selected count (e.g., 'Brand (2)')
+[STATE] Removing one chip does not remove other values in same facet group
+[MATH] Product count updates after each chip change","[NETWORK] no 4xx/5xx on multi-select filter requests
+[CONSOLE] no TypeError or JS errors","Chips not appearing for each selected value; facet header not showing count; closing one chip removes all values in group; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
+"CAT-026","Facet Filter Badge - Size xs Renders Legibly","Catalog > Filters > Badge","High","BL-CAT-002","","Category with faceted filters and products available","url={{FRONT_URL}}","[NAV] Navigate to a category page with facets on {{FRONT_URL}}
+[ACT] Apply a facet filter (e.g., Brand)
+[WAIT] Wait for filter chip with badge to appear
+[ASSERT] Locate the badge element on the filter chip
+[ASSERT] Verify badge is readable and visually distinct","[DOM] Badge renders at xs size (smaller than sm variant)
+[DOM] Badge text is legible — not clipped or overflowing container
+[DOM] Badge has sufficient visual contrast against background
+[DOM] Badge shape and padding appear correct at xs size","[CONSOLE] no TypeError or JS errors","Badge text clipped or overflowing; badge not visible against background; badge absent from chip; console TypeError","none","VCST-4623","Manual"
+"CAT-027","Facet Filter Badge - Double-Digit Count Uses Correct Padding","Catalog > Filters > Badge","High","BL-CAT-002","","Category with many filter values available","url={{FRONT_URL}}","[NAV] Navigate to a category page with many filterable values on {{FRONT_URL}}
+[ACT] Apply 10 or more values from the same facet group
+[WAIT] Wait for facet header badge to update
+[ASSERT] Verify badge shows double-digit count correctly","[DOM] Badge shows double-digit count (e.g., '10', '12')
+[DOM] Badge width expands to fit double-digit number (dynamic px-1 padding)
+[DOM] Count not clipped or truncated
+[DOM] Badge proportionally correct at double-digit count","[CONSOLE] no TypeError or JS errors","Badge truncating double-digit count; badge overflow at 10+; count not matching applied filters; console TypeError","none","VCST-4623","Manual"
+"CAT-029","Facet Filter Badge - WCAG Contrast at xs Size","Catalog > Filters > Badge > Accessibility","High","BL-CAT-002","","Category with facets; DevTools or accessibility checker available","url={{FRONT_URL}}","[NAV] Navigate to a category page with facets on {{FRONT_URL}}
+[ACT] Apply a filter to display a filter chip with badge
+[WAIT] Wait for chip with badge to render
+[ACT] Open browser DevTools Accessibility panel or contrast checker
+[ASSERT] Measure badge text contrast ratio against badge background","[DOM] Badge text contrast ratio >= 4.5:1 against badge background (WCAG AA for normal text)
+[DOM] Contrast maintained at xs badge size despite reduced padding
+[DOM] Badge meets WCAG 2.1 Level AA criterion 1.4.3","[CONSOLE] no TypeError or JS errors","Contrast ratio below 4.5:1; badge failing WCAG AA; DevTools flagging color contrast issue; console TypeError","none","VCST-4623","Manual"

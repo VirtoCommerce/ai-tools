@@ -196,8 +196,8 @@ Full payment matrix: `.claude/agents/knowledge/order-creation-matrix.md`
 
 | Area | Reference File |
 |------|---------------|
-| Frontend suites | `regression/suites/Frontend/*.csv` (suites 01-13, 35-36, 41) |
-| Backend suites | `regression/suites/Backend/*.csv` (suites 14-34, 37-40, 42) |
+| Frontend suites | `regression/suites/Frontend/**/*.csv` (40 suites in module subdirectories) |
+| Backend suites | `regression/suites/Backend/**/*.csv` (38 suites in module subdirectories) |
 | E2E Scenario Catalog | `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md` |
 | Evidence Capture Policy | `.claude/skills/qa-methodology/qa-evidence/evidence-capture-policy.md` |
 | Bug Investigation Flow | `.claude/skills/qa-methodology/qa-investigate/bug-investigation-flow.md` |

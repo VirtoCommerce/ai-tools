@@ -1,0 +1,448 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"CART-001","Add to Cart - From Product Page","Cart > Add","Critical","BL-CART-007","ECL-2.1, ECL-14.1","User logged in, product available and in stock, on product detail page","url={{FRONT_URL}}/product/{{TEST_SKU}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/product/{{TEST_SKU}}
+[ASSERT] verify 'Add to Cart' button is visible and enabled
+[ACT] click 'Add to Cart'
+[WAIT] wait for success notification to appear
+[ASSERT] verify cart badge count incremented","[DOM] success notification message visible
+[DOM] cart badge count incremented by 1
+[STATE] product appears in cart","[API] addItem mutation response errors[] is empty
+[CONSOLE] no JS errors after add-to-cart click
+[NETWORK] no 4xx/5xx on cart API requests","cart badge stuck at 0; success notification never appears; 'Add to Cart' button stays in loading state","Remove added item from cart","VCST-4499","Automated"
+"CART-002","Add to Cart - From Category List","Cart > Add","High","BL-CART-007","ECL-2.1, ECL-14.1","User logged in, category page with products visible, quick-add available on product cards","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to a category listing page on {{FRONT_URL}}
+[ACT] hover over a product card
+[WAIT] wait for quick-add button to appear on hover
+[ACT] click quick-add (Increase quantity) button on product card
+[WAIT] wait for cart badge to update","[DOM] cart badge incremented without page navigation
+[DOM] no redirect to product detail page
+[STATE] product appears in cart mini-cart","[API] addItem mutation response errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx on cart update requests","page redirects to PDP unexpectedly; cart badge does not update; quick-add button not visible on hover","Remove added item from cart","VCST-4499","Automated"
+"CART-003","Add to Cart - Multiple Quantities","Cart > Add","High","BL-CART-002","ECL-3.1, ECL-14.1","User logged in, product detail page loaded, quantity selector available","url={{FRONT_URL}}/product/{{TEST_SKU}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/product/{{TEST_SKU}}
+[ACT] click quantity spinbutton field
+[ACT] clear field and type '5'
+[ACT] click 'Add to Cart'
+[WAIT] wait for success notification
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify line item quantity shows 5","[DOM] line item quantity = 5
+[MATH] line total = unit price × 5 (2 decimal places)
+[STATE] cart subtotal includes full line total","[API] addItem mutation response errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","quantity reverts to 1 after add; line total shows unit price only; cart page shows wrong quantity","Remove added item from cart","VCST-4499","Automated"
+"CART-004","Add to Cart - Product Variation","Cart > Add","High","BL-CART-007","ECL-2.1, ECL-14.1","User logged in, configurable product with size and color variants available","url={{FRONT_URL}}/product/{{TEST_SKU}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to configurable product PDP on {{FRONT_URL}}
+[ACT] select size option 'Medium'
+[ACT] select color option 'Blue'
+[WAIT] wait for price and SKU to update for selected variant
+[ACT] click 'Add to Cart'
+[WAIT] wait for success notification
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify variant attributes displayed","[DOM] cart line item shows size: Medium and color: Blue
+[STATE] correct variant SKU in cart line (not parent SKU)
+[DOM] price in cart matches variant price shown on PDP","[API] addItem mutation response errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","wrong variant added to cart; parent SKU shown instead of variant; option selections reset after add","Remove added item from cart","tests/B2C-Variations","Automated"
+"CART-005","View Cart - Display Items","Cart > View","Critical","BL-CART-003","ECL-14.1","Products added to cart, user logged in","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[ACT] click cart icon in site header
+[WAIT] wait for mini cart overlay to appear
+[ASSERT] verify mini cart shows item names and prices
+[ACT] click 'View Cart'
+[WAIT] wait for full cart page to load at {{FRONT_URL}}/cart
+[ASSERT] verify all cart items displayed","[DOM] mini cart overlay visible with at least one item
+[DOM] full cart page shows product images, names, unit prices, quantities, line totals
+[NAV] URL is {{FRONT_URL}}/cart after clicking 'View Cart'
+[FORMAT] prices formatted to 2 decimal places","[CONSOLE] no JS errors on cart page load
+[NETWORK] no 4xx/5xx on cart data fetch","mini cart does not open; items missing from full cart page; images broken; prices show $0.00 or NaN","none","VCST-4499","Automated"
+"CART-006","Update Quantity - Increase","Cart > Update","High","BL-CART-002","ECL-3.1, ECL-14.1","Product in cart with qty=1, user on cart page","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ACT] click '+' (Increase quantity) button on line item
+[WAIT] wait for quantity to update and totals to recalculate
+[ASSERT] verify quantity incremented to 2","[DOM] line item quantity shows 2
+[MATH] line total = unit price × 2 (2 decimal places)
+[MATH] cart subtotal = sum of all updated line totals","[API] changeCartItemQuantity mutation response errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","quantity does not increment; line total stays at unit price; subtotal not recalculated","Restore item quantity to 1 or remove item","VCST-4499","Automated"
+"CART-007","Update Quantity - Decrease","Cart > Update","High","BL-CART-002","ECL-3.1, ECL-14.1","Product in cart with qty > 1 (e.g., qty=2), user on cart page","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ACT] click '-' (Decrease quantity) button on line item
+[WAIT] wait for quantity to update and totals to recalculate
+[ASSERT] verify quantity decremented to 1
+[ASSERT] verify '-' (Decrease quantity) is disabled when qty=1","[DOM] line item quantity shows 1
+[DOM] '-' (Decrease quantity) button is disabled at qty=1
+[MATH] line total = unit price × 1 (2 decimal places)
+[MATH] cart subtotal recalculated","[API] changeCartItemQuantity mutation response errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","quantity goes below 1; '-' button active at qty=1; totals not recalculated","Restore or remove item","VCST-4499","Automated"
+"CART-008","Update Quantity - Direct Input","Cart > Update","Medium","BL-CART-002","ECL-3.1, ECL-4.1, ECL-14.1","Product in cart, user on cart page","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ACT] click the quantity spinbutton field for a line item
+[KEY] Ctrl+A to select all
+[ACT] type '10'
+[KEY] press Tab to commit input
+[WAIT] wait for cart to update
+[ASSERT] verify quantity shows 10
+[ASSERT] verify line total updated","[DOM] spinbutton shows '10'
+[MATH] line total = unit price × 10 (2 decimal places)
+[MATH] cart subtotal recalculated
+[STATE] quantity validated against available stock","[API] changeCartItemQuantity mutation response errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","input reverts to previous value; line total not updated; no API call triggered on Tab","Restore item quantity or remove item","VCST-4499","Automated"
+"CART-009","Remove Item - Single Product","Cart > Remove","High","BL-CART-003","ECL-14.1","Product in cart, user on cart page","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ACT] click 'Remove from cart' (X) button on line item
+[WAIT] wait for confirmation dialog if shown
+[ACT] confirm removal if dialog appears
+[WAIT] wait for item to be removed
+[ASSERT] verify item no longer in cart","[DOM] removed item no longer listed on cart page
+[STATE] cart badge count decremented
+[MATH] cart totals updated to exclude removed item","[API] removeCartItem mutation response errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","item remains in cart after remove click; cart count does not decrement; totals unchanged","none (item removed)","VCST-4499","Automated"
+"CART-010","Remove Item - Last Item","Cart > Remove","Medium","BL-CART-003","ECL-14.1","Only one item in cart, user on cart page","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ACT] click 'Remove from cart' (X) button on the only item
+[WAIT] wait for item removal and empty cart state to render
+[ASSERT] verify empty cart state displayed
+[ASSERT] verify continue shopping link visible","[DOM] empty cart message displayed
+[DOM] 'Continue Shopping' or similar link visible
+[STATE] cart badge shows 0
+[NAV] URL remains {{FRONT_URL}}/cart or redirects gracefully","[API] removeCartItem mutation response errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","page errors after last item removal; empty state not shown; cart badge still shows 1","none (cart empty)","VCST-4499","Automated"
+"CART-011","Clear Cart - All Items","Cart > Clear","Medium","BL-CART-003","ECL-14.1","Multiple items in cart, user on cart page","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ACT] click 'Clear Cart' button
+[WAIT] wait for confirmation dialog to appear
+[ACT] confirm action in dialog
+[WAIT] wait for all items to be removed
+[ASSERT] verify cart is empty","[DOM] confirmation dialog appeared before clearing
+[DOM] empty cart state shown after confirmation
+[STATE] cart badge shows 0
+[STATE] all line items removed","[API] each removeCartItem mutation response errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","confirmation dialog skipped; items remain after clear; cart badge not reset; GA4 clear_cart event not fired","none (cart empty)","google-analytics","Automated"
+"CART-016","Cart Calculations - Subtotal","Cart > Calculations","Critical","BL-CART-003","ECL-4.1","Multiple items in cart with different quantities, user on cart page","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] record unit price and quantity for each line item
+[ASSERT] calculate expected subtotal: sum of (unit price × qty) for all lines
+[ASSERT] compare expected subtotal to displayed subtotal
+[ACT] change one item quantity
+[WAIT] wait for totals to recalculate
+[ASSERT] verify subtotal updated correctly","[MATH] each line total = unit price × quantity (2 decimal places)
+[MATH] displayed subtotal = sum of all line totals (2 decimal places)
+[MATH] subtotal updates immediately after quantity change
+[FORMAT] all amounts formatted as currency with 2 decimal places","[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx on cart recalculation requests","subtotal does not match sum of line totals; rounding error > $0.01; subtotal not updating after quantity change","Restore quantities or remove items","VCST-4499","Automated"
+"CART-017","Cart Calculations - Tax","Cart > Calculations","High","BL-CART-003","ECL-4.1","Taxable items in cart, tax configured for shipping address, user on cart page","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify tax line item displayed in order summary
+[ASSERT] verify tax rate or amount shown
+[ASSERT] verify total = subtotal + tax (+ shipping)","[DOM] tax line visible in order summary
+[FORMAT] tax amount displayed to 2 decimal places
+[MATH] total = subtotal + tax + shipping (2 decimal places)
+[STATE] tax calculation based on shipping address","[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx on tax calculation requests","tax line missing from order summary; tax = $0.00 for taxable items; total does not include tax","none","VCST-4499","Automated"
+"CART-018","Cart Calculations - Shipping","Cart > Calculations","High","BL-CART-003","ECL-4.1","Items in cart, shipping methods configured, user on cart page","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ACT] select a shipping method if multiple options available
+[WAIT] wait for shipping cost to display
+[ASSERT] verify shipping cost matches selected method
+[ASSERT] verify shipping cost included in order total","[DOM] shipping cost line visible in order summary
+[MATH] order total = subtotal + tax + shipping (2 decimal places)
+[STATE] selected shipping method name displayed with cost","[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx on shipping rate requests","shipping line missing; shipping cost $0.00 for paid methods; total does not include shipping","none","VCST-4499","Automated"
+"CART-031","Quantity Stepper - PDP Increment Adds to Cart Immediately","Cart > Quantity Stepper","Critical","BL-CART-007, BL-CART-002","ECL-2.1, ECL-14.1","User logged in, product available, product NOT currently in cart","url={{FRONT_URL}}/product/{{TEST_SKU}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/product/{{TEST_SKU}}
+[ASSERT] verify spinbutton 'Product quantity' shows '0' and 'Decrease quantity' button is disabled
+[ACT] click '+' (Increase quantity) button
+[WAIT] wait for API call to complete and UI to update
+[ASSERT] verify spinbutton shows '1'
+[ASSERT] verify 'in Cart' indicator appears showing '1'
+[ASSERT] verify Cart badge incremented by 1
+[ASSERT] verify 'Decrease quantity' button becomes enabled","[DOM] spinbutton value = '1' after click
+[DOM] 'in Cart' indicator visible adjacent to stepper
+[STATE] cart badge incremented (no separate Add to Cart button required)
+[DOM] 'Decrease quantity' button transitioned from disabled to enabled","[API] addItem mutation response errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx on add-to-cart request","spinbutton does not increment; cart badge unchanged; 'in Cart' indicator not appearing; mutation returns error","Remove item from cart","QS-PDP-001","Manual"
+"CART-032","Quantity Stepper - PDP Decrement to Zero Removes from Cart","Cart > Quantity Stepper","Critical","BL-CART-007, BL-CART-003","ECL-3.1, ECL-14.1","User logged in; product in cart with qty=1; on product detail page; spinbutton shows '1'","url={{FRONT_URL}}/product/{{TEST_SKU}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/product/{{TEST_SKU}}
+[ASSERT] verify spinbutton shows '1' and 'in Cart' indicator shows '1'
+[ACT] click '-' (Decrease quantity) button
+[WAIT] wait for API and UI update
+[ASSERT] verify spinbutton shows '0'
+[ASSERT] verify 'in Cart' indicator disappears
+[ASSERT] verify Cart badge decremented by 1
+[ASSERT] verify 'Decrease quantity' button disabled
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] confirm product is removed from cart","[DOM] spinbutton shows '0'
+[DOM] 'in Cart' indicator absent from DOM
+[STATE] cart badge decremented
+[DOM] 'Decrease quantity' disabled at qty=0 on PDP
+[STATE] product not listed in cart page","[API] removeCartItem mutation response errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","spinbutton stays at 1; 'in Cart' indicator persists; cart badge not decremented; product still in cart","none (item removed)","QS-PDP-004","Manual"
+"CART-033","Quantity Stepper - Same SKU from Listing and PDP Creates Single Line Item","Cart > Quantity Stepper","Critical","BL-CART-007","ECL-2.1, ECL-14.1","User logged in, cart empty or product not in cart","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to category listing page on {{FRONT_URL}}
+[ACT] click '+' (Increase quantity) on product card — qty becomes 1
+[WAIT] wait for cart badge to update
+[NAV] navigate to {{FRONT_URL}}/product/{{TEST_SKU}} (same product)
+[ASSERT] verify spinbutton shows '1' (synced from listing add)
+[ACT] click '+' (Increase quantity) on PDP
+[WAIT] wait for API update
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] count line items for this product SKU","[STATE] exactly one line item in cart for this SKU (no duplicate)
+[DOM] line item quantity = 2
+[STATE] PDP spinbutton reflected qty added from listing (server-side sync)","[API] addItem/changeCartItemQuantity mutation response errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","duplicate line items created for same SKU; PDP shows 0 instead of 1; total qty wrong; two line items in cart","Remove item from cart","QS-PDP-006","Manual"
+"CART-034","Quantity Stepper - Cart Page Minimum is 1","Cart > Quantity Stepper","High","BL-CART-001","ECL-3.1","Product in cart with qty=1; on {{FRONT_URL}}/cart page","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify spinbutton shows '1' for line item
+[ASSERT] observe 'Decrease quantity' button state
+[ACT] attempt to click '-' (Decrease quantity) button","[DOM] spinbutton shows '1'
+[DOM] 'Decrease quantity' button is disabled at qty=1 on cart page
+[STATE] quantity cannot go below 1 via stepper on cart page (use 'Remove from cart' to delete)","[CONSOLE] no JS errors on disabled button interaction
+[NETWORK] no API call fired when disabled button clicked","'-' button enabled at qty=1; clicking '-' removes item instead of blocking; qty goes to 0 on cart page","none","QS-BVA-003","Manual"
+"CART-035","Quantity Stepper - Direct Input Updates Cart and Totals","Cart > Quantity Stepper","High","BL-CART-002","ECL-3.1, ECL-4.1, ECL-14.1","Product in cart with qty=1; on cart page or PDP","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ACT] click on spinbutton 'Product quantity' field to focus
+[KEY] Ctrl+A to select all text
+[ACT] type '5'
+[KEY] press Tab to commit input
+[WAIT] wait for cart to update
+[ASSERT] verify spinbutton shows '5'
+[ASSERT] verify line total updated
+[ASSERT] verify Order Summary totals updated","[DOM] spinbutton shows '5'
+[MATH] line total = unit price × 5 (2 decimal places)
+[MATH] Order Summary subtotal and total updated to reflect qty=5
+[STATE] no duplicate line item created","[API] changeCartItemQuantity mutation response errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","input reverts to 1 after Tab; line total not recalculated; API not called on Tab; duplicate line item created","Restore qty to 1 or remove item","QS-INPUT-001","Manual"
+"CART-036","Quantity Stepper - Invalid Input Rejected","Cart > Quantity Stepper","High","BL-CART-001","ECL-3.1, ECL-4.1","Product in cart; spinbutton focused on cart page","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[KEY] select all in spinbutton and type '-1'
+[KEY] press Tab
+[ASSERT] verify value rejected or reverted to last valid qty
+[KEY] select all and type 'abc'
+[KEY] press Tab
+[ASSERT] verify value rejected or reverted
+[KEY] select all and type '1.5'
+[KEY] press Tab
+[ASSERT] verify value rejected or rounded to integer
+[ASSERT] check browser console for errors after each attempt","[STATE] negative numbers rejected — qty remains at last valid value
+[STATE] non-numeric input rejected — qty remains at last valid value
+[STATE] decimal values rejected or rounded to integer
+[DOM] no cart errors displayed for rejected inputs","[CONSOLE] no JS errors after any invalid input attempt
+[NETWORK] no failed API calls triggered by invalid input","negative qty accepted and submitted; non-numeric input crashes cart; decimal qty causes API error; console errors on invalid input","none (no state change from rejections)","QS-INPUT-004","Manual"
+"CART-037","Quantity Stepper - Max Stock Enforcement","Cart > Quantity Stepper","High","BL-CART-001","ECL-3.1, ECL-14.1","Product with known limited stock (e.g., stock=5) available; qty=0 in cart (not yet added)","url={{FRONT_URL}}/product/{{TEST_SKU}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/product/{{TEST_SKU}}
+[ACT] click '+' (Increase quantity) repeatedly until reaching max stock (5)
+[ASSERT] observe 'Increase quantity' button state at max stock
+[ACT] attempt to click '+' (Increase quantity) one more time
+[ASSERT] verify qty does not exceed 5
+[ACT] click spinbutton and type '99999'
+[KEY] press Tab
+[ASSERT] verify qty capped at max stock or error shown","[DOM] 'Increase quantity' button disabled at max stock (5)
+[STATE] additional '+' clicks have no effect beyond max
+[STATE] direct input of 99999 capped at available stock or validation error shown
+[STATE] cart quantity never exceeds available inventory","[API] changeCartItemQuantity mutation response errors[] is empty (valid calls); stock constraint returned for over-max attempts
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","'+' button active beyond max stock; qty exceeds inventory in cart; 99999 accepted and submitted without cap","Remove item from cart","QS-BVA-002","Manual"
+"CART-038","Quantity Stepper - Cart Quantity Persists After Page Refresh","Cart > Quantity Stepper","High","BL-CART-006","ECL-7.3","Product in cart with qty=3; on {{FRONT_URL}}/cart page","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify spinbutton shows '3' for line item
+[ACT] refresh browser page (F5)
+[WAIT] wait for cart page to fully load after refresh
+[ASSERT] verify spinbutton still shows '3'
+[ASSERT] verify Cart badge count unchanged after refresh","[DOM] spinbutton shows '3' after page refresh
+[STATE] cart badge count unchanged
+[STATE] cart quantity persisted server-side (not lost on refresh)
+[MATH] line total and subtotal consistent with qty=3","[CONSOLE] no JS errors on page load after refresh
+[NETWORK] no 4xx/5xx on cart data fetch after refresh","qty resets to 1 after refresh; cart badge resets; subtotal recalculates to unit price only","none","QS-PERSIST-001","Manual"
+"CART-039","Quantity Stepper - Rapid Double-Click Does Not Corrupt Cart","Cart > Quantity Stepper","High","BL-CART-007","ECL-1.2, ECL-2.1, ECL-14.1","Product in cart with qty=1; on PDP or cart page","url={{FRONT_URL}}/product/{{TEST_SKU}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/product/{{TEST_SKU}}
+[ACT] double-click '+' (Increase quantity) button rapidly
+[WAIT] wait 2 seconds for all API responses to settle
+[ASSERT] observe spinbutton value (expect 2 or 3, deterministic)
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify line item quantity and count
+[ASSERT] check browser console for errors","[STATE] spinbutton shows deterministic value — 2 or 3 (not indeterminate or 0)
+[STATE] exactly one line item for SKU (no duplicates created)
+[MATH] cart total arithmetically consistent with displayed quantity
+[DOM] no error messages on cart page","[API] all addItem/changeCartItemQuantity mutation responses errors[] are empty
+[CONSOLE] no JS race condition errors or duplicate mutation errors
+[NETWORK] no failed requests from race conditions","duplicate line items from double-click; qty jumps to unexpected value; console errors from race; cart total mismatch","Remove item from cart","QS-ERR-001","Manual"
+"CART-049","Currency Switch - Cart Prices Recalculate Using New Price List","Cart > Currency","Critical","BL-CART-004","ECL-4.1, ECL-14.4","User logged in; products in cart with prices in multiple currencies; store supports at least two currencies (e.g., USD and EUR)","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add 2-3 products to cart
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] note all unit prices, line totals, subtotal, shipping, and tax in current currency (e.g., USD)
+[ACT] locate currency selector (header or footer)
+[ACT] switch currency to EUR (or second supported currency)
+[WAIT] wait for cart page to reload/recalculate
+[ASSERT] verify all unit prices updated to EUR price list values (not just USD converted)
+[ASSERT] verify line totals recalculated
+[ASSERT] verify subtotal, shipping, and tax all display in EUR","[DOM] currency symbol changes from $ to EUR/other on all price elements
+[MATH] each line total = new currency unit price x quantity (2 decimal places)
+[MATH] subtotal = sum of all line totals in new currency
+[STATE] prices reflect new currency's price list (not a simple exchange rate conversion)
+[FORMAT] all monetary values display correct currency symbol","[API] getCart query returns prices in new currency after switch
+[NETWORK] no 4xx/5xx on currency switch request
+[CONSOLE] no JS errors during currency recalculation","prices still show old currency after switch; line totals not recalculated; subtotal mismatch; currency symbol not updated; shipping/tax still in old currency","Switch currency back to original; remove items from cart","Coverage Gap Analysis","Generated"
+"CART-050","Currency Switch - Product Without Price in New Currency Flagged","Cart > Currency","Critical","BL-CART-004","ECL-4.1, ECL-7.3, ECL-14.4","User logged in; cart contains at least one product that has no price defined in the target currency; store supports multiple currencies","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add products to cart including one product known to lack a price in the target currency
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify all items display with valid prices in current currency
+[ACT] switch currency to target currency where one product has no price
+[WAIT] wait for cart to recalculate
+[ASSERT] verify product without price is flagged with warning or removed from cart
+[ASSERT] verify remaining products display correct prices in new currency
+[ASSERT] verify cart totals only include valid items","[DOM] product without new-currency price shows warning message or is removed
+[STATE] cart does not display $0.00 or blank price for the missing-price product
+[DOM] remaining items show correct new-currency prices
+[MATH] subtotal excludes flagged/removed item
+[STATE] checkout blocked if flagged item remains in cart","[API] getCart query returns validation warning for product without price in new currency
+[CONSOLE] no JS errors during currency switch
+[NETWORK] no 4xx/5xx","product shows $0.00 price instead of warning; no indication of missing price; cart totals include zero-price item; checkout proceeds with invalid pricing","Switch currency back to original; remove items from cart","Coverage Gap Analysis","Generated"
+"CART-051","Currency Switch - Subtotal Shipping Tax All in New Currency","Cart > Currency","High","BL-CART-004","ECL-4.1, ECL-14.4","User logged in; products in cart; shipping method selected; store supports multiple currencies","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add products to cart
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify Order Summary shows subtotal, shipping cost, tax, and total in current currency
+[ASSERT] note all Order Summary amounts
+[ACT] switch currency to second supported currency
+[WAIT] wait for cart to fully recalculate
+[ASSERT] verify subtotal in new currency
+[ASSERT] verify shipping cost in new currency
+[ASSERT] verify tax amount in new currency
+[ASSERT] verify grand total in new currency
+[ASSERT] verify all amounts use same currency symbol","[MATH] subtotal = sum of all line totals in new currency
+[MATH] grand total = subtotal + shipping + tax (all in new currency)
+[FORMAT] all Order Summary values use same currency symbol (no mixed currencies)
+[DOM] shipping cost recalculated (not just symbol change)
+[DOM] tax amount recalculated for new currency context","[API] getCart query returns shipping, tax, and totals all in new currency
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","mixed currency symbols in Order Summary; shipping still in old currency; tax not recalculated; grand total arithmetic mismatch","Switch currency back to original; remove items from cart","Coverage Gap Analysis","Generated"
+"CART-052","Cart Isolation - Org A Items Not Visible in Org B Cart","Cart > B2B > Org Isolation","Critical","BL-CART-005","ECL-14.3","User is member of at least two B2B organizations (Org A and Org B); user logged in","url={{FRONT_URL}}
+org_user={{ORG_USER_EMAIL}}
+org_password={{ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{ORG_USER_EMAIL}}
+[ACT] ensure current organization context is Org A
+[ACT] add 2 products to cart (Product X qty 1, Product Y qty 2) in Org A context
+[ASSERT] verify cart badge shows 2 items (or 3 total qty)
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] note Org A cart contents
+[ACT] switch organization context to Org B (via org selector in header or account settings)
+[WAIT] wait for org switch to complete and cart to refresh
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify Org B cart is empty or contains only Org B-specific items (no Product X or Product Y from Org A)","[STATE] Org B cart does not contain Org A items (Product X and Product Y absent)
+[DOM] cart badge updated to reflect Org B cart count (0 or Org B-only items)
+[STATE] org context switch does not contaminate cart data
+[DOM] no Org A product names visible in Org B cart","[API] getCart query returns cart scoped to current org context
+[API] verify me.organization reflects Org B after switch
+[CONSOLE] no JS errors during org switch
+[NETWORK] no 4xx/5xx","Org A items appear in Org B cart; cart badge shows Org A count after switch; Product X or Y visible in Org B","Switch back to Org A; remove test items from both carts","Coverage Gap Analysis","Generated"
+"CART-053","Cart Isolation - Org A Items Restored After Switching Back","Cart > B2B > Org Isolation","High","BL-CART-005","ECL-14.3","User is member of at least two B2B organizations; Org A cart has items from CART-052 setup","url={{FRONT_URL}}
+org_user={{ORG_USER_EMAIL}}
+org_password={{ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{ORG_USER_EMAIL}} in Org A context
+[ASSERT] verify Org A cart contains Product X qty 1 and Product Y qty 2
+[ACT] switch organization context to Org B
+[WAIT] wait for org switch to complete
+[ASSERT] verify Org B cart (empty or Org B items only)
+[ACT] switch organization context back to Org A
+[WAIT] wait for org switch to complete and cart to refresh
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify Org A cart restored with Product X qty 1 and Product Y qty 2
+[ASSERT] verify cart badge shows correct Org A count","[STATE] Org A cart fully restored after round-trip org switch (A → B → A)
+[DOM] Product X qty 1 and Product Y qty 2 present in cart
+[MATH] cart subtotal matches original Org A subtotal
+[DOM] cart badge reflects Org A item count
+[STATE] no data loss from org switching","[API] getCart query returns Org A cart contents after switching back
+[API] verify me.organization reflects Org A
+[CONSOLE] no JS errors during org switch cycle
+[NETWORK] no 4xx/5xx","Org A cart empty after round-trip switch; items lost; quantities changed; subtotal mismatch after switching back","Remove test items from both org carts","Coverage Gap Analysis","Generated"
+"CART-054","Pack Size Enforcement - Quantity Stepper Increments by Pack Size","Cart > Pack Size","Medium","BL-CART-006","ECL-3.1","User logged in; product with pack size / MOQ configured (e.g., pack size = 6); product available in store","url={{FRONT_URL}}/product/{{PACK_SIZE_SKU}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/product/{{PACK_SIZE_SKU}}
+[ASSERT] verify product detail page loads with pack size information visible (e.g., 'Sold in packs of 6')
+[ACT] click '+' (Increase quantity) button
+[WAIT] wait for quantity to update
+[ASSERT] verify spinbutton shows pack size value (e.g., 6) not 1
+[ACT] click '+' again
+[ASSERT] verify quantity increments by pack size (e.g., 6 → 12)
+[ACT] click '-' (Decrease quantity) once
+[ASSERT] verify quantity decrements by pack size (e.g., 12 → 6)
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify cart line item quantity is a multiple of pack size","[DOM] initial increment sets quantity to pack size (6), not 1
+[DOM] each subsequent '+' click adds pack size (6 → 12 → 18)
+[DOM] each '-' click decrements by pack size (18 → 12 → 6)
+[STATE] cart quantity is always a multiple of pack size
+[MATH] line total = unit price x quantity (where qty is multiple of pack size)","[API] addItem or changeCartItemQuantity mutation enforces pack size multiples
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","stepper increments by 1 instead of pack size; quantity not a multiple of pack size in cart; no pack size info on PDP","Remove item from cart","Coverage Gap Analysis","Generated"
+"CART-055","Pack Size Enforcement - Manual Non-Multiple Entry Rejected","Cart > Pack Size","Medium","BL-CART-006","ECL-3.1, ECL-4.1","User logged in; product with pack size configured (e.g., pack size = 6) in cart","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with pack-size product in cart
+[ACT] click on spinbutton 'Product quantity' field to focus
+[KEY] Ctrl+A to select all text
+[ACT] type '7' (non-multiple of pack size 6)
+[KEY] press Tab to commit input
+[WAIT] wait for validation response
+[ASSERT] verify quantity rejected or auto-rounded to nearest valid multiple (6 or 12)
+[ACT] type '0' in quantity field
+[KEY] press Tab
+[ASSERT] verify zero rejected (minimum = pack size)
+[ACT] type '13' in quantity field
+[KEY] press Tab
+[ASSERT] verify auto-rounded to 12 or 18, or validation error shown","[STATE] non-multiple quantity (7) rejected or rounded to nearest valid multiple
+[STATE] zero quantity rejected (minimum is one pack = 6)
+[STATE] quantity 13 rounded to 12 or 18, or error shown with valid options
+[DOM] validation message indicates pack size constraint if error shown
+[MATH] line total always reflects a valid pack-size-multiple quantity","[API] changeCartItemQuantity mutation returns pack size validation error for non-multiples
+[CONSOLE] no JS errors on invalid pack size input
+[NETWORK] no 4xx/5xx","non-multiple quantity accepted (7 units in cart); zero accepted for pack-size product; no validation message about pack size constraint","Remove item from cart","Coverage Gap Analysis","Generated"
+"CART-056","Select Subset of Cart Items for Partial Checkout","Cart > Selection","Medium","","ECL-14.1","User logged in; cart contains 3+ different products","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add 3+ different products to cart
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify all items displayed with selection checkboxes (if available)
+[ACT] deselect one or more items (uncheck checkbox or equivalent UI control)
+[ASSERT] verify Order Summary totals update to reflect only selected items
+[ASSERT] verify deselected items remain in cart but excluded from totals
+[ACT] click 'Proceed to Checkout'
+[WAIT] wait for checkout page to load
+[ASSERT] verify only selected items appear in checkout order summary
+[ASSERT] verify deselected items NOT in checkout","[DOM] item selection controls (checkboxes) visible for each cart line item
+[STATE] deselecting an item excludes it from Order Summary totals
+[MATH] subtotal = sum of only selected items' line totals
+[STATE] deselected items remain in cart (not removed)
+[DOM] checkout order summary contains only selected items
+[STATE] deselected items absent from checkout","[API] checkout mutation payload includes only selected item IDs
+[CONSOLE] no JS errors during selection/deselection
+[NETWORK] no 4xx/5xx","no selection controls available; deselecting does not update totals; all items sent to checkout regardless of selection; deselected items removed from cart instead of preserved","none (items remain in cart)","Coverage Gap Analysis","Generated"

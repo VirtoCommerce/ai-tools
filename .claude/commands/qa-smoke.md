@@ -44,8 +44,8 @@ Prompt:
 ```
 You are executing Track A of a smoke test run ({RUN_ID}).
 
-Suite: 01 — Smoke Tests
-CSV: regression/suites/Frontend/01-smoke-tests.csv
+Suite: 042 — Smoke Tests
+CSV: regression/suites/Frontend/cross-cutting/042-smoke-tests.csv
 Browser: playwright-chrome
 Frontend URL: {FRONT_URL}
 Output: reports/regression/{RUN_ID}/suite-01-trackA-results.json

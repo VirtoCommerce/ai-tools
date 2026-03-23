@@ -1,0 +1,224 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"PAY-UX-001","Payment Form - Field Labels and Placeholders","UX","Medium","BL-PAY-004","ECL-14.6","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; locate CyberSource payment section
+[ACT] Observe all payment field labels without interacting
+[ASSERT] Each field has a visible label: 'Card Number', 'Cardholder Name', 'Expiry Date', 'CVV'
+[ASSERT] Placeholder text is present and descriptive in each field
+[ASSERT] Required fields are marked with asterisk (*) or equivalent required indicator","[DOM] All four payment fields have visible labels
+[DOM] Placeholder text present and readable in all fields
+[DOM] Required field indicator (* or 'required') present on mandatory fields","[CONSOLE] No rendering errors for payment section labels","Any field missing a label; placeholder text absent or generic (e.g., '...' only); required indicator absent on mandatory fields","none — no order placed","VCST-3387 TC-UX-001","Manual"
+"PAY-UX-002","Payment Form - Keyboard Tab Order","UX","Medium","BL-PAY-004","ECL-14.6","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form visible on {{FRONT_URL}}/cart
+- Keyboard-only navigation mode (no mouse)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; locate CyberSource payment section
+[ACT] Place focus on 'Card Number' field using keyboard (Tab from previous element)
+[KEY] Press Tab to advance through payment fields
+[ASSERT] Focus moves: Card Number → Cardholder Name → Expiry Date → CVV in logical order
+[KEY] Verify Tab moves into iframe fields correctly (focus enters iframe)
+[KEY] Verify Tab exits iframe fields correctly (focus leaves iframe to next storefront element)
+[ASSERT] No tab trap encountered — Tab always advances focus","[STATE] Tab order follows logical sequence: Card Number → Cardholder Name → Expiry Date → CVV
+[STATE] Focus enters and exits iframe fields without becoming trapped
+[DOM] Focus indicator visible on each field when focused via keyboard","[CONSOLE] No JS errors from iframe focus handling","Tab order illogical (e.g., skips fields or jumps out of order); tab trap occurs inside iframe (cannot escape with Tab); focus indicator not visible on focused field","none — no order placed","VCST-3387 TC-UX-004","Manual"
+"PAY-PERF-001","Payment Form - Load Time Under 2 Seconds","Performance","Medium","BL-PAY-004","ECL-14.6","- Logged in as registered user
+- Cart has at least one item
+- Browser DevTools Performance or Network tab available
+- Clear browser cache before test","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Clear cache; navigate to {{FRONT_URL}}/cart
+[ACT] Start timing from page navigation until CyberSource payment form is fully interactive
+[WAIT] Observe payment section loading — iframe(s) must fully initialize
+[ASSERT] CyberSource payment form is interactive within 2 seconds of page load completing
+[ASSERT] All iframe fields accept input without additional waiting
+[ACT] Open DevTools Network tab; review iframe resource load times","[STATE] CyberSource payment form fields interactive within 2 seconds of cart page load
+[DOM] All payment iframe(s) initialized — fields accept clicks and input
+[NETWORK] Iframe resources load without excessive blocking time","[NETWORK] No failed resource loads for cybersource.com iframe scripts
+[CONSOLE] No timeout errors for iframe initialization","Payment form remains in loading state beyond 2 seconds; iframe fails to initialize requiring page refresh; form fields unresponsive after iframes load","none — no order placed","VCST-3387 TC-PERF-001","Manual"
+"PAY-EDGE-001","Double-Click Place Order Prevention","Edge Cases","High","BL-PAY-003, BL-PAY-005","ECL-1.2, ECL-14.6","- Logged in as registered user
+- Cart has at least one item
+- CyberSource payment form on {{FRONT_URL}}/cart fully filled with valid test card
+- DevTools Network tab open and recording","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart; fill CyberSource payment form completely with '4622943127013705', '09/2029', '838', 'John Smith'
+[ACT] Double-click 'Place Order' button as rapidly as possible
+[WAIT] Wait for all network requests to settle
+[ASSERT] Only ONE createOrderFromCart GraphQL mutation request is sent — not two
+[ASSERT] 'Place Order' button becomes disabled/inactive after the first click
+[ASSERT] Only one order is created — check order confirmation shows single order number
+[NAV] Navigate to account order history and verify only one new order appears","[STATE] 'Place Order' button disabled after first click — subsequent clicks have no effect
+[STATE] Only one order created — no duplicate in account order history
+[NETWORK] Only one createOrderFromCart mutation request in DevTools Network","[API] createOrderFromCart GraphQL mutation called exactly once
+[ADMIN] Single new order in admin — no duplicate orders with same cart contents and timestamp","Button remains active after first click (not disabled); two or more createOrderFromCart mutations sent; duplicate order appears in account history or admin","Cancel order(s) via admin — ensure duplicate orders also cancelled if created","VCST-3387 TC-EDGE-020","Manual"
+"PAY-DECLINE-001","Declined Card - Error Message Displayed","Declined Cards","Critical","BL-PAY-005, BL-PAY-003","ECL-9.1, ECL-14.6","- Logged in as registered user
+- Cart has at least one item
+- Payment processor configured with a test card number known to produce a decline response","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[KEY] For CyberSource: payment form is on cart page. For other processors: click 'Place Order' first to reach {{FRONT_URL}}/checkout/payment
+[ACT] Fill payment form using a known-decline test card (obtain from processor test docs or .env)
+[ACT] Fill valid expiry date, CVV, and cardholder name
+[ACT] Click 'Place Order'
+[WAIT] Wait for processor decline response
+[ASSERT] Clear error message displayed — e.g., 'Your card was declined' or equivalent
+[ASSERT] Payment form fields are NOT cleared (user can correct and retry)
+[ASSERT] User remains on payment step — not navigated away
+[NAV] Navigate to account order history
+[ASSERT] No new order appears in order history","[DOM] Error message displayed with text indicating card decline (not a generic system error)
+[STATE] Payment form fields retain entered values after decline — not cleared
+[NAV] User remains on payment step after decline
+[STATE] No order created — order history unchanged","[API] createOrderFromCart GraphQL mutation errors[] contains decline-related error OR mutation is not called if processor blocks before order creation
+[ADMIN] No new order in admin for this session","No error message shown after decline; generic 'something went wrong' message without explanation; form cleared requiring full re-entry; order created despite decline (BL-PAY-005 violation)","none — no order created","Coverage Gap Analysis","Manual"
+"PAY-DECLINE-002","Declined Card - Retry with Different Card Succeeds","Declined Cards","Critical","BL-PAY-005, BL-PAY-003","ECL-9.1, ECL-1.2","- Logged in as registered user
+- Cart has at least one item
+- Payment in declined state from PAY-DECLINE-001 (decline error visible, no page reload performed)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[KEY] Begin from declined state — error message visible, user on payment step, no page reload
+[ACT] Clear 'Card Number' field and enter {{TEST_CARD_NUMBER}} (valid test card)
+[ACT] Update 'CVV' field with {{TEST_CARD_CVV}}; update 'Expiry Date' if needed
+[ACT] Click 'Place Order' again
+[WAIT] Wait for payment processing response
+[ASSERT] Payment succeeds with the new card — no error message
+[NAV] User navigated to order confirmation page
+[ASSERT] Order confirmation shows order number
+[NAV] Check account order history
+[ASSERT] Exactly one new order — no duplicate from the first declined attempt","[NAV] Order confirmation reached after retry with valid card
+[DOM] Order confirmation displays order number
+[STATE] Only one order created — no duplicate from failed first attempt
+[MATH] Order total matches original cart total","[API] createOrderFromCart GraphQL mutation errors[] is empty on successful retry
+[ADMIN] Single new order in admin — no duplicate entry for this session","Retry attempt triggers page reload losing cart state; second valid card also declined; two orders created (one from declined attempt — BL-PAY-005 violation); form not accepting input after decline","Cancel order via admin","Coverage Gap Analysis","Manual"
+"PAY-DECLINE-003","Declined Card - Network Timeout Recovery","Declined Cards","High","BL-PAY-003, BL-PAY-005","ECL-9.1, ECL-1.2","- Logged in as registered user
+- Cart has at least one item
+- Payment form fully filled with valid test card
+- Browser DevTools Network tab available for throttling/blocking","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Navigate to payment step with valid card details filled in
+[ACT] In DevTools Network tab: block or simulate timeout on the payment API endpoint
+[ACT] Click 'Place Order'
+[WAIT] Wait for timeout error response
+[ASSERT] Error message displayed: 'Payment timed out. Please try again.' or equivalent — no internal server error details exposed
+[ASSERT] Form remains usable — fields accessible for retry
+[ACT] In DevTools: restore network (unblock payment API)
+[ACT] Click 'Place Order' again
+[WAIT] Wait for payment response
+[ASSERT] Retry succeeds — order confirmation reached
+[NAV] Check account order history and admin for duplicate orders","[DOM] Timeout error message visible — user-friendly text without server internals exposed
+[STATE] Payment form fields remain accessible after timeout error
+[NAV] Successful retry after network restored reaches order confirmation
+[STATE] Only one order in history and admin — no duplicate from timeout","[API] Only one createOrderFromCart GraphQL mutation per user action — no automatic retries that could cause duplicates
+[CONSOLE] No internal server error details leaked to console or UI
+[ADMIN] Single order in admin after successful retry","Internal server error message exposed to user; form inaccessible after timeout requiring page refresh; duplicate order created from timeout + retry scenario; timeout produces no user feedback","Cancel order via admin; ensure no duplicate orders","Coverage Gap Analysis","Manual"
+"PAY-DECLINE-004","Declined Card - Double-Click Prevention After Error","Declined Cards","High","BL-PAY-003, BL-PAY-005","ECL-1.2, ECL-9.1","- Logged in as registered user
+- Cart has at least one item
+- Payment just returned a decline error — user is on payment step with error message visible
+- DevTools Network tab open and recording","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[KEY] Begin from declined payment state — error visible, no page reload, form fields intact
+[ACT] Without clearing the form: rapidly double-click or triple-click 'Place Order'
+[WAIT] Wait for all network activity to settle
+[ASSERT] Only ONE payment request is sent per action — not multiple rapid-fire requests
+[ASSERT] 'Place Order' button is disabled immediately after first click
+[ASSERT] Button re-enables after payment response received (allowing deliberate retry)
+[ASSERT] No additional orders created beyond what the single payment request would produce","[STATE] 'Place Order' button disabled immediately after first click even following a decline
+[NETWORK] Only one payment/order request per click sequence — no duplicate requests
+[STATE] Button re-enables after response (enabling intentional retry)","[API] Only one createOrderFromCart GraphQL mutation per click sequence visible in DevTools
+[ADMIN] No duplicate orders created from rapid clicking after decline","Button not disabled after click following decline — multiple payment requests sent; multiple duplicate auth requests in Network tab; button requires page reload to re-enable after decline","none — verify no spurious orders; cancel any created via admin","Coverage Gap Analysis","Manual"
+"PAY-DECLINE-005","Declined Card - Cart and Checkout State Preserved","Declined Cards","Critical","BL-PAY-005, BL-PAY-003","ECL-9.1, ECL-14.6","- Logged in as registered user
+- Cart has at least one item with specific quantity
+- All checkout steps completed through to payment (address, shipping method selected)
+- Payment submitted using a known-decline test card","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; proceed through checkout — enter shipping address, select shipping method, reach payment step
+[KEY] Note the cart contents, item quantities, shipping address, and shipping method before payment
+[ACT] Submit payment using known-decline test card; wait for decline response
+[ASSERT] Error message displayed for decline
+[ACT] Observe cart — navigate to cart page or review checkout summary
+[ASSERT] Cart still contains all original items with correct quantities
+[NAV] Review shipping address in checkout
+[ASSERT] Shipping address is preserved — not reset to default or cleared
+[NAV] Review shipping method selection
+[ASSERT] Shipping method selection preserved — not reset","[STATE] Cart items and quantities unchanged after payment decline
+[STATE] Shipping address preserved after payment decline — user need not re-enter
+[STATE] Shipping method selection preserved after payment decline
+[DOM] Checkout progress indicator shows user still in payment step (not reset to start)","[API] createOrderFromCart GraphQL mutation errors[] confirms no order created
+[ADMIN] No new order in admin for this cart session","Cart cleared after decline — items lost requiring re-add; shipping address reset requiring re-entry; shipping method cleared requiring re-selection; user navigated back to checkout start","none — no order created; verify cart state is clean for next test","Coverage Gap Analysis","Manual"
+"PAY-GUEST-001","Guest Checkout - CyberSource Payment Completes Without Account","Guest Checkout","High","BL-PAY-003, BL-CHK-005","ECL-14.1","- User is NOT logged in (anonymous / guest session)
+- Guest checkout enabled in store settings
+- Cart has at least one item added as guest
+- CyberSource payment processor configured and active","FRONT_URL={{FRONT_URL}}, GUEST_EMAIL=guest-{{TIMESTAMP}}@test.example.com, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Open a fresh incognito/private browser window; navigate to {{FRONT_URL}}
+[ASSERT] User is not logged in — no user name or account icon in header
+[ACT] Add at least one product to cart
+[NAV] Navigate to {{FRONT_URL}}/cart
+[WAIT] Wait for CyberSource payment form to render in the guest cart view
+[ACT] Enter guest email GUEST_EMAIL in the guest checkout email field (if prompted)
+[ACT] Fill shipping address fields with valid test address data
+[ACT] Fill 'Card Number' iframe field with '4622943127013705'
+[ACT] Fill 'Cardholder Name' with 'Guest User'; fill 'Expiry Date' with '09/2029'; fill 'CVV' with '838'
+[ACT] Click 'Place Order'
+[WAIT] Wait for order processing response","[DOM] CyberSource payment form renders correctly for unauthenticated / guest session — no authentication wall
+[NAV] After successful payment guest user is navigated to order confirmation page
+[DOM] Order confirmation page shows order number and ordered items
+[STATE] No account registration required to complete payment","[API] createOrderFromCart GraphQL mutation response has no errors[] entries
+[NETWORK] Payment token (not raw card number) sent in request payload for guest session
+[ADMIN] Order appears in admin Orders list with guest email and correct payment method","CyberSource payment form fails to render for guest users; guest is forced to create an account before payment form appears; order confirmation not reached without registration; raw card data in network payload for guest session","none — guest order; no cleanup required unless test order removal is standard practice","ECL-14.1; BL-PAY-003; BL-CHK-005","Manual"
+"PAY-GUEST-002","Guest Checkout - Payment Validation Same as Authenticated User","Guest Checkout","High","BL-PAY-003, BL-CHK-005","ECL-14.1, ECL-9.1","- User is NOT logged in (anonymous / guest session)
+- Guest checkout enabled in store settings
+- Cart has at least one item added as guest
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}","[NAV] Open a fresh incognito/private browser window; add product to cart; navigate to {{FRONT_URL}}/cart
+[ASSERT] User is not logged in — guest context confirmed
+[WAIT] Wait for CyberSource payment form to render
+[ACT] Leave 'Card Number' field empty; click 'Place Order'
+[ASSERT] Inline validation error appears on 'Card Number' field — same as authenticated user behavior
+[ACT] Fill 'Card Number' with '1234567890123456' (Luhn-failing); click 'Place Order'
+[ASSERT] 'Invalid card number' or equivalent error displayed
+[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Expiry Date' with a past date (e.g., '01/2020'); click 'Place Order'
+[ASSERT] Expired date validation error displayed on 'Expiry Date' field
+[ACT] Fill valid card details: '4622943127013705', '09/2029', '838'; leave 'Cardholder Name' empty; click 'Place Order'
+[ASSERT] Validation error for missing cardholder name (or form submits — document behavior)","[DOM] Each validation error appears at field level for guest users — not a single generic error
+[STATE] Form does not submit with any invalid guest payment input
+[NAV] Guest user remains on cart page after each validation failure","[API] No createOrderFromCart GraphQL mutation fired for any invalid payment attempt
+[CONSOLE] No JS errors from CyberSource iframe during guest validation flows","Validation skipped for guest users while enforced for authenticated users; generic top-level error replaces field-level errors in guest context; form submits with invalid card in guest session","none — no order created","ECL-14.1; ECL-9.1; BL-PAY-003; BL-CHK-005","Manual"
+"PAY-XLAY-001","Cross-Layer - Order Total at Checkout Matches Gateway Charge Amount","Cross-Layer Verification","Medium","BL-CHK-006, BL-PAY-003","ECL-14.6","- Logged in as registered user
+- Cart has at least one item with a known price (record the expected total)
+- CyberSource payment processor active
+- Browser DevTools Network tab open and recording
+- Admin access available","FRONT_URL={{FRONT_URL}}, BACK_URL={{BACK_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, ADMIN_EMAIL={{ADMIN_EMAIL}}, ADMIN_PASSWORD={{ADMIN_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart; record the displayed order total (subtotal + shipping + taxes)
+[ASSERT] Displayed total matches expected value based on cart contents
+[ACT] Fill CyberSource payment form: '4622943127013705', 'John Smith', '09/2029', '838'
+[ACT] In DevTools Network tab start recording; click 'Place Order'
+[WAIT] Wait for order confirmation page
+[ACT] In DevTools Network tab locate the CyberSource tokenization / payment authorization request; inspect the 'amount' or 'orderAmount' field in the request payload
+[ASSERT] Amount in payment gateway request equals the total displayed in the cart
+[NAV] On order confirmation page: record the total displayed
+[ASSERT] Confirmation page total matches the cart total recorded before payment
+[NAV] Log in to {{BACK_URL}} admin; locate the order; open order details
+[ASSERT] Order total in admin matches the cart and confirmation totals","[MATH] Amount in CyberSource payment request payload equals displayed cart total (to 2 decimal places)
+[MATH] Order confirmation total equals cart total — no rounding or truncation
+[MATH] Admin order total equals confirmation total — consistent across all three surfaces","[NETWORK] CyberSource payment request 'amount' field value matches storefront displayed total
+[API] createOrderFromCart GraphQL mutation totalPrice equals displayed cart total
+[ADMIN] Order total in admin details matches storefront and network payload amounts","Amount in network request differs from displayed total (overcharge or undercharge — BL-CHK-006 violation); confirmation total differs from cart total; admin order total differs from payment amount; rounding inconsistency causes 1-cent discrepancy","Cancel order via admin","ECL-14.6; BL-CHK-006; BL-PAY-003","Manual"
+"PAY-DECLINE-006","Declined Card Recovery - CyberSource Error Then Retry With Valid Card","Payment > Decline > Recovery","Critical","BL-CHK-004","ECL-1.1","User logged in; items in cart; at checkout payment step; CyberSource payment processor active","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+declined_card=4000000000000002
+valid_card={{TEST_CARD_NUMBER}}","[NAV] navigate to {{FRONT_URL}}/cart and complete checkout to payment step
+[ACT] enter declined test card number in CyberSource payment form on cart page
+[ACT] fill expiry date and CVV
+[ACT] click Place Order
+[WAIT] wait for payment processing
+[ASSERT] verify declined/error message displayed clearly
+[ASSERT] verify cart contents still visible and intact
+[ASSERT] verify shipping address and method still selected
+[ACT] clear declined card details and enter valid card number
+[ACT] click Place Order again
+[WAIT] wait for payment processing
+[ASSERT] verify order confirmation page reached with valid order number","[DOM] decline error message clearly visible
+[STATE] cart and shipping preserved after decline
+[DOM] payment form accepts new card entry after decline
+[NAV] order confirmation reached on retry","[API] first payment attempt returns decline error
+[API] second payment attempt succeeds
+[CONSOLE] no unhandled JS errors during decline or retry
+[NETWORK] no 5xx errors","cart emptied after decline; shipping address lost; payment form unresponsive after decline; cannot re-enter card details; second attempt also fails despite valid card","Cancel test order via admin","Coverage Gap Analysis","Manual"
+"PAY-DECLINE-007","Multiple Consecutive Declines Preserve Checkout State","Payment > Decline > Multiple","High","BL-CHK-004","ECL-1.1","User logged in; at checkout payment step; multiple declined test cards available","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+declined_card=4000000000000002","[NAV] complete checkout to payment step with shipping address filled
+[ACT] enter declined card and attempt payment
+[WAIT] wait for decline message
+[ASSERT] verify decline error shown; cart and addresses preserved
+[ACT] enter another declined card and attempt payment again
+[WAIT] wait for second decline message
+[ASSERT] verify second decline error shown
+[ASSERT] verify shipping address STILL populated (not cleared)
+[ASSERT] verify cart items and quantities unchanged
+[ASSERT] verify billing address (if separate) still populated","[STATE] shipping address preserved after multiple declines
+[STATE] cart items unchanged after multiple declines
+[STATE] billing address preserved if entered separately
+[DOM] decline error messages shown for each attempt","[API] multiple decline responses received without state corruption
+[CONSOLE] no JS errors accumulating across retries
+[NETWORK] no 5xx","addresses cleared after second decline; cart modified; checkout session invalidated; error messages accumulate and overlap; form becomes unresponsive","Cancel any test orders via admin","Coverage Gap Analysis","Manual"

@@ -1,0 +1,422 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+L10N-DE-001,German (de) - UI Translation,Localization > German,Medium,BL-L10N-001,,- German language available in storefront language switcher,"language=de;url={{FRONT_URL}}","[ACT] Open language switcher in header or footer and select German (de)
+[WAIT] Wait for page to reload with de locale
+[NAV] Navigate to {{FRONT_URL}} homepage
+[ASSERT] Verify main navigation labels are in German
+[NAV] Navigate to {{FRONT_URL}}/catalog (or equivalent category page)
+[ASSERT] Verify page headings, filter labels, and button text are in German
+[NAV] Navigate to a product detail page
+[ASSERT] Verify Add to Cart button, product labels, and breadcrumb are in German
+[NAV] Navigate to {{FRONT_URL}}/account (if accessible)
+[ASSERT] Verify account menu labels, form field labels, and section headings are in German","[DOM] Language switcher shows ""de"" or German flag as active selection
+[DOM] Main navigation items render in German (not English)
+[DOM] CTA buttons (e.g., Add to Cart, Checkout) display German text
+[DOM] Form labels and placeholders are in German
+[STATE] No English fallback text visible anywhere in the UI
+[DOM] No raw translation keys (e.g., translation.button.add) visible","[CONSOLE] No 404 errors for locale resource files (e.g., de.json)
+[NETWORK] Locale file loaded successfully (HTTP 200)","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Mixed-language UI (some elements in English some in German)","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-DE-002,German (de) - BOPIS Modal,Localization > German,Medium,BL-L10N-001,,- German language set via language switcher
+- BOPIS (Buy Online Pickup In Store) feature enabled for the store,"language=de;url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} with German locale active
+[ACT] Add a BOPIS-eligible product to cart
+[ACT] Click the pickup / BOPIS option on cart or product page to open the pickup modal
+[WAIT] Wait for the BOPIS location search modal to open
+[ASSERT] Inspect the search input placeholder text inside the modal
+[ASSERT] Inspect all button labels inside the modal (e.g., Search, Confirm, Cancel)
+[ASSERT] Inspect filter labels and dropdown options inside the modal
+[ASSERT] Inspect location card content (store name label, address label, hours label)","[DOM] Search input placeholder text is in German (not English)
+[DOM] All modal button labels render in German
+[DOM] Filter labels and option text render in German
+[DOM] Location card field labels (address, hours, etc.) are in German
+[STATE] No English text visible anywhere in the BOPIS modal
+[DOM] No text is truncated — all German labels fit their containers","[CONSOLE] No JavaScript errors thrown when opening modal
+[NETWORK] No failed requests for modal locale resources","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Text truncated or overflowing modal container","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-EN-001,English (en) - Baseline,Localization > English,High,BL-L10N-001,,- English language set (default storefront language),"language=en;url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} homepage with English locale active
+[ASSERT] Verify English is the default language on first load
+[NAV] Navigate through homepage, catalog, PDP, and account sections
+[ASSERT] Verify all UI elements display readable English text
+[ASSERT] Verify no raw translation keys are visible anywhere
+[ASSERT] Verify no missing translation placeholders (empty labels or blank buttons)","[DOM] Language switcher shows English (en) as active by default
+[DOM] All navigation items, buttons, and labels render in complete English
+[STATE] No raw translation keys (e.g., translation.button.add) visible anywhere
+[DOM] No blank or empty text nodes where translated content is expected
+[DOM] All text is readable and grammatically complete","[CONSOLE] No 404 errors for en locale resource file
+[NETWORK] en.json (or equivalent) locale file loads with HTTP 200","Translation key (e.g., translation.button.add) shown instead of text;Blank or empty labels where text is expected;English marked as unavailable in language switcher","No cleanup required — English is the default state",VCST-4499 TC-010,Manual
+L10N-ES-001,Spanish (es) - UI Translation,Localization > Spanish,Medium,BL-L10N-001,,- Spanish language available in storefront language switcher,"language=es;url={{FRONT_URL}}","[ACT] Open language switcher and select Spanish (es)
+[WAIT] Wait for page to reload with es locale
+[NAV] Navigate to {{FRONT_URL}} homepage
+[ASSERT] Verify main navigation labels are in Spanish
+[NAV] Navigate to a product category page
+[ASSERT] Verify filter labels, sort options, and CTAs are in Spanish
+[NAV] Navigate to a product detail page
+[ASSERT] Verify Add to Cart button and form labels are in Spanish
+[ACT] Navigate to a form (e.g., login or registration page)
+[ASSERT] Verify all form field labels and placeholders are in Spanish","[DOM] Language switcher shows es as active
+[DOM] Navigation, buttons, and labels render in Spanish
+[DOM] Form field labels and placeholders are in Spanish
+[STATE] No English fallback text visible
+[DOM] Button text fits within button boundaries — no overflow
+[DOM] No raw translation keys visible","[CONSOLE] No 404 errors for es locale resource file
+[NETWORK] es locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Button label overflowing or clipped","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-FR-001,French (fr) - UI Translation,Localization > French,Medium,BL-L10N-001,,- French language available in storefront language switcher,"language=fr;url={{FRONT_URL}}","[ACT] Open language switcher and select French (fr)
+[WAIT] Wait for page to reload with fr locale
+[NAV] Navigate to {{FRONT_URL}} homepage
+[ASSERT] Verify main navigation labels are in French
+[NAV] Navigate to a product category page
+[ASSERT] Verify filter labels, sort options, and CTAs are in French
+[NAV] Navigate to a product detail page
+[ASSERT] Verify all labels and buttons are in French
+[ASSERT] Verify that longer French words (e.g., ""Ajouter au panier"") fit their containers without truncation","[DOM] Language switcher shows fr as active
+[DOM] Navigation, buttons, and labels render in French
+[STATE] No English fallback text visible
+[DOM] No text truncated — French tends toward longer strings; all containers accommodate text
+[DOM] No raw translation keys visible
+[DOM] No layout overflow caused by longer French phrases","[CONSOLE] No 404 errors for fr locale resource file
+[NETWORK] fr locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Text truncated or overflowing containers","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-IT-001,Italian (it) - UI Translation,Localization > Italian,Medium,BL-L10N-001,,- Italian language available in storefront language switcher,"language=it;url={{FRONT_URL}}","[ACT] Open language switcher and select Italian (it)
+[WAIT] Wait for page to reload with it locale
+[NAV] Navigate to {{FRONT_URL}} homepage
+[ASSERT] Verify main navigation labels are in Italian
+[NAV] Navigate to a product category page
+[ASSERT] Verify filter labels and CTAs are in Italian
+[NAV] Navigate to a product detail page
+[ASSERT] Verify all labels and buttons are in Italian
+[ASSERT] Verify text fits properly within all UI containers","[DOM] Language switcher shows it as active
+[DOM] Navigation, buttons, and labels render in Italian
+[STATE] No English fallback text visible
+[DOM] Text fits properly in all UI containers — no overflow or truncation
+[DOM] No raw translation keys visible","[CONSOLE] No 404 errors for it locale resource file
+[NETWORK] it locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Text overflowing container boundaries","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-PT-001,Portuguese (pt) - UI Translation,Localization > Portuguese,Medium,BL-L10N-001,,- Portuguese language available in storefront language switcher,"language=pt;url={{FRONT_URL}}","[ACT] Open language switcher and select Portuguese (pt)
+[WAIT] Wait for page to reload with pt locale
+[NAV] Navigate to {{FRONT_URL}} homepage
+[ASSERT] Verify main navigation labels are in Portuguese
+[NAV] Navigate to a product category page
+[ASSERT] Verify filter labels and CTAs are in Portuguese
+[NAV] Navigate to a product detail page
+[ASSERT] Verify all labels and buttons are in Portuguese
+[ASSERT] Verify text fits properly within all UI containers","[DOM] Language switcher shows pt as active
+[DOM] Navigation, buttons, and labels render in Portuguese
+[STATE] No English fallback text visible
+[DOM] Text fits properly in all UI containers — no overflow or truncation
+[DOM] No raw translation keys visible","[CONSOLE] No 404 errors for pt locale resource file
+[NETWORK] pt locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Text overflowing container boundaries","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-NO-001,Norwegian (no) - UI Translation,Localization > Norwegian,Medium,BL-L10N-001,,- Norwegian language available in storefront language switcher,"language=no;url={{FRONT_URL}}","[ACT] Open language switcher and select Norwegian (no)
+[WAIT] Wait for page to reload with no locale
+[NAV] Navigate to {{FRONT_URL}} homepage
+[ASSERT] Verify main navigation labels are in Norwegian
+[NAV] Navigate to a product category page
+[ASSERT] Verify filter labels and CTAs are in Norwegian
+[NAV] Navigate to a product detail page
+[ASSERT] Verify all labels and buttons are in Norwegian
+[ASSERT] Verify Scandinavian characters (æ, ø, å) render correctly","[DOM] Language switcher shows no as active
+[DOM] Navigation, buttons, and labels render in Norwegian
+[STATE] No English fallback text visible
+[DOM] Scandinavian characters (æ, ø, å) display correctly — no font fallback boxes (□)
+[DOM] No raw translation keys visible","[CONSOLE] No font-face loading errors or tofu (□) character fallbacks
+[NETWORK] no locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;font rendering box (□) for non-Latin chars","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-SV-001,Swedish (sv) - UI Translation,Localization > Swedish,Medium,BL-L10N-001,,- Swedish language available in storefront language switcher,"language=sv;url={{FRONT_URL}}","[ACT] Open language switcher and select Swedish (sv)
+[WAIT] Wait for page to reload with sv locale
+[NAV] Navigate to {{FRONT_URL}} homepage
+[ASSERT] Verify main navigation labels are in Swedish
+[NAV] Navigate to a product category page
+[ASSERT] Verify filter labels and CTAs are in Swedish
+[NAV] Navigate to a product detail page
+[ASSERT] Verify all labels and buttons are in Swedish
+[ASSERT] Verify special characters (å, ä, ö) render correctly without font fallback boxes","[DOM] Language switcher shows sv as active
+[DOM] Navigation, buttons, and labels render in Swedish
+[STATE] No English fallback text visible
+[DOM] Special characters å, ä, ö display correctly — no font fallback boxes (□)
+[DOM] No raw translation keys visible","[CONSOLE] No font-face loading errors or tofu (□) character fallbacks
+[NETWORK] sv locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;font rendering box (□) for non-Latin chars","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-FI-001,Finnish (fi) - UI Translation,Localization > Finnish,Medium,BL-L10N-001,,- Finnish language available in storefront language switcher,"language=fi;url={{FRONT_URL}}","[ACT] Open language switcher and select Finnish (fi)
+[WAIT] Wait for page to reload with fi locale
+[NAV] Navigate to {{FRONT_URL}} homepage
+[ASSERT] Verify main navigation labels are in Finnish
+[NAV] Navigate to a product category page
+[ASSERT] Verify filter labels and CTAs are in Finnish
+[NAV] Navigate to a product detail page
+[ASSERT] Verify all labels and buttons are in Finnish
+[ASSERT] Verify very long Finnish compound words (e.g., ""ostoskoriin"") fit within their UI containers without clipping or overflow","[DOM] Language switcher shows fi as active
+[DOM] Navigation, buttons, and labels render in Finnish
+[STATE] No English fallback text visible
+[DOM] Long Finnish compound words fit within containers — no text-overflow: ellipsis clipping unexpected content
+[DOM] No raw translation keys visible","[CONSOLE] No 404 errors for fi locale resource file
+[NETWORK] fi locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Long compound words clipped or truncated in buttons or navigation","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-PL-001,Polish (pl) - UI Translation,Localization > Polish,Medium,BL-L10N-001,,- Polish language available in storefront language switcher,"language=pl;url={{FRONT_URL}}","[ACT] Open language switcher and select Polish (pl)
+[WAIT] Wait for page to reload with pl locale
+[NAV] Navigate to {{FRONT_URL}} homepage
+[ASSERT] Verify main navigation labels are in Polish
+[NAV] Navigate to a product category page
+[ASSERT] Verify filter labels and CTAs are in Polish
+[NAV] Navigate to a product detail page
+[ASSERT] Verify all labels and buttons are in Polish
+[ASSERT] Verify Polish diacritic characters (ą, ę, ł, ó, ś, ź, ż) render correctly","[DOM] Language switcher shows pl as active
+[DOM] Navigation, buttons, and labels render in Polish
+[STATE] No English fallback text visible
+[DOM] Polish diacritic characters (ą, ę, ł, ó, ś, ź, ż) display correctly — no font fallback boxes (□)
+[DOM] No raw translation keys visible","[CONSOLE] No font-face loading errors or tofu (□) character fallbacks
+[NETWORK] pl locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;font rendering box (□) for non-Latin chars","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-RU-001,Russian (ru) - Cyrillic Display,Localization > Russian,Medium,"BL-L10N-001, BL-L10N-003",ECL-8.1,- Russian language available in storefront language switcher,"language=ru;url={{FRONT_URL}}","[ACT] Open language switcher and select Russian (ru)
+[WAIT] Wait for page to reload with ru locale
+[NAV] Navigate to {{FRONT_URL}} homepage
+[ASSERT] Verify main navigation labels are in Russian Cyrillic
+[NAV] Navigate to a product category page
+[ASSERT] Verify filter labels and CTAs are in Russian Cyrillic
+[NAV] Navigate to a product detail page
+[ASSERT] Verify all labels and buttons are in Russian Cyrillic
+[ASSERT] Verify Cyrillic characters render correctly without font fallback boxes
+[ASSERT] Verify button and container sizes accommodate Cyrillic text width","[DOM] Language switcher shows ru as active
+[DOM] Navigation, buttons, and labels render in Russian Cyrillic
+[STATE] No English fallback text visible
+[DOM] Cyrillic characters display correctly — no font fallback boxes (□) or encoding artifacts
+[DOM] Buttons are sized to accommodate Cyrillic text — no clipping
+[DOM] No raw translation keys visible","[CONSOLE] No font-face loading errors or tofu (□) character fallbacks
+[NETWORK] ru locale file loads successfully
+[NETWORK] No encoding errors in network responses (check Content-Type: charset=utf-8)","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;font rendering box (□) for non-Latin chars;Cyrillic text clipped in fixed-width buttons","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-JA-001,Japanese (ja) - Character Display,Localization > Japanese,Medium,"BL-L10N-001, BL-L10N-003",ECL-8.1,- Japanese language available in storefront language switcher,"language=ja;url={{FRONT_URL}}","[ACT] Open language switcher and select Japanese (ja)
+[WAIT] Wait for page to reload with ja locale
+[NAV] Navigate to {{FRONT_URL}} homepage
+[ASSERT] Verify main navigation labels display Japanese characters
+[NAV] Navigate to a product category page
+[ASSERT] Verify filter labels, sort options, and CTAs display Japanese characters
+[NAV] Navigate to a product detail page
+[ASSERT] Verify kanji, hiragana, and katakana all render correctly in product descriptions and labels
+[ASSERT] Verify text wrapping is correct for vertical and horizontal Japanese text","[DOM] Language switcher shows ja as active
+[DOM] Navigation and UI labels render Japanese characters (kanji, hiragana, katakana)
+[STATE] No English fallback text visible
+[DOM] Kanji, hiragana, and katakana all display without font fallback boxes (□)
+[DOM] Text wrapping respects Japanese word-break rules — no broken mid-character splits
+[DOM] No raw translation keys visible","[CONSOLE] No font-face loading errors or tofu (□) character fallbacks
+[NETWORK] ja locale file and any CJK font resources load successfully","English text visible in non-English UI;font rendering box (□) for non-Latin chars;Japanese characters broken across lines mid-character","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-ZH-001,Chinese (zh) - Character Display,Localization > Chinese,Medium,"BL-L10N-001, BL-L10N-003",ECL-8.1,- Chinese language available in storefront language switcher,"language=zh;url={{FRONT_URL}}","[ACT] Open language switcher and select Chinese (zh)
+[WAIT] Wait for page to reload with zh locale
+[NAV] Navigate to {{FRONT_URL}} homepage
+[ASSERT] Verify main navigation labels display Chinese characters
+[NAV] Navigate to a product category page
+[ASSERT] Verify filter labels and CTAs display Chinese characters
+[NAV] Navigate to a product detail page
+[ASSERT] Verify Chinese characters (simplified and/or traditional as configured) render correctly
+[ASSERT] Verify text fits within all UI containers — Chinese characters are typically wider than Latin characters","[DOM] Language switcher shows zh as active
+[DOM] Navigation, buttons, and labels render Chinese characters
+[STATE] No English fallback text visible
+[DOM] Chinese characters display correctly — no font fallback boxes (□) or encoding artifacts
+[DOM] Text fits within containers — proper font rendering at expected character dimensions
+[DOM] No raw translation keys visible","[CONSOLE] No font-face loading errors or tofu (□) character fallbacks
+[NETWORK] zh locale file and any CJK font resources load successfully","English text visible in non-English UI;font rendering box (□) for non-Latin chars;Chinese characters overflowing fixed-width containers","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-FLOW-001,Complete Flow - German,Localization > Flows,High,BL-L10N-001,,- German language set via language switcher
+- At least one product available in catalog,"language=de;url={{FRONT_URL}};search_term=product","[ACT] Open language switcher and select German (de)
+[WAIT] Wait for page to reload with de locale
+[ACT] Use the search bar to search for a product (use a generic term)
+[WAIT] Wait for search results to load
+[ASSERT] Verify search results page UI is in German
+[ACT] Click on a product from search results
+[ASSERT] Verify product detail page is in German
+[ACT] Click the Add to Cart button (in German)
+[WAIT] Wait for cart confirmation
+[ASSERT] Verify cart notification/mini-cart shows German text
+[NAV] Navigate to the cart page
+[ASSERT] Verify cart page UI is in German
+[NAV] Navigate to checkout (as far as possible)
+[ASSERT] Verify checkout step labels, form fields, and buttons are in German
+[ACT] Select pickup option if BOPIS available
+[ASSERT] Verify BOPIS modal is in German","[DOM] Language switcher shows de as active throughout the flow
+[DOM] Search results page renders in German
+[DOM] Product detail page renders in German
+[DOM] Cart page — all labels, totals section headers, and CTAs in German
+[DOM] Checkout steps — form field labels, navigation buttons, and section titles in German
+[STATE] No English fallback text at any step of the flow
+[DOM] No raw translation keys visible at any step","[API] search and cart mutations succeed without encoding errors
+[CONSOLE] No JavaScript errors throughout the flow
+[NETWORK] No failed locale resource requests at any step","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Cart or checkout step fails to load in German locale","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-FLOW-002,Complete Flow - Japanese,Localization > Flows,High,"BL-L10N-001, BL-L10N-003",ECL-8.1,"- Japanese language set via language switcher
+- At least one product available in catalog","language=ja;url={{FRONT_URL}}","[ACT] Open language switcher and select Japanese (ja)
+[WAIT] Wait for page to reload with ja locale
+[ACT] Use the search bar to search for a product
+[WAIT] Wait for search results to load
+[ASSERT] Verify search results page UI displays Japanese characters
+[ACT] Click on a product from search results
+[ASSERT] Verify product detail page renders Japanese characters correctly
+[ACT] Click the Add to Cart button
+[WAIT] Wait for cart confirmation
+[ASSERT] Verify cart notification shows Japanese text without character encoding issues
+[NAV] Navigate to cart page
+[ASSERT] Verify cart page renders Japanese text correctly
+[NAV] Navigate to checkout (as far as possible)
+[ASSERT] Verify checkout steps render Japanese characters without encoding issues
+[ASSERT] Verify layout remains intact throughout — no broken containers from CJK character widths","[DOM] Language switcher shows ja as active throughout the flow
+[DOM] Search, PDP, cart, and checkout pages all render Japanese characters
+[STATE] No English fallback text at any step
+[DOM] No font fallback boxes (□) or encoding artifacts at any step
+[DOM] Layout integrity maintained across all steps — no overflow from CJK character dimensions
+[DOM] No raw translation keys visible at any step","[API] search and cart mutations succeed without encoding errors
+[CONSOLE] No font-face loading errors or tofu (□) character fallbacks
+[NETWORK] All requests carry correct UTF-8 encoding headers","English text visible in non-English UI;font rendering box (□) for non-Latin chars;Character encoding errors visible in UI text;Layout broken by CJK character widths","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-ERR-001,Error Messages - Translated,Localization > Errors,Medium,BL-L10N-001,,- Non-English language set (use German as reference)
+- Access to forms that have client-side and server-side validation,"language=de;url={{FRONT_URL}}","[ACT] Open language switcher and select German (de)
+[WAIT] Wait for page to reload with de locale
+[NAV] Navigate to a form with validation (e.g., login page or registration page at {{FRONT_URL}}/account)
+[ACT] Submit the form with an empty required field to trigger a required-field validation error
+[ASSERT] Verify the validation error message is in German
+[ACT] Enter an invalid format in an email or phone field and submit
+[ASSERT] Verify the format error message is in German
+[ACT] Attempt to trigger a server-side error (e.g., login with wrong password)
+[ASSERT] Verify the server-side error message is in German","[DOM] Required-field validation errors display in German
+[DOM] Format validation errors (email, phone) display in German
+[DOM] Server-side error messages (e.g., invalid credentials) display in German
+[STATE] No English error messages visible in German locale
+[DOM] Error messages are clear and contextually meaningful — not just translation keys","[CONSOLE] No JavaScript errors when validation is triggered
+[NETWORK] Error responses from API return messages that can be localised on the frontend","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Server error messages return English text that is not localised","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-DATE-001,Date Formatting - Locale,Localization > Formats,Medium,BL-L10N-002,,- Storefront has date values visible (e.g., order dates, estimated delivery dates, or account activity dates)
+- Both German and US English locales available,"language=de;url={{FRONT_URL}};language_alt=en","[ACT] Set language to German (de)
+[WAIT] Wait for page reload
+[NAV] Navigate to a page displaying date values (e.g., order history at {{FRONT_URL}}/account/orders or a product with availability date)
+[ASSERT] Verify dates display in DD.MM.YYYY format (German locale)
+[ACT] Set language to English (en)
+[WAIT] Wait for page reload
+[NAV] Navigate to the same page displaying date values
+[ASSERT] Verify dates display in MM/DD/YYYY format (US English locale)","[FORMAT] German locale: dates formatted as DD.MM.YYYY (e.g., 15.03.2026)
+[FORMAT] English locale: dates formatted as MM/DD/YYYY (e.g., 03/15/2026)
+[STATE] Date format changes when locale changes — no hardcoded format persisting across locale switch
+[DOM] No raw ISO date strings (e.g., 2026-03-15) displayed without locale formatting","[CONSOLE] No JavaScript errors related to Intl.DateTimeFormat or date parsing
+[NETWORK] No API errors when fetching date-bearing resources in each locale","Dates showing in same format regardless of locale;ISO date strings (YYYY-MM-DD) displayed instead of locale-formatted dates;Date format hardcoded and not responding to locale change","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-NUM-001,Number Formatting - Locale,Localization > Formats,Medium,BL-L10N-002,,- Storefront displays prices with decimal and thousands separators
+- Both German and English locales available with products that have prices over 1,000,"language=de;url={{FRONT_URL}};language_alt=en;test_price_min=1000","[ACT] Set language to German (de)
+[WAIT] Wait for page reload
+[NAV] Navigate to a product category page showing prices
+[ASSERT] Verify prices with thousands use period as thousands separator and comma as decimal (e.g., 1.234,56)
+[ACT] Set language to English (en)
+[WAIT] Wait for page reload
+[NAV] Navigate to the same product category page
+[ASSERT] Verify prices use comma as thousands separator and period as decimal (e.g., 1,234.56)","[FORMAT] German locale: number format 1.234,56 (period thousands, comma decimal)
+[FORMAT] English locale: number format 1,234.56 (comma thousands, period decimal)
+[STATE] Number format changes when locale changes — no hardcoded separators
+[DOM] Currency symbol displayed alongside correctly formatted number
+[DOM] Prices over 1,000 clearly distinguish thousands separators from decimal separators","[CONSOLE] No JavaScript errors related to Intl.NumberFormat
+[NETWORK] Price data from API is returned as numeric values and formatted client-side (not pre-formatted strings)","Prices showing in same format regardless of locale;Thousands separator and decimal separator swapped;Prices not updating format when locale changes","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-TRUNC-001,Text Truncation Check,Localization > Layout,High,BL-L10N-001,,- All supported languages available (minimum 13 languages)
+- Storefront fully accessible in all supported locales,"url={{FRONT_URL}};languages=de|en|es|fr|it|pt|no|sv|fi|pl|ru|ja|zh","[ACT] Set language to German (de) via language switcher
+[ASSERT] Inspect all button labels for text truncation or clipping
+[ASSERT] Inspect main navigation items for truncation
+[ASSERT] Inspect form field labels for truncation
+[ACT] Repeat for Spanish (es): set language, inspect buttons, nav, and labels
+[ACT] Repeat for French (fr): set language, inspect buttons, nav, and labels
+[ACT] Repeat for Finnish (fi): pay extra attention to long compound words in buttons and nav
+[ACT] Repeat for Russian (ru): inspect Cyrillic labels for truncation in fixed-width containers
+[ACT] Repeat for remaining supported languages (it, pt, no, sv, pl, ja, zh)
+[ASSERT] For each language: confirm no text is clipped where it should be fully visible
+[ASSERT] Ellipsis (...) present only where intentionally applied (e.g., product titles in listing cards)","[DOM] No button labels are clipped or show ellipsis due to insufficient container width
+[DOM] Navigation items render fully without truncation in all 13 languages
+[DOM] Form field labels are fully readable in all 13 languages
+[STATE] Any ellipsis observed is intentional (documented truncation for product card titles, etc.) not caused by insufficient container sizing
+[DOM] No overflow: hidden hiding readable content in any locale","[CONSOLE] No layout overflow errors or CSS overflow warnings
+[NETWORK] All locale files load successfully for all 13 languages","Text truncated or overflowing containers;Ellipsis appearing on button labels that should show full text;Navigation items hidden due to overflow in non-English locales","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-LAYOUT-001,Layout Integrity - Long Text,Localization > Layout,High,BL-L10N-001,,- Languages with characteristically long words/text available: Finnish, German, Russian,"url={{FRONT_URL}};languages=fi|de|ru","[ACT] Set language to Finnish (fi)
+[WAIT] Wait for page reload
+[NAV] Navigate through homepage, category page, and PDP
+[ASSERT] Verify layouts remain intact — long Finnish compound words do not break containers
+[ASSERT] Verify text wraps appropriately within cards, modals, and buttons
+[ACT] Set language to German (de)
+[WAIT] Wait for page reload
+[NAV] Navigate through homepage, category page, and PDP
+[ASSERT] Verify layouts remain intact with German long words
+[ASSERT] Verify no horizontal scrollbars appear due to overflowing text
+[ACT] Set language to Russian (ru)
+[WAIT] Wait for page reload
+[NAV] Navigate through homepage, category page, and PDP
+[ASSERT] Verify Cyrillic text wraps correctly and does not break grid or flex layouts
+[ASSERT] Verify no overflow issues across any tested locale","[DOM] All grid and flex layouts remain intact across Finnish, German, and Russian locales
+[DOM] Text wraps appropriately within bounded containers — no text escaping parent boundaries
+[DOM] No horizontal scrollbars appear caused by overflowing text in any locale
+[DOM] Cards, modals, and buttons maintain their intended dimensions across all tested locales
+[STATE] No layout shift or reflow errors visible","[CONSOLE] No CSS layout errors or overflow warnings
+[NETWORK] All locale files load successfully","Text overflowing or breaking grid layouts;Horizontal scrollbar appearing due to text overflow;Containers expanding beyond intended dimensions due to long words","Switch language back to English (en) via language switcher",VCST-4499 TC-010,Manual
+L10N-CURR-001,Currency Switcher Visible,Localization > Currency,Medium,BL-L10N-004,,Store configured with multiple currencies enabled,"url={{FRONT_URL}};currencies=USD|EUR","[NAV] Navigate to {{FRONT_URL}} homepage
+[ASSERT] Check the header area for a currency switcher control
+[SCROLL] Scroll to the footer if currency switcher not found in header
+[ASSERT] Verify currency switcher is present in header or footer
+[ACT] Click or tap the currency switcher
+[WAIT] Wait for the currency list to open
+[ASSERT] Verify list of available currencies appears
+[ASSERT] Verify the currently active currency is visually indicated as selected
+[ASSERT] Verify all store-configured currencies are listed (minimum: USD, EUR)
+[KEY] Press Tab to navigate to the currency switcher
+[ASSERT] Verify the currency switcher is reachable and operable via keyboard","[DOM] Currency switcher control is visible in header or footer
+[DOM] Clicking/tapping the switcher opens a list of available currencies
+[STATE] Current active currency is shown as selected in the list
+[DOM] All store-configured currencies listed — minimum USD and EUR present
+[DOM] Currency switcher is reachable via keyboard Tab navigation and operable via Enter/Space","[API] cart price query returns amount in selected currency
+[CONSOLE] No JavaScript errors when opening currency switcher","Currency switcher not visible in header or footer;Switcher opens but shows empty list;Active currency not highlighted in the list;Currency switcher not keyboard accessible","Switch currency back to USD",VCST-4499 TC-010;Coverage Gap Analysis,Manual
+L10N-CURR-002,Switch to EUR,Localization > Currency,Medium,BL-L10N-004,,"Store configured with USD and EUR, currently displaying USD","url={{FRONT_URL}};from_currency=USD;to_currency=EUR","[NAV] Navigate to a product category page showing prices in USD
+[ASSERT] Note a product price displayed in USD (e.g., $100.00) as baseline
+[ACT] Open the currency switcher
+[ACT] Select EUR from the currency list
+[WAIT] Wait for prices to update on the current page
+[ASSERT] Verify all product prices on the category page now display in EUR
+[ASSERT] Verify the currency symbol changed from $ to the euro symbol
+[NAV] Navigate to the cart page (if items are present in cart)
+[ASSERT] Verify cart line item prices are in EUR
+[ASSERT] Verify cart total is in EUR
+[ASSERT] Verify mini-cart header shows EUR amounts","[DOM] All product prices on category page convert to EUR after selection
+[DOM] Currency symbol changes from $ to euro symbol
+[DOM] Cart line item prices and totals shown in EUR
+[DOM] Mini-cart header reflects EUR amounts
+[MATH] Exchange rate applied consistently — all prices on the page reflect the same rate
+[STATE] USD prices no longer visible after switching to EUR","[API] cart price query returns amount in selected currency
+[CONSOLE] No JavaScript errors during currency switch
+[NETWORK] No failed requests when prices are re-fetched in EUR","prices revert to USD after navigation;Currency symbol not updating after switch;EUR symbol not displayed (raw ""EUR"" text shown instead)","Switch currency back to USD",VCST-4499 TC-010;Coverage Gap Analysis,Manual
+L10N-CURR-003,Currency Persists Across Navigation,Localization > Currency,Medium,BL-L10N-004,,"Store with multiple currencies, EUR selected","url={{FRONT_URL}};currency=EUR","[ACT] Switch currency to EUR via the currency switcher
+[WAIT] Wait for prices to update
+[NAV] Navigate to a different product category page
+[ASSERT] Verify prices on the new category page are displayed in EUR
+[NAV] Navigate to a product detail page (PDP)
+[ASSERT] Verify PDP price is displayed in EUR
+[KEY] Press F5 to refresh the page
+[WAIT] Wait for page to fully reload
+[ASSERT] Verify EUR is still the selected currency after page refresh
+[ASSERT] Verify prices on the refreshed page remain in EUR","[STATE] EUR prices shown on category page after navigating away from initial page
+[STATE] EUR prices shown on product detail page
+[STATE] Currency preference persists across page navigation — no reversion to USD
+[STATE] Currency preference persists after browser page refresh
+[STATE] No reversion to USD on navigation or refresh","[API] cart price query returns amount in selected currency
+[CONSOLE] No JavaScript errors related to currency state persistence
+[NETWORK] Currency preference stored (check cookie or localStorage for currency value)","prices revert to USD after navigation;EUR not persisted after page refresh;Currency selection lost on navigation to a different section","Switch currency back to USD",VCST-4499 TC-010;Coverage Gap Analysis,Manual
+L10N-CURR-004,Checkout in Selected Currency,Localization > Currency,Medium,BL-L10N-004,,"Store with multiple currencies, EUR selected, product in cart","url={{FRONT_URL}};currency=EUR","[ACT] Switch currency to EUR via the currency switcher
+[ACT] Add a product to the cart
+[WAIT] Wait for cart confirmation
+[NAV] Navigate to the cart page
+[ASSERT] Verify cart line items and total are shown in EUR
+[NAV] Proceed to checkout
+[ASSERT] Verify shipping step shows estimated shipping cost in EUR
+[NAV] Navigate to payment step
+[ASSERT] Verify payment amount shown on payment step is in EUR
+[NAV] Navigate to order review page
+[ASSERT] Verify order review total is in EUR
+[ACT] Place the order
+[WAIT] Wait for order confirmation page
+[ASSERT] Verify order confirmation shows EUR total
+[NAV] Navigate to Order History in account ({{FRONT_URL}}/account/orders)
+[ASSERT] Verify the new order record shows EUR currency and amount","[STATE] All checkout step amounts (shipping, payment, review) shown in EUR
+[MATH] Payment amount charged matches order review EUR total
+[DOM] Order confirmation page shows EUR total — not USD
+[STATE] Order History record shows EUR currency code/symbol and correct EUR amount
+[STATE] No currency mismatch between any checkout step and the confirmation","[API] cart price query returns amount in selected currency
+[CONSOLE] No JavaScript errors during checkout in non-default currency
+[NETWORK] Payment request payload contains EUR currency code","prices revert to USD after navigation;Currency mismatch between checkout and order confirmation;Order History showing USD instead of EUR for the placed order","Switch currency back to USD",VCST-4499 TC-010;Coverage Gap Analysis,Manual
+L10N-CURR-005,Currency Symbol Display,Localization > Currency,Medium,BL-L10N-004,,"Store configured with USD, EUR, and GBP currencies","url={{FRONT_URL}};currencies=USD|EUR|GBP","[ACT] Set currency to USD via the currency switcher
+[NAV] Navigate to any product page
+[ASSERT] Note the currency symbol and number format displayed (expected: $1,234.56)
+[ACT] Set currency to EUR via the currency switcher
+[NAV] Navigate to the same product page
+[ASSERT] Note the euro symbol and number format displayed (expected: euro symbol with locale-appropriate formatting)
+[ACT] Set currency to GBP via the currency switcher
+[NAV] Navigate to the same product page
+[ASSERT] Note the pound symbol and number format displayed (expected: pound symbol with locale-appropriate formatting)
+[ASSERT] Compare symbol placement for each: verify correct prefix or suffix position per currency locale convention
+[ASSERT] Verify no raw currency code (USD, EUR, GBP) is displayed as a substitute for the symbol","[FORMAT] USD: $ symbol as prefix, format $1,234.56
+[FORMAT] EUR: euro symbol displayed, format follows locale convention (e.g., 1.234,56 euro symbol or euro symbol 1,234.56 depending on locale)
+[FORMAT] GBP: pound symbol as prefix, format follows locale convention
+[DOM] Symbol placement correct for each currency — prefix or suffix as per international convention
+[DOM] No raw currency ISO code (USD/EUR/GBP) displayed instead of the currency symbol
+[FORMAT] Decimal and thousands separators correct per currency locale for each of the three currencies","[API] cart price query returns amount in selected currency
+[CONSOLE] No JavaScript errors related to Intl.NumberFormat during currency formatting
+[NETWORK] Currency symbol data loaded correctly for all three currencies","prices revert to USD after navigation;Raw currency code (e.g., USD) shown instead of symbol;Symbol on wrong side (e.g., 1,234.56$ instead of $1,234.56);Separators incorrect for the selected currency","Switch currency back to USD",VCST-4499 TC-010;Coverage Gap Analysis,Manual

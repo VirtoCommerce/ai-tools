@@ -271,11 +271,11 @@ Push notifications are configured at platform level via `appsettings.json` using
 
 ## Regression Suites
 
-- **Suite 05** — Frontend BOPIS: `regression/suites/Frontend/05-bopis.csv`
-- **Suite 29** — Backend Store Settings: `regression/suites/Backend/29-store-settings.csv`
-- **Suite 33** — Backend Push Messages: `regression/suites/Backend/33-push-messages.csv`
-- Quotes covered in suite 04c (Orders & Quotes) and suite 15 (GraphQL xAPI)
-- Covered by suite 14 (Platform API) for REST `/api/stores` endpoints
+- **Suites 036-038** — Frontend BOPIS: `regression/suites/Frontend/bopis/`
+- **Suites 034-035** — Backend Store: `regression/suites/Backend/store/`
+- **Suite 068** — Backend Push Messages: `regression/suites/Backend/push-messages/068-push-messages.csv`
+- Quotes covered in suite 015 (`Frontend/orders/015-quotes.csv`) and suite 050 (GraphQL xAPI)
+- Covered by suite 049 (Platform API) for REST `/api/stores` endpoints
 
 ## Sources
 

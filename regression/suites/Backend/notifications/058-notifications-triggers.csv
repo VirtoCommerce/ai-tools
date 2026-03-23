@@ -1,0 +1,69 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"NOTIF-004","Add default recipient for notification","Notification Recipients","High",,,"Admin logged in",,"1. Navigate to Notifications
+2. Select a notification type
+3. Add default recipient email
+4. Save",,,,,"C207584",
+"NOTIF-005","Notification added to feed","Notification Feed","High",,,"Notification feed enabled",,"1. Trigger a notification event (e.g. new order)
+2. Navigate to Notification feed",,,,,"C207585",
+"NOTIF-011","Registration notification template","Account Notifications","Critical",,,"Platform configured with registration notification",,"1. Register a new user on storefront
+2. Check email inbox",,,,,"C207386",
+"NOTIF-012","Registration invitation notification","Account Notifications","High",,,"Invitation feature enabled",,"1. Send registration invitation from Admin
+2. Check recipient email inbox",,,,,"C207600",
+"NOTIF-013","Password reset notification","Account Notifications","High",,,"User account exists",,"1. Request password reset on storefront
+2. Check email inbox",,,,,"C207610",
+"NOTIF-014","Password reset limit enforcement","Account Notifications","High",,,"User account exists",,"1. Request password reset multiple times exceeding limit
+2. Attempt another reset",,,,,"C307517",
+"NOTIF-015","Email confirmation notification","Account Notifications","High",,,"Email verification enabled",,"1. Register new user or change email
+2. Check inbox for confirmation email",,,,,"C340946",
+"NOTIF-016","Two-factor authentication email","Account Notifications","High",,,"2FA via email configured",,"1. Login with 2FA-enabled account
+2. Check email for verification code",,,,,"C254245",
+"NOTIF-017","Organization registration notification","Account Notifications","High",,,"Organization registration enabled",,"1. Register a new organization on storefront
+2. Check admin/email notifications",,,,,"C340947",
+"NOTIF-018","Enable abandoned cart notifications (global)","Abandoned Cart","High",,,"Admin logged in; notifications module",,"1. Navigate to Settings > Notifications
+2. Enable abandoned cart notifications globally
+3. Save",,,,,"C394634",
+"NOTIF-019","Trigger abandoned cart email after default time","Abandoned Cart","High",,,"Abandoned cart notifications enabled; cart exists",,"1. Create a cart with items
+2. Wait for default reminder time (5 days or configured)
+3. Check email",,,,,"C394637",
+"NOTIF-020","Custom reminder time for abandoned cart","Abandoned Cart","Medium",,,"Admin logged in",,"1. Navigate to abandoned cart settings
+2. Set custom reminder time
+3. Save and trigger",,,,,"C394638",
+"NOTIF-021","Create order notification","Order Notifications","Critical",,,"Order notification template configured",,"1. Create a new order
+2. Check email for order confirmation",,,,,"C208255",
+"NOTIF-022","Cancel order notification","Order Notifications","High",,,"Order exists; cancellation template configured",,"1. Cancel an existing order
+2. Check email for cancellation notification",,,,,"C208256",
+"NOTIF-023","Order paid notification","Order Notifications","High",,,"Payment notification template configured",,"1. Mark order payment as Paid
+2. Check email",,,,,"C208259",
+"NOTIF-024","Order sent notification","Order Notifications","High",,,"Shipment notification template configured",,"1. Change shipment status to Sent
+2. Check email",,,,,"C208260",
+"NOTIF-025","Invoice notification for customer","Order Notifications","High",,,"Invoice template configured",,"1. Generate invoice for an order
+2. Check customer email",,,,,"C208262",
+"NOTIF-026","Shipment status change notification - PickPack","Order Status Notifications","Medium",,,"Shipment status notification template set",,"1. Change shipment document status to PickPack
+2. Check notification",,,,,"C357104",
+"NOTIF-027","Shipment status change notification - Sent","Order Status Notifications","Medium",,,"Shipment status notification template set",,"1. Change shipment document status to Sent
+2. Check notification",,,,,"C357107",
+"NOTIF-028","Payment status change notification - Paid","Order Status Notifications","Medium",,,"Payment status notification template set",,"1. Change payment document status to Paid
+2. Check notification",,,,,"C357116",
+"NOTIF-029","Payment status change notification - Refunded","Order Status Notifications","Medium",,,"Payment status notification template set",,"1. Change payment document status to Refunded
+2. Check notification",,,,,"C357109",
+"NOTIF-030","SMS notification - phone number change","SMS Notifications","High",,,"SMS gateway configured",,"1. Configure SMS notification gateway
+2. Trigger phone number change event
+3. Check SMS delivery",,,,,"C207563",
+"NOTIF-031","SMS notification - two-factor authentication","SMS Notifications","High",,,"SMS 2FA configured",,"1. Configure SMS as 2FA method
+2. Login with 2FA-enabled account
+3. Check SMS",,,,,"C251791",
+"NOTIF-046","Predefined notification - edit and restore","Predefined Notifications","High",,,"Predefined notification template exists",,"1. Open predefined notification
+2. Edit template content
+3. Save
+4. Click Restore",,,,,"C255756 C255757",
+"NOTIF-047","Send edited predefined template","Predefined Notifications","Medium",,,"Predefined template has been edited",,"1. Edit predefined template
+2. Send to test email",,,,,"C255758",
+"NOTIF-053","Notification Attachment — No Attachment","Notification Attachments","High",,,"Admin logged in to Backend
+Notification template exists without attachments",,"1. Navigate to ${BACK_URL}/notifications
+2. Select a notification type that has no attachments configured
+3. Open the notification template details blade
+4. Verify the Attachments widget or section is visible
+5. Verify the attachment list is empty
+6. Verify the UI indicates the no-attachment state clearly (e.g., empty state message)
+7. Send a test notification from this template
+8. Verify the received email has no file attachments",,,,,"C342062",

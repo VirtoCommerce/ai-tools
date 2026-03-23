@@ -45,6 +45,7 @@
     "@anthropic-ai/claude-agent-sdk": "^0.1.0",
     "@playwright/test": "^1.55.0",
     "@types/node": "^22.19.10",
+    "csv-stringify": "^6.7.0",
     "playwright": "^1.55.0",
     "tsx": "^4.0.0"
   }

@@ -1,0 +1,292 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"MKT-018","xAPI: Published content queries","Marketing > xAPI Dynamic Content","High",,,"Admin logged in to Backend
+xAPI endpoint accessible",,"1. Add published content in admin > Check xAPI query returns data
+2. Add Content Items to publishing > Check query
+3. Set Is Active = False > Check query returns empty
+4. Set Is Active = True > Check query returns data",,,,,"C352334-C352337",
+"MKT-019","xAPI: Store/placeholder/content/date changes","Marketing > xAPI Dynamic Content","Medium",,,"Admin logged in to Backend
+Published content exists",,"1. Change StoreId > Check xAPI query
+2. Change Placeholder > Check query
+3. Change Content item > Check query
+4. Set Start Date > Check query
+5. Set End Date > Check query",,,,,"C352338-C352345",
+"MKT-020","xAPI: Publishing conditions (category/product/user groups/tags)","Marketing > xAPI Dynamic Content","Medium",,,"Admin logged in to Backend
+Published content exists",,"1. Set Category condition > Check xAPI query
+2. Set Product condition > Check query
+3. Set User groups condition > Check query
+4. Assign tag on category > Set for publish content > Check query",,,,,"C352341-C352346",
+"MKT-037","Add coupon with validation","Marketing > Coupons","Critical",,,"Admin logged in to Backend",,"1. Navigate to Marketing > Promotions > Coupon management
+2. Click 'Add'
+3. Try to create without required fields > Verify validation
+4. Fill all fields (code, max uses, max per user)
+5. Click 'Create'",,,,,"C184605 C184622",
+"MKT-038","Edit coupon (code/max uses/max per user)","Marketing > Coupons","High",,,"Admin logged in to Backend
+Coupon exists [MKT-037]",,"1. Edit coupon code > Save
+2. Edit 'Maximum uses number' > Save
+3. Edit 'Maximum uses per user' > Save",,,,,"C184606 C184624 C184625",
+"MKT-039","Delete coupon and search","Marketing > Coupons","High",,,"Admin logged in to Backend
+Coupons exist",,"1. Delete via bulk delete > Confirm
+2. Search for coupon by code",,,,,"C184626 C184627",
+"MKT-040","Import coupons (valid and invalid files)","Marketing > Coupons","Medium",,,"Admin logged in to Backend
+CSV files prepared",,"1. Import valid file > Add new coupons > Verify created
+2. Import valid file > Update existing coupons > Verify updated
+3. Import invalid: missing coupon_code column > Verify error
+4. Import invalid: missing max_uses_number column > Verify error
+5. Import invalid: wrong delimiter > Verify error
+6. Import invalid: text in max_uses_number > Verify error",,,,,"C184628-C184633",
+"MKT-041","Personal coupon assignment (organization/user/anonymous)","Marketing > Coupons","High",,,"Admin logged in to Backend and Storefront
+Personal coupon exists
+Organization with members exists",,"1. Assign coupon to organization > Check via org member > Verify works
+2. Assign to organization > Check via anonymous > Verify not applied
+3. Assign to organization > Check via non-member > Verify not applied
+4. Assign to user > Check via that user > Verify works
+5. Assign to user > Check via another user > Verify not applied
+6. No assignment > Check via various users > Verify behavior",,,,,"C359150-C359158",
+"MKT-042","Coupon applied in storefront","Marketing > Coupon Logic","High",,,"Admin logged in to Backend and Storefront
+Coupon with promotion exists",,"1. Add coupon code in storefront cart
+2. Verify promotion is applied",,,,,"C184635",
+"MKT-043","Coupon expiration and usage limits","Marketing > Coupon Logic","Medium",,,"Admin logged in to Backend and Storefront
+Coupon exists",,"1. Set expiration in past > Try on storefront > Verify not applied
+2. Set expiration in future > Verify applied
+3. Set uses < max uses > Verify applied
+4. Set uses >= max uses > Verify not applied
+5. Set uses per user > max per user > Verify not applied
+6. Set uses per user < max per user > Verify applied",,,,,"C184636-C184641",
+"MKT-046","Permission > Access","Marketing > Permissions","High",,,"Role_1 with marketing:access
+Role_1 assigned to User_1",,"1. Login as User_1
+2. Open Marketing module",,,,,"C241402",
+"MKT-047","Permission > Read","Marketing > Permissions","High",,,"Role_1 with marketing:read, marketing:access
+Role_1 assigned to User_1",,"1. Login as User_1
+2. View marketing entities",,,,,"C241407",
+"MKT-048","Permission > Create","Marketing > Permissions","High",,,"Role_1 with marketing:create, marketing:read, marketing:access
+Role_1 assigned to User_1",,"1. Login as User_1
+2. Create new promotion/content",,,,,"C241408",
+"MKT-049","Permission > Update","Marketing > Permissions","High",,,"Role_1 with marketing:update, marketing:read, marketing:access
+Role_1 assigned to User_1",,"1. Login as User_1
+2. Edit existing entity > Save",,,,,"C241409",
+"MKT-050","Permission > Delete","Marketing > Permissions","High",,,"Role_1 with marketing:delete, marketing:read, marketing:access
+Role_1 assigned to User_1",,"1. Login as User_1
+2. Delete marketing entity",,,,,"C241410",
+"MKT-065","xAPI Marketing Content Query — Query Active Content via GraphQL","Marketing > xAPI Dynamic Content","High",,,"Admin logged in to Backend
+Active content publishing exists with Is Active = TRUE
+xAPI endpoint accessible",,"1. Navigate to ${BACK_URL}/marketing/dynamicContent and ensure content publishing is active
+2. Open GraphQL playground or API client targeting the xAPI endpoint
+3. Query for dynamic content items using the appropriate xAPI query
+4. Verify the response includes the active content item
+5. Set Is Active = FALSE on the content publishing in admin
+6. Re-execute the GraphQL query
+7. Verify the response does not include the now-inactive content
+8. Re-enable Is Active = TRUE and verify content returns in query
+9. Verify query results match the admin configuration exactly",,,,,"C352338",
+"MKT-067","Create dynamic association (CRUD)","Marketing > Dynamic Associations","High",,,"Admin logged in to Backend
+VirtoCommerce.DynamicAssociationsModule installed and active",,"1. Navigate to Marketing > Dynamic Associations
+2. Click 'Add' to open the new association blade
+3. Enter Name (e.g., 'Cross-sell Electronics')
+4. Set Group (e.g., 'Related Products')
+5. Set Priority to 10
+6. Verify 'aActive' toggle is ON by default (note: column header has known typo 'aActive')
+7. Configure association rules: select source category and target category
+8. Click 'Save'
+9. Verify the association appears in the list grid with correct Name, Group, Priority, and Active status
+10. Reopen the association blade and verify all fields persisted correctly",,,,,"",
+"MKT-068","Edit dynamic association","Marketing > Dynamic Associations","High",,,"Admin logged in to Backend
+Dynamic association exists [MKT-067]",,"1. Navigate to Marketing > Dynamic Associations
+2. Open an existing dynamic association from the grid
+3. Edit the Name field to a new value (e.g., 'Updated Cross-sell')
+4. Save and verify the name change persisted
+5. Reopen and change the Group field to a different value
+6. Save and verify
+7. Reopen and change Priority from 10 to 50
+8. Save and verify priority updated in the grid
+9. Toggle Active state from ON to OFF
+10. Save and verify the Active column reflects the change",,,,,"",
+"MKT-069","Delete dynamic association (single and bulk)","Marketing > Dynamic Associations","High",,,"Admin logged in to Backend
+Multiple dynamic associations exist",,"1. Navigate to Marketing > Dynamic Associations
+2. Select a single association via checkbox
+3. Click 'Delete' toolbar button > Confirm deletion
+4. Verify the association is removed from the grid
+5. Create 3 new associations for bulk delete test
+6. Select all 3 associations via checkboxes
+7. Click 'Delete' toolbar button > Confirm bulk deletion
+8. Verify all 3 associations are removed from the grid
+9. Verify the total count in the grid updates correctly",,,,,"",
+"MKT-070","Search dynamic associations","Marketing > Dynamic Associations","Medium",,,"Admin logged in to Backend
+Multiple dynamic associations exist with different names",,"1. Navigate to Marketing > Dynamic Associations
+2. Enter a partial name in the search bar (e.g., 'Cross')
+3. Verify the grid filters to show only matching associations
+4. Enter the full exact name and verify single result
+5. Enter a non-matching term (e.g., 'ZZZZNOTEXIST')
+6. Verify the grid shows empty state or no results
+7. Clear the search field and verify the full list is restored
+8. Verify pagination works: if more than one page of results, navigate to page 2 and back",,,,,"",
+"MKT-071","Evaluate dynamic association rules via API","Marketing > Dynamic Associations","High",,,"Admin logged in to Backend
+Dynamic association with configured rules exists [MKT-067]
+Products exist in the configured source and target categories",,"1. Create a dynamic association with source category 'Electronics' and target category 'Accessories'
+2. Set the association to Active and save
+3. Send POST request to /api/dynamicassociations/evaluate with body:
+   { ""productId"": ""<source-product-id>"", ""group"": ""Related Products"", ""storeId"": ""${STORE_ID}"" }
+4. Verify HTTP 200 response with array of recommended product IDs from the target category
+5. Send the same request with a productId NOT in the source category
+6. Verify the response returns empty array or no matching associations
+7. Set the association to Inactive and repeat step 3
+8. Verify inactive association returns no results",,,,,"",
+"MKT-072","Preview dynamic association results via API","Marketing > Dynamic Associations","High",,,"Admin logged in to Backend
+Dynamic association with configured rules exists [MKT-067]",,"1. Open an existing dynamic association in the admin blade
+2. Send POST request to /api/dynamicassociations/preview with the association configuration payload
+3. Verify HTTP 200 response with preview of matching products
+4. Modify the association rules (change target category) without saving
+5. Send another preview request with the modified payload
+6. Verify preview results reflect the modified rules (not the saved state)
+7. Send preview with invalid/empty rules
+8. Verify graceful error handling (HTTP 400 or empty result, not 500)",,,,,"",
+"MKT-073","Priority ordering between dynamic associations","Marketing > Dynamic Associations","High",,,"Admin logged in to Backend
+Two dynamic associations exist for the same source category with different priorities",,"1. Create Association A: source='Electronics', target='Accessories', Priority=10, Active=TRUE
+2. Create Association B: source='Electronics', target='Cables', Priority=20, Active=TRUE
+3. Send POST /api/dynamicassociations/evaluate for a product in Electronics
+4. Verify results include products from both Accessories and Cables
+5. Note the ordering of results: higher priority (lower number) association results should appear first
+6. Change Association A Priority to 30 (lower priority than B)
+7. Re-evaluate and verify Association B results now appear first
+8. Set both associations to the same priority and verify both still return results",,,,,"",
+"MKT-074","Active/inactive toggle excludes from evaluate results","Marketing > Dynamic Associations","High",,,"Admin logged in to Backend
+Dynamic association exists [MKT-067] with Active=TRUE",,"1. Navigate to Marketing > Dynamic Associations
+2. Open the existing active association
+3. Send POST /api/dynamicassociations/evaluate and confirm results are returned
+4. Toggle the Active switch to OFF (inactive)
+5. Save the association
+6. Verify the 'aActive' column in the grid shows inactive state
+7. Send the same POST /api/dynamicassociations/evaluate request
+8. Verify the response returns no results from this association
+9. Toggle Active back to ON and save
+10. Re-evaluate and confirm results are returned again",,,,,"",
+"MKT-075","Delete store with assigned promotions","Marketing > Data Integrity","High",,,"Admin logged in to Backend
+Promotion assigned to a specific store exists
+KNOWN BUG: 'Clothing store main page slider' content publishing has broken store reference showing 'Error: Not found'",,"1. Navigate to Marketing > Promotions
+2. Note a promotion assigned to a specific store (e.g., 'Electronics Store')
+3. Navigate to Stores module and attempt to delete that store
+4. Observe the behavior: does deletion succeed, fail, or warn?
+5. If deletion succeeds: return to Marketing > Promotions
+6. Open the promotion that was assigned to the deleted store
+7. Verify the Store field behavior (empty, error, or graceful fallback)
+8. Check for 'Error: Not found' similar to the known broken store reference in 'Clothing store main page slider'
+9. Verify the promotion can still be edited and reassigned to another store",,,,,"",
+"MKT-076","Delete content placeholder linked to published content","Marketing > Data Integrity","Medium",,,"Admin logged in to Backend
+Content publishing exists with a linked placeholder [MKT-012]",,"1. Navigate to Marketing > Dynamic Content > Content Publishing
+2. Open an existing publishing and note the linked placeholder name
+3. Navigate to Marketing > Dynamic Content > Placeholders
+4. Delete the linked placeholder > Confirm
+5. Return to the content publishing that referenced the deleted placeholder
+6. Open the publishing blade and inspect the placeholder reference
+7. Verify behavior: does it show empty, error, or orphaned reference?
+8. Check storefront to verify no broken content renders
+9. Verify the publishing can still be edited and a new placeholder assigned",,,,,"",
+"MKT-077","Delete content item referenced in publication","Marketing > Data Integrity","Medium",,,"Admin logged in to Backend
+Content publishing exists with linked content items [MKT-012]",,"1. Navigate to Marketing > Dynamic Content > Content Publishing
+2. Open an existing publishing and note the linked content item(s)
+3. Navigate to Marketing > Dynamic Content > Content Items
+4. Delete the linked content item > Confirm
+5. Return to the content publishing that referenced the deleted content item
+6. Open the publishing blade and inspect the content items section
+7. Verify behavior: does it show empty list, error, or orphaned reference?
+8. Query xAPI for the affected publishing's content
+9. Verify xAPI returns empty content (not an error) for the affected publishing",,,,,"",
+"MKT-078","Delete promotion with active coupons","Marketing > Data Integrity","Medium",,,"Admin logged in to Backend
+Promotion with active coupons exists [MKT-037]",,"1. Navigate to Marketing > Promotions
+2. Open a promotion that has active coupons assigned
+3. Note the coupon codes associated with this promotion
+4. Delete the promotion > Confirm
+5. Verify the promotion is removed from the list
+6. Navigate to check if orphaned coupons remain (search for the coupon codes)
+7. Try to use one of the deleted promotion's coupon codes on storefront
+8. Verify the coupon is no longer valid",,,,,"",
+"MKT-079","Promotions search REST API contract","Marketing > REST API","High",,,"Admin logged in to Backend
+Multiple promotions exist (32+ from exploration data)
+API authentication token obtained",,"1. Send POST /api/marketing/promotions/search with body: { ""skip"": 0, ""take"": 10 }
+2. Verify HTTP 200 response with JSON containing 'results' array and 'totalCount'
+3. Verify response schema: each promotion has id, name, store, isActive, startDate, endDate, priority
+4. Verify totalCount matches the actual number of promotions in admin
+5. Test pagination: send with skip=10, take=10 and verify next page of results
+6. Test sorting: send with ""sort"": ""name:asc"" and verify results are alphabetically ordered
+7. Test with skip=0, take=0 and verify response returns totalCount but empty results array
+8. Test with skip exceeding totalCount and verify empty results with correct totalCount
+9. Send request without authentication token and verify HTTP 401",,,,,"",
+"MKT-080","Content items evaluate REST API contract","Marketing > REST API","High",,,"Admin logged in to Backend
+Content publishing exists with placeholder and content items [MKT-012]
+API authentication token obtained",,"1. Send POST /api/marketing/contentitems/evaluate with body:
+   { ""storeId"": ""${STORE_ID}"", ""placeholderName"": ""<existing-placeholder>"", ""cultureName"": ""en-US"" }
+2. Verify HTTP 200 response with array of matching content items
+3. Verify each content item has expected fields: id, name, contentType, dynamicContent
+4. Send request with a non-existent placeholder name
+5. Verify response returns empty array (not 404 or 500)
+6. Send request without storeId
+7. Verify appropriate validation error (HTTP 400 or empty result)
+8. Send request with cultureName for a language with no content
+9. Verify response handles missing localized content gracefully",,,,,"",
+"MKT-081","Promotion CRUD via REST API","Marketing > REST API","High",,,"Admin logged in to Backend
+API authentication token obtained",,"1. POST /api/marketing/promotions with body: { ""name"": ""API Test Promo"", ""store"": ""${STORE_ID}"", ""isActive"": true }
+2. Verify HTTP 200/201 response with created promotion object including generated ID
+3. GET the created promotion by ID and verify all fields match
+4. PUT /api/marketing/promotions with updated name: ""API Test Promo Updated""
+5. Verify HTTP 200/204 response
+6. GET the promotion again and verify name is updated
+7. Test PUT idempotency: send the same PUT request again and verify same result (no duplicate)
+8. DELETE /api/marketing/promotions with the promotion ID
+9. Verify HTTP 200/204 response
+10. GET the deleted promotion and verify HTTP 404
+11. Repeat DELETE on the same ID and verify idempotent behavior (no error or 404)",,,,,"",
+"MKT-082","Coupon import API error handling","Marketing > REST API","Medium",,,"Admin logged in to Backend
+API authentication token obtained
+Test CSV files prepared: valid file, invalid files (missing columns, wrong delimiter, text in numeric fields)",,"1. POST /api/marketing/promotions/coupons/import with a valid CSV file containing coupon_code and max_uses_number columns
+2. Verify HTTP 200 response and coupons are created
+3. POST import with CSV missing the 'coupon_code' column
+4. Verify appropriate error response (HTTP 400) with message about missing required column
+5. POST import with CSV missing the 'max_uses_number' column
+6. Verify appropriate error response about missing column
+7. POST import with CSV using semicolon delimiter instead of comma
+8. Verify error response about invalid format
+9. POST import with CSV containing text values in 'max_uses_number' column
+10. Verify error response about invalid data type
+11. POST import with an excessively large file (1000+ rows)
+12. Verify the import completes or returns a clear size limit error",,,,,"",
+"MKT-083","Dynamic associations evaluate REST API contract","Marketing > REST API","High",,,"Admin logged in to Backend
+Dynamic association with configured rules exists [MKT-067]
+API authentication token obtained",,"1. Send POST /api/dynamicassociations/evaluate with body:
+   { ""productId"": ""<valid-product-id>"", ""group"": ""Related Products"", ""storeId"": ""${STORE_ID}"", ""take"": 10 }
+2. Verify HTTP 200 response with array of associated product IDs
+3. Verify response schema includes expected fields (productId, associatedObjects or results array)
+4. Send request with non-existent productId
+5. Verify response returns empty array (not 404 or 500)
+6. Send request with empty/null group parameter
+7. Verify graceful handling (all groups returned or validation error)
+8. Send request without storeId
+9. Verify validation error response
+10. Send request without authentication and verify HTTP 401",,,,,"",
+"MKT-084","xAPI query with invalid placeholder name","Marketing > xAPI Error Handling","Medium",,,"Admin logged in to Backend
+xAPI endpoint accessible at ${BACK_URL}/ui/graphiql",,"1. Open GraphiQL at ${BACK_URL}/ui/graphiql
+2. Execute a dynamic content query with a valid storeId but invalid/non-existent placeholder name (e.g., 'NONEXISTENT_PLACEHOLDER_999')
+3. Observe the response: check for HTTP status code and response body
+4. Verify the response is NOT an HTTP 500 Internal Server Error
+5. Verify the response returns empty data or a descriptive error message
+6. Execute the query with an empty string placeholder name
+7. Verify graceful error handling (validation error or empty result)
+8. Execute the query with special characters in placeholder name (e.g., '<script>alert(1)</script>')
+9. Verify no XSS reflection and graceful error response",,,,,"",
+"MKT-085","xAPI query without storeId","Marketing > xAPI Error Handling","Medium",,,"Admin logged in to Backend
+xAPI endpoint accessible at ${BACK_URL}/ui/graphiql",,"1. Open GraphiQL at ${BACK_URL}/ui/graphiql
+2. Execute a dynamic content query WITHOUT the storeId parameter
+3. Observe the response for validation error
+4. Verify the error message clearly indicates storeId is required
+5. Execute the query with an empty string storeId
+6. Verify appropriate validation error
+7. Execute the query with a non-existent storeId (e.g., 'FAKE_STORE_ID')
+8. Verify the response returns empty data or store-not-found error
+9. Verify no HTTP 500 errors in any scenario",,,,,"",
+"MKT-086","MarketingExperienceApi Swagger health check","Marketing > xAPI Error Handling","High",,,"Admin logged in to Backend
+KNOWN BUG: This endpoint currently returns HTTP 500",,"1. Navigate to ${BACK_URL}/docs/VirtoCommerce.MarketingExperienceApi/swagger.json
+2. Observe the HTTP response status code
+3. If HTTP 200: verify the response is valid JSON with OpenAPI/Swagger schema
+4. If HTTP 500: document the error response body
+5. Navigate to ${BACK_URL}/docs/index.html
+6. Check if VirtoCommerce.MarketingExperienceApi appears in the Swagger UI module dropdown
+7. If present: click to load and verify the API documentation renders
+8. Check browser console for any JavaScript errors during Swagger load",,,,,"",

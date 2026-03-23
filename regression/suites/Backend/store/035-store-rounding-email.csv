@@ -1,0 +1,285 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"STORE-011","Edit Aggregation Properties - Add/Remove Properties","Store > Aggregation Properties","High","BL-STORE-004","","Admin logged in; Store exists in system","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}","[NAV] Open Store details > Click Aggregation properties widget
+[ACT] Select property from left list and click to add
+[ACT] Click X icon on Selected properties to remove
+[ACT] Click OK to save","[STATE] Filtering properties blade opens with Available and Selected properties lists
+[STATE] Selected property moves to Selected properties list
+[STATE] Property removed from Selected list when deleted
+[STATE] Changes saved successfully","[API] PUT /api/stores/{{STORE_ID}}/aggregation-properties returns 200
+[CONSOLE] No errors on property add/remove
+[ADMIN] Selected properties list reflects changes after save","Property not moving between lists; OK button not saving; API returns 400","restore original settings","C169669","None"
+"STORE-012","Edit Aggregation Properties - Property Details","Store > Aggregation Properties","High","BL-STORE-004","","Admin logged in; Store exists; Aggregation properties configured","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; property_name=Brand","[NAV] Open Aggregation properties for {{STORE_ID}}
+[ACT] Select property from Selected properties list
+[ACT] Review property details: Name (label), Aggregation type dropdown (Attribute/Range), Aggregation size (Attribute only), Allowed values
+[ACT] Enter new value in Allowed values > Click blue field
+[ACT] Delete existing values using X icon
+[ACT] Click OK to save
+[ACT] Make changes and click Cancel > Confirm cancellation","[DOM] Property details blade opens in editable format
+[DOM] Property name is label (not editable)
+[STATE] Aggregation type dropdown shows Attribute and Range
+[STATE] Aggregation size visible only for Attribute type
+[STATE] Allowed values editable (add/remove)
+[STATE] New value added successfully
+[STATE] Existing values deleted
+[STATE] Changes saved on OK
+[DOM] Cancel shows warning message
+[STATE] Changes not saved on Cancel confirmation","[API] PUT /api/stores/{{STORE_ID}}/aggregation-properties returns 200
+[CONSOLE] No errors during property detail edit
+[ADMIN] Property details reflect saved values","Aggregation size visible for Range type; Cancel does not warn; Saved changes not persisted","restore original settings","C169669","None"
+"STORE-013","Edit Aggregation Properties - Edit Attribute with Dictionary","Store > Aggregation Properties","High","BL-STORE-004","","Admin logged in; Brand property exists with dictionary values","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; property=Brand; value_1=BrandValue1","[NAV] Go to Store > Aggregation properties > Select Brand > Edit icon
+[ACT] Click Add button in Allowed values > Select value_1 from dropdown
+[ACT] Remove value_1 using X icon
+[ACT] Click Add > Check value_1 in dictionary
+[ACT] Add all values from dictionary
+[ACT] Remove one value
+[ACT] Remove all values > Save","[STATE] Property details blade opens with Aggregation type Attribute
+[DOM] Allowed values shows Add button
+[STATE] value_1 added from dictionary dropdown
+[STATE] value_1 removed from field
+[STATE] value_1 available in dictionary after removal
+[STATE] All dictionary values can be added
+[STATE] Add button disappears when all values added
+[STATE] Add button reappears after removing value
+[STATE] All values removed successfully","[API] PUT /api/stores/{{STORE_ID}}/aggregation-properties returns 200
+[CONSOLE] No dropdown errors
+[ADMIN] Allowed values list reflects changes","Add button does not hide when all values added; Removed value not returned to dictionary; Save fails","restore original settings","C342153","None"
+"STORE-014","Edit Aggregation Properties - Edit PriceRange","Store > Aggregation Properties","High","BL-STORE-004","","Admin logged in; Store exists; Price property exists","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; range_values=[0-100,100-500,500+]","[NAV] Go to Store > Aggregation properties > Select Price property > Edit icon
+[ACT] Click Add button in Price range bounds > Select value from dropdown
+[ACT] Remove value_1 using X icon > Click OK
+[ACT] Remove all values > Save","[STATE] Property details blade opens with Aggregation type Range
+[STATE] Price range bounds field editable
+[STATE] Add button displays dropdown with available values
+[STATE] New value added to field
+[STATE] value_1 removed from field
+[STATE] All changes saved
+[STATE] All values removed successfully
+[DOM] Add button displayed after deleting all values","[API] PUT /api/stores/{{STORE_ID}}/aggregation-properties with range type
+[CONSOLE] No range calculation errors
+[ADMIN] Price range bounds reflect updated values","Range values not saving; Add button not appearing after full removal; API returns 400","restore original settings","C342152","None"
+"STORE-015","Edit Aggregation Properties - Value Mapping","Store > Aggregation Properties","Medium","BL-STORE-004","","Admin logged in; Store exists","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}","[NAV] Open Aggregation properties for {{STORE_ID}}
+[ACT] Navigate to Value mapping section
+[ACT] Configure value mappings as needed","[STATE] Value mapping section accessible
+[STATE] Mapping configuration functional
+[STATE] Changes saved correctly","[API] PUT /api/stores/{{STORE_ID}}/aggregation-properties includes value mappings
+[CONSOLE] No mapping errors
+[ADMIN] Value mappings persist after save","Value mapping section not accessible; Save returns error; Mappings not persisted","restore original settings","C398720","None"
+"STORE-040","Enable Tax Calculation Setting","Store > Tax Calculation","High","BL-STORE-001","","Admin logged in; Store_1 created; User_1 created for Store_1; Tax Provider configured","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{FRONT_URL}}; store=Store_1; user=User_1","[NAV] Login as Admin at {{BACK_URL}}
+[NAV] Go to Store_1 > Settings panel
+[ACT] Switch on Enable tax calculation
+[ACT] Save
+[NAV] Create order on Storefront at {{FRONT_URL}} as User_1","[STATE] Tax calculation toggle switched on
+[STATE] Setting saved successfully
+[STATE] Taxes calculated according to Tax Provider during checkout","[API] GET /api/stores/Store_1/settings returns taxCalculationEnabled=true
+[NETWORK] Tax provider API called during checkout
+[CONSOLE] No tax calculation errors","Toggle state not saved; Tax provider not called; Tax line missing from checkout total","restore original settings","C237748","None"
+"STORE-041","Disable Tax Calculation Setting","Store > Tax Calculation","High","BL-STORE-001","","Admin logged in; Store_1 created; User_1 created for Store_1","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{FRONT_URL}}; store=Store_1; user=User_1","[NAV] Login as Admin at {{BACK_URL}}
+[NAV] Go to Store_1 > Settings panel
+[ACT] Switch off Enable tax calculation
+[ACT] Save
+[ACT] Clear cache
+[NAV] Create order on Storefront at {{FRONT_URL}} as User_1","[STATE] Tax calculation toggle switched off
+[STATE] Setting saved successfully
+[STATE] Taxes not calculated during checkout","[API] GET /api/stores/Store_1/settings returns taxCalculationEnabled=false
+[NETWORK] No tax provider API calls during checkout
+[CONSOLE] No unexpected tax errors","Tax still shown when disabled; Cache clear not effective; Setting reverts to enabled","restore original settings","C237749","None"
+"STORE-042","Allow Anonymous User Setting","Store > Anonymous User","High","BL-STORE-001","","Admin logged in; Store_1 created; User_1 created but not logged in","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{FRONT_URL}}; store=Store_1","[NAV] Login as Admin at {{BACK_URL}}
+[NAV] Go to Store_1 > Settings panel
+[ACT] Switch on Allow anonymous user for store
+[ACT] Save
+[NAV] Go to Storefront at {{FRONT_URL}} as User_1 (not logged in)
+[ACT] Add product and create order","[STATE] Anonymous user toggle switched on
+[STATE] Setting saved
+[STATE] Catalog opened for anonymous user
+[STATE] User_1 can add product and create order without login","[API] GET /api/stores/Store_1/settings returns allowAnonymousUsers=true
+[NETWORK] Anonymous cart creation returns 200
+[CONSOLE] No auth errors for anonymous session","Anonymous user blocked when toggle ON; Order creation fails for anonymous; Catalog not accessible","restore original settings","C237750","None"
+"STORE-043","Disallow Anonymous User Setting","Store > Anonymous User","High","BL-STORE-001","","Admin logged in; Store_1 created; User_1 created but not logged in","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{FRONT_URL}}; store=Store_1","[NAV] Login as Admin at {{BACK_URL}}
+[NAV] Go to Store_1 > Settings panel
+[ACT] Switch off Allow anonymous user for store
+[ACT] Save
+[NAV] Go to Storefront at {{FRONT_URL}} as User_1 (not logged in)
+[ACT] Attempt to complete checkout","[STATE] Anonymous user toggle switched off
+[STATE] Setting saved
+[STATE] User_1 not allowed to finish checkout without login
+[DOM] Login required message displayed","[API] GET /api/stores/Store_1/settings returns allowAnonymousUsers=false
+[NETWORK] Anonymous checkout request returns 401/403
+[CONSOLE] No unexpected errors","Anonymous user can checkout when disabled; Login prompt not shown; Setting not persisted","restore original settings","C237754","None"
+"STORE-046","Allow Anonymous Users to Create Orders (XAPI) - On","Store > Allow Anonymous Order","High","BL-STORE-001","","Admin logged in; Store exists","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}","[NAV] Go to Store > Settings for {{STORE_ID}}
+[ASSERT] Verify Allow anonymous users to create orders (XAPI) setting
+[ASSERT] Confirm default is True
+[NAV] Go to Storefront at {{FRONT_URL}} as Anonymous
+[ACT] Add products to cart and create order
+[ACT] Open Playground and create order by Anonymous via API","[STATE] Setting Allow anonymous users to create orders (XAPI) is True by default
+[STATE] Anonymous user can create order on Storefront
+[STATE] Order created successfully
+[STATE] Order created via Playground API successfully","[API] POST /xapi/order (anonymous) returns 200
+[NETWORK] Anonymous order request succeeds
+[CONSOLE] No authorization errors","Setting not True by default; Anonymous order rejected on Storefront; API returns Unauthorized","restore original settings","C369081","None"
+"STORE-047","Allow Anonymous Users to Create Orders (XAPI) - Off","Store > Allow Anonymous Order","High","BL-STORE-001","","Admin logged in; Store exists","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}","[NAV] Go to Store > Settings for {{STORE_ID}}
+[ACT] Switch off Allow anonymous users to create orders (XAPI)
+[ACT] Save
+[NAV] Go to Storefront at {{FRONT_URL}} as Anonymous
+[ACT] Add products to cart
+[ACT] Attempt to create order
+[ACT] Open Playground and attempt to create order by Anonymous via API","[STATE] Setting switched off successfully
+[STATE] Anonymous user cannot create order on Storefront
+[STATE] Order creation blocked
+[FORMAT] Playground API returns error_code: Unauthorized
+[STATE] Anonymous order creation prevented","[API] POST /xapi/order (anonymous) returns 401 with error_code: Unauthorized
+[NETWORK] Anonymous order request blocked
+[CONSOLE] Expected authorization error logged","Anonymous order succeeds when disabled; API returns 200 instead of 401; Error code mismatch","restore original settings","C369082","None"
+"STORE-052","Email Address Verification Setting Available","Store > Email Verification","Medium","BL-STORE-001","","Admin logged in; Store exists","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}","[NAV] Go to Store module at {{BACK_URL}}
+[ACT] Open any store
+[ACT] Click Settings widget
+[SCROLL] Scroll through settings list","[DOM] Email address verification toggle visible in settings list
+[STATE] Toggle accessible and functional","[CONSOLE] No JS errors on settings blade load
+[ADMIN] Toggle visible without any permission errors","Toggle not visible in settings; Settings blade fails to load; Toggle not interactive","none","C278771","None"
+"STORE-053","Enable Email Verification","Store > Email Verification","High","BL-STORE-001","","Admin logged in; Email confirmation notification active; Template_1 set for notification; User_1 created in Store_1 with Email_1","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; user=User_1; email1=user1@test.com; email2=user1new@test.com","[NAV] Go to Stores module > Open Store_1 at {{BACK_URL}}
+[ACT] Open Settings blade
+[ACT] Switch on Enable email address verification toggle
+[ACT] Click OK and Save
+[ACT] Reopen Settings blade and verify toggle state
+[NAV] Login to Storefront at {{FRONT_URL}} as User_1
+[NAV] Go to My Account > Profile
+[ACT] Change Email_1 to Email_2
+[WAIT] Check Email_2 inbox
+[ACT] Open verification email
+[ACT] Click verification link","[STATE] Enable email address verification toggle switched on
+[STATE] Setting saved in ON position
+[STATE] Toggle persists in ON position after reopen
+[STATE] Email address verification notification sent to Email_2 inbox
+[STATE] Email received with verification link
+[NAV] User redirected to email verification page after clicking link
+[STATE] Email verification process completed","[NETWORK] Email notification API called after email change
+[CONSOLE] No notification send errors
+[ADMIN] User_1 shows unverified email status until link clicked","Toggle reverts to OFF after save; No email sent after change; Verification link returns 404; User not redirected to verification page","restore original settings","C278768","None"
+"STORE-054","Disable Email Verification","Store > Email Verification","High","BL-STORE-001","","Admin logged in; Email confirmation notification active; Template_1 set; User_1 created in Store_1 with Email_1","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; user=User_1; email1=user1@test.com; email2=user1new@test.com","[NAV] Go to Stores module > Open Store_1 at {{BACK_URL}}
+[ACT] Open Settings blade
+[ACT] Switch off Enable email address verification toggle
+[ACT] Click OK and Save
+[ACT] Reopen Settings blade and verify toggle state
+[NAV] Login to Storefront at {{FRONT_URL}} as User_1
+[NAV] Go to My Account > Profile
+[ACT] Change Email_1 to Email_2
+[WAIT] Check Email_2 inbox","[STATE] Enable email address verification toggle switched off
+[STATE] Setting saved in OFF position
+[STATE] Toggle persists in OFF position after reopen
+[STATE] No verification email sent to Email_2 inbox
+[STATE] Email address changed without verification","[NETWORK] No notification API call after email change when disabled
+[CONSOLE] No unexpected notification errors
+[ADMIN] User_1 email updated immediately without verification step","Toggle reverts to ON after save; Verification email sent when disabled; Email change rejected without verification","restore original settings","C278769","None"
+"STORE-055","Disable Email Verification - Statuses Unchanged","Store > Email Verification","Medium","BL-STORE-001","","Admin on Store page; Verification_link sent to User_1; User_1 assigned to Store_1; Enable email address verification set to TRUE","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; user=User_1","[ACT] Send verification link to User_1
+[ACT] Before User_1 verifies, disable Enable email address verification in Store settings
+[ACT] Save
+[ACT] User_1 clicks verification link","[STATE] Email not verified via disabled link
+[DOM] Error message shown
+[STATE] Disabling feature does not change existing verification statuses
+[STATE] Sent links remain invalid after feature disabled","[NETWORK] Verification link returns appropriate error (expired/invalid)
+[CONSOLE] No unexpected server errors on link click
+[ADMIN] User_1 verification status unchanged","Verification link succeeds after feature disabled; No error shown to user; User verification status changed by disabling feature","restore original settings","C278770","None"
+"STORE-056","Resend Verification Link - Email Verification ON","Store > Email Verification","High","BL-STORE-001","","Admin logged in; Email confirmation notification active; Template_1 set; User_1 created in Store_1 with Email_1; Enable email address verification enabled","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}}; user=User_1; email=user1@test.com","[NAV] Login to Backend as Admin at {{BACK_URL}}
+[NAV] Go to Security > Users > Open User_1 blade
+[ACT] Click Resend link button
+[NAV] Go to Email_1 inbox
+[ACT] Open received email","[DOM] Resend link button visible
+[STATE] Confirmation email sent to Email_1 inbox
+[STATE] Email received successfully
+[STATE] Email content matches Template_1","[NETWORK] Email notification API called on Resend click
+[CONSOLE] No send errors
+[ADMIN] Resend action reflected in user activity","Resend button not visible; Email not received; Email content does not match Template_1","none","C279038","None"
+"STORE-057","Resend Verification Link - Email Verification OFF","Store > Email Verification","Medium","BL-STORE-001","","Admin logged in; Email confirmation notification active; Template_1 set; User_1 created with Email_1; Enable email address verification disabled","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}}; user=User_1; email=user1@test.com","[NAV] Login to Backend as Admin at {{BACK_URL}}
+[NAV] Go to Security > Users > Open User_1 blade
+[ACT] Click Resend link button
+[NAV] Go to Email_1 inbox","[DOM] Resend link button visible
+[STATE] No confirmation email sent to Email_1 inbox
+[STATE] Email verification disabled prevents email sending","[NETWORK] No email notification API call when verification disabled
+[CONSOLE] No unexpected send errors
+[ADMIN] Resend action does not trigger email when feature off","Email sent when verification is OFF; Resend button hidden; API call made despite feature being disabled","none","C279040","None"
+"STORE-058","Currency Rounding 001 & Away From Zero","Store > Rounding Policy","Medium","BL-STORE-001","","Admin logged in; Store currency configured with Midpoint Rounding = Away from zero; RoundingType = Rounding001; Product_1 created with price $26.25","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; product=Product_1; price=26.25; qty=3","[NAV] Go to Store > Edit default currency > Set RoundingType = Rounding001, Midpoint Rounding = Away from zero
+[ACT] Save
+[ACT] Add Product_1 (price $26.25) to cart
+[ACT] Set quantity to 3
+[ASSERT] Verify pricing","[STATE] Rounding settings saved
+[MATH] System displays rounded price = 24.94
+[MATH] Total = 24.9375 * 3 = 74.81
+[STATE] Rounding policy applied correctly","[API] Cart API returns prices with correct rounding applied
+[CONSOLE] No pricing calculation errors
+[ADMIN] Currency rounding settings persisted","Wrong rounding mode applied; Price shows unrounded value; Total calculation incorrect; Settings not saved","restore original settings","C307018","None"
+"STORE-059","Currency Rounding 001 & To Zero","Store > Rounding Policy","Medium","BL-STORE-001","","Admin logged in; Store currency configured; Product_1 created with price $26.25","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; product=Product_1; price=26.25; qty=3","[NAV] Go to Store > Edit default currency > Set RoundingType = Rounding001, Midpoint Rounding = ToZero
+[ACT] Save
+[ACT] Add Product_1 (price $26.25) to cart
+[ACT] Set quantity to 3
+[ASSERT] Verify pricing","[STATE] Rounding settings saved
+[MATH] System displays rounded price = 24.94
+[MATH] Total = 24.94 * 3 = 74.82
+[STATE] Rounding policy applied correctly","[API] Cart API returns prices with ToZero rounding applied
+[CONSOLE] No pricing calculation errors
+[ADMIN] Rounding settings persisted","Wrong rounding mode (AwayFromZero) applied; Total = 74.81 instead of 74.82; Settings not saved","restore original settings","C307019","None"
+"STORE-060","Deploy Rounding Policy","Store > Rounding Policy","Medium","BL-STORE-001","","Admin logged in; Product_1 created with price $26.25","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; product=Product_1; price=26.25","[ACT] Create Product_1 with price $26.25
+[NAV] Go to Store > Edit currency > Configure rounding settings
+[ACT] Save
+[ACT] Add product to cart and verify rounding applied","[STATE] Rounding settings configured
+[MATH] System displays rounded price = 24.94
+[MATH] Total = 24.9375 * 3 = 74.81
+[STATE] Rounding policy deployed successfully","[API] Cart API returns rounded prices after policy deployed
+[CONSOLE] No rounding errors
+[ADMIN] Rounding policy settings saved","Rounding not applied to cart prices; Old rounding policy still in effect; Prices shown unrounded","restore original settings","C307435","None"
+"STORE-061","Rounding Settings Per Currency","Store > Rounding Policy","Medium","BL-STORE-001","","Admin logged in; Store with multiple currencies","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; currencies=[USD,EUR]","[NAV] Go to any Store > Edit Currency for {{STORE_ID}}
+[ACT] Set Midpoint Rounding = ToZero, RoundingType = Rounding1 for selected currency only
+[ACT] Save
+[ASSERT] Verify settings applied to selected currency only","[STATE] Rounding settings configurable per currency
+[STATE] Settings applied only to chosen currency
+[STATE] Other currencies unaffected","[API] GET /api/stores/{{STORE_ID}} returns per-currency rounding settings
+[CONSOLE] No cross-currency contamination errors
+[ADMIN] Other currencies retain original rounding settings","Rounding setting applied to all currencies; Other currency settings changed; Settings not saved per currency","restore original settings","C307436","None"
+"STORE-062","Midpoint Rounding - To Even","Store > Midpoint Rounding","Medium","BL-STORE-001","","Admin logged in; Store currency with Midpoint Rounding = ToEven; RoundingType = Rounding001; Products created: Product_1 ($26.25), Product_2 ($26.48), Product_3 ($26.12); Coupon_1 (5% discount)","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; p1_price=26.25; p2_price=26.48; p3_price=26.12; coupon=5%","[ACT] Set Midpoint Rounding = ToEven, RoundingType = Rounding001
+[ACT] Add Product_1 (qty 2) to cart > Verify Subtotal = $52.50
+[ACT] Add Product_2 (qty 2) > Verify Subtotal = $105.46
+[ACT] Add Product_3 (qty 2) > Verify Subtotal = $157.70
+[ACT] Apply Coupon_1 (5%) to Product_1 > Verify Subtotal = $155.70, Total = $155.08, Discount = $2.62
+[ACT] Checkout > Go to Orders on Storefront > Verify order details
+[NAV] Go to Admin > Orders > Find order > Verify Order and Payment details","[STATE] Rounding settings saved
+[MATH] Product subtotals calculated correctly with ToEven rounding
+[MATH] Discount applied with correct rounding: $2.62
+[STATE] Order totals match in Storefront orders
+[STATE] Admin order details match calculated values","[API] Order API returns totals matching ToEven rounding calculation
+[ADMIN] Order details consistent with Storefront values
+[CONSOLE] No calculation errors","Wrong discount ($2.63 instead of $2.62); Subtotals incorrect; Admin/Storefront order totals mismatch","restore original settings","C306961","None"
+"STORE-063","Midpoint Rounding - Away From Zero","Store > Midpoint Rounding","Medium","BL-STORE-001","","Admin logged in; Store currency with AwayFromZero rounding; Products and Coupon_1 created","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; p1_price=26.25; p2_price=26.48; p3_price=26.12; coupon=5%","[ACT] Set Midpoint Rounding = AwayFromZero, RoundingType = Rounding001
+[ACT] Add Product_1 (qty 2) > Verify Subtotal = $52.50
+[ACT] Add Product_2 (qty 2) > Verify Subtotal = $105.46
+[ACT] Add Product_3 (qty 2) > Verify Subtotal = $157.70
+[ACT] Apply Coupon_1 (5%) > Verify Subtotal = $155.70, Total = $155.07, Discount = $2.63
+[ACT] Checkout > Verify Storefront order details
+[ASSERT] Verify Admin order details","[STATE] Rounding settings saved
+[MATH] Subtotals calculated with AwayFromZero rounding
+[MATH] Discount = $2.63 (rounds away from zero)
+[STATE] Order details consistent across Storefront and Admin","[API] Order API returns totals matching AwayFromZero rounding
+[ADMIN] Order details match Storefront values
+[CONSOLE] No rounding calculation errors","Discount = $2.62 instead of $2.63; Wrong rounding direction applied; Admin/Storefront totals mismatch","restore original settings","C306962","None"
+"STORE-064","Midpoint Rounding - ToZero","Store > Midpoint Rounding","Medium","BL-STORE-001","","Admin logged in; Store currency with ToZero rounding; Products and Coupons created","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; p1_price=26.25; p2_price=26.48; p3_price=26.12; coupon1=5%; coupon2=55%","[ACT] Set Midpoint Rounding = ToZero, RoundingType = Rounding001
+[ACT] Add Product_1 (qty 2) > Verify Subtotal = $52.50
+[ACT] Add Product_2 (qty 2) > Verify Subtotal = $105.46
+[ACT] Add Product_3 (qty 2) > Verify Subtotal = $155.70
+[ACT] Apply Coupon_2 (5%) to Product_1 > Verify Subtotal = $155.70, Total = $155.08, Discount = $2.62
+[ACT] Remove coupon > Verify Subtotal = $157.50, SubtotalDiscount = $0
+[ACT] Apply coupon for total cart 55% > Verify Subtotal = $157.70, Total = $70.96, Discount = $86.74","[STATE] Rounding settings saved
+[MATH] Subtotals calculated with ToZero rounding
+[MATH] Discount calculations rounded toward zero
+[STATE] Coupon removal resets discount
+[MATH] Large percentage discount calculated correctly: Total = $70.96, Discount = $86.74","[API] Cart and order APIs return totals matching ToZero rounding
+[CONSOLE] No coupon calculation errors
+[ADMIN] Order discount amounts match calculated values","Coupon removal does not reset discount; Large discount calculation incorrect; Wrong rounding direction (AwayFromZero) applied","restore original settings","C306963","None"
+"STORE-065","Midpoint Rounding - To Negative Infinity","Store > Midpoint Rounding","Medium","BL-STORE-001","","Admin logged in; Store currency with To Negative Infinity rounding; Products and Coupons created","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; p1_price=26.25; p2_price=26.48; p3_price=26.12; coupon1=5%; coupon2=55%","[ACT] Set Midpoint Rounding = To Negative Infinity, RoundingType = Rounding001
+[ACT] Add Product_1 (qty 2) > Verify Subtotal = $52.50
+[ACT] Add Product_2 (qty 2) > Verify Subtotal = $105.46
+[ACT] Add Product_3 (qty 2) > Verify Subtotal = $155.70
+[ACT] Apply Coupon_2 (5%) > Verify Subtotal = $155.70, Total = $155.08, Discount = $2.62
+[ACT] Remove coupon > Verify Subtotal = $157.50, SubtotalDiscount = $0
+[ACT] Apply coupon 55% to total cart > Verify Subtotal = $157.70, Total = $70.96, Discount = $86.74","[STATE] Rounding settings saved
+[MATH] Subtotals calculated with To Negative Infinity rounding
+[MATH] Discount rounds toward negative infinity
+[STATE] Coupon operations function correctly
+[MATH] Large discounts calculated accurately: Total = $70.96, Discount = $86.74","[API] Cart and order APIs return totals matching Negative Infinity rounding
+[CONSOLE] No coupon calculation errors
+[ADMIN] Order totals match Storefront values","Wrong rounding mode applied; Coupon removal fails; Large discount total incorrect; Rounding behavior same as ToZero (not distinct)","restore original settings","C306964","None"

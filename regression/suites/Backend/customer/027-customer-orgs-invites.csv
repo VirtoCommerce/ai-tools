@@ -1,0 +1,232 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"CUST-024","Dynamic properties value types","Customer > Dynamic Properties","Medium",,,"Admin logged in to Backend
+Contact, Organization, Employee exist",,"1. Open Contact > Dynamic properties > Verify value types
+2. Repeat for Organization
+3. Repeat for Employee",,,,,"C261138 C261139 C261140",
+"CUST-025","Dynamic properties hide empty values and fields","Customer > Dynamic Properties","Medium",,,"Admin logged in to Backend
+Dynamic properties configured",,"1. Click 'Hide empty values' > Verify empty values hidden
+2. Verify required fields always shown
+3. Verify switcher fields always shown",,,,,"C289520-C289524",
+"CUST-029","Email verification on account creation","Customer > Email Verification","Medium",,,"Admin logged in to Backend and Storefront",,"1. Create account via Security blade > Verify email sent
+2. Create account via Contacts blade > Verify email sent
+3. Create account via Storefront > Verify email sent",,,,,"C278784 C278781 C278785",
+"CUST-030","Email verification on email change","Customer > Email Verification","Medium",,,"Admin logged in to Backend and Storefront
+Account exists",,"1. Change email via Security blade > Verify email sent
+2. Change email via Contacts blade > Verify email sent
+3. Change email via Store > Verify email sent",,,,,"C278786 C278787 C278792",
+"CUST-031","Admin verification toggle and send link","Customer > Email Verification","Medium",,,"Admin logged in to Backend",,"1. Toggle verification via Security blade > Verify
+2. Toggle verification via Contact blade > Verify
+3. Send link via Security blade > Verify
+4. Send link via Contact blade > Verify
+5. Test via API: Send verification email
+6. Test via API: Change toggle state",,,,,"C278794-C278812",
+"CUST-032","User permission for email verification (with/without)","Customer > Email Verification","Medium",,,"Admin logged in to Backend
+User_1 with verification permission
+User_2 without verification permission",,"1. User with permission: Toggle via Security/Contact blade > Verify allowed
+2. User with permission: Send link > Verify allowed
+3. User with permission: API operations > Verify allowed
+4. User without permission: Toggle > Verify restricted
+5. User without permission: Send link > Verify restricted
+6. User without permission: API operations > Verify restricted",,,,,"C278796-C278816",
+"CUST-033","Verification UI design (toggle and resend link)","Customer > Email Verification","Medium",,,"Admin logged in to Backend",,"1. Verify toggle UI on Security blade
+2. Verify toggle UI on Contact blade
+3. Verify resend link title on Security blade
+4. Verify resend link title on Contact blade
+5. Change email but don't save > Verify resend link not shown",,,,,"C278789-C278834 C278825 C278826",
+"CUST-040","Organization user groups","Customer > Organization Details","Medium",,,"Admin logged in to Backend
+Organization exists",,"1. Open Organization > Verify user groups field
+2. Assign user group
+3. Save",,,,,"C261125",
+"CUST-052","CustomerSample module CRUD","Customer > Extensions","Medium",,,"Admin logged in to Backend",,"1. Install CustomerSample module
+2. Create new contact via module
+3. Read contact > Verify data
+4. Update contact > Verify changes
+5. Delete contact > Verify removed",,,,,"C311901-C311904",
+"CUST-058","Organization About Field","Customer > Organization Management > Profile","Low",,,"Admin logged in to Backend (${BACK_URL}), an existing organization record is available",,"1. Navigate to Customer module > Organizations (or Contacts filtered to organizations)
+2. Open an existing organization record
+3. Locate the About field on the organization profile
+4. Enter a descriptive text about the organization
+5. Save the organization
+6. Reopen the organization and verify the About text is displayed
+7. Edit the About field and verify the update saves correctly",,,,,"C343693",
+"CUST-059","xAPI Contact Query with About Field","Customer > xAPI Integration","Medium",,,"Admin logged in to Backend (${BACK_URL}), a contact with a populated About field exists, xAPI endpoint is accessible",,"1. Open a contact in admin and note the About field value
+2. Open the GraphQL xAPI explorer or use a REST client
+3. Execute a contact query by ID or email
+4. Include the about field in the query selection
+5. Verify the response includes the about field with the correct value
+6. Update the About field in admin and re-query via xAPI
+7. Verify the updated value is returned",,,,,"C343694",
+"CUST-063","Role Assignment in Customer Module","Customer > Organization Management > Roles","High",,,"Admin logged in to Backend (${BACK_URL}), an organization with at least one contact member exists, roles are defined in the system",,"1. Navigate to Customer module > Organizations
+2. Open an organization
+3. Navigate to the Members tab
+4. Select a contact member
+5. Locate the role assignment section
+6. Assign an available role to the contact within this organization
+7. Save the assignment
+8. Verify the role is listed on the contact within the organization",,,,,"",
+"CUST-064","Multi-Org Contact Hierarchy","Customer > Organization Management > Hierarchy","High",,,"Admin logged in to Backend (${BACK_URL}), two separate organizations exist, a contact is a member of one organization only",,"1. Navigate to Customer module > Contacts
+2. Locate a contact assigned to Organization A
+3. Verify the contact appears in Organization A member list
+4. Navigate to Organization B
+5. Verify the contact does not appear in Organization B member list
+6. Add the contact to Organization B via the member management UI
+7. Verify the contact now appears in both Organization A and B
+8. Remove the contact from Organization A and verify they remain in Organization B only",,,,,"",
+"CUST-065","Invite customer from Contacts toolbar — full flow","Customer > Invite Customers","Critical",,,"Admin logged in to Backend (${BACK_URL}), at least one store configured, email service operational",,"1. Navigate to Customer module > Contacts
+2. Locate and click 'Invite customers' button in the toolbar
+3. Verify the Invite blade opens with fields: Store (dropdown), Language (dropdown), Organization (dropdown), Role (dropdown), Emails (text input), Message (textarea)
+4. Select a Store from the dropdown (e.g. B2B-store)
+5. Verify Language auto-populates from store default
+6. Leave Organization empty
+7. Verify Role defaults to 'Organization employee'
+8. Enter a valid email address in the Emails field
+9. Click the 'Invite' button
+10. Verify success response in the UI (toast or confirmation message)
+11. Check network request: POST /api/members/customers/invite with correct payload",,,,,"",
+"CUST-066","Invite customer from Organization context — org pre-filled","Customer > Invite Customers","Critical",,,"Admin logged in to Backend (${BACK_URL}), organization exists with known name",,"1. Navigate to Customer module > Contacts
+2. Open an existing Organization detail blade
+3. Locate and click 'Invite customers' button in the organization toolbar
+4. Verify the Invite blade opens with Organization field pre-filled with current organization name
+5. Select a Store from the dropdown
+6. Enter a valid email address
+7. Click 'Invite'
+8. Verify success response
+9. Check API request payload includes organizationId matching the opened organization
+10. After invite is accepted, verify the new user is linked to the organization",,,,,"",
+"CUST-067","Invite form validation — required fields","Customer > Invite Customers","Critical",,,"Admin logged in to Backend (${BACK_URL})",,"1. Navigate to Customer module > Contacts > Click 'Invite customers'
+2. Leave all fields empty > Verify 'Invite' button is disabled or clicking it shows validation errors
+3. Select a Store but leave Emails empty > Verify Invite button remains disabled or shows email required error
+4. Clear Store, enter an email address > Verify Invite button remains disabled or shows store required error
+5. Select Store AND enter email > Verify Invite button becomes enabled
+6. Clear the email field again > Verify button disables
+7. Enter only whitespace in email field > Verify validation rejects it",,,,,"",
+"CUST-068","Invite API — valid request","Customer > Invite Customers > API","Critical",,,"Admin logged in to Backend (${BACK_URL}), valid OAuth2 token obtained, store and organization exist",,"1. Send POST /api/members/customers/invite with valid payload:
+   { ""storeId"": ""${STORE_ID}"", ""emails"": [""testinvite@example.com""], ""cultureName"": ""en-US"", ""roleId"": ""org-employee"", ""message"": ""Welcome"" }
+2. Verify HTTP 200 response
+3. Verify response body contains succeeded:true
+4. Verify response includes per-email result details
+5. Send same request again with a different email to confirm repeatability",,,,,"",
+"CUST-069","Invite API — empty body","Customer > Invite Customers > API","Critical",,,"Admin logged in to Backend (${BACK_URL}), valid OAuth2 token obtained",,"1. Send POST /api/members/customers/invite with empty body: {}
+2. Verify response status code (expected: 200 with succeeded:false, or 400)
+3. Verify response contains error code or validation message
+4. Send POST with null body
+5. Verify response contains error information
+6. Send POST with body: { ""emails"": [] } (empty array)
+7. Verify response indicates no emails provided",,,,,"",
+"CUST-070","Invite API — invalid email format","Customer > Invite Customers > API","Critical",,,"Admin logged in to Backend (${BACK_URL}), valid OAuth2 token obtained",,"1. Send POST /api/members/customers/invite with payload: { ""storeId"": ""${STORE_ID}"", ""emails"": [""not-an-email""] }
+2. Verify response indicates email validation failure
+3. Send with emails: [""@missing-local.com""]
+4. Verify validation failure
+5. Send with emails: [""spaces in@email.com""]
+6. Verify validation failure
+7. Send with emails: [""valid@test.com"", ""invalid""] (mixed valid and invalid)
+8. Verify per-email validation results",,,,,"",
+"CUST-071","Invite API — already registered email","Customer > Invite Customers > API","Critical",,,"Admin logged in to Backend (${BACK_URL}), valid OAuth2 token obtained, a user account already exists with known email",,"1. Identify an existing registered user email from the system
+2. Send POST /api/members/customers/invite with payload: { ""storeId"": ""${STORE_ID}"", ""emails"": [""existing-user@example.com""] }
+3. Verify response indicates the email is already registered
+4. Verify the response contains succeeded:false or a per-email error for the duplicate
+5. Verify the existing user account is NOT modified or duplicated
+6. Send invite with mix of new and existing emails
+7. Verify per-email results correctly distinguish new vs existing",,,,,"",
+"CUST-072","Invite RBAC — permission required","Customer > Invite Customers > Permissions","Critical",,,"Admin logged in to Backend (${BACK_URL}), two test users: User_Admin with full customer permissions, User_Limited with only customer:read and customer:access (no customer:create)",,"1. Login as User_Admin > Navigate to Contacts > Verify 'Invite customers' button is visible
+2. Click 'Invite customers' > Verify blade opens and invite can be submitted
+3. Logout > Login as User_Limited (customer:read + customer:access only)
+4. Navigate to Contacts > Verify 'Invite customers' button is hidden or disabled
+5. Attempt direct API call as User_Limited: POST /api/members/customers/invite
+6. Verify API returns HTTP 403 Forbidden or 401 Unauthorized
+7. Login as Admin > Grant customer:create to User_Limited role
+8. Login as User_Limited > Verify 'Invite customers' button now appears",,,,,"",
+"CUST-073","Invite with all 3 roles","Customer > Invite Customers > Roles","High",,,"Admin logged in to Backend (${BACK_URL}), store configured, 3 roles available: Organization employee, Organization maintainer, Purchasing agent",,"1. Navigate to Contacts > Click 'Invite customers'
+2. Select Store, enter email_1@test.com
+3. Select role 'Organization employee' from dropdown > Click Invite
+4. Verify API request contains roleId for Organization employee
+5. Repeat: enter email_2@test.com, select 'Organization maintainer' > Invite
+6. Verify API request contains roleId for Organization maintainer
+7. Repeat: enter email_3@test.com, select 'Purchasing agent' > Invite
+8. Verify API request contains roleId for Purchasing agent
+9. Verify all 3 invitations succeeded",,,,,"",
+"CUST-074","Invite multiple emails in single request","Customer > Invite Customers","High",,,"Admin logged in to Backend (${BACK_URL}), store configured",,"1. Navigate to Contacts > Click 'Invite customers'
+2. Select Store and Role
+3. Enter 3 email addresses: user1@test.com, user2@test.com, user3@test.com
+4. Click Invite
+5. Monitor network request: verify all 3 emails appear in the emails array of the POST payload
+6. Verify response contains per-email success/failure status
+7. Enter 1 valid and 1 invalid email > Submit
+8. Verify per-email results: valid succeeds, invalid fails
+9. Test with duplicate emails in the same request",,,,,"",
+"CUST-075","Invite from Store context — store pre-filled","Customer > Invite Customers","High",,,"Admin logged in to Backend (${BACK_URL}), at least one store exists",,"1. Navigate to More > Stores
+2. Open a Store detail blade (e.g. B2B-store)
+3. Locate and click 'Invite customers' button in the store toolbar
+4. Verify the Invite blade opens with Store field pre-filled with the current store
+5. Verify the Store field is read-only or pre-selected
+6. Verify Language auto-populates from this store's default language
+7. Enter an email address and click Invite
+8. Verify API request storeId matches the pre-filled store",,,,,"",
+"CUST-076","Invite roles API — GET available roles","Customer > Invite Customers > API","High",,,"Admin logged in to Backend (${BACK_URL}), valid OAuth2 token obtained",,"1. Send GET /api/members/customers/invite/roles
+2. Verify HTTP 200 response
+3. Verify response is a JSON array with exactly 3 role objects
+4. Verify each role has id and name fields
+5. Verify role names: 'Organization employee', 'Organization maintainer', 'Purchasing agent'
+6. Verify role IDs are non-empty strings
+7. Send request without auth token > Verify 401 Unauthorized",,,,,"",
+"CUST-077","GraphQL inviteUser mutation","Customer > Invite Customers > xAPI","High",,,"Admin logged in to Backend (${BACK_URL}), GraphQL xAPI endpoint accessible at ${BACK_URL}/ui/graphiql, store and organization exist",,"1. Open GraphiQL at ${BACK_URL}/ui/graphiql
+2. Execute inviteUser mutation:
+   mutation { inviteUser(command: { storeId: ""${STORE_ID}"", emails: [""gqltest@example.com""], cultureName: ""en-US"", roleId: ""org-employee"", organizationId: ""test-org-id"", message: ""GraphQL invite test"" }) { succeeded errors { code description } } }
+3. Verify response: { data: { inviteUser: { succeeded: true } } }
+4. Execute with invalid storeId > Verify succeeded:false with error
+5. Execute with empty emails array > Verify error response
+6. Verify inviteUser mutation appears in schema introspection with InputInviteUserType",,,,,"",
+"CUST-078","Invite with custom message","Customer > Invite Customers","High",,,"Admin logged in to Backend (${BACK_URL}), store configured",,"1. Navigate to Contacts > Click 'Invite customers'
+2. Select Store and enter email
+3. Locate the Message textarea field
+4. Enter a custom message: 'Welcome to our B2B platform! Your account is ready.'
+5. Click Invite
+6. Monitor network request: verify message field is included in the POST payload
+7. Verify API response is succeeded:true
+8. Repeat without message (leave textarea empty) > Verify invite still succeeds
+9. Enter a very long message (500+ characters) > Verify behavior",,,,,"",
+"CUST-079","Invite language selection","Customer > Invite Customers","High",,,"Admin logged in to Backend (${BACK_URL}), store configured with multiple languages",,"1. Navigate to Contacts > Click 'Invite customers'
+2. Select a Store > Verify Language dropdown auto-populates with store default language
+3. Open Language dropdown > Verify available options (up to 14: EN, DE, FR, ES, NO, SV, PL, IT, PT, JA, ZH, FI, RU, and store default)
+4. Select 'de-DE' (German)
+5. Enter email and click Invite
+6. Monitor API request: verify cultureName is 'de-DE'
+7. Change store > Verify language resets to new store default
+8. Select 'ja-JP' (Japanese) > Invite > Verify cultureName is 'ja-JP'",,,,,"",
+"CUST-080","Invite notification template rendering","Customer > Invite Customers > Notifications","High",,,"Admin logged in to Backend (${BACK_URL}), notification service operational, store configured",,"1. Send an invite via POST /api/members/customers/invite with valid payload including organizationId
+2. Navigate to More > Notifications > Notification activity feed (or check notification log)
+3. Search for the most recent notification sent to the invited email
+4. Verify notification type is 'Signup invite notification (with organization)' when org is specified
+5. Verify template variables are replaced: invite URL is populated, organization name appears, custom message appears
+6. Send another invite WITHOUT organizationId
+7. Verify notification type is 'Signup invite notification (customer)' (without org template)
+8. Verify invite URL in the notification is valid and clickable",,,,,"",
+"CUST-081","Invite notification template content","Customer > Invite Customers > Notifications","Medium",,,"Admin logged in to Backend (${BACK_URL})",,"1. Navigate to More > Notifications > Notification templates
+2. Search for 'Signup invite notification (customer)' template
+3. Open template > Verify subject line, body content, and template variables: {{ message }}, {{ invite_url }}
+4. Search for 'Signup invite notification (with organization)' template
+5. Open template > Verify it includes organization-specific variables in addition to base variables
+6. Verify both templates have correct sender configuration
+7. Note any grammar errors in template body text",,,,,"",
+"CUST-082","Invite without organization — correct template used","Customer > Invite Customers > Notifications","Medium",,,"Admin logged in to Backend (${BACK_URL}), store configured, notification log accessible",,"1. Navigate to Contacts > Click 'Invite customers'
+2. Select Store, enter email, leave Organization field empty
+3. Click Invite > Verify success
+4. Check notification log or API: verify the notification used 'Signup invite notification (customer)' template (NOT the 'with organization' template)
+5. Now send another invite WITH an Organization selected
+6. Verify notification used 'Signup invite notification (with organization)' template
+7. Compare the two notification bodies to confirm different templates were applied",,,,,"",
+"CUST-083","Invite store dropdown options","Customer > Invite Customers > UI","Medium",,,"Admin logged in to Backend (${BACK_URL}), multiple stores configured in the system",,"1. Navigate to Customer module > Contacts > Click 'Invite customers'
+2. Click on the Store dropdown field
+3. Verify all configured stores appear in the dropdown list
+4. Verify store names are readable and correctly displayed
+5. Select each store one by one > Verify Language updates accordingly
+6. Navigate to More > Stores > Count the active stores
+7. Compare active store count with dropdown options count",,,,,"",
+"CUST-084","GraphQL inviteUser with customerOrderId","Customer > Invite Customers > xAPI","Medium",,,"Admin logged in to Backend (${BACK_URL}), GraphQL xAPI endpoint accessible, an existing order ID available, store configured",,"1. Open GraphiQL at ${BACK_URL}/ui/graphiql
+2. Introspect InputInviteUserType > Verify customerOrderId field exists in the schema
+3. Execute inviteUser mutation with customerOrderId:
+   mutation { inviteUser(command: { storeId: ""${STORE_ID}"", emails: [""orderinvite@example.com""], cultureName: ""en-US"", customerOrderId: ""existing-order-id"" }) { succeeded errors { code description } } }
+4. Verify response succeeded:true
+5. Verify the invited user is associated with the specified order (check via order API or admin)
+6. Execute with invalid customerOrderId > Verify error handling
+7. Note: customerOrderId field is available in GraphQL but NOT exposed in the Admin UI Invite blade",,,,,"",

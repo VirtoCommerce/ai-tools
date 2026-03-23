@@ -154,7 +154,7 @@ Guards: can't capture non-authorized, can't refund non-captured, only full cance
 **Browsers:** `playwright-edge` (primary for Admin), `playwright-chrome`, `playwright-firefox`. No WebKit on Windows.
 **MCP Servers:** Postman (API), Chrome DevTools (debugging), Atlassian (JIRA), GitHub (PRs, module repos), context7 (VC docs).
 
-**Additional refs:** `qa-api/test-cases-api-graphql.md`, `qa-checklist/backend-admin-checklists.md` (29 domains), `qa-checklist/graphql-checklist.md` (34 items) — all under `.claude/skills/testing/`. Backend suites: `regression/suites/Backend/*.csv` (14-34, 37-40, 42).
+**Additional refs:** `qa-api/test-cases-api-graphql.md`, `qa-checklist/backend-admin-checklists.md` (29 domains), `qa-checklist/graphql-checklist.md` (34 items) — all under `.claude/skills/testing/`. Backend suites: `regression/suites/Backend/**/*.csv` (module subdirectories: api, assets, catalog, channels, cms, configurable-products, contracts, customer, graphql, image-tools, import-export, inventory, loyalty, marketing, notifications, orders, platform, pricing, push-messages, returns, search, seo, shipping, store, whitelabeling, xmarketing).
 
 ### Judge — Pass/Fail Classification
 

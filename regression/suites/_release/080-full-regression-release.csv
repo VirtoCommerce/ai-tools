@@ -1,0 +1,1084 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+FRR-001,User Registration - Personal Account,Full Regression > Authentication > Registration,Critical,,,  "Browser open, QA environment: {{FRONT_URL}}, cleared cache/cookies","email=testuser-{{timestamp}}@example.com, password=TestP@ss123!, front_url={{FRONT_URL}}","1. Navigate to storefront homepage
+2. Click 'Sign Up' in header
+3. Select 'Personal' account type
+4. Fill required fields: First Name, Last Name, Email: testuser-{timestamp}@example.com, Password: TestP@ss123!
+5. Accept terms and conditions
+6. Click 'Create Account' button
+7. Verify confirmation page displays","- Registration form submits successfully
+- Confirmation page displays success message
+- User can sign in with new credentials
+- Account visible in Admin panel under Customers
+- Profile displays correct personal information","[ADMIN] new user appears in Customers list
+[CONSOLE] no JS errors during registration","Spinner visible >5s, 4xx/5xx on network tab, console TypeError, page redirect to /error",none,C410417,Automated
+FRR-002,User Registration - Organization Account,Full Regression > Authentication > Registration,Critical,,,  "Browser open, QA environment accessible","front_url={{FRONT_URL}}","1. Navigate to registration page
+2. Select 'Organization' account type
+3. Fill required fields: Company Name, Admin name, Email, Password
+4. Accept terms and conditions
+5. Click 'Create Account'
+6. Log in with new credentials
+7. Verify organization context","- Organization account created successfully
+- Company appears in Organizations list in Admin
+- User assigned as organization administrator
+- Organization name visible in storefront header
+- B2B features accessible: Company Members, Quick Order","[ADMIN] organization appears in Organizations list
+[CONSOLE] no JS errors","Spinner visible >5s, 4xx/5xx on network tab, console TypeError",none,C410418,Automated
+FRR-003,Sign In - Personal User,Full Regression > Authentication > Sign In,Critical,BL-AUTH-006,,  "Valid personal user account: {{USER_EMAIL}} from .env","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","1. Navigate to {{FRONT_URL}}
+2. Click 'Sign In' in header
+3. Enter email: {{USER_EMAIL}} and password: {{USER_PASSWORD}}
+4. Click 'Sign In' button
+5. Verify successful authentication","- User authenticated successfully
+- User name displayed in header
+- Cart icon accessible
+- Account menu shows Logout option
+- No error messages displayed","[CONSOLE] no JS errors on sign-in
+[NETWORK] no 4xx/5xx on auth requests","Spinner visible >5s, 4xx/5xx on /connect/token, console TypeError, redirect to /error",Sign out after test,C410420,Automated
+FRR-004,Sign In - Organization User,Full Regression > Authentication > Sign In,Critical,BL-B2B-001,,  "Valid organization user account exists","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, front_url={{FRONT_URL}}","1. Navigate to sign-in page
+2. Enter organization user email and password
+3. Click 'Sign In'
+4. Verify organization context active
+5. Check B2B features available","- User logged in with organization context
+- Organization name visible in header
+- B2B features accessible: Quick Order, Company Members, Quotes
+- Pricing reflects organization contracts if configured
+- Cart specific to organization (BL-B2B-001)","[API] xAPI cart query returns org-scoped cart
+[CONSOLE] no JS errors","Spinner visible >5s, 4xx/5xx on auth, console TypeError",Sign out after test,C410421,Automated
+FRR-005,Forgot Password - Reset Flow,Full Regression > Authentication > Password,High,BL-AUTH-003,,  "Valid user account exists","email={{USER_EMAIL}}, front_url={{FRONT_URL}}","1. Navigate to sign-in page
+2. Click 'Forgot Password?' link
+3. Enter registered email address
+4. Click 'Send Reset Link'
+5. Check email for password reset link
+6. Click reset link and enter new password
+7. Log in with new password
+8. Verify old password no longer works","- Reset link email received within 2 minutes
+- Password reset form accepts strong passwords
+- Password reset completes with confirmation message
+- Can sign in with new password; old password rejected
+- Reset link expires after use (BL-AUTH-003)","[EMAIL] reset email received within 2 minutes
+[CONSOLE] no JS errors","Spinner visible >5s, email not received after 5 min, console TypeError",Restore original password if changed,C410440,Manual
+FRR-006,Sign Out and Session Revocation,Full Regression > Authentication > Sign Out,High,BL-AUTH-001,,  "User logged in","email={{USER_EMAIL}}, front_url={{FRONT_URL}}","1. Click user name/account menu in header
+2. Click 'Sign Out'
+3. Verify sign-out completed
+4. Attempt to access {{FRONT_URL}}/account/orders directly","- User signed out successfully
+- Account menu no longer shows user name
+- Attempting account pages redirects to sign-in
+- Session token revoked (protected API calls return 401)","[NETWORK] /account/orders redirects to sign-in (not 200)
+[CONSOLE] no JS errors","Session still active after sign-out, 4xx/5xx errors, console TypeError",none,C410423,Automated
+FRR-007,Account Lockout After Failed Login Attempts,Full Regression > Authentication > Security,Critical,BL-AUTH-003,,  "Valid user account exists","email={{USER_EMAIL}}, front_url={{FRONT_URL}}","1. Navigate to sign-in page
+2. Enter correct email with wrong password 5 times in succession
+3. Attempt 6th login with correct credentials
+4. Verify lockout behavior","- Account locked after N consecutive failures (platform default: 5)
+- Even correct credentials rejected during lockout with generic message
+- Lockout message does not reveal whether account exists
+- Successful login prior to threshold resets failure counter (BL-AUTH-003)","[CONSOLE] no JS errors
+[NETWORK] no 5xx on repeated login attempts","Account not locked after 5 failures, 500 error on login attempt, console TypeError",Wait for lockout expiry OR use dedicated test account,FR-AUTH-003,Manual
+FRR-008,Catalog Browsing - Category Navigation,Full Regression > Catalog > Navigation,Critical,BL-CAT-004,,  "User logged in","front_url={{FRONT_URL}}","1. Navigate to main catalog from header menu
+2. Hover over main category
+3. Verify subcategories display
+4. Click on subcategory
+5. Verify category page loads
+6. Check breadcrumbs and product listing","- Main categories load in header/menu
+- Subcategories display on hover/click
+- Category page loads with correct products
+- Breadcrumbs show correct hierarchy
+- Product count displayed
+- Facets/filters display in sidebar
+- Products show image, name, price, Add to Cart","[CONSOLE] no JS errors on category nav
+[NETWORK] no 4xx/5xx on catalog API calls","Category menu blank, 404 on category page, console TypeError, spinner >5s",none,C410460,Automated
+FRR-009,Catalog - Faceted Filters (Multi-Filter Apply),Full Regression > Catalog > Filters,Critical,BL-SRCH-001,,  "User on category page with filterable products","front_url={{FRONT_URL}}","1. Navigate to category page
+2. Verify facets display (Brand, Price, Size, Color)
+3. Select Brand filter
+4. Verify results update and count changes
+5. Apply Price range filter
+6. Verify chip badges show active filters
+7. Click X on one chip to remove it
+8. Verify no-results case with conflicting filters","- Facets display available values
+- Applying filter updates product listing immediately
+- Product count updates after each filter
+- Multiple filters work together (AND logic)
+- Chip badges display for active filters
+- Removing chip updates results
+- Facet counts match filtered results (BL-SRCH-001)
+- Empty state shows 'No products match' message","[NETWORK] no 4xx/5xx on filter requests
+[CONSOLE] no JS errors","Facets not loading, product count not updating, console TypeError, spinner >5s",Remove applied filters,C410470,Automated
+FRR-010,Catalog - Sort Products,Full Regression > Catalog > Sorting,High,,ECL-3.2,  "User on category page with multiple products","front_url={{FRONT_URL}}","1. Navigate to category page
+2. Select 'Price: Low to High' in sort dropdown
+3. Verify products sorted ascending
+4. Select 'Price: High to Low'
+5. Verify descending sort
+6. Apply a filter and verify sort persists","- Sort options available: Price (Low-High, High-Low), Name (A-Z, Z-A), Newest
+- Sorting applies immediately
+- Sort order maintained after filter applied (ECL-3.2)
+- Pagination resets to page 1 on sort change","[CONSOLE] no JS errors on sort change
+[NETWORK] no 4xx/5xx","Sort not persisting with filter, console TypeError, spinner >5s",none,C410475,Automated
+FRR-011,Product Search - Basic Query and Suggestions,Full Regression > Search > Basic,Critical,BL-SRCH-004,,  "User logged in, products exist in catalog","front_url={{FRONT_URL}}","1. Click on search bar in header
+2. Start typing 'lapt'
+3. Verify autocomplete suggestions appear
+4. Press Enter to search 'laptop'
+5. Verify search results page loads with result count
+6. Verify filters available to refine","- Suggestions update after 2-3 characters
+- Search results page displays matching products
+- Result count shown
+- Products display with image, name, price, Add to Cart
+- Filters available on search results
+- Breadcrumbs: Home > Search Results (BL-SRCH-004)","[CONSOLE] no JS errors on search
+[NETWORK] no 4xx/5xx on search API","Autocomplete not appearing, 0 results for common term, console TypeError",none,C410480,Automated
+FRR-012,Product Search - No Results Handling,Full Regression > Search > Edge Cases,High,BL-SRCH-002,,  "User on search page","front_url={{FRONT_URL}}","1. Enter nonsense search term: 'xyzabc123notfound'
+2. Press Enter
+3. Verify no results handling
+4. Verify search term visible in bar","- 'No results found for xyzabc123notfound' message shown
+- Suggestions shown: 'Try different keywords' or 'Browse categories'
+- Page layout intact (no broken grid)
+- Search bar filled with term
+- No 500 errors (BL-SRCH-002)","[NETWORK] no 5xx on no-results search
+[CONSOLE] no JS errors","500 error on no-results query, console TypeError, blank page",none,C410484,Manual
+FRR-013,Product Search - Special Characters and XSS,Full Regression > Search > Security,Critical,BL-SRCH-005,,  "User on search page","front_url={{FRONT_URL}}","1. Enter: '<script>alert()</script>' in search
+2. Press Enter
+3. Enter: 'laptop & monitor'
+4. Verify search handles both queries","- XSS attempts sanitized (no script execution)
+- Special characters handled gracefully
+- No server errors
+- Query escaped in URL (BL-SRCH-005)","[CONSOLE] no alert() dialogs, no script execution
+[NETWORK] no 5xx errors","Script executing (alert dialog), 500 on special char query",none,C410485,Manual
+FRR-014,Search Index Lag - Admin Change Reflects Within 120s,Full Regression > Search > Consistency,High,"BL-CAT-003, BL-CROSS-009",,  "Admin access, product in catalog","admin_url={{BACK_URL}}, front_url={{FRONT_URL}}","1. Update product name in Admin
+2. Immediately search on storefront (may show old name - expected within 60s)
+3. Verify direct product URL shows new name immediately
+4. Wait 120 seconds
+5. Re-run search
+6. Verify new name appears in results","- PDP (direct URL) shows updated name immediately (live data)
+- Search results update within 120s after reindex
+- After 120s no stale data remains (BL-CAT-003, BL-CROSS-009)","[ADMIN] product shows new name immediately in Admin
+[CONSOLE] no JS errors","Stale data persisting beyond 120s, PDP showing stale data, console TypeError",Restore original product name in Admin,BL-CAT-003,Manual
+FRR-015,Add to Cart - From Product Page,Full Regression > Cart > Add,Critical,BL-CART-001,,  "User logged in, product available","sku={{TEST_SKU}}, front_url={{FRONT_URL}}","1. Navigate to product detail page
+2. Verify product details load (name, image, price)
+3. Verify quantity selector defaults to 1
+4. Click 'Add to Cart'
+5. Verify success notification
+6. Verify cart icon count increments","- Product detail page loads fully
+- 'Add to Cart' button enabled (if in stock)
+- Success notification shows product name
+- Cart icon count increments
+- Product visible in cart","[API] addItem mutation returns HTTP 200, errors[] is empty
+[API] cart.items contains sku={{TEST_SKU}}
+[CONSOLE] no JS errors","Spinner >5s, errors[] non-empty in addItem, cart badge unchanged after 3s, 4xx/5xx on /graphql",Remove item from cart after test,CART-001,Automated
+FRR-016,Add to Cart - Product Variations (Correct SKU),Full Regression > Cart > Add,Critical,BL-CAT-006,,  "Configurable product with variations. DevTools Network tab open.","front_url={{FRONT_URL}}","1. Navigate to product with size and color variations
+2. Verify 'Add to Cart' disabled until all required options selected
+3. Select Size: Medium and Color: Blue
+4. Click 'Add to Cart'
+5. In Network tab: locate addItem GraphQL mutation
+6. Verify request payload SKU matches Blue/M variant
+7. View cart and verify line item shows 'Color: Blue, Size: M'","- 'Add to Cart' disabled until all required attributes selected
+- Selecting options enables the button
+- addItem mutation sends correct variant SKU (not parent SKU)
+- Cart line item displays variant attributes: 'Color: Blue, Size: M'
+- Price matches selected variant
+- Cart badge increments (BL-CAT-006)","[API] addItem mutation sends correct variant SKU (not parent SKU)
+[API] addItem response errors[] is empty
+[CONSOLE] no JS errors","'Add to Cart' enabled before options selected, wrong SKU in addItem, errors[] non-empty",Remove item from cart after test,C411059,Manual
+FRR-017,Add Same SKU Twice - Quantity Increments (No Duplicate Line),Full Regression > Cart > Quantity,High,BL-CART-007,,  "User logged in, product available","sku={{TEST_SKU}}, front_url={{FRONT_URL}}","1. Navigate to product detail page
+2. Click 'Add to Cart' (qty=1)
+3. Return to listing page
+4. Add same product again
+5. View cart","- Cart shows 1 line item with qty=2, not 2 separate lines
+- Quantity incremented on re-add
+- Line total = unit price x 2 (BL-CART-007)","[API] cart query shows 1 line item with quantity=2 for sku={{TEST_SKU}}
+[CONSOLE] no JS errors","Two separate line items for same SKU, cart badge shows 2 items, errors[] non-empty",Remove item from cart after test,BL-CART-007,Automated
+FRR-018,Cart - View and Update Quantities,Full Regression > Cart > View,Critical,BL-PRICE-008,,  "Multiple products in cart","front_url={{FRONT_URL}}","1. Add 2-3 products to cart
+2. Navigate to full cart page
+3. Verify cart displays all items with image, name, SKU, qty, line total
+4. Click '+' to increase quantity of one item
+5. Verify line total and subtotal recalculate
+6. Click '-' to decrease quantity
+7. Decrease to 0 and verify item removed","- Full cart shows all items with image, name, qty selector, line total
+- Subtotal, shipping placeholder, grand total displayed
+- Line total = unit price x quantity (BL-PRICE-008)
+- Subtotal updates on quantity change
+- Decreasing to 0 removes item or minus button disabled at 1","[MATH] line total = unit price × quantity for each item
+[MATH] sum(line totals) = displayed subtotal
+[CONSOLE] no JS errors","Line total not updating, subtotal mismatch, console TypeError, spinner >5s",Clear cart after test,CART-005,Automated
+FRR-019,Cart - Remove Item,Full Regression > Cart > Remove,High,,,  "Multiple products in cart","front_url={{FRONT_URL}}","1. Navigate to cart
+2. Click remove/trash icon on one item
+3. Verify item removed
+4. Verify totals recalculate
+5. Remove all items and verify empty state","- Item disappears from cart immediately
+- Cart totals recalculate
+- If cart empty: 'Your cart is empty' message with continue shopping link","[API] cart query confirms item removed (not in cart.items)
+[CONSOLE] no JS errors","Item still visible after remove click, totals not updating, spinner >5s",none,CART-009,Automated
+FRR-020,Cart - Stock Limit Enforced (Max Qty = Available Stock),Full Regression > Cart > Validation,Critical,BL-CART-001,,  "Product with limited stock (e.g., 5 units available)","front_url={{FRONT_URL}}","1. Navigate to product with limited stock
+2. Enter quantity 999 in quantity input field
+3. Attempt to add to cart","- Quantity capped to available stock or error shown: 'Only X available'
+- Order cannot exceed available inventory
+- '+' button disabled at stock limit (BL-CART-001)","[API] addToCart mutation rejects quantity exceeding stock OR returns capped qty
+[CONSOLE] no JS errors","Qty 999 accepted without error, order placed exceeding stock, spinner >5s",none,C411201,Manual
+FRR-021,Cart - Out-of-Stock Product Cannot Be Added,Full Regression > Cart > Validation,Critical,BL-CAT-001,,  "Admin access. Product with all FFC inventory set to 0.","admin_url={{BACK_URL}}, front_url={{FRONT_URL}}","1. In Admin: set all fulfillment center stock to 0 for a product
+2. Navigate to product on storefront
+3. Observe stock label and Add to Cart button
+4. Attempt to add via xAPI if UI blocks","- 'Out of stock' or 'Sold out' label shown on PDP and listing
+- 'Add to Cart' disabled/hidden
+- xAPI addToCart returns error for zero-stock product (BL-CAT-001)","[API] addToCart mutation returns error for zero-stock item
+[ADMIN] product stock shows 0 in Admin inventory
+[CONSOLE] no JS errors","'Add to Cart' enabled for zero-stock product, no out-of-stock label, 5xx on addToCart",Restore stock in Admin,C410692,Manual
+FRR-022,Cart - Price N/A Prevents Purchase ($0 Guard),Full Regression > Cart > Validation,Critical,"BL-CROSS-001, BL-CROSS-012",,  "Admin access. Product with price removed or set to 0.","admin_url={{BACK_URL}}, front_url={{FRONT_URL}}","1. In Admin: remove price from product (delete price list entry)
+2. Navigate to product on storefront
+3. Observe price and Add to Cart state","- Product shows 'Unavailable' or N/A price — NOT $0.00
+- 'Add to Cart' button disabled
+- Product cannot be purchased at $0 (BL-CROSS-001, BL-CROSS-012)","[API] xAPI products query returns null price for this product
+[CONSOLE] no JS errors","Product shows $0.00, 'Add to Cart' enabled with no price, 5xx on product query",Restore price in Admin,C410689,Manual
+FRR-023,Cart - Promo Code Valid Application,Full Regression > Cart > Promo,High,"BL-CART-003, BL-PRICE-001",,  "Valid promo code available (e.g., SAVE10). Products in cart.","front_url={{FRONT_URL}}","1. Add products to cart
+2. Navigate to cart
+3. Enter valid code: SAVE10
+4. Click 'Apply'
+5. Verify discount applied
+6. Verify discount calculated on sale price not list price","- Valid code applies discount
+- Discount line appears: 'Promo Code (SAVE10): -$X.XX'
+- Percentage coupon applies to already-discounted (sale) price, not list price
+- Grand total reduced correctly (BL-CART-003, BL-PRICE-001)","[API] cart query shows coupon applied and correct discount amount
+[MATH] discount amount = coupon% × sale price (not list price)
+[CONSOLE] no JS errors","Discount calculated on list price, no discount line visible, errors[] non-empty in cart mutation",Remove coupon from cart,CART-011,Manual
+FRR-024,Cart - Invalid Promo Code Rejected,Full Regression > Cart > Promo,Medium,,,  "On cart page with products","front_url={{FRONT_URL}}","1. Navigate to cart
+2. Enter invalid code: INVALID123
+3. Click 'Apply'
+4. Verify error","- Error message: 'Invalid promo code' or 'Code not found'
+- No discount applied
+- Cart totals unchanged","[CONSOLE] no JS errors
+[NETWORK] no 5xx on invalid coupon submit","No error shown for invalid code, discount applied with invalid code",none,CART-012,Manual
+FRR-025,Cart - Pack Size Validation,Full Regression > Cart > Validation,High,BL-CART-006,,  "Product sold in packs of 6","front_url={{FRONT_URL}}","1. Navigate to product with pack size = 6
+2. Enter quantity = 7
+3. Attempt to add to cart","- Quantity rejected or auto-rounded to nearest pack (6 or 12)
+- Stepper increments by pack size (BL-CART-006)","[API] addToCart mutation rejects or rounds non-multiple quantity
+[CONSOLE] no JS errors","Qty 7 accepted for pack-size-6 product, stepper increments by 1",none,C411205,Manual
+FRR-026,Cart - Currency Switch Recalculates All Prices,Full Regression > Cart > Currency,Critical,"BL-CART-004, BL-CROSS-004",,  "Multi-currency configured. Products in cart.","front_url={{FRONT_URL}}, currency={{CURRENCY_CODE}}","1. Add items to cart in USD
+2. Switch currency to EUR (or other configured currency)
+3. Verify all cart line items recalculate to EUR prices
+4. Verify shipping and tax also in EUR
+5. Check a product not in new currency's price list","- All prices switch to new currency's price list (not exchange rate conversion)
+- Cart subtotal, shipping, tax all in new currency
+- Products without new-currency prices show 'Unavailable' or removed
+- No mixed-currency state in cart (BL-CART-004, BL-CROSS-004)","[API] cart query after currency switch shows all prices in new currency
+[CONSOLE] no JS errors","Mixed-currency display, products without new-currency price show $0, errors[] non-empty",Switch back to USD,BL-CART-004,Manual
+FRR-027,Cart - Persistence Across Sign-Out / Sign-In,Full Regression > Cart > Persistence,High,BL-CART-008,,  "User logged in with items in cart","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","1. Add 3 products to cart
+2. Sign out
+3. Sign back in
+4. Verify cart restored","- Cart restored with same items and quantities after re-login
+- No items lost on sign-out/sign-in cycle (BL-CART-008)","[API] cart query after re-login shows same items and quantities
+[CONSOLE] no JS errors","Cart empty after re-login, items lost, quantities changed",Clear cart after test,BL-CART-008,Manual
+FRR-028,Checkout - Standard Delivery - Full Flow,Full Regression > Checkout > Delivery,Critical,BL-CHK-006,,  "Products in cart, shipping addresses configured","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","1. Navigate to cart
+2. Click 'Checkout'
+3. Select 'Delivery' option
+4. Select or add shipping address
+5. Select shipping method
+6. Select payment method
+7. Review order summary
+8. Click 'Place Order'
+9. Verify order confirmation page","- Checkout page loads with progress indicator
+- Address form or selector displays
+- Shipping methods display with cost and estimated delivery
+- Payment methods available
+- Order summary shows: Items, Subtotal, Shipping, Tax, Grand Total
+- Grand total = subtotal + shipping + tax - discounts (BL-CHK-006)
+- Order processes successfully
+- Confirmation page displays order number
+- Cart cleared after order","[MATH] grand total = subtotal + shipping + tax - discounts
+[ADMIN] order appears in Admin with correct total
+[EMAIL] confirmation email received within 5 minutes
+[CONSOLE] no JS errors","Order not created, confirmation page not loading, errors[] non-empty, 4xx/5xx on place order",Cancel test order in Admin,SMK-009,Automated
+FRR-029,Checkout - BOPIS Pickup Location Selection,Full Regression > Checkout > Pickup,Critical,BL-SHIP-002,,  "Products in cart, pickup locations configured","front_url={{FRONT_URL}}","1. Navigate to cart
+2. Click 'Checkout'
+3. Select 'Pickup' option
+4. Click 'Select pickup location'
+5. Verify map modal opens with location list
+6. Select a pickup location
+7. Complete checkout without shipping address","- 'Pickup' option available at checkout
+- Map modal shows markers for all pickup locations
+- Location details shown: Name, Address, Phone, Hours, Availability
+- No shipping cost applied for pickup
+- Shipping address step skipped
+- Order confirmation shows pickup location and instructions
+- Billing address still required (BL-SHIP-002)","[ADMIN] order shows pickup location and no shipping cost
+[CONSOLE] no JS errors on map load
+[NETWORK] no 4xx/5xx on location API","Map not loading, pickup option missing, console TypeError, location modal blank",Cancel test order in Admin,SMK-010,Automated
+FRR-030,Checkout - Shipping Methods Update on Address Change,Full Regression > Checkout > Shipping,Critical,"BL-CHK-005, BL-SHIP-001",,  "Checkout with delivery selected","front_url={{FRONT_URL}}","1. Enter domestic shipping address
+2. Note available shipping methods and rates
+3. Change to international address
+4. Verify shipping methods refresh
+5. Verify previously selected method deselected if unavailable","- Shipping methods update when address changes
+- Rates recalculate for new destination
+- Method unavailable for new address is deselected with notification
+- BOPIS option disappears for distant addresses (BL-CHK-005, BL-SHIP-001)","[NETWORK] shipping methods API called on address change
+[CONSOLE] no JS errors","Shipping methods not updating on address change, stale rates showing",none,BL-CHK-005,Manual
+FRR-031,Checkout - Free Shipping Threshold Recalculates on Cart Change,Full Regression > Checkout > Shipping,High,BL-SHIP-003,,  "Store configured with free shipping threshold (e.g., $100). Cart near threshold.","front_url={{FRONT_URL}}","1. Add items totaling $90 to cart
+2. Note shipping cost ($10 standard)
+3. Add item worth $20 (total $110)
+4. Verify shipping becomes $0 (free)
+5. Apply coupon reducing total to $95
+6. Verify free shipping removed","- Shipping recalculates each time cart changes
+- Free shipping triggered at threshold on subtotal after discounts
+- Coupon reducing below threshold removes free shipping (BL-SHIP-003)","[MATH] shipping = $0 when subtotal >= threshold
+[MATH] shipping restored when coupon drops subtotal below threshold
+[CONSOLE] no JS errors","Free shipping not triggering at threshold, shipping not removed when below threshold",Remove coupon from cart,BL-SHIP-003,Manual
+FRR-032,Checkout - Order Total Formula Verified,Full Regression > Checkout > Totals,Critical,"BL-PRICE-002, BL-PRICE-008, BL-CHK-006",,  "User at final checkout review step before placing order","front_url={{FRONT_URL}}","1. Proceed through all checkout steps
+2. At order review page, manually calculate: sum(line totals) + shipping + tax - discounts
+3. Compare manual calculation to displayed grand total
+4. After placing order, compare to confirmation page total
+5. Verify Admin order shows same total","- Grand total = subtotal + shipping + tax - cart discounts exactly
+- Tax calculated on post-discount subtotal (BL-PRICE-002)
+- No unexplained discrepancies >= $0.01 (BL-PRICE-008, BL-CHK-006)
+- Checkout total matches confirmation page
+- Confirmation matches Admin order detail","[MATH] grand total = subtotal + shipping + tax - discounts (manual calculation)
+[ADMIN] admin order total = checkout total
+[CONSOLE] no JS errors","$0.01+ discrepancy in total calculation, checkout total differs from confirmation, admin order amount different",Cancel test order in Admin,CART-015,Manual
+FRR-033,Checkout - Place Order (Double-Submit Prevention),Full Regression > Checkout > Idempotency,Critical,"BL-CHK-002, BL-CROSS-010",,  "User at final checkout step with payment ready","front_url={{FRONT_URL}}","1. Complete all checkout steps
+2. Click 'Place Order'
+3. Immediately click 'Place Order' again (rapid double-click)
+4. Wait for processing
+5. Check Admin for orders","- Only 1 order created (not 2)
+- Button disabled/loading state after first click
+- No duplicate orders in Admin
+- No double inventory decrement (BL-CHK-002, BL-CROSS-010)","[ADMIN] only 1 order created for this cart
+[NETWORK] only 1 order creation API call sent
+[CONSOLE] no JS errors","Two orders created, button clickable during processing, double inventory decrement",Cancel test order in Admin,BL-CHK-002,Manual
+FRR-034,Checkout - Payment Credit Card (CyberSource),Full Regression > Payment > CyberSource,Critical,BL-CHK-004,,  "Checkout at payment step, CyberSource configured","card={{TEST_CARD_NUMBER}}, front_url={{FRONT_URL}}","1. Proceed to payment step
+2. Select 'Bank card (CyberSource)'
+3. Wait for CyberSource iframe to load
+4. Enter: card {{TEST_CARD_NUMBER}} (4622943127013705), name John Smith, expiry 09/2029, CVV 838
+5. Click 'Place Order'","- CyberSource iframe loads (PCI-compliant, isolated)
+- Card fields accept input
+- No raw card data in HTML or browser storage
+- Payment authorized or clear decline message shown
+- If success: order confirmation with order number
+- If declined: user can retry without losing cart (BL-CHK-004)","[NETWORK] no raw card data in any network request body
+[CONSOLE] no JS errors, no card data in console logs","Payment iframe blank (iframe blocked), card fields not accepting input, spinner >5s on place order",Cancel test order in Admin,PAY-CS-001,Manual
+FRR-035,Payment - Authorize.Net Valid Card,Full Regression > Payment > AuthorizeNet,Critical,BL-CHK-004,,  "Checkout at payment step, Authorize.Net configured","front_url={{FRONT_URL}}","1. Select 'Bank card (Authorize.Net)'
+2. Enter test card: 4111111111111111, expiry 12/2028, CVV 123
+3. Submit payment","- Authorize.Net form loads
+- Card accepted
+- Payment processes
+- Order confirmation or decline message shown","[NETWORK] no raw card data in network requests
+[CONSOLE] no JS errors","Payment form not loading, spinner >5s, console TypeError, 5xx on payment submit",Cancel test order in Admin,PAY-AN-001,Manual
+FRR-036,Payment - Datatrans Valid Card (3D Secure),Full Regression > Payment > Datatrans,High,BL-CHK-004,,  "Checkout at payment step, Datatrans configured","datatrans_otp={{DATATRANS_OTP}}, front_url={{FRONT_URL}}","1. Select 'Bank card (Datatrans)'
+2. Enter test card: 4242424242424242, expiry 12/2028, CVV 123
+3. Enter OTP if prompted: {{DATATRANS_OTP}}
+4. Complete payment","- Datatrans form loads (may redirect to /checkout/payment)
+- OTP field appears if 3D Secure enabled
+- Correct OTP authorizes payment
+- Order placed with confirmation","[NETWORK] no raw card data in network requests
+[CONSOLE] no JS errors","Payment form not loading, OTP field missing when 3DS enabled, console TypeError",Cancel test order in Admin,PAY-DT-001,Manual
+FRR-037,Payment - Skyflow Valid Card (PCI Tokenization),Full Regression > Payment > Skyflow,High,BL-CHK-004,,  "Checkout at payment step, Skyflow configured","skyflow_visa={{SKYFLOW_VISA}}, skyflow_expiry={{SKYFLOW_EXPIRY}}, skyflow_cvv={{SKYFLOW_CVV}}, front_url={{FRONT_URL}}","1. Select 'Bank card (Skyflow)'
+2. Enter: {{SKYFLOW_VISA}}, expiry {{SKYFLOW_EXPIRY}}, CVV {{SKYFLOW_CVV}}
+3. Submit payment","- Skyflow secure form loads
+- Card data tokenized before submission
+- Only token sent to server (no raw PAN in requests)
+- Order confirmation on success (BL-CHK-004)","[NETWORK] verify no raw PAN in any network request (token only sent to server)
+[CONSOLE] no JS errors","Raw card number visible in network request, payment form not loading, spinner >5s",Cancel test order in Admin,PAY-SK-001,Manual
+FRR-038,Payment - Invalid Card Rejected with Clear Error,Full Regression > Payment > Negative,High,BL-CHK-004,,  "Payment form ready (any processor)","front_url={{FRONT_URL}}","1. Enter invalid card: 1234567890123456
+2. Fill other fields with valid data
+3. Attempt to submit","- Real-time validation on card number field
+- Error message: 'Invalid card number'
+- No payment attempted
+- User can correct and retry without losing checkout state","[CONSOLE] no JS errors
+[NETWORK] no payment API call sent for invalid card","No validation error for invalid card, payment API called with invalid card",none,PAY-CS-004,Manual
+FRR-039,Payment - Secure Data Handling (PCI Compliance Check),Full Regression > Payment > Security,Critical,BL-CHK-004,,  "Checkout at payment step, DevTools open","front_url={{FRONT_URL}}","1. Inspect payment form
+2. Verify credit card fields in iframe
+3. Submit payment
+4. Inspect network requests
+5. Check browser storage (localStorage, sessionStorage, cookies)","- Payment form uses iframe (PCI DSS scope reduction)
+- No raw card number in HTML
+- No card data stored in browser storage
+- Only tokenized data sent to server
+- All communication over HTTPS
+- No mixed content warnings (BL-CHK-004)","[NETWORK] no raw PAN in any network request
+[CONSOLE] no card data logged to console
+[NETWORK] all payment requests over HTTPS only","Raw card number found in DOM or network, card stored in localStorage, mixed content warning",none,FR-SECURITY-005,Manual
+FRR-040,Order Confirmation Page - Cross-Layer Verification,Full Regression > Orders > Confirmation,Critical,"BL-CROSS-005, BL-NOTIF-001, BL-NOTIF-002, BL-CHK-006",,  "Order just placed successfully","front_url={{FRONT_URL}}, admin_url={{BACK_URL}}","1. Complete checkout and place order
+2. Capture order number from confirmation page
+3. Verify confirmation page content
+4. Check email inbox for confirmation
+5. Navigate to account Order History
+6. In Admin: verify order exists with matching total
+7. Verify cart is empty after order","- Confirmation page shows order number prominently
+- Success message displayed
+- Order details: items, shipping address, shipping method, payment, total
+- Cart cleared (BL-CROSS-005)
+- Confirmation email received within 5 minutes with matching data (BL-NOTIF-001, BL-NOTIF-002)
+- Order appears in account Order History
+- Admin order total matches confirmation total (BL-CHK-006)","[ADMIN] order exists with status 'New' and matching total
+[EMAIL] confirmation email received within 5 minutes with correct order data
+[API] order history query returns newly placed order
+[CONSOLE] no JS errors","Order not in Admin, email not received after 5 min, cart not cleared after order",Cancel test order in Admin,SMK-012,Automated
+FRR-041,GA4 Purchase Event Fires on Order Confirmation,Full Regression > Analytics > GA4,Critical,BL-CROSS-005,,  "GA4 configured, Network tab open, DevTools console open","front_url={{FRONT_URL}}","1. Complete checkout and place order
+2. On confirmation page, open DevTools > Network tab
+3. Filter for 'google-analytics.com' or 'gtag' events
+4. Find 'purchase' event
+5. Inspect event parameters","- purchase event fires exactly once on confirmation page load
+- event.transaction_id matches displayed order number
+- event.value matches order total (revenue)
+- event.currency matches order currency
+- event.tax, event.shipping included
+- event.items array contains all ordered products with correct item_id, price, quantity
+- No GA errors in console (BL-CROSS-005)","[NETWORK] purchase event visible in network tab
+[CONSOLE] no GA4 errors","purchase event not firing, transaction_id mismatch, event.value incorrect",Cancel test order in Admin,FR-GA-004,Manual
+FRR-042,GA4 Add to Cart and Begin Checkout Events,Full Regression > Analytics > GA4,High,BL-CROSS-005,,  "GA4 configured, Network tab open","front_url={{FRONT_URL}}, sku={{TEST_SKU}}","1. Navigate to product page
+2. Click 'Add to Cart'
+3. Verify 'add_to_cart' GA4 event in Network tab
+4. Navigate to cart and click Checkout
+5. Verify 'begin_checkout' event fired","- add_to_cart event: currency, value, items[item_id, item_name, price, quantity]
+- begin_checkout event: currency, value, items array with all cart products
+- Both events visible in Network tab
+- Data accurate (matches product/cart values)","[NETWORK] add_to_cart and begin_checkout events visible in network tab
+[CONSOLE] no GA4 errors","Events not firing, incorrect event parameters, GA4 console errors",Remove item from cart,FR-GA-002,Manual
+FRR-043,Order History - View and Reorder,Full Regression > Orders > History,High,BL-ORD-005,,  "User logged in with previous orders","front_url={{FRONT_URL}}","1. Navigate to account > Orders
+2. Verify orders listed newest-first with status, date, total
+3. Click 'View Details' on an order
+4. Verify all order details present
+5. Click 'Reorder All'
+6. Verify products added to cart","- Orders listed in reverse chronological order
+- Each order: Order Number, Date, Status badge, Total
+- Order details: items, address, shipping, payment, totals
+- Actions: Reorder, Track Shipment, Print Invoice
+- Reorder adds all items to cart
+- Out-of-stock items on reorder show warning","[API] order history query returns orders in correct order
+[CONSOLE] no JS errors","Orders not listed, wrong sort order, reorder not adding to cart, console TypeError",Clear cart added by reorder,CART-017,Manual
+FRR-044,Order Status State Machine - Admin Processing,Full Regression > Orders > Status,High,"BL-ORD-001, BL-ORD-006",,  "Placed order in Admin","admin_url={{BACK_URL}}, front_url={{FRONT_URL}}","1. Place order in storefront
+2. In Admin: open the order
+3. Attempt to change payment: Pending → Captured (skipping Authorized)
+4. Verify illegal transition rejected
+5. Process through valid states: Pending → Authorized → Captured
+6. Ship via: New → PickPack → Sent (with tracking number)
+7. Verify storefront order status updates","- Illegal state transitions rejected (cannot capture before authorize)
+- Valid transitions accepted in correct order
+- Shipment requires tracking number for 'Sent' state
+- Order status updates visible in storefront Order History
+- Audit log records each transition with actor and timestamp (BL-ORD-001, BL-ORD-006)","[API] illegal state transition returns 400/422
+[ADMIN] audit log records each transition
+[CONSOLE] no JS errors","Illegal transition accepted, no audit log entry, storefront status not updating",Cancel/close test order in Admin,BL-ORD-001,Manual
+FRR-045,BOPIS - Pickup Location Map, Filter, and Select,Full Regression > BOPIS > Map,Critical,BL-SHIP-002,,  "Cart has products, multiple pickup locations exist","front_url={{FRONT_URL}}","1. Add products to cart and select Pickup at checkout
+2. Open pickup location modal
+3. Verify map loads with markers for all locations
+4. Enter city name in search bar and verify locations filter
+5. Apply 'Open Now' filter
+6. Click on a location in list and verify marker highlights
+7. Click 'Select' on a location
+8. Verify modal closes and selected location shows in checkout","- Google Maps loads with location markers
+- Map interactive (zoom, pan)
+- Search filters list and re-centers map
+- Filters apply to location list (AND logic)
+- Clicking location highlights marker and opens info window
+- Info window shows: Name, Address, Phone, Hours, Availability
+- 'Select' closes modal
+- Selected location displayed in checkout with 'Change Location' option","[CONSOLE] no JS errors on map load
+[NETWORK] no 4xx/5xx on location API calls","Map not loading, location list empty, 'Select' not closing modal, console TypeError",none,BOPIS-001,Automated
+FRR-046,BOPIS - Mobile Pickup Flow,Full Regression > BOPIS > Mobile,Critical,BL-SHIP-002,,  "Mobile viewport (375x812px or iPhone), cart has products","front_url={{FRONT_URL}}","1. Resize to mobile viewport
+2. Add products to cart
+3. Select Pickup at checkout
+4. Open pickup location selector
+5. Interact with map (pinch zoom, tap markers)
+6. Select location
+7. Complete checkout","- Pickup location selector optimized for mobile
+- Touch interactions work: pinch zoom, tap markers
+- Location list scrollable
+- Select button tappable (44x44px minimum)
+- No horizontal scrolling required
+- Checkout completes on mobile","[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx during mobile pickup flow","Horizontal scrolling on mobile, tap targets too small, map not loading on mobile",Cancel test order in Admin,BOPIS-004,Manual
+FRR-047,B2B - Multi-Organization Cart Isolation,Full Regression > B2B > Multi-Org,Critical,"BL-B2B-001, BL-CART-005",,  "User belongs to 2+ organizations","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, front_url={{FRONT_URL}}","1. Log in as user with multiple organizations
+2. Switch to Org A using org selector in header
+3. Add 3 products to cart while in Org A
+4. Switch to Org B
+5. Verify Org B cart is separate (empty or different items)
+6. Add products to Org B cart
+7. Switch back to Org A
+8. Verify Org A cart intact","- Organization selector shows all user's orgs
+- Switching org switches cart context
+- Org A's items NOT visible in Org B
+- Cart items persist when switching back to Org A
+- Pricing reflects each org's contract prices (BL-B2B-001, BL-CART-005)","[API] cart query with Org A context returns Org A items
+[API] cart query with Org B context returns Org B items (different cart)
+[CONSOLE] no JS errors","Org A items visible in Org B cart, cart not switching on org change, console TypeError",Clear both org carts,FR-MULTI-ORG-002,Manual
+FRR-048,B2B - Organization Context Swap (All 6 Dimensions),Full Regression > B2B > Context Swap,Critical,BL-CROSS-008,,  "User member of 2+ organizations with different configs (prices, theme if WL enabled)","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, front_url={{FRONT_URL}}","1. Log in as Org A member
+2. Note: cart items, visible addresses, product prices, white-label theme
+3. Switch to Org B
+4. Verify cart changed to Org B's cart
+5. Verify addresses changed to Org B's address book
+6. Verify prices changed to Org B's price list
+7. Verify theme updated if white labeling enabled
+8. Switch back to Org A and verify all contexts restored","- Cart swaps atomically to new org's cart
+- Addresses from Org A not visible under Org B
+- Prices reflect Org B's contract list (BL-B2B-002)
+- Theme/branding updates if white labeling enabled
+- Quotes scope to current org
+- Switching back restores all Org A's context (BL-CROSS-008)","[API] xAPI cart and address queries scoped to current org context
+[CONSOLE] no JS errors","Org A addresses visible under Org B, wrong prices for Org B, theme not updating",none,BL-CROSS-008,Manual
+FRR-049,B2B - Organization-Specific (Contract) Pricing,Full Regression > B2B > Pricing,Critical,"BL-PRICE-007, BL-B2B-002",,  "Org A has a custom price list with Product X at $50. Store default has Product X at $75.","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, front_url={{FRONT_URL}}","1. Sign in as Org A member
+2. Navigate to Product X
+3. Note displayed price
+4. Sign out and sign in as a non-org (personal) user
+5. Navigate to Product X
+6. Note displayed price","- Org A member sees contract price: $50
+- Non-org user sees store default price: $75
+- Org A member adds to cart — cart uses $50
+- Non-org user's cart uses $75
+- Product not in Org A's price list falls back to store default (BL-PRICE-007, BL-B2B-002)","[API] xAPI products query returns different prices for org vs non-org context
+[CONSOLE] no JS errors","Non-org user sees contract price, org member sees store default, cart uses wrong price",Sign out after test,BL-PRICE-007,Manual
+FRR-050,B2B - Quick Order Entry,Full Regression > B2B > Quick Order,High,,,  "B2B user logged in with organization context","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, front_url={{FRONT_URL}}","1. Navigate to Quick Order page
+2. Enter valid SKUs and quantities:
+   - Row 1: SKU-001, Qty: 10
+   - Row 2: SKU-002, Qty: 5
+   - Row 3: INVALID-SKU, Qty: 1
+3. Click 'Add to Cart'","- Quick Order form displays with SKU and Quantity rows
+- Valid SKUs validate against catalog (product name shown)
+- Invalid SKU shows error: 'Product not found'
+- Valid rows added to cart
+- Invalid rows highlighted
+- Cart updates with correct quantities","[API] cart query shows correct items added from valid SKUs
+[CONSOLE] no JS errors","No quick order page, invalid SKU not showing error, console TypeError",Clear cart,FR-B2B-001,Manual
+FRR-051,B2B - Company Members Management,Full Regression > B2B > Company,High,BL-B2B-005,,  "Organization admin logged in","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, front_url={{FRONT_URL}}","1. Navigate to Company Members page
+2. Verify members list with Name, Email, Role, Status
+3. Click 'Invite Member' button
+4. Enter email: newmember@example.com and select role: Employee
+5. Click 'Send Invitation'
+6. Verify invitation email received","- Members list shows all org members
+- 'Invite Member' button visible for org admins
+- Invitation sent successfully
+- Invitation email received with registration link
+- After joining, member appears in list
+- Admins can edit roles or remove members (BL-B2B-005)","[EMAIL] invitation email received within 5 minutes
+[CONSOLE] no JS errors","Invite button missing for org admin, email not received, console TypeError",Remove test invitation,FR-B2B-002,Manual
+FRR-052,B2B - Quote Request Flow,Full Regression > B2B > Quotes,High,BL-B2B-003,,  "B2B user with 'Quotes' feature enabled in store settings","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, admin_url={{BACK_URL}}, front_url={{FRONT_URL}}","1. Add products to cart
+2. Click 'Request Quote' button
+3. Add message/notes and submit quote request
+4. Verify quote appears in account > Quote Requests
+5. In Admin: review and approve quote with adjusted price
+6. Return to storefront: open approved quote
+7. Click 'Convert to Order'
+8. Complete checkout at quoted price","- 'Request Quote' button visible (feature enabled in store)
+- Quote submitted with cart items and message
+- Quote appears in account Quote Requests with status 'New'
+- Admin can approve with price adjustments
+- Approved quote shows in storefront with seller price
+- Convert to Order creates checkout at quoted prices
+- Expired quotes cannot be converted (BL-B2B-003)","[ADMIN] quote appears in Admin with correct items and status
+[API] quotes query returns submitted quote
+[CONSOLE] no JS errors","Quote button missing, quote not appearing in account, console TypeError",Cancel test quote and order in Admin,BL-B2B-003,Manual
+FRR-053,B2B - Member Role Feature Visibility,Full Regression > B2B > Roles,High,BL-B2B-005,,  "Org Admin and Org Buyer accounts available","admin_email={{ORG_USER_EMAIL}}, buyer_email=org-buyer@example.com, front_url={{FRONT_URL}}","1. Sign in as Org Admin
+2. Verify: Members, Quotes, Orders, Approval menu items visible
+3. Sign out; sign in as Org Buyer
+4. Verify: Orders and Lists visible; 'Members' NOT visible
+5. Sign out; sign in as view-only member (no purchasing role)
+6. Verify: no cart/checkout access","- Org Admin sees all B2B features
+- Buyer sees Orders and Lists but not member management
+- View-only member cannot add to cart or checkout (BL-B2B-005)","[CONSOLE] no JS errors
+[NETWORK] no 403 errors for permitted actions","Buyer sees member management, view-only member can add to cart",Sign out after test,BL-B2B-005,Manual
+FRR-054,Tiered/Volume Pricing - Tier Activates at Threshold,Full Regression > Pricing > Tiers,Critical,BL-PRICE-004,,  "Product configured with tier pricing: 1-9 units = $10, 10+ units = $8","front_url={{FRONT_URL}}","1. Navigate to product with tier pricing
+2. Add 9 units to cart
+3. Verify price = $10/unit (line total = $90)
+4. Add 1 more unit (qty=10)
+5. Verify price drops to $8/unit for ALL 10 units
+6. Verify line total = $80 (not $90+$8)","- Price changes at exact threshold quantity
+- All units in the line use the same tier price (no split pricing)
+- Line total = qty x tier price
+- 'From $X' on listing matches lowest tier (BL-PRICE-004)","[MATH] line total at qty=9: $90.00
+[MATH] line total at qty=10: $80.00 (all units at tier price)
+[API] cart query shows correct tier price applied
+[CONSOLE] no JS errors","Split pricing applied, price not dropping at threshold, line total calculation wrong",Clear cart,BL-PRICE-004,Manual
+FRR-055,Order Placement Side Effects - Inventory and Email,Full Regression > Orders > Side Effects,Critical,"BL-NOTIF-001, BL-NOTIF-002, BL-CROSS-005",,  "Product with known stock count. Order about to be placed.","admin_url={{BACK_URL}}, front_url={{FRONT_URL}}","1. Note current stock count for product in Admin
+2. Place order for 2 units
+3. Verify confirmation page shows order number
+4. In Admin: check product inventory (should decrease by 2)
+5. Check email inbox for confirmation email
+6. Verify email content matches order (number, items, total, shipping address)","- Inventory decremented by ordered quantity immediately after order
+- Exactly 1 confirmation email received (not 0, not 2)
+- Email content matches Admin order detail (BL-NOTIF-001, BL-NOTIF-002)
+- Order appears in customer Order History
+- Cart is cleared
+- All side effects complete — no partial execution (BL-CROSS-005)","[ADMIN] inventory decremented by ordered quantity
+[EMAIL] exactly 1 confirmation email received within 5 minutes
+[API] order history query shows new order
+[CONSOLE] no JS errors","Inventory not decremented, 2 confirmation emails received, email content mismatch",Cancel test order in Admin,BL-CROSS-005,Manual
+FRR-056,Minimum Order Amount Enforcement,Full Regression > Checkout > Validation,High,BL-CHK-007,,  "Store configured with minimum order amount (e.g., $50)","front_url={{FRONT_URL}}","1. Add items totaling $40 to cart
+2. Proceed to checkout
+3. Verify 'Place Order' blocked
+4. Add more items to exceed $50
+5. Verify checkout unblocked","- 'Place Order' disabled or blocked when below minimum
+- Message shown: 'Minimum order is $50, you need $10 more'
+- Minimum checked against subtotal after discounts, not grand total
+- Checkout unblocks when minimum met (BL-CHK-007)","[DOM] 'Place Order' button disabled/blocked when below minimum
+[DOM] error message shows minimum amount and shortfall
+[CONSOLE] no JS errors","Order placed below minimum, no error message shown, minimum checked against grand total",Clear cart,BL-CHK-007,Manual
+FRR-057,Session Expiry During Checkout - Cart Preserved,Full Regression > Checkout > Session,High,BL-AUTH-001,"ECL-1.2",  "User in checkout flow, ability to expire session (e.g., clear auth token)","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","1. Start checkout with items in cart
+2. Manually expire session (clear auth cookies/token or wait for timeout)
+3. Attempt to proceed to next step
+4. Re-authenticate when prompted
+5. Verify cart intact and checkout resumable","- Cart contents preserved after session expiry
+- Redirected to sign-in after session expires
+- After re-login: cart intact with same items
+- Checkout resumes from last step (BL-AUTH-001)","[API] cart query after re-auth returns same items
+[CONSOLE] no JS errors","Cart empty after re-auth, redirected to homepage instead of checkout, items lost",none,BL-AUTH-001,Manual
+FRR-058,Product Catalog - Out-of-Stock Visibility,Full Regression > Catalog > Stock,Critical,BL-CAT-001,,  "Product with stock = 0 in all FFCs","admin_url={{BACK_URL}}, front_url={{FRONT_URL}}","1. Navigate to product PDP and listing
+2. Verify stock label
+3. Verify Add to Cart state
+4. Verify product still visible (not hidden)","- 'Sold out' or 'Out of stock' label shown on PDP and listing
+- 'Add to Cart' disabled
+- Product remains visible in catalog (not hidden)
+- 'Add to Cart' enabled when stock restored (BL-CAT-001)","[API] xAPI products query returns inStock=false
+[ADMIN] product stock shows 0
+[CONSOLE] no JS errors","'Add to Cart' enabled with zero stock, product hidden completely, no stock label",Restore stock in Admin,BL-CAT-001,Manual
+FRR-059,Product Catalog - Hidden Product Not Searchable,Full Regression > Catalog > Visibility,High,BL-CAT-004,,  "Admin access. Product_1 with 'Visible' toggle available.","admin_url={{BACK_URL}}, front_url={{FRONT_URL}}","1. In Admin: set product 'Visible' = false
+2. Search for product on storefront
+3. Navigate category containing product
+4. Try direct URL access","- Product absent from category listing
+- Product not found in search results
+- Direct URL returns 404 or redirect
+- Admin confirms product still exists (BL-CAT-004)","[ADMIN] product still visible in Admin with Visible=false flag
+[CONSOLE] no JS errors","Product still showing in search/category after hiding, direct URL returns 200",Restore product visibility in Admin,C410691,Manual
+FRR-060,Configurable Product - All Required Sections Must Be Filled,Full Regression > Catalog > Configurable,Critical,BL-CAT-006,,  "Configurable product with 2+ required configuration sections","front_url={{FRONT_URL}}","1. Open configurable product PDP
+2. Verify 'Add to Cart' disabled with no selections
+3. Fill first required section only
+4. Verify 'Add to Cart' still disabled
+5. Fill all required sections
+6. Verify 'Add to Cart' enabled
+7. Leave optional section empty
+8. Verify 'Add to Cart' still enabled","- 'Add to Cart' disabled until all required sections completed
+- Partial completion keeps button disabled
+- Optional sections do not block cart add
+- Cart shows configuration details (BL-CAT-006)","[DOM] 'Add to Cart' button disabled state changes correctly with selections
+[API] addToCart succeeds only with all required sections filled
+[CONSOLE] no JS errors","'Add to Cart' enabled with incomplete required sections, optional section blocking cart add",Remove item from cart,B2C-CONFIG-001,Manual
+FRR-061,B2C Variations - Option Display and Add to Cart (Correct SKU),Full Regression > B2C Variations > Display,Critical,BL-CAT-006,,  "Product with VirtoFrontend_UI_Layout=B2C property. 2+ color and size options.","front_url={{FRONT_URL}}","1. Navigate to B2C variation product PDP
+2. Verify 'Options' section (not standard variation list) displayed
+3. Verify color swatches render as visual colored indicators
+4. Verify 'Add to Cart' disabled with no selections
+5. Select Color: Blue (only); verify button still disabled
+6. Select Size: M (both selected); verify button enabled
+7. Click 'Add to Cart'
+8. In Network tab: verify addItem mutation sends Blue/M variant SKU","- 'Options' section renders (not standard list/table)
+- Color swatches are visual (not text-only)
+- Single-select per option group enforced
+- 'Add to Cart' enabled only when all required groups selected
+- Correct variant SKU in API request (not parent SKU)
+- Cart line shows 'Color: Blue, Size: M' (BL-CAT-006, C411046)","[API] addItem mutation sends correct variant SKU (not parent)
+[API] addItem response errors[] is empty
+[CONSOLE] no JS errors","Wrong SKU in addItem mutation, 'Add to Cart' enabled before all groups selected, errors[] non-empty",Remove item from cart,C411031,Manual
+FRR-062,B2C Variations - Price and Stock Update on Selection,Full Regression > B2C Variations > Price,Critical,"BL-PRICE-003, BL-CAT-006",,  "B2C product with variants having different prices and stock levels","front_url={{FRONT_URL}}","1. Navigate to B2C variation PDP
+2. Select in-stock variant — note price and 'In stock' label
+3. Select out-of-stock variant
+4. Verify price, stock indicator, and button state update
+5. Verify SKU code on page updates to selected variant","- Price updates immediately on selection (no reload)
+- Stock indicator shows per-variant stock (not aggregate)
+- Out-of-stock variant: 'Out of stock' label, 'Add to Cart' disabled
+- All prices display exactly 2 decimal places (BL-PRICE-003)
+- SKU on PDP reflects selected variant (not parent)","[FORMAT] all prices display with exactly 2 decimal places
+[CONSOLE] no JS errors","Price not updating on variant selection, aggregate stock shown instead of per-variant",none,C411052,Manual
+FRR-063,B2C Variations - Image Gallery Updates on Color Selection,Full Regression > B2C Variations > Images,High,,,  "B2C product with color-specific images assigned to variants","front_url={{FRONT_URL}}","1. Navigate to B2C variation PDP
+2. Select Color: Blue
+3. Verify main image and thumbnail gallery update to Blue images
+4. Select Color: Red
+5. Verify gallery switches to Red images
+6. Click thumbnail to set as main image","- Main image changes to variant-specific image on selection
+- Thumbnail gallery shows images for selected variant only
+- Thumbnails from other variants replaced (not accumulated)
+- Clicking thumbnail sets it as main image
+- No broken image icons if no variant-specific image (shows parent)","[CONSOLE] no JS errors on image change
+[NETWORK] no 404 on variant image requests","Broken image icons, gallery not updating on color selection, console TypeError",none,C411051,Manual
+FRR-064,B2C Variations - Shareable URL Deep Links to Correct Variant,Full Regression > B2C Variations > URL,High,,,  "B2C variation product with URL encoding of variation selection","front_url={{FRONT_URL}}","1. Navigate to B2C variation PDP
+2. Select Color: Red, Size: M
+3. Copy current URL (should have query params encoding selection)
+4. Open URL in incognito window
+5. Verify Red/M pre-selected on page load","- URL encodes variant selection (query params or path)
+- Opening URL pre-selects correct options
+- Price and image match the Red/M variant
+- Shareable link preserved (not redirected to base product)
+- (VCST-4530)","[NAV] URL contains variant selection parameters
+[CONSOLE] no JS errors","URL not updated on variant selection, incognito window not pre-selecting variant",none,VCST-4530,Manual
+FRR-065,Wishlist / Lists - Add Product and Add to Cart from List,Full Regression > B2C > Lists,Critical,,,  "User logged in, wishlist exists","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","1. Navigate to product detail page
+2. Click 'Add to List' or heart icon
+3. Select list: 'Wishlist'
+4. Verify success notification and heart icon fills
+5. Navigate to My Lists > open wishlist
+6. Verify product appears with image, name, price
+7. Click 'Add to Cart' from list
+8. Click 'Add All to Cart'","- 'Add to List' button/icon visible on PDP
+- Product added to selected list
+- Product visible in list with correct details
+- Individual and bulk 'Add to Cart' from list both work
+- Out-of-stock items skipped with warning on 'Add All'
+- Products remain in list after adding to cart","[API] lists query returns product in wishlist
+[CONSOLE] no JS errors","Heart icon not updating, product not in wishlist after add, 'Add All' failing",Clear cart after test,B2C-LIST-005,Automated
+FRR-066,Ship-To - Select and Add Addresses,Full Regression > B2C > Ship To,Critical,BL-CHK-003,,  "User logged in with saved addresses","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","1. Add products to cart and proceed to checkout
+2. Verify default address pre-selected
+3. Click 'Change Address' and select different saved address
+4. Verify shipping costs may update for new address region
+5. Navigate to Account > Addresses and add new address with all required fields","- Default address pre-selected in checkout
+- Address selector shows all saved addresses
+- Changing address updates shipping section
+- New address form validates required fields (ZIP format, phone)
+- Saved address appears in address list (BL-CHK-003)","[API] addresses query returns saved addresses
+[CONSOLE] no JS errors","Default address not pre-selected, address form validation missing, shipping not updating",none,B2C-SHIP-006,Automated
+FRR-067,Coupons - Valid Coupon Applied (Storefront End-to-End),Full Regression > Coupons > Apply,Critical,"BL-CART-003, BL-PRICE-001",,  "Valid coupon exists in Admin (e.g., WELCOME10 - 10% off). Products in cart.","front_url={{FRONT_URL}}","1. Add eligible products to cart
+2. Navigate to /account/coupons to view available coupons
+3. Go to cart and enter coupon code: WELCOME10
+4. Click Apply
+5. Verify discount applied and shown as line item
+6. Proceed to checkout and verify coupon persists
+7. Place order and verify order total reflects coupon","- Coupon input field visible on cart page
+- Valid coupon applies discount
+- Discount line shows: 'WELCOME10: -$X.XX'
+- Coupon persists through checkout flow
+- Order total reduced correctly
+- /account/coupons page shows available coupons (BL-CART-003, BL-PRICE-001)","[API] cart query shows coupon applied with correct discount amount
+[MATH] discount = coupon% × eligible subtotal
+[CONSOLE] no JS errors","Coupon not persisting through checkout, discount calculated on wrong base, errors[] non-empty",Cancel test order in Admin,VCST-4590,Manual
+FRR-068,Coupons - Case-Insensitive Code Acceptance,Full Regression > Coupons > Validation,High,,"ECL-1.3",  "Valid coupon code exists (e.g., SAVE10)","front_url={{FRONT_URL}}","1. Enter coupon code in all lowercase: 'save10'
+2. Click Apply","- Coupon accepted regardless of case (lowercase/uppercase)
+- Same discount applied as with uppercase code (ECL-1.3)","[API] cart mutation accepts lowercase coupon code
+[CONSOLE] no JS errors","Lowercase coupon rejected, no discount applied",Remove coupon from cart,ECL-1.3,Manual
+FRR-069,Coupons - Expired Coupon Rejected with Clear Message,Full Regression > Coupons > Validation,High,,"ECL-1.3",  "Expired coupon code available (past expiry date)","front_url={{FRONT_URL}}","1. Enter expired coupon code in cart
+2. Click Apply","- Error: 'Coupon expired' or 'Coupon not valid'
+- No discount applied
+- Cart total unchanged (ECL-1.3)","[API] cart mutation returns error for expired coupon
+[CONSOLE] no JS errors","No error shown for expired coupon, discount applied for expired code",none,ECL-1.3,Manual
+FRR-070,Coupons - Only One Coupon Per Cart (Single-Use Enforcement),Full Regression > Coupons > Validation,High,BL-CART-003,,  "Two valid coupon codes available. Cart with products.","front_url={{FRONT_URL}}","1. Apply first valid coupon code
+2. Attempt to apply second coupon code","- First coupon applied successfully
+- Second coupon rejected with message: 'Only one coupon allowed' (if single-coupon store)
+- Or second coupon replaces first (if replacement behavior)
+- No double-discount (BL-CART-003)","[API] cart mutation enforces single-coupon rule
+[CONSOLE] no JS errors","Two coupons both applied, double discount on cart",Remove coupon from cart,BL-CART-003,Manual
+FRR-071,Coupons - Coupon Removed from Cart,Full Regression > Coupons > Removal,High,,,  "Coupon applied to cart","front_url={{FRONT_URL}}","1. Apply valid coupon to cart
+2. Locate 'Remove coupon' option
+3. Click to remove
+4. Verify coupon removed and total restored","- Applied coupon shows with 'Remove' option
+- Clicking Remove removes discount
+- Cart total restored to pre-coupon amount
+- Coupon code field available again","[API] cart query shows no coupon after removal
+[CONSOLE] no JS errors","Coupon not removable, total not restored after removal",none,VCST-4590,Manual
+FRR-072,Security - SQL Injection Prevention,Full Regression > Security > Injection,Critical,BL-SRCH-005,,  "User on search and login pages","front_url={{FRONT_URL}}","1. Enter in search: laptop' OR '1'='1
+2. Enter in login email: admin' OR '1'='1' --
+3. Verify no SQL execution","- Inputs sanitized server-side
+- No database errors exposed to user
+- Generic error messages (no stack traces)
+- Application remains stable (BL-SRCH-005)","[CONSOLE] no database errors in console
+[NETWORK] no 5xx errors from SQL injection attempt","SQL error returned to user, 500 on injection attempt, stack trace visible",none,FR-SECURITY-001,Manual
+FRR-073,Security - XSS Prevention,Full Regression > Security > XSS,Critical,,,  "User on any input page","front_url={{FRONT_URL}}","1. Enter in search: <script>alert('XSS')</script>
+2. Enter in registration name: <img src=x onerror=alert('XSS')>
+3. Submit and verify","- XSS attempts fail — no script execution
+- Inputs displayed as text or stripped
+- No alert dialogs appear
+- CSP headers present","[NETWORK] CSP headers present in responses
+[CONSOLE] no script execution from XSS attempts","alert() dialog appears, script executing, no CSP headers",none,FR-SECURITY-002,Manual
+FRR-074,Security - RBAC: Unauthorized Action Blocked (Admin),Full Regression > Security > Authorization,Critical,BL-AUTH-005,,  "Admin user with restricted role (read-only on Catalog)","admin_url={{BACK_URL}}","1. Create role with only 'read' permission on Catalog
+2. Assign to user and sign in as that user in Admin
+3. Verify Create and Delete buttons absent in Catalog blade
+4. Attempt POST /api/catalog/products directly
+5. Add 'create' permission
+6. Verify button appears","- Create/Delete buttons absent for read-only role
+- Direct API call returns 403 Forbidden
+- Adding permission makes button appear
+- Zero-permission escalation possible via UI (BL-AUTH-005)","[API] POST /api/catalog/products returns 403 for read-only role
+[ADMIN] Create/Delete buttons absent in Catalog blade
+[CONSOLE] no JS errors","403 not returned for unauthorized API call, buttons visible for unauthorized role",Remove test role,BL-AUTH-005,Manual
+FRR-075,Security - Password Strength Enforcement,Full Regression > Security > Password,High,,,  "User on registration page","front_url={{FRONT_URL}}","1. Attempt weak password: '123456'
+2. Attempt without uppercase: 'mypassword1!'
+3. Use strong password: 'MyP@ssw0rd!'","- Weak passwords rejected with specific feedback
+- Requirements shown: 8+ chars, uppercase, lowercase, number, special char
+- Real-time validation feedback
+- Strong password accepted","[DOM] password strength feedback visible
+[CONSOLE] no JS errors","Weak password accepted, no validation feedback shown",none,FR-SECURITY-004,Manual
+FRR-076,Security - Session Timeout Triggers Re-Authentication,Full Regression > Security > Session,High,BL-AUTH-001,,  "User logged in","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","1. Log in to account
+2. Wait for or simulate session timeout
+3. Attempt to perform action","- Session expires after configured idle time
+- Attempting action triggers re-authentication prompt
+- Re-login restores session without data loss (BL-AUTH-001)","[CONSOLE] no JS errors
+[NETWORK] 401 returned after session expiry","No session expiry, data lost after re-authentication, console TypeError",none,FR-SECURITY-006,Manual
+FRR-077,White Labeling - Organization Theme Override,Full Regression > White Labeling > Org Override,High,"BL-B2B-006, BL-CROSS-006",,  "White labeling feature enabled. Org B has a different logo/theme configured.","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, admin_url={{BACK_URL}}, front_url={{FRONT_URL}}","1. Sign in as Org B member
+2. Verify storefront shows Org B logo and branding
+3. Disable White Labeling feature in Admin store settings
+4. Refresh storefront
+5. Verify store default branding shown","- Org B member sees Org B theme (logo, colors)
+- Disabling White Labeling feature → store default shown regardless of org setting
+- Re-enabling → org theme returns (BL-B2B-006, BL-CROSS-006)","[CONSOLE] no JS errors
+[NETWORK] no 4xx on theme assets","Org theme shown when WL feature is disabled, store default shown when WL is enabled",Re-enable White Labeling in Admin,BL-B2B-006,Manual
+FRR-078,Accessibility - Keyboard Navigation (Full Site),Full Regression > Accessibility > Keyboard,High,,,  "Browser open, keyboard only (no mouse)","front_url={{FRONT_URL}}","1. Navigate storefront using only keyboard (Tab, Enter, Escape, Arrow keys)
+2. Tab through header, main content, category page
+3. Navigate to cart and checkout using keyboard only
+4. Verify all interactive elements reachable","- All interactive elements reachable via Tab
+- Focus indicators visible on all focused elements
+- Tab order logical (left-to-right, top-to-bottom)
+- Menus navigable with arrow keys
+- Enter activates buttons/links; Escape closes modals
+- Skip links available ('Skip to main content')
+- No keyboard traps (WCAG 2.1 AA)","[CONSOLE] no JS errors during keyboard nav
+[DOM] focus indicators visible on all focused elements","Keyboard trap encountered, focus indicator missing, interactive element unreachable",none,FR-ACCESS-001,Manual
+FRR-079,Accessibility - Screen Reader Compatibility (Key Flows),Full Regression > Accessibility > Screen Reader,High,,,  "Screen reader installed (NVDA or JAWS)","front_url={{FRONT_URL}}","1. Enable screen reader
+2. Navigate catalog: verify product info announced
+3. Test form fields (labels announced with inputs)
+4. Test add to cart (success announced)
+5. Navigate checkout form with screen reader","- Product names, prices, stock status announced correctly
+- Form labels associated with inputs
+- Buttons have descriptive labels
+- Dynamic cart updates announced
+- Error messages announced","[CONSOLE] no JS errors
+[DOM] aria-labels present on interactive elements","Form labels not associated with inputs, dynamic updates not announced",none,FR-ACCESS-002,Manual
+FRR-080,Performance - Homepage and Category Page Load Time,Full Regression > Performance > Load Time,High,,,  "Browser DevTools open, Network tab active, cache cleared","front_url={{FRONT_URL}}","1. Clear cache
+2. Navigate to storefront homepage
+3. Measure DOMContentLoaded and Load events
+4. Navigate to category page with 20+ products
+5. Measure load time","- Homepage DOMContentLoaded < 3s, fully loaded < 5s
+- LCP < 2.5s, CLS < 0.1
+- Category page loads < 3s
+- No console errors impacting performance
+- Images lazy load below fold (BL-CROSS-009 for data, performance threshold for UX)","[CONSOLE] no JS errors
+[NETWORK] no failed requests on homepage/category","DOMContentLoaded > 3s, LCP > 2.5s, console errors on load",none,FR-PERF-001,Manual
+FRR-081,Cross-Browser - Chrome Critical Path,Full Regression > Browser > Chrome,Critical,,,  "Chrome browser latest version","front_url={{FRONT_URL}}","1. Execute full critical path in Chrome: Login → Catalog → Search → Add to Cart → Checkout → Place Order
+2. Verify all functionality works
+3. Check console for errors","- All critical flows work in Chrome
+- No JavaScript errors in console
+- Layout renders correctly
+- Payment forms load
+- No browser-specific bugs","[CONSOLE] no JS errors in Chrome
+[NETWORK] no 4xx/5xx in Chrome","Chrome-specific JS errors, layout broken in Chrome, payment form not loading",Cancel test order,FR-BROWSER-001,Automated
+FRR-082,Cross-Browser - Firefox Critical Path,Full Regression > Browser > Firefox,High,,,  "Firefox browser latest version","front_url={{FRONT_URL}}","1. Execute critical path in Firefox: Login → Add to Cart → Checkout → Place Order
+2. Note Firefox-specific issues","- All functionality works in Firefox
+- Layout consistent (minor font rendering differences acceptable)
+- Forms work correctly
+- Payment forms load","[CONSOLE] no JS errors in Firefox
+[NETWORK] no 4xx/5xx in Firefox","Firefox-specific JS errors, forms not working in Firefox",Cancel test order,FR-BROWSER-003,Manual
+FRR-083,Cross-Browser - Mobile Safari (iOS) Critical Path,Full Regression > Browser > Mobile,Critical,,,  "iPhone with latest iOS Safari (physical or simulator). NOTE: Not executable on Windows MCP environment — requires physical iOS device or BrowserStack.","front_url={{FRONT_URL}}","1. Execute critical path on iOS Safari: Login → Browse → Add to Cart → Checkout → Place Order
+2. Test mobile-specific: touch targets, no horizontal scroll, iOS keyboard forms
+3. Test BOPIS map (pinch zoom, tap markers)","- All critical flows work on iOS Safari
+- Touch interactions smooth (tap, swipe, pinch)
+- No accidental zooms
+- Payment form redirects work correctly
+- BOPIS map functional on mobile
+- No iOS-specific bugs (position: fixed, etc.)","[CONSOLE] no JS errors on iOS Safari
+[NETWORK] no 4xx/5xx on iOS","iOS-specific JS errors, touch targets too small, accidental zoom, payment redirect failing",Cancel test order,FR-BROWSER-005,Manual
+FRR-084,Cross-Browser - Chrome Android Critical Path,Full Regression > Browser > Mobile,High,,,  "Android phone with Chrome","front_url={{FRONT_URL}}","1. Execute critical path on Chrome Android: Login → Add to Cart → Checkout → Place Order","- Critical flows work on Android Chrome
+- Touch interactions work
+- Forms work with Android keyboard
+- Payment forms load and process","[CONSOLE] no JS errors on Android Chrome
+[NETWORK] no 4xx/5xx","Android-specific form issues, payment not loading on Android",Cancel test order,FR-BROWSER-006,Manual
+FRR-085,Localization - Language Switching,Full Regression > Localization > Language,High,,,  "Multi-language site configured","front_url={{FRONT_URL}}","1. Locate language selector in header/footer
+2. Select 'Deutsch' (German)
+3. Verify UI elements translated
+4. Switch to 'Français'
+5. Verify French translations","- Language selector lists all 14 configured languages
+- UI elements translated: Navigation, buttons, labels, messages
+- Language persists across pages
+- URL updates with locale prefix (e.g., /de/catalog)","[NAV] URL contains locale prefix after language switch
+[CONSOLE] no JS errors","UI not translated after language switch, language not persisting, URL not updating",Switch back to English,FR-LOCAL-001,Manual
+FRR-086,Localization - Currency Selection and Cart Prices,Full Regression > Localization > Currency,High,"BL-PRICE-005, BL-CART-004",,  "Multi-currency configured","front_url={{FRONT_URL}}, currency={{CURRENCY_CODE}}","1. Select non-default currency (e.g., EUR)
+2. Verify all prices update to EUR price list
+3. Add product to cart
+4. Verify cart and checkout use EUR
+5. Verify order confirmation in EUR","- Currency selector shows all configured currencies
+- Prices switch to currency-specific price list (not exchange rate conversion)
+- Cart, checkout, and confirmation all use selected currency (BL-PRICE-005, BL-CART-004)","[API] cart query shows prices in selected currency
+[CONSOLE] no JS errors","Exchange rate conversion used instead of price list, mixed currencies in cart",Switch back to default currency,FR-LOCAL-002,Manual
+FRR-087,Feature Flag Toggle - Immediate Effect Without Restart,Full Regression > Platform > Feature Flags,High,BL-CROSS-006,,  "Admin access to store settings. 'quotesEnabled' flag available.","admin_url={{BACK_URL}}, front_url={{FRONT_URL}}","1. Ensure quotesEnabled = true in store settings
+2. Verify 'Request Quote' button visible on storefront
+3. Toggle quotesEnabled = false in Admin
+4. Refresh storefront (no server restart)
+5. Verify 'Request Quote' button disappears
+6. Toggle back to true and verify button returns","- Flag change takes effect on next page load (no restart needed)
+- Storefront reads flags from xAPI on each page load
+- Quote button appears/disappears based on flag state (BL-CROSS-006)","[API] xAPI storeSettings query returns updated flag value
+[CONSOLE] no JS errors","Flag requires server restart to take effect, button not disappearing, console TypeError",Restore quotesEnabled=true,BL-CROSS-006,Manual
+FRR-088,Price List Deletion - Products Show Unavailable Not $0,Full Regression > Catalog > Price Integrity,Critical,"BL-CROSS-001, BL-CROSS-012",,  "Product with price only from one price list. Admin access.","admin_url={{BACK_URL}}, front_url={{FRONT_URL}}","1. Note product URL on storefront (in-stock, purchasable)
+2. In Admin: delete the price list associated with this product
+3. Navigate to product on storefront (clear cache if needed)
+4. Verify price display and Add to Cart state
+5. Verify via xAPI: products query returns null price","- Product shows 'Unavailable' or N/A — NOT $0.00
+- 'Add to Cart' button disabled
+- Cannot add to cart via UI or API
+- Existing orders retain historical prices unchanged
+- Recreating price list restores availability (BL-CROSS-001, BL-CROSS-012)","[API] xAPI products query returns null/no price after price list deletion
+[ADMIN] order history still shows original prices for historical orders
+[CONSOLE] no JS errors","Product shows $0.00 after deletion, 'Add to Cart' enabled with no price, historical order prices changed",Recreate price list in Admin,BL-CROSS-001,Manual
+FRR-089,Cart Price Uses Live Data Not Cached Search Price,Full Regression > Catalog > Price Sync,Critical,BL-CROSS-002,,  "Admin access. Product with a price visible on storefront.","admin_url={{BACK_URL}}, front_url={{FRONT_URL}}","1. Note current product price on storefront listing ($X)
+2. In Admin: increase price by $10
+3. Immediately (within 60s) add the product to cart
+4. Verify cart uses NEW price not cached listing price
+5. Wait 120s and verify search listing also shows new price","- Cart/checkout always uses server-side (current) price
+- Cart does NOT use stale cached search index price
+- After reindex (120s): listing price matches cart price
+- Price change propagated within consistency window (BL-CROSS-002)","[API] cart query shows new price immediately after admin change
+[CONSOLE] no JS errors","Cart using stale cached price, listing price still old after 120s",Restore original price in Admin,BL-CROSS-002,Manual
+FRR-090,End-to-End - Complete Purchase Flow (Full Cross-Layer Verification),Full Regression > E2E > Complete Flow,Critical,"BL-CROSS-005, BL-CHK-006, BL-NOTIF-001",,  "All layers accessible: storefront, Admin, email, DevTools","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, admin_url={{BACK_URL}}, front_url={{FRONT_URL}}, sku={{TEST_SKU}}","1. Register new user (or sign in with test account)
+2. Browse catalog and search for product
+3. Add product to cart (verify correct SKU via Network tab)
+4. Apply valid promo code
+5. Proceed to checkout with delivery address
+6. Select shipping method
+7. Enter payment details and place order
+8. On confirmation page: note order number, verify GA4 purchase event fires
+9. Verify email received with correct order data
+10. In Admin: verify order exists with matching total
+11. Verify inventory decremented
+12. Verify cart is cleared on storefront","[DOM] Confirmation page shows correct order number and total
+[STATE] Cart cleared after order placed
+[FORMAT] All prices displayed with exactly 2 decimal places throughout flow","[ADMIN] order exists with matching total, status New, inventory decremented
+[EMAIL] confirmation received within 5 minutes, content matches order
+[NETWORK] GA4 purchase event fired with correct transaction_id, value, items
+[CONSOLE] no JS errors on any step
+[NETWORK] no 4xx/5xx errors during order flow","Order not in Admin, email not received, GA4 event missing, 4xx/5xx on any flow step",Cancel test order in Admin,SMK-E2E,Manual
+FRR-091,Checkout — Guest Checkout Full Flow (Anonymous Order),Full Regression > Checkout > Guest,High,BL-CHK-001,,  "Store setting createAnonymousOrderEnabled=true. Products available in catalog.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}} without signing in (anonymous/guest session)
+[ACT] browse to a product and click 'Add to Cart'
+[WAIT] cart badge increments
+[NAV] {{FRONT_URL}}/cart
+[ACT] click 'Checkout'
+[WAIT] checkout page loads (no sign-in redirect)
+[ACT] fill in guest email address: guest-{{timestamp}}@example.com
+[ACT] fill in shipping address (first name, last name, address, city, ZIP, country)
+[ACT] select a shipping method
+[ACT] enter test payment details
+[ACT] click 'Place Order'
+[WAIT] order confirmation page loads","[DOM] checkout proceeds without requiring sign-in (BL-CHK-001)
+[DOM] guest email field visible on checkout
+[DOM] no 'saved addresses' selector shown (guest has no address book)
+[DOM] order confirmation page shows order number
+[STATE] order confirmation page accessible without account
+[NAV] URL is /order/confirmation or equivalent after place order","[ADMIN] order created with guest email in customer field
+[CONSOLE] no JS errors during guest checkout
+[NETWORK] no 4xx/5xx on order creation","Sign-in required for anonymous user when createAnonymousOrderEnabled=true, 4xx on order creation, spinner >5s on place order, errors[] non-empty",none,CHK-066,Manual
+FRR-092,Checkout — B2B PO Number Entry and Order Placement,Full Regression > Checkout > B2B,High,BL-CHK-001,,  "B2B user logged in with organization context. Checkout PO number field enabled in store settings.","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] sign in as B2B organization user
+[ACT] add product to cart
+[NAV] {{FRONT_URL}}/cart (combined cart/checkout page)
+[WAIT] cart page loads with checkout sections (shipping, payment, summary)
+[ASSERT] 'Purchase Order Number' field visible in checkout form
+[ACT] fill 'Purchase Order Number': PO-TEST-{{timestamp}}
+[ACT] fill shipping address and select shipping method
+[ACT] select payment method and complete payment details
+[ACT] click 'Place Order'
+[WAIT] order confirmation page loads","[DOM] 'Purchase Order Number' field visible for B2B users
+[DOM] PO number field accepts alphanumeric input
+[DOM] order confirmation page shows PO number
+[STATE] order placed successfully with PO number","[ADMIN] order in Admin shows PO number in order details
+[API] order API response includes purchaseOrderNumber field
+[CONSOLE] no JS errors","PO number field missing for B2B user, PO number not saved to order, 4xx on place order",Cancel test order in Admin,CHK-069,Manual
+FRR-093,B2B — Delegated Purchasing Limit Triggers Approval Workflow,Full Regression > B2B > Approval,Critical,BL-B2B-004,"ECL-4.1",  "Organization with buyer purchasing limit configured (e.g., $500). Org Buyer account and Org Admin account available.","buyer_email=org-buyer@example.com, buyer_password={{USER_PASSWORD}}, admin_email={{ORG_USER_EMAIL}}, admin_password={{ORG_USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] sign in as Org Buyer (account with purchasing limit of $500)
+[ACT] add products totaling $400 to cart
+[NAV] proceed to checkout
+[ACT] click 'Place Order'
+[WAIT] order confirmation or pending approval page loads
+[ASSERT] order at $400 placed directly (below limit)
+[ACT] add more items to total $650
+[NAV] proceed to checkout for new order
+[ACT] click 'Place Order'
+[WAIT] pending approval page or approval notification","[DOM] order at $400 (below limit) placed directly with order number
+[DOM] order at $650 (above limit) enters 'Pending Approval' state — NOT placed directly (BL-B2B-004)
+[STATE] order with $650 shows status 'Pending Approval' in account Order History
+[DOM] notification shown: order requires manager approval","[ADMIN] order at $650 shows status 'Pending Approval' in Admin
+[API] order API shows status='PendingApproval' for the $650 order
+[CONSOLE] no JS errors","Order exceeding limit placed without approval, buyer can self-approve, no pending approval status visible",Cancel both test orders in Admin,BL-B2B-004,Manual
+FRR-094,Orders — Return / RMA Request from Order History,Full Regression > Orders > Return,High,BL-ORD-004,,  "User with a fulfilled/delivered order in order history. Return/RMA feature enabled.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/orders
+[WAIT] order history page loads
+[ACT] click on a fulfilled/delivered order to open detail page
+[WAIT] order detail page loads
+[ASSERT] 'Return' or 'Request Return' button visible for delivered order
+[ACT] click 'Return' / 'Request Return'
+[WAIT] return request form opens
+[ACT] select items to return and enter reason
+[ACT] click 'Submit Return Request'
+[WAIT] confirmation of return request submission","[DOM] 'Return' button visible only for eligible (delivered) orders
+[DOM] return form allows item selection and reason entry
+[DOM] confirmation message shown after return submission
+[STATE] return request appears in account with status 'Pending' or equivalent","[ADMIN] return/RMA request appears in Admin with correct items and reason
+[EMAIL] return confirmation email received (if configured)
+[CONSOLE] no JS errors","Return button missing for delivered order, form submission failing, 4xx on return creation",none,ORD-037,Manual
+FRR-095,Orders — Invoice / PDF Download from Order Detail,Full Regression > Orders > Invoice,High,BL-ORD-005,,  "User with a placed order in order history. Invoice/PDF feature enabled in store settings.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/orders
+[WAIT] order history page loads
+[ACT] click on an order to open detail page
+[WAIT] order detail page loads
+[ASSERT] 'Download Invoice' or 'Print Invoice' button/link visible
+[ACT] click 'Download Invoice'
+[WAIT] PDF downloads or opens in new tab","[DOM] 'Download Invoice' or 'Print Invoice' button visible on order detail
+[DOM] downloaded file is a valid PDF (not empty, not corrupted)
+[STATE] PDF contains correct order number, items, total, shipping address, date
+[FORMAT] all prices in PDF display with exactly 2 decimal places","[CONSOLE] no JS errors during invoice download
+[NETWORK] no 4xx/5xx on invoice download request","Invoice button missing, PDF download failing (4xx), PDF content incorrect or empty",none,ORD-041,Manual
+FRR-096,Quotes — Expired Quote Cannot Be Converted to Order,Full Regression > B2B > Quotes,High,BL-B2B-003,,  "B2B user with a quote in 'Approved' status that has an expiry date in the past. Quotes feature enabled.","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] sign in as B2B org user
+[NAV] {{FRONT_URL}}/account/quotes or equivalent
+[WAIT] quotes list page loads
+[ACT] open an approved quote with expired date (expiry date < today 2026-03-21)
+[WAIT] quote detail page loads
+[ASSERT] quote shows expiry date in the past
+[ASSERT] quote status shows 'Expired' or expiry indicator
+[ACT] attempt to click 'Convert to Order' button (if visible)","[DOM] expired quote shows expiry date clearly
+[DOM] 'Convert to Order' button is disabled OR absent for expired quote (BL-B2B-003)
+[DOM] expiry message shown: 'This quote has expired' or equivalent
+[STATE] clicking disabled Convert button (if shown) shows error message — order NOT created","[API] quotes mutation for expired quote returns error (quote expired)
+[CONSOLE] no JS errors","Expired quote converted to order, no expiry indication shown, 'Convert' button active on expired quote",none,QUO-013,Manual
+FRR-097,Payment — Decline Recovery with Different Card (Retry Flow),Full Regression > Payment > Decline Recovery,Critical,BL-CHK-004,"ECL-1.1",  "Checkout at payment step. Decline test card available (card that produces decline from gateway). Valid test card also available. CyberSource configured.","decline_card=4000000000000002, valid_card={{TEST_CARD_NUMBER}}, front_url={{FRONT_URL}}","[NAV] proceed through checkout to payment step
+[WAIT] payment form loaded
+[ACT] select 'Bank card (CyberSource)'
+[WAIT] CyberSource iframe loads
+[ACT] enter decline test card: 4000000000000002, expiry 12/2028, CVV 123, name Test User
+[ACT] click 'Place Order'
+[WAIT] decline error message appears
+[ASSERT] checkout NOT abandoned after decline (cart and shipping still intact)
+[ACT] clear card fields in iframe
+[ACT] enter valid test card: {{TEST_CARD_NUMBER}}, expiry 09/2029, CVV 838, name John Smith
+[ACT] click 'Place Order'
+[WAIT] order confirmation page loads","[DOM] decline error message shown clearly: 'Payment declined' or equivalent
+[DOM] 'Place Order' button re-enabled after decline (user can retry)
+[DOM] shipping address and shipping method are unchanged after decline (BL-CHK-004)
+[DOM] cart contents unchanged after decline
+[DOM] order confirmation page shows order number after successful retry","[ADMIN] only 1 order created (the successful retry, not the declined attempt)
+[API] no partial/ghost order created on initial decline
+[NETWORK] no duplicate order creation requests
+[CONSOLE] no JS errors","Cart emptied after decline, shipping address reset after decline, 2 orders created (decline + retry), button not re-enabled after decline",Cancel test order in Admin,PAY-DECLINE-006,Manual
+FRR-098,Admin Impersonation — Login on Behalf and Place Order,Full Regression > Admin > Impersonation,High,"BL-AUTH-005, BL-AUTH-006",,  "Admin account with impersonation permission. Customer account to impersonate. Storefront accessible.","admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, customer_email={{USER_EMAIL}}, admin_url={{BACK_URL}}, front_url={{FRONT_URL}}","--- ADMIN ---
+[NAV] {{BACK_URL}}/customers or Admin > Customers
+[WAIT] Customers blade loads
+[GRID] search for customer: {{USER_EMAIL}}
+[ACT] click on customer row to open customer detail blade
+[WAIT] customer detail blade loads
+[ACT] click 'Login on behalf' button
+[WAIT] storefront opens in new tab/window as the impersonated customer
+--- STOREFRONT ---
+[ASSERT] storefront header shows customer name: {{USER_EMAIL}} (or 'Acting as...' indicator)
+[ACT] add a product to cart as the impersonated user
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page shows added item
+[ACT] click 'Checkout'
+[WAIT] checkout page loads
+[ACT] select saved address or fill address form
+[ACT] select shipping method
+[ACT] select payment and place order
+[WAIT] order confirmation page","[DOM] 'Acting as [customer name]' or impersonation indicator visible in storefront header during session
+[DOM] order confirmation page shows order number
+[STATE] cart and checkout reflect customer's data (addresses, pricing)","[ADMIN] order appears in Admin assigned to customer {{USER_EMAIL}}, not to admin user
+[API] order API shows correct customerId (impersonated user, not admin)
+[CONSOLE] no JS errors in Admin or storefront during impersonation","Admin's own orders affected by impersonation, impersonation indicator missing, 403 on 'Login on behalf', order assigned to wrong customer",Cancel test order in Admin,IMP-001,Manual
+FRR-099,B2B — Cart Isolation Verified via xAPI (Cross-Layer),Full Regression > B2B > Cart Isolation xAPI,High,"BL-CART-005, BL-B2B-001",,  "User member of 2+ organizations. GraphiQL at {{BACK_URL}}/ui/graphiql accessible.","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, back_url={{BACK_URL}}, front_url={{FRONT_URL}}","--- STOREFRONT ---
+[NAV] sign in as org user with multiple organizations
+[ACT] switch to Org A using org selector
+[ACT] add 2 products to cart in Org A context
+[WAIT] cart badge shows 2 items
+--- API ---
+[GQL] query cart with Org A context via xAPI: { cart { items { productId quantity } } }
+[VAR] save Org A cart item IDs
+--- STOREFRONT ---
+[ACT] switch to Org B using org selector
+[WAIT] cart badge changes (empty or different)
+--- API ---
+[GQL] query cart with Org B context via xAPI
+[ASSERT] Org B cart does NOT contain Org A items","[ERRORS] Org A cart query: errors[] is empty
+[DATA] Org A cart items returned correctly (2 items)
+[ERRORS] Org B cart query: errors[] is empty
+[DATA] Org B cart is empty or contains only Org B items — Org A items NOT present (BL-CART-005, BL-B2B-001)","[STOREFRONT] storefront UI matches GraphQL cart query result for each org
+[CONSOLE] no JS errors","Org A items returned in Org B cart query, errors[] non-empty in cart query, cart isolation broken",Clear both org carts after test,FR-MULTI-ORG-002,Manual
+FRR-100,Pricing — Floating-Point Arithmetic: Multi-Item Cart Subtotal Exact Match,Full Regression > Pricing > Arithmetic,High,BL-PRICE-008,"ECL-2.3",  "Products with prices that create floating-point edge cases (e.g., $19.99, $7.33, $0.10) available in catalog.","front_url={{FRONT_URL}}, sku1={{TEST_SKU}}, sku2=TEST_SKU_2, sku3=TEST_SKU_3","[NAV] {{FRONT_URL}}
+[ACT] add Product A (price $19.99, qty 3) to cart
+[WAIT] cart badge increments
+[ACT] add Product B (price $7.33, qty 2) to cart
+[WAIT] cart badge increments
+[ACT] add Product C (price $0.10, qty 1) to cart
+[WAIT] cart badge increments
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads with all 3 items","[MATH] Product A line total = $19.99 × 3 = $59.97
+[MATH] Product B line total = $7.33 × 2 = $14.66
+[MATH] Product C line total = $0.10 × 1 = $0.10
+[MATH] manual sum = $59.97 + $14.66 + $0.10 = $74.73
+[DOM] displayed subtotal = $74.73 (exact match, no $0.01 discrepancy) (BL-PRICE-008)
+[FORMAT] all prices display with exactly 2 decimal places","[API] xAPI cart query returns lineTotal values that sum exactly to cartSubtotal
+[MATH] sum(cart.items[].extendedPrice) = cart.subTotal in API response
+[CONSOLE] no JS errors","Subtotal differs from manual sum by $0.01+, price displaying with 1 or 3 decimal places, penny discrepancy between line totals and subtotal",Clear cart after test,BL-PRICE-008,Manual

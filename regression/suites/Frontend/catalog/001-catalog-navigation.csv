@@ -1,0 +1,251 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"CAT-001","Category Navigation - Main Menu","Catalog > Navigation","High","BL-CAT-001","","User logged in; catalog populated","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Hover over main menu navigation
+[WAIT] Wait for category dropdown to appear
+[ASSERT] Verify dropdown is visible
+[ACT] Click on a top-level category
+[WAIT] Wait for category page to load
+[ASSERT] Verify category page content","[DOM] Main menu displays top-level categories
+[DOM] Subcategory items visible on hover
+[NAV] Category page loads with correct URL slug
+[DOM] Category heading matches selected category","[NETWORK] GET category page returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Spinner >5s; dropdown not appearing; category page returns 4xx; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"CAT-002","Category Page - Product Grid View","Catalog > Display","High","BL-CAT-001","","Category with products exists","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
+[ACT] Click 'Grid view' icon
+[WAIT] Wait for layout to update
+[ASSERT] Verify product cards display in grid","[DOM] Products shown in multi-column grid layout
+[DOM] Each card shows image, name, and price
+[DOM] Add to cart button present on each card","[NETWORK] no 4xx/5xx on category page request
+[CONSOLE] no TypeError or JS errors","Products not displaying; grid layout broken; images not loading; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"CAT-003","Category Page - Product List View","Catalog > Display","High","BL-CAT-001","","Category with products exists","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
+[ACT] Click 'List view' icon
+[WAIT] Wait for layout to update
+[ASSERT] Verify list layout renders","[DOM] Products shown in single-column list format
+[DOM] More detail visible per product compared to grid
+[DOM] Action buttons (Add to cart) accessible in list view","[NETWORK] no 4xx/5xx on layout toggle request
+[CONSOLE] no TypeError or JS errors","List layout not switching; products missing in list view; actions inaccessible; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"CAT-007","Category - Sorting Options","Catalog > Sorting","Medium","BL-CAT-005","","Category with multiple products","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[ACT] Open sort dropdown
+[ASSERT] Verify sort options are present
+[ACT] select 'Price: Low to High' from sort dropdown
+[WAIT] Wait for products to reorder
+[ASSERT] Verify ascending price order
+[ACT] select 'Price: High to Low' from sort dropdown
+[WAIT] Wait for products to reorder
+[ASSERT] Verify descending price order
+[NAV] Click to page 2 of pagination
+[ASSERT] Verify sort order persists on page 2","[DOM] Sort dropdown visible with multiple options
+[STATE] Products reorder correctly for each sort selection
+[MATH] 'Price: Low to High' — first product price <= last product price
+[MATH] 'Price: High to Low' — first product price >= last product price
+[STATE] Sort state persists across pagination","[NETWORK] no 4xx/5xx on sort change request
+[CONSOLE] no TypeError or JS errors","Sort dropdown not rendering; products not reordering; sort not persisting on pagination; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"CAT-035","Brands Page Loads","Catalog > Brands","Medium","BL-CAT-001","","Store has brand data configured; brands page enabled","url={{FRONT_URL}}/Brands","[NAV] Navigate to {{FRONT_URL}}/Brands
+[WAIT] Wait for page to load completely
+[ASSERT] Verify brand list or grid is displayed
+[ASSERT] Check browser console for JavaScript errors","[NAV] /Brands page loads without errors (HTTP 200)
+[DOM] Brand list or grid displayed
+[DOM] Each brand entry shows brand name (and logo/image if configured)
+[DOM] Page title or heading confirms Brands context","[NETWORK] GET /Brands returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Brands page returns 4xx/5xx; brand list empty when brands exist; brand images failing to load; console TypeError","none","Coverage Gap Analysis","Generated"
+"CAT-036","Brand Navigation","Catalog > Brands","Medium","BL-CAT-001","","Brands page loaded; at least one brand with products exists","url={{FRONT_URL}}/Brands","[NAV] Navigate to {{FRONT_URL}}/Brands
+[ASSERT] Verify at least one brand entry is visible
+[ACT] Click on a brand entry
+[WAIT] Wait for brand product listing page to load
+[ASSERT] Verify page heading or breadcrumb shows selected brand name
+[ASSERT] Verify all listed products belong to the selected brand","[NAV] Clicking brand navigates to a brand-filtered product listing page
+[DOM] Page heading or breadcrumb shows selected brand name
+[STATE] All displayed products associated with the selected brand
+[DOM] Facet filters available on brand result page
+[STATE] URL reflects brand filter context","[NETWORK] GET brand listing page returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Brand entry not clickable; brand listing page returns 4xx; non-brand products appearing in brand listing; console TypeError","none","Coverage Gap Analysis","Generated"
+"CAT-037","Brand Product Count","Catalog > Brands","Medium","BL-CAT-001","","Brands page loaded; brands have known product counts","url={{FRONT_URL}}/Brands","[NAV] Navigate to {{FRONT_URL}}/Brands
+[ASSERT] Locate a brand entry showing a product count badge or label
+[ASSERT] Note the displayed count value
+[ACT] Click on that brand
+[WAIT] Wait for brand product listing page
+[ASSERT] Count or compare product cards on the listing page to displayed count","[MATH] Product count on brand entry matches actual products in brand listing
+[DOM] Brand entry shows product count (e.g., '24 products')
+[STATE] Zero-count brands hidden or marked as unavailable if feature configured","[NETWORK] GET brand listing returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Product count on Brands page does not match listing count; brand count not showing; console TypeError","none","Coverage Gap Analysis","Generated"
+"CAT-040","PDP SEO - Meta Tags and Open Graph Tags","Catalog > SEO","Medium","BL-CAT-006","","Product exists with SEO info configured (meta title and description set in admin)","url={{FRONT_URL}}","[NAV] Navigate to a product detail page on {{FRONT_URL}} (e.g., a product with known SEO data)
+[WAIT] Wait for PDP to fully render
+[ACT] Open browser DevTools Elements panel
+[ASSERT] Inspect <head> section for meta tags
+[ASSERT] Verify meta title tag matches product name or configured SEO title
+[ASSERT] Verify meta description tag is present and non-empty
+[ASSERT] Verify canonical URL tag is present and points to correct PDP URL
+[ASSERT] Verify og:title, og:description, og:image, og:url tags are present
+[ASSERT] Verify og:image points to a valid product image URL","[DOM] <title> or meta[name=title] matches product SEO title
+[DOM] meta[name=description] is present with meaningful content (not empty or placeholder)
+[DOM] link[rel=canonical] present with href matching current PDP URL (no query params)
+[DOM] meta[property=og:title] present and matches product name
+[DOM] meta[property=og:description] present and non-empty
+[DOM] meta[property=og:image] present with valid image URL
+[DOM] meta[property=og:url] present and matches canonical URL","[NETWORK] og:image URL returns HTTP 200 (image is accessible)
+[CONSOLE] no TypeError or JS errors","Meta title missing or showing generic site title; meta description empty; canonical URL absent or pointing to wrong page; og:tags missing; og:image returning 404; console TypeError","none","Checklist #4 SEO, GAP-CS-02","Generated"
+"CAT-041","Category Page SEO - JSON-LD BreadcrumbList and Canonical URL","Catalog > SEO","Medium","BL-CAT-001, BL-CAT-006","","Category page exists with at least one level of subcategory hierarchy","url={{FRONT_URL}}","[NAV] Navigate to a subcategory page on {{FRONT_URL}} (e.g., a category with parent > child structure)
+[WAIT] Wait for page to fully render
+[ACT] Open browser DevTools Elements panel
+[ASSERT] Inspect <head> for canonical URL
+[ASSERT] Search for <script type=application/ld+json> in page source
+[ASSERT] Verify JSON-LD contains @type: BreadcrumbList
+[ASSERT] Verify breadcrumb items match the visible breadcrumb trail on page
+[ASSERT] Verify each breadcrumb item has name and item (URL) properties","[DOM] link[rel=canonical] present with href matching current category URL
+[DOM] JSON-LD script tag present with @type: BreadcrumbList
+[DOM] BreadcrumbList itemListElement array has correct number of items matching visible breadcrumbs
+[DOM] Each itemListElement has @type: ListItem, position (integer), name, and item (URL)
+[DOM] Breadcrumb positions are sequential starting from 1
+[FORMAT] JSON-LD is valid JSON (no parse errors)","[NETWORK] GET category page returns HTTP 200
+[CONSOLE] no JSON parse errors from structured data
+[CONSOLE] no TypeError or JS errors","Canonical URL missing or pointing to wrong category; JSON-LD absent from page; BreadcrumbList items not matching visible breadcrumbs; JSON-LD parse errors; console TypeError","none","Checklist #4 SEO, GAP-CS-02","Generated"
+"CAT-042","Multi-Level Category Navigation with Breadcrumbs","Catalog > Navigation","Medium","BL-CAT-001","","Category hierarchy exists with at least 3 levels (top-level > subcategory > sub-subcategory)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} main catalog page
+[ACT] Click on a top-level category in the navigation menu
+[WAIT] Wait for top-level category page to load
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level Category]
+[ASSERT] Verify URL slug matches category name
+[ACT] Click on a subcategory within the top-level category
+[WAIT] Wait for subcategory page to load
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level] > [Subcategory]
+[ASSERT] Verify URL updates to include subcategory slug
+[ACT] Click on a sub-subcategory if available
+[WAIT] Wait for sub-subcategory page to load
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level] > [Sub] > [Sub-Sub]
+[ACT] Click the top-level breadcrumb link
+[WAIT] Wait for navigation
+[ASSERT] Verify navigation back to top-level category page","[DOM] Breadcrumb trail updates correctly at each navigation level
+[NAV] URL slug updates to reflect current category hierarchy at each level
+[DOM] Category heading matches the currently selected category at each level
+[DOM] Each breadcrumb item is a clickable link (except the current page)
+[NAV] Clicking a breadcrumb ancestor navigates to that level
+[DOM] Products displayed are relevant to the current category level","[NETWORK] GET each category page returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Breadcrumbs not updating at deeper levels; URL not reflecting category hierarchy; breadcrumb links not navigable; heading mismatching current category; console TypeError","none","Checklist #3, GAP-CS-03","Generated"
+"CAT-043","Empty Category Handling - No Products Message","Catalog > Navigation","Medium","BL-CAT-004, BL-CAT-001","ECL-3.1","A category exists with zero products assigned (or all products are deactivated/out of stock)","url={{FRONT_URL}}","[NAV] Navigate to a category page with no products on {{FRONT_URL}}
+[WAIT] Wait for page to fully render
+[ASSERT] Verify a 'No products found' or equivalent empty state message is displayed
+[ASSERT] Verify the page does NOT show a blank/empty content area with no explanation
+[ASSERT] Verify the filter panel is hidden or shows no filter options
+[ASSERT] Verify pagination controls are not displayed
+[ASSERT] Check browser console for JavaScript errors","[DOM] Empty state message visible (e.g., 'No products found' or 'No items in this category')
+[DOM] No blank page — user understands why no products are shown
+[DOM] Filter panel is either hidden or disabled (no filterable values)
+[DOM] No pagination controls displayed for empty result set
+[DOM] Category heading still shows correct category name
+[NAV] Breadcrumbs still functional for navigation back","[NETWORK] GET category page returns HTTP 200 (not 4xx)
+[CONSOLE] no TypeError or JS errors
+[CONSOLE] no Vue hydration warnings","Blank page with no message; filter panel showing options for zero products; pagination showing for empty set; JS errors on empty category; console TypeError","none","Checklist #3, ECL-3.1, GAP-CS-04","Generated"
+"CAT-047","All Products Dropdown - Displays All Top-Level Categories","Catalog > Navigation","High","BL-CAT-001","","Storefront populated with multiple top-level categories; main navigation rendered","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ASSERT] Locate 'All Products' or equivalent top-level navigation item in the main menu
+[ACT] Hover over or click 'All Products' to open the dropdown
+[WAIT] Wait for the dropdown to fully render
+[ASSERT] Verify the dropdown is visible and lists category items
+[ASSERT] Count visible category links in the dropdown
+[ASSERT] Verify each category item has a text label and a clickable href","[DOM] 'All Products' dropdown is visible after hover/click
+[DOM] At least 3 top-level category links are displayed in the dropdown
+[DOM] Each category item shows a text label matching a known category name
+[DOM] Each category item has a non-empty href pointing to /catalog/... or equivalent slug URL
+[STATE] Dropdown does not show blank or placeholder items","[NETWORK] GET {{FRONT_URL}} returns HTTP 200
+[NETWORK] no 4xx/5xx on menu data request
+[CONSOLE] no TypeError or JS errors","Dropdown not opening; dropdown empty with no categories; category items with empty or # href; console TypeError on hover","none","Coverage Gap Analysis; GAP-CS-13","Generated"
+"CAT-048","All Products Dropdown - Category Link Navigates to Correct Category Page","Catalog > Navigation","High","BL-CAT-001","","Storefront populated; at least one named top-level category accessible from 'All Products' dropdown","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Hover over or click 'All Products' in the main navigation to open the dropdown
+[WAIT] Wait for dropdown to appear
+[ASSERT] Identify a specific category in the dropdown (note its label)
+[ACT] Click the identified category link
+[WAIT] Wait for the category page to load
+[ASSERT] Verify the URL matches the expected category slug
+[ASSERT] Verify the page heading matches the clicked category name
+[ASSERT] Verify the breadcrumb shows the correct category hierarchy","[NAV] URL after click contains the correct category slug matching the label clicked
+[DOM] Page heading matches the category name selected from the dropdown
+[DOM] Breadcrumbs show: Home > [Category Name]
+[DOM] Product grid or product listing is rendered on the category page
+[STATE] Active/highlighted state on the category in navigation (if applicable)","[NETWORK] GET category page returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Category page returning 404; URL slug not matching the dropdown label; page heading mismatching clicked category; breadcrumbs absent; console TypeError","none","Coverage Gap Analysis; GAP-CS-13","Generated"
+"CAT-049","Category SEO Slug URL Resolves Correctly","Catalog > Navigation","Medium","BL-CAT-001","","A category with a configured SEO-friendly slug exists in the catalog","url={{FRONT_URL}}","[NAV] Navigate to a category page using its SEO slug URL (e.g., {{FRONT_URL}}/catalog/clothing)
+[WAIT] Wait for the page to fully load
+[ASSERT] Verify page loads with HTTP 200 (no redirect to an error page)
+[ASSERT] Verify the URL remains as the slug URL (no redirect to an ID-based URL)
+[ASSERT] Verify the category heading matches the expected category name
+[ASSERT] Verify products are listed on the category page
+[ACT] Open browser DevTools and check the link[rel=canonical] tag value
+[ASSERT] Verify the canonical URL matches the slug URL","[NAV] Slug URL resolves to the correct category page without redirect to an ID-based URL
+[DOM] Category heading matches the known category name for the slug
+[DOM] Products are displayed on the page
+[DOM] link[rel=canonical] href equals the current slug URL (not an ID-based URL)
+[STATE] No 301/302 redirect from slug to ID URL","[NETWORK] GET slug URL returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Slug URL returning 404; slug redirecting to an ID-based URL; canonical pointing to a different URL; heading not matching expected category; console TypeError","none","Coverage Gap Analysis; GAP-CS-14","Generated"
+"CAT-056","Catalog Listing Page Renders Correctly at 768px Tablet Viewport","Catalog > Responsive","Medium","BL-CAT-001","","Category with products exists; storefront accessible","url={{FRONT_URL}}","[NAV] Navigate to a category listing page on {{FRONT_URL}}
+[ACT] Resize the browser viewport to 768x1024 (tablet portrait)
+[WAIT] Wait for layout to reflow
+[ASSERT] Verify the product grid adapts to the tablet viewport (typically 2-column grid at 768px)
+[ASSERT] Verify product card images names and prices are fully visible with no overflow or clipping
+[ASSERT] Verify the navigation menu is accessible (hamburger or condensed menu)
+[ASSERT] Verify facet/filter panel is accessible (collapsed drawer or sidebar condensed)
+[SCROLL] Scroll down to verify entire product listing is accessible
+[ASSERT] Verify pagination controls are visible and functional","[DOM] Product grid displays in tablet-appropriate layout at 768px
+[DOM] Product cards are fully visible with no image cropping text overflow or price truncation
+[DOM] Navigation accessible at 768px
+[DOM] Facet/filter controls accessible (not off-screen)
+[DOM] Pagination controls visible and not overlapping content
+[STATE] No horizontal scroll bar visible at 768px width","[NETWORK] no 4xx/5xx on category page at tablet viewport
+[CONSOLE] no TypeError or JS errors","Product grid overflowing at 768px; product cards clipped or inaccessible; navigation menu not accessible; horizontal scrollbar visible; pagination hidden off-screen; console TypeError","none","Coverage Gap Analysis; GAP-CS-20","Generated"
+"CAT-059","Breadcrumb Resets When Navigating from Subcategory Back to Parent via Main Menu","Catalog > Navigation > Breadcrumb State","High","BL-CAT-001","ECL-14.1","Category hierarchy exists with at least 2 levels; user can navigate subcategory then return to parent via main menu","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click on a top-level category in the main navigation menu
+[WAIT] Wait for top-level category page to load
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level Category]
+[ACT] Click on a subcategory link within the top-level category page
+[WAIT] Wait for subcategory page to load
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level Category] > [Subcategory]
+[ACT] Click on the top-level category link in the main navigation menu (not the breadcrumb)
+[WAIT] Wait for top-level category page to load
+[ASSERT] Verify URL updated to top-level category URL (subcategory segment absent)
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level Category] (subcategory name must be absent)
+[ASSERT] Verify category heading matches top-level category name","[DOM] breadcrumb trail contains exactly 2 items: Home + Top-Level Category
+[DOM] subcategory name absent from breadcrumb after navigating to parent
+[NAV] URL matches top-level category URL (no subcategory slug)
+[DOM] category page heading matches top-level category name","[CONSOLE] no Vue hydration warnings or TypeError
+[NETWORK] GET top-level category page returns HTTP 200
+[NETWORK] no 4xx/5xx on navigation","breadcrumb still shows subcategory name after navigating to parent; URL correct but breadcrumb stale; heading correct but breadcrumb wrong (VCST-4728 regression check)","none","VCST-4728","Manual"
+"CAT-060","Breadcrumb Resets When Using Browser Back Button from Subcategory to Parent","Catalog > Navigation > Breadcrumb State","High","BL-CAT-001","ECL-14.1","Category hierarchy with at least 2 levels; user on subcategory page reached via forward navigation","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Click on a top-level category in the main navigation menu
+[WAIT] Wait for top-level category page to load
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level Category]
+[ACT] Click on a subcategory
+[WAIT] Wait for subcategory page to fully load
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level Category] > [Subcategory]
+[ACT] Press browser Back button
+[WAIT] Wait for browser to navigate to previous page (top-level category)
+[ASSERT] Verify URL is the top-level category URL
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level Category]
+[ASSERT] Verify category heading matches top-level category","[DOM] breadcrumb contains exactly 2 items: Home + Top-Level Category
+[DOM] subcategory name absent from breadcrumb
+[NAV] URL is top-level category URL
+[DOM] heading matches top-level category name","[CONSOLE] no hydration errors or TypeError after back navigation
+[NETWORK] no 4xx/5xx triggered by back navigation","breadcrumb still shows subcategory name after browser Back; URL correct but breadcrumb stale — direct reproduction of VCST-4728","none","VCST-4728","Manual"
+"CAT-061","Breadcrumb Reflects Correct Path When Navigating Between Sibling Subcategories","Catalog > Navigation > Breadcrumb State","Medium","BL-CAT-001","ECL-14.1","Category hierarchy with one parent and at least 2 sibling subcategories","url={{FRONT_URL}}","[NAV] Navigate to a subcategory page (e.g., Home > [Parent] > [Subcategory A])
+[WAIT] Wait for page to load
+[ASSERT] Verify breadcrumb shows: Home > [Parent] > [Subcategory A]
+[ACT] Click on the parent category in the main navigation menu
+[WAIT] Wait for parent category page to load
+[ACT] Click on a different sibling subcategory (e.g., [Subcategory B])
+[WAIT] Wait for sibling subcategory page to load
+[ASSERT] Verify breadcrumb shows: Home > [Parent] > [Subcategory B]
+[ASSERT] Verify [Subcategory A] is absent from the breadcrumb","[DOM] breadcrumb shows Home > [Parent] > [New Sibling] — no trace of previous sibling
+[DOM] breadcrumb has exactly 3 items matching the new navigation path
+[NAV] URL reflects the new sibling subcategory slug","[CONSOLE] no TypeError or hydration warnings
+[NETWORK] no 4xx/5xx","breadcrumb shows blend of both paths; previous subcategory name persists; breadcrumb shows 4 items instead of 3; heading correct but breadcrumb wrong","none","VCST-4728","Manual"
+"CAT-062","Breadcrumb Determinism on Rapid Forward-Back-Forward Navigation","Catalog > Navigation > Breadcrumb State","Medium","BL-CAT-001","ECL-1.2, ECL-14.1","Category hierarchy with at least 2 levels; user can navigate quickly","url={{FRONT_URL}}","[NAV] Navigate to a top-level category on {{FRONT_URL}}
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level Category]
+[ACT] Click into a subcategory
+[WAIT] Wait for page to load
+[ACT] Click the top-level category in main navigation
+[WAIT] Wait for page to load
+[ACT] Click the same subcategory again
+[WAIT] Wait 1 second for all navigation and state to settle
+[ASSERT] Verify breadcrumb shows: Home > [Top-Level Category] > [Subcategory] (final destination)
+[ASSERT] Verify breadcrumb does not show intermediate stale state
+[ASSERT] Verify URL matches subcategory","[DOM] breadcrumb shows 3 items: Home > [Top-Level Category] > [Subcategory] matching final destination
+[DOM] no intermediate stale breadcrumb state visible
+[NAV] URL is subcategory URL
+[DOM] heading matches subcategory name","[CONSOLE] no race condition errors or uncaught exceptions
+[NETWORK] no 4xx/5xx","breadcrumb flickers between states; breadcrumb shows parent instead of subcategory after rapid navigation; heading correct but breadcrumb stale","none","VCST-4728","Manual"

@@ -1,0 +1,62 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"ORD-023","View shipment documents","Orders > Shipment Documents","High",,,"Admin logged in to Backend
+Order with shipment exists",,"1. Open order > Documents section
+2. Verify shipment document is listed
+3. Open shipment document details",,,,,"C237967",
+"ORD-024","Shipment document status changes","Orders > Shipment Documents","High",,,"Admin logged in to Backend
+Shipment document exists",,"1. Open shipment document
+2. Change shipment status through available transitions
+3. Verify each status change",,,,,"C237963",
+"ORD-025","Shipment address and price blocks","Orders > Shipment Documents","Medium",,,"Admin logged in to Backend
+Shipment document exists",,"1. Open shipment document
+2. Verify Shipment address block
+3. Verify Shipment price block",,,,,"C237964 C237965",
+"ORD-026","Add new line item to shipment","Orders > Shipment Documents","Medium",,,"Admin logged in to Backend
+Shipment document exists",,"1. Open shipment document
+2. Click 'Add' to add line item
+3. Select product
+4. Save",,,,,"C238704",
+"ORD-027","Shipment document with new order","Orders > Shipment Documents","Medium",,,"Admin logged in to Backend
+New order created",,"1. Create new order
+2. Open shipment document
+3. Verify initial state",,,,,"C237966",
+"ORD-028","Cancel order > adjust stock for single product FFC","Orders > Inventory Adjustment","High",,,"Admin logged in to Backend
+Order exists with product from Default FFC
+'Adjust inventory for orders' enabled
+Track inventory = TRUE",,"1. Note current 'In stock' qty for product in Default FFC
+2. Cancel the order
+3. Verify stock inventory adjusts",,,,,"C357118",
+"ORD-029","Cancel order > adjust stock for available FFC and multiple products","Orders > Inventory Adjustment","High",,,"Admin logged in to Backend
+Order exists with products from different FFCs
+'Adjust inventory for orders' enabled",,"1. Note current stock for products in different FFCs
+2. Cancel the order
+3. Verify stock adjusts for each product/FFC",,,,,"C357121 C357119 C385328",
+"ORD-030","Non-cancelled status > stock doesn't change","Orders > Inventory Adjustment","Medium",,,"Admin logged in to Backend
+Order exists",,"1. Set Payment status = Cancelled (not order)
+2. Verify stock doesn't change
+3. Set Shipment status = Cancelled (not order)
+4. Verify stock doesn't change",,,,,"C357120 C357122 C357123",
+"ORD-084","Shipment state — New to Sent skipping PickPack must fail","Orders > Shipment State Machine","High",,,"Admin logged in to Backend
+Order exists with shipment in New status
+API access available via Swagger at ${BACK_URL}/docs",,"1. Retrieve order with shipment in New status via GET /api/order/customerOrders/{orderId}
+2. Attempt to change shipment status directly from New to Sent (skip PickPack) via PUT request
+3. Send the PUT request with modified shipment status
+4. Inspect the HTTP response status code
+5. Inspect the response body for error details
+6. Verify shipment status remains New in subsequent GET request",,,,,"Coverage Gap Analysis BL-ORD-007",
+"ORD-085","Shipment state — New to Delivered skipping PickPack and Sent must fail","Orders > Shipment State Machine","High",,,"Admin logged in to Backend
+Order exists with shipment in New status
+API access available via Swagger at ${BACK_URL}/docs",,"1. Retrieve order with shipment in New status via GET /api/order/customerOrders/{orderId}
+2. Attempt to change shipment status directly from New to Delivered (skip PickPack and Sent) via PUT request
+3. Send the PUT request with modified shipment status
+4. Inspect the HTTP response status code
+5. Inspect the response body for error details
+6. Verify shipment status remains New in subsequent GET request",,,,,"Coverage Gap Analysis BL-ORD-007",
+"ORD-086","Shipment state — Delivered to Sent backward transition must fail","Orders > Shipment State Machine","High",,,"Admin logged in to Backend
+Order exists with shipment in Delivered status (terminal state)
+API access available via Swagger at ${BACK_URL}/docs",,"1. Retrieve order with shipment in Delivered status via GET /api/order/customerOrders/{orderId}
+2. Attempt to change shipment status from Delivered back to Sent via PUT request
+3. Send the PUT request with modified shipment status
+4. Inspect the HTTP response status code
+5. Inspect the response body for error details
+6. Verify shipment status remains Delivered in subsequent GET request",,,,,"Coverage Gap Analysis BL-ORD-007",

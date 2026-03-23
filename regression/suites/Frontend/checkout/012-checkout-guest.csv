@@ -1,0 +1,173 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"CHK-014","Guest Checkout - Happy Path","Checkout > Guest","Critical","BL-CHK-005","ECL-1.2, ECL-14.1","Store allows anonymous users (anonymousUsersAllowed: true), products available in catalog","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Open {{FRONT_URL}} in incognito/private window (not logged in)
+[NAV] Navigate to product page for {{TEST_SKU}}
+[ACT] click 'Add to Cart'
+[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] click 'Checkout' or 'Proceed to Checkout'
+[WAIT] Wait for guest checkout email step
+[ACT] Fill 'Email' field with guest email address
+[ACT] Fill shipping address (First Name, Last Name, Street, City, State, ZIP, Country)
+[ACT] select shipping method
+[ACT] Fill payment details in payment form
+[ACT] click 'Place Order'
+[WAIT] Wait for confirmation page
+[ASSERT] Verify confirmation page with order number displayed","[NAV] Guest reaches checkout without being redirected to login
+[DOM] Email field appears on guest checkout
+[DOM] Shipping form accepts all fields
+[DOM] Shipping methods listed
+[DOM] Payment form functional
+[DOM] Confirmation page shows order number
+[STATE] Cart cleared after order placement
+[STATE] No account creation required to complete purchase","[API] createOrderFromCart mutation response errors[] is empty
+[CONSOLE] No errors during guest checkout flow
+[NETWORK] No unauthorized 401 responses blocking checkout
+[ADMIN] Guest order appears in {{ADMIN_URL}}/orders","Guest redirected to login page instead of proceeding as guest; confirmation page not reached after payment","Cancel guest order via {{ADMIN_URL}}/orders","Coverage Gap Analysis","Automated"
+"CHK-015","Guest Checkout - New Address Entry","Checkout > Guest > Shipping","High","BL-CHK-001","","Guest user at checkout (anonymousUsersAllowed: true), no saved addresses for guest","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Proceed to checkout as guest (not logged in)
+[ASSERT] Verify no pre-populated or saved address shown
+[ACT] Fill 'Street' field with valid street address
+[ACT] Fill 'City', 'State', 'ZIP', 'Country' with valid values
+[ACT] click 'Continue'
+[WAIT] Wait for shipping method step
+[ASSERT] Verify entered address shown in shipping summary
+[ASSERT] Verify shipping methods calculate based on entered address","[DOM] No saved address shown for guest user
+[DOM] All address fields accept manual input
+[STATE] Validation passes on valid address
+[STATE] Address carried through to shipping method and order summary steps
+[DOM] Shipping methods listed after address entry","[API] POST address for guest session returns valid response
+[CONSOLE] No errors on address submission","Saved addresses from previous sessions shown for anonymous user; shipping methods not loading after address entry","none","Coverage Gap Analysis","Automated"
+"CHK-016","Guest Checkout - Track Order","Orders > Guest Tracking","High","BL-ORD-001","","Guest order successfully placed, order number and guest email noted","url={{FRONT_URL}}","[NAV] Note order number from confirmation page
+[NAV] Note email used during guest checkout
+[NAV] Navigate to order tracking page (e.g. {{FRONT_URL}}/account/orders or dedicated tracking URL)
+[ACT] Fill guest email field with order email
+[ACT] Fill order number field with order number
+[ACT] click 'Track Order' or 'Submit'
+[WAIT] Wait for tracking results
+[ASSERT] Verify correct order details displayed
+[ASSERT] Verify status clearly shown
+[ACT] Enter incorrect email with correct order number
+[ASSERT] Verify error shown for mismatch","[DOM] Tracking form accessible without login
+[DOM] Email and order number fields present
+[STATE] Correct combination returns order details and status
+[STATE] Incorrect email + order number returns error (not order data)","[API] GET /orders/track?email=...&order=... returns correct order
+[CONSOLE] No unhandled errors on tracking page","Tracking page requires login; correct guest credentials return no order; wrong credentials return order data (security issue)","none","Coverage Gap Analysis","Generated"
+"CHK-017","Guest Checkout - Prompt Registration After Purchase","Checkout > Guest > Post-Purchase","Medium","BL-CHK-005","","Guest order just placed, user on confirmation page","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Complete guest checkout and land on order confirmation page
+[ASSERT] Verify 'Create Account' prompt or banner present
+[ASSERT] Verify prompt references linking order to new account
+[ACT] click 'Create Account' from confirmation page
+[WAIT] Wait for registration form
+[ASSERT] Verify registration form pre-fills guest email
+[ACT] Complete registration with valid password
+[ACT] submit registration
+[WAIT] Wait for account creation confirmation
+[NAV] Navigate to {{FRONT_URL}}/account/orders
+[ASSERT] Verify guest order appears in new account order history","[DOM] Create Account prompt visible on confirmation page
+[DOM] Prompt text references order linking
+[DOM] Registration form pre-fills guest email
+[STATE] After registration guest order appears in account history","[API] POST /account/register links guest order to new account
+[CONSOLE] No errors during account creation flow","Create Account prompt absent from confirmation; guest order missing from account after registration","none","Coverage Gap Analysis","Generated"
+"CHK-018","Guest Checkout - With Coupon Code","Checkout > Guest > Promotions","High","BL-CHK-002","","Guest user at checkout (anonymousUsersAllowed: true), valid coupon code exists in system","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Proceed to checkout as guest with items in cart
+[ACT] Enter guest email address
+[ACT] Fill shipping address
+[ACT] select shipping method
+[ASSERT] Locate coupon code input field
+[ACT] Enter valid coupon code in coupon field
+[ACT] click 'Apply'
+[WAIT] Wait for discount to apply
+[ASSERT] Verify discount line item appears in order summary
+[ASSERT] Verify total reflects discounted amount
+[ACT] click 'Place Order'
+[ASSERT] Verify confirmation page shows discounted total","[DOM] Coupon input field accessible to guest users
+[STATE] Valid coupon accepted with success confirmation
+[DOM] Discount shown as separate line in order summary
+[MATH] Total = subtotal + shipping + tax - coupon discount
+[DOM] Confirmation page shows coupon discount line item","[API] createOrderFromCart mutation response errors[] is empty
+[API] Order payload contains applied coupon/promotion
+[CONSOLE] No errors on coupon application","Coupon field not shown for guests; coupon accepted but discount not reflected in total; discount disappears at confirmation","Cancel guest order via {{ADMIN_URL}}/orders","Coverage Gap Analysis","Generated"
+"CHK-019","Guest Checkout - Field Validation","Checkout > Guest > Validation","High","BL-CHK-001","","Guest user at checkout email and address entry step","url={{FRONT_URL}}","[NAV] Proceed to checkout as guest (not logged in)
+[ACT] click 'Continue' without entering email
+[ASSERT] Verify 'Email is required' or equivalent error shown
+[ACT] Enter invalid email format 'notanemail'
+[ASSERT] Verify 'Enter a valid email address' error shown
+[ACT] Enter valid email address
+[ACT] Leave required address fields (Street, City, ZIP) empty
+[ACT] click 'Continue'
+[ASSERT] Verify inline error per empty required field
+[ACT] Fix each field with valid data
+[ASSERT] Verify error clears as each field is corrected
+[ACT] click 'Continue' with all valid data
+[ASSERT] Verify form advances to next step","[DOM] Email required error on empty submit
+[DOM] Email format error on invalid format
+[DOM] Per-field inline errors for required address fields
+[STATE] Form does not advance with validation errors
+[STATE] Individual errors clear when field corrected
+[NAV] Form advances after all errors resolved","[CONSOLE] No JS exceptions during validation interactions
+[API] No API calls made while client-side validation active","Form advances with invalid email; no per-field errors shown; all errors clear simultaneously instead of per field","none","Coverage Gap Analysis","Automated"
+"CHK-020","Guest Checkout - Register After Purchase and Order Linked","Checkout > Guest > Post-Purchase","High","BL-CHK-005","","Guest order placed, on confirmation page with Create Account option","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Complete guest checkout successfully
+[ASSERT] Verify 'Create Account' prompt on confirmation page
+[ACT] click 'Create Account' or 'Register' from confirmation
+[ACT] Complete registration form with guest email and new password
+[ACT] submit registration form
+[WAIT] Wait for account confirmation
+[NAV] Navigate to {{FRONT_URL}}/account/orders
+[ASSERT] Verify guest order visible in order history
+[ASSERT] Verify order details match original guest order","[DOM] Create Account prompt on confirmation
+[STATE] Registration completes without error
+[STATE] Guest order linked to new account and visible in order history
+[DOM] Order details (items, totals, addresses) match original guest order","[API] POST /account/register response indicates order linking
+[CONSOLE] No errors during registration and order linking
+[ADMIN] Account created in {{ADMIN_URL}} with order linked","Guest order absent from account history after registration; registration fails when using guest email","Delete test account via {{ADMIN_URL}} if created","Coverage Gap Analysis","Generated"
+"CHK-021","Guest Checkout - Disabled When Anonymous Users Not Allowed","Checkout > Guest > Access Control","Critical","BL-CHK-005","","Store configured with anonymousUsersAllowed: false, products available","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Open {{FRONT_URL}} in incognito/private window (not logged in)
+[NAV] Navigate to product page for {{TEST_SKU}}
+[ACT] click 'Add to Cart'
+[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] click 'Checkout' or 'Proceed to Checkout'
+[ASSERT] Verify user redirected to sign-in or login page
+[ASSERT] Verify prompt to log in or register
+[ASSERT] Verify cart contents preserved after redirect","[NAV] Guest redirected to sign-in/sign-up page (not checkout)
+[DOM] Login or register prompt displayed
+[STATE] Cart contents preserved for authenticated session
+[STATE] No guest checkout option shown when disabled","[API] Store settings endpoint reflects anonymousUsersAllowed=false
+[CONSOLE] No unexpected errors on redirect","Guest can access checkout without login when anonymousUsersAllowed=false; cart lost on redirect to login","none","Coverage Gap Analysis","Automated"
+"CHK-029","Checkout Validation - Invalid Email Format","Checkout > Guest > Validation","High","BL-CHK-001","","Guest user at checkout, on email entry step","url={{FRONT_URL}}","[NAV] Proceed to checkout as guest (not logged in)
+[ACT] Enter invalid email 'user@' in email field
+[ACT] click 'Continue'
+[ASSERT] Verify error 'Enter a valid email address' or equivalent
+[ACT] Enter 'notanemail' (no @ symbol)
+[ASSERT] Verify format validation error still shown
+[ACT] Enter 'user@domain' (no TLD)
+[ASSERT] Verify error shown
+[ACT] Enter valid email 'test@example.com'
+[ASSERT] Verify error clears
+[ACT] click 'Continue'
+[ASSERT] Verify form advances to address step","[DOM] Email format error rendered for each invalid pattern
+[STATE] Form does not advance with invalid email
+[STATE] Error clears when valid email entered
+[DOM] Error message references email validity","[CONSOLE] No JS exceptions during email validation
+[API] No API call made with invalid email","Email format not validated; form accepts 'notanemail' without error","none","Coverage Gap Analysis","Automated"
+"CHK-066","Guest Checkout - No Saved Addresses Available","Checkout > Guest > Address","High","BL-CHK-005","ECL-4.4, ECL-1.2","Guest checkout enabled; anonymous user at checkout step","url={{FRONT_URL}}","[NAV] navigate to {{FRONT_URL}}/cart as anonymous user with items
+[ACT] proceed to checkout
+[ASSERT] verify no saved address dropdown or selector is shown
+[ASSERT] verify empty address form is displayed for manual entry
+[ACT] fill all required address fields manually
+[ASSERT] verify address accepted and shipping methods appear","[DOM] no saved address selector visible for guest
+[DOM] blank address form rendered
+[STATE] manual address entry is the only option for guest","[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","saved addresses from another user shown; address selector appears for guest; error on address form render","None","Coverage Gap Analysis","Manual"
+"CHK-067","Guest Checkout - Order Confirmation Without Order History Link","Checkout > Guest > Confirmation","Medium","BL-CHK-005","ECL-4.4","Guest checkout completed; on order confirmation page","url={{FRONT_URL}}","[NAV] complete guest checkout flow (add item > checkout > payment)
+[WAIT] wait for order confirmation page
+[ASSERT] verify order number is displayed on confirmation page
+[ASSERT] verify NO link to order history or account dashboard is shown
+[ASSERT] verify email confirmation message displayed (order details sent to email)","[DOM] order number visible on confirmation page
+[DOM] no 'View Order History' or 'My Account' link present for guest
+[DOM] email confirmation notice displayed","[CONSOLE] no JS errors on confirmation page
+[NETWORK] no 4xx/5xx","order history link shown to guest (would 404 or error); no order number displayed; confirmation page is blank","None","Coverage Gap Analysis","Manual"
+"CHK-068","Guest Checkout - Same Email as Existing Account","Checkout > Guest > Email Conflict","High","BL-CHK-005","ECL-4.4, ECL-1.2","Guest checkout enabled; email matches an existing registered account","url={{FRONT_URL}}
+existing_user_email={{USER_EMAIL}}","[NAV] navigate to {{FRONT_URL}} as anonymous user
+[ACT] add product to cart and proceed to checkout
+[ACT] enter {{USER_EMAIL}} (existing account email) in guest email field
+[ACT] complete shipping address and payment
+[ASSERT] verify system displays an informational message about existing account
+[ASSERT] verify no unhandled error or crash","[STATE] checkout does not crash on email conflict
+[DOM] informational message about existing account displayed
+[DOM] no generic/500 error page","[CONSOLE] no unhandled JS errors
+[NETWORK] no 5xx errors on email validation","unhandled error on email conflict; checkout crashes; order created under wrong account; silent failure","None","Coverage Gap Analysis","Manual"

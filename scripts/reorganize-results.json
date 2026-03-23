@@ -1,0 +1,713 @@
+[
+  {
+    "id": "001",
+    "name": "Catalog Navigation",
+    "dir": "catalog",
+    "file": "regression/suites/catalog/001-catalog-navigation.csv",
+    "testCount": 19,
+    "source": "Frontend/03-catalog-search-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "002",
+    "name": "Product Detail",
+    "dir": "catalog",
+    "file": "regression/suites/catalog/002-product-detail.csv",
+    "testCount": 32,
+    "source": "Frontend/03-catalog-search-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "003",
+    "name": "Catalog Filters",
+    "dir": "catalog",
+    "file": "regression/suites/catalog/003-catalog-filters.csv",
+    "testCount": 19,
+    "source": "Frontend/03-catalog-search-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "004",
+    "name": "Search Core",
+    "dir": "search",
+    "file": "regression/suites/search/004-search-core.csv",
+    "testCount": 27,
+    "source": "Frontend/03-catalog-search-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "005",
+    "name": "Search Filters & Advanced",
+    "dir": "search",
+    "file": "regression/suites/search/005-search-filters-advanced.csv",
+    "testCount": 33,
+    "source": "Frontend/03-catalog-search-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "006",
+    "name": "B2C Organization",
+    "dir": "b2c",
+    "file": "regression/suites/b2c/006-b2c-organization.csv",
+    "testCount": 38,
+    "source": "Frontend/13-b2c-features-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "007",
+    "name": "B2C Lists & Shared",
+    "dir": "b2c",
+    "file": "regression/suites/b2c/007-b2c-lists-shared.csv",
+    "testCount": 29,
+    "source": "Frontend/13-b2c-features-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "008",
+    "name": "B2C Members",
+    "dir": "b2c",
+    "file": "regression/suites/b2c/008-b2c-members.csv",
+    "testCount": 18,
+    "source": "Frontend/13-b2c-features-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "009",
+    "name": "B2C Variations & Configs",
+    "dir": "b2c",
+    "file": "regression/suites/b2c/009-b2c-variations-configs.csv",
+    "testCount": 31,
+    "source": "Frontend/13-b2c-features-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "010",
+    "name": "B2C Bulk Ship Dashboard",
+    "dir": "b2c",
+    "file": "regression/suites/b2c/010-b2c-bulk-ship-dashboard.csv",
+    "testCount": 50,
+    "source": "Frontend/13-b2c-features-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "011",
+    "name": "Checkout Flow",
+    "dir": "checkout",
+    "file": "regression/suites/checkout/011-checkout-flow.csv",
+    "testCount": 40,
+    "source": "Frontend/04b-checkout-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "012",
+    "name": "Checkout Guest",
+    "dir": "checkout",
+    "file": "regression/suites/checkout/012-checkout-guest.csv",
+    "testCount": 12,
+    "source": "Frontend/04b-checkout-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "013",
+    "name": "Checkout B2B",
+    "dir": "checkout",
+    "file": "regression/suites/checkout/013-checkout-b2b.csv",
+    "testCount": 12,
+    "source": "Frontend/04b-checkout-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "014a",
+    "name": "Orders Frontend (from Checkout)",
+    "dir": "orders",
+    "file": "regression/suites/orders/014a-orders-frontend-from-checkout-.csv",
+    "testCount": 16,
+    "source": "Frontend/04b-checkout-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "014b",
+    "name": "Orders Frontend (from Orders-Quotes)",
+    "dir": "orders",
+    "file": "regression/suites/orders/014b-orders-frontend-from-orders-quotes-.csv",
+    "testCount": 51,
+    "source": "Frontend/04c-orders-quotes-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "015",
+    "name": "Quotes",
+    "dir": "orders",
+    "file": "regression/suites/orders/015-quotes.csv",
+    "testCount": 30,
+    "source": "Frontend/04c-orders-quotes-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "017",
+    "name": "Orders Admin Management",
+    "dir": "orders",
+    "file": "regression/suites/orders/017-orders-admin-management.csv",
+    "testCount": 57,
+    "source": "Backend/20-orders-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "018",
+    "name": "Orders Admin Payments",
+    "dir": "orders",
+    "file": "regression/suites/orders/018-orders-admin-payments.csv",
+    "testCount": 22,
+    "source": "Backend/20-orders-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "019",
+    "name": "Orders Admin Shipments",
+    "dir": "orders",
+    "file": "regression/suites/orders/019-orders-admin-shipments.csv",
+    "testCount": 11,
+    "source": "Backend/20-orders-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "020",
+    "name": "Platform Users Roles & Settings",
+    "dir": "platform",
+    "file": "regression/suites/platform/020-platform-users-roles-settings.csv",
+    "testCount": 41,
+    "source": "Backend/17-platform-core-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "021",
+    "name": "Platform Dynamic Properties",
+    "dir": "platform",
+    "file": "regression/suites/platform/021-platform-dynamic-properties.csv",
+    "testCount": 39,
+    "source": "Backend/17-platform-core-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "023",
+    "name": "Marketing Promotions",
+    "dir": "marketing",
+    "file": "regression/suites/marketing/023-marketing-promotions.csv",
+    "testCount": 25,
+    "source": "Backend/23-marketing-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "024",
+    "name": "Marketing Content",
+    "dir": "marketing",
+    "file": "regression/suites/marketing/024-marketing-content.csv",
+    "testCount": 28,
+    "source": "Backend/23-marketing-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "025",
+    "name": "Marketing Coupons & API",
+    "dir": "marketing",
+    "file": "regression/suites/marketing/025-marketing-coupons-api.csv",
+    "testCount": 36,
+    "source": "Backend/23-marketing-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "026",
+    "name": "Customer Contacts",
+    "dir": "customer",
+    "file": "regression/suites/customer/026-customer-contacts.csv",
+    "testCount": 51,
+    "source": "Backend/21-customer-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "027",
+    "name": "Customer Orgs & Invites",
+    "dir": "customer",
+    "file": "regression/suites/customer/027-customer-orgs-invites.csv",
+    "testCount": 33,
+    "source": "Backend/21-customer-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "028",
+    "name": "Cart Core",
+    "dir": "cart",
+    "file": "regression/suites/cart/028-cart-core.csv",
+    "testCount": 31,
+    "source": "Frontend/04a-cart-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "029",
+    "name": "Cart Validation & Persistence",
+    "dir": "cart",
+    "file": "regression/suites/cart/029-cart-validation-persistence.csv",
+    "testCount": 32,
+    "source": "Frontend/04a-cart-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "030",
+    "name": "Cart Merge",
+    "dir": "cart",
+    "file": "regression/suites/cart/030-cart-merge.csv",
+    "testCount": 14,
+    "source": "Frontend/04a-cart-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "031",
+    "name": "Auth Login & Register",
+    "dir": "auth",
+    "file": "regression/suites/auth/031-auth-login-register.csv",
+    "testCount": 33,
+    "source": "Frontend/02-authentication-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "032",
+    "name": "Auth Session & RBAC",
+    "dir": "auth",
+    "file": "regression/suites/auth/032-auth-session-rbac.csv",
+    "testCount": 21,
+    "source": "Frontend/02-authentication-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "033",
+    "name": "Auth Company & Account Menu",
+    "dir": "auth",
+    "file": "regression/suites/auth/033-auth-company-account-menu.csv",
+    "testCount": 14,
+    "source": "Frontend/02-authentication-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "034",
+    "name": "Store Management",
+    "dir": "store",
+    "file": "regression/suites/store/034-store-management.csv",
+    "testCount": 40,
+    "source": "Backend/18-store-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "035",
+    "name": "Store Rounding & Email",
+    "dir": "store",
+    "file": "regression/suites/store/035-store-rounding-email.csv",
+    "testCount": 25,
+    "source": "Backend/18-store-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "036",
+    "name": "BOPIS Store Selector",
+    "dir": "bopis",
+    "file": "regression/suites/bopis/036-bopis-store-selector.csv",
+    "testCount": 36,
+    "source": "Frontend/05-bopis-pickup-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "037",
+    "name": "BOPIS Cart",
+    "dir": "bopis",
+    "file": "regression/suites/bopis/037-bopis-cart.csv",
+    "testCount": 44,
+    "source": "Frontend/05-bopis-pickup-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "038",
+    "name": "BOPIS Checkout",
+    "dir": "bopis",
+    "file": "regression/suites/bopis/038-bopis-checkout.csv",
+    "testCount": 8,
+    "source": "Frontend/05-bopis-pickup-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "039",
+    "name": "Payment CyberSource",
+    "dir": "payment",
+    "file": "regression/suites/payment/039-payment-cybersource.csv",
+    "testCount": 23,
+    "source": "Frontend/06-payment-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "040",
+    "name": "Payment Processors",
+    "dir": "payment",
+    "file": "regression/suites/payment/040-payment-processors.csv",
+    "testCount": 28,
+    "source": "Frontend/06-payment-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "041",
+    "name": "Payment Cross-Cutting",
+    "dir": "payment",
+    "file": "regression/suites/payment/041-payment-cross-cutting.csv",
+    "testCount": 14,
+    "source": "Frontend/06-payment-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "042",
+    "name": "Smoke Tests",
+    "dir": "cross-cutting",
+    "file": "regression/suites/cross-cutting/042-smoke-tests.csv",
+    "testCount": 19,
+    "source": "Frontend/01-smoke-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "043",
+    "name": "Google Analytics",
+    "dir": "cross-cutting",
+    "file": "regression/suites/cross-cutting/043-google-analytics.csv",
+    "testCount": 24,
+    "source": "Frontend/07-google-analytics-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "044",
+    "name": "Security Tests",
+    "dir": "cross-cutting",
+    "file": "regression/suites/cross-cutting/044-security-tests.csv",
+    "testCount": 33,
+    "source": "Frontend/08-security-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "045",
+    "name": "Accessibility Tests",
+    "dir": "cross-cutting",
+    "file": "regression/suites/cross-cutting/045-accessibility-tests.csv",
+    "testCount": 23,
+    "source": "Frontend/09-accessibility-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "046",
+    "name": "Localization Tests",
+    "dir": "cross-cutting",
+    "file": "regression/suites/cross-cutting/046-localization-tests.csv",
+    "testCount": 32,
+    "source": "Frontend/10-localization-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "047",
+    "name": "Performance Tests",
+    "dir": "cross-cutting",
+    "file": "regression/suites/cross-cutting/047-performance-tests.csv",
+    "testCount": 20,
+    "source": "Frontend/11-performance-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "048",
+    "name": "Browser Compatibility",
+    "dir": "cross-cutting",
+    "file": "regression/suites/cross-cutting/048-browser-compatibility.csv",
+    "testCount": 21,
+    "source": "Frontend/12-browser-compatibility-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "049",
+    "name": "Platform API",
+    "dir": "api",
+    "file": "regression/suites/api/049-platform-api.csv",
+    "testCount": 33,
+    "source": "Backend/14-platform-api-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "050",
+    "name": "GraphQL xAPI",
+    "dir": "graphql",
+    "file": "regression/suites/graphql/050-graphql-xapi.csv",
+    "testCount": 33,
+    "source": "Backend/15-graphql-xapi-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "051",
+    "name": "Catalog Admin Products",
+    "dir": "catalog",
+    "file": "regression/suites/catalog/051-catalog-admin-products.csv",
+    "testCount": 46,
+    "source": "Backend/16-catalog-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "052",
+    "name": "Configurable Products Admin",
+    "dir": "configurable-products",
+    "file": "regression/suites/configurable-products/052-configurable-products-admin.csv",
+    "testCount": 15,
+    "source": "Backend/16-catalog-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "053",
+    "name": "Catalog Admin Categories",
+    "dir": "catalog",
+    "file": "regression/suites/catalog/053-catalog-admin-categories.csv",
+    "testCount": 17,
+    "source": "Backend/16-catalog-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "054",
+    "name": "Pricing Logic",
+    "dir": "pricing",
+    "file": "regression/suites/pricing/054-pricing-logic.csv",
+    "testCount": 29,
+    "source": "Backend/19-pricing-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "055",
+    "name": "Pricing Management",
+    "dir": "pricing",
+    "file": "regression/suites/pricing/055-pricing-management.csv",
+    "testCount": 33,
+    "source": "Backend/19-pricing-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "056",
+    "name": "Inventory",
+    "dir": "inventory",
+    "file": "regression/suites/inventory/056-inventory.csv",
+    "testCount": 43,
+    "source": "Backend/22-inventory-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "057",
+    "name": "Notifications Templates",
+    "dir": "notifications",
+    "file": "regression/suites/notifications/057-notifications-templates.csv",
+    "testCount": 27,
+    "source": "Backend/24-notifications-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "058",
+    "name": "Notifications Triggers",
+    "dir": "notifications",
+    "file": "regression/suites/notifications/058-notifications-triggers.csv",
+    "testCount": 26,
+    "source": "Backend/24-notifications-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "059",
+    "name": "CMS Page Management",
+    "dir": "cms",
+    "file": "regression/suites/cms/059-cms-page-management.csv",
+    "testCount": 21,
+    "source": "Backend/25-cms-pagebuilder-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "060",
+    "name": "CMS Design & Content",
+    "dir": "cms",
+    "file": "regression/suites/cms/060-cms-design-content.csv",
+    "testCount": 35,
+    "source": "Backend/25-cms-pagebuilder-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "061",
+    "name": "Search Indexing Admin",
+    "dir": "search",
+    "file": "regression/suites/search/061-search-indexing-admin.csv",
+    "testCount": 46,
+    "source": "Backend/26-search-indexing-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "062",
+    "name": "Assets",
+    "dir": "assets",
+    "file": "regression/suites/assets/062-assets.csv",
+    "testCount": 24,
+    "source": "Backend/27-assets-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "063",
+    "name": "Core Settings",
+    "dir": "platform",
+    "file": "regression/suites/platform/063-core-settings.csv",
+    "testCount": 14,
+    "source": "Backend/28-core-settings-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "064",
+    "name": "CSV Import Export",
+    "dir": "import-export",
+    "file": "regression/suites/import-export/064-csv-import-export.csv",
+    "testCount": 18,
+    "source": "Backend/29-csv-export-import-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "065",
+    "name": "Shipping",
+    "dir": "shipping",
+    "file": "regression/suites/shipping/065-shipping.csv",
+    "testCount": 20,
+    "source": "Backend/30-shipping-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "066",
+    "name": "SEO",
+    "dir": "seo",
+    "file": "regression/suites/seo/066-seo.csv",
+    "testCount": 20,
+    "source": "Backend/31-seo-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "067",
+    "name": "Whitelabeling Admin",
+    "dir": "whitelabeling",
+    "file": "regression/suites/whitelabeling/067-whitelabeling-admin.csv",
+    "testCount": 40,
+    "source": "Backend/32-whitelabeling-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "068",
+    "name": "Push Messages",
+    "dir": "push-messages",
+    "file": "regression/suites/push-messages/068-push-messages.csv",
+    "testCount": 25,
+    "source": "Backend/33-push-messages-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "069",
+    "name": "Image Tools",
+    "dir": "image-tools",
+    "file": "regression/suites/image-tools/069-image-tools.csv",
+    "testCount": 28,
+    "source": "Backend/34-image-tools-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "070",
+    "name": "Whitelabeling Storefront",
+    "dir": "whitelabeling",
+    "file": "regression/suites/whitelabeling/070-whitelabeling-storefront.csv",
+    "testCount": 51,
+    "source": "Frontend/35-frontend-whitelabeling-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "071",
+    "name": "Whitelabeling Branding",
+    "dir": "whitelabeling",
+    "file": "regression/suites/whitelabeling/071-whitelabeling-branding.csv",
+    "testCount": 17,
+    "source": "Frontend/35-frontend-whitelabeling-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "072",
+    "name": "Configurable Products Storefront",
+    "dir": "configurable-products",
+    "file": "regression/suites/configurable-products/072-configurable-products-storefront.csv",
+    "testCount": 139,
+    "source": "Frontend/36-configurable-products-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "073",
+    "name": "Returns",
+    "dir": "returns",
+    "file": "regression/suites/returns/073-returns.csv",
+    "testCount": 22,
+    "source": "Backend/37-returns-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "074",
+    "name": "Contracts",
+    "dir": "contracts",
+    "file": "regression/suites/contracts/074-contracts.csv",
+    "testCount": 18,
+    "source": "Backend/38-contracts-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "075",
+    "name": "Loyalty",
+    "dir": "loyalty",
+    "file": "regression/suites/loyalty/075-loyalty.csv",
+    "testCount": 18,
+    "source": "Backend/39-loyalty-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "076",
+    "name": "Channels",
+    "dir": "channels",
+    "file": "regression/suites/channels/076-channels.csv",
+    "testCount": 15,
+    "source": "Backend/40-channels-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "077",
+    "name": "Coupons & Promotions Storefront",
+    "dir": "marketing",
+    "file": "regression/suites/marketing/077-coupons-promotions-storefront.csv",
+    "testCount": 53,
+    "source": "Frontend/41-coupons-promotions-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "078",
+    "name": "Promotions Advanced",
+    "dir": "marketing",
+    "file": "regression/suites/marketing/078-promotions-advanced.csv",
+    "testCount": 1,
+    "source": "Frontend/41-coupons-promotions-tests.csv",
+    "type": "split"
+  },
+  {
+    "id": "079",
+    "name": "xMarketing",
+    "dir": "xmarketing",
+    "file": "regression/suites/xmarketing/079-xmarketing.csv",
+    "testCount": 38,
+    "source": "Backend/42-xmarketing-tests.csv",
+    "type": "intact"
+  },
+  {
+    "id": "080",
+    "name": "Full Regression Release",
+    "dir": "_release",
+    "file": "regression/suites/_release/080-full-regression-release.csv",
+    "testCount": 100,
+    "source": "Frontend/00-full-regression-release.csv",
+    "type": "intact"
+  }
+]

@@ -1,0 +1,81 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"NOTIF-001","Send default notification template","Notification Send","Critical",,,"Admin logged in; notification module installed",,"1. Navigate to Notifications
+2. Select a notification type
+3. Open default template
+4. Click Send to test email",,,,,"C207375",
+"NOTIF-002","Send template for concrete localization","Notification Send","Medium",,,"Multiple language templates configured",,"1. Navigate to Notifications
+2. Select notification with multiple language templates
+3. Choose a specific localization
+4. Send to test email",,,,,"C207581",
+"NOTIF-003","Disable notification","Notification Send","High",,,"Notification type enabled",,"1. Navigate to Notifications
+2. Select a notification type
+3. Toggle Active = OFF
+4. Trigger the notification event",,,,,"C207583",
+"NOTIF-006","Unregistered notifications handling","Notification Validation","Medium",,,"Admin logged in",,"1. Navigate to Notifications
+2. Check for unregistered notification types",,,,,"C387780",
+"NOTIF-007","Create template with sample data preview","Preview","High",,,"Notification template exists",,"1. Navigate to Notifications
+2. Select a notification type
+3. Click Preview
+4. Enter sample data
+5. Click Preview button",,,,,"C342249",
+"NOTIF-008","Edit sample data in preview","Preview","Medium",,,"Preview is open with sample data",,"1. Edit sample data JSON fields
+2. Click Preview",,,,,"C342250",
+"NOTIF-009","Share preview - send email with preview","Preview Share","High",,,"Preview rendered successfully",,"1. Click Share in preview
+2. Enter valid email address
+3. Click Send",,,,,"C342212",
+"NOTIF-010","Share preview - invalid email validation","Preview Share","Medium",,,"Preview is open",,"1. Click Share
+2. Enter invalid email format
+3. Attempt to send",,,,,"C342246",
+"NOTIF-032","Search notifications list","Notification List","High",,,"Multiple notifications exist",,"1. Navigate to Notifications list
+2. Enter search term in search field",,,,,"C208264",
+"NOTIF-033","Search by notification type","Notification List","Medium",,,"Multiple notification types exist",,"1. Navigate to Notifications list
+2. Search by notification type name",,,,,"C350200",
+"NOTIF-034","Add new notification template","Template Management","Critical",,,"Admin logged in",,"1. Navigate to Notifications
+2. Select notification type
+3. Click Add Template
+4. Select language
+5. Enter template content
+6. Save",,,,,"C208280",
+"NOTIF-035","Add default template","Template Management","High",,,"Admin logged in",,"1. Select notification type
+2. Click Add Template
+3. Select Default language
+4. Enter content and Save",,,,,"C208282",
+"NOTIF-036","Overwrite template with same localization","Template Management","Medium",,,"Template exists for a language",,"1. Add new template for same localization
+2. Confirm overwrite",,,,,"C208283",
+"NOTIF-037","Save changes for email template","Template Management","High",,,"Template is open for editing",,"1. Edit email template content
+2. Click Save",,,,,"C208274",
+"NOTIF-038","Save changes for SMS template","Template Management","High",,,"SMS template editing supported",,"1. Edit SMS template content
+2. Click Save",,,,,"C211027",
+"NOTIF-039","Undo template changes","Template Management","Medium",,,"Template has unsaved changes",,"1. Make changes to template
+2. Click Undo/Reset",,,,,"C208277",
+"NOTIF-040","Add notification layout","Notification Layout","Critical",,,"Admin logged in",,"1. Navigate to Notification layouts
+2. Click Add
+3. Enter layout name and template
+4. Save",,,,,"C343733",
+"NOTIF-041","Edit notification layout","Notification Layout","High",,,"Layout exists",,"1. Open existing layout
+2. Edit template content
+3. Save",,,,,"C343728",
+"NOTIF-042","Delete notification layout","Notification Layout","High",,,"Layout exists",,"1. Select layout
+2. Click Delete
+3. Confirm",,,,,"C343731",
+"NOTIF-043","Reset notification layout","Notification Layout","Medium",,,"Layout has been modified",,"1. Open modified layout
+2. Click Reset",,,,,"C344120",
+"NOTIF-044","Add notification template with layout","Notification Layout","High",,,"Layout exists",,"1. Open notification template
+2. Assign layout
+3. Preview and save",,,,,"C344064",
+"NOTIF-045","Check layout in sent mail","Notification Layout","High",,,"Template with layout assigned",,"1. Send notification with layout-assigned template
+2. Check email",,,,,"C344066",
+"NOTIF-048","Access permission - notifications","Permissions","High",,,"Role with notification:access permission",,"1. Login as user with notification:access
+2. Navigate to Notifications",,,,,"C241391",
+"NOTIF-049","Template create permission","Permissions","High",,,"Role with template:create permission",,"1. Login as user with template:create
+2. Add a new template",,,,,"C241395",
+"NOTIF-050","Settings - manage notification languages","Settings","Medium",,,"Admin logged in",,"1. Navigate to Settings > Notifications > Languages
+2. Add a new language
+3. Save",,,,,"C242713",
+"NOTIF-051","Settings - delete notification language","Settings","Medium",,,"Additional language exists",,"1. Navigate to Settings > Notifications > Languages
+2. Select language and delete",,,,,"C242714",
+"NOTIF-052","NotificationsSample module - install and test","Extensions","Low",,,"NotificationsSample module available",,"1. Install NotificationsSample module
+2. Create a new template
+3. Send notification
+4. Update template and resend
+5. Delete template",,,,,"C311917 C311918 C311919 C311920",

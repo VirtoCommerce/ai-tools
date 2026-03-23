@@ -1,0 +1,364 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"PRICE-001","Create a new price list","Pricing > Pricelist Management","Critical","BL-PRICE-004","ECL-8.1","Admin logged in to Backend","pricelist_name={{TEST_SKU}}-PL-001; currency=USD","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
+[ACT] Click 'Add' button
+[ACT] Enter price list name
+[ACT] Select currency USD
+[ACT] Click 'Create' button","[STATE] New price list is created and visible in list
+[DOM] Price list name appears in Price Lists table","[ADMIN] Verify price list persists after page refresh
+[API] GET /api/pricing/pricelists — confirm new entry exists","Price list not created; 'Create' button unresponsive; name not reflected in list","delete created price list via Admin","C178828","Katalon"
+"PRICE-002","Edit price list","Pricing > Pricelist Management","High","BL-PRICE-004","ECL-8.1","Admin logged in to Backend
+Price list created [PRICE-001]","updated_name={{TEST_SKU}}-PL-EDIT; updated_description=test description","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
+[ACT] Open existing price list
+[ACT] Modify price list name and description
+[ACT] Click 'Save' button
+[ASSERT] Verify changes reflected in table","[STATE] All changes are saved
+[DOM] Updated name and description appear in the Price Lists table","[ADMIN] Re-open price list blade and confirm persisted values
+[API] GET /api/pricing/pricelists/{id} — confirm updated fields","Changes not saved; stale data in table after save; save button unresponsive","restore original prices","C178873","Katalon"
+"PRICE-003","Delete price list","Pricing > Pricelist Management","High","BL-PRICE-004","","Admin logged in to Backend
+Price list created [PRICE-001]","target_pricelist_id from PRICE-001","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
+[ACT] Select price list to delete
+[ACT] Click 'Delete' button
+[ACT] Confirm deletion
+[ASSERT] Verify price list removed from list","[STATE] Price list is deleted
+[DOM] Price list no longer appears in table","[API] GET /api/pricing/pricelists/{id} returns 404 after deletion","Price list still visible after deletion; confirmation dialog not appearing; delete fails silently","none","C178875","Katalon"
+"PRICE-004","Filter pricelists","Pricing > Pricelist Management","Medium","BL-PRICE-004","","Admin logged in to Backend
+Multiple price lists exist with different currencies
+Filter_1 already created","filter_name=Filter_1; currency=USD; new_filter_name=Filter_2","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
+[ACT] Select filter_1 from dropdown
+[ASSERT] Verify filtered results sorted by filter_1
+[ACT] Click blue cross to clear filter
+[ASSERT] Verify filter cleared
+[ACT] Click 'Select filter' > 'Add new filter'
+[ACT] Fill Filter name and Currencies fields
+[ACT] Click 'Save & Apply'
+[ASSERT] Verify new filter_2 created and applied","[STATE] filter_1 applied — price list sorted by filter_1 criteria
+[STATE] Filter cleared successfully
+[DOM] New filter_2 blade opens with filter criteria fields
+[STATE] filter_2 created and saved in filter list; price list sorted by filter_2","[ADMIN] Verify filter persists across sessions
+[ADMIN] Confirm filter_2 appears in filter dropdown","Filter not applied; filter clear button missing; new filter not saved","delete created price list via Admin","C178894","Katalon"
+"PRICE-005","Add products to the price list","Pricing > Prices","Critical","BL-PRICE-001","","Admin logged in to Backend
+Price list created [PRICE-001]","product_ids={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
+[ACT] Open price list from PRICE-001
+[ACT] Click on 'Prices' widget
+[ACT] Click 'Add' button
+[ACT] Select products to add using {{TEST_SKU}}
+[ACT] Confirm selection
+[ASSERT] Verify products appear in Prices widget","[STATE] Selected products are added to the price list
+[DOM] Number of products added is displayed in Prices widget count","[ADMIN] Reload price list blade and confirm product count persists
+[API] GET /api/pricing/pricelists/{id}/prices — confirm product entries","Product selection dialog not opening; products not saved; widget count not updated","delete created price list via Admin","C178829","Katalon"
+"PRICE-006","Add prices to the product","Pricing > Prices","High","BL-PRICE-001","ECL-7.1","Admin logged in to Backend
+Price list created [PRICE-001]
+Products added to price list [PRICE-005]","list_price=100.00; sale_price=80.00; min_qty_tier=5; list_price_tier=70.00; sale_price_tier=60.00","[NAV] Navigate to {{BACK_URL}} Pricing > Price Lists > open PRICE-001 > Prices widget
+[ACT] Click on a product
+[ACT] Enter list_price=100.00 into 'List Price' input field
+[ACT] Click 'Save'
+[ASSERT] Verify price appears in Price range column
+[ACT] Re-open product; enter sale_price=80.00
+[ACT] Click 'Save'
+[ASSERT] Verify Price range shows both list and sale price
+[ACT] Re-open product; click 'Add price row'
+[ACT] Set min_qty=5; enter list_price_tier=70.00 and sale_price_tier=60.00
+[ACT] Click 'Save'
+[ASSERT] Verify tier price row saved","[STATE] Step 1: List price saved; product Price range column shows $100.00
+[STATE] Step 2: Price range shows list price ($100) and sale price ($80)
+[STATE] Step 3: New price row with min qty=5 saved; '#' column shows 2 price rows; tier price available for qty>=5","[API] GET /api/pricing/pricelists/{id}/prices — confirm all three price entries
+[CONSOLE] No JS errors during save operations","Save fails silently; price range column not updated; tier price row not persisting","restore original prices","C178848","Katalon"
+"PRICE-007","View price list via catalog module","Pricing > Prices","Medium","BL-PRICE-001","","Admin logged in to Backend
+Product has prices in multiple price lists","product_id={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} Catalog module > Products
+[ACT] Open any product with prices ({{TEST_SKU}})
+[ACT] Click on 'Price' widget
+[ASSERT] Review all prices from all price lists","[DOM] Screen displays all prices for selected item from every Price list that contains this item
+[STATE] All price list entries visible with their respective list/sale prices","[API] GET /api/pricing/products/{id}/prices — cross-check count and values with UI display","Price widget not opening; prices from some price lists missing; widget shows 0 prices","none","C178852","Katalon (generic)"
+"PRICE-008","Export price lists","Pricing > Pricelist Management","Medium","BL-PRICE-004","ECL-5.1","Admin logged in to Backend
+Multiple price lists exist","export_format=CSV","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
+[ACT] Select price lists to export
+[ACT] Click 'Export' button
+[ACT] Configure export settings
+[ACT] Click 'Start Export'
+[WAIT] Wait for completion indicator
+[ACT] Download exported file
+[ASSERT] Verify file contents","[STATE] Export completes successfully
+[DOM] Download link available after export
+[FORMAT] Downloaded CSV file contains selected price list data","[NETWORK] Confirm download request succeeds (HTTP 200)
+[CONSOLE] No JS errors during export","Export button unresponsive; export hangs indefinitely; downloaded file empty or malformed","none","C178871","None"
+"PRICE-020","Pricelist > Validate description field length","Pricing > Pricelist Management","Medium","BL-PRICE-004","ECL-8.1","Admin logged in to Backend
+API access available","description_length=513 chars; endpoint={{BACK_URL}}/api/pricing/pricelists","[ACT] Prepare POST request to {{BACK_URL}}/api/pricing/pricelists
+[ACT] Include pricelist with description longer than 512 characters
+[ACT] Send request
+[ASSERT] Verify error response","[STATE] HTTP 400 or 422 error response received
+[DOM] Response body contains: 'Description must not be longer than 512 symbols'","[API] Confirm error response body matches expected validation message exactly
+[NETWORK] HTTP status code is 4xx (not 200/500)","Server returns HTTP 200 (validation bypass); server returns 500 (unhandled exception); error message differs","none","C340884","None"
+"PRICE-027","Add new assignment","Pricing > Assignment Management","Critical","BL-PRICE-004","","Admin logged in to Backend
+Price list exists","assignment_name=TestAssignment-001; catalog_id={{STORE_ID}}","[NAV] Navigate to {{BACK_URL}} Pricing module > Price List Assignments
+[ACT] Click 'Add' button
+[ACT] Enter assignment name: TestAssignment-001
+[ACT] Select catalog
+[ACT] Select price list
+[ACT] Click 'Create' button (without additional rules/conditions)
+[ASSERT] Verify assignment appears in list","[STATE] System creates assignment without additional rules and conditions
+[DOM] Assignment count in 'Assignment' widget is incremented
+[STATE] New assignment visible in Assignments list","[API] GET /api/pricing/assignments — confirm new assignment entry exists
+[ADMIN] Reload Assignments blade and confirm assignment persists","Assignment not created; widget count not updated; assignment not visible in list","delete created price list via Admin","C178853","Katalon"
+"PRICE-028","Edit price list assignment","Pricing > Assignment Management","High","BL-PRICE-004","","Admin logged in to Backend
+Assignment created [PRICE-027]","updated_name=TestAssignment-EDIT; updated_description=edited description; updated_priority=10","[NAV] Navigate to {{BACK_URL}} Pricing module > Price List Assignments
+[ACT] Open existing assignment (TestAssignment-001)
+[ACT] Modify assignment name, description, and priority
+[ACT] Click 'Save' button
+[ASSERT] Verify changes reflected in table","[STATE] All changes are saved
+[DOM] Updated name, description, and priority appear in the Assignments table","[API] GET /api/pricing/assignments/{id} — confirm updated fields match input values","Changes not saved; stale data in table; save button unresponsive","restore original prices","C178874","Katalon"
+"PRICE-029","Delete price list assignment","Pricing > Assignment Management","High","BL-PRICE-004","","Admin logged in to Backend
+Assignment created [PRICE-027]","assignment_id from PRICE-027","[NAV] Navigate to {{BACK_URL}} Pricing module > Price List Assignments
+[ACT] Select assignment to delete
+[ACT] Click 'Delete' button
+[ACT] Confirm deletion
+[ASSERT] Verify assignment removed from list","[STATE] Assignment is deleted
+[DOM] Assignment no longer appears in Assignments table","[API] GET /api/pricing/assignments/{id} returns 404","Assignment still visible after deletion; confirmation dialog missing; delete fails silently","none","C178876","Katalon"
+"PRICE-036","Search pricelist by various criteria","Pricing > Search & Filter","Medium","BL-PRICE-004","","Admin logged in to Backend
+Multiple price lists exist with various names and currencies","search_term_1=Clothing; search_term_2=elect; search_term_3=USD","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists
+[ACT] Enter 'Clothing' in search field
+[ASSERT] Verify results contain pricelists with 'Clothing' in name
+[ACT] Enter 'elect' in search field
+[ASSERT] Verify results contain pricelists matching partial text 'elect'
+[ACT] Enter 'USD' in search field
+[ASSERT] Verify results contain USD currency pricelists","[STATE] Step 1: Results match pricelists containing 'Clothing'
+[STATE] Step 2: Results match partial text 'elect'
+[STATE] Step 3: Results match USD currency pricelists
+[DOM] All search results are relevant to each search term","[ADMIN] Confirm search is case-insensitive by testing uppercase/lowercase variants","No results for valid search terms; wrong results returned; search field unresponsive","none","C182896","None"
+"PRICE-037","Search pricelist assignment by name","Pricing > Search & Filter","Medium","BL-PRICE-004","","Admin logged in to Backend
+Multiple price list assignments exist","search_term_1=B2B-mixed; search_term_2=B2B-MIxed-MFD","[NAV] Navigate to {{BACK_URL}} Pricing module > Price List Assignments
+[ACT] Enter 'B2B-mixed' in search field
+[ASSERT] Verify search results match assignment name
+[ACT] Enter 'B2B-MIxed-MFD' in search field (case insensitive)
+[ASSERT] Verify search results match case-insensitively","[STATE] Step 1: Results show assignment(s) containing 'B2B-mixed'
+[STATE] Step 2: Results match 'B2B-MIxed-MFD' case-insensitively","[ADMIN] Confirm search works regardless of case variation","Search is case-sensitive (no results for variant); wrong assignments returned; search field non-functional","none","C182897","None"
+"PRICE-038","Create and apply filter in pricing module","Pricing > Search & Filter","Medium","BL-PRICE-004","","Admin logged in to Backend
+Multiple price lists/assignments exist","filter_name=TestFilter-01; filter_criteria=currency:USD; filter_name_2=TestFilter-02","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists or Assignments
+[ACT] Click 'Select filter' > 'Add new filter'
+[ACT] Select filter criteria (currency=USD)
+[ACT] Click 'Save & Apply'
+[ASSERT] Verify filtering applies correctly
+[ACT] Create another filter (TestFilter-02) with different criteria
+[ACT] Apply new filter
+[ASSERT] Verify second filter applies correctly","[STATE] Filter 1 applied — only USD pricelists shown
+[STATE] Filter 2 applied — correct data for second filter criteria shown
+[DOM] Correct filtering data displayed for each filter","[ADMIN] Confirm filters persist and appear in filter dropdown for reuse","Filter not saved; wrong data shown after filter apply; second filter replaces rather than supplements first","delete created price list via Admin","C182898","None"
+"PRICE-039","Search with wrong/no results request","Pricing > Search & Filter","Medium","BL-PRICE-004","","Admin logged in to Backend
+Pricing module open","search_term=XXXXXXXXXNONEXISTENT9999","[NAV] Navigate to {{BACK_URL}} Pricing module
+[ACT] Enter non-existent search term 'XXXXXXXXXNONEXISTENT9999' in search field
+[ASSERT] Verify system response","[DOM] 'No data' or empty state message displayed
+[STATE] No results shown — no false positives","[CONSOLE] No JS errors when empty results rendered","No empty state message shown; JS error thrown; spinner stuck indefinitely","none","C182899","None"
+"PRICE-040","Filter then search within filtered data","Pricing > Search & Filter","Medium","BL-PRICE-004","","Admin logged in to Backend
+Filter created for pricelist [PRICE-038]","filter_name=TestFilter-01; search_term=Clothing","[NAV] Navigate to {{BACK_URL}} Pricing module
+[ACT] Apply TestFilter-01 (USD filter)
+[ACT] Enter 'Clothing' in search field
+[ASSERT] Verify results show only filtered+searched data","[STATE] Search results come from filtered dataset only — no non-USD pricelists in results","[ADMIN] Confirm result count is subset of both filter and search independently applied","Search ignores active filter; non-filtered data appears in results; filter cleared on search","none","C182900","None"
+"PRICE-041","Search products in pricelist by multiple criteria","Pricing > Search & Filter","Medium","BL-PRICE-001","","Admin logged in to Backend
+Price list exists with multiple products","search_sku={{TEST_SKU}}; search_color=Blue; search_size=M; search_category=Electronics; search_name=TestProduct","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists > open price list > Prices widget
+[ACT] Search by SKU: {{TEST_SKU}}
+[ASSERT] Verify results match SKU
+[ACT] Search by color: Blue
+[ASSERT] Verify results match color
+[ACT] Search by size: M
+[ASSERT] Verify results match size
+[ACT] Search by category: Electronics
+[ASSERT] Verify results match category
+[ACT] Search by name: TestProduct
+[ASSERT] Verify results match name","[STATE] Each search criterion returns matching results
+[DOM] SKU, color, size, category, and name searches all return relevant products","[ADMIN] Cross-check result count with known test data for each criterion","Some criteria return no results; wrong products returned; search not functional for property-based criteria","none","C205045","None"
+"PRICE-042","Settings > Export/Import page size","Pricing > Settings","Medium","BL-PRICE-004","ECL-5.1","Admin logged in to Backend
+Admin on Settings panel","page_size_value=1","[NAV] Navigate to {{BACK_URL}} Settings > Pricing > General
+[ACT] Change 'Export/Import page size' value to 1
+[ACT] Click 'Save'
+[ASSERT] Verify changes saved
+[NAV] Navigate to Export & Import page > Export blade
+[ACT] Choose VirtoCommerce.Pricing
+[ACT] Click 'Start Export'
+[ASSERT] Verify progress bar increments in steps matching page size = 1
+[NAV] Navigate to Import blade
+[ACT] Choose VirtoCommerce.Pricing
+[ACT] Click 'Start Import'
+[ASSERT] Verify progress bar increments in steps matching page size = 1","[STATE] Setting value saved to 1
+[DOM] Progress bar updates with value increments matching page size setting
+[STATE] Both Export and Import respect the configured page size","[ADMIN] Confirm setting persists after page refresh
+[CONSOLE] No errors during export/import with custom page size","Setting not saved; progress bar not reflecting page size; export/import ignores setting","none","C242158","None"
+"PRICE-043","Settings > Enable event-based indexation for pricing entities","Pricing > Settings","Medium","BL-PRICE-001","","Admin logged in to Backend","setting_name=Enable event-based indexation for pricing entities","[NAV] Navigate to {{BACK_URL}} Settings > Pricing > General
+[ACT] Enable 'Enable event-based indexation for pricing entities'
+[ACT] Click 'Save'
+[NAV] Navigate to Catalog > Category > Product ({{TEST_SKU}}) > Price widget
+[ACT] Change Min. quantity value
+[ACT] Click 'Save'
+[ACT] Reopen edit blade
+[ASSERT] Check Indexation widget
+[ASSERT] Verify system was reindexed automatically after saving change","[STATE] Setting saved as enabled
+[STATE] Indexation widget shows recent reindex event after price save
+[STATE] System was reindexed after saving change — no manual index rebuild required","[ADMIN] Check background job logs or Indexation widget for reindex timestamp","Setting not saved; auto-reindex not triggered; Indexation widget not updated","none","C242159","None"
+"PRICE-044","Settings > Disable event-based indexation for pricing entities","Pricing > Settings","Medium","BL-PRICE-001","","Admin logged in to Backend","setting_name=Enable event-based indexation for pricing entities","[NAV] Navigate to {{BACK_URL}} Settings > Pricing > General
+[ACT] Disable 'Enable event-based indexation for pricing entities'
+[ACT] Click 'Save'
+[NAV] Navigate to Catalog > Category > Product ({{TEST_SKU}}) > Price widget
+[ACT] Change Min. quantity value
+[ACT] Click 'Save'
+[ACT] Reopen edit blade
+[ASSERT] Check Indexation widget
+[ASSERT] Verify system does NOT auto-reindex after saving change","[STATE] Setting saved as disabled
+[STATE] Indexation widget shows no new reindex event after price save
+[STATE] System does NOT reindex after saving change — manual index rebuild required","[ADMIN] Confirm Indexation widget timestamp unchanged after price save with setting disabled","Setting not saved; auto-reindex still triggers when disabled; Indexation widget status unclear","none","C242160","None"
+"PRICE-045","Settings > Enable log pricing changes","Pricing > Settings","Medium","BL-PRICE-001","","Admin logged in to Backend","setting_name=Log pricing changes; product_sku={{TEST_SKU}}; db_table=PlatformOperationLog","[NAV] Navigate to {{BACK_URL}} Settings > Pricing > General
+[ACT] Enable 'Log pricing changes'
+[ACT] Click 'Save'
+[NAV] Navigate to Catalog > Product ({{TEST_SKU}}) > Price widget
+[ACT] Change price value
+[ACT] Save changes
+[ASSERT] Check PlatformOperationLog table
+[ASSERT] Verify new row was added with pricing change record","[STATE] Setting saved as enabled
+[STATE] New row added to PlatformOperationLog after price change
+[FORMAT] Log row contains timestamp, user, and pricing change details","[API] Query PlatformOperationLog table via DB or API endpoint — confirm new row exists with pricing operation","Setting not saved; no log row created; log row missing required fields","restore original prices","C261705","None"
+"PRICE-046","Settings > Disable log pricing changes","Pricing > Settings","Medium","BL-PRICE-001","","Admin logged in to Backend","setting_name=Log pricing changes; product_sku={{TEST_SKU}}; db_table=PlatformOperationLog","[NAV] Navigate to {{BACK_URL}} Settings > Pricing > General
+[ACT] Disable 'Log pricing changes'
+[ACT] Click 'Save'
+[NAV] Navigate to Catalog > Product ({{TEST_SKU}}) > Price widget
+[ACT] Change price value
+[ACT] Save changes
+[ASSERT] Check PlatformOperationLog table
+[ASSERT] Verify new row was NOT added","[STATE] Setting saved as disabled
+[STATE] No new row added to PlatformOperationLog after price change
+[STATE] Pricing operation not logged when setting is disabled","[API] Query PlatformOperationLog table — confirm row count unchanged after price change","Setting not saved; log row still created when logging disabled; false positive log entries","restore original prices","C261704","None"
+"PRICE-047","Settings > Tooltips show/hide behavior","Pricing > Settings","Medium","BL-PRICE-004","","Admin logged in to Backend","field_1=first tooltip field; field_2=second tooltip field","[NAV] Navigate to {{BACK_URL}} Settings > Pricing > General blade
+[ASSERT] Verify all tooltips are folded by default
+[ACT] Click 'Show' link for field_1
+[ASSERT] Verify tooltip for field_1 is unfolded
+[ACT] Click 'Show' link for field_2
+[ASSERT] Verify tooltip for field_2 unfolded AND field_1 auto-folded
+[ACT] Click 'Hide' link
+[ASSERT] Verify all tooltips folded","[DOM] All tooltips initially folded
+[STATE] field_1 tooltip unfolds on 'Show' click
+[STATE] field_2 tooltip unfolds; field_1 auto-folds (accordion behavior)
+[STATE] All tooltips fold when 'Hide' clicked","[CONSOLE] No JS errors during tooltip toggle operations","Tooltips all shown at once (no accordion); field_1 stays open when field_2 shown; Hide button missing","none","C338422","None"
+"PRICE-048","Settings > Pricing indexation date and time","Pricing > Settings","Medium","BL-PRICE-001","","Admin logged in to Backend
+Admin on Settings panel","date_format=Jul 3 2020 12:50:14 PM; product_sku={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} Pricing settings blade > Search
+[ASSERT] Check 'Pricing indexation date and time' field — format: 'Jul 3 2020 12:50:14 PM'
+[NAV] Navigate to Catalog > Product ({{TEST_SKU}}) > Price widget
+[ACT] Change Price value; set valid from/to dates
+[ACT] Click 'Save'
+[NAV] Navigate to Search Index page > Products > Build index
+[ACT] Click 'Build'
+[WAIT] Wait for completion
+[ACT] After background job 'IndexingJobs.IndexChangesJob' completes — check Pricing indexation date/time field
+[ASSERT] Verify new indexation date/time displayed","[FORMAT] Initial date/time in format 'Jul 3 2020 12:50:14 PM'
+[STATE] After rebuild: new indexation date/time displayed in correct format
+[STATE] Timestamp updated — later than initial value","[ADMIN] Confirm timestamp is correctly formatted (not ISO 8601 or Unix timestamp format)","Timestamp not updating after rebuild; wrong date format; field blank after rebuild","restore original prices","C242161","None"
+"PRICE-049","Settings > Enable product price indexing","Pricing > Settings","Medium","BL-PRICE-001","","Admin logged in to Backend
+'Enable event-based indexation for pricing entities' is ON","product_sku={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} Settings > Pricing > Search
+[ACT] Enable 'Enable product price indexing'
+[ACT] Click 'Save'
+[NAV] Navigate to Catalog > Product ({{TEST_SKU}}) > Price widget
+[ACT] Change Price value
+[ACT] Click 'Save'
+[ACT] Reopen edit blade
+[ASSERT] Check Indexation widget
+[ASSERT] Verify prices reindexed and included in search index","[STATE] Setting saved as enabled
+[STATE] Prices reindexed and included in index
+[STATE] Indexation widget confirms price data in search index","[ADMIN] Verify search index contains price data for product after save","Setting not saved; prices not included in index despite setting enabled; Indexation widget unclear","restore original prices","C242163","None"
+"PRICE-050","Settings > Disable product price indexing","Pricing > Settings","Medium","BL-PRICE-001","","Admin logged in to Backend
+'Enable event-based indexation for pricing entities' is ON","product_sku={{TEST_SKU}}","[NAV] Navigate to {{BACK_URL}} Settings > Pricing > Search
+[ACT] Disable 'Enable product price indexing'
+[ACT] Click 'Save'
+[NAV] Navigate to Catalog > Product ({{TEST_SKU}}) > Price widget
+[ACT] Change Price value
+[ACT] Click 'Save'
+[ACT] Reopen edit blade
+[ASSERT] Check Indexation widget
+[ASSERT] Verify prices reindexed but NOT included in search index","[STATE] Setting saved as disabled
+[STATE] Prices reindexed but NOT included in index
+[STATE] Indexation widget confirms price data excluded from search index","[ADMIN] Verify search index does NOT contain price data for product after save","Price data still in index despite setting disabled; setting not saved; ambiguous Indexation widget state","restore original prices","C242168","None"
+"PRICE-053","Permissions > Access only","Pricing > Permissions","High","BL-PRICE-004","","Admin logged in to Backend
+Role_1 created with permissions: pricing:access and catalog:read
+Role_1 assigned to User_1","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; role=pricing:access+catalog:read","[NAV] Navigate to {{BACK_URL}} and login as User_1 ({{USER_EMAIL}}/{{USER_PASSWORD}})
+[ASSERT] Verify 'Pricing' module visible in Navigation
+[ACT] Open 'Pricing' blade
+[ACT] Try to open 'Price lists' tab
+[ACT] Try to open any price list
+[ASSERT] Verify price list does not open (nothing happens on click)
+[ACT] Try to open 'Price list assignments' tab
+[ACT] Try to open any assignment
+[ASSERT] Verify assignment does not open (nothing happens on click)","[STATE] Pricing module visible in Navigation
+[STATE] Pricing blade opens
+[STATE] Price lists tab opens but individual price lists cannot be opened (click has no effect)
+[STATE] Price list assignments tab opens but individual assignments cannot be opened","[API] GET /api/pricing/pricelists — should return 403 for User_1
+[CONSOLE] No JS errors when access-restricted items are clicked","Pricing module not visible; user can open price lists (over-privileged); unauthorized API access not blocked","none","C338376","None"
+"PRICE-054","Permissions > Read","Pricing > Permissions","High","BL-PRICE-004","","Admin logged in to Backend
+Role_1 created with permissions: pricing:access, pricing:read, catalog:read
+Role_1 assigned to User_1","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; role=pricing:access+pricing:read+catalog:read","[NAV] Navigate to {{BACK_URL}} and login as User_1 ({{USER_EMAIL}}/{{USER_PASSWORD}})
+[ACT] Open 'Pricing' module
+[ACT] Open 'Price lists' tab
+[ACT] Open any price list
+[ASSERT] Verify all data is visible (read-only)
+[ACT] Open 'Price list assignments' tab
+[ACT] Open any assignment
+[ASSERT] Verify all data is visible (read-only)","[STATE] Price list opens and all data is visible
+[STATE] Price list assignment opens and all data is visible
+[STATE] No edit/save controls active (read-only access)","[API] GET /api/pricing/pricelists and GET /api/pricing/assignments — should return 200 for User_1
+[CONSOLE] No unauthorized access errors","User cannot open price lists; create/update buttons visible (over-privileged); API returns 403 for read calls","none","C338377","None"
+"PRICE-055","Permissions > Export","Pricing > Permissions","High","BL-PRICE-004","ECL-5.1","Admin logged in to Backend
+Role_1 created with permissions: pricing:access, pricing:read, pricing:export, catalog:read
+Role_1 assigned to User_1","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; role=pricing:access+pricing:read+pricing:export+catalog:read","[NAV] Navigate to {{BACK_URL}} and login as User_1 ({{USER_EMAIL}}/{{USER_PASSWORD}})
+[ACT] Open 'Pricing' module > Price lists
+[ASSERT] Verify 'Export' button visible in header
+[ACT] Click 'Export'
+[ACT] Select provider data and properties
+[ACT] Click 'Start export'
+[ASSERT] Verify export progress and file download available
+[ACT] Open 'Price list assignment' tab
+[ASSERT] Verify 'Export' button visible in header
+[ACT] Click 'Export' and repeat export steps
+[ASSERT] Verify export completes and file downloadable","[STATE] Export button visible in header for both Price lists and Assignments
+[STATE] Export progress blade opens
+[STATE] File can be downloaded after export completes","[NETWORK] Confirm export download HTTP 200 for User_1
+[CONSOLE] No authorization errors during export","Export button not visible despite permission; export returns 403; file download fails","none","C338378","None"
+"PRICE-056","Permissions > Create","Pricing > Permissions","High","BL-PRICE-004","ECL-14.1","Admin logged in to Backend
+Role_1 created with permissions: pricing:access, pricing:read, pricing:create, catalog:read
+Role_1 assigned to User_1","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; new_pricelist_name=User1-PL-001; new_assignment_name=User1-Assign-001","[NAV] Navigate to {{BACK_URL}} and login as User_1 ({{USER_EMAIL}}/{{USER_PASSWORD}})
+[ACT] Open 'Pricing' module > Price lists
+[ASSERT] Verify 'Add' button is visible and clickable
+[ACT] Click 'Add'; enter name=User1-PL-001; select currency
+[ACT] Click 'Create'
+[ASSERT] Verify new price list created
+[ACT] Open 'Price list assignments' tab
+[ASSERT] Verify 'Add' button is visible and clickable
+[ACT] Click 'Add'; enter name=User1-Assign-001; select catalog and price list
+[ACT] Click 'Create'
+[ASSERT] Verify new assignment created","[STATE] Add button visible and clickable for User_1
+[STATE] New price list 'User1-PL-001' created successfully
+[STATE] New assignment 'User1-Assign-001' created successfully","[API] POST /api/pricing/pricelists — should return 201 for User_1
+[CONSOLE] No authorization errors during create operations","Add button not visible despite permission; create returns 403; created items not appearing in list","delete created price list via Admin","C338379","None"
+"PRICE-057","Permissions > Update","Pricing > Permissions","High","BL-PRICE-004","ECL-14.1","Admin logged in to Backend
+Role_1 created with permissions: pricing:access, pricing:read, pricing:update, catalog:read
+Role_1 assigned to User_1","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; updated_field=description","[NAV] Navigate to {{BACK_URL}} and login as User_1 ({{USER_EMAIL}}/{{USER_PASSWORD}})
+[ACT] Open 'Pricing' module > Price lists
+[ACT] Open any price list
+[ACT] Change description field
+[ACT] Click 'Save'
+[ASSERT] Verify all changes saved
+[ACT] Open 'Price list assignments' tab
+[ACT] Open any assignment
+[ACT] Change description field
+[ACT] Click 'Save'
+[ASSERT] Verify all changes saved","[STATE] Price list changes saved successfully for User_1
+[STATE] Assignment changes saved successfully for User_1","[API] PUT /api/pricing/pricelists/{id} — should return 200 for User_1
+[CONSOLE] No authorization errors during update operations","Save button not visible despite permission; update returns 403; changes not persisted","restore original prices","C338380","None"
+"PRICE-058","Permissions > Delete","Pricing > Permissions","High","BL-PRICE-004","","Admin logged in to Backend
+Role_1 created with permissions: pricing:access, pricing:read, pricing:delete, catalog:read
+Role_1 assigned to User_1","user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[NAV] Navigate to {{BACK_URL}} and login as User_1 ({{USER_EMAIL}}/{{USER_PASSWORD}})
+[ACT] Open 'Pricing' module > Price lists
+[ASSERT] Verify 'Delete' button visible in header
+[ACT] Mark a price list to delete
+[ACT] Click 'Delete'; confirm deletion
+[ASSERT] Verify price list deleted
+[ACT] Open 'Price list assignments' tab
+[ASSERT] Verify 'Delete' button visible in header
+[ACT] Mark an assignment to delete
+[ACT] Click 'Delete'; confirm deletion
+[ASSERT] Verify assignment deleted","[STATE] Delete button visible in header for both sections
+[STATE] Price list deleted successfully
+[STATE] Assignment deleted successfully","[API] DELETE /api/pricing/pricelists/{id} — should return 204 for User_1
+[CONSOLE] No authorization errors during delete operations","Delete button not visible despite permission; delete returns 403; items not removed from list after deletion","none","C338381","None"

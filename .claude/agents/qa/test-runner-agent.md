@@ -162,8 +162,10 @@ Each browser slot has a **dedicated test user** to prevent session/cart/order co
 For EACH test case in the CSV, execute this protocol:
 
 ### 2.1 Announce
-State the test case ID, title, and business rule:
-> "Executing SMK-007: Add to Cart — Single Product [BL-CART-001] | Watching for: ECL-2.1, ECL-7.3"
+Print the test case progress, ID, title, and business rule before executing each test:
+> "▶ Suite {{SUITE_ID}} | [N/TOTAL] SMK-007: Add to Cart — Single Product [BL-CART-001] | Watching for: ECL-2.1, ECL-7.3"
+
+Where `N` is the current test case number and `TOTAL` is the total count of test cases in the suite. This output is mandatory for every test case — never skip the announcement.
 
 ### 2.2 Check Preconditions
 - Read the `Preconditions` column

@@ -1,0 +1,497 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"CAT-001","Add New Catalog","Catalog > Common Catalogs","Critical","BL-CAT-001","ECL-8.1","Admin logged in, Catalog module accessible","catalogName={{STORE_ID}}_TestCatalog; adminUrl={{BACK_URL}}","[NAV] Open Catalog module > Add > Click Catalog
+[ASSERT] Verify screen displays with required fields
+[ACT] Fill Catalog name field (required)
+[ACT] Configure Language block if needed
+[ACT] Click Create","[STATE] System displays new catalog screen
+[STATE] Catalog name field marked as required
+[STATE] Language block visible and functional
+[STATE] System saves new catalog successfully
+[DOM] New catalog appears in catalog list","[API] GET /api/catalog/catalogs — verify new catalog returned
+[CONSOLE] No errors on create","Catalog save fails silently; required field validation not shown; duplicate catalog name accepted","delete created catalog via Admin","VP-660, C122780","Katalon"
+"CAT-002","Edit Existing Catalog","Catalog > Common Catalogs","High","BL-CAT-001","ECL-8.1","Admin logged in, at least one catalog exists","catalogName=UpdatedCatalog; adminUrl={{BACK_URL}}","[NAV] Right-click on existing catalog > Manage
+[ASSERT] Verify edit screen displays
+[ACT] Review blocks: Name (required), Language, Property
+[ACT] Modify catalog name
+[ACT] Change language settings
+[ACT] Modify property settings
+[ACT] Click Save","[STATE] Edit screen displays with catalog data
+[STATE] Name field is required
+[STATE] Language block shows current selection
+[STATE] Property block displays correctly
+[STATE] System saves all changes
+[DOM] Updated catalog reflects changes","[API] GET /api/catalog/catalogs/{id} — verify updated fields
+[CONSOLE] No errors on save","Save button inactive after edits; name not persisted after save; language block missing","restore original catalog name via Admin","VP-660, C122781","Katalon"
+"CAT-003","Delete Catalog - Cancel","Catalog > Common Catalogs","High","BL-CAT-001","","Admin logged in, multiple catalogs exist","adminUrl={{BACK_URL}}","[NAV] Right-click on any catalog > Delete
+[ASSERT] Verify confirmation dialog appears
+[ACT] Click Cancel","[STATE] Confirmation dialog displays
+[STATE] System does not delete catalog
+[DOM] Catalog remains in list
+[STATE] No data loss","[API] GET /api/catalog/catalogs — verify catalog still exists
+[CONSOLE] No errors","Catalog deleted despite Cancel click; dialog not shown; list count changes","none","VP-660, C122782","Katalon"
+"CAT-004","Delete Catalog - Confirm","Catalog > Common Catalogs","High","BL-CAT-001","","Admin logged in, test catalog exists","catalogName=TestCatalogToDelete; adminUrl={{BACK_URL}}","[NAV] Right-click on test catalog > Delete
+[ASSERT] Verify confirmation dialog
+[ACT] Type 'Yes' in confirmation field
+[ACT] Click Confirm","[STATE] Confirmation dialog requires typing 'Yes'
+[STATE] System deletes catalog after confirmation
+[DOM] Catalog removed from list
+[STATE] Related data handled appropriately","[API] GET /api/catalog/catalogs — verify catalog absent
+[CONSOLE] No errors on delete","Catalog not removed after confirm; 'Yes' field not enforced; related data orphaned","none (catalog was created for deletion)","VP-660, C122782","Katalon"
+"CAT-005","Add Catalog with Multiple Languages","Catalog > Common Catalogs","Medium","BL-CAT-001","ECL-8.1","Admin logged in, Catalog module accessible","languages=en-US,de-DE; adminUrl={{BACK_URL}}","[NAV] Open Catalog module > Click Catalog
+[ACT] Click Language selector
+[ACT] Select default language
+[ACT] Add additional languages
+[ACT] Click OK > Create","[STATE] Language selector displays available languages
+[STATE] Can select one default language
+[STATE] Can add multiple additional languages
+[STATE] System saves catalog with selected languages
+[STATE] All languages available in catalog","[API] GET /api/catalog/catalogs/{id} — verify languages array
+[CONSOLE] No errors","Only one language saved; additional languages lost after save; language selector empty","delete created catalog via Admin","VP-660, C122783","Katalon (generic)"
+"CAT-006","Add New Language Value to Catalog","Catalog > Common Catalogs","High","BL-CAT-001","ECL-8.1","Admin logged in, at least one catalog exists","langValue=TestLang; adminUrl={{BACK_URL}}","[NAV] Go to Catalog module
+[NAV] Right-click on any catalog > Manage
+[ACT] Click on Languages widget
+[ACT] Click Edit button next to Default language title
+[ACT] Enter new language value in input field
+[ACT] Click Add
+[ACT] Click Save","[STATE] Manage dictionary values screen displays
+[STATE] New language value added to list
+[STATE] Changes saved successfully
+[STATE] New language available for selection as default or additional","[API] GET /api/catalog/catalogs/{id} — verify language value in response
+[CONSOLE] No errors","Language value not persisted; duplicate language accepted; dictionary screen does not open","delete added language value via Admin","C180483","Katalon (generic)"
+"CAT-007","Delete Language Value from Catalog","Catalog > Common Catalogs","Medium","BL-CAT-001","","Admin logged in, language value added via C180483","adminUrl={{BACK_URL}}","[NAV] Navigate to catalog Languages widget
+[ACT] Click Edit button
+[ACT] Select language value to delete
+[ACT] Click Delete
+[ACT] Confirm deletion","[STATE] Language value selection works
+[STATE] Delete confirmation appears
+[STATE] Selected language deleted from list
+[STATE] Changes saved successfully","[API] GET /api/catalog/catalogs/{id} — verify language removed
+[CONSOLE] No errors","Language value still in list after delete; no confirmation dialog; other values affected","none","C180484","Katalon (generic)"
+"CAT-019","Add New Physical Product","Catalog > Products","Critical","BL-CAT-001; BL-CAT-004","ECL-8.1","Admin logged in, category exists","sku={{TEST_SKU}}; productName=TestPhysicalProduct; adminUrl={{BACK_URL}}","[NAV] Open Catalog module > Click on any category
+[ACT] Click Add > Physical product
+[ASSERT] Verify product details screen displays
+[ACT] Review required fields: SKU, Name
+[ACT] Review available blocks: Property, Image, Description, SEO
+[ACT] Fill required fields
+[ACT] Add optional data (images, description, SEO)
+[ACT] Click Save
+[ASSERT] Verify product in list","[STATE] Physical product creation screen displays
+[STATE] SKU field required
+[STATE] Name field required
+[STATE] Property, Image, Description, SEO blocks available
+[STATE] System saves new product
+[DOM] Product appears in product list
+[STATE] Product indexed and searchable","[API] GET /api/catalog/products — verify new product returned
+[API] POST /api/catalog/search — verify product appears in search index within 60s
+[CONSOLE] No indexing errors","Product not indexed within 60s; SKU auto-generation fails; required field bypassed","delete created product via Admin","VP-660, C123091","Katalon"
+"CAT-020","Add New Digital Product","Catalog > Products","High","BL-CAT-001","","Admin logged in, catalog exists","productName=TestDigitalProduct; adminUrl={{BACK_URL}}","[NAV] Go to Catalog module > Any catalog
+[ACT] Click Add
+[ACT] Choose Digital Product from New category item blade
+[ASSERT] Verify SKU generated automatically
+[ACT] Enter product name
+[ACT] Click Create
+[ASSERT] Verify product in list","[STATE] New product screen displays
+[STATE] Digital Product option available
+[STATE] SKU auto-generated
+[STATE] Product name field available
+[DOM] New digital product added to list
+[STATE] Digital product type persisted","[API] GET /api/catalog/products/{id} — verify productType=Digital
+[CONSOLE] No errors","SKU not auto-generated; product type not persisted; digital product not distinguished in list","delete created product via Admin","C180504","Katalon (generic)"
+"CAT-021","Edit Existing Product","Catalog > Products","High","BL-CAT-001; BL-CAT-004","ECL-8.1","Admin logged in, test product exists","productName=UpdatedProduct; adminUrl={{BACK_URL}}","[NAV] Right-click on product > Manage
+[ASSERT] Verify edit screen loads with product data
+[ACT] Change product name
+[ACT] Update description
+[ACT] Modify properties
+[ACT] Click Save
+[ASSERT] Verify changes persisted","[STATE] Edit screen displays with all product data
+[STATE] All fields editable
+[STATE] Changes saved successfully
+[DOM] Updated product reflects changes
+[STATE] No data loss on edit","[API] GET /api/catalog/products/{id} — verify updated name and properties
+[CONSOLE] No errors on save","Name revert after save; description lost; save button inactive after edits","restore original product name via Admin","VP-660, C123092","Katalon"
+"CAT-022","Delete Product - Cancel","Catalog > Products","High","BL-CAT-001","","Admin logged in, products exist","adminUrl={{BACK_URL}}","[NAV] Right-click on product > Delete
+[ASSERT] Verify confirmation dialog
+[ACT] Click Cancel","[STATE] Confirmation dialog displays
+[STATE] System does not delete product
+[DOM] Product remains in list","[API] GET /api/catalog/products — verify product still listed
+[CONSOLE] No errors","Product deleted despite Cancel; dialog not shown; list count changes","none","VP-660, C123093","Katalon"
+"CAT-023","Delete Product - Confirm","Catalog > Products","High","BL-CAT-001","ECL-5.1","Admin logged in, test product exists","adminUrl={{BACK_URL}}","[NAV] Right-click on test product > Delete
+[ASSERT] Verify confirmation dialog
+[ACT] Type 'Yes'
+[ACT] Click Confirm
+[ASSERT] Verify product removed from list","[STATE] Confirmation requires typing 'Yes'
+[STATE] System deletes product
+[DOM] Product removed from list
+[STATE] Related data (inventory, pricing) handled","[API] GET /api/catalog/products — verify product absent
+[CONSOLE] No errors on delete","Product not removed; inventory record orphaned; 'Yes' not enforced","none (product was created for deletion)","VP-660, C123093","Katalon"
+"CAT-024","Add Description to Product","Catalog > Products","High","BL-CAT-001","","Admin logged in, product exists","descType=QuickReview; lang=en-US; adminUrl={{BACK_URL}}","[NAV] Go to product details
+[ACT] Click on Descriptions widget
+[ACT] Click Add
+[ACT] Select description type and language
+[ACT] Enter description content
+[ACT] Close screen
+[ASSERT] Verify description in list","[STATE] Item description screen displays
+[STATE] Type and language selectable
+[STATE] Content editor available
+[DOM] New description added to descriptions list
+[STATE] Description saved with product","[API] GET /api/catalog/products/{id} — verify descriptions array
+[CONSOLE] No editor errors","Description not persisted; language not selectable; content editor broken","delete added description via Admin","C180500","Katalon (generic)"
+"CAT-025","Add Product Dimensions","Catalog > Products","Medium","BL-CAT-001","","Admin logged in, product exists","length=10; width=5; height=3; weight=1.5; adminUrl={{BACK_URL}}","[NAV] Go to product details
+[ACT] Click on Item dimensions widget
+[ACT] Fill in dimension fields (Length, Width, Height, Weight)
+[ACT] Click OK
+[ASSERT] Verify data displayed on widget","[STATE] Item dimensions widget opens
+[STATE] Dimension fields available
+[STATE] Entered data saved
+[DOM] Data displayed on widget
+[STATE] Dimensions used in shipping calculations","[API] GET /api/catalog/products/{id} — verify dimensions in response
+[CONSOLE] No errors","Dimension values not saved; widget not opening; values not used in shipping","restore original dimensions","C180501","Katalon (generic)"
+"CAT-026","Clone Product","Catalog > Products","High","BL-CAT-001","ECL-5.1","Admin logged in, at least one product exists","sourceProductSku={{TEST_SKU}}; adminUrl={{BACK_URL}}","[NAV] Navigate to existing product
+[ACT] Click Clone button
+[ASSERT] Review cloned product data
+[ACT] Click Create
+[ASSERT] Verify new product in list
+[ASSERT] Verify SKU is different from original","[STATE] Clone function creates copy of product
+[STATE] All product data copied (name, properties, images, descriptions)
+[STATE] SKU auto-generated (different from original)
+[DOM] Cloned product appears in list
+[STATE] Original product unchanged","[API] GET /api/catalog/products — verify both products exist with distinct IDs and SKUs
+[CONSOLE] No errors","Clone creates duplicate SKU; original product modified; clone missing properties or images","delete cloned product via Admin","C180619","Katalon"
+"CAT-027","Add Vendor to Product","Catalog > Products","High","BL-CAT-001","","Admin logged in, product exists","vendor1=Vendor_1; vendor2=Vendor_2; adminUrl={{BACK_URL}}","[NAV] Go to catalog > Open product details
+[ACT] Click blue pencil near Vendor field
+[ACT] Click Add > Choose Vendor
+[ACT] Create vendors (Vendor_1, Vendor_2)
+[ACT] Select Vendor_1 from dropdown
+[ACT] Save
+[NAV] Reopen product > Verify vendor persisted
+[ACT] Change to Vendor_2
+[ACT] Save and verify","[STATE] Vendor management screen accessible
+[STATE] Can add new vendors
+[STATE] Vendors added to Companies and Contacts list
+[STATE] Vendor selection saved with product
+[STATE] Vendor value persisted on reopen
+[STATE] Can change vendor","[API] GET /api/catalog/products/{id} — verify vendor field
+[CONSOLE] No errors","Vendor not persisted after save; vendor dropdown empty; Companies module not updated","restore original vendor state via Admin","C340856","Katalon (generic)"
+"CAT-028","Add Tax Type to Product","Catalog > Products","Medium","BL-CAT-003","","Admin logged in, product exists","tax1=Tax_1; tax2=Tax_2; adminUrl={{BACK_URL}}","[NAV] Go to Catalog > Open product details
+[ACT] Click blue pencil near Tax field
+[ACT] Click Add > Create tax types (Tax_1, Tax_2)
+[ACT] Save
+[ACT] Select Tax_1 from dropdown > Save
+[NAV] Reopen product > Verify Tax_1 displayed
+[ACT] Change to Tax_2 > Save and verify","[STATE] Tax management accessible from product
+[STATE] Can add new tax types
+[STATE] Tax types added to list
+[STATE] Tax selection saved with product
+[STATE] Tax value persisted on reopen
+[STATE] Can change tax type","[API] GET /api/catalog/products/{id} — verify taxType field
+[CONSOLE] No errors","Tax type not persisted; dropdown not showing created types; tax change not saved","restore original tax state via Admin","C340857","Katalon (generic)"
+"CAT-029","Add New Product Description Type","Catalog > Products","Medium","BL-CAT-001","ECL-8.1","Admin logged in, product description types configurable","descTypeName=TestDescType; adminUrl={{BACK_URL}}","[NAV] Navigate to description type management
+[ACT] Create new description type
+[ACT] Enter type name and properties
+[ACT] Save
+[NAV] Go to product > Descriptions widget
+[ASSERT] Verify new type in dropdown","[STATE] Description type creation available
+[STATE] New type saved successfully
+[DOM] New type appears in types dropdown
+[STATE] Type selectable when adding descriptions","[API] GET /api/catalog/producttypes — verify new type returned
+[CONSOLE] No errors","Type not appearing in dropdown; save fails; type name with special chars causes error","delete created description type via Admin","C200442","Katalon"
+"CAT-030","Edit Product Description Type","Catalog > Products","Medium","BL-CAT-001","ECL-8.1","Admin logged in, description type exists","descTypeName=UpdatedDescType; adminUrl={{BACK_URL}}","[NAV] Navigate to description type management
+[ACT] Select existing type
+[ACT] Modify type properties
+[ACT] Save
+[ASSERT] Verify changes in types dropdown","[STATE] Description type editing available
+[STATE] Type properties updatable
+[STATE] Changes saved successfully
+[DOM] Updated type reflected in dropdown","[API] GET /api/catalog/producttypes — verify updated type
+[CONSOLE] No errors","Updated name not reflected in dropdown; save fails; products using type not updated","restore original type name via Admin","C200443","Katalon"
+"CAT-031","Delete Product Description Type","Catalog > Products","Medium","BL-CAT-001","ECL-5.1","Admin logged in, description type C200442 exists","adminUrl={{BACK_URL}}","[NAV] Navigate to description type management
+[ACT] Select type to delete
+[ACT] Click Delete
+[ACT] Confirm deletion
+[ASSERT] Verify type removed from dropdown","[STATE] Description type deletion available
+[STATE] Deletion confirmation required
+[STATE] Type deleted from system
+[DOM] Type removed from dropdown
+[STATE] Existing descriptions using type handled","[API] GET /api/catalog/producttypes — verify type absent
+[CONSOLE] No errors on delete","Type still in dropdown after delete; confirmation not required; descriptions using type break","none","C200444","Katalon"
+"CAT-032","Add New Image to Product with Alt Text","Catalog > Products","High","BL-CAT-001","","Admin logged in, product exists, image file ready","imageFile=test-product-image.jpg; altText=Test alt text; adminUrl={{BACK_URL}}","[NAV] Open product to edit
+[ACT] Click on Image blade > Add button
+[ACT] Upload image via drag-drop or file picker
+[ACT] Fill all fields: Name, Image category, Language, Alt text, Meta description
+[ACT] Click OK
+[ASSERT] Verify image in image list","[STATE] Upload images blade opens
+[STATE] Image upload methods available
+[DOM] All image metadata fields present
+[STATE] Alt text field available (accessibility)
+[STATE] Meta description available (SEO)
+[DOM] New image appears in list","[API] GET /api/catalog/products/{id} — verify images array with alt text
+[NETWORK] Image URL returns 200
+[CONSOLE] No upload errors","Alt text not saved; image not appearing in list; upload fails silently","delete uploaded image via Admin","C261112","Katalon"
+"CAT-033","Edit Product Image Alt Text","Catalog > Products","Medium","BL-CAT-001","","Admin logged in, product with image exists","altText=UpdatedAltText; adminUrl={{BACK_URL}}","[NAV] Open product to edit
+[ACT] Click on Image blade
+[ACT] Select image > Right-click > Edit
+[ASSERT] Verify edit blade with fields: Name, Image category, Language, Alt text, Meta description
+[ACT] Modify fields
+[ACT] Click OK
+[NAV] Reopen image to verify changes","[STATE] Image edit blade opens
+[DOM] All metadata fields displayed
+[STATE] Fields editable
+[STATE] Changes saved successfully
+[STATE] Updated values persist on reopen","[API] GET /api/catalog/products/{id} — verify updated alt text in images array
+[CONSOLE] No errors","Alt text reverts after save; edit blade not opening; fields read-only","restore original alt text via Admin","C261113","Katalon"
+"CAT-VID-001","Video Widget Display","Catalog > Product > Video","Medium","BL-CAT-001","","Admin logged in, product with video exists","adminUrl={{BACK_URL}}","[NAV] Open Catalog module
+[NAV] Navigate to a product that has videos
+[ACT] Click on the Video widget/tab in product detail
+[ASSERT] Observe the video widget display","[STATE] Video widget is visible in product detail
+[STATE] Widget displays video count or preview
+[CONSOLE] No console errors on widget load","[CONSOLE] Check for JS errors
+[DOM] Video widget element present in DOM","Video widget not loading; widget shows wrong count; console JS errors","none","C315288","Not Automated"
+"CAT-VID-002","Add New Video to Product","Catalog > Product > Video","High","BL-CAT-001","ECL-8.1","Admin logged in, product open in edit mode","videoUrl=https://youtube.com/watch?v=testid; videoTitle=Test Video; adminUrl={{BACK_URL}}","[NAV] Open a product in Catalog
+[ACT] Click Video section/tab
+[ACT] Click Add Video
+[ACT] Enter YouTube video URL
+[ACT] Fill required fields (title, description)
+[ACT] Click Save","[STATE] Add Video button is functional
+[STATE] YouTube URL field accepts valid URLs
+[STATE] Required fields are validated
+[STATE] Video is saved successfully
+[DOM] New video appears in video list","[API] GET /api/catalog/products/{id} — verify videos array
+[CONSOLE] No errors on save","URL field rejects valid YouTube URL; required field validation missing; video not persisted","delete added video via Admin","C315290 VCST-4445","Not Automated"
+"CAT-VID-003","List Added Videos","Catalog > Product > Video","Medium","BL-CAT-001","","Admin logged in, product has multiple videos added","adminUrl={{BACK_URL}}","[NAV] Open a product with videos
+[NAV] Navigate to Video section
+[ASSERT] Observe the video list","[STATE] All added videos are listed
+[DOM] Each video shows title and thumbnail
+[STATE] List is scrollable if many videos
+[STATE] Video count matches expected","[API] GET /api/catalog/products/{id} — verify videos count matches UI
+[CONSOLE] No errors","Video list shows wrong count; thumbnails broken; list not scrollable","none","C315291","Not Automated"
+"CAT-VID-004","Modify Video Item","Catalog > Product > Video","High","BL-CAT-001","ECL-8.1","Admin logged in, product has at least one video","newTitle=Updated Video Title; adminUrl={{BACK_URL}}","[NAV] Open product Video section
+[ACT] Click on existing video item
+[ACT] Modify title or URL
+[ACT] Click Save
+[NAV] Reopen the video item","[STATE] Video item opens for editing
+[STATE] Fields are editable
+[STATE] Save completes without error
+[STATE] Updated data persists after reload","[API] GET /api/catalog/products/{id} — verify updated video title
+[CONSOLE] No errors","Changes not persisted after reload; fields read-only; save fails silently","restore original video title via Admin","C315292 VCST-4445","Not Automated"
+"CAT-VID-005","Delete Video Item","Catalog > Product > Video","Medium","BL-CAT-001","ECL-5.1","Admin logged in, product has at least one video","adminUrl={{BACK_URL}}","[NAV] Open product Video section
+[ACT] Select a video item
+[ACT] Click Delete
+[ACT] Confirm deletion","[STATE] Delete confirmation dialog appears
+[STATE] Video is removed from the list
+[STATE] Video count decrements
+[STATE] Change persists after save","[API] GET /api/catalog/products/{id} — verify video removed
+[CONSOLE] No errors on delete","Video still in list after delete; count not decrementing; confirmation not shown","none","C315293","Not Automated"
+"CAT-VID-006","Video Thumbnails from YouTube","Catalog > Product > Video","Medium","BL-CAT-001","","Admin logged in, YouTube API key configured, product open","videoUrl=https://youtube.com/watch?v=testid; adminUrl={{BACK_URL}}","[NAV] Open product Video section
+[ACT] Add a new video with valid YouTube URL
+[ACT] Save the video
+[ASSERT] Observe thumbnail display","[STATE] Thumbnail is fetched from YouTube automatically
+[DOM] Thumbnail image displays correctly
+[STATE] Thumbnail URL is populated
+[STATE] No broken image icons","[NETWORK] Thumbnail request to YouTube CDN returns 200
+[CONSOLE] No API errors","Thumbnail broken; API key not working; thumbnail URL empty after save","delete added video via Admin","C315294 VCST-4445","Not Automated"
+"CAT-VID-007","Change URL for Video Thumbnail","Catalog > Product > Video","Medium","BL-CAT-001","","Admin logged in, product has video with thumbnail","newThumbnailUrl=https://example.com/thumb.jpg; adminUrl={{BACK_URL}}","[NAV] Open product Video section
+[ACT] Open existing video with thumbnail
+[ACT] Change the thumbnail URL to a different image
+[ACT] Save","[STATE] Thumbnail URL field is editable
+[DOM] New thumbnail displays after save
+[STATE] Change persists on reload","[NETWORK] New thumbnail URL returns 200
+[CONSOLE] No errors","Thumbnail URL field read-only; new thumbnail not displayed; change reverts on reload","restore original thumbnail URL via Admin","C315295","Not Automated"
+"CAT-VID-008","Video Required Fields Validation","Catalog > Product > Video","Medium","BL-CAT-001","","Admin logged in, product open in edit mode","adminUrl={{BACK_URL}}","[NAV] Open product Video section
+[ACT] Click Add Video
+[ACT] Leave all fields empty
+[ACT] Click Save","[STATE] Validation errors shown for required fields
+[STATE] Save is blocked until required fields filled
+[DOM] Error messages are clear and specific","[CONSOLE] No unhandled JS errors
+[DOM] Validation error elements present in DOM","No validation error; empty video saved; error message vague","none","C315296","Not Automated"
+"CAT-VID-009","Video Data Without YouTube API Key","Catalog > Product > Video","Medium","BL-CAT-001","","Admin logged in, YouTube API key NOT configured","videoUrl=https://youtube.com/watch?v=testid; adminUrl={{BACK_URL}}","[NAV] Open product Video section
+[ACT] Add a new video with YouTube URL
+[ACT] Save
+[ASSERT] Observe thumbnail behavior","[STATE] Video can still be saved without API key
+[STATE] Thumbnail may not auto-fetch without API key
+[STATE] No system crash or unhandled error
+[STATE] Appropriate warning or fallback displayed","[CONSOLE] No unhandled errors (graceful degradation)
+[NETWORK] No failed API calls cause 500","System crash on save; unhandled exception in console; video not saveable without API key","delete added video via Admin","C315297","Not Automated"
+"CAT-VID-010","Video Data With YouTube API Key","Catalog > Product > Video","Medium","BL-CAT-001","","Admin logged in, YouTube API key IS configured","videoUrl=https://youtube.com/watch?v=testid; adminUrl={{BACK_URL}}","[NAV] Open product Video section
+[ACT] Add a new video with YouTube URL
+[ACT] Save
+[ASSERT] Observe thumbnail and metadata behavior","[STATE] Video saved successfully
+[STATE] Thumbnail auto-fetched from YouTube
+[STATE] Video metadata (title, duration) populated if available
+[STATE] API key integration works without errors","[NETWORK] Thumbnail request returns 200
+[CONSOLE] No API integration errors","Thumbnail not fetched despite valid API key; metadata missing; integration errors in console","delete added video via Admin","C315298 VCST-4445","Not Automated"
+"CAT-034","Add Tax Type to Product","Catalog > Product > Properties","High","BL-CAT-003","","Admin logged in to Backend ({{BACK_URL}}), at least one tax type configured in Tax module","taxType=TaxTypeFromModule; productId={{TEST_SKU}}; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
+[NAV] Open an existing physical product
+[SCROLL] Scroll to or navigate to the Properties tab
+[ACT] Locate the Tax Type field
+[ACT] Click the Tax Type dropdown
+[ACT] Select an available tax type from the list
+[ACT] Click Save","[STATE] Tax Type dropdown is visible on the product form
+[DOM] Available tax types are listed in the dropdown
+[STATE] Selected tax type is saved successfully
+[STATE] Product record shows correct tax type after save
+[STATE] No validation errors appear","[API] GET /api/catalog/products/{id} — verify taxType field value
+[CONSOLE] No errors on save","Tax Type dropdown empty; selected type not saved; validation error on save","restore original tax type state via Admin","C180485","Not Automated"
+"CAT-035","Delete Tax Type from Product","Catalog > Product > Properties","High","BL-CAT-003","","Admin logged in to Backend ({{BACK_URL}}), product has a tax type assigned","adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
+[NAV] Open the product that has a tax type assigned
+[NAV] Navigate to the Properties tab
+[ACT] Locate the Tax Type field
+[ACT] Click the Tax Type dropdown
+[ACT] Select the blank/empty option to clear the tax type
+[ACT] Click Save","[STATE] Tax Type can be cleared/removed from the dropdown
+[STATE] Product saves successfully with no tax type
+[STATE] Tax Type field shows empty after save
+[STATE] No errors or unhandled exceptions appear","[API] GET /api/catalog/products/{id} — verify taxType is null/empty
+[CONSOLE] No errors","Blank option not available in dropdown; tax type not cleared; unhandled exception on save","restore original tax type via Admin","C345251","Not Automated"
+"CAT-039","Sort Language Check Property","Catalog > Property Management","Low","BL-CAT-001","","Admin logged in to Backend ({{BACK_URL}}), catalog with properties defined in multiple languages","langs=en-US,de-DE,fr-FR; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
+[NAV] Open Catalog > Properties blade
+[ACT] Add or open a property with multilingual display names
+[ACT] Switch the UI language or view properties sorted by language
+[ASSERT] Verify the sort order of languages in the property editor
+[ACT] Save any changes and reopen to confirm persistence","[STATE] Language options appear in the expected sort order (alphabetical or configured order)
+[STATE] Display names for each language are editable and distinct
+[STATE] Sorted order is consistent across page refreshes
+[STATE] No duplicate language entries appear","[API] GET /api/catalog/properties — verify language entries
+[CONSOLE] No errors","Languages in random order; duplicate language entries; sort changes after refresh","restore original property language settings via Admin","C362079","Not Automated"
+"CAT-042","Unit of Measure Extended Properties","Catalog > Product > Properties","Medium","BL-CAT-001","","Admin logged in to Backend ({{BACK_URL}}), a UoM group with at least one unit is configured","productId={{TEST_SKU}}; uomGroup=Weight; uomUnit=kg; propertyValue=5.0; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module and open a product
+[NAV] Go to the Properties tab
+[ACT] Locate a property that uses a Unit of Measure
+[ASSERT] Verify the UoM selector is displayed next to the property value
+[ACT] Select a unit from the UoM dropdown
+[ACT] Enter a numeric value for the property
+[ACT] Save the product
+[NAV] Reopen the product and verify the UoM value is retained","[STATE] UoM selector appears on product properties that support it
+[DOM] Unit dropdown shows available units from the configured group
+[STATE] Selected unit and value save correctly
+[STATE] Reopened product shows the correct UoM and value
+[STATE] UoM display is consistent across product detail views","[API] GET /api/catalog/products/{id} — verify property with UoM value
+[CONSOLE] No errors","UoM selector not visible; unit not saved with value; value reverts after reopen","restore original property value via Admin","","Not Automated"
+"CAT-043","Product Automatic Links","Catalog > Product > Links","Medium","BL-CAT-001","","Admin logged in to Backend ({{BACK_URL}}), product exists in a virtual catalog setup","adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
+[NAV] Open a product that belongs to a physical catalog
+[NAV] Navigate to the Links tab
+[ACT] Click Add Link or observe automatic link entries
+[ASSERT] Verify links to virtual catalogs are displayed
+[ACT] Click on a link entry to verify it navigates to the linked location
+[ASSERT] Verify link details (catalog name, category path)","[STATE] Links tab is accessible on the product blade
+[STATE] Automatic links from virtual catalog assignments are displayed
+[STATE] Each link shows the correct catalog and category reference
+[NAV] Clicking a link navigates to the correct location
+[STATE] No broken or duplicate links appear","[API] GET /api/catalog/products/{id}/links — verify links array
+[CONSOLE] No errors","Links tab empty despite virtual catalog assignment; broken navigation; duplicate links shown","none","","Not Automated"
+"CAT-045","Links from Category and Product","Catalog > Navigation","Medium","BL-CAT-002","","Admin logged in to Backend ({{BACK_URL}}), product and category both linked to a virtual catalog","adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
+[NAV] Open a category linked to a virtual catalog
+[NAV] Navigate to the Links tab and click on a link
+[ASSERT] Verify navigation to the virtual catalog location
+[NAV] Return and open a product within this category
+[NAV] Navigate to the product Links tab
+[ACT] Click on a product link and verify correct navigation
+[ASSERT] Verify breadcrumb or path information is correct","[NAV] Category link navigates to the correct virtual catalog location
+[NAV] Product link navigates to the correct virtual catalog entry
+[STATE] Breadcrumb or path reflects the virtual catalog hierarchy
+[STATE] Navigation is consistent between category and product links
+[STATE] No 404 or broken navigation occurs","[CONSOLE] No navigation errors
+[DOM] Breadcrumb path matches virtual catalog hierarchy","404 on link click; breadcrumb shows wrong path; category and product links inconsistent","none","","Not Automated"
+"CAT-046","Full-Text Search Within Catalog Module","Catalog > Search","Medium","BL-CAT-004","ECL-8.1","Admin logged in to Backend ({{BACK_URL}}), catalog populated with at least 20 products and categories","searchTerm=TestProduct; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
+[ACT] Locate the search/filter bar at the top of the catalog blade
+[ACT] Enter a partial product name in the search field
+[ASSERT] Observe search results filtering in real-time or on submit
+[ACT] Clear the search field and verify all items return
+[ACT] Enter a category name and verify filtering applies to categories
+[ACT] Enter a non-existent term and verify an appropriate empty-state message","[STATE] Search bar is present and accepts text input
+[STATE] Entering a term filters the product/category list to matching items
+[STATE] Clearing the search restores the full list
+[STATE] Category name search filters categories correctly
+[STATE] Non-existent term shows an empty state or No results message
+[STATE] Search is case-insensitive","[API] GET /api/catalog/search?q=TestProduct — verify results match UI
+[CONSOLE] No search errors","Search not filtering; clear search not restoring full list; case-sensitive search; no empty-state message","none","","Not Automated"
+"CAT-047","Clone BOM Product","Catalog > Product > BOM","High","BL-CAT-001","ECL-5.1","Admin logged in to Backend ({{BACK_URL}}), a BOM (Bill of Materials) product exists with at least one component","adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
+[NAV] Locate and open a BOM product
+[ASSERT] Note the product name, properties, and BOM components
+[ACT] Click the Clone or Copy action (from toolbar or context menu)
+[ACT] Confirm the clone action in the dialog
+[WAIT] Wait for the clone to complete
+[NAV] Open the cloned product from the list","[STATE] Clone action is available on BOM products
+[STATE] Cloned product is created with a distinct name (e.g. Copy of original name)
+[STATE] All top-level product properties are copied to the clone
+[STATE] BOM component list is present in the cloned product
+[STATE] Clone has a new unique product ID
+[STATE] No errors occur during the clone operation","[API] GET /api/catalog/products — verify both BOM products with distinct IDs
+[CONSOLE] No errors","Clone timeout; BOM components not cloned; clone has same ID as original; clone action not available","delete cloned BOM product via Admin","","Not Automated"
+"CAT-048","Clone BOM Product Variations","Catalog > Product > BOM > Variations","High","BL-CAT-001","ECL-5.1","Admin logged in to Backend ({{BACK_URL}}), a BOM product with variations (child products) exists","adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module and open a BOM product with variations
+[ASSERT] Note the number and details of variations
+[ACT] Initiate the Clone action
+[ACT] Confirm the clone action
+[NAV] Open the cloned product
+[NAV] Navigate to the Variations tab of the cloned product
+[ASSERT] Verify the cloned variations match the originals in count and properties","[STATE] Cloned BOM product includes all variations from the original
+[STATE] Each variation is a new record with a unique ID
+[STATE] Variation properties (name, SKU, images) are copied correctly
+[STATE] Cloned variations are editable independently of the original
+[STATE] No variation data is lost or corrupted during cloning","[API] GET /api/catalog/products/{cloneId}/variations — verify variations count and properties
+[CONSOLE] No errors","Variations not cloned; cloned variations share IDs with originals; variation data corrupted","delete cloned BOM product with variations via Admin","","Not Automated"
+"CAT-049","Virtual Catalog Assignment","Catalog > Virtual Catalogs","High","BL-CAT-001","","Admin logged in to Backend ({{BACK_URL}}), a virtual catalog and at least one physical catalog product exist","adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
+[ACT] Open or create a Virtual Catalog
+[NAV] Navigate into a category within the virtual catalog
+[ACT] Click Add Items or Link Products
+[ACT] Search for and select a product from the physical catalog
+[ACT] Confirm the assignment
+[ASSERT] Verify the product appears in the virtual catalog category","[STATE] Virtual catalog structure is accessible and editable
+[STATE] Product search returns physical catalog products
+[STATE] Selected product is assigned to the virtual catalog category
+[DOM] Assigned product is visible in the virtual catalog without duplicating the original
+[STATE] Assignment persists after page refresh
+[STATE] Product remains in its original physical catalog","[API] GET /api/catalog/virtualcatalogs/{id} — verify product assignment
+[CONSOLE] No errors","Product duplicated instead of linked; assignment lost after refresh; product removed from physical catalog","remove virtual catalog assignment via Admin","","Not Automated"
+"CAT-050","Dynamic Product Associations","Catalog > Product > Associations","Medium","BL-CAT-001","ECL-5.1","Admin logged in to Backend ({{BACK_URL}}), Associations feature enabled, multiple products exist","adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module and open a product
+[NAV] Navigate to the Associations tab
+[ACT] Click Add Dynamic Association or configure an association group
+[ACT] Define association criteria (e.g. same category, same brand)
+[ACT] Save the association rule
+[ASSERT] Verify the associated products list populates based on the rule
+[ASSERT] Verify associated products update if catalog changes match the rule","[STATE] Associations tab is accessible on the product blade
+[STATE] Dynamic association rule can be created with criteria
+[STATE] Matching products are listed under the dynamic association
+[STATE] Association list refreshes when matching criteria are met
+[STATE] Saved rules persist after navigating away and returning
+[STATE] No performance degradation with large product sets","[API] GET /api/catalog/products/{id}/associations — verify dynamic association results
+[CONSOLE] No performance errors","Association tab missing; rules not saving; associated list empty despite matching products; timeout with large sets","delete created association rule via Admin","","Not Automated"
+"CAT-051","Product Required Properties Validation","Catalog > Product > Validation","High","BL-CAT-001","","Admin logged in to Backend ({{BACK_URL}}), catalog schema has at least one property marked as Required","adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module and open or create a product
+[NAV] Navigate to the Properties tab
+[ASSERT] Identify a property marked as Required (indicated by asterisk or label)
+[ACT] Clear or leave the required property field empty
+[ACT] Attempt to Save the product
+[ASSERT] Observe validation feedback
+[ACT] Fill in the required property and save again","[STATE] Required properties are visually marked (asterisk or highlight)
+[STATE] Saving with empty required property shows a validation error message
+[DOM] Error message identifies which property is missing
+[STATE] Product does not save while required fields are empty
+[STATE] After filling required field, product saves successfully
+[STATE] No data loss occurs for non-required fields during failed save attempt","[API] PUT /api/catalog/products — verify 400 response when required property missing
+[CONSOLE] No unhandled errors
+[DOM] Validation error visible in UI","No visual marking for required properties; product saves without required property; error message vague","none","","Not Automated"
+"CAT-052","Text Option Properties","Catalog > Property Management","Medium","BL-CAT-001","ECL-8.1","Admin logged in to Backend ({{BACK_URL}}), Catalog module with property management access","propertyName=TestOptionProp; options=Option1,Option2,Option3; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module > Properties or open a catalog property blade
+[ACT] Click Add Property
+[ACT] Select ShortText or Text as the property value type
+[ACT] Set property display name and configure it as an Option (not free-text)
+[ACT] Add at least 3 predefined option values
+[ACT] Save the property
+[ACT] Assign it to a product and verify the option values appear as a dropdown","[STATE] Property is created with text type and predefined options
+[STATE] Option values are saved and listed correctly
+[DOM] On a product, the property appears as a dropdown with the defined options
+[STATE] Only predefined options are selectable (no free-text entry)
+[STATE] Selecting an option and saving the product persists the value","[API] GET /api/catalog/properties — verify property with options
+[API] GET /api/catalog/products/{id} — verify option value persisted
+[CONSOLE] No errors","Free-text entry allowed despite option type; options not shown in dropdown; option value not saved","delete created property via Admin","","Not Automated"
+"CAT-053","Property Name Rules Validation","Catalog > Property Management","Medium","BL-CAT-001","ECL-8.1","Admin logged in to Backend ({{BACK_URL}}), Catalog module with property creation access","invalidName=Test @#!%; validName=Test_Valid_Prop; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module > Properties blade
+[ACT] Click Add Property
+[ACT] Attempt to enter invalid characters in the property Name field (e.g. spaces, special chars like @#!%)
+[ASSERT] Observe whether validation prevents saving
+[ACT] Attempt to save the property with an invalid name
+[ASSERT] Observe the error message
+[ACT] Enter a valid property name (alphanumeric, underscores, hyphens only)
+[ACT] Save and verify success","[STATE] Invalid characters in property name trigger a validation error
+[DOM] Error message clearly states the name rules (e.g. Only alphanumeric, underscore, and hyphen allowed)
+[STATE] Property cannot be saved with an invalid name
+[STATE] Valid name allows the property to be created successfully
+[STATE] Existing properties with valid names are not affected","[API] POST /api/catalog/properties — verify 400 response for invalid name
+[CONSOLE] No unhandled errors
+[DOM] Validation error visible in UI","Invalid name accepted; no error message; error message not descriptive; valid name rejected","delete created property (from valid save) via Admin","","Not Automated"

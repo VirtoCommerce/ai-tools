@@ -1,0 +1,173 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+IMGTL-001,Add thumbnail task,Task Management,Functional,Critical,3m,Image Tools module installed,"1. Navigate to Image Tools > Thumbnails
+2. Click Add Task
+3. Configure task name and settings
+4. Save","New thumbnail task created",C205968,Not Automated
+IMGTL-002,Run thumbnail task,Task Management,Functional,High,3m,Thumbnail task exists,"1. Select thumbnail task
+2. Click Run
+3. Wait for completion","Thumbnail task executed; thumbnails generated",C205971,Not Automated
+IMGTL-003,Delete thumbnail task,Task Management,Functional,High,2m,Thumbnail task exists,"1. Select thumbnail task
+2. Click Delete
+3. Confirm deletion","Thumbnail task deleted; confirm dialog shown",C205981 C205992,Not Automated
+IMGTL-004,Save and reset task changes,Task Management,Functional,Medium,3m,Thumbnail task open for editing,"1. Make changes to task
+2. Click Save
+3. Make more changes
+4. Click Reset","Save persists changes; Reset reverts to last saved state",C205978 C205979,Not Automated
+IMGTL-005,Thumbnail settings - background color,Thumbnail Settings,Functional,Medium,3m,Thumbnail task exists,"1. Open thumbnail task
+2. Navigate to Thumbnail Settings
+3. Set Background Color
+4. Save","Background color setting saved for thumbnails",C346101,Not Automated
+IMGTL-006,Thumbnail settings - anchor position,Thumbnail Settings,Functional,Medium,2m,Thumbnail task exists,"1. Open thumbnail settings
+2. Set Anchor Position
+3. Save","Anchor position saved; thumbnails use configured position",C346102,Not Automated
+IMGTL-007,Thumbnail settings - JPEG quality (low and very high),Thumbnail Settings,Functional,Medium,3m,Thumbnail task exists,"1. Set JPEG quality to Low; generate thumbnail
+2. Set JPEG quality to Very High; generate thumbnail
+3. Compare file sizes","Low quality produces smaller files; Very High produces larger/sharper files",C346103 C346116,Not Automated
+IMGTL-008,Thumbnail resize method - FixedSize,Resize Methods,Functional,Medium,3m,Thumbnail task with image,"1. Set resize method to FixedSize
+2. Set width and height
+3. Run task and verify output","Thumbnails generated at exact specified dimensions",C346114,Not Automated
+IMGTL-009,Thumbnail resize method - FixedWidth and FixedHeight,Resize Methods,Functional,Medium,3m,Thumbnail task with image,"1. Set resize method to FixedWidth; run task
+2. Set resize method to FixedHeight; run task
+3. Verify dimensions","Width-fixed maintains aspect ratio; Height-fixed maintains aspect ratio",C346117 C346118,Not Automated
+IMGTL-010,Thumbnail resize method - Crop,Resize Methods,Functional,Medium,3m,Thumbnail task with image,"1. Set resize method to Crop
+2. Set dimensions
+3. Run task and verify","Thumbnail cropped to exact dimensions",C346119,Not Automated
+IMGTL-011,Add and manage task settings,Task Configuration,Functional,High,3m,Thumbnail task exists,"1. Open task
+2. Add settings (paths and configurations)
+3. Save changes
+4. Reset changes to verify","Settings added; save persists; reset reverts to previous state",C205983 C205988 C205987,Not Automated
+IMGTL-012,Enter path manually and select multiple paths,Task Configuration,Functional,Medium,3m,Thumbnail task with settings,"1. Enter image path manually
+2. Select several paths from list
+3. Verify all paths included","Manual and list-selected paths all included in task",C206228 C206229,Not Automated
+IMGTL-013,Manage multiple settings in task,Task Configuration,Functional,Medium,3m,Task with multiple settings,"1. Add several settings entries
+2. Remove settings from list
+3. Save","Multiple settings managed correctly; removal works",C206230 C206231,Not Automated
+IMGTL-014,Process changes vs Regenerate thumbnails,Processing,Functional,High,3m,Thumbnail task exists with images,"1. Run task with Process Changes option
+2. Run task with Regenerate option
+3. Compare behavior","Process Changes updates only changed images; Regenerate rebuilds all",C205989 C206214,Not Automated
+IMGTL-015,Process several tasks,Processing,Functional,Medium,3m,Multiple thumbnail tasks exist,"1. Select multiple tasks
+2. Process all","All selected tasks processed successfully",C206233,Not Automated
+IMGTL-016,Image Tools permissions - CRUD,Permissions,Functional,High,3m,Roles with image tools permissions,"1. Test Access permission
+2. Test Read permission
+3. Test Create permission
+4. Test Update permission
+5. Test Delete permission","Each permission level grants appropriate access",C239981 C239986 C239987 C239988 C239989,Not Automated
+IMGTL-017,Enable image processing job,Settings,Functional,Medium,3m,Admin logged in,"1. Navigate to Settings > Image Tools
+2. Toggle Enable Image Processing Job ON
+3. Set cron expression
+4. Set partition size
+5. Save","Image processing job scheduled with configured settings",C242716 C242721 C242722,Not Automated
+IMGTL-018,Disable image processing job,Settings,Functional,Medium,2m,Image processing job enabled,"1. Toggle Enable Image Processing Job OFF
+2. Save","Image processing job disabled; no automatic processing",C242720,Not Automated
+IMGTL-019,Refresh tasks list and UI operations,UI Operations,Functional,Medium,2m,Thumbnail tasks exist,"1. Click Refresh on tasks list
+2. Add/remove columns
+3. Change column size
+4. Toggle full screen","UI operations work correctly; list refreshes",C205967 C206242 C206243 C206244 C206245,Not Automated
+IMGTL-020,Thumbnail background work setup,Background Jobs,Functional,Medium,3m,Image Tools installed,"1. Navigate to Thumbnails
+2. Set up background work configuration
+3. Verify RUN general view","Background work configured; run view shows task status",C346096 C346097,Not Automated
+IMGTL-021,Thumbnail Size Configuration — Small,Thumbnail Settings,Functional,Medium,3m,Thumbnail task exists; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Image Tools > Thumbnails
+2. Open an existing thumbnail task or create a new one
+3. Locate the Width and Height dimension fields
+4. Enter 100 in the Width field
+5. Enter 100 in the Height field
+6. Click Save
+7. Run the thumbnail task on a sample product image
+8. Navigate to the generated thumbnail output path and verify the file","- Width field accepts value 100
+- Height field accepts value 100
+- Settings saved without validation errors
+- Thumbnail task runs successfully
+- Generated thumbnail file dimensions are exactly 100x100 pixels
+- Thumbnail file size is smaller than the original image",,Not Automated
+IMGTL-022,Thumbnail Size Configuration — Medium,Thumbnail Settings,Functional,Medium,3m,Thumbnail task exists; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Image Tools > Thumbnails
+2. Open an existing thumbnail task
+3. Set Width field to 300
+4. Set Height field to 300
+5. Click Save
+6. Run the thumbnail task on a sample product image
+7. Verify the generated thumbnail dimensions
+8. Compare file size to the 100x100 output from small configuration","- Width and Height fields both accept value 300
+- Settings saved successfully
+- Generated thumbnail dimensions are exactly 300x300 pixels
+- File size is larger than 100x100 thumbnail but smaller than original
+- Task completes without errors",,Not Automated
+IMGTL-023,Thumbnail Size Configuration — Large,Thumbnail Settings,Functional,Medium,3m,Thumbnail task exists; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Image Tools > Thumbnails
+2. Open an existing thumbnail task
+3. Set Width field to 800
+4. Set Height field to 800
+5. Click Save
+6. Run the thumbnail task on a sample product image
+7. Inspect the generated thumbnail file dimensions
+8. Verify that file size is proportionally larger than medium (300x300) output","- Width and Height fields both accept value 800
+- Settings saved successfully
+- Generated thumbnail dimensions are exactly 800x800 pixels
+- File size is larger than both 100x100 and 300x300 thumbnails
+- Quality is visibly higher at this resolution
+- Task completes without errors",,Not Automated
+IMGTL-024,Thumbnail Quality Setting — JPEG 50% Compression,Thumbnail Settings,Functional,Medium,4m,Thumbnail task with JPEG output configured; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Image Tools > Thumbnails
+2. Open a thumbnail task configured for JPEG output
+3. Locate the JPEG Quality setting field
+4. Set JPEG quality to 50 (or equivalent Mid/Low setting)
+5. Click Save
+6. Run the thumbnail task on a known reference image
+7. Record the output file size
+8. Set JPEG quality to 95 (High) and repeat the task on the same image
+9. Compare the two output file sizes and visual quality","- Quality field accepts value 50 without validation error
+- Settings saved successfully at 50% quality
+- Output file at 50% quality has measurably smaller file size than 95% quality output
+- Visual quality at 50% is acceptable but shows compression artifacts compared to 95%
+- Both tasks complete without errors
+- File size difference is at least 30% smaller at 50% vs 95%",,Not Automated
+IMGTL-025,Batch Image Processing — Multiple Products,Processing,Functional,Medium,5m,Multiple products with images exist; thumbnail task configured; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Image Tools > Thumbnails
+2. Open a thumbnail task configured with a path covering multiple product images
+3. Ensure at least 5 product images are present in the configured path
+4. Click Run on the thumbnail task
+5. Observe the processing execution
+6. Wait for the task to complete
+7. Navigate to the output path and count generated thumbnail files
+8. Verify a sample of 3 thumbnails for correct dimensions","- Task starts processing without errors
+- All product images in the configured path are included in processing
+- Generated thumbnail count matches the number of source images
+- Each inspected thumbnail has the configured dimensions
+- No errors reported for individual image processing failures
+- Task status shows 'Completed' after all images are processed",,Not Automated
+IMGTL-026,Thumbnail Task Progress Monitoring,Processing,Functional,Medium,4m,Thumbnail task configured with multiple product images; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Image Tools > Thumbnails
+2. Select a thumbnail task that will process a large number of images (10+)
+3. Click Run to start the task
+4. Immediately observe the task list or task detail view for progress indicators
+5. Note the progress percentage or processed count while task is running
+6. Monitor for any intermediate status updates during processing
+7. Observe when processing reaches 100% or completes
+8. Verify the final completed status display","- Progress indicator is visible while the batch task is running
+- Progress value increases over time (e.g., percentage or items processed count)
+- UI does not freeze or become unresponsive during processing
+- Task status transitions from 'Running' to 'Completed' after all images are processed
+- Final status clearly indicates completion
+- No timeout or error during the monitoring period",,Not Automated
+IMGTL-027,Tooltip Validation on Thumbnail Settings,UI Operations,Functional,Medium,3m,Thumbnail task settings panel open; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Image Tools > Thumbnails
+2. Open a thumbnail task to access its settings panel
+3. Hover the mouse cursor over the Width field label or its info icon
+4. Wait 1-2 seconds for tooltip to appear and record the tooltip text
+5. Hover over the Height field label or its info icon
+6. Record the tooltip text
+7. Hover over the JPEG Quality field label or its info icon
+8. Hover over the Resize Method dropdown label or its info icon","- Tooltip appears on hover for each settings field within 2 seconds
+- Tooltip text is descriptive and accurately explains the field's purpose
+- Tooltips disappear when the cursor moves away
+- No tooltip shows raw key names, HTML tags, or empty content
+- All tooltips are readable and correctly localized in the active UI language",C338426,Not Automated
+IMGTL-028,Thumbnail Output Format — PNG vs JPEG,Thumbnail Settings,Functional,Medium,4m,Thumbnail task with configurable output format; product images available; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Image Tools > Thumbnails
+2. Open a thumbnail task and locate the Output Format setting
+3. Set Output Format to JPEG
+4. Set dimensions to 300x300 and quality to 85
+5. Run the task on a sample product image
+6. Download and inspect the output file extension and format
+7. Change Output Format to PNG
+8. Run the task on the same sample product image
+9. Download and inspect the PNG output file","- JPEG output format produces a file with .jpg or .jpeg extension
+- JPEG file uses lossy compression; file size is smaller than PNG for the same image
+- PNG output format produces a file with .png extension
+- PNG file supports lossless compression; file size is typically larger than JPEG
+- Both formats render the image at the correct 300x300 dimensions
+- PNG output preserves transparency if the source image has an alpha channel
+- Both tasks complete without errors",,Not Automated

@@ -1,0 +1,211 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"CAT-008","Add New Category","Catalog > Categories","Critical","BL-CAT-002","ECL-8.1","Admin logged in, at least one catalog exists","categoryName=TestCategory; categoryCode=TEST_CAT_001; adminUrl={{BACK_URL}}","[NAV] Open Catalog module > Click on any catalog
+[ACT] Click Add > Category
+[ASSERT] Verify new category screen displays
+[ACT] Review required fields: Category name, Code
+[ACT] Fill all required fields
+[ACT] Add optional data (description, images)
+[ACT] Click Save
+[ASSERT] Verify category in list","[STATE] New category screen displays
+[STATE] Category name field marked as required
+[STATE] Code field marked as required
+[STATE] Optional fields available
+[STATE] System saves new category
+[DOM] Category appears in catalog tree","[API] GET /api/catalog/categories — verify new category returned
+[CONSOLE] No errors on create","Category not in tree after save; required field validation bypassed; code field not enforced","delete created category via Admin","VP-660, C123087","Katalon"
+"CAT-009","Edit Existing Category","Catalog > Categories","High","BL-CAT-002","ECL-8.1","Admin logged in, test category exists","categoryName=UpdatedCategory; adminUrl={{BACK_URL}}","[NAV] Right-click on category > Manage
+[ASSERT] Verify edit screen displays with blocks: Name (required), Priority, Visible toggle, Code (required), Property block, Image, Tax type, Tags, SEO block, Search index block, Description
+[ACT] Modify any fields
+[ACT] Click Save","[STATE] Edit screen displays with all data blocks
+[STATE] Required fields enforced
+[STATE] All widgets functional
+[STATE] System saves changes successfully
+[DOM] Updated category reflects changes","[API] GET /api/catalog/categories/{id} — verify updated data
+[CONSOLE] No errors on save","Blocks missing from edit screen; save fails silently; changes not reflected after save","restore original category name via Admin","VP-660, C123088","Katalon"
+"CAT-010","Delete Category - Cancel","Catalog > Categories","High","BL-CAT-002","","Admin logged in, categories exist","adminUrl={{BACK_URL}}","[NAV] Right-click on category > Delete
+[ASSERT] Verify confirmation dialog
+[ACT] Click Cancel","[STATE] Confirmation dialog displays
+[STATE] System does not delete category
+[DOM] Category remains in catalog tree","[API] GET /api/catalog/categories — verify category still listed
+[CONSOLE] No errors","Category deleted despite Cancel; dialog not shown; tree item disappears","none","VP-660, C123089","Katalon"
+"CAT-011","Delete Category - Confirm","Catalog > Categories","High","BL-CAT-002","ECL-5.1","Admin logged in, test category exists","adminUrl={{BACK_URL}}","[NAV] Right-click on test category > Delete
+[ASSERT] Verify confirmation dialog
+[ACT] Type 'Yes'
+[ACT] Click Confirm
+[ASSERT] Verify category removed","[STATE] Confirmation requires typing 'Yes'
+[STATE] System deletes category
+[STATE] Subcategories handled appropriately
+[STATE] Products in category handled per rules","[API] GET /api/catalog/categories — verify absent
+[CONSOLE] No errors on delete","Category not removed; 'Yes' not required; subcategories become orphaned; products lost","none (category was created for deletion)","VP-660, C123089","Katalon"
+"CAT-012","Add Tax Type to Category","Catalog > Categories","High","BL-CAT-003","","Admin logged in, category exists","taxTypeName=TestTaxType; adminUrl={{BACK_URL}}","[NAV] Go to Catalog module > Any catalog
+[NAV] Right-click on category > Manage
+[ACT] Click Edit button next to Tax type
+[ACT] Enter new tax type name
+[ACT] Click Add
+[ACT] Click Save
+[ASSERT] Verify in Tax type dropdown","[STATE] Manage dictionary values (Tax types) screen displays
+[STATE] New tax type name added to Current values list
+[STATE] System saves new values
+[DOM] New tax type appears in dropdown","[API] GET /api/catalog/categories/{id} — verify taxType in response
+[CONSOLE] No errors","Tax type not in dropdown; dictionary screen not accessible; save fails","delete added tax type via Admin","C180485","Katalon (generic)"
+"CAT-013","Delete Tax Type from Category","Catalog > Categories","Medium","BL-CAT-003","","Admin logged in, tax type exists","adminUrl={{BACK_URL}}","[NAV] Navigate to category > Manage
+[ACT] Click Edit next to Tax type
+[ACT] Select checkbox opposite one tax type value
+[ACT] Click Delete button
+[ACT] Click Save
+[ASSERT] Verify tax type removed from list","[STATE] Manage dictionary values screen displays
+[STATE] Checkbox selection works
+[STATE] Tax deleted from list
+[STATE] Save button becomes active
+[STATE] Changes saved successfully","[API] GET /api/catalog/categories/{id} — verify taxType removed
+[CONSOLE] No errors","Tax type still appears after delete; checkbox not selectable; save button stays inactive","none","C345251","Katalon (generic)"
+"CAT-014","Add New Image to Category","Catalog > Categories","High","BL-CAT-002","","Admin logged in, category exists, image file ready","imageFile=test-image.jpg; imageCategory=Main; lang=en-US; adminUrl={{BACK_URL}}","[NAV] Go to Catalog module > Any catalog
+[NAV] Right-click on category > Manage
+[ACT] Click on Images widget
+[ACT] Click Add button
+[ACT] Specify image category and language
+[ACT] Drag and drop image to upload zone
+[ACT] Click OK on Upload Images screen
+[ACT] Click OK on Manage images screen
+[ACT] Click Save on category details
+[ASSERT] Verify image in category images list","[STATE] Manage images screen displays
+[STATE] Upload Images screen allows drag-drop
+[STATE] Image category and language selectable
+[STATE] Image uploaded successfully
+[STATE] Image added to category
+[DOM] Uploaded image findable in images list","[API] GET /api/catalog/categories/{id} — verify images array
+[NETWORK] Image URL returns 200
+[CONSOLE] No upload errors","Upload dialog not opening; drag-drop not working; image not persisted after save","delete uploaded image via Admin","C180491","Katalon (generic)"
+"CAT-015","Add New SEO to Category","Catalog > Categories","High","BL-CAT-002","ECL-8.1","Admin logged in, category exists","seoUrl=test-category-seo; seoTitle=Test SEO Title; metaDesc=Test meta; adminUrl={{BACK_URL}}","[NAV] Go to Catalog module > Any catalog
+[NAV] Right-click on category > Manage
+[ACT] Click on SEO widget
+[ACT] Click Add
+[ACT] Fill in all SEO fields (URL, Title, Meta Description, Keywords)
+[ACT] Click OK
+[ACT] Click Save on category details","[STATE] New SEO screen opens with empty fields
+[DOM] All SEO fields available: URL, Title, Meta Description, Keywords, Language
+[STATE] SEO added to SEOs list
+[STATE] Changes saved successfully
+[STATE] SEO data applied to category","[API] GET /api/catalog/categories/{id} — verify SEO block
+[NAV] Navigate to {{FRONT_URL}} category URL — verify meta tags
+[CONSOLE] No errors","SEO widget not accessible; SEO data not saved; meta tags not rendered on storefront","delete SEO record via Admin","C180492","Katalon (generic)"
+"CAT-016","Add QuickReview Description to Category","Catalog > Categories","High","BL-CAT-002","","Admin logged in, catalog with category_1 created","categoryName=category_1; lang=en-US; adminUrl={{BACK_URL}}; frontUrl={{FRONT_URL}}","[NAV] Open Catalog > Select category_1
+[ACT] Click Description widget
+[ACT] Click Add > Choose QuickReview type
+[ACT] Choose language (e.g. EN-en)
+[ACT] Add description content
+[ACT] Click Save
+[ASSERT] Verify widget counter increases
+[NAV] Go to Storefront > Open category_1
+[ASSERT] Verify description displays via Liquid","[STATE] Description widget opens
+[STATE] QuickReview type selectable
+[STATE] Language selector works
+[STATE] Description saved successfully
+[STATE] Widget shows count increase
+[DOM] Description visible on storefront (via Liquid template)","[API] GET /api/catalog/categories/{id} — verify descriptions array
+[NAV] {{FRONT_URL}} category page — verify QuickReview content rendered
+[CONSOLE] No errors","Counter not incrementing; description not visible on storefront; Liquid template error in console","delete added description via Admin","C315282","Katalon (generic)"
+"CAT-017","Add FullReview Description to Category","Catalog > Categories","Medium","BL-CAT-002","","Admin logged in, catalog with category_1 created","categoryName=category_1; lang=de-DE; adminUrl={{BACK_URL}}; frontUrl={{FRONT_URL}}","[NAV] Open Catalog > Select category_1
+[ACT] Click Description widget
+[ACT] Click Add > Choose FullReview type
+[ACT] Choose language (e.g. DE-de)
+[ACT] Add description content
+[ACT] Click Save
+[ASSERT] Verify widget counter increases
+[NAV] Go to Storefront > Change store language (Deutsch DE-de)
+[NAV] Open category_1
+[ASSERT] Verify localized description displays","[STATE] FullReview type selectable
+[STATE] Language selector works (multiple languages)
+[STATE] Description saved successfully
+[STATE] Widget count updates
+[DOM] Localized content displays on storefront
+[STATE] Language switching works correctly","[API] GET /api/catalog/categories/{id} — verify descriptions array includes DE entry
+[NAV] {{FRONT_URL}} category page with DE locale — verify FullReview content
+[CONSOLE] No errors","Localized content not rendered; language switch breaks layout; counter not updating","delete added description via Admin","C315289","Katalon (generic)"
+"CAT-018","Delete Category with Descriptions","Catalog > Categories","High","BL-CAT-002","ECL-5.1","Catalog with category_1 created, description_1 added to category_1","categoryName=category_1; adminUrl={{BACK_URL}}; frontUrl={{FRONT_URL}}","[NAV] Open Catalog > Locate category_1 with description_1
+[ACT] Right-click > Delete category_1
+[ACT] Confirm deletion
+[NAV] Check on storefront
+[ASSERT] Verify category and descriptions removed","[STATE] Category removed with all content
+[STATE] Descriptions deleted along with category
+[DOM] Category no longer on storefront
+[STATE] No orphaned description data
+[STATE] Deletion properly cascades","[API] GET /api/catalog/categories — verify absent
+[NAV] {{FRONT_URL}} — verify category not in navigation
+[CONSOLE] No errors","Orphaned descriptions remain; category still visible on storefront; 500 error on storefront after delete","none (category was created for deletion)","C315283","Katalon (generic)"
+"CAT-036","Category Image Upload","Catalog > Category > Images","Medium","BL-CAT-002","","Admin logged in to Backend ({{BACK_URL}}), a test image file (JPG or PNG under 5 MB) ready for upload","imageFile=test-category.jpg; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
+[NAV] Open an existing category or create a new one
+[ACT] Click on the Images tab within the category blade
+[ACT] Click the Upload or Add Image button
+[ACT] Select a valid image file from the local filesystem
+[WAIT] Wait for upload to complete
+[ACT] Click Save","[STATE] Upload dialog opens correctly
+[STATE] Image uploads without errors
+[DOM] Uploaded image thumbnail is visible in the Images tab
+[STATE] Category saves with the image attached
+[NETWORK] Image URL is accessible and renders in the browser","[NETWORK] Image URL returns 200
+[API] GET /api/catalog/categories/{id} — verify images array
+[CONSOLE] No upload errors","Upload dialog not opening; upload fails with no error; thumbnail not shown after upload","delete uploaded image via Admin","C180491","Not Automated"
+"CAT-037","Category SEO Configuration","Catalog > Category > SEO","Medium","BL-CAT-002","ECL-8.1","Admin logged in to Backend ({{BACK_URL}}), Stores module accessible with at least one store configured","seoSlug=test-category-slug; pageTitle=Test Category Title; metaDesc=Test meta description; storeId={{STORE_ID}}; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
+[NAV] Open an existing category
+[ACT] Click on the SEO tab within the category blade
+[ACT] Click Add SEO or select a store to configure SEO
+[ACT] Enter a SEO URL keyword (slug)
+[ACT] Enter a page title
+[ACT] Enter a meta description
+[ACT] Click Save","[STATE] SEO tab is accessible on the category blade
+[STATE] SEO URL keyword field accepts input and validates uniqueness
+[STATE] Page title and meta description fields accept input
+[STATE] SEO data saves successfully
+[STATE] Saved SEO values persist after reopening the category","[API] GET /api/catalog/categories/{id} — verify SEO data in response
+[NAV] {{FRONT_URL}} category URL — verify meta title and description tags
+[CONSOLE] No errors","Duplicate slug accepted; SEO data not persisted; meta tags not rendered on storefront","delete SEO entry via Admin","C180492","Not Automated"
+"CAT-038","Toggle Category Visible Checkbox","Catalog > Category > Properties","Medium","BL-CAT-001","","Admin logged in to Backend ({{BACK_URL}}), an existing category is available","adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
+[NAV] Open an existing category
+[ACT] Locate the Visible checkbox in the Properties or Details section
+[ASSERT] Note the current state of the checkbox
+[ACT] Toggle the Visible checkbox to the opposite state
+[ACT] Click Save
+[NAV] Reopen the category and verify the saved state","[STATE] Visible checkbox is present on the category form
+[STATE] Checkbox state toggles on click
+[STATE] Toggled state saves correctly
+[STATE] Reopened category shows the updated Visible value
+[STATE] No errors occur on save","[API] GET /api/catalog/categories/{id} — verify isVisible field toggled
+[CONSOLE] No errors","Checkbox not toggling; state reverts after save; API not reflecting UI change","restore original Visible state via Admin","C292384","Not Automated"
+"CAT-040","Unit of Measure Group CRUD","Catalog > Units of Measure","Medium","BL-CAT-001","ECL-5.1","Admin logged in to Backend ({{BACK_URL}}), Catalog module with UoM feature enabled","groupName=Weight; updatedName=Weight Units; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module > Units of Measure section
+[ACT] Click Add to create a new UoM group
+[ACT] Enter a unique group name (e.g. Weight)
+[ACT] Save the group and verify it appears in the list
+[ACT] Open the group and edit the name (e.g. Weight Units)
+[ACT] Save and verify updated name
+[ACT] Delete the group via the Delete button
+[ACT] Confirm deletion and verify the group no longer appears in the list","[STATE] New UoM group is created and visible in the list
+[STATE] Group name updates correctly on edit
+[STATE] Delete action removes the group permanently
+[STATE] No orphaned data remains after deletion
+[STATE] All CRUD operations complete without errors","[API] GET /api/catalog/measureunits — verify group lifecycle
+[CONSOLE] No errors","Group not created; edit not saved; delete leaves orphaned units; API returns stale data","none (group created and deleted within test)","","Not Automated"
+"CAT-041","Unit of Measure Unit CRUD","Catalog > Units of Measure","Medium","BL-CAT-001","ECL-5.1","Admin logged in to Backend ({{BACK_URL}}), at least one UoM group exists","unitName=kilogram; shortName=kg; conversionFactor=1.0; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module > Units of Measure
+[NAV] Open an existing UoM group
+[ACT] Click Add Unit to create a new unit (e.g. kg - kilogram)
+[ACT] Enter unit name, short name, and conversion factor
+[ACT] Save the unit and verify it appears within the group
+[ACT] Edit the unit short name and conversion factor
+[ACT] Save changes and verify updates
+[ACT] Delete the unit and confirm it is removed from the group","[STATE] New unit is created within the group with correct fields
+[STATE] Unit name, short name, and conversion factor save correctly
+[STATE] Edited values persist after save
+[STATE] Deleted unit no longer appears in the group list
+[STATE] Group integrity is maintained after unit deletion","[API] GET /api/catalog/measureunits/{groupId} — verify unit lifecycle
+[CONSOLE] No errors","Unit not created; conversion factor not saved; delete leaves unit in UI; group integrity broken","none (unit created and deleted within test)","","Not Automated"
+"CAT-044","Category Automatic Links","Catalog > Category > Links","Medium","BL-CAT-002","","Admin logged in to Backend ({{BACK_URL}}), category linked to a virtual catalog","adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
+[NAV] Open a category that has virtual catalog associations
+[NAV] Navigate to the Links tab
+[ASSERT] Verify automatic links from virtual catalog assignments are listed
+[ASSERT] Inspect each link for correct catalog and path information
+[ASSERT] Confirm no stale or broken links appear after catalog restructuring","[STATE] Links tab is accessible on the category blade
+[STATE] Automatic links reflect current virtual catalog associations
+[STATE] Link details (catalog name, path) are accurate
+[STATE] Stale links from deleted associations are not shown
+[STATE] No errors appear when viewing the Links tab","[API] GET /api/catalog/categories/{id}/links — verify links array
+[CONSOLE] No errors","Stale links shown after reassignment; broken link navigation; links tab errors","none","","Not Automated"

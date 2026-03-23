@@ -1,0 +1,255 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"FWL-004","Store and organization both have whitelabeling settings - organization branding overrides store","Organization Branding","Critical","BL-WL-001","","Store has White Labeling with store-level logo/favicon/theme; Organization has custom logo/favicon/theme configured","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > B2B-store
+[ACT] 2. Open White Labeling settings
+[ACT] 3. Upload store logo: store-logo.png
+[ACT] 4. Set theme: Default
+[ACT] 5. Save
+[NAV] 6. Navigate to Customer > Organizations > Branded Org
+[ACT] 7. Open White Labeling settings
+[ASSERT] 8. Verify Enabled = ON
+[ACT] 9. Upload organization logo: org-logo.png
+[ACT] 10. Upload organization favicon: org-favicon.ico
+[ACT] 11. Set theme preset: Coffee
+[ACT] 12. Configure footer links list: org-footer-links
+[ACT] 13. Configure main menu links list: org-main-menu
+[ACT] 14. Save organization settings
+[NAV] 15. Sign in to storefront with user from Branded Org
+[NAV] 16. Navigate to homepage
+[ASSERT] 17. Inspect header logo (should show org logo, not store logo)
+[ASSERT] 18. Inspect favicon (should show org favicon)
+[ASSERT] 19. Inspect theme (should be Coffee, not Default)
+[ASSERT] 20. Inspect main menu links structure
+[ASSERT] 21. Inspect footer links structure","[DOM] Organization logo displayed in header (org-logo.png, NOT store-logo.png)
+[DOM] Organization favicon displayed in browser tab
+[STATE] Coffee theme applied (NOT Default)
+[DOM] Org-specific main menu links visible
+[DOM] Org-specific footer links visible","[CONSOLE] no uncaught JS errors
+[NETWORK] org logo image loads with HTTP 200","Store logo shown instead of org logo; Store theme applied instead of org theme; Org footer/menu links missing","restore org settings to pre-test state; restore store settings","C390297 VCST-1634","Manual"
+"FWL-005","Set non-existent theme preset - default theme applied as fallback","Theme Preset","Medium","BL-WL-004","","Store/Organization White Labeling configured; Access to backend","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Test Org
+[ACT] 2. Open White Labeling settings
+[ACT] 3. Directly set themePresetName field to non-existent value: Mercury (outdated preset)
+[ACT] 4. Save settings
+[NAV] 5. Sign in to storefront with user from Test Org
+[NAV] 6. Navigate to homepage
+[ASSERT] 7. Inspect page theme colors and styles
+[ASSERT] 8. Verify theme applied","[STATE] Default theme preset applied as fallback (NOT Mercury)
+[DOM] Page renders correctly with default colors
+[DOM] No broken or missing styles visible","[CONSOLE] no theme-related JS errors or warnings
+[NETWORK] theme CSS loads with HTTP 200","Mercury theme applied (should not exist); Console errors on theme load; Broken styles or missing CSS","restore org themePresetName to valid preset","C391195 VCST-1634","Manual"
+"FWL-006","Set custom logo and favicon for organization - displayed after sign-in","Organization Branding","Critical","BL-WL-001","","Organization exists: Company1; White Labeling enabled; Custom logo and favicon assets prepared","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Company1
+[ACT] 2. Open White Labeling settings
+[ASSERT] 3. Verify Enabled = ON
+[ACT] 4. Upload custom logo: company1-logo.png (PNG, 200x60px)
+[ACT] 5. Upload custom favicon: company1-favicon.ico (ICO, 32x32px)
+[ACT] 6. Save settings
+[NAV] 7. Open new browser tab
+[NAV] 8. Navigate to {{FRONT_URL}}
+[ACT] 9. Sign in with user account from Company1 organization
+[WAIT] 10. After successful sign-in, wait for redirect to homepage
+[ASSERT] 11. Inspect header
+[ASSERT] 12. Inspect browser tab favicon","[DOM] company1-logo.png visible in header
+[DOM] company1-favicon.ico displayed in browser tab
+[DOM] Logo is properly sized (not distorted)
+[STATE] Logo links to homepage when clicked
+[DOM] Branding persists across catalog, product, cart pages","[CONSOLE] no uncaught JS errors
+[NETWORK] company1-logo.png loads with HTTP 200","Default logo shown instead of company1 logo; Broken image in header; Favicon not updated","restore org settings (remove logo/favicon)","C389426","Manual"
+"FWL-007","Set White Labeling Enabled = OFF for organization - default logo and favicon displayed","Organization Settings","High","BL-WL-002","","Organization Company1 has custom logo/favicon configured; White Labeling currently enabled","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Company1
+[ACT] 2. Open White Labeling settings
+[ASSERT] 3. Verify custom logo and favicon are uploaded
+[ACT] 4. Set Enabled = OFF
+[ACT] 5. Save settings
+[NAV] 6. Sign in to storefront with Company1 user
+[NAV] 7. Navigate to homepage
+[ASSERT] 8. Inspect header logo
+[ASSERT] 9. Inspect browser tab favicon","[DOM] Default Virto Commerce logo displayed in header (NOT company1-logo.png)
+[DOM] Default favicon displayed in browser tab
+[STATE] Custom branding NOT applied even though assets exist","[CONSOLE] no uncaught JS errors
+[NETWORK] default logo loads with HTTP 200","Custom org logo still shown when WL is OFF; Console errors when WL toggled OFF","restore org Enabled = ON","C389427","Manual"
+"FWL-008","Set White Labeling Enabled = ON for organization - custom logo and favicon displayed","Organization Settings","High","BL-WL-002","","Organization Company1 has custom logo/favicon configured; White Labeling currently disabled (OFF)","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Company1
+[ACT] 2. Open White Labeling settings
+[ASSERT] 3. Verify Enabled = OFF but custom logo/favicon exist
+[ACT] 4. Set Enabled = ON
+[ACT] 5. Save settings
+[NAV] 6. Sign in to storefront with Company1 user
+[NAV] 7. Navigate to homepage
+[ASSERT] 8. Inspect header logo
+[ASSERT] 9. Inspect browser tab favicon","[DOM] Custom company1-logo.png displayed in header
+[DOM] Custom company1-favicon.ico displayed in browser tab
+[STATE] Organization branding applied correctly","[CONSOLE] no uncaught JS errors
+[NETWORK] company1-logo.png loads with HTTP 200","Default logo still shown after enabling WL; Favicon not updated; Theme preset not applied","restore org Enabled = OFF","C389428","Manual"
+"FWL-010","Set theme preset for organization - Coffee theme applied after sign-in","Theme Preset","High","BL-WL-001","","Organization Company1 exists; White Labeling enabled; Available theme presets: Default Coffee","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Company1
+[ACT] 2. Open White Labeling settings
+[ASSERT] 3. Verify Enabled = ON
+[ACT] 4. Set Theme Preset: Coffee
+[ACT] 5. Save settings
+[NAV] 6. Sign in to storefront with Company1 user
+[NAV] 7. Navigate to homepage
+[ASSERT] 8. Inspect page styles and CSS variables
+[ASSERT] 9. Verify header colors
+[ASSERT] 10. Verify button styles
+[ASSERT] 11. Verify link colors
+[NAV] 12. Navigate to multiple pages (catalog, product, cart)
+[ASSERT] 13. Verify theme consistency","[DOM] CSS variables updated to Coffee theme values
+[FORMAT] Header background color matches Coffee theme spec
+[FORMAT] Button styles use Coffee theme colors
+[FORMAT] Links use Coffee accent color
+[STATE] Theme persists across homepage, catalog, product, cart pages","[CONSOLE] no uncaught JS errors or CSS errors
+[NETWORK] theme CSS loads with HTTP 200","Default theme shown instead of Coffee; Colors not matching Coffee palette; Theme inconsistent across pages; CSS flash during navigation","restore org theme to Default","C389430","Manual"
+"FWL-019","Verify theme preset colors applied to storefront after sign-in - Default theme","Theme Preset","High","BL-WL-001","","Organization has theme preset: Default; User account for this organization exists","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}, admin={{BACK_URL}}","[NAV] 1. Navigate to Admin > Organizations > Org With Default Theme
+[ACT] 2. Open White Labeling settings
+[ASSERT] 3. Verify Theme Preset = Default
+[ACT] 4. Save
+[NAV] 5. Sign in to storefront with user from this org
+[NAV] 6. Navigate to homepage
+[ASSERT] 7. Open browser DevTools > Elements
+[ASSERT] 8. Inspect CSS variables on :root or body element
+[ASSERT] 9. Verify color values match Default theme
+[ASSERT] 10. Inspect header background color
+[ASSERT] 11. Inspect button primary color
+[ASSERT] 12. Inspect link accent color","[FORMAT] CSS variables match Default theme palette
+[FORMAT] Header uses Default theme colors
+[FORMAT] Buttons use Default theme primary color
+[FORMAT] Links use Default theme accent color
+[STATE] No color conflicts or visual glitches","[CONSOLE] no CSS or JS errors","Wrong theme colors applied; Coffee theme shown when Default expected; CSS variable values don't match Default palette","none","VCST-4637","Manual"
+"FWL-020","Verify theme preset colors applied to storefront after sign-in - Coffee theme","Theme Preset","High","BL-WL-001","","Organization has theme preset: Coffee; User account for this organization exists","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}, admin={{BACK_URL}}","[NAV] 1. Navigate to Admin > Organizations > Org With Coffee Theme
+[ACT] 2. Open White Labeling settings
+[ASSERT] 3. Verify Theme Preset = Coffee
+[ACT] 4. Save
+[NAV] 5. Sign in to storefront with user from this org
+[NAV] 6. Navigate to homepage
+[ASSERT] 7. Open browser DevTools > Elements
+[ASSERT] 8. Inspect CSS variables
+[ASSERT] 9. Verify color values match Coffee theme (brown/cream palette)
+[ASSERT] 10. Inspect header, buttons, links
+[ASSERT] 11. Compare to Default theme (should be different)","[FORMAT] CSS variables match Coffee theme palette (browns, creams)
+[FORMAT] Header uses Coffee theme colors (NOT Default)
+[FORMAT] Buttons use Coffee theme primary color
+[FORMAT] Links use Coffee theme accent color
+[STATE] Visual difference from Default theme is obvious
+[STATE] No color conflicts","[CONSOLE] no CSS or JS errors","Default theme shown instead of Coffee; CSS variables unchanged from Default; No visual difference between themes","none","VCST-4637","Manual"
+"FWL-028","Switch organization - verify branding updates dynamically (logo and favicon)","Multi-Organization","Critical","BL-WL-003","","User account is member of 2 organizations: Org A (logo-a.png, favicon-a.ico, Default theme) and Org B (logo-b.png, favicon-b.ico, Coffee theme)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with multi-org user account
+[ASSERT] 2. Verify current organization is Org A
+[ASSERT] 3. Inspect header logo (should be logo-a.png)
+[ASSERT] 4. Inspect browser tab favicon (should be favicon-a.ico)
+[ASSERT] 5. Inspect theme colors (should be Default)
+[ACT] 6. Click organization switcher in header
+[ACT] 7. Select Org B from dropdown
+[WAIT] 8. Wait for organization switch to complete
+[ASSERT] 9. Verify page refreshes or updates
+[ASSERT] 10. Inspect header logo (should NOW be logo-b.png)
+[ASSERT] 11. Inspect browser tab favicon (should NOW be favicon-b.ico)
+[ASSERT] 12. Inspect theme colors (should NOW be Coffee)
+[ACT] 13. Switch back to Org A
+[ASSERT] 14. Verify logo/favicon/theme revert to Org A branding","[DOM] Switching Org A to Org B updates header logo from logo-a.png to logo-b.png
+[DOM] Browser tab favicon updates from favicon-a.ico to favicon-b.ico
+[STATE] Theme updates from Default to Coffee
+[STATE] Switching back to Org A restores Org A branding
+[STATE] All branding changes persist across page navigation after switch","[CONSOLE] no uncaught JS errors
+[NETWORK] new logo image loads with HTTP 200 after switch","Old org logo still shown after switch; Stale branding from previous org; Theme not updating; Flash of wrong branding during transition","none","Multi-Organization","Manual"
+"FWL-029","Switch organization - verify main menu links update dynamically","Multi-Organization","High","BL-WL-003","","User is member of Org A (main menu: Products, Services, Contact) and Org B (main menu: Solutions, Partners, Support, Blog)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in with multi-org user
+[ASSERT] 2. Verify current org is Org A
+[ASSERT] 3. Inspect main menu links in header: Products, Services, Contact
+[ACT] 4. Hover over links to verify dropdowns (if any)
+[ACT] 5. Switch organization to Org B
+[WAIT] 6. Wait for refresh
+[ASSERT] 7. Inspect main menu links in header: should NOW show Solutions, Partners, Support, Blog
+[ASSERT] 8. Verify main menu structure changed
+[ACT] 9. Switch back to Org A
+[ASSERT] 10. Verify main menu reverts to Products, Services, Contact","[DOM] Org A displays main menu: Products, Services, Contact
+[DOM] Switching to Org B updates main menu to: Solutions, Partners, Support, Blog
+[DOM] Switching back to Org A restores original main menu
+[STATE] No stale links from previous org displayed
+[NAV] Navigation works correctly after org switch","[CONSOLE] no uncaught JS errors","Stale main menu links from previous org; Menu not updating after switch; Navigation broken after switch","none","Multi-Organization","Manual"
+"FWL-030","Switch organization - verify footer links update dynamically","Multi-Organization","Medium","BL-WL-003","","User is member of Org A (footer: About, Support, Legal) and Org B (footer: Company, Help, Policies, Careers)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in with multi-org user (Org A)
+[SCROLL] 2. Scroll to footer
+[ASSERT] 3. Verify footer links: About, Support, Legal
+[ACT] 4. Switch organization to Org B
+[WAIT] 5. Wait for refresh
+[SCROLL] 6. Scroll to footer
+[ASSERT] 7. Verify footer links updated: Company, Help, Policies, Careers
+[ACT] 8. Switch back to Org A
+[ASSERT] 9. Verify footer reverts","[DOM] Org A displays footer: About, Support, Legal
+[DOM] Switching to Org B updates footer to: Company, Help, Policies, Careers
+[STATE] Switching back restores Org A footer
+[STATE] No stale footer links displayed","[CONSOLE] no uncaught JS errors","Stale footer links from previous org; Footer not updating after switch; Wrong hierarchy displayed","none","Multi-Organization","Manual"
+"FWL-031","Switch organization - verify theme preset changes dynamically","Multi-Organization","High","BL-WL-003","","User is member of Org A (Default theme) and Org B (Coffee theme)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in with multi-org user (Org A with Default theme)
+[ASSERT] 2. Inspect page CSS variables and colors
+[ASSERT] 3. Note Default theme colors (header, buttons, links)
+[ACT] 4. Switch organization to Org B (Coffee theme)
+[WAIT] 5. Wait for refresh
+[ASSERT] 6. Inspect CSS variables again
+[ASSERT] 7. Verify colors changed to Coffee theme
+[ASSERT] 8. Verify visual difference (browns/creams instead of default blue/gray)
+[ACT] 9. Switch back to Org A
+[ASSERT] 10. Verify theme reverts to Default","[FORMAT] Org A displays Default theme colors
+[FORMAT] Switching to Org B applies Coffee theme (visual color change obvious)
+[FORMAT] CSS variables update to Coffee theme values
+[FORMAT] Switching back to Org A restores Default theme
+[STATE] Theme transition is smooth (no flicker or broken styles)","[CONSOLE] no uncaught JS errors","Theme not changing after org switch; Stale theme from previous org; CSS variables not updating; Theme flicker during transition","none","Multi-Organization","Manual"
+"FWL-032","Verify branding transition is smooth during organization switch (no flash of wrong branding)","Multi-Organization","High","BL-WL-003","","User is member of 2 organizations with distinct branding; Fast internet connection for accurate performance test","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in with multi-org user (Org A)
+[ACT] 2. Open browser DevTools > Network tab
+[ACT] 3. Switch organization to Org B
+[ASSERT] 4. Observe page reload/refresh
+[ASSERT] 5. Watch for logo/favicon loading
+[ASSERT] 6. Verify no flash of old branding during transition
+[ASSERT] 7. Measure time for branding to fully update
+[ACT] 8. Repeat switch 3 times (Org A to Org B and back)","[STATE] No flash of Org A logo before Org B logo loads
+[STATE] No flash of Org A favicon before Org B favicon loads
+[STATE] Theme colors transition smoothly (no jarring color flash)
+[FORMAT] Branding update completes within 1-2 seconds
+[STATE] No broken images or layout during transition","[CONSOLE] no uncaught JS errors
+[NETWORK] new branding assets load with HTTP 200 within 2 seconds","Flash of wrong branding during org switch; Broken images during transition; Transition takes more than 2 seconds; Layout breaks during switch","none","Multi-Organization Performance","Manual"
+"FWL-061","Verify logo upload validation - accepted file formats (PNG SVG JPEG)","Logo Upload","Medium","BL-WL-001","","Admin access to White Labeling settings; Test image files: logo.png logo.svg logo.jpg","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
+[ACT] 2. Open White Labeling settings
+[ACT] 3. Test 1: Upload logo.png (valid PNG file)
+[ASSERT] 4. Verify upload succeeds
+[ACT] 5. Save settings
+[ACT] 6. Test 2: Upload logo.svg (valid SVG file)
+[ASSERT] 7. Verify upload succeeds
+[ACT] 8. Save settings
+[ACT] 9. Test 3: Upload logo.jpg (valid JPEG file)
+[ASSERT] 10. Verify upload succeeds
+[ACT] 11. Save settings
+[ASSERT] 12. For each upload, verify logo displays correctly on storefront","[STATE] PNG upload succeeds without error
+[STATE] SVG upload succeeds without error
+[STATE] JPEG upload succeeds without error
+[DOM] Uploaded logos display correctly on storefront","[ADMIN] settings saved successfully for each format
+[CONSOLE] no file upload errors","Upload rejected for valid PNG/SVG/JPEG; Error message shown for valid formats; Logo not displaying on storefront after upload","remove uploaded logos and restore original","Logo Upload","Manual"
+"FWL-062","Verify logo upload validation - rejected file formats (GIF BMP TXT)","Logo Upload","Medium","BL-WL-001","","Admin access to White Labeling settings; Test invalid files: logo.gif logo.bmp logo.txt","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
+[ACT] 2. Open White Labeling settings
+[ACT] 3. Test 1: Attempt to upload logo.gif (invalid format)
+[ASSERT] 4. Verify upload is REJECTED with validation error
+[ACT] 5. Test 2: Attempt to upload logo.bmp (invalid format)
+[ASSERT] 6. Verify upload is REJECTED
+[ACT] 7. Test 3: Attempt to upload logo.txt (invalid format)
+[ASSERT] 8. Verify upload is REJECTED
+[ASSERT] 9. Verify error messages are clear: e.g. ""Only PNG, SVG, and JPEG formats are allowed""
+[ASSERT] 10. Verify settings do NOT save with invalid file","[STATE] GIF upload is rejected with error message
+[STATE] BMP upload is rejected with error message
+[STATE] TXT upload is rejected with error message
+[DOM] Error messages are clear and user-friendly
+[STATE] Invalid file is NOT uploaded to server
+[STATE] Logo field remains empty or retains previous valid logo","[CONSOLE] no uncaught JS errors","Invalid formats accepted without error; No error message shown; Invalid file saved to server","none","Logo Upload Negative","Manual"
+"FWL-063","Verify logo upload validation - file size limit (max 2MB)","Logo Upload","Medium","BL-WL-001","","Admin access; Test large logo file: logo-large.png (3MB or larger exceeds limit)","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
+[ACT] 2. Open White Labeling settings
+[ACT] 3. Attempt to upload logo-large.png (3MB file size)
+[ASSERT] 4. Verify upload is REJECTED due to file size
+[ASSERT] 5. Verify error message: ""File size exceeds 2MB limit"" or similar
+[ACT] 6. Attempt to upload valid-sized logo (< 2MB)
+[ASSERT] 7. Verify upload succeeds","[STATE] Files larger than 2MB are rejected
+[DOM] Error message clearly states file size limit
+[STATE] User is NOT able to save with oversized file
+[STATE] Valid-sized files (< 2MB) are accepted","[CONSOLE] no uncaught JS errors","Oversized file accepted without error; No error message for size limit; Valid file rejected as too large","none","Logo Upload Negative","Manual"
+"FWL-064","Verify favicon upload validation - accepted file format (ICO PNG)","Favicon Upload","Medium","BL-WL-001","","Admin access; Test favicon files: favicon.ico favicon.png","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
+[ACT] 2. Open White Labeling settings
+[ACT] 3. Test 1: Upload favicon.ico (valid ICO file, 32x32)
+[ASSERT] 4. Verify upload succeeds
+[ACT] 5. Save settings
+[ASSERT] 6. Verify favicon displays in storefront browser tab
+[ACT] 7. Test 2: Upload favicon.png (valid PNG file, 32x32)
+[ASSERT] 8. Verify upload succeeds
+[ASSERT] 9. Verify PNG favicon displays correctly","[STATE] ICO format accepted and uploads successfully
+[STATE] PNG format accepted and uploads successfully
+[DOM] Both formats display correctly in browser tab
+[DOM] Favicon is properly generated in multiple sizes (16x16, 32x32, 180x180) if thumbnail job runs","[CONSOLE] no file upload errors
+[NETWORK] favicon loads with HTTP 200 in browser tab","ICO format rejected; PNG format rejected; Favicon not showing in browser tab after upload","remove uploaded favicons and restore original","Favicon Upload","Manual"

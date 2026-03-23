@@ -1,0 +1,193 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"CHK-031","B2B Checkout - PO Number Entry","Checkout > B2B","High","BL-CHK-004","","Logged in as B2B org user ({{ORG_USER_EMAIL}}), cart has items","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}, admin={{ADMIN_URL}}","[NAV] Log in as {{ORG_USER_EMAIL}} and navigate to {{FRONT_URL}}/cart
+[ACT] click 'Checkout' or 'Proceed to Checkout'
+[ASSERT] Verify PO Number field visible (B2B org user context)
+[ACT] Enter PO number 'PO-2026-001' in PO Number field
+[ACT] Complete remaining checkout steps (address, shipping, payment)
+[ACT] click 'Place Order'
+[WAIT] Wait for confirmation page
+[ASSERT] Verify PO number shown on confirmation page
+[NAV] Navigate to {{FRONT_URL}}/account/orders and view order detail
+[ASSERT] Verify PO number shown on order detail page","[DOM] PO Number field visible during checkout for org user
+[DOM] PO number accepts alphanumeric input
+[DOM] PO number shown on confirmation page
+[DOM] PO number shown on account order detail
+[ADMIN] PO number stored and visible in {{ADMIN_URL}}/orders","[API] createOrderFromCart mutation response errors[] is empty
+[API] verify org context is non-null (me.organization)
+[ADMIN] Order in {{ADMIN_URL}}/orders shows PO number = PO-2026-001
+[CONSOLE] No errors submitting B2B order","PO Number field not visible for B2B user; PO number not shown on confirmation or order detail","Cancel order via {{ADMIN_URL}}/orders","Coverage Gap Analysis","Generated"
+"CHK-032","B2B Checkout - Net 30 Payment Terms","Checkout > B2B > Payment","High","BL-CHK-004","","Logged in as B2B org user with Net 30 payment terms configured for org","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] Log in as {{ORG_USER_EMAIL}} and navigate to cart with items
+[ACT] click 'Checkout'
+[ACT] Complete shipping address and method steps
+[WAIT] Wait for payment method step
+[ASSERT] Verify 'Net 30' or 'On Account' payment option available
+[ACT] select 'Net 30' or 'On Account' payment method
+[ASSERT] Verify no credit card entry required
+[ACT] click 'Place Order'
+[WAIT] Wait for confirmation page
+[ASSERT] Verify order placed with appropriate status (Pending Approval or On Account)","[DOM] Net 30 / On Account option listed in payment methods
+[STATE] No credit card form shown when Net 30 selected
+[STATE] Order placed with On Account or Pending status
+[DOM] Confirmation page shows Net 30 payment method","[API] createOrderFromCart mutation response errors[] is empty
+[API] verify org context is non-null (me.organization)
+[ADMIN] Order in {{ADMIN_URL}}/orders shows Net 30 payment method
+[CONSOLE] No errors on Net 30 order placement","Net 30 option not available for eligible org; credit card required even after selecting Net 30","Cancel order via {{ADMIN_URL}}/orders","Coverage Gap Analysis","Generated"
+"CHK-033","B2B Checkout - Approval Workflow","Checkout > B2B > Approval","Critical","BL-CHK-003","ECL-14.3","B2B org with approval workflow enabled, Buyer and Admin/Approver roles configured","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}, admin={{ADMIN_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] Log in as Buyer role user ({{ORG_USER_EMAIL}}) in storefront
+[ACT] Add items to cart exceeding buyer purchase limit
+[ACT] click 'Checkout' and proceed through all steps
+[ACT] click 'Place Order'
+[WAIT] Wait for order submission
+[ASSERT] Verify order status is 'Pending Approval' (not Processing)
+[ASSERT] Verify buyer sees notification that order requires approval
+[NAV] Log in as Admin/Approver in {{ADMIN_URL}}
+[NAV] Navigate to pending orders in admin
+[ASSERT] Verify order appears in approval queue
+[ACT] Approve the order in admin
+[NAV] Return to storefront as Buyer and view order
+[ASSERT] Verify order status updated to 'Processing' after approval","[STATE] Order status = Pending Approval immediately after buyer places order
+[DOM] Buyer sees approval pending notification
+[ADMIN] Order visible in approval queue for admin/approver
+[STATE] After admin approval order transitions to Processing
+[DOM] Buyer sees Processing status after admin approves","[API] createOrderFromCart mutation response errors[] is empty
+[API] verify org context is non-null (me.organization)
+[API] Order status API returns pendingApproval before admin action
+[ADMIN] Approval queue shows order after placement
+[CONSOLE] No errors during approval workflow","Order placed directly as Processing bypassing approval; approval queue not showing order for admin","Cancel or complete order via {{ADMIN_URL}}/orders","Coverage Gap Analysis","Generated"
+"CHK-034","B2B Checkout - Buyer Cannot Bypass Approval","Checkout > B2B > Security","Critical","BL-CHK-003, BL-CHK-004","ECL-14.3","B2B org with approval workflow enabled, logged in as Buyer subject to approval limits","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}, back={{BACK_URL}}","[NAV] Log in as Buyer ({{ORG_USER_EMAIL}}) subject to approval workflow
+[ACT] Add items exceeding purchase limit to cart
+[ACT] Proceed through checkout normally (address, shipping, payment)
+[ACT] click 'Place Order'
+[ASSERT] Verify order status = Pending Approval (not Processing)
+[ACT] Attempt to manipulate checkout by sending direct API request to transition order status to Processing
+[ASSERT] Verify API returns error or unauthorized response
+[ASSERT] Verify order status remains Pending Approval in storefront","[STATE] Order placed with Pending Approval status by buyer
+[STATE] Direct API attempt to bypass approval returns 403 or error
+[STATE] Order status unchanged after bypass attempt
+[STATE] Approval requirement enforced server-side","[API] createOrderFromCart mutation response errors[] is empty
+[API] verify org context is non-null (me.organization)
+[API] Status transition API call by buyer returns 403/unauthorized
+[BACK_URL] Platform enforces approval server-side (not just frontend)
+[CONSOLE] No client-side bypass possible via DevTools manipulation","Buyer can place order directly as Processing bypassing approval; server accepts unauthorized status transition","Cancel order via {{ADMIN_URL}}/orders","Coverage Gap Analysis","Manual"
+"CHK-035","B2B Checkout - Organization Shipping Address","Checkout > B2B > Shipping","High","BL-CHK-004","","Logged in as B2B org user, org has at least one configured shipping address","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] Log in as {{ORG_USER_EMAIL}} and add items to cart
+[ACT] click 'Checkout'
+[WAIT] Wait for shipping address step
+[ASSERT] Verify org shipping addresses listed as distinct group or clearly labeled
+[ASSERT] Verify personal user addresses also available but differentiated from org addresses
+[ACT] select an organization shipping address
+[ASSERT] Verify org address populates shipping fields
+[ACT] Proceed to shipping method step
+[ASSERT] Verify org address carried through to order summary","[DOM] Org addresses shown in separate group or with org label
+[DOM] Personal addresses differentiated from org addresses
+[STATE] Org address selection populates shipping form fields
+[STATE] Selected org address shown in order summary","[API] verify org context is non-null (me.organization)
+[API] GET /account/addresses returns org addresses distinctly
+[CONSOLE] No errors loading org address list","Org addresses not shown; personal and org addresses not differentiated; org address selection fails","none","Coverage Gap Analysis","Generated"
+"CHK-036","B2B Checkout - Contract Pricing Applied","Checkout > B2B > Pricing","Critical","BL-CHK-004","ECL-4.1, ECL-14.1","B2B org with contract/tier pricing configured, products have org-specific prices in system","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}, sku={{TEST_SKU}}","[NAV] Log in as {{ORG_USER_EMAIL}}
+[NAV] Navigate to product page for {{TEST_SKU}} with org-specific contract price
+[ASSERT] Verify contract/negotiated price shown on PDP (not standard catalog price)
+[ACT] click 'Add to Cart'
+[NAV] Navigate to {{FRONT_URL}}/cart
+[ASSERT] Verify cart shows contract price for item
+[ACT] click 'Checkout'
+[ASSERT] Verify order summary at checkout shows contract price
+[ACT] click 'Place Order'
+[ASSERT] Verify confirmation shows contract price in totals","[DOM] Contract price shown on PDP (lower than or different from catalog price)
+[DOM] Cart line item shows contract price
+[MATH] Checkout order summary totals use contract price
+[DOM] Confirmation page totals reflect contract pricing","[API] createOrderFromCart mutation response errors[] is empty
+[API] verify org context is non-null (me.organization)
+[API] Order payload shows contract/org price not catalog price
+[ADMIN] Order in admin shows contract pricing applied
+[CONSOLE] No pricing calculation errors","Standard catalog price shown instead of contract price; price changes to catalog price at checkout step","Cancel order via {{ADMIN_URL}}/orders","Coverage Gap Analysis","Generated"
+"CHK-037","B2B Checkout - Coupon on Top of Contract Price","Checkout > B2B > Promotions","High","BL-CHK-004","ECL-4.1, ECL-14.1","B2B org user with contract pricing configured, valid coupon code applicable to B2B users","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}, sku={{TEST_SKU}}","[NAV] Log in as {{ORG_USER_EMAIL}}
+[ACT] Add product with contract pricing to cart
+[NAV] Navigate to {{FRONT_URL}}/cart and proceed to checkout
+[ASSERT] Verify contract price shown in cart
+[ACT] Locate coupon code field
+[ACT] Enter valid coupon code
+[ACT] click 'Apply'
+[WAIT] Wait for discount to apply
+[ASSERT] Verify discount applied per configured stacking rules
+[ASSERT] Verify cart total = contract price - coupon discount + shipping + tax
+[ACT] click 'Place Order'
+[ASSERT] Verify confirmation shows coupon as separate discount line","[DOM] Coupon field accessible for B2B users
+[STATE] Valid coupon accepted
+[MATH] Total = contract price - coupon discount + shipping + tax (no double-discounting)
+[DOM] Coupon discount shown as separate line item
+[DOM] Confirmation page shows coupon discount","[API] createOrderFromCart mutation response errors[] is empty
+[API] verify org context is non-null (me.organization)
+[ADMIN] Order in admin shows coupon and contract price as separate line items
+[CONSOLE] No pricing errors with coupon + contract price combination","Coupon not accepted for B2B user; double discounting applied (coupon on already-discounted contract price incorrectly); coupon absent from confirmation","Cancel order via {{ADMIN_URL}}/orders","Coverage Gap Analysis","Generated"
+"CHK-038","B2B Checkout - PO Number Validation","Checkout > B2B > Validation","High","BL-CHK-004","","Logged in as B2B org user at checkout, PO Number field visible","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] Log in as {{ORG_USER_EMAIL}} and navigate to checkout
+[ASSERT] Verify PO Number field visible
+[ACT] Leave PO Number empty (if required) and click 'Place Order'
+[ASSERT] Verify 'PO Number is required' error if field is required
+[ACT] Enter PO number exceeding max character length
+[ASSERT] Verify length validation error shown
+[ACT] Enter valid PO number within character limits
+[ASSERT] Verify error clears
+[ACT] Complete checkout
+[ASSERT] Verify order placed successfully","[DOM] PO Number required error if field required and empty
+[DOM] Length error for over-max-length input
+[STATE] Errors appear inline on PO field
+[STATE] Errors clear when valid PO entered
+[STATE] Checkout proceeds with valid PO number","[API] verify org context is non-null (me.organization)
+[CONSOLE] No unhandled exceptions during PO validation","PO field accepts empty value when required; no length validation; errors do not clear after correction","none","Coverage Gap Analysis","Generated"
+"CHK-069","B2B Checkout - PO Number Field Visible and Saved","Checkout > B2B > PO Number","High","BL-CHK-001","ECL-7.1, BL-ORD-001","User logged in as B2B org buyer; items in cart; PO number field configured for the store","url={{FRONT_URL}}
+user={{ORG_USER_EMAIL}}
+password={{ORG_USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in as B2B buyer {{ORG_USER_EMAIL}}
+[ACT] add product to cart
+[NAV] navigate to {{FRONT_URL}}/cart
+[ACT] proceed to checkout
+[ASSERT] verify PO Number field is visible in checkout form
+[ACT] enter PO number 'PO-TEST-12345'
+[ACT] complete checkout (address + shipping + payment)
+[WAIT] wait for order confirmation
+[ASSERT] verify PO number 'PO-TEST-12345' displayed on order confirmation page
+[NAV] navigate to order details in account
+[ASSERT] verify PO number shown in order details","[DOM] PO Number input field visible at checkout
+[DOM] PO number displayed on confirmation page
+[STATE] PO number persisted and visible in order details","[API] createOrderFromCart includes purchaseOrderNumber field
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","PO Number field missing for B2B buyer; PO number not saved with order; PO number not shown on confirmation; field shown for non-B2B users","Cancel test order via admin","Coverage Gap Analysis","Manual"
+"CHK-070","B2B Checkout - PO Number Optional (Proceeds Without)","Checkout > B2B > PO Number","Medium","BL-CHK-001","ECL-7.1","User logged in as B2B org buyer; PO number field is optional","url={{FRONT_URL}}
+user={{ORG_USER_EMAIL}}
+password={{ORG_USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in as B2B buyer
+[ACT] add product to cart and proceed to checkout
+[ASSERT] verify PO Number field is visible but not marked as required
+[ACT] leave PO Number field empty
+[ACT] complete checkout
+[WAIT] wait for order confirmation
+[ASSERT] verify order placed successfully without PO number
+[ASSERT] verify no validation error for empty PO field","[STATE] checkout completes without PO number when field is optional
+[DOM] no validation error on empty PO field
+[DOM] order confirmation reached","[API] createOrderFromCart succeeds with empty/null purchaseOrderNumber
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","checkout blocked without PO number; validation error on optional field; order fails to create","Cancel test order via admin","Coverage Gap Analysis","Manual"
+"CHK-071","B2B Checkout - Order Appears in Organization Order History","Checkout > B2B > Order History","High","BL-CHK-001","ECL-7.1, BL-ORD-001","User logged in as B2B org buyer; order placed via B2B checkout","url={{FRONT_URL}}
+user={{ORG_USER_EMAIL}}
+password={{ORG_USER_PASSWORD}}
+admin_url={{ADMIN_URL}}","[NAV] navigate to {{FRONT_URL}} and log in as B2B buyer
+[ACT] add product to cart and complete full checkout
+[WAIT] wait for order confirmation; note the order number
+[NAV] navigate to organization order history page
+[ASSERT] verify the new order appears in the organization order list
+[ASSERT] verify order details accessible from org order history
+[NAV] navigate to {{ADMIN_URL}}
+[ACT] search for the order by number
+[ASSERT] verify order is associated with the B2B organization","[STATE] order visible in org order history (not just personal)
+[DOM] order listed in organization orders section
+[DOM] order details page accessible","[API] searchOrders with organizationId returns the order
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","order missing from org history; order only in personal history; order not linked to organization in admin","Cancel test order via admin","Coverage Gap Analysis","Manual"
+"CHK-072","B2B Checkout - Cost Center/Department Field","Checkout > B2B > Cost Center","Low","BL-CHK-001","ECL-7.1","User logged in as B2B org buyer; cost center/department field configured","url={{FRONT_URL}}
+user={{ORG_USER_EMAIL}}
+password={{ORG_USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in as B2B buyer
+[ACT] add product to cart and proceed to checkout
+[ASSERT] verify cost center or department field is visible if configured
+[ACT] select or enter a cost center value
+[ACT] complete checkout
+[ASSERT] verify cost center value appears on order confirmation","[DOM] cost center field visible at checkout (if configured)
+[STATE] selected cost center persisted with order","[API] order payload includes cost center metadata
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","cost center field missing when configured; value not saved; field shown when not configured","Cancel test order via admin","Coverage Gap Analysis","Manual"

@@ -16,11 +16,11 @@
 ```bash
 npm install              # Install dependencies
 npm run env:check        # Verify all required env vars (33 total)
-npm run ci:smoke         # Smoke tests only (suite 01)
-npm run ci:critical      # P0 suites (01, 06, 08, 14)
-npm run ci:frontend      # Frontend suites (01-13, 35-36, 41)
-npm run ci:backend       # Backend suites (14-34, 37-40, 42)
-npm run ci:full          # Full regression (all 45 suites)
+npm run ci:smoke         # Smoke tests only (suite 042)
+npm run ci:critical      # P0 suites (042, 039, 044, 049)
+npm run ci:frontend      # Frontend-layer suites
+npm run ci:backend       # Backend-layer suites
+npm run ci:full          # Full regression (all 79 suites)
 npm run ci:regression    # Run CI regression via Claude Agent SDK
 npm run ci:cycle         # Full cycle: sync → lifecycle → regression
 npm run ci:coverage      # Coverage generation pipeline
@@ -46,7 +46,7 @@ Create `.env` (33 vars). Validate: `npm run env:check`. Access: `import { env } 
 ├── config/               # Playwright MCP configs + test-suites.json manifest
 ├── ci/                   # CI regression — Docker + Claude Agent SDK (gitignored)
 ├── docs/prompts/         # LLM prompt templates
-├── regression/suites/    # 45 CSV suites (~2,271 cases): Frontend/ + Backend/
+├── regression/suites/    # 79 CSV suites (~2,400 cases) in 33 module directories
 ├── tests/                # Test cases by sprint/JIRA ticket
 ├── reports/              # Bug reports + regression reports
 ├── test-data/            # Orgs, search queries, uploads

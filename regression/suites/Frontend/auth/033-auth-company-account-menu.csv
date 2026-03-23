@@ -1,0 +1,185 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"AUTH-029","Account Menu - Purchasing Group Structure","Authentication > Account Menu","Critical","BL-AUTH-001","","User logged in with account access; storefront account section accessible","url={{FRONT_URL}}/sign-in;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Log in with valid credentials
+[NAV] Navigate to account section via user icon or 'My Account' link
+[ASSERT] Left rail navigation menu visible
+[ASSERT] 'Purchasing' group header visible
+[ASSERT] 'Dashboard' link present under Purchasing
+[ASSERT] 'Orders' link present under Purchasing
+[ASSERT] 'Lists' link present under Purchasing
+[ASSERT] 'Saved for Later' link present under Purchasing","[DOM] 'Purchasing' group label visible in left rail
+[DOM] 'Dashboard' link present under Purchasing
+[DOM] 'Orders' link present under Purchasing
+[DOM] 'Lists' link present under Purchasing
+[DOM] 'Saved for Later' link present under Purchasing
+[DOM] Items appear in correct order","[CONSOLE] no TypeError or JS errors
+[NETWORK] Account page loads with HTTP 200","Account page inaccessible after login; Purchasing group missing; any expected link absent; console TypeError","Logout after test","VCST-4589","Manual"
+"AUTH-030","Account Menu - User Group Structure","Authentication > Account Menu","Critical","BL-AUTH-001","","User logged in; personal account (without org)","url={{FRONT_URL}}/sign-in;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Log in with valid personal account credentials
+[NAV] Navigate to account section
+[ASSERT] Left rail navigation menu visible
+[ASSERT] 'User' group header visible
+[ASSERT] 'Profile' link present under User
+[ASSERT] 'Addresses' link present under User (personal accounts only)
+[ASSERT] 'Change Password' link present under User
+[ASSERT] 'Saved Credit Cards' link present under User","[DOM] 'User' group label visible in left rail
+[DOM] 'Profile' link under User group
+[DOM] 'Addresses' link under User group (personal account only)
+[DOM] 'Change Password' link under User group
+[DOM] 'Saved Credit Cards' link under User group","[CONSOLE] no TypeError or JS errors","User group header missing; any expected link absent; Addresses link visible for org user (known expected behavior: hidden for B2B); console TypeError","Logout after test","VCST-4589","Manual"
+"AUTH-031","Account Menu - Group Headers Are Non-Clickable","Authentication > Account Menu","High","BL-AUTH-001","","User logged in; account menu visible","url={{FRONT_URL}}/sign-in;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to account section after login
+[ACT] Click on 'Purchasing' group header text
+[ASSERT] No navigation occurs
+[ACT] Click on 'User' group header text
+[ASSERT] No navigation occurs
+[ASSERT] Cursor style on group headers is default (not pointer)","[STATE] Clicking 'Purchasing' header does not navigate
+[STATE] Clicking 'User' header does not navigate
+[DOM] Group header cursor style is 'default' not 'pointer'
+[DOM] Group headers have no href or are not <a> elements","[CONSOLE] no TypeError or JS errors","Group header click triggers navigation; headers styled as links with pointer cursor; console TypeError","Logout after test","VCST-4589","Manual"
+"AUTH-032","Account Menu - All Navigation Items Route Correctly","Authentication > Account Menu","High","BL-AUTH-001","","User logged in; account menu visible","url={{FRONT_URL}}/sign-in;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to account section after login
+[ACT] Click 'Dashboard' under Purchasing
+[ASSERT] Dashboard page loads
+[ACT] Click 'Orders' under Purchasing
+[ASSERT] Order History page loads
+[ACT] Click 'Lists' under Purchasing
+[ASSERT] Lists page loads
+[ACT] Click 'Saved for Later' under Purchasing
+[ASSERT] Saved for Later page loads
+[ACT] Click 'Profile' under User
+[ASSERT] Profile page loads
+[ACT] Click 'Addresses' under User
+[ASSERT] Addresses page loads
+[ACT] Click 'Change Password' under User
+[ASSERT] Change Password page loads
+[ACT] Click 'Saved Credit Cards' under User
+[ASSERT] Saved Credit Cards page loads","[NAV] Each menu item routes to its correct page
+[DOM] Page heading or title confirms correct destination for each
+[DOM] Left rail navigation remains visible after each navigation
+[DOM] Active item is highlighted on destination page","[CONSOLE] no TypeError or JS errors","Any menu item routes to wrong page; 404 or /error page after click; left rail disappears after navigation; console TypeError","Logout after test","VCST-4589","Manual"
+"AUTH-033","Account Menu - Active State Highlighting","Authentication > Account Menu","Medium","BL-AUTH-001","","User logged in; navigating between account pages","url={{FRONT_URL}}/sign-in;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to account section after login
+[ACT] Click 'Orders' in Purchasing group
+[ASSERT] 'Orders' item is highlighted/active in left rail
+[ASSERT] Other items are not highlighted
+[ACT] Click 'Profile' in User group
+[ASSERT] 'Profile' item is now highlighted
+[ASSERT] 'Orders' item is no longer highlighted","[DOM] Active item has distinct visual style (bold; border; or background)
+[DOM] Only one menu item is active at a time
+[STATE] Active state updates correctly on each navigation","[CONSOLE] no TypeError or JS errors","Multiple items highlighted simultaneously; active state not updating after navigation; no visual distinction for active item; console TypeError","Logout after test","VCST-4589","Manual"
+"AUTH-034","Account Menu - Mobile Responsive Layout","Authentication > Account Menu > Mobile","High","BL-AUTH-001","","Mobile viewport set to 375x667; user logged in","url={{FRONT_URL}}/sign-in;email={{USER_EMAIL}};password={{USER_PASSWORD}};viewport=375x667","[NAV] Set browser viewport to 375x667 pixels
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Log in with valid credentials
+[NAV] Navigate to account section
+[ASSERT] Account menu accessible on mobile (hamburger; drawer; or tabs)
+[ACT] Open mobile menu
+[ASSERT] Purchasing and User group structures visible
+[ACT] Navigate to 'Orders' via mobile menu
+[ASSERT] Orders page loads correctly on mobile","[DOM] Account menu accessible on 375px viewport
+[DOM] Grouped structure (Purchasing; User) maintained on mobile
+[DOM] Touch targets minimum 44x44px
+[STATE] Mobile menu opens and closes correctly
+[NAV] Navigation from mobile menu routes correctly","[CONSOLE] no TypeError or JS errors","Account menu inaccessible on mobile; group structure lost on mobile; touch targets below 44px; navigation from mobile menu broken; console TypeError","Logout after test","VCST-4589","Manual"
+"AUTH-035","Members Page Display","Authentication > Company Members","Critical","BL-B2B-001","","User logged in as company Admin or Maintainer","url={{FRONT_URL}}/company/members;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Log in as company Admin or Maintainer
+[NAV] Navigate to {{FRONT_URL}}/company/members or via Company > Members in account menu
+[WAIT] Wait for member list to load","[DOM] /company/members page loads without error
+[DOM] Member list displays all company members
+[DOM] Each member row shows: full name; email address; role (Buyer/Admin); status (Active/Blocked)
+[STATE] Own account is visible in the list","[CONSOLE] no TypeError or JS errors
+[NETWORK] GET /company/members returns HTTP 200","Page returns 403 or 404; member list empty when members exist; member data columns missing; console TypeError","Logout after test","Coverage Gap Analysis","Automated"
+"AUTH-036","Invite Member - Buyer Role","Authentication > Company Members","Critical","BL-B2B-001","ECL-14.1","Logged in as company Admin; on Members page","url={{FRONT_URL}}/company/members;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}};inviteEmail=invite+buyer+{{timestamp}}@example.com","[NAV] Navigate to {{FRONT_URL}}/sign-in and log in as company Admin
+[NAV] Navigate to {{FRONT_URL}}/company/members
+[ACT] Click 'Invite Member' button
+[ACT] Fill invitation form 'Email': invite+buyer+{{timestamp}}@example.com
+[ACT] Select role: 'Buyer'
+[ACT] Submit the invitation form
+[WAIT] Wait for success confirmation
+[ASSERT] Success message shown
+[ASSERT] Invited email appears as pending in member list (if applicable)","[DOM] 'Invite Member' button visible for Admin users
+[DOM] Invitation form accepts email and role selection
+[DOM] Role options include at minimum: Buyer; Admin
+[DOM] Success message 'Invitation sent' or similar shown after submit
+[STATE] Pending invitation visible in member list","[API] mutation errors[] is empty
+[EMAIL] Invited email receives invitation email
+[CONSOLE] no TypeError or JS errors","Invite button missing for Admin; role options absent; mutation returns errors[]; no success message; console TypeError","Remove invited member after test","Coverage Gap Analysis","Automated"
+"AUTH-037","Invite Member - Admin Role","Authentication > Company Members","High","BL-B2B-001","ECL-14.1","Logged in as company Admin; on Members page","url={{FRONT_URL}}/company/members;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}};inviteEmail=invite+admin+{{timestamp}}@example.com","[NAV] Navigate to {{FRONT_URL}}/sign-in and log in as company Admin
+[NAV] Navigate to {{FRONT_URL}}/company/members
+[ACT] Click 'Invite Member'
+[ACT] Fill invitation form 'Email': invite+admin+{{timestamp}}@example.com
+[ACT] Select role: 'Admin'
+[ACT] Submit invitation
+[WAIT] Wait for success confirmation
+[ASSERT] Invited Admin appears in member list after accepting invitation
+[ASSERT] New Admin can access member management features","[DOM] Invitation with Admin role can be sent successfully
+[STATE] After accepting: new member appears in list with 'Admin' role
+[STATE] New Admin can invite others and manage members
+[STATE] New Admin cannot exceed own permission scope","[API] mutation errors[] is empty
+[EMAIL] Invited Admin email receives invitation
+[CONSOLE] no TypeError or JS errors","Admin role invitation blocked; mutation returns errors[]; new Admin lacks admin permissions after invite; console TypeError","Remove invited admin member after test","Coverage Gap Analysis","Automated"
+"AUTH-038","Edit Member Role","Authentication > Company Members","High","BL-B2B-001","ECL-14.1","Logged in as company Admin; at least one Buyer member exists","url={{FRONT_URL}}/company/members;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in and log in as company Admin
+[NAV] Navigate to {{FRONT_URL}}/company/members
+[ACT] Locate a member with 'Buyer' role
+[ACT] Click Edit or role change option next to that member
+[ACT] Change role from 'Buyer' to 'Admin'
+[ACT] Save the change
+[WAIT] Wait for member list to update
+[ASSERT] Member role shows 'Admin' in list
+[ASSERT] Affected member's permissions updated on next action","[DOM] Edit/role-change option available per member row
+[DOM] Role selector shows available roles (Buyer; Admin)
+[STATE] Saving updates the member's role in list immediately
+[STATE] Changed member gains Admin permissions","[API] mutation errors[] is empty
+[CONSOLE] no TypeError or JS errors","Role edit option missing; mutation returns errors[]; role not updated in list after save; permissions not updated; console TypeError","Revert member role to Buyer after test","Coverage Gap Analysis","Automated"
+"AUTH-039","Block Member","Authentication > Company Members","High","BL-B2B-001; BL-B2B-002","ECL-14.1","Logged in as company Admin; at least one active Buyer member exists","url={{FRONT_URL}}/company/members;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in and log in as company Admin
+[NAV] Navigate to {{FRONT_URL}}/company/members
+[ACT] Locate an active Buyer member
+[ACT] Click Block or Deactivate option for that member
+[ACT] Confirm the block action in the dialog
+[WAIT] Wait for status to update
+[ASSERT] Member status shows 'Blocked' in list
+[NAV] Attempt to log in as the blocked member on {{FRONT_URL}}/sign-in
+[ASSERT] Login is rejected with blocked account error","[DOM] Block/Deactivate option available for non-Admin members
+[DOM] Confirmation dialog appears before blocking
+[STATE] After confirmation: member status changes to 'Blocked' in list
+[DOM] Blocked member login error: 'Your account has been blocked. Contact your administrator.'
+[STATE] Blocked member's existing sessions invalidated","[API] mutation errors[] is empty
+[NETWORK] POST /connect/token returns 4xx for blocked member
+[CONSOLE] no TypeError or JS errors","Block option missing; mutation returns errors[]; member status not updated after block; blocked member can still log in; console TypeError","Unblock member after test to restore state","Coverage Gap Analysis","Automated"
+"AUTH-040","Unblock Member","Authentication > Company Members","High","BL-B2B-001; BL-B2B-002","ECL-14.1","Logged in as company Admin; at least one Blocked member exists","url={{FRONT_URL}}/company/members;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in and log in as company Admin
+[NAV] Navigate to {{FRONT_URL}}/company/members
+[ACT] Locate a Blocked member
+[ACT] Click Unblock or Activate option for that member
+[ACT] Confirm the unblock action
+[WAIT] Wait for status to update
+[ASSERT] Member status returns to 'Active' in list
+[NAV] Attempt to log in as the previously blocked member on {{FRONT_URL}}/sign-in
+[ASSERT] Login succeeds","[DOM] Unblock/Activate option visible for Blocked members
+[STATE] After unblock: member status returns to 'Active' in list
+[STATE] Previously blocked member can now sign in successfully
+[STATE] Member's data and history preserved after unblock","[API] mutation errors[] is empty
+[NETWORK] POST /connect/token returns HTTP 200 after unblock
+[CONSOLE] no TypeError or JS errors","Unblock option missing; mutation returns errors[]; status not updated after unblock; member still cannot log in after unblock; console TypeError","none","Coverage Gap Analysis","Automated"
+"AUTH-041","Filter Members by Role","Authentication > Company Members","Medium","BL-B2B-001","","Logged in as company Admin; member list has both Buyer and Admin members","url={{FRONT_URL}}/company/members;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in and log in as company Admin
+[NAV] Navigate to {{FRONT_URL}}/company/members
+[ACT] Locate role filter control (dropdown; tabs; or checkbox)
+[ACT] Filter by role 'Buyer'
+[ASSERT] Only Buyer members shown
+[ACT] Filter by role 'Admin'
+[ASSERT] Only Admin members shown
+[ACT] Clear filter
+[ASSERT] All members shown","[DOM] Role filter control present on Members page
+[STATE] Filtering by 'Buyer' shows only Buyer members
+[STATE] Filtering by 'Admin' shows only Admin members
+[DOM] Member count updates to reflect applied filter
+[STATE] Clearing filter restores full member list","[CONSOLE] no TypeError or JS errors
+[NETWORK] Members endpoint returns filtered results","Filter control missing; filter has no effect on list; clearing filter fails to restore full list; console TypeError","none","Coverage Gap Analysis","Automated"
+"AUTH-042","Search Members","Authentication > Company Members","Medium","BL-B2B-001","","Logged in as company Admin; at least 5 members with distinct names","url={{FRONT_URL}}/company/members;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in and log in as company Admin
+[NAV] Navigate to {{FRONT_URL}}/company/members
+[ACT] Locate search input field
+[ACT] Type part of a member's name (at least 3 characters)
+[WAIT] Wait for results to filter
+[ASSERT] Member list updates dynamically to show matching results
+[ACT] Clear search field
+[ASSERT] Full member list restored","[DOM] Search input field present on Members page
+[STATE] Typing filters member list dynamically (live or on Enter)
+[STATE] Search matches on name and/or email
+[DOM] No-results state shown if no members match
+[STATE] Clearing search restores complete member list","[CONSOLE] no TypeError or JS errors","Search input missing; search has no filtering effect; clearing search does not restore list; console TypeError","none","Coverage Gap Analysis","Automated"

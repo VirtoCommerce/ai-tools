@@ -1,0 +1,133 @@
+ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
+WL-001,Check White Labeling widget,Widget,Functional,High,2m,White Labeling module installed,"1. Navigate to Admin Dashboard
+2. Locate White Labeling widget","White Labeling widget displayed with current settings summary",C384970,Not Automated
+WL-002,Set theme presets,Theme,Functional,High,3m,White Labeling module installed,"1. Navigate to White Labeling settings
+2. Select a theme preset
+3. Save","Theme preset applied; colors change accordingly",C384973,Not Automated
+WL-003,Upload custom logo - allowed extensions,Logo,Functional,Critical,3m,White Labeling module enabled,"1. Navigate to White Labeling
+2. Upload logo with allowed file extension (PNG/SVG/JPG)
+3. Save","Custom logo uploaded and displayed",C384971,Not Automated
+WL-004,Upload logo - rejected for invalid extension,Logo,Negative,Medium,2m,White Labeling module enabled,"1. Attempt to upload logo with non-allowed extension","Upload rejected with validation message",C384980,Not Automated
+WL-005,Upload favicon,Favicon,Functional,High,3m,White Labeling module enabled,"1. Navigate to White Labeling
+2. Upload favicon
+3. Save","Favicon uploaded and displayed in browser tab",C384972,Not Automated
+WL-006,Reset branding to defaults,Settings,Functional,Medium,2m,Custom branding applied,"1. Click Reset to restore defaults","Branding restored to default theme/logo/favicon",C384977,Not Automated
+WL-007,Clear all custom branding,Settings,Functional,Medium,2m,Custom branding applied,"1. Click Clear to remove customization","All custom branding removed",C384978,Not Automated
+WL-008,Per-organization footer links - add parent links,Organization Branding,Functional,High,3m,Multiple organizations exist; WL enabled,"1. Navigate to Organization settings
+2. Add parent footer links for Organization1
+3. Save","Parent footer links created for organization",C385322,Not Automated
+WL-009,Per-organization footer links - add children links,Organization Branding,Functional,Medium,3m,Parent footer links exist,"1. Add children footer links under parent
+2. Save","Child footer links nested under parent",C385323,Not Automated
+WL-010,Footer links and main menu links returned in GraphQL query,Organization Branding,Functional,Critical,4m,Footer and main menu links configured for organization,"1. Query white labeling settings via GraphQL with both footerLinks and mainMenuLinks fields
+2. Verify response structure
+3. Verify hierarchical data","GraphQL query returns correct footer link hierarchy and main menu links hierarchy with priority ordering",C385324 VCST-4637,Not Automated
+WL-011,Organization-specific logo and favicon,Organization Branding,Functional,High,5m,Organization with custom branding,"1. Set custom logo/favicon for Organization1
+2. Sign in under Organization1 account
+3. Verify branding displayed","Organization-specific logo and favicon displayed for org users",C385326 C384974,Not Automated
+WL-012,White Labeling Enabled = OFF shows default branding,Store Settings,Functional,Medium,3m,Custom branding exists,"1. Set White Labeling Enabled = OFF
+2. Navigate to storefront
+3. Verify branding","Default platform branding displayed when WL disabled",C384975,Not Automated
+WL-013,White Labeling Enabled = ON shows custom branding,Store Settings,Functional,Medium,3m,Custom branding exists,"1. Set White Labeling Enabled = ON
+2. Navigate to storefront
+3. Verify branding","Custom logo/favicon/colors displayed when WL enabled",C384976,Not Automated
+WL-014,Store-level White Labeling OFF,Store Settings,Functional,Medium,3m,Store settings accessible,"1. Set store-level White Labeling = OFF
+2. Verify storefront","Store-level WL override disables custom branding for that store",C384979,Not Automated
+WL-015,Enable thumbnail job for favicons,Background Jobs,Functional,Medium,3m,White Labeling installed,"1. Enable thumbnail job
+2. Add new run for favicon generation
+3. Verify favicons generated","Favicon generation job runs and produces favicons in all required sizes",C385320 C385321,Not Automated
+WL-016,Verify MainMenuLinkListName field exists in database,Database Schema,Functional,Critical,2m,Database migrations applied,"1. Connect to QA database
+2. Query WhiteLabelingSettings table schema
+3. Verify MainMenuLinkListName column exists
+4. Verify column type is varchar(256)
+5. Verify column is nullable","MainMenuLinkListName column exists with correct type and nullable constraint",VCST-4637 PR#21,Not Automated
+WL-017,Test GraphQL query returns mainMenuLinks field,GraphQL xAPI,Functional,Critical,3m,"Backend deployed with PR #21; Test organization configured","1. Navigate to GraphQL playground
+2. Execute white labeling settings query with mainMenuLinks field
+3. Verify response contains mainMenuLinks array","Query executes successfully; mainMenuLinks field returned with title/url/priority; hierarchical structure supported",VCST-4637 PR#21,Not Automated
+WL-018,Test mainMenuLinks with hierarchical structure,GraphQL xAPI,Functional,High,3m,"Link list with parent + child links created","1. Create link list with parent (Products) and children (Laptops, Phones)
+2. Set organization MainMenuLinkListName
+3. Execute GraphQL query
+4. Verify response structure","Parent link returned; Child links nested under childItems; Correct priority order",VCST-4637 PR#21,Not Automated
+WL-019,Test mainMenuLinks when MainMenuLinkListName is empty,GraphQL xAPI,Functional,High,2m,Organization with MainMenuLinkListName = NULL,"1. Configure organization with MainMenuLinkListName = NULL
+2. Execute GraphQL query
+3. Verify mainMenuLinks field","Query executes successfully; mainMenuLinks is empty array or null; No error",VCST-4637 PR#21,Not Automated
+WL-020,Test mainMenuLinks with non-existent link list name,GraphQL xAPI,Negative,Medium,2m,Organization exists,"1. Set organization MainMenuLinkListName = non-existent-link-list
+2. Execute GraphQL query
+3. Verify response","Query executes without error; mainMenuLinks is empty; Graceful handling",VCST-4637 PR#21,Not Automated
+WL-021,Test query handler retrieves correct org-specific main menu,Query Handler,Functional,High,4m,"Two organizations configured with different MainMenuLinkListName","1. Create two different link lists
+2. Configure Org A and Org B with different values
+3. Query with Org A context
+4. Query with Org B context
+5. Verify results","Org A query returns Org A main menu; Org B query returns Org B main menu; No cross-contamination",VCST-4637 PR#21,Not Automated
+WL-022,Test backward compatibility - footerLinks still works,GraphQL xAPI,Regression,Critical,3m,Organization with existing FooterLinkListName,"1. Query white labeling settings
+2. Verify footerLinks field returned
+3. Verify footer data correct","footerLinks field returned; Data matches FooterLinkListName; No breaking changes",VCST-4637 PR#21,Not Automated
+WL-023,Test GraphQL query performance with mainMenuLinks,Performance,Performance,Medium,3m,Organization with main menu and footer configured,"1. Execute query 10 times
+2. Measure average response time
+3. Compare with baseline","Average response time < 500ms; No significant performance degradation",VCST-4637 PR#21,Not Automated
+WL-024,Verify Admin SPA displays main menu link list field,Admin UI,Functional,High,3m,"Admin SPA deployed; Admin user logged in","1. Navigate to Organization White Labeling settings
+2. Verify Main menu link list field exists
+3. Verify field label and placeholder","Field displayed; Label: Main menu link list; Placeholder: Enter link list name...",VCST-4637 PR#21,Not Automated
+WL-025,Configure MainMenuLinkListName via Admin SPA,Admin UI,Functional,Critical,3m,"Admin SPA accessible; Link list exists","1. Navigate to Organization White Labeling settings
+2. Enter main-menu-test in Main menu link list field
+3. Save settings
+4. Verify success message","Value saves successfully; Success message displayed; Value persisted",VCST-4637 PR#21,Not Automated
+WL-026,Verify MainMenuLinkListName persisted after save,Admin UI,Functional,High,2m,MainMenuLinkListName configured,"1. Configure MainMenuLinkListName
+2. Save settings
+3. Refresh page
+4. Navigate back to White Labeling settings
+5. Verify field value","Field displays saved value; Value persisted; No data loss",VCST-4637 PR#21,Not Automated
+WL-027,Clear MainMenuLinkListName value,Admin UI,Functional,Medium,2m,MainMenuLinkListName configured,"1. Navigate to White Labeling settings
+2. Clear Main menu link list field
+3. Save settings
+4. Verify value cleared","Field clears successfully; Value set to NULL; Storefront falls back to default",VCST-4637 PR#21,Not Automated
+WL-028,Test Admin UI localization - English,Localization,Functional,Medium,1m,Admin SPA language set to English,"1. Navigate to White Labeling settings
+2. Verify field label and placeholder","Label: Main menu link list; Placeholder: Enter link list name...",VCST-4637 PR#21,Not Automated
+WL-029,Verify storefront displays per-org main menu links,Storefront Rendering,Functional,Critical,3m,"Organization configured; User logged in","1. Sign in as organization member
+2. Navigate to storefront homepage
+3. Verify main menu displays
+4. Verify links match configured link list","Main menu displays; Links match titles and URLs; Correct priority order",VCST-4637 PR#21,Not Automated
+WL-030,Verify hierarchical main menu rendering (parent + children),Storefront Rendering,Functional,High,4m,Link list with hierarchical structure,"1. Create link list with parent + child links
+2. Configure organization
+3. Sign in as organization member
+4. Hover over parent menu item
+5. Verify dropdown shows children","Parent displays; Hovering reveals dropdown; Dropdown shows child links; Links clickable",VCST-4637 PR#21,Not Automated
+WL-031,Verify main menu on mobile (responsive design),Mobile,Functional,High,4m,"Organization configured; Mobile device or dev tools","1. Open storefront on mobile
+2. Sign in as organization member
+3. Verify main menu displays
+4. Test hamburger menu
+5. Verify links accessible","Main menu renders correctly; Links accessible; Touch-friendly; No UI issues",VCST-4637 PR#21,Not Automated
+WL-032,Verify main menu on desktop (Chrome),Browser Compatibility,Functional,Medium,3m,Organization configured,"1. Open storefront in Chrome
+2. Sign in as organization member
+3. Verify main menu displays
+4. Test hover states and dropdowns","Main menu renders correctly; Hover states work; Dropdowns display; No console errors",VCST-4637 PR#21,Not Automated
+WL-033,Verify main menu accessibility (keyboard navigation),Accessibility,Functional,High,4m,Organization configured,"1. Navigate to storefront
+2. Sign in
+3. Use Tab to navigate menu
+4. Verify focus indicators
+5. Use Enter/Space to activate
+6. Use Arrow keys for dropdowns","All menu items keyboard-accessible; Focus indicators visible; WCAG 2.1 AA compliant",VCST-4637 PR#21,Not Automated
+WL-034,Test switching between organizations updates main menu,Multi-Organization,Functional,Critical,5m,"Two organizations configured; User member of both","1. Sign in as Org A member
+2. Verify Org A main menu
+3. Switch to Org B
+4. Verify Org B main menu
+5. Switch back to Org A
+6. Verify Org A main menu","Org A: Org A menu; Org B: Org B menu; Switching updates dynamically; No cross-contamination",VCST-4637 PR#21,Not Automated
+WL-035,Test main menu + footer both update on org switch,Multi-Organization,Functional,High,4m,Two organizations with different configs,"1. Sign in as Org A member
+2. Verify Org A main menu and footer
+3. Switch to Org B
+4. Verify Org B main menu and footer","Both main menu and footer update; Updates simultaneous; No inconsistent state",VCST-4637 PR#21,Not Automated
+WL-036,Verify existing footer-only configs still work,Backward Compatibility,Regression,Critical,3m,"Organization with pre-existing FooterLinkListName; MainMenuLinkListName = NULL","1. Identify organization with footer config
+2. Sign in as organization member
+3. Verify footer displays
+4. Verify no errors","Footer displays correctly; Existing configs unaffected; No migration required",VCST-4637 PR#21,Not Automated
+WL-037,Verify existing logo configs still work,Backward Compatibility,Regression,High,2m,Organization with custom logo,"1. Sign in as organization member
+2. Verify logo displays in header
+3. Verify logo unchanged","Custom logo displays correctly; No changes to logo functionality",VCST-4637 PR#21,Not Automated
+WL-038,Verify existing theme preset configs still work,Backward Compatibility,Regression,High,2m,Organization with custom theme preset,"1. Sign in as organization member
+2. Verify theme colors and styling
+3. Verify theme unchanged","Custom theme preset displays correctly; No changes to theme functionality",VCST-4637 PR#21,Not Automated
+WL-039,Verify store-level white labeling still works,Backward Compatibility,Regression,High,3m,Store-level white labeling configured,"1. Navigate to storefront without org context
+2. Verify store-level branding displays
+3. Verify no errors","Store-level white labeling unaffected; Fallback logic works",VCST-4637 PR#21,Not Automated
+WL-040,Verify GraphQL query without mainMenuLinks field still works,Backward Compatibility,Regression,High,2m,GraphQL playground accessible,"1. Execute white labeling query WITHOUT mainMenuLinks field
+2. Verify query executes successfully","Query executes without errors; Backward compatibility maintained (optional field)",VCST-4637 PR#21,Not Automated

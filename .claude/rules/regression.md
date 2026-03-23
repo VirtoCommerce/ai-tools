@@ -36,30 +36,75 @@ Load a prompt template from `docs/prompts/`, execute via MCP browser tools with 
 
 Central configuration for regression orchestration. Defines:
 - **Browser pool**: 3 slots (playwright-chrome, playwright-firefox, playwright-edge) with fallback chain
-- **Suite definitions**: 45 suites (19 frontend + 26 backend) with id, name, CSV file path, priority, test count, assigned agent type, and tags
-- **Selection groups**: `smoke` (01), `critical` (01,06,08,14), `release` (00), `sprint` (33 suites), `full` (all 45), `frontend` (01-13,35-36,41), `backend` (14-34,37-40,42)
+- **Suite definitions**: 79 suites in module-aligned subdirectories under `Frontend/` and `Backend/`, with id, name, CSV file path, priority, test count, assigned agent type, and tags
+- **Selection groups**: `smoke`, `critical`, `release`, `sprint`, `full`, `frontend`, `backend`, plus module-specific groups (`catalog`, `search`, `orders`, `auth`, `b2c`, `marketing`, `platform`, `bopis`, `payment`, `configurable-products`, `whitelabeling`, `purchase-flow`)
 - **Defaults**: max 3 parallel agents, 2 retries, 30s retry delay, HAR capture enabled
 
 ## Regression Test Suites
 
-45 modular suites + 1 master suite in `regression/suites/` (Frontend/ + Backend/) in enriched agent-native CSV format (`ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status`). Full definitions in `config/test-suites.json`. **Total: ~2,271 test cases** (~1,175 frontend + ~1,096 backend).
+79 suites in `regression/suites/` organized by module under `Frontend/` (40 suites) and `Backend/` (38 suites) + 1 release suite. Enriched agent-native CSV format. Full definitions in `config/test-suites.json`. **Total: ~2,400 test cases**.
 
-- **Suite 00** (`Frontend/00-full-regression-release.csv`): Master suite — 90 consolidated P0/P1 test cases for major releases
-- **Frontend** (suites 01-13, 35-36, 41): Smoke, Auth, Catalog, Cart (04a), Checkout (04b), Orders & Quotes (04c), BOPIS, Payment, GA4, Security, A11y, i18n, Perf, Browser Compat, B2C, White Labeling, Configurable Products, Coupons & Promotions
-- **Backend** (suites 14-34, 37-40, 42): Platform API, GraphQL xAPI, Catalog/Store/Pricing/Orders/Customer/Inventory/Marketing/Notifications/CMS/Search/Assets/Settings Admin, CSV Import/Export, Shipping, SEO, White Labeling, Push Messages, Image Tools, Returns, Contracts, Loyalty, Channels & Data Quality, xMarketing
-- **P0 suites**: 01 (Smoke), 06 (Payment), 08 (Security), 14 (Platform API)
+### Frontend Suites (40 suites, user-facing features & flows)
+
+| Directory | Suites | Tests | Description |
+|-----------|--------|-------|-------------|
+| `Frontend/auth/` | 031-033 | 68 | Login, registration, session, RBAC, company menu |
+| `Frontend/catalog/` | 001-003 | 70 | Navigation, product detail, filters |
+| `Frontend/search/` | 004-005 | 60 | Core search, filters & advanced |
+| `Frontend/cart/` | 028-030 | 77 | Core, validation/persistence, merge |
+| `Frontend/checkout/` | 011-013 | 64 | Flow, guest, B2B |
+| `Frontend/orders/` | 014-015 | 97 | Orders frontend, quotes |
+| `Frontend/payment/` | 039-041 | 65 | CyberSource, processors, cross-cutting |
+| `Frontend/bopis/` | 036-038 | 88 | Store selector, cart, checkout |
+| `Frontend/b2c/` | 006-010 | 166 | Organization, lists, members, variations/configs, bulk/ship/dashboard |
+| `Frontend/configurable-products/` | 072, 072b, 072c | 139 | UI, E2E scenarios, cross-cutting |
+| `Frontend/whitelabeling/` | 070-071 | 68 | Storefront, branding |
+| `Frontend/marketing/` | 077 | 54 | Coupons & promotions storefront |
+| `Frontend/cross-cutting/` | 042-048 | 172 | Smoke, GA4, security, a11y, i18n, performance, browser compat |
+
+### Backend Suites (38 suites, admin UI, modules & APIs)
+
+| Directory | Suites | Tests | Description |
+|-----------|--------|-------|-------------|
+| `Backend/platform/` | 020-021, 063 | 94 | Users/roles, dynamic properties, core settings |
+| `Backend/store/` | 034-035 | 65 | Management, rounding/email |
+| `Backend/catalog/` | 051, 053 | 63 | Products admin, categories admin |
+| `Backend/customer/` | 026-027 | 84 | Contacts, orgs & invites |
+| `Backend/pricing/` | 054-055 | 62 | Logic, management |
+| `Backend/inventory/` | 056 | 43 | Fulfillment centers, stock |
+| `Backend/marketing/` | 023-025 | 89 | Promotions, content, coupons/API |
+| `Backend/notifications/` | 057-058 | 53 | Templates, triggers |
+| `Backend/cms/` | 059-060 | 56 | Page management, design/content |
+| `Backend/orders/` | 017-019 | 90 | Management, payments, shipments admin |
+| `Backend/api/` | 049 | 33 | Platform REST API |
+| `Backend/graphql/` | 050 | 33 | GraphQL xAPI |
+| `Backend/search/` | 061 | 46 | Search indexing admin |
+| `Backend/configurable-products/` | 052 | 15 | Configurable products admin |
+| `Backend/whitelabeling/` | 067 | 40 | White labeling admin |
+| Other modules | various | ~213 | assets, channels, contracts, image-tools, import-export, loyalty, push-messages, returns, seo, shipping, xmarketing |
+
+- **Release suite**: `_release/080-full-regression-release.csv` (100 P0/P1 tests for major releases)
+- **P0 suites**: 042 (Smoke), 039 (CyberSource Payment), 044 (Security), 049 (Platform API)
 
 ### Selection Groups
 
 | Selection | Suites | Use Case |
 |-----------|--------|----------|
-| `smoke` | 01 | Daily validation before deployment |
-| `critical` | 01, 06, 08, 14 | P0 suites only |
-| `release` | 00 | Master suite for major releases |
-| `sprint` | 33 suites (01-06, 08, 14-27, 29-31, 35-39, 41-42) | Before sprint release |
-| `full` | All 45 | Before production release |
-| `frontend` | 01-13, 35-36, 41 (18 suites) | Frontend-only regression |
-| `backend` | 14-34, 37-40, 42 (26 suites) | Backend-only regression |
+| `smoke` | 042 | Daily validation before deployment |
+| `critical` | 042, 039, 044, 049 | P0 suites only |
+| `release` | 080 | Master suite for major releases |
+| `purchase-flow` | cart + checkout + orders-frontend + payment | Purchase flow regression |
+| `catalog` | 001-003, 051, 053 | Catalog module (frontend + admin) |
+| `search` | 004-005, 061 | Search module (frontend + admin) |
+| `orders` | 014-019 | Orders & quotes (frontend + admin) |
+| `auth` | 031-033 | Authentication module |
+| `b2c` | 006-010 | B2C features |
+| `marketing` | 023-025, 077 | Marketing module (admin + storefront) |
+| `platform` | 020-021, 049, 063 | Platform module |
+| `frontend` | All Frontend/ suites (40) | Frontend-only regression |
+| `backend` | All Backend/ suites (38) | Backend-only regression |
+| `sprint` | All P0 + P1 suites | Before sprint release |
+| `full` | All 79 suites | Before production release |
 
 ## CI Regression Testing
 
@@ -75,13 +120,13 @@ docker run --rm --shm-size=2gb --env-file .env \
   vc-regression
 ```
 
-Suite selection accepts the same group names as above, or comma-separated IDs (`01,04,06`). CI runs up to 3 suites in parallel (configurable via `MAX_PARALLEL`). Reports go to `reports/regression/ci-YYYY-MM-DD/` (markdown + JSON summary).
+Suite selection accepts group names (`smoke`, `critical`, `catalog`, `orders`, etc.) or comma-separated IDs (`042,039,049`). CI runs up to 3 suites in parallel (configurable via `MAX_PARALLEL`). Reports go to `reports/regression/ci-YYYY-MM-DD/` (markdown + JSON summary).
 
 **Note:** The CI `run-regression.ts` dynamically loads suite definitions from `config/test-suites.json` at startup. Selection groups are also defined in the manifest's `selections` block.
 
 **Scheduled Pipeline (GitHub Actions - `.github/workflows/regression.yml`):**
-- **Daily smoke**: Mon-Fri at 6:00 AM UTC — runs suite 01 ($5 budget)
-- **Weekly full regression**: Sunday at 2:00 AM UTC — runs all suites ($80 budget)
+- **Daily smoke**: Mon-Fri at 6:00 AM UTC — runs suite 042 ($5 budget)
+- **Weekly full regression**: Sunday at 2:00 AM UTC — runs all 79 suites ($80 budget)
 - **Manual trigger**: Any selection, any environment, any budget via `workflow_dispatch`
 
 **Teams Notifications:** After each pipeline run, `ci/notify-teams.ts` sends an Adaptive Card to the configured Teams webhook. Requires `TEAMS_WEBHOOK_URL` secret.

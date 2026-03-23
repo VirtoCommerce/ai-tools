@@ -1,30 +1,30 @@
 {
-  "runId": "REG-2026-03-23-1300",
-  "selection": "16",
-  "trigger": "manual /qa-regression — configurable products backend",
+  "runId": "REG-2026-03-23-1400",
+  "selection": "13",
+  "trigger": "manual /qa-regression — B2C Features (Corporate and multi-organizations)",
   "status": "in_progress",
-  "startedAt": "2026-03-23T13:00:00.000Z",
+  "startedAt": "2026-03-23T14:00:00.000Z",
   "completedAt": null,
   "environment": {
     "frontUrl": "https://vcst-qa-storefront.govirto.com",
     "backUrl": "https://vcst-qa.govirto.com"
   },
   "suites": {
-    "16": {
-      "name": "Catalog Admin Tests",
+    "13": {
+      "name": "B2C Features Tests",
       "status": "in_progress",
-      "browser": "playwright-edge",
-      "slot": 3,
+      "browser": "playwright-chrome",
+      "slot": 1,
       "batch": 1,
       "priority": "P1",
       "attempts": 1,
-      "outputFile": "reports/regression/REG-2026-03-23-1300/suite-16-results.json"
+      "outputFile": "reports/regression/REG-2026-03-23-1400/suite-13-results.json"
     }
   },
   "retryLog": [],
   "previousRun": {
-    "runId": "REG-2026-03-23-1200",
-    "status": "completed"
+    "runId": "REG-2026-03-23-1300",
+    "status": "in_progress"
   },
   "summary": null
 }

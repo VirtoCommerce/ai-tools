@@ -1,0 +1,317 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"ORD-001","Create new order","Orders > Order Management","Critical",,,"Admin logged in to Backend",,"1. Navigate to Orders module
+2. Click 'Add' or create new order
+3. Fill in order details (customer, store, items)
+4. Click 'Create'
+5. Verify order in list",,,,,"C169605",
+"ORD-002","View and edit order details","Orders > Order Management","High",,,"Admin logged in to Backend
+Order exists [ORD-001]",,"1. Navigate to Orders module
+2. Select and click on existing order
+3. Verify order details blade opens in editable format
+4. Change any fields
+5. Click 'Save'
+6. Reopen blade with Order details",,,,,"C169801",
+"ORD-003","Delete order","Orders > Order Management","High",,,"Admin logged in to Backend
+Order exists [ORD-001]",,"1. Navigate to Orders module
+2. Select order to delete
+3. Click 'Delete'
+4. Confirm deletion",,,,,"C169823",
+"ORD-004","Line items widget","Orders > Order Widgets","High",,,"Admin logged in to Backend
+Order exists with line items",,"1. Open order details
+2. Click on Line items widget
+3. Verify line item details display",,,,,"C169805",
+"ORD-005","Addresses widget","Orders > Order Widgets","High",,,"Admin logged in to Backend
+Order exists",,"1. Open order details
+2. Click on Addresses widget
+3. Verify shipping and billing addresses",,,,,"C169807",
+"ORD-006","Comments widget","Orders > Order Widgets","Medium",,,"Admin logged in to Backend
+Order exists",,"1. Open order details
+2. Click on Comments widget
+3. Add a comment
+4. Save",,,,,"C169808",
+"ORD-007","Dynamic properties widget","Orders > Order Widgets","Medium",,,"Admin logged in to Backend
+Order exists",,"1. Open order details
+2. Click on Dynamic properties widget
+3. Verify 'Manage dynamic properties' blade opens
+4. Modify a property value
+5. Save",,,,,"C169809",
+"ORD-008","Changes widget","Orders > Order Widgets","Medium",,,"Admin logged in to Backend
+Order exists with modifications",,"1. Open order details
+2. Click on Changes widget
+3. Verify change history",,,,,"C169806",
+"ORD-009","Get invoice","Orders > Order Management","Medium",,,"Admin logged in to Backend
+Order exists",,"1. Open order details
+2. Click 'Get Invoice'
+3. Verify PDF generation",,,,,"C169824",
+"ORD-010","Create new document","Orders > Order Management","High",,,"Admin logged in to Backend
+Order exists",,"1. Open order details
+2. Click 'Create new document'
+3. Select document type
+4. Fill in details
+5. Save",,,,,"C169822",
+"ORD-011","Create order with configuration items","Orders > Configurable Products","High",,,"Admin logged in to Backend
+Configurable products exist",,"1. Create an order with configuration items
+2. Verify order created
+3. Open line item details blade
+4. Verify View, Configuration, Discounts, Dynamic properties tabs",,,,,"C396953 C396954 C396955 C396956 C396957",
+"ORD-031","Create organization and Order Manager role","Orders > Employee Assignment","High",,,"Admin logged in to Backend",,"1. Create Organization1 with sub-organization
+2. Add employees to both organizations
+3. Create role 'Order Manager' with order permissions
+4. Assign role to employees",,,,,"C358272 C358243",
+"ORD-032","Assign employee from root organization as order responsible","Orders > Employee Assignment","High",,,"Admin logged in to Backend
+Organization with employees [ORD-031]",,"1. Open order details
+2. Assign employee1 from root Organization as order responsible
+3. Login as employee1
+4. Verify employee sees only assigned orders",,,,,"C358248 C358244",
+"ORD-033","Assign employee from sub-organization as order responsible","Orders > Employee Assignment","High",,,"Admin logged in to Backend
+Organization with sub-org and employees [ORD-031]",,"1. Open order details
+2. Assign employee1 from sub-organization as order responsible
+3. Login as employee1
+4. Verify employee sees only assigned orders",,,,,"C358250 C358268",
+"ORD-034","Update order assignment to different employee","Orders > Employee Assignment","Medium",,,"Admin logged in to Backend
+Order assigned to employee [ORD-032]",,"1. Open order details
+2. Change assignment to employee2 from root organization
+3. Verify assignment updated
+4. Change assignment to employee2 from sub-organization
+5. Verify assignment updated",,,,,"C358251 C358252",
+"ORD-035","Assign order to employee without order permission","Orders > Employee Assignment","Medium",,,"Admin logged in to Backend
+Employee without order permissions exists",,"1. Open order details
+2. Assign order to employee without permissions
+3. Verify behavior",,,,,"C358275",
+"ORD-036","Shipment assigned employee","Orders > Employee Assignment","Medium",,,"Admin logged in to Backend
+Employee assignments configured [ORD-031]",,"1. Open shipment document
+2. Assign employee from root organization
+3. Assign employee from sub-organization
+4. Verify assignments",,,,,"C358256 C358257",
+"ORD-037","Filter orders by assigned employee","Orders > Employee Assignment","Medium",,,"Admin logged in to Backend
+Orders assigned to employees",,"1. Open Orders module
+2. Add filter > 'Assigned to'
+3. Filter by employee from root organization
+4. Verify filtered results
+5. Filter by employee from sub-organization
+6. Verify filtered results",,,,,"C358254 C358255",
+"ORD-038","Validate order fields","Orders > Validation","Medium",,,"Admin logged in to Backend (API/Swagger)",,"1. Test order validation for fields: Number, CustomerId, CustomerName, StoreId, StoreName, ChannelId, OrganizationId, OrganizationName, EmployeeId, EmployeeName, SubscriptionId, SubscriptionNumber, LanguageCode, ShoppingCardId, PurchaseOrderNumber
+2. Submit invalid values for each field
+3. Verify validation errors",,,,,"C301875-C301889 C295632 C301874",
+"ORD-039","Validate payment fields","Orders > Validation","Medium",,,"Admin logged in to Backend (API/Swagger)",,"1. Test payment validation for fields: OrganizationId, OrganizationName, CustomerId, CustomerName, Purpose, GatewayCode, TaxType
+2. Submit invalid values for each field
+3. Verify validation errors",,,,,"C301890-C301896",
+"ORD-040","Search by keyword and term","Orders > Search","Medium",,,"Admin logged in to Backend
+Multiple orders exist
+Order indexing enabled",,"1. Navigate to Orders module
+2. Search by keyword
+3. Verify results
+4. Search by term
+5. Verify results",,,,,"C293761 C293762",
+"ORD-041","Search by date/time range","Orders > Search","Medium",,,"Admin logged in to Backend
+Multiple orders exist",,"1. Navigate to Orders module
+2. Set date/time range filter
+3. Verify filtered results",,,,,"C293764",
+"ORD-042","Order index widget and reindex","Orders > Search","Medium",,,"Admin logged in to Backend
+Order indexing enabled",,"1. Open order details
+2. Verify Index widget is visible
+3. Trigger reindex
+4. Verify reindex completes",,,,,"C293763 C293760",
+"ORD-043","Enable/Disable order index setting","Orders > Search","Medium",,,"Admin logged in to Backend",,"1. Open Settings > Orders
+2. Disable 'Order Index' > Save
+3. Open order > Verify Index widget hidden
+4. Enable 'Order Index' > Save
+5. Open order > Verify Index widget shown",,,,,"C293162 C293163",
+"ORD-044","Number template with datetime {0}","Orders > Number Generation","Medium",,,"Admin logged in to Backend",,"1. Open Settings > Orders > Order number template
+2. Set template: {0}
+3. Create new order
+4. Verify order number",,,,,"C380814",
+"ORD-045","Number template with sequential {1} and padded CO{1:D5}","Orders > Number Generation","Medium",,,"Admin logged in to Backend",,"1. Set template: {1} > Create two orders > Verify sequential numbers (1, 2)
+2. Set template: CO{1:D5} > Create two orders > Verify padded numbers (CO00001, CO00002)",,,,,"C380815 C380816",
+"ORD-046","Number template with date+padded and weekly reset","Orders > Number Generation","Medium",,,"Admin logged in to Backend",,"1. Set template: CO-{0:yyMMdd}-{1:D5} > Create orders > Verify format
+2. Set template: PO{0:yyMMdd}-{1:D5}@Weekly:1:10 > Create orders > Verify weekly reset",,,,,"C380817 C380818",
+"ORD-047","Notifications widget (view and refresh and resend)","Orders > Notifications","Medium",,,"Admin logged in to Backend
+Order with notifications exists",,"1. Open order details
+2. Click Notifications widget > Verify notifications display
+3. Click Refresh > Verify updated state
+4. Click Resend on a notification > Verify new email sent",,,,,"C292301 C292302 C292303",
+"ORD-048","Order paid/sent notification settings","Orders > Notifications","Medium",,,"Admin logged in to Backend",,"1. Enable 'Use order paid and order sent notifications'
+2. Process order through paid > sent workflow
+3. Verify notifications generated",,,,,"C357126",
+"ORD-049","Payment/shipment status changed notification settings","Orders > Notifications","Medium",,,"Admin logged in to Backend",,"1. Disable 'Use payments/shipments status changed notifications' > Change status > Verify no notification
+2. Enable setting > Change status > Verify notification sent",,,,,"C357127 C357150",
+"ORD-050","Add role with order permissions","Orders > Roles & Permissions","High",,,"Admin with permissions to create roles",,"1. Navigate to Security > Roles
+2. Click 'Add'
+3. Fill form and assign order-related permissions
+4. Click 'Create'",,,,,"C169802",
+"ORD-051","Assign order role to user","Orders > Roles & Permissions","High",,,"Admin with permissions to manage users
+Role with order permissions [ORD-050]",,"1. Navigate to Security > Users
+2. Select user
+3. Open Roles widget
+4. Click 'Assign' > Select role > Confirm",,,,,"C169803",
+"ORD-052","Permission > Access","Orders > Permissions","High",,,"Role_1 with orders:access permission
+Role_1 assigned to User_1",,"1. Login as User_1
+2. Verify Orders blade link shown
+3. Open Orders blade",,,,,"C241270",
+"ORD-053","Permission > Read","Orders > Permissions","High",,,"Role_1 with orders:read permission
+Role_1 assigned to User_1",,"1. Login as User_1
+2. Open Orders blade
+3. View order list",,,,,"C241273",
+"ORD-054","Permission > Create","Orders > Permissions","High",,,"Role_1 with orders:create permission
+Role_1 assigned to User_1",,"1. Login as User_1
+2. Create new document for order",,,,,"C241274",
+"ORD-055","Permission > Update","Orders > Permissions","High",,,"Role_1 with orders:update permission
+Role_1 assigned to User_1",,"1. Login as User_1
+2. Open order > Make changes > Save",,,,,"C241277",
+"ORD-056","Permission > Delete","Orders > Permissions","High",,,"Role_1 with orders:delete permission
+Role_1 assigned to User_1",,"1. Login as User_1
+2. Select order > Delete",,,,,"C241276",
+"ORD-057","Permission > Read prices and Update shipments","Orders > Permissions","High",,,"Role_1 with orders:read_prices and orders:update_shipments permissions
+Role_1 assigned to User_1",,"1. Login as User_1
+2. Verify prices for line items shown
+3. Verify shipment can be updated",,,,,"C241278 C358274",
+"ORD-058","Permission > API delete order (assigned/unassigned)","Orders > Permissions","Medium",,,"Employee1 with order permissions
+Order1 assigned to Employee1
+Order2 assigned to another employee
+Order3 does not exist",,"1. Delete Order1 (assigned to self) > Verify success
+2. Delete Order2 (assigned to another) > Verify behavior
+3. Delete Order3 (non-existent) > Verify error
+4. Delete combinations: Order1+2, Order2+3, Order1+2+3",,,,,"C360517-C360522",
+"ORD-059","Settings > Order/Shipment/Payment statuses","Orders > Settings","Medium",,,"Admin logged in to Backend",,"1. Open Settings > Orders
+2. Configure Customer order statuses
+3. Configure Shipment statuses
+4. Configure Payment statuses
+5. Save each",,,,,"C242170 C242171 C242172",
+"ORD-060","Settings > Number templates","Orders > Settings","Medium",,,"Admin logged in to Backend",,"1. Open Settings > Orders
+2. Configure Order number template
+3. Configure Order shipment number template
+4. Configure Order payment number template
+5. Save",,,,,"C242173 C242667 C242668",
+"ORD-061","Settings > Enable/Disable notifications for orders","Orders > Settings","Medium",,,"Admin logged in to Backend",,"1. Open Settings > Orders
+2. Enable 'Enable notifications for orders' > Save
+3. Verify notifications sent on order events
+4. Disable setting > Save
+5. Verify no notifications sent",,,,,"C242176 C242180",
+"ORD-062","Settings > Enable/Disable adjust inventory for orders","Orders > Settings","Medium",,,"Admin logged in to Backend",,"1. Open Settings > Orders
+2. Enable 'Adjust inventory for orders' > Save
+3. Cancel order > Verify stock adjusts
+4. Disable setting > Save
+5. Cancel order > Verify stock doesn't adjust",,,,,"C242178 C242181",
+"ORD-063","Settings > Tooltips","Orders > Settings","Medium",,,"Admin logged in to Backend",,"1. Open Settings > Orders blade
+2. Verify all tooltips folded
+3. Click tooltip for field1 > Verify unfolds
+4. Click tooltip for field2 > Verify field2 unfolds and field1 folds
+5. Click 'Hide' > Verify all fold",,,,,"C338423",
+"ORD-064","Address with OuterId (Add/Update/Delete)","Orders > API","Medium",,,"Admin logged in to Backend
+Order with addresses exists",,"1. Add address with OuterId property > Verify saved
+2. Update address with new OuterId > Verify updated
+3. Delete address > Verify deleted",,,,,"C312160 C312161 C312162",
+"ORD-065","OrganizationOrder API","Orders > API","Medium",,,"GraphQL/API access
+Organization with orders exists",,"1. Get orders with correct token and correct organizationId > Verify order list
+2. Get orders with incorrect organizationId > Verify empty list
+3. Get orders with incorrect token > Verify access denied",,,,,"C361429 C361430 C361431",
+"ORD-066","Order2Sample module CRUD","Orders > Extensions","Medium",,,"Admin logged in to Backend",,"1. Install Order2Sample module
+2. Create a new order via Order2Sample
+3. Read order > Verify data
+4. Update order > Verify changes saved
+5. Delete order > Verify removed",,,,,"C311912-C311916",
+"ORD-071","Subscription Order — Open Subscription","Orders > Subscriptions","High",,,"Admin logged in to Backend
+Subscription feature enabled
+Customer with active subscription exists",,"1. Navigate to ${BACK_URL}/orders
+2. Locate and open a subscription order (identified by subscription icon/badge)
+3. Verify the Subscription widget is visible on the order details blade
+4. Open the Subscription widget to view subscription details
+5. Verify subscription fields: frequency, next order date, status
+6. Attempt to modify subscription frequency
+7. Save changes and verify persistence
+8. Verify related orders are linked in the subscription chain",,,,,"C169810",
+"ORD-072","Configurable Product Line Items — Verify Configuration in Order","Orders > Configurable Products","High",,,"Admin logged in to Backend
+Order exists containing a configurable product line item",,"1. Navigate to ${BACK_URL}/orders
+2. Open an order that contains a configurable product
+3. Open the Line Items widget
+4. Click on the configurable line item to open its details blade
+5. Verify the Configuration tab is present in the line item details
+6. Open the Configuration tab and verify all selected options are displayed
+7. Verify Discounts tab shows any configuration-related discounts
+8. Verify Dynamic Properties tab is accessible",,,,,"C396955",
+"ORD-073","Role-Based Order Access — Operator Can Only View Assigned Orders","Orders > Employee Assignment","High",,,"Admin logged in to Backend
+Order Manager role created with order permissions [ORD-031]
+Employee1 assigned to Order Manager role
+Order1 assigned to Employee1
+Order2 assigned to a different employee",,"1. Login to ${BACK_URL} as Employee1 with Order Manager role
+2. Navigate to Orders module
+3. Verify Orders blade link is visible
+4. Open Orders list and note which orders are displayed
+5. Verify Order1 (assigned to Employee1) is visible
+6. Verify Order2 (assigned to another employee) is NOT visible
+7. Attempt to directly access Order2 via URL
+8. Verify access is restricted",,,,,"C169803",
+"ORD-074","Order Changes Widget — Change Log Tracks All Modifications","Orders > Order Widgets","High",,,"Admin logged in to Backend
+Order exists with at least one prior modification",,"1. Navigate to ${BACK_URL}/orders and open an existing order
+2. Make a modification to the order (e.g., update customer comment)
+3. Save the changes
+4. Open the Changes widget on the order details blade
+5. Verify the latest modification appears in the change log
+6. Make a second modification (e.g., update dynamic property)
+7. Save and re-open Changes widget
+8. Verify both changes are tracked with timestamps and user info",,,,,"C169806",
+"ORD-075","Order Immutability After Payment — Paid Order Items Cannot Be Edited","Orders > Order Management","High",,,"Admin logged in to Backend
+Order exists with payment status Paid",,"1. Navigate to ${BACK_URL}/orders
+2. Open an order where the payment status is Paid
+3. Attempt to modify the line item quantity in the Line Items widget
+4. Attempt to add a new line item to the order
+5. Attempt to remove an existing line item
+6. Attempt to change the product price
+7. Verify all edit controls for order items are disabled or hidden
+8. Verify Save button is disabled or changes cannot be submitted",,,,,"BL-ORDER-001",
+"ORD-076","Order Validation Full Field List — Complete Validation Test","Orders > Validation","High",,,"Admin logged in to Backend (API/Swagger)",,"1. Open Swagger UI at ${BACK_URL}/docs or use API client
+2. Test order validation for fields: Number, CustomerId, CustomerName, StoreId, Currency, Status, CreatedDate
+3. Submit invalid value for Number field (e.g., empty string or exceeding max length)
+4. Submit invalid value for CustomerId (e.g., null or non-existent ID)
+5. Submit invalid value for CustomerName (e.g., exceeding character limit)
+6. Submit invalid value for StoreId (e.g., non-existent store)
+7. Submit invalid Currency code (e.g., invalid ISO code)
+8. Submit invalid Status value (e.g., non-existent status string)
+9. Submit invalid CreatedDate (e.g., future date or wrong format)",,,,,"C301875",
+"ORD-087","Order placement — inventory decremented for each line item in correct FFC","Orders > Order Placement Side Effects","Critical",,,"Admin logged in to Backend
+Track inventory = TRUE
+Products with known stock quantities in specific FFCs
+API access available
+Storefront accessible",,"1. Navigate to ${BACK_URL} > Inventory module
+2. Record current stock quantity for Product_1 in FFC_1 (e.g., qty = 50)
+3. Record current stock quantity for Product_2 in FFC_2 (e.g., qty = 30)
+4. Place order via API or Storefront containing Product_1 (qty=2) and Product_2 (qty=3)
+5. Verify order creation succeeds with status = New
+6. Navigate to Inventory module
+7. Check stock for Product_1 in FFC_1
+8. Check stock for Product_2 in FFC_2
+9. Verify decrements match ordered quantities",,,,,"Coverage Gap Analysis BL-CROSS-005",
+"ORD-088","Order placement — order appears in customer order history","Orders > Order Placement Side Effects","Critical",,,"Customer account exists with known order history count
+Storefront and xAPI accessible
+Products available for purchase",,"1. Execute xAPI query to get current order count for customer:
+   query { orders(storeId: ""${STORE_ID}"", cultureName: ""en-US"", userId: ""<customer-id>"") { totalCount } }
+2. Record current totalCount (e.g., N)
+3. Place a new order via Storefront or API as the customer
+4. Record the new order number
+5. Execute the same xAPI orders query again
+6. Verify totalCount = N + 1
+7. Execute detailed order query to find the new order by number
+8. Verify order details match what was placed",,,,,"Coverage Gap Analysis BL-CROSS-005",
+"ORD-089","Order placement — cart is cleared after successful order","Orders > Order Placement Side Effects","Critical",,,"Customer account exists
+Cart has items added
+Storefront and xAPI accessible",,"1. Add Product_1 (qty=2) and Product_2 (qty=1) to cart
+2. Execute xAPI cart query to verify cart has 2 line items:
+   query { cart(storeId: ""${STORE_ID}"", cultureName: ""en-US"", currencyCode: ""USD"") { items { quantity productId } itemsCount } }
+3. Verify itemsCount = 2
+4. Complete checkout and place the order
+5. Verify order creation returns success with order number
+6. Execute the same xAPI cart query again
+7. Verify cart is empty (itemsCount = 0, items = [])",,,,,"Coverage Gap Analysis BL-CROSS-005",
+"ORD-090","Order placement — order number generated and totals match cart","Orders > Order Placement Side Effects","Critical",,,"Admin logged in to Backend
+Customer account exists
+Cart has items with known prices
+Number template configured in Settings > Orders",,"1. Add products to cart and proceed to checkout
+2. Before placing order, execute xAPI cart query to capture: cart.subTotal, cart.taxTotal, cart.shippingTotal, cart.total
+3. Record cart totals
+4. Place the order
+5. Retrieve the new order via API: GET /api/order/customerOrders/{orderId}
+6. Verify order.number is generated and follows the configured number template
+7. Verify order.status = 'New'
+8. Compare order.subTotal with cart.subTotal
+9. Compare order.taxTotal with cart.taxTotal
+10. Compare order.total with cart.total",,,,,"Coverage Gap Analysis BL-CROSS-005",

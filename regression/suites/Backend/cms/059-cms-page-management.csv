@@ -1,0 +1,58 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"CMS-001","Create new page in Page Builder","Page Management","Critical",,,"Admin logged in; CMS module installed",,"1. Navigate to Content > Pages
+2. Click Add button
+3. Enter page name and permalink
+4. Select language
+5. Click Save",,,,,"C415417 C221162",
+"CMS-002","Edit created page","Page Management","High",,,"Page exists in Draft status",,"1. Open existing page from list
+2. Edit Name and Permalink fields
+3. Click Save",,,,,"C257813",
+"CMS-003","Preview page","Page Management","High",,,"Page exists with content",,"1. Open page
+2. Click Preview",,,,,"C221163",
+"CMS-004","Open page in designer (Builder)","Page Management","High",,,"Page exists; Builder configured",,"1. Open page
+2. Click Open Designer button",,,,,"C221164 C415406",
+"CMS-005","Archive page","Page Management","High",,,"Page exists in Draft or Published status",,"1. Open page
+2. Click Archive button
+3. Confirm",,,,,"C415418",
+"CMS-006","Publish draft page","Status Transitions","Critical",,,"Page exists in Draft status",,"1. Open draft page
+2. Click Publish button",,,,,"C415431 C415434",
+"CMS-007","Publish to Archive transition","Status Transitions","High",,,"Page is Published",,"1. Open published page
+2. Click Archive",,,,,"C415432",
+"CMS-008","Draft to Archive transition","Status Transitions","Medium",,,"Page is in Draft status",,"1. Open draft page
+2. Click Archive",,,,,"C415433",
+"CMS-017","Status filter - Draft pages only","Status Filters","High",,,"Pages in various statuses exist",,"1. Click Draft filter in navigation
+2. Verify counter and list",,,,,"C415379 C415385",
+"CMS-018","Status filter - Active (Published) pages only","Status Filters","High",,,"Published pages exist",,"1. Click Active filter in navigation
+2. Verify counter and list",,,,,"C415381 C415387",
+"CMS-019","Status filter - Pending (Scheduled) pages only","Status Filters","Medium",,,"Scheduled pages exist",,"1. Click Pending filter in navigation",,,,,"C415380 C415386",
+"CMS-020","Status filter - Archived pages only","Status Filters","Medium",,,"Archived pages exist",,"1. Click Archived filter in navigation",,,,,"C415382 C415388",
+"CMS-021","Counters update when page status changes","Status Filters","Medium",,,"Draft page exists",,"1. Note current counter values
+2. Publish a draft page
+3. Check counters",,,,,"C415384",
+"CMS-022","Page blade - Basic information fields","Page Configuration","High",,,"Page blade is open",,"1. Open a page
+2. Verify Basic information section",,,,,"C415391 C415392 C415393 C415394",
+"CMS-023","Scheduling section - set start and end dates","Page Configuration","High",,,"Page exists",,"1. Open page
+2. Expand Scheduling section
+3. Set Start date via datepicker
+4. Set End date via datepicker
+5. Save",,,,,"C415395 C415396 C415397 C415398",
+"CMS-024","Personalization - visibility toggle","Page Configuration","High",,,"Page exists",,"1. Open page
+2. Expand Personalization section
+3. Toggle Visibility OFF
+4. Save",,,,,"C415399 C415401",
+"CMS-025","Personalization - User groups restriction","Page Configuration","High",,,"User groups exist; page exists",,"1. Open page
+2. Expand Personalization section
+3. Select User groups from dropdown
+4. Save",,,,,"C415402 C415493 C415494",
+"CMS-026","Personalization - Organization restriction","Page Configuration","High",,,"Organizations exist; page exists",,"1. Open page
+2. Expand Personalization section
+3. Select Organization from dropdown
+4. Save",,,,,"C415403 C415465 C415466",
+"CMS-052","Partial search match and case-insensitive search","Search","Medium",,,"Multiple pages exist",,"1. Search with partial page name
+2. Search with different case
+3. Search with special characters",,,,,"C415488 C415489 C415487",
+"CMS-053","Page Builder Admin shows correct frontend URL","Admin Integration","Medium",,,"Published page exists",,"1. Open page in admin
+2. Check frontend URL display",,,,,"C415499",
+"CMS-055","Login and user profile in Page Builder admin","Authentication","Medium",,,"User credentials available",,"1. Login to Page Builder admin with valid credentials
+2. Verify user profile display
+3. Check logo display",,,,,"C415421 C415425 C415426",

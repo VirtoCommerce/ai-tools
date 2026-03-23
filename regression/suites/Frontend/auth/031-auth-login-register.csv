@@ -1,0 +1,395 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"AUTH-001","Registration Form - Personal View","Registration > Personal","Medium","BL-AUTH-001","","Browser open; registration page accessible","url={{FRONT_URL}}/sign-up","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Select 'Personal' account type if toggle present
+[ASSERT] Verify form renders all fields","[DOM] 'First Name' input visible
+[DOM] 'Last Name' input visible
+[DOM] 'Email' input visible
+[DOM] 'Password' input visible
+[DOM] 'Confirm Password' input visible
+[DOM] Terms/conditions checkbox present","[CONSOLE] no TypeError or JS errors
+[NETWORK] GET /sign-up returns HTTP 200","Spinner visible >5s; console TypeError; form fields missing after load","none","regression-qa-theme-26.csv","Automated"
+"AUTH-002","Create Account - Personal User","Registration > Personal","Medium","BL-AUTH-001","ECL-4.1","Registration page open; unique test email available","url={{FRONT_URL}}/sign-up;email=testuser+{{timestamp}}@example.com;password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Select 'Personal' account type
+[ACT] Fill 'First Name': 'TestFirst'
+[ACT] Fill 'Last Name': 'TestLast'
+[ACT] Fill 'Email': testuser+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Fill 'Confirm Password': {{USER_PASSWORD}}
+[ACT] Check terms/conditions checkbox
+[ACT] Click 'Create Account'
+[WAIT] Wait for success message or redirect
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': testuser+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'","[DOM] Success confirmation message visible after registration
+[STATE] User redirected to account page or login page
+[STATE] Login with new credentials succeeds
+[STATE] User is authenticated after login","[API] mutation errors[] is empty
+[NETWORK] POST /connect/token returns HTTP 200 after login
+[CONSOLE] no TypeError or JS errors","Spinner visible >5s; 4xx/5xx on registration endpoint; redirect to /error page; login fails after registration","Delete test account via admin after test","regression-qa-theme-26.csv","Automated"
+"AUTH-003","Registration Form - Organization View","Registration > Organization","Medium","BL-AUTH-001","","Registration page accessible","url={{FRONT_URL}}/sign-up","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Select 'Organization' account type
+[WAIT] Wait for form to update
+[ASSERT] Verify organization-specific fields appear","[DOM] 'Company Name' input visible
+[DOM] Personal fields (First Name; Last Name; Email; Password) visible
+[DOM] Organization account type selected","[CONSOLE] no TypeError or JS errors
+[NETWORK] GET /sign-up returns HTTP 200","Spinner visible >5s; Company Name field absent; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"AUTH-004","Create Account - Organization","Registration > Organization","Medium","BL-AUTH-001","ECL-4.1","Registration page open; unique test email available","url={{FRONT_URL}}/sign-up;email=orguser+{{timestamp}}@example.com;password={{USER_PASSWORD}};org=TestOrg{{timestamp}}","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Select 'Organization' account type
+[ACT] Fill 'Company Name': 'TestOrg{{timestamp}}'
+[ACT] Fill 'First Name': 'OrgFirst'
+[ACT] Fill 'Last Name': 'OrgLast'
+[ACT] Fill 'Email': orguser+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Fill 'Confirm Password': {{USER_PASSWORD}}
+[ACT] Check terms/conditions checkbox
+[ACT] Click 'Create Account'
+[WAIT] Wait for success or redirect","[DOM] Success confirmation shown
+[STATE] Organization created (visible in admin)
+[STATE] Registering user assigned admin role in org","[API] mutation errors[] is empty
+[ADMIN] Organization 'TestOrg{{timestamp}}' visible in admin member list
+[CONSOLE] no TypeError or JS errors","Spinner visible >5s; 4xx/5xx on registration endpoint; organization not created in admin; redirect to /error page","Delete test org and user via admin after test","regression-qa-theme-26.csv","Automated"
+"AUTH-005","Password Visibility Toggle","Registration > UI","Medium","BL-AUTH-001","","Registration form open","url={{FRONT_URL}}/sign-up","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Fill 'Password': 'TestPassword1!'
+[ACT] Click password visibility toggle icon on Password field
+[ASSERT] Password text is now visible in field
+[ACT] Click password visibility toggle icon again
+[ASSERT] Password text is masked
+[ACT] Fill 'Confirm Password': 'TestPassword1!'
+[ACT] Click visibility toggle on Confirm Password field
+[ASSERT] Confirm password text visible
+[ACT] Click toggle again","[DOM] Password field type changes to 'text' when toggled on
+[DOM] Password field type returns to 'password' when toggled off
+[DOM] Same behavior verified for Confirm Password field","[CONSOLE] no TypeError or JS errors","Toggle icon unresponsive; field type does not change; console TypeError","none","regression-qa-theme-26.csv","Manual"
+"AUTH-006","Validation - Personal Required Fields","Registration > Validation","Medium","BL-AUTH-001","","Registration form open (Personal)","url={{FRONT_URL}}/sign-up","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Select 'Personal' account type
+[ACT] Click 'Create Account' without filling any fields
+[WAIT] Wait for validation messages
+[ACT] Fill 'First Name': 'Test'
+[ACT] Click 'Create Account' again","[DOM] Inline error message shown for each required empty field
+[DOM] Form does not submit while required fields empty
+[DOM] Error messages are descriptive and field-specific
+[DOM] After filling First Name; remaining field errors still visible","[CONSOLE] no TypeError or JS errors","Form submits despite empty required fields; no error messages shown; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"AUTH-007","Validation - Personal Max Characters","Registration > Validation","Medium","BL-AUTH-001","","Registration form open","url={{FRONT_URL}}/sign-up","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Select 'Personal' account type
+[ACT] Fill 'First Name' with 256-character string
+[ACT] Fill 'Last Name' with 256-character string
+[ACT] Fill 'Email' with a very long invalid email string
+[ACT] Click 'Create Account'","[DOM] Error message shown for First Name exceeding max length
+[DOM] Error message shown for Last Name exceeding max length
+[DOM] Field either truncates input or shows validation error
+[DOM] Form does not submit with overlong values","[CONSOLE] no TypeError or JS errors","Form accepts 256+ chars without error; no max-length validation; console TypeError","none","regression-qa-theme-26.csv","Manual"
+"AUTH-008","Validation - Organization Required Fields","Registration > Validation","Medium","BL-AUTH-001","","Registration form open (Organization)","url={{FRONT_URL}}/sign-up","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Select 'Organization' account type
+[ACT] Click 'Create Account' without filling any fields
+[WAIT] Wait for validation messages","[DOM] Error shown for 'Company Name' required field
+[DOM] Errors shown for all personal required fields (First Name; Last Name; Email; Password)
+[DOM] Form does not submit while required fields empty
+[DOM] Error messages are clear and specific","[CONSOLE] no TypeError or JS errors","Form submits without required org fields; Company Name error missing; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"AUTH-009","Validation - Unique Email","Registration > Validation","Medium","BL-AUTH-001","ECL-4.1","Existing user account in system; known email available","url={{FRONT_URL}}/sign-up;email={{USER_EMAIL}}","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Select 'Personal' account type
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill remaining required fields with valid data
+[ACT] Click 'Create Account'","[DOM] Error message indicating email already registered
+[DOM] Suggestion to log in or reset password present
+[STATE] No duplicate account created","[API] mutation errors[] is empty
+[CONSOLE] no TypeError or JS errors","Form accepts duplicate email and creates duplicate account; no error message shown; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"AUTH-010","Validation - Email Format","Registration > Validation","Medium","BL-AUTH-001","","Registration form open","url={{FRONT_URL}}/sign-up","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Select 'Personal' account type
+[ACT] Fill 'Email': 'notanemail'
+[ACT] Click 'Create Account'
+[ASSERT] Error message for invalid format shown
+[ACT] Fill 'Email': 'missing@domain'
+[ACT] Click 'Create Account'
+[ASSERT] Error message for invalid format shown
+[ACT] Fill 'Email': '@nodomain.com'
+[ACT] Click 'Create Account'
+[ASSERT] Error message for invalid format shown
+[ACT] Fill 'Email': 'valid@example.com'
+[ASSERT] No format error shown for valid email","[DOM] Each invalid format shows inline email validation error
+[DOM] Valid email format accepted without format error","[CONSOLE] no TypeError or JS errors","Invalid email format accepted; no format validation message; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"AUTH-011","Validation - Password Match","Registration > Validation","Medium","BL-AUTH-001","","Registration form open","url={{FRONT_URL}}/sign-up","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Select 'Personal' account type
+[ACT] Fill 'Password': 'TestPass1!'
+[ACT] Fill 'Confirm Password': 'DifferentPass1!'
+[ACT] Click 'Create Account'","[DOM] Error message: 'Passwords do not match' or equivalent
+[STATE] Form does not submit with mismatched passwords","[CONSOLE] no TypeError or JS errors","Form submits with mismatched passwords; no mismatch error shown; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"AUTH-012","Validation - Password Policy","Registration > Validation","Medium","BL-AUTH-001","","Registration form open","url={{FRONT_URL}}/sign-up","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Select 'Personal' account type
+[ACT] Fill 'Password': '123'
+[ACT] Click 'Create Account'
+[ASSERT] Weak password rejected with policy error
+[ACT] Fill 'Password': 'alllowercase1!'
+[ACT] Click 'Create Account'
+[ASSERT] Missing uppercase rejected
+[ACT] Fill 'Password': 'NoNumber!'
+[ACT] Click 'Create Account'
+[ASSERT] Missing number rejected
+[ACT] Fill 'Password': 'ValidPass1!'
+[ACT] Fill 'Confirm Password': 'ValidPass1!'
+[ASSERT] Strong password accepted without policy error","[DOM] Weak password '123' triggers policy error message
+[DOM] Password missing uppercase triggers error
+[DOM] Password missing number triggers error
+[DOM] 'ValidPass1!' accepted without policy errors
+[DOM] Policy requirements listed clearly in UI","[CONSOLE] no TypeError or JS errors","Weak passwords accepted; no policy feedback shown; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"AUTH-013","Email Verification - Without","Registration > Email","Medium","BL-AUTH-001","ECL-6.1","Email verification disabled in admin; test email available","url={{FRONT_URL}}/sign-up;email=noverify+{{timestamp}}@example.com;password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Register new account with valid unique email
+[WAIT] Wait for success/redirect
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': noverify+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'","[STATE] No email verification prompt shown after registration
+[STATE] Login succeeds immediately after registration
+[STATE] User is authenticated and account active","[NETWORK] POST /connect/token returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Login fails despite verification being disabled; verification prompt shown unexpectedly; console TypeError","Delete test account after test","regression-qa-theme-26.csv","Manual"
+"AUTH-014","Email Verification - Optional","Registration > Email","Medium","BL-AUTH-001","ECL-6.1","Optional email verification enabled in admin","url={{FRONT_URL}}/sign-up;email=optverify+{{timestamp}}@example.com;password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Register new account with valid unique email
+[WAIT] Wait for success or verification prompt
+[ASSERT] Option to verify or skip is presented
+[ACT] Choose to skip verification
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Login with new credentials
+[ASSERT] Login succeeds (skip path)","[DOM] Verification page shows option to skip or verify
+[STATE] Skipping verification allows immediate login
+[DOM] Reminder banner shown if verification was skipped","[CONSOLE] no TypeError or JS errors","No skip option presented when optional mode enabled; login blocked despite skip option; console TypeError","Delete test account after test","regression-qa-theme-26.csv","Manual"
+"AUTH-015","Email Verification - Mandatory","Registration > Email","Medium","BL-AUTH-001","ECL-6.1","Mandatory email verification enabled in admin; email access available","url={{FRONT_URL}}/sign-up;email=mandatory+{{timestamp}}@example.com;password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Register new account with valid unique email
+[WAIT] Wait for post-registration screen
+[NAV] Attempt to navigate to {{FRONT_URL}}/sign-in
+[ACT] Login with new credentials before verifying email
+[ASSERT] Login is rejected with verification required error
+[ACT] Open verification link from email inbox
+[WAIT] Wait for verification confirmation
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Login with same credentials after verification","[STATE] Login attempt before verification is rejected
+[DOM] Error message: email verification required shown
+[DOM] Option to resend verification email present
+[STATE] Login succeeds after clicking verification link","[NETWORK] POST /connect/token returns HTTP 200 after verified login
+[CONSOLE] no TypeError or JS errors","Login succeeds before email verified; verification link broken; no resend option; console TypeError","Delete test account after test","regression-qa-theme-26.csv","Automated"
+"AUTH-016","Login - Empty Email","Login > Validation","Medium","BL-AUTH-002","","Login page open","url={{FRONT_URL}}/sign-in","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Leave 'Email' field empty
+[ACT] Fill 'Password': 'AnyPassword1!'
+[ACT] Click 'Sign In'","[DOM] Inline error: 'Email is required' or equivalent shown on Email field
+[STATE] Form does not submit","[CONSOLE] no TypeError or JS errors","Form submits with empty email; no validation message; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"AUTH-017","Login - Invalid User","Login > Validation","Medium","BL-AUTH-002","","Login page open","url={{FRONT_URL}}/sign-in","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': 'nonexistent_{{timestamp}}@example.com'
+[ACT] Fill 'Password': 'AnyPassword1!'
+[ACT] Click 'Sign In'
+[WAIT] Wait for error response","[DOM] Generic error message shown: 'Invalid credentials' or equivalent
+[STATE] No user-specific information leaked in error (no 'user not found')
+[STATE] User remains on login page","[NETWORK] POST /connect/token returns 4xx
+[CONSOLE] no TypeError or JS errors","User existence leaked in error message; 500 error returned; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"AUTH-018","Login - Invalid Password","Login > Validation","Medium","BL-AUTH-002","ECL-14.1","Valid user exists in system","url={{FRONT_URL}}/sign-in;email={{USER_EMAIL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': 'WrongPassword999!'
+[ACT] Click 'Sign In'
+[WAIT] Wait for error response","[DOM] Error message: 'Invalid credentials' or equivalent shown
+[STATE] Login denied
+[STATE] access_failed count incremented in platform","[NETWORK] POST /connect/token returns 4xx
+[API] mutation errors[] is empty
+[CONSOLE] no TypeError or JS errors","Login succeeds with wrong password; no error shown; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"AUTH-019","Login - Email Verification Required","Login > Validation","Medium","BL-AUTH-001","ECL-6.1","User registered but email not yet verified; mandatory verification enabled","url={{FRONT_URL}}/sign-in;email=unverified+{{timestamp}}@example.com;password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': unverified+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for response","[DOM] Error message: email verification required shown
+[DOM] Option to resend verification email present
+[STATE] Login denied until email is verified","[NETWORK] POST /connect/token returns 4xx
+[CONSOLE] no TypeError or JS errors","Unverified user allowed to log in; no verification message; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"AUTH-020","Login - Temporary Lockout","Login > Security","Medium","BL-AUTH-004","ECL-3.1","Valid user account; account lockout enabled after 5 failed attempts","url={{FRONT_URL}}/sign-in;email={{USER_EMAIL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': 'WrongPass1!'
+[ACT] Click 'Sign In'
+[ACT] Repeat incorrect login 4 more times (5 total)
+[ASSERT] Lockout message displayed after 5th attempt
+[ACT] Attempt login with correct credentials
+[ASSERT] Login still denied due to lockout
+[WAIT] Wait for lockout timeout period
+[ACT] Attempt login again with correct credentials","[DOM] Lockout error message shown after 5 failed attempts
+[STATE] Login with correct credentials fails during lockout period
+[STATE] Login succeeds after lockout timeout expires","[NETWORK] POST /connect/token returns 4xx during lockout
+[CONSOLE] no TypeError or JS errors","No lockout after 5 failures; lockout persists beyond timeout; correct password accepted during lockout; console TypeError","none","regression-qa-theme-26.csv","Manual"
+"AUTH-021","Login - Admin Blocked User","Login > Security","Medium","BL-B2B-002","","User blocked by admin in platform","url={{FRONT_URL}}/sign-in","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email' with blocked user email
+[ACT] Fill 'Password' with blocked user password
+[ACT] Click 'Sign In'
+[WAIT] Wait for response","[DOM] Error message: 'Account is locked' or 'contact admin' shown
+[STATE] Login denied for blocked user","[NETWORK] POST /connect/token returns 4xx
+[CONSOLE] no TypeError or JS errors","Blocked user can log in; generic error without admin contact info; console TypeError","none","regression-qa-theme-26.csv","Manual"
+"AUTH-025","SSO - Entra ID Enabled","SSO > Azure","Medium","BL-AUTH-005","","Entra ID SSO configured in admin; login page accessible","url={{FRONT_URL}}/sign-in","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ASSERT] 'Sign in with Microsoft' button visible
+[ACT] Click 'Sign in with Microsoft'
+[WAIT] Wait for redirect to Microsoft authentication page
+[ASSERT] Microsoft login URL observed (login.microsoftonline.com)","[DOM] 'Sign in with Microsoft' button present on login page
+[NAV] Browser redirects to Microsoft OAuth endpoint
+[STATE] After completing Microsoft auth; user redirected back and logged in","[CONSOLE] no TypeError or JS errors
+[NETWORK] Redirect to Microsoft OAuth endpoint occurs","SSO button missing; redirect fails; redirect URL not Microsoft; console TypeError","Logout after test","regression-qa-theme-26.csv","Manual"
+"AUTH-026","SSO - Google Enabled","SSO > Google","Medium","BL-AUTH-005","","Google SSO configured in admin; login page accessible","url={{FRONT_URL}}/sign-in","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ASSERT] 'Sign in with Google' button visible
+[ACT] Click 'Sign in with Google'
+[WAIT] Wait for redirect to Google authentication page
+[ASSERT] Google OAuth URL observed (accounts.google.com)","[DOM] 'Sign in with Google' button present on login page
+[NAV] Browser redirects to Google OAuth endpoint
+[STATE] After completing Google auth; user redirected back and logged in","[CONSOLE] no TypeError or JS errors
+[NETWORK] Redirect to Google OAuth endpoint occurs","SSO button missing; redirect fails; redirect not to Google; console TypeError","Logout after test","regression-qa-theme-26.csv","Manual"
+"AUTH-027","Login on Behalf - With Permission","Login > Admin","Medium","BL-AUTH-006; BL-AUTH-007","","Admin user with login-on-behalf permission; target customer account exists","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}};targetEmail={{USER_EMAIL}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[NAV] Navigate to customer/user management in Admin SPA
+[ACT] Search for and select target customer '{{USER_EMAIL}}'
+[ACT] Click 'Login on Behalf' or equivalent action
+[WAIT] Wait for storefront to open in customer context
+[ASSERT] Storefront shows customer identity","[STATE] Storefront reflects target customer context (name; org; pricing)
+[STATE] Admin can return to admin context
+[STATE] Customer-specific catalog and prices visible","[API] mutation errors[] is empty
+[CONSOLE] no TypeError or JS errors
+[NETWORK] Login-on-behalf token exchange returns HTTP 200","Impersonation fails; storefront shows admin context instead of customer; console TypeError; 4xx on impersonation endpoint","Stop impersonation and logout admin after test","regression-qa-theme-26.csv","Manual"
+"AUTH-028","Login on Behalf - Org Maintainer","Login > Admin","Medium","BL-AUTH-006; BL-B2B-001","","Organization maintainer account; at least one member in same org","url={{FRONT_URL}}/sign-in;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Log in as org maintainer
+[NAV] Navigate to organization members section
+[ACT] Select an employee from the same organization
+[ACT] Initiate login-on-behalf for that employee
+[WAIT] Wait for context switch
+[ASSERT] Can impersonate own org employee
+[ACT] Attempt to impersonate a user from a different organization (if accessible)
+[ASSERT] Impersonation of outside-org user is denied","[STATE] Maintainer can impersonate own org members
+[STATE] Impersonation of outside-org users is blocked
+[STATE] Impersonation limited to own organization scope","[API] mutation errors[] is empty
+[CONSOLE] no TypeError or JS errors","Maintainer impersonates users outside own org; impersonation of own org member fails; console TypeError","Stop impersonation and logout after test","regression-qa-theme-26.csv","Manual"
+"AUTH-052","Password Reset - Forgot Password UI Flow","Password Reset > UI","High","BL-AUTH-002","ECL-4.2","Login page accessible; valid user email in system","email={{USER_EMAIL}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ASSERT] 'Forgot Password' or 'Reset Password' link visible on login page
+[ACT] Click 'Forgot Password' link
+[WAIT] Wait for forgot password page to load
+[ASSERT] Forgot password form with email input visible
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Click 'Submit' or 'Send Reset Link'
+[WAIT] Wait for confirmation message","[DOM] 'Forgot Password' link present on login page
+[NAV] Clicking link navigates to forgot password page (URL contains 'forgot' or 'reset')
+[DOM] Email input field visible on reset page
+[DOM] Submit button visible and enabled
+[DOM] Success message shown after submission: 'check your email' or equivalent
+[STATE] No error message shown for valid email","[NETWORK] POST to password reset endpoint returns HTTP 200
+[CONSOLE] no TypeError or JS errors
+[NETWORK] No 4xx/5xx on reset request","Forgot Password link missing on login page; reset page does not load; submission returns error for valid email; 4xx/5xx on reset endpoint; console TypeError","none","E2E-AUTH-004","Automated"
+"AUTH-053","Password Reset - Non-Existent Email","Password Reset > Validation","Medium","BL-AUTH-002","ECL-4.2, ECL-14.1","Forgot password page accessible","front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Click 'Forgot Password' link
+[WAIT] Wait for forgot password page to load
+[ACT] Fill 'Email': nonexistent_{{timestamp}}@example.com
+[ACT] Click 'Submit' or 'Send Reset Link'
+[WAIT] Wait for response","[DOM] Same generic success message shown as for valid email (no user enumeration)
+[STATE] No indication whether email exists in system (security best practice)
+[DOM] No error message revealing 'user not found'","[NETWORK] POST to password reset endpoint returns HTTP 200 (same as valid email)
+[CONSOLE] no TypeError or JS errors","Different response for non-existent email vs valid email (user enumeration vulnerability); error message reveals user existence; console TypeError","none","E2E-AUTH-004","Automated"
+"AUTH-054","Email Case Sensitivity - Login with Different Case","Login > Email Handling","Medium","BL-AUTH-001","ECL-4.1","Valid user account with known email; login page accessible","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}} converted to UPPERCASE
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for login response
+[ASSERT] Login succeeds with uppercase email
+[ACT] Click logout
+[WAIT] Wait for logout
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}} with mIxEd CaSe
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for login response","[STATE] Login succeeds regardless of email case (uppercase)
+[STATE] Login succeeds regardless of email case (mixed case)
+[STATE] Authenticated user profile shows original registered email
+[NAV] User redirected to account after successful login","[NETWORK] POST /connect/token returns HTTP 200 for both case variants
+[CONSOLE] no TypeError or JS errors","Login fails with different email casing; different behavior for uppercase vs lowercase; console TypeError","Logout after test","","Automated"
+"AUTH-055","Password with Leading and Trailing Spaces","Login > Password Handling","Medium","BL-AUTH-001","ECL-4.2","Valid user account with known password; login page accessible","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': ' {{USER_PASSWORD}} ' (with leading and trailing spaces)
+[ACT] Click 'Sign In'
+[WAIT] Wait for login response
+[ASSERT] Note whether login succeeds or fails (document behavior)
+[NAV] Navigate to {{FRONT_URL}}/sign-in (if needed)
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': '  ' (spaces only)
+[ACT] Click 'Sign In'
+[WAIT] Wait for validation or error response","[STATE] Password with spaces: either trimmed (login succeeds) or preserved (login fails) - document actual behavior
+[DOM] Spaces-only password shows validation error or login failure
+[STATE] Form does not submit with spaces-only password as valid","[NETWORK] POST /connect/token response observed for space-padded password
+[CONSOLE] no TypeError or JS errors","Spaces-only password accepted as valid; inconsistent trimming behavior between registration and login; console TypeError","none","","Automated"
+"AUTH-056","Special Characters in Name Fields During Registration","Registration > Data Integrity","Medium","BL-AUTH-001","ECL-7.2","Registration page accessible; unique test email available","front_url={{FRONT_URL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Select 'Personal' account type
+[ACT] Fill 'First Name': ""O'Brien""
+[ACT] Fill 'Last Name': 'Müller'
+[ACT] Fill 'Email': specialname+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Fill 'Confirm Password': {{USER_PASSWORD}}
+[ACT] Check terms/conditions checkbox
+[ACT] Click 'Create Account'
+[WAIT] Wait for success or error
+[ASSERT] Registration succeeds without error
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': specialname+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for redirect
+[NAV] Navigate to {{FRONT_URL}}/account/profile
+[WAIT] Wait for profile page to load","[STATE] Registration completes successfully with special characters in names
+[DOM] Profile page displays ""O'Brien"" correctly (apostrophe preserved)
+[DOM] Profile page displays 'Müller' correctly (umlaut preserved)
+[STATE] No data corruption or encoding issues in stored names
+[DOM] Name displayed in header/greeting matches registered name","[API] mutation errors[] is empty
+[CONSOLE] no TypeError or JS errors
+[NETWORK] POST registration endpoint returns HTTP 200","Registration fails with special characters; names display with encoding artifacts (Ã¼ instead of ü); apostrophe causes SQL injection or XSS; console TypeError","Delete test account via admin after test","","Automated"
+"AUTH-066","Registration - HTML Tags Rejected in Personal Name Fields","Registration > Input Validation","High","BL-AUTH-001","ECL-5.1","Registration page accessible; unique test email available","front_url={{FRONT_URL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Select 'Personal' account type
+[ACT] Fill 'First Name': '<b>Bold</b>Name'
+[ACT] Fill 'Last Name': 'Test<script>alert(1)</script>'
+[ACT] Fill 'Email': htmlname+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Fill 'Confirm Password': {{USER_PASSWORD}}
+[ACT] Check terms/conditions checkbox
+[ACT] Click 'Create Account'
+[WAIT] Wait for server response
+[ASSERT] Verify registration is REJECTED with validation error — NameValidationPattern only allows Unicode letters, spaces, apostrophes, hyphens, dots
+[ASSERT] Verify no account was created
+[ACT] Clear name fields
+[ACT] Fill 'First Name': 'Test&amp;Name'
+[ACT] Fill 'Last Name': 'User<img>'
+[ACT] Click 'Create Account'
+[ASSERT] Verify rejection again — HTML entities and tags not in allow-list","[STATE] Registration rejected for names containing HTML tags or entities
+[STATE] NameValidationPattern ^[\p{L}\p{M}\s'\-\.]+$ rejects <, >, &, (, ) characters
+[DOM] Validation error message visible to user
+[STATE] No account created with HTML in name fields","[NETWORK] POST registration returns validation error (not 200)
+[CONSOLE] no TypeError or JS errors
+[API] No new user account exists with HTML tag names","Registration succeeds with HTML tags in name; <script> stored as first name; no validation error shown; account created with XSS payload in name","none","VCST-4691 PR #130","Manual"
+"AUTH-067","Registration - Org Name Allows Business Characters (3M AT&T H&M)","Registration > Input Validation","High","BL-AUTH-001","ECL-7.2","Registration page accessible; unique test email available","front_url={{FRONT_URL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Select 'For business' / Organization account type
+[ACT] Fill 'Company Name': 'AT&T Corp.'
+[ACT] Fill 'First Name': 'Test'
+[ACT] Fill 'Last Name': 'User'
+[ACT] Fill 'Email': orgbiz+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Fill 'Confirm Password': {{USER_PASSWORD}}
+[ACT] Check terms/conditions checkbox
+[ACT] Click 'Create Account'
+[WAIT] Wait for success or error
+[ASSERT] Verify registration succeeds — OrganizationNameValidationPattern allows digits, &, #, /, commas, parens
+[ACT] Log in with new account
+[NAV] Navigate to organization profile
+[ASSERT] Verify org name 'AT&T Corp.' displayed correctly","[STATE] Registration succeeds with business-legal characters in org name
+[STATE] OrganizationNameValidationPattern ^[\p{L}\p{M}\p{N}\s'\-\.&#/,()]+$ permits &, #, /, digits
+[DOM] Org name displayed correctly without encoding artifacts
+[STATE] Organization created with exact name submitted","[NETWORK] POST registration returns 200 success
+[CONSOLE] no TypeError or JS errors
+[API] Organization query returns name 'AT&T Corp.' exactly","Org name rejected; ampersand stripped or encoded; org name truncated; OrganizationNameValidationPattern false-positive rejects valid business name","Delete test org and user via admin after test","VCST-4691 PR #130","Manual"
+"AUTH-068","Registration - HTML/Script Tags Rejected in Org Name","Registration > Input Validation","High","BL-AUTH-001","ECL-5.1","Registration page accessible; unique test email available","front_url={{FRONT_URL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-up
+[ACT] Select 'For business' / Organization account type
+[ACT] Fill 'Company Name': '<script>alert(1)</script>Org'
+[ACT] Fill 'First Name': 'Test'
+[ACT] Fill 'Last Name': 'User'
+[ACT] Fill 'Email': orgxss+{{timestamp}}@example.com
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Fill 'Confirm Password': {{USER_PASSWORD}}
+[ACT] Check terms/conditions checkbox
+[ACT] Click 'Create Account'
+[WAIT] Wait for server response
+[ASSERT] Verify registration is REJECTED — OrganizationNameValidationPattern rejects < and > characters
+[ASSERT] Verify no organization was created with XSS payload","[STATE] Registration rejected for org name containing script tags
+[STATE] OrganizationNameValidationPattern rejects <, > characters even though & is allowed
+[DOM] Validation error message visible to user
+[STATE] No organization created with XSS payload in name","[NETWORK] POST registration returns validation error (not 200)
+[CONSOLE] no TypeError or JS errors
+[API] No new organization exists with script tag in name","Registration succeeds with script tags in org name; XSS stored as org name; no validation error shown; org created with executable payload","none","VCST-4691 PR #130","Manual"

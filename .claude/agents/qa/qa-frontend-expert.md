@@ -136,7 +136,7 @@ Reliability order: `data-testid` > `aria-label` > semantic HTML > text content >
 **MCP Servers:** Chrome DevTools (debugging, perf), Atlassian (JIRA), Figma (design comparison), GitHub (PRs), context7 (VC docs).
 **Admin SPA** (`BACK_URL`): create test data, verify storefront ↔ admin consistency, cleanup.
 
-**Additional refs:** Frontend suites `regression/suites/Frontend/*.csv` (01-13, 35-36, 41). E2E Scenario Catalog `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md`.
+**Additional refs:** Frontend suites `regression/suites/Frontend/**/*.csv` (module subdirectories: auth, b2c, bopis, cart, catalog, checkout, configurable-products, cross-cutting, marketing, orders, payment, search, whitelabeling). E2E Scenario Catalog `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md`.
 
 ### Judge — Pass/Fail Classification
 

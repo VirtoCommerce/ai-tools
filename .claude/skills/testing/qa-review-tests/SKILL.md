@@ -9,14 +9,14 @@ Review test cases against quality criteria to catch issues before regression run
 
 ## Usage
 ```
-/qa-review-tests suite 04c              # Review a specific suite by ID (static analysis)
-/qa-review-tests file regression/suites/Frontend/04c-orders-quotes-tests.csv
+/qa-review-tests suite 015              # Review a specific suite by ID (static analysis)
+/qa-review-tests file regression/suites/Frontend/orders/015-quotes.csv
 /qa-review-tests diff                   # Review only git-changed test cases
 /qa-review-tests all                    # Review all 36 suites (summary mode)
 /qa-review-tests domain checkout        # Review all suites touching a domain
-/qa-review-tests suite 04c --fix        # Review + auto-fix issues (asks before writing)
-/qa-review-tests suite 04c --verify     # Static review + live environment verification via qa-testing-expert
-/qa-review-tests suite 04c --verify --fix  # Full review + fix + verify
+/qa-review-tests suite 015 --fix        # Review + auto-fix issues (asks before writing)
+/qa-review-tests suite 015 --verify     # Static review + live environment verification via qa-testing-expert
+/qa-review-tests suite 015 --verify --fix  # Full review + fix + verify
 ```
 
 ## Supporting Files

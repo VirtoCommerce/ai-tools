@@ -1,0 +1,524 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"CART-012","Save for Later - Move Item","Cart > Save Later","Medium","BL-CART-003","ECL-14.1","Product in cart, user logged in on cart page","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ACT] click 'Save for Later' on a line item
+[WAIT] wait for item to move to saved-for-later section
+[ASSERT] verify item appears in saved list
+[ASSERT] verify item removed from active cart section","[DOM] item visible in saved-for-later section
+[DOM] item no longer in active cart line items
+[MATH] cart subtotal excludes saved item
+[STATE] cart badge decremented","[API] moveItemToSaved or equivalent mutation response errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","item stays in cart instead of moving; saved-for-later section not shown; subtotal not updated","Move item back to cart or remove","tests/VCST-3928-save4later-delay-fix","Automated"
+"CART-013","Save for Later - Move Back","Cart > Save Later","Medium","BL-CART-003","ECL-14.1","Item in saved-for-later list, user on cart page","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ACT] click 'Move to Cart' on an item in the saved-for-later section
+[WAIT] wait for item to appear in active cart
+[ASSERT] verify item in active cart
+[ASSERT] verify item removed from saved list","[DOM] item listed in active cart line items
+[DOM] item no longer in saved-for-later section
+[MATH] cart subtotal includes moved item
+[STATE] cart badge incremented","[API] moveItemToCart or equivalent mutation response errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","item stays in saved list; active cart not updated; subtotal unchanged; badge not incremented","Remove item from cart","tests/VCST-3928-save4later-delay-fix","Automated"
+"CART-014","Apply Coupon - Valid Code","Cart > Coupons","Medium","BL-CART-004","ECL-4.1, ECL-14.1","User logged in, valid coupon code exists in system, eligible items in cart","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ACT] locate coupon/promo code input field
+[ACT] type valid coupon code
+[ACT] click 'Apply'
+[WAIT] wait for discount to be applied
+[ASSERT] verify discount line appears in order summary","[DOM] coupon accepted confirmation or discount line visible
+[MATH] cart total = subtotal - discount amount (2 decimal places)
+[DOM] discount amount shown in order summary
+[STATE] coupon code displayed in cart summary","[API] applyCoupon or addOrUpdateCoupon mutation response errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","apply button spins indefinitely; no discount shown; error message for valid code; total not reduced","Remove coupon and items from cart","VCST-4499","Automated"
+"CART-015","Apply Coupon - Invalid Code","Cart > Coupons","Medium","BL-CART-004","ECL-14.1","User logged in, items in cart","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ACT] locate coupon input field
+[ACT] type 'FAKECODE'
+[ACT] click 'Apply'
+[WAIT] wait for error response
+[ASSERT] verify error message displayed","[DOM] error message visible (e.g. 'Invalid coupon code' or similar)
+[STATE] no discount applied to cart
+[MATH] cart total unchanged after invalid coupon attempt","[API] applyCoupon mutation returns error message in response (not in errors[])
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx (API-level error is expected, not HTTP 4xx)","no error shown for fake code; discount incorrectly applied; cart total changes","none (no state change)","VCST-4499","Automated"
+"CART-019","Cart Persistence - Sign Out and Sign In","Cart > Persistence","Critical","BL-CART-006","ECL-7.3, ECL-14.1","User has an account, at least one product available, note: search index may lag 30-60s after any price/stock changes","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in
+[ACT] add two or more products to the cart
+[ASSERT] note cart contents: product names, quantities, line totals
+[ACT] click sign out
+[WAIT] wait for signed-out state confirmed
+[ACT] sign back in with same credentials
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] compare cart contents to noted items","[STATE] cart contains same items after sign out/in cycle
+[DOM] quantities match pre-sign-out values
+[MATH] cart subtotal matches pre-sign-out subtotal
+[STATE] no duplicate or missing items","[API] getCart query response errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx on cart restore","cart empty after re-login; items duplicated after merge; quantities wrong; subtotal mismatch","Remove added items from cart","Coverage Gap Analysis","Automated"
+"CART-020","Cart Persistence - Price Updates While Signed Out","Cart > Persistence","High","BL-CART-005, BL-CART-006","ECL-7.3, ECL-14.2, ECL-14.4","User has account, admin access available, product in cart; allow 30-60s search index lag after admin price change","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+admin={{ADMIN_URL}}
+adminUser={{ADMIN_EMAIL}}
+adminPassword={{ADMIN_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
+[ACT] add product to cart
+[ASSERT] note current displayed price
+[ACT] sign out
+[NAV] log in to {{ADMIN_URL}}
+[ACT] navigate to Catalog > Products, find product, update price, save
+[WAIT] wait 30-60s for search index to update
+[NAV] log in to {{FRONT_URL}} with user account
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify price reflects admin update","[STATE] cart contains product after re-login
+[DOM] unit price shows updated price (not stale cached value)
+[MATH] line total and subtotal reflect new price
+[FORMAT] price formatted to 2 decimal places","[ADMIN] verify price change saved in admin
+[API] getCart query returns updated price
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","cart shows old stale price after re-login; price update not reflected even after wait; subtotal mismatch","Restore product price in admin; remove item from cart","Coverage Gap Analysis","Automated"
+"CART-021","Cart Persistence - Cross-Device (Cross-Session)","Cart > Persistence","High","BL-CART-006","ECL-7.3","User has account; two separate browser sessions available (e.g., different browser profile or incognito after login)","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} in Browser Session A
+[ACT] add two or more products to cart in Session A
+[WAIT] wait for cart to sync server-side
+[NAV] open Browser Session B (separate browser or profile)
+[ACT] log in with same account in Session B
+[NAV] navigate to {{FRONT_URL}}/cart in Session B
+[ASSERT] verify Session B cart matches Session A","[STATE] Session B cart contains items added in Session A
+[DOM] quantities and selected variants match
+[MATH] cart subtotal identical across sessions
+[STATE] cart synchronized via server-side account, not just localStorage","[API] getCart query in Session B returns same items
+[CONSOLE] no JS errors in either session
+[NETWORK] no 4xx/5xx","Session B shows empty cart; items differ between sessions; qty mismatch; cart loaded from stale local state","Remove items from cart","Coverage Gap Analysis","Automated"
+"CART-022","Cart Persistence - Guest Cart Merge on Sign In","Cart > Persistence","High","BL-CART-006","ECL-7.3, ECL-14.1","Store allows guest shopping; user has registered account with existing cart items; user currently signed out","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} without signing in (guest session)
+[ACT] add one or more products to cart as guest
+[ASSERT] verify guest cart shows added items
+[ACT] navigate to sign in and log in with registered account
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify guest items merged with account cart
+[ASSERT] verify no items dropped from either source","[STATE] all guest cart items present in merged cart
+[STATE] pre-existing account cart items retained
+[DOM] no duplicate line items for same SKU
+[MATH] cart subtotal reflects all merged items","[API] mergeCarts or equivalent mutation response errors[] is empty
+[CONSOLE] no JS errors on sign-in and cart page
+[NETWORK] no 4xx/5xx during merge","guest items silently dropped on login; account items overwritten by guest cart; duplicate line items created; subtotal wrong","Remove all items from cart","Coverage Gap Analysis","Automated"
+"CART-023","Cart Validation - Out of Stock After Add","Cart > Validation","Critical","BL-CART-001, BL-CART-005","ECL-7.3, ECL-14.1, ECL-14.2","Product is in cart; admin access to change inventory; allow 30-60s search index lag after inventory change","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+admin={{ADMIN_URL}}
+adminUser={{ADMIN_EMAIL}}
+adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart and verify it shows as in-stock
+[NAV] log in to {{ADMIN_URL}}
+[ACT] navigate to product inventory settings, set inventory to 0, save
+[WAIT] wait 30-60s for search index to update
+[NAV] return to {{FRONT_URL}}/cart
+[ACT] refresh page
+[ASSERT] verify out-of-stock item flagged in cart
+[ACT] click 'Proceed to Checkout'
+[ASSERT] verify checkout is blocked","[DOM] out-of-stock item visually flagged (e.g., 'Out of Stock' badge or warning)
+[STATE] 'Proceed to Checkout' button disabled or shows blocking error
+[DOM] option to remove unavailable item present","[ADMIN] verify inventory set to 0 in admin
+[API] getCart query reflects out-of-stock status
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","no indication of out-of-stock on cart page; checkout allowed with out-of-stock item; no option to remove","Restore inventory in admin; remove item from cart","Coverage Gap Analysis","Automated"
+"CART-024","Cart Validation - Price Change After Add","Cart > Validation","High","BL-CART-005, BL-CART-002","ECL-4.1, ECL-14.2, ECL-14.4","Product in cart; admin access to change pricing; allow 30-60s search index lag after price update","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+admin={{ADMIN_URL}}
+adminUser={{ADMIN_EMAIL}}
+adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart and note the displayed unit price
+[NAV] log in to {{ADMIN_URL}}
+[ACT] update product price to higher value and save
+[WAIT] wait 30-60s for search index to update
+[NAV] return to {{FRONT_URL}}/cart
+[ACT] refresh page
+[ASSERT] verify line item price updated","[DOM] unit price reflects updated value
+[MATH] line total = new unit price × quantity (2 decimal places)
+[MATH] cart subtotal recalculated with new price
+[STATE] no stale cached price shown","[ADMIN] verify price change saved in admin
+[API] getCart query returns updated price
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","old price shown after refresh; line total not recalculated; subtotal mismatch with new price","Restore product price in admin; remove item from cart","Coverage Gap Analysis","Automated"
+"CART-025","Cart Validation - Product Unpublished After Add","Cart > Validation","High","BL-CART-005","ECL-7.3, ECL-14.1, ECL-14.2","Product in cart; admin access to unpublish product; allow 30-60s search index lag","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+admin={{ADMIN_URL}}
+adminUser={{ADMIN_EMAIL}}
+adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart
+[NAV] log in to {{ADMIN_URL}}
+[ACT] find product in catalog, unpublish/deactivate it, save
+[WAIT] wait 30-60s for search index to update
+[NAV] return to {{FRONT_URL}}/cart
+[ACT] refresh page
+[ASSERT] verify product shown as unavailable
+[ACT] click 'Proceed to Checkout'
+[ASSERT] verify checkout blocked","[DOM] unavailable item shows 'This item is no longer available' or similar message
+[STATE] checkout blocked until unavailable item removed
+[DOM] option to remove unavailable item visible
+[STATE] removing item unblocks checkout","[ADMIN] verify product set to unpublished/inactive in admin
+[API] getCart query reflects unavailable status
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","unavailable item shown as purchasable; checkout allowed with unpublished product; no prompt to remove","Republish product in admin; remove item from cart","Coverage Gap Analysis","Automated"
+"CART-026","Cart Validation - Quantity Exceeds Available Stock","Cart > Validation","High","BL-CART-001","ECL-3.1, ECL-14.1","Product in cart with qty=1; product has limited stock (e.g., 5 units); inventory tracking enabled","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ACT] click '+' (Increase quantity) or use direct input to set qty exceeding stock (e.g., type 10 when max 5)
+[WAIT] wait for validation response
+[ASSERT] verify validation error or auto-cap applied
+[ACT] click 'Proceed to Checkout'
+[ASSERT] verify checkout blocked if qty still exceeds stock","[DOM] warning message displayed indicating qty exceeds available stock
+[STATE] quantity auto-corrected to max available OR checkout blocked with error
+[DOM] max available quantity stated in error message","[API] changeCartItemQuantity mutation returns stock validation error or errors[] reflects constraint
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","no validation shown for over-stock qty; checkout proceeds with qty > stock; no indication of stock limit","Restore item quantity to valid amount","Coverage Gap Analysis","Automated"
+"CART-027","Cart Validation - Mixed Valid and Invalid Items","Cart > Validation","Critical","BL-CART-001, BL-CART-005","ECL-7.3, ECL-14.1, ECL-14.2","Multiple products in cart; admin access; allow 30-60s search index lag after admin changes","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+admin={{ADMIN_URL}}
+adminUser={{ADMIN_EMAIL}}
+adminPassword={{ADMIN_PASSWORD}}","[ACT] add three or more products to cart
+[NAV] log in to {{ADMIN_URL}}
+[ACT] set one product inventory to 0 (out of stock)
+[ACT] unpublish a second product
+[WAIT] wait 30-60s for search index to update
+[NAV] return to {{FRONT_URL}}/cart and refresh
+[ASSERT] verify valid items unaffected, invalid items flagged
+[ACT] remove all invalid items
+[ACT] click 'Proceed to Checkout'
+[ASSERT] verify checkout proceeds","[DOM] valid items displayed with correct prices and quantities
+[DOM] out-of-stock item individually flagged
+[DOM] unpublished item individually flagged with separate message
+[STATE] checkout blocked while invalid items present
+[STATE] checkout proceeds after all invalid items removed","[ADMIN] verify both admin changes saved
+[API] getCart query returns per-item status flags
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","valid items affected by invalid item flags; all items show same error; checkout proceeds with invalid items; individual item messages missing","Restore inventory and republish products in admin; remove items from cart","Coverage Gap Analysis","Automated"
+"CART-028","Price Increase During Session","Cart > Price Changes","Medium","BL-CART-005, BL-CART-002","ECL-4.1, ECL-14.2, ECL-14.4","User logged in; product added to cart at original price; admin access available; allow 30-60s search index lag","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+admin={{ADMIN_URL}}
+adminUser={{ADMIN_EMAIL}}
+adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart and note price (e.g., $10.00) and subtotal
+[NAV] log in to {{ADMIN_URL}}
+[ACT] navigate to Catalog > Products, find product, increase price to $15.00, save
+[WAIT] wait 30-60s for search index to update
+[NAV] return to {{FRONT_URL}}/cart (without clearing cache)
+[ACT] reload cart page (F5 or refresh)
+[ASSERT] verify unit price and subtotal updated","[DOM] unit price shows $15.00 (not $10.00)
+[MATH] line total = $15.00 × quantity (2 decimal places)
+[MATH] subtotal recalculated at new price
+[STATE] no mismatch between cart price and checkout price","[ADMIN] verify price saved as $15.00 in admin
+[API] getCart query returns updated price
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","old $10.00 price persists after refresh; subtotal shows stale value; price mismatch between cart and checkout","Restore original price in admin; remove item from cart","Coverage Gap Analysis","Automated"
+"CART-029","Price Decrease During Session","Cart > Price Changes","Medium","BL-CART-005, BL-CART-002","ECL-4.1, ECL-14.2, ECL-14.4","User logged in; product added to cart at original price; admin access available; allow 30-60s search index lag","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+admin={{ADMIN_URL}}
+adminUser={{ADMIN_EMAIL}}
+adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart and note price (e.g., $20.00)
+[NAV] log in to {{ADMIN_URL}}
+[ACT] decrease product price to $15.00 and save
+[WAIT] wait 30-60s for search index to update
+[NAV] return to {{FRONT_URL}}/cart
+[ACT] reload cart page
+[ASSERT] verify price decreased","[DOM] unit price shows $15.00 (not $20.00)
+[MATH] line total = $15.00 × quantity (2 decimal places)
+[MATH] subtotal recalculated at lower price
+[STATE] customer benefits from lower price — no residual old price shown","[ADMIN] verify price saved as $15.00 in admin
+[API] getCart query returns updated lower price
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","old $20.00 price shown after refresh; line total not recalculated; checkout still charges old price","Restore original price in admin; remove item from cart","Coverage Gap Analysis","Automated"
+"CART-030","Discount Removal During Session","Cart > Price Changes","Medium","BL-CART-005, BL-CART-004","ECL-4.1, ECL-14.2, ECL-14.4","User logged in; product in cart with active promotional discount applied; admin access available; allow 30-60s search index lag","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+admin={{ADMIN_URL}}
+adminUser={{ADMIN_EMAIL}}
+adminPassword={{ADMIN_PASSWORD}}","[ACT] add discounted product to cart and note discounted price
+[NAV] log in to {{ADMIN_URL}}
+[ACT] deactivate or remove the promotion/coupon, save
+[WAIT] wait 30-60s for search index to update
+[NAV] return to {{FRONT_URL}}/cart
+[ACT] reload cart page
+[ASSERT] verify discount removed and full price shown","[DOM] unit price shows full price (discount removed)
+[STATE] discount line removed from order summary
+[MATH] cart total recalculates to full price
+[STATE] no stale discount amount persists","[ADMIN] verify promotion deactivated in admin
+[API] getCart query reflects full price without discount
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","stale discount persists after promo deactivation; discount line still shown in summary; total still shows reduced amount","Restore promotion in admin; remove item from cart","Coverage Gap Analysis","Automated"
+"CART-040","Cart Persistence - Sign Out and Sign Back In","Cart > Persistence","Critical","BL-CART-006","ECL-7.3, ECL-14.1","User logged in with items in cart","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
+[ACT] add 2-3 different products to cart with varying quantities
+[ASSERT] note all cart contents: product names, quantities, prices
+[ACT] sign out of the account
+[ASSERT] verify cart cleared or inaccessible on storefront while signed out
+[ACT] sign back in with the same account
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] compare cart contents to noted items","[STATE] all cart contents preserved after sign out/in cycle
+[DOM] all product names, quantities, prices match pre-sign-out state
+[STATE] cart badge shows correct total
+[MATH] cart subtotal matches pre-sign-out value
+[STATE] no duplicate or missing items","[API] getCart query response errors[] is empty after re-login
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","cart empty after re-login; items duplicated; quantities wrong; subtotal mismatch","Remove added items from cart","Coverage Gap Analysis","Automated"
+"CART-041","Cart Merge - Guest to Authenticated User","Cart > Persistence","Critical","BL-CART-006, BL-CART-007","ECL-7.3, ECL-14.1","Registered account with Product A qty 2 already in cart; user currently signed out","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest (not signed in)
+[ACT] add Product B to cart (qty 1) as guest
+[ACT] add Product C to cart (qty 3) as guest
+[ASSERT] verify guest cart shows Products B and C
+[ACT] navigate to sign in
+[ACT] sign in with registered account (which already has Product A qty 2)
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify all three products present
+[ASSERT] verify quantities: A=2, B=1, C=3
+[ASSERT] verify no duplicate entries for any product","[STATE] guest cart items merged with existing account cart
+[DOM] all items from both carts present after login
+[DOM] quantities from guest session preserved
+[STATE] pre-existing account cart items retain their quantities
+[MATH] cart subtotal reflects all merged items
+[STATE] no duplicate line items","[API] mergeCarts mutation response errors[] is empty
+[CONSOLE] no JS errors on sign-in and cart page
+[NETWORK] no 4xx/5xx during merge","guest items dropped on login; account items overwritten; duplicates created; quantities wrong; subtotal incorrect","Remove all items from cart","Coverage Gap Analysis","Automated"
+"CART-042","Cart Persistence - Coupon Survives Sign Out/In","Cart > Persistence","Critical","BL-CART-004, BL-CART-006","ECL-7.3, ECL-14.1","User logged in; valid coupon code available; products in cart eligible for coupon","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and navigate to cart
+[ACT] add eligible products to cart
+[ACT] enter valid coupon code and click 'Apply'
+[ASSERT] verify coupon applied and discount visible
+[ASSERT] note discount amount and final total
+[ACT] sign out of account
+[ACT] sign back in with same account
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify coupon still applied
+[ASSERT] verify discount amount matches pre-sign-out value","[STATE] coupon code persists across sign out/in cycle
+[MATH] discount amount identical after re-authentication
+[MATH] cart total with discount matches pre-sign-out total
+[DOM] coupon code visible in cart summary
+[STATE] no need to re-enter coupon manually","[API] getCart query returns coupon in cart response after re-login
+[API] applyCoupon mutation response errors[] is empty (initial apply)
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","coupon dropped on re-login; different discount amount after re-login; coupon not shown in summary","Remove coupon and items from cart","Coverage Gap Analysis","Automated"
+"CART-043","Price Change During Session - Admin Increases Price","Cart > Price Changes","Critical","BL-CART-005, BL-CART-002","ECL-4.1, ECL-14.2, ECL-14.4","User logged in with item in cart at known price (e.g., $10.00); admin access available; allow 30-60s search index lag after price update","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+admin={{ADMIN_URL}}
+adminUser={{ADMIN_EMAIL}}
+adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart and note displayed unit price ($10.00) and subtotal
+[NAV] log in to {{ADMIN_URL}}
+[ACT] navigate to Catalog > Products, find product, update price to $15.00, save
+[WAIT] wait 30-60s for search index to update
+[NAV] return to {{FRONT_URL}}/cart
+[ACT] refresh page (F5)
+[ASSERT] verify displayed unit price
+[ASSERT] verify cart subtotal recalculated","[DOM] unit price shows $15.00 (not $10.00) after refresh
+[MATH] cart subtotal recalculates based on $15.00
+[STATE] price updated without requiring item removal and re-add
+[STATE] no stale cached price shown","[ADMIN] verify price saved as $15.00 in admin
+[API] getCart query returns updated price
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","old $10.00 price persists after admin change and refresh; subtotal shows stale value; checkout charges wrong price","Restore original price in admin; remove item from cart","Coverage Gap Analysis","Automated"
+"CART-044","Price Change During Session - Price Drop With Indicator","Cart > Price Changes","High","BL-CART-005, BL-CART-002","ECL-4.1, ECL-14.2, ECL-14.4","User logged in with item in cart at known price (e.g., $25.00); admin access available; allow 30-60s search index lag","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+admin={{ADMIN_URL}}
+adminUser={{ADMIN_EMAIL}}
+adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart and note price ($25.00)
+[NAV] log in to {{ADMIN_URL}}
+[ACT] decrease product price to $18.00 and save
+[WAIT] wait 30-60s for search index to update
+[NAV] return to {{FRONT_URL}}/cart
+[ACT] refresh page
+[ASSERT] verify price shows $18.00
+[ASSERT] observe any price-change indicator or notification
+[ASSERT] verify subtotal recalculated","[DOM] unit price shows $18.00 (not $25.00)
+[DOM] visual indicator or notification informs user of price change (e.g., price-updated badge, toast, or strikethrough of old price)
+[MATH] cart subtotal recalculates at $18.00
+[STATE] customer benefits from lower price — old price not prominently displayed without context","[ADMIN] verify price saved as $18.00 in admin
+[API] getCart query returns lower price
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","old $25.00 price shown after refresh; no visual indicator of price change; subtotal not recalculated","Restore original price in admin; remove item from cart","Coverage Gap Analysis","Automated"
+"CART-045","Item Goes Out of Stock While in Cart","Cart > Validation","Critical","BL-CART-001, BL-CART-005","ECL-7.3, ECL-14.1, ECL-14.2","User logged in with item in cart; admin access to adjust inventory; allow 30-60s search index lag after inventory change","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+admin={{ADMIN_URL}}
+adminUser={{ADMIN_EMAIL}}
+adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart (qty 1) and verify it appears as in-stock
+[NAV] log in to {{ADMIN_URL}}
+[ACT] set product inventory to 0 (out of stock) and save
+[WAIT] wait 30-60s for search index to update
+[NAV] return to {{FRONT_URL}}/cart
+[ACT] refresh page
+[ASSERT] verify out-of-stock status shown for item
+[ACT] click 'Proceed to Checkout'
+[ASSERT] verify checkout blocked","[DOM] out-of-stock item visually marked as unavailable (grayed out, strikethrough, or warning badge)
+[DOM] clear message indicating item is unavailable
+[STATE] 'Proceed to Checkout' disabled or blocked with error message
+[DOM] prompt to remove unavailable item visible
+[STATE] other in-stock items unaffected","[ADMIN] verify inventory set to 0 in admin
+[API] getCart query reflects out-of-stock status
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","no out-of-stock indicator on cart; checkout allowed with out-of-stock item; no removal prompt; other items affected","Restore inventory in admin; remove item from cart","Coverage Gap Analysis","Automated"
+"CART-046","Checkout Blocked by Out-of-Stock Item","Cart > Validation","Critical","BL-CART-001","ECL-7.3, ECL-14.1","User logged in; cart contains one out-of-stock item and one in-stock item","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with mixed availability items
+[ASSERT] verify out-of-stock item shows unavailable status
+[ACT] click 'Proceed to Checkout' button
+[WAIT] wait for validation response
+[ASSERT] verify checkout blocked with clear error message
+[ACT] remove the out-of-stock item from cart
+[ACT] click 'Proceed to Checkout' again
+[ASSERT] verify checkout proceeds","[STATE] checkout blocked when cart contains out-of-stock items
+[DOM] clear error message identifies which item(s) are unavailable
+[STATE] after removing unavailable item, checkout proceeds normally
+[STATE] in-stock items not affected by validation block
+[DOM] error message is user-friendly and actionable","[API] changeCartItemQuantity or checkout mutation returns blocking error for out-of-stock
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","checkout proceeds with out-of-stock item; error message vague or missing; in-stock items blocked unnecessarily; error not cleared after removal","Remove all test items from cart","Coverage Gap Analysis","Automated"
+"CART-047","Cart Item Quantity Exceeds Available Stock","Cart > Validation","Critical","BL-CART-001","ECL-3.1, ECL-14.1","User logged in; product in cart; product has limited stock (e.g., 3 units available)","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ACT] attempt to increase item quantity beyond available stock (e.g., set to 10 when only 3 available via '+' or direct input)
+[WAIT] wait for validation response
+[ASSERT] verify validation error or qty cap applied
+[ACT] click 'Proceed to Checkout' with over-stock quantity (if still set)
+[ASSERT] verify checkout blocked or qty corrected","[DOM] validation error displayed indicating qty exceeds available stock
+[STATE] qty either auto-capped at maximum available (3) or checkout blocked with error
+[DOM] error message clearly states available stock limit
+[STATE] cannot proceed to checkout with qty exceeding stock
+[MATH] cart subtotal reflects valid (capped) quantity","[API] changeCartItemQuantity mutation returns stock constraint error or errors[]
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","no validation for over-stock qty; checkout proceeds with qty > stock; no stock limit communicated; subtotal shows over-stock amount","Restore item quantity to valid amount or remove item","Coverage Gap Analysis","Automated"
+"CART-048","Cart With Zero-Quantity Item Cannot Proceed to Checkout","Cart > Validation","Critical","BL-CART-001","ECL-3.1, ECL-14.1","User logged in; product in cart","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[ACT] manually set item quantity to 0 via direct input in spinbutton
+[KEY] press Tab to commit
+[WAIT] wait for cart behavior (auto-remove or validation error)
+[ASSERT] verify cart handles zero-qty: auto-removed or error shown
+[ACT] if item remains, click 'Proceed to Checkout'
+[ASSERT] verify checkout blocked if zero-qty item persists","[STATE] zero-qty item auto-removed from cart OR clear validation error shown (quantity must be at least 1)
+[STATE] if auto-removed: cart count decremented, subtotal recalculated, empty state if last item
+[STATE] cannot proceed to checkout with zero-quantity items","[API] removeCartItem or changeCartItemQuantity mutation response errors[] is empty
+[CONSOLE] no JS errors after zero-qty input
+[NETWORK] no 4xx/5xx","zero-qty item remains without error; checkout proceeds with qty=0; API accepts qty=0; page crashes on zero input","Remove all test items from cart","Coverage Gap Analysis","Automated"
+"CART-073","Cart Transfer - Guest Cart to New Account With Empty Cart","Cart > Persistence > Transfer","High","BL-CART-008","ECL-2.1","A registered user account exists with empty cart; user is currently signed out","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
+[ACT] add 2 products to guest cart with different quantities
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify 2 items in guest cart with correct quantities
+[ACT] sign in as {{USER_EMAIL}} (account has empty cart)
+[WAIT] wait for cart transfer
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify same 2 products transferred with original quantities
+[ASSERT] verify cart subtotal is correct","[STATE] guest cart fully transferred to authenticated user cart
+[DOM] 2 line items present with correct quantities
+[MATH] subtotal matches pre-sign-in guest cart total","[API] getCart returns transferred guest items
+[CONSOLE] no JS errors during transfer
+[NETWORK] no 4xx/5xx on cart operations","guest cart items lost; quantities reset; empty cart shown after sign-in","Remove items from cart","Coverage Gap Analysis","Manual"
+"CART-074","Cart Persistence - Empty Cart Stays Empty After Sign-Out/Sign-In","Cart > Persistence","Medium","BL-CART-008","ECL-2.1","User logged in with empty cart","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in as {{USER_EMAIL}}
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify cart is empty (0 items or empty state message)
+[ACT] sign out
+[WAIT] wait for sign-out to complete
+[ACT] sign in again as {{USER_EMAIL}}
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify cart is still empty - no phantom items appeared
+[ASSERT] verify cart badge shows 0 or is hidden","[STATE] cart remains empty after sign-out/sign-in cycle
+[DOM] empty cart state displayed; no unexpected line items
+[DOM] cart badge count = 0 or badge hidden","[API] getCart returns empty lineItems array
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","phantom items appear in cart after sign-in; cart count badge shows nonzero value; error message instead of empty state","None","Coverage Gap Analysis","Manual"
+"CART-076","Stale Cart Price Warning - Admin Price Change During Session","Cart > Price > Stale","Critical","BL-PRICE-001","ECL-2.3","User logged in with item in cart; admin access available to change product price","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+admin_url={{BACK_URL}}
+admin_email={{ADMIN_EMAIL}}
+admin_password={{ADMIN_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in as {{USER_EMAIL}}
+[ACT] add a product to cart and note the unit price shown
+[NAV] navigate to {{BACK_URL}} admin panel
+[ACT] change the price of the same product in the price list
+[NAV] navigate back to {{FRONT_URL}}/cart
+[ACT] refresh the cart page
+[WAIT] wait for cart to reload with updated prices
+[ASSERT] verify cart shows updated price or a price-changed notification
+[ASSERT] verify line total recalculated based on new price","[STATE] cart price updated to reflect admin price change
+[DOM] price warning or updated price visible on cart page
+[MATH] line total = new unit price x quantity","[API] getCart returns updated unitPrice from current price list
+[CONSOLE] no JS errors on price refresh
+[NETWORK] cart API call returns fresh price data","stale/cached price shown after admin change; no warning displayed; line total uses old price; checkout proceeds with wrong price","Revert price in admin; remove cart items","Coverage Gap Analysis","Manual"
+"CART-077","Checkout Recalculates Totals to Reflect Current Prices","Cart > Price > Recalculation","Critical","BL-PRICE-001","ECL-2.3","User logged in with item in cart; prices are current","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with items
+[ASSERT] note the current cart subtotal
+[ACT] proceed to checkout (select delivery and shipping)
+[WAIT] wait for checkout page to load order summary
+[ASSERT] verify checkout order summary subtotal uses current prices (not cached)
+[ASSERT] verify line item prices on checkout match cart page prices
+[ASSERT] verify total = subtotal + shipping + tax - discounts","[MATH] checkout subtotal = sum of (current unit price x quantity) for all items
+[STATE] no price discrepancy between cart and checkout
+[DOM] order summary displays correct line prices","[API] checkout API returns recalculated totals
+[CONSOLE] no JS errors during checkout transition
+[NETWORK] no 4xx/5xx","checkout shows different total than cart; cached prices used at checkout; price mismatch between cart and order summary","Clear cart","Coverage Gap Analysis","Manual"
+"CART-078","Tier Price Update When Quantity Drops Below Threshold","Cart > Price > Tier","High","BL-PRICE-004","ECL-2.3","User logged in; product has tier pricing configured (e.g., qty >= 10 = $8/unit; qty < 10 = $10/unit)","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+tier_product_sku={{TIER_PRICED_SKU}}","[NAV] navigate to {{FRONT_URL}}/product/{{TIER_PRICED_SKU}}
+[ACT] set quantity to tier threshold (e.g., 10) and add to cart
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify tier price is applied (e.g., $8/unit)
+[ASSERT] verify line total = tier price x quantity
+[ACT] reduce quantity below tier threshold (e.g., change to 5)
+[WAIT] wait for cart to recalculate
+[ASSERT] verify unit price reverts to standard price (e.g., $10/unit)
+[ASSERT] verify line total recalculated with standard price","[MATH] tier price applied when qty >= threshold; standard price when qty < threshold
+[STATE] price updates dynamically on quantity change
+[DOM] unit price display changes when quantity crosses tier boundary","[API] changeCartItemQuantity mutation returns updated unitPrice
+[CONSOLE] no JS errors on quantity change
+[NETWORK] no 4xx/5xx on price recalculation","price stays at tier rate after reducing below threshold; line total not recalculated; unit price display stale","Reset cart item quantity or remove","Coverage Gap Analysis","Manual"
+"CART-081","Cart Validation - Removed/Unavailable Product in Cart","Cart > Validation","High","BL-CART-001","ECL-2.1","User logged in; product was added to cart then removed/deactivated via admin","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+admin_url={{BACK_URL}}
+admin_email={{ADMIN_EMAIL}}
+admin_password={{ADMIN_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and add a product to cart
+[NAV] navigate to {{BACK_URL}} admin and deactivate/unpublish the product
+[NAV] navigate back to {{FRONT_URL}}/cart
+[ACT] refresh cart page
+[ASSERT] verify unavailable product shows error indicator or is flagged
+[ASSERT] verify checkout is blocked with clear message about unavailable product
+[ACT] remove the unavailable item from cart
+[ASSERT] verify cart updates and checkout becomes available (if other valid items exist)","[DOM] unavailable product marked with error/warning state
+[DOM] checkout blocked until unavailable item removed
+[STATE] removing unavailable item unblocks checkout","[API] getCart returns validation errors for unavailable product
+[CONSOLE] no JS errors
+[NETWORK] no 5xx","unavailable product shown as normal; checkout proceeds; no error message; cart crashes on load","Reactivate product in admin; remove from cart","Coverage Gap Analysis","Manual"
+"CART-082","Cart Validation - Multiple Simultaneous Errors Displayed","Cart > Validation > Multiple","Medium","BL-CART-001","ECL-2.1","User logged in; cart has one out-of-stock item AND one item with quantity exceeding available stock","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart containing: 1 out-of-stock item + 1 over-max-quantity item
+[ASSERT] verify BOTH validation errors are shown simultaneously (not just the first)
+[ASSERT] verify each error message is associated with the correct line item
+[ASSERT] verify checkout is blocked
+[ACT] resolve one error (remove out-of-stock item)
+[ASSERT] verify first error cleared but second error still shown
+[ACT] resolve second error (adjust quantity)
+[ASSERT] verify all errors cleared and checkout unblocked","[DOM] multiple error messages displayed simultaneously on different line items
+[DOM] each error is item-specific not a single generic message
+[STATE] checkout unblocks only after ALL validation errors resolved","[API] getCart returns multiple validation errors
+[CONSOLE] no JS errors
+[NETWORK] no 5xx","only one error shown at a time; generic error replaces item-specific errors; fixing one error hides the other; checkout unblocks with remaining errors","Remove test items from cart","Coverage Gap Analysis","Manual"

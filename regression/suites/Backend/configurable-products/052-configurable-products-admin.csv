@@ -1,0 +1,211 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"CFG-CA-001","Create New Configurable Product in Admin Catalog","Catalog > Configurable Products > Create","Critical","BL-CAT-001; BL-CAT-004","","Admin SPA accessible at {{BACK_URL}}. Logged in as {{ADMIN_EMAIL}} with catalog edit permissions. Products with Options > Configurations category exists.","productName=QA Test Configurable Product; sku=QA-CONFIG-TEST-001; price=100.00; adminUrl={{BACK_URL}}","[NAV] Navigate to {{BACK_URL}} and log in as admin
+[NAV] Navigate to Catalog module
+[NAV] Navigate to the Products with Options category or equivalent test category
+[ACT] Click Add item or Add product
+[ACT] Select product type Configurable (or type that supports configurations)
+[ACT] Enter product name: QA Test Configurable Product
+[ACT] Enter product SKU: QA-CONFIG-TEST-001
+[ACT] Set product price to $100.00
+[ACT] Save the product (click Save or OK)
+[ASSERT] Verify product appears in category list","[STATE] Admin SPA loads and dashboard is visible
+[STATE] Catalog module opens
+[STATE] Configurable product form displayed
+[STATE] Name and SKU fields populated
+[STATE] Product saved successfully with no error messages
+[DOM] QA Test Configurable Product visible in category list","[API] GET /api/catalog/products?type=Configurable — verify product returned
+[CONSOLE] No errors on create","Product type not available; SKU rejected; product not indexed after save","delete created configurable product via Admin","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+"CFG-CA-002","Add Configuration Section to Configurable Product","Catalog > Configurable Products > Configuration Sections","Critical","BL-CAT-001","","QA Test Configurable Product created (CFG-CA-001). Admin logged in.","sectionName=QA Test Options; required=false; adminUrl={{BACK_URL}}","[NAV] Open QA Test Configurable Product in Admin
+[ACT] Find the Configurations tab or section
+[ACT] Click Add configuration section or Add group
+[ACT] Enter section name: QA Test Options
+[ACT] Set the section as optional (not required)
+[ACT] Save the configuration section
+[ASSERT] Verify section appears in the product configurations list","[STATE] Product detail blade opens
+[STATE] Configurations section is visible
+[STATE] Configuration section form opens
+[STATE] Name field populated with QA Test Options
+[STATE] Optional flag is set
+[STATE] Section saved without error
+[DOM] QA Test Options visible in configurations","[API] GET /api/catalog/products/{id} — verify configurations array
+[CONSOLE] No errors","Configurations tab not visible; section not saved; optional flag not persisted","delete configuration section via Admin","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+"CFG-CA-003","Add Option Products to Configuration Section","Catalog > Configurable Products > Option Products","Critical","BL-CAT-001","ECL-5.1","QA Test Options section created (CFG-CA-002). Existing simple products available in catalog to add as options.","option1=Seat; option2=Pedals; qty=1; adminUrl={{BACK_URL}}","[NAV] Open the QA Test Options configuration section
+[ACT] Click Add option or Add product to the section
+[ACT] Search for an existing product to add as option (e.g. Seat)
+[ACT] Select the product
+[ACT] Set the option quantity to 1
+[ACT] Set the option price or verify it inherits from product
+[ACT] Save the option
+[ACT] Add a second option product (e.g. Pedals) with qty 1
+[ACT] Save all changes
+[ASSERT] Verify both options appear in the section","[STATE] Section management blade opens
+[STATE] Product search/selector opens
+[STATE] Product found in search results
+[STATE] Product added as option
+[STATE] Quantity and price set correctly
+[STATE] First option saved without error
+[STATE] Second option added successfully
+[DOM] Both options visible in the configuration section","[API] GET /api/catalog/products/{id} — verify options in configurations
+[CONSOLE] No errors","Product search returns no results; option not saved; second option overwrites first","delete added option products via Admin","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+"CFG-CA-004","Set and Update Option Price and Quantity","Catalog > Configurable Products > Option Products","High","BL-CAT-001; BL-CAT-003","","Options added to QA Test Options section (CFG-CA-003). Admin logged in.","qty=3; price=25.00; extendedPrice=75.00; adminUrl={{BACK_URL}}","[NAV] Open the first option in the configuration section
+[ACT] Update the quantity to 3
+[ACT] Update the price to $25.00
+[ACT] Save the option
+[ASSERT] Verify the option now shows qty 3 and price $25.00
+[ASSERT] Verify extended price = $25.00 x 3 = $75.00 (if displayed in Admin)","[STATE] Option edit form opens
+[STATE] Quantity field updated to 3
+[STATE] Price field updated to $25.00
+[STATE] Saved without error
+[STATE] Updated values displayed
+[MATH] Extended price calculation is correct","[API] GET /api/catalog/products/{id} — verify option qty and price
+[CONSOLE] No errors","Extended price calculation wrong; qty not saved; price revert after save","restore original option price and qty","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+"CFG-CA-005","Mark Configuration Section as Required and Verify Storefront Enforcement","Catalog > Configurable Products > Required Options","High","BL-CAT-001","","QA Test Configurable Product with configuration section exists. Admin logged in. Product published and accessible on storefront.","frontUrl={{FRONT_URL}}; adminUrl={{BACK_URL}}","[NAV] Open the QA Test Options configuration section in Admin
+[ACT] Change the required flag to true/on
+[ACT] Save the section
+[NAV] Navigate to the configurable product on storefront
+[ASSERT] Observe the accordion label
+[ACT] Set quantity to 1 without selecting any option (with None selected)
+[ACT] Attempt to click Add to cart
+[ACT] Select an option from the section
+[ACT] Click Add to cart","[STATE] Section edit opens
+[STATE] Required flag enabled
+[STATE] Saved without error
+[STATE] Product PDP loads
+[STATE] Accordion subtitle no longer says (optional) or shows (required)
+[STATE] Quantity set to 1
+[STATE] Validation error: Please select a required option or similar; item NOT added to cart
+[STATE] Option selected
+[STATE] Item successfully added to cart","[API] POST /graphql — cart mutation — verify required option enforced
+[CONSOLE] No validation errors in console
+[NETWORK] Cart API rejects add without required option","Required option not enforced; item added to cart without selection; accordion label not updated","restore section to optional via Admin","TP_CONFIGURABLE_PRODUCTS_001, CONFIG-002","Manual"
+"CFG-CA-006","Edit Existing Configuration Option Price and Verify on Storefront","Catalog > Configurable Products > Edit","High","BL-CAT-001; BL-CAT-003","","QA Test Configurable Product exists with options. Admin logged in. Note current price of first option ($25.00).","oldPrice=25.00; newPrice=30.00; frontUrl={{FRONT_URL}}; adminUrl={{BACK_URL}}","[NAV] Open first option in Admin
+[ACT] Change price from $25.00 to $30.00
+[ACT] Save changes
+[NAV] Navigate to the product PDP on storefront
+[ASSERT] Observe the updated option price
+[ASSERT] Verify price calculation uses updated value","[STATE] Option edit form opens
+[STATE] Price field updated to $30.00
+[STATE] Saved without error
+[STATE] Product PDP loads
+[FORMAT] Option now shows $30.00 (updated immediately or after cache clear)
+[MATH] Total = base price + $30.00 x qty","[API] GET /api/catalog/products/{id} — verify option price updated
+[NAV] {{FRONT_URL}} product PDP — verify updated price shown
+[CONSOLE] No cache or pricing errors","Price not updated on storefront; stale cache not cleared; calculation uses old price","restore option price to $25.00","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+"CFG-CA-007","Add Second Configuration Section to Existing Configurable Product","Catalog > Configurable Products > Configuration Sections","High","BL-CAT-001","","QA Test Configurable Product has one section (QA Test Options). Admin logged in.","section2Name=QA Color Options; adminUrl={{BACK_URL}}; frontUrl={{FRONT_URL}}","[NAV] Open QA Test Configurable Product in Admin
+[ACT] Add a second configuration section: QA Color Options
+[ACT] Add 2 option products to QA Color Options
+[ACT] Save all changes
+[NAV] Navigate to storefront PDP
+[ASSERT] Observe Configure the parameters widget
+[ASSERT] Verify each accordion independently collapses/expands
+[ACT] Select an option in each section","[STATE] Product opens in Admin
+[STATE] Second section QA Color Options added
+[STATE] Two options added to QA Color Options
+[STATE] All changes saved
+[STATE] Product PDP loads
+[DOM] Widget now shows TWO accordions (QA Test Options and QA Color Options)
+[STATE] Both accordions function independently
+[STATE] Each section tracks its own selection","[API] GET /api/catalog/products/{id} — verify 2 configuration sections
+[NAV] {{FRONT_URL}} PDP — verify two accordions rendered
+[CONSOLE] No errors","Second section not saved; accordions share state; options from section 1 appear in section 2","delete second configuration section via Admin","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+"CFG-CA-008","Remove Option Product from Configuration Section","Catalog > Configurable Products > Delete Option","Medium","BL-CAT-001","","QA Test Configurable Product has section with 2 options. Admin logged in.","adminUrl={{BACK_URL}}; frontUrl={{FRONT_URL}}","[NAV] Open the option list for QA Test Options
+[ACT] Select/click the second option to edit or delete
+[ACT] Click Delete or Remove for the second option
+[ACT] Confirm deletion
+[ASSERT] Verify only one option remains in section
+[NAV] Navigate to storefront PDP
+[ASSERT] Verify accordion shows only 2 radio options (1 option + None)","[STATE] Options listed in section
+[STATE] Option detail or delete action available
+[STATE] Confirmation dialog appears
+[STATE] Option removed from section
+[STATE] Section now shows only 1 option
+[STATE] Product PDP loads
+[DOM] Deleted option no longer appears in accordion","[API] GET /api/catalog/products/{id} — verify option removed
+[NAV] {{FRONT_URL}} PDP accordion — verify option count
+[CONSOLE] No errors","Option still visible on storefront; confirmation not shown; other option also removed","none (option was created for deletion)","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+"CFG-CA-009","Delete Entire Configuration Section from Configurable Product","Catalog > Configurable Products > Delete Section","Medium","BL-CAT-001","ECL-5.1","QA Test Configurable Product has 2 sections (from CFG-CA-007). Admin logged in.","adminUrl={{BACK_URL}}; frontUrl={{FRONT_URL}}","[NAV] Open QA Test Configurable Product in Admin
+[ACT] Select QA Color Options section for deletion
+[ACT] Click Delete section
+[ACT] Confirm deletion
+[ASSERT] Verify only QA Test Options section remains
+[NAV] Navigate to storefront PDP
+[ASSERT] Observe Configure the parameters widget","[STATE] Product opens in Admin
+[STATE] Section selected
+[STATE] Confirmation dialog shown
+[STATE] QA Color Options deleted
+[STATE] Product shows 1 remaining section
+[STATE] Product PDP loads
+[DOM] Only one accordion (QA Test Options) shown in widget","[API] GET /api/catalog/products/{id} — verify 1 configuration section remains
+[NAV] {{FRONT_URL}} PDP — verify only one accordion
+[CONSOLE] No errors","Second section not deleted; first section also removed; storefront still shows two accordions","none (section was created for deletion)","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+"CFG-CA-010","Publish and Activate Configurable Product — Verify Storefront Visibility","Catalog > Configurable Products > Publish","Critical","BL-CAT-001","","QA Test Configurable Product exists but is NOT published/inactive. Admin logged in.","adminUrl={{BACK_URL}}; frontUrl={{FRONT_URL}}","[NAV] Open QA Test Configurable Product in Admin
+[ASSERT] Verify current state is draft/unpublished
+[NAV] Attempt to find the product on storefront (direct URL or catalog browse)
+[NAV] Return to Admin, click Publish or change status to Active
+[ACT] Save the product
+[NAV] Navigate to storefront and search or browse for the product
+[NAV] Open the product PDP","[STATE] Product opens in Admin
+[STATE] Published = false or Status = Draft
+[STATE] Product NOT visible on storefront (404 or not in catalog)
+[STATE] Published flag enabled
+[STATE] Product saved as published
+[DOM] Product appears in catalog or accessible by direct URL
+[DOM] Configure the parameters widget is visible on PDP","[API] GET /api/catalog/products/{id} — verify isPublished=true
+[NAV] {{FRONT_URL}} product URL — verify 200 response not 404
+[CONSOLE] No errors","Product still 404 after publish; published flag not persisted; Configure widget missing on PDP","unpublish/deactivate product after test via Admin","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+"CFG-CA-011","Validation Error When Creating Configuration Section with Empty Name","Catalog > Configurable Products > Validation","Medium","BL-CAT-001","","Configurable product open in Admin. Admin logged in.","adminUrl={{BACK_URL}}","[NAV] Initiate Add configuration section
+[ACT] Leave section name EMPTY
+[ACT] Click Save
+[ACT] Enter a valid section name
+[ACT] Click Save","[STATE] Configuration section form opens
+[STATE] Name field is blank
+[STATE] Validation error: Section name is required or similar message; section NOT saved
+[STATE] Name entered
+[STATE] Section saved successfully","[CONSOLE] No unhandled JS errors
+[DOM] Validation error message visible in UI","No validation error; empty section saved; error message not descriptive","delete created section (from second save) via Admin","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+"CFG-CA-012","Duplicate Configuration Section Name Behavior","Catalog > Configurable Products > Validation","Medium","BL-CAT-001","","QA Test Configurable Product has section QA Test Options. Admin logged in.","adminUrl={{BACK_URL}}","[NAV] Attempt to add a second section with the same name QA Test Options
+[ACT] Click Save
+[ACT] If allowed: verify storefront shows two sections with same name","[STATE] Section form shown with duplicate name
+[STATE] Either: validation error Section name already exists is shown
+[STATE] OR: system allows it (note behavior)
+[STATE] If duplicates allowed: storefront behavior is documented and no crash occurs","[CONSOLE] No unhandled JS errors
+[NAV] {{FRONT_URL}} PDP — verify no crash with duplicate section names","Duplicate causes server 500; storefront crashes with two same-name sections","delete duplicate section if created via Admin","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+"CFG-CA-013","Edit Configurable Product Name and Verify Update on Storefront","Catalog > Configurable Products > Edit","High","BL-CAT-001; BL-CAT-004","ECL-8.1","QA Test Configurable Product is published and visible on storefront. Admin logged in.","oldName=QA Test Configurable Product; newName=QA Updated Configurable Product; frontUrl={{FRONT_URL}}; adminUrl={{BACK_URL}}","[NAV] Open QA Test Configurable Product in Admin
+[ACT] Change product name to QA Updated Configurable Product
+[ACT] Save the product
+[NAV] Navigate to the product on storefront (direct URL or search)
+[ASSERT] Observe the product name on storefront","[STATE] Product opens in Admin
+[STATE] Name field updated to QA Updated Configurable Product
+[STATE] Saved without error
+[STATE] Product PDP loads
+[DOM] Name now shows QA Updated Configurable Product on storefront","[API] GET /api/catalog/products/{id} — verify updated name
+[NAV] {{FRONT_URL}} product PDP — verify name updated
+[CONSOLE] No errors","Name not updated on storefront within 60s; search still returns old name; PDP shows old name","restore product name to original via Admin","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+"CFG-CA-014","View Configured Orders in Admin Order Management","Admin > Orders > Configured Orders","High","BL-CAT-001","","A configured product order has been placed on storefront. Admin logged in.","adminUrl={{BACK_URL}}","[NAV] Navigate to Orders module in Admin
+[NAV] Find the order placed with the configured product
+[NAV] Open the order
+[ASSERT] Observe line items
+[ASSERT] Observe configuration details in order
+[ASSERT] Verify order total
+[ACT] Verify order status can be updated (change to Processing)","[STATE] Orders list loads
+[DOM] Order appears in list
+[STATE] Order detail blade opens
+[DOM] Configured product appears as a line item
+[DOM] Selected option (e.g. Seat) visible as sub-item or configuration attribute
+[MATH] Order total matches what customer paid
+[STATE] Status change to Processing saves without error","[API] GET /api/order/orders/{id} — verify line items include configured options
+[CONSOLE] No errors","Order total doesn't match storefront total; configuration details missing from order; status change fails","restore order status","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+"CFG-CA-015","Delete Configurable Product from Admin and Verify Storefront Removal","Catalog > Configurable Products > Delete","Medium","BL-CAT-001","ECL-5.1","QA Updated Configurable Product exists and is published. Admin logged in. Note the direct storefront URL for this product.","frontUrl={{FRONT_URL}}; adminUrl={{BACK_URL}}","[NAV] Open QA Updated Configurable Product in Admin
+[ACT] Click Delete
+[ACT] Confirm deletion
+[ASSERT] Verify product no longer in category list
+[NAV] Navigate to product's direct URL on storefront
+[ACT] Search for the product on storefront","[STATE] Product opens in Admin
+[STATE] Confirmation dialog appears
+[STATE] Product deleted from Admin catalog
+[DOM] Product absent from category list
+[STATE] 404 page or Product not found message shown for direct URL
+[STATE] Product does not appear in search results","[API] GET /api/catalog/products — verify product absent
+[NAV] {{FRONT_URL}} direct URL — verify 404
+[API] POST /api/catalog/search — verify product not in results
+[CONSOLE] No errors","Product still accessible on storefront after delete; search still returns deleted product; 500 instead of 404","none (product was created for deletion)","TP_CONFIGURABLE_PRODUCTS_001","Manual"

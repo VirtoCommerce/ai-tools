@@ -1,0 +1,438 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"B2C-SHIP-001","Ship To - View Saved Addresses","B2C Features > Ship To","Critical","BL-B2C-003","","User logged in, saved addresses exist","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Account > Addresses or click Ship To selector in header
+2. [ASSERT] Verify address list displays
+3. [ASSERT] Verify each address shows: Name, Street, City, State, ZIP, Phone
+4. [ASSERT] Verify default address is marked","[DOM] Address list displays all saved addresses
+[DOM] Each address shows full details (Name, Street, City, State, ZIP, Phone)
+[DOM] Default address has 'Default' badge
+[DOM] Edit and Delete options visible per address","[CONSOLE] no uncaught JS errors","Address list empty when addresses exist; default badge missing; address details incomplete","none","VCST-4575","Automated"
+"B2C-SHIP-002","Ship To - Add New Address","B2C Features > Ship To","Critical","BL-B2C-003","","User logged in","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Addresses
+2. [ACT] Click 'Add New Address'
+3. [ACT] Fill form: First Name: Jane, Last Name: Doe, Address: 456 New St, City: Springfield, State: IL, ZIP: 62701, Phone: 555-987-6543
+4. [ACT] Optionally check 'Set as default'
+5. [ACT] Click Save
+6. [ASSERT] Verify address saved and appears in list","[DOM] Add address button visible
+[DOM] Form displays all required fields
+[DOM] State dropdown populated based on country
+[DOM] Success message: 'Address added'
+[DOM] New address appears in list
+[DOM] Default badge shown if set as default","[CONSOLE] no uncaught JS errors","Add address button missing; form missing required fields; address not appearing in list after save; validation not applied to ZIP or phone","none","VCST-4575","Automated"
+"B2C-SHIP-003","Ship To - Edit Address","B2C Features > Ship To","High","BL-B2C-003","","Saved address exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Addresses
+2. [ACT] Click Edit on an address
+3. [ACT] Modify street to '456 New St Apt 2B'
+4. [ACT] Modify phone number
+5. [ACT] Click Save
+6. [ASSERT] Verify address updated in list","[DOM] Edit button or link available per address
+[STATE] Form pre-filled with current address data
+[DOM] Updated address displays new street and phone
+[DOM] Historical orders using this address are unaffected","[CONSOLE] no uncaught JS errors","Edit button missing; form not pre-filled; updates not saving; historical orders show incorrect updated address","none","VCST-4575","Automated"
+"B2C-SHIP-004","Ship To - Delete Address","B2C Features > Ship To","High","BL-B2C-003","","Non-default address exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Addresses
+2. [ACT] Click Delete on a non-default address
+3. [ASSERT] Verify confirmation prompt
+4. [ACT] Confirm deletion
+5. [ASSERT] Verify address removed from list","[DOM] Delete option available (not shown for default address)
+[DOM] Confirmation prompt: 'Delete this address?'
+[DOM] Address removed from list after confirmation
+[DOM] Cannot delete default address (UI prevents it)","[CONSOLE] no uncaught JS errors","Delete available for default address; no confirmation prompt; address not removed after deletion","none","VCST-4575","Automated"
+"B2C-SHIP-005","Ship To - Set Default Address","B2C Features > Ship To","High","BL-B2C-003","","Multiple addresses exist","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Addresses
+2. [ACT] Click 'Set as Default' on a non-default address
+3. [ASSERT] Verify default badge moves to new address
+4. [ASSERT] Verify only one default address exists","[STATE] Only one address has 'Default' badge at any time
+[DOM] Previous default loses badge; new default gains badge
+[DOM] New default appears first in address list
+[DOM] Default pre-selected in checkout","[CONSOLE] no uncaught JS errors","Multiple addresses showing Default badge simultaneously; badge not updating; new default not used in checkout","none","VCST-4575","Automated"
+"B2C-SHIP-006","Ship To - Select Address in Checkout","B2C Features > Ship To","Critical","BL-B2C-003","","Multiple saved addresses, in checkout","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Proceed to checkout
+2. [ASSERT] Verify default address pre-selected
+3. [ACT] Click 'Change' or open address selector
+4. [ASSERT] Verify address list displays all saved addresses
+5. [ACT] Select a different address
+6. [ASSERT] Verify shipping address updates in checkout","[STATE] Default address pre-selected on checkout load
+[DOM] All saved addresses listed in selector
+[DOM] Selecting updates shipping address in order summary
+[FORMAT] Shipping costs may update based on selected address","[CONSOLE] no uncaught JS errors","Default address not pre-selected; address selector not showing all addresses; shipping cost not updating after address change","none","VCST-4575","Automated"
+"B2C-SHIP-007","Ship To - Header Selector/Dropdown","B2C Features > Ship To","High","BL-B2C-003","","User logged in, multiple addresses","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Locate Ship To selector in header
+2. [ACT] Click Ship To selector
+3. [ASSERT] Verify dropdown shows addresses
+4. [ACT] Select a different address
+5. [ASSERT] Verify selection updates
+6. [ASSERT] Verify context switches (pricing may update for region)","[DOM] Ship To selector visible in header (near account menu)
+[DOM] Shows current default address (truncated)
+[DOM] Clicking opens dropdown with all addresses
+[STATE] Selection updates immediately
+[DOM] Pricing, availability, or shipping context switches after selection","[CONSOLE] no uncaught JS errors","Ship To selector missing from header; dropdown not opening; context not switching after address selection","none","VCST-4575","Manual"
+"B2C-SHIP-008","Ship To - Add Address During Checkout","B2C Features > Ship To","High","BL-B2C-003","","User in checkout","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to checkout
+2. [ACT] Click 'Add New Address' in shipping section
+3. [ACT] Fill address form
+4. [ACT] Check 'Save for future' (optional)
+5. [ACT] Click 'Use This Address'
+6. [ASSERT] Verify address used in checkout
+7. [ACT] Complete order
+8. [NAV] Navigate to Addresses page
+9. [ASSERT] Verify address saved if checkbox was selected","[DOM] Add new address option available inline in checkout
+[STATE] Address used immediately for the current order
+[DOM] If 'Save for future' checked: address appears in Addresses list after order
+[DOM] If not saved: address used for order only","[CONSOLE] no uncaught JS errors","Add address option missing in checkout; address not used for current order; address not persisted when save option checked","none","VCST-4575","Automated"
+"B2C-SHIP-009","Ship To - Address Validation","B2C Features > Ship To","High","BL-B2C-003","","User adding or editing address","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Add Address
+2. [ACT] Enter invalid ZIP: '999'
+3. [ACT] Attempt to save
+4. [ASSERT] Verify validation error: 'Invalid ZIP code'
+5. [ACT] Enter valid ZIP: 90210
+6. [ACT] Enter invalid phone: '123'
+7. [ASSERT] Verify error: 'Phone must be 10 digits'
+8. [ACT] Fix phone to 555-123-4567
+9. [ACT] Save
+10. [ASSERT] Verify address saves successfully","[DOM] ZIP code validated: 5 or 9 digits for US
+[DOM] Phone number validated: 10 digits
+[DOM] Error messages clear and specific per field
+[STATE] Cannot save address with invalid fields
+[DOM] Formatting hints shown (e.g., ZIP: 12345 or 12345-6789)","[CONSOLE] no uncaught JS errors","Invalid ZIP or phone accepted without error; error messages not specific enough; validation only on submit (not real-time)","none","VCST-4575","Manual"
+"B2C-SHIP-010","Ship To - Mobile Address Management","B2C Features > Ship To","High","BL-B2C-003","","Mobile device (375x667), logged in","url={{FRONT_URL}};viewport=375x667;user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Addresses on mobile viewport
+2. [ASSERT] Verify address list is mobile-optimized (stacked layout)
+3. [ACT] Tap Add New Address
+4. [ACT] Fill address form on mobile
+5. [ACT] Use native picker for State
+6. [ACT] Save address
+7. [ASSERT] Verify responsive design","[DOM] Address list stacks vertically on mobile
+[DOM] Cards or list items are tap-friendly
+[DOM] Form fields are full-width
+[DOM] Native select used for State field (better UX)
+[DOM] Phone keyboard type used for phone field
+[DOM] No horizontal scrolling","[CONSOLE] no uncaught JS errors","Horizontal scrolling present; touch targets too small; form fields not full-width; native pickers not used","none","VCST-4575","Manual"
+"B2C-SHIP-011","Ship To - International Address Support","B2C Features > Ship To","Medium","BL-B2C-003","","International shipping enabled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open Add New Address
+2. [ACT] Select Country: Canada
+3. [ASSERT] Verify Province/State updates to Canadian provinces
+4. [ACT] Fill address: 123 Maple Ave, Toronto, Ontario, M5A 1A1, Canada
+5. [ACT] Save
+6. [ASSERT] Verify address accepted with Canadian postal code format","[DOM] Country selector shows all enabled countries
+[DOM] State/Province field updates based on selected country
+[FORMAT] ZIP/Postal code validation per country: US=12345 or 12345-6789; Canada=A1A 1A1; UK=SW1A 1AA
+[DOM] Phone field accepts international format (+ prefix)","[CONSOLE] no uncaught JS errors","Province field not updating when country changed; Canadian postal code rejected; international phone format rejected","none","VCST-4575","Manual"
+"B2C-SHIP-012","Ship To - Address Nickname","B2C Features > Ship To","Low","BL-B2C-003","","User adding address","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open Add New Address
+2. [ACT] Enter nickname: 'Home' or 'Office' in the optional Nickname field
+3. [ACT] Fill address fields
+4. [ACT] Save
+5. [ASSERT] Verify nickname displays in address list","[DOM] Optional nickname field present in address form
+[DOM] Nickname displayed in list: 'Home - 123 Main St'
+[DOM] Nickname shown in checkout address selector
+[DOM] Nickname editable via Edit address","[CONSOLE] no uncaught JS errors","Nickname field missing; nickname not showing in address list or checkout selector","none","VCST-4575","Manual"
+"B2C-BULK-001","Quick Order by SKU","B2C Features > Bulk Order","Critical","BL-B2C-001","ECL-14.1","User logged in, /bulk-order page accessible, at least one known product SKU","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order (Quick Order page)
+2. [ASSERT] Locate the SKU entry field
+3. [ACT] Enter a known valid product SKU
+4. [KEY] Press Enter or click Add to confirm entry
+5. [ASSERT] Verify product info appears: name, image, unit price, available quantity","[DOM] Quick Order page loads at /bulk-order
+[DOM] SKU entry field present and auto-focused
+[DOM] Valid SKU entry loads product: name, price, availability in row
+[STATE] Quantity field becomes editable after product found","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Page does not load at /bulk-order; SKU field missing; product info not appearing after valid SKU entry","none","Coverage Gap Analysis","Generated"
+"B2C-BULK-002","Add All to Cart","B2C Features > Bulk Order","Critical","BL-B2C-001","ECL-14.1","Quick Order page with 3+ valid SKUs entered and quantities set","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order
+2. [ACT] Enter 3 different valid SKUs and set quantities: 2, 5, 1
+3. [ASSERT] Verify all 3 rows show correct product info
+4. [ACT] Click 'Add All to Cart'
+5. [WAIT] Wait for cart update confirmation
+6. [NAV] Navigate to cart
+7. [ASSERT] Verify all 3 products in cart with correct quantities","[STATE] 'Add All to Cart' button enabled when at least one valid product row populated
+[DOM] Cart contains all 3 products with specified quantities after add
+[DOM] Cart count updates to reflect all added items
+[DOM] Success notification: 'X items added to cart'","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Add All to Cart fails silently; cart missing one or more products; incorrect quantities in cart after bulk add","remove item from cart","Coverage Gap Analysis","Generated"
+"B2C-BULK-003","Invalid SKU Handling","B2C Features > Bulk Order","High","BL-B2C-001","","Quick Order page open","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to /bulk-order
+2. [ACT] Enter a valid SKU in row 1 and confirm
+3. [ACT] Enter a non-existent SKU 'FAKE-SKU-99999' in row 2 and confirm
+4. [ASSERT] Verify error state on row 2
+5. [ASSERT] Verify row 1 is unaffected","[DOM] Row 2 shows error: 'Product not found' or 'Invalid SKU'
+[DOM] Row 1 with valid SKU remains displayed correctly
+[DOM] Error scoped to invalid row only (other rows unaffected)
+[STATE] 'Add All to Cart' skips or warns about invalid rows","[CONSOLE] no uncaught JS errors","Error not shown for invalid SKU; error spreading to valid rows; Add All to Cart silently skips invalid rows without warning","none","Coverage Gap Analysis","Generated"
+"B2C-BULK-004","Multi-row Entry","B2C Features > Bulk Order","High","BL-B2C-001","","Quick Order page open","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order
+2. [ACT] Enter 5 different valid SKUs in separate rows
+3. [ACT] Set quantities: 1, 3, 2, 5, 10
+4. [ASSERT] Verify all 5 rows display product info correctly
+5. [ASSERT] Verify running total or summary calculated correctly","[DOM] All 5 rows display with product name, price, and set quantity
+[DOM] Page does not slow down or lose state with 5+ rows
+[MATH] Running total (if displayed) sums subtotals for all rows correctly
+[DOM] Can continue adding rows beyond 5","[CONSOLE] no uncaught JS errors","Page performance degradation with 5+ rows; row data lost when adding new rows; running total calculation incorrect","none","Coverage Gap Analysis","Generated"
+"B2C-BULK-005","Paste from Spreadsheet","B2C Features > Bulk Order","High","BL-B2C-001","","Quick Order page open, clipboard contains tab-separated SKU and quantity data","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [ACT] In a text editor, create 3 rows with format: SKU[tab]Quantity
+2. [ACT] Copy the 3 rows to clipboard
+3. [NAV] Navigate to /bulk-order
+4. [KEY] Press Ctrl+V in the bulk order entry area or first SKU field
+5. [ASSERT] Verify rows auto-populated with pasted SKUs and quantities","[DOM] Paste action auto-populates multiple rows from tab-separated clipboard data
+[DOM] SKU and quantity from each pasted row assigned to correct columns
+[DOM] Product lookup triggered for each pasted SKU
+[DOM] Invalid SKUs in pasted data flagged per row
+[DOM] Valid products display correctly after paste","[CONSOLE] no uncaught JS errors","Paste not triggering row population; SKUs and quantities mixed up across columns; product lookup not triggered for pasted SKUs","none","Coverage Gap Analysis","Generated"
+"B2C-BULK-006","Bulk Order Quantity Validation","B2C Features > Bulk Order","Medium","BL-B2C-001","","Quick Order page with a valid product SKU entered","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order and enter a valid SKU
+2. [ACT] Set quantity field to 0
+3. [ACT] Attempt to add to cart
+4. [ASSERT] Verify validation error shown
+5. [ACT] Set quantity to -1 (negative)
+6. [ASSERT] Verify validation error
+7. [ACT] Set valid quantity: 1
+8. [ASSERT] Verify add to cart succeeds","[DOM] Quantity 0 triggers error: 'Quantity must be at least 1'
+[DOM] Negative quantity triggers validation error
+[STATE] Add to Cart or Add All to Cart blocked for rows with invalid quantities
+[STATE] Setting valid positive quantity clears error and enables add action","[API] mutation errors[] is empty
+[CONSOLE] no uncaught JS errors","Zero or negative quantity accepted without error; Add to Cart not blocked for invalid quantities","remove item from cart","Coverage Gap Analysis","Generated"
+"B2C-DASH-001","Dashboard Page Loads","B2C Features > Dashboard","Medium","BL-B2C-003","","User signed in with valid credentials","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in to storefront
+2. [NAV] Navigate to /account/dashboard
+3. [WAIT] Wait for page to fully load
+4. [ASSERT] Check browser console for JavaScript errors
+5. [ASSERT] Verify page title and heading display","[DOM] /account/dashboard loads without errors
+[DOM] Page heading confirms Dashboard context
+[DOM] All page sections render (no blank areas)
+[NETWORK] All network requests complete with 200 status","[CONSOLE] no uncaught JS errors
+[NETWORK] no 4xx or 5xx network errors on dashboard load","Dashboard page returns 404 or 500; blank sections visible; JavaScript console errors on load","none","Coverage Gap Analysis","Generated"
+"B2C-DASH-002","Recent Orders Widget","B2C Features > Dashboard","Medium","BL-B2C-003","","User signed in, has at least one previous order","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in and navigate to /account/dashboard
+2. [ASSERT] Locate Recent Orders widget or section
+3. [ASSERT] Verify order entries are displayed
+4. [ASSERT] Verify each entry shows: order number, date, status, amount","[DOM] Recent Orders section visible on dashboard
+[DOM] Each order entry shows order number (e.g., ORD-12345)
+[DOM] Order date displayed per entry
+[DOM] Order status shown (Processing, Shipped, Delivered)
+[FORMAT] Order total amount shown per entry
+[DOM] Orders sorted most-recent first","[CONSOLE] no uncaught JS errors","Recent Orders section missing; order entries showing blank data; orders not sorted by date","none","Coverage Gap Analysis","Generated"
+"B2C-DASH-003","Monthly Spend Display","B2C Features > Dashboard","Medium","BL-B2C-003","","User signed in, has orders placed in current calendar month","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in and navigate to /account/dashboard
+2. [ASSERT] Locate monthly spending summary widget
+3. [ASSERT] Note the displayed amount
+4. [NAV] Cross-reference against Order History for current month
+5. [ASSERT] Verify totals match","[DOM] Monthly spend widget visible on dashboard
+[FORMAT] Amount corresponds to current calendar month
+[MATH] Value matches sum of current-month orders from Order History
+[FORMAT] Currency symbol and formatting correct
+[DOM] Label clearly indicates the time period (e.g., 'This Month')","[CONSOLE] no uncaught JS errors","Monthly spend widget missing; amount not matching Order History sum; wrong month shown; no period label","none","Coverage Gap Analysis","Generated"
+"B2C-DASH-004","Quick Navigation Links","B2C Features > Dashboard","Medium","BL-B2C-003","","User signed in, account section accessible","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in and navigate to /account/dashboard
+2. [ASSERT] Locate quick-navigation links or tiles
+3. [ACT] Click Orders link
+4. [ASSERT] Verify navigation to Order History page
+5. [ACT] Return to dashboard
+6. [ACT] Click Profile link
+7. [ASSERT] Verify navigation to Profile page
+8. [ACT] Return to dashboard
+9. [ACT] Click Addresses link
+10. [ASSERT] Verify navigation to Addresses page
+11. [ACT] Return to dashboard
+12. [ACT] Click Lists link
+13. [ASSERT] Verify navigation to Lists page","[NAV] Orders link navigates to /account/orders or Order History
+[NAV] Profile link navigates to /account/profile
+[NAV] Addresses link navigates to /account/addresses
+[NAV] Lists link navigates to /account/lists
+[NAV] Back-navigation returns to dashboard correctly
+[DOM] All links resolve without 404 errors","[NETWORK] no 404 responses on quick-nav link clicks
+[CONSOLE] no uncaught JS errors","Any quick-nav link returning 404; back-navigation not returning to dashboard; links missing from dashboard","none","Coverage Gap Analysis","Generated"
+"B2C-DASH-005","Dashboard After First Login","B2C Features > Dashboard","Medium","BL-B2C-003","","New user account created, no prior orders or activity","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Register a new user account
+2. [NAV] Sign in for the first time
+3. [NAV] Navigate to /account/dashboard
+4. [ASSERT] Observe dashboard empty state","[DOM] Dashboard loads without errors for new user
+[DOM] Empty state message displayed (no blank or broken sections)
+[DOM] Helpful prompts or call-to-action shown (e.g., 'Start shopping', 'Browse catalog')
+[DOM] No order widget errors due to missing data
+[DOM] No spend widget errors due to missing data
+[DOM] Navigation links still functional","[CONSOLE] no uncaught JS errors","Dashboard throws JS errors for new user; blank sections with no empty-state message; widget rendering errors due to empty data","none","Coverage Gap Analysis","Generated"
+"B2C-NOTIF-001","Notification Bell Icon","B2C Features > Notifications","Medium","BL-B2C-003","","User signed in, header navigation visible","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in to storefront
+2. [ASSERT] Observe the header navigation bar
+3. [ASSERT] Locate the notification bell icon
+4. [ASSERT] Verify badge element on the icon","[DOM] Notification bell icon visible in header navigation
+[DOM] Badge (numeric counter) displayed on bell when notifications exist
+[FORMAT] Badge count reflects number of unread notifications
+[DOM] Icon is visually distinct and meets minimum tap target size","[CONSOLE] no uncaught JS errors","Bell icon missing from header; badge not showing when notifications exist; badge count incorrect","none","Coverage Gap Analysis","Generated"
+"B2C-NOTIF-002","Notification Dropdown Opens","B2C Features > Notifications","Medium","BL-B2C-003","","User signed in, at least one notification exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in to storefront
+2. [ACT] Click the notification bell icon in header
+3. [ASSERT] Verify dropdown panel opens
+4. [ASSERT] Inspect notification list order
+5. [ASSERT] Verify notification entry details","[DOM] Dropdown panel opens on bell click
+[DOM] Notification list displayed within dropdown
+[DOM] Notifications ordered most-recent first (newest at top)
+[DOM] Each notification shows title or description and timestamp
+[STATE] Dropdown closes when clicking outside or pressing Escape","[CONSOLE] no uncaught JS errors","Dropdown not opening on bell click; notifications not sorted newest-first; dropdown not closing on outside click or Escape","none","Coverage Gap Analysis","Generated"
+"B2C-NOTIF-003","Mark as Read","B2C Features > Notifications","Medium","BL-B2C-003","","User signed in, unread notification exists, badge count visible","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [ASSERT] Note the current badge count on bell icon
+2. [ACT] Open the notification dropdown
+3. [ACT] Click on an unread notification
+4. [ASSERT] Observe visual state change of the notification
+5. [ASSERT] Observe badge count on bell icon","[STATE] Clicked notification changes to read state (loses bold or highlight)
+[DOM] Badge count decrements by 1 after marking as read
+[DOM] Notification remains in list but marked as read
+[STATE] If last unread notification read, badge disappears or shows 0","[CONSOLE] no uncaught JS errors","Notification visual state not changing after click; badge count not decrementing; notification disappearing from list after mark-as-read","none","Coverage Gap Analysis","Generated"
+"B2C-NOTIF-004","Empty Notifications","B2C Features > Notifications","Medium","BL-B2C-003","","User signed in, account has no notifications","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in with account that has no notifications
+2. [ACT] Click the notification bell icon in header
+3. [ASSERT] Observe the dropdown content","[DOM] Notification dropdown opens without errors
+[DOM] Empty state message or equivalent displayed (not blank area)
+[DOM] Bell icon shows no badge or badge shows 0
+[DOM] Empty state styled consistently with design system","[CONSOLE] no uncaught JS errors","Dropdown not opening for zero-notification account; blank area shown instead of empty-state message; layout broken with no notifications","none","Coverage Gap Analysis","Generated"
+"B2C-STOCK-001","Back-in-Stock Page","B2C Features > Back in Stock","Medium","BL-B2C-001","","User signed in, back-in-stock feature enabled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in to storefront
+2. [NAV] Navigate to /account/back-in-stock
+3. [ASSERT] Verify page loads
+4. [ASSERT] Observe listed products","[DOM] /account/back-in-stock page loads without errors
+[DOM] Page heading confirms context (e.g., Back in Stock Alerts)
+[DOM] If subscriptions exist: product list shows name, image, and status
+[DOM] If no subscriptions: empty state shown with helpful message","[CONSOLE] no uncaught JS errors","Page returns 404; page shows blank without empty-state; JS errors on load","none","Coverage Gap Analysis","Generated"
+"B2C-STOCK-002","Subscribe to Alert","B2C Features > Back in Stock","Medium","BL-B2C-001","","User signed in, out-of-stock product exists on PDP","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to an out-of-stock product detail page
+2. [ASSERT] Verify 'Notify When Available' or equivalent button is shown
+3. [ACT] Click the Notify When Available button
+4. [ASSERT] Verify confirmation feedback (toast or inline message)
+5. [NAV] Navigate to /account/back-in-stock
+6. [ASSERT] Verify the product appears in the subscribed list","[DOM] Notify When Available button visible on OOS product PDP
+[DOM] Clicking shows confirmation (toast, modal, or inline text)
+[DOM] Product appears in /account/back-in-stock list after subscribing
+[DOM] Product name and image shown in the list
+[STATE] Subscription persists after page refresh","[CONSOLE] no uncaught JS errors","Notify When Available button missing on OOS product; no confirmation after clicking; subscription not appearing in back-in-stock list","none","Coverage Gap Analysis","Generated"
+"B2C-STOCK-003","Unsubscribe from Alert","B2C Features > Back in Stock","Medium","BL-B2C-001","","User signed in, at least one product subscribed in back-in-stock list","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to /account/back-in-stock
+2. [ASSERT] Locate a subscribed product entry
+3. [ACT] Click remove or unsubscribe action
+4. [ACT] Confirm removal if prompted
+5. [ASSERT] Verify product no longer in list
+6. [NAV] Navigate back to product PDP
+7. [ASSERT] Verify PDP no longer shows active subscription state","[DOM] Remove or unsubscribe action available per subscribed product
+[DOM] Product removed from list immediately after action (no page refresh required)
+[DOM] List updates without full page refresh
+[STATE] Product PDP no longer shows active subscription state after unsubscribe","[CONSOLE] no uncaught JS errors","Unsubscribe action missing; product remaining in list after unsubscribe; PDP still showing active subscription state","none","Coverage Gap Analysis","Generated"
+"B2C-POINTS-001","Points History Page","B2C Features > Loyalty","Medium","BL-B2C-003","","User signed in, loyalty/points feature enabled for store","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in to storefront
+2. [NAV] Navigate to /account/points-history
+3. [ASSERT] Verify page loads
+4. [ASSERT] Observe points balance display
+5. [ASSERT] Observe transaction history list","[DOM] /account/points-history page loads without errors
+[FORMAT] Current points balance prominently displayed
+[DOM] Transaction history list shown: date, description, points earned/spent
+[DOM] Transactions ordered most-recent first","[CONSOLE] no uncaught JS errors","Page returns 404; points balance missing or showing 0 when points exist; transaction list empty; layout broken","none","Coverage Gap Analysis","Generated"
+"B2C-POINTS-002","Points After Order","B2C Features > Loyalty","Medium","BL-B2C-003","","User signed in, loyalty feature enabled, current points balance noted before test","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Note current points balance on /account/points-history
+2. [ACT] Place a new order through checkout
+3. [NAV] Navigate to order confirmation page
+4. [ASSERT] Verify confirmation page loads
+5. [NAV] Navigate to /account/points-history
+6. [ASSERT] Verify new transaction entry present
+7. [ASSERT] Verify points balance increased","[DOM] New transaction entry appears in points history after order
+[DOM] Transaction references the order (order number or description)
+[MATH] Points credited matches expected earn rate for the order total
+[FORMAT] Points balance updated to reflect new total
+[FORMAT] Transaction timestamp reflects order date","[CONSOLE] no uncaught JS errors","Points balance not increasing after order; new transaction not appearing in history; points calculation not matching expected earn rate","none","Coverage Gap Analysis","Generated"
+"B2C-NOTIF-008","Notification Bell Badge - Unread Count","B2C Features > Notifications","High","","","User logged in as {{USER_EMAIL}} with unread notifications","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in and navigate to {{FRONT_URL}}
+2. [WAIT] Page fully loaded with navigation bar
+3. [ASSERT] Verify notification bell icon visible in header/nav
+4. [ASSERT] Verify unread count badge displayed on bell icon","[DOM] Notification bell icon visible in navigation bar
+[DOM] Badge shows numeric count > 0
+[FORMAT] Badge count is a positive integer","[API] no GraphQL errors on page load
+[CONSOLE] no uncaught JS errors","Bell icon missing; badge not displayed; badge shows 0 when notifications exist","none","Coverage Gap Analysis","Generated"
+"B2C-NOTIF-009","Notification Dropdown - View Recent","B2C Features > Notifications","High","","","User logged in with notifications","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}} and sign in
+2. [WAIT] Navigation loaded
+3. [ACT] Click notification bell icon
+4. [WAIT] Notification dropdown opens","[DOM] Dropdown displays list of recent notifications
+[DOM] Each notification shows title/message and date/time
+[DOM] Unread notifications visually distinguished from read","[API] notifications query returns 200
+[CONSOLE] no uncaught JS errors","Dropdown empty despite notifications; dropdown does not open; notifications missing dates","none","Coverage Gap Analysis","Generated"
+"B2C-NOTIF-010","Mark Individual Notification as Read","B2C Features > Notifications","High","","","User logged in with unread notifications","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}} and sign in
+2. [ACT] Click notification bell to open dropdown
+3. [WAIT] Dropdown with unread notifications visible
+4. [ASSERT] Note current unread badge count
+5. [ACT] Click on an unread notification
+6. [WAIT] Notification marked as read","[DOM] Clicked notification visual style changes to read state
+[DOM] Badge count decrements by 1
+[STATE] Notification no longer highlighted as unread","[API] markAsRead mutation returns 200 with empty errors[]
+[CONSOLE] no uncaught JS errors","Badge count unchanged after click; notification still shows as unread","none","Coverage Gap Analysis","Generated"
+"B2C-NOTIF-011","Mark All Notifications as Read","B2C Features > Notifications","High","","","User logged in with multiple unread notifications","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}} and sign in
+2. [ACT] Click notification bell to open dropdown
+3. [WAIT] Dropdown shows multiple unread notifications
+4. [ACT] Click Mark all as read link/button
+5. [WAIT] All notifications update to read state","[DOM] All notifications show read visual state
+[DOM] Badge disappears or shows 0
+[STATE] No unread notifications remaining","[API] markAllAsRead mutation returns 200 with empty errors[]
+[CONSOLE] no uncaught JS errors","Some notifications still unread; badge still shows count","none","Coverage Gap Analysis","Generated"
+"B2C-NOTIF-005","Empty Notifications State","B2C Features > Notifications","Medium","","","User logged in with no notifications","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in as user with no notifications
+2. [WAIT] Navigation loaded
+3. [ACT] Click notification bell icon
+4. [WAIT] Dropdown opens","[DOM] Dropdown shows No notifications or empty state message
+[DOM] No badge on bell icon
+[DOM] Empty state is styled properly","[CONSOLE] no uncaught JS errors","Dropdown shows error; blank dropdown with no message","none","Coverage Gap Analysis","Generated"
+"B2C-NOTIF-006","Subscribe to Back-in-Stock Alert","B2C Features > Back in Stock","High","","","User logged in; product is out of stock","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to an out-of-stock product PDP on {{FRONT_URL}}
+2. [WAIT] PDP loaded with out-of-stock indicator
+3. [ASSERT] Verify Add to Cart is disabled
+4. [ACT] Click Notify When Available button
+5. [WAIT] Subscription confirmation appears","[DOM] Notify When Available button visible on out-of-stock PDP
+[DOM] Confirmation message displayed after subscribing
+[STATE] User subscribed to back-in-stock alert","[API] subscription mutation returns 200 with empty errors[]
+[CONSOLE] no uncaught JS errors","Notify button missing on out-of-stock product; no confirmation after click","none","Coverage Gap Analysis","Generated"
+"B2C-NOTIF-007","Back-in-Stock Subscription Indicator","B2C Features > Back in Stock","Medium","","","User logged in; already subscribed to back-in-stock alert","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to product PDP where user already subscribed
+2. [WAIT] PDP loaded
+3. [ASSERT] Verify subscription indicator shown
+4. [ACT] Attempt to subscribe again","[DOM] Button shows subscribed state (disabled or text changed)
+[STATE] Cannot subscribe again to same product","[CONSOLE] no uncaught JS errors","Button still shows Notify for already-subscribed product; duplicate subscription allowed","none","Coverage Gap Analysis","Generated"
+"B2C-LOY-001","Loyalty Points Balance Display","B2C Features > Loyalty","Medium","","","User logged in with loyalty points balance","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in and navigate to account dashboard or loyalty page
+2. [WAIT] Page loaded
+3. [ASSERT] Verify loyalty points section visible
+4. [ASSERT] Verify points balance displayed","[DOM] Loyalty section visible on account/dashboard page
+[DOM] Points balance displayed as numeric value
+[FORMAT] Points formatted consistently","[API] loyalty query returns 200 with balance data
+[CONSOLE] no uncaught JS errors","Loyalty section missing; points balance shows 0 incorrectly","none","Coverage Gap Analysis","Generated"
+"B2C-LOY-002","Loyalty Points Transaction History","B2C Features > Loyalty","Medium","","","User logged in with loyalty points history","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to loyalty page or points history section
+2. [WAIT] History loaded
+3. [ASSERT] Verify transaction list displays recent entries","[DOM] Transaction list shows entries with date and type and amount
+[DOM] Earn transactions show positive points
+[DOM] Redeem transactions show negative points
+[FORMAT] Dates formatted consistently","[API] loyalty history query returns 200
+[CONSOLE] no uncaught JS errors","History empty despite transactions; earn/redeem not distinguished","none","Coverage Gap Analysis","Generated"
+"B2C-LOY-003","Loyalty Points Earning After Purchase","B2C Features > Loyalty","Medium","BL-PRICE-001","","User logged in; loyalty program active; recent order placed","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in to {{FRONT_URL}} as {{USER_EMAIL}} (account must have a recent completed order)
+2. [NAV] Navigate to loyalty page or account dashboard loyalty section
+3. [WAIT] Page loaded
+4. [ASSERT] Verify points earned for the recent order appear","[DOM] New transaction entry shows points earned
+[DOM] Points balance updated to include new earnings
+[STATE] Order reference visible in loyalty transaction","[API] loyalty query shows updated balance after purchase
+[CONSOLE] no uncaught JS errors","Points not credited after purchase; balance unchanged; no transaction entry for order","none","Coverage Gap Analysis","Generated"
+"B2C-LIST-027","Bulk Order Page - Accessible from Navigation","B2C Features > Bulk Order","High","BL-B2C-001","","User logged in; bulk order feature enabled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Log in to storefront
+2. [NAV] Look for Bulk Order or Quick Order link in main navigation or account menu
+3. [ACT] Click the navigation link
+4. [ASSERT] Verify /bulk-order page loads","[DOM] Bulk Order / Quick Order link visible in navigation
+[NAV] Link navigates to /bulk-order
+[DOM] Bulk order page loads with SKU input form","[CONSOLE] no uncaught JS errors","Bulk order link missing from navigation; link leads to 404; page does not load","none","Coverage Gap Analysis","Generated"
+"B2C-LIST-028","Bulk Order - CSV File Upload","B2C Features > Bulk Order","High","BL-B2C-001","","User on /bulk-order page; CSV file with valid SKUs and quantities prepared","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to /bulk-order
+2. [ASSERT] Verify file upload option is available (drag-and-drop or file picker)
+3. [ACT] Upload a CSV file with 3 rows of SKU and quantity pairs
+4. [WAIT] Wait for file processing
+5. [ASSERT] Verify products from CSV populated in bulk order form
+6. [ASSERT] Verify quantities match CSV values","[DOM] File upload area or button visible on bulk order page
+[DOM] After upload: products populated in form rows
+[STATE] SKUs and quantities match CSV content
+[DOM] Product names resolved from uploaded SKUs","[CONSOLE] no uncaught JS errors","File upload option missing; CSV not processed; products not populating from file; quantities wrong after upload","none","Coverage Gap Analysis","Generated"
+"B2C-LIST-029","Quick Order - SKU Autocomplete Suggestions","B2C Features > Bulk Order","Medium","BL-B2C-001","","User on /bulk-order page; valid product SKU prefix known","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order
+2. [ACT] Start typing the first 3 characters of a known SKU
+3. [WAIT] Wait for autocomplete suggestions to appear
+4. [ASSERT] Verify dropdown shows matching products
+5. [ACT] Click on the suggested product
+6. [ASSERT] Verify SKU and product name populated in the row","[DOM] Autocomplete dropdown appears after typing 3+ characters
+[DOM] Suggestions show product name and SKU
+[STATE] Clicking suggestion populates the row with correct SKU and product info","[CONSOLE] no uncaught JS errors","No autocomplete suggestions; suggestions not matching typed text; clicking suggestion does not populate row","none","Coverage Gap Analysis","Generated"
+"B2C-LIST-030","Quick Order - Non-Existent SKU Clear Error","B2C Features > Bulk Order","Medium","BL-B2C-001","","User on /bulk-order page","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to /bulk-order
+2. [ACT] Type INVALID_SKU_999 in SKU input
+3. [KEY] Press Enter or Tab to submit the SKU
+4. [ASSERT] Verify clear error message shown for invalid SKU","[DOM] Error message displayed for non-existent SKU
+[DOM] Error indicates SKU not found or product unavailable
+[STATE] Row does not accept invalid SKU as valid entry","[CONSOLE] no uncaught JS errors","No error for invalid SKU; form accepts non-existent SKU silently; JS error instead of user-friendly message","none","Coverage Gap Analysis","Generated"
+"B2C-LIST-031","Quick Order - Clear Form Resets All Entries","B2C Features > Bulk Order","Medium","BL-B2C-001","","User on /bulk-order page with 3+ rows filled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order
+2. [ACT] Enter 3 valid SKUs with quantities
+3. [ASSERT] Verify 3 rows populated
+4. [ACT] Click Clear or Reset button (if available)
+5. [ASSERT] Verify all rows are cleared/reset to empty state","[DOM] All SKU input rows cleared after reset
+[DOM] Quantities reset to default (0 or 1)
+[STATE] Form returned to initial empty state","[CONSOLE] no uncaught JS errors","Clear button missing; some rows not cleared; quantities persisting after reset","none","Coverage Gap Analysis","Generated"
+"B2C-DASH-006","Recent Orders Widget - Last 5 Orders with Correct Data","B2C Features > Dashboard","Medium","BL-B2C-003","","User signed in; has 5 or more previous orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in and navigate to /account/dashboard
+2. [ASSERT] Verify recent orders widget/section is visible
+3. [ASSERT] Verify widget shows up to 5 most recent orders
+4. [ASSERT] Verify each order shows: order number and date and total and status
+5. [ASSERT] Verify orders are sorted most-recent first","[DOM] Recent orders section visible on dashboard
+[DOM] Up to 5 orders displayed
+[FORMAT] Each order shows: order number and date and total amount and status
+[STATE] Orders sorted by date descending (most recent first)","[API] orders query returns recent orders
+[CONSOLE] no uncaught JS errors","Recent orders widget missing; more than 5 orders shown; wrong sort order; missing data fields in order entries","none","Coverage Gap Analysis","Generated"
+"B2C-DASH-007","Dashboard - Spend Display Accuracy","B2C Features > Dashboard","Medium","BL-B2C-003","","User signed in; has orders in current month/quarter","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in and navigate to /account/dashboard
+2. [ASSERT] Verify spend summary widget/section is visible
+3. [ASSERT] Verify monthly or quarterly spend amount is displayed
+4. [ASSERT] Verify spend amount is formatted with currency symbol","[DOM] Spend summary section visible on dashboard
+[FORMAT] Spend amount displayed with correct currency symbol and formatting
+[STATE] Amount reflects orders placed in the displayed period","[API] spend data matches order totals for period
+[CONSOLE] no uncaught JS errors","Spend widget missing; amount showing $0 when orders exist; currency formatting incorrect; wrong time period calculation","none","Coverage Gap Analysis","Generated"
+"B2C-DASH-008","Dashboard - Quick Navigation Links Functional","B2C Features > Dashboard","Medium","BL-B2C-003","","User signed in; dashboard accessible","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in and navigate to /account/dashboard
+2. [ASSERT] Verify quick navigation links/buttons are visible (e.g. Orders and Lists and Addresses)
+3. [ACT] Click Orders link
+4. [ASSERT] Verify navigation to /account/orders
+5. [NAV] Go back to dashboard
+6. [ACT] Click Lists link
+7. [ASSERT] Verify navigation to /account/lists","[DOM] Quick navigation links visible on dashboard
+[NAV] Orders link navigates to /account/orders
+[NAV] Lists link navigates to /account/lists
+[DOM] All links are functional (no dead links)","[CONSOLE] no uncaught JS errors","Navigation links missing; links lead to 404; dead links on dashboard; broken navigation after clicking link","none","Coverage Gap Analysis","Generated"

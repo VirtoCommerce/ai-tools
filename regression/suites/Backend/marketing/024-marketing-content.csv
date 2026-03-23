@@ -1,0 +1,187 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"MKT-001","Add content item","Marketing > Content Items","Critical",,,"Admin logged in to Backend",,"1. Navigate to Marketing > Dynamic Content > Content Items
+2. Click 'Add'
+3. Fill in content item details (name, type, HTML)
+4. Click 'Create'",,,,,"C183314",
+"MKT-002","Edit content item (name/description/type/HTML)","Marketing > Content Items","High",,,"Admin logged in to Backend
+Content item exists [MKT-001]",,"1. Open content item > Update name > Save
+2. Update description > Save
+3. Add new content type > Save
+4. Update HTML > Save",,,,,"C183317 C183321 C183320 C183322",
+"MKT-003","Delete content item and bulk delete","Marketing > Content Items","High",,,"Admin logged in to Backend
+Content items exist",,"1. Delete single content item > Confirm
+2. Select multiple items > Bulk delete > Confirm",,,,,"C183316 C183315",
+"MKT-004","Search content items","Marketing > Content Items","Medium",,,"Admin logged in to Backend
+Multiple content items exist",,"1. Enter search term in list view
+2. Verify matching results",,,,,"C183348",
+"MKT-005","Add/edit/delete content folder","Marketing > Content Folders","High",,,"Admin logged in to Backend",,"1. Add content folder > Fill name and description > Create
+2. Edit folder name > Save
+3. Edit folder description > Save
+4. Delete folder",,,,,"C183502 C183318 C183503 C183504",
+"MKT-006","Add placeholder","Marketing > Placeholders","Critical",,,"Admin logged in to Backend",,"1. Navigate to Marketing > Dynamic Content > Placeholders
+2. Click 'Add'
+3. Fill in placeholder details
+4. Click 'Create'",,,,,"C183505",
+"MKT-007","Add/update image to placeholder (drag&drop and upload)","Marketing > Placeholders","High",,,"Admin logged in to Backend
+Placeholder exists [MKT-006]",,"1. Add image via drag&drop > Verify
+2. Add image via upload file > Verify
+3. Update image via drag&drop > Verify
+4. Update image via upload > Verify",,,,,"C183332 C183333 C183342 C183343",
+"MKT-008","Edit/delete placeholder and search","Marketing > Placeholders","High",,,"Admin logged in to Backend
+Placeholders exist",,"1. Edit placeholder name > Save
+2. Edit placeholder description > Save
+3. Delete via right-click context menu
+4. Delete via bulk delete
+5. Search placeholders in list",,,,,"C183340 C183341 C183338 C183339 C183350",
+"MKT-009","Add/edit/delete placeholder folder","Marketing > Placeholder Folders","High",,,"Admin logged in to Backend",,"1. Add placeholder folder > Fill name and description > Create
+2. Edit folder name > Save
+3. Edit folder description > Save
+4. Delete folder",,,,,"C183334-C183337",
+"MKT-010","Add content publishing","Marketing > Content Publishing","Critical",,,"Admin logged in to Backend",,"1. Navigate to Marketing > Dynamic Content > Content Publishing
+2. Click 'Add'
+3. Fill in publishing details
+4. Click 'Create'",,,,,"C184664",
+"MKT-011","Edit content publishing (name/description/store/dates)","Marketing > Content Publishing","High",,,"Admin logged in to Backend
+Content publishing exists [MKT-010]",,"1. Edit name > Save
+2. Edit description > Save
+3. Edit store > Save
+4. Edit start date > Save
+5. Edit end date > Save",,,,,"C198278-C199250",
+"MKT-012","Add placeholder and content item to publishing","Marketing > Content Publishing","High",,,"Admin logged in to Backend
+Content publishing exists [MKT-010]
+Placeholder and content item exist",,"1. Add placeholder to content publishing
+2. Add content item to content publishing
+3. Save",,,,,"C183327 C183747",
+"MKT-013","Content publishing Is Active toggle and search","Marketing > Content Publishing","High",,,"Admin logged in to Backend
+Content publishing exists [MKT-010]",,"1. Set Is Active = FALSE > Save > Verify on storefront
+2. Set Is Active = TRUE > Save > Verify on storefront
+3. Search in list view",,,,,"C183329 C183330 C183352",
+"MKT-014","Delete content publishing","Marketing > Content Publishing","High",,,"Admin logged in to Backend
+Content publishings exist",,"1. Delete via bulk delete > Confirm
+2. Delete on details blade > Confirm",,,,,"C198276 C198277",
+"MKT-015","Publishing conditions (add/edit/delete and apply types)","Marketing > Publishing Conditions","High",,,"Admin logged in to Backend
+Content publishing exists",,"1. Add publishing condition > Configure > Save
+2. Edit condition > Save
+3. Verify type of applying: 'all' (all conditions must match)
+4. Verify type of applying: 'any' (any condition can match)
+5. Delete condition",,,,,"C184654-C184656 C184649 C184650",
+"MKT-016","Geo location and browse behavior conditions","Marketing > Publishing Conditions","Medium",,,"Admin logged in to Backend
+Content publishing with conditions",,"1. Set condition: Browsing from timezone offset > Verify
+2. Set condition: Browsing from zip/postal code > Verify
+3. Set condition: Browsing from city/country/state > Verify
+4. Set condition: Shopper searched for phrase > Verify
+5. Set condition: Current language > Verify",,,,,"C184651-C184658 C184665 C184666",
+"MKT-017","Shopper profile and catalog conditions","Marketing > Publishing Conditions","Medium",,,"Admin logged in to Backend
+Content publishing with conditions",,"1. Set condition: Shopper age > Verify
+2. Set condition: Shopper gender > Verify
+3. Set condition: User groups > Verify
+4. Set condition: Category > Verify
+5. Set condition: Product > Verify",,,,,"C184667-C184669 C295625 C295626",
+"MKT-027","Visitor targeting (everyone/registered/first-time/user groups)","Marketing > Visitor Targeting","Medium",,,"Admin logged in to Backend
+Promotion exists",,"1. Set target: Everyone > Verify all users see promotion
+2. Set target: Registered user > Verify
+3. Set target: First time buyer > Verify
+4. Set target: User groups > Verify",,,,,"C183365-C183367 C183364",
+"MKT-052","Publishing Condition — All Stores","Marketing > Content Publishing","High",,,"Admin logged in to Backend
+Content publishing exists [MKT-010]",,"1. Navigate to ${BACK_URL}/marketing/dynamicContent
+2. Open an existing content publishing
+3. Navigate to Publishing Conditions section
+4. Click Add condition
+5. Select condition type ""Store"" and set value to All Stores
+6. Save the publishing
+7. Verify the condition is saved and displayed
+8. Check that content appears on all configured stores in storefront",,,,,"C184649",
+"MKT-053","Publishing Condition — Specific Store","Marketing > Content Publishing","High",,,"Admin logged in to Backend
+Content publishing exists [MKT-010]
+Multiple stores configured",,"1. Navigate to ${BACK_URL}/marketing/dynamicContent
+2. Open an existing content publishing
+3. Navigate to Publishing Conditions section
+4. Click Add condition
+5. Select condition type ""Store"" and choose a specific store from the dropdown
+6. Save the publishing
+7. Verify the condition is saved
+8. Open storefront for the specified store and verify content is visible
+9. Open storefront for a different store and verify content is NOT visible",,,,,"",
+"MKT-054","Publishing Condition — Specific Contact","Marketing > Content Publishing","High",,,"Admin logged in to Backend
+Content publishing exists [MKT-010]
+Contact exists in the system",,"1. Navigate to ${BACK_URL}/marketing/dynamicContent
+2. Open an existing content publishing
+3. Navigate to Publishing Conditions section
+4. Click Add condition
+5. Select condition type targeting a specific contact or user
+6. Search for and select an existing contact
+7. Save the publishing
+8. Verify the condition is saved with the contact name
+9. Login to storefront as that contact and verify content visibility",,,,,"",
+"MKT-055","Content Scheduling — Start Date","Marketing > Content Publishing","High",,,"Admin logged in to Backend
+Content publishing exists [MKT-010]",,"1. Navigate to ${BACK_URL}/marketing/dynamicContent
+2. Open an existing content publishing
+3. Click Edit to open the editing form
+4. Set Start Date to a future date and time (e.g., tomorrow at 09:00)
+5. Leave End Date empty
+6. Save the publishing
+7. Verify start date is saved and displayed correctly
+8. Verify content is NOT visible on storefront before the start date
+9. Advance system time or wait for start date and verify content becomes visible",,,,,"",
+"MKT-056","Content Scheduling — End Date","Marketing > Content Publishing","High",,,"Admin logged in to Backend
+Content publishing with Is Active = TRUE exists",,"1. Navigate to ${BACK_URL}/marketing/dynamicContent
+2. Open an active content publishing
+3. Click Edit
+4. Set End Date to a past date and time
+5. Save the publishing
+6. Verify the content publishing is now inactive or expired
+7. Check storefront to confirm content is no longer visible
+8. Set End Date to a future date and save
+9. Verify content becomes visible on storefront again",,,,,"",
+"MKT-057","Content Scheduling — Date Range","Marketing > Content Publishing","High",,,"Admin logged in to Backend
+Content publishing exists [MKT-010]",,"1. Navigate to ${BACK_URL}/marketing/dynamicContent
+2. Open an existing content publishing
+3. Click Edit
+4. Set Start Date to a past date (e.g., yesterday)
+5. Set End Date to a future date (e.g., next week)
+6. Save the publishing
+7. Verify content is currently visible on storefront (within the date range)
+8. Update End Date to a past date and save
+9. Verify content is no longer visible on storefront
+10. Verify that Start Date before End Date validation is enforced",,,,,"",
+"MKT-058","Dynamic Expression Content Items — Create Expression-Based Content","Marketing > Content Items","High",,,"Admin logged in to Backend
+Dynamic expression content item type available",,"1. Navigate to ${BACK_URL}/marketing/dynamicContent
+2. Click on Content Items in the Dynamic Content section
+3. Click Add to create a new content item
+4. Select the expression-based or dynamic content type
+5. Configure the expression with dynamic variables (e.g., customer name, product)
+6. Enter the HTML template using expression syntax
+7. Click Create and verify the item is created
+8. Link the content item to a content publishing
+9. Verify the expression is evaluated correctly on the storefront",,,,,"",
+"MKT-066","Search in Publishing List View — Use Search Bar to Find Published Content","Marketing > Content Publishing","High",,,"Admin logged in to Backend
+Multiple content publishings exist with different names",,"1. Navigate to ${BACK_URL}/marketing/dynamicContent
+2. Open the Content Publishing list
+3. Click on the search bar
+4. Enter a partial name of an existing content publishing
+5. Verify the list filters to show matching results
+6. Enter the full exact name and verify single result
+7. Enter a name that does not match any publishing
+8. Verify the list shows empty state or no results message
+9. Clear the search field and verify the full list is restored",,,,,"C183352",
+"MKT-087","Content item HTML XSS prevention","Marketing > Content Security","High",,,"Admin logged in to Backend",,"1. Navigate to Marketing > Dynamic Content > Content Items
+2. Click 'Add' to create a new content item
+3. In the Name field enter: '<script>alert(""XSS"")</script>Test Item'
+4. In the HTML/Content field enter: '<img src=x onerror=alert(1)><p>Test content</p>'
+5. Click 'Create' and verify the item is saved
+6. Open the created content item and verify the name is displayed safely (no script execution)
+7. Link this content item to a content publishing with an active placeholder
+8. Query the content via xAPI and inspect the returned HTML
+9. Verify script tags are sanitized or escaped in the xAPI response
+10. Check the storefront rendering to ensure no JavaScript executes from injected content",,,,,"",
+"MKT-088","Content item with special characters","Marketing > Content Security","Medium",,,"Admin logged in to Backend",,"1. Navigate to Marketing > Dynamic Content > Content Items
+2. Create content item with Unicode name: 'Aktionstag Fruhling 2026'
+3. Save and verify the name displays correctly with special characters
+4. Create content item with emoji in name: 'Summer Sale'
+5. Save and verify emoji renders correctly in the grid and blade
+6. Create content item with very long name (255+ characters)
+7. Verify validation: either truncates or shows max length error
+8. Create content item with HTML entities in description: '&amp; &lt; &gt; &quot;'
+9. Verify entities are stored and displayed correctly without double-encoding
+10. Create content item with Cyrillic characters: 'Test content item name'
+11. Verify multi-script text displays correctly",,,,,"",

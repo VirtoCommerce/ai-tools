@@ -1,0 +1,153 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"ORD-012","View payment documents","Orders > Payment Documents","High",,,"Admin logged in to Backend
+Order with payment exists",,"1. Open order > Documents section
+2. Verify payment document is listed
+3. Open payment document details",,,,,"C232798",
+"ORD-013","Payment document status changes","Orders > Payment Documents","High",,,"Admin logged in to Backend
+Payment document exists",,"1. Open payment document
+2. Change payment status through available transitions
+3. Verify each status change",,,,,"C232799",
+"ORD-014","Cancel payment document","Orders > Payment Documents","High",,,"Admin logged in to Backend
+Payment document exists",,"1. Open payment document
+2. Click 'Cancel'
+3. Confirm cancellation",,,,,"C232800",
+"ORD-015","Payment document details (address and price blocks)","Orders > Payment Documents","Medium",,,"Admin logged in to Backend
+Order with payment and shipping",,"1. Open payment document
+2. Verify Payment address block with 'Same as shipping address' checkbox
+3. Verify Payment price block
+4. Verify Transactions block",,,,,"C232802 C232803 C232804",
+"ORD-016","Payment document with new order","Orders > Payment Documents","Medium",,,"Admin logged in to Backend
+New order created",,"1. Create new order
+2. Open payment document
+3. Verify initial state",,,,,"C232801",
+"ORD-017","Capture authorized payment (manual method)","Orders > Capture","High",,,"Admin logged in to Backend
+Payment in status 'Authorized' with manual payment method",,"1. Open order with authorized payment
+2. Click 'Capture' on payment document
+3. Verify capture result",,,,,"C358190",
+"ORD-018","Capture authorized payment (authorize.net and native) fails","Orders > Capture","Medium",,,"Admin logged in to Backend
+Payment in status 'Authorized' with authorize.net or native payment method",,"1. Open order with authorized payment (authorize.net)
+2. Try to capture
+3. Repeat with native payment method",,,,,"C358191 C358192",
+"ORD-019","Capture non-authorized payment fails","Orders > Capture","Medium",,,"Admin logged in to Backend
+Payment NOT in status 'Authorized'",,"1. Open order with non-authorized payment
+2. Try to capture",,,,,"C358193",
+"ORD-020","Refund paid payment","Orders > Refund","High",,,"Admin logged in to Backend
+Payment in status 'Paid'",,"1. Open order with paid payment
+2. Click 'Refund'
+3. Verify refund result",,,,,"C358194",
+"ORD-021","Refund non-paid payment fails","Orders > Refund","Medium",,,"Admin logged in to Backend
+Payment NOT in status 'Paid'",,"1. Open order with non-paid payment
+2. Try to refund",,,,,"C358195",
+"ORD-022","Refund document management","Orders > Refund","Medium",,,"Admin logged in to Backend
+Refund document exists",,"1. Verify refund document number template
+2. Try to remove refund document
+3. Verify dynamic property on refund document",,,,,"C358196 C358197 C358198",
+"ORD-067","Payment Capture — Manual Capture","Orders > Payment Capture","High",,,"Admin logged in to Backend
+Order exists with payment in Authorized status via manual payment method",,"1. Navigate to ${BACK_URL}/orders
+2. Open an order with payment in Authorized status
+3. Open the payment document from the Documents section
+4. Verify the Capture button is visible and enabled
+5. Click the Capture button
+6. Confirm the capture action in the dialog
+7. Verify the payment status transitions",,,,,"C358190",
+"ORD-068","Payment Refund — Full Refund","Orders > Payment Refund","High",,,"Admin logged in to Backend
+Order exists with payment in Paid status",,"1. Navigate to ${BACK_URL}/orders
+2. Open an order with payment in Paid status
+3. Open the payment document from the Documents section
+4. Verify the Refund button is visible and enabled
+5. Click the Refund button
+6. Enter the full payment amount as the refund amount
+7. Confirm the refund action
+8. Verify the payment status transitions",,,,,"C358193",
+"ORD-069","Payment Refund — Partial Refund","Orders > Payment Refund","High",,,"Admin logged in to Backend
+Order exists with payment in Paid status with amount > $10",,"1. Navigate to ${BACK_URL}/orders
+2. Open an order with payment in Paid status
+3. Open the payment document from the Documents section
+4. Click the Refund button
+5. Enter a partial amount (less than the total payment amount)
+6. Confirm the partial refund
+7. Verify the refund document and payment state
+8. Verify remaining balance is correct",,,,,"C358194",
+"ORD-070","Payment Status Transitions — Authorized to Captured to Refunded","Orders > Payment Documents","High",,,"Admin logged in to Backend
+Order exists with manual payment method
+Payment is in New status",,"1. Navigate to ${BACK_URL}/orders and open the target order
+2. Open the payment document
+3. Transition payment from New to Authorized (click Authorize)
+4. Verify payment is in Authorized status
+5. Click Capture to transition to Paid/Captured
+6. Verify payment is in Paid status
+7. Click Refund and enter full amount to transition to Refunded
+8. Verify final Refunded status
+9. Verify each status transition is logged in the change history",,,,,"C232799 C232804",
+"ORD-077","Payment state — Pending to Captured skipping Authorization must fail","Orders > Payment State Machine","High",,,"Admin logged in to Backend
+Order exists with payment in Pending status
+Manual payment method configured
+API access available via Swagger at ${BACK_URL}/docs",,"1. Open Swagger UI at ${BACK_URL}/docs/index.html
+2. Locate the payment status update endpoint (PUT /api/order/customerOrders)
+3. Retrieve order with payment in Pending status via GET /api/order/customerOrders/{orderId}
+4. Attempt to change payment status directly from Pending to Captured (skip Authorized)
+5. Send the PUT request with modified payment status
+6. Inspect the HTTP response status code
+7. Inspect the response body for error details
+8. Verify payment status remains Pending in subsequent GET request",,,,,"Coverage Gap Analysis BL-ORD-001",
+"ORD-078","Payment state — Voided to Captured must fail","Orders > Payment State Machine","High",,,"Admin logged in to Backend
+Order exists with payment in Voided status (terminal state)
+API access available via Swagger at ${BACK_URL}/docs",,"1. Open Swagger UI at ${BACK_URL}/docs/index.html
+2. Retrieve order with payment in Voided status via GET /api/order/customerOrders/{orderId}
+3. Attempt to change payment status from Voided to Captured via PUT request
+4. Send the PUT request with modified payment status
+5. Inspect the HTTP response status code
+6. Inspect the response body for error details
+7. Verify payment status remains Voided in subsequent GET request",,,,,"Coverage Gap Analysis BL-ORD-001",
+"ORD-079","Payment state — Refunded to Captured must fail","Orders > Payment State Machine","High",,,"Admin logged in to Backend
+Order exists with payment in Refunded status (terminal state)
+API access available via Swagger at ${BACK_URL}/docs",,"1. Open Swagger UI at ${BACK_URL}/docs/index.html
+2. Retrieve order with payment in Refunded status via GET /api/order/customerOrders/{orderId}
+3. Attempt to change payment status from Refunded to Captured via PUT request
+4. Send the PUT request with modified payment status
+5. Inspect the HTTP response status code
+6. Inspect the response body for error details
+7. Verify payment status remains Refunded in subsequent GET request",,,,,"Coverage Gap Analysis BL-ORD-001",
+"ORD-080","Payment state — Admin shows only valid transition buttons per state","Orders > Payment State Machine","High",,,"Admin logged in to Backend
+Orders exist with payments in various states: Pending, Authorized, Paid (Captured), Voided, Refunded",,"1. Navigate to ${BACK_URL} and open Orders module
+2. Open order with payment in Pending status > Open payment document
+3. Note which action buttons are visible (expected: Authorize only)
+4. Open order with payment in Authorized status > Open payment document
+5. Note which action buttons are visible (expected: Capture, Void only)
+6. Open order with payment in Paid status > Open payment document
+7. Note which action buttons are visible (expected: Refund only)
+8. Open order with payment in Voided status > Open payment document
+9. Verify no transition buttons are visible (terminal state)
+10. Open order with payment in Refunded status > Open payment document
+11. Verify no transition buttons are visible (terminal state)",,,,,"Coverage Gap Analysis BL-ORD-006",
+"ORD-081","Refund boundary — partial refund exceeding remaining balance must fail","Orders > Payment Refund","High",,,"Admin logged in to Backend
+Order exists with payment captured for $100
+Partial refund of $30 already processed
+Remaining refundable balance = $70
+API access available via Swagger at ${BACK_URL}/docs",,"1. Verify order has payment in Paid status with original amount $100
+2. Verify existing partial refund of $30 is recorded
+3. Attempt to issue a second refund for $80 via API (exceeds remaining $70)
+4. Send the refund request
+5. Inspect the HTTP response status code
+6. Inspect the response body for error details
+7. Verify remaining refundable balance is still $70 (unchanged)
+8. Verify no refund document was created for the $80 attempt",,,,,"Coverage Gap Analysis BL-ORD-004",
+"ORD-082","Refund boundary — voided payment cannot be refunded","Orders > Payment Refund","High",,,"Admin logged in to Backend
+Order exists with payment in Voided status
+API access available via Swagger at ${BACK_URL}/docs",,"1. Retrieve order with payment in Voided status via GET /api/order/customerOrders/{orderId}
+2. Attempt to issue a refund on the voided payment via API
+3. Send the refund request
+4. Inspect the HTTP response status code
+5. Inspect the response body for error details
+6. Verify payment status remains Voided
+7. Verify no refund document was created",,,,,"Coverage Gap Analysis BL-ORD-004",
+"ORD-083","Refund boundary — fully refunded payment cannot be refunded again","Orders > Payment Refund","High",,,"Admin logged in to Backend
+Order exists with payment fully refunded (status = Refunded)
+API access available via Swagger at ${BACK_URL}/docs",,"1. Retrieve order with payment in Refunded status via GET /api/order/customerOrders/{orderId}
+2. Verify refund total equals original captured amount
+3. Attempt to issue an additional refund via API (any amount)
+4. Send the refund request
+5. Inspect the HTTP response status code
+6. Inspect the response body for error details
+7. Verify payment status remains Refunded
+8. Verify no additional refund document was created",,,,,"Coverage Gap Analysis BL-ORD-004",

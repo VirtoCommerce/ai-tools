@@ -1,0 +1,98 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"CMS-009","Verify Draft status badge in grid","Grid View","Medium",,,"Draft page exists",,"1. Navigate to Pages list
+2. Locate draft page in grid",,,,,"C415407 C415436",
+"CMS-010","Verify Published status badge in grid","Grid View","Medium",,,"Published page exists",,"1. Navigate to Pages list
+2. Locate published page",,,,,"C415408 C415437",
+"CMS-011","Verify Archived status badge in grid","Grid View","Medium",,,"Archived page exists",,"1. Navigate to Pages list
+2. Locate archived page",,,,,"C415409 C415438",
+"CMS-012","Verify Scheduled badge in grid","Grid View","Medium",,,"Page with scheduled dates exists",,"1. Navigate to Pages list
+2. Locate scheduled page",,,,,"C415410 C415456",
+"CMS-013","Verify Personalized badge in grid","Grid View","Medium",,,"Page with visibility/user group restrictions exists",,"1. Navigate to Pages list
+2. Locate personalized page",,,,,"C415411 C415457",
+"CMS-014","Grid columns display correctly","Grid View","Medium",,,"Multiple pages exist",,"1. Navigate to Pages list
+2. Verify all columns visible",,,,,"C415412",
+"CMS-015","Checkbox selection and bulk selection","Grid View","Medium",,,"Multiple pages exist",,"1. Select individual page checkboxes
+2. Use bulk select checkbox",,,,,"C415414 C415415 C415416",
+"CMS-016","Search functionality in page list","Grid View","High",,,"Multiple pages exist",,"1. Enter search term in search field
+2. Verify results",,,,,"C415420",
+"CMS-027","Published page accessible on frontend (correct language)","Storefront Verification","Critical",,,"Page published with English content",,"1. Navigate to frontend URL with correct language prefix
+2. Access page by permalink",,,,,"C415460",
+"CMS-028","Published page 404 on frontend - wrong language","Storefront Verification","Medium",,,"Page published in English only",,"1. Navigate to frontend with different language prefix
+2. Access page by permalink",,,,,"C415461",
+"CMS-029","Draft page NOT accessible on frontend","Storefront Verification","High",,,"Page in Draft status",,"1. Navigate to frontend
+2. Attempt to access draft page URL",,,,,"C415474",
+"CMS-030","Archived page NOT accessible on frontend","Storefront Verification","High",,,"Page in Archived status",,"1. Navigate to frontend
+2. Attempt to access archived page URL",,,,,"C415476",
+"CMS-031","Published page appears in search","Storefront Verification","High",,,"Published page exists",,"1. Navigate to frontend
+2. Search for page title",,,,,"C415473 C415497",
+"CMS-032","Draft page NOT in search results","Storefront Verification","Medium",,,"Draft page exists",,"1. Search for draft page title on frontend",,,,,"C415475",
+"CMS-033","Scheduled page with future start date - not accessible","Storefront Verification","Medium",,,"Page scheduled with future start date",,"1. Navigate to frontend
+2. Attempt to access scheduled page URL",,,,,"C415490",
+"CMS-034","Scheduled page within valid date range - accessible","Storefront Verification","Medium",,,"Page scheduled with current date in range",,"1. Navigate to frontend
+2. Access scheduled page URL",,,,,"C415492",
+"CMS-035","Search returns only current language pages","Storefront Verification","Medium",,,"Pages in multiple languages exist",,"1. Search on frontend in specific language context",,,,,"C415463 C415464",
+"CMS-036","Add section to page","Designer Sections","Critical",,,"Page open in designer/builder",,"1. Open page designer
+2. Click Add Section
+3. Select section type
+4. Configure content
+5. Save",,,,,"C221165",
+"CMS-037","Copy section in page","Designer Sections","Medium",,,"Page has at least one section",,"1. Open page designer
+2. Click Copy on existing section",,,,,"C221166",
+"CMS-038","Remove section from page","Designer Sections","High",,,"Page has at least one section",,"1. Open page designer
+2. Click Remove on section
+3. Confirm",,,,,"C221167",
+"CMS-039","Simple text block - add and preview","Content Blocks","High",,,"Page open in designer",,"1. Add Simple Text section
+2. Enter text content in General tab
+3. Configure Settings tab
+4. Preview",,,,,"C221889 C221890 C221056",
+"CMS-040","Simple image block - add and preview","Content Blocks","High",,,"Page open in designer",,"1. Add Simple Image section
+2. Upload image in General tab
+3. Configure Settings tab
+4. Preview",,,,,"C221968 C221969 C221060",
+"CMS-041","Text over image block - add and preview","Content Blocks","High",,,"Page open in designer",,"1. Add Text Over Image section
+2. Configure text and image
+3. Preview",,,,,"C221970 C221971 C221054",
+"CMS-042","Cards list block - add and preview","Content Blocks","Medium",,,"Page open in designer",,"1. Add Cards List section
+2. Add card items
+3. Preview",,,,,"C221972 C221973 C221094",
+"CMS-043","Two columns list block - add and preview","Content Blocks","Medium",,,"Page open in designer",,"1. Add Two Columns section
+2. Configure both columns
+3. Preview",,,,,"C221974 C221975 C221057",
+"CMS-044","Video and text block - add and preview","Content Blocks","Medium",,,"Page open in designer",,"1. Add Video and Text section
+2. Configure video URL and text
+3. Preview",,,,,"C221976 C221977",
+"CMS-045","Page builder field types - text and rich text","Field Types","High",,,"Section editing open",,"1. Use text field to enter content
+2. Use rich text editor with formatting
+3. Use image upload field
+4. Use select/dropdown field",,,,,"C221068 C221069 C221070 C221072",
+"CMS-046","Color preset - Blue theme","Design Presets","Medium",,,"CMS designer open",,"1. Select Blue preset
+2. Preview page",,,,,"C221107",
+"CMS-047","Color preset - Dark theme","Design Presets","Medium",,,"CMS designer open",,"1. Select Dark preset
+2. Preview page",,,,,"C221108",
+"CMS-048","Custom colors - background and text","Design Presets","Medium",,,"CMS designer open",,"1. Navigate to Colors > General
+2. Set custom Background color
+3. Set custom Text color
+4. Set custom Headings color
+5. Preview",,,,,"C221110 C221111 C221112",
+"CMS-049","Custom colors - links buttons and borders","Design Presets","Medium",,,"CMS designer open",,"1. Set custom Links color
+2. Set custom Button color
+3. Set custom Button text color
+4. Set custom Borders color
+5. Preview",,,,,"C221113 C221114 C221115 C221117",
+"CMS-050","Section settings - Image with text","Section Settings","Medium",,,"Image with text section exists",,"1. Open Image with text section
+2. Configure all settings options
+3. Preview",,,,,"C221075 C221053 C221092",
+"CMS-051","Multiple badge combinations","Badge Display","Medium",,,"Pages with various status/configuration combinations",,"1. Create pages with: Published+Scheduled, Published+Personalized, Published+Scheduled+Personalized
+2. Check grid view",,,,,"C415441 C415442 C415443 C415444",
+"CMS-054","Cross-browser compatibility - Chrome and Edge","Cross-Browser","Medium",,,"CMS module accessible",,"1. Open CMS page management in Chrome
+2. Verify all features work
+3. Repeat in Edge",,,,,"C415427 C415428",
+"CMS-056","Rich Text Field Type — Add Rich Text Content Block","Field Types","High",,,"Admin logged in to Backend
+Page exists in Page Builder designer",,"1. Navigate to ${BACK_URL}/pages and open an existing page
+2. Click Open Designer to enter the page builder
+3. Add a new section or open an existing section for editing
+4. Locate the Rich Text field type in the field list
+5. Click on the Rich Text field to open the rich text editor
+6. Enter formatted text content: bold, italic, and a hyperlink
+7. Click Save or apply the changes
+8. Preview the page and verify rich text renders correctly",,,,,"C221068",

@@ -120,8 +120,9 @@ REST exposes `primaryColor` and `secondaryColor` hex fields not available in xAP
 - Migration applied via PR #21
 
 ## Regression Suites
-- **Suite 32** — Backend: `regression/suites/Backend/32-whitelabeling-tests.csv` (WL-001–WL-040)
-- **Suite 35** — Frontend: `regression/suites/Frontend/35-frontend-whitelabeling-tests.csv` (FWL-001–FWL-06x)
+- **Suite 067** — Backend: `regression/suites/Backend/whitelabeling/067-whitelabeling-admin.csv` (WL-001–WL-040)
+- **Suite 070** — Frontend: `regression/suites/Frontend/whitelabeling/070-whitelabeling-storefront.csv` (FWL storefront)
+- **Suite 071** — Frontend: `regression/suites/Frontend/whitelabeling/071-whitelabeling-branding.csv` (FWL branding)
 
 ## Critical Test Areas
 
@@ -176,8 +177,8 @@ REST exposes `primaryColor` and `secondaryColor` hex fields not available in xAP
 - **Elasticsearch / cache**: WL changes don't require reindex, but may need cache purge to reflect on storefront immediately.
 
 ## Sources
-- Regression Backend: `regression/suites/Backend/32-whitelabeling-tests.csv` (WL-001–040)
-- Regression Frontend: `regression/suites/Frontend/35-frontend-whitelabeling-tests.csv` (FWL-001–06x)
+- Regression Backend: `regression/suites/Backend/whitelabeling/067-whitelabeling-admin.csv` (WL-001–040)
+- Regression Frontend: `regression/suites/Frontend/whitelabeling/070-whitelabeling-storefront.csv`, `071-whitelabeling-branding.csv`
 - VCST-4637 / PR #21 — mainMenuLinks / MainMenuLinkListName feature
 - [White Labeling xAPI Overview](https://github.com/virtocommerce/vc-docs/blob/main/platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/White-labeling/overview.md)
 - [whiteLabelingSettings Query](https://github.com/virtocommerce/vc-docs/blob/main/platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/White-labeling/queries/whiteLabelingSettings.md)

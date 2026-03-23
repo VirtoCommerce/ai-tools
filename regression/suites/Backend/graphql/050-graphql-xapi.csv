@@ -1,0 +1,411 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+GQL-001,xCatalog - Search Products Query,GraphQL > xCatalog,Critical,BL-GQL-002,ECL-2.1; ECL-8.1,"GraphQL endpoint accessible at {{BACK_URL}}; products in catalog","storeId={{STORE_ID}}; keyword=""laptop""; cultureName=""en-US""; currencyCode=""USD""","[NAV] Navigate to {{BACK_URL}}/graphql
+[ACT] Execute: query { products(storeId: ""{{STORE_ID}}"" keyword: ""laptop"") { totalCount items { id name code imgSrc } } }
+[WAIT] Wait for response
+[ASSERT] Verify response structure","[STATE] data.products object present in response
+[STATE] totalCount > 0 for valid keyword
+[STATE] items[] non-empty; each item contains id, name, code
+[FORMAT] imgSrc is a valid URL or null
+[STATE] No errors[] in response","[NETWORK] HTTP 200 status on POST /graphql
+[CONSOLE] No JS errors
+[API] Response time < 500ms","errors[] non-empty; totalCount = 0 for known keyword; missing id/name/code on items; HTTP non-200",none,xAPI,Automated
+GQL-002,xCatalog - Get Product Detail Query,GraphQL > xCatalog,Critical,BL-GQL-002; BL-GQL-003,ECL-2.1,"Product ID known from GQL-001; {{BACK_URL}} accessible","storeId={{STORE_ID}}; productId from GQL-001 result; currencyCode=""USD""","[ACT] Execute: query { product(storeId: ""{{STORE_ID}}"" id: ""<PRODUCT_ID>"") { id name descriptions { content } prices { list { amount } sale { amount } } } }
+[WAIT] Wait for response
+[ASSERT] Verify all fields populated","[STATE] product object returned with correct id
+[STATE] descriptions[] non-empty; content populated
+[MATH] prices.list.amount > 0
+[STATE] prices.sale present (may be null if no sale active)
+[STATE] No errors[] in response","[NETWORK] HTTP 200; response time < 500ms
+[API] Price hierarchy matches BL-GQL-003 (sale ≥ list validation)
+[CONSOLE] No errors","errors[] non-empty; product null; descriptions empty; prices missing list amount",none,xAPI,Automated
+GQL-003,xCatalog - Category Tree Query,GraphQL > xCatalog,High,BL-GQL-002,ECL-2.1,"Categories configured in store; {{BACK_URL}} accessible","storeId={{STORE_ID}}; cultureName=""en-US""","[NAV] Navigate to {{BACK_URL}}/graphql
+[ACT] Execute: query { categories(storeId: ""{{STORE_ID}}"") { totalCount items { id name slug childCategories { id name } } } }
+[WAIT] Wait for response
+[ASSERT] Verify category hierarchy","[STATE] Root categories returned; totalCount > 0
+[STATE] childCategories nested correctly under parent
+[FORMAT] Each category has slug (non-empty string suitable for URL)
+[MATH] totalCount matches actual items[] length
+[STATE] No errors[] in response","[NETWORK] HTTP 200; response time < 500ms
+[API] Category count matches Admin catalog configuration
+[CONSOLE] No JS errors","errors[] non-empty; totalCount = 0; slug null or empty; childCategories missing on known parent categories",none,xAPI,Automated
+GQL-004,xCatalog - Product Facets/Filters Query,GraphQL > xCatalog,High,BL-GQL-002,ECL-2.1; ECL-8.1,"Products with properties configured; {{BACK_URL}} accessible","storeId={{STORE_ID}}; facetQuery includes brand/price range; filter combinations","[ACT] Execute products query with facet parameter: query { products(storeId: ""{{STORE_ID}}"" facetQuery: ""brand"") { totalCount items { id name } facets { name type values { label count } } } }
+[WAIT] Wait for response
+[ASSERT] Verify aggregations
+[ACT] Apply filter and re-query with term facet
+[ASSERT] Verify filtered results match applied filter","[STATE] facets[] non-empty; at minimum brand and price range facets present
+[STATE] Each facet value has label and count > 0
+[STATE] Filtered result set is smaller than unfiltered set
+[STATE] Combining two filters uses AND logic (result set narrows further)
+[STATE] No errors[] in response","[NETWORK] HTTP 200 on each query
+[API] Filter counts match product count in filtered response
+[CONSOLE] No errors","errors[] non-empty; facets[] empty when facet-enabled properties exist; filter does not narrow results; facet count mismatches",none,xAPI,Automated
+GQL-005,xCart - Create Cart Mutation,GraphQL > xCart,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; store configured; {{BACK_URL}} accessible","storeId={{STORE_ID}}; userId from auth token; currencyCode=""USD""; cultureName=""en-US""; authToken={{USER_TOKEN}}","[NAV] Obtain auth token for {{USER_EMAIL}}
+[ACT] Execute: mutation { createCart(storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"") { id } }
+[WAIT] Wait for response
+[ASSERT] Verify errors[] field present and empty
+[ASSERT] Verify cart created with ID","[STATE] errors[] field present in response (BL-GQL-001)
+[STATE] errors[] is empty (mutation succeeded)
+[STATE] data.createCart.id is non-empty string
+[STATE] Cart retrievable by returned ID via cart query
+[FORMAT] Cart id matches UUID format","[NETWORK] HTTP 200; POST /graphql
+[API] Cart retrievable via follow-up query
+[ADMIN] Cart appears in Admin order management
+[CONSOLE] No errors","errors[] non-empty; data.createCart null; cart id empty; subsequent cart query returns null; HTTP 401 (missing auth)","delete created cart via API (DELETE {{BACK_URL}}/api/cart/carts/<CART_ID>)",xAPI,Automated
+GQL-006,xCart - Add Item to Cart Mutation,GraphQL > xCart,Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"Cart created from GQL-005; product ID known; user authenticated","cartId from GQL-005; productId={{TEST_SKU}}; quantity=2; authToken={{USER_TOKEN}}","[ACT] Execute: mutation { addItem(cartId: ""<CART_ID>"" productId: ""{{TEST_SKU}}"" quantity: 2) { id itemsCount items { id productId quantity listPrice { amount } } } }
+[WAIT] Wait for response
+[ASSERT] Verify errors[] field present and empty
+[ASSERT] Verify item added with correct quantity and price","[STATE] errors[] present and empty (BL-GQL-001)
+[STATE] itemsCount = 1 (or incremented by 1 if cart had items)
+[STATE] items[] contains entry with productId = {{TEST_SKU}}
+[STATE] items[0].quantity = 2
+[MATH] items[0].listPrice.amount > 0
+[STATE] No mixed pricing anomalies","[NETWORK] HTTP 200
+[API] Cart query confirms item presence
+[ADMIN] Line item visible in Admin cart view
+[CONSOLE] No errors","errors[] non-empty; itemsCount not incremented; quantity wrong; listPrice.amount = 0 or null; productId mismatch","remove item from cart via removeCartItem mutation",xAPI,Automated
+GQL-007,xCart - Update Cart Item Quantity,GraphQL > xCart,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Cart with items from GQL-006; lineItemId known; user authenticated","cartId from GQL-005; lineItemId from GQL-006; newQuantity=5; authToken={{USER_TOKEN}}","[ACT] Execute: mutation { changeCartItemQuantity(cartId: ""<CART_ID>"" lineItemId: ""<LINE_ITEM_ID>"" quantity: 5) { id items { id quantity } totals { subTotal { amount } } } }
+[WAIT] Wait for response
+[ASSERT] Verify errors[] present and empty
+[ASSERT] Verify quantity and totals updated","[STATE] errors[] present and empty (BL-GQL-001)
+[STATE] items[0].quantity = 5
+[MATH] totals.subTotal.amount = items[0].listPrice.amount × 5 (within rounding tolerance)
+[STATE] No stale quantity values","[NETWORK] HTTP 200
+[API] Follow-up cart query confirms quantity = 5
+[CONSOLE] No errors","errors[] non-empty; quantity still 2; subtotal not recalculated; HTTP 401","remove item or delete cart",xAPI,Automated
+GQL-008,xCart - Remove Item from Cart,GraphQL > xCart,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Cart with items; lineItemId known; user authenticated","cartId; lineItemId; authToken={{USER_TOKEN}}","[ACT] Execute: mutation { removeCartItem(cartId: ""<CART_ID>"" lineItemId: ""<LINE_ITEM_ID>"") { id itemsCount items { id } } }
+[WAIT] Wait for response
+[ASSERT] Verify errors[] present and empty
+[ASSERT] Verify item removed","[STATE] errors[] present and empty (BL-GQL-001)
+[STATE] itemsCount decremented by 1
+[STATE] Removed item id no longer in items[]
+[STATE] Cart remains valid (id still present)
+[MATH] Totals recalculated (subTotal lower if items remain)","[NETWORK] HTTP 200
+[API] Cart query confirms item absence
+[CONSOLE] No errors","errors[] non-empty; itemsCount unchanged; removed item still in items[]; cart becomes null after removal","delete cart if empty",xAPI,Automated
+GQL-009,xCart - Set Shipping Address,GraphQL > xCart,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1; ECL-8.1,"Cart with items; valid address available; user authenticated","cartId; address: city=""New York"" state=""NY"" zip=""10001"" country=""US""; authToken={{USER_TOKEN}}","[ACT] Execute addOrUpdateCartShipment mutation with full address object
+[WAIT] Wait for response
+[ASSERT] Verify errors[] present and empty
+[ACT] Query cart to confirm shipping info
+[ASSERT] Verify address fields on shipment","[STATE] errors[] present and empty (BL-GQL-001)
+[STATE] Shipping address saved on cart shipment
+[FORMAT] City, state, zip, country populated and match input
+[STATE] No validation errors for valid address
+[STATE] Cart ready for shipping method selection (availableShippingMethods non-empty)","[NETWORK] HTTP 200
+[API] Cart query returns shipment with address fields populated
+[CONSOLE] No errors","errors[] non-empty; address fields null after mutation; validationErrors on shipment; availableShippingMethods empty after address set","delete cart after test",xAPI,Automated
+GQL-010,xCart - Apply Coupon Mutation,GraphQL > xCart,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Cart with items; valid coupon code ""TESTCOUPON"" configured; user authenticated","cartId; couponCode=""TESTCOUPON""; invalidCoupon=""BADCODE999""; authToken={{USER_TOKEN}}","[ACT] Execute: mutation { addCoupon(cartId: ""<CART_ID>"" couponCode: ""TESTCOUPON"") { id coupons { code isAppliedSuccessfully } totals { discountTotal { amount } } } }
+[WAIT] Wait for response
+[ASSERT] Verify errors[] present and empty
+[ASSERT] Verify coupon applied and discount calculated
+[ACT] Apply invalid coupon code ""BADCODE999""
+[ASSERT] Verify appropriate error returned","[STATE] errors[] present and empty (BL-GQL-001)
+[STATE] coupons[] contains entry with code=""TESTCOUPON""
+[STATE] isAppliedSuccessfully = true
+[MATH] totals.discountTotal.amount > 0
+[STATE] Invalid coupon returns structured error or isAppliedSuccessfully = false (not a 500)","[NETWORK] HTTP 200 for both calls
+[API] Discount amount matches coupon configuration in Admin
+[CONSOLE] No errors","errors[] non-empty on valid coupon; isAppliedSuccessfully = false for valid code; discountTotal = 0 after successful apply; HTTP 500 on invalid coupon","remove coupon from cart; delete cart",xAPI,Automated
+GQL-011,xOrder - Get Orders Query,GraphQL > xOrder,Critical,BL-GQL-002; BL-GQL-004,ECL-2.1,"User authenticated with valid token; orders exist for user","authToken={{USER_TOKEN}}; filter=""""; sort=""createdDate:desc""; pagination: first=10","[NAV] Ensure auth token valid for {{USER_EMAIL}}
+[ACT] Execute: query { orders(filter: """" sort: ""createdDate:desc"") { totalCount items { id number status createdDate total { amount } } } }
+[WAIT] Wait for response
+[ASSERT] Verify orders list returned","[STATE] totalCount > 0
+[STATE] items[] sorted by createdDate descending
+[STATE] Each item has id, number, status, createdDate, total.amount
+[FORMAT] status is a known enum value (New, Processing, Completed, etc.)
+[STATE] Pagination: first/after params work to return subsets
+[STATE] No errors[] in response","[NETWORK] HTTP 200; response time < 500ms
+[API] totalCount matches actual order count in Admin
+[CONSOLE] No errors","errors[] non-empty; totalCount = 0 when orders exist; sort order wrong; missing total.amount; HTTP 401 without auth",none,xAPI,Automated
+GQL-012,xOrder - Get Order Detail Query,GraphQL > xOrder,Critical,BL-GQL-002; BL-GQL-004,ECL-2.1,"Order exists; order ID/number known from GQL-011; user authenticated","orderId or orderNumber from GQL-011; authToken={{USER_TOKEN}}","[ACT] Execute order query by ID or number
+[WAIT] Wait for response
+[ASSERT] Verify full order detail fields
+[ASSERT] Verify line items, addresses, payments","[STATE] Full order object returned with correct id/number
+[STATE] items[] (line items) non-empty with productId, quantity, price
+[STATE] shippingAddress populated (city, country at minimum)
+[STATE] payment info present (method, status)
+[MATH] Order totals (subTotal + shipping + tax = grandTotal within tolerance)
+[STATE] No errors[] in response","[NETWORK] HTTP 200; response time < 500ms
+[API] Order detail matches Admin order view
+[CONSOLE] No errors","errors[] non-empty; items[] empty; shippingAddress null; totals incorrect; HTTP 401",none,xAPI,Automated
+GQL-013,xOrder - Create Order from Cart,GraphQL > xOrder,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Cart with items, shipping address, shipping method, and payment method configured; user authenticated","cartId (fully configured); authToken={{USER_TOKEN}}","[ACT] Prepare cart: add item, set address, select shipping method, set payment method
+[ACT] Execute: mutation { createOrderFromCart(cartId: ""<CART_ID>"") { id number status } }
+[WAIT] Wait for response (up to 10s)
+[ASSERT] Verify errors[] present and empty
+[ASSERT] Verify order created with expected fields","[STATE] errors[] present and empty (BL-GQL-001)
+[STATE] data.createOrderFromCart.id is non-empty
+[FORMAT] data.createOrderFromCart.number matches order number pattern
+[STATE] status is ""New"" or ""Processing""
+[STATE] Original cart is cleared/invalidated after order creation","[NETWORK] HTTP 200; response time < 10s
+[API] Order appears in xOrder orders query and Admin orders list
+[ADMIN] Order visible in Admin with correct status
+[CONSOLE] No errors","errors[] non-empty; id null; status unexpected value; cart still active after order creation; duplicate order on retry","verify order exists via query; cancel/delete test order via Admin API {{BACK_URL}}/api/order/customerOrders/<ORDER_ID>",xAPI,Automated
+GQL-014,xCMS - Get Page Content Query,GraphQL > xCMS,High,BL-GQL-002,ECL-2.1,"CMS pages configured in store; {{BACK_URL}} accessible","storeId={{STORE_ID}}; cultureName=""en-US""","[NAV] Navigate to {{BACK_URL}}/graphql
+[ACT] Execute: query { pages(storeId: ""{{STORE_ID}}"") { totalCount items { id name relativeUrl content } } }
+[WAIT] Wait for response
+[ASSERT] Verify page content structure","[STATE] totalCount > 0
+[STATE] items[] non-empty; each page has id, name, relativeUrl
+[STATE] content populated (not empty string)
+[FORMAT] relativeUrl starts with /
+[STATE] No HTML injection artifacts in content (no unescaped script tags)
+[STATE] No errors[] in response","[NETWORK] HTTP 200; response time < 500ms
+[API] Page count matches CMS configuration in Admin
+[CONSOLE] No errors","errors[] non-empty; totalCount = 0; content empty; relativeUrl malformed; script injection in content",none,xAPI,Automated
+GQL-015,GraphQL Error Handling - Invalid Query,GraphQL > Errors,High,BL-GQL-001,ECL-14.1,"GraphQL endpoint accessible at {{BACK_URL}}; no auth required for this test","malformedQuery=""{ products { INVALID_FIELD } }""; missingArgsQuery=""mutation { createCart }""; nonExistentField=""{ nonExistentTopLevelField }"" ","[ACT] Send malformed query syntax (unclosed brace or invalid syntax)
+[WAIT] Wait for response
+[ASSERT] Verify structured GraphQL error returned (not HTTP 500)
+[ACT] Send query for non-existent field
+[ASSERT] Verify field-level error message
+[ACT] Send mutation with missing required arguments
+[ASSERT] Verify argument validation error","[STATE] Malformed syntax: errors[] non-empty with message describing syntax error; HTTP 200 (not 500)
+[STATE] Unknown field: errors[].message references the unknown field by name
+[STATE] Missing args: errors[].message references missing argument name
+[FORMAT] All error responses follow GraphQL error format: { errors: [{ message, locations, path }] }
+[STATE] No stack traces or internal paths in error messages","[NETWORK] HTTP 200 on all three requests (GraphQL errors via 200, not 4xx/5xx)
+[CONSOLE] No unhandled server exceptions","HTTP 500 on any request; stack trace in errors[].message; no errors[] on obviously invalid query; non-JSON response body",none,xAPI,Automated
+GQL-016,GraphQL Authentication - Unauthenticated Access,GraphQL > Auth,Critical,BL-GQL-004,ECL-2.1; ECL-14.1,"GraphQL endpoint accessible; products exist; auth tokens available","publicQuery (no token); protectedQuery (orders, no token); mutationNoToken (createCart without auth); validToken={{USER_TOKEN}}","[ACT] Query products without Authorization header (public catalog)
+[ASSERT] Verify public query succeeds
+[ACT] Query orders without Authorization header (protected)
+[ASSERT] Verify authentication error returned
+[ACT] Execute createCart mutation without Authorization header
+[ASSERT] Verify authentication error returned
+[ASSERT] Verify error messages do not leak sensitive information","[STATE] Public products query: data.products returned; no errors[]
+[STATE] Orders query without auth: errors[] non-empty with UNAUTHORIZED message (BL-GQL-004)
+[STATE] createCart without auth: errors[] non-empty with UNAUTHORIZED message
+[STATE] Error messages contain no user IDs, internal paths, or password hints
+[FORMAT] errors[].extensions.code = ""UNAUTHORIZED"" or equivalent","[NETWORK] HTTP 200 on all requests (GraphQL auth errors in body, not HTTP 401 header — verify per implementation)
+[API] Authenticated version of orders query succeeds
+[CONSOLE] No server errors","data returned for orders/mutations without auth; HTTP 500 on unauth request; error message exposes internal details; authenticated query fails with valid token",none,xAPI,Automated
+GQL-017,xCart - Full Checkout Flow via GraphQL,GraphQL > xCart,Critical,BL-GQL-001; BL-GQL-002; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated; products available with known SKU; payment method configured; shipping configured for test store","authToken={{USER_TOKEN}}; storeId={{STORE_ID}}; productId={{TEST_SKU}}; paymentMethodCode from config","[ACT] Create cart mutation
+[ASSERT] errors[] empty; cartId returned
+[ACT] Add item mutation (quantity=1)
+[ASSERT] errors[] empty; itemsCount=1
+[ACT] Set shipping address mutation
+[ASSERT] errors[] empty; address saved
+[ACT] Query available shipping methods
+[ASSERT] availableShippingMethods non-empty
+[ACT] Set shipping method mutation
+[ASSERT] errors[] empty
+[ACT] Set payment method mutation
+[ASSERT] errors[] empty
+[ACT] Validate cart mutation (if available)
+[ACT] Create order from cart mutation
+[ASSERT] errors[] empty; orderId returned
+[WAIT] Measure total elapsed time","[STATE] Each mutation: errors[] present and empty (BL-GQL-001)
+[STATE] Cart totals update correctly after each addItem/address/shipping step
+[MATH] Shipping rates > 0 in availableShippingMethods
+[STATE] Order created with id, number, status = ""New"" or ""Processing""
+[STATE] End-to-end flow completes in < 30 seconds total","[NETWORK] HTTP 200 on all 8 mutations
+[API] Order appears in xOrder query after creation
+[ADMIN] Order visible in Admin
+[CONSOLE] No errors throughout flow","Any mutation returning errors[] non-empty; cart totals not updating; availableShippingMethods empty; order not created; total time > 30s","cancel/delete test order via Admin API",xAPI,Automated
+GQL-018,GraphQL Query Performance,GraphQL > Performance,High,BL-GQL-002,,,"product search query; complex nested product query (variants + prices + images); orders list query; start timestamp before each query","[ACT] Execute products search query; record start/end timestamps
+[ASSERT] Response time < 500ms
+[ACT] Execute complex nested product query with variants, prices, images
+[ASSERT] Response time < 1000ms
+[ACT] Execute orders list query
+[ASSERT] Response time < 500ms
+[ACT] Execute nested query 5 times; check response times do not grow proportionally (N+1 detection)","[STATE] Product search response time < 500ms
+[STATE] Nested product query response time < 1000ms
+[STATE] Orders list response time < 500ms
+[STATE] Repeated nested queries: response times remain within 20% of first call (no N+1 pattern)
+[STATE] No errors[] in any response","[NETWORK] Monitor response times via DevTools Network panel
+[CONSOLE] No timeout errors or slow query warnings","Response time exceeds threshold; response times grow linearly with nesting depth (N+1); errors[] on any query",none,xAPI,Automated
+GQL-019,xCatalog - Product Variations Query,GraphQL > xCatalog,High,BL-GQL-002; BL-GQL-003,ECL-2.1,"Configurable products with variations (size, color) exist in catalog; {{BACK_URL}} accessible","storeId={{STORE_ID}}; parentProductId (configurable product with known variations)","[ACT] Query product with variations: query { product(storeId: ""{{STORE_ID}}"" id: ""<PARENT_ID>"") { id name variations { id name properties { name value } prices { list { amount } } availability { availableQuantity } } } }
+[WAIT] Wait for response
+[ASSERT] Verify variation properties
+[ASSERT] Verify availability and pricing per variation","[STATE] variations[] non-empty
+[STATE] Each variation has distinct property combination (e.g., size+color unique)
+[STATE] Each variation has prices.list.amount > 0
+[STATE] Availability differs per variation if stock differs (or all show available if not tracked)
+[STATE] No errors[] in response","[NETWORK] HTTP 200; response time < 1s
+[API] Variation count matches Admin catalog configuration
+[CONSOLE] No errors","errors[] non-empty; variations[] empty for known configurable product; all variations same price when they should differ; availability not populated",none,xAPI,Automated
+GQL-020,GraphQL Introspection Security,GraphQL > Security,High,,,"GraphQL endpoint accessible at {{BACK_URL}}; no auth required for introspection test","introspectionQuery: { __schema { types { name } } }","[ACT] Send introspection query: { __schema { types { name } } }
+[WAIT] Wait for response
+[ASSERT] Check introspection enabled/disabled status
+[ASSERT] If enabled: verify no sensitive internal types exposed","[STATE] If introspection disabled: errors[] contains message indicating introspection not allowed (acceptable for production)
+[STATE] If introspection enabled: __schema.types returned; no types with names containing ""internal"" ""debug"" ""admin"" ""secret""
+[STATE] Rate limiting applies (send 10 rapid introspection queries; no 200 on all after rate limit threshold)
+[FORMAT] Response is valid JSON in either case","[NETWORK] HTTP 200 (error response) or 200 (data response); not HTTP 500
+[CONSOLE] No server errors","HTTP 500 on introspection; internal type names exposed in schema; no rate limiting on repeated introspection; server crashes on introspection query",none,xAPI,Automated
+GQL-021,xCart - Cart Uses Live Price After Admin Price Change (Not Cached Index),GraphQL > xCart > Cross-Domain,Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"Authenticated user; product with known price in price list; Admin API accessible at {{BACK_URL}}","productId={{TEST_SKU}}; priceListId from Admin; originalPrice (recorded); newPrice (different from original); authToken={{USER_TOKEN}}","[ACT] Note current price of {{TEST_SKU}} via xCatalog products query; record as originalPrice
+[ACT] Change {{TEST_SKU}} price via: PUT {{BACK_URL}}/api/pricing/pricelists/<priceListId>/prices with newPrice
+[WAIT] Wait 2 seconds
+[ACT] Execute addItem mutation to add {{TEST_SKU}} to a new cart
+[ACT] Query cart: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"") { items { productId listPrice { amount } placedPrice { amount } } } }
+[ASSERT] Verify errors[] present and empty on all mutations
+[ASSERT] Compare cart placedPrice against newPrice","[STATE] errors[] present and empty on createCart and addItem (BL-GQL-001)
+[STATE] cart items[0].placedPrice.amount = newPrice (not originalPrice)
+[STATE] cart items[0].listPrice.amount = newPrice
+[STATE] No mixed pricing: all monetary fields on line item use newPrice
+[STATE] BL-GQL-003: Cart resolves live price, not stale index","[NETWORK] HTTP 200 on REST price update; HTTP 200 on GraphQL mutations
+[API] Price change confirmed via GET {{BACK_URL}}/api/pricing/pricelists/<priceListId>/prices
+[ADMIN] Admin pricing UI reflects new price
+[CONSOLE] No errors","errors[] non-empty; placedPrice = originalPrice (stale cache); mixed pricing on line item; REST price update returns non-200","restore original price via PUT {{BACK_URL}}/api/pricing/pricelists/<priceListId>/prices; delete test cart","Coverage Gap Analysis BL-CROSS-002",Generated
+GQL-022,xCatalog - Product Listing Price During Reindex Lag Window,GraphQL > xCatalog > Cross-Domain,Critical,BL-GQL-002; BL-GQL-003,ECL-2.1,"Product with known price; Elasticsearch indexing enabled; Admin API accessible at {{BACK_URL}}","productCode={{TEST_SKU}}; storeId={{STORE_ID}}; originalPrice; newPrice; reindexWindowSeconds=60","[ACT] Query xCatalog for {{TEST_SKU}}; record listed price as originalPrice: query { products(storeId: ""{{STORE_ID}}"" query: ""<TEST_SKU_CODE>"") { items { id prices { list { amount } } } } }
+[ACT] Change {{TEST_SKU}} price via: PUT {{BACK_URL}}/api/pricing/pricelists/<priceListId>/prices with newPrice
+[ACT] Immediately re-query xCatalog products (same query)
+[ASSERT] Document whether old or new price returned (lag acceptable per BL-CROSS-002)
+[WAIT] Wait 60 seconds for reindex to complete
+[ACT] Re-query xCatalog products again
+[ASSERT] Verify price now reflects newPrice","[STATE] Step 3 result: originalPrice MAY be returned (acceptable reindex lag of 30-60s)
+[STATE] Step 6 result: prices.list.amount = newPrice (reindex must have completed)
+[STATE] If step 6 still shows originalPrice after 90s total: flag as reindex failure
+[STATE] Document actual observed lag duration
+[STATE] No errors[] in any query","[NETWORK] HTTP 200 on price update REST call and GraphQL queries
+[API] Reindex status checkable via {{BACK_URL}}/api/search/indexes (if endpoint available)
+[CONSOLE] No errors","xCatalog still shows originalPrice after 90 seconds total; errors[] on xCatalog query; REST price update returns non-200; price shows as 0 after change","restore original price via Admin API","Coverage Gap Analysis BL-CROSS-002",Generated
+GQL-023,xCart - Price Update Reflected on Re-query After Admin Change,GraphQL > xCart > Cross-Domain,Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"Cart with existing item at known price; Admin API accessible at {{BACK_URL}}; user authenticated","cartId (with item); lineItemProductId={{TEST_SKU}}; originalPlacedPrice; newPrice; authToken={{USER_TOKEN}}","[ACT] Create cart and add {{TEST_SKU}} (quantity=1) via addItem mutation
+[ACT] Query cart; record items[0].placedPrice.amount as originalPlacedPrice
+[ACT] Change {{TEST_SKU}} price via: PUT {{BACK_URL}}/api/pricing/pricelists/<priceListId>/prices with newPrice
+[ACT] Re-query same cart: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"") { items { productId placedPrice { amount } listPrice { amount } } totals { subTotal { amount } } } }
+[ASSERT] Verify errors[] present and empty on mutations
+[ASSERT] Compare placedPrice before and after price change","[STATE] errors[] present and empty on mutations (BL-GQL-001)
+[STATE] items[0].placedPrice.amount = newPrice (not originalPlacedPrice)
+[MATH] totals.subTotal.amount recalculated = newPrice × quantity
+[STATE] No stale/cached price persisted in cart
+[STATE] BL-GQL-003 + BL-CROSS-002: Cart uses live price regardless of index state","[NETWORK] HTTP 200 on REST update and GraphQL queries
+[API] Price change confirmed via GET on pricing endpoint
+[ADMIN] Admin cart view reflects new price on line item
+[CONSOLE] No errors","items[0].placedPrice = originalPlacedPrice (P0 violation: stale cached price); subtotal not recalculated; errors[] non-empty on re-query","restore original price; delete cart","Coverage Gap Analysis BL-CROSS-002",Generated
+GQL-024,xOrder - createOrderFromCart Idempotency (Duplicate Call Returns Same Order),GraphQL > xOrder > Cross-Domain,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Full cart ready for order: items added, shipping address set, shipping method selected, payment configured; user authenticated","cartId (fully configured); authToken={{USER_TOKEN}}; expectedOrderCount=1","[ACT] Prepare cart through full checkout flow (addItem, addOrUpdateCartShipment with address+method, addOrUpdateCartPayment)
+[ACT] Execute: mutation { createOrderFromCart(cartId: ""<CART_ID>"") { id number status } }; record orderId1 and orderNumber1
+[ASSERT] Verify errors[] present and empty
+[ACT] Execute same mutation again: mutation { createOrderFromCart(cartId: ""<CART_ID>"") { id number status } }
+[ASSERT] Verify second response
+[ACT] Query orders list: query { orders(filter: ""createdDate gt 2026-03-10"") { totalCount items { id number } } }
+[ASSERT] Verify exactly 1 order created","[STATE] errors[] present and empty on first call (BL-GQL-001)
+[STATE] First call: orderId1 and orderNumber1 non-empty
+[STATE] Second call: either (a) returns same orderId1/orderNumber1, or (b) returns structured GraphQL error with clear message (NOT HTTP 500)
+[STATE] orders query: totalCount for this cart = 1 (not 2)
+[STATE] No duplicate payment charges; no duplicate inventory decrements
+[STATE] BL-CROSS-010: All checkout mutations must be idempotent","[NETWORK] HTTP 200 on both mutation calls (even if second returns errors[])
+[API] Exactly 1 order in system for this cart
+[ADMIN] Single order visible in Admin orders list
+[CONSOLE] No unhandled exceptions on second call","HTTP 500 on second call; 2 orders created; duplicate payment charge; errors[] on first (successful) call; second call returns different orderId","cancel/delete test order via Admin API; clean up test cart","Coverage Gap Analysis BL-CROSS-010",Generated
+GQL-025,xOrder - Second createOrderFromCart Returns Same Order ID (Not Server Error),GraphQL > xOrder > Cross-Domain,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Full cart ready for order creation; user authenticated","cartId (fully configured); authToken={{USER_TOKEN}}","[ACT] Prepare cart through full checkout flow
+[ACT] Execute createOrderFromCart mutation; record orderId and orderNumber
+[WAIT] Wait 2 seconds
+[ACT] Execute createOrderFromCart with same cartId again
+[ASSERT] Inspect response structure of second call
+[ASSERT] If successful response: verify orderId matches first call
+[ASSERT] If error response: verify structured GraphQL error (not HTTP 500)","[STATE] First call: errors[] present and empty; valid orderId returned (BL-GQL-001)
+[STATE] Second call: MUST NOT return HTTP 500 or unhandled exception
+[STATE] Acceptable second-call responses: (a) same orderId, or (b) errors[].message = ""Cart already converted"" or ""Cart not found"" or equivalent
+[STATE] errors[] if present on second call: has message, locations, path — no stack trace
+[STATE] No partial order created by second call
+[STATE] BL-CROSS-010: Idempotent — same input produces same output without side effects","[NETWORK] HTTP 200 on both calls
+[CONSOLE] No unhandled exception logged on second call
+[API] Order count = 1 in system","HTTP 500 on second call; stack trace in errors[].message; 2 orders created; no response on second call","cancel/delete test order; delete cart","Coverage Gap Analysis BL-CROSS-010",Generated
+GQL-026,xCart - Cart Invalidated After Order Creation (No Reuse),GraphQL > xCart > Cross-Domain,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Cart converted to order via createOrderFromCart; orderId known; user authenticated","cartId (converted to order); orderId; productId={{TEST_SKU}}; authToken={{USER_TOKEN}}","[ACT] Create cart, add items, complete checkout setup
+[ACT] Execute createOrderFromCart mutation; record orderId
+[ASSERT] Verify errors[] present and empty; order created
+[ACT] Attempt to add item to same converted cart: mutation { addItem(cartId: ""<CART_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1) { id itemsCount } }
+[ASSERT] Verify addItem fails with appropriate error
+[ACT] Query cart: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"") { id status itemsCount } }
+[ASSERT] Verify cart inactive/null
+[ACT] Attempt changeCartItemQuantity on converted cart
+[ASSERT] Verify mutation fails","[STATE] createOrderFromCart: errors[] empty; valid orderId (BL-GQL-001)
+[STATE] addItem on converted cart: returns error (cart not found / cart already converted / similar); NOT silent success
+[STATE] Cart query: returns null or cart.status indicates inactive/completed
+[STATE] changeCartItemQuantity: returns error, not success
+[STATE] BL-CROSS-010: Post-order cart invalidated to prevent reuse and duplicate orders","[NETWORK] HTTP 200 on all calls (errors in body for failures)
+[API] No new line items on order after attempted addItem
+[ADMIN] Cart not modifiable in Admin after order creation
+[CONSOLE] No errors","Silent success on addItem to converted cart (P0 violation); cart still shows active status; mutations succeed on converted cart","cancel/delete test order","Coverage Gap Analysis BL-CROSS-010",Generated
+GQL-027,xCart - Currency Switch Updates All Line Items to New Price List,GraphQL > xCart > Cross-Domain,High,BL-GQL-001; BL-GQL-002; BL-GQL-004,ECL-14.1; ECL-2.1,"Products with prices in both USD and EUR price lists; authenticated user; changeCartCurrency mutation available","cartId; productA_id (has USD+EUR prices); productB_id (has USD+EUR prices); authToken={{USER_TOKEN}}","[ACT] Create cart in USD: mutation { createCart(storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"") { id } }
+[ACT] Add productA and productB via addItem mutations
+[ASSERT] errors[] empty on each mutation
+[ACT] Query cart; record USD prices: items[].listPrice, items[].placedPrice, totals.subTotal
+[ACT] Switch currency: mutation { changeCartCurrency(cartId: ""<CART_ID>"" newCurrencyCode: ""EUR"") { id currency { code } items { productId listPrice { amount currencyCode } placedPrice { amount currencyCode } } totals { subTotal { amount currencyCode } } } }
+[ASSERT] Verify errors[] present and empty
+[ASSERT] Verify ALL monetary fields use EUR","[STATE] errors[] present and empty on changeCartCurrency (BL-GQL-001)
+[STATE] All items[].listPrice.currencyCode = ""EUR""
+[STATE] All items[].placedPrice.currencyCode = ""EUR""
+[STATE] totals.subTotal.currencyCode = ""EUR""
+[STATE] Price amounts correspond to EUR price list values (NOT USD-to-EUR conversion rates)
+[STATE] Zero fields showing USD after currency switch (atomic update — BL-CROSS-004)","[NETWORK] HTTP 200 on all mutations
+[API] EUR prices match Admin price list configuration for EUR
+[CONSOLE] No errors","errors[] non-empty on currency switch; any item still showing currencyCode=""USD""; price appears to be USD amount with EUR label; totals.subTotal in wrong currency","delete cart",xAPI,Generated
+GQL-028,xCart - Shipping Rates Recalculate After Currency Switch,GraphQL > xCart > Cross-Domain,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Cart with items and shipping address set; shipping methods configured for both USD and EUR; user authenticated","cartId (with items + shipping address); authToken={{USER_TOKEN}}","[ACT] Create cart in USD, add items, set shipping address via addOrUpdateCartShipment
+[ASSERT] errors[] empty on mutations
+[ACT] Query available shipping methods in USD: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"") { availableShippingMethods { code optionName price { amount currencyCode } } } }
+[ACT] Record USD shipping rates per method
+[ACT] Switch cart currency to EUR via changeCartCurrency mutation
+[ASSERT] Verify errors[] present and empty
+[ACT] Re-query available shipping methods (same query as above)
+[ASSERT] Verify shipping rates in EUR","[STATE] errors[] present and empty on changeCartCurrency (BL-GQL-001)
+[STATE] All availableShippingMethods[].price.currencyCode = ""EUR"" after switch
+[STATE] Shipping rate amounts are EUR-specific values (from EUR shipping config, not USD-converted)
+[STATE] No shipping method still displaying USD amounts
+[STATE] If a method is unavailable in EUR: excluded from list (not shown with 0 or wrong currency)
+[STATE] Cart totals including shipping all in EUR (BL-CROSS-004)","[NETWORK] HTTP 200 on mutations and queries
+[API] EUR shipping rates match shipping provider config
+[CONSOLE] No errors","errors[] non-empty on currency switch; shipping methods still show USD after switch; shipping amount = 0 in EUR; cart totals contain USD amounts","delete cart","Coverage Gap Analysis BL-CROSS-004",Generated
+GQL-029,xCart - Product Without New Currency Price Flagged After Currency Switch,GraphQL > xCart > Cross-Domain,High,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"productA has both USD and EUR prices; productB has ONLY USD price; authenticated user","cartId; productA_id (USD+EUR); productB_id (USD only); authToken={{USER_TOKEN}}","[ACT] Create cart in USD, add productA and productB
+[ASSERT] errors[] empty; both items in cart
+[ACT] Query cart; verify both items present with USD prices
+[ACT] Switch currency to EUR via changeCartCurrency mutation
+[ASSERT] Verify errors[] present and empty
+[ACT] Query cart: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"") { items { productId name listPrice { amount currencyCode } isValid validationErrors { errorCode errorMessage } } validationErrors { errorCode } itemsCount } }
+[ASSERT] Verify productA status (has EUR price)
+[ASSERT] Verify productB status (no EUR price)","[STATE] errors[] present and empty on changeCartCurrency (BL-GQL-001)
+[STATE] productA: listPrice.currencyCode = ""EUR""; isValid = true; no item-level validationErrors
+[STATE] productB: one of (a) removed from cart with itemsCount decremented, or (b) isValid = false with validationErrors indicating no price in EUR, or (c) flagged in cart-level validationErrors
+[STATE] productB MUST NOT show $0.00 EUR price or a USD-amount with EUR label
+[STATE] Cart totals exclude productB if it has no valid EUR price
+[STATE] BL-GQL-003 + BL-CROSS-004: Products without price list in new currency become unavailable","[NETWORK] HTTP 200 on all mutations and queries
+[API] productB EUR price absence confirmed via Admin pricing
+[CONSOLE] No errors","errors[] non-empty on currency switch; productB shows 0.00 EUR (silent invalid price); productB shows USD amount with EUR currency code; cart totals include invalid productB price","delete cart","Coverage Gap Analysis BL-CROSS-004 BL-PRICE-005",Generated
+GQL-030,xProfile - createOrganization Mutation Validates Org Name (InputValidationOptions),GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"GraphQL endpoint accessible at {{BACK_URL}}; user authenticated","storeId={{STORE_ID}}; authToken={{USER_TOKEN}}; valid_org_name=AT&T Corp. #1; invalid_org_name=<script>alert(1)</script>Org","[NAV] Navigate to {{BACK_URL}}/graphql
+[ACT] Set Authorization header: Bearer {{USER_TOKEN}}
+[ACT] Execute createOrganization mutation with valid business name: mutation { createOrganization(command: { name: ""AT&T Corp. #1"" storeId: ""{{STORE_ID}}"" }) { id name } }
+[ASSERT] Verify errors[] empty — OrganizationNameValidationPattern allows digits, &, #, /, commas, parens
+[ASSERT] Verify organization.name = ""AT&T Corp. #1""
+[ACT] Execute createOrganization with XSS payload: mutation { createOrganization(command: { name: ""<script>alert(1)</script>Org"" storeId: ""{{STORE_ID}}"" }) { id name } }
+[ASSERT] Verify errors[] contains validation error — OrganizationNameValidationPattern rejects < and >
+[ASSERT] Verify no organization created with XSS name","[STATE] errors[] empty for valid business name (BL-GQL-001)
+[STATE] OrganizationNameValidationPattern ^[\p{L}\p{M}\p{N}\s'\-\.&#/,()]+$ permits &, #, digits
+[STATE] Organization created with exact business name including &
+[STATE] errors[] non-empty for XSS payload — validation rejects <, > characters
+[STATE] No organization created with script tags in name","[NETWORK] HTTP 200 on both mutations
+[API] Organization query confirms valid org exists; XSS org does not exist
+[CONSOLE] No errors","Valid business name with & rejected (false positive); XSS payload accepted as org name; no validation error in errors[]; org created with <script> in name","delete valid test org via admin API","VCST-4691 PR #130",Generated
+GQL-031,xProfile - updateContact Mutation Rejects HTML in Phone and Address Fields,GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"GraphQL endpoint accessible at {{BACK_URL}}; existing contact; user authenticated","storeId={{STORE_ID}}; authToken={{USER_TOKEN}}; contactId=existing_contact_id","[NAV] Navigate to {{BACK_URL}}/graphql
+[ACT] Set Authorization header: Bearer {{USER_TOKEN}}
+[ACT] Execute updateContact mutation with HTML in phone: mutation { updateContact(command: { id: ""{{contactId}}"" storeId: ""{{STORE_ID}}"" phones: [""<img src=x onerror=alert(1)>""] }) { id phones } }
+[ASSERT] Verify errors[] contains validation error — EnableNoHtmlTagsValidation rejects HTML tags in phone field
+[ASSERT] Verify contact phone unchanged
+[ACT] Execute updateContact with valid phone: mutation { updateContact(command: { id: ""{{contactId}}"" storeId: ""{{STORE_ID}}"" phones: [""+1-555-0123""] }) { id phones } }
+[ASSERT] Verify errors[] empty — valid phone accepted
+[ASSERT] Verify contact.phones contains +1-555-0123","[STATE] errors[] non-empty for HTML in phone field — EnableNoHtmlTagsValidation active (BL-GQL-001)
+[STATE] Phone field unchanged after rejected HTML payload
+[STATE] errors[] empty for valid phone number
+[STATE] Valid phone stored correctly","[NETWORK] HTTP 200 on both mutations
+[API] Contact query confirms phone unchanged after rejection; updated after valid input
+[CONSOLE] No errors","HTML tags accepted in phone field; <img> tag stored as phone number; no validation error; EnableNoHtmlTagsValidation not applied to phone","none","VCST-4691 PR #130",Generated
+GQL-032,xProfile - updateMemberAddresses Rejects Script Injection in Address Fields,GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"GraphQL endpoint accessible at {{BACK_URL}}; existing member with address; user authenticated","storeId={{STORE_ID}}; authToken={{USER_TOKEN}}; memberId=existing_member_id","[NAV] Navigate to {{BACK_URL}}/graphql
+[ACT] Set Authorization header: Bearer {{USER_TOKEN}}
+[ACT] Execute updateMemberAddresses with XSS in city: mutation { updateMemberAddresses(command: { memberId: ""{{memberId}}"" addresses: [{ city: ""<script>alert(1)</script>"" line1: ""123 Main St"" countryCode: ""US"" countryName: ""United States"" }] }) { id } }
+[ASSERT] Verify errors[] contains validation error — EnableNoHtmlTagsValidation rejects HTML in city field
+[ACT] Execute updateMemberAddresses with XSS in line1: mutation { updateMemberAddresses(command: { memberId: ""{{memberId}}"" addresses: [{ city: ""New York"" line1: ""<img onerror=alert(1)>"" countryCode: ""US"" countryName: ""United States"" }] }) { id } }
+[ASSERT] Verify errors[] contains validation error — HTML tags rejected in address line
+[ACT] Execute with valid address: mutation { updateMemberAddresses(command: { memberId: ""{{memberId}}"" addresses: [{ city: ""New York"" line1: ""123 Main St"" countryCode: ""US"" countryName: ""United States"" }] }) { id } }
+[ASSERT] Verify errors[] empty — valid address accepted","[STATE] errors[] non-empty for HTML in city and line1 fields (BL-GQL-001)
+[STATE] EnableNoHtmlTagsValidation rejects <script> and <img> tags in address fields
+[STATE] Address unchanged after rejected payloads
+[STATE] errors[] empty for valid address — accepted and stored","[NETWORK] HTTP 200 on all mutations
+[API] Member address query confirms no XSS stored; valid address stored correctly
+[CONSOLE] No errors","HTML tags accepted in city or address line fields; <script> stored in address; no validation error; address saved with XSS payload","none","VCST-4691 PR #130",Generated
+GQL-033,xProfile - updatePersonalData Validates Name Fields,GraphQL > xProfile,Medium,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"GraphQL endpoint accessible at {{BACK_URL}}; user authenticated with profile","storeId={{STORE_ID}}; authToken={{USER_TOKEN}}","[NAV] Navigate to {{BACK_URL}}/graphql
+[ACT] Set Authorization header: Bearer {{USER_TOKEN}}
+[ACT] Execute updatePersonalData with XSS in firstName: mutation { updatePersonalData(command: { storeId: ""{{STORE_ID}}"" personalData: { firstName: ""<svg onload=alert(1)>"" lastName: ""Test"" } }) { succeeded } }
+[ASSERT] Verify errors[] contains validation error — NameValidationPattern rejects <, >, = in name fields
+[ACT] Execute with valid Unicode name: mutation { updatePersonalData(command: { storeId: ""{{STORE_ID}}"" personalData: { firstName: ""François"" lastName: ""O'Brien-Müller"" } }) { succeeded } }
+[ASSERT] Verify errors[] empty — valid Unicode names with accents, apostrophes, hyphens accepted
+[ASSERT] Verify succeeded = true","[STATE] errors[] non-empty for SVG payload in firstName — NameValidationPattern rejects non-letter characters (BL-GQL-001)
+[STATE] Profile name unchanged after rejected XSS payload
+[STATE] errors[] empty for valid Unicode names — accents (ç, ö), apostrophes, hyphens all permitted
+[STATE] Profile updated successfully with François O'Brien-Müller","[NETWORK] HTTP 200 on both mutations
+[API] Profile query confirms name unchanged after rejection; updated after valid input
+[CONSOLE] No errors","SVG payload accepted as firstName; XSS stored in profile name; valid Unicode names (accents, apostrophes) rejected as false positive; no validation error for HTML in name","none","VCST-4691 PR #130",Generated

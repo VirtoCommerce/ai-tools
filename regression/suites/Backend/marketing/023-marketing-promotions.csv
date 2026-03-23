@@ -1,0 +1,164 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"MKT-021","Add promotion (name required)","Marketing > Promotions","Critical",,,"Admin logged in to Backend",,"1. Navigate to Marketing > Promotions
+2. Click 'Add'
+3. Try to create without name > Verify required validation
+4. Enter name > Create",,,,,"C183346",
+"MKT-022","Edit promotion (name/description)","Marketing > Promotions","High",,,"Admin logged in to Backend
+Promotion exists [MKT-021]",,"1. Edit promotion name > Save
+2. Edit promotion description > Save",,,,,"C183353 C183354",
+"MKT-023","Delete promotion","Marketing > Promotions","High",,,"Admin logged in to Backend
+Promotion exists",,"1. Select promotion
+2. Delete > Confirm",,,,,"C183347",
+"MKT-024","Promotion Is Active toggle and storefront visibility","Marketing > Promotions","High",,,"Admin logged in to Backend and Storefront
+Promotion exists with conditions",,"1. Set Is Active = TRUE > Check storefront > Promotion visible
+2. Set Is Active = FALSE > Check storefront > Promotion not visible",,,,,"C183355 C183356",
+"MKT-025","Promotion start/expiration date validation","Marketing > Promotions","Medium",,,"Admin logged in to Backend and Storefront
+Promotion exists",,"1. Set start date in future > Check storefront > Not applied
+2. Set start date in past > Check storefront > Applied
+3. Set expiration in past > Check storefront > Not applied
+4. Set expiration in future > Check storefront > Applied",,,,,"C183357-C183360",
+"MKT-026","Promotion store scope","Marketing > Promotions","Medium",,,"Admin logged in to Backend
+Promotion exists
+Multiple stores available",,"1. Set promotion store to non-current store > Verify not visible
+2. Set promotion store to current store > Verify visible",,,,,"C183361 C183362",
+"MKT-028","Catalog conditions (category/product/currency)","Marketing > Catalog Conditions","Medium",,,"Admin logged in to Backend and Storefront
+Promotion exists",,"1. Set Category condition (fully, without subcategory, without items) > Verify
+2. Set Product condition (SKU, name, full price) > Verify
+3. Set Currency = USD with storefront EUR > Verify not applied
+4. Set Currency = USD with storefront USD > Verify applied",,,,,"C183368-C183373 C184212 C216972",
+"MKT-029","Catalog conditions (InStock and Cart subtotal quantities)","Marketing > Catalog Conditions","Medium",,,"Admin logged in to Backend and Storefront
+Promotion exists",,"1. InStock quantity: at least > Verify
+2. InStock quantity: exactly > Verify
+3. InStock quantity: less than or equals > Verify
+4. InStock quantity: between > Verify
+5. Cart subtotal: at least/exactly/less than/between > Verify",,,,,"C183374-C183385",
+"MKT-030","Cart conditions (items/category/entry/payment/shipping)","Marketing > Cart Conditions","Medium",,,"Admin logged in to Backend and Storefront
+Promotion exists",,"1. Cart items: at least/exactly/less than/between > Verify
+2. Cart items with excluding items > Verify
+3. Cart items of category > Verify
+4. Cart items of entry > Verify
+5. Payment type condition > Verify
+6. Shipping type condition > Verify",,,,,"C183378-C183381 C184273-C184275 C380806 C380807",
+"MKT-031","Effects: Cart subtotal discounts","Marketing > Effects","High",,,"Admin logged in to Backend and Storefront
+Promotion with conditions exists",,"1. Get $X off cart subtotal > Verify discount
+2. Get X% off cart subtotal not to exceed $Y > Verify discount and cap",,,,,"C183363 C183386",
+"MKT-032","Effects: Entry and free item discounts","Marketing > Effects","Medium",,,"Admin logged in to Backend and Storefront
+Promotion with product conditions exists",,"1. Get $X off > Verify
+2. Get $X off Y items of entry > Verify
+3. Get X% off not to exceed $Y > Verify
+4. Get X% off for Y items not to exceed $Z > Verify
+5. Get X free items of product > Verify
+6. Complex: For X in every Y items get Z% off > Verify",,,,,"C183387-C183399",
+"MKT-033","Effects: Shipping and payment method discounts","Marketing > Effects","Medium",,,"Admin logged in to Backend and Storefront
+Promotion with shipping/payment conditions",,"1. Get $X off shipping > Verify
+2. Get X% off shipping not to exceed $Y > Verify
+3. Get $X off payment method > Verify
+4. Get X% off payment method not to exceed $Y > Verify",,,,,"C183394-C183397",
+"MKT-034","Stackable Combination Policy","Marketing > Promotion Policies","Medium",,,"Admin logged in to Backend
+Two promotions configured",,"1. Switch to CombineStackable policy (Settings)
+2. Both promos 'Can be combined' > Verify both applied
+3. Promo A combinable + Promo B exclusive > Verify only B
+4. Promo A exclusive + Promo B combinable > Verify only A
+5. Both exclusive > Verify higher priority wins",,,,,"C184642-C184647",
+"MKT-035","Best Reward Policy","Marketing > Promotion Policies","Medium",,,"Admin logged in to Backend
+Two promotions with different discounts",,"1. Switch to BestReward policy (Settings)
+2. Apply both promos to cart
+3. Verify promo with biggest discount is applied",,,,,"C184643 C184648",
+"MKT-036","Promotion priority comparison","Marketing > Promotion Policies","Medium",,,"Admin logged in to Backend and Storefront
+Two promotions with different priorities",,"1. Equal priority: Regular user + cart subtotal > X > Verify free shipping
+2. Equal priority: Regular user + cart subtotal < X > Verify no free shipping
+3. Equal priority: First time buyer + cart subtotal > X > Verify discount + free shipping
+4. Priority 1 > Priority 2: First time buyer scenarios > Verify higher priority applied first
+5. Higher priority: Regular user scenarios",,,,,"C204277-C204288",
+"MKT-044","Multi-store promotion selection and access","Marketing > Multi-Store","Medium",,,"Admin logged in to Backend
+Multiple stores exist",,"1. Select 2 stores for promotion > Verify
+2. Change promo with access to 1 store > Verify restrictions
+3. Change promo with access to both stores > Verify full access",,,,,"C380797-C380799",
+"MKT-045","Gift availability rules","Marketing > Gifts","Medium",,,"Admin logged in to Backend and Storefront
+Gift promotion configured",,"1. Set gift product out of stock > Verify gift not available
+2. Set Can be purchased = false > Verify gift not available
+3. Set Visible = false > Verify gift not available",,,,,"C328341-C328343",
+"MKT-051","Settings tooltips","Marketing > Settings","Medium",,,"Admin logged in to Backend",,"1. Open Settings > Marketing blade
+2. Verify all tooltips folded
+3. Click tooltip for field1 > Verify unfolds
+4. Click tooltip for field2 > Verify field2 unfolds, field1 folds
+5. Click Hide > Verify all fold",,,,,"C338431",
+"MKT-059","Promotion — Catalog Discount","Marketing > Promotions","High",,,"Admin logged in to Backend
+Catalog with products exists",,"1. Navigate to ${BACK_URL}/marketing/promotions
+2. Click Add and enter a promotion name
+3. Set the promotion type to Catalog discount
+4. Configure catalog condition: select a product category
+5. Configure effect: set percentage discount (e.g., 10% off)
+6. Set Is Active = TRUE and save the promotion
+7. Open storefront and navigate to the targeted category
+8. Verify product prices reflect the 10% discount
+9. Verify products outside the category are not discounted",,,,,"",
+"MKT-060","Promotion — Cart Discount","Marketing > Promotions","High",,,"Admin logged in to Backend
+Products exist for cart testing",,"1. Navigate to ${BACK_URL}/marketing/promotions
+2. Click Add and enter a promotion name
+3. Configure cart condition: set minimum cart subtotal (e.g., $50)
+4. Configure effect: set fixed amount discount (e.g., $5 off cart subtotal)
+5. Set Is Active = TRUE and save the promotion
+6. Open storefront and add products totaling less than $50
+7. Verify the cart discount is NOT applied
+8. Add more products to exceed $50 subtotal
+9. Verify the $5 discount is applied to the cart total",,,,,"",
+"MKT-061","Promotion — Coupon Code","Marketing > Promotions","High",,,"Admin logged in to Backend
+Promotion exists [MKT-021]",,"1. Navigate to ${BACK_URL}/marketing/promotions
+2. Open an existing promotion
+3. Navigate to the Coupon management section
+4. Click Add coupon and enter a unique coupon code (e.g., SAVE10)
+5. Set max uses to 100 and max uses per user to 1
+6. Save the coupon
+7. Open storefront and add products to cart
+8. Enter the coupon code at checkout
+9. Verify the promotion discount is applied
+10. Verify the coupon code appears in the order summary",,,,,"C184622",
+"MKT-062","Promotion — Usage Limit","Marketing > Promotions","High",,,"Admin logged in to Backend
+Promotion with coupon exists [MKT-061]",,"1. Navigate to ${BACK_URL}/marketing/promotions
+2. Open a promotion with coupon
+3. Edit the coupon and set Maximum uses number to 2
+4. Set Maximum uses per user to 1
+5. Save the coupon
+6. Use the coupon code on storefront for User1 and complete checkout
+7. Attempt to use the same coupon code again with User1
+8. Verify the per-user limit is enforced
+9. Use the coupon code with User2 to consume the global limit
+10. Attempt a third usage and verify it is blocked",,,,,"",
+"MKT-063","Promotion — Date Range","Marketing > Promotions","High",,,"Admin logged in to Backend
+Promotion exists [MKT-021]",,"1. Navigate to ${BACK_URL}/marketing/promotions
+2. Open an existing promotion
+3. Set Start date to yesterday and End date to next week
+4. Set Is Active = TRUE and save
+5. Verify promotion is active on storefront
+6. Update End date to yesterday and save
+7. Verify promotion is no longer active on storefront
+8. Set Start date to tomorrow and End date to next week
+9. Verify promotion is not yet active on storefront
+10. Verify date range validation (end date must be after start date)",,,,,"",
+"MKT-064","Promotion — Stacking Rules","Marketing > Promotion Policies","High",,,"Admin logged in to Backend
+Two active promotions exist with different effects
+CombineStackable policy is set in Settings",,"1. Navigate to ${BACK_URL}/marketing/promotions
+2. Set Promotion1 as ""Can be combined"" (combinable)
+3. Set Promotion2 as ""Can be combined"" (combinable)
+4. On storefront verify both promotions are applied simultaneously
+5. Set Promotion2 as ""Exclusive"" (cannot be combined)
+6. Trigger both promotions on storefront
+7. Verify only the exclusive promotion is applied
+8. Set both promotions as exclusive
+9. Verify only the higher-priority promotion is applied
+10. Verify the stacking rule behavior matches the CombineStackable policy",,,,,"",
+"MKT-089","Promotion combination policy setting persistence","Marketing > Settings","Medium",,,"Admin logged in to Backend
+Two active promotions exist with different discount effects",,"1. Navigate to Settings > Marketing
+2. Locate the 'Promotion combination policy' setting
+3. Note the current value (e.g., CombineStackable)
+4. Change the value to 'BestReward'
+5. Click Save
+6. Close the Settings blade and reopen it
+7. Verify the value persisted as 'BestReward'
+8. On storefront: trigger both promotions in a cart
+9. Verify only the promotion with the biggest discount is applied (BestReward behavior)
+10. Return to Settings and switch back to 'CombineStackable'
+11. Save and verify persistence
+12. On storefront: trigger both combinable promotions
+13. Verify both promotions are applied (CombineStackable behavior)",,,,,"",

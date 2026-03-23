@@ -200,8 +200,8 @@ GET /api/catalog/products?responseGroup=WithProperties
 
 ## Test Suites
 
-### Frontend — Suite 03: Catalog & Search Tests
-File: `regression/suites/Frontend/03-catalog-search-tests.csv`
+### Frontend — Catalog Suites (001-003) + Search Suites (004-005)
+Files: `regression/suites/Frontend/catalog/001-catalog-navigation.csv`, `002-product-detail.csv`, `003-catalog-filters.csv`, `regression/suites/Frontend/search/004-search-core.csv`, `005-search-filters-advanced.csv`
 Tags: `catalog`, `search`, `sprint`
 
 | ID | Title | Section | Priority |
@@ -220,8 +220,8 @@ Tags: `catalog`, `search`, `sprint`
 | CAT-012 | Product Variations - B2C Style | Catalog > Variations | High |
 | CAT-013 | Product - Related Products | Catalog > Product | Low |
 
-### Backend — Suite 16: Catalog Admin Tests
-File: `regression/suites/Backend/16-catalog-tests.csv`
+### Backend — Catalog Admin Suites (051, 053) + Configurable Products (052)
+Files: `regression/suites/Backend/catalog/051-catalog-admin-products.csv`, `053-catalog-admin-categories.csv`, `regression/suites/Backend/configurable-products/052-configurable-products-admin.csv`
 Tags: `catalog`, `admin`, `crud`, `configurable-products`
 
 | ID | Title | Section | Priority |

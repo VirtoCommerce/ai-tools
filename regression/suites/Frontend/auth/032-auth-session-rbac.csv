@@ -1,0 +1,336 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"AUTH-022","Login - Token Generation","Login > Token","Medium","BL-AUTH-003","ECL-6.1","Valid user credentials; browser DevTools / network tab accessible","url={{FRONT_URL}}/sign-in;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for redirect after successful login
+[ASSERT] Capture /connect/token response in network tab","[STATE] Login succeeds and user is redirected
+[FORMAT] /connect/token response contains 'access_token' (JWT format)
+[FORMAT] Response includes 'refresh_token'
+[FORMAT] Token payload contains expected claims (sub; email; roles)","[NETWORK] POST /connect/token returns HTTP 200
+[NETWORK] Response body contains access_token and refresh_token fields
+[CONSOLE] no TypeError or JS errors","POST /connect/token returns non-200; access_token missing from response; token not JWT format; console TypeError","Logout after test","regression-qa-theme-26.csv","Manual"
+"AUTH-023","Login - Token Persistence","Login > Token","Medium","BL-AUTH-003","ECL-6.1","User logged in with valid session","url={{FRONT_URL}}/sign-in;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Login with valid credentials
+[WAIT] Wait for successful redirect to account area
+[NAV] Reload page (F5 / browser refresh)
+[WAIT] Wait for page to load
+[ASSERT] User is still logged in after reload
+[WAIT] Wait for token refresh interval (if observable)","[STATE] User remains authenticated after page reload
+[STATE] No re-login prompt shown after reload
+[NETWORK] Token refresh request observed (if auto-refresh active)","[NETWORK] GET account page returns HTTP 200 without redirect to login
+[NETWORK] Token refresh call (if triggered) returns HTTP 200
+[CONSOLE] no TypeError or JS errors","User redirected to login after page reload; token refresh returns 4xx/5xx; console TypeError","Logout after test","regression-qa-theme-26.csv","Manual"
+"AUTH-024","Logout - Token Revocation","Login > Token","Medium","BL-AUTH-003","ECL-6.1","User logged in with active session; DevTools network tab accessible","url={{FRONT_URL}}/sign-in;email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Login with valid credentials
+[WAIT] Wait for authenticated session
+[ACT] Note the access_token value from /connect/token response
+[ACT] Click logout button or navigate to logout
+[WAIT] Wait for logout to complete
+[ASSERT] /revoke/token call observed in network tab
+[ACT] Attempt to use old token in a direct API request to {{BACK_URL}}","[STATE] Logout completes and user is redirected to login or home page
+[STATE] Old access_token rejected by API (returns 401)
+[NETWORK] POST /revoke/token called during logout","[NETWORK] POST /revoke/token returns HTTP 200
+[NETWORK] Old token returns 401 on subsequent API call
+[CONSOLE] no TypeError or JS errors","Logout does not call /revoke/token; old token still valid after logout; console TypeError","none","regression-qa-theme-26.csv","Manual"
+"AUTH-043","Impersonation - View as Customer","Authentication > Impersonation","Medium","BL-AUTH-006; BL-AUTH-007","ECL-14.1","Admin account with impersonation permissions; target customer account exists","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}};targetEmail={{USER_EMAIL}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[NAV] Navigate to customer account management in Admin SPA
+[ACT] Select target customer account '{{USER_EMAIL}}'
+[ACT] Initiate login-on-behalf (impersonation)
+[WAIT] Wait for storefront context to open
+[ASSERT] Storefront reflects customer context
+[ASSERT] Catalog; prices; and cart reflect customer's account","[STATE] Storefront opens in customer context (not admin)
+[STATE] Catalog shows products available to that customer
+[STATE] Prices match the customer pricing tier
+[STATE] Customer cart is shown (not admin cart)
+[DOM] No admin-only UI elements visible in storefront","[API] mutation errors[] is empty
+[CONSOLE] no TypeError or JS errors
+[NETWORK] Impersonation token exchange returns HTTP 200","Impersonation fails; storefront shows admin context; admin UI elements visible to customer; console TypeError","Stop impersonation after test","Coverage Gap Analysis","Automated"
+"AUTH-044","Impersonation - Switch Companies","Authentication > Impersonation","Medium","BL-AUTH-006","ECL-14.1","Admin with impersonation permissions; customer belongs to multiple companies","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of a customer who belongs to multiple companies
+[WAIT] Wait for storefront to load in customer context
+[ASSERT] Current company context noted
+[ACT] Use company switcher in storefront
+[ACT] Switch to a different company
+[WAIT] Wait for context to reload
+[ASSERT] Catalog; prices; and account context reflect new company","[STATE] Company switcher accessible during impersonation session
+[STATE] Switching company changes catalog and pricing context
+[DOM] Account header reflects new company name
+[STATE] Previous company data does not bleed into new context
+[CONSOLE] No console errors on company switch","[API] mutation errors[] is empty
+[CONSOLE] no TypeError or JS errors","Company switcher inaccessible during impersonation; context switch fails; previous company data bleeds through; console TypeError","Stop impersonation after test","Coverage Gap Analysis","Automated"
+"AUTH-045","Impersonation - Stop Impersonation","Authentication > Impersonation","Medium","BL-AUTH-006; BL-AUTH-007","","Admin currently impersonating a customer","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of a customer
+[WAIT] Wait for customer storefront context
+[ACT] Locate stop-impersonation control in storefront
+[ACT] Click 'Stop Impersonation' or equivalent
+[WAIT] Wait for session to revert
+[ASSERT] Admin context restored","[STATE] Stop impersonation control visible and accessible during impersonation
+[STATE] Clicking ends the customer session
+[STATE] Admin is returned to Admin SPA or admin-authenticated state
+[STATE] No customer-specific data (cart; addresses; profile) persists in admin session
+[STATE] Session cookies/tokens reflect admin identity after stop","[CONSOLE] no TypeError or JS errors
+[NETWORK] Admin token valid after stopping impersonation","Stop impersonation control missing; admin not restored after stop; customer data leaks into admin session; console TypeError","none","Coverage Gap Analysis","Automated"
+"AUTH-046","Impersonation - Place Order on Behalf","Authentication > Impersonation","Medium","BL-AUTH-006; BL-AUTH-007","ECL-14.1","Admin impersonating a customer; cart accessible; checkout enabled","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of target customer
+[WAIT] Wait for customer storefront context
+[ACT] Navigate to catalog and add a product to cart
+[ACT] Proceed through checkout steps
+[ACT] Complete and place the order
+[WAIT] Wait for order confirmation
+[NAV] Navigate to Order History in customer account
+[ASSERT] Order appears attributed to customer","[STATE] Checkout flow completes successfully during impersonation
+[DOM] Order confirmation page shown after placing order
+[STATE] Order appears in the customer Order History (not admin history)
+[STATE] Order record shows customer as the owner
+[STATE] Order visible in Admin SPA under the customer account","[API] mutation errors[] is empty
+[CONSOLE] no TypeError or JS errors
+[NETWORK] Order creation endpoint returns HTTP 200","Checkout blocked during impersonation; order confirmation not shown; order attributed to admin instead of customer; console TypeError","Stop impersonation after test","Coverage Gap Analysis","Automated"
+"AUTH-047","Impersonation - No Persistent Side Effects","Authentication > Impersonation","Medium","BL-AUTH-006; BL-AUTH-007","","Customer has items in cart before impersonation; admin account separate","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}};customerEmail={{USER_EMAIL}};customerPassword={{USER_PASSWORD}}","[ACT] Note customer cart contents before impersonation (via admin or pre-setup)
+[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of the customer
+[WAIT] Wait for customer storefront context
+[ACT] View the cart but do NOT modify it
+[ACT] Stop the impersonation session
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Log in as the customer independently
+[NAV] Navigate to cart page
+[ASSERT] Customer cart is unchanged from before impersonation","[STATE] Customer cart contents identical before and after impersonation session
+[STATE] No items added; removed; or quantity-changed during impersonation
+[STATE] Customer saved addresses unchanged
+[STATE] Customer profile data unchanged
+[STATE] No orphaned sessions remain after impersonation ends","[CONSOLE] no TypeError or JS errors
+[NETWORK] No unexpected mutations to customer data during impersonation","Cart items changed after impersonation session; customer addresses or profile modified; orphaned session detected; console TypeError","none","Coverage Gap Analysis","Automated"
+"AUTH-048","Session Expiry During Checkout - Cart Preserved After Re-Auth","Session > Checkout Recovery","Critical","BL-AUTH-001","ECL-1.2, ECL-4.2","User logged in; product in stock; checkout page accessible","email={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for redirect to account or home page
+[NAV] Navigate to {{FRONT_URL}}/product/{{TEST_SKU}}
+[WAIT] Wait for product page to load
+[ACT] Click 'Add to Cart'
+[WAIT] Wait for cart badge to increment
+[ASSERT] Cart badge shows at least 1 item
+[NAV] Navigate to {{FRONT_URL}}/cart
+[WAIT] Wait for cart page to load
+[ASSERT] Cart contains {{TEST_SKU}}
+[ACT] Click 'Proceed to Checkout' or equivalent
+[WAIT] Wait for checkout page to load
+[ASSERT] Checkout page renders with shipping/billing sections
+[ACT] Clear all cookies and local storage via browser console to simulate session expiry
+[NAV] Reload the checkout page
+[WAIT] Wait for redirect to login page
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for redirect after re-authentication
+[NAV] Navigate to {{FRONT_URL}}/cart
+[WAIT] Wait for cart page to load","[STATE] After session expiry user is redirected to login page
+[STATE] After re-authentication cart still contains {{TEST_SKU}}
+[STATE] Cart item quantities are preserved after re-auth
+[DOM] Cart total matches pre-expiry total
+[STATE] Checkout is resumable after re-authentication
+[NAV] User can navigate back to checkout after re-login","[API] cart query returns items including sku={{TEST_SKU}} after re-auth
+[NETWORK] POST /connect/token returns HTTP 200 on re-login
+[CONSOLE] no TypeError or JS errors
+[NETWORK] no 4xx/5xx on /graphql after re-auth","Session expiry does not redirect to login; cart empty after re-authentication; checkout page shows error after re-login; 4xx/5xx on cart query after re-auth; console TypeError","Remove {{TEST_SKU}} from cart after test","E2E-AUTH-001","Automated"
+"AUTH-049","Concurrent Sessions - Both Active Independently","Session > Concurrent","High","BL-AUTH-003","ECL-4.2","Valid user account; two browser contexts available","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}}","[NAV] In Browser A: Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for redirect to account or home page
+[ASSERT] User authenticated in Browser A
+[NAV] In Browser B: Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for redirect to account or home page
+[ASSERT] User authenticated in Browser B
+[NAV] In Browser A: Navigate to {{FRONT_URL}}/account
+[WAIT] Wait for account page to load
+[ASSERT] Browser A still authenticated
+[NAV] In Browser A: Click logout
+[WAIT] Wait for logout to complete
+[NAV] In Browser B: Navigate to {{FRONT_URL}}/account
+[WAIT] Wait for account page to load","[STATE] Both Browser A and Browser B are authenticated simultaneously
+[STATE] Browser A session is independent of Browser B
+[STATE] After logout in Browser A user is redirected to login/home
+[STATE] Browser B remains authenticated after Browser A logs out
+[NAV] Browser B can still access /account after Browser A logout","[NETWORK] POST /connect/token returns HTTP 200 in both browsers
+[CONSOLE] no TypeError or JS errors in either browser
+[NETWORK] Browser B GET /account returns HTTP 200 after Browser A logout","Login in Browser B invalidates Browser A session; Browser B loses session after Browser A logout; 4xx on account page in either browser; console TypeError","Logout from both browser contexts after test","E2E-AUTH-007","Semi-Automated"
+"AUTH-050","Remember Me - Session Persistence Across Browser Restart","Session > Persistence","High","BL-AUTH-003","ECL-4.2","Login page accessible; 'Remember me' checkbox present on login form","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ASSERT] 'Remember me' checkbox visible on login form
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Check 'Remember me' checkbox
+[ACT] Click 'Sign In'
+[WAIT] Wait for successful login redirect
+[ASSERT] User is authenticated
+[ACT] Close the browser tab
+[ACT] Open a new browser tab (same context/profile)
+[NAV] Navigate to {{FRONT_URL}}/account
+[WAIT] Wait for page to load","[STATE] After closing and reopening browser user is still authenticated
+[DOM] Account page loads without redirect to login
+[STATE] User name/email visible in header confirming auth state
+[NAV] URL remains /account (not redirected to /sign-in)","[NETWORK] GET /account returns HTTP 200 without 302 redirect to login
+[CONSOLE] no TypeError or JS errors","User redirected to login after reopening browser despite Remember Me; session cookie expired prematurely; console TypeError","Logout after test","E2E-AUTH-006","Semi-Automated"
+"AUTH-051","Remember Me - Session Does Not Persist Without Checkbox","Session > Persistence","Medium","BL-AUTH-003","ECL-4.2","Login page accessible; 'Remember me' checkbox present","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ASSERT] 'Remember me' checkbox is unchecked by default
+[ACT] Click 'Sign In' without checking 'Remember me'
+[WAIT] Wait for successful login redirect
+[ASSERT] User is authenticated
+[ACT] Close the browser context entirely (clear session cookies)
+[ACT] Open a new browser context
+[NAV] Navigate to {{FRONT_URL}}/account
+[WAIT] Wait for page to load","[STATE] Without 'Remember me' user is NOT authenticated after browser restart
+[NAV] User is redirected to login page from /account
+[STATE] Session-only cookies are cleared on browser close","[NETWORK] GET /account returns 302 redirect to login
+[CONSOLE] no TypeError or JS errors","User remains authenticated without Remember Me after browser restart; session cookie persists as permanent cookie; console TypeError","none","E2E-AUTH-006","Semi-Automated"
+"AUTH-057","Token Replay After Logout - API Rejection","Session > Token Security","High","BL-AUTH-003","ECL-4.3","Valid user account; ability to capture network requests","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}};back_url={{BACK_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for successful login
+[ACT] Capture the access_token from /connect/token response in network tab
+[ASSERT] access_token captured successfully
+[ACT] Click logout button
+[WAIT] Wait for logout to complete
+[ASSERT] User is redirected to login or home page
+[ACT] Execute fetch request to {{BACK_URL}}/graphql with captured token in Authorization header
+[WAIT] Wait for API response","[STATE] Logout completes and user session is terminated
+[STATE] API call with old token returns 401 Unauthorized
+[STATE] Old token cannot access protected resources after logout
+[STATE] Token revocation is immediate (not delayed)","[NETWORK] POST /revoke/token called during logout returns HTTP 200
+[NETWORK] API call with revoked token returns HTTP 401
+[API] GraphQL response with old token returns authentication error
+[CONSOLE] no TypeError or JS errors","Old token still accepted after logout (token not revoked); API returns 200 with old token; logout does not call revocation endpoint; console TypeError","none","","Semi-Automated"
+"AUTH-058","RBAC - Customer Cannot Access Admin API","Authorization > RBAC","High","BL-AUTH-005","ECL-4.3","Valid customer (non-admin) account; backend URL accessible","email={{USER_EMAIL}};password={{USER_PASSWORD}};back_url={{BACK_URL}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for successful login
+[ACT] Capture the access_token from /connect/token response
+[ACT] Execute fetch to {{BACK_URL}}/api/platform/settings with Authorization: Bearer {customer_token}
+[WAIT] Wait for API response
+[ASSERT] API returns 401 or 403
+[ACT] Execute fetch to {{BACK_URL}}/api/platform/security/users with Authorization: Bearer {customer_token}
+[WAIT] Wait for API response
+[ASSERT] API returns 401 or 403
+[ACT] Execute fetch to {{BACK_URL}}/api/platform/modules with Authorization: Bearer {customer_token}
+[WAIT] Wait for API response","[STATE] Customer token rejected by /api/platform/settings (401 or 403)
+[STATE] Customer token rejected by /api/platform/security/users (401 or 403)
+[STATE] Customer token rejected by /api/platform/modules (401 or 403)
+[STATE] No admin data exposed to customer-role token","[NETWORK] All admin API calls return 401 or 403 for customer token
+[API] No admin data leaked in response body
+[CONSOLE] no TypeError or JS errors","Admin API returns 200 for customer token (privilege escalation); admin data visible in response body; any admin endpoint accessible to customer; console TypeError","Logout after test","","Semi-Automated"
+"AUTH-059","RBAC - Anonymous Cannot Access Authenticated Endpoints","Authorization > RBAC","High","BL-AUTH-005","ECL-4.3","No active session; backend URL accessible","back_url={{BACK_URL}};front_url={{FRONT_URL}}","[ACT] Execute fetch to {{BACK_URL}}/graphql with query { me { id email } } without Authorization header
+[WAIT] Wait for API response
+[ASSERT] Response returns null user or authentication error
+[ACT] Execute fetch to {{BACK_URL}}/api/platform/settings without Authorization header
+[WAIT] Wait for API response
+[ASSERT] API returns 401
+[ACT] Execute fetch to {{BACK_URL}}/graphql with mutation { addCartItem(...) } without Authorization header
+[WAIT] Wait for API response","[STATE] Anonymous GraphQL query for 'me' returns null or auth error
+[STATE] Anonymous REST call to /api/platform/settings returns 401
+[STATE] Anonymous mutation attempt is rejected or creates anonymous-scoped cart only
+[STATE] No authenticated user data exposed without token","[NETWORK] REST admin endpoints return 401 for anonymous requests
+[API] GraphQL 'me' query returns null data or errors[] for anonymous
+[CONSOLE] no TypeError or JS errors","Admin API accessible without auth token; authenticated user data returned to anonymous request; mutations execute with full privileges anonymously; console TypeError","none","","Automated"
+"AUTH-060","Protected Route Redirect - Unauthenticated Access to Account Pages","Authorization > Route Protection","High","BL-AUTH-006","ECL-4.2","No active session; storefront accessible","front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/account (no login)
+[WAIT] Wait for redirect
+[ASSERT] Redirected to login page
+[NAV] Navigate to {{FRONT_URL}}/account/orders (no login)
+[WAIT] Wait for redirect
+[ASSERT] Redirected to login page
+[NAV] Navigate to {{FRONT_URL}}/checkout (no login)
+[WAIT] Wait for redirect
+[ASSERT] Redirected to login page
+[NAV] Navigate to {{FRONT_URL}}/company/members (no login)
+[WAIT] Wait for redirect","[NAV] /account redirects to login page
+[NAV] /account/orders redirects to login page
+[NAV] /checkout redirects to login page
+[NAV] /company/members redirects to login page
+[DOM] Login form visible after each redirect
+[STATE] No account data visible before authentication","[NETWORK] GET /account returns 302 redirect to login
+[NETWORK] GET /account/orders returns 302 redirect to login
+[CONSOLE] no TypeError or JS errors","Protected page renders without redirect; account data visible to unauthenticated user; 500 error instead of redirect; console TypeError","none","","Automated"
+"AUTH-061","Protected Route Redirect - Return to Original Page After Login","Authorization > Route Protection","High","BL-AUTH-006","ECL-4.2","Valid user account; no active session","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/account/orders (no login)
+[WAIT] Wait for redirect to login page
+[ASSERT] Redirected to login page
+[ASSERT] Login URL contains return URL parameter pointing to /account/orders
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Fill 'Password': {{USER_PASSWORD}}
+[ACT] Click 'Sign In'
+[WAIT] Wait for redirect after login
+[ASSERT] User is redirected to originally requested page (/account/orders)","[NAV] After login user is redirected to /account/orders (not to home or dashboard)
+[DOM] Orders page content visible after redirect
+[STATE] Return URL parameter preserved through login flow
+[STATE] User does not land on default post-login page when return URL exists","[NETWORK] POST /connect/token returns HTTP 200
+[NETWORK] Final redirect targets /account/orders
+[CONSOLE] no TypeError or JS errors","User redirected to home instead of original page after login; return URL lost during authentication; 404 on return redirect; console TypeError","Logout after test","","Automated"
+"AUTH-062","Impersonation - Switch Companies While Impersonating","Authentication > Impersonation","Medium","BL-AUTH-006; BL-AUTH-007","ECL-14.1","Admin impersonating a customer who belongs to multiple companies; storefront loaded in impersonation context","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of a customer belonging to multiple companies
+[WAIT] Wait for storefront to load in impersonation context
+[ASSERT] Verify impersonation banner visible
+[ASSERT] Note current company context (name in org switcher)
+[ACT] Open the company/org switcher in the storefront
+[ACT] Select a different company
+[WAIT] Wait for company context to update
+[ASSERT] Verify org switcher shows new company name
+[ASSERT] Verify catalog and prices reflect new company context
+[ASSERT] Verify impersonation banner still visible after company switch","[STATE] Company switcher accessible during impersonation session
+[STATE] Company context changes successfully while maintaining impersonation
+[DOM] Impersonation banner persists through company switch
+[DOM] Org switcher shows updated company name
+[STATE] Prices and catalog reflect new company context","[API] organization switch mutation succeeds during impersonation
+[CONSOLE] no TypeError or JS errors
+[NETWORK] no 4xx on company switch during impersonation","Company switcher inaccessible during impersonation; company switch breaks impersonation session; impersonation banner disappears after switch; previous company data persists; console TypeError","Stop impersonation after test","Coverage Gap Analysis","Generated"
+"AUTH-063","Impersonation - Stop Impersonation Returns to Admin State","Authentication > Impersonation","Medium","BL-AUTH-006; BL-AUTH-007","","Admin currently impersonating a customer; impersonation session active","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of a customer
+[WAIT] Wait for storefront to load in impersonation context
+[ASSERT] Verify impersonation banner visible in storefront
+[ACT] Locate stop-impersonation control (banner button or link)
+[ACT] Click Stop Impersonation
+[WAIT] Wait for context to change
+[ASSERT] Verify redirected to admin panel or admin context restored
+[ASSERT] Verify no customer data leaks into admin session
+[ASSERT] Verify admin panel is fully functional after stopping","[STATE] Stop impersonation control visible and accessible
+[STATE] After stopping: admin context fully restored (not customer storefront)
+[DOM] Admin panel loads correctly after stopping impersonation
+[STATE] No customer session data persists in admin context
+[STATE] Admin authentication token still valid","[NETWORK] Admin token valid after stopping impersonation
+[CONSOLE] no TypeError or JS errors","Stop impersonation control missing; admin not restored after stop; customer data leaks into admin session; admin panel broken after stopping; console TypeError","none","Coverage Gap Analysis","Generated"
+"AUTH-064","Impersonation - Banner Visible Throughout Browsing","Authentication > Impersonation","Medium","BL-AUTH-006","","Admin impersonating a customer; storefront loaded","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of a customer
+[WAIT] Wait for storefront to load in impersonation context
+[ASSERT] Verify impersonation banner visible on homepage
+[NAV] Navigate to a category page
+[ASSERT] Verify impersonation banner still visible
+[NAV] Navigate to a product detail page
+[ASSERT] Verify impersonation banner still visible
+[NAV] Navigate to cart page
+[ASSERT] Verify impersonation banner still visible
+[NAV] Navigate to account/orders page
+[ASSERT] Verify impersonation banner still visible on all account pages","[DOM] Impersonation banner visible on homepage
+[DOM] Impersonation banner visible on category page
+[DOM] Impersonation banner visible on product page
+[DOM] Impersonation banner visible on cart page
+[DOM] Impersonation banner visible on account pages
+[DOM] Banner includes customer name or identifier and stop button","[CONSOLE] no TypeError or JS errors
+[NETWORK] no 4xx on any page navigation during impersonation","Impersonation banner disappears on some pages; banner missing on cart or checkout; banner not showing customer identity; console TypeError","Stop impersonation after test","Coverage Gap Analysis","Generated"
+"AUTH-065","Impersonation - Impersonated User Cannot Impersonate Others","Authentication > Impersonation","High","BL-AUTH-006; BL-AUTH-005","ECL-4.3","Admin impersonating a customer who has admin-like role in their org; storefront loaded","adminUrl={{ADMIN_URL}};adminEmail={{ADMIN_EMAIL}};adminPassword={{ADMIN_PASSWORD}}","[NAV] Navigate to {{ADMIN_URL}} and log in as admin
+[ACT] Initiate impersonation of a customer
+[WAIT] Wait for storefront to load in impersonation context
+[ASSERT] Verify impersonation banner visible
+[NAV] Attempt to navigate to admin panel URL ({{ADMIN_URL}})
+[ASSERT] Verify admin access is denied or redirected to storefront
+[ASSERT] Verify no impersonation controls available in the impersonated session
+[ASSERT] Verify impersonated user cannot access login-on-behalf API endpoints","[STATE] Impersonated user cannot access admin panel
+[STATE] No nested impersonation possible (impersonate-while-impersonating blocked)
+[STATE] Admin URL redirects to storefront or shows access denied
+[STATE] Login-on-behalf API returns 401/403 for impersonated token","[API] login-on-behalf endpoint rejects impersonated user token
+[CONSOLE] no TypeError or JS errors
+[NETWORK] admin panel returns 401 or 403 for impersonated session","Impersonated user can access admin panel; nested impersonation possible; admin API accessible from impersonated session; privilege escalation via impersonation chain; console TypeError","Stop impersonation after test","Coverage Gap Analysis","Generated"

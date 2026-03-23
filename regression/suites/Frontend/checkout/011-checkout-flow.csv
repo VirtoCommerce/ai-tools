@@ -1,0 +1,564 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"CHK-001","Checkout - Delivery Option Selection","Checkout > Shipping","Critical","BL-CHK-001","","Products in cart","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ASSERT] Verify shipping options section visible
+[ACT] select 'Delivery' option
+[WAIT] Wait for address form to render
+[ASSERT] Verify shipping address form appears
+[ASSERT] Verify shipping method list visible","[DOM] Delivery radio/button is selected state
+[DOM] Shipping address form fields rendered (Street City State ZIP Country)
+[DOM] At least one shipping method option listed","[API] GET /storefronts/shipping-methods returns non-empty array
+[CONSOLE] No errors on delivery option selection","Delivery option not selectable; address form does not appear after selection","none","VCST-4499","Automated"
+"CHK-002","Checkout - Enter Shipping Address","Checkout > Shipping","High","BL-CHK-001","","Delivery selected at checkout, user has no saved addresses","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and proceed to checkout
+[ACT] select 'Delivery' option
+[ACT] Fill 'Street' field with valid street address
+[ACT] Fill 'City' field with valid city
+[ACT] Fill 'State' field with valid state
+[ACT] Fill 'ZIP' field with valid postal code
+[ACT] Fill 'Country' field with valid country
+[ACT] click 'Continue' or 'Save Address'
+[ASSERT] Verify address saved and displayed in summary","[DOM] All address fields accept text input
+[STATE] Validation passes on all fields (no error states)
+[STATE] Address displayed in shipping summary section
+[DOM] Continue/Next step button becomes active","[API] POST address payload contains all required fields
+[CONSOLE] No validation errors in console","Form accepts invalid data without error; address not persisted after clicking Continue","none","VCST-4499","Automated"
+"CHK-003","Checkout - Select Saved Address","Checkout > Shipping","High","BL-CHK-001","","User logged in with at least one saved address, products in cart","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and proceed to checkout
+[ACT] select 'Delivery' option
+[WAIT] Wait for saved addresses to load
+[ASSERT] Verify saved address dropdown or list appears
+[ACT] select existing saved address from dropdown/list
+[ASSERT] Verify address fields populated with saved address data
+[ACT] Optionally edit a field and verify change persists","[DOM] Saved address dropdown or address list rendered
+[STATE] Selecting address populates all form fields correctly
+[DOM] Edit capability present (Edit button or inline edit)","[API] GET /account/addresses returns saved addresses
+[CONSOLE] No errors when loading saved addresses","Saved addresses not listed; selecting address does not populate fields","none","VCST-4499","Automated"
+"CHK-004","Checkout - Address Validation","Checkout > Shipping","High","BL-CHK-001","","User at checkout shipping address step, address form open","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and proceed to checkout shipping step
+[ACT] Leave all required address fields empty
+[ACT] click 'Continue'
+[ASSERT] Verify inline validation errors appear per field
+[ACT] Enter invalid ZIP format (e.g. ABC for US address)
+[ASSERT] Verify ZIP format error message
+[ACT] Fix all fields with valid data
+[ACT] click 'Continue'
+[ASSERT] Verify form advances to next step","[DOM] Inline error message per required empty field
+[DOM] ZIP format error shown (invalid format for country)
+[STATE] Form does not advance with validation errors
+[STATE] Error messages clear when valid data entered","[CONSOLE] No unhandled JS exceptions during validation
+[API] No API calls made when client-side validation fails","Form advances with empty required fields; no field-level error messages shown","none","VCST-4499","Automated"
+"CHK-005","Checkout - Shipping Method Selection","Checkout > Shipping","High","BL-CHK-002","","Valid shipping address entered at checkout, user at shipping method step","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout shipping method step with valid address
+[ASSERT] Verify shipping method list rendered
+[ACT] select 'Ground' shipping option
+[ASSERT] Verify Ground shipping cost displayed
+[ASSERT] Verify order total updates to include shipping cost
+[ACT] select 'Air' or express shipping option
+[ASSERT] Verify cost updates to higher amount
+[ASSERT] Verify delivery estimate displayed for each method","[DOM] Shipping methods listed with name and cost
+[MATH] Order total = subtotal + selected shipping cost
+[DOM] Delivery estimate text shown per method
+[STATE] Switching method updates displayed total","[API] GET /shipping-rates or equivalent returns multiple methods
+[CONSOLE] No errors on method switch","Only one shipping method shown; total does not update when method changes","none","VCST-4499","Automated"
+"CHK-006","Checkout - Payment Method Selection","Checkout > Payment","Critical","BL-CHK-002","","Shipping address and shipping method configured, user at payment step","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout payment step
+[ASSERT] Verify payment methods section rendered
+[ACT] select 'Credit Card' payment option
+[WAIT] Wait for payment form to render
+[ASSERT] Verify credit card fields visible (card number, expiry, CVV)
+[ASSERT] Verify required field indicators present","[DOM] Payment method list rendered with at least one option
+[DOM] Credit card form fields rendered on selection
+[DOM] Required field indicators visible on payment form
+[STATE] Payment method selection active state reflected","[API] GET /payment-methods returns available processors
+[CONSOLE] No errors loading payment iframe or form","No payment methods listed; payment form does not render after selection","none","VCST-4499","Automated"
+"CHK-007","Checkout - Order Review","Checkout > Review","High","BL-CHK-002","","All checkout steps completed (address, shipping, payment), user at review step","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout order review step
+[ASSERT] Verify line items listed with name, quantity, price
+[ASSERT] Verify shipping address shown
+[ASSERT] Verify selected shipping method and cost shown
+[ASSERT] Verify payment method shown (masked card or method name)
+[ASSERT] Verify order totals: subtotal, shipping, tax, grand total
+[ASSERT] Verify 'Place Order' button is active/enabled
+[ACT] Verify each section has an Edit link or back navigation","[DOM] All cart line items displayed on review page
+[DOM] Shipping address and method section rendered
+[DOM] Payment method section rendered (no full card numbers)
+[MATH] Grand total = subtotal + shipping + tax - discounts
+[DOM] 'Place Order' button enabled
+[DOM] Edit link or section navigation available","[CONSOLE] No errors rendering review page
+[NETWORK] No failed requests loading review page data","'Place Order' button disabled without clear reason; line items missing from review","none","VCST-4499","Automated"
+"CHK-008","Checkout - Place Order","Checkout > Submission","Critical","BL-CHK-002","ECL-1.2, ECL-14.1","All checkout info valid and reviewed, user at order review step","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout review step with all steps complete
+[ASSERT] Verify 'Place Order' button active
+[ACT] click 'Place Order'
+[WAIT] Wait for order processing indicator
+[ASSERT] Verify loading/processing indicator shown
+[KEY] Do NOT click again (double-click prevention)
+[WAIT] Wait for confirmation page to load
+[ASSERT] Verify order confirmation page displayed with order number","[STATE] Processing indicator shown immediately on click
+[NAV] Redirected to order confirmation page
+[DOM] Order number displayed on confirmation page
+[STATE] Cart emptied after successful order placement","[API] createOrderFromCart mutation response errors[] is empty
+[CONSOLE] No unhandled exceptions on order submission
+[NETWORK] POST /cart/createOrder or GraphQL mutation returns 200
+[ADMIN] Order appears in {{ADMIN_URL}}/orders with correct status","Confirmation page never loads; order number not displayed; cart not cleared after submission","Cancel order via {{ADMIN_URL}}/orders if order was placed","VCST-4499","Automated"
+"CHK-009","Checkout - Order Confirmation Page","Checkout > Confirmation","High","BL-ORD-001","","Order just placed successfully, user on confirmation page","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[ASSERT] Verify order number displayed on confirmation page
+[ASSERT] Verify all ordered line items listed on confirmation
+[ASSERT] Verify shipping address shown on confirmation
+[ASSERT] Verify shipping method shown
+[ASSERT] Verify order totals shown (subtotal, shipping, tax, total)
+[ASSERT] Verify confirmation email message or notification shown
+[ASSERT] Verify order status shown as 'New'","[DOM] Order number visible and non-empty
+[DOM] All line items from cart listed
+[DOM] Shipping address matches what was entered
+[MATH] Totals consistent with cart totals
+[DOM] Email confirmation reference visible (e.g. 'A confirmation has been sent to your email')
+[STATE] Order status = New","[API] GET /account/orders/{orderId} returns order with New status
+[CONSOLE] No errors on confirmation page","Order number missing; line items not displayed on confirmation; status not shown","Cancel order via {{ADMIN_URL}}/orders if needed","VCST-4499","Automated"
+"CHK-026","Checkout Validation - Empty Required Fields","Checkout > Validation","Critical","BL-CHK-001","","User at checkout shipping address step, all fields empty","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and proceed to checkout shipping step
+[ACT] Leave all address fields empty (do not fill any)
+[ACT] click 'Continue'
+[ASSERT] Verify inline error message appears next to each required empty field
+[ASSERT] Verify Street field shows error
+[ASSERT] Verify City field shows error
+[ASSERT] Verify ZIP/Postal field shows error
+[ASSERT] Verify Country or State field shows error
+[ASSERT] Verify form does not advance to next step","[DOM] Inline error per required empty field rendered
+[STATE] Form stays on current step (does not advance)
+[DOM] Required fields highlighted or marked in error state
+[DOM] Error messages identify which field is missing","[CONSOLE] No unhandled JS exceptions during validation
+[API] No API calls when client-side validation blocks submission","Form advances without required fields; errors shown as a single banner rather than inline per field; no error shown at all","none","Coverage Gap Analysis","Automated"
+"CHK-027","Checkout Validation - Invalid ZIP/Postal Code","Checkout > Validation","High","BL-CHK-001","","User at checkout shipping address step, all fields filled except ZIP","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout shipping address step
+[ACT] Fill all address fields with valid data
+[ACT] Replace ZIP field with invalid value 'ABCDE' (for US address)
+[ACT] click 'Continue'
+[ASSERT] Verify validation error on ZIP field
+[ASSERT] Verify error indicates invalid format for selected country
+[ASSERT] Verify form does not advance
+[ACT] Replace with valid ZIP code
+[ASSERT] Verify ZIP validation error clears","[DOM] ZIP field error message rendered (invalid format for country)
+[STATE] Form does not advance with invalid ZIP
+[STATE] Error clears when valid ZIP entered
+[DOM] Country context used for ZIP format validation","[CONSOLE] No JS exceptions during ZIP validation
+[API] No address API call made with invalid ZIP","No validation on ZIP field; form accepts any value; ZIP error persists after correction","none","Coverage Gap Analysis","Automated"
+"CHK-028","Checkout Validation - Invalid Phone Number","Checkout > Validation","High","BL-CHK-001","","User at checkout shipping address step, phone number field available","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout shipping address step
+[ACT] Fill all required fields with valid data
+[ACT] Enter invalid phone number '123' in phone field
+[ACT] click 'Continue'
+[ASSERT] Verify validation error on phone field
+[ASSERT] Verify error indicates invalid format
+[ACT] Enter letters 'abc-def' in phone field
+[ASSERT] Verify error still shown
+[ACT] Enter valid phone number
+[ASSERT] Verify phone error clears and form advances","[DOM] Phone field error rendered for invalid format
+[STATE] Form does not advance with invalid phone
+[STATE] Error clears on valid phone entry
+[DOM] Error message is descriptive (invalid format)","[CONSOLE] No JS exceptions during phone validation
+[API] No submission API call with invalid phone data","Phone field accepts any string without validation; error persists after valid phone entered","none","Coverage Gap Analysis","Automated"
+"CHK-030","Checkout Validation - Fix Errors and Proceed","Checkout > Validation","Critical","BL-CHK-001","","User at checkout shipping address step with validation errors present","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout shipping address step
+[ACT] click 'Continue' with empty fields to trigger validation errors
+[ASSERT] Verify multiple inline errors shown
+[ACT] Fix Street field with valid data
+[ASSERT] Verify Street error clears immediately
+[ACT] Fix City field with valid data
+[ASSERT] Verify City error clears
+[ACT] Fix ZIP field with valid data
+[ASSERT] Verify ZIP error clears
+[ACT] Fix remaining fields
+[ASSERT] Verify all errors cleared
+[ACT] click 'Continue'
+[ASSERT] Verify form advances to next step","[DOM] Each field's error disappears as that field is corrected
+[STATE] No residual errors on correctly filled fields
+[STATE] Form advances after all errors resolved
+[DOM] No new errors appear on valid input","[CONSOLE] No JS exceptions during sequential field correction
+[API] Successful continuation call after all validation passes","Errors only clear on re-submit (not per-field); residual errors remain on corrected fields; form fails to advance after all errors fixed","none","Coverage Gap Analysis","Automated"
+"CHK-043","Separate Billing Address","Checkout > Billing","High","BL-CHK-002","","User in checkout with shipping address selected, at billing or payment step","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout with shipping address and method selected
+[ASSERT] Locate billing address section
+[ASSERT] Verify 'Same as shipping address' checkbox present and checked by default
+[ACT] Uncheck 'Same as shipping address' checkbox
+[WAIT] Wait for billing address form to appear
+[ASSERT] Verify billing address form fields rendered
+[ACT] Fill billing form with a different address (different Street, City, ZIP)
+[ACT] Proceed to payment or order review step
+[ASSERT] Verify different billing address carried forward","[DOM] 'Same as shipping address' checkbox present and checked by default
+[DOM] Billing address form appears after unchecking
+[DOM] Billing form has same required fields as shipping form
+[STATE] Different billing address carried through to order summary
+[STATE] Billing form validates required fields independently","[CONSOLE] No errors when revealing billing form
+[NETWORK] No failed requests when billing form toggles","Checkbox absent; unchecking does not reveal billing form; billing form fields do not validate independently","none","Coverage Gap Analysis","Automated"
+"CHK-044","Billing Address Validation","Checkout > Billing > Validation","High","BL-CHK-001","","User in checkout with 'Same as shipping address' unchecked, billing form visible","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout billing step with 'Same as shipping' unchecked
+[ACT] Leave required billing fields empty (Street, City, ZIP, Country)
+[ACT] click 'Continue' or 'Proceed to Payment'
+[ASSERT] Verify required billing field errors shown
+[ACT] Enter invalid ZIP '999' in billing ZIP field
+[ASSERT] Verify billing ZIP format error shown
+[ACT] Fix all billing fields with valid data
+[ACT] click 'Continue'
+[ASSERT] Verify form advances","[DOM] Required field errors on billing form (Street, City, ZIP, Country)
+[DOM] ZIP format error on invalid billing ZIP
+[STATE] Form does not advance with billing errors
+[STATE] Errors clear when valid billing data entered
+[NAV] Form advances after valid billing address","[CONSOLE] No JS exceptions during billing validation
+[API] No submission call made with invalid billing address","Billing form validation uses shipping form errors; billing form accepts empty required fields; form advances without valid billing address","none","Coverage Gap Analysis","Automated"
+"CHK-046","Default Billing Same as Shipping","Checkout > Billing","Medium","BL-CHK-002","","User at checkout billing or payment step","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout with shipping address and method configured
+[WAIT] Wait for billing address section to render
+[ASSERT] Verify 'Same as shipping address' checkbox is checked by default
+[ASSERT] Verify no separate billing form shown when checkbox is checked
+[ASSERT] Verify shipping address will be used as billing address (shown in summary or implied)
+[ACT] Proceed to order review or payment without changing billing
+[ASSERT] Verify checkout can complete with same-as-shipping billing","[DOM] 'Same as shipping address' checked by default on load
+[DOM] No billing address form shown while checkbox checked
+[STATE] Checkout proceeds without requiring separate billing entry
+[STATE] Placed order uses shipping address as billing address","[CONSOLE] No errors rendering billing section
+[API] Order payload uses shipping address as billing address when same-as-shipping selected","Billing checkbox unchecked by default causing friction; billing form shown when checkbox checked; checkout fails without separate billing entry","none","Coverage Gap Analysis","Automated"
+"CHK-050","Double Submit Prevention - Button Disabled After First Click","Checkout > Submission > Idempotency","Critical","BL-CHK-002","ECL-1.2","User logged in; all checkout steps complete (address, shipping, payment); user at order review step","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and complete all checkout steps to reach order review page
+[ASSERT] verify 'Place Order' button is visible and enabled
+[ACT] rapidly double-click 'Place Order' button (two clicks within 500ms)
+[WAIT] wait for order submission to process
+[ASSERT] verify button is disabled after first click (not two submissions fired)
+[ASSERT] verify only one order confirmation page or success state reached","[DOM] 'Place Order' button enters disabled/loading state immediately after first click
+[STATE] button does not re-enable while submission is in-flight
+[STATE] user lands on a single order confirmation page (not two)
+[DOM] spinner or loading indicator visible during submission","[API] createOrder or changeCartComment mutation called exactly once (check network tab)
+[CONSOLE] no JS errors during double-click scenario
+[NETWORK] only one POST to order creation endpoint; no duplicate requests","button remains active after first click allowing double submission; two confirmation pages displayed; two orders created in backend","Remove duplicate order if created; verify order history shows one entry","Coverage Gap Analysis","Generated"
+"CHK-051","Double Submit Prevention - Single Order in Order History","Checkout > Submission > Idempotency","Critical","BL-CHK-002","ECL-1.2","User logged in; CHK-050 executed (order placed via rapid double-click); user on confirmation page","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] after CHK-050 completes, note order number from confirmation page
+[NAV] navigate to {{FRONT_URL}}/account/orders
+[WAIT] wait for order history to load
+[ASSERT] verify order number from confirmation appears exactly once in list
+[ASSERT] verify no duplicate entry with same line items and timestamp
+[ASSERT] verify only one order with status 'New' from the test session","[DOM] order history list shows exactly one entry for the placed order
+[STATE] no duplicate orders with identical items and placement time
+[STATE] order count incremented by exactly 1 from pre-test baseline","[API] GET /orders returns array with exactly one new order entry (not two)
+[CONSOLE] no JS errors on order history page
+[NETWORK] no 4xx/5xx on order list request","two identical orders in order history; duplicate order numbers; order history count incremented by 2","Remove test order(s) from system if possible; restore cart","Coverage Gap Analysis","Generated"
+"CHK-052","Payment Retry After Decline - Retry With Different Card Succeeds","Checkout > Payment > Retry","High","BL-CHK-004","ECL-1.2","User logged in; all checkout steps complete up to payment; test decline card number available (e.g., Authorize.Net test decline card)","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout payment step
+[ASSERT] verify payment form visible
+[ACT] enter invalid or known-decline test card number in card number field
+[ACT] fill expiry, CVV, and cardholder name fields
+[ACT] click 'Place Order' or 'Pay Now'
+[WAIT] wait for decline response
+[ASSERT] verify decline message shown (e.g., 'Payment declined. Please try a different card.')
+[ASSERT] verify checkout step is still at payment (not redirected away)
+[ACT] clear card number field and enter valid test card number
+[ACT] click 'Place Order' or 'Pay Now'
+[WAIT] wait for order confirmation","[DOM] decline error message visible after first attempt
+[STATE] payment form remains on screen (not navigated away from checkout)
+[STATE] user can re-enter card details without refreshing the page
+[DOM] order confirmation page shown after successful retry with valid card","[API] first order attempt returns payment error (not 500); second attempt returns success
+[CONSOLE] no unhandled JS exceptions on decline or retry
+[NETWORK] no ghost order created on first (declined) attempt — verify via order history","page crashes on decline; user redirected to unrecoverable error page; no decline message shown; retry button absent after decline","Remove test order; clear cart if needed","Coverage Gap Analysis","Generated"
+"CHK-053","Payment Retry After Decline - Checkout State Preserved","Checkout > Payment > Retry","High","BL-CHK-004","ECL-1.2","User logged in; shipping address and method selected at checkout; at payment step with declined card message shown (run CHK-052 setup steps)","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] proceed to checkout payment step and trigger a payment decline (enter test decline card)
+[WAIT] wait for decline message to appear
+[ASSERT] verify selected shipping address still displayed in checkout summary
+[ASSERT] verify shipping method selection unchanged
+[ASSERT] verify cart items and quantities unchanged in checkout review
+[ASSERT] verify no ghost order visible in {{FRONT_URL}}/account/orders","[STATE] shipping address in checkout summary unchanged after decline
+[STATE] shipping method selection persisted (no reset to first option)
+[STATE] cart line items and quantities identical to pre-decline state
+[DOM] no 'Order Placed' or order number shown (no ghost order)","[API] GET /orders does not show a new order entry after decline
+[CONSOLE] no JS errors related to state loss
+[NETWORK] no 4xx/5xx on state reload","address reset to empty after decline; shipping method reset; cart items changed; ghost order created and visible in order history","Clear test cart; remove any ghost orders","Coverage Gap Analysis","Generated"
+"CHK-054","Minimum Order Amount - Checkout Blocked When Below Minimum","Checkout > Validation > Minimum Order","High","BL-CHK-007","ECL-4.1","User logged in; store has minimum order amount configured (e.g., $50.00); cart total is below minimum (e.g., one item at $5.00)","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+min_order_amount=$50.00","[NAV] log in to {{FRONT_URL}} and add a low-value item to cart (total below minimum order amount)
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify cart total is below configured minimum order amount
+[ACT] attempt to click 'Proceed to Checkout' or 'Place Order'
+[WAIT] wait for validation response
+[ASSERT] verify checkout blocked with informational message
+[ASSERT] verify message indicates minimum order amount and shortfall (e.g., 'Minimum order is $50.00. Add $45.00 more to proceed.')","[DOM] 'Proceed to Checkout' button disabled or validation message shown
+[DOM] message references minimum order amount value
+[DOM] message references shortfall amount (amount needed to reach minimum)
+[STATE] user cannot advance past cart or checkout steps while below minimum","[API] getCart or checkout mutation returns minimum order violation error
+[CONSOLE] no JS errors when minimum order block is triggered
+[NETWORK] no 4xx/5xx (validation should be graceful)","checkout proceeds despite cart being below minimum; no message shown; vague error message without minimum amount or shortfall; 500 error instead of validation message","Remove test items from cart","Coverage Gap Analysis","Generated"
+"CHK-055","Minimum Order Amount - Checkout Unblocked After Adding Items","Checkout > Validation > Minimum Order","High","BL-CHK-007","ECL-4.1","User logged in; cart previously blocked by minimum order amount (CHK-054 state); store minimum order amount is $50.00","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+min_order_amount=$50.00","[NAV] log in to {{FRONT_URL}} with cart total below minimum (from CHK-054 or fresh setup)
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify checkout button blocked or minimum order message visible
+[ACT] add additional items to cart until total meets or exceeds minimum order amount
+[WAIT] wait for cart total to update
+[ASSERT] verify minimum order warning disappears or 'Proceed to Checkout' button becomes active
+[ACT] click 'Proceed to Checkout'
+[WAIT] wait for checkout page to load
+[ASSERT] verify user advances to checkout steps (address/shipping)","[DOM] minimum order warning message disappears once threshold is met
+[DOM] 'Proceed to Checkout' button enabled when cart total >= minimum
+[STATE] user successfully navigates to checkout shipping step
+[MATH] cart total >= configured minimum order amount","[API] getCart returns no minimum order violation once threshold met
+[CONSOLE] no JS errors during cart update
+[NETWORK] no 4xx/5xx on cart recalculation","checkout still blocked after meeting minimum; button stays disabled; cart total exceeds minimum but validation message persists","Remove test items from cart","Coverage Gap Analysis","Generated"
+"CHK-056","Saved Credit Card - Checkout Completes Without Re-entering Details","Checkout > Payment > Saved Cards","High","","ECL-1.2","User logged in; user has at least one saved tokenized credit card from a previous order; cart has items; user at payment step","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout payment step
+[ASSERT] verify 'Saved payment methods' or 'Saved cards' section visible
+[ASSERT] verify at least one saved card listed (showing last 4 digits)
+[ACT] select saved card from saved payment methods list
+[ASSERT] verify card selected (radio or highlight state)
+[ASSERT] verify card number entry field NOT shown (no need to re-enter full card)
+[ACT] click 'Place Order' or 'Pay Now'
+[WAIT] wait for order confirmation
+[ASSERT] verify order confirmation page displayed with order number","[DOM] saved cards section visible at payment step
+[STATE] selecting saved card does not reveal full card entry form
+[DOM] last 4 digits of saved card visible in card selector
+[DOM] order confirmation page shown after paying with saved card","[API] order creation request references saved payment token (not raw card data)
+[CONSOLE] no JS errors during saved card selection or order placement
+[NETWORK] no 4xx/5xx on order submission with saved card","saved cards section absent at payment; selecting saved card still requires full card re-entry; payment fails with saved card token; no confirmation after order placement","Remove test order; saved card remains for future tests","Coverage Gap Analysis","Generated"
+"CHK-057","Saved Credit Card - Delete Saved Card From Checkout","Checkout > Payment > Saved Cards","High","","ECL-1.2","User logged in; user has at least one saved tokenized credit card; user at checkout payment step","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout payment step
+[ASSERT] verify saved cards section visible with at least one card listed
+[ACT] click delete/remove icon next to the saved card
+[WAIT] wait for confirmation dialog or immediate removal
+[ACT] confirm deletion if dialog appears
+[WAIT] wait for card list to refresh
+[ASSERT] verify deleted card no longer appears in saved cards list
+[ASSERT] verify payment form allows entering a new card or shows empty state","[DOM] deleted card absent from saved cards list after removal
+[STATE] saved cards section shows empty state or prompts to add a new card
+[DOM] no ghost entry of deleted card remaining
+[STATE] user can proceed to enter a new card for payment","[API] DELETE /payment-methods/{id} or equivalent returns 200/204
+[CONSOLE] no JS errors on card deletion
+[NETWORK] no 4xx/5xx on delete request","deleted card still visible after removal; delete button has no effect; page error on delete; confirmation dialog not dismissible","Verify card removal; complete checkout with new card if needed","Coverage Gap Analysis","Generated"
+"CHK-058","Ship-To Address - Default or Favorite Address Pre-Selected at Checkout","Checkout > Shipping > Address Selector","High","BL-CHK-005","ECL-14.1","User logged in; user has at least one saved address marked as default or favorite; cart has items","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout
+[ACT] select 'Delivery' option if not auto-selected
+[WAIT] wait for address section to render
+[ASSERT] verify default or favorite address is pre-selected (highlighted or shown as selected)
+[ASSERT] verify selected address displays street, city, state, ZIP, and country
+[ASSERT] verify 'Proceed' or 'Continue' button active with pre-selected address","[DOM] default/favorite address is selected state at checkout load (no manual selection needed)
+[DOM] selected address shows full address fields (street, city, state, ZIP, country)
+[STATE] user does not need to manually select an address to proceed
+[DOM] Continue/Next step button is active with pre-selected address","[API] getCart or checkout query returns pre-selected default address in deliveryAddress field
+[CONSOLE] no JS errors on checkout address load
+[NETWORK] no 4xx/5xx on address section render","no address pre-selected (user must manually pick every time); wrong address pre-selected (not the default/favorite); address form shown blank instead of pre-filled","No cleanup required","Coverage Gap Analysis","Generated"
+"CHK-059","Ship-To Address - Search and Select Different Address Updates Shipping Methods","Checkout > Shipping > Address Selector","High","BL-CHK-005","ECL-14.1","User logged in; user has 2+ saved addresses in different zones or countries; cart has items; user at checkout shipping address step","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout shipping address step
+[ASSERT] verify current address and shipping methods displayed
+[ASSERT] note available shipping method count for the pre-selected address
+[ACT] click 'Change address' or address search/selector control
+[WAIT] wait for address list or search input to appear
+[ACT] search for or select a different saved address (different region or country)
+[WAIT] wait for checkout to recalculate with new address
+[ASSERT] verify selected address updated in checkout summary
+[ASSERT] verify shipping methods list refreshed with options for the new address
+[ASSERT] verify subtotal and shipping cost updated if applicable","[DOM] new address shown in checkout shipping summary
+[STATE] shipping method options updated to reflect new address zone/country
+[STATE] previously selected shipping method may reset (valid behavior if incompatible with new address)
+[MATH] shipping cost reflects new address zone pricing","[API] getShippingMethods called with new address params; returns updated methods
+[CONSOLE] no JS errors on address switch and shipping recalculation
+[NETWORK] no 4xx/5xx on address change or shipping methods refresh","shipping methods not refreshed after address change; old address shown in summary despite selecting new one; shipping cost unchanged after address zone change","No cleanup required","Coverage Gap Analysis","Generated"
+"CHK-060","Ship-To Address - Show More Addresses Pagination","Checkout > Shipping > Address Selector","Medium","BL-CHK-005","","User logged in; user has more than 5 (or the per-page limit) saved addresses; cart has items","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout shipping address step
+[ACT] click 'Change address' or address selector to open full address list
+[WAIT] wait for address list to render
+[ASSERT] verify initial address list shows a subset of addresses (e.g., first 5)
+[ASSERT] verify 'Show more' button or pagination control visible
+[ACT] click 'Show more' or next page control
+[WAIT] wait for additional addresses to load
+[ASSERT] verify additional addresses appended or paginated correctly
+[ASSERT] verify all displayed addresses are selectable","[DOM] initial address list shows partial set (not all addresses at once)
+[DOM] 'Show more' button or pagination control present
+[STATE] clicking 'Show more' loads additional addresses without page refresh
+[DOM] newly loaded addresses selectable via click
+[STATE] no duplicate addresses in expanded list","[API] addresses query returns paginated result; second page returns additional items
+[CONSOLE] no JS errors on show more / pagination click
+[NETWORK] no 4xx/5xx on address pagination request","'Show more' button absent despite many addresses; clicking 'Show more' causes page refresh or error; duplicate addresses in list; addresses not selectable after expansion","No cleanup required","Coverage Gap Analysis","Generated"
+"CHK-061","Session Timeout During Checkout - Cart Preserved After Re-authentication","Checkout > Session > Timeout","Medium","","ECL-1.2","User logged in with items in cart; session timeout is configured (or can be simulated by clearing session cookie); user is at payment step","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart; proceed to checkout payment step
+[ASSERT] note cart contents (item names, quantities, total)
+[ACT] simulate session expiry by clearing session/auth cookies in browser developer tools OR wait for natural session timeout
+[ACT] attempt to interact with checkout (e.g., click 'Place Order')
+[WAIT] wait for response
+[ASSERT] verify user redirected to login page or session expired message shown (not a 500 error)
+[ACT] log in again with {{USER_EMAIL}} and {{USER_PASSWORD}}
+[WAIT] wait for redirect after login
+[ASSERT] verify cart contents preserved (same items and quantities as before session expired)
+[ASSERT] verify user can resume checkout flow","[DOM] session expiry triggers login redirect or graceful message (not 500)
+[STATE] after re-login, cart contains same items and quantities
+[STATE] user can proceed through checkout after re-authentication
+[DOM] no 'internal server error' or blank page on session expiry","[API] requests with expired token return 401 (not 500)
+[CONSOLE] no unhandled exceptions on session timeout; 401 handled gracefully
+[NETWORK] 401 response on expired session; 200 on successful re-auth","500 error on session expiry; cart emptied after re-login; user redirected to homepage with no message; checkout state lost entirely","Clear test cart items; re-login if needed","Coverage Gap Analysis","Generated"
+"CHK-062","Browser Back Button After Payment - No Duplicate Order Created","Checkout > Submission > Navigation","High","BL-CHK-002","ECL-1.2","User logged in; order successfully placed; user is on order confirmation page","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and complete a full checkout to reach the order confirmation page
+[ASSERT] note order number from confirmation page
+[ACT] press browser back button (or [KEY] Alt+Left arrow)
+[WAIT] wait for navigation to resolve (back to review or cart or redirect)
+[ASSERT] verify no second order confirmation page rendered with a new order number
+[ASSERT] verify appropriate behavior: redirect to cart, or 'Order already placed' message, or checkout steps shown with empty cart
+[NAV] navigate to {{FRONT_URL}}/account/orders
+[ASSERT] verify order history contains exactly one entry matching the noted order number","[STATE] browser back does not trigger a second order submission
+[DOM] no second order number generated after pressing back
+[DOM] appropriate page shown on back navigation (cart, homepage, or informational message)
+[STATE] order history shows exactly one new order from the session","[API] GET /orders shows only one entry for this test session (no duplicate)
+[CONSOLE] no JS errors on back navigation after payment
+[NETWORK] no second POST to order creation endpoint after back button press","second order created after browser back; duplicate order number in order history; blank or error page on back navigation","Remove any duplicate test orders from system","Coverage Gap Analysis","Generated"
+"CHK-063","Billing Address Validation - Individual Field Errors Shown","Checkout > Billing > Validation","Medium","BL-CHK-003","ECL-1.2","User logged in; at checkout billing or payment step; 'Same as shipping address' is unchecked; billing form visible","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout billing address step
+[ACT] uncheck 'Same as shipping address' to reveal billing address form
+[WAIT] wait for billing address form fields to render
+[ACT] leave all billing fields empty (do not fill any)
+[ACT] enter an invalid value in 'ZIP' field (e.g., 'ABCDE' for US ZIP)
+[ACT] enter an invalid value in 'Phone' field (e.g., 'notaphone')
+[ACT] click 'Continue' or 'Place Order' to trigger validation
+[WAIT] wait for validation to fire
+[ASSERT] verify individual error messages shown inline next to each invalid or empty required field
+[ASSERT] verify 'First Name' field shows its own error (not a generic form error)
+[ASSERT] verify 'ZIP' field shows its own error message
+[ASSERT] verify 'Phone' field shows its own error message
+[ASSERT] verify form does not submit while errors present","[DOM] inline validation error shown adjacent to each invalid/empty required field
+[DOM] 'First Name' field error visible independently
+[DOM] 'ZIP' field error message visible independently
+[DOM] 'Phone' field error message visible independently
+[STATE] form submission blocked while any required field is invalid
+[STATE] correcting a field clears that field's error without clearing other fields","[API] no order or billing payload sent while validation errors are present
+[CONSOLE] no JS errors during field-level validation
+[NETWORK] no outbound POST on failed validation","single generic error shown for entire form instead of field-level errors; form submits despite invalid fields; fixing one field clears all others' errors; no validation triggered on submit","Clear test cart; no order placed","Coverage Gap Analysis","Generated"
+"CHK-074","Billing Address Persists Through Payment Retry","Checkout > Address > Billing Persistence","High","BL-CHK-003, BL-CHK-004","ECL-1.1","User logged in; separate billing address entered; payment fails on first attempt","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to checkout with items in cart
+[ACT] fill shipping address
+[ACT] uncheck 'Billing same as shipping' and fill different billing address
+[ACT] proceed to payment
+[ACT] enter invalid payment details to trigger a decline/failure
+[WAIT] wait for payment error message
+[ASSERT] verify billing address fields still populated after payment failure
+[ASSERT] verify shipping address still populated
+[ACT] correct payment details and retry
+[ASSERT] verify both addresses still correct on order confirmation","[STATE] billing address not cleared after payment failure
+[STATE] shipping address preserved through retry
+[DOM] both address forms retain entered values","[API] payment retry sends same billing/shipping addresses
+[CONSOLE] no JS errors during payment retry
+[NETWORK] no 5xx on retry","billing address cleared after decline; shipping address lost; user forced to re-enter addresses; addresses swapped","Cancel test order via admin","Coverage Gap Analysis","Manual"
+"CHK-075","Order Confirmation Shows Both Shipping and Billing Addresses","Checkout > Confirmation > Addresses","Medium","BL-CHK-003","ECL-1.1","Order placed with different shipping and billing addresses","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] complete checkout with separate shipping and billing addresses
+[WAIT] wait for order confirmation page
+[ASSERT] verify shipping address section displays the shipping address
+[ASSERT] verify billing address section displays the billing address
+[ASSERT] verify the two addresses are different (not duplicated)
+[NAV] navigate to order details in account
+[ASSERT] verify both addresses shown in order detail view","[DOM] distinct shipping address section on confirmation
+[DOM] distinct billing address section on confirmation
+[STATE] addresses match what was entered at checkout","[CONSOLE] no JS errors on confirmation page
+[NETWORK] no 4xx/5xx","only one address shown; billing shows shipping address; addresses section missing; addresses swapped","Cancel test order via admin","Coverage Gap Analysis","Manual"
+"CHK-076","Checkout Field Validation - US Address Requires ZIP and State","Checkout > Validation > Address","High","BL-CHK-003","ECL-4.1","User at checkout address step; country selector available","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to checkout with items in cart
+[ACT] select United States as country
+[ACT] fill street and city but leave ZIP and State empty
+[ACT] click Continue or submit address
+[ASSERT] verify validation error for missing ZIP code
+[ASSERT] verify validation error for missing State
+[ACT] fill ZIP with valid US ZIP and select State
+[ASSERT] verify validation errors clear
+[ACT] change country to a non-US country that does not require ZIP
+[ACT] leave ZIP empty
+[ACT] submit address
+[ASSERT] verify no ZIP validation error for non-US country (if ZIP not required)","[DOM] ZIP validation error shown for US address without ZIP
+[DOM] State validation error shown for US address without State
+[STATE] validation rules change based on selected country","[CONSOLE] no JS errors during validation
+[NETWORK] no 4xx/5xx","no validation for missing US ZIP; State not required for US; same validation rules applied to all countries; validation error does not clear","None","Coverage Gap Analysis","Manual"
+"CHK-077","Checkout Field Validation - Special Characters in Name Fields","Checkout > Validation > Names","Medium","BL-CHK-003","ECL-4.1","User at checkout address step","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to checkout with items in cart
+[ACT] enter name with apostrophe: O'Connor
+[ACT] enter name with accent: García
+[ACT] enter name with spaces: van der Berg
+[ACT] enter name with umlaut: Müller
+[ACT] fill remaining address fields with valid data
+[ACT] submit address
+[ASSERT] verify all special character names accepted without validation error — NameValidationPattern allows \p{L}\p{M}\s'\-\.
+[ASSERT] verify names displayed correctly in address summary (not escaped or mangled)","[DOM] no validation errors on special character names
+[DOM] names render correctly with original characters in summary
+[STATE] address saved successfully with special characters
+[STATE] InputValidationOptions NameValidationPattern permits valid Unicode names (apostrophes, accents, umlauts, hyphens, spaces)","[API] address payload contains unescaped special characters
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx on address save
+[API] updateMemberAddresses mutation returns no validation errors for valid special characters","apostrophe rejected; accented characters stripped; name truncated; NameValidationPattern false-positive rejects valid Unicode characters; InputValidationOptions blocks legitimate names","None","Synced: PR #130 vc-module-profile-experience-api (2026-03-21)","Manual"
+"CHK-078","Checkout Field Validation - Long Address Line Handled","Checkout > Validation > Long Input","Low","BL-CHK-003","ECL-4.1","User at checkout address step","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to checkout with items in cart
+[ACT] enter a very long address line (>100 characters) in Street field
+[ACT] fill remaining address fields with valid data
+[ACT] submit address
+[ASSERT] verify address accepted OR clear max-length validation shown (not a crash)
+[ASSERT] verify long address displayed correctly without truncation in summary","[DOM] long address either accepted or shows clear length validation
+[DOM] no layout break or overflow from long address text
+[STATE] no crash or unhandled error","[CONSOLE] no JS errors
+[NETWORK] no 5xx on address save","address silently truncated; layout breaks; unhandled error; field accepts but order fails later","None","Coverage Gap Analysis","Manual"
+"CHK-081","Order Total Formula - Subtotal Plus Shipping Plus Tax Minus Discounts","Checkout > Totals > Formula","Critical","BL-CHK-006","ECL-2.3","User at checkout with items in cart; shipping selected; tax applicable","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to checkout with multiple items in cart
+[ACT] select delivery and fill shipping address
+[ACT] select a shipping method
+[WAIT] wait for order summary to fully calculate
+[ASSERT] verify subtotal = sum of all line item totals
+[ASSERT] verify shipping cost displayed and non-negative
+[ASSERT] verify tax amount displayed
+[ASSERT] verify total = subtotal + shipping + tax - discounts
+[ACT] note the exact total amount","[MATH] total = subtotal + shipping + tax - discounts
+[MATH] subtotal = sum(unit price x quantity) for each line item
+[DOM] all cost components visible in order summary","[API] checkout API response totals match displayed values
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","total does not equal component sum; missing tax or shipping in calculation; negative total; rounding error > $0.01","Clear cart","Coverage Gap Analysis","Manual"
+"CHK-082","Order Confirmation Total Matches Checkout Total","Checkout > Totals > Confirmation Match","High","BL-CHK-006","ECL-2.3","User completing checkout; on payment step","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] complete checkout to final step
+[ACT] note the order total displayed at checkout
+[ACT] place the order
+[WAIT] wait for order confirmation page
+[ASSERT] verify order total on confirmation page matches checkout total exactly
+[ASSERT] verify subtotal and shipping and tax match checkout values","[MATH] confirmation total = checkout total (exact match)
+[DOM] all line items match between checkout and confirmation
+[STATE] no price recalculation between checkout submit and confirmation","[API] order response total matches checkout total
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","confirmation total differs from checkout; extra charges appear; tax recalculated differently; rounding discrepancy","Cancel test order via admin","Coverage Gap Analysis","Manual"
+"CHK-083","Admin Order Total Matches Storefront Confirmation","Checkout > Totals > Admin Match","High","BL-CHK-006","ECL-2.3","Order placed and confirmed on storefront","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+admin_url={{ADMIN_URL}}","[NAV] complete checkout and note order total and order number from confirmation
+[NAV] navigate to {{ADMIN_URL}} admin panel
+[ACT] search for the order by order number
+[ASSERT] verify admin order total matches storefront confirmation total
+[ASSERT] verify admin shows same subtotal and shipping and tax
+[ASSERT] verify line item prices match","[MATH] admin total = storefront confirmation total
+[STATE] no discrepancy between storefront and admin order data","[API] admin order detail API returns same totals
+[CONSOLE] no admin console errors
+[NETWORK] no 4xx/5xx","admin total differs from storefront; line item prices mismatch; tax calculated differently in admin; order not found in admin","Cancel test order via admin","Coverage Gap Analysis","Manual"
+"CHK-084","Minimum Order Amount - Cart Below Minimum Blocks Checkout","Checkout > Minimum Order","High","BL-CHK-007","ECL-1.3","Minimum order amount configured in store settings (e.g., $50); user logged in","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in
+[ACT] add a low-priced product to cart (total below minimum order amount)
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] verify message indicating minimum order amount not met (e.g., 'Minimum order is $50')
+[ASSERT] verify checkout/Place Order button is disabled or blocked
+[ACT] attempt to proceed to checkout
+[ASSERT] verify user cannot advance past cart to checkout","[DOM] minimum order warning message visible
+[DOM] checkout button disabled or not clickable
+[STATE] checkout flow blocked for below-minimum cart","[API] cart validation returns minimum order error
+[CONSOLE] no JS errors
+[NETWORK] no 5xx","checkout proceeds below minimum; no warning message; button enabled despite below-minimum total; generic error without specifying minimum amount","Remove items from cart","Coverage Gap Analysis","Manual"
+"CHK-085","Minimum Order Amount - Adding Items to Exceed Minimum Unblocks","Checkout > Minimum Order","Medium","BL-CHK-007","ECL-1.3","Cart currently below minimum order amount; minimum order message displayed","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with below-minimum total
+[ASSERT] verify minimum order warning is shown and checkout is blocked
+[ACT] add more items or increase quantity to exceed minimum order amount
+[WAIT] wait for cart to recalculate
+[ASSERT] verify minimum order warning disappears
+[ASSERT] verify checkout button becomes enabled/clickable
+[ACT] proceed to checkout
+[ASSERT] verify checkout flow accessible","[DOM] warning removed after exceeding minimum
+[DOM] checkout button enabled
+[STATE] checkout unblocked when total >= minimum","[API] cart validation passes after exceeding minimum
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","warning persists after exceeding minimum; checkout still blocked; page refresh required to clear warning","Remove items from cart","Coverage Gap Analysis","Manual"

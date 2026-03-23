@@ -98,8 +98,18 @@ You are one of up to 3 concurrent browser agents. Strict isolation is mandatory:
 For EACH test case in the CSV, execute the following protocol:
 
 ### 2.1 Announce
-State the test case ID, title, and business rule:
+State the test case ID, title, and business rule, then send a progress message to the orchestrator:
 > "Executing SMK-007: Add to Cart — Single Product [BL-CART-001] | Watching for: ECL-2.1, ECL-7.3"
+
+```
+SendMessage:
+  type: "message"
+  recipient: "{{ORCHESTRATOR_NAME}}"
+  content: "▶ Suite {{SUITE_ID}} | [N/TOTAL] <ID>: <Title>"
+  summary: "Suite {{SUITE_ID}}: running test N/TOTAL"
+```
+
+Where `N` is the current test case number and `TOTAL` is the total count of test cases in the suite.
 
 ### 2.2 Check Preconditions
 - Read the `Preconditions` column
