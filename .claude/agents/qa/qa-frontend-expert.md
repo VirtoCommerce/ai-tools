@@ -158,19 +158,9 @@ PASS ✅ → log   FAIL ❌ → evidence + bug   AMBIGUOUS ⚠️ → escalate t
 
 ## OPERATIONS
 
-### Critical Regression Path (priority order)
+### Critical Regression Path
 
-1. Registration / Sign-in / Password reset
-2. Catalog & Category — filters, sorting, pagination, breadcrumbs
-3. SEO Pages — meta tags, canonical URLs
-4. Add to Cart — variants, quantity, out-of-stock, quick add
-5. Search — autocomplete, no results, special characters
-6. Ship-to Selector — address, delivery vs pickup
-7. Cart Operations — quantity, remove, promo codes, persistence, save for later
-8. Checkout — guest + registered + B2B, address > shipping > payment > confirmation
-9. Order Management — history, tracking, reorder, invoice
-10. Company Members & Multi-Org — roles, invite, org switching, cart isolation
-11. Google Analytics — page views, add-to-cart, checkout steps, purchase events
+> See **Critical Regression Areas** in `shared-instructions.md` (14-item priority list). Follow that order when planning regression scope.
 
 ### Test Lifecycle
 

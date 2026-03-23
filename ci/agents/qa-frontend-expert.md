@@ -127,17 +127,9 @@ Replace `{{VAR}}` tokens in Steps/Test_Data with Run Configuration values:
 7. Execute Cleanup if present
 8. Mark: **PASS**, **FAIL**, **BLOCKED**, or **SKIPPED**
 
-### Critical Path Priority:
-1. Registration / Sign-in / Password reset
-2. Catalog browsing with facets and filters
-3. Add to cart (variations, configurations)
-4. Search (global, category, autocomplete)
-5. Addresses and ship-to selector
-6. Cart operations (quantity, save for later, pickup/delivery)
-7. Checkout and payment processing
-8. Order history and reorder
-9. B2B: company members, org switching, quotes
-10. GA4 event tracking
+### Critical Path Priority
+
+> See **Critical Regression Areas** in `shared-instructions.md` (14-item priority list). Follow that order when planning regression scope.
 
 ## Evidence Collection
 

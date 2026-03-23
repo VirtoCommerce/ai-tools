@@ -3,7 +3,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-03-23",
-    "totalSuites": 79,
+    "totalSuites": 80,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -783,18 +783,25 @@
     {
       "id": "042",
       "name": "Smoke Tests",
-      "file": "regression/suites/Frontend/cross-cutting/042-smoke-tests.csv",
+      "file": "regression/suites/Frontend/smoke/042-smoke-tests.csv",
       "domain": "cross-cutting",
       "layer": "frontend",
       "concern": "functional",
       "priority": "P0",
-      "testCount": 19,
-      "estimatedMinutes": 13,
+      "testCount": 26,
+      "estimatedMinutes": 18,
       "agent": "qa-testing-expert",
       "tags": [
         "smoke",
         "daily",
-        "pre-deploy"
+        "pre-deploy",
+        "auth",
+        "cart",
+        "checkout",
+        "b2b",
+        "search",
+        "security",
+        "regression"
       ]
     },
     {
@@ -1493,6 +1500,33 @@
       ]
     },
     {
+      "id": "078",
+      "name": "Backend Smoke Tests",
+      "file": "regression/suites/Backend/smoke/078-backend-smoke-tests.csv",
+      "domain": "cross-cutting",
+      "layer": "backend",
+      "concern": "functional",
+      "priority": "P0",
+      "testCount": 111,
+      "estimatedMinutes": 82,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "smoke",
+        "daily",
+        "pre-deploy",
+        "platform",
+        "admin",
+        "api",
+        "graphql",
+        "orders",
+        "catalog",
+        "pricing",
+        "inventory",
+        "auth",
+        "regression"
+      ]
+    },
+    {
       "id": "080",
       "name": "Full Regression Release",
       "file": "regression/suites/_release/080-full-regression-release.csv",
@@ -1515,10 +1549,12 @@
   ],
   "selections": {
     "smoke": [
-      "042"
+      "042",
+      "078"
     ],
     "critical": [
       "042",
+      "078",
       "039",
       "044",
       "049"
@@ -1694,6 +1730,7 @@
       "074",
       "075",
       "076",
+      "078",
       "079"
     ],
     "sprint": [
@@ -1766,6 +1803,7 @@
       "074",
       "075",
       "077",
+      "078",
       "079"
     ],
     "full": [
@@ -1846,6 +1884,7 @@
       "075",
       "076",
       "077",
+      "078",
       "079",
       "080"
     ],

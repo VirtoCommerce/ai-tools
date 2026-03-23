@@ -54,7 +54,7 @@ When consolidating agent reports, always ask: "Were business invariants from bus
 
 ### Critical Areas — Testing Priority
 
-**Revenue-Critical (P0 — always test):** Registration, Sign-in, Catalog, Search, Add to Cart, Ship-to Selector, Cart, Checkout (all payment methods), Order confirmation, Company Members, Multi-Org, Google Analytics
+**Revenue-Critical (P0 — always test):** See **Critical Regression Areas** in `shared-instructions.md` (items 1-12 are P0)
 
 **B2B-Critical (P1):** Organization hierarchies, Quote management, Contract pricing, Approval workflows, Quick/Bulk ordering
 

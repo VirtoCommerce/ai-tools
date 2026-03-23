@@ -4,14 +4,14 @@
 >
 > For Admin SPA and Platform API checklists, see `backend-admin-checklists.md` (27 Admin domains + 2 API domains | 255 items).
 
-**28 storefront domains + 1 cross-domain checklist | 331 checklist items** — every checked item should map to at least one test case.
+**32 storefront domains + 1 cross-domain checklist | 365 checklist items** — every checked item should map to at least one test case.
 
 ## Summary
 
 | # | Domain | Items | E2E Catalog | Related Suites |
 |---|--------|-------|-------------|----------------|
 | 1 | Auth | 8 | E2E-AUTH | 01, 02, 08 |
-| 2 | Catalog | 14 | E2E-CAT | 01, 03, 16 |
+| 2 | Catalog | 21 | E2E-CAT | 01, 03, 16 |
 | 3 | Categories | 6 | E2E-CAT | 03, 16 |
 | 4 | SEO | 7 | E2E-CAT | 31 |
 | 5 | Add to Cart | 10 | E2E-CART | 01, 04a |
@@ -20,24 +20,28 @@
 | 8 | Cart/Checkout | 17 | E2E-CHK | 04a, 04b, 06 |
 | 9 | Payment | 12 | E2E-PAY | 06 |
 | 10 | Orders | 7 | E2E-ORD | 01, 04c, 20 |
-| 11 | Company Members | 14 | E2E-MEMBER | 02, 21 |
-| 12 | Multi-Org | 11 | E2E-ORG | 02, 21 |
-| 13 | Product Configurations & Variations | 14 | E2E-CONFIG | 36 |
-| 14 | Google Analytics | 11 | E2E-GA | 07 |
-| 15 | BOPIS (Pickup) | 12 | E2E-BOPIS | 05, 30 |
-| 16 | B2B Quotes & RFQ | 13 | E2E-QUOTE | 04c, 20 |
-| 17 | B2B Lists & Quick Order | 12 | E2E-LIST | 13 |
-| 18 | Localization & i18n | 7 | E2E-L10N | 10 |
-| 19 | Notifications | 12 | E2E-NOTIF | 24 |
-| 20 | White Labeling | 13 | E2E-WL | 32, 35 |
-| 21 | Account Management | 12 | E2E-ACCT | 01, 02, 13 |
-| 22 | Storefront Push Messages | 12 | E2E-PUSH | 33 |
-| 23 | Coupons & Promotions | 12 | E2E-PROMO | 41, 23, 42 |
-| 24 | Security | 10 | E2E-SEC | 08 |
-| 25 | Accessibility | 10 | E2E-A11Y | 09 |
-| 26 | Performance | 8 | E2E-PERF | 11 |
-| 27 | Browser Compatibility | 7 | E2E-COMPAT | 12 |
-| 28 | B2C Features | 10 | E2E-B2C | 13 |
+| 11 | Company Info | 6 | E2E-ORG | 02, 21 |
+| 12 | Company Members | 12 | E2E-MEMBER | 02, 21 |
+| 13 | Multi-Org | 11 | E2E-ORG | 02, 21 |
+| 14 | Product Configurations & Variations | 14 | E2E-CONFIG | 36 |
+| 15 | PDP (Product Detail Page) | 11 | E2E-CAT | 01, 03 |
+| 16 | Google Analytics | 11 | E2E-GA | 07 |
+| 17 | Anonymous Flow | 8 | E2E-CHK | 04a, 04b |
+| 18 | Cart Merge | 7 | E2E-CART | 04a, 30 |
+| 19 | BOPIS (Pickup) | 12 | E2E-BOPIS | 05, 30 |
+| 20 | B2B Quotes & RFQ | 13 | E2E-QUOTE | 04c, 20 |
+| 21 | B2B Lists & Quick Order | 12 | E2E-LIST | 13 |
+| 22 | Localization & i18n | 7 | E2E-L10N | 10 |
+| 23 | Notifications | 12 | E2E-NOTIF | 24 |
+| 24 | White Labeling | 13 | E2E-WL | 32, 35 |
+| 25 | Account Management | 12 | E2E-ACCT | 01, 02, 13 |
+| 26 | Storefront Push Messages | 12 | E2E-PUSH | 33 |
+| 27 | Coupons & Promotions | 12 | E2E-PROMO | 41, 23, 42 |
+| 28 | Security | 10 | E2E-SEC | 08 |
+| 29 | Accessibility | 10 | E2E-A11Y | 09 |
+| 30 | Performance | 8 | E2E-PERF | 11 |
+| 31 | Browser Compatibility | 7 | E2E-COMPAT | 12 |
+| 32 | B2C Features | 10 | E2E-B2C | 13 |
 | **BF** | **Bug Fix Verification** | **10** | *cross-domain* | *per bug* |
 
 ---
@@ -78,19 +82,6 @@
 - [ ] In-stock / out-of-stock filter works correctly in product listing
 - [ ] "Purchased Before" tag displayed for previously ordered items (B2B)
 - [ ] Multi-fulfillment center: `availabilityData.inventories` shows per-center stock levels (via xAPI)
-
-### PDP (Product Detail Page)
-- [ ] Product name, SKU, and description render correctly
-- [ ] Image gallery: thumbnails switch main image, multiple images navigable
-- [ ] Video media: embedded videos render and play on PDP
-- [ ] Properties displayed in collapsible groups (specs, attributes) — all structured properties render
-- [ ] Pricing: list price, sale price, discount amount/percentage shown
-- [ ] `minVariationPrice` shown for products with variations ("From $X")
-- [ ] Stock level visibility for physical products (in-stock quantity when tracked)
-- [ ] Related products section displayed below product details
-- [ ] Recommendations section rendered (if configured)
-- [ ] Customer reviews section: display existing reviews, submit new review
-- [ ] `keyProperties` (top 3 key specs) shown prominently on PDP and in product cards
 
 ## 3. Categories
 - [ ] Multi-level navigation (top → sub → sub-sub)
@@ -185,7 +176,15 @@
 - [ ] Order status lifecycle: Admin updates status → storefront reflects
 - [ ] Tracking number visible when shipped
 
-## 11. Company Members
+## 11. Company Info
+- [ ] Organization details page (`/account/company`): company name, description, addresses, phones displayed
+- [ ] Edit company details: update name, addresses, phones (Organization maintainer role required)
+- [ ] Company logo upload: upload from account settings, logo displayed in header/account area (Organization maintainer only)
+- [ ] Company addresses: add, edit, delete company shipping/billing addresses (scoped to org, not personal)
+- [ ] Role restriction: non-maintainer roles cannot edit company info — edit controls hidden or disabled
+- [ ] Company info persistence: changes reflected across all org members' sessions after refresh
+
+## 12. Company Members
 - [ ] Invite member: enter email, assign role(s), send — roles: Organization maintainer, Store administrator, Purchasing agent, Organization employee
 - [ ] Bulk invite: multiple emails at once, partial failure handling (some succeed, some fail with error details)
 - [ ] Custom invitation message: message appears in email body, empty message uses default template
@@ -198,10 +197,8 @@
 - [ ] Filter by role (Organization maintainer, Store administrator, Purchasing agent, Organization employee), filter by status (Active, Blocked)
 - [ ] Search members by name or role
 - [ ] Role permissions enforcement: Organization maintainer can manage company info/addresses/logo; Purchasing agent can place orders; Organization employee has basic access only
-- [ ] Company logo upload: upload from account settings (requires Organization maintainer role), logo displayed in header/account area
-- [ ] Organization details edit: update company name, addresses, phones (Organization maintainer role required)
 
-## 12. Multi-Org
+## 13. Multi-Org
 - [ ] Org switcher: current org in header, list of assigned orgs, switch
 - [ ] Cart isolation: Org A cart ≠ Org B cart, switching preserves each
 - [ ] Ship-to per company: addresses scoped to active org, no cross-contamination
@@ -214,7 +211,7 @@
 - [ ] Org switch triggers branding update: logo/favicon/theme change per org white labeling (if WL enabled)
 - [ ] New org assignment: user added to second org → org appears in switcher (after re-login or session refresh)
 
-## 13. Product Configurations & Variations
+## 14. Product Configurations & Variations
 - [ ] Variation swatches: color, size selectors displayed on PDP
 - [ ] Select variation → price updates, image gallery switches to variant images
 - [ ] "From $X" price on listing → specific price after variant selection
@@ -230,7 +227,20 @@
 - [ ] B2B vs B2C layout differences for variation products
 - [ ] Category `/products-with-options`: 8 configurable + 7 variation products as test data
 
-## 14. Google Analytics
+## 15. PDP (Product Detail Page)
+- [ ] Product name, SKU, and description render correctly
+- [ ] Image gallery: thumbnails switch main image, multiple images navigable
+- [ ] Video media: embedded videos render and play on PDP
+- [ ] Properties displayed in collapsible groups (specs, attributes) — all structured properties render
+- [ ] Pricing: list price, sale price, discount amount/percentage shown
+- [ ] `minVariationPrice` shown for products with variations ("From $X")
+- [ ] Stock level visibility for physical products (in-stock quantity when tracked)
+- [ ] Related products section displayed below product details
+- [ ] Recommendations section rendered (if configured)
+- [ ] Customer reviews section: display existing reviews, submit new review
+- [ ] `keyProperties` (top 3 key specs) shown prominently on PDP and in product cards
+
+## 16. Google Analytics
 - [ ] `view_item` event on PDP: product ID, name, price, category
 - [ ] `add_to_cart` event: item details, quantity, value
 - [ ] `remove_from_cart` event: fired when item removed from cart with item details
@@ -243,7 +253,26 @@
 - [ ] Verify via Network tab: GA4 collect endpoint requests
 - [ ] SPA navigation: no duplicate `page_view` or ecommerce events on client-side route change
 
-## 15. BOPIS (Pickup)
+## 17. Anonymous Flow
+- [ ] Browse catalog without sign-in: product listing, PDP, search all functional for anonymous users
+- [ ] Add to cart as anonymous: items persist in cart across page navigation
+- [ ] Anonymous cart persistence: cart survives browser refresh (cookie/localStorage-based)
+- [ ] Guest checkout: complete purchase without registration — email-only identification, order confirmation
+- [ ] Login prompt at checkout: anonymous user prompted to sign in or continue as guest at checkout step
+- [ ] Anonymous → registration: user can register during checkout, cart preserved after account creation
+- [ ] Anonymous session expiry: cart cleared after session timeout, no stale anonymous carts
+- [ ] Anonymous user restrictions: cannot access account pages, order history, saved lists, or company features
+
+## 18. Cart Merge
+- [ ] Sign-in with existing anonymous cart: anonymous items merged into authenticated user's cart
+- [ ] Quantity merge: same product in both carts → quantities summed (respecting max stock limits)
+- [ ] No item loss: all anonymous cart items appear in merged cart, none silently dropped
+- [ ] Promo codes preserved: coupon applied in anonymous cart carried over after sign-in
+- [ ] Price update on merge: merged cart reflects authenticated user's pricing (tier/org-specific), not anonymous prices
+- [ ] Cart merge with org context: B2B user sign-in → anonymous items merge into active org's cart (not personal)
+- [ ] Merge conflict handling: out-of-stock items in anonymous cart flagged after merge, not silently removed
+
+## 19. BOPIS (Pickup)
 - [ ] Select "Pickup" delivery → location selector opens (map + list)
 - [ ] Browse/search pickup locations by zip code or city → results sorted by distance
 - [ ] Select store → verify address, hours, and pin highlighted on map
@@ -257,7 +286,7 @@
 - [ ] Product-level pickup availability: per-product availability at each location (InStock/LowStock/BackOrder) with quantity
 - [ ] Location pagination: stores with many (10+) pickup locations support scrolling/load-more in selector
 
-## 16. B2B Quotes & RFQ
+## 20. B2B Quotes & RFQ
 - [ ] Create quote from cart: `createQuoteFromCart` with optional comment, cart items become quote line items
 - [ ] Empty cart quote creation blocked: error when attempting to create quote from empty cart
 - [ ] Quote negotiation: Admin responds with pricing → storefront shows quote received
@@ -272,7 +301,7 @@
 - [ ] Approve workflow: `approveQuoteRequest` mutation for admin approval before conversion
 - [ ] Admin: Quotes blade → status transitions, line items, pricing, discussion history
 
-## 17. B2B Lists & Quick Order
+## 21. B2B Lists & Quick Order
 - [ ] Create list → name it → add products from catalog → manage items (qty, remove)
 - [ ] List rename / delete: edit list name, delete list with confirmation prompt
 - [ ] Add to cart from list: select items or "Select All" → verify cart totals
@@ -286,7 +315,7 @@
 - [ ] List pagination: large lists with many items support scroll/load-more
 - [ ] Move items between lists
 
-## 18. Localization & i18n
+## 22. Localization & i18n
 - [ ] Language switch → UI labels translated → persist preference across pages and refresh
 - [ ] Multi-currency: switch to EUR → prices in EUR → cart totals in EUR → order in EUR
 - [ ] All 14 languages: homepage, cart, and checkout labels render correctly per locale
@@ -295,7 +324,7 @@
 - [ ] RTL layout support (Arabic/Hebrew if enabled): text alignment, navigation mirrors
 - [ ] Admin: verify order shows correct currency and language in back-office
 
-## 19. Notifications
+## 23. Notifications
 - [ ] Order confirmation email: sent exactly once after successful order placement (BL-NOTIF-001)
 - [ ] Email content: order number, items, quantities, prices, totals match actual order (BL-NOTIF-002)
 - [ ] Notification activity feed in Admin: sent/pending/failed status visible per notification
@@ -309,7 +338,7 @@
 - [ ] Admin → Notifications blade: template list, preview, edit, enable/disable per event type
 - [ ] Push messages (if enabled): create draft, send to user/role, delivered status in Admin (suite 33)
 
-## 20. White Labeling
+## 24. White Labeling
 - [ ] Resolution chain: user-level override → organization override → store default (BL-B2B-006)
 - [ ] Store default theme applied when White Labeling feature is disabled (org overrides ignored)
 - [ ] Organization override: custom logo, favicon, theme preset applied for org members on storefront
@@ -324,7 +353,7 @@
 - [ ] Cross-browser: branding consistent across Chrome, Firefox, and Edge
 - [ ] Page context: custom branding persists across navigation (catalog, cart, checkout, account pages)
 
-## 21. Account Management
+## 25. Account Management
 - [ ] Profile page (`/account/profile`): view and edit first name, last name, email with validation (required fields, email format)
 - [ ] Profile save: success confirmation, error handling for invalid input
 - [ ] Change password (`/account/change-password`): old password required, new password validation (min length, complexity), confirm password match
@@ -338,7 +367,7 @@
 - [ ] Account menu redesign: dropdown with user info + organizations list (radio buttons + search), no account nav links in dropdown
 - [ ] Empty states: each account page handles zero-data gracefully (no orders, no cards, no coupons)
 
-## 22. Storefront Push Messages
+## 26. Storefront Push Messages
 - [ ] Notifications page (`/account/notifications`): list of received notifications, pagination for older items
 - [ ] Read/unread state: unread notifications visually distinct, mark as read on click (`markPushMessageRead` mutation)
 - [ ] Mark as unread: toggle read notification back to unread state (`markPushMessageUnread` mutation)
@@ -352,7 +381,7 @@
 - [ ] Real-time delivery: `pushMessageCreated` subscription delivers new messages without page refresh (WebSocket/SSE)
 - [ ] Empty state: "No notifications" message when inbox is empty
 
-## 23. Coupons & Promotions
+## 27. Coupons & Promotions
 - [ ] Coupons page (`/account/coupons`): authenticated access, page loads with list of available coupons/promotions
 - [ ] Coupon card display: code, description, expiry date, discount value/percentage, status (active/expired/used)
 - [ ] Expired coupon visual treatment: greyed out or strikethrough, cannot be applied
@@ -366,7 +395,7 @@
 - [ ] Admin → Marketing → Coupons: generate coupon codes, set usage limits, assign to promotions
 - [ ] Storefront ↔ Admin consistency: promotion visible in storefront matches Admin configuration (discount amount, conditions)
 
-## 24. Security
+## 28. Security
 - [ ] PCI compliance: payment card fields rendered in isolated iframes, card data not in DOM/localStorage/network requests
 - [ ] XSS prevention: user-generated content (search queries, addresses, product reviews) sanitized — no script execution
 - [ ] CSRF protection: state-changing requests include anti-forgery tokens
@@ -378,7 +407,7 @@
 - [ ] Input validation: form fields enforce max length, type constraints, reject SQL/NoSQL injection patterns
 - [ ] Sensitive data exposure: no PII (emails, addresses, card data) leaked in error messages, logs, or network responses to unauthorized users
 
-## 25. Accessibility
+## 29. Accessibility
 - [ ] Keyboard navigation: all interactive elements (links, buttons, inputs, modals) reachable and operable via Tab/Shift+Tab/Enter/Space
 - [ ] Focus management: focus trapped inside open modals/dialogs, returns to trigger element on close
 - [ ] Focus indicators: visible outline/ring on focused elements (WCAG 2.4.7)
@@ -390,7 +419,7 @@
 - [ ] Skip navigation: "Skip to main content" link present and functional as first focusable element
 - [ ] Touch targets: interactive elements meet minimum 44x44px touch target size on mobile viewports
 
-## 26. Performance
+## 30. Performance
 - [ ] Page load time: homepage, category page, PDP load within acceptable thresholds (LCP < 2.5s on 4G)
 - [ ] Core Web Vitals: LCP, FID/INP, CLS measured and within "Good" thresholds per Google guidelines
 - [ ] API response time: xAPI GraphQL queries (products, cart, checkout) respond within 2s under normal load
@@ -400,7 +429,7 @@
 - [ ] Cart operations: add/remove/update cart items reflected in UI within 1s
 - [ ] Pagination performance: "Load More" / next page renders within 1.5s, no layout shift during load
 
-## 27. Browser Compatibility
+## 31. Browser Compatibility
 - [ ] Chrome (latest): all critical flows (auth, catalog, cart, checkout, payment) work correctly
 - [ ] Firefox (latest): layout, functionality, and payment forms render and function identically to Chrome
 - [ ] Edge (latest): all flows work correctly, Edge-specific rendering verified
@@ -409,7 +438,7 @@
 - [ ] CSS consistency: fonts, colors, spacing, grid layouts render consistently across browsers
 - [ ] JavaScript compatibility: no browser-specific JS errors in console across supported browsers
 
-## 28. B2C Features
+## 32. B2C Features
 - [ ] B2C product variations: inline variant selection on product cards (color/size swatches visible in listing)
 - [ ] B2C cart layout: simplified cart without B2B-specific elements (no org switcher, no quote option)
 - [ ] Wishlist: add product from PDP (heart icon), view in `/account/wishlist`, move to cart, remove
@@ -425,7 +454,7 @@
 
 ## BF. Bug Fix Verification
 
-> **Cross-domain checklist. Used by qa-lead-orchestrator (Workflow 5) when delegating bug fix verification to test-management-specialist.** Combine with the affected domain's checklist (#1-28) and/or `backend-admin-checklists.md` (A1-A27) for full coverage.
+> **Cross-domain checklist. Used by qa-lead-orchestrator (Workflow 5) when delegating bug fix verification to test-management-specialist.** Combine with the affected domain's checklist (#1-32) and/or `backend-admin-checklists.md` (A1-A27) for full coverage.
 
 **Fix Confirmation (always):**
 - [ ] Original bug reproduced first (STR from ticket), then verify fix resolves the exact reported issue
@@ -433,7 +462,7 @@
 - [ ] All acceptance criteria / fix description from the ticket satisfied
 
 **Regression Scope (always):**
-- [ ] Adjacent features in the same domain still work (pull 2-3 items from domain checklist #1-28 or admin checklist A1-A27)
+- [ ] Adjacent features in the same domain still work (pull 2-3 items from domain checklist #1-32 or admin checklist A1-A27)
 - [ ] Related domains unaffected (e.g., cart fix → checkout still works, payment still processes)
 - [ ] No new console errors or failed network requests introduced by the fix
 

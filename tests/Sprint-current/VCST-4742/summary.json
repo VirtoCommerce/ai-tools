@@ -1,0 +1,47 @@
+{
+  "ticket": "VCST-4742",
+  "verdict": "FAIL",
+  "date": "2026-03-23",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "pr": "https://github.com/VirtoCommerce/vc-frontend/pull/2212",
+  "build": "2.44.0-pr-2212-9072-9072853e",
+  "theme": "Coffee (light + dark)",
+  "agents_dispatched": ["qa-frontend-expert", "qa-testing-expert"],
+  "browsers": ["chromium", "firefox"],
+  "total_cases": 13,
+  "passed": 9,
+  "failed": 3,
+  "blocked": 1,
+  "bugs_found": [
+    {
+      "id": "BUG-1",
+      "severity": "P0",
+      "summary": "Skyflow CVV-only COMPOSABLE container collapses to 0px height after switching from 'Add new card' back to saved card — blocks saved card payment",
+      "regression": true,
+      "root_cause": "PR #2212 changed CVV-only form from COLLECT to COMPOSABLE container type; mount/unmount lifecycle broken",
+      "repro": "Payment page → saved card → Add new card → switch back to saved card → CVV input invisible"
+    },
+    {
+      "id": "BUG-2",
+      "severity": "P2",
+      "summary": "Skyflow CVV-only iframe shows white background leak in dark mode — iframe body background not set",
+      "regression": false,
+      "root_cause": "Skyflow SDK applies background to inner container div, not iframe body/html elements"
+    },
+    {
+      "id": "BUG-3",
+      "severity": "P1",
+      "summary": "Skyflow postMessage cross-origin errors on every iframe mount — origin mismatch between storefront and js.skyflow.com",
+      "regression": "needs-verification",
+      "root_cause": "May pre-date PR #2212; correlates with CVV container mount failure"
+    }
+  ],
+  "business_rules_verified": ["BL-CHK-006"],
+  "business_rules_not_tested": ["BL-CHK-004"],
+  "exploratory": {
+    "charter": "Payment form iframe dark theme — theme toggling, card switching, mount/unmount edge cases",
+    "heuristic": "CRISP + SFDPOT",
+    "findings": { "bugs": 2, "questions": 0, "observations": 4, "risks": 1 }
+  },
+  "artifacts": "tests/Sprint-current/VCST-4742/"
+}

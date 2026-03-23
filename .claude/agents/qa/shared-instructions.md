@@ -112,10 +112,15 @@ INTEGRATIONS                           ├── Design System (Coffee theme)
 8. **Cart/Checkout:** Qty changes, select/unselect, save for later, pickup/delivery, shipping methods, payment (Skyflow/AuthorizeNet/CyberSource/DataTrance), billing, totals, place order
 9. **Payment:** Form validation, processing, confirmation
 10. **Orders:** Detail page, history table, filters, reorder
-11. **Company Members:** Invite, edit role, block/unblock, filter, search
-12. **Multi-Org:** Switch orgs, cart per org, ship-to per company, shared/private lists
-13. **Product Configurations & Variations:** Configuration groups, variation swatches, size/color selectors, price updates on selection, stock per variation, image switching, unavailable combinations
-14. **Google Analytics:** Cart events, search events, catalog/PDP events, purchase events
+11. **Company Info:** Company details, logo upload, addresses, phones (Organization maintainer role)
+12. **Company Members:** Invite, edit role, block/unblock, filter, search, bulk invite, role permissions
+13. **Account Structure:** Personal vs corporate account differences, sidebar navigation, profile, saved cards, dashboard, addresses (personal only)
+14. **Multi-Org:** Switch orgs, cart per org, ship-to per company, shared/private lists
+15. **Product Configurations & Variations:** Configuration groups, variation swatches, size/color selectors, price updates on selection, stock per variation, image switching, unavailable combinations
+16. **Product Page (PDP):** Image gallery, properties, pricing (list/sale/tier), stock status, reviews, related products, B2B variation matrix, configurable product sections
+17. **Anonymous Flow:** Browse → add to cart → guest checkout, session persistence, login prompt at checkout
+18. **Cart Merge:** Anonymous cart + sign-in → items merged, quantities summed, no duplicates lost, promo codes preserved
+19. **Google Analytics:** Cart events, search events, catalog/PDP events, purchase events
 
 ## Skills Integration Pattern
 

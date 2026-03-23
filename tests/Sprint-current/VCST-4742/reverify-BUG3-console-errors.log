@@ -1,0 +1,6 @@
+Total messages: 83 (Errors: 3, Warnings: 67)
+Returning 3 messages for level "error"
+
+[ERROR] [JavaScript Error: "Failed to execute ‘postMessage’ on ‘DOMWindow’: The target origin provided (‘https://js.skyflow.com’) does not match the recipient window’s origin (‘https://vcst-qa-storefront.govirto.com’)." {file: "https://vcst-qa-storefront.govirto.com/checkout/payment" line: 0}] @ https://vcst-qa-storefront.govirto.com/checkout/payment:0
+[ERROR] [JavaScript Error: "Failed to execute ‘postMessage’ on ‘DOMWindow’: The target origin provided (‘https://js.skyflow.com’) does not match the recipient window’s origin (‘https://vcst-qa-storefront.govirto.com’)." {file: "https://vcst-qa-storefront.govirto.com/checkout/payment" line: 0}] @ https://vcst-qa-storefront.govirto.com/checkout/payment:0
+[ERROR] [JavaScript Error: "Failed to execute ‘postMessage’ on ‘DOMWindow’: The target origin provided (‘https://js.skyflow.com’) does not match the recipient window’s origin (‘https://vcst-qa-storefront.govirto.com’)." {file: "https://vcst-qa-storefront.govirto.com/checkout/payment" line: 0}] @ https://vcst-qa-storefront.govirto.com/checkout/payment:0
