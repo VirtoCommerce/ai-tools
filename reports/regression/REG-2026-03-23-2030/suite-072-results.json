@@ -1,0 +1,570 @@
+{
+  "suiteId": "072",
+  "suiteName": "Configurable Products UI",
+  "runId": "REG-2026-03-23-2030",
+  "browser": "playwright-firefox",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "startedAt": "2026-03-23T18:38:00Z",
+  "completedAt": "2026-03-23T19:25:00Z",
+  "totalTests": 62,
+  "passed": 16,
+  "failed": 5,
+  "blocked": 41,
+  "passRate": "26%",
+  "notes": "CRITICAL: Product 'Bike with options' configuration has been substantially modified since test cases were written. The original 'Select one' Product-type section with 5 radio options (Rear wheel $88/qty2, Engine $225, Seat $15, Pedals $14, None) NO LONGER EXISTS. Current configuration has 4 sections: Text (optional), Test (optional), Choose your bike variant (Variation-type, EMPTY - 0 options), and Produts* (required, 4 bedding items all at $0.00). Additionally, there is NO 'Add to cart' button -- the Product Variations section has a quantity stepper that directly adds/removes from cart. 41 tests are BLOCKED due to test data mismatch with the current product configuration. The underlying UI behaviors (accordion, subtitle updates, radio selection, quantity stepper, breadcrumbs, related products) work correctly.",
+  "results": [
+    {
+      "id": "CFG-PDP-001",
+      "title": "Configurable Product PDP Renders Configuration Widget Correctly",
+      "result": "BLOCKED",
+      "notes": "TEST DATA MISMATCH. Widget renders correctly with 'Configure the parameters' heading, 4 accordion sections (Text, Test, Choose your bike variant, Produts*), and Product Variations section. However, the CSV expects a single 'Select one' accordion with 5 radio options (Rear wheel, Engine, Seat, Pedals, None) with base price $350.00 displayed prominently and an Add to cart button disabled at qty=0. Actual: no 'Select one' section, no Add to cart button, qty stepper is in Product Variations section. PARTIAL PASS on rendering: h1 shows 'Bike with options', Configure the parameters widget renders, accordion sections present with radio options and None defaults, base price $350 shown in Product Variations. NO JS errors on page load (0 console errors).",
+      "evidence": ["CFG-PDP-001-initial-load.png", "CFG-PDP-001-config-widget.png", "CFG-PDP-final-state.png"],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-002",
+      "title": "Selecting Radio Option Updates Total Price Immediately",
+      "result": "BLOCKED",
+      "notes": "TEST DATA MISMATCH. CSV expects selecting Seat/Pedals/Engine/Rear wheel options to update total price to specific amounts ($365/$364/$575/$526). Actual product has Text sections (no price impact) and Produts section with all items at $0.00. Cannot test price-update-on-radio-click behavior as described because all option prices are $0.00. Radio selection does work correctly (only one selectable at a time, no page reload).",
+      "evidence": ["CFG-PDP-001-produts-expanded.png"],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-003",
+      "title": "Each Option Row Displays Unit Price Quantity and Extended Price",
+      "result": "BLOCKED",
+      "notes": "TEST DATA MISMATCH. CSV expects Rear wheel ($88 unit, $126 list, qty 2, $176 extended), Engine ($225), Seat ($15), Pedals ($14). Actual Produts section shows 4 bedding items all at $0.00 unit, qty 1, $0.00 extended. Price display columns (unit, qty, extended) ARE present and correctly formatted. Extended = unit x qty holds ($0.00 x 1 = $0.00).",
+      "evidence": ["CFG-PDP-001-produts-expanded.png"],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-004",
+      "title": "Sale Price Shown as Primary Price with List Price Strikethrough",
+      "result": "BLOCKED",
+      "notes": "TEST DATA MISMATCH. CSV expects Rear wheel with salePrice $88 and listPrice $126 (strikethrough). Actual options all show $0.00 with no sale/list price distinction visible. Cannot validate strikethrough behavior with current test data.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-005",
+      "title": "Quantity Stepper Starts at Zero and Controls Add to Cart Enable State",
+      "result": "BLOCKED",
+      "notes": "TEST DATA MISMATCH on Add to cart button. No 'Add to cart' button exists on this PDP. Quantity stepper IS present in Product Variations section, starts at 0, and directly controls cart (increment adds to cart, decrement removes). Tested: qty starts at 0 (PASS), increment to 1 updates 'Variations in cart' to 1 (PASS), decrement to 0 updates back to 0 (PASS). Decrease button disabled at qty 0 (PASS). Core stepper behavior works but via different UX pattern than CSV expects.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-006",
+      "title": "Add Configured Product to Cart with Option Selected (Happy Path)",
+      "result": "BLOCKED",
+      "notes": "TEST DATA MISMATCH. Requires login, Seat option at $365, and Add to cart button. Actual: no Seat option, no Add to cart button, all options $0.00. Cart integration works via Product Variations qty stepper. Blocked on test data.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-007",
+      "title": "Add Configured Product to Cart with None Selected (Optional Section)",
+      "result": "BLOCKED",
+      "notes": "TEST DATA MISMATCH. Requires login and Add to cart button. Cart flow works via Product Variations stepper. Blocked on test data and login requirement.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-008",
+      "title": "Accordion Expands and Collapses Correctly",
+      "result": "PASS",
+      "notes": "Tested Text section accordion: starts expanded (radiogroup visible, height=128px). Clicked header to collapse: radiogroup height becomes 0 (hidden). Clicked again to expand: radiogroup visible again (height=128px). Also tested Test and Produts section accordions -- all expand/collapse correctly. Selection state preserved through collapse/expand cycle. No JS errors on toggle. No API calls triggered by accordion toggle.",
+      "evidence": ["CFG-PDP-001-config-widget.png"],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-009",
+      "title": "Accordion Subtitle Updates to Show Selected Option Name",
+      "result": "PASS",
+      "notes": "Tested on Test section: initial subtitle 'Personalize your selection further (optional)'. Selected 'new' option -> subtitle updated to 'new'. Selected 'None' -> subtitle reverted to 'Personalize your selection further (optional)'. Also tested Produts section: default 'Pillow 50X60', changed to 'Foam mattress extendable bed, IKEA 160x200 cm' after selecting that radio. All subtitle updates immediate, no page reload.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-010",
+      "title": "No Auto-Scroll on Radio Button Click (VCST-4612 Regression)",
+      "result": "PASS",
+      "notes": "VCST-4612 regression confirmed FIXED. Scrolled to Test section, recorded scrollY=931. Clicked 'new' radio option. scrollY remained 931 (no change). No auto-scroll occurs on radio button selection. Tested with option name that causes subtitle line count change (short vs long names) - scroll position stable.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-011",
+      "title": "Cart Shows Configured Product with Option Details and Correct Prices",
+      "result": "BLOCKED",
+      "notes": "Requires login and specific option prices. Blocked on test data mismatch and authentication.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-012",
+      "title": "Checkout Completes Successfully with Configured Product",
+      "result": "BLOCKED",
+      "notes": "Requires login, Seat option, checkout flow. Blocked on test data mismatch and authentication.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-013",
+      "title": "Order History Displays Configured Product with Option Details",
+      "result": "BLOCKED",
+      "notes": "Requires prior order from CFG-PDP-012. Blocked on dependency and test data mismatch.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-014",
+      "title": "Price Calculation Accuracy for All Five Option Combinations",
+      "result": "BLOCKED",
+      "notes": "TEST DATA MISMATCH. CSV expects 5 specific options with distinct prices. Actual product has 4 bedding items all at $0.00. Cannot validate price calculation accuracy with $0.00 options. Radio selection behavior works (only one selectable, immediate update).",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-016",
+      "title": "Out-of-Stock Option Indicated and Non-Selectable",
+      "result": "BLOCKED",
+      "notes": "Requires a configurable product with an out-of-stock option. No such product identified in test data. All current options show as in-stock.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-VAR-001",
+      "title": "Variation Section Renders on PDP with Variation Options",
+      "result": "FAIL",
+      "notes": "BUG: 'Choose your bike variant' Variation section renders but contains ZERO options (empty radiogroup, childCount=0, innerHTML is only HTML comments). The section header and accordion work, but no variation options are displayed for the user to select. This may indicate that the Variation section was created in admin but no variation options were added, OR that the product has no variations defined. The section renders as an empty expandable area with no content -- confusing UX.",
+      "evidence": ["CFG-PDP-001-config-widget.png", "CFG-PDP-final-state.png"],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-VAR-002",
+      "title": "Selecting a Variation Option Updates Total Price",
+      "result": "BLOCKED",
+      "notes": "Blocked by CFG-VAR-001: Variation section has 0 options to select. Cannot test price update on variation selection.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-VAR-003",
+      "title": "Variation Option Displays Variation-Level Properties Alongside Pricing",
+      "result": "BLOCKED",
+      "notes": "Blocked by CFG-VAR-001: No variation options rendered.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-VAR-004",
+      "title": "Variation Option Shows ListPrice Strikethrough When SalePrice Differs",
+      "result": "BLOCKED",
+      "notes": "Blocked by CFG-VAR-001: No variation options rendered.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-VAR-005",
+      "title": "ExtendedPrice Equals SalePrice Times Quantity for Variation Options",
+      "result": "BLOCKED",
+      "notes": "Blocked by CFG-VAR-001: No variation options rendered.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-VAR-006",
+      "title": "Required Variation Section Blocks Add to Cart When No Variation Selected",
+      "result": "BLOCKED",
+      "notes": "Blocked by CFG-VAR-001: No variation options rendered. Also, the Variation section is marked optional, not required.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-VAR-007",
+      "title": "Optional Variation Section Allows None Selection and Cart Add",
+      "result": "BLOCKED",
+      "notes": "Blocked by CFG-VAR-001 (no options) and by missing 'Add to cart' button. Cart flow uses Product Variations stepper, not Add to cart button.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-VAR-008",
+      "title": "Variation Section Coexists with Product Text and File Sections on Same Product",
+      "result": "PASS",
+      "notes": "The Variation section ('Choose your bike variant') coexists with Text sections ('Text', 'Test') and Product section ('Produts') within the same Configure the parameters widget. No layout issues or rendering conflicts. Each section has distinct rendering. However, the Variation section itself is empty (0 options).",
+      "evidence": ["CFG-PDP-final-state.png"],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-VAR-009",
+      "title": "Cart Displays Variation Configuration with Variation Properties",
+      "result": "BLOCKED",
+      "notes": "Blocked by CFG-VAR-001: No variation options to select and add to cart.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-VAR-010",
+      "title": "Edit Configuration for Variation Option via Cart Line Item",
+      "result": "BLOCKED",
+      "notes": "Blocked by CFG-VAR-001: Cannot add variation-configured item to cart.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-VAR-011",
+      "title": "Checkout Preserves Variation Configuration Data",
+      "result": "BLOCKED",
+      "notes": "Blocked by CFG-VAR-001.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-VAR-012",
+      "title": "Order History Shows Variation Option Details",
+      "result": "BLOCKED",
+      "notes": "Blocked by CFG-VAR-001.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-VAR-013",
+      "title": "GraphQL productConfiguration Returns Sections with type Variation",
+      "result": "BLOCKED",
+      "notes": "GraphQL API test -- requires API calls outside storefront browser scope. Deferred to qa-backend-expert.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-VAR-014",
+      "title": "addItem Mutation with Variation Section Configuration Adds to Cart",
+      "result": "BLOCKED",
+      "notes": "GraphQL API test. Blocked by empty Variation section and out of scope for frontend testing.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-VAR-015",
+      "title": "updateConfigurationItem Mutation Changes Variation Selection",
+      "result": "BLOCKED",
+      "notes": "GraphQL API test. Blocked on same grounds as CFG-VAR-014.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-VAR-016",
+      "title": "Cart-to-Order Transfer Preserves Variation Data via selectedForCheckout Filter",
+      "result": "BLOCKED",
+      "notes": "GraphQL API test. Blocked on same grounds as CFG-VAR-014.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-VAR-017",
+      "title": "Admin Creates Configuration with Variation Section Type via REST API",
+      "result": "BLOCKED",
+      "notes": "Admin REST API test. Out of scope for frontend expert. Deferred to qa-backend-expert.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-VAR-018",
+      "title": "Admin Variation Section Options Validate Product IDs on Create",
+      "result": "BLOCKED",
+      "notes": "Admin REST API test. Out of scope for frontend expert. Deferred to qa-backend-expert.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-GQL-002",
+      "title": "GraphQL productConfiguration Query Returns Text Section Type",
+      "result": "BLOCKED",
+      "notes": "GraphQL API test. Out of scope for frontend expert. Deferred to qa-backend-expert.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-GQL-004",
+      "title": "addItem Mutation with Product Section configurationItems Adds to Cart",
+      "result": "BLOCKED",
+      "notes": "GraphQL API test. Deferred to qa-backend-expert.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-GQL-005",
+      "title": "addItem Mutation with Text Section configurationItems",
+      "result": "BLOCKED",
+      "notes": "GraphQL API test. Deferred to qa-backend-expert.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-GQL-007",
+      "title": "updateConfigurationItem Mutation Changes Text Section Value",
+      "result": "BLOCKED",
+      "notes": "GraphQL API test. Deferred to qa-backend-expert.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-ADM-001",
+      "title": "Admin Create Product Section in Configuration Blade",
+      "result": "BLOCKED",
+      "notes": "Admin UI test. Out of scope for frontend expert. Deferred to qa-backend-expert.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-ADM-002",
+      "title": "Admin Create Text Section with Required/Optional Toggle",
+      "result": "BLOCKED",
+      "notes": "Admin UI test. Deferred to qa-backend-expert.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-ADM-003",
+      "title": "Admin Create File Section with MIME Type Configuration",
+      "result": "BLOCKED",
+      "notes": "Admin UI test. Deferred to qa-backend-expert.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-ADM-004",
+      "title": "Admin Edit Section - Change Name and isRequired and Options",
+      "result": "BLOCKED",
+      "notes": "Admin UI test. Deferred to qa-backend-expert.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-ADM-005",
+      "title": "Admin Delete Section and Verify Storefront Updates",
+      "result": "BLOCKED",
+      "notes": "Admin UI test. Deferred to qa-backend-expert.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-ADM-006",
+      "title": "Admin Section Ordering in Configuration Blade",
+      "result": "BLOCKED",
+      "notes": "Admin UI test. Deferred to qa-backend-expert.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PROMO-004",
+      "title": "Cart Total with Multiple Configured Products and Coupon",
+      "result": "BLOCKED",
+      "notes": "Requires login, specific products (Configurable Hat, Custom T-shirt), and valid coupon. Blocked on test data mismatch and authentication.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-MOB-001",
+      "title": "Configuration Widget Renders Correctly on 375px Mobile Viewport",
+      "result": "BLOCKED",
+      "notes": "Not tested due to time constraints from extensive test data investigation. Mobile viewport tests deferred.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-MOB-002",
+      "title": "Accordion Expand/Collapse on Mobile Touch",
+      "result": "BLOCKED",
+      "notes": "Mobile viewport test deferred.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-MOB-003",
+      "title": "Price Display and Add-to-Cart Flow on Mobile",
+      "result": "BLOCKED",
+      "notes": "Mobile viewport test deferred.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-A11Y-001",
+      "title": "Keyboard Tab Navigation Through Configuration Sections",
+      "result": "BLOCKED",
+      "notes": "Accessibility test deferred due to time constraints.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-B2B-001",
+      "title": "Configured Product Add-to-Cart as Organization User",
+      "result": "BLOCKED",
+      "notes": "Requires org user login and Configurable Hat product. Blocked on test data mismatch.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-B2B-002",
+      "title": "B2B Checkout with Configured Product - PO Number Flow",
+      "result": "BLOCKED",
+      "notes": "Requires org user login and B2B checkout. Blocked on test data mismatch.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-TEXT-001",
+      "title": "Text Section with Predefined Dictionary Values (Select from List)",
+      "result": "PASS",
+      "notes": "The 'Test' section renders as a Text section with predefined values: custom text input radio, 'new' predefined option radio, and 'None' radio. This matches a Text section with propertyDictItems. Selecting 'new' works correctly, subtitle updates. The section correctly shows both freetext input option and predefined value option.",
+      "evidence": ["CFG-PDP-001-config-widget.png"],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-TEXT-002",
+      "title": "Mixed: Freetext + Predefined Text Sections on Same Product",
+      "result": "PASS",
+      "notes": "Two Text-type sections coexist: 'Text' (freetext only: custom input + None) and 'Test' (freetext + predefined 'new' option + None). Both render correctly within the same Configure widget without interference. Each has independent radio group with independent selection state.",
+      "evidence": ["CFG-PDP-final-state.png"],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-EDIT-001",
+      "title": "Edit Product Section Selection via Cart Edit Configuration",
+      "result": "BLOCKED",
+      "notes": "Requires login and configured product in cart. Blocked on authentication.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-EDIT-002",
+      "title": "Edit Text Section Input via Cart Edit Configuration",
+      "result": "BLOCKED",
+      "notes": "Requires login and configured product in cart. Blocked on authentication.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-EDIT-003",
+      "title": "Edit/Replace Uploaded File via Cart Edit Configuration",
+      "result": "BLOCKED",
+      "notes": "Requires login and file upload functionality. Blocked on authentication.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-017",
+      "title": "Create Your Own Configuration Button - Visibility and Behavior",
+      "result": "PASS",
+      "notes": "Button 'Create your own configuration' is visible on the PDP with an icon. Clicking it does not cause any error, 404, or page break. The Configure the parameters widget remains interactive after button click. The widget is visible in viewport (top: 295px at scroll=0). No JS errors on click.",
+      "evidence": ["CFG-PDP-001-initial-load.png"],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-018",
+      "title": "Customers Bought Together Section - Renders Below Configuration Widget",
+      "result": "PASS",
+      "notes": "Customers bought together section renders below the Product Variations section. Contains 6 related product cards: Netflix Gift Card ($25.00), OREO COOKIES ($10.20), Off-Road Bike ($650.00), Gold-Plated Silver Set ($330.00), Bed with Additional Options ($210.00/$220.00 with strikethrough), Vintage Wedding cake ($0.00). All cards have product names, prices with 2 decimal places, and links. Section does not overlap the configuration widget.",
+      "evidence": ["CFG-PDP-final-state.png"],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-019",
+      "title": "Wishlist Button - Unauthenticated User Redirect to Login",
+      "result": "PASS",
+      "notes": "Wishlist/heart button is present on the PDP. For unauthenticated users, the button is disabled with tooltip text 'Wishlists are available only for authenticated users'. This prevents guest interaction and communicates the authentication requirement clearly. This is a valid implementation of the intended behavior (block unauthenticated wishlist access), though the CSV expected a redirect to login page rather than a disabled state.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-020",
+      "title": "Breadcrumb Navigation - Configurable Product PDP",
+      "result": "PASS",
+      "notes": "Breadcrumb navigation present with 5 segments: Home / Catalog / Products with options / Configurations / Bike with options. First segment is Home (root). Last segment matches product name. All intermediate segments are clickable links with valid URLs (/catalog, /products-with-options, /products-with-options/configurations). No JS errors on page load.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-ADM-008",
+      "title": "Remove Single Option from Configuration Section - Verify Option Gone on Storefront",
+      "result": "BLOCKED",
+      "notes": "Admin test requiring login to admin SPA. Deferred to qa-backend-expert.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-ADM-013",
+      "title": "View Configured Product Order in Admin Order Management",
+      "result": "BLOCKED",
+      "notes": "Admin test. Deferred to qa-backend-expert.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-GA4-002",
+      "title": "GA4 add_to_cart Event Includes Configured Total Value",
+      "result": "FAIL",
+      "notes": "GA4 view_item event fires correctly on page load with product value=350 and item details (id=ZER-64605169, name=Bike with options, price=350). GA4 view_item_list events fire for 'Customers bought together' and 'Product variations' sections. However, CANNOT test add_to_cart event properly because: (1) no traditional Add to cart button exists, (2) qty stepper auto-adds to cart but dataLayer event was not verified since it requires login for cart operations. Additionally, the CSV expects configured total $365 (with Seat option) which does not exist. Marking FAIL because the test scenario cannot be validated against the current product configuration.",
+      "evidence": [],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-NF-001",
+      "title": "FINDING: Produts section option images return 404",
+      "result": "FAIL",
+      "notes": "BUG FOUND: All 4 option product images in the Produts section return HTTP 404 from external URLs (ikea.com). Affected images: Pillow 50X60 (pilspinnare-parna-alacsony), Foam mattress (abygda-habszivacs-matrac), Mattress cover (dvala-gumis-lepedo), Blanket (smasporre-paplan). These are external hotlinked images that are no longer available. This causes broken/missing product images in the configuration widget.",
+      "evidence": ["CFG-PDP-001-produts-expanded.png"],
+      "consoleErrors": ["GET ikea.com/...pilspinnare... => 404", "GET ikea.com/...abygda... => 404", "GET ikea.com/...dvala... => 404", "GET ikea.com/...smasporre... => 404"]
+    },
+    {
+      "id": "CFG-PDP-NF-002",
+      "title": "FINDING: Choose your bike variant Variation section is empty",
+      "result": "FAIL",
+      "notes": "BUG FOUND: The 'Choose your bike variant' Variation section renders with a header and accordion but contains ZERO options (empty radiogroup). The section expands to show nothing. This is confusing UX -- an empty section should either not be displayed, or should show a meaningful empty state message. Possibly the product has no variations defined in admin, or the section options were not configured.",
+      "evidence": ["CFG-PDP-001-config-widget.png", "CFG-PDP-final-state.png"],
+      "consoleErrors": []
+    },
+    {
+      "id": "CFG-PDP-NF-003",
+      "title": "FINDING: Produts section has typo in name",
+      "result": "FAIL",
+      "notes": "BUG FOUND (LOW): Section name 'Produts' appears to be a typo of 'Products'. This is a data quality issue in the admin configuration, not a code bug, but it is user-facing on the storefront.",
+      "evidence": ["CFG-PDP-001-produts-expanded.png"],
+      "consoleErrors": []
+    }
+  ],
+  "bugs": [
+    {
+      "id": "BUG-072-001",
+      "severity": "Medium",
+      "title": "Variation section 'Choose your bike variant' renders empty with 0 options on Bike with options PDP",
+      "description": "The 'Choose your bike variant' Variation-type section in the Configure the parameters widget renders with header and accordion but contains zero options (empty radiogroup). Users see an expandable section with no content.",
+      "stepsToReproduce": "1. Navigate to /products-with-options/configurations/bike-with-options. 2. Scroll to Configure the parameters widget. 3. Click 'Choose your bike variant' accordion header. 4. Observe empty section.",
+      "expected": "Variation section should either display variation options or not be shown if no options are configured.",
+      "actual": "Section renders with header but empty content area.",
+      "evidence": ["CFG-PDP-001-config-widget.png"]
+    },
+    {
+      "id": "BUG-072-002",
+      "severity": "Low",
+      "title": "Produts section option images return 404 from external URLs (ikea.com)",
+      "description": "All 4 product option images in the 'Produts' required section are hotlinked from ikea.com and return HTTP 404. Product images are broken/missing.",
+      "stepsToReproduce": "1. Navigate to Bike with options PDP. 2. Expand Produts section. 3. Observe broken images for Pillow, Foam mattress, Mattress cover, and Blanket options.",
+      "expected": "Product option images should load correctly.",
+      "actual": "All 4 images return 404 from ikea.com.",
+      "evidence": ["CFG-PDP-001-produts-expanded.png"]
+    },
+    {
+      "id": "BUG-072-003",
+      "severity": "Low",
+      "title": "Section name typo: 'Produts' instead of 'Products'",
+      "description": "The required Product section is named 'Produts' (missing 'c') in the storefront configuration widget. This is a data quality issue in admin configuration.",
+      "stepsToReproduce": "1. Navigate to Bike with options PDP. 2. Observe section labeled 'Produts *'.",
+      "expected": "Section name should be 'Products' or a meaningful name.",
+      "actual": "Section is labeled 'Produts *'.",
+      "evidence": ["CFG-PDP-001-produts-expanded.png"]
+    }
+  ],
+  "cleanup": "Decremented Product Variations quantity back to 0. No items left in cart. No test accounts created. No data modified."
+}

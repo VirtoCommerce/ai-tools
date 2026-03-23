@@ -209,3 +209,40 @@
 [NAV] {{FRONT_URL}} direct URL — verify 404
 [API] POST /api/catalog/search — verify product not in results
 [CONSOLE] No errors","Product still accessible on storefront after delete; search still returns deleted product; 500 instead of 404","none (product was created for deletion)","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+"CFG-CA-016","Save Configuration with Product Section Having No Predefined Options — IsActive Preserved","Catalog > Configurable Products > IsActive Validation","Critical","BL-CAT-001","","Admin logged in at {{BACK_URL}}. A configurable product exists. Admin Bearer token obtained.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token with {{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}} to obtain admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations with body: { productId: <existing-configurable-product-id>, isActive: true, sections: [{ name: Dynamic Options Section, type: Product, isRequired: false, options: [] }] }
+[WAIT] Response received
+[ASSERT] Verify HTTP response is 200 or 201
+[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<product-id> to retrieve saved configuration
+[ASSERT] Verify isActive field in response","[STATUS] POST returns 200 or 201 — configuration saved successfully
+[BODY] Response contains the created configuration with sections[].type = Product
+[BODY] sections[0].options is empty array []
+[BODY] isActive = true — NOT silently reset to false
+[STATE] Configuration with Product section having no predefined options remains active","[API] GET after POST confirms isActive = true persisted in database
+[ADMIN] Navigate to product in Admin UI > Configurations tab — Active toggle should be ON
+[CONSOLE] No server errors","isActive silently reset to false despite being set to true; HTTP 400/422 rejecting empty options on Product section; 500 server error; isActive field missing from response","Delete created configuration via DELETE API after test","PR #873 — fix: Stop silently resetting product configuration IsActive (2026-03-23)","Manual"
+"CFG-CA-017","Admin UI Active Toggle Not Blocked When Product Section Has No Options","Catalog > Configurable Products > IsActive UI","High","BL-CAT-001","","Admin logged in at {{BACK_URL}}. A configurable product exists with at least one Product-type section that has NO predefined options (dynamically resolved options).","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}} and log in as admin
+[NAV] Navigate to Catalog module
+[NAV] Open a configurable product that has a Product-type section with no predefined options
+[NAV] Open the Configurations tab/blade
+[ASSERT] Observe the Active/IsActive toggle state
+[ACT] If toggle is OFF, click to enable it
+[ACT] Save the configuration
+[NAV] Re-open the configuration
+[ASSERT] Observe the Active toggle state after re-opening","[STATE] Active toggle is ENABLED (not grayed out or blocked) even though Product section has no predefined options
+[STATE] canBeEnabled evaluates to true when sections exist (regardless of options)
+[STATE] Toggle can be switched ON by user
+[STATE] After save and re-open, Active toggle remains ON — not silently reset by $watch
+[DOM] No visual indication that toggle is restricted","[API] GET /api/catalog/products/configurations — verify isActive = true after save
+[CONSOLE] No JavaScript errors in Admin SPA
+[CONSOLE] No Angular $watch errors","Active toggle grayed out or disabled when Product section has no options; toggle silently resets to OFF after save; $watch handler overrides user choice; canBeEnabled incorrectly evaluates to false","none","PR #873 — fix: Stop silently resetting product configuration IsActive (2026-03-23)","Manual"
+"CFG-CA-018","Save Configuration with No Sections — IsActive Forced to False","Catalog > Configurable Products > IsActive Validation","High","BL-CAT-001","","Admin logged in at {{BACK_URL}}. Admin Bearer token obtained. A configurable product exists.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token with {{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}} to obtain admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations with body: { productId: <existing-configurable-product-id>, isActive: true, sections: [] }
+[WAIT] Response received
+[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<product-id> to retrieve saved configuration
+[ASSERT] Verify isActive field in response","[STATUS] POST returns 200 or 201 — configuration saved
+[BODY] sections is empty array []
+[BODY] isActive = false — correctly forced to false because no sections exist
+[STATE] The empty-sections guard is the ONLY condition that forces IsActive to false","[API] GET after POST confirms isActive = false when sections are empty
+[ADMIN] Navigate to product > Configurations tab — Active toggle should be OFF and possibly disabled
+[CONSOLE] No server errors","isActive = true despite empty sections (guard removed); HTTP 400 rejecting empty sections; 500 server error","Delete created configuration via DELETE API after test","PR #873 — fix: Stop silently resetting product configuration IsActive (2026-03-23)","Manual"

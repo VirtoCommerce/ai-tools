@@ -1,0 +1,27 @@
+{
+  "runId": "SYNC-2026-03-23-1430",
+  "source": "PR #873 — fix: Stop silently resetting product configuration IsActive",
+  "sourceUrl": "https://github.com/VirtoCommerce/vc-module-catalog/pull/873",
+  "date": "2026-03-23",
+  "prStatus": "open",
+  "changedModules": ["Catalog"],
+  "changedLayers": ["backend", "admin-ui"],
+  "affectedSuites": ["052", "072c"],
+  "shouldRunSuites": ["072", "072b", "042"],
+  "casesAnalyzed": 126,
+  "casesUpdated": 0,
+  "casesDeprecated": 0,
+  "casesGenerated": 4,
+  "casesValid": 126,
+  "newCases": [
+    { "id": "CFG-CA-016", "suite": "052", "priority": "Critical", "layer": "backend-api" },
+    { "id": "CFG-CA-017", "suite": "052", "priority": "High", "layer": "admin-ui" },
+    { "id": "CFG-CA-018", "suite": "052", "priority": "High", "layer": "backend-api" },
+    { "id": "CFG-IMP-001", "suite": "072c", "priority": "High", "layer": "import-export" }
+  ],
+  "filesModified": [
+    "regression/suites/Backend/configurable-products/052-configurable-products-admin.csv",
+    "regression/suites/Frontend/configurable-products/072c-configurable-products-cross.csv",
+    "config/test-suites.json"
+  ]
+}

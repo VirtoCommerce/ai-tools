@@ -62,7 +62,10 @@ Transition the JIRA ticket to TESTING status via Atlassian MCP (`transitionJiraI
 Add a JIRA comment:
 ```
 Starting QA verification.
-Build: [version/commit from PR]
+Platform: [PlatformVersion from packages.json]
+Theme: [theme version from artifact.json]
+Module: [relevant module + version from packages.json]
+PR Build: [PR branch/artifact version confirmed deployed]
 Environment: [FRONT_URL or BACK_URL]
 Test scope: STR verification (3x) + domain regression + side effect check
 ```
@@ -73,14 +76,18 @@ If Atlassian MCP is unavailable, skip the transition and note it in the final re
 
 ## Step 3 — Confirm Fix Deployment
 
-Before testing, verify the fix is actually deployed:
+Before testing, verify the fix is actually deployed per `agent-dispatch.md § Build Verification`:
 
-1. Check PR merge status: `gh pr view <number> --json state,mergedAt`
-2. If the fix touches frontend: navigate to the affected page and check for expected UI changes
-3. If the fix touches backend API: make a quick API call to verify the endpoint responds as expected
-4. If environment uses cache: note potential cache staleness — if STR still fails, ask user about cache invalidation before reopening
+1. **Fetch deployed versions** — use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`)
+2. **Verify PR build is deployed** — PRs are deployed to QA while still open (not merged). Check:
+   - `gh pr view <number> --json title,state,headRefName` to get PR details and expected build artifact version
+   - Cross-reference: the module/theme version in the deploy repo should match the PR's build artifact (e.g., alpha version like `2.44.0-alpha.2262`)
+3. If the fix touches frontend: navigate to the affected page and check for expected UI changes
+4. If the fix touches backend API: make a quick API call to verify the endpoint responds as expected
+5. If environment uses cache: note potential cache staleness — if STR still fails, ask user about cache invalidation before reopening
+6. **Record** platform version, theme version, and relevant module versions — include in verification report and JIRA comments
 
-If the fix is NOT deployed, transition back to `IN PROGRESS` with comment and stop.
+If the fix is NOT deployed, warn user and ask whether to wait. Do NOT proceed with verification against old code.
 
 ---
 
@@ -215,6 +222,12 @@ Write `tests/{SPRINT}/VCST-XXXX/verification-summary.json`:
   "verdict": "VERIFIED|VERIFIED_WITH_NOTES|FIX_INCOMPLETE|NEW_REGRESSION|INTERMITTENT|BLOCKED",
   "date": "YYYY-MM-DD",
   "environment": "{FRONT_URL}",
+  "build": {
+    "platform": "{PlatformVersion}",
+    "theme": "{theme version}",
+    "relevant_modules": {"module-name": "version"},
+    "pr_build": "{PR artifact version confirmed deployed}"
+  },
   "agent_used": "qa-frontend-expert",
   "str_result": "3/3",
   "checklist_total": 10,
@@ -231,10 +244,16 @@ Write `tests/{SPRINT}/VCST-XXXX/verification-summary.json`:
 
 Output to the user: verdict, STR result, checklist score, regressions found, JIRA transition, and artifact paths.
 
+**Bug report lifecycle:** If verdict is VERIFIED or VERIFIED_WITH_NOTES, check `reports/bugs/open/` for a matching bug report (by ticket ID or title keywords). If found:
+1. Add a `## Resolution` block to the report with fixed version, JIRA ticket, verification date, and method
+2. Update the status line to `## Status: FIXED`
+3. Move the file from `reports/bugs/open/` to `reports/bugs/fixed/`
+
 ---
 
 ## Rules
 
+- Follow `.claude/skills/qa-methodology/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, error handling, and JIRA transitions
 - Browser fallback: chrome→firefox, edge→chrome, firefox→edge (max 1 retry)
 - Never use WebKit — not supported on Windows

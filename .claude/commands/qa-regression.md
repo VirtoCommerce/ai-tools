@@ -36,8 +36,13 @@ When `--autonomous` is specified, delegate to `autonomous-regression-orchestrato
 ### Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
 
 1. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, abort — regression on a broken env wastes budget.
-2. **Duplicate check** — check `reports/regression/test-run-status.json` for an active run with the same suite selection. If found, block — wait for current run to complete.
-3. **Context7 query** (for `sprint` and `full` selections) — resolve `/virtocommerce/vc-docs`, query `"platform release notes recent changes"` with `tokens: 8000`. Flag any API contract changes that may cause false failures in existing test cases. Consider running `/qa-sync-tests` first if breaking changes detected.
+2. **Build & version verification** — fetch full deploy state per `agent-dispatch.md § Build Verification`:
+   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`)
+   - Record: platform version, theme version, and all module versions
+   - Include full deploy state in the regression report header (Step 6)
+   - Save to `reports/deploy-state-cache.json` for cross-reference
+3. **Duplicate check** — check `reports/regression/test-run-status.json` for an active run with the same suite selection. If found, block — wait for current run to complete.
+4. **Context7 query** (for `sprint` and `full` selections) — resolve `/virtocommerce/vc-docs`, query `"platform release notes recent changes"` with `tokens: 8000`. Flag any API contract changes that may cause false failures in existing test cases. Consider running `/qa-sync-tests` first if breaking changes detected.
 
 ### Step 1 — Read Manifest
 Read `config/test-suites.json` to load suite definitions, browser pool, and selection groups. Resolve the requested selection into suite IDs.
@@ -101,6 +106,7 @@ Never assign two agents to the same browser. Never use WebKit on Windows.
 ---
 
 ## Rules
+- Follow `.claude/skills/qa-methodology/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
 - Never execute tests yourself — delegate via Task tool
 - Never share browser slots between concurrent agents

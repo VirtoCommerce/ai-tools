@@ -31,6 +31,19 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. When invoke
 
 ---
 
+## Pre-Flight
+
+Before starting the pipeline:
+
+1. **Build & version verification** — fetch deployed versions per `agent-dispatch.md § Build Verification`:
+   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`)
+   - Record platform version, theme version, and modules relevant to the target scope
+   - Include version info in the lifecycle report header (Phase 6)
+2. **Duplicate check** — scan `reports/test-lifecycle/` for a `TLC-*` run on the same scope in the last 24 hours. If found, warn user and show previous verdict.
+3. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the target domain(s) with `tokens: 8000`. Pass findings to `test-management-specialist` in Phase 1.
+
+---
+
 ## Pipeline Overview
 
 ```
@@ -86,7 +99,14 @@ Delegate to: test-management-specialist
 Input:
   - scope: [suite ID | domain | VCST-XXXX | diff]
   - phases: [1,2,3,4] (or [3,4] if --skip-generate)
-  - flags: [--auto-fix | --report-only]
+  - flags: [--auto-fix | --report-only | --layer <name>]
+  - build:
+    - platform: {PlatformVersion from packages.json}
+    - theme: {theme version from artifact.json}
+    - relevant_modules: {module-name: version} (modules matching the target scope)
+  - environment:
+    - frontend: {FRONT_URL}
+    - backend: {BACK_URL}
   - references:
     - config/test-suites.json (suite definitions)
     - regression/suites/ (target CSV files)
@@ -115,10 +135,19 @@ Output: structured JSON with:
 Delegate to: qa-testing-expert
 Input:
   - verificationTargets: [{caseId, url, elementsToCheck, stepsToWalk, priority}]
+  - build:
+    - platform: {PlatformVersion}
+    - theme: {theme version}
+    - relevant_modules: {module-name: version}
+  - browser: playwright-firefox (fallback: playwright-edge)
+  - environment:
+    - frontend: {FRONT_URL}
+    - backend: {BACK_URL}
   - maxPages: 20
   - maxFlowWalkthroughs: 5
   - timeoutPerPage: 60s
   - totalBudget: 5min
+  - evidence: follow `.claude/skills/qa-methodology/qa-evidence/evidence-capture-policy.md`
 
 Output: per-case verification:
   - VERIFIED: page loads, elements found, flow reachable
@@ -283,6 +312,9 @@ Write to `reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`:
 ## Summary
 - **Scope:** [suite/domain/ticket/diff]
 - **Date:** YYYY-MM-DD HH:MM
+- **Platform:** [PlatformVersion from packages.json]
+- **Theme:** [theme version from artifact.json]
+- **Module Versions:** [relevant modules with versions from packages.json]
 - **Verdict:** APPROVED | APPROVED WITH WARNINGS | NEEDS FIXES | BLOCKED
 
 ## Phase Results
@@ -365,6 +397,7 @@ Write to `reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`:
 
 ## Rules
 
+- Follow `.claude/skills/qa-methodology/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
 - **Agent delegation is mandatory** — do NOT run Phases 1-4 directly in the orchestrator; always dispatch to `test-management-specialist`
 - **Never modify files without confirmation** unless `--auto-fix` is set
@@ -378,3 +411,4 @@ Write to `reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`:
 - **Read URLs from .env** via `config.js`, never hardcode
 - **Always query Context7** (`/virtocommerce/vc-docs`) in Phase 1 to enrich gap detection with up-to-date VC module behavior
 - **Deduplication before generation** — Phase 2 must check target and related suite CSVs for semantic duplicates before creating new cases
+- **Build verification before pipeline** — always run pre-flight build verification per `agent-dispatch.md § Build Verification` and include version info in the lifecycle report

@@ -24,8 +24,11 @@ Run a guided exploratory testing session on a specific area of the application. 
 ### Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
 
 1. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, warn user.
-2. **Duplicate check** — scan `reports/exploratory/` for an `SBTM-*` session on the same domain in the last 24 hours. If found, warn user and show previous findings.
-3. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the target domain (e.g., `"checkout workflow"`, `"B2B organizations members"`, `"catalog product properties"`) with `tokens: 8000`. Extract feature inventory to guide exploration — ensure the agent covers all documented features, not just obvious ones.
+2. **Build & version verification** — fetch deployed versions per `agent-dispatch.md § Build Verification`:
+   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`)
+   - Record platform version and theme version — include in the session report header
+3. **Duplicate check** — scan `reports/exploratory/` for an `SBTM-*` session on the same domain in the last 24 hours. If found, warn user and show previous findings.
+4. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the target domain (e.g., `"checkout workflow"`, `"B2B organizations members"`, `"catalog product properties"`) with `tokens: 8000`. Extract feature inventory to guide exploration — ensure the agent covers all documented features, not just obvious ones.
 
 Delegate to **qa-testing-expert** (Task tool, `subagent_type: qa-testing-expert`) with the target area.
 
@@ -77,6 +80,8 @@ Write a session report to `reports/exploratory/SBTM-{charter}-YYYY-MM-DD.md`:
 # Exploratory Session: [Area]
 **Date:** YYYY-MM-DD
 **Duration:** ~X minutes
+**Platform:** {PlatformVersion}
+**Theme:** {theme version}
 **Charter:** [What was explored and why]
 
 ## Findings
@@ -99,6 +104,7 @@ Write a session report to `reports/exploratory/SBTM-{charter}-YYYY-MM-DD.md`:
 ---
 
 ## Rules
+- Follow `.claude/skills/qa-methodology/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
 - Use qa-testing-expert on `playwright-firefox` (fallback: `playwright-edge`)
 - Monitor console and network throughout

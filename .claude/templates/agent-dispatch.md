@@ -147,6 +147,64 @@ Commands that transition JIRA tickets (`/qa-test`, `/qa-verify-fix`, `/qa-bug`) 
 Every command that uses a browser SHOULD run these checks before dispatching agents:
 
 1. **Environment health** — invoke `/qa-env-check endpoints` (or inline: `curl -sk {BACK_URL}/health`)
-2. **Context7 query** — for the target domain(s), verify current module behavior
-3. **Duplicate check** — scan reports/ for recent runs matching scope
-4. If any pre-flight fails → warn user with specific failure, ask whether to proceed
+2. **Build & version verification** — fetch deployed versions (see Build Verification below)
+3. **Context7 query** — for the target domain(s), verify current module behavior
+4. **Duplicate check** — scan reports/ for recent runs matching scope
+5. If any pre-flight fails → warn user with specific failure, ask whether to proceed
+
+## Build Verification
+
+Commands that test the QA environment SHOULD verify what build is deployed before running tests. This prevents testing against stale deployments, undeployed PRs, or unexpected module versions.
+
+### How to Fetch Deployed Versions
+
+Use **GitHub MCP** (`get_file_contents`) against the deploy repo:
+
+```
+owner: "VirtoCommerce"
+repo: "vc-deploy-dev"
+branch: "vcst-qa"
+```
+
+| File | Contains |
+|------|----------|
+| `backend/packages.json` | `PlatformVersion` + all module IDs with versions |
+| `theme/artifact.json` | Theme package URL with version (e.g., `vc-theme-b2b-vue-2.44.0-alpha.2262`) |
+
+### What to Record
+
+Extract and include in reports/agent prompts:
+
+```
+Platform: {PlatformVersion from packages.json}
+Theme: {version from artifact.json URL}
+Key modules: {list modules relevant to the test scope with their versions}
+```
+
+### When to Verify PRs
+
+PRs in `vc-frontend` and `vc-module-*` are deployed to QA **while still open** (not merged). Testing happens before merge.
+
+For `/qa-test PR #NNN` and `/qa-verify-fix`:
+
+1. Get PR details: `gh pr view <number> --json title,state,headRefName,labels` — note the branch and any CI build artifact version (often in PR description or CI checks)
+2. Identify which module/theme the PR belongs to (from the repo name)
+3. Cross-reference the module/theme version in `backend/packages.json` or `theme/artifact.json` — look for the PR's **build artifact version** (e.g., alpha/preview version like `2.44.0-alpha.2262`)
+4. If the deploy repo doesn't contain the PR's build version → the PR build is **not yet deployed** to QA. Warn user and ask whether to wait
+5. Record the confirmed deployed version in the test report
+
+### Scope-Based Verification
+
+| Command | Verification Level |
+|---------|-------------------|
+| `/qa-test PR #NNN` | Full — confirm PR is deployed (module version matches) |
+| `/qa-verify-fix` | Full — confirm fix PR is deployed before testing |
+| `/qa-test VCST-XXXX` | Standard — record platform + relevant module versions |
+| `/qa-smoke` | Standard — record platform + theme versions in report |
+| `/qa-regression` | Standard — record full deploy state (platform + theme + all modules) |
+| `/qa-exploratory` | Light — record platform + theme versions |
+| `/qa-bug` | Light — include platform + theme versions in bug report |
+
+### Caching
+
+Store the fetched deploy state in `reports/deploy-state-cache.json` with a timestamp. Reuse within the same hour to avoid redundant GitHub API calls. Invalidate if the user says a new deployment happened.

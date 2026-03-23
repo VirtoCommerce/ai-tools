@@ -23,8 +23,13 @@ Analyze scope, dispatch specialist agents, collect results, and produce a verdic
 ### Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
 
 1. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, warn user.
-2. **Duplicate check** — scan `tests/{SPRINT}/` for the same ticket tested in the last 2 hours. If found, warn user and show previous results.
-3. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected feature's domain (e.g., `"cart xAPI mutations"`, `"order processing workflow"`) with `tokens: 8000`. Pass findings to agents in Step 3.
+2. **Build & version verification** — fetch deployed versions per `agent-dispatch.md § Build Verification`:
+   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`)
+   - Record: platform version, theme version, and modules relevant to the ticket scope
+   - **For PR testing:** PRs are deployed to QA while still open. Confirm the PR's build artifact version appears in `packages.json` (modules) or `artifact.json` (theme). If not deployed → warn user and ask whether to wait
+   - Include version info in agent dispatch prompts and the final summary
+3. **Duplicate check** — scan `tests/{SPRINT}/` for the same ticket tested in the last 2 hours. If found, warn user and show previous results.
+4. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected feature's domain (e.g., `"cart xAPI mutations"`, `"order processing workflow"`) with `tokens: 8000`. Pass findings to agents in Step 3.
 
 ### Step 1 — Analyze Scope
 
@@ -221,6 +226,11 @@ Write `tests/{SPRINT}/VCST-XXXX/summary.json`:
   "verdict": "PASS|PASS_WITH_NOTES|FAIL|BLOCKED",
   "date": "YYYY-MM-DD",
   "environment": "{FRONT_URL}",
+  "build": {
+    "platform": "{PlatformVersion}",
+    "theme": "{theme version}",
+    "relevant_modules": {"module-name": "version"}
+  },
   "agents_dispatched": ["qa-frontend-expert", "qa-backend-expert"],
   "total_cases": 0,
   "passed": 0,
@@ -243,6 +253,7 @@ Output to the user: verdict, coverage summary, business rules verified, explorat
 
 ## Rules
 
+- Follow `.claude/skills/qa-methodology/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, error handling, and JIRA transitions
 - Never use WebKit — not supported on Windows
 - Never assign two agents to the same browser server simultaneously

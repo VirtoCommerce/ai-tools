@@ -75,6 +75,8 @@ Combine all subagent outputs into the final structured report (see Output Format
 
 ## Output Format
 
+Follow `.claude/skills/qa-methodology/qa-evidence/output-paths.md` for artifact output paths and naming conventions.
+
 Produce a Markdown report saved as `reports/ba/ba-report-{date}.md`, and also print a summary to the terminal.
 
 ```markdown

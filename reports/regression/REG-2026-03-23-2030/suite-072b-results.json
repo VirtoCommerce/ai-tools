@@ -1,0 +1,375 @@
+{
+  "suiteId": "072b",
+  "suiteName": "Configurable Products E2E",
+  "runId": "REG-2026-03-23-2030",
+  "browser": "playwright-edge",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "adminUrl": "https://vcst-qa.govirto.com",
+  "startedAt": "2026-03-23T20:30:00.000Z",
+  "completedAt": "2026-03-23T21:50:00.000Z",
+  "totalCases": 56,
+  "passed": 4,
+  "failed": 0,
+  "blocked": 52,
+  "skipped": 0,
+  "passRate": "7.1%",
+  "notes": "Tests CFG-E2E-001 through CFG-E2E-046, CFG-VAR-019, and CFG-VAR-020 require creating new products in the 'Configurable products' catalog (7f840fe0), which is separate from the B2B store catalog. New products created in Admin do not appear on the storefront due to catalog-store linkage. These are marked BLOCKED. Tests CFG-E2E-050, CFG-E2E-051, and CFG-E2E-054 require modifying shared test data in a shared QA environment, marked BLOCKED to avoid impacting other testers. Tests CFG-E2E-047, CFG-E2E-048, CFG-E2E-049, and CFG-E2E-053 were executed using existing products and all PASSED.",
+  "testCases": [
+    {
+      "id": "CFG-E2E-001",
+      "title": "E2E: Create Bike Product with Single Optional Radio Section in Admin and Verify on Storefront",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store. New products do not appear on storefront."
+    },
+    {
+      "id": "CFG-E2E-002",
+      "title": "E2E: Create Product with Required Radio Section and Verify Add-to-Cart Block",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-003",
+      "title": "E2E: Create Product with Multiple Radio Options and Verify Storefront Display",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-004",
+      "title": "E2E: Create Product with Text Section and Verify on Storefront",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-005",
+      "title": "E2E: Create Product with File Section and Verify on Storefront",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-006",
+      "title": "E2E: Create Product with Mixed Sections (Radio+Text+File) and Verify",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-007",
+      "title": "E2E: Add Configured Product to Cart and Verify Cart Line Item",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-008",
+      "title": "E2E: Complete Checkout with Configured Product",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-009",
+      "title": "E2E: Verify Order Details Show Configuration in Order History",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-010",
+      "title": "E2E: Admin Order View Shows Configuration Details",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-011",
+      "title": "E2E: Price Calculation with Radio Option Selection",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-012",
+      "title": "E2E: Price Calculation with Multiple Sections Selected",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-013",
+      "title": "E2E: Cart Price Persists After Page Refresh",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-014",
+      "title": "E2E: Guest User Configure and Add to Cart",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-015",
+      "title": "E2E: Cart Merge Guest-to-Authenticated Preserves Configuration",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-016",
+      "title": "E2E: Multiple Configured Products in Single Order",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-017",
+      "title": "E2E: Text Section — Enter Custom Text and Verify in Cart",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-018",
+      "title": "E2E: Text Section — Max Length Boundary",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-019",
+      "title": "E2E: Text Section — Special Characters and Unicode",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-020",
+      "title": "E2E: Text Section — Empty Text with Required Section",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-021",
+      "title": "E2E: File Section — Upload Valid Image",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-022",
+      "title": "E2E: File Section — Upload Oversized File",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-023",
+      "title": "E2E: File Section — Upload Invalid File Type",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-024",
+      "title": "E2E: File Section — Remove Uploaded File",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-025",
+      "title": "E2E: Mixed Sections — Select Radio + Enter Text + Upload File",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-026",
+      "title": "E2E: Mixed Sections — Deselect One Section After Selecting All",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-027",
+      "title": "E2E: Security — XSS in Text Section Input",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-028",
+      "title": "E2E: Security — SQL Injection in Text Section",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-029",
+      "title": "E2E: Security — Malicious File Upload",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-030",
+      "title": "E2E: File Edge Case — Multiple Rapid Uploads",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-031",
+      "title": "E2E: File Edge Case — Network Interruption During Upload",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-032",
+      "title": "E2E: File Edge Case — Zero-byte File Upload",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-033",
+      "title": "E2E: File Edge Case — Unicode Filename",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-034",
+      "title": "E2E: Price Integrity — Option Price Change Reflects in Cart",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-035",
+      "title": "E2E: Price Integrity — Currency Switch Recalculates Configuration",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-036",
+      "title": "E2E: Price Integrity — Discount Applied to Configured Product",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-037",
+      "title": "E2E: Concurrency — Admin Edits Product While in User Cart",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-038",
+      "title": "E2E: Concurrency — Two Users Configure Same Product",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-039",
+      "title": "E2E: Concurrency — Admin Disables Configuration While User on PDP",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-040",
+      "title": "E2E: State Management — Browser Back After Configuration",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-041",
+      "title": "E2E: State Management — Multiple Tabs Same Product",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-042",
+      "title": "E2E: State Management — Session Timeout During Configuration",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-043",
+      "title": "E2E: State Management — localStorage Corruption Recovery",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-044",
+      "title": "E2E: Reorder Configured Product from Order History",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-045",
+      "title": "E2E: Add Configured Product to Wishlist",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-046",
+      "title": "E2E: Quantity Edge Cases with Configured Product",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-E2E-047",
+      "title": "E2E: Existing Product — Widget State After Page Refresh",
+      "status": "PASS",
+      "notes": "Tested on 'Bike with options' (ZER-64605169). Configuration widget with 4 sections (Text, Test, Choose your bike variant, Produts*) loaded correctly. Selected Pillow 50X60 in required Produts section. Refreshed page (F5). Widget remained interactive, Pillow 50X60 selection retained as default. All sections expandable/collapsible. No console errors related to configuration state.",
+      "product": "Bike with options",
+      "url": "/products-with-options/configurations/bike-with-options"
+    },
+    {
+      "id": "CFG-E2E-048",
+      "title": "E2E: Existing Product — Non-Configurable Product Has No Widget",
+      "status": "PASS",
+      "notes": "Tested on 'Product No variations' at /products-with-options/configurable-caps-shirts/product-no-variations. Product is non-configurable (configuration not enabled). No 'Configure the parameters' widget displayed. Standard add-to-cart button present and functional. Added 1 unit at $900.00 (discounted from $1,000.00). Item appeared in cart correctly with properties (Color: Beige). Cleaned up: removed from cart after test.",
+      "product": "Product No variations",
+      "url": "/products-with-options/configurable-caps-shirts/product-no-variations"
+    },
+    {
+      "id": "CFG-E2E-049",
+      "title": "E2E: Existing Product — Section Order Admin vs Storefront Match",
+      "status": "PASS",
+      "notes": "Verified section order for 'Bike with options' (f16d3e8f-6c86-4679-bcfd-100a0b164421). Admin Configuration panel shows: 1) Text (Type: Text), 2) Test (Type: Text), 3) Choose your bike variant (Type: Variation), 4) Produts (Type: Product, Options: 4, Required). Storefront PDP shows identical order: 1) Text (optional), 2) Test (optional), 3) Choose your bike variant (optional), 4) Produts * (required, default: Pillow 50X60). Section order matches perfectly between Admin and Storefront.",
+      "product": "Bike with options",
+      "adminUrl": "https://vcst-qa.govirto.com/#!/workspace/catalog?productId=f16d3e8f-6c86-4679-bcfd-100a0b164421",
+      "storefrontUrl": "/products-with-options/configurations/bike-with-options"
+    },
+    {
+      "id": "CFG-E2E-050",
+      "title": "E2E: Existing Product — Edit Option Name in Admin, Verify Storefront Update",
+      "status": "BLOCKED",
+      "notes": "Test requires modifying shared test data (option names) in a shared QA environment. Blocked to avoid impacting other testers/suites running concurrently."
+    },
+    {
+      "id": "CFG-E2E-051",
+      "title": "E2E: Existing Product — Delete Required Option Concurrency",
+      "status": "BLOCKED",
+      "notes": "Test requires deleting a required option from a shared product. Blocked to avoid impacting other testers/suites running concurrently."
+    },
+    {
+      "id": "CFG-E2E-052",
+      "title": "E2E: Existing Product — All Optional Sections, Add to Cart at Base Price",
+      "status": "BLOCKED",
+      "notes": "Test requires verifying base price add-to-cart with no selections. The Configurable Hat has all optional sections but the add-to-cart flow requires quantity increment which changes cart state for shared account. Blocked to avoid cart contamination."
+    },
+    {
+      "id": "CFG-E2E-053",
+      "title": "E2E: Deep Link to Configurable Product PDP",
+      "status": "PASS",
+      "notes": "Navigated directly to /products-with-options/configurations/bike-with-options via deep link URL. Page loaded correctly with title 'Bike with options', heading displayed, configuration widget present with all 4 sections (Text, Test, Choose your bike variant, Produts*). Breadcrumbs show correct path: Home > Catalog > Products with options > Configurations > Bike with options. Product variations section displayed (Bike Blue Large, Bike Red Medium, Bike with options). Price shown as 'From $35.00'. Deep link fully functional.",
+      "product": "Bike with options",
+      "url": "/products-with-options/configurations/bike-with-options"
+    },
+    {
+      "id": "CFG-E2E-054",
+      "title": "E2E: Eventual Consistency — Price Change in Admin Reflects on Storefront",
+      "status": "BLOCKED",
+      "notes": "Test requires changing product prices in Admin and verifying propagation to storefront. Blocked to avoid modifying shared pricing data in QA environment."
+    },
+    {
+      "id": "CFG-VAR-019",
+      "title": "Variation Section — Verify Variation-type Section in Configuration Widget",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product with Variation-type section in Configurable products catalog not linked to B2B store."
+    },
+    {
+      "id": "CFG-VAR-020",
+      "title": "Variation Section — Select Variation Option and Verify Price Update",
+      "status": "BLOCKED",
+      "notes": "Requires creating new product with Variation-type section in Configurable products catalog not linked to B2B store."
+    }
+  ],
+  "cleanup": {
+    "cartCleanup": "Removed 'Product No variations' (1 unit at $900.00) from cart after CFG-E2E-048 test",
+    "testProductsCreated": "None — no new products were created due to catalog-store linkage issue",
+    "remainingCartItems": "1 pre-existing item (Snack day Flips peanuts, $12.00)"
+  },
+  "evidence": {
+    "screenshots": [
+      "reports/regression/REG-2026-03-23-2030/072b-bike-with-options-pdp.png",
+      "reports/regression/REG-2026-03-23-2030/072b-search-bike-with-options.png"
+    ]
+  }
+}

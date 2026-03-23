@@ -399,6 +399,7 @@ When `--ci` flag is set:
 
 ## Rules
 
+- Follow `.claude/skills/qa-methodology/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
 - **Never delete test cases without user confirmation** — prefer deprecation (`Automation_Status: deprecated`) over removal
 - **Preserve case IDs** — never renumber or reuse IDs. Deprecated cases keep their IDs.

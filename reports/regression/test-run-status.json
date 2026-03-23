@@ -1,30 +1,67 @@
 {
-  "runId": "REG-2026-03-23-1400",
-  "selection": "13",
-  "trigger": "manual /qa-regression — B2C Features (Corporate and multi-organizations)",
-  "status": "in_progress",
-  "startedAt": "2026-03-23T14:00:00.000Z",
+  "runId": "REG-2026-03-23-2030",
+  "selection": "configurable-products",
+  "trigger": "manual /qa-regression configurable-products — post PR #873 sync",
+  "status": "running",
+  "startedAt": "2026-03-23T20:30:00Z",
   "completedAt": null,
   "environment": {
     "frontUrl": "https://vcst-qa-storefront.govirto.com",
-    "backUrl": "https://vcst-qa.govirto.com"
+    "backUrl": "https://vcst-qa.govirto.com",
+    "platform": "3.1009.0",
+    "catalogModule": "3.1013.0-pr-873-9ee6",
+    "theme": "vc-theme-b2b-vue-2.44.0-pr-2212-9072"
   },
   "suites": {
-    "13": {
-      "name": "B2C Features Tests",
-      "status": "in_progress",
+    "052": {
+      "name": "Configurable Products Admin",
+      "status": "running",
       "browser": "playwright-chrome",
       "slot": 1,
       "batch": 1,
       "priority": "P1",
+      "testCount": 18,
       "attempts": 1,
-      "outputFile": "reports/regression/REG-2026-03-23-1400/suite-13-results.json"
+      "outputFile": "reports/regression/REG-2026-03-23-2030/suite-052-results.json"
+    },
+    "072": {
+      "name": "Configurable Products UI",
+      "status": "running",
+      "browser": "playwright-firefox",
+      "slot": 2,
+      "batch": 1,
+      "priority": "P1",
+      "testCount": 62,
+      "attempts": 1,
+      "outputFile": "reports/regression/REG-2026-03-23-2030/suite-072-results.json"
+    },
+    "072b": {
+      "name": "Configurable Products E2E",
+      "status": "running",
+      "browser": "playwright-edge",
+      "slot": 3,
+      "batch": 1,
+      "priority": "P1",
+      "testCount": 54,
+      "attempts": 1,
+      "outputFile": "reports/regression/REG-2026-03-23-2030/suite-072b-results.json"
+    },
+    "072c": {
+      "name": "Configurable Products Cross-Cutting",
+      "status": "pending",
+      "browser": "playwright-chrome",
+      "slot": 1,
+      "batch": 2,
+      "priority": "P1",
+      "testCount": 24,
+      "attempts": 0,
+      "outputFile": "reports/regression/REG-2026-03-23-2030/suite-072c-results.json"
     }
   },
   "retryLog": [],
   "previousRun": {
-    "runId": "REG-2026-03-23-1300",
-    "status": "in_progress"
+    "runId": "REG-2026-03-23-1745",
+    "status": "stale"
   },
   "summary": null
 }

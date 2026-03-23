@@ -268,6 +268,7 @@ When a single domain is requested (`domain <name>`), this command delegates dire
 
 ## Rules
 
+- Follow `.claude/skills/qa-methodology/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
 - Never modify suite CSVs directly — always delegate to sub-agents
 - Never create new suite files without explicit user approval

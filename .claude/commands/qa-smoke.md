@@ -24,8 +24,11 @@ You are the smoke test orchestrator running in the main context. Spawn sub-agent
 ### Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
 
 1. **Environment health** — run `/qa-env-check endpoints` (or inline: `curl -sk {BACK_URL}/health`). If unhealthy, warn user and ask whether to proceed.
-2. **Duplicate check** — scan `reports/regression/` for a `SMOKE-*` run from today. If found, warn user and show previous verdict.
-3. **Context7 query** — resolve `/virtocommerce/vc-docs`, query `"storefront cart checkout smoke"` with `tokens: 8000`. Check for recent module behavior changes that could affect smoke tests.
+2. **Build & version verification** — fetch deployed versions per `agent-dispatch.md § Build Verification`:
+   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`)
+   - Record platform version and theme version — include in the smoke report header (Step 4)
+3. **Duplicate check** — scan `reports/regression/` for a `SMOKE-*` run from today. If found, warn user and show previous verdict.
+4. **Context7 query** — resolve `/virtocommerce/vc-docs`, query `"storefront cart checkout smoke"` with `tokens: 8000`. Check for recent module behavior changes that could affect smoke tests.
 
 ### Step 1 — Read Suite & Prepare Run
 
@@ -45,7 +48,7 @@ Prompt:
 You are executing Track A of a smoke test run ({RUN_ID}).
 
 Suite: 042 — Smoke Tests
-CSV: regression/suites/Frontend/cross-cutting/042-smoke-tests.csv
+CSV: regression/suites/Frontend/smoke/042-smoke-tests.csv
 Browser: playwright-chrome
 Frontend URL: {FRONT_URL}
 Output: reports/regression/{RUN_ID}/suite-01-trackA-results.json
@@ -61,6 +64,8 @@ Prompt:
 ```
 You are executing Track B of a smoke test run ({RUN_ID}).
 
+Suite: 078 — Backend Smoke Tests
+CSV: regression/suites/Backend/smoke/078-backend-smoke-tests.csv
 Browser: playwright-edge
 Backend URL: {BACK_URL}
 Frontend URL: {FRONT_URL}
@@ -104,6 +109,8 @@ Write `reports/regression/{RUN_ID}/smoke-report.md`:
 | Run ID | {RUN_ID} |
 | Date | YYYY-MM-DD |
 | Environment | {FRONT_URL} |
+| Platform | {PlatformVersion} |
+| Theme | {theme version} |
 
 ## Track A — Storefront Results
 
@@ -130,6 +137,7 @@ Output verdict, pass rate, bugs found, and report path to the user.
 
 ## Rules
 
+- Follow `.claude/skills/qa-methodology/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
 - Track A: `playwright-chrome` (fallback: `playwright-firefox`). Track B: `playwright-edge` (fallback: `playwright-chrome`)
 - Never use WebKit — not supported on Windows

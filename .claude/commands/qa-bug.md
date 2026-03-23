@@ -18,8 +18,11 @@ Create a structured bug report from a description, screenshot, or observed issue
 
 ## Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
 
-1. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected area (e.g., `"cart pricing calculations"`, `"order status workflow"`) with `tokens: 8000`. Verify expected behavior before concluding it's a bug — the observed behavior may be by design.
-2. **Duplicate check** — scan `reports/bugs/` for existing bug reports with the same component/title in the last 48 hours. If found, warn user and show existing report.
+1. **Build & version verification** — fetch deployed versions per `agent-dispatch.md § Build Verification`:
+   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`)
+   - Record platform version, theme version, and modules relevant to the bug area — include in the bug report (Step 3)
+2. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected area (e.g., `"cart pricing calculations"`, `"order status workflow"`) with `tokens: 8000`. Verify expected behavior before concluding it's a bug — the observed behavior may be by design.
+3. **Duplicate check** — scan `reports/bugs/open/` and `reports/bugs/fixed/` for existing bug reports with the same component/title. If found in `open/`, warn user and show existing report. If found in `fixed/`, check whether it's a regression (same bug resurfaced).
 
 ## Step 1 — Gather Bug Details
 
@@ -75,17 +78,61 @@ After reproducing the bug, research the root cause before writing the report:
 
 > **Skills:** Use `/qa-evidence compact|detailed` for report verbosity tier. Use `/qa-defect classify` for defect type taxonomy and root cause categories.
 
-Generate a report in `reports/bugs/` using this naming convention:
+Generate a report in `reports/bugs/open/` using this naming convention:
 `BUG-{Short-Description}.md` or `BUG-{Short-Description}-VCST-XXXX.md` (if a JIRA ticket is known)
+
+### Bug Report Folder Structure
+
+```
+reports/bugs/
+├── open/        # Active bugs (confirmed, reproduced, ready-to-submit)
+├── fixed/       # Verified fixes — kept for regression reference
+├── closed/      # Won't fix, cannot reproduce, false positive, duplicate
+├── templates/   # Investigation templates (not actual bugs)
+├── screenshots/ # Evidence screenshots
+```
+
+**Lifecycle:** New bugs → `open/`. When verified fixed → move to `fixed/` with Resolution block. When closed without fix (false positive, cannot reproduce, won't fix, duplicate) → move to `closed/`.
+
+### Status Convention
+
+Every bug report MUST include a status line immediately after the title (line 3):
+
+```markdown
+## Status: OPEN | CONFIRMED | REPRODUCED | READY_TO_SUBMIT | FIXED | CLOSED
+```
+
+Valid statuses:
+- `OPEN` — reported, not yet reproduced
+- `CONFIRMED` — reproduced, root cause identified
+- `REPRODUCED` — reproduced, root cause not yet identified
+- `READY_TO_SUBMIT` — ready to file in JIRA
+- `FIXED` — fix verified (move file to `fixed/`)
+- `CLOSED` — won't fix / cannot reproduce / false positive / duplicate (move file to `closed/`)
+
+When moving to `fixed/`, add a Resolution block below the status:
+
+```markdown
+## Resolution
+- **Fixed in:** [version or PR reference]
+- **JIRA:** [VCST-XXXX]
+- **Verified:** [YYYY-MM-DD]
+- **Verification method:** /qa-verify-fix VCST-XXXX
+```
 
 ### Report Template
 ```markdown
 # BUG: [Short Title]
 
+## Status: OPEN
+
 **Severity:** Critical | High | Medium | Low
 **Component:** [Cart | Checkout | Catalog | Search | Payment | Admin | ...]
 **Browser:** [Browser + version]
 **Environment:** [URL]
+**Platform Version:** [from packages.json]
+**Theme Version:** [from artifact.json]
+**Module Versions:** [relevant modules with versions from packages.json]
 **USER_EMAIL**: .env
 **USER_PASSWORD**: .env
 **Date:** YYYY-MM-DD
@@ -142,6 +189,7 @@ Report the ticket key back to the user.
 ---
 
 ## Rules
+- Follow `.claude/skills/qa-methodology/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
 - Always reproduce the bug before filing — never file unverified bugs
 - Always include evidence (screenshot + console + network)
