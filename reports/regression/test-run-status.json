@@ -1,100 +1,30 @@
 {
-  "runId": "REG-2026-03-21-1615",
-  "selection": "02,03,04c,13",
-  "trigger": "COV-2026-03-21-1550 coverage generation pipeline (retry of blocked REG-2026-03-21-1600)",
-  "status": "completed",
-  "startedAt": "2026-03-21T16:15:00.000Z",
-  "completedAt": "2026-03-21T21:30:00.000Z",
+  "runId": "REG-2026-03-23-1300",
+  "selection": "16",
+  "trigger": "manual /qa-regression — configurable products backend",
+  "status": "in_progress",
+  "startedAt": "2026-03-23T13:00:00.000Z",
+  "completedAt": null,
   "environment": {
     "frontUrl": "https://vcst-qa-storefront.govirto.com",
     "backUrl": "https://vcst-qa.govirto.com"
   },
   "suites": {
-    "04c": {
-      "name": "Orders & Quotes Tests",
-      "status": "completed",
-      "browser": "playwright-chrome",
-      "slot": 1,
-      "batch": 1,
-      "priority": "P1",
-      "attempts": 1,
-      "outputFile": "reports/regression/REG-2026-03-21-1615/suite-04c-results.json",
-      "result": {
-        "passed": 61,
-        "failed": 4,
-        "blocked": 16,
-        "skipped": 0,
-        "passRate": "75.3%"
-      }
-    },
-    "13": {
-      "name": "B2C Features Tests",
-      "status": "completed",
-      "browser": "playwright-firefox",
-      "slot": 2,
-      "batch": 1,
-      "priority": "P1",
-      "attempts": 1,
-      "outputFile": "reports/regression/REG-2026-03-21-1615/suite-13-results.json",
-      "result": {
-        "passed": 98,
-        "failed": 3,
-        "blocked": 52,
-        "skipped": 15,
-        "passRate": "58.3%"
-      }
-    },
-    "02": {
-      "name": "Authentication Tests",
-      "status": "completed",
+    "16": {
+      "name": "Catalog Admin Tests",
+      "status": "in_progress",
       "browser": "playwright-edge",
       "slot": 3,
       "batch": 1,
       "priority": "P1",
       "attempts": 1,
-      "outputFile": "reports/regression/REG-2026-03-21-1615/suite-02-results.json",
-      "result": {
-        "passed": 44,
-        "failed": 2,
-        "blocked": 16,
-        "skipped": 6,
-        "passRate": "64.7%"
-      }
-    },
-    "03": {
-      "name": "Catalog & Search Tests",
-      "status": "completed",
-      "browser": "playwright-chrome",
-      "slot": 1,
-      "batch": 2,
-      "priority": "P1",
-      "attempts": 1,
-      "outputFile": "reports/regression/REG-2026-03-21-1615/suite-03-results.json",
-      "result": {
-        "passed": 78,
-        "failed": 1,
-        "blocked": 50,
-        "skipped": 1,
-        "passRate": "98.7%"
-      }
+      "outputFile": "reports/regression/REG-2026-03-23-1300/suite-16-results.json"
     }
   },
   "retryLog": [],
   "previousRun": {
-    "runId": "REG-2026-03-21-1600",
-    "blockerReason": "All browser slots blocked by open browser windows on host — user has now closed all windows"
+    "runId": "REG-2026-03-23-1200",
+    "status": "completed"
   },
-  "summary": {
-    "totalSuites": 4,
-    "passedSuites": 4,
-    "failedSuites": 0,
-    "totalCases": 447,
-    "passed": 281,
-    "failed": 10,
-    "blocked": 134,
-    "skipped": 22,
-    "executableCases": 291,
-    "overallPassRate": "96.6%",
-    "qualityGateVerdict": "APPROVED_WITH_CONDITIONS"
-  }
+  "summary": null
 }

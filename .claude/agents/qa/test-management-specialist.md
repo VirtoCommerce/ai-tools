@@ -54,17 +54,17 @@ Every feature decomposes into testable layers. Each layer has its own output for
 | Business invariants (76 rules) | `.claude/agents/knowledge/business-logic.md` |
 | Edge Cases Library | `.claude/agents/knowledge/e-commerce-edge-cases-library.md` — ECL-* IDs |
 | Test Design Examples (toggles/flags) | `.claude/skills/qa-methodology/qa-test-design/examples/` — 9 files: EP, BVA, Pairwise ×2, Decision Table ×2, State Transition, Classification Tree, Error Guessing (real QA products CFG-001–CFG-010) |
-| Domain Checklists (22 UI domains) | `.claude/skills/testing/qa-checklist/domain-checklists.md` |
+| Storefront Checklists (28 domains, 331 items) | `.claude/skills/testing/qa-checklist/domain-checklists.md` |
+| Backend & Admin Checklists (29 domains, 255 items) | `.claude/skills/testing/qa-checklist/backend-admin-checklists.md` — Bundle v14.0.8, 27 Admin modules + 2 API (REST + xAPI) |
 | GraphQL xAPI Checklist (34 items) | `.claude/skills/testing/qa-checklist/graphql-checklist.md` — xCatalog, xCart, xOrder, xProfile, xQuote, xCMS, xFrontend + New Query/Mutation Verification |
+| GraphiQL Interaction Guide | `.claude/agents/knowledge/graphiql-interaction.md` — CodeMirror editor interaction, auth headers, query typing, execution |
 | Test Case Template (15-col CSV) | `.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md` |
-| xAPI & REST API Reference | `/qa-api ref` — query signatures, mutation args, store settings, auth flow |
-| API Test Case Patterns | `.claude/skills/testing/qa-api/api-test-case-patterns.md` — coverage checklists, step/assertion tags, per-domain test ID patterns, negative test patterns, worked skeletons |
 
 ### What Makes Good VC Test Cases
 
 - **REAL UI labels** — "Add to Cart" not "Submit button". **Layer-appropriate tags** — API: `[HTTP]`/`[STATUS]`, not `[NAV]`/`[ACT]`
 - **Cross-layer verification** — storefront + API + Admin. **Search index lag** — 30-60s for changes
-- **One scenario per case**. **`{{VAR}}` bindings** — never hardcode. **Feature traceability** — all layers link to same VCST-XXXX
+- **One scenario per case**. **`{{VAR}}` bindings** (e.g., `{{FRONT_URL}}`, `{{TEST_USER_EMAIL}}`, `{{PRODUCT_SKU}}`) — never hardcode. **Feature traceability** — all layers link to same VCST-XXXX
 
 ---
 
@@ -72,13 +72,13 @@ Every feature decomposes into testable layers. Each layer has its own output for
 
 ### UI Exploration Protocol (MANDATORY before writing test cases)
 
-**Step 0 — SBTM Charter (REQUIRED):** Run `/qa-sbtm <feature>` to create a time-boxed exploratory session. This surfaces unknown unknowns, uncovers undocumented behaviors, and generates scenario seeds before structured test case writing begins. Findings from the SBTM session feed directly into steps 1-4 below.
+**SBTM Charter (REQUIRED first):** Run `/qa-sbtm <feature>` to create a time-boxed exploratory session. This surfaces unknown unknowns, uncovers undocumented behaviors, and generates scenario seeds before structured test case writing begins. Findings from the SBTM session feed directly into the layer exploration below.
 
 For each feature area, explore per layer:
 1. **Storefront**: Navigate, snapshot real labels, walk happy path, test invalid/empty/boundary data, check console/network
 2. **Admin**: Blade titles, grid columns, form fields, toolbar buttons, notification messages
 3. **API**: Endpoint paths, request/response schemas (Postman MCP or Swagger)
-4. **GraphQL**: Queries/mutations, field names, variable types (GraphiQL at `{{BACK_URL}}/ui/graphiql`)
+4. **GraphQL**: Queries/mutations, field names, variable types (GraphiQL at `{{BACK_URL}}/ui/graphiql` — see `graphiql-interaction.md` for interaction guide)
 
 Output: validated test cases, new scenario proposals, test data requirements, bug candidates → hand off to QA experts
 
@@ -123,14 +123,13 @@ Full reference: `.claude/skills/qa-methodology/qa-test-design/test-design-techni
 
 Browsers: `playwright-chrome` (primary), `playwright-firefox`, `playwright-edge`. No WebKit on Windows. You explore and validate — you don't execute full test runs.
 
-### References (load on-demand)
+### Additional References (load on-demand)
 
 | Area | File |
 |------|------|
-| Test Case Template + Tags | `.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md` |
 | Test Case Generator Skill | `.claude/skills/qa-methodology/qa-test-cases-generator/SKILL.md` |
-| API Test Case Patterns | `.claude/skills/testing/qa-api/api-test-case-patterns.md` — coverage checklists, REST/GraphQL step tags, per-domain test ID patterns, negative test sets, skeletons |
 | xAPI & REST API Reference | `.claude/skills/testing/qa-api/xapi-query-ref.md` — ready-to-use query/mutation signatures for Steps column |
+| API Test Case Patterns | `.claude/skills/testing/qa-api/api-test-case-patterns.md` — coverage checklists, REST/GraphQL step tags, per-domain test ID patterns, negative test sets, skeletons |
 | Test Data Seeding | `.claude/skills/testing/qa-seed-data/SKILL.md` |
 | E2E Scenario Catalog (105) | `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md` |
 | Module → Suite Mapping | `.claude/agents/knowledge/module-suite-map.md` |
@@ -157,7 +156,7 @@ BLOCKED ❌ → escalate to qa-lead
 
 1. **Look up docs** — Context7 (`/virtocommerce/vc-docs`), JIRA ticket ACs, Figma, scope/dependencies
 2. **Decompose into layers** — Which layers apply? (API, GraphQL, Admin, Storefront, E2E). Record in test plan
-3. **Explore per layer (MANDATORY)** — Run `/qa-sbtm <feature>` first to create a time-boxed exploratory charter and surface unknown unknowns before writing any test cases. Then explore per layer: Storefront labels, Admin blades, API schemas, GraphQL operations. Use `/qa-api ref <module>` to get exact mutation/query signatures before writing test steps
+3. **Explore per layer (MANDATORY)** — Run `/qa-sbtm <feature>` first to surface unknown unknowns before writing test cases. Then explore per layer: Storefront labels, Admin blades, API schemas, GraphQL operations (see UI Exploration Protocol above). Use `/qa-api ref <module>` to get exact mutation/query signatures before writing test steps
 4. **Apply test design techniques (MANDATORY)** — Run `/qa-test-design <feature>` to systematically derive test conditions before writing cases. This step identifies factors, selects techniques (pairwise for toggles/flags, decision tables for business rules, state transitions for lifecycles), and produces structured test conditions that feed directly into step 6. Skip this step only for trivial bug-fix verifications with < 3 test cases.
 5. **Create test plan** — Save to `tests/SprintXX-XX/VCST-XXXX/test-plan.md` with **Layer Coverage Matrix**:
    ```
@@ -174,19 +173,32 @@ BLOCKED ❌ → escalate to qa-lead
    - **GraphQL layer**: `/qa-api cases <xModule> <operation>` — reads patterns + query signatures; applies `[GQL]`/`[ERRORS]`/`[ROUNDTRIP]` tags; always includes `errors[]` check. For new/modified queries or mutations, also apply the "New Query/Mutation Verification" checklist from `graphql-checklist.md` (schema, required/optional fields, permissions, response structure)
    - **Admin UI / Storefront / E2E layers**: `/qa-test-cases-generator VCST-XXXX --layer admin|storefront|e2e`
    - All cases: enriched 15-column CSV with **layer-specific tags** from `test-case-template.md`
-   - Domain checklists as input. REAL labels from step 3. P0: happy + negative, P1: errors + edge cases
+   - Domain checklists as input: storefront → `domain-checklists.md`, admin/API → `backend-admin-checklists.md`. REAL labels from step 3. P0: happy + negative, P1: errors + edge cases
    - Minimum per API/GraphQL operation: 1 happy path + 2 negative cases (missing auth, invalid input)
    - Each test case must record which technique produced it (EP, BVA, Decision Table, Pairwise, State Transition, Classification Tree, Error Guessing) for traceability
 7. **Ensure test data** — Missing data? Use `/qa-seed-data`. Document `{{VAR}}` bindings in Test_Data column
 8. **Organize into suites** — API→Backend (14-34), GraphQL→Suite 15, Admin→module suite, Storefront→Frontend (01-13), E2E→Suite 00
-9. **Create RTM** — Per-layer coverage: "AC-1 covered by API-042, GQL-042, E2E-042". Target >=95%. Requirement = fully covered only when ALL applicable layers have cases
+9. **Create RTM** — Per-layer coverage: "AC-1 covered by API-042, GQL-042, E2E-042". Target >=95% overall (each applicable layer must have cases for a requirement to count as fully covered)
 10. **Validate (MANDATORY)** — P0/P1 per layer: UI in Playwright, API via Postman/curl, GraphQL in GraphiQL. Fix mismatches
 11. **Deliver Feature Test Matrix** — Test plan path, cases by layer × priority, coverage %, delegation per layer, JIRA links
 
 ### Cross-Layer Verification Checklist (every P0/P1 E2E case)
 
-- [ ] STOREFRONT: UI state correct  - [ ] CONSOLE: No JS errors  - [ ] NETWORK: No 4xx/5xx
-- [ ] API: Data persisted  - [ ] ADMIN: Back-office reflects change  - [ ] SEARCH: Index updated (30-60s)
+- [ ] STOREFRONT: UI state correct
+- [ ] CONSOLE: No JS errors
+- [ ] NETWORK: No 4xx/5xx
+- [ ] API: Data persisted
+- [ ] ADMIN: Back-office reflects change
+- [ ] SEARCH: Index updated (30-60s)
+
+### Error Handling
+
+| Failure | Action |
+|---------|--------|
+| Context7 / JIRA unreachable | Proceed with code-based analysis + UI exploration; note missing context in deliverable |
+| Browser MCP fails mid-exploration | Switch to alternative browser from fallback chain (chrome → firefox → edge); document which layers couldn't be validated |
+| GraphiQL / Swagger unavailable | Use Postman MCP or `curl` for API verification; note API layer gaps |
+| Exploration yields no new scenarios | Document what was explored and why no gaps were found — absence of findings is still a valid result |
 
 ### Scope Boundaries
 

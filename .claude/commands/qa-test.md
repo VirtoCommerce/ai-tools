@@ -132,9 +132,45 @@ Write a test execution report to tests/{SPRINT}/VCST-XXXX/test-execution-report.
 
 ---
 
-### Step 4 — Collect & Decide
+### Step 4 — Exploratory Testing (SBTM)
 
-After all agents return, **validate evidence quality first:**
+After all scripted agents return, run a **targeted exploratory session** using `/qa-sbtm` methodology to find issues that scripted tests miss. This step is mandatory for P0/P1 tickets and critical revenue flows; optional (but recommended) for P2/P3.
+
+1. **Create a charter** scoped to the ticket/feature:
+   - Mission: explore the changed area and its integration boundaries
+   - Charter type: **Risk** (for bug fixes) or **Feature** (for new functionality)
+   - Heuristic: **SFDPOT** for UI changes, **CRISP** for API/backend changes
+   - Time box: 20 minutes (10 min explore + 5 min adjacent areas + 5 min document)
+
+2. **Dispatch `qa-testing-expert`** (if not already dispatched in Step 3) on `playwright-firefox`:
+   ```
+   Exploratory session for VCST-XXXX.
+
+   Charter: [mission statement]
+   Heuristic: [SFDPOT or CRISP]
+   Focus areas:
+   - Interaction with adjacent features (e.g., cart ↔ checkout boundary)
+   - Data edge cases not covered by ACs (empty states, max lengths, special chars)
+   - Error recovery paths (network failures, validation errors, back-button)
+   - State persistence across navigation (refresh, deep link, browser back)
+
+   Environment: {FRONT_URL} / {BACK_URL}
+   Browser: playwright-firefox
+   Output: tests/{SPRINT}/VCST-XXXX/exploratory-session.md
+
+   Log findings in real-time. Classify each as: Bug | Question | Observation | Risk.
+   Follow evidence capture policy for any bugs found.
+   ```
+
+3. **If `qa-testing-expert` was already dispatched** in Step 3 for cross-browser verification, include the exploratory charter as an additional task in the same agent prompt instead of dispatching twice.
+
+4. **Merge findings** into the overall results before proceeding to Step 5.
+
+---
+
+### Step 5 — Collect & Decide
+
+After all agents return (including the exploratory session), **validate evidence quality first:**
 
 | Check | Action if Missing |
 |---|---|
@@ -143,19 +179,20 @@ After all agents return, **validate evidence quality first:**
 | Critical revenue flow (checkout, payment, cart) not explicitly tested | Flag as incomplete coverage |
 | Bugs found but no JIRA tickets mentioned | Ask user if bugs should be filed via `/qa-bug` |
 | Business rule `BL-*` listed in prompt but not mentioned in results | Flag as untested — request verification |
+| Exploratory session skipped for P0/P1 ticket | Flag as incomplete — exploratory coverage required |
 
 Then evaluate against decision matrix:
 
 | Decision | Criteria |
 |---|---|
-| **PASS** | All ACs met, all `BL-*` rules verified, no P0/P1 bugs |
-| **PASS WITH NOTES** | ACs met, minor P2/P3 issues tracked in JIRA |
+| **PASS** | All ACs met, all `BL-*` rules verified, no P0/P1 bugs, exploratory session clean |
+| **PASS WITH NOTES** | ACs met, minor P2/P3 issues tracked in JIRA, exploratory observations logged |
 | **FAIL** | Any AC not met, any `BL-*` rule violated, or P0/P1 bug found |
 | **BLOCKED** | Environment down, missing test data, unresolved dependency |
 
 ---
 
-### Step 5 — JIRA Transition (with confirmation)
+### Step 6 — JIRA Transition (with confirmation)
 
 Ask the user before transitioning JIRA status. Skip this step if Atlassian MCP is not configured.
 
@@ -167,6 +204,7 @@ Ask the user before transitioning JIRA status. Skip this step if Atlassian MCP i
 Add a JIRA comment with:
 ```
 QA Complete — [X] cases, [Y] passed, [Z] failed.
+Exploratory: [N] findings ([bugs/observations/risks]).
 Business rules verified: [BL-* list].
 Bugs: [list or None]. Decision: [verdict].
 Artifacts: tests/{SPRINT}/VCST-XXXX/
@@ -174,7 +212,7 @@ Artifacts: tests/{SPRINT}/VCST-XXXX/
 
 ---
 
-### Step 6 — Deliver Summary
+### Step 7 — Deliver Summary
 
 Write `tests/{SPRINT}/VCST-XXXX/summary.json`:
 ```json
@@ -190,11 +228,16 @@ Write `tests/{SPRINT}/VCST-XXXX/summary.json`:
   "blocked": 0,
   "bugs_filed": [],
   "business_rules_verified": ["BL-CART-001"],
+  "exploratory": {
+    "charter": "Risk charter for VCST-XXXX",
+    "heuristic": "SFDPOT|CRISP",
+    "findings": { "bugs": 0, "questions": 0, "observations": 0, "risks": 0 }
+  },
   "artifacts": "tests/{SPRINT}/VCST-XXXX/"
 }
 ```
 
-Output to the user: verdict, coverage summary, business rules verified, bugs found, and artifact paths.
+Output to the user: verdict, coverage summary, business rules verified, exploratory findings, bugs found, and artifact paths.
 
 ---
 
@@ -210,3 +253,5 @@ Output to the user: verdict, coverage summary, business rules verified, bugs fou
 - If Atlassian MCP is unavailable, skip JIRA transitions and ask user for ticket details manually
 - Always load `business-logic.md` for the affected domains — agents must know what rules to verify
 - Always query Context7 in Step 0 — pass findings to agents so they test against current module behavior
+- Exploratory session (Step 4) is mandatory for P0/P1 tickets and critical revenue flows — skip only for P2/P3 if user explicitly opts out
+- If `qa-testing-expert` is already dispatched in Step 3, combine exploratory charter into that agent's prompt rather than spawning a second instance

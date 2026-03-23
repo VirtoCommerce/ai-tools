@@ -39,7 +39,7 @@ Create `.env` (33 vars). Validate: `npm run env:check`. Access: `import { env } 
 ## Repository Structure
 
 ```
-├── .claude/agents/       # 14 agents in qa/ + ba/ subfolders, knowledge/ (14 files) for shared refs
+├── .claude/agents/       # 14 agents in qa/ + ba/ subfolders, knowledge/ (15 files) for shared refs
 ├── .claude/skills/       # 20 skills (vc-knowledge, testing, qa-methodology)
 ├── .claude/commands/     # 13 slash commands
 ├── .claude/rules/        # Reference docs (agents, regression, skills, MCP)

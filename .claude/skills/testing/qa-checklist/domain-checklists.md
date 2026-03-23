@@ -1,21 +1,23 @@
 # Domain Test Case Writing Checklists
 
 > Reference file for `test-management-specialist` agent and `/qa-checklist` skill. Read on-demand when writing test cases for a specific domain.
+>
+> For Admin SPA and Platform API checklists, see `backend-admin-checklists.md` (27 Admin domains + 2 API domains | 255 items).
 
-**22 domains + 1 cross-domain checklist | 245 checklist items** — every checked item should map to at least one test case.
+**28 storefront domains + 1 cross-domain checklist | 331 checklist items** — every checked item should map to at least one test case.
 
 ## Summary
 
 | # | Domain | Items | E2E Catalog | Related Suites |
 |---|--------|-------|-------------|----------------|
 | 1 | Auth | 8 | E2E-AUTH | 01, 02, 08 |
-| 2 | Catalog | 12 | E2E-CAT | 01, 03, 16 |
+| 2 | Catalog | 14 | E2E-CAT | 01, 03, 16 |
 | 3 | Categories | 6 | E2E-CAT | 03, 16 |
 | 4 | SEO | 7 | E2E-CAT | 31 |
 | 5 | Add to Cart | 10 | E2E-CART | 01, 04a |
 | 6 | Search | 12 | E2E-SEARCH | 03, 26 |
 | 7 | Ship-to Selector | 6 | E2E-CHK | 04a, 04b |
-| 8 | Cart/Checkout | 15 | E2E-CHK | 04a, 04b, 06 |
+| 8 | Cart/Checkout | 17 | E2E-CHK | 04a, 04b, 06 |
 | 9 | Payment | 12 | E2E-PAY | 06 |
 | 10 | Orders | 7 | E2E-ORD | 01, 04c, 20 |
 | 11 | Company Members | 14 | E2E-MEMBER | 02, 21 |
@@ -29,7 +31,13 @@
 | 19 | Notifications | 12 | E2E-NOTIF | 24 |
 | 20 | White Labeling | 13 | E2E-WL | 32, 35 |
 | 21 | Account Management | 12 | E2E-ACCT | 01, 02, 13 |
-| 22 | Storefront Push Messages | 8 | E2E-PUSH | 33 |
+| 22 | Storefront Push Messages | 12 | E2E-PUSH | 33 |
+| 23 | Coupons & Promotions | 12 | E2E-PROMO | 41, 23, 42 |
+| 24 | Security | 10 | E2E-SEC | 08 |
+| 25 | Accessibility | 10 | E2E-A11Y | 09 |
+| 26 | Performance | 8 | E2E-PERF | 11 |
+| 27 | Browser Compatibility | 7 | E2E-COMPAT | 12 |
+| 28 | B2C Features | 10 | E2E-B2C | 13 |
 | **BF** | **Bug Fix Verification** | **10** | *cross-domain* | *per bug* |
 
 ---
@@ -53,6 +61,8 @@
 - [ ] SEO-friendly URLs, canonical links, meta title/description
 - [ ] Currency-aware product listing: prices update when currency switched, products without price in new currency show "Unavailable"
 - [ ] Hidden product exclusion: products with `status:hidden` in Admin do not appear in storefront listing or search
+- [ ] Recently browsed products: `recentlyBrowsed` section displays previously visited products (max 6), updates after viewing new products
+- [ ] Fuzzy search support: `fuzzy: true` parameter returns products with slight misspellings, fuzziness level configurable via `fuzzyLevel`
 
 ### Product Types
 - [ ] Physical product: tangible item displays correctly in listing and PDP
@@ -149,6 +159,8 @@
 - [ ] Billing address field-level validation: all 17+ fields (firstName, lastName, line1, city, regionId, zip, countryCode, email, phone) validated per country
 - [ ] Payment authorization error handling: gateway decline returns `isSuccess: false` with `errorMessage`, user can retry
 - [ ] Loyalty points as payment: apply points balance to reduce order total, insufficient points blocked (if loyalty enabled)
+- [ ] Recently browsed products: cart page displays recently viewed products section below main cart content (if feature enabled)
+- [ ] Loyalty gifts display: preselected loyalty gifts shown on cart page when loyalty program awards free items
 
 ## 9. Payment
 - [ ] Skyflow Visa: card entry → tokenization → payment success → order status "Paid"
@@ -328,19 +340,92 @@
 
 ## 22. Storefront Push Messages
 - [ ] Notifications page (`/account/notifications`): list of received notifications, pagination for older items
-- [ ] Read/unread state: unread notifications visually distinct, mark as read on click
+- [ ] Read/unread state: unread notifications visually distinct, mark as read on click (`markPushMessageRead` mutation)
+- [ ] Mark as unread: toggle read notification back to unread state (`markPushMessageUnread` mutation)
 - [ ] Notification badge: unread count indicator in header or account sidebar
-- [ ] Mark all as read: bulk action to mark all notifications as read
+- [ ] Mark all as read: bulk action via `markAllPushMessagesRead` mutation
+- [ ] Mark all as unread: bulk action via `markAllPushMessagesUnread` mutation
+- [ ] Clear all notifications: `clearAllPushMessages` mutation removes all messages, confirmation prompt before action
 - [ ] Notification detail: full message content displayed on click/expand
 - [ ] Notification link/action: notification links to related entity (order, quote, shipment)
 - [ ] Push message targeting: user receives only messages sent to their user/role, not other roles
+- [ ] Real-time delivery: `pushMessageCreated` subscription delivers new messages without page refresh (WebSocket/SSE)
 - [ ] Empty state: "No notifications" message when inbox is empty
+
+## 23. Coupons & Promotions
+- [ ] Coupons page (`/account/coupons`): authenticated access, page loads with list of available coupons/promotions
+- [ ] Coupon card display: code, description, expiry date, discount value/percentage, status (active/expired/used)
+- [ ] Expired coupon visual treatment: greyed out or strikethrough, cannot be applied
+- [ ] Apply coupon in cart: enter valid coupon code → discount applied → totals recalculate
+- [ ] Invalid coupon: enter non-existent or expired code → error message displayed, totals unchanged
+- [ ] Remove coupon: applied coupon removable from cart, totals revert to original
+- [ ] Automatic promotions: catalog-level promotions (e.g., "Buy 2 Get 10% Off") applied without code entry
+- [ ] Promotion stacking rules: verify whether multiple promotions/coupons can combine or if best-reward-only policy applies (BL-PRICE-001)
+- [ ] Promotion conditions: minimum order amount, specific product/category, date range — verified at cart evaluation
+- [ ] Admin → Marketing → Promotions: create, edit, enable/disable promotion with conditions and rewards
+- [ ] Admin → Marketing → Coupons: generate coupon codes, set usage limits, assign to promotions
+- [ ] Storefront ↔ Admin consistency: promotion visible in storefront matches Admin configuration (discount amount, conditions)
+
+## 24. Security
+- [ ] PCI compliance: payment card fields rendered in isolated iframes, card data not in DOM/localStorage/network requests
+- [ ] XSS prevention: user-generated content (search queries, addresses, product reviews) sanitized — no script execution
+- [ ] CSRF protection: state-changing requests include anti-forgery tokens
+- [ ] Authentication token handling: JWT/bearer tokens stored securely, not in URL parameters or localStorage (prefer httpOnly cookies)
+- [ ] Session management: session expires after inactivity timeout, forced logout clears all tokens
+- [ ] HTTPS enforcement: all pages served over HTTPS, mixed content blocked
+- [ ] API authorization: unauthenticated requests to protected endpoints return 401, unauthorized roles return 403
+- [ ] Rate limiting: login endpoint, password reset, and API endpoints enforce rate limits (429 on abuse)
+- [ ] Input validation: form fields enforce max length, type constraints, reject SQL/NoSQL injection patterns
+- [ ] Sensitive data exposure: no PII (emails, addresses, card data) leaked in error messages, logs, or network responses to unauthorized users
+
+## 25. Accessibility
+- [ ] Keyboard navigation: all interactive elements (links, buttons, inputs, modals) reachable and operable via Tab/Shift+Tab/Enter/Space
+- [ ] Focus management: focus trapped inside open modals/dialogs, returns to trigger element on close
+- [ ] Focus indicators: visible outline/ring on focused elements (WCAG 2.4.7)
+- [ ] ARIA landmarks: `main`, `nav`, `banner`, `contentinfo` regions defined for screen readers
+- [ ] Alt text: all informational images have descriptive `alt` attributes, decorative images have `alt=""`
+- [ ] Color contrast: text meets WCAG 2.1 AA minimum contrast ratio (4.5:1 normal, 3:1 large text)
+- [ ] Form labels: every input has an associated `<label>` or `aria-label`, error messages linked via `aria-describedby`
+- [ ] Screen reader announcements: dynamic content changes (toast notifications, cart updates, validation errors) announced via `aria-live` regions
+- [ ] Skip navigation: "Skip to main content" link present and functional as first focusable element
+- [ ] Touch targets: interactive elements meet minimum 44x44px touch target size on mobile viewports
+
+## 26. Performance
+- [ ] Page load time: homepage, category page, PDP load within acceptable thresholds (LCP < 2.5s on 4G)
+- [ ] Core Web Vitals: LCP, FID/INP, CLS measured and within "Good" thresholds per Google guidelines
+- [ ] API response time: xAPI GraphQL queries (products, cart, checkout) respond within 2s under normal load
+- [ ] Image optimization: product images served in modern formats (WebP/AVIF), lazy-loaded below fold
+- [ ] Bundle size: JavaScript bundle size within budget, no unnecessary vendor code shipped to client
+- [ ] Search performance: autocomplete dropdown responds within 300ms of keystroke, full search results within 2s
+- [ ] Cart operations: add/remove/update cart items reflected in UI within 1s
+- [ ] Pagination performance: "Load More" / next page renders within 1.5s, no layout shift during load
+
+## 27. Browser Compatibility
+- [ ] Chrome (latest): all critical flows (auth, catalog, cart, checkout, payment) work correctly
+- [ ] Firefox (latest): layout, functionality, and payment forms render and function identically to Chrome
+- [ ] Edge (latest): all flows work correctly, Edge-specific rendering verified
+- [ ] Safari (macOS/iOS): layout and functionality verified on WebKit engine (if applicable to target audience)
+- [ ] Mobile browsers (Chrome Android, Safari iOS): responsive layout, touch interactions, viewport scaling correct
+- [ ] CSS consistency: fonts, colors, spacing, grid layouts render consistently across browsers
+- [ ] JavaScript compatibility: no browser-specific JS errors in console across supported browsers
+
+## 28. B2C Features
+- [ ] B2C product variations: inline variant selection on product cards (color/size swatches visible in listing)
+- [ ] B2C cart layout: simplified cart without B2B-specific elements (no org switcher, no quote option)
+- [ ] Wishlist: add product from PDP (heart icon), view in `/account/wishlist`, move to cart, remove
+- [ ] Compare list: add products to compare, view side-by-side comparison of specs/prices, remove items
+- [ ] Guest checkout: complete purchase without account registration (if enabled), email-only identification
+- [ ] Social login: sign in via Google/Facebook/Apple (if configured), account linking
+- [ ] Product reviews: submit star rating + text review on PDP, moderation workflow, average rating display
+- [ ] Recently browsed: recently viewed products section on homepage/cart/PDP sidebar
+- [ ] Promotional banners: homepage hero banners, category-level promotions render with correct links
+- [ ] Single-user account: personal account without organization context, "Addresses" link visible in sidebar
 
 ---
 
 ## BF. Bug Fix Verification
 
-> **Cross-domain checklist. Used by qa-lead-orchestrator (Workflow 5) when delegating bug fix verification to test-management-specialist.** Combine with the affected domain's checklist (#1-22) for full coverage.
+> **Cross-domain checklist. Used by qa-lead-orchestrator (Workflow 5) when delegating bug fix verification to test-management-specialist.** Combine with the affected domain's checklist (#1-28) and/or `backend-admin-checklists.md` (A1-A27) for full coverage.
 
 **Fix Confirmation (always):**
 - [ ] Original bug reproduced first (STR from ticket), then verify fix resolves the exact reported issue
@@ -348,7 +433,7 @@
 - [ ] All acceptance criteria / fix description from the ticket satisfied
 
 **Regression Scope (always):**
-- [ ] Adjacent features in the same domain still work (pull 2-3 items from domain checklist #1-22)
+- [ ] Adjacent features in the same domain still work (pull 2-3 items from domain checklist #1-28 or admin checklist A1-A27)
 - [ ] Related domains unaffected (e.g., cart fix → checkout still works, payment still processes)
 - [ ] No new console errors or failed network requests introduced by the fix
 

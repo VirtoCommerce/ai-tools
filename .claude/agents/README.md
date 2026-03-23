@@ -49,7 +49,7 @@ Two agent teams for the Virto Commerce platform: **QA** (quality assurance) and 
 
 | Command | Purpose | Speed |
 |---------|---------|-------|
-| `/qa-smoke` | Daily pre-deploy smoke (19 P0 tests, GO/NO-GO) | ~15 min |
+| `/qa-smoke` | Daily pre-deploy smoke (12 P0 tests, GO/NO-GO) | ~15 min |
 | `/qa-test VCST-XXXX` | Test a JIRA ticket, feature, or PR | varies |
 | `/qa-regression [scope]` | Run regression suites (smoke/critical/sprint/full) | varies |
 | `/qa-coverage-generation [scope]` | Orchestrated parallel coverage generation with CI support | varies |
@@ -132,7 +132,7 @@ Reads `config/test-suites.json`, dispatches sub-agents in batches of 3, retries 
 | `backend` | 14-34, 37-40, 42 | Backend only |
 
 ### 4. Ad-hoc Testing
-Use specialists directly via Task tool:
+Use specialists directly via Agent tool:
 ```
 "Use qa-frontend-expert to test the checkout flow"
 "Use qa-backend-expert to verify the GraphQL catalog queries"
@@ -169,13 +169,13 @@ QA agents use a **four-layer prompt architecture**:
 3. **Skill Set** (technique) — how to find what's broken
 4. **Design Decisions** (constraints) — tools and boundaries
 
-Shared knowledge files in `knowledge/` (14 files): `api-auth.md`, `business-logic.md`, `platform-patterns.md`, `browser-quirks.md`, `debugging-signals.md`, `performance-thresholds.md`, `catalog.md`, `store-settings.md`, `white-labeling.md`, `e-commerce-edge-cases-library.md`, `module-suite-map.md`, `sitemap.md`, `products.md`, `graphiql-interaction.md`.
+Shared knowledge files in `knowledge/` (15 files): `api-auth.md`, `business-logic.md`, `platform-patterns.md`, `browser-quirks.md`, `debugging-signals.md`, `performance-thresholds.md`, `catalog.md`, `store-settings.md`, `white-labeling.md`, `e-commerce-edge-cases-library.md`, `module-suite-map.md`, `sitemap.md`, `products.md`, `graphiql-interaction.md`, `order-creation-matrix.md`.
 
 ---
 
 ## Customizing Agents
 
-Agents are organized in subfolders: `.claude/agents/qa/` (10 QA agents + `shared-instructions.md`) and `.claude/agents/ba/` (4 BA agents). Shared knowledge files are in `.claude/agents/knowledge/` (14 files). Each agent is a Markdown file with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior.
+Agents are organized in subfolders: `.claude/agents/qa/` (10 QA agents + `shared-instructions.md`) and `.claude/agents/ba/` (4 BA agents). Shared knowledge files are in `.claude/agents/knowledge/` (15 files). Each agent is a Markdown file with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior.
 
 ---
 
