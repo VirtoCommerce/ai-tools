@@ -1,0 +1,114 @@
+{
+  "runId": "TLC-2026-03-24-1330",
+  "phase": 5,
+  "browser": "playwright-firefox",
+  "timestamp": "2026-03-24T11:22:00Z",
+  "environment": "QA",
+  "storefrontVersion": "2.44.0-pr-2212-9072-9072853e",
+  "verifications": [
+    {
+      "caseId": "CFG-FILE-001",
+      "jira": "VCST-4825",
+      "url": "https://vcst-qa-storefront.govirto.com/products-with-options/configurable-caps-shirts/physical",
+      "result": "VERIFIED",
+      "details": "Uploaded 5 files (Logo1.png, Netflix-25.jpg, newier.pdf, Test.xlsx, paperstraw.JPg). Warning message 'You have uploaded the maximum number of files possible. Further uploads are not possible.' appeared correctly. However, the 'Browse your files' button remains active/clickable (not disabled) at max file count. Bug VCST-4825 reproduced. Test case expectations match actual behavior.",
+      "screenshot": "reports/test-lifecycle/TLC-2026-03-24-1330/CFG-FILE-001-5files-uploaded.png",
+      "bugReproduced": true
+    },
+    {
+      "caseId": "CFG-FILE-002",
+      "jira": "VCST-4826",
+      "url": "https://vcst-qa-storefront.govirto.com/products-with-options/configurable-caps-shirts/physical",
+      "result": "VERIFIED",
+      "details": "After uploading 5 files, selected 'None' radio on optional File section. The 'None' radio became checked and section header updated to 'Personalize your selection further (optional)', BUT all 5 files remained visible in the list. Files were NOT cleared. Bug VCST-4826 reproduced.",
+      "screenshot": "reports/test-lifecycle/TLC-2026-03-24-1330/CFG-FILE-002-none-selected.png",
+      "bugReproduced": true
+    },
+    {
+      "caseId": "CFG-FILE-003",
+      "jira": "VCST-4827",
+      "url": "https://vcst-qa-storefront.govirto.com/products-with-options/configurable-caps-shirts/physical-1703",
+      "result": "VERIFIED",
+      "details": "Uploaded large_logo.png (0 bytes) to required File section. File was accepted without error, shown as 'large_logo.png (0B)' in the file list. Section header changed from 'Complete all required options' to 'large_logo.png', meaning the 0-byte file satisfied the required validation. No rejection or error message. Bug VCST-4827 reproduced.",
+      "screenshot": "reports/test-lifecycle/TLC-2026-03-24-1330/CFG-FILE-003-0byte-accepted.png",
+      "bugReproduced": true
+    },
+    {
+      "caseId": "CFG-FILE-004",
+      "jira": "VCST-4828",
+      "url": "https://vcst-qa-storefront.govirto.com/products-with-options/configurable-caps-shirts/physical-1703",
+      "result": "VERIFIED",
+      "details": "On required File product with no file uploaded, clicked '+' (Increase quantity). Counter incremented from 0 to 1 despite required section being unfilled. Toast appeared: 'Sorry, this product cannot be added to cart. Check your product configuration'. Section header showed 'Section is required'. Bug confirmed: counter should not increment when required section is unfilled. Bug VCST-4828 reproduced.",
+      "screenshot": "reports/test-lifecycle/TLC-2026-03-24-1330/CFG-FILE-004-005-counter-incremented.png",
+      "bugReproduced": true
+    },
+    {
+      "caseId": "CFG-FILE-005",
+      "jira": "VCST-4829",
+      "url": "https://vcst-qa-storefront.govirto.com/products-with-options/configurable-caps-shirts/physical-1703",
+      "result": "VERIFIED",
+      "details": "The '+' (Increase quantity / add-to-cart) button is NOT disabled when the required File section is unfilled. It has cursor=pointer and is fully clickable. No disabled attribute or aria-disabled present. Bug VCST-4829 reproduced.",
+      "screenshot": "reports/test-lifecycle/TLC-2026-03-24-1330/CFG-FILE-004-005-counter-incremented.png",
+      "bugReproduced": true
+    },
+    {
+      "caseId": "CFG-TEXT-001",
+      "jira": null,
+      "url": "https://vcst-qa-storefront.govirto.com/products-with-options/configurations/agent-test-config-engraved-ring-20260324",
+      "result": "CHANGED",
+      "details": "Product AGENT-TEST-Config-Engraved-Ring-20260324 found and accessible. Required Text section 'Engraving Text *' present with textbox. However, the HTML input has maxLength=255 (not 30 as test case assumes). No visible character counter on the page. 30 characters were accepted fine, but the 30-char boundary test is not enforceable at this HTML level. Test case needs updating: either the admin maxLength config is 255 (not 30), or the test should verify via API what the configured limit is. The text section itself works correctly.",
+      "screenshot": "reports/test-lifecycle/TLC-2026-03-24-1330/CFG-TEXT-002-whitespace-rejected.png",
+      "bugReproduced": false
+    },
+    {
+      "caseId": "CFG-TEXT-002",
+      "jira": null,
+      "url": "https://vcst-qa-storefront.govirto.com/products-with-options/configurations/agent-test-config-engraved-ring-20260324",
+      "result": "VERIFIED",
+      "details": "Typed 5 spaces into required text field. Attempted add-to-cart via '+' button. Toast appeared: 'Sorry, this product cannot be added to cart'. Section header showed 'Section is required' — whitespace-only input correctly does NOT satisfy required validation. Add-to-cart was blocked. Note: counter still incremented (VCST-4828 bug), but whitespace validation itself works as expected by the test case.",
+      "screenshot": "reports/test-lifecycle/TLC-2026-03-24-1330/CFG-TEXT-002-whitespace-rejected.png",
+      "bugReproduced": false
+    },
+    {
+      "caseId": "CFG-TEXT-005",
+      "jira": null,
+      "url": "https://vcst-qa-storefront.govirto.com/products-with-options/configurations/agent-test-config-engraved-ring-20260324",
+      "result": "VERIFIED",
+      "details": "Typed special characters: O'Brien & Co -- <script>. Text persisted in input field. Added to cart successfully. In cart, 'Components list' shows: '1. Selected text: O'Brien & Co -- <script>'. Special characters preserved correctly: apostrophe, ampersand, em-dash, and HTML angle brackets all displayed without encoding artifacts (& not shown as &amp;, < not executed as HTML).",
+      "screenshot": "reports/test-lifecycle/TLC-2026-03-24-1330/CFG-TEXT-005-cart-special-chars.png",
+      "bugReproduced": false
+    },
+    {
+      "caseId": "CFG-FILE-006",
+      "jira": null,
+      "url": "https://vcst-qa-storefront.govirto.com/products-with-options/configurable-caps-shirts/physical",
+      "result": "VERIFIED",
+      "details": "Confirmed during CFG-FILE-001 testing: each file in the list has an individual 'Remove file' (X) button. Files are listed individually with name, size, and remove button. The selective removal mechanism is present and functional (individual X buttons per file item confirmed in DOM).",
+      "screenshot": "reports/test-lifecycle/TLC-2026-03-24-1330/CFG-FILE-001-5files-uploaded.png",
+      "bugReproduced": false
+    },
+    {
+      "caseId": "CFG-FILE-009",
+      "jira": "VCST-4827",
+      "url": "https://vcst-qa-storefront.govirto.com/products-with-options/configurable-caps-shirts/physical-1703",
+      "result": "VERIFIED",
+      "details": "Uploaded download.avif (unsupported type) — rejected with 'File format is not allowed' error and 'Fix file upload errors to continue' warning. Removed rejected file. Then uploaded Logo1.png (valid, 203kB) — accepted successfully. Section header updated to 'Logo1.png'. Error state cleared completely. Upload control remained functional after rejection. Recovery flow works correctly.",
+      "screenshot": null,
+      "bugReproduced": false
+    }
+  ],
+  "summary": {
+    "total": 10,
+    "verified": 9,
+    "changed": 1,
+    "broken": 0,
+    "blocked": 0
+  },
+  "notes": {
+    "consoleErrors": 0,
+    "networkFailures": 0,
+    "changedCases": "CFG-TEXT-001 needs maxLength updated from 30 to 255 (or verified via admin config). No character counter visible on storefront.",
+    "allJiraBugsReproduced": true,
+    "bugsReproduced": ["VCST-4825", "VCST-4826", "VCST-4827", "VCST-4828", "VCST-4829"]
+  }
+}

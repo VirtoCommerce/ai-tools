@@ -3,7 +3,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-03-23",
-    "totalSuites": 80,
+    "totalSuites": 81,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1370,6 +1370,25 @@
       ]
     },
     {
+      "id": "072d",
+      "name": "Configurable Products File & Text Sections",
+      "file": "regression/suites/Frontend/configurable-products/072b-file-text-section-cases.csv",
+      "domain": "catalog-search",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 17,
+      "estimatedMinutes": 15,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "configurable-products",
+        "file-upload",
+        "text-input",
+        "validation",
+        "sprint"
+      ]
+    },
+    {
       "id": "072c",
       "name": "Configurable Products Cross-Cutting",
       "file": "regression/suites/Frontend/configurable-products/072c-configurable-products-cross.csv",
@@ -1643,7 +1662,8 @@
       "052",
       "072",
       "072b",
-      "072c"
+      "072c",
+      "072d"
     ],
     "whitelabeling": [
       "067",
@@ -1690,6 +1710,7 @@
       "072",
       "072b",
       "072c",
+      "072d",
       "077"
     ],
     "backend": [
@@ -1799,6 +1820,7 @@
       "072",
       "072b",
       "072c",
+      "072d",
       "073",
       "074",
       "075",
@@ -1879,6 +1901,7 @@
       "072",
       "072b",
       "072c",
+      "072d",
       "073",
       "074",
       "075",
@@ -1924,7 +1947,8 @@
       "061",
       "072",
       "072b",
-      "072c"
+      "072c",
+      "072d"
     ],
     "domain:auth-security": [
       "031",
@@ -2022,6 +2046,7 @@
       "072",
       "072b",
       "072c",
+      "072d",
       "077",
       "080"
     ],

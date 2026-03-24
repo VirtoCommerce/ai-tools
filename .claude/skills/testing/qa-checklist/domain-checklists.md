@@ -4,7 +4,7 @@
 >
 > For Admin SPA and Platform API checklists, see `backend-admin-checklists.md` (27 Admin domains + 2 API domains | 255 items).
 
-**32 storefront domains + 1 cross-domain checklist | 365 checklist items** — every checked item should map to at least one test case.
+**32 storefront domains + 1 cross-domain checklist | 407 checklist items** — every checked item should map to at least one test case.
 
 ## Summary
 
@@ -23,7 +23,7 @@
 | 11 | Company Info | 6 | E2E-ORG | 02, 21 |
 | 12 | Company Members | 12 | E2E-MEMBER | 02, 21 |
 | 13 | Multi-Org | 11 | E2E-ORG | 02, 21 |
-| 14 | Product Configurations & Variations | 14 | E2E-CONFIG | 36 |
+| 14 | Product Configurations & Variations | 56 | E2E-CONFIG | 36 |
 | 15 | PDP (Product Detail Page) | 11 | E2E-CAT | 01, 03 |
 | 16 | Google Analytics | 11 | E2E-GA | 07 |
 | 17 | Anonymous Flow | 8 | E2E-CHK | 04a, 04b |
@@ -212,19 +212,80 @@
 - [ ] New org assignment: user added to second org → org appears in switcher (after re-login or session refresh)
 
 ## 14. Product Configurations & Variations
+
+### Variations
 - [ ] Variation swatches: color, size selectors displayed on PDP
 - [ ] Select variation → price updates, image gallery switches to variant images
-- [ ] "From $X" price on listing → specific price after variant selection
+- [ ] "From $X" price on listing (`minVariationPrice`) → specific price after variant selection
 - [ ] "N variations" link on product card → opens variation selector or separate page
 - [ ] Out-of-stock variant: greyed/disabled, "Out of Stock" message, cannot add
 - [ ] Unavailable combinations: selecting one option disables incompatible others
 - [ ] Stock per variation: inventory shown for selected variant
-- [ ] Configurable product: "Customize" CTA → sections (Section 1 → 2 → 3) → running total
-- [ ] File upload options (required vs optional) in configurator
-- [ ] Custom text properties (Custom1, Custom2, Custom3 fields)
-- [ ] Configured product in cart: shows selected options, edit reopens configurator
 - [ ] Cart line shows variant details (color, size) not just parent product name
 - [ ] B2B vs B2C layout differences for variation products
+
+### Configurable Products — Section Types
+Configurable products use **sections** (customizable parts) with **options** (choices per section). Three section types:
+
+#### Product Section Type
+- [ ] Product section renders with list of catalog items as selectable options
+- [ ] Each option shows product name, SKU/code, properties, and extended price
+- [ ] Option quantity selector: changing quantity recalculates `extendedPrice` (qty × unit price)
+- [ ] Required product section (`isRequired: true`): cannot proceed without selecting an option
+- [ ] Optional product section (`isRequired: false`): can skip section, configuration still valid
+- [ ] Multiple options in one section: only one selectable at a time (radio-style), or multiple if allowed
+- [ ] Option prices reflect current pricing (list price, sale price if applicable)
+
+#### Text Section Type
+- [ ] Text section renders input field for custom/predefined text entry
+- [ ] Custom text properties (Custom1, Custom2, Custom3 fields) accept free-form input
+- [ ] Required text section: validation prevents proceeding with empty text
+- [ ] Optional text section: can leave blank without blocking configuration
+- [ ] Text input character limits / validation rules enforced (if configured)
+- [ ] Predefined text options: dropdown or selection list of preset text values
+
+#### File Section Type
+- [ ] File section renders file upload control (e.g., logo uploads, custom artwork)
+- [ ] Required file section: cannot complete configuration without uploading a file
+- [ ] Optional file section: configuration valid without file attachment
+- [ ] File type validation: only accepted formats allowed (image, PDF, etc.)
+- [ ] File size limits enforced with user-friendly error message
+- [ ] Uploaded file preview displayed after successful upload
+
+### Configurable Products — Storefront UX
+- [ ] "Customize" CTA on PDP opens configurator (not standard "Add to Cart")
+- [ ] Configurator displays sections in defined order (Section 1 → 2 → 3 …)
+- [ ] Section name and description rendered for each configuration step
+- [ ] Running total updates dynamically as options are selected across sections
+- [ ] Required sections visually distinguished from optional (asterisk, label, or styling)
+- [ ] Validation: cannot add to cart until all required sections are satisfied
+- [ ] Validation error messages indicate which required sections are incomplete
+- [ ] Configuration summary shown before adding to cart (all selected options with prices)
+- [ ] Mixed section types in one product: Product + Text + File sections render correctly together
+- [ ] Empty configuration (no sections defined): product behaves as standard non-configurable product
+
+### Configurable Products — Cart & Checkout
+- [ ] Configured product in cart: shows selected options per section (product name, text value, file name)
+- [ ] Cart line item displays configuration details, not just parent product name
+- [ ] Edit configured product in cart: reopens configurator with previous selections pre-filled
+- [ ] Remove configured product from cart: entire configuration removed as one unit
+- [ ] Price in cart matches running total from configurator (sum of all section option prices)
+- [ ] Quantity change on configured cart item: recalculates total (qty × configured price)
+- [ ] Multiple configurations of same base product: appear as separate cart lines
+- [ ] Configured product persists through cart merge (anonymous → authenticated)
+- [ ] Configured product survives cart persistence across sessions
+- [ ] Checkout displays configuration details in order summary
+- [ ] Order confirmation / order history shows full configuration breakdown
+
+### Configurable Products — GraphQL API (`productConfiguration` query)
+- [ ] `productConfiguration` query returns `configurationSections` with `id`, `type`, `name`, `description`, `isRequired`
+- [ ] Each section contains `options` array with `quantity`, `extendedPrice`, and `product` details
+- [ ] Section `type` field correctly reflects: `Product`, `Text`, or `File`
+- [ ] Required parameters: `configurableProductId` + `storeId`; optional: `userId`, `cultureName`, `currencyCode`
+- [ ] Non-configurable product ID returns empty sections or appropriate error
+- [ ] `CartConfigurationItemType` in cart: `id`, `name`, `sectionId`, `productId`, `quantity` fields populated
+
+### Test Data
 - [ ] Category `/products-with-options`: 8 configurable + 7 variation products as test data
 
 ## 15. PDP (Product Detail Page)

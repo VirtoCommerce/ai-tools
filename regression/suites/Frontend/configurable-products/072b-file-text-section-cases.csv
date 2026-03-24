@@ -1,0 +1,314 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"CFG-FILE-001","File Section — Upload Button Disabled After 5th File Uploaded (Max Limit)","Configurable Products > File Section > Upload Limits","High","BL-CAT-006","ECL-7.3","User logged in as {{USER_EMAIL}}. Configurable product with optional File section accessible at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical (Hoodie Base, optional File section). Upload fixtures available: Logo1.png, Netflix-25.jpg, newier.pdf, Test.xlsx, large_test.png.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_url=/products-with-options/configurable-caps-shirts/physical; max_files=5","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
+[WAIT] Product configuration widget visible
+[SCROLL] Scroll to File upload section
+[ASSERT] File upload button visible and enabled
+[ACT] Upload file 1: Logo1.png via file upload control
+[WAIT] File 1 appears in uploaded files list
+[ASSERT] Upload button still enabled after file 1
+[ACT] Upload file 2: Netflix-25.jpg via file upload control
+[WAIT] File 2 appears in uploaded files list
+[ACT] Upload file 3: newier.pdf via file upload control
+[WAIT] File 3 appears in uploaded files list
+[ACT] Upload file 4: Test.xlsx via file upload control
+[WAIT] File 4 appears in uploaded files list
+[ACT] Upload file 5: large_test.png via file upload control
+[WAIT] File 5 appears in uploaded files list — 5 files total
+[ASSERT] Upload button is now disabled or hidden (max 5 reached)
+[ACT] Delete file 3 (newier.pdf) from uploaded files list
+[WAIT] File 3 removed; 4 files remain
+[ASSERT] Upload button is re-enabled after deletion","[DOM] Upload button disabled or hidden when 5 files are present
+[DOM] Upload button re-enabled after deleting one file (4 remain)
+[STATE] File list shows exactly 5 files at max limit
+[STATE] File list shows exactly 4 files after deletion","[CONSOLE] No JS errors during upload sequence
+[NETWORK] No 4xx/5xx on file upload requests
+[API] Each upload returns success response","Spinner visible >5s on any upload; upload button not disabled at 5 files; upload button not re-enabled after deletion; console TypeError during upload","Remove all uploaded files from section; navigate away from product page","VCST-4825","Manual"
+"CFG-FILE-002","File Section — Selecting None on Optional Section Clears Uploaded Files","Configurable Products > File Section > Optional Behavior","High","BL-CAT-006","ECL-7.1; ECL-7.3","User logged in as {{USER_EMAIL}}. Configurable product with optional File section accessible at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical (Hoodie Base, optional File section, shows None option).","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_url=/products-with-options/configurable-caps-shirts/physical","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
+[WAIT] Product configuration widget visible
+[SCROLL] Scroll to optional File section
+[ASSERT] 'None' option is available and selected by default
+[ACT] Upload file: Logo1.png via file upload control
+[WAIT] Logo1.png appears in uploaded files list
+[ASSERT] File list shows Logo1.png (1 file uploaded)
+[ACT] Select 'None' option on the optional File section
+[WAIT] Section state updates
+[ASSERT] Uploaded files list is cleared — Logo1.png no longer visible
+[ASSERT] File upload area returns to empty/initial state
+[ACT] Set quantity to 1; click 'Add to Cart'
+[WAIT] Cart operation completes","[STATE] Selecting 'None' removes all previously uploaded files from the list
+[DOM] File list is empty after selecting 'None'
+[DOM] Upload area shows empty/initial state (no file names or thumbnails)
+[STATE] Add-to-cart succeeds with None selected (optional section)","[CONSOLE] No JS errors when switching to None
+[NETWORK] No failed requests when clearing files
+[API] addItem mutation returns 200 with no file references in configuration","Files remaining in list after selecting None; add-to-cart blocked despite None selected; console TypeError on None selection","Remove item from cart after test","VCST-4826","Manual"
+"CFG-FILE-003","File Section — 0-Byte File Rejected on Required Upload Section","Configurable Products > File Section > Validation","High","BL-CAT-006","ECL-7.1; ECL-7.3","User logged in as {{USER_EMAIL}}. Configurable product with required File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703 (Hoodie Base required File). Upload fixture large_logo.png (0 bytes) available at test-data/uploads/.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_url=/products-with-options/configurable-caps-shirts/physical-1703; empty_file=large_logo.png (0 bytes)","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703
+[WAIT] Product configuration widget visible
+[SCROLL] Scroll to required File section
+[ASSERT] File section marked as Required
+[ACT] Upload file: large_logo.png (0 bytes) via file upload control
+[WAIT] Upload attempt completes
+[ASSERT] 0-byte file is rejected — error message shown
+[ASSERT] Upload area returns to empty state (no file shown in list)
+[ACT] Set quantity to 1; click 'Add to Cart'
+[ASSERT] Add-to-cart is blocked — validation error shown for required file section
+[ACT] Upload valid file: Logo1.png (208KB)
+[WAIT] Logo1.png appears in uploaded files list
+[ACT] Set quantity to 1; click 'Add to Cart'
+[WAIT] Add-to-cart completes","[STATE] 0-byte file rejected with error message (not silently accepted)
+[DOM] Error message indicates file is invalid or empty
+[STATE] Upload area is empty after 0-byte rejection
+[STATE] Add-to-cart blocked when only 0-byte file was uploaded
+[STATE] Valid file accepted after 0-byte rejection attempt","[CONSOLE] No unhandled server errors (5xx) for 0-byte upload attempt
+[NETWORK] Upload API returns 4xx for 0-byte file; 200 for valid file
+[API] addItem blocked before valid file; succeeds after valid file uploaded","0-byte file accepted without error; required section satisfied by 0-byte file; add-to-cart succeeds with 0-byte file; server 500 on 0-byte upload attempt","Remove item from cart after test","VCST-4827","Manual"
+"CFG-FILE-004","Cart Quantity Counter Does Not Increment When Required Section Is Unfilled","Configurable Products > File Section > Quantity Validation","High","BL-CAT-006; BL-CART-001","ECL-7.3","User logged in as {{USER_EMAIL}}. Configurable product with required File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_url=/products-with-options/configurable-caps-shirts/physical-1703","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703
+[WAIT] Product configuration widget visible
+[ASSERT] Required File section is unfilled (no file uploaded)
+[SCROLL] Scroll to quantity control
+[ASSERT] Record current quantity counter value (should be 1 or default)
+[ACT] Click '+' (increase quantity) button on the quantity spinbutton
+[WAIT] 500ms for any UI response
+[ASSERT] Quantity counter value has NOT changed from initial value
+[ACT] Click '+' button a second time
+[WAIT] 500ms
+[ASSERT] Quantity counter still unchanged (required section still unfilled)
+[ACT] Upload valid file: Logo1.png via file upload control
+[WAIT] File appears in upload list
+[ACT] Click '+' on quantity counter
+[WAIT] Quantity increments","[STATE] Quantity counter does not increment when required File section is unfilled
+[DOM] Quantity value unchanged after clicking '+' with no file uploaded
+[STATE] Quantity counter increments normally once required section is fulfilled","[CONSOLE] No JS errors when clicking '+' with unfilled required section
+[NETWORK] No add-to-cart API calls triggered by quantity increment alone","Quantity incrementing with unfilled required section; counter reaching 2 or higher before file uploaded; JS error on quantity click","Navigate away; no cart cleanup needed","VCST-4828","Manual"
+"CFG-FILE-005","Add-to-Cart Plus Button Disabled When Required Section Is Unfilled","Configurable Products > File Section > Add-to-Cart Validation","High","BL-CAT-006","ECL-7.3","User logged in as {{USER_EMAIL}}. Configurable product with required File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_url=/products-with-options/configurable-caps-shirts/physical-1703","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703
+[WAIT] Product configuration widget visible
+[ASSERT] Required File section is unfilled
+[SCROLL] Scroll to Add-to-Cart area
+[ASSERT] 'Add to Cart' '+' button (or add-to-cart control) is disabled or visually inactive
+[ACT] Attempt to click the 'Add to Cart' '+' button
+[WAIT] 300ms
+[ASSERT] No item added to cart — cart badge unchanged
+[ASSERT] Validation error or tooltip visible indicating required section must be filled
+[ACT] Upload valid file: Logo1.png via file upload control
+[WAIT] Logo1.png appears in uploaded files list
+[SCROLL] Scroll to Add-to-Cart area
+[ASSERT] 'Add to Cart' '+' button is now enabled
+[ACT] Click 'Add to Cart'
+[WAIT] Success notification visible OR cart badge increments","[DOM] 'Add to Cart' '+' button has disabled attribute or aria-disabled='true' when required section unfilled
+[STATE] No cart item created when disabled button clicked
+[DOM] Button becomes enabled after required File section is fulfilled
+[DOM] Success notification shown after clicking enabled button","[CONSOLE] No JS errors when clicking disabled button
+[NETWORK] No addItem API call made when button is disabled
+[API] addItem mutation succeeds after file uploaded — errors[] is empty","Button clickable despite being visually disabled; cart badge incrementing with unfilled required section; button not becoming enabled after file upload","Remove item from cart after test","VCST-4829","Manual"
+"CFG-FILE-006","File Section — Multiple Files Upload and Individual Remove","Configurable Products > File Section > Upload Management","Medium","BL-CAT-006","ECL-7.3","User logged in as {{USER_EMAIL}}. Configurable product with optional File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_url=/products-with-options/configurable-caps-shirts/physical","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
+[WAIT] Configuration widget visible
+[SCROLL] Scroll to File section
+[ACT] Upload Logo1.png
+[WAIT] Logo1.png in file list
+[ACT] Upload Netflix-25.jpg
+[WAIT] Netflix-25.jpg in file list
+[ACT] Upload newier.pdf
+[WAIT] newier.pdf in file list
+[ASSERT] 3 files visible in list
+[ACT] Click remove/delete (X) on Netflix-25.jpg only
+[WAIT] Netflix-25.jpg removed
+[ASSERT] File list shows 2 files: Logo1.png and newier.pdf
+[ASSERT] Logo1.png and newier.pdf still present (not accidentally removed)","[DOM] Individual file remove works without clearing all files
+[STATE] Remaining files persisted after individual removal
+[STATE] Correct files remain after specific file deletion","[CONSOLE] No JS errors on file removal
+[NETWORK] No unexpected API failures","Removing one file clears all files; wrong file removed; file list showing stale entries","Remove all files; navigate away","","Manual"
+"CFG-FILE-007","File Section — Accepted and Rejected File Types Boundary","Configurable Products > File Section > Type Validation","High","BL-CAT-006","ECL-7.1; ECL-7.3","User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical. Upload fixtures available: Logo1.png, newier.pdf, Test.xlsx, video.mp4 (24MB oversized), download.avif, Stabilio.webp.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_url=/products-with-options/configurable-caps-shirts/physical","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
+[WAIT] Configuration widget visible
+[ACT] Upload Logo1.png (.png — accepted type)
+[WAIT] Result
+[ASSERT] Logo1.png accepted; file appears in list
+[ACT] Remove Logo1.png
+[ACT] Upload download.avif (.avif — not in accepted list)
+[WAIT] Result
+[ASSERT] download.avif rejected with clear error message
+[ACT] Upload Stabilio.webp (.webp — not in accepted list)
+[WAIT] Result
+[ASSERT] Stabilio.webp rejected with clear error message
+[ACT] Upload newier.pdf (.pdf — accepted type)
+[WAIT] Result
+[ASSERT] newier.pdf accepted; file appears in list
+[ACT] Remove newier.pdf
+[ACT] Upload Test.xlsx (.xlsx — accepted type)
+[WAIT] Result
+[ASSERT] Test.xlsx accepted","[STATE] .png accepted (.jpg, .png in allowed list)
+[STATE] .pdf accepted (.pdf in allowed list)
+[STATE] .xlsx accepted (.xls, .xlsx in allowed list)
+[STATE] .avif rejected with error (not in allowed list)
+[STATE] .webp rejected with error (not in allowed list)
+[DOM] Error messages clearly state format is not supported","[CONSOLE] No 500 errors for rejected type uploads
+[NETWORK] Upload API returns 4xx for rejected types; 200 for accepted","Accepted types rejected; unsupported types silently accepted; server 500 on type rejection","Remove all uploaded files; navigate away","","Manual"
+"CFG-FILE-008","File Section — Max File Size Enforcement (10MB Platform Limit)","Configurable Products > File Section > Size Validation","High","BL-CAT-006","ECL-7.1","User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical. Upload fixtures: large_test.png (5MB), video.mp4 (24MB).","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_url=/products-with-options/configurable-caps-shirts/physical","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
+[WAIT] Configuration widget visible
+[ACT] Upload large_test.png (5MB — within 10MB limit)
+[WAIT] Upload completes
+[ASSERT] large_test.png accepted; visible in file list
+[ACT] Remove large_test.png
+[ACT] Upload video.mp4 (24MB — exceeds 10MB platform limit)
+[WAIT] Upload attempt result
+[ASSERT] video.mp4 rejected with size error message
+[ASSERT] Upload area returns to empty state (no file persisted)","[STATE] 5MB file within 10MB limit accepted
+[STATE] 24MB file exceeding 10MB limit rejected with clear error
+[DOM] Error message references size limit
+[STATE] Upload area clean after rejection","[CONSOLE] No 500 server errors on oversized upload
+[NETWORK] Upload API returns 4xx for oversized file; 200 for 5MB file","5MB file rejected incorrectly; 24MB file accepted; server 500 on oversized upload; UI frozen after oversized upload attempt","Remove uploaded files; navigate away","","Manual"
+"CFG-FILE-009","File Section — Re-Upload After Failed Attempt Works Correctly","Configurable Products > File Section > Upload Recovery","Medium","BL-CAT-006","ECL-7.3","User logged in as {{USER_EMAIL}}. Product with required File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_url=/products-with-options/configurable-caps-shirts/physical-1703","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703
+[WAIT] Configuration widget visible
+[ACT] Upload download.avif (unsupported type — will be rejected)
+[WAIT] Rejection response
+[ASSERT] download.avif rejected with error message
+[ASSERT] Upload control still functional (not frozen)
+[ACT] Upload large_logo.png (0 bytes — will be rejected)
+[WAIT] Rejection response
+[ASSERT] 0-byte file rejected
+[ACT] Upload Logo1.png (valid PNG, 208KB)
+[WAIT] Upload completes
+[ASSERT] Logo1.png appears in file list
+[ACT] Set quantity to 1; click 'Add to Cart'
+[WAIT] Cart operation completes","[STATE] Upload control remains functional after consecutive rejections
+[STATE] Valid file accepted after prior failed attempts
+[STATE] Add-to-cart succeeds with valid file after previous rejections
+[DOM] No stale error message persisted from failed attempts","[CONSOLE] No JS errors leaving upload control in broken state
+[NETWORK] Successful upload returns 200 after prior 4xx rejections
+[API] addItem mutation succeeds — errors[] empty","Upload control frozen after rejection; valid file rejected after prior failure; stale error messages blocking UI; add-to-cart blocked despite valid file","Remove item from cart after test","VCST-4827","Manual"
+"CFG-TEXT-001","Text Section — Max Length Enforced (Required Text, 30-Char Limit)","Configurable Products > Text Section > Validation","High","BL-CAT-006","ECL-7.2","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Engraved-Ring-20260324 has a required Text section with maxLength 30. Product URL at {{FRONT_URL}} in /products-with-options/.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-Config-Engraved-Ring-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Engraved-Ring-20260324
+[WAIT] Configuration widget visible
+[SCROLL] Scroll to required Text section
+[ASSERT] Text input field visible; character count or maxlength hint shown (30 chars)
+[ACT] Type exactly 30 characters into text field: 'Exactly thirty characters here!'
+[ASSERT] All 30 characters accepted; counter shows 30/30 or equivalent
+[ACT] Attempt to type one more character (31st character: 'X')
+[ASSERT] 31st character not accepted (input capped at 30)
+[ACT] Clear field; type text exceeding 30 chars by pasting: 'This text is way too long for this field!'
+[ASSERT] Text truncated to 30 characters or excess characters rejected
+[ACT] Clear field; type 1 character: 'A'
+[ASSERT] 1 character accepted; add-to-cart not blocked by length
+[ACT] Click 'Add to Cart'","[STATE] Text field enforces 30-character maximum
+[STATE] 30 characters accepted exactly
+[STATE] 31st character rejected or trimmed
+[STATE] 1 character accepted (above minimum if any)
+[DOM] Character counter or maxlength indicator reflects the limit","[CONSOLE] No JS errors on limit enforcement
+[NETWORK] No API call made for over-length input attempts
+[API] addItem call includes text value (trimmed to limit)","31st character accepted without indication; paste overwrites entire field; character counter not updating; add-to-cart blocked by 1-char input","Remove item from cart after test","","Manual"
+"CFG-TEXT-002","Text Section — Whitespace-Only Input Does Not Satisfy Required Validation","Configurable Products > Text Section > Validation","High","BL-CAT-006","ECL-7.2","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Engraved-Ring-20260324 has required Text section with maxLength 30.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-Config-Engraved-Ring-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Engraved-Ring-20260324
+[WAIT] Configuration widget visible
+[SCROLL] Scroll to required Text section
+[ACT] Type 5 spaces into the text field (whitespace only)
+[ASSERT] Field appears filled visually but contains only spaces
+[ACT] Set quantity to 1; click 'Add to Cart'
+[WAIT] Validation response
+[ASSERT] Add-to-cart blocked — validation error for required text field
+[ACT] Clear field; type meaningful text: 'Happy Birthday'
+[ACT] Click 'Add to Cart'
+[WAIT] Success notification","[STATE] Whitespace-only input does not satisfy required text validation
+[DOM] Validation error shown when only whitespace entered
+[STATE] Meaningful text satisfies required validation and allows add-to-cart","[CONSOLE] No JS errors on whitespace validation
+[NETWORK] addItem API not called when whitespace fails validation","Whitespace satisfying required validation; add-to-cart succeeding with spaces-only text; no validation error shown","Remove item from cart after test","","Manual"
+"CFG-TEXT-003","Text Section — Optional Text Section Allows Empty and Non-Empty Values","Configurable Products > Text Section > Optional Behavior","Medium","BL-CAT-006","ECL-7.1","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Gift-Box-20260324 has optional Text section with maxLength 100.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-Config-Gift-Box-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Gift-Box-20260324
+[WAIT] Configuration widget visible
+[SCROLL] Scroll to optional Text section
+[ASSERT] Text field visible but not marked Required
+[ACT] Leave text field empty; set quantity to 1; click 'Add to Cart'
+[WAIT] Success or error
+[ASSERT] Add-to-cart SUCCEEDS with empty optional text field
+[NAV] Open cart
+[ASSERT] Cart line item shows product; no text configuration shown or shows empty
+[ACT] Navigate back to PDP
+[ACT] Type 'Congratulations on your new home!' into text field
+[ACT] Set quantity to 1; click 'Add to Cart'
+[WAIT] Success notification
+[NAV] Open cart
+[ASSERT] Cart line item shows 'Congratulations on your new home!'","[STATE] Empty optional text field does not block add-to-cart
+[STATE] Filled optional text field value preserved in cart
+[DOM] Cart shows text value when provided; no text shown when left empty","[CONSOLE] No errors for either scenario
+[NETWORK] Both addItem calls return 200
+[API] addItem response errors[] empty for both empty and filled text","Optional text blocking add-to-cart when empty; text value missing from cart; wrong item added","Remove both cart items after test","","Manual"
+"CFG-TEXT-004","Text Section — Long Text at 100-Char Boundary Preserved in Cart and Order","Configurable Products > Text Section > Max Length E2E","Medium","BL-CAT-006","ECL-7.2","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Gift-Box-20260324 has optional Text section with maxLength 100.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-Config-Gift-Box-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Gift-Box-20260324
+[WAIT] Configuration widget visible
+[ACT] Type exactly 100 characters: 'This gift message is exactly one hundred characters long. It tests the maximum length boundary ok!'
+[ASSERT] All 100 characters accepted
+[ACT] Attempt to add 101st character
+[ASSERT] Character not accepted (capped at 100)
+[ACT] Set quantity to 1; click 'Add to Cart'
+[WAIT] Success notification
+[NAV] Open cart
+[ASSERT] Full 100-character text preserved in cart line item (not truncated)
+[ASSERT] Text not garbled by special characters at end","[STATE] 100-character text accepted (at-limit boundary value)
+[STATE] 101st character not accepted
+[DOM] Cart displays full 100-character text without truncation or corruption
+[FORMAT] No HTML encoding artifacts in text display","[CONSOLE] No errors
+[NETWORK] addItem returns 200
+[API] addItem request body contains full 100-char text; errors[] empty","100 chars rejected; text truncated in cart display; encoding artifacts in long text; 101 chars accepted","Remove item from cart","","Manual"
+"CFG-TEXT-005","Text Section — Special Characters and Unicode Preserved Through Cart","Configurable Products > Text Section > Character Handling","Medium","BL-CAT-006","ECL-7.2","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Gift-Box-20260324 has optional Text section.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-Config-Gift-Box-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Gift-Box-20260324
+[WAIT] Configuration widget visible
+[ACT] Type text with special characters: 'Happy Birthday! & Best Wishes — 2026'
+[ACT] Set quantity to 1; click 'Add to Cart'
+[WAIT] Success
+[NAV] Open cart
+[ASSERT] Special characters preserved exactly (& and — not HTML-encoded in display)
+[ACT] Navigate back to PDP
+[ACT] Type text with international characters: 'Félicitations! Ünschön — ありがとう'
+[ACT] Set quantity to 1; click 'Add to Cart'
+[WAIT] Success
+[NAV] Open cart
+[ASSERT] Unicode/international characters preserved correctly in cart","[STATE] Special characters (& — !) preserved in cart without HTML encoding artifacts
+[STATE] Unicode characters preserved correctly in cart display
+[FORMAT] '&' displayed as '&' not '&amp;'; '—' displayed as '—' not '&mdash;'","[CONSOLE] No encoding-related JS errors
+[NETWORK] addItem request correctly encodes Unicode in payload
+[API] Response contains unescaped characters; errors[] empty","& displayed as &amp; in cart; Unicode characters garbled or replaced with ?; add-to-cart blocked by special chars","Remove both cart items after test","","Manual"
+"CFG-TEXT-006","Text Section — Text Value Preserved Through Full Checkout to Order History","Configurable Products > Text Section > E2E Persistence","High","BL-CAT-006; BL-CART-007","ECL-7.1; ECL-14.1","User logged in as {{USER_EMAIL}} with {{USER_PASSWORD}}. Product AGENT-TEST-Config-Engraved-Ring-20260324 has required Text section (maxLength 30). Checkout must be completable (valid address, payment method available).","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Engraved-Ring-20260324
+[WAIT] Configuration widget visible
+[ACT] Type 'With Love Always' into required text field
+[ACT] Set quantity 1; click 'Add to Cart'
+[WAIT] Success notification
+[NAV] {{FRONT_URL}}/cart
+[ASSERT] Text 'With Love Always' visible in cart line item
+[ACT] Proceed to checkout
+[WAIT] Checkout page loads
+[ASSERT] Text 'With Love Always' visible in checkout order summary
+[ACT] Complete checkout (shipping address, payment method)
+[WAIT] Order confirmation page
+[ASSERT] Text 'With Love Always' visible on order confirmation page
+[NAV] {{FRONT_URL}}/account/orders
+[ASSERT] Text 'With Love Always' visible in order history for this order","[DOM] 'With Love Always' present at: cart, checkout summary, order confirmation, order history
+[STATE] Text value not dropped at any stage of the purchase flow
+[FORMAT] Text displayed accurately without truncation at all stages","[ADMIN] Admin order detail shows 'With Love Always' in line item configuration
+[API] Order creation POST returns 201; errors[] empty
+[CONSOLE] No errors across entire checkout flow","Text missing at any stage; text truncated; different text shown than entered; order creation failing","None (order placed for test verification)","","Manual"
+"CFG-TEXT-007","Text Section — Required Text Quantity Counter Blocked When Field Empty (Parallel to VCST-4828)","Configurable Products > Text Section > Quantity Validation","High","BL-CAT-006; BL-CART-001","ECL-7.3","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Engraved-Ring-20260324 has required Text section.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-Config-Engraved-Ring-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Engraved-Ring-20260324
+[WAIT] Configuration widget visible
+[ASSERT] Required Text section field is empty
+[SCROLL] Scroll to quantity spinbutton
+[ASSERT] Record current quantity value (expect 1)
+[ACT] Click '+' on quantity counter
+[WAIT] 500ms
+[ASSERT] Quantity counter has NOT changed (remains at 1)
+[ACT] Type 'Engraved' into required text field
+[WAIT] Field updated
+[ACT] Click '+' on quantity counter
+[WAIT] Quantity increments","[STATE] Quantity '+' does not increment when required text section is empty
+[DOM] Quantity value unchanged after clicking '+' with empty required text
+[STATE] Quantity increments after required text section is filled","[CONSOLE] No JS errors when clicking '+' with empty required text
+[NETWORK] No addItem API calls triggered by quantity increment alone","Counter incrementing with empty required text; JS error on quantity click; counter not incrementing after text filled","Navigate away; no cart cleanup needed","VCST-4828","Manual"
+"CFG-TEXT-008","Text Section — Add-to-Cart Button Disabled When Required Text Is Empty (Parallel to VCST-4829)","Configurable Products > Text Section > Add-to-Cart Validation","High","BL-CAT-006","ECL-7.3","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Engraved-Ring-20260324 has required Text section.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-Config-Engraved-Ring-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Engraved-Ring-20260324
+[WAIT] Configuration widget visible
+[ASSERT] Required Text section is empty
+[SCROLL] Scroll to 'Add to Cart' button
+[ASSERT] 'Add to Cart' button is disabled (aria-disabled or visually inactive)
+[ACT] Attempt to click 'Add to Cart' button
+[WAIT] 300ms
+[ASSERT] Cart badge unchanged — no item added
+[ACT] Type 'My Engraving' into required text field
+[WAIT] Field updated
+[SCROLL] Scroll to 'Add to Cart' button
+[ASSERT] 'Add to Cart' button is now enabled
+[ACT] Click 'Add to Cart'
+[WAIT] Success notification","[DOM] 'Add to Cart' button disabled when required text field is empty
+[STATE] No cart item created when disabled button clicked
+[DOM] Button enabled after required text field filled
+[STATE] Add-to-cart succeeds after text filled","[CONSOLE] No JS errors on disabled button click
+[NETWORK] No addItem API call when button disabled
+[API] addItem succeeds after text filled — errors[] empty","Button enabled with empty required text; cart item added with empty text; button not re-enabling after text entered","Remove item from cart after test","VCST-4829","Manual"

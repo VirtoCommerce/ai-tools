@@ -91,7 +91,7 @@ Each step on its own line, prefixed with a type tag.
 
 **Step type tags:**
 
-> These tags apply to **Storefront UI** tests. For other layers see: REST API → `[HTTP]` `[AUTH]` `[SETUP]` `[TEARDOWN]`; GraphQL → `[GQL]` `[VAR]` `[AUTH]` `[SETUP]` `[TEARDOWN]`; Admin UI → `[BLADE]` `[GRID]` `[SAVE]` `[WIDGET]`. Full definitions in the Layer-Specific Formats section below.
+> These tags apply to **Storefront UI** tests. For other layers see: REST API → `[HTTP]` `[AUTH]` `[SETUP]` `[TEARDOWN]`; GraphQL → `[NAV]` `[AUTH]` `[ACT]` `[GQL]` `[READ]` `[SETUP]` `[TEARDOWN]`; Admin UI → `[BLADE]` `[GRID]` `[SAVE]` `[WIDGET]`. Full definitions in the Layer-Specific Formats section below.
 
 | Tag | Meaning | Agent Action |
 |-----|---------|-------------|
@@ -281,23 +281,27 @@ Tests executed via Postman MCP or `browser_evaluate` (fetch). No browser UI inte
 
 ### Layer: GraphQL xAPI
 
-Tests executed via Postman MCP or `browser_evaluate` (fetch to `/graphql`). Key rule: **HTTP 200 ≠ success** — always check `errors[]`.
+Tests executed in the **GraphiQL UI** at `{{BACK_URL}}/ui/graphiql`. GraphiQL uses CodeMirror editors — use `browser_type` (NOT `browser_fill`). See `graphiql-interaction.md` for the full interaction guide. Key rule: **HTTP 200 ≠ success** — always check `errors[]` in the response panel.
 
 **Step tags (Steps column):**
 
 | Tag | Meaning | Agent Action |
 |-----|---------|-------------|
-| `[GQL]` | Execute GraphQL query or mutation | POST to `{{BACK_URL}}/graphql` with query + variables |
-| `[AUTH]` | Authenticate (get Bearer token or use storefront cookie) | Token endpoint or login mutation |
-| `[SETUP]` | Create prerequisite data (cart, user, product) | GraphQL mutations or REST API |
-| `[TEARDOWN]` | Clean up created data | Delete mutations or REST API |
+| `[NAV]` | Navigate to GraphiQL UI | `browser_navigate` to `{{BACK_URL}}/ui/graphiql` |
+| `[AUTH]` | Set Bearer token in Headers tab | Obtain token via POST `{{BACK_URL}}/connect/token`, then type `{"Authorization": "Bearer <token>"}` into Headers CodeMirror |
+| `[ACT]` | Interact with GraphiQL editor | Click editor → Ctrl+A → Backspace → type query/mutation via `browser_type` |
+| `[GQL]` | Execute GraphQL query or mutation | Click Execute (▶) button or press Ctrl+Enter |
+| `[READ]` | Read response from response panel | `browser_snapshot` or `browser_evaluate` to extract response JSON |
+| `[SETUP]` | Create prerequisite data (cart, user, product) | Execute setup mutations in GraphiQL or REST API |
+| `[TEARDOWN]` | Clean up created data | Execute cleanup mutations in GraphiQL or REST API |
 | `[WAIT]` | Wait for async processing (reindex, event) | Poll or delay |
-| `[VAR]` | Extract value from previous response for next step | Save `id` from mutation response |
+| `[VAR]` | Extract value from response for next step | Save `id` from response panel |
 
 **Assertion tags (Assertions column):**
 
 | Tag | Checks |
 |-----|--------|
+| `[RESPONSE]` | Response panel shows data (no red error banner in GraphiQL) |
 | `[ERRORS]` | `errors[]` is empty (or contains expected error for negative tests) |
 | `[DATA]` | Response `data` field has expected structure and values |
 | `[NULL]` | Specific field is null or non-null as expected |
@@ -309,10 +313,10 @@ Tests executed via Postman MCP or `browser_evaluate` (fetch to `/graphql`). Key 
 
 | Tag | Checks |
 |-----|--------|
-| `[ROUNDTRIP]` | Mutation → Query confirms data persisted correctly |
+| `[ROUNDTRIP]` | Mutation → clear editor → type query → execute → confirms data persisted |
 | `[STOREFRONT]` | Storefront UI reflects the GraphQL state change |
 | `[ADMIN]` | Admin SPA shows the entity/change |
-| `[CONSOLE]` | No JS errors if testing via browser |
+| `[CONSOLE]` | No JS errors in GraphiQL during execution |
 | `[EVENT]` | Platform events/notifications triggered |
 
 **Worked example:** see `test-case-examples.md` → GraphQL xAPI — GQL-042

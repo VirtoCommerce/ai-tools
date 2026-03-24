@@ -22,19 +22,28 @@ API-042,"Create Product — Catalog REST","API > Catalog > CRUD",High,BL-CAT-001
 
 ---
 
-## GraphQL xAPI — GQL-042: Add Coupon to Cart
+## GraphQL xAPI — GQL-042: Add Coupon to Cart (via GraphiQL UI)
+
+> **All GraphQL tests execute in the GraphiQL UI** at `{{BACK_URL}}/ui/graphiql`.
+> GraphiQL uses CodeMirror — use `browser_type` (NOT `browser_fill`). See `graphiql-interaction.md` for the full interaction guide.
 
 ```csv
-GQL-042,"Add Coupon to Cart — xCart Mutation","GraphQL > xCart > Coupons",High,"BL-CART-003, BL-PROMO-001","ECL-14.1, ECL-5.1","User authenticated, cart exists with items, valid coupon code available","back_url={{BACK_URL}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}, cart_id={{CART_ID}}, coupon_code={{COUPON_CODE}}","[AUTH] POST {{BACK_URL}}/connect/token for {{USER_EMAIL}}
-[SETUP] ensure cart {{CART_ID}} has at least 1 item via cart query
-[GQL] mutation { addCoupon(command: { cartId: ""{{CART_ID}}"", couponCode: ""{{COUPON_CODE}}"" }) { id coupons { code isAppliedSuccessfully } totals { discountTotal { amount } subTotal { amount } grandTotalAmount { amount } } } }
-[VAR] save discountTotal.amount as {{DISCOUNT}}","[ERRORS] errors[] is empty
-[DATA] coupons array contains entry with code == {{COUPON_CODE}}
+GQL-042,"Add Coupon to Cart — xCart Mutation via GraphiQL","GraphQL > xCart > Coupons",High,"BL-CART-003, BL-PROMO-001","ECL-14.1, ECL-5.1","Cart exists with items, valid coupon code available, OAuth2 bearer token obtained","back_url={{BACK_URL}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}, cart_id={{CART_ID}}, coupon_code={{COUPON_CODE}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password for {{USER_EMAIL}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] click Headers tab → clear editor (Ctrl+A, Backspace) → type: {""Authorization"": ""Bearer {{TOKEN}}""}
+[ACT] click query editor → clear (Ctrl+A, Backspace)
+[ACT] type mutation: mutation { addCoupon(command: { cartId: ""{{CART_ID}}"", couponCode: ""{{COUPON_CODE}}"" }) { id coupons { code isAppliedSuccessfully } totals { discountTotal { amount } subTotal { amount } grandTotalAmount { amount } } } }
+[ACT] click Execute (▶) button or press Ctrl+Enter
+[WAIT] response panel shows result
+[READ] snapshot response panel or evaluate: document.querySelector('.result-window .CodeMirror').CodeMirror.getValue()
+[VAR] save discountTotal.amount as {{DISCOUNT}}","[RESPONSE] response panel contains data (no red error banner)
+[DATA] data.addCoupon.coupons contains entry with code == {{COUPON_CODE}}
 [DATA] coupons[].isAppliedSuccessfully == true
 [MATH] grandTotalAmount = subTotal - discountTotal
-[COUNT] coupons array length incremented by 1","[ROUNDTRIP] query cart by id → coupons still applied, totals unchanged
+[COUNT] coupons array length incremented by 1","[ROUNDTRIP] clear editor → type cart query → execute → coupons still applied, totals unchanged
 [STOREFRONT] {{FRONT_URL}}/cart shows discount line and updated total
-[ADMIN] order (if created) shows coupon in admin","errors[] non-empty after addCoupon, discountTotal.amount == 0, coupon not in coupons array, 5xx on /graphql","[TEARDOWN] removeCoupon mutation to restore cart state",VCST-XXXX,Automated
+[CONSOLE] no JS errors in GraphiQL during execution","errors[] non-empty in response panel, discountTotal.amount == 0, coupon not in coupons array, GraphiQL shows network error or red error banner","[TEARDOWN] type removeCoupon mutation in GraphiQL editor → execute to restore cart state",VCST-XXXX,Automated
 ```
 
 ---

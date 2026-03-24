@@ -175,108 +175,121 @@ XMKT-018,REST API — Coupon List for Promotion,xMarketing > API > REST,High,BL-
 [SCHEMA] each coupon has 'code', 'id' fields; 'maxUsesNumber' present (nullable)
 [COUNT] returned count matches count visible in Admin Coupons tab for same promotion","[ADMIN] Admin Coupons tab count matches API totalCount
 [CONSOLE] no errors","HTTP 404 on valid promo_id, missing coupon fields, count mismatch with Admin","none",,Not Automated
-XMKT-019,GraphQL xAPI — promotionCoupons Happy Path Query,xMarketing > GraphQL > promotionCoupons,Critical,"BL-PRICE-001, BL-CART-003",,"xMarketing experience API module deployed; at least one active, public promotion with a coupon code exists in store {{STORE_ID}}; authenticated user whose storeId matches {{STORE_ID}}","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[AUTH] obtain Bearer token for {{USER_EMAIL}} from storefront auth endpoint
-[GQL] POST {{BACK_URL}}/graphql with query:
-query {
-  promotionCoupons(storeId: ""{{STORE_ID}}"", first: 20, after: ""0"") {
-    totalCount
-    items {
-      id
-      systemName
-      name
-      label
-      description
-      couponCode
-      endDate
-    }
-  }
-}","[ERRORS] errors[] is empty
+XMKT-019,GraphQL xAPI — promotionCoupons Happy Path Query,xMarketing > GraphQL > promotionCoupons,Critical,"BL-PRICE-001, BL-CART-003",,"xMarketing experience API module deployed; at least one active, public promotion with a coupon code exists in store {{STORE_ID}}","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password for {{USER_EMAIL}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click Headers tab → clear (Ctrl+A, Backspace) → type: {""Authorization"": ""Bearer {{TOKEN}}""}
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { promotionCoupons(storeId: ""{{STORE_ID}}"", first: 20, after: ""0"") { totalCount items { id systemName name label description couponCode endDate } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response from response panel","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty
 [DATA] data.promotionCoupons.totalCount >= 0 (integer)
 [DATA] items[] array present; each item has non-null id, systemName, couponCode
 [DATA] all returned items have couponCode != null (promotions without coupons excluded)
-[NULL] endDate is ISO 8601 string when present; null acceptable for open-ended promotions
-[SCHEMA] all field names are camelCase; no unexpected extra fields","[ROUNDTRIP] count of returned items ≤ totalCount (pagination consistent)
+[NULL] endDate is ISO 8601 string when present; null acceptable for open-ended promotions","[ROUNDTRIP] Re-execute query → same results; count of returned items ≤ totalCount (pagination consistent)
 [ADMIN] count of active+public+couponed promotions in Admin for {{STORE_ID}} matches totalCount
 [STOREFRONT] /account/coupons storefront page shows same coupon codes
-[CONSOLE] no JS errors if tested via browser","HTTP 200 but errors[] non-empty, couponCode null on returned items, totalCount mismatch with Admin, response >500ms","none",VCST-4590,Not Automated
-XMKT-020,GraphQL xAPI — promotionCoupons Schema Introspection,xMarketing > GraphQL > promotionCoupons,High,BL-PRICE-001,,"xMarketing xAPI module deployed; GraphQL introspection enabled","admin_url={{BACK_URL}}","[GQL] POST {{BACK_URL}}/graphql with introspection query:
-{
-  __schema {
-    queryType {
-      fields {
-        name
-        args { name type { name kind ofType { name kind } } }
-      }
-    }
-  }
-}
-[VAR] find 'promotionCoupons' field in queryType.fields","[ERRORS] introspection returns HTTP 200, errors[] empty
+[CONSOLE] no JS errors in GraphiQL","errors[] non-empty in response panel, couponCode null on returned items, totalCount mismatch with Admin, GraphiQL shows error banner","none",VCST-4590,Not Automated
+XMKT-020,GraphQL xAPI — promotionCoupons Schema Introspection,xMarketing > GraphQL > promotionCoupons,High,BL-PRICE-001,,"xMarketing xAPI module deployed; GraphQL introspection enabled; GraphiQL UI loaded","admin_url={{BACK_URL}}","[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type introspection query: { __schema { queryType { fields { name args { name type { name kind ofType { name kind } } } } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — find 'promotionCoupons' field in queryType.fields
+[ACT] Click Docs (📖) sidebar → search for 'promotionCoupons' to verify in schema explorer","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] empty
 [DATA] 'promotionCoupons' field exists in root Query type
-[SCHEMA] accepts args: storeId (String! non-null), userId (String nullable), currencyCode (String nullable), cultureName (String nullable), first (Int nullable), after (String nullable)
-[SCHEMA] return type is a connection type with totalCount (Int) and items ([PromotionCouponType])","[ADMIN] field names match Admin module structure
-[CONSOLE] no introspection errors","HTTP 500 on introspection, promotionCoupons field missing from schema, storeId arg not String! non-null","none",VCST-4590,Not Automated
-XMKT-021,GraphQL xAPI — promotionCoupons Unauthenticated (Negative),xMarketing > GraphQL > promotionCoupons > Negative,Critical,"BL-PRICE-001, BL-AUTH-005",,"xMarketing xAPI module deployed","admin_url={{BACK_URL}}, store_id={{STORE_ID}}","[GQL] POST {{BACK_URL}}/graphql with promotionCoupons query (storeId: {{STORE_ID}}, first: 5, after: ""0"") — NO Authorization header","[ERRORS] errors[] contains at least one error with UNAUTHORIZED or authentication-related message/code
+[DATA] accepts args: storeId (String! non-null), userId (String nullable), currencyCode (String nullable), cultureName (String nullable), first (Int nullable), after (String nullable)
+[DATA] return type is a connection type with totalCount (Int) and items ([PromotionCouponType])","[RESPONSE] Docs sidebar shows promotionCoupons with matching args and return type
+[CONSOLE] no introspection errors in GraphiQL","GraphiQL crashes on introspection, promotionCoupons field missing from schema or Docs sidebar, storeId arg not String! non-null","none",VCST-4590,Not Automated
+XMKT-021,GraphQL xAPI — promotionCoupons Unauthenticated (Negative),xMarketing > GraphQL > promotionCoupons > Negative,Critical,"BL-PRICE-001, BL-AUTH-005",,"xMarketing xAPI module deployed; GraphiQL UI accessible","admin_url={{BACK_URL}}, store_id={{STORE_ID}}","[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click Headers tab → clear (Ctrl+A, Backspace) → leave empty (no auth)
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { promotionCoupons(storeId: ""{{STORE_ID}}"", first: 5, after: ""0"") { totalCount items { id couponCode } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response from response panel","[ERRORS] errors[] contains at least one error with UNAUTHORIZED or authentication-related message/code
 [DATA] data.promotionCoupons is null (no promotion data returned)
-[STATUS] HTTP status remains 200 (GraphQL spec — errors returned in body, not HTTP 4xx)
-[SCHEMA] response body contains no stack traces or internal infrastructure paths","[CONSOLE] no internal errors exposed
-[NETWORK] HTTP 200 response (not 401/403 at transport level)","HTTP 200 with promotion data returned (security failure), HTTP 500, stack trace in response, no errors[] populated","none",VCST-4590,Not Automated
-XMKT-022,GraphQL xAPI — promotionCoupons Forbidden (Wrong Store) Negative,xMarketing > GraphQL > promotionCoupons > Negative,High,"BL-PRICE-001, BL-AUTH-005",,"xMarketing xAPI deployed; user authenticated with storeId = Store A; Store B exists and is different","admin_url={{BACK_URL}}, store_id_other=STORE_B_ID, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[AUTH] obtain Bearer token for {{USER_EMAIL}} (user assigned to Store A)
-[GQL] POST {{BACK_URL}}/graphql with promotionCoupons query using storeId: ""STORE_B_ID"" (different store)","[ERRORS] errors[] contains at least one FORBIDDEN or authorization-related error code/message
+[RESPONSE] Response panel shows error data (not crash or blank)
+[DATA] response body contains no stack traces or internal infrastructure paths","[CONSOLE] no internal errors in GraphiQL
+[RESPONSE] GraphiQL remains functional after auth error","Promotion data returned without auth in response panel (security failure), GraphiQL crashes, stack trace in response, no errors[] populated","none",VCST-4590,Not Automated
+XMKT-022,GraphQL xAPI — promotionCoupons Forbidden (Wrong Store) Negative,xMarketing > GraphQL > promotionCoupons > Negative,High,"BL-PRICE-001, BL-AUTH-005",,"xMarketing xAPI deployed; user authenticated with storeId = Store A; Store B exists and is different","admin_url={{BACK_URL}}, store_id_other=STORE_B_ID, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password for {{USER_EMAIL}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click Headers tab → clear (Ctrl+A, Backspace) → type: {""Authorization"": ""Bearer {{TOKEN}}""}
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query with wrong store: query { promotionCoupons(storeId: ""STORE_B_ID"", first: 5, after: ""0"") { totalCount items { id couponCode } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response from response panel","[ERRORS] errors[] contains at least one FORBIDDEN or authorization-related error code/message
 [DATA] data.promotionCoupons is null — no Store B promotion data returned for Store A user
-[STATUS] HTTP 200 (GraphQL spec)","[CONSOLE] no internal paths or stack traces in errors
-[NETWORK] HTTP 200 at transport level","HTTP 200 with Store B promotions returned (cross-store data bleed — security failure), HTTP 500, no errors[] populated","none",VCST-4590,Not Automated
-XMKT-023,GraphQL xAPI — promotionCoupons Missing Required storeId (Negative),xMarketing > GraphQL > promotionCoupons > Negative,High,BL-PRICE-001,,"xMarketing xAPI deployed; authenticated user","admin_url={{BACK_URL}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[AUTH] obtain Bearer token for {{USER_EMAIL}}
-[GQL] POST {{BACK_URL}}/graphql with malformed query — omit storeId argument:
-query {
-  promotionCoupons(first: 10, after: ""0"") {
-    totalCount
-    items { id couponCode }
-  }
-}","[ERRORS] errors[] contains validation error naming missing required argument 'storeId'
+[RESPONSE] Response panel shows error (not data)","[CONSOLE] no internal paths or stack traces in errors in GraphiQL
+[RESPONSE] GraphiQL remains functional after forbidden error","Store B promotions returned in response panel (cross-store data bleed — security failure), GraphiQL crashes, no errors[] populated","none",VCST-4590,Not Automated
+XMKT-023,GraphQL xAPI — promotionCoupons Missing Required storeId (Negative),xMarketing > GraphQL > promotionCoupons > Negative,High,BL-PRICE-001,,"xMarketing xAPI deployed; auth header set in GraphiQL","admin_url={{BACK_URL}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type malformed query (omit storeId): query { promotionCoupons(first: 10, after: ""0"") { totalCount items { id couponCode } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response from response panel","[ERRORS] errors[] contains validation error naming missing required argument 'storeId'
 [DATA] no data returned (null or absent)
-[STATUS] HTTP 200 (GraphQL spec — validation error, not HTTP 400)
-[SCHEMA] error location includes line/column info for the missing argument","[CONSOLE] no unhandled exceptions
-[NETWORK] HTTP 200 at transport level","HTTP 500, no errors[] (silent failure), data returned despite missing required arg","none",VCST-4590,Not Automated
-XMKT-024,GraphQL xAPI — promotionCoupons Pagination Correctness,xMarketing > GraphQL > promotionCoupons,High,BL-PRICE-001,,"xMarketing xAPI deployed; authenticated user with storeId match; store has 3+ active public couponed promotions","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[AUTH] obtain Bearer token for {{USER_EMAIL}}
-[GQL] POST /graphql: promotionCoupons(storeId: {{STORE_ID}}, first: 2, after: ""0"") → get page 1 items, save last cursor or use skip
-[VAR] save totalCount from page 1 response
-[GQL] POST /graphql: promotionCoupons(storeId: {{STORE_ID}}, first: 2, after: ""2"") → get page 2 items","[COUNT] page 1 returns exactly 2 items (or fewer if totalCount < 2)
+[RESPONSE] Response panel shows error with location info for the missing argument
+[DATA] error location includes line/column info","[CONSOLE] no unhandled exceptions in GraphiQL
+[RESPONSE] GraphiQL remains functional after validation error","GraphiQL crashes, no errors[] in response (silent failure), data returned despite missing required arg","none",VCST-4590,Not Automated
+XMKT-024,GraphQL xAPI — promotionCoupons Pagination Correctness,xMarketing > GraphQL > promotionCoupons,High,BL-PRICE-001,,"xMarketing xAPI deployed; auth header set in GraphiQL; store has 3+ active public couponed promotions","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type page 1 query: query { promotionCoupons(storeId: ""{{STORE_ID}}"", first: 2, after: ""0"") { totalCount items { id couponCode } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response → save page 1 items and totalCount
+[ACT] Clear editor → type page 2 query: query { promotionCoupons(storeId: ""{{STORE_ID}}"", first: 2, after: ""2"") { totalCount items { id couponCode } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response → compare page 2 items with page 1","[COUNT] page 1 returns exactly 2 items (or fewer if totalCount < 2)
 [COUNT] totalCount on page 1 and page 2 are identical (consistent)
 [DATA] page 2 items are different from page 1 items (no duplicates across pages)
 [COUNT] combining page 1 and page 2 items covers the first 4 promotions without gaps","[ROUNDTRIP] totalCount matches count of all active+public+couponed promotions via Admin verification
-[CONSOLE] no JS errors","Pages return identical items (pagination broken), totalCount inconsistent between pages, duplicates across pages, HTTP 200 + errors[]","none",VCST-4590,Not Automated
-XMKT-025,GraphQL xAPI — promotionCoupons Filter Correctness (Only Active+Public+Couponed),xMarketing > GraphQL > promotionCoupons,Critical,BL-PRICE-001,,"xMarketing xAPI deployed; authenticated admin user; setup: deactivated promotion and private promotion exist in store","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] obtain admin Bearer token
-[SETUP] via REST API: ensure one promotion exists with isActive=false in {{STORE_ID}}
+[CONSOLE] no JS errors in GraphiQL","Pages return identical items (pagination broken), totalCount inconsistent between pages, duplicates across pages, errors[] non-empty in response panel","none",VCST-4590,Not Automated
+XMKT-025,GraphQL xAPI — promotionCoupons Filter Correctness (Only Active+Public+Couponed),xMarketing > GraphQL > promotionCoupons,Critical,BL-PRICE-001,,"xMarketing xAPI deployed; auth header set in GraphiQL; setup: deactivated and private promotions exist in store","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[SETUP] via REST API: ensure one promotion exists with isActive=false in {{STORE_ID}}
 [SETUP] via REST API: ensure one promotion exists with isPublic=false (or 'private') in {{STORE_ID}}
 [SETUP] via REST API: ensure one promotion with isActive=true AND isPublic=true AND at least 1 coupon exists
-[GQL] POST {{BACK_URL}}/graphql: promotionCoupons(storeId: {{STORE_ID}}, first: 100, after: ""0"") with admin token","[ERRORS] errors[] empty
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { promotionCoupons(storeId: ""{{STORE_ID}}"", first: 100, after: ""0"") { totalCount items { id systemName couponCode } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — check which promotions appear in results","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] empty
 [DATA] inactive promotion (isActive=false) NOT present in items[]
 [DATA] private promotion (isPublic=false) NOT present in items[]
 [DATA] active+public+couponed promotion IS present in items[]
 [COUNT] totalCount reflects only qualifying promotions","[ADMIN] Admin Promotions list for {{STORE_ID}} filtered to Active+Public shows same count as totalCount
-[CONSOLE] no JS errors","Inactive or private promotions appearing in results (filter broken), totalCount inflated by non-qualifying promotions","Delete any test promotions created in SETUP after test",VCST-4590,Not Automated
-XMKT-026,GraphQL xAPI — promotionCoupons Localization (cultureName),xMarketing > GraphQL > promotionCoupons,Medium,BL-PRICE-001,,"xMarketing xAPI deployed; promotion exists with en-US translations for name/label/description; authenticated user","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[AUTH] obtain Bearer token for {{USER_EMAIL}}
-[GQL] POST /graphql: promotionCoupons(storeId: {{STORE_ID}}, cultureName: ""en-US"", first: 20, after: ""0"") { items { id name label description systemName } }
-[VAR] save name/label/description values for en-US
-[GQL] POST /graphql: promotionCoupons(storeId: {{STORE_ID}}, first: 20, after: ""0"") (no cultureName arg) { items { id name label description systemName } }","[DATA] with cultureName: 'en-US' — name, label, description return English translation strings (non-null when translations exist)
+[CONSOLE] no JS errors in GraphiQL","Inactive or private promotions appearing in response panel (filter broken), totalCount inflated by non-qualifying promotions","Delete any test promotions created in SETUP after test",VCST-4590,Not Automated
+XMKT-026,GraphQL xAPI — promotionCoupons Localization (cultureName),xMarketing > GraphQL > promotionCoupons,Medium,BL-PRICE-001,,"xMarketing xAPI deployed; promotion exists with en-US translations; auth header set in GraphiQL","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query with cultureName: query { promotionCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", first: 20, after: ""0"") { items { id name label description systemName } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response → save name/label/description values for en-US
+[ACT] Clear editor → type query without cultureName: query { promotionCoupons(storeId: ""{{STORE_ID}}"", first: 20, after: ""0"") { items { id name label description systemName } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — compare values without cultureName","[DATA] with cultureName: 'en-US' — name, label, description return English translation strings (non-null when translations exist)
 [DATA] without cultureName — name, label, description return null (no default locale applied per spec)
 [DATA] systemName is always returned as non-null regardless of cultureName setting
 [NULL] label and description are null (not empty string) when no translation for the requested locale","[ROUNDTRIP] en-US name value matches what Admin shows as promotion name in English
-[CONSOLE] no JS errors","name/label/description returning same value regardless of cultureName, systemName returning null, empty string instead of null for missing locale","none",VCST-4590,Not Automated
-XMKT-027,GraphQL xAPI — promotionCoupons Cross-Layer: Admin Deactivate → GQL Excludes,xMarketing > GraphQL > Cross-Layer,Critical,BL-PRICE-001,,"xMarketing xAPI deployed; authenticated admin user; at least one active+public+couponed promotion in {{STORE_ID}}","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] obtain admin Bearer token
-[GQL] POST /graphql: record initial promotionCoupons totalCount and item ids for {{STORE_ID}}
-[NAV] {{BACK_URL}} → Marketing → Promotions → open target promotion detail blade
-[ACT] toggle 'Active' to disabled/inactive
-[SAVE] save promotion
-[WAIT] save confirmed
-[GQL] POST /graphql: re-query promotionCoupons(storeId: {{STORE_ID}}, first: 100, after: ""0"")","[DATA] deactivated promotion id NO LONGER appears in items[] after deactivation
+[CONSOLE] no JS errors in GraphiQL","name/label/description returning same value regardless of cultureName, systemName returning null, empty string instead of null for missing locale","none",VCST-4590,Not Automated
+XMKT-027,GraphQL xAPI — promotionCoupons Cross-Layer: Admin Deactivate → GQL Excludes,xMarketing > GraphQL > Cross-Layer,Critical,BL-PRICE-001,,"xMarketing xAPI deployed; auth header set in GraphiQL; at least one active+public+couponed promotion in {{STORE_ID}}","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { promotionCoupons(storeId: ""{{STORE_ID}}"", first: 100, after: ""0"") { totalCount items { id systemName couponCode } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response → record initial totalCount and item ids
+[NAV] {{BACK_URL}} → Marketing → Promotions → open target promotion detail blade (separate browser tab or Admin session)
+[ACT] Toggle 'Active' to disabled/inactive
+[SAVE] Save promotion
+[WAIT] Save confirmed
+[ACT] Return to GraphiQL tab → clear editor → type same promotionCoupons query
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — compare with initial results","[DATA] deactivated promotion id NO LONGER appears in items[] after deactivation
 [COUNT] totalCount decrements by 1 compared to initial query
 [ERRORS] errors[] empty on re-query","[ADMIN] Admin Promotions list shows promotion as inactive
 [STOREFRONT] /account/coupons storefront page no longer shows the deactivated promotion's coupon
-[CONSOLE] no JS errors","Deactivated promotion still appears in GQL results (cache staleness or filter bug), totalCount unchanged, errors[] non-empty","Re-activate the promotion in Admin after test to restore state",VCST-4590,Not Automated
-XMKT-028,GraphQL xAPI — promotionCoupons E2E: Apply Returned CouponCode in Cart,xMarketing > GraphQL > E2E,Critical,"BL-PRICE-001, BL-CART-003",,"xMarketing xAPI deployed; promotionCoupons returns at least one item with couponCode; cart exists for authenticated user; product in catalog qualifies for the promotion","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","--- API ---
-[AUTH] obtain Bearer token for {{USER_EMAIL}}
-[GQL] POST /graphql: promotionCoupons(storeId: {{STORE_ID}}, first: 5, after: ""0"") → extract first couponCode value → save as {{coupon_code}}
+[CONSOLE] no JS errors in GraphiQL","Deactivated promotion still appears in response panel (cache staleness or filter bug), totalCount unchanged, errors[] non-empty","Re-activate the promotion in Admin after test to restore state",VCST-4590,Not Automated
+XMKT-028,GraphQL xAPI — promotionCoupons E2E: Apply Returned CouponCode in Cart,xMarketing > GraphQL > E2E,Critical,"BL-PRICE-001, BL-CART-003",,"xMarketing xAPI deployed; auth header set in GraphiQL; product in catalog qualifies for the promotion","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","--- GRAPHIQL ---
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { promotionCoupons(storeId: ""{{STORE_ID}}"", first: 5, after: ""0"") { items { id couponCode } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response → extract first couponCode value → save as {{coupon_code}}
 --- STOREFRONT ---
 [NAV] {{FRONT_URL}}/catalog → add qualifying product to cart
 [WAIT] cart badge increments
@@ -287,10 +300,11 @@ XMKT-028,GraphQL xAPI — promotionCoupons E2E: Apply Returned CouponCode in Car
 [WAIT] cart totals recalculate","[DOM] coupon code applied message visible (or discount row appears in cart totals)
 [MATH] cart discountTotal > 0 after coupon application
 [MATH] cart total = subtotal - discountTotal (± any shipping/tax)
-[STATE] coupon {{coupon_code}} appears in cart.coupons[] with isAppliedSuccessfully=true","[API] POST /graphql addCoupon mutation response: errors[] empty AND isAppliedSuccessfully=true
-[API] cart.discountTotal > 0 in addCoupon response
+[STATE] coupon {{coupon_code}} appears in cart.coupons[] with isAppliedSuccessfully=true","--- GRAPHIQL VERIFY ---
+[ACT] Return to GraphiQL → clear editor → type addCoupon mutation for same cart → execute
+[READ] Verify errors[] empty and isAppliedSuccessfully=true in response panel
 [CONSOLE] no JS errors during coupon application
-[NETWORK] no 4xx/5xx on addCoupon graphql call","errors[] non-empty after addCoupon, discountTotal still 0, coupon rejected, console TypeError, 5xx on graphql","Remove coupon from cart via removeCoupon mutation or clear cart after test",VCST-4590,Not Automated
+[CONSOLE] no JS errors in GraphiQL","errors[] non-empty in response panel after addCoupon, discountTotal still 0, coupon rejected on storefront, GraphiQL shows error","Remove coupon from cart via removeCoupon mutation in GraphiQL or clear cart after test",VCST-4590,Not Automated
 XMKT-029,Dynamic Content — Content Items CRUD in Admin,xMarketing > Admin > Dynamic Content > Content Items,High,,,"Marketing module installed; admin user authenticated","admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}} → Marketing → Dynamic Content → Content Items
 [BLADE] wait for Content Items list blade
 [ACT] click 'Add' button
@@ -372,36 +386,36 @@ XMKT-035,Marketing Security — RBAC: Read-Only Role Cannot Create or Delete Pro
 [BLADE] Promotions list blade is accessible (read access granted)","[API] POST {{BACK_URL}}/api/marketing/promotions with read-only user Bearer token returns HTTP 403
 [API] DELETE {{BACK_URL}}/api/marketing/promotions/{id} with read-only user token returns HTTP 403
 [CONSOLE] no JS errors","Add or Delete button visible for read-only user (permission leak), API returns 200 for unauthorized create/delete","Sign out and sign back in as admin after test",,Not Automated
-XMKT-036,Marketing Security — No Data Exposure in GraphQL Error Responses,xMarketing > Security,Critical,"BL-PRICE-001, BL-AUTH-005",,"xMarketing xAPI deployed","admin_url={{BACK_URL}}, store_id={{STORE_ID}}","[GQL] POST {{BACK_URL}}/graphql with intentionally malformed promotionCoupons query (unknown field):
-query {
-  promotionCoupons(storeId: ""{{STORE_ID}}"", first: 5) {
-    items { id nonExistentField }
-  }
-}
-[GQL] POST {{BACK_URL}}/graphql with extremely large first value:
-query {
-  promotionCoupons(storeId: ""{{STORE_ID}}"", first: 10000, after: ""0"") {
-    totalCount items { id couponCode }
-  }
-}","[ERRORS] unknown field query returns errors[] with field-level error (location info present); HTTP 200
-[SCHEMA] errors[] messages contain no server file paths, SQL fragments, or stack traces
+XMKT-036,Marketing Security — No Data Exposure in GraphQL Error Responses,xMarketing > Security,Critical,"BL-PRICE-001, BL-AUTH-005",,"xMarketing xAPI deployed; GraphiQL UI accessible","admin_url={{BACK_URL}}, store_id={{STORE_ID}}","[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type malformed query (unknown field): query { promotionCoupons(storeId: ""{{STORE_ID}}"", first: 5) { items { id nonExistentField } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — verify field-level error without data exposure
+[ACT] Clear editor → type query with large first value: query { promotionCoupons(storeId: ""{{STORE_ID}}"", first: 10000, after: ""0"") { totalCount items { id couponCode } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — verify no timeout or memory crash","[ERRORS] unknown field query: errors[] with field-level error (location info present)
+[DATA] errors[] messages contain no server file paths, SQL fragments, or stack traces
 [DATA] unknown field query returns no data for valid fields (partial data not leaked alongside error)
-[PERF] large first value query completes in < 2000ms without timeout or memory crash
-[DATA] large first value returns actual matching count (capped at real data — no artificial inflation)","[CONSOLE] no unhandled exceptions in error responses
-[NETWORK] HTTP 200 at transport level for both cases","HTTP 500 on unknown field, stack trace in errors[], query times out with large first value","none",VCST-4590,Not Automated
-XMKT-037,Marketing Performance — promotionCoupons Response Time,xMarketing > Performance,Medium,BL-PRICE-001,,"xMarketing xAPI deployed; store with 20+ active public couponed promotions; authenticated user","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[AUTH] obtain Bearer token for {{USER_EMAIL}}
-[GQL] POST {{BACK_URL}}/graphql: promotionCoupons(storeId: {{STORE_ID}}, first: 20, after: ""0"") { totalCount items { id systemName couponCode endDate } }
-[VAR] capture response duration (from request to first byte)
-[GQL] repeat same query 3 times to assess consistency","[PERF] average response time < 500ms for all 3 calls
-[PERF] no single call exceeds 2000ms
+[DATA] large first value query completes in < 2000ms without timeout
+[DATA] large first value returns actual matching count (capped at real data — no artificial inflation)","[CONSOLE] no unhandled exceptions in GraphiQL
+[RESPONSE] GraphiQL remains functional after both queries","GraphiQL crashes on unknown field, stack trace in errors[] in response panel, query times out with large first value","none",VCST-4590,Not Automated
+XMKT-037,Marketing Performance — promotionCoupons Response Time,xMarketing > Performance,Medium,BL-PRICE-001,,"xMarketing xAPI deployed; store with 20+ active public couponed promotions; auth header set in GraphiQL","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { promotionCoupons(storeId: ""{{STORE_ID}}"", first: 20, after: ""0"") { totalCount items { id systemName couponCode endDate } } }
+[GQL] Click Execute (▶) or Ctrl+Enter → note response time in GraphiQL or DevTools Network
+[GQL] Click Execute (▶) 2 more times → note response times for consistency
+[READ] Read response panel after each execution","[DATA] average response time < 500ms for all 3 executions
+[DATA] no single execution exceeds 2000ms
 [DATA] all 3 responses return identical totalCount (no flapping)
-[ERRORS] errors[] empty on all calls","[CONSOLE] no JS errors
-[NETWORK] HTTP 200 on all 3 calls","Any call exceeds 2000ms, totalCount fluctuates between calls, HTTP 500 on any call","none",VCST-4590,Not Automated
-XMKT-038,Marketing Performance — DataLoader Batch Loading Verification (No N+1),xMarketing > Performance,High,BL-PRICE-001,,"xMarketing xAPI deployed; store with 10+ active public couponed promotions; admin with backend tracing access or network DevTools","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] obtain admin Bearer token
-[GQL] POST {{BACK_URL}}/graphql with DevTools network monitoring enabled:
-promotionCoupons(storeId: {{STORE_ID}}, first: 10, after: ""0"") { totalCount items { id couponCode } }
-[WAIT] response received
-[NETWORK] inspect network requests to coupon/search APIs during the single GQL call","[PERF] single GraphQL request resulted in at most ONE batch call to coupon search service (DataLoader behavior — not 10 individual calls)
+[ERRORS] errors[] empty on all executions","[CONSOLE] no JS errors in GraphiQL
+[RESPONSE] Response panel updates after each execution","Any execution exceeds 2000ms, totalCount fluctuates between executions, errors[] non-empty in response panel","none",VCST-4590,Not Automated
+XMKT-038,Marketing Performance — DataLoader Batch Loading Verification (No N+1),xMarketing > Performance,High,BL-PRICE-001,,"xMarketing xAPI deployed; store with 10+ active public couponed promotions; auth header set in GraphiQL; Chrome DevTools Network tab open","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[ACT] Open Chrome DevTools → Network tab → clear log
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { promotionCoupons(storeId: ""{{STORE_ID}}"", first: 10, after: ""0"") { totalCount items { id couponCode } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response from response panel
+[ACT] Inspect Network tab for sub-requests during the single GraphQL call","[DATA] single GraphQL request resulted in at most ONE batch call to coupon search service (DataLoader behavior — not 10 individual calls)
 [DATA] response contains couponCode for each promotion item (non-null, DataLoader resolved correctly)
-[PERF] total response time < 1000ms for 10 items","[CONSOLE] no timeout errors or DataLoader exceptions
-[NETWORK] no burst of identical coupon search sub-requests (N+1 pattern absent)","10 individual coupon search calls observed instead of 1 batch call (N+1 regression), couponCode null on items, response >3000ms","none",VCST-4590,Not Automated
+[DATA] total response time < 1000ms for 10 items","[CONSOLE] no timeout errors or DataLoader exceptions in GraphiQL
+[RESPONSE] Network tab shows no burst of identical coupon search sub-requests (N+1 pattern absent)","10 individual coupon search calls observed in Network tab instead of 1 batch call (N+1 regression), couponCode null on items in response panel, response >3000ms","none",VCST-4590,Not Automated

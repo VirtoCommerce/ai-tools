@@ -116,6 +116,8 @@ Input:
     - .claude/agents/knowledge/e-commerce-edge-cases-library.md
     - .claude/agents/knowledge/products.md
     - .claude/skills/testing/qa-checklist/domain-checklists.md
+    - .claude/skills/testing/qa-checklist/backend-admin-checklists.md
+    - .claude/skills/testing/qa-checklist/graphql-checklist.md
     - .claude/skills/testing/qa-coverage-gap/feature-domain-map.md
   - context7: query `/virtocommerce/vc-docs` for domain-specific module behavior
 
