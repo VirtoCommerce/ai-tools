@@ -1,6 +1,7 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
+import { TestDataResolver } from "../lib/test-data-resolver.js";
 
 // --- Configuration from environment variables ---
 
@@ -59,6 +60,9 @@ function loadManifest(): Manifest {
 }
 
 const manifest = loadManifest();
+
+// Test data resolver — resolves @td() references in suite CSVs
+const testDataResolver = new TestDataResolver(join(process.cwd(), "test-data"));
 
 // Build SUITE_MAP dynamically from manifest
 const SUITE_MAP: Record<string, SuiteConfig> = {};
@@ -238,7 +242,8 @@ async function runSuite(suiteId: string, config: SuiteConfig, remainingBudget: n
       errors: [`Suite file not found: ${suitePath}`],
     };
   }
-  const suiteCSV = readFileSync(suitePath, "utf-8");
+  const rawCSV = readFileSync(suitePath, "utf-8");
+  const suiteCSV = testDataResolver.resolveCSV(rawCSV);
 
   // Read agent definition
   const agentPath = join("ci", "agents", `${config.agent}.md`);

@@ -2,13 +2,13 @@
 "PAY-CS-001","CyberSource - Valid Form Submission","CyberSource > Positive","Critical","BL-PAY-004","ECL-14.6","- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment processor configured and active
-- Browser DevTools Network tab open","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart — CyberSource payment form is on cart page
+- Browser DevTools Network tab open","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart — CyberSource payment form is on cart page
 [WAIT] Wait for CyberSource payment section to render with iframe fields
 [ACT] Select 'Bank card (CyberSource)' payment method if not pre-selected
-[ACT] Click into 'Card Number' iframe field; fill '4622943127013705'
-[ACT] Fill 'Cardholder Name' field with 'John Smith'
-[ACT] Fill 'Expiry Date' field with '09/2029'
-[ACT] Fill 'CVV' field with '838'
+[ACT] Click into 'Card Number' iframe field; fill '@td(CYBERSOURCE_VISA.number)'
+[ACT] Fill 'Cardholder Name' field with '@td(CYBERSOURCE_VISA.cardholder)'
+[ACT] Fill 'Expiry Date' field with '@td(CYBERSOURCE_VISA.expiry)'
+[ACT] Fill 'CVV' field with '@td(CYBERSOURCE_VISA.cvv)'
 [ASSERT] All fields accept input without validation errors
 [ACT] Click 'Place Order'
 [WAIT] Wait for order processing response","[DOM] All payment fields accept input without inline error messages
@@ -19,8 +19,8 @@
 [ADMIN] Confirm order appears in admin Orders list with status reflecting payment attempt","Order confirmation page not reached; inline validation error appears unexpectedly; network request contains raw card number","Cancel order via admin if order was created","VCST-3387 TC-POS-001","Manual"
 "PAY-CS-002","CyberSource - Special Characters in Cardholder Name","CyberSource > Positive","Medium","BL-PAY-004","ECL-14.6","- Logged in as registered user
 - Cart has at least one item
-- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
-[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Expiry Date' with '09/2029'; fill 'CVV' with '838'
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Expiry Date' with '@td(CYBERSOURCE_VISA.expiry)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'
 [ACT] Fill 'Cardholder Name' with 'Mary-Jane O''Connor'
 [ASSERT] Name field accepts hyphen and apostrophe without error
 [ACT] Clear 'Cardholder Name'; fill with 'José García'
@@ -35,22 +35,22 @@
 [NETWORK] Cardholder name transmitted correctly in tokenization request","Name field strips special characters silently; validation error fires on valid international name characters; form refuses to submit with accented characters","Cancel order via admin if order was created","VCST-3387 TC-POS-004","Manual"
 "PAY-CS-003","CyberSource - Expiry Date Format Variations","CyberSource > Positive","Medium","BL-PAY-004","ECL-14.6","- Logged in as registered user
 - Cart has at least one item
-- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
-[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Cardholder Name' with 'John Smith'; fill 'CVV' with '838'
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'
 [ACT] Click 'Expiry Date' field; type '092029' (no slash)
-[ASSERT] Field auto-formats to '09/2029'
-[ACT] Clear field; type '09/2029' (with slash)
-[ASSERT] Value '09/2029' accepted as-is
+[ASSERT] Field auto-formats to '@td(CYBERSOURCE_VISA.expiry)'
+[ACT] Clear field; type '@td(CYBERSOURCE_VISA.expiry)' (with slash)
+[ASSERT] Value '@td(CYBERSOURCE_VISA.expiry)' accepted as-is
 [ACT] Clear field; type '09 / 2029' (with spaces)
-[ASSERT] Field normalizes to '09/2029' or accepts padded format
+[ASSERT] Field normalizes to '@td(CYBERSOURCE_VISA.expiry)' or accepts padded format
 [ASSERT] All three input styles display as MM/YYYY","[FORMAT] Expiry date field displays value as MM/YYYY regardless of input style
 [DOM] No validation error shown for any accepted format variant
 [STATE] Form is submittable after each valid format entry","[API] createOrderFromCart GraphQL mutation errors[] is empty on submission","Field rejects valid expiry formats; auto-formatting breaks cursor position causing incorrect value; MM/YYYY display not achieved","Cancel order via admin if order was created","VCST-3387 TC-POS-005","Manual"
 "PAY-CS-004","CyberSource - Invalid Card Number Rejected","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
-[ACT] Click into 'Card Number' iframe field; fill '1234567890123456'
-[ACT] Fill 'Cardholder Name' with 'John Smith'; fill 'Expiry Date' with '09/2029'; fill 'CVV' with '838'
+[ACT] Click into 'Card Number' iframe field; fill '@td(CYBERSOURCE_INVALID.number)'
+[ACT] Fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'Expiry Date' with '@td(CYBERSOURCE_VISA.expiry)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'
 [ACT] Click 'Place Order'
 [ASSERT] Inline validation error appears on or near 'Card Number' field
 [ASSERT] Error text contains 'Invalid card number' or equivalent
@@ -62,7 +62,7 @@
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
 [ACT] Leave 'Card Number' field empty
-[ACT] Fill 'Cardholder Name' with 'John Smith'; fill 'Expiry Date' with '09/2029'; fill 'CVV' with '838'
+[ACT] Fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'Expiry Date' with '@td(CYBERSOURCE_VISA.expiry)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'
 [ACT] Click 'Place Order'
 [ASSERT] Inline error appears on 'Card Number' field with text 'Card number required' or equivalent
 [ASSERT] Field border or highlight indicates error state
@@ -73,8 +73,8 @@
 "PAY-CS-006","CyberSource - Empty Cardholder Name Blocked","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart
-- Known bug: form may submit without name (document outcome)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
-[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Expiry Date' with '09/2029'; fill 'CVV' with '838'
+- Known bug: form may submit without name (document outcome)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Expiry Date' with '@td(CYBERSOURCE_VISA.expiry)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'
 [ACT] Leave 'Cardholder Name' field empty
 [ACT] Click 'Place Order'
 [ASSERT] Inline validation error appears on 'Cardholder Name' with text 'Name required' or equivalent
@@ -85,8 +85,8 @@
 [CONSOLE] No unhandled exceptions","Form submits successfully without cardholder name (known bug — document if still present); no error message displayed; field not highlighted","Cancel order via admin if order was placed despite empty name (known bug path)","VCST-3387 TC-NEG-003","Manual"
 "PAY-CS-007","CyberSource - Expired Card Rejected","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","- Logged in as registered user
 - Cart has at least one item
-- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
-[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Cardholder Name' with 'John Smith'; fill 'CVV' with '838'
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'
 [ACT] Fill 'Expiry Date' with '01/2020' (past date)
 [ACT] Click 'Place Order'
 [ASSERT] Inline error appears on 'Expiry Date' field with text 'Card expired' or equivalent
@@ -96,8 +96,8 @@
 [CONSOLE] No JS errors","Expired date accepted without error; form submits with past expiry; error message missing or generic","none — no order created","VCST-3387 TC-NEG-004","Manual"
 "PAY-CS-008","CyberSource - Empty Expiry Date Blocked","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","- Logged in as registered user
 - Cart has at least one item
-- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
-[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Cardholder Name' with 'John Smith'; fill 'CVV' with '838'
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'
 [ACT] Leave 'Expiry Date' empty
 [ACT] Click 'Place Order'
 [ASSERT] Inline error on 'Expiry Date' field with text 'Expiry required' or equivalent
@@ -107,8 +107,8 @@
 [CONSOLE] No JS errors from iframe","No error for blank expiry; form submits without expiry date; field highlighted but no readable error text","none — no order created","VCST-3387 TC-NEG-005","Manual"
 "PAY-CS-009","CyberSource - Invalid Expiry Month Rejected","CyberSource > Negative","High","BL-PAY-001","ECL-9.1","- Logged in as registered user
 - Cart has at least one item
-- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
-[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Cardholder Name' with 'John Smith'; fill 'CVV' with '838'
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'
 [ACT] Fill 'Expiry Date' with '13/2029' (invalid month 13)
 [ACT] Click 'Place Order'
 [ASSERT] Validation error appears; month 13 rejected
@@ -121,8 +121,8 @@
 [CONSOLE] No unhandled errors","Any invalid month value accepted; field only validates on one boundary but not others; error message absent or unclear","none — no order created","VCST-3387 TC-NEG-006","Manual"
 "PAY-CS-010","CyberSource - Invalid CVV Length Rejected","CyberSource > Negative","High","BL-PAY-001","ECL-9.1","- Logged in as registered user
 - Cart has at least one item
-- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
-[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Cardholder Name' with 'John Smith'; fill 'Expiry Date' with '09/2029'
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry)","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'Expiry Date' with '@td(CYBERSOURCE_VISA.expiry)'
 [ACT] Fill 'CVV' with '12' (only 2 digits); click 'Place Order'
 [ASSERT] Error on 'CVV' field: 'CVV must be 3 digits' or equivalent; form does not submit
 [ACT] Clear 'CVV'; fill '12345' (5 digits); click 'Place Order'
@@ -132,8 +132,8 @@
 [CONSOLE] No unhandled iframe errors","CVV shorter than 3 digits accepted silently; field allows more than 4 characters; length error not shown to user","none — no order created","VCST-3387 TC-NEG-007","Manual"
 "PAY-CS-011","CyberSource - Empty CVV Blocked","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","- Logged in as registered user
 - Cart has at least one item
-- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
-[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Cardholder Name' with 'John Smith'; fill 'Expiry Date' with '09/2029'
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry)","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+[ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'Expiry Date' with '@td(CYBERSOURCE_VISA.expiry)'
 [ACT] Leave 'CVV' field empty
 [ACT] Click 'Place Order'
 [ASSERT] Inline error on 'CVV' field: 'CVV required' or equivalent
@@ -143,12 +143,12 @@
 [CONSOLE] No JS errors","No error shown for empty CVV; form submits and reaches payment processor without CVV; error present but field not focused","none — no order created","VCST-3387 TC-NEG-008","Manual"
 "PAY-CS-012","CyberSource - Non-numeric CVV Rejected","CyberSource > Negative","Medium","BL-PAY-001","ECL-9.1","- Logged in as registered user
 - Cart has at least one item
-- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry)","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
 [ACT] Click into 'CVV' iframe field; attempt to type 'abc'
 [ASSERT] Letters are not accepted — field remains empty or rejects non-numeric input
 [ACT] Attempt to type '8a8'
 [ASSERT] Only digit '8' and '8' appear; 'a' is filtered out
-[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Cardholder Name' with 'John Smith'; fill 'Expiry Date' with '09/2029'
+[ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'Expiry Date' with '@td(CYBERSOURCE_VISA.expiry)'
 [ACT] Click 'Place Order' with non-numeric content in CVV
 [ASSERT] Validation error or rejection prevents submission","[DOM] CVV iframe field rejects alphabetic characters at input level
 [STATE] Field contains only numeric content after attempted non-numeric input
@@ -158,7 +158,7 @@
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
 [ACT] Click into 'Card Number' iframe field
-[ACT] Type '4622943127013705' without spaces (continuous digits)
+[ACT] Type '@td(CYBERSOURCE_VISA.number)' without spaces (continuous digits)
 [ASSERT] Field auto-inserts spaces to display as '4622 9431 2701 3705'
 [ASSERT] Cursor position maintained correctly after auto-formatting (can continue typing naturally)","[FORMAT] Card Number field displays 16-digit number in '#### #### #### ####' format automatically
 [DOM] No validation error triggered by auto-formatting
@@ -167,19 +167,19 @@
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
 [ACT] Click into 'Card Number' iframe field
-[ACT] Begin entering Visa card number '4622943127013705' (starts with '4')
+[ACT] Begin entering Visa card number '@td(CYBERSOURCE_VISA.number)' (starts with '4')
 [ASSERT] After first digit, Visa card icon highlights/becomes active in the card type icon row
 [ASSERT] Other card type icons (Mastercard, Amex, etc.) become dimmed or deselected
-[ACT] Complete entering '4622943127013705'
+[ACT] Complete entering '@td(CYBERSOURCE_VISA.number)'
 [ASSERT] Visa icon remains highlighted; card type indicator shows 'Visa'","[DOM] Card type icon area shows Visa icon as active/highlighted after Visa BIN entered
 [STATE] Other card type icons visually de-emphasized
 [FORMAT] Card type indicator updates in real-time as digits are entered","[CONSOLE] No JS errors during BIN detection","No card type icon appears; wrong card type detected for Visa BIN; icon shows but never updates as more digits entered","none — no order placed","VCST-3387 TC-VAL-002","Manual"
 "PAY-CS-015","CyberSource - CVV Input Masking","CyberSource > Validation","High","BL-PAY-001","ECL-9.1","- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
-[ACT] Click into 'CVV' iframe field; type '838'
-[ASSERT] CVV field displays dots (•••) or asterisks (***) instead of the digits '838'
-[ASSERT] The actual value '838' is not visible in the UI at any point
+[ACT] Click into 'CVV' iframe field; type '@td(CYBERSOURCE_VISA.cvv)'
+[ASSERT] CVV field displays dots (•••) or asterisks (***) instead of the digits '@td(CYBERSOURCE_VISA.cvv)'
+[ASSERT] The actual value '@td(CYBERSOURCE_VISA.cvv)' is not visible in the UI at any point
 [KEY] Note: field is inside secure iframe — verify masking from parent page perspective","[DOM] CVV field shows masked characters (dots/asterisks) — actual digits never exposed in UI
 [STATE] Masking applied immediately on each character input
 [FORMAT] Input type or iframe rendering prevents plaintext display of CVV","[CONSOLE] No JS in parent page can read CVV value (cross-origin iframe restriction)
@@ -213,28 +213,28 @@
 "PAY-SEC-003","CyberSource - No Raw Card Data in Network Requests","CyberSource > Security","Critical","BL-PAY-001, BL-PAY-002","ECL-9.1","- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart
-- DevTools Network tab open and recording before form interaction","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart; open DevTools Network tab; begin recording
-[ACT] Fill 'Card Number' with '4622943127013705'; fill 'CVV' with '838'; fill 'Cardholder Name' with 'John Smith'; fill 'Expiry Date' with '09/2029'
+- DevTools Network tab open and recording before form interaction","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart; open DevTools Network tab; begin recording
+[ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'; fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'Expiry Date' with '@td(CYBERSOURCE_VISA.expiry)'
 [ACT] Click 'Place Order'
 [WAIT] Wait for all network requests to complete
-[ACT] In DevTools Network, search request payloads for '4622943127013705'
+[ACT] In DevTools Network, search request payloads for '@td(CYBERSOURCE_VISA.number)'
 [ASSERT] Card number NOT found in any request payload (should be replaced by token)
-[ACT] Search request payloads for '838'
+[ACT] Search request payloads for '@td(CYBERSOURCE_VISA.cvv)'
 [ASSERT] CVV NOT found in any request payload
-[ACT] Check all POST request bodies for any card-related plaintext","[NETWORK] Card number '4622943127013705' absent from all request payloads
-[NETWORK] CVV '838' absent from all request payloads
+[ACT] Check all POST request bodies for any card-related plaintext","[NETWORK] Card number '@td(CYBERSOURCE_VISA.number)' absent from all request payloads
+[NETWORK] CVV '@td(CYBERSOURCE_VISA.cvv)' absent from all request payloads
 [STATE] Only tokenized references or encrypted data present in payment-related requests","[NETWORK] All payment-related requests use HTTPS (check protocol column)
 [CONSOLE] No JS errors indicating tokenization failure","Raw card number found in any network request body; CVV found in any request payload; requests made over HTTP rather than HTTPS","Cancel order via admin if order was created","VCST-3387 TC-SEC-004","Manual"
 "PAY-SEC-004","CyberSource - No Card Data in Browser Storage","CyberSource > Security","Critical","BL-PAY-001, BL-PAY-002","ECL-9.1","- Logged in as registered user
 - Cart has at least one item
-- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart; open DevTools Application tab
-[ACT] Fill 'Card Number' with '4622943127013705'; fill 'CVV' with '838'; fill 'Cardholder Name' with 'John Smith'; fill 'Expiry Date' with '09/2029'
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart; open DevTools Application tab
+[ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'; fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'Expiry Date' with '@td(CYBERSOURCE_VISA.expiry)'
 [ACT] Click 'Place Order'; wait for response
-[ACT] In DevTools Application: inspect localStorage — search all keys/values for '4622943127013705'
+[ACT] In DevTools Application: inspect localStorage — search all keys/values for '@td(CYBERSOURCE_VISA.number)'
 [ASSERT] Card number NOT in localStorage
-[ACT] Inspect sessionStorage — search for '4622943127013705'
+[ACT] Inspect sessionStorage — search for '@td(CYBERSOURCE_VISA.number)'
 [ASSERT] Card number NOT in sessionStorage
-[ACT] Inspect all cookies — search values for '4622943127013705' and '838'
+[ACT] Inspect all cookies — search values for '@td(CYBERSOURCE_VISA.number)' and '@td(CYBERSOURCE_VISA.cvv)'
 [ASSERT] No cookie contains raw card number or CVV","[STATE] localStorage contains no card number or CVV values
 [STATE] sessionStorage contains no card number or CVV values
 [STATE] Cookies do not contain raw card data","[CONSOLE] No JS writes card data to storage (no localStorage.setItem calls with card data visible)
@@ -275,7 +275,7 @@
 [WAIT] Wait for CyberSource payment section to render with Flex Microform iframe fields
 [ACT] Select 'Bank card (CyberSource)' payment method if not pre-selected
 [ACT] Fill 'Card Number' iframe field with {{TEST_3DS_CARD}} (3DS-enrolled test card)
-[ACT] Fill 'Cardholder Name' with 'John Smith'; fill 'Expiry Date' with {{TEST_3DS_EXP}}; fill 'CVV' with {{TEST_3DS_CVV}}
+[ACT] Fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'Expiry Date' with {{TEST_3DS_EXP}}; fill 'CVV' with {{TEST_3DS_CVV}}
 [ACT] Click 'Place Order'
 [WAIT] Wait for 3DS challenge modal or popup to appear (Verified by Visa or Mastercard SecureCode window)
 [ASSERT] 3DS authentication dialog is visible — prompts for OTP or password

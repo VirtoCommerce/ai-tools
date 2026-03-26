@@ -219,7 +219,7 @@ SRCH-046,Partial Index Rebuild — Single Document Type,Index Management,Functio
 - Index timestamps for other document types (Customer, Order) remain unchanged
 - Product search returns correct results after the partial rebuild
 - System stability is maintained; no errors or corruption in non-rebuilt indices",,Not Automated
-SRCH-047,Aggregation Properties - Configure Range Facet for Numeric Property,Aggregation Properties,Functional,High,5m,Admin logged into ${BACK_URL}; Store exists with catalog containing products with a numeric property (e.g. Volume_ml); search index active,"1. Navigate to ${BACK_URL} > Stores > B2B-store > Aggregation properties
+SRCH-047,Aggregation Properties - Configure Range Facet for Numeric Property,Aggregation Properties,Functional,High,5m,Admin logged into ${BACK_URL}; Store exists with catalog containing products with a numeric property (e.g. Volume_ml); search index active,"1. Navigate to ${BACK_URL} > Stores > @td(STORE_PRIMARY.id) > Aggregation properties
 2. Click 'Add' to create a new aggregation property
 3. Select the numeric property (e.g. 'Volume_ml') from the property list
 4. Set Aggregation Type to 'Range'

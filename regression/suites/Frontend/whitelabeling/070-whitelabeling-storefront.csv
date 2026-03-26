@@ -11,7 +11,7 @@
 [DOM] whiteLabelingSettings.favicons array contains entries for 16x16, 32x32, 180x180, 192x192, 512x512
 [STATE] Job run completes without errors","[ADMIN] job run status shows Success
 [CONSOLE] no uncaught JS errors","Favicons not generated; Thumbnail job fails to run; Sizes missing from favicons array","restore original job state","C389425","Manual"
-"FWL-002","Store and organization have no whitelabeling settings - default branding displayed","Store Settings","High","BL-WL-002","","Store exists with White Labeling enabled but no custom settings; Organization exists with no branding configured","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > B2B-store
+"FWL-002","Store and organization have no whitelabeling settings - default branding displayed","Store Settings","High","BL-WL-002","","Store exists with White Labeling enabled but no custom settings; Organization exists with no branding configured","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id)
 [ACT] 2. Open White Labeling settings tab
 [ASSERT] 3. Verify Enabled = ON but no custom logo/favicon/theme set (all empty)
 [NAV] 4. Navigate to Customer > Organizations > Test Org
@@ -26,7 +26,7 @@
 [STATE] Default theme preset colors applied
 [DOM] No organization-specific branding visible","[CONSOLE] no uncaught JS errors
 [NETWORK] logo image loads with HTTP 200","Custom logo shown instead of default; Custom favicon shown; Theme overridden unexpectedly","none","C390295","Manual"
-"FWL-003","Store has whitelabeling settings but organization does not - store defaults shown","Store Settings","High","BL-WL-002","","Store has White Labeling enabled with custom logo/favicon/theme; Organization has White Labeling enabled but no custom settings","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > B2B-store
+"FWL-003","Store has whitelabeling settings but organization does not - store defaults shown","Store Settings","High","BL-WL-002","","Store has White Labeling enabled with custom logo/favicon/theme; Organization has White Labeling enabled but no custom settings","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id)
 [ACT] 2. Open White Labeling settings
 [ACT] 3. Upload store-level logo: store-logo.png
 [ACT] 4. Upload store-level favicon: store-favicon.ico
@@ -45,7 +45,7 @@
 [STATE] Coffee theme colors applied
 [DOM] No org-specific branding overrides present","[CONSOLE] no uncaught JS errors
 [NETWORK] logo image loads with HTTP 200","Org overrides shown when org has no branding; Default branding shown instead of store branding; Wrong theme applied","restore store to previous settings; restore org settings","C390296 VCST-1634","Manual"
-"FWL-009","Store-level White Labeling = OFF - organization branding disabled regardless of org settings","Store Settings","High","BL-WL-002","","Store B2B-store has White Labeling setting; Organization Company1 has custom branding configured with Enabled = ON","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > B2B-store
+"FWL-009","Store-level White Labeling = OFF - organization branding disabled regardless of org settings","Store Settings","High","BL-WL-002","","Store @td(STORE_PRIMARY.id) has White Labeling setting; Organization Company1 has custom branding configured with Enabled = ON","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id)
 [ACT] 2. Open White Labeling settings
 [ACT] 3. Set store-level White Labeling = OFF
 [ACT] 4. Save store settings
@@ -91,7 +91,7 @@
 query {
   whiteLabelingSettings(
     organizationId: ""<org-id>""
-    storeId: ""B2B-store""
+    storeId: ""@td(STORE_PRIMARY.id)""
   ) {
     footerLinks {
       title
@@ -254,7 +254,7 @@ query {
 query {
   whiteLabelingSettings(
     organizationId: ""<org-id>""
-    storeId: ""B2B-store""
+    storeId: ""@td(STORE_PRIMARY.id)""
   ) {
     mainMenuLinks {
       title
@@ -281,7 +281,7 @@ query {
 [ACT] 2. Execute pageContext query:
 query {
   pageContext(
-    storeId: ""B2B-store""
+    storeId: ""@td(STORE_PRIMARY.id)""
     organizationId: ""<org-id>""
     cultureName: ""en-US""
   ) {

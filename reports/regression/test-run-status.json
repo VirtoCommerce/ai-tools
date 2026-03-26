@@ -2,9 +2,9 @@
   "runId": "REG-2026-03-26-1200",
   "selection": "configurable-products",
   "trigger": "manual — PR #104 regression (vc-module-x-cart: empty options validator fix + SelectedForCheckout pricing)",
-  "status": "running",
+  "status": "completed",
   "startedAt": "2026-03-26T12:00:00.000Z",
-  "completedAt": null,
+  "completedAt": "2026-03-26T15:00:00.000Z",
   "environment": {
     "frontUrl": "https://vcst-qa-storefront.govirto.com",
     "backUrl": "https://vcst-qa.govirto.com",
@@ -16,24 +16,33 @@
     "catalog": "3.1013.0"
   },
   "suites": {
-    "072":  { "name": "Configurable Products UI",                    "status": "running", "browser": "playwright-chrome",  "attempts": 1, "agent": "qa-frontend-expert", "batch": 1 },
-    "072b": { "name": "Configurable Products E2E",                   "status": "running", "browser": "playwright-firefox", "attempts": 1, "agent": "qa-frontend-expert", "batch": 1 },
-    "052":  { "name": "Configurable Products Admin",                  "status": "running", "browser": "playwright-edge",   "attempts": 1, "agent": "qa-backend-expert",  "batch": 1 },
-    "072c": { "name": "Configurable Products Cross-Cutting",          "status": "pending", "browser": null,                "attempts": 0, "agent": "qa-testing-expert",  "batch": 2 },
-    "072d": { "name": "Configurable Products File & Text Sections",   "status": "pending", "browser": null,                "attempts": 0, "agent": "qa-frontend-expert", "batch": 2 }
+    "052":  { "name": "Configurable Products Admin",                 "status": "passed",  "browser": "playwright-edge",    "attempts": 1, "agent": "qa-backend-expert",  "batch": 1, "passRate": "81%", "passed": 13, "failed": 0, "blocked": 0,  "skipped": 3 },
+    "072":  { "name": "Configurable Products UI",                   "status": "passed",  "browser": "playwright-chrome",  "attempts": 1, "agent": "qa-frontend-expert", "batch": 2, "passRate": "35%", "passed": 22, "failed": 0, "blocked": 35, "skipped": 5 },
+    "072b": { "name": "Configurable Products E2E",                  "status": "blocked", "browser": "playwright-firefox", "attempts": 1, "agent": "qa-frontend-expert", "batch": 2, "passRate": "0%",  "passed": 0,  "failed": 0, "blocked": 2,  "skipped": 0 },
+    "072c": { "name": "Configurable Products Cross-Cutting",         "status": "passed",  "browser": "playwright-edge",    "attempts": 1, "agent": "qa-testing-expert",  "batch": 2, "passRate": "52%", "passed": 13, "failed": 1, "blocked": 10, "skipped": 1 },
+    "072d": { "name": "Configurable Products File & Text Sections",  "status": "passed",  "browser": "playwright-chrome",  "attempts": 1, "agent": "qa-frontend-expert", "batch": 3, "passRate": "47%", "passed": 8,  "failed": 0, "blocked": 9,  "skipped": 0 }
   },
   "batches": [
     {
       "batch": 1,
-      "suites": ["072", "072b", "052"],
-      "status": "running",
-      "startedAt": "2026-03-26T12:00:00.000Z"
+      "suites": ["052"],
+      "status": "completed",
+      "startedAt": "2026-03-26T12:00:00.000Z",
+      "completedAt": "2026-03-26T13:10:00.000Z"
     },
     {
       "batch": 2,
-      "suites": ["072c", "072d"],
-      "status": "pending",
-      "startedAt": null
+      "suites": ["072", "072b", "072c"],
+      "status": "completed",
+      "startedAt": "2026-03-26T13:10:00.000Z",
+      "completedAt": "2026-03-26T14:00:00.000Z"
+    },
+    {
+      "batch": 3,
+      "suites": ["072d"],
+      "status": "completed",
+      "startedAt": "2026-03-26T14:00:00.000Z",
+      "completedAt": "2026-03-26T15:00:00.000Z"
     }
   ]
 }

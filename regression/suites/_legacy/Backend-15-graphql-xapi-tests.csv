@@ -82,7 +82,7 @@ GQL-008,xCart - Remove Item from Cart,GraphQL > xCart,High,BL-GQL-001; BL-GQL-00
 [MATH] Totals recalculated (subTotal lower if items remain)","[NETWORK] HTTP 200
 [API] Cart query confirms item absence
 [CONSOLE] No errors","errors[] non-empty; itemsCount unchanged; removed item still in items[]; cart becomes null after removal","delete cart if empty",xAPI,Automated
-GQL-009,xCart - Set Shipping Address,GraphQL > xCart,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1; ECL-8.1,"Cart with items; valid address available; user authenticated","cartId; address: city=""New York"" state=""NY"" zip=""10001"" country=""US""; authToken={{USER_TOKEN}}","[ACT] Execute addOrUpdateCartShipment mutation with full address object
+GQL-009,xCart - Set Shipping Address,GraphQL > xCart,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1; ECL-8.1,"Cart with items; valid address available; user authenticated","cartId; address: city=""@td(ADDR_NY.city)"" state=""@td(ADDR_NY.state)"" zip=""@td(ADDR_NY.zip)"" country=""US""; authToken={{USER_TOKEN}}","[ACT] Execute addOrUpdateCartShipment mutation with full address object
 [WAIT] Wait for response
 [ASSERT] Verify errors[] present and empty
 [ACT] Query cart to confirm shipping info

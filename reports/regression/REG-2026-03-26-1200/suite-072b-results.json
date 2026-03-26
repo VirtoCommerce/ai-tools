@@ -1,0 +1,37 @@
+{
+  "suiteId": "072b",
+  "suiteName": "Configurable Products E2E",
+  "runId": "REG-2026-03-26-1200",
+  "browser": "playwright-firefox",
+  "agent": "qa-frontend-expert",
+  "startedAt": "2026-03-26T13:10:00.000Z",
+  "completedAt": "2026-03-26T13:20:00.000Z",
+  "environment": {
+    "frontUrl": "https://vcst-qa-storefront.govirto.com",
+    "backUrl": "https://vcst-qa.govirto.com",
+    "xcart": "3.1004.0-pr-104-6ed3"
+  },
+  "summary": {
+    "total": 2,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "blocked": 2,
+    "passRate": "0%"
+  },
+  "bugs": [],
+  "results": [
+    {
+      "id": "CFG-VAR-019",
+      "title": "E2E: Full Flow with Variation Section — Select, Add to Cart, Place Order",
+      "status": "blocked",
+      "notes": "BLOCKED — precondition not met: no Product-type sections with seeded variation options found on any test configurable product. Bike with options (f16d3e8f) has Variation-type section with 0 options. Configurable Hat has Product-type sections with hat color options (Black/Beige/Green/Red) but no variation product links (no size/color variants of same SKU). Full E2E flow with variation selection cannot be executed without dedicated test data. Blocking issue: missing seeded variation options in Product-type sections."
+    },
+    {
+      "id": "CFG-VAR-020",
+      "title": "E2E: Mixed Configuration — Product Section + Text Section + File Section",
+      "status": "blocked",
+      "notes": "BLOCKED — same precondition as CFG-VAR-019: mixed configuration E2E requires a product with an active Product-type section that has seeded options plus Text/File sections all in one configuration. Configurable Hat has this structure (Product+Product+Text+File) but the org account (Coffee shop / Elena Mutykova) has no ship-to address configured, so 'Add to Cart' button is absent and cart flow cannot proceed. Personal test account (qa-agent-slot2@virtocommerce.com) would be needed but session not available in this browser context."
+    }
+  ]
+}

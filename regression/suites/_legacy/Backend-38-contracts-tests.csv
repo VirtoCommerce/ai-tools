@@ -6,11 +6,11 @@ CONT-001,Create New Contract,Contracts > CRUD,CRUD,Critical,5m,"Admin logged in,
 5. Optionally fill Description field
 6. Set Start date and End date
 7. Select Vendor from dropdown
-8. Verify Store is locked to B2B-store
+8. Verify Store is locked to @td(STORE_PRIMARY.id)
 9. Click Save","- Contracts list blade opens with Add button visible
 - New contract blade opens with empty fields
 - Code field is auto-generated and read-only
-- Store field is pre-filled with B2B-store and not editable
+- Store field is pre-filled with @td(STORE_PRIMARY.id) and not editable
 - Vendor dropdown shows available vendors
 - Status dropdown shows Active and Draft options
 - Save button persists the contract

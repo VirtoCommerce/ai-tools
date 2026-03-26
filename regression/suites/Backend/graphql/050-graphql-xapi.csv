@@ -96,7 +96,7 @@ GQL-008,xCart - Remove Item from Cart,GraphQL > xCart,High,BL-GQL-001; BL-GQL-00
 [DATA] Cart remains valid (id still present)
 [MATH] Totals recalculated (subTotal lower if items remain)","[ROUNDTRIP] Clear editor → type cart query → execute → item absent
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; itemsCount unchanged; removed item still in items[]; cart becomes null after removal","delete cart if empty",xAPI,Automated
-GQL-009,xCart - Set Shipping Address,GraphQL > xCart,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1; ECL-8.1,"Cart with items; valid address available; auth header set in GraphiQL","cartId; address: city=""New York"" state=""NY"" zip=""10001"" country=""US""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+GQL-009,xCart - Set Shipping Address,GraphQL > xCart,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1; ECL-8.1,"Cart with items; valid address available; auth header set in GraphiQL","cartId; address: city=""@td(ADDR_NY.city)"" state=""@td(ADDR_NY.state)"" zip=""@td(ADDR_NY.zip)"" country=""US""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type mutation: addOrUpdateCartShipment with full address object
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result

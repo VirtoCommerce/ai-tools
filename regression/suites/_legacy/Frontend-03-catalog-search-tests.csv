@@ -943,7 +943,7 @@ CAT-043,Empty Category Handling - No Products Message,Catalog > Navigation,Mediu
 [NAV] Breadcrumbs still functional for navigation back","[NETWORK] GET category page returns HTTP 200 (not 4xx)
 [CONSOLE] no TypeError or JS errors
 [CONSOLE] no Vue hydration warnings","Blank page with no message; filter panel showing options for zero products; pagination showing for empty set; JS errors on empty category; console TypeError",none,"Checklist #3, ECL-3.1, GAP-CS-04",Generated
-CAT-044,Configurable Product PDP - Required Sections Present,Catalog > Configurable Product,High,BL-CAT-006,,Configurable product exists with multiple configuration sections (Product, Text, File types),"url={{FRONT_URL}}/products-with-options/configurable-caps-shirts/configurable-hat","[NAV] Navigate to {{FRONT_URL}}/products-with-options/configurable-caps-shirts/configurable-hat
+CAT-044,Configurable Product PDP - Required Sections Present,Catalog > Configurable Product,High,BL-CAT-006,,Configurable product exists with multiple configuration sections (Product, Text, File types),"url={{FRONT_URL}}/products-with-options/configurable-caps-shirts/@td(CFG_HAT.slug)","[NAV] Navigate to {{FRONT_URL}}/products-with-options/configurable-caps-shirts/@td(CFG_HAT.slug)
 [WAIT] Wait for PDP to fully load
 [ASSERT] Verify product name 'Configurable Hat' is displayed
 [ASSERT] Verify price is displayed (not zero or placeholder)

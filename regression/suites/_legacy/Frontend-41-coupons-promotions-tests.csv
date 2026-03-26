@@ -633,22 +633,22 @@ CPN-047,"Admin — Import Coupon Codes (Bulk Import via CSV)","Coupons & Promoti
 [STATE] existing coupon QA10OFF is not removed by the import (additive import, not replace)
 [FORMAT] imported codes appear with Total use count = 0 and Maximum use number = 0","[API] import endpoint (POST to /api/marketing/promotions/{{PROMOTION_ID}}/coupons/import or similar) returns HTTP 200/201
 [CONSOLE] no errors during import","Import button opens nothing (dead button), import file format not documented in UI, imported codes not appearing in list, existing codes deleted by import (destructive import bug)","DELETE IMPORT-TEST1 and IMPORT-TEST2 coupons after test",VCST-4590,Manual
-CPN-048,"Admin — Promotion Scoping: Promotion Not Shown on Storefront of Unassigned Store","Coupons & Promotions > Business Logic",High,"BL-PRICE-001, BL-PRICE-007","ECL-14.3","Admin user is logged in. A promotion exists assigned only to store 'B2B-store'. A second store exists in the platform. UI exploration confirmed promotions have a 'Stores' field listing assigned stores.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, front_url={{FRONT_URL}}, store_id={{STORE_ID}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{ADMIN_URL}}
+CPN-048,"Admin — Promotion Scoping: Promotion Not Shown on Storefront of Unassigned Store","Coupons & Promotions > Business Logic",High,"BL-PRICE-001, BL-PRICE-007","ECL-14.3","Admin user is logged in. A promotion exists assigned only to store '@td(STORE_PRIMARY.id)'. A second store exists in the platform. UI exploration confirmed promotions have a 'Stores' field listing assigned stores.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, front_url={{FRONT_URL}}, store_id={{STORE_ID}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{ADMIN_URL}}
 [WAIT] Admin SPA loads
 [ACT] navigate to Marketing > Promotions and open 'QA Coupon English Name'
 [BLADE] Promotion detail blade opens
-[ASSERT] 'Stores' field shows 'B2B-store' and an 'Add' option — the promotion is scoped to B2B-store only
-[NAV] {{FRONT_URL}}/account/coupons (ensure storefront context is B2B-store)
+[ASSERT] 'Stores' field shows '@td(STORE_PRIMARY.id)' and an 'Add' option — the promotion is scoped to @td(STORE_PRIMARY.id) only
+[NAV] {{FRONT_URL}}/account/coupons (ensure storefront context is @td(STORE_PRIMARY.id))
 [WAIT] 'All coupons & promotions' heading visible
 [WAIT] coupon cards load
-[ASSERT] QA10OFF card is visible (promotion IS in B2B-store scope)
+[ASSERT] QA10OFF card is visible (promotion IS in @td(STORE_PRIMARY.id) scope)
 [ACT] run GraphQL query with a different storeId (if a second store exists): { promotionCoupons(storeId: ""DIFFERENT-STORE-ID"", cultureName: ""en-US"", first: 20) { items { couponCode } } }
-[WAIT] query response","[DOM] Admin Stores field shows only 'B2B-store' for the test promotion
-[STATE] QA10OFF coupon IS visible on storefront when storeId={{STORE_ID}} (B2B-store)
+[WAIT] query response","[DOM] Admin Stores field shows only '@td(STORE_PRIMARY.id)' for the test promotion
+[STATE] QA10OFF coupon IS visible on storefront when storeId=@td(STORE_PRIMARY.id)
 [STATE] if a second store exists with different storeId: QA10OFF is NOT present in promotionCoupons results for that store
 [STATE] storeId scoping is enforced by the GraphQL query filtering","[API] promotionCoupons for DIFFERENT-STORE-ID: items array does not contain QA10OFF
-[API] promotionCoupons for B2B-store: items array contains QA10OFF
-[CONSOLE] no errors","B2B-store promotion leaks into other store's promotionCoupons response (store isolation bug), Stores field absent from Admin blade","none",VCST-4590,Manual
+[API] promotionCoupons for @td(STORE_PRIMARY.id): items array contains QA10OFF
+[CONSOLE] no errors","@td(STORE_PRIMARY.id) promotion leaks into other store's promotionCoupons response (store isolation bug), Stores field absent from Admin blade","none",VCST-4590,Manual
 CPN-049,"Frontend Endpoint Bug — Coupons Page Must Call /graphql Not /xapi/graphql","Coupons & Promotions > API Integration",Critical,BL-PRICE-001,"ECL-14.1","User is authenticated. Bug identified 2026-03-17: storefront coupons page was calling /xapi/graphql (returns 404) instead of /graphql (returns 14 coupons). Fix must be verified in the deployed build (vc-frontend PR #2198).","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
 [WAIT] page content fully loaded (no loading spinner)","[DOM] at least one coupon card is visible — page is NOT showing empty state 'You don't have any coupons or promotions'

@@ -364,11 +364,11 @@ Multiple price lists exist with various names and currencies","search_term_1=Clo
 [STATE] Step 3: Results match USD currency pricelists
 [DOM] All search results are relevant to each search term","[ADMIN] Confirm search is case-insensitive by testing uppercase/lowercase variants","No results for valid search terms; wrong results returned; search field unresponsive","none",C182896,None
 PRICE-037,Search pricelist assignment by name,Pricing > Search & Filter,Medium,BL-PRICE-004,"","Admin logged in to Backend
-Multiple price list assignments exist","search_term_1=B2B-mixed; search_term_2=B2B-MIxed-MFD","[NAV] Navigate to {{BACK_URL}} Pricing module > Price List Assignments
-[ACT] Enter 'B2B-mixed' in search field
+Multiple price list assignments exist","search_term_1=@td(CATALOG_MIXED.name); search_term_2=B2B-MIxed-MFD","[NAV] Navigate to {{BACK_URL}} Pricing module > Price List Assignments
+[ACT] Enter '@td(CATALOG_MIXED.name)' in search field
 [ASSERT] Verify search results match assignment name
 [ACT] Enter 'B2B-MIxed-MFD' in search field (case insensitive)
-[ASSERT] Verify search results match case-insensitively","[STATE] Step 1: Results show assignment(s) containing 'B2B-mixed'
+[ASSERT] Verify search results match case-insensitively","[STATE] Step 1: Results show assignment(s) containing '@td(CATALOG_MIXED.name)'
 [STATE] Step 2: Results match 'B2B-MIxed-MFD' case-insensitively","[ADMIN] Confirm search works regardless of case variation","Search is case-sensitive (no results for variant); wrong assignments returned; search field non-functional","none",C182897,None
 PRICE-038,Create and apply filter in pricing module,Pricing > Search & Filter,Medium,BL-PRICE-004,"","Admin logged in to Backend
 Multiple price lists/assignments exist","filter_name=TestFilter-01; filter_criteria=currency:USD; filter_name_2=TestFilter-02","[NAV] Navigate to {{BACK_URL}} Pricing module > Price Lists or Assignments

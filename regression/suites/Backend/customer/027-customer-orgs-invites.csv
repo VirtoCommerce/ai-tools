@@ -75,7 +75,7 @@ Organization exists",,"1. Open Organization > Verify user groups field
 "CUST-065","Invite customer from Contacts toolbar — full flow","Customer > Invite Customers","Critical",,,"Admin logged in to Backend (${BACK_URL}), at least one store configured, email service operational",,"1. Navigate to Customer module > Contacts
 2. Locate and click 'Invite customers' button in the toolbar
 3. Verify the Invite blade opens with fields: Store (dropdown), Language (dropdown), Organization (dropdown), Role (dropdown), Emails (text input), Message (textarea)
-4. Select a Store from the dropdown (e.g. B2B-store)
+4. Select a Store from the dropdown (e.g. @td(STORE_PRIMARY.id))
 5. Verify Language auto-populates from store default
 6. Leave Organization empty
 7. Verify Role defaults to 'Organization employee'
@@ -155,7 +155,7 @@ Organization exists",,"1. Open Organization > Verify user groups field
 8. Verify per-email results: valid succeeds, invalid fails
 9. Test with duplicate emails in the same request",,,,,"",
 "CUST-075","Invite from Store context — store pre-filled","Customer > Invite Customers","High",,,"Admin logged in to Backend (${BACK_URL}), at least one store exists",,"1. Navigate to More > Stores
-2. Open a Store detail blade (e.g. B2B-store)
+2. Open a Store detail blade (e.g. @td(STORE_PRIMARY.id))
 3. Locate and click 'Invite customers' button in the store toolbar
 4. Verify the Invite blade opens with Store field pre-filled with the current store
 5. Verify the Store field is read-only or pre-selected

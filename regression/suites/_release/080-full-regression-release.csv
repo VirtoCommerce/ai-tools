@@ -340,7 +340,7 @@ FRR-033,Checkout - Place Order (Double-Submit Prevention),Full Regression > Chec
 FRR-034,Checkout - Payment Credit Card (CyberSource),Full Regression > Payment > CyberSource,Critical,BL-CHK-004,,  "Checkout at payment step, CyberSource configured","card={{TEST_CARD_NUMBER}}, front_url={{FRONT_URL}}","1. Proceed to payment step
 2. Select 'Bank card (CyberSource)'
 3. Wait for CyberSource iframe to load
-4. Enter: card {{TEST_CARD_NUMBER}} (4622943127013705), name John Smith, expiry 09/2029, CVV 838
+4. Enter: card {{TEST_CARD_NUMBER}} (@td(CYBERSOURCE_VISA.number)), name @td(CYBERSOURCE_VISA.cardholder), expiry @td(CYBERSOURCE_VISA.expiry), CVV @td(CYBERSOURCE_VISA.cvv)
 5. Click 'Place Order'","- CyberSource iframe loads (PCI-compliant, isolated)
 - Card fields accept input
 - No raw card data in HTML or browser storage
@@ -349,14 +349,14 @@ FRR-034,Checkout - Payment Credit Card (CyberSource),Full Regression > Payment >
 - If declined: user can retry without losing cart (BL-CHK-004)","[NETWORK] no raw card data in any network request body
 [CONSOLE] no JS errors, no card data in console logs","Payment iframe blank (iframe blocked), card fields not accepting input, spinner >5s on place order",Cancel test order in Admin,PAY-CS-001,Manual
 FRR-035,Payment - Authorize.Net Valid Card,Full Regression > Payment > AuthorizeNet,Critical,BL-CHK-004,,  "Checkout at payment step, Authorize.Net configured","front_url={{FRONT_URL}}","1. Select 'Bank card (Authorize.Net)'
-2. Enter test card: 4111111111111111, expiry 12/2028, CVV 123
+2. Enter test card: @td(CYBERSOURCE_VISA_ALT.number), expiry @td(CYBERSOURCE_VISA_ALT.expiry), CVV @td(CYBERSOURCE_VISA_ALT.cvv)
 3. Submit payment","- Authorize.Net form loads
 - Card accepted
 - Payment processes
 - Order confirmation or decline message shown","[NETWORK] no raw card data in network requests
 [CONSOLE] no JS errors","Payment form not loading, spinner >5s, console TypeError, 5xx on payment submit",Cancel test order in Admin,PAY-AN-001,Manual
 FRR-036,Payment - Datatrans Valid Card (3D Secure),Full Regression > Payment > Datatrans,High,BL-CHK-004,,  "Checkout at payment step, Datatrans configured","datatrans_otp={{DATATRANS_OTP}}, front_url={{FRONT_URL}}","1. Select 'Bank card (Datatrans)'
-2. Enter test card: 4242424242424242, expiry 12/2028, CVV 123
+2. Enter test card: @td(SKYFLOW_VISA_ALT.number), expiry @td(SKYFLOW_VISA_ALT.expiry), CVV @td(SKYFLOW_VISA_ALT.cvv)
 3. Enter OTP if prompted: {{DATATRANS_OTP}}
 4. Complete payment","- Datatrans form loads (may redirect to /checkout/payment)
 - OTP field appears if 3D Secure enabled
@@ -370,7 +370,7 @@ FRR-037,Payment - Skyflow Valid Card (PCI Tokenization),Full Regression > Paymen
 - Only token sent to server (no raw PAN in requests)
 - Order confirmation on success (BL-CHK-004)","[NETWORK] verify no raw PAN in any network request (token only sent to server)
 [CONSOLE] no JS errors","Raw card number visible in network request, payment form not loading, spinner >5s",Cancel test order in Admin,PAY-SK-001,Manual
-FRR-038,Payment - Invalid Card Rejected with Clear Error,Full Regression > Payment > Negative,High,BL-CHK-004,,  "Payment form ready (any processor)","front_url={{FRONT_URL}}","1. Enter invalid card: 1234567890123456
+FRR-038,Payment - Invalid Card Rejected with Clear Error,Full Regression > Payment > Negative,High,BL-CHK-004,,  "Payment form ready (any processor)","front_url={{FRONT_URL}}","1. Enter invalid card: @td(CYBERSOURCE_INVALID.number)
 2. Fill other fields with valid data
 3. Attempt to submit","- Real-time validation on card number field
 - Error message: 'Invalid card number'
@@ -1006,16 +1006,16 @@ FRR-096,Quotes — Expired Quote Cannot Be Converted to Order,Full Regression > 
 [DOM] expiry message shown: 'This quote has expired' or equivalent
 [STATE] clicking disabled Convert button (if shown) shows error message — order NOT created","[API] quotes mutation for expired quote returns error (quote expired)
 [CONSOLE] no JS errors","Expired quote converted to order, no expiry indication shown, 'Convert' button active on expired quote",none,QUO-013,Manual
-FRR-097,Payment — Decline Recovery with Different Card (Retry Flow),Full Regression > Payment > Decline Recovery,Critical,BL-CHK-004,"ECL-1.1",  "Checkout at payment step. Decline test card available (card that produces decline from gateway). Valid test card also available. CyberSource configured.","decline_card=4000000000000002, valid_card={{TEST_CARD_NUMBER}}, front_url={{FRONT_URL}}","[NAV] proceed through checkout to payment step
+FRR-097,Payment — Decline Recovery with Different Card (Retry Flow),Full Regression > Payment > Decline Recovery,Critical,BL-CHK-004,"ECL-1.1",  "Checkout at payment step. Decline test card available (card that produces decline from gateway). Valid test card also available. CyberSource configured.","decline_card=@td(CYBERSOURCE_DECLINED.number), valid_card={{TEST_CARD_NUMBER}}, front_url={{FRONT_URL}}","[NAV] proceed through checkout to payment step
 [WAIT] payment form loaded
 [ACT] select 'Bank card (CyberSource)'
 [WAIT] CyberSource iframe loads
-[ACT] enter decline test card: 4000000000000002, expiry 12/2028, CVV 123, name Test User
+[ACT] enter decline test card: @td(CYBERSOURCE_DECLINED.number), expiry @td(CYBERSOURCE_DECLINED.expiry), CVV @td(CYBERSOURCE_DECLINED.cvv), name Test User
 [ACT] click 'Place Order'
 [WAIT] decline error message appears
 [ASSERT] checkout NOT abandoned after decline (cart and shipping still intact)
 [ACT] clear card fields in iframe
-[ACT] enter valid test card: {{TEST_CARD_NUMBER}}, expiry 09/2029, CVV 838, name John Smith
+[ACT] enter valid test card: {{TEST_CARD_NUMBER}}, expiry @td(CYBERSOURCE_VISA.expiry), CVV @td(CYBERSOURCE_VISA.cvv), name @td(CYBERSOURCE_VISA.cardholder)
 [ACT] click 'Place Order'
 [WAIT] order confirmation page loads","[DOM] decline error message shown clearly: 'Payment declined' or equivalent
 [DOM] 'Place Order' button re-enabled after decline (user can retry)

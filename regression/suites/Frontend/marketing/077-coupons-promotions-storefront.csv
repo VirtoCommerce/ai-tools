@@ -17,55 +17,55 @@
 [NAV] URL is redirected away from /account/coupons (e.g., to /sign-in or /catalog)
 [DOM] sign-in form OR catalog page is visible — not coupons content","[CONSOLE] no unhandled JS errors
 [NETWORK] no 5xx on redirect request","Coupons page content visible to unauthenticated user (security failure), 5xx on redirect","none","VCST-4590","Automated"
-"CPN-003","Coupon Card — All Fields Displayed Correctly (Name, Description, Code, Label)","Coupons & Promotions > Display","High","BL-PRICE-001","ECL-1.3","User is authenticated. At least one coupon with name, description, and code exists in the system. Confirmed live coupons include QA10OFF (name: 'QA Coupon English Name', description: 'QA Coupon English Description') and AGENT (name: 'Register and get 15% for all', description: 'For new customer get a 15% discount for all items').","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=QA10OFF","[NAV] {{FRONT_URL}}/account/coupons
+"CPN-003","Coupon Card — All Fields Displayed Correctly (Name, Description, Code, Label)","Coupons & Promotions > Display","High","BL-PRICE-001","ECL-1.3","User is authenticated. At least one coupon with name, description, and code exists in the system. Confirmed live coupons include @td(COUPON_10PCT.code) (name: '@td(COUPON_10PCT.promo_name)', description: '@td(COUPON_10PCT.description)') and @td(COUPON_WELCOME.code) (name: '@td(COUPON_WELCOME.promo_name)', description: 'For new customer get a 15% discount for all items').","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
 [WAIT] coupon cards visible on page
 [SCROLL] scroll through all coupon cards","[DOM] each coupon card displays a coupon name (title text, styled heading)
 [DOM] each coupon card with a description shows that description text
 [DOM] each coupon card displays a 'Click to copy' button containing the coupon code
-[FORMAT] coupon code on button is the code as stored (e.g., 'QA10OFF')
+[FORMAT] coupon code on button is the code as stored (e.g., '@td(COUPON_10PCT.code)')
 [FORMAT] 'Click to copy' label is visible below the code on the button
 [DOM] when a coupon has a label value set, the label text is displayed on the card
 [DOM] when a coupon label is null, no empty label element is visible (no broken layout)","[API] POST /graphql returns coupons data with HTTP 200, errors[] empty
 [CONSOLE] no TypeError during render
 [NETWORK] no 4xx/5xx on API requests","Coupon cards blank or partially rendered, code button missing, console TypeError, spinner >5s, label area shows empty block when label=null","none","VCST-4590","Automated"
-"CPN-004","Coupon Code — Click to Copy Copies Code to Clipboard","Coupons & Promotions > Copy Functionality","Critical","BL-PRICE-001","ECL-1.3","User is authenticated. At least one coupon with a code is visible on the page. Coupon QA10OFF (promotion: 'QA Coupon English Name') is visible on the coupons page.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=QA10OFF","[NAV] {{FRONT_URL}}/account/coupons
+"CPN-004","Coupon Code — Click to Copy Copies Code to Clipboard","Coupons & Promotions > Copy Functionality","Critical","BL-PRICE-001","ECL-1.3","User is authenticated. At least one coupon with a code is visible on the page. Coupon @td(COUPON_10PCT.code) (promotion: '@td(COUPON_10PCT.promo_name)') is visible on the coupons page.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
-[WAIT] 'QA10OFF Click to copy' button visible
-[ACT] click 'QA10OFF Click to copy' button
+[WAIT] '@td(COUPON_10PCT.code) Click to copy' button visible
+[ACT] click '@td(COUPON_10PCT.code) Click to copy' button
 [WAIT] success notification visible","[DOM] toast/notification with text 'Coupon copied successfully' appears
 [DOM] notification is dismissible (close button present)
-[STATE] clipboard contains the coupon code text 'QA10OFF' (verified via evaluate)
+[STATE] clipboard contains the coupon code text '@td(COUPON_10PCT.code)' (verified via evaluate)
 [DOM] notification disappears automatically after a few seconds OR can be closed manually","[CONSOLE] no TypeError or clipboard API errors during copy action
 [NETWORK] no API call required for copy (client-side clipboard operation)","No notification appears after click, notification text incorrect, console clipboard permission error, spinner visible >3s after click","none","VCST-4590","Automated"
-"CPN-005","Copied Coupon Code — Apply to Cart Yields Correct Discount (E2E)","Coupons & Promotions > End-to-End Flow","Critical","BL-PRICE-001, BL-CART-003","ECL-1.3, ECL-14.1","User is authenticated. Cart has at least one item ({{TEST_SKU}}). Coupon 'QA10OFF' (promotion: 'QA Coupon English Name', 10% off) is active and eligible for the cart contents. Confirmed live via GraphQL: id d763872c-d5ed-4bc4-99de-271324ef74ed, endDate 2026-12-31.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=QA10OFF, test_sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/account/coupons
+"CPN-005","Copied Coupon Code — Apply to Cart Yields Correct Discount (E2E)","Coupons & Promotions > End-to-End Flow","Critical","BL-PRICE-001, BL-CART-003","ECL-1.3, ECL-14.1","User is authenticated. Cart has at least one item ({{TEST_SKU}}). Coupon '@td(COUPON_10PCT.code)' (promotion: '@td(COUPON_10PCT.promo_name)', 10% off) is active and eligible for the cart contents. Confirmed live via GraphQL: id @td(COUPON_10PCT.gql_id), endDate 2026-12-31.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code), test_sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
-[ACT] click 'QA10OFF Click to copy' button
+[ACT] click '@td(COUPON_10PCT.code) Click to copy' button
 [WAIT] 'Coupon copied successfully' notification appears
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loaded with at least 1 item
 [SCROLL] scroll to Order summary sidebar
 [ACT] click 'Enter a promo-coupon' textbox
 [KEY] Ctrl+V (paste copied code)
-[WAIT] coupon code 'QA10OFF' appears in the textbox
+[WAIT] coupon code '@td(COUPON_10PCT.code)' appears in the textbox
 [WAIT] coupon is applied automatically OR press Enter to apply
-[WAIT] discount reflected in Order summary","[DOM] coupon 'QA10OFF' is shown in the 'Enter a promo-coupon' textbox (now disabled/applied state)
+[WAIT] discount reflected in Order summary","[DOM] coupon '@td(COUPON_10PCT.code)' is shown in the 'Enter a promo-coupon' textbox (now disabled/applied state)
 [DOM] 'Deny' button appears next to the applied coupon textbox
 [DOM] Discount line item appears in Order summary showing a non-zero amount (e.g., '- $29.80')
 [MATH] new cart total = subtotal - coupon_discount + shipping + tax
 [FORMAT] discount amount displays with currency symbol and 2 decimal places","[API] POST /graphql (addCoupon mutation) returns HTTP 200
 [API] addCoupon response errors[] is empty
-[API] cart.coupons contains code 'QA10OFF' after apply
+[API] cart.coupons contains code '@td(COUPON_10PCT.code)' after apply
 [CONSOLE] no TypeError during coupon apply
-[NETWORK] no 4xx/5xx on /graphql during coupon apply","'Enter a promo-coupon' textbox not found, paste does not fill the textbox, 'Deny' button absent after apply, spinner >5s after apply, errors[] non-empty in mutation response, discount amount is zero after successful apply","Click 'Deny' button to remove QA10OFF coupon from cart after test","VCST-4590","Automated"
-"CPN-006","Multiple Coupons Listed — Each Card Has Functional Copy Button","Coupons & Promotions > Display","High","BL-PRICE-001","ECL-1.3","User is authenticated. 14 active public coupons exist per live GraphQL query: SUPER, FIXED5, FREESHIP, WINE, AGENT, AIR, THRESH50, E2E-COUPON, CAT20#%$$^%%$&^%, QA10OFF, EXCLUSIVE10, QA, super, wine.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/coupons
+[NETWORK] no 4xx/5xx on /graphql during coupon apply","'Enter a promo-coupon' textbox not found, paste does not fill the textbox, 'Deny' button absent after apply, spinner >5s after apply, errors[] non-empty in mutation response, discount amount is zero after successful apply","Click 'Deny' button to remove @td(COUPON_10PCT.code) coupon from cart after test","VCST-4590","Automated"
+"CPN-006","Multiple Coupons Listed — Each Card Has Functional Copy Button","Coupons & Promotions > Display","High","BL-PRICE-001","ECL-1.3","User is authenticated. 14 active public coupons exist per live GraphQL query: @td(COUPON_20PCT.code), @td(COUPON_FIXED5.code), @td(COUPON_FREESHIP.code), @td(COUPON_WINE.code), @td(COUPON_WELCOME.code), @td(COUPON_SHIPPING.code), @td(COUPON_THRESH50.code), @td(COUPON_E2E.code), @td(COUPON_SPECIAL_CHARS.code), @td(COUPON_10PCT.code), @td(COUPON_EXCLUSIVE.code), @td(COUPON_TOP20.code), super, wine.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
 [WAIT] multiple coupon cards visible
-[ACT] click 'AIR Click to copy' button (coupon for shipping discount)
+[ACT] click '@td(COUPON_SHIPPING.code) Click to copy' button (coupon for shipping discount)
 [WAIT] 'Coupon copied successfully' notification
 [ACT] click 'Close alert' button on notification
 [WAIT] notification dismissed
-[ACT] click 'AGENT Click to copy' button
+[ACT] click '@td(COUPON_WELCOME.code) Click to copy' button
 [WAIT] 'Coupon copied successfully' notification
 [ACT] click 'Close alert' button","[DOM] 'Coupon copied successfully' notification appears after each copy action
 [DOM] each click on a different coupon button copies that specific coupon's code
@@ -73,14 +73,14 @@
 [DOM] all page(s) show coupon cards with functional 'Click to copy' buttons
 [FORMAT] each coupon code button displays the code text followed by 'Click to copy' label","[CONSOLE] no TypeError across multiple copy actions
 [NETWORK] no API calls triggered per copy action (clipboard is client-side)","Any copy button unresponsive, wrong code copied, notification missing for any card, totalCount mismatch from expected 14","none","VCST-4590","Automated"
-"CPN-007","Coupon With No Description — Card Renders Without Empty Space","Coupons & Promotions > Display","Medium","BL-PRICE-001","ECL-1.3","User is authenticated. Live data confirmed: 'Test 100%' (code: super) has null description. 'Wine as a gift' (code: wine) has a description. AGENT has description 'For new customer get a 15% discount for all items'.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/coupons
+"CPN-007","Coupon With No Description — Card Renders Without Empty Space","Coupons & Promotions > Display","Medium","BL-PRICE-001","ECL-1.3","User is authenticated. Live data confirmed: 'Test 100%' (code: super) has null description. 'Wine as a gift' (code: wine) has a description. @td(COUPON_WELCOME.code) has description 'For new customer get a 15% discount for all items'.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
 [WAIT] coupon cards visible
 [SCROLL] scroll to find the 'Test 100%' card (code: super — null description)
 [ASSERT] 'Test 100%' / super card visible
-[SCROLL] scroll to 'Register and get 15% for all' card (AGENT — has description)
-[ASSERT] AGENT card visible","[DOM] card with null description ('Test 100%' / super) renders without an empty placeholder paragraph or broken layout
-[DOM] cards WITH description (AGENT: 'For new customer get a 15% discount for all items') show that text correctly
+[SCROLL] scroll to 'Register and get 15% for all' card (@td(COUPON_WELCOME.code) — has description)
+[ASSERT] @td(COUPON_WELCOME.code) card visible","[DOM] card with null description ('Test 100%' / super) renders without an empty placeholder paragraph or broken layout
+[DOM] cards WITH description (@td(COUPON_WELCOME.code): 'For new customer get a 15% discount for all items') show that text correctly
 [FORMAT] all coupon cards have consistent height and alignment regardless of whether description is present or null","[CONSOLE] no rendering errors
 [NETWORK] no 4xx/5xx","Layout broken (misaligned cards), empty paragraph visible for null-description coupons, console render error","none","VCST-4590","Automated"
 "CPN-008","Sidebar Navigation — Coupons & Promotions Active State Highlighted","Coupons & Promotions > Navigation","High","BL-PRICE-001","ECL-4.2","User is authenticated. User is currently on the /account/coupons page.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/coupons
@@ -91,13 +91,13 @@
 [DOM] sidebar Marketing section heading is visible and contains 'Coupons & promotions', 'Notifications', and 'Points history' links
 [DOM] sidebar Purchasing, Corporate, and User sections are also present and show their respective links","[CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx","Sidebar missing, wrong link highlighted, Marketing section heading absent","none","VCST-4590","Automated"
-"CPN-009","Shipping Discount Coupon Card — Card Renders with Name, Description, and Copy Button","Coupons & Promotions > Display","Medium","BL-PRICE-001, BL-PRICE-002","ECL-1.3, ECL-6.2","User is authenticated. The 'AIR' coupon (promotion: 'Coupon on discount for shipping', id: e1d82455-180b-4e6d-bae7-34645cf4035e) exists and is active. Live GraphQL confirmed name='Coupon on discount for shipping', description='Coupon on discount for shipping', endDate=2026-12-31.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=AIR","[NAV] {{FRONT_URL}}/account/coupons
+"CPN-009","Shipping Discount Coupon Card — Card Renders with Name, Description, and Copy Button","Coupons & Promotions > Display","Medium","BL-PRICE-001, BL-PRICE-002","ECL-1.3, ECL-6.2","User is authenticated. The '@td(COUPON_SHIPPING.code)' coupon (promotion: '@td(COUPON_SHIPPING.promo_name)', id: @td(COUPON_SHIPPING.gql_id)) exists and is active. Live GraphQL confirmed name='@td(COUPON_SHIPPING.promo_name)', description='Coupon on discount for shipping', endDate=2026-12-31.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_SHIPPING.code)","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
-[SCROLL] scroll to find the 'Coupon on discount for shipping' coupon card
-[ASSERT] AIR coupon card is visible","[DOM] coupon card title reads 'Coupon on discount for shipping'
+[SCROLL] scroll to find the '@td(COUPON_SHIPPING.promo_name)' coupon card
+[ASSERT] @td(COUPON_SHIPPING.code) coupon card is visible","[DOM] coupon card title reads '@td(COUPON_SHIPPING.promo_name)'
 [DOM] coupon card description reads 'Coupon on discount for shipping'
-[DOM] 'AIR Click to copy' button is present and enabled
-[FORMAT] code 'AIR' is displayed on the button","[CONSOLE] no errors
+[DOM] '@td(COUPON_SHIPPING.code) Click to copy' button is present and enabled
+[FORMAT] code '@td(COUPON_SHIPPING.code)' is displayed on the button","[CONSOLE] no errors
 [NETWORK] no 4xx/5xx during page load","Shipping coupon card missing, description text absent, code button disabled","none","VCST-4590","Automated"
 "CPN-010","Direct URL Access — Coupons Page Loads Without Dashboard Navigation","Coupons & Promotions > Navigation","Medium","BL-PRICE-001","ECL-4.2","User is authenticated. User navigates directly to the coupons URL without going through the sidebar link first.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] dashboard loads
@@ -108,9 +108,9 @@
 [NAV] URL is /account/coupons","[API] POST /graphql for coupons data returns HTTP 200, errors[] empty
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx","Page blank on direct URL access, 404 response, coupons data not loaded","none","VCST-4590","Automated"
-"CPN-011","Copy Notification — Manual Close Works Without Breaking Page","Coupons & Promotions > Copy Functionality","Medium","BL-PRICE-001","ECL-1.3","User is authenticated. Coupons page is loaded with at least one coupon card visible.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=QA","[NAV] {{FRONT_URL}}/account/coupons
+"CPN-011","Copy Notification — Manual Close Works Without Breaking Page","Coupons & Promotions > Copy Functionality","Medium","BL-PRICE-001","ECL-1.3","User is authenticated. Coupons page is loaded with at least one coupon card visible.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_TOP20.code)","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
-[ACT] click 'QA Click to copy' button
+[ACT] click '@td(COUPON_TOP20.code) Click to copy' button
 [WAIT] 'Coupon copied successfully' notification appears
 [ASSERT] close alert button visible on notification
 [ACT] click 'Close alert' button on notification
@@ -129,7 +129,7 @@
 "CPN-013","Page Load — Zero JS Console Errors During Load and Copy Action","Coupons & Promotions > Quality","High","BL-PRICE-001","ECL-14.1","User is authenticated. Browser console monitoring is active.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
 [WAIT] all coupon cards fully rendered
-[ACT] click 'QA10OFF Click to copy' button
+[ACT] click '@td(COUPON_10PCT.code) Click to copy' button
 [WAIT] 'Coupon copied successfully' notification visible","[DOM] all coupons & promotions cards are rendered with title, description, and code button
 [DOM] 'Coupon copied successfully' notification visible after copy click","[CONSOLE] zero JavaScript errors (level: error) during entire page load and copy action
 [CONSOLE] zero unhandled promise rejections
@@ -141,18 +141,18 @@
 [DOM] only currently active/valid coupons are displayed to the user","[API] POST /graphql response for promotionCoupons does not include expired promotions in the data
 [API] GraphQL response errors[] is empty
 [CONSOLE] no errors","Expired coupon visible and copyable to user, console error, GraphQL errors[] non-empty","none","VCST-4590","Automated"
-"CPN-015","Coupon Code Case Preserved — Code Copied Exactly As Displayed (No Mutation)","Coupons & Promotions > Copy Functionality","Medium","BL-PRICE-001","ECL-1.3","User is authenticated. Coupon with code 'QA10OFF' (uppercase) is visible on coupons page. Cart page is accessible.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=QA10OFF","[NAV] {{FRONT_URL}}/account/coupons
+"CPN-015","Coupon Code Case Preserved — Code Copied Exactly As Displayed (No Mutation)","Coupons & Promotions > Copy Functionality","Medium","BL-PRICE-001","ECL-1.3","User is authenticated. Coupon with code '@td(COUPON_10PCT.code)' (uppercase) is visible on coupons page. Cart page is accessible.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
-[ACT] click 'QA10OFF Click to copy' button
+[ACT] click '@td(COUPON_10PCT.code) Click to copy' button
 [WAIT] 'Coupon copied successfully' notification
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads
 [SCROLL] scroll to Order summary sidebar
 [ACT] click 'Enter a promo-coupon' textbox
 [KEY] Ctrl+V
-[WAIT] code appears in textbox","[DOM] coupon code in 'Enter a promo-coupon' textbox after paste reads exactly 'QA10OFF' (uppercase, no leading/trailing whitespace)
+[WAIT] code appears in textbox","[DOM] coupon code in 'Enter a promo-coupon' textbox after paste reads exactly '@td(COUPON_10PCT.code)' (uppercase, no leading/trailing whitespace)
 [DOM] no lowercase conversion, no space padding, no truncation of the code","[CONSOLE] no clipboard errors
-[NETWORK] no errors","Code pasted as lowercase 'qa10off', trailing space in pasted value, code truncated or mangled","none — do not apply the coupon, just verify the pasted value","VCST-4590","Automated"
+[NETWORK] no errors","Code pasted as lowercase '@td(COUPON_10PCT.code)', trailing space in pasted value, code truncated or mangled","none — do not apply the coupon, just verify the pasted value","VCST-4590","Automated"
 "CPN-017","Localized URL — Coupons Page Accessible Under Locale Prefix","Coupons & Promotions > Localization","Low","BL-PRICE-001","ECL-4.2","User is authenticated. Store supports at least one non-default locale. CULTURE_NAME env var set to a non-default locale.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, culture_name={{CULTURE_NAME}}","[NAV] {{FRONT_URL}}/{{CULTURE_NAME}}/account/coupons
 [WAIT] page loads","[DOM] 'All coupons & promotions' heading visible (or localized equivalent)
 [DOM] coupon cards rendered with correct data
@@ -217,7 +217,7 @@
 [STATE] Admin save reflected on storefront within 15s (no reindex lag since it is metadata, not catalog)","[API] POST /graphql promotionCoupons query — name field in the response matches the updated en-US localized name
 [ADMIN] Promotion blade still shows 'CROSS-LAYER TEST NAME {{TIMESTAMP}}' after storefront check
 [CONSOLE] no JS errors on storefront","Storefront still shows old name after 30s, GraphQL response returns old name, console error on storefront","Restore localized name to original value in Admin after test","VCST-4590","Automated"
-"CPN-022","GraphQL — promotionCoupons Query Returns Only Public Active Promotions","Coupons & Promotions > API Backend","Critical","BL-PRICE-001","ECL-14.1","GraphQL endpoint accessible. GraphiQL UI at {{BACK_URL}}/ui/graphiql. A public active promotion with coupon exists (QA10OFF). A non-public promotion also exists in the same store.","front_url={{FRONT_URL}}, store_id={{STORE_ID}}, culture_name={{CULTURE_NAME}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{BACK_URL}}/ui/graphiql
+"CPN-022","GraphQL — promotionCoupons Query Returns Only Public Active Promotions","Coupons & Promotions > API Backend","Critical","BL-PRICE-001","ECL-14.1","GraphQL endpoint accessible. GraphiQL UI at {{BACK_URL}}/ui/graphiql. A public active promotion with coupon exists (@td(COUPON_10PCT.code)). A non-public promotion also exists in the same store.","front_url={{FRONT_URL}}, store_id={{STORE_ID}}, culture_name={{CULTURE_NAME}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL interface loads
 [AUTH] authenticate with Bearer token obtained for {{USER_EMAIL}}
 [GQL] enter query: { promotionCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""{{CULTURE_NAME}}"", first: 20) { totalCount items { id systemName name description endDate couponCode } } }
@@ -256,13 +256,13 @@
 [DATA] systemName field is identical in both responses (non-localized identifier unchanged)
 [DATA] couponCode field is identical in both responses (codes are not localized)","[API] HTTP 200 and errors[] empty on both queries
 [CONSOLE] no errors","Both queries return the same name (localization not applied), systemName changes per locale (regression), de-DE returns empty name","none","VCST-4590","Automated"
-"CPN-025","GraphQL — DataLoader Batch: Multiple Coupons Have Distinct Coupon Codes","Coupons & Promotions > API Backend","High","BL-PRICE-001, BL-CART-003","ECL-14.1","Multiple active public promotions exist. Live GraphQL query (2026-03-17) confirmed 14 items with codes: SUPER, FIXED5, FREESHIP, WINE, AGENT, AIR, THRESH50, E2E-COUPON, CAT20#%$$^%%$&^%, QA10OFF, EXCLUSIVE10, QA, super, wine. DataLoader batch loading is in use (PR #14).","front_url={{FRONT_URL}}, store_id={{STORE_ID}}, culture_name={{CULTURE_NAME}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{BACK_URL}}/ui/graphiql
+"CPN-025","GraphQL — DataLoader Batch: Multiple Coupons Have Distinct Coupon Codes","Coupons & Promotions > API Backend","High","BL-PRICE-001, BL-CART-003","ECL-14.1","Multiple active public promotions exist. Live GraphQL query (2026-03-17) confirmed 14 items with codes: @td(COUPON_20PCT.code), @td(COUPON_FIXED5.code), @td(COUPON_FREESHIP.code), @td(COUPON_WINE.code), @td(COUPON_WELCOME.code), @td(COUPON_SHIPPING.code), @td(COUPON_THRESH50.code), @td(COUPON_E2E.code), @td(COUPON_SPECIAL_CHARS.code), @td(COUPON_10PCT.code), @td(COUPON_EXCLUSIVE.code), @td(COUPON_TOP20.code), super, wine. DataLoader batch loading is in use (PR #14).","front_url={{FRONT_URL}}, store_id={{STORE_ID}}, culture_name={{CULTURE_NAME}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL loads
 [GQL] execute query: { promotionCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""{{CULTURE_NAME}}"", first: 20) { totalCount items { id name couponCode } } }
 [WAIT] response","[ERRORS] errors[] is empty in the GraphQL response
 [COUNT] totalCount = 14 (matches known live count as of 2026-03-17)
 [DATA] each item in the response has a non-null couponCode value
-[DATA] confirmed codes present: QA10OFF, SUPER, AIR, AGENT, E2E-COUPON, WINE, FIXED5, FREESHIP, THRESH50, EXCLUSIVE10, QA
+[DATA] confirmed codes present: @td(COUPON_10PCT.code), @td(COUPON_20PCT.code), @td(COUPON_SHIPPING.code), @td(COUPON_WELCOME.code), @td(COUPON_E2E.code), @td(COUPON_WINE.code), @td(COUPON_FIXED5.code), @td(COUPON_FREESHIP.code), @td(COUPON_THRESH50.code), @td(COUPON_EXCLUSIVE.code), @td(COUPON_TOP20.code)
 [DATA] no item has an empty or null couponCode (all returned items have codes — promotions without codes are excluded by design)
 [DATA] no two items share the same couponCode value (DataLoader cross-contamination check)","[API] HTTP 200, errors[] empty
 [CONSOLE] no DataLoader or batch-related errors in browser console
@@ -282,19 +282,19 @@
 [API] GET response HTTP 200
 [CONSOLE] no errors","HTTP 4xx on POST, isPublic not persisted, coupons array empty in GET response, coupon code different from submitted value","[HTTP] DELETE {{ADMIN_URL}}/api/marketing/promotions/{{CREATED_PROMOTION_ID}} after test to clean up","VCST-4590","Automated"
 "CPN-027","REST API — Promotion with IsPublic=false Not Returned by GraphQL Storefront Query","Coupons & Promotions > Admin → Frontend Cross-Layer","Critical","BL-PRICE-001","ECL-14.1","Admin user authenticated. A promotion exists with IsPublic=false and an active coupon code. Storefront GraphQL accessible.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, front_url={{FRONT_URL}}, store_id={{STORE_ID}}, culture_name={{CULTURE_NAME}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[AUTH] obtain admin token via POST {{ADMIN_URL}}/connect/token
-[HTTP] POST {{ADMIN_URL}}/api/marketing/promotions with body: { name: 'Private Promotion VCST-4590', isActive: true, isPublic: false, coupons: [{ code: 'PRIVATE4590' }] }
+[HTTP] POST {{ADMIN_URL}}/api/marketing/promotions with body: { name: 'Private Promotion VCST-4590', isActive: true, isPublic: false, coupons: [{ code: '@td(COUPON_PRIVATE.code)' }] }
 [WAIT] HTTP 201 or 200 response with new promotion id
 [VAR] extract {{PRIVATE_PROMOTION_ID}} from POST response body id field
 [WAIT] 5s for backend propagation
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL loads
 [GQL] execute query: { promotionCoupons(storeId: ""{{STORE_ID}}"", cultureName: ""{{CULTURE_NAME}}"", first: 50) { items { id couponCode } } }
-[WAIT] query response","[STATE] 'PRIVATE4590' coupon code is NOT present in the promotionCoupons GraphQL response items
-[STATE] no item in the response has couponCode = 'PRIVATE4590'
+[WAIT] query response","[STATE] '@td(COUPON_PRIVATE.code)' coupon code is NOT present in the promotionCoupons GraphQL response items
+[STATE] no item in the response has couponCode = '@td(COUPON_PRIVATE.code)'
 [STATE] the total count does not include the private promotion","[API] HTTP 200 on GraphQL query, errors[] empty
 [API] Admin GET {{ADMIN_URL}}/api/marketing/promotions/{{PRIVATE_PROMOTION_ID}} confirms isPublic = false for the created promotion
 [CONSOLE] no errors","Private coupon appears in storefront GraphQL response (security/filtering bug), errors[] non-empty on query","[HTTP] DELETE {{ADMIN_URL}}/api/marketing/promotions/{{PRIVATE_PROMOTION_ID}} after test","VCST-4590","Automated"
-"CPN-028","BL-CART-003: Coupon Discount Applied to Sale Price (Not List Price)","Coupons & Promotions > Business Invariants","Critical","BL-CART-003, BL-PRICE-001","ECL-1.3, ECL-14.1","A product exists with list price and a lower sale/discounted price. Coupon QA10OFF (10% discount) is active and public. User is authenticated with an item in cart.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, test_sku={{TEST_SKU}}, coupon_code=QA10OFF","[NAV] {{FRONT_URL}}/catalog
+"CPN-028","BL-CART-003: Coupon Discount Applied to Sale Price (Not List Price)","Coupons & Promotions > Business Invariants","Critical","BL-CART-003, BL-PRICE-001","ECL-1.3, ECL-14.1","A product exists with list price and a lower sale/discounted price. Coupon @td(COUPON_10PCT.code) (10% discount) is active and public. User is authenticated with an item in cart.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, test_sku={{TEST_SKU}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/catalog
 [WAIT] catalog loads
 [ACT] search for a product with a visible sale price (price with strikethrough)
 [WAIT] product listing with sale price visible
@@ -307,7 +307,7 @@
 [WAIT] cart page loads
 [ASSERT] note cart line subtotal = sale_price × quantity
 [SCROLL] scroll to Order summary sidebar
-[ACT] fill 'Enter a promo-coupon' textbox with 'QA10OFF'
+[ACT] fill 'Enter a promo-coupon' textbox with '@td(COUPON_10PCT.code)'
 [WAIT] Discount line appears in Order summary (auto-applied or press Enter)","[MATH] discount amount = 10% × sale_price (NOT 10% × list_price)
 [MATH] new cart total = sale_price - (10% × sale_price) = 90% × sale_price
 [DOM] discount line in cart totals shows the correct calculated discount amount
@@ -315,8 +315,8 @@
 [STATE] BL-CART-003 is satisfied: coupon applies to already-discounted price","[API] addCoupon mutation returns HTTP 200, errors[] empty
 [API] cart query: cart.totals.discountTotal.amount matches 10% of sale price (not list price)
 [CONSOLE] no TypeError during apply
-[NETWORK] no 4xx/5xx on /graphql","Discount equals 10% of list_price instead of sale_price (BL-CART-003 violation), errors[] non-empty, spinner >5s after apply","Remove QA10OFF coupon from cart and remove test item","VCST-4590","Automated"
-"CPN-029","BL-PRICE-001: Discount Stacking — Coupon Applied After Tier Price (Not on List Price)","Coupons & Promotions > Business Invariants","Critical","BL-PRICE-001, BL-CART-003","ECL-1.3, ECL-2.3","A product has tier pricing (e.g., 10+ units = lower tier price). Coupon QA10OFF (10%) is active. User is authenticated and adds qty >= tier threshold.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, test_sku={{TEST_SKU}}, coupon_code=QA10OFF","[NAV] {{FRONT_URL}}/catalog
+[NETWORK] no 4xx/5xx on /graphql","Discount equals 10% of list_price instead of sale_price (BL-CART-003 violation), errors[] non-empty, spinner >5s after apply","Remove @td(COUPON_10PCT.code) coupon from cart and remove test item","VCST-4590","Automated"
+"CPN-029","BL-PRICE-001: Discount Stacking — Coupon Applied After Tier Price (Not on List Price)","Coupons & Promotions > Business Invariants","Critical","BL-PRICE-001, BL-CART-003","ECL-1.3, ECL-2.3","A product has tier pricing (e.g., 10+ units = lower tier price). Coupon @td(COUPON_10PCT.code) (10%) is active. User is authenticated and adds qty >= tier threshold.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, test_sku={{TEST_SKU}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/catalog
 [WAIT] catalog loads
 [ACT] find a product with tier pricing (or use TEST_SKU with known tier)
 [ACT] add the product to cart with quantity >= tier threshold (e.g., qty=10)
@@ -325,7 +325,7 @@
 [WAIT] cart page loads
 [ASSERT] note the unit price displayed (should be tier price, lower than list)
 [SCROLL] scroll to Order summary sidebar
-[ACT] fill 'Enter a promo-coupon' textbox with 'QA10OFF'
+[ACT] fill 'Enter a promo-coupon' textbox with '@td(COUPON_10PCT.code)'
 [WAIT] Discount line appears in Order summary","[MATH] coupon discount = 10% × (tier_price × quantity)
 [MATH] final total = tier_price × quantity - coupon_discount (no hidden list-price recalculation)
 [STATE] BL-PRICE-001 satisfied: stacking order is (1) tier price replaces list, (2) coupon applies to tier price
@@ -333,8 +333,8 @@
 [API] addCoupon mutation errors[] empty
 [CONSOLE] no errors
 [NETWORK] no 4xx/5xx","Coupon calculated on list price instead of tier price (BL-PRICE-001 violation), tier price not applied at qty threshold, errors[] non-empty","Remove coupon and clear cart after test","VCST-4590","Automated"
-"CPN-030","BL-CHK-006: Order Total Formula Correct After Coupon Applied from Coupons Page","Coupons & Promotions > Business Invariants","Critical","BL-CHK-006, BL-CART-003","ECL-1.3, ECL-14.1","CPN-005 or CPN-028 passed. Cart has item with coupon applied. Checkout flow accessible.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=QA10OFF, test_sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
-[WAIT] cart loads with coupon QA10OFF applied and at least 1 item
+"CPN-030","BL-CHK-006: Order Total Formula Correct After Coupon Applied from Coupons Page","Coupons & Promotions > Business Invariants","Critical","BL-CHK-006, BL-CART-003","ECL-1.3, ECL-14.1","CPN-005 or CPN-028 passed. Cart has item with coupon applied. Checkout flow accessible.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code), test_sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart loads with coupon @td(COUPON_10PCT.code) applied and at least 1 item
 [ASSERT] note: (a) line item subtotal, (b) coupon discount amount, (c) shipping cost, (d) tax amount, (e) displayed cart total
 [ACT] click 'Proceed to Checkout' or 'Checkout' button
 [WAIT] checkout page loads
@@ -426,14 +426,14 @@
 [API] cart.totals.discountTotal.amount = 0 after invalid coupon attempt
 [CONSOLE] no TypeError (error handling is graceful)
 [NETWORK] no 5xx (400-level error handled client-side)","Cart total changed despite invalid coupon, no error message shown to user, console TypeError, cart breaks or empties on invalid coupon","none — invalid coupon was not applied","VCST-4590","Automated"
-"CPN-035","Non-Public Promotion Coupon Code Rejected When Typed Manually in Cart","Coupons & Promotions > Negative Cases","High","BL-CART-003, BL-PRICE-001","ECL-1.3, ECL-14.1","A promotion exists with IsPublic=false and coupon code 'PRIVATE4590' (created in CPN-027 or pre-existing). User is authenticated with items in cart.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=PRIVATE4590","[NAV] {{FRONT_URL}}/cart
+"CPN-035","Non-Public Promotion Coupon Code Rejected When Typed Manually in Cart","Coupons & Promotions > Negative Cases","High","BL-CART-003, BL-PRICE-001","ECL-1.3, ECL-14.1","A promotion exists with IsPublic=false and coupon code '@td(COUPON_PRIVATE.code)' (created in CPN-027 or pre-existing). User is authenticated with items in cart.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_PRIVATE.code)","[NAV] {{FRONT_URL}}/cart
 [WAIT] cart loads with at least 1 item
 [SCROLL] scroll to Order summary sidebar
-[ACT] fill 'Enter a promo-coupon' textbox with 'PRIVATE4590'
+[ACT] fill 'Enter a promo-coupon' textbox with '@td(COUPON_PRIVATE.code)'
 [WAIT] page responds (auto-apply or press Enter)
 [WAIT] response","[DOM] error message or 'not applied' feedback displayed (the code exists but the promotion is not public)
 [STATE] cart total unchanged — no discount applied
-[STATE] 'PRIVATE4590' coupon NOT shown as applied in cart","[API] addCoupon mutation response: cart.coupons[].isAppliedSuccessfully = false for code 'PRIVATE4590' OR coupon entry absent from cart.coupons[] entirely
+[STATE] '@td(COUPON_PRIVATE.code)' coupon NOT shown as applied in cart","[API] addCoupon mutation response: cart.coupons[].isAppliedSuccessfully = false for code '@td(COUPON_PRIVATE.code)' OR coupon entry absent from cart.coupons[] entirely
 [API] errors[] behavior depends on implementation — either errors[] non-empty or cart.coupons[].isAppliedSuccessfully=false signals rejection
 [CONSOLE] no TypeError","Private coupon silently applies and grants discount (security/revenue bug), cart breaks on this code","none","VCST-4590","Automated"
 "CPN-036","B2B Org User — Coupons Page Accessible and Shows Store-Scoped Coupons","Coupons & Promotions > Access","High","BL-PRICE-001, BL-PRICE-007","ECL-14.3","User is authenticated as a B2B organization member ({{ORG_USER_EMAIL}}). Organization is active. Store has public coupons configured.","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, front_url={{FRONT_URL}}, store_id={{STORE_ID}}","[NAV] {{FRONT_URL}}/sign-in
@@ -449,10 +449,10 @@
 [NAV] URL is /account/coupons (or locale-prefixed equivalent)","[API] POST /graphql promotionCoupons returns HTTP 200, errors[] empty
 [CONSOLE] no JS errors for B2B user
 [NETWORK] no 4xx/5xx","403 error for org user, coupons page inaccessible for B2B users, different coupons shown due to org context incorrectly affecting public promotion filter","Sign out B2B user after test","VCST-4590","Automated"
-"CPN-037","Cart — Applied Coupon Removed via 'Deny' Button Restores Original Total","Coupons & Promotions > Cart Integration","High","BL-CART-003, BL-PRICE-001","ECL-1.3, ECL-14.1","User is authenticated. Cart has at least one item. Coupon QA10OFF is currently applied in the cart (discount visible in order summary). UI exploration confirmed removal button label is 'Deny'.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=QA10OFF","[NAV] {{FRONT_URL}}/cart
+"CPN-037","Cart — Applied Coupon Removed via 'Deny' Button Restores Original Total","Coupons & Promotions > Cart Integration","High","BL-CART-003, BL-PRICE-001","ECL-1.3, ECL-14.1","User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code) is currently applied in the cart (discount visible in order summary). UI exploration confirmed removal button label is 'Deny'.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads with at least 1 item
 [SCROLL] scroll to Order summary sidebar
-[ASSERT] coupon QA10OFF is applied — textbox 'Enter a promo-coupon' shows 'QA10OFF' (disabled) and Discount line shows non-zero amount
+[ASSERT] coupon @td(COUPON_10PCT.code) is applied — textbox 'Enter a promo-coupon' shows '@td(COUPON_10PCT.code)' (disabled) and Discount line shows non-zero amount
 [ASSERT] 'Deny' button is visible next to the applied coupon code
 [ACT] note the current cart total displayed
 [ACT] click 'Deny' button next to the applied coupon
@@ -462,22 +462,22 @@
 [DOM] 'Deny' button no longer visible next to coupon field
 [DOM] cart items are still present and quantities unchanged","[API] POST /graphql removeCoupon mutation returns HTTP 200
 [API] removeCoupon response errors[] is empty
-[API] cart.coupons array no longer contains QA10OFF after removal
+[API] cart.coupons array no longer contains @td(COUPON_10PCT.code) after removal
 [CONSOLE] no TypeError during coupon removal
 [NETWORK] no 4xx/5xx on /graphql during removal","'Deny' button absent (UI label changed), cart total unchanged after removal, discount persists after clicking 'Deny', removeCoupon mutation errors[] non-empty, console TypeError","none — coupon is already removed by this test","VCST-4590","Automated"
-"CPN-038","Cart — Discount Breakdown Expandable Section Shows Per-Coupon Discount Amount","Coupons & Promotions > Cart Integration","High","BL-CART-003, BL-CHK-006","ECL-1.3","User is authenticated. Cart has at least one item. Coupon QA10OFF (10% off) is applied. UI exploration confirmed 'Discount' is a collapsible button in Order summary.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=QA10OFF","[NAV] {{FRONT_URL}}/cart
-[WAIT] cart loads with coupon QA10OFF applied
+"CPN-038","Cart — Discount Breakdown Expandable Section Shows Per-Coupon Discount Amount","Coupons & Promotions > Cart Integration","High","BL-CART-003, BL-CHK-006","ECL-1.3","User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code) (10% off) is applied. UI exploration confirmed 'Discount' is a collapsible button in Order summary.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart loads with coupon @td(COUPON_10PCT.code) applied
 [SCROLL] scroll to Order summary section in the sidebar
 [ASSERT] 'Discount' row visible with a non-zero amount (e.g., '- $29.80')
 [ASSERT] 'Discount' row is a button (has expand chevron)
 [ACT] click 'Discount' button to expand the breakdown
-[WAIT] breakdown list appears below Discount row","[DOM] breakdown list appears showing at least one item with label 'QA10OFF' and amount '-US$29.80' (or equivalent for cart subtotal)
+[WAIT] breakdown list appears below Discount row","[DOM] breakdown list appears showing at least one item with label '@td(COUPON_10PCT.code)' and amount '-US$29.80' (or equivalent for cart subtotal)
 [DOM] per-coupon line format: coupon code text + formatted negative currency amount
 [MATH] sum of per-coupon amounts in breakdown equals the total Discount amount shown in Order summary
 [DOM] clicking 'Discount' button again collapses the breakdown (toggle behavior)","[API] cart.totals.discountTotal.amount matches the sum displayed in the breakdown
 [API] cart query errors[] is empty
 [CONSOLE] no JS errors during expand/collapse
-[NETWORK] no API calls triggered by expanding the breakdown (client-side only)","Discount row not clickable, breakdown does not appear, per-coupon line shows wrong code or wrong amount, sum mismatch between breakdown and total","Remove QA10OFF coupon from cart via Deny button after test (coupon remains applied — may affect subsequent cart tests)","VCST-4590","Automated"
+[NETWORK] no API calls triggered by expanding the breakdown (client-side only)","Discount row not clickable, breakdown does not appear, per-coupon line shows wrong code or wrong amount, sum mismatch between breakdown and total","Remove @td(COUPON_10PCT.code) coupon from cart via Deny button after test (coupon remains applied — may affect subsequent cart tests)","VCST-4590","Automated"
 "CPN-039","Admin — Coupon-Level Usage Limits: Maximum Use Number and Maximum Uses Per Customer","Coupons & Promotions > Admin Backend","High","BL-PRICE-001, BL-CART-003","ECL-14.1","Admin user is logged in. A promotion exists with at least one coupon code. UI exploration confirmed coupon detail blade shows 'Maximum use number' and 'Maximum uses per customer' spinbuttons.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{ADMIN_URL}}
 [WAIT] Admin SPA loads
 [ACT] navigate to Marketing > Promotions
@@ -485,9 +485,9 @@
 [ACT] click 'QA Coupon English Name'
 [BLADE] Promotion detail blade opens
 [ACT] click 'Coupons' tab (badge shows count)
-[BLADE] Coupons list blade opens showing QA10OFF row with columns: Code, Total use count, Maximum use number
-[ACT] click 'QA10OFF' row to open coupon detail blade
-[BLADE] coupon detail blade opens — 'Coupon QA10OFF'
+[BLADE] Coupons list blade opens showing @td(COUPON_10PCT.code) row with columns: Code, Total use count, Maximum use number
+[ACT] click '@td(COUPON_10PCT.code)' row to open coupon detail blade
+[BLADE] coupon detail blade opens — 'Coupon @td(COUPON_10PCT.code)'
 [ASSERT] 'Maximum use number' spinbutton is visible with value '0' (unlimited)
 [ASSERT] 'Maximum uses per customer' spinbutton is visible with value '0' (unlimited)
 [ACT] set 'Maximum use number' to 100
@@ -505,8 +505,8 @@
 [BLADE] Promotion detail blade opens — note no Expiration date set at promotion level
 [ACT] click 'Coupons' tab
 [BLADE] Coupons list blade opens
-[ACT] click 'QA10OFF' coupon row
-[BLADE] coupon detail blade 'Coupon QA10OFF' opens
+[ACT] click '@td(COUPON_10PCT.code)' coupon row
+[BLADE] coupon detail blade 'Coupon @td(COUPON_10PCT.code)' opens
 [ASSERT] 'Coupon expiration date' field is visible (datetime picker with hint text 'Leave this field blank in case it is the same as the promotion expiration date')
 [ACT] set 'Coupon expiration date' to yesterday's date (a past date)
 [SAVE] click 'Save' and wait for save confirmation
@@ -514,10 +514,10 @@
 [NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
 [SCROLL] scroll through all coupon cards","[DOM] Admin: coupon expiration date persists after save and reopen
-[DOM] Storefront: the QA10OFF coupon card does NOT appear on the coupons page after the coupon-level expiry is set to past date
+[DOM] Storefront: the @td(COUPON_10PCT.code) coupon card does NOT appear on the coupons page after the coupon-level expiry is set to past date
 [STATE] storefront correctly filters out coupon with past coupon-level expiry even when the promotion itself has no expiry date","[API] coupon detail GET: expirationDate field contains the set past date
-[API] promotionCoupons GraphQL query does not return QA10OFF in items
-[CONSOLE] no JS errors on either admin or storefront","Coupon still visible on storefront after past coupon-level expiry set, expiration date not persisted, Admin 4xx on save","Restore Coupon expiration date to blank (clear the field) after test to keep QA10OFF usable","VCST-4590","Manual"
+[API] promotionCoupons GraphQL query does not return @td(COUPON_10PCT.code) in items
+[CONSOLE] no JS errors on either admin or storefront","Coupon still visible on storefront after past coupon-level expiry set, expiration date not persisted, Admin 4xx on save","Restore Coupon expiration date to blank (clear the field) after test to keep @td(COUPON_10PCT.code) usable","VCST-4590","Manual"
 "CPN-041","Admin — Coupon Code Alphanumeric Constraint: Non-Alphanumeric Characters Rejected","Coupons & Promotions > Admin Backend","Medium","BL-PRICE-001","ECL-1.3","Admin user is logged in. A promotion is open. UI exploration confirmed hint text: 'Coupon code may contain only alphanumeric characters'.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{ADMIN_URL}}
 [WAIT] Admin SPA loads
 [ACT] navigate to Marketing > Promotions and open any promotion
@@ -547,17 +547,17 @@
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart loads with at least 1 item
 [SCROLL] scroll to 'Enter a promo-coupon' input
-[ACT] type 'QA10OFF' in coupon input
+[ACT] type '@td(COUPON_10PCT.code)' in coupon input
 [KEY] Enter to apply coupon
-[WAIT] QA10OFF applied (discount visible)
-[ACT] type a second coupon code (e.g., 'SUPER') in the coupon input
+[WAIT] @td(COUPON_10PCT.code) applied (discount visible)
+[ACT] type a second coupon code (e.g., '@td(COUPON_20PCT.code)') in the coupon input
 [KEY] Enter to apply second coupon
 [WAIT] response","[DOM] Admin: Exclusivity saved as 'Globally exclusive' persists after blade reopen
-[DOM] Cart: After QA10OFF (globally exclusive) is applied, attempting to apply a second coupon results in rejection — second coupon NOT applied
-[STATE] only one promotion discount (QA10OFF) appears in Order summary breakdown
+[DOM] Cart: After @td(COUPON_10PCT.code) (globally exclusive) is applied, attempting to apply a second coupon results in rejection — second coupon NOT applied
+[STATE] only one promotion discount (@td(COUPON_10PCT.code)) appears in Order summary breakdown
 [MATH] discount = 10% × subtotal only (no additional SUPER discount stacked)","[API] addCoupon mutation for second coupon: cart.coupons[].isAppliedSuccessfully=false for the second code OR errors[] indicates exclusive promotion conflict
 [API] GET promotion: exclusivity field = 'Globally exclusive'
-[CONSOLE] no TypeError on second coupon attempt","Globally exclusive promotion allows stacking with other coupons (revenue leakage bug), Exclusivity dropdown missing from Admin blade, second coupon silently applies","Restore Exclusivity to 'Valid with other offers' on QA10OFF after test; remove all applied coupons from cart","VCST-4590","Automated"
+[CONSOLE] no TypeError on second coupon attempt","Globally exclusive promotion allows stacking with other coupons (revenue leakage bug), Exclusivity dropdown missing from Admin blade, second coupon silently applies","Restore Exclusivity to 'Valid with other offers' on @td(COUPON_10PCT.code) after test; remove all applied coupons from cart","VCST-4590","Automated"
 "CPN-043","Coupons Page — Automatic Promotion Without Coupon Code Does Not Appear","Coupons & Promotions > Business Logic","High","BL-PRICE-001","ECL-1.3","An automatic promotion exists (IsPublic=true, IsActive=true, zero coupon codes). UI exploration confirmed 'Snack as a gift' has 0 coupons but 686 usage history entries. These automatic promotions must not appear on the storefront coupons page.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{ADMIN_URL}}
 [WAIT] Admin SPA loads
 [ACT] navigate to Marketing > Promotions and locate 'Snack as a gift'
@@ -573,13 +573,13 @@
 [STATE] the promotionCoupons GraphQL query excludes promotions with zero coupon codes from results regardless of IsPublic value","[API] promotionCoupons query: no item in response has systemName or name matching 'Snack as a gift'
 [API] all items in response have non-empty couponCode field
 [CONSOLE] no errors","Automatic promotion (no coupon code) appears on coupons page (logic bug), coupon card rendered with empty/missing code button, console error during render","Restore 'Snack as a gift' IsPublic to original state if changed during test","VCST-4590","Manual"
-"CPN-044","GA4 — Coupon Code Tracked in GA4 Events on Cart Page After Application","Coupons & Promotions > Analytics","Medium","BL-PRICE-001","ECL-14.1","User is authenticated. Cart has at least one item. Coupon QA10OFF is applied in the cart. GA4 tracking is active (G-S2KXT3KTJZ). UI exploration confirmed GA4 events include ep.coupon=QA10OFF in add_shipping_info, add_payment_info, begin_checkout, and view_cart payloads.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=QA10OFF, ga4_id=G-S2KXT3KTJZ","[NAV] {{FRONT_URL}}/cart
-[WAIT] cart loads with coupon QA10OFF applied (discount visible in Order summary)
+"CPN-044","GA4 — Coupon Code Tracked in GA4 Events on Cart Page After Application","Coupons & Promotions > Analytics","Medium","BL-PRICE-001","ECL-14.1","User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code) is applied in the cart. GA4 tracking is active (G-S2KXT3KTJZ). UI exploration confirmed GA4 events include ep.coupon=@td(COUPON_10PCT.code) in add_shipping_info, add_payment_info, begin_checkout, and view_cart payloads.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code), ga4_id=G-S2KXT3KTJZ","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart loads with coupon @td(COUPON_10PCT.code) applied (discount visible in Order summary)
 [WAIT] network requests complete (page fully loaded)
-[ASSERT] inspect network requests to region1.google-analytics.com","[NETWORK] at least one POST to region1.google-analytics.com contains en=view_cart AND ep.coupon=QA10OFF in the query string
-[NETWORK] at least one POST contains en=begin_checkout AND ep.coupon=QA10OFF
-[NETWORK] at least one POST contains en=add_shipping_info AND ep.coupon=QA10OFF
-[NETWORK] at least one POST contains en=add_payment_info AND ep.coupon=QA10OFF
+[ASSERT] inspect network requests to region1.google-analytics.com","[NETWORK] at least one POST to region1.google-analytics.com contains en=view_cart AND ep.coupon=@td(COUPON_10PCT.code) in the query string
+[NETWORK] at least one POST contains en=begin_checkout AND ep.coupon=@td(COUPON_10PCT.code)
+[NETWORK] at least one POST contains en=add_shipping_info AND ep.coupon=@td(COUPON_10PCT.code)
+[NETWORK] at least one POST contains en=add_payment_info AND ep.coupon=@td(COUPON_10PCT.code)
 [FORMAT] coupon value in GA4 payload matches exactly the applied coupon code (case-sensitive)","[NETWORK] all GA4 POSTs return HTTP 200, 204, or 302 (not 4xx/5xx from analytics endpoint)
 [CONSOLE] no GTM/GA4 errors in browser console","GA4 events missing ep.coupon parameter when coupon is applied (GA4 regression), coupon code sent as lowercase in GA4 while stored as uppercase, GA4 events not firing at all","none","VCST-4590","Manual"
 "CPN-045","Admin — Promotion 'Can Be Redeemed More Than Once' Toggle Persists","Coupons & Promotions > Admin Backend","Medium","BL-PRICE-001","ECL-14.1","Admin user is logged in. UI exploration confirmed promotion detail blade shows 'Can be redeemed more than once' toggle with hint 'Enable this option if multiple coupons are required to redeem the offer'.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{ADMIN_URL}}
@@ -623,25 +623,25 @@
 [WAIT] import completes
 [WAIT] coupons list refreshes","[DOM] import dialog opens after clicking 'Import' button
 [DOM] after successful import: IMPORT-TEST1 and IMPORT-TEST2 appear in the Coupons list
-[STATE] existing coupon QA10OFF is not removed by the import (additive import, not replace)
+[STATE] existing coupon @td(COUPON_10PCT.code) is not removed by the import (additive import, not replace)
 [FORMAT] imported codes appear with Total use count = 0 and Maximum use number = 0","[API] import endpoint (POST to /api/marketing/promotions/{{PROMOTION_ID}}/coupons/import or similar) returns HTTP 200/201
 [CONSOLE] no errors during import","Import button opens nothing (dead button), import file format not documented in UI, imported codes not appearing in list, existing codes deleted by import (destructive import bug)","DELETE IMPORT-TEST1 and IMPORT-TEST2 coupons after test","VCST-4590","Manual"
-"CPN-048","Admin — Promotion Scoping: Promotion Not Shown on Storefront of Unassigned Store","Coupons & Promotions > Business Logic","High","BL-PRICE-001, BL-PRICE-007","ECL-14.3","Admin user is logged in. A promotion exists assigned only to store 'B2B-store'. A second store exists in the platform. UI exploration confirmed promotions have a 'Stores' field listing assigned stores.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, front_url={{FRONT_URL}}, store_id={{STORE_ID}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{ADMIN_URL}}
+"CPN-048","Admin — Promotion Scoping: Promotion Not Shown on Storefront of Unassigned Store","Coupons & Promotions > Business Logic","High","BL-PRICE-001, BL-PRICE-007","ECL-14.3","Admin user is logged in. A promotion exists assigned only to store '@td(STORE_PRIMARY.id)'. A second store exists in the platform. UI exploration confirmed promotions have a 'Stores' field listing assigned stores.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, front_url={{FRONT_URL}}, store_id={{STORE_ID}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{ADMIN_URL}}
 [WAIT] Admin SPA loads
 [ACT] navigate to Marketing > Promotions and open 'QA Coupon English Name'
 [BLADE] Promotion detail blade opens
-[ASSERT] 'Stores' field shows 'B2B-store' and an 'Add' option — the promotion is scoped to B2B-store only
-[NAV] {{FRONT_URL}}/account/coupons (ensure storefront context is B2B-store)
+[ASSERT] 'Stores' field shows '@td(STORE_PRIMARY.id)' and an 'Add' option — the promotion is scoped to @td(STORE_PRIMARY.id) only
+[NAV] {{FRONT_URL}}/account/coupons (ensure storefront context is @td(STORE_PRIMARY.id))
 [WAIT] 'All coupons & promotions' heading visible
 [WAIT] coupon cards load
-[ASSERT] QA10OFF card is visible (promotion IS in B2B-store scope)
+[ASSERT] @td(COUPON_10PCT.code) card is visible (promotion IS in @td(STORE_PRIMARY.id) scope)
 [ACT] run GraphQL query with a different storeId (if a second store exists): { promotionCoupons(storeId: ""DIFFERENT-STORE-ID"", cultureName: ""en-US"", first: 20) { items { couponCode } } }
-[WAIT] query response","[DOM] Admin Stores field shows only 'B2B-store' for the test promotion
-[STATE] QA10OFF coupon IS visible on storefront when storeId={{STORE_ID}} (B2B-store)
-[STATE] if a second store exists with different storeId: QA10OFF is NOT present in promotionCoupons results for that store
-[STATE] storeId scoping is enforced by the GraphQL query filtering","[API] promotionCoupons for DIFFERENT-STORE-ID: items array does not contain QA10OFF
-[API] promotionCoupons for B2B-store: items array contains QA10OFF
-[CONSOLE] no errors","B2B-store promotion leaks into other store's promotionCoupons response (store isolation bug), Stores field absent from Admin blade","none","VCST-4590","Manual"
+[WAIT] query response","[DOM] Admin Stores field shows only '@td(STORE_PRIMARY.id)' for the test promotion
+[STATE] @td(COUPON_10PCT.code) coupon IS visible on storefront when storeId=@td(STORE_PRIMARY.id)
+[STATE] if a second store exists with different storeId: @td(COUPON_10PCT.code) is NOT present in promotionCoupons results for that store
+[STATE] storeId scoping is enforced by the GraphQL query filtering","[API] promotionCoupons for DIFFERENT-STORE-ID: items array does not contain @td(COUPON_10PCT.code)
+[API] promotionCoupons for @td(STORE_PRIMARY.id): items array contains @td(COUPON_10PCT.code)
+[CONSOLE] no errors","@td(STORE_PRIMARY.id) promotion leaks into other store's promotionCoupons response (store isolation bug), Stores field absent from Admin blade","none","VCST-4590","Manual"
 "CPN-049","Frontend Endpoint Bug — Coupons Page Must Call /graphql Not /xapi/graphql","Coupons & Promotions > API Integration","Critical","BL-PRICE-001","ECL-14.1","User is authenticated. Bug identified 2026-03-17: storefront coupons page was calling /xapi/graphql (returns 404) instead of /graphql (returns 14 coupons). Fix must be verified in the deployed build (vc-frontend PR #2198).","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
 [WAIT] page content fully loaded (no loading spinner)","[DOM] at least one coupon card is visible — page is NOT showing empty state 'You don't have any coupons or promotions'
@@ -674,7 +674,7 @@
 [NETWORK] /graphql request for promotionCoupons is pending during skeleton display","Blank white page during loading (skeleton not implemented), layout jump between skeleton and content, skeleton not replaced after data arrives, console TypeError on widget render","Restore network throttling to normal after test","VCST-4590","Automated"
 "CPN-052","Coupon Card — Label Field Displayed When Set by Admin","Coupons & Promotions > Display","High","BL-PRICE-001","ECL-1.3","User is authenticated. The label feature is deployed (vc-module-marketing commit 36f2c93, experience-api commit 90f747c, frontend commit f1827eb — 2026-03-17). At least one promotion must have a non-null label value set in Admin. NOTE: As of 2026-03-17, all 14 live coupons have label=null — label must be set on a test promotion before running this case.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{ADMIN_URL}}
 [WAIT] Admin SPA loads
-[ACT] navigate to Marketing > Promotions and open 'QA Coupon English Name' (QA10OFF)
+[ACT] navigate to Marketing > Promotions and open 'QA Coupon English Name' (@td(COUPON_10PCT.code))
 [BLADE] Promotion detail blade opens
 [ASSERT] 'Label' (or 'DisplayName') field is present in the promotion form
 [ACT] set the Label/DisplayName field to 'TEST-LABEL-4590'
@@ -682,9 +682,9 @@
 [WAIT] 5s for propagation
 [NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
-[SCROLL] scroll to 'QA Coupon English Name' card (QA10OFF)","[DOM] the QA10OFF coupon card displays the label text 'TEST-LABEL-4590' as set in Admin — may render as a badge, tag, or subtitle element distinct from the promotion name
+[SCROLL] scroll to 'QA Coupon English Name' card (@td(COUPON_10PCT.code))","[DOM] the @td(COUPON_10PCT.code) coupon card displays the label text 'TEST-LABEL-4590' as set in Admin — may render as a badge, tag, or subtitle element distinct from the promotion name
 [DOM] label text is visible on the card (Phase 5 found label rendering may not be visually differentiated from name — verify if label appears as separate DOM element or overrides name display)
-[DOM] other coupon cards (with label=null) do NOT show an empty label element","[API] POST /graphql promotionCoupons query: item for QA10OFF has label = 'TEST-LABEL-4590' in the response
+[DOM] other coupon cards (with label=null) do NOT show an empty label element","[API] POST /graphql promotionCoupons query: item for @td(COUPON_10PCT.code) has label = 'TEST-LABEL-4590' in the response
 [API] errors[] empty
 [ADMIN] label value persists after blade close and reopen
 [CONSOLE] no JS errors on storefront after label is set","Label field absent from Admin promotion blade (feature not deployed), label value not returned in GraphQL response, label visible on storefront as empty string/element when null, console error during render","Restore label/displayName to empty/null on 'QA Coupon English Name' promotion after test","VCST-4590","Automated"
@@ -695,7 +695,7 @@
 [DOM] all cards render cleanly without extra whitespace attributable to a null label field
 [FORMAT] card layout is consistent across all 14 coupons — no card appears taller or differently spaced due to null label","[API] promotionCoupons query: all 14 items have label = null confirmed
 [CONSOLE] no 'undefined' or null reference errors in console related to the label field","Empty badge or element visible on any card where label=null, card height varies only due to label null (not description length), console null reference error for label","none","VCST-4590","Automated"
-"CPN-L01","Coupon With Special Characters in Code — Card Renders and Copy Works","Coupons & Promotions > Display","Medium","BL-PRICE-001","ECL-1.3","User is authenticated. Coupon 'CAT20#%$$^%%$&^%' (promotion: 'QA Category Percent', id: f61031c2-d6ce-48e9-87a7-d670a754b157) exists in live env with special characters in the code. Confirmed via GraphQL 2026-03-17.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=CAT20#%$$^%%$&^%","[NAV] {{FRONT_URL}}/account/coupons
+"CPN-L01","Coupon With Special Characters in Code — Card Renders and Copy Works","Coupons & Promotions > Display","Medium","BL-PRICE-001","ECL-1.3","User is authenticated. Coupon '@td(COUPON_SPECIAL_CHARS.code)' (promotion: '@td(COUPON_SPECIAL_CHARS.promo_name)', id: @td(COUPON_SPECIAL_CHARS.gql_id)) exists in live env with special characters in the code. Confirmed via GraphQL 2026-03-17.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_SPECIAL_CHARS.code)","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
 [WAIT] coupon cards visible
 [SCROLL] scroll to find 'QA Category Percent' coupon card
@@ -706,7 +706,7 @@
 [STATE] clipboard contains the full code including special characters (verify via browser_evaluate document.execCommand or clipboard API)
 [DOM] the special characters are not HTML-encoded or truncated in the displayed code","[CONSOLE] no encoding errors or innerHTML injection warnings for the special-char code
 [NETWORK] no 4xx/5xx
-[API] promotionCoupons response includes this item with couponCode = 'CAT20#%$$^%%$&^%' exactly","Card missing for this coupon, copy button absent, clipboard contains only partial code, console XSS/injection warning, layout broken due to special chars","none","VCST-4590","Manual"
+[API] promotionCoupons response includes this item with couponCode = '@td(COUPON_SPECIAL_CHARS.code)' exactly","Card missing for this coupon, copy button absent, clipboard contains only partial code, console XSS/injection warning, layout broken due to special chars","none","VCST-4590","Manual"
 "CPN-016","Empty State — Graceful Handling When No Public Coupons Available","Coupons & Promotions > Edge Cases","Low","BL-PRICE-001","ECL-1.3","A user account or store context exists with no active public promotions with coupon codes. NOTE: May require a test user account in a separate store with no active promotions.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] page loads
 [WAIT] page content stabilizes (spinner gone)","[DOM] page heading 'All coupons & promotions' is still visible

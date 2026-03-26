@@ -1,5 +1,5 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"CMS-001","Create new page in Page Builder","Page Management","Critical",,,"Admin logged in; CMS module installed; Precondition gate passed (see test-data/cms/pagebuilder-pages.md § Precondition Verification Gate)","PAGE-1 from test-data/cms/pagebuilder-pages.md: Name=QA Homepage Spring Sale, Permalink=qa-homepage-spring-sale, Lang=EN","1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-draft
+"CMS-001","Create new page in Page Builder","Page Management","Critical",,,"Admin logged in; CMS module installed; Precondition gate passed (see test-data/cms/pagebuilder-pages.md § Precondition Verification Gate)","PAGE-1 from test-data/cms/pagebuilder-pages.md: Name=QA Homepage Spring Sale, Permalink=qa-homepage-spring-sale, Lang=EN","1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
 2. Click Add button
 3. Enter page name: QA Homepage Spring Sale
 4. Enter permalink: qa-homepage-spring-sale
@@ -21,20 +21,20 @@
 2. Click Archive",,,,,"C415432",
 "CMS-008","Draft to Archive transition","Status Transitions","Medium",,,"Page is in Draft status",,"1. Open draft page
 2. Click Archive",,,,,"C415433",
-"CMS-017","Status filter - Draft pages only","Status Filters","High",,,"Seeded pages exist in various statuses (see test-data/cms/pagebuilder-pages.md § Precondition Verification Gate); PageBuilder shell accessible","Seeded pages PAGE-2 through PAGE-5 from test-data/cms/pagebuilder-pages.md","1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-draft
+"CMS-017","Status filter - Draft pages only","Status Filters","High",,,"Seeded pages exist in various statuses (see test-data/cms/pagebuilder-pages.md § Precondition Verification Gate); PageBuilder shell accessible","Seeded pages PAGE-2 through PAGE-5 from test-data/cms/pagebuilder-pages.md","1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
 2. Verify Draft counter badge in left sidebar shows correct count
 3. Verify page list shows only pages with Draft status badge","Draft counter matches total pages listed; all listed pages display Draft badge; grid columns: Name, Language, Permalink, Modified, Modified by, Status",,"Empty list or zero counter when draft pages exist in API; navigation to wrong admin path (Content > Pages shows file grid, NOT PageBuilder pages)",,"C415379 C415385; Synced: PR #105 (2026-03-25)",
-"CMS-018","Status filter - Active (Published) pages only","Status Filters","High",,,"Published pages exist; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-active
+"CMS-018","Status filter - Active (Published) pages only","Status Filters","High",,,"Published pages exist; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-active
 2. Verify Active counter badge in left sidebar shows correct count
 3. Verify page list shows only pages with Published status that are within their scheduled date range","Active counter matches total pages listed; all listed pages display Published badge; pages may also show Scheduled and/or Personalized badges",,"Empty list or zero counter when published pages exist; navigation to wrong admin path (Content > Pages)",,"C415381 C415387; Synced: PR #105 (2026-03-25)",
-"CMS-019","Status filter - Pending (Scheduled) pages only","Status Filters","Medium",,,"PAGE-4 (QA Summer Collection Preview) seeded with future StartDate; PageBuilder shell accessible","PAGE-4 from test-data/cms/pagebuilder-pages.md: StartDate=+7d, EndDate=+60d","1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-pending
+"CMS-019","Status filter - Pending (Scheduled) pages only","Status Filters","Medium",,,"PAGE-4 (QA Summer Collection Preview) seeded with future StartDate; PageBuilder shell accessible","PAGE-4 from test-data/cms/pagebuilder-pages.md: StartDate=+7d, EndDate=+60d","1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-pending
 2. Verify Pending section in left sidebar
 3. Verify PAGE-4 appears in list with Published status and Scheduled badge
 4. Verify page list shows only Published pages with StartDate in the future","PAGE-4 visible in Pending tab with Published + Scheduled badges; Pending counter matches list total; if PAGE-4 StartDate has passed, it will NOT appear here (re-seed needed)",,"Empty list when pending pages exist; PAGE-4 missing despite future StartDate; navigation to wrong admin path (Content > Pages)",,"C415380 C415386; Synced: PR #105 (2026-03-25)",
-"CMS-020","Status filter - Archived pages only","Status Filters","Medium",,,"Archived pages exist; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-archived
+"CMS-020","Status filter - Archived pages only","Status Filters","Medium",,,"Archived pages exist; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-archived
 2. Verify Archived section in left sidebar
 3. Verify page list shows only pages where all language versions are Archived, or pages past their EndDate","Listed pages display Archived badge; pages past EndDate may also show Published+Scheduled badges; counter matches list total",,"Empty list when archived pages exist in API; navigation to wrong admin path (Content > Pages)",,"C415382 C415388; Synced: PR #105 (2026-03-25)",
-"CMS-021","Counters update when page status changes","Status Filters","Medium",,,"Draft page exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-draft",,"1. Note Draft and Active counter badge values in left sidebar
+"CMS-021","Counters update when page status changes","Status Filters","Medium",,,"Draft page exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft",,"1. Note Draft and Active counter badge values in left sidebar
 2. Open a draft page and click Publish
 3. Navigate back to Draft tab — verify counter decreased by 1
 4. Click Active tab — verify counter increased by 1","Draft counter decreases by 1 after publish; Active counter increases by 1; page appears in Active list with Published badge",,"Counters not updating after status change; page still appears in Draft list after publish",,"C415384; Synced: PR #105 (2026-03-25)",
@@ -57,16 +57,16 @@
 2. Expand Personalization section
 3. Select Organization: TechFlow Solutions from dropdown
 4. Save","Org restriction saved; Personalized badge appears in grid; page accessible only to TechFlow org members (see PAGE-5 Access Control Matrix)",,,,"C415403 C415465 C415466",
-"CMS-052","Partial search match and case-insensitive search","Search","Medium",,,"Multiple pages exist; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-all",,"1. Navigate to All Pages tab in PageBuilder shell
+"CMS-052","Partial search match and case-insensitive search","Search","Medium",,,"Multiple pages exist; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all",,"1. Navigate to All Pages tab in PageBuilder shell
 2. Type partial page name in Search field (e.g. 'water')
 3. Verify matching pages appear in filtered list
 4. Clear and search with different case (e.g. 'WATER')
 5. Verify same results (case-insensitive)
 6. Clear and search with special characters (e.g. '&')","Partial match returns pages containing search term; case-insensitive search returns identical results; special characters handled without errors",,"Search returns no results for valid partial match; case-sensitive filtering; UI error on special characters",,"C415488 C415489 C415487; Synced: PR #105 (2026-03-25)",
-"CMS-053","Page Builder Admin shows correct frontend URL","Admin Integration","Medium",,,"Published page exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-active",,"1. Navigate to Active tab in PageBuilder shell
+"CMS-053","Page Builder Admin shows correct frontend URL","Admin Integration","Medium",,,"Published page exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-active",,"1. Navigate to Active tab in PageBuilder shell
 2. Click on a published page to open its blade
 3. Check that the frontend URL/permalink is displayed correctly
 4. Verify permalink matches ${FRONT_URL}/<permalink>","Frontend URL displayed in page blade matches the page permalink; URL is clickable or copyable",,"Frontend URL missing or showing incorrect domain",,"C415499; Synced: PR #105 (2026-03-25)",
-"CMS-055","Login and user profile in Page Builder admin","Authentication","Medium",,,"User credentials available",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store (login if prompted)
+"CMS-055","Login and user profile in Page Builder admin","Authentication","Medium",,,"User credentials available",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id) (login if prompted)
 2. Verify user profile button in bottom-left shows username and role (e.g. 'admin / Administrator')
 3. Check Virto Commerce logo display in top-left corner","User profile shows logged-in user's name and role; Virto Commerce logo is visible",,"User profile missing or showing wrong user; logo not loading",,"C415421 C415425 C415426; Synced: PR #105 (2026-03-25)",

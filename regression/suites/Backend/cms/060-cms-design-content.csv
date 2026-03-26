@@ -1,26 +1,26 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"CMS-009","Verify Draft status badge in grid","Grid View","Medium",,,"Draft page exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-draft
+"CMS-009","Verify Draft status badge in grid","Grid View","Medium",,,"Draft page exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
 2. Locate draft page in grid
 3. Verify Draft badge is displayed in Status column","Draft badge (pill) visible next to the page name in Status column; page may also show Personalized badge",,"No Draft badge visible; page appears in wrong lifecycle tab",,"C415407 C415436; Synced: PR #105 (2026-03-25)",
-"CMS-010","Verify Published status badge in grid","Grid View","Medium",,,"Published page exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-active
+"CMS-010","Verify Published status badge in grid","Grid View","Medium",,,"Published page exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-active
 2. Locate published page in grid
 3. Verify Published badge is displayed in Status column","Published badge (pill) visible in Status column; page may also show Scheduled and/or Personalized badges",,"No Published badge visible; page missing from Active tab",,"C415408 C415437; Synced: PR #105 (2026-03-25)",
-"CMS-011","Verify Archived status badge in grid","Grid View","Medium",,,"Archived page exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-archived
+"CMS-011","Verify Archived status badge in grid","Grid View","Medium",,,"Archived page exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-archived
 2. Locate archived page in grid
 3. Verify Archived badge is displayed in Status column","Archived badge (pill) visible in Status column",,"No Archived badge visible; page missing from Archived tab",,"C415409 C415438; Synced: PR #105 (2026-03-25)",
-"CMS-012","Verify Scheduled badge in grid","Grid View","Medium",,,"Page with scheduled dates (StartDate or EndDate) exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-active (or Archived for expired)
+"CMS-012","Verify Scheduled badge in grid","Grid View","Medium",,,"Page with scheduled dates (StartDate or EndDate) exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-active (or Archived for expired)
 2. Locate page with scheduled dates in grid
 3. Verify Scheduled badge is displayed alongside Published badge in Status column","Scheduled badge (pill) visible next to Published badge for pages with date restrictions",,"No Scheduled badge visible on pages that have StartDate/EndDate configured",,"C415410 C415456; Synced: PR #105 (2026-03-25)",
-"CMS-013","Verify Personalized badge in grid","Grid View","Medium",,,"Page with visibility=false or user group restrictions exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to any lifecycle tab in PageBuilder shell (Draft, Active, or Archived)
+"CMS-013","Verify Personalized badge in grid","Grid View","Medium",,,"Page with visibility=false or user group restrictions exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)",,"1. Navigate to any lifecycle tab in PageBuilder shell (Draft, Active, or Archived)
 2. Locate page with personalization settings (visibility off, user groups, or organization restrictions)
 3. Verify Personalized badge is displayed in Status column","Personalized badge (pill) visible in Status column alongside the page's lifecycle badge (Draft/Published/Archived)",,"No Personalized badge on pages that have visibility or user group restrictions configured",,"C415411 C415457; Synced: PR #105 (2026-03-25)",
-"CMS-014","Grid columns display correctly","Grid View","Medium",,,"Multiple pages exist; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-all
+"CMS-014","Grid columns display correctly","Grid View","Medium",,,"Multiple pages exist; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all
 2. Verify all grid columns are visible: Name, Language, Permalink, Modified, Modified by, Status","All 6 columns rendered with sortable headers; data populates correctly for each column",,"Missing columns; column data not rendering; sort not functional",,"C415412; Synced: PR #105 (2026-03-25)",
-"CMS-015","Checkbox selection and bulk selection","Grid View","Medium",,,"Multiple pages exist; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to any lifecycle tab in PageBuilder shell
+"CMS-015","Checkbox selection and bulk selection","Grid View","Medium",,,"Multiple pages exist; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)",,"1. Navigate to any lifecycle tab in PageBuilder shell
 2. Click individual row checkboxes to select pages
 3. Click Select All checkbox in header row
 4. Verify Archive toolbar button becomes enabled when pages are selected","Individual checkboxes toggle selection; Select All selects all visible rows; Archive button activates on selection",,"Checkboxes not clickable; Select All not working; Archive button stays disabled",,"C415414 C415415 C415416; Synced: PR #105 (2026-03-25)",
-"CMS-016","Search functionality in page list","Grid View","High",,,"Multiple pages exist; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to All Pages tab in PageBuilder shell
+"CMS-016","Search functionality in page list","Grid View","High",,,"Multiple pages exist; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)",,"1. Navigate to All Pages tab in PageBuilder shell
 2. Enter search term in Search field
 3. Verify filtered results display matching pages","Search filters page list to show only pages matching the keyword (by Name or Permalink); results update as user types",,"Search returns no results for valid terms; search field not present",,"C415420; Synced: PR #105 (2026-03-25)",
 "CMS-027","Published page accessible on frontend (correct language)","Storefront Verification","Critical",,,"PAGE-1 published via CMS-006 OR PAGE-3 seeded (both EN+DE published)","PAGE-1: ${FRONT_URL}/qa-homepage-spring-sale; PAGE-3 EN: ${FRONT_URL}/en/qa-return-policy; PAGE-3 DE: ${FRONT_URL}/de/qa-return-policy (see test-data/cms/pagebuilder-pages.md)","1. Navigate to ${FRONT_URL}/qa-homepage-spring-sale (PAGE-1, EN)
@@ -52,7 +52,7 @@
 2. Verify search suggestions dropdown shows PAGE-3 EN title and does NOT show DE title
 3. Navigate to ${FRONT_URL}/de/ and type 'Rückgaberichtlinie' in search bar
 4. Verify search suggestions dropdown shows PAGE-3 DE title only","Search suggestions in /en/ context return only English-language pages; suggestions in /de/ context return only German-language pages; no cross-language contamination in dropdown","","English search suggestions show German-language page; language-specific isolation broken in suggestions dropdown","","C415463 C415464",
-"CMS-036","Add section to page","Designer Sections","Critical",,,"Page open in designer at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Open a draft page in the PageBuilder designer
+"CMS-036","Add section to page","Designer Sections","Critical",,,"Page open in designer at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)",,"1. Open a draft page in the PageBuilder designer
 2. Click the Add block button (+ icon or 'Add block' label) in the designer
 3. Select a block type (e.g., 'Title') from the block library panel
 4. Verify the block appears in the sections panel on the left
@@ -105,23 +105,23 @@
 "CMS-044","Video and text block - add and preview","Content Blocks","Medium",,,"Page open in designer",,"1. Add Video and Text section
 2. Configure video URL and text
 3. Preview","","","","deprecated — block type removed from designer library (COV-2026-03-25-1630)","C221976 C221977","deprecated"
-"CMS-045","Page builder field types - text and rich text","Field Types","High",,,"Section editing open in designer at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Open a page in the PageBuilder designer and add or open a section that contains text, rich text, image, and select field types
+"CMS-045","Page builder field types - text and rich text","Field Types","High",,,"Section editing open in designer at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)",,"1. Open a page in the PageBuilder designer and add or open a section that contains text, rich text, image, and select field types
 2. In the text field: enter plain text and verify it saves
 3. In the rich text field: apply bold, italic, and add a hyperlink; verify formatting toolbar is present
 4. In the image field: upload an image and verify thumbnail preview
 5. In the select/dropdown field: choose an option and verify selection persists
 6. Click Save and verify all field values persist","Text field accepts and saves plain text; rich text editor shows formatting toolbar with bold/italic/link options; image field shows thumbnail after upload; select field retains chosen option; all values persist after Save","","Text field not editable; rich text toolbar missing; image upload failing; select field options not loading; values reset after Save","","C221068 C221069 C221070 C221072",
-"CMS-046","Color preset - Blue theme","Design Presets","Medium",,,"CMS designer open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Open a page in the PageBuilder designer
+"CMS-046","Color preset - Blue theme","Design Presets","Medium",,,"CMS designer open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)",,"1. Open a page in the PageBuilder designer
 2. Click 'Theme settings' in the top toolbar
 3. In the Presets section, select the 'Blue' preset
 4. Verify the live preview updates with blue color scheme
 5. Click Save","Blue preset selected and applied; live preview updates to show blue primary colors on buttons, headings, and accents; Save persists the preset","","Presets section not visible; Blue preset not in list; preview not updating on selection; Save fails","","C221107",
-"CMS-047","Color preset - Dark theme","Design Presets","Medium",,,"CMS designer open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Open a page in the PageBuilder designer
+"CMS-047","Color preset - Dark theme","Design Presets","Medium",,,"CMS designer open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)",,"1. Open a page in the PageBuilder designer
 2. Click 'Theme settings' in the top toolbar
 3. In the Presets section, select the 'Dark' preset
 4. Verify the live preview updates with dark color scheme
 5. Click Save","Dark preset selected and applied; live preview updates to show dark background and light text; Save persists the preset","","Presets section not visible; Dark preset not in list; preview not updating on selection; Save fails","","C221108",
-"CMS-048","Custom colors - background and text","Design Presets","Medium",,,"CMS designer open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Open a page in the PageBuilder designer
+"CMS-048","Custom colors - background and text","Design Presets","Medium",,,"CMS designer open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)",,"1. Open a page in the PageBuilder designer
 2. Click 'Theme settings' in the top toolbar
 3. Navigate to Colors > General section
 4. Set a custom Background color using the color picker
@@ -129,7 +129,7 @@
 6. Set a custom Headings color
 7. Verify the live preview updates with the new colors
 8. Click Save","Background, Text, and Headings color inputs accept hex/color picker values; live preview updates in real-time for each change; Save persists all three custom colors","","Color pickers not opening; values not accepted; preview not updating; Save resets colors to default","","C221110 C221111 C221112",
-"CMS-049","Custom colors - links buttons and borders","Design Presets","Medium",,,"CMS designer open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Open a page in the PageBuilder designer
+"CMS-049","Custom colors - links buttons and borders","Design Presets","Medium",,,"CMS designer open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)",,"1. Open a page in the PageBuilder designer
 2. Click 'Theme settings' in the top toolbar
 3. Set a custom Links color using the color picker
 4. Set a custom Button color
@@ -143,23 +143,23 @@
 4. Modify at least one setting (e.g., change image alignment to right)
 5. Verify live preview reflects the setting change
 6. Click Save","Image with text section configuration panel shows layout/alignment/padding options; setting changes reflect in live preview; Save persists the updated settings","","Configuration panel empty; settings changes not reflecting in preview; Save fails or resets settings","","C221075 C221053 C221092",
-"CMS-051","Multiple badge combinations","Badge Display","Medium",,,"Pages with various status/configuration combinations; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to Active tab in PageBuilder shell
+"CMS-051","Multiple badge combinations","Badge Display","Medium",,,"Pages with various status/configuration combinations; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)",,"1. Navigate to Active tab in PageBuilder shell
 2. Locate pages with multiple badges: Published+Scheduled, Published+Personalized, Published+Scheduled+Personalized
 3. Navigate to Archived tab — locate pages with Archived+Scheduled badges
 4. Verify all badge combinations render correctly without overlap","Multiple badges display side by side in Status column (e.g. 'Published Scheduled Personalized'); badges are legible and don't overflow the cell",,"Badges overlapping; missing badges on pages with multiple statuses; layout broken with 3 badges",,"C415441 C415442 C415443 C415444; Synced: PR #105 (2026-03-25)",
-"CMS-054","Cross-browser compatibility - Chrome and Edge","Cross-Browser","Medium",,,"CMS module accessible; admin user credentials available",,"1. Open ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store in Chrome
+"CMS-054","Cross-browser compatibility - Chrome and Edge","Cross-Browser","Medium",,,"CMS module accessible; admin user credentials available",,"1. Open ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id) in Chrome
 2. Verify page list loads, grid columns render, and badge display is correct
-3. Open ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store in Edge
+3. Open ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id) in Edge
 4. Repeat grid and badge verification steps
 5. Compare results between browsers","PageBuilder shell loads and functions identically in Chrome and Edge; no layout differences in grid columns or badge display; all toolbar buttons accessible in both browsers","","Page fails to load in one browser; grid columns missing or misaligned; badges rendering differently across browsers; JS errors in console","","C415427 C415428",
-"CMS-056","Rich Text Field Type — Add Rich Text Content Block","Field Types","High",,,"Admin logged in to Backend; page exists in Page Builder designer",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store and open an existing page
+"CMS-056","Rich Text Field Type — Add Rich Text Content Block","Field Types","High",,,"Admin logged in to Backend; page exists in Page Builder designer",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id) and open an existing page
 2. Click Open Designer to enter the page builder
 3. Add a new section or open an existing section that contains a Rich Text field
 4. Click on the Rich Text field to open the rich text editor
 5. Enter formatted text content: apply bold, apply italic, and insert a hyperlink
 6. Click Save or apply the changes
 7. Preview the page and verify rich text renders correctly","Rich text editor opens with formatting toolbar; bold, italic, and hyperlink controls are present and functional; formatted content saves without data loss; preview renders bold/italic text and clickable hyperlinks correctly","","Rich text editor not opening; formatting toolbar missing; bold/italic not applying; hyperlinks not saving; formatted content displaying as raw HTML in preview","","C221068",
-"CMS-057","Designer — Viewport switching (Desktop/Tablet/Mobile)","Designer Core","High",,,"Page open in designer at ${BACK_URL}/Modules/$(VirtoCommerce.PageBuilderModule)/Content/page-builder-designer/index.html?storeId=B2B-store",,"1. Open a page in the designer
+"CMS-057","Designer — Viewport switching (Desktop/Tablet/Mobile)","Designer Core","High",,,"Page open in designer at ${BACK_URL}/Modules/$(VirtoCommerce.PageBuilderModule)/Content/page-builder-designer/index.html?storeId=@td(STORE_PRIMARY.id)",,"1. Open a page in the designer
 2. Click the Desktop dropdown in the top-left toolbar
 3. Select Tablet viewport
 4. Verify the live preview iframe resizes to tablet width
@@ -309,7 +309,7 @@
 9. Verify 'Paste before' and 'Paste after' are now active/enabled
 10. Click 'Paste before'
 11. Verify copied section appears above the first section","Context menu appears on right-click for any section; all 6 options visible (Hide, Copy, Paste before, Paste after, Duplicate, Delete); Copy enables Paste options; Paste before inserts above target; Paste after inserts below target; menu dismisses on click-away","","Context menu not appearing; options missing or disabled; Paste not working after Copy; wrong insertion position; menu not dismissing",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
-"CMS-078","E2E — Create promotional landing page and publish","E2E Flow","Critical","BL-CMS-001",,"Admin logged in; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-draft","pageName=Summer Sale 2026; permalink=/summer-sale-2026; language=en-US","1. Click Add button in Draft tab toolbar
+"CMS-078","E2E — Create promotional landing page and publish","E2E Flow","Critical","BL-CMS-001",,"Admin logged in; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft","pageName=Summer Sale 2026; permalink=/summer-sale-2026; language=en-US","1. Click Add button in Draft tab toolbar
 2. Enter page name 'Summer Sale 2026' and permalink '/summer-sale-2026'
 3. Select language 'en-US'
 4. Click Save — verify page appears in Draft list
@@ -323,7 +323,7 @@
 12. Click Publish in designer toolbar
 13. Navigate to ${FRONT_URL}/summer-sale-2026
 14. Verify page renders with title, products grid, and CTA button","Page created in Draft; designer opens with empty canvas; blocks add and configure; preview renders all blocks; Save+Publish succeeds; storefront renders the page at correct permalink with all content","ADMIN: Page moves from Draft tab to Active tab with Published badge; API: GET page-builder-pages/search returns page with status=Published","Page creation fails; designer blocks not adding; preview blank; Publish fails; storefront returns 404 after publish; content missing on storefront","Delete test page via Archive after test","Coverage Gap Analysis COV-2026-03-25-1630","generated"
-"CMS-079","E2E — Edit published page and verify storefront update","E2E Flow","Critical","BL-CMS-002",,"Published page exists with known permalink (e.g. from CMS-078)","Published page permalink","1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-active
+"CMS-079","E2E — Edit published page and verify storefront update","E2E Flow","Critical","BL-CMS-002",,"Published page exists with known permalink (e.g. from CMS-078)","Published page permalink","1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-active
 2. Click on a published page to open blade
 3. Click Open Designer
 4. Modify existing text block content — change heading text
@@ -335,7 +335,7 @@
 10. Navigate to ${FRONT_URL}/<permalink> again
 11. Verify the NEW content now appears (updated heading + new image)","Editing a published page creates a draft version; Save persists edits without affecting live storefront; Publish pushes changes to storefront; storefront reflects updated content only after Publish","ADMIN: Page shows HasChanges indicator in Active tab after save but before publish","Edit not saving; storefront showing edited content before Publish (premature publish); Publish not updating storefront; new image block missing on storefront","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
 "CMS-080","E2E — Archive page and verify storefront 404","E2E Flow","High","BL-CMS-003",,"Published page exists with known permalink","Published page permalink","1. Verify page is accessible on storefront: navigate to ${FRONT_URL}/<permalink> — expect HTTP 200
-2. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-active
+2. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-active
 3. Select the page checkbox
 4. Click Archive toolbar button
 5. Confirm archive action if prompted
@@ -438,7 +438,7 @@
 5. Verify the storefront renders correctly with all blocks
 6. Exit preview mode (click back or close)
 7. Verify you return to the designer editing mode","Preview mode shows full storefront rendering with all blocks; interactive (scrollable, links clickable); exiting returns to designer without losing unsaved changes","","Preview button disabled; preview blank or showing error; cannot exit preview; unsaved changes lost after preview","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
-"CMS-093","API — Page search with lifecycle filter","API Layer","High","BL-CMS-009",,"Admin authenticated; API access available","storeId=B2B-store","1. Call GET ${BACK_URL}/api/page-builder/grouped-pages/search with body: {storeId: 'B2B-store', lifecycle: 'Drafts', take: 10}
+"CMS-093","API — Page search with lifecycle filter","API Layer","High","BL-CMS-009",,"Admin authenticated; API access available","storeId=@td(STORE_PRIMARY.id)","1. Call GET ${BACK_URL}/api/page-builder/grouped-pages/search with body: {storeId: '@td(STORE_PRIMARY.id)', lifecycle: 'Drafts', take: 10}
 2. Verify response contains only Draft pages
 3. Call with lifecycle: 'Active'
 4. Verify response contains only Published pages within date range
@@ -446,7 +446,7 @@
 6. Verify response contains only Archived pages or pages past EndDate
 7. Call with lifecycle: 'Pending'
 8. Verify response contains only Published pages with future StartDate","Each lifecycle filter returns correctly filtered pages; response includes page metadata (name, permalink, status, dates, language); total count matches filter","","Wrong pages returned for lifecycle filter; mixed statuses in results; API error on filter value; pagination broken","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
-"CMS-094","API — Page CRUD operations","API Layer","High","BL-CMS-010",,"Admin authenticated via API","storeId=B2B-store; test page data","1. POST ${BACK_URL}/api/page-builder/grouped-pages — create a new page with name, permalink, language, storeId
+"CMS-094","API — Page CRUD operations","API Layer","High","BL-CMS-010",,"Admin authenticated via API","storeId=@td(STORE_PRIMARY.id); test page data","1. POST ${BACK_URL}/api/page-builder/grouped-pages — create a new page with name, permalink, language, storeId
 2. Verify response returns created page with ID and Draft status
 3. PUT ${BACK_URL}/api/page-builder/grouped-pages/{id} — update page name
 4. Verify response confirms update
@@ -462,7 +462,7 @@
 5. Navigate to ${FRONT_URL}/<permalink>
 6. Verify storefront returns 404 (page no longer published)
 7. Navigate to PageBuilder shell — verify page is in Draft tab, not Active","Unpublish removes page from storefront; page moves from Active to Draft tab; storefront returns 404; page content is preserved in Draft state for future re-publishing","ADMIN: Page moves from Active to Draft tab; counter updates","Unpublish button disabled; page still accessible on storefront after unpublish; page stuck in Active tab; content lost after unpublish","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
-"CMS-096","Pagination — Page list with many pages","Grid View","Medium",,,"More than 20 pages exist in at least one lifecycle tab","30+ pages in All Pages","1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-all
+"CMS-096","Pagination — Page list with many pages","Grid View","Medium",,,"More than 20 pages exist in at least one lifecycle tab","30+ pages in All Pages","1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all
 2. Verify page list shows first page of results
 3. Check pagination controls at bottom (page numbers, arrows)
 4. Verify Totals count matches expected number

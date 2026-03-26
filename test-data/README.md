@@ -2,7 +2,45 @@
 
 **Purpose:** Centralized test data for all Virto Commerce B2B e-commerce regression testing.
 
-**Last Updated:** 2026-03-21
+**Last Updated:** 2026-03-26
+
+---
+
+## Test Data References (`@td()` Syntax)
+
+Regression suite CSVs reference test data using the `@td()` notation instead of hardcoding values. This eliminates duplication and drift risk.
+
+### Syntax
+
+```
+# Alias form (recommended — uses aliases.json registry)
+@td(CYBERSOURCE_VISA.number)     → 4622943127013705
+@td(COUPON_10PCT.code)           → QA10OFF
+@td(STORE_PRIMARY.id)            → B2B-store
+@td(ADDR_LA.city)                → Los Angeles
+@td(ACME_ADMIN.email)            → test-john.mitchell-20260310@test-agent.com
+
+# Direct form (for one-off lookups)
+@td(payment/test-cards, processor=CyberSource&card_type=Visa, card_number)
+```
+
+### How It Works
+
+1. Suite CSV contains `@td(ALIAS.field)` tokens in the `Test_Data` column
+2. **CI mode**: `lib/test-data-resolver.ts` resolves all tokens before injecting CSV into agent prompt
+3. **Interactive mode**: Orchestrator agents resolve tokens by reading `aliases.json` + CSV files
+4. Agents receive fully resolved values — no @td() parsing needed during test execution
+
+### Alias Registry
+
+All aliases are defined in [`aliases.json`](aliases.json). Each alias maps to:
+- `file` — CSV file path (relative to `test-data/`, without `.csv` extension)
+- `filter` — key-value pairs to find the right row
+- `fields` — shorthand names → CSV column names
+
+### Validation
+
+Run `npx tsx scripts/validate-td-refs.ts` to verify all `@td()` references across all suites resolve correctly.
 
 ---
 

@@ -1,0 +1,511 @@
+{
+  "_meta": {
+    "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
+    "version": "1.0.0",
+    "updated": "2026-03-26"
+  },
+
+  "CYBERSOURCE_VISA": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "CyberSource", "card_type": "Visa", "test_scenario": "Valid CyberSource Visa" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "CYBERSOURCE_VISA_ALT": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "CyberSource", "card_type": "Visa", "test_scenario": "Valid Visa alternate" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "CYBERSOURCE_MC": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "CyberSource", "card_type": "Mastercard", "test_scenario": "Valid CyberSource Mastercard" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "CYBERSOURCE_AMEX": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "CyberSource", "card_type": "Amex", "test_scenario": "Valid CyberSource Amex" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "CYBERSOURCE_DECLINED": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "CyberSource", "test_scenario": "Declined transaction" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "CYBERSOURCE_INVALID": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "CyberSource", "test_scenario": "Invalid card number" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "SKYFLOW_VISA": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Skyflow", "card_type": "Visa", "test_scenario": "Valid Visa card" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "SKYFLOW_VISA_ALT": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Skyflow", "card_type": "Visa", "test_scenario": "Valid Visa alternate" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "SKYFLOW_MC": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Skyflow", "card_type": "Mastercard", "test_scenario": "Valid Mastercard" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "SKYFLOW_AMEX": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Skyflow", "card_type": "Amex", "test_scenario": "Valid American Express" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "SKYFLOW_DISCOVER": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Skyflow", "card_type": "Discover", "test_scenario": "Valid Discover card" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "SKYFLOW_DECLINED": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Skyflow", "test_scenario": "Declined transaction" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "SKYFLOW_CVV_ERROR": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Skyflow", "test_scenario": "CVV error" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "AUTHORIZENET_VISA": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Authorize.Net", "card_type": "Visa", "test_scenario": "Valid Authorize.Net Visa" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "AUTHORIZENET_MC": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Authorize.Net", "card_type": "Mastercard", "test_scenario": "Valid Authorize.Net Mastercard" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "AUTHORIZENET_AMEX": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Authorize.Net", "card_type": "Amex", "test_scenario": "Valid Authorize.Net Amex" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "AUTHORIZENET_DISCOVER": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Authorize.Net", "card_type": "Discover", "test_scenario": "Valid Authorize.Net Discover" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "AUTHORIZENET_DECLINED": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Authorize.Net", "test_scenario": "Declined transaction" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "DATATRANCE_MC": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Datatrance", "card_type": "Mastercard", "test_scenario": "Valid Datatrance Mastercard" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "DATATRANCE_VISA": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Datatrance", "card_type": "Visa", "test_scenario": "Valid Datatrance Visa" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "DATATRANCE_OTP": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Datatrance", "test_scenario": "3D Secure with OTP" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name", "notes": "notes" }
+  },
+  "DATATRANCE_DECLINED": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Datatrance", "test_scenario": "Declined transaction" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "CARD_INSUFFICIENT_FUNDS": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Generic", "test_scenario": "Insufficient funds error" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv" }
+  },
+  "CARD_EXPIRED": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Generic", "test_scenario": "Expired card error" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv" }
+  },
+  "CARD_SPECIAL_CHARS_NAME": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Special", "test_scenario": "Special chars in name" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+  "CARD_LONG_NAME": {
+    "file": "payment/test-cards",
+    "filter": { "processor": "Special", "test_scenario": "Very long name" },
+    "fields": { "number": "card_number", "expiry": "expiry_format", "cvv": "cvv", "cardholder": "cardholder_name" }
+  },
+
+  "COUPON_10PCT": {
+    "file": "promotions/coupons",
+    "filter": { "coupon_id": "COU-001" },
+    "fields": { "code": "code", "promo_name": "promo_name", "id": "coupon_id", "gql_id": "gql_id", "description": "description" }
+  },
+  "COUPON_TOP20": {
+    "file": "promotions/coupons",
+    "filter": { "coupon_id": "COU-002" },
+    "fields": { "code": "code", "promo_name": "promo_name", "id": "coupon_id", "gql_id": "gql_id" }
+  },
+  "COUPON_20PCT": {
+    "file": "promotions/coupons",
+    "filter": { "coupon_id": "COU-003" },
+    "fields": { "code": "code", "promo_name": "promo_name", "id": "coupon_id", "gql_id": "gql_id" }
+  },
+  "COUPON_SHIPPING": {
+    "file": "promotions/coupons",
+    "filter": { "coupon_id": "COU-004" },
+    "fields": { "code": "code", "promo_name": "promo_name", "id": "coupon_id", "gql_id": "gql_id" }
+  },
+  "COUPON_WELCOME": {
+    "file": "promotions/coupons",
+    "filter": { "coupon_id": "COU-005" },
+    "fields": { "code": "code", "promo_name": "promo_name", "id": "coupon_id", "gql_id": "gql_id" }
+  },
+  "COUPON_E2E": {
+    "file": "promotions/coupons",
+    "filter": { "coupon_id": "COU-006" },
+    "fields": { "code": "code", "promo_name": "promo_name", "id": "coupon_id", "gql_id": "gql_id" }
+  },
+  "COUPON_WINE": {
+    "file": "promotions/coupons",
+    "filter": { "coupon_id": "COU-007" },
+    "fields": { "code": "code", "promo_name": "promo_name", "id": "coupon_id", "gql_id": "gql_id" }
+  },
+  "COUPON_PRIVATE": {
+    "file": "promotions/coupons",
+    "filter": { "coupon_id": "COU-008" },
+    "fields": { "code": "code", "promo_name": "promo_name", "id": "coupon_id" }
+  },
+  "COUPON_EXPIRED": {
+    "file": "promotions/coupons",
+    "filter": { "coupon_id": "COU-009" },
+    "fields": { "code": "code", "promo_name": "promo_name", "id": "coupon_id" }
+  },
+  "COUPON_FIXED5": {
+    "file": "promotions/coupons",
+    "filter": { "coupon_id": "COU-019" },
+    "fields": { "code": "code", "promo_name": "promo_name", "id": "coupon_id", "gql_id": "gql_id" }
+  },
+  "COUPON_FREESHIP": {
+    "file": "promotions/coupons",
+    "filter": { "coupon_id": "COU-020" },
+    "fields": { "code": "code", "promo_name": "promo_name", "id": "coupon_id", "gql_id": "gql_id" }
+  },
+  "COUPON_THRESH50": {
+    "file": "promotions/coupons",
+    "filter": { "coupon_id": "COU-021" },
+    "fields": { "code": "code", "promo_name": "promo_name", "id": "coupon_id", "gql_id": "gql_id" }
+  },
+  "COUPON_EXCLUSIVE": {
+    "file": "promotions/coupons",
+    "filter": { "coupon_id": "COU-022" },
+    "fields": { "code": "code", "promo_name": "promo_name", "id": "coupon_id", "gql_id": "gql_id" }
+  },
+  "COUPON_SPECIAL_CHARS": {
+    "file": "promotions/coupons",
+    "filter": { "coupon_id": "COU-023" },
+    "fields": { "code": "code", "promo_name": "promo_name", "id": "coupon_id", "gql_id": "gql_id" }
+  },
+
+  "STORE_PRIMARY": {
+    "file": "stores/stores",
+    "filter": { "store_id": "B2B-store" },
+    "fields": { "id": "store_id", "name": "store_name", "url": "store_url", "catalog": "catalog_id", "language": "default_language", "currency": "default_currency", "theme": "theme_preset" }
+  },
+  "STORE_B2C": {
+    "file": "stores/stores",
+    "filter": { "store_id": "B2C-store" },
+    "fields": { "id": "store_id", "name": "store_name", "url": "store_url", "catalog": "catalog_id" }
+  },
+  "STORE_EU": {
+    "file": "stores/stores",
+    "filter": { "store_id": "B2B-EU-store" },
+    "fields": { "id": "store_id", "name": "store_name", "url": "store_url", "language": "default_language", "currency": "default_currency" }
+  },
+  "STORE_RESTRICTED": {
+    "file": "stores/stores",
+    "filter": { "store_id": "B2B-restricted" },
+    "fields": { "id": "store_id", "name": "store_name" }
+  },
+  "STORE_CLOSED": {
+    "file": "stores/stores",
+    "filter": { "store_id": "B2B-closed" },
+    "fields": { "id": "store_id", "name": "store_name" }
+  },
+
+  "ADDR_LA": {
+    "file": "addresses/us-addresses",
+    "filter": { "address_id": "US-ADDR-001" },
+    "fields": { "first_name": "first_name", "last_name": "last_name", "street": "address_line1", "city": "city", "state": "state", "zip": "zip_code", "country": "country", "phone": "phone" }
+  },
+  "ADDR_NY": {
+    "file": "addresses/us-addresses",
+    "filter": { "address_id": "US-ADDR-002" },
+    "fields": { "first_name": "first_name", "last_name": "last_name", "street": "address_line1", "apt": "address_line2", "city": "city", "state": "state", "zip": "zip_code", "country": "country", "phone": "phone" }
+  },
+  "ADDR_CHICAGO_BIZ": {
+    "file": "addresses/us-addresses",
+    "filter": { "address_id": "US-ADDR-003" },
+    "fields": { "first_name": "first_name", "last_name": "last_name", "company": "company", "street": "address_line1", "suite": "address_line2", "city": "city", "state": "state", "zip": "zip_code", "country": "country", "phone": "phone" }
+  },
+  "ADDR_MIAMI": {
+    "file": "addresses/us-addresses",
+    "filter": { "address_id": "US-ADDR-004" },
+    "fields": { "first_name": "first_name", "last_name": "last_name", "street": "address_line1", "city": "city", "state": "state", "zip": "zip_code", "country": "country", "phone": "phone" }
+  },
+  "ADDR_SEATTLE": {
+    "file": "addresses/us-addresses",
+    "filter": { "address_id": "US-ADDR-005" },
+    "fields": { "first_name": "first_name", "last_name": "last_name", "street": "address_line1", "apt": "address_line2", "city": "city", "state": "state", "zip": "zip_code", "country": "country", "phone": "phone" }
+  },
+
+  "ACME_ADMIN": {
+    "file": "b2b/users",
+    "filter": { "user_id": "USR-001" },
+    "fields": { "email": "email", "password": "password", "name": "user_name", "platform_id": "platform_id", "org_id": "org_id", "roles": "roles" }
+  },
+  "ACME_BUYER": {
+    "file": "b2b/users",
+    "filter": { "user_id": "USR-002" },
+    "fields": { "email": "email", "password": "password", "name": "user_name", "platform_id": "platform_id", "roles": "roles" }
+  },
+  "ACME_VIEWER": {
+    "file": "b2b/users",
+    "filter": { "user_id": "USR-003" },
+    "fields": { "email": "email", "password": "password", "name": "user_name", "platform_id": "platform_id", "roles": "roles" }
+  },
+  "ACME_BUYER2": {
+    "file": "b2b/users",
+    "filter": { "user_id": "USR-004" },
+    "fields": { "email": "email", "password": "password", "name": "user_name", "platform_id": "platform_id" }
+  },
+  "ACME_INACTIVE": {
+    "file": "b2b/users",
+    "filter": { "user_id": "USR-005" },
+    "fields": { "email": "email", "password": "password", "name": "user_name" }
+  },
+  "TECHFLOW_ADMIN": {
+    "file": "b2b/users",
+    "filter": { "user_id": "USR-006" },
+    "fields": { "email": "email", "password": "password", "name": "user_name", "platform_id": "platform_id", "org_id": "org_id" }
+  },
+  "TECHFLOW_BUYER": {
+    "file": "b2b/users",
+    "filter": { "user_id": "USR-007" },
+    "fields": { "email": "email", "password": "password", "name": "user_name", "platform_id": "platform_id" }
+  },
+  "BUILDRIGHT_ADMIN": {
+    "file": "b2b/users",
+    "filter": { "user_id": "USR-008" },
+    "fields": { "email": "email", "password": "password", "name": "user_name", "platform_id": "platform_id", "org_id": "org_id" }
+  },
+  "ACMEWEST_ADMIN": {
+    "file": "b2b/users",
+    "filter": { "user_id": "USR-010" },
+    "fields": { "email": "email", "password": "password", "name": "user_name", "platform_id": "platform_id", "org_id": "org_id" }
+  },
+  "EU_ADMIN": {
+    "file": "b2b/users",
+    "filter": { "user_id": "USR-011" },
+    "fields": { "email": "email", "password": "password", "name": "user_name", "platform_id": "platform_id" }
+  },
+  "SUSPENDED_USER": {
+    "file": "b2b/users",
+    "filter": { "user_id": "USR-012" },
+    "fields": { "email": "email", "password": "password", "name": "user_name" }
+  },
+
+  "ORG_ACME": {
+    "file": "b2b/organizations",
+    "filter": { "org_id": "ORG-001" },
+    "fields": { "name": "org_name", "platform_id": "platform_id", "id": "org_id", "category": "business_category" }
+  },
+  "ORG_TECHFLOW": {
+    "file": "b2b/organizations",
+    "filter": { "org_id": "ORG-002" },
+    "fields": { "name": "org_name", "platform_id": "platform_id", "id": "org_id" }
+  },
+  "ORG_BUILDRIGHT": {
+    "file": "b2b/organizations",
+    "filter": { "org_id": "ORG-003" },
+    "fields": { "name": "org_name", "platform_id": "platform_id", "id": "org_id" }
+  },
+  "ORG_ACMEWEST": {
+    "file": "b2b/organizations",
+    "filter": { "org_id": "ORG-004" },
+    "fields": { "name": "org_name", "platform_id": "platform_id", "id": "org_id", "parent": "parent_org_id" }
+  },
+  "ORG_SUSPENDED": {
+    "file": "b2b/organizations",
+    "filter": { "org_id": "ORG-006" },
+    "fields": { "name": "org_name", "id": "org_id", "status": "status" }
+  },
+  "ORG_EMPTY": {
+    "file": "b2b/organizations",
+    "filter": { "org_id": "ORG-007" },
+    "fields": { "name": "org_name", "id": "org_id" }
+  },
+
+  "PROD_HEADPHONES": {
+    "file": "products/test-products",
+    "filter": { "product_id": "PROD-001" },
+    "fields": { "sku": "sku", "name": "product_name", "price": "price", "category": "category" }
+  },
+  "PROD_LAPTOP": {
+    "file": "products/test-products",
+    "filter": { "product_id": "PROD-002" },
+    "fields": { "sku": "sku", "name": "product_name", "price": "price", "category": "category" }
+  },
+  "PROD_SHOES": {
+    "file": "products/test-products",
+    "filter": { "product_id": "PROD-003" },
+    "fields": { "sku": "sku", "name": "product_name", "price": "price", "category": "category" }
+  },
+  "PROD_COFFEE_MAKER": {
+    "file": "products/test-products",
+    "filter": { "product_id": "PROD-004" },
+    "fields": { "sku": "sku", "name": "product_name", "price": "price" }
+  },
+  "PROD_PHONE_CASE": {
+    "file": "products/test-products",
+    "filter": { "product_id": "PROD-005" },
+    "fields": { "sku": "sku", "name": "product_name", "price": "price" }
+  },
+
+  "CFG_HAT": {
+    "file": "products/configurable-products",
+    "filter": { "product_id": "CFG-001" },
+    "fields": { "name": "product_name", "slug": "product_slug", "url": "storefront_url", "price": "base_price", "sections": "section_count" }
+  },
+  "CFG_TSHIRT": {
+    "file": "products/configurable-products",
+    "filter": { "product_id": "CFG-002" },
+    "fields": { "name": "product_name", "slug": "product_slug", "url": "storefront_url", "price": "base_price" }
+  },
+  "CFG_HOODIE": {
+    "file": "products/configurable-products",
+    "filter": { "product_id": "CFG-003" },
+    "fields": { "name": "product_name", "slug": "product_slug", "url": "storefront_url", "price": "base_price" }
+  },
+  "CFG_BIKE": {
+    "file": "products/configurable-products",
+    "filter": { "product_id": "CFG-009" },
+    "fields": { "name": "product_name", "slug": "product_slug", "url": "storefront_url", "price": "base_price" }
+  },
+
+  "FC_EAST": {
+    "file": "inventory/fulfillment-centers",
+    "filter": { "ffc_id": "FFC-001" },
+    "fields": { "name": "ffc_name", "code": "ffc_code", "city": "city", "state": "state", "id": "ffc_id" }
+  },
+  "FC_WEST": {
+    "file": "inventory/fulfillment-centers",
+    "filter": { "ffc_id": "FFC-002" },
+    "fields": { "name": "ffc_name", "code": "ffc_code", "city": "city", "id": "ffc_id" }
+  },
+  "FC_CENTRAL": {
+    "file": "inventory/fulfillment-centers",
+    "filter": { "ffc_id": "FFC-003" },
+    "fields": { "name": "ffc_name", "code": "ffc_code", "city": "city", "id": "ffc_id" }
+  },
+  "FC_EU": {
+    "file": "inventory/fulfillment-centers",
+    "filter": { "ffc_id": "FFC-004" },
+    "fields": { "name": "ffc_name", "code": "ffc_code", "city": "city", "id": "ffc_id" }
+  },
+  "FC_INACTIVE": {
+    "file": "inventory/fulfillment-centers",
+    "filter": { "ffc_id": "FFC-005" },
+    "fields": { "name": "ffc_name", "code": "ffc_code", "id": "ffc_id" }
+  },
+
+  "BOPIS_DOWNTOWN": {
+    "file": "bopis/pickup-locations",
+    "filter": { "location_id": "BOPIS-LOC-001" },
+    "fields": { "name": "location_name", "address": "address", "city": "city", "state": "state", "zip": "zip_code", "hours": "store_hours", "id": "location_id" }
+  },
+  "BOPIS_MALL": {
+    "file": "bopis/pickup-locations",
+    "filter": { "location_id": "BOPIS-LOC-002" },
+    "fields": { "name": "location_name", "address": "address", "city": "city", "id": "location_id" }
+  },
+  "BOPIS_BEACH": {
+    "file": "bopis/pickup-locations",
+    "filter": { "location_id": "BOPIS-LOC-003" },
+    "fields": { "name": "location_name", "address": "address", "city": "city", "id": "location_id" }
+  },
+
+  "PRICELIST_USD": {
+    "file": "pricing/price-lists",
+    "filter": { "pricelist_id": "PL-USD-001" },
+    "fields": { "id": "pricelist_id", "name": "pricelist_name", "currency": "currency" }
+  },
+  "PRICELIST_EUR": {
+    "file": "pricing/price-lists",
+    "filter": { "pricelist_id": "PL-EUR-001" },
+    "fields": { "id": "pricelist_id", "name": "pricelist_name", "currency": "currency" }
+  },
+  "PRICELIST_VOLUME": {
+    "file": "pricing/price-lists",
+    "filter": { "pricelist_id": "PL-USD-002" },
+    "fields": { "id": "pricelist_id", "name": "pricelist_name", "priority": "priority" }
+  },
+  "PRICELIST_VIP": {
+    "file": "pricing/price-lists",
+    "filter": { "pricelist_id": "PL-USD-003" },
+    "fields": { "id": "pricelist_id", "name": "pricelist_name", "priority": "priority" }
+  },
+
+  "CATALOG_MIXED": {
+    "file": "catalogs/catalogs",
+    "filter": { "catalog_id": "CAT-VIRT-001" },
+    "fields": { "id": "catalog_id", "name": "catalog_name", "type": "catalog_type", "store": "assigned_store" }
+  },
+  "CATALOG_ELECTRONICS": {
+    "file": "catalogs/catalogs",
+    "filter": { "catalog_id": "CAT-PHYS-001" },
+    "fields": { "id": "catalog_id", "name": "catalog_name", "type": "catalog_type" }
+  },
+  "CATALOG_INDUSTRIAL": {
+    "file": "catalogs/catalogs",
+    "filter": { "catalog_id": "CAT-PHYS-002" },
+    "fields": { "id": "catalog_id", "name": "catalog_name", "type": "catalog_type" }
+  },
+
+  "WL_ELECTRONICS": {
+    "file": "white-labeling/organizations",
+    "filter": { "org_id": "WL-ORG-A" },
+    "fields": { "name": "org_name", "main_menu": "main_menu_link_list_name", "footer": "footer_link_list_name", "id": "org_id" }
+  },
+  "WL_FASHION": {
+    "file": "white-labeling/organizations",
+    "filter": { "org_id": "WL-ORG-B" },
+    "fields": { "name": "org_name", "main_menu": "main_menu_link_list_name", "footer": "footer_link_list_name", "id": "org_id" }
+  },
+  "WL_DEFAULT": {
+    "file": "white-labeling/organizations",
+    "filter": { "org_id": "WL-ORG-C" },
+    "fields": { "name": "org_name", "id": "org_id" }
+  },
+
+  "LANG_EN": {
+    "file": "localization/languages",
+    "filter": { "language_code": "en" },
+    "fields": { "code": "language_code", "name": "language_name", "native": "native_name", "direction": "text_direction", "date_format": "date_format" }
+  },
+  "LANG_DE": {
+    "file": "localization/languages",
+    "filter": { "language_code": "de" },
+    "fields": { "code": "language_code", "name": "language_name", "native": "native_name", "date_format": "date_format" }
+  },
+  "LANG_FR": {
+    "file": "localization/languages",
+    "filter": { "language_code": "fr" },
+    "fields": { "code": "language_code", "name": "language_name", "native": "native_name", "date_format": "date_format" }
+  },
+  "LANG_ES": {
+    "file": "localization/languages",
+    "filter": { "language_code": "es" },
+    "fields": { "code": "language_code", "name": "language_name", "native": "native_name", "date_format": "date_format" }
+  }
+}

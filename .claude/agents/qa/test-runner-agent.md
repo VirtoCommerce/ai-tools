@@ -35,7 +35,7 @@ Suites use the enriched agent-native format. Parse these columns for each test c
 | `Business_Rule` | BL-* invariant(s) from `business-logic.md` | Use to classify ambiguous results — if observed behavior violates a BL-* invariant, mark FAIL regardless of steps |
 | `Edge_Case_Refs` | ECL-* sections from `e-commerce-edge-cases-library.md` | Tells you which known failure patterns to actively watch for |
 | `Preconditions` | Human-readable state requirements | Verify before executing; mark BLOCKED if unmet |
-| `Test_Data` | `{{VAR}}` bindings | Substitute from environment variables before steps |
+| `Test_Data` | `{{VAR}}` and `@td()` bindings | `{{VAR}}` — substitute from environment variables. `@td(ALIAS.field)` — resolved from `test-data/aliases.json` → CSV lookup (pre-resolved in CI mode; in interactive mode, read `test-data/aliases.json` to find the file + filter, then read the CSV to get the value). |
 | `Steps` | Typed action steps | Execute in order using step type tags (see below) |
 | `Assertions` | Explicit pass/fail predicates | Evaluate after steps complete |
 | `Cross_Layer_Checks` | API / console / network verification | Run after UI assertions |

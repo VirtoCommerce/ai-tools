@@ -19,29 +19,29 @@ SEC-PCI-002,CVV Iframe Isolation,PCI Compliance > Iframe,Critical,BL-SEC-002,,- 
 [STATE] JavaScript access to CVV iframe contentDocument is blocked (DOMException)
 [STATE] Cannot read or write CVV value from parent page context","[NETWORK] CVV value does not appear in any network request to {{BACK_URL}}
 [CONSOLE] No sandbox or iframe configuration errors","CVV field accessible from parent page JavaScript; sandbox attributes missing; CVV value appears in network requests to VC servers",,VCST-3387 TC-SEC-002,Manual
-SEC-PCI-003,CVV Visual Masking,PCI Compliance > Display,High,BL-SEC-001,,- CyberSource form ready,cvv=838,,"[NAV] Navigate to {{FRONT_URL}} cart page
+SEC-PCI-003,CVV Visual Masking,PCI Compliance > Display,High,BL-SEC-001,,- CyberSource form ready,cvv=@td(CYBERSOURCE_VISA.cvv),,"[NAV] Navigate to {{FRONT_URL}} cart page
 [ACT] Focus CVV/security code field inside CyberSource iframe
-[ACT] Type CVV: 838
+[ACT] Type CVV: @td(CYBERSOURCE_VISA.cvv)
 [ASSERT] Observe the field display — verify digits are masked
 [ASSERT] Verify no digits are visible in plain text","[DOM] CVV field displays masking characters (• or *) instead of actual digits
-[STATE] Entered digits 838 are never visible as plain text in the field
+[STATE] Entered digits @td(CYBERSOURCE_VISA.cvv) are never visible as plain text in the field
 [STATE] Shoulder-surfing attack is mitigated by visual masking","[CONSOLE] No CVV value logged to browser console","CVV digits visible as plain text; masking not applied; actual digits briefly flicker before masking",,VCST-3387 TC-SEC-003,Manual
 SEC-PCI-004,No Card Data in Network Requests,PCI Compliance > Network,Critical,BL-SEC-001,,- DevTools Network tab open
-- CyberSource payment form filled,"card_number=4622943127013705;cvv=838",,"[NAV] Navigate to {{FRONT_URL}} cart page with product added
+- CyberSource payment form filled,"card_number=@td(CYBERSOURCE_VISA.number);cvv=@td(CYBERSOURCE_VISA.cvv)",,"[NAV] Navigate to {{FRONT_URL}} cart page with product added
 [ACT] Open DevTools Network tab and enable recording
-[ACT] Fill CyberSource payment form with test card: 4622943127013705, CVV: 838
+[ACT] Fill CyberSource payment form with test card: @td(CYBERSOURCE_VISA.number), CVV: @td(CYBERSOURCE_VISA.cvv)
 [ACT] Submit the order
 [WAIT] Wait for all network requests to complete
-[ACT] Search all request payloads and headers for the string '4622943127013705'
-[ACT] Search all request payloads and headers for the string '838'
-[ASSERT] Verify no raw card data found in any request to {{BACK_URL}}","[NETWORK] String '4622943127013705' does not appear in any request URL, header, or body sent to {{BACK_URL}}
-[NETWORK] String '838' does not appear in any request sent to {{BACK_URL}}
+[ACT] Search all request payloads and headers for the string '@td(CYBERSOURCE_VISA.number)'
+[ACT] Search all request payloads and headers for the string '@td(CYBERSOURCE_VISA.cvv)'
+[ASSERT] Verify no raw card data found in any request to {{BACK_URL}}","[NETWORK] String '@td(CYBERSOURCE_VISA.number)' does not appear in any request URL, header, or body sent to {{BACK_URL}}
+[NETWORK] String '@td(CYBERSOURCE_VISA.cvv)' does not appear in any request sent to {{BACK_URL}}
 [NETWORK] Only tokenized/masked card data transits to VC servers
 [STATE] CyberSource tokenizes card data before any VC server interaction","[NETWORK] All POST requests to {{BACK_URL}}/api/* contain no raw PAN or CVV
-[CONSOLE] No card data logged to browser console","Raw PAN 4622943127013705 visible in any network request body or header; CVV 838 found in any request; unmasked card data in GraphQL mutation payload",,VCST-3387 TC-SEC-004,Manual
-SEC-PCI-005,No Card Data in Browser Storage,PCI Compliance > Storage,Critical,BL-SEC-001,,- Payment form interaction complete,card_number=4622943127013705;cvv=838,,"[NAV] Navigate to {{FRONT_URL}} cart page and interact with CyberSource payment form
+[CONSOLE] No card data logged to browser console","Raw PAN @td(CYBERSOURCE_VISA.number) visible in any network request body or header; CVV @td(CYBERSOURCE_VISA.cvv) found in any request; unmasked card data in GraphQL mutation payload",,VCST-3387 TC-SEC-004,Manual
+SEC-PCI-005,No Card Data in Browser Storage,PCI Compliance > Storage,Critical,BL-SEC-001,,- Payment form interaction complete,card_number=@td(CYBERSOURCE_VISA.number);cvv=@td(CYBERSOURCE_VISA.cvv),,"[NAV] Navigate to {{FRONT_URL}} cart page and interact with CyberSource payment form
 [ACT] Open DevTools Application tab
-[ACT] Inspect localStorage — search for '4622943127013705' and '838'
+[ACT] Inspect localStorage — search for '@td(CYBERSOURCE_VISA.number)' and '@td(CYBERSOURCE_VISA.cvv)'
 [ACT] Inspect sessionStorage — search for card number and CVV
 [ACT] Inspect Cookies — search for card number and CVV
 [ACT] Search for partial card number (last 4 digits: 3705)

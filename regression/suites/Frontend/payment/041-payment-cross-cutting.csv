@@ -35,7 +35,7 @@
 "PAY-EDGE-001","Double-Click Place Order Prevention","Edge Cases","High","BL-PAY-003, BL-PAY-005","ECL-1.2, ECL-14.6","- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form on {{FRONT_URL}}/cart fully filled with valid test card
-- DevTools Network tab open and recording","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart; fill CyberSource payment form completely with '4622943127013705', '09/2029', '838', 'John Smith'
+- DevTools Network tab open and recording","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart; fill CyberSource payment form completely with '@td(CYBERSOURCE_VISA.number)', '@td(CYBERSOURCE_VISA.expiry)', '@td(CYBERSOURCE_VISA.cvv)', '@td(CYBERSOURCE_VISA.cardholder)'
 [ACT] Double-click 'Place Order' button as rapidly as possible
 [WAIT] Wait for all network requests to settle
 [ASSERT] Only ONE createOrderFromCart GraphQL mutation request is sent — not two
@@ -130,15 +130,15 @@
 "PAY-GUEST-001","Guest Checkout - CyberSource Payment Completes Without Account","Guest Checkout","High","BL-PAY-003, BL-CHK-005","ECL-14.1","- User is NOT logged in (anonymous / guest session)
 - Guest checkout enabled in store settings
 - Cart has at least one item added as guest
-- CyberSource payment processor configured and active","FRONT_URL={{FRONT_URL}}, GUEST_EMAIL=guest-{{TIMESTAMP}}@test.example.com, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Open a fresh incognito/private browser window; navigate to {{FRONT_URL}}
+- CyberSource payment processor configured and active","FRONT_URL={{FRONT_URL}}, GUEST_EMAIL=guest-{{TIMESTAMP}}@test.example.com, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Open a fresh incognito/private browser window; navigate to {{FRONT_URL}}
 [ASSERT] User is not logged in — no user name or account icon in header
 [ACT] Add at least one product to cart
 [NAV] Navigate to {{FRONT_URL}}/cart
 [WAIT] Wait for CyberSource payment form to render in the guest cart view
 [ACT] Enter guest email GUEST_EMAIL in the guest checkout email field (if prompted)
 [ACT] Fill shipping address fields with valid test address data
-[ACT] Fill 'Card Number' iframe field with '4622943127013705'
-[ACT] Fill 'Cardholder Name' with 'Guest User'; fill 'Expiry Date' with '09/2029'; fill 'CVV' with '838'
+[ACT] Fill 'Card Number' iframe field with '@td(CYBERSOURCE_VISA.number)'
+[ACT] Fill 'Cardholder Name' with 'Guest User'; fill 'Expiry Date' with '@td(CYBERSOURCE_VISA.expiry)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'
 [ACT] Click 'Place Order'
 [WAIT] Wait for order processing response","[DOM] CyberSource payment form renders correctly for unauthenticated / guest session — no authentication wall
 [NAV] After successful payment guest user is navigated to order confirmation page
@@ -154,11 +154,11 @@
 [WAIT] Wait for CyberSource payment form to render
 [ACT] Leave 'Card Number' field empty; click 'Place Order'
 [ASSERT] Inline validation error appears on 'Card Number' field — same as authenticated user behavior
-[ACT] Fill 'Card Number' with '1234567890123456' (Luhn-failing); click 'Place Order'
+[ACT] Fill 'Card Number' with '@td(CYBERSOURCE_INVALID.number)' (Luhn-failing); click 'Place Order'
 [ASSERT] 'Invalid card number' or equivalent error displayed
-[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Expiry Date' with a past date (e.g., '01/2020'); click 'Place Order'
+[ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Expiry Date' with a past date (e.g., '01/2020'); click 'Place Order'
 [ASSERT] Expired date validation error displayed on 'Expiry Date' field
-[ACT] Fill valid card details: '4622943127013705', '09/2029', '838'; leave 'Cardholder Name' empty; click 'Place Order'
+[ACT] Fill valid card details: '@td(CYBERSOURCE_VISA.number)', '@td(CYBERSOURCE_VISA.expiry)', '@td(CYBERSOURCE_VISA.cvv)'; leave 'Cardholder Name' empty; click 'Place Order'
 [ASSERT] Validation error for missing cardholder name (or form submits — document behavior)","[DOM] Each validation error appears at field level for guest users — not a single generic error
 [STATE] Form does not submit with any invalid guest payment input
 [NAV] Guest user remains on cart page after each validation failure","[API] No createOrderFromCart GraphQL mutation fired for any invalid payment attempt
@@ -167,9 +167,9 @@
 - Cart has at least one item with a known price (record the expected total)
 - CyberSource payment processor active
 - Browser DevTools Network tab open and recording
-- Admin access available","FRONT_URL={{FRONT_URL}}, BACK_URL={{BACK_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, ADMIN_EMAIL={{ADMIN_EMAIL}}, ADMIN_PASSWORD={{ADMIN_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart; record the displayed order total (subtotal + shipping + taxes)
+- Admin access available","FRONT_URL={{FRONT_URL}}, BACK_URL={{BACK_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, ADMIN_EMAIL={{ADMIN_EMAIL}}, ADMIN_PASSWORD={{ADMIN_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart; record the displayed order total (subtotal + shipping + taxes)
 [ASSERT] Displayed total matches expected value based on cart contents
-[ACT] Fill CyberSource payment form: '4622943127013705', 'John Smith', '09/2029', '838'
+[ACT] Fill CyberSource payment form: '@td(CYBERSOURCE_VISA.number)', '@td(CYBERSOURCE_VISA.cardholder)', '@td(CYBERSOURCE_VISA.expiry)', '@td(CYBERSOURCE_VISA.cvv)'
 [ACT] In DevTools Network tab start recording; click 'Place Order'
 [WAIT] Wait for order confirmation page
 [ACT] In DevTools Network tab locate the CyberSource tokenization / payment authorization request; inspect the 'amount' or 'orderAmount' field in the request payload
@@ -185,7 +185,7 @@
 "PAY-DECLINE-006","Declined Card Recovery - CyberSource Error Then Retry With Valid Card","Payment > Decline > Recovery","Critical","BL-CHK-004","ECL-1.1","User logged in; items in cart; at checkout payment step; CyberSource payment processor active","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
-declined_card=4000000000000002
+declined_card=@td(CYBERSOURCE_DECLINED.number)
 valid_card={{TEST_CARD_NUMBER}}","[NAV] navigate to {{FRONT_URL}}/cart and complete checkout to payment step
 [ACT] enter declined test card number in CyberSource payment form on cart page
 [ACT] fill expiry date and CVV
@@ -207,7 +207,7 @@ valid_card={{TEST_CARD_NUMBER}}","[NAV] navigate to {{FRONT_URL}}/cart and compl
 "PAY-DECLINE-007","Multiple Consecutive Declines Preserve Checkout State","Payment > Decline > Multiple","High","BL-CHK-004","ECL-1.1","User logged in; at checkout payment step; multiple declined test cards available","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
-declined_card=4000000000000002","[NAV] complete checkout to payment step with shipping address filled
+declined_card=@td(CYBERSOURCE_DECLINED.number)","[NAV] complete checkout to payment step with shipping address filled
 [ACT] enter declined card and attempt payment
 [WAIT] wait for decline message
 [ASSERT] verify decline error shown; cart and addresses preserved

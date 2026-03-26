@@ -21,7 +21,7 @@
 - Cart has at least one item
 - Authorize.Net payment form loaded at {{FRONT_URL}}/checkout/payment (reached by clicking Place Order from cart)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order' to reach Authorize.Net payment form at {{FRONT_URL}}/checkout/payment
 [WAIT] Wait for payment form to load
-[ACT] Fill 'Card Number' with '1234567890123456' (fails Luhn check)
+[ACT] Fill 'Card Number' with '@td(CYBERSOURCE_INVALID.number)' (fails Luhn check)
 [ACT] Fill 'Expiry Date' with a valid future date; fill 'CVV' with a valid 3-digit value
 [ACT] Attempt to submit payment
 [ASSERT] Validation error appears on 'Card Number' field
@@ -174,7 +174,7 @@
 "PAY-SKY-003","Skyflow - Invalid Card Number Validation","Skyflow","High","BL-PAY-001","ECL-9.1","- Logged in as registered user
 - Cart has at least one item
 - Skyflow payment form loaded at {{FRONT_URL}}/checkout/payment (reached via Place Order from cart)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order'; wait for Skyflow form at {{FRONT_URL}}/checkout/payment
-[ACT] Fill 'Card Number' iframe field with '1234567890123456' (fails Luhn check)
+[ACT] Fill 'Card Number' iframe field with '@td(CYBERSOURCE_INVALID.number)' (fails Luhn check)
 [ACT] Tab out of the 'Card Number' field
 [ASSERT] Validation error appears inline on or below the 'Card Number' field
 [ACT] Attempt to click 'Place Order' or submit payment
@@ -225,15 +225,15 @@
 [STATE] Full card number and expiry fields not re-shown or editable when saved card selected
 [NAV] Order confirmation reached after clicking 'Place Order' with saved card
 [DOM] Order confirmation shows order number","[API] createOrderFromCart GraphQL mutation response has no errors[] entries
-[NETWORK] Network request uses stored token — raw card PAN (4622943127013705) absent from all payloads
+[NETWORK] Network request uses stored token — raw card PAN (@td(CYBERSOURCE_VISA.number)) absent from all payloads
 [ADMIN] Order in admin shows payment method as stored card / tokenized reference","Saved card not shown after prior successful payment; user forced to re-enter full card details; raw card number visible in network payload for saved-card payment; order fails when using saved card but succeeds when entering card manually","Cancel order via admin if created","Checklist #9 item 12; ECL-14.6; BL-PAY-003; BL-PAY-001","Manual"
 "PAY-SWITCH-001","Payment Method Switch - Form Resets When Switching Processors","Payment Method Switching","Medium","BL-PAY-004","ECL-7.1","- Logged in as registered user
 - Cart has at least one item
 - At least two payment processors enabled (e.g., CyberSource and another method such as Skyflow or manual/PO)
-- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart; confirm at least two payment method options are visible
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart; confirm at least two payment method options are visible
 [ACT] Select 'Bank card (CyberSource)' payment method
 [WAIT] Wait for CyberSource Flex Microform iframe fields to render
-[ACT] Fill 'Card Number' with '4622943127013705'; fill 'Cardholder Name' with 'John Smith'; fill 'Expiry Date' with '09/2029'; fill 'CVV' with '838'
+[ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'Expiry Date' with '@td(CYBERSOURCE_VISA.expiry)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'
 [ASSERT] All four CyberSource fields contain entered data
 [ACT] Switch to a different payment method (e.g., select 'Purchase Order' or another available option)
 [WAIT] Wait for the payment form area to update
@@ -268,24 +268,24 @@
 - Cart has at least one item
 - Skyflow payment processor configured
 - Browser DevTools Network tab open and recording ALL requests (including XHR/Fetch)
-- Test card number known for verification: 4622943127013705","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=4622943127013705, TEST_CARD_EXP=09/2029, TEST_CARD_CVV=838","[NAV] Navigate to {{FRONT_URL}}/cart; select Skyflow payment method; open DevTools Network tab and start recording
+- Test card number known for verification: @td(CYBERSOURCE_VISA.number)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart; select Skyflow payment method; open DevTools Network tab and start recording
 [ACT] Click 'Place Order' — this redirects to {{FRONT_URL}}/checkout/payment with Skyflow form
 [WAIT] Wait for Skyflow payment form to load at {{FRONT_URL}}/checkout/payment
-[ACT] Fill Skyflow 'Card Number' iframe field with '4622943127013705'; fill 'Expiry Date' with '09/2029'; fill 'CVV' with '838'
+[ACT] Fill Skyflow 'Card Number' iframe field with '@td(CYBERSOURCE_VISA.number)'; fill 'Expiry Date' with '@td(CYBERSOURCE_VISA.expiry)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'
 [ACT] Submit payment via Skyflow form
 [WAIT] Wait for order processing to complete
-[ACT] In DevTools Network tab: filter requests by XHR/Fetch; search all request payloads for the string '4622943127013705'
-[ASSERT] Raw card number '4622943127013705' is NOT present in any request payload, URL parameter, or response body
+[ACT] In DevTools Network tab: filter requests by XHR/Fetch; search all request payloads for the string '@td(CYBERSOURCE_VISA.number)'
+[ASSERT] Raw card number '@td(CYBERSOURCE_VISA.number)' is NOT present in any request payload, URL parameter, or response body
 [ACT] Locate the Skyflow tokenization request in Network tab; inspect the token value sent to the Virto Commerce backend
 [ASSERT] Token format is a UUID or alphanumeric reference — NOT the raw card PAN
-[ASSERT] Order confirmation page reached after successful Skyflow payment","[NETWORK] String '4622943127013705' absent from all captured network request payloads and URLs
+[ASSERT] Order confirmation page reached after successful Skyflow payment","[NETWORK] String '@td(CYBERSOURCE_VISA.number)' absent from all captured network request payloads and URLs
 [NETWORK] Skyflow token (UUID or alphanumeric) present in the request sent to Virto Commerce backend instead of raw PAN
 [NAV] Order confirmation reached — tokenization did not block payment flow","[API] createOrderFromCart GraphQL mutation errors[] is empty
-[ADMIN] Order in admin shows Skyflow token or masked card reference — not raw PAN","Raw card number '4622943127013705' found in any network request payload (BL-PAY-001 / BL-PAY-002 violation); Skyflow token not present in backend request; tokenization request fails causing order to not complete; token format is full PAN rather than opaque reference","Cancel order via admin","Checklist #9 item 10; ECL-9.1; BL-PAY-001; BL-PAY-002","Manual"
+[ADMIN] Order in admin shows Skyflow token or masked card reference — not raw PAN","Raw card number '@td(CYBERSOURCE_VISA.number)' found in any network request payload (BL-PAY-001 / BL-PAY-002 violation); Skyflow token not present in backend request; tokenization request fails causing order to not complete; token format is full PAN rather than opaque reference","Cancel order via admin","Checklist #9 item 10; ECL-9.1; BL-PAY-001; BL-PAY-002","Manual"
 "PAY-DECLINE-008","After Decline User Can Switch Payment Method Entirely","Payment > Decline > Method Switch","High","BL-CHK-004","ECL-1.1","User logged in; at checkout; multiple payment methods available; first attempt declined","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
-declined_card=4000000000000002","[NAV] complete checkout to payment step
+declined_card=@td(CYBERSOURCE_DECLINED.number)","[NAV] complete checkout to payment step
 [ACT] select first payment method (e.g., CyberSource)
 [ACT] enter declined card details and attempt payment
 [WAIT] wait for decline error
@@ -318,7 +318,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with items
 "PAY-SKY-007","Skyflow Invalid Card Number Rejected With Error","Payment > Skyflow > Validation","High","BL-PAY-004","ECL-1.1","Skyflow payment form rendered on /checkout/payment","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to Skyflow payment form at /checkout/payment
-[ACT] enter invalid card number (e.g., 1234567890123456)
+[ACT] enter invalid card number (e.g., @td(CYBERSOURCE_INVALID.number))
 [ACT] fill valid expiry date and CVV
 [ACT] click submit/pay button
 [WAIT] wait for validation response

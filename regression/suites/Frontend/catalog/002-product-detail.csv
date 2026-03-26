@@ -124,7 +124,7 @@
 [STATE] URL reflects virtual catalog category structure","[NETWORK] GET product PDP returns HTTP 200
 [API] GraphQL product query returns catalogId matching virtual catalog
 [CONSOLE] no TypeError or JS errors","Inherited products missing from virtual catalog; product details differing from physical source; breadcrumbs showing physical catalog path; PDP returning 4xx; console TypeError","none","E2E-CAT-007, GAP-CS-01","Generated"
-"CAT-044","Configurable Product PDP - Required Sections Present","Catalog > Configurable Product","High","BL-CAT-006","","Configurable product exists with multiple configuration sections (Product"," Text"," File types)","url={{FRONT_URL}}/products-with-options/configurable-caps-shirts/configurable-hat","[NAV] Navigate to {{FRONT_URL}}/products-with-options/configurable-caps-shirts/configurable-hat
+"CAT-044","Configurable Product PDP - Required Sections Present","Catalog > Configurable Product","High","BL-CAT-006","","Configurable product exists with multiple configuration sections (Product"," Text"," File types)","url={{FRONT_URL}}/products-with-options/configurable-caps-shirts/@td(CFG_HAT.slug)","[NAV] Navigate to {{FRONT_URL}}/products-with-options/configurable-caps-shirts/@td(CFG_HAT.slug)
 [WAIT] Wait for PDP to fully load
 [ASSERT] Verify product name 'Configurable Hat' is displayed
 [ASSERT] Verify price is displayed (not zero or placeholder)

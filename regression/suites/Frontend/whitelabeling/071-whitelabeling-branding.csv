@@ -1,5 +1,5 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"FWL-004","Store and organization both have whitelabeling settings - organization branding overrides store","Organization Branding","Critical","BL-WL-001","","Store has White Labeling with store-level logo/favicon/theme; Organization has custom logo/favicon/theme configured","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > B2B-store
+"FWL-004","Store and organization both have whitelabeling settings - organization branding overrides store","Organization Branding","Critical","BL-WL-001","","Store has White Labeling with store-level logo/favicon/theme; Organization has custom logo/favicon/theme configured","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id)
 [ACT] 2. Open White Labeling settings
 [ACT] 3. Upload store logo: store-logo.png
 [ACT] 4. Set theme: Default

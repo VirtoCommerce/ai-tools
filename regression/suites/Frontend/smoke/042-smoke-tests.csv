@@ -176,7 +176,7 @@ SMK-012,Checkout — Delivery Address and Shipping Method,Smoke > Checkout,Criti
 [WAIT] cart page loads with items visible
 [ACT] select 'Delivery' shipping option (not Pickup)
 [WAIT] shipping address section visible
-[ACT] select existing address OR enter new valid US address (First Name, Last Name, Street, City, State, ZIP 10001, Country: US)
+[ACT] select existing address OR enter new valid US address (First Name: @td(ADDR_NY.first_name), Last Name: @td(ADDR_NY.last_name), Street: @td(ADDR_NY.street), City: @td(ADDR_NY.city), State: @td(ADDR_NY.state), ZIP: @td(ADDR_NY.zip), Country: @td(ADDR_NY.country))
 [ACT] select first available shipping method (e.g., 'Ground')
 [WAIT] shipping cost appears in order summary
 [ASSERT] order summary shows subtotal + shipping + tax = grand total","[DOM] 'Delivery' option selectable and selected
@@ -252,17 +252,17 @@ SMK-017,Account — Address Management (VCST-4802 Regression),Smoke > Addresses,
 [WAIT] addresses list page loads
 [ACT] click 'Add address' or '+ New address' button
 [WAIT] address form opens (VCST-4802: form must open without blank page or error)
-[ACT] fill 'First Name': 'Smoke', 'Last Name': 'Test', 'Street Address': '123 Main St', 'City': 'New York', 'State': 'New York', 'ZIP': '10001', 'Country': 'United States'
+[ACT] fill 'First Name': '@td(ADDR_NY.first_name)', 'Last Name': '@td(ADDR_NY.last_name)', 'Street Address': '@td(ADDR_NY.street)', 'City': '@td(ADDR_NY.city)', 'State': '@td(ADDR_NY.state)', 'ZIP': '@td(ADDR_NY.zip)', 'Country': '@td(ADDR_NY.country)'
 [ACT] click 'Save' or 'Add address'
 [WAIT] success toast OR address appears in list","[DOM] 'Addresses' link visible in dashboard sidebar for personal account
 [DOM] address list page loads without blank screen or JS error (VCST-4802 regression check)
 [DOM] 'Add address' button visible and clickable
 [DOM] address form opens with all standard fields (VCST-4802: form not blank)
 [DOM] success toast shown after save (VCST-4802: save must succeed)
-[DOM] new address 'Smoke Test, 123 Main St, New York, 10001' visible in list","[GQL] updateContact mutation (or addAddress mutation) returns 200, errors[] empty
+[DOM] new address '@td(ADDR_NY.first_name) @td(ADDR_NY.last_name), @td(ADDR_NY.street), @td(ADDR_NY.city), @td(ADDR_NY.zip)' visible in list","[GQL] updateContact mutation (or addAddress mutation) returns 200, errors[] empty
 [GQL] me query after add shows new address in addresses[]
 [CONSOLE] no XSS-related console errors (VCST-4803 regression: updateContact XSS)
-[NETWORK] no 4xx/5xx on address save request","'Addresses' link absent for personal user (not org user — ECL-14.3), address form blank/broken (VCST-4802 regression failure), save returns 4xx/5xx, address not in list after save, XSS in address fields (VCST-4803)",Delete test address '123 Main St' from addresses list after test,"VCST-4802, VCST-4803, VCST-4499",Automated
+[NETWORK] no 4xx/5xx on address save request","'Addresses' link absent for personal user (not org user — ECL-14.3), address form blank/broken (VCST-4802 regression failure), save returns 4xx/5xx, address not in list after save, XSS in address fields (VCST-4803)",Delete test address '@td(ADDR_NY.street)' from addresses list after test,"VCST-4802, VCST-4803, VCST-4499",Automated
 SMK-018,B2C Variation — Select Option and Add to Cart,Smoke > Variations,Critical,"BL-CAT-006, BL-CAT-001","ECL-8.2, ECL-7.2, ECL-14.5",User logged in. B2C variation product with VirtoFrontend_UI_Layout=B2C property exists in catalog with 2+ in-stock variants (color or size). {{FRONT_URL}} accessible.,front_url={{FRONT_URL}},"[NAV] B2C variation product PDP (e.g., in /products-with-options/variations-of-jeans/ category)
 [WAIT] 'Options' section visible (B2C layout)
 [ASSERT] 'Add to Cart' button is disabled before any option selected (BL-CAT-006)

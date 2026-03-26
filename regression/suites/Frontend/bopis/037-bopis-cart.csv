@@ -282,7 +282,7 @@
 "BOPIS-061","Search by ZIP Code","BOPIS > Cart > Search","High","BL-BOPIS-003","ECL-14.2","PickPoints modal open from cart","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
-[ACT] type ZIP code (e.g., 10001) in search field
+[ACT] type ZIP code (e.g., @td(ADDR_NY.zip)) in search field
 [ACT] submit or wait for debounced search
 [WAIT] results update
 [ASSERT] matching locations displayed for ZIP code area
