@@ -78,7 +78,7 @@ Parse the change source to extract a structured change inventory:
 
 **For JIRA ticket (`VCST-XXXX`):**
 1. Try Atlassian MCP (`getJiraIssue`) — if unavailable, ask user for ticket details
-2. Extract: summary, components, acceptance criteria, linked PRs
+2. Extract: summary, components, acceptance criteria, linked PRs, comments
 3. For each linked PR: run the PR analysis above
 4. Map JIRA components to VC modules
 

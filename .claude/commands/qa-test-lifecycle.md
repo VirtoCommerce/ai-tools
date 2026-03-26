@@ -23,7 +23,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. When invoke
 
 | Flag | Effect |
 |------|--------|
-| `--skip-generate` | Skip Phases 1-2 (Analyze + Generate) — start directly at Phase 3 (Review) |
+| `--skip-generate` | Skip Phases 1-2 (Analyze + Generate) — start directly at Phase 3 (Review). Note: for `diff` scope, Phase 1 (change impact analysis) still runs unless this flag is set |
 | `--skip-verify` | Skip Phase 5 (Environment Verification) — no browser needed |
 | `--auto-fix` | Apply auto-fixable issues without asking for each one (still shows diff summary) |
 | `--layer <name>` | Scope to a specific layer: `api`, `graphql`, `admin`, `storefront`, `e2e`. Filters gap detection, generation, and review to cases matching the layer |
@@ -186,6 +186,14 @@ Output: per-case verification:
    - Features documented in VC docs (from Context7) but not tested
    - For JIRA tickets: acceptance criteria not covered
 6. **Score gaps** by business impact (P0/P1/P2)
+
+**Diff-mode (when scope is `diff`):**
+Instead of full coverage gap detection, `test-management-specialist` performs **change impact analysis**:
+1. Run `git diff` on changed test case CSVs
+2. For each modified case: verify changed steps/assertions still align with BL-* invariants
+3. Flag regressions: removed P0 assertions, weakened checks, broken CSV structure
+4. Check modified cases still match their domain checklist items
+5. Identify if changes require new companion cases (e.g., a new step added without negative-path coverage)
 
 **Gate:** If 0 gaps found → skip Phase 2, proceed to Phase 3.
 
@@ -375,7 +383,7 @@ Write to `reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`:
 | `suite <ID>` | Yes | Yes | Yes | Yes | Yes | Yes |
 | `domain <name>` | Yes | Yes | Yes | Yes | Yes | Yes |
 | `VCST-XXXX` | Yes | Yes | Yes | Yes | Yes | Yes |
-| `diff` | Skip | Skip | Yes | Yes | Optional | Yes |
+| `diff` | Yes (diff-mode) | Skip | Yes | Yes | Optional | Yes |
 | `--skip-generate` | Skip | Skip | Yes | Yes | Yes | Yes |
 | `--skip-verify` | Yes | Yes | Yes | Yes | Skip | Yes* |
 
