@@ -352,3 +352,36 @@
 6. [ASSERT] Verify same default org is loaded as before","[STATE] Default org is the same across sign-out/sign-in cycles
 [DOM] Org switcher shows same org name after re-login
 [STATE] Default org setting persists server-side","[CONSOLE] no uncaught JS errors","Different org loaded after re-login; default org setting lost; org selector shown despite default configured","none","Coverage Gap Analysis","Generated"
+"B2C-ORG-039","Company Info - Add Address XSS Prevention in City, Address, and Description Fields","B2C Features > Organization > Company Info","High","BL-B2C-004; BL-SEC-001","ECL-5.1; ECL-14.1","Org user logged in, /company/info page accessible, user has permission to add address. Note: org address form has NO phone, first name, or last name fields — only Description, Country, ZIP, State, City, Address, Apt.","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/info
+2. [WAIT] Company Info page loads
+3. [ASSERT] Verify company name and Addresses section visible
+4. [ACT] Click 'Add new address' button
+5. [WAIT] 'Create a new company address' modal opens
+6. [ASSERT] Verify form fields: Description, Country*, ZIP*, State*, City*, Address*, Apt. — confirm NO phone or name fields
+7. [ACT] Enter Description: '<script>alert(1)</script>'
+8. [ACT] Select Country: 'United States of America'
+9. [ACT] Enter ZIP: '90210'
+10. [ACT] Select State: 'California'
+11. [ACT] Enter City: '<img src=x onerror=alert(1)>'
+12. [ACT] Enter Address: '<svg onload=alert(1)> 123 Main St'
+13. [ACT] Click Save
+14. [ASSERT] Verify server rejects — error notification 'Something went wrong' (generic error, no field-specific message)
+15. [ASSERT] Verify no XSS alert dialog triggered
+16. [ASSERT] Verify address NOT added to table (no new row)
+17. [ACT] Fix Description to 'Test Office'
+18. [ACT] Fix City to 'Beverly Hills'
+19. [ACT] Fix Address to '123 Corporate Dr'
+20. [ACT] Click Save
+21. [ASSERT] Verify address saves successfully — new row appears in address table
+22. [ASSERT] Verify new address displays: '123 Corporate Dr, Beverly Hills', 'United States of America', '90210', 'Test Office'
+23. [NAV] Reload /company/info
+24. [ASSERT] Verify saved address persists with plain text — no rendered HTML tags","[DOM] No client-side HTML tag validation — form accepts any text input
+[STATE] Server-side NoHtmlTags validation via updateMemberAddresses rejects HTML in Description, City, Address fields
+[DOM] Generic error toast: 'Something went wrong. Please try again later.' — not field-specific
+[DOM] No XSS alert dialogs triggered by rejected payloads
+[STATE] XSS address NOT persisted — address table unchanged after rejected save
+[DOM] Clean address saves and displays correctly in table
+[DOM] Address persists after page reload with plain text values","[CONSOLE] No JS errors or XSS alert dialogs
+[API] updateMemberAddresses mutation returns errors[] for HTML payloads (EnableNoHtmlTagsValidation active)
+[DOM] Company Info page renders all address fields as text nodes, not HTML
+[NET] No successful mutation call when HTML tags present in fields","XSS payload accepted and saved to address table; <script> or <img> tag rendered on /company/info page; alert dialog fires; HTML stored verbatim in address fields; generic error NOT shown (mutation succeeds with XSS data)","delete test address from org via Actions menu","VCST-4803 verified — company info address XSS server-side rejected","Synced"

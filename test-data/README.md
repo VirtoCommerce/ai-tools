@@ -71,6 +71,8 @@ test-data/
 │   ├── *.pdf, *.xlsx               # Document files
 │   ├── *.mp4                       # Video files
 │   └── *.svg, *.avif               # Other formats
+├── cms/                             # CMS PageBuilder test data
+│   └── pagebuilder-pages.md        # 5 test pages with block structures, access matrices, scheduling
 └── white-labeling/                  # White labeling test data (VCST-4637)
     ├── organizations.csv           # Org configs (5 orgs, different WL setups)
     ├── link-lists.csv              # Menu/footer link list items (22 links)
@@ -192,7 +194,10 @@ Test files for file upload functionality (images, documents, videos) — flat di
 ### 10. White Labeling (white-labeling/)
 Organization-specific branding test data with GraphQL verification queries.
 
-### 11. Promotions (promotions/)
+### 11. CMS / PageBuilder (cms/)
+5 test page definitions for PageBuilder (Builder.io integration) with block structures, access control matrices, scheduling configs, and language verification. Covers all 14 designer block types across homepage, B2B gated content, multi-language policy, scheduled promo, and org-restricted support page scenarios. References users from `b2b/users.csv` for access control testing.
+
+### 12. Promotions (promotions/)
 Marketing promotions and coupon codes for VCST-4590 testing. Covers 4 reward types (% off, $ off, free shipping, gift item), 3 condition types (category, cart threshold, shipping method), exclusivity modes, usage limits, coupon-level expiry, and 8 edge case scenarios. See `promotions/setup-guide.md` for REST API seeding scripts.
 
 ---
@@ -231,6 +236,7 @@ Each test should:
 | 10-localization-tests | localization/, products/ |
 | 32-whitelabeling-tests | white-labeling/ |
 | 36-configurable-products | products/configurable-products.csv, promotions/coupons.csv, uploads/, b2b/users.csv |
+| 059/060-cms-pagebuilder | cms/pagebuilder-pages.md, b2b/users.csv |
 | VCST-4590-coupons | promotions/ |
 
 ---

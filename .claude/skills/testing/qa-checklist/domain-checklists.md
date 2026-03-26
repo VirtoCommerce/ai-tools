@@ -4,14 +4,14 @@
 >
 > For Admin SPA and Platform API checklists, see `backend-admin-checklists.md` (27 Admin domains + 2 API domains | 255 items).
 
-**32 storefront domains + 1 cross-domain checklist | 407 checklist items** — every checked item should map to at least one test case.
+**32 storefront domains + 1 cross-domain checklist | 412 checklist items** — every checked item should map to at least one test case.
 
 ## Summary
 
 | # | Domain | Items | E2E Catalog | Related Suites |
 |---|--------|-------|-------------|----------------|
 | 1 | Auth | 8 | E2E-AUTH | 01, 02, 08 |
-| 2 | Catalog | 21 | E2E-CAT | 01, 03, 16 |
+| 2 | Catalog | 26 | E2E-CAT | 01, 03, 16 |
 | 3 | Categories | 6 | E2E-CAT | 03, 16 |
 | 4 | SEO | 7 | E2E-CAT | 31 |
 | 5 | Add to Cart | 10 | E2E-CART | 01, 04a |
@@ -59,7 +59,12 @@
 ## 2. Catalog
 - [ ] Category navigation → product grid → PDP → breadcrumbs round-trip
 - [ ] Faceted filtering: brand, price range, color, size, availability, type
-- [ ] Filter chips: display, remove one, "Clear All"
+- [ ] Range facets: price slider / range inputs render for numeric/money properties configured as "Range" in Admin → Stores → Aggregation properties
+- [ ] Range facet boundaries: inclusive `[100 TO 200]` vs exclusive `(100 TO 200)` produce correct result counts
+- [ ] Range facet open-ended: `(TO 100]` (up to 100) and `(0 TO)` (greater than zero) return correct products
+- [ ] Range facet with currency: `price.{currency}` scoped to selected currency, switching currency updates range facet values
+- [ ] Range facet counts: each range bucket displays correct product count matching actual filtered results (cascading)
+- [ ] Filter chips: display, remove one, "Reset filters"
 - [ ] Sorting: price asc/desc, name A-Z, relevance
 - [ ] Pagination / "Load More" / page count
 - [ ] SEO-friendly URLs, canonical links, meta title/description

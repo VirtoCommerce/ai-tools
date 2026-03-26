@@ -1,0 +1,47 @@
+{
+  "ticket": "VCST-4718",
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-03-24",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1009.0",
+    "theme": "2.45.0-pr-2204-de06c786",
+    "relevant_modules": {
+      "VirtoCommerce.WhiteLabeling": "3.1001.0"
+    }
+  },
+  "agents_dispatched": ["qa-frontend-expert", "ui-ux-expert"],
+  "total_cases": 12,
+  "passed": 10,
+  "failed": 0,
+  "blocked": 0,
+  "notes": 2,
+  "bugs_filed": [],
+  "accessibility_findings": [
+    {
+      "id": "BUG-02",
+      "severity": "High",
+      "description": "White text on red CTA button (#e73433) fails WCAG AA: 4.25:1 vs 4.5:1 required",
+      "recommendation": "Darken button to accent-300 (#ca1918) for ~6:1 ratio"
+    },
+    {
+      "id": "BUG-03",
+      "severity": "High",
+      "description": "Status colors at -500 scale too dark for text on card surfaces (danger, success, warning, info)",
+      "recommendation": "Use -700 tokens for status text in dark mode"
+    },
+    {
+      "id": "BUG-04",
+      "severity": "Medium",
+      "description": "Neutral-300 (#5a5a5a) input border borderline fails 3:1 UI contrast on dark backgrounds",
+      "recommendation": "Use neutral-400 (#6f6f6f) for borders"
+    }
+  ],
+  "business_rules_verified": ["BL-B2B-006", "BL-WL-001"],
+  "exploratory": {
+    "charter": "Skipped — P2 story, low-risk theme addition",
+    "heuristic": "N/A",
+    "findings": { "bugs": 0, "questions": 0, "observations": 0, "risks": 0 }
+  },
+  "artifacts": "tests/Sprint-current/VCST-4718/"
+}

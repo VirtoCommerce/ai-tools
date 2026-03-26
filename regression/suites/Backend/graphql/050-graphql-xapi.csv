@@ -1,5 +1,5 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-GQL-001,xCatalog - Search Products Query,GraphQL > xCatalog,Critical,BL-GQL-002,ECL-2.1; ECL-8.1,"GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; products in catalog","storeId={{STORE_ID}}; keyword=""laptop""; cultureName=""en-US""; currencyCode=""USD""","[NAV] {{BACK_URL}}/ui/graphiql
+GQL-001,xCatalog - Search Products Query,GraphQL > xCatalog,Critical,BL-GQL-002,ECL-2.1; ECL-8.1,"BROWSER-ONLY: All tests MUST execute in GraphiQL UI via browser (playwright-edge). Do NOT use curl/API calls. Follow graphiql-interaction.md for CodeMirror interaction. GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; products in catalog","storeId={{STORE_ID}}; keyword=""laptop""; cultureName=""en-US""; currencyCode=""USD""","[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type query: query { products(storeId: ""{{STORE_ID}}"" keyword: ""laptop"") { totalCount items { id name code imgSrc } } }
@@ -398,7 +398,7 @@ GQL-029,xCart - Product Without New Currency Price Flagged After Currency Switch
 [DATA] Cart totals exclude productB if it has no valid EUR price
 [DATA] BL-GQL-003 + BL-CROSS-004: Products without price list in new currency become unavailable","[ROUNDTRIP] Re-execute cart query → productB status consistent
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel on currency switch; productB shows 0.00 EUR (silent invalid price); productB shows USD amount with EUR currency code; cart totals include invalid productB price","delete cart","Coverage Gap Analysis BL-CROSS-004 BL-PRICE-005",Generated
-GQL-030,xProfile - createOrganization Mutation Validates Org Name (InputValidationOptions),GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; user authenticated","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; valid_org_name=AT&T Corp. #1; invalid_org_name=<script>alert(1)</script>Org","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password for {{USER_EMAIL}} → save bearer token
+GQL-030,xProfile - createOrganization Mutation Validates Org Name (InputValidationOptions),GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"BROWSER-ONLY: Execute in GraphiQL UI ({{BACK_URL}}/ui/graphiql) via playwright browser. Use CodeMirror editor per graphiql-interaction.md. Do NOT use curl. User authenticated via Headers tab.","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; valid_org_name=AT&T Corp. #1; invalid_org_name=<script>alert(1)</script>Org","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password for {{USER_EMAIL}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
 [ACT] Click Headers tab → clear (Ctrl+A, Backspace) → type: {""Authorization"": ""Bearer {{TOKEN}}""}
@@ -414,17 +414,30 @@ GQL-030,xProfile - createOrganization Mutation Validates Org Name (InputValidati
 [ERRORS] errors[] non-empty for XSS payload — validation rejects <, > characters
 [DATA] No organization created with script tags in name","[ROUNDTRIP] Clear editor → type organization query → execute → valid org exists; XSS org does not
 [CONSOLE] No JS errors in GraphiQL","Valid business name with & rejected (false positive); XSS payload accepted as org name in response panel; no validation error in errors[]; org created with <script> in name","delete valid test org via admin API","VCST-4691 PR #130",Generated
-GQL-031,xProfile - updateContact Mutation Rejects HTML in Phone and Address Fields,GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"GraphiQL UI loaded with auth header set; existing contact","storeId={{STORE_ID}}; contactId=existing_contact_id","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+GQL-031,xProfile - updateContact Mutation Rejects HTML and Oversized Phone Values,GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"GraphiQL UI loaded with auth header set; existing contact","storeId={{STORE_ID}}; contactId=existing_contact_id","[ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type mutation with HTML in phone: mutation { updateContact(command: { id: ""{{contactId}}"" storeId: ""{{STORE_ID}}"" phones: [""<img src=x onerror=alert(1)>""] }) { id phones } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify HTML in phone rejected
+[ACT] Clear editor → type mutation with <script> tag in phone: mutation { updateContact(command: { id: ""{{contactId}}"" storeId: ""{{STORE_ID}}"" phones: [""<script>alert(1)</script>""] }) { id phones } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — verify script tag in phone rejected
+[ACT] Clear editor → type mutation with 65-char phone (exceeds MaxLength 64): mutation { updateContact(command: { id: ""{{contactId}}"" storeId: ""{{STORE_ID}}"" phones: [""11111111111111111111111111111111111111111111111111111111111111111""] }) { id phones } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — verify oversized phone rejected
 [ACT] Clear editor → type mutation with valid phone: mutation { updateContact(command: { id: ""{{contactId}}"" storeId: ""{{STORE_ID}}"" phones: [""+1-555-0123""] }) { id phones } }
 [GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify valid phone accepted","[ERRORS] errors[] non-empty for HTML in phone field — EnableNoHtmlTagsValidation active (BL-GQL-001)
-[DATA] Phone field unchanged after rejected HTML payload
+[READ] Read response — verify valid phone accepted
+[ACT] Clear editor → type mutation with empty phones array: mutation { updateContact(command: { id: ""{{contactId}}"" storeId: ""{{STORE_ID}}"" phones: [] }) { id phones } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — verify empty array accepted","[ERRORS] errors[] non-empty for HTML <img> tag in phone field — EnableNoHtmlTagsValidation active (BL-GQL-001)
+[ERRORS] errors[] non-empty for <script> tag in phone field — NoHtmlTags rejects all HTML tags
+[ERRORS] errors[] non-empty for 65-char phone — MaxLength(64) enforced
+[DATA] Phone field unchanged after all rejected payloads
 [ERRORS] errors[] empty for valid phone number
-[DATA] Valid phone stored correctly","[ROUNDTRIP] Clear editor → type contact query → execute → phone unchanged after rejection; updated after valid input
-[CONSOLE] No JS errors in GraphiQL","HTML tags accepted in phone field in response panel; <img> tag stored as phone number; no validation error; EnableNoHtmlTagsValidation not applied to phone","none","VCST-4691 PR #130",Generated
+[DATA] Valid phone ""+1-555-0123"" stored correctly
+[ERRORS] errors[] empty for empty phones array
+[DATA] Empty phones array accepted without error","[ROUNDTRIP] Clear editor → type contact query → execute → phone unchanged after rejection; updated after valid input
+[CONSOLE] No JS errors in GraphiQL","HTML tags accepted in phone field in response panel; <img> or <script> tag stored as phone number; 65-char string accepted (MaxLength not enforced); no validation error; EnableNoHtmlTagsValidation not applied to phone","none","VCST-4691 PR #130; VCST-4803 PR #132 (MaxLength 64 + NoHtmlTags on phones)",Synced
 GQL-032,xProfile - updateMemberAddresses Rejects Script Injection in Address Fields,GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"GraphiQL UI loaded with auth header set; existing member with address","storeId={{STORE_ID}}; memberId=existing_member_id","[ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type mutation with XSS in city: mutation { updateMemberAddresses(command: { memberId: ""{{memberId}}"" addresses: [{ city: ""<script>alert(1)</script>"" line1: ""123 Main St"" countryCode: ""US"" countryName: ""United States"" }] }) { id } }
 [GQL] Click Execute (▶) or Ctrl+Enter
@@ -450,3 +463,80 @@ GQL-033,xProfile - updatePersonalData Validates Name Fields,GraphQL > xProfile,M
 [ERRORS] errors[] empty for valid Unicode names — accents (ç, ö), apostrophes, hyphens all permitted
 [DATA] Profile updated successfully with François O'Brien-Müller","[ROUNDTRIP] Clear editor → type profile query → execute → name unchanged after rejection; updated after valid input
 [CONSOLE] No JS errors in GraphiQL","SVG payload accepted as firstName in response panel; XSS stored in profile name; valid Unicode names (accents, apostrophes) rejected as false positive; no validation error for HTML in name","none","VCST-4691 PR #130",Generated
+GQL-034,xCatalog - Range Filter Syntax: Inclusive vs Exclusive Boundaries,GraphQL > xCatalog > Range Facets,High,BL-GQL-002; BL-SRCH-001,ECL-3.2,"GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; products with known prices exist; auth not required for product queries","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""","[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { products(storeId: ""{{STORE_ID}}"" filter: ""price.usd:[50 TO 100]"" currencyCode: ""USD"") { totalCount items { name price { actual { amount } } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — note totalCount as Count_Inclusive
+[ACT] Clear editor → type query with exclusive bounds: query { products(storeId: ""{{STORE_ID}}"" filter: ""price.usd:(50 TO 100)"" currencyCode: ""USD"") { totalCount items { name price { actual { amount } } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — note totalCount as Count_Exclusive","[DATA] Inclusive [50 TO 100]: all items have price.actual.amount >= 50 AND <= 100
+[DATA] Exclusive (50 TO 100): all items have price.actual.amount > 50 AND < 100
+[MATH] Count_Inclusive >= Count_Exclusive (inclusive includes boundary products)
+[ERRORS] No errors[] in either response
+[DATA] Products at exactly $50.00 or $100.00 appear in inclusive but not exclusive result","[ROUNDTRIP] Re-execute inclusive query → same totalCount
+[CONSOLE] No JS errors in GraphiQL","Inclusive and exclusive returning identical counts; products at exact boundary appearing in exclusive result; errors[] in response; totalCount = 0 for valid price range",none,"GAP-RF-11, BL-SRCH-001",Generated
+GQL-035,xCatalog - Open-Ended Range Filter Syntax,GraphQL > xCatalog > Range Facets,High,BL-GQL-002; BL-SRCH-001,ECL-3.2,"GraphiQL UI loaded; products with varying prices exist","storeId={{STORE_ID}}; currencyCode=""USD""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query with upper-bounded range: query { products(storeId: ""{{STORE_ID}}"" filter: ""price.usd:(TO 100]"" currencyCode: ""USD"") { totalCount items { name price { actual { amount } } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — note totalCount as Count_UpTo100
+[ACT] Clear editor → type query with lower-bounded range: query { products(storeId: ""{{STORE_ID}}"" filter: ""price.usd:[100 TO)"" currencyCode: ""USD"") { totalCount items { name price { actual { amount } } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — note totalCount as Count_From100","[DATA] (TO 100]: all items have price.actual.amount <= 100
+[DATA] [100 TO): all items have price.actual.amount >= 100
+[MATH] Count_UpTo100 + Count_From100 >= total products (products at exactly $100 counted in both)
+[ERRORS] No errors[] in either response
+[DATA] No products with amount > 100 in the (TO 100] result","[ROUNDTRIP] Re-execute each query → same totalCount
+[CONSOLE] No JS errors in GraphiQL","Products above $100 appearing in (TO 100] result; products below $100 in [100 TO) result; errors[] in response; empty result for ranges containing known products",none,"GAP-RF-12, BL-SRCH-001",Generated
+GQL-036,xCatalog - Range Filter on Non-Price Property (Underscore Field Name),GraphQL > xCatalog > Range Facets,Critical,BL-GQL-002; BL-SRCH-001,ECL-3.2,"GraphiQL UI loaded; products with underscore-named property exist (e.g., Volume_ml in Alcoholic Drinks category)","storeId={{STORE_ID}}; currencyCode=""USD""; categorySlug=""alcoholic-drinks""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query filtering by underscore property: query { products(storeId: ""{{STORE_ID}}"" filter: ""Volume_ml:[200 TO 550]"" facet: ""Volume_ml"" currencyCode: ""USD"") { totalCount items { name properties { name value } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — check totalCount and item properties","[DATA] totalCount > 0 for valid Volume_ml range (observed: 12 products)
+[DATA] Returned items have Volume_ml property values within 200–550 range (observed: 200, 220, 330, 500, 550)
+[DATA] No items with Volume_ml < 200 (e.g., 33ml products excluded)
+[ERRORS] No errors[] related to filter logic (note: ARGUMENT_NULL errors may appear for items with null properties — this is a pre-existing data quality issue, not a filter bug)
+[DATA] Filter parameter 'Volume_ml' is preserved in the request (not truncated to 'Volume')","[ROUNDTRIP] Re-execute same query → consistent results
+[CONSOLE] No JS errors in GraphiQL","totalCount = 0 for range containing known products; items with Volume_ml=33 appearing in 200–550 range; field name truncated in filter parameter; errors[] indicating filter parsing failure",none,"VP-9035, VCST-4833, GAP-RF-13",Generated
+GQL-037,xCatalog - Facet Parameter Returns Range Aggregation Bucket,GraphQL > xCatalog > Range Facets,High,BL-GQL-002; BL-SRCH-001,ECL-3.2,"GraphiQL UI loaded; category with price-range products exists","storeId={{STORE_ID}}; currencyCode=""USD""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query with explicit range facet parameter: query { products(storeId: ""{{STORE_ID}}"" facet: ""price.usd:[0 TO 100]"" currencyCode: ""USD"") { totalCount range_facets { name ranges { from to count isSelected label } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read range_facets in response
+[ACT] Clear editor → type query with different range bucket: query { products(storeId: ""{{STORE_ID}}"" facet: ""price.usd:[100 TO 500]"" currencyCode: ""USD"") { totalCount range_facets { name ranges { from to count isSelected label } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read range_facets in response — compare bucket count","[DATA] range_facets array contains entry with name 'price'
+[DATA] ranges[] contains at least one bucket object with from, to, count, isSelected, label fields
+[MATH] Bucket count is non-negative and <= totalCount
+[DATA] isSelected reflects whether the range matches the facet parameter
+[ERRORS] No errors[] in response
+[DATA] Second query returns a different bucket count for [100 TO 500] range","[ROUNDTRIP] Re-execute → same bucket counts
+[CONSOLE] No JS errors in GraphiQL","range_facets empty or null (note: facet:""price"" alone returns empty range_facets — explicit range syntax required); bucket missing count field; errors[] in response; bucket count exceeds totalCount",none,"GAP-RF-14, BL-SRCH-001",Generated
+GQL-038,xProfile - createContact Mutation Validates Phone Fields (NewContactValidator),GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"BROWSER-ONLY: Execute in GraphiQL UI ({{BACK_URL}}/ui/graphiql) via playwright browser. Use CodeMirror editor per graphiql-interaction.md. Do NOT use curl. User authenticated via Headers tab.","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password for {{USER_EMAIL}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click Headers tab → clear (Ctrl+A, Backspace) → type: {""Authorization"": ""Bearer {{TOKEN}}""}
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation with HTML in phone: mutation { createContact(command: { firstName: ""TestPhone"" lastName: ""Validator"" storeId: ""{{STORE_ID}}"" phones: [""<img src=x onerror=alert(1)>""] }) { id firstName lastName phones } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — verify HTML in phone rejected and no contact created
+[ACT] Clear editor → type mutation with 65-char phone: mutation { createContact(command: { firstName: ""TestPhone"" lastName: ""MaxLen"" storeId: ""{{STORE_ID}}"" phones: [""11111111111111111111111111111111111111111111111111111111111111111""] }) { id phones } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — verify 65-char phone rejected by MaxLength(64)
+[ACT] Clear editor → type mutation with valid phone: mutation { createContact(command: { firstName: ""TestPhone"" lastName: ""Valid"" storeId: ""{{STORE_ID}}"" phones: [""+1 (555) 123-4567""] }) { id firstName lastName phones } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — verify contact created with valid phone
+[ACT] Clear editor → type mutation with 64-char phone (boundary): mutation { createContact(command: { firstName: ""TestPhone"" lastName: ""Boundary"" storeId: ""{{STORE_ID}}"" phones: [""1111111111111111111111111111111111111111111111111111111111111111""] }) { id phones } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — verify exactly 64 chars accepted","[ERRORS] errors[] non-empty for HTML <img> tag — NewContactValidator.NoHtmlTags() rejects HTML in phones (BL-GQL-001)
+[DATA] No contact created with HTML phone payload
+[ERRORS] errors[] non-empty for 65-char phone — NewContactValidator.MaxLength(64) enforced
+[DATA] No contact created with oversized phone
+[ERRORS] errors[] empty for valid phone — contact created successfully
+[DATA] Contact has phones: [""+1 (555) 123-4567""]
+[ERRORS] errors[] empty for exactly 64-char phone — boundary value accepted
+[DATA] Contact created with 64-char phone value","[ROUNDTRIP] Clear editor → type contact query by ID → execute → phones match created values
+[CONSOLE] No JS errors in GraphiQL","HTML tags accepted in phone during contact creation; 65-char phone accepted (MaxLength not enforced); valid phone rejected (false positive); 64-char boundary phone rejected; contact created with <img> tag in phone","delete created test contacts via admin API or deleteContact mutation","VCST-4803 PR #132 (NewContactValidator: MaxLength 64 + NoHtmlTags on phones)",Generated

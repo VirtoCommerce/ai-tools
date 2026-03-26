@@ -1,62 +1,18 @@
 {
-  "runId": "REG-2026-03-24-1030",
-  "selection": "072b",
-  "trigger": "manual /qa-regression 072b — re-run after seed-data catalog",
-  "status": "completed",
-  "startedAt": "2026-03-24T10:30:00Z",
-  "completedAt": "2026-03-24T12:45:00Z",
+  "runId": "REG-2026-03-26-0910",
+  "selection": "060",
+  "trigger": "manual /qa-regression 060 — retest after Firefox locale fix",
+  "status": "running",
+  "startedAt": "2026-03-26T09:10:00Z",
   "environment": {
     "frontUrl": "https://vcst-qa-storefront.govirto.com",
     "backUrl": "https://vcst-qa.govirto.com",
-    "platform": "3.1009.0"
+    "platform": "3.1009.0",
+    "theme": "vc-theme-b2b-vue-2.45.0-pr-2215",
+    "pageBuilderModule": "3.1001.0-pr-105-6754",
+    "fix": "locale: en-US added to all Playwright MCP configs"
   },
   "suites": {
-    "072b": {
-      "name": "Configurable Products E2E",
-      "status": "completed",
-      "browsers": ["playwright-chrome", "playwright-firefox", "playwright-edge"],
-      "priority": "P1",
-      "testCount": 54,
-      "passed": 24,
-      "failed": 1,
-      "blocked": 28,
-      "skipped": 1,
-      "passRate": "44.4%",
-      "passRateExecuted": "96.0% (24/25 executed)",
-      "attempts": 4,
-      "batches": [
-        {"browser": "playwright-chrome", "tests": "001-006,041,047,049", "passed": 9, "failed": 0, "blocked": 0},
-        {"browser": "playwright-chrome", "tests": "007-009,017-019,047", "passed": 6, "failed": 1, "blocked": 0},
-        {"browser": "playwright-edge", "tests": "010-012,020,043,044", "passed": 4, "failed": 0, "blocked": 1},
-        {"browser": "playwright-firefox", "tests": "021-024,030-033", "passed": 5, "failed": 0, "blocked": 2, "skipped": 1}
-      ],
-      "outputFiles": [
-        "reports/regression/REG-2026-03-24-1030/suite-072b-results.json",
-        "reports/regression/REG-2026-03-24-1030/suite-072b-remaining-results.json",
-        "reports/regression/REG-2026-03-24-1030/suite-072b-checkout-results.json",
-        "reports/regression/REG-2026-03-24-1030/suite-072b-file-upload-results.json"
-      ]
-    }
-  },
-  "bugs": [
-    {
-      "id": "BUG_072b_001",
-      "title": "OOS configuration option (qty=0) is selectable — no disabled state",
-      "severity": "High",
-      "testCaseId": "CFG-E2E-009",
-      "confirmed": false
-    }
-  ],
-  "summary": {
-    "totalCases": 54,
-    "executed": 25,
-    "passed": 24,
-    "failed": 1,
-    "blocked": 28,
-    "skipped": 1,
-    "passRate": "44.4%",
-    "passRateExecuted": "96.0% (24/25)",
-    "verdict": "PARTIAL PASS — 96% of executed tests pass, 1 bug (OOS not disabled)",
-    "ordersCreated": ["CO260324-00005", "CO260324-00006", "CO260324-00007"]
+    "060b": { "name": "CMS Design — Designer Core, Blocks, Sections, Presets (retest)", "status": "running", "browser": "playwright-firefox", "batch": 1 }
   }
 }

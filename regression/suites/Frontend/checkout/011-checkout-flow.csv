@@ -147,6 +147,26 @@
 [STATE] Error clears on valid phone entry
 [DOM] Error message is descriptive (invalid format)","[CONSOLE] No JS exceptions during phone validation
 [API] No submission API call with invalid phone data","Phone field accepts any string without validation; error persists after valid phone entered","none","Coverage Gap Analysis","Automated"
+"CHK-029","Checkout Validation - XSS Prevention in Address Fields","Checkout > Validation","High","BL-CHK-001; BL-SEC-001","ECL-5.1; ECL-14.1","User at checkout shipping address step, cart has at least one item","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout shipping address step
+[ACT] Enter First Name: '<script>alert(1)</script>'
+[ACT] Enter Last Name: 'TestXSS'
+[ACT] Enter Phone: '<img src=x onerror=alert(1)>'
+[ACT] Fill Street, City, State, ZIP with valid data
+[ACT] Click Continue
+[ASSERT] Verify form rejects HTML tags — validation error OR sanitized before submission
+[ASSERT] Verify no XSS alert dialog triggered
+[ACT] Enter Phone: '555<script>alert(1)</script>1234'
+[ACT] Click Continue
+[ASSERT] Verify mixed HTML+digits in phone rejected
+[ACT] Fix all fields: First Name 'John', Phone '555-123-4567'
+[ACT] Click Continue
+[ASSERT] Verify form advances with clean data","[DOM] HTML tags in name/phone fields rejected at form level or stripped before submission
+[STATE] Checkout does not advance with XSS payloads in address fields
+[DOM] No alert dialog or script execution from injected payloads
+[DOM] Error messages shown inline for fields containing HTML tags
+[STATE] Clean data accepted and checkout proceeds normally","[CONSOLE] No XSS alert dialogs; no uncaught JS errors
+[API] addOrUpdateCartShipment mutation not called with HTML payload data
+[NET] No request sent with unsanitized HTML in address fields","XSS payload accepted in name or phone; alert dialog fires; HTML tags stored in shipping address; checkout proceeds with <script> in address","none","VCST-4803 coverage gap — checkout address XSS","Generated"
 "CHK-030","Checkout Validation - Fix Errors and Proceed","Checkout > Validation","Critical","BL-CHK-001","","User at checkout shipping address step with validation errors present","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout shipping address step
 [ACT] click 'Continue' with empty fields to trigger validation errors
 [ASSERT] Verify multiple inline errors shown

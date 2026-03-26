@@ -169,7 +169,7 @@ branch: "vcst-qa"
 | File | Contains |
 |------|----------|
 | `backend/packages.json` | `PlatformVersion` + all module IDs with versions |
-| `theme/artifact.json` | Theme package URL with version (e.g., `vc-theme-b2b-vue-2.44.0-alpha.2262`) |
+| `theme/artifact.json` | Theme package URL with version (e.g., `vc-theme-b2b-vue-2.45.0-pr-2204-de06-de06c786`) |
 
 ### What to Record
 

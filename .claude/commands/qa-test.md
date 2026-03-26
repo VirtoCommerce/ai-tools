@@ -18,36 +18,36 @@ Analyze scope, dispatch specialist agents, collect results, and produce a verdic
 
 ---
 
-## Execution
+## Pipeline: Analyze → Plan → Write → Execute → Explore → Report
 
-### Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
+### Step 1 — Analyze
 
+Gather all inputs and determine scope. Combines pre-flight checks with scope analysis.
+
+**Pre-flight (per `.claude/templates/agent-dispatch.md`):**
 1. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, warn user.
-2. **Build & version verification** — fetch deployed versions per `agent-dispatch.md § Build Verification`:
-   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`)
-   - Record: platform version, theme version, and modules relevant to the ticket scope
+2. **Build & version verification** — use GitHub MCP `get_file_contents` to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`):
+   - Record: platform version (`PlatformVersion`), theme version (from `artifact.json` URL), and modules relevant to the ticket scope
    - **For PR testing:** PRs are deployed to QA while still open. Confirm the PR's build artifact version appears in `packages.json` (modules) or `artifact.json` (theme). If not deployed → warn user and ask whether to wait
-   - Include version info in agent dispatch prompts and the final summary
 3. **Duplicate check** — scan `tests/{SPRINT}/` for the same ticket tested in the last 2 hours. If found, warn user and show previous results.
-4. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected feature's domain (e.g., `"cart xAPI mutations"`, `"order processing workflow"`) with `tokens: 8000`. Pass findings to agents in Step 3.
-
-### Step 1 — Analyze Scope
 
 **Resolve current sprint** — check if `tests/Sprint-current` exists → use it. Otherwise list `tests/` and pick the latest `SprintXX-XX` folder. This becomes `{SPRINT}` for all output paths. Create the folder if it doesn't exist.
 
+**Scope analysis:**
+
 **For JIRA tickets** — try Atlassian MCP (`getJiraIssue`) first. If Atlassian MCP is not configured, ask the user to paste the ticket details (summary, ACs, components, linked PR):
 - Summary, Type, Priority, Status, Components, Acceptance Criteria
-- Linked PR: run `gh pr view <number>` and `gh pr diff <number> --name-only` to see changed files
+- Linked PR: use GitHub MCP `get_pull_request` (owner, repo, pull_number) for PR details and `get_pull_request_files` to see changed files
 - Confirm ticket is in a testable status
 
-**For a PR** — use `gh pr view <number>` + `gh pr diff <number> --name-only`:
-- Map file extensions to areas: `.cs` / `.csproj` → Backend, `.vue` / `.tsx` / `.jsx` → Frontend, `.css` / `.scss` → Styling
+**For a PR** — use GitHub MCP `get_pull_request` (owner, repo, pull_number) for details + `get_pull_request_files` for changed files:
+- Map file extensions to areas: `.cs` / `.csproj` → Backend, `.vue` / `.ts` / `.tsx` / `.jsx` → Frontend, `.css` / `.scss` → Styling
 
 **For a feature name** — use the name to determine which areas are affected.
 
-**Identify applicable domain(s)** — map the ticket/feature to one or more of the 18 domains in `/qa-checklist` (Auth, Catalog, Cart/Checkout, Payment, Orders, etc.). This drives knowledge loading in Step 2.
+**Identify applicable domain(s)** — map the ticket/feature to one or more of the 62 domains in `/qa-checklist` (32 storefront + 29 backend/admin + 1 GraphQL).
 
-**Scope output** (produce before dispatching):
+**Scope output** (produce before proceeding):
 ```
 Ticket: VCST-XXXX | Priority: P0/P1/P2 | Changed: Backend / Frontend / Both
 Domains: [Cart, Payment, ...]
@@ -58,16 +58,16 @@ Agents to dispatch: [list]
 
 ---
 
-### Step 2 — Load Context & Route Agents
+### Step 2 — Plan
+
+Determine testing strategy: load knowledge, query docs, and route agents.
 
 **Load knowledge files** relevant to the identified domains (read from `.claude/agents/knowledge/`):
 - **business-logic.md** — find all `BL-*` invariants for the affected domains. These become mandatory verification points.
-- **e-commerce-edge-cases-library.md** — find `ECL-*` patterns for the domains. Include relevant ones in agent prompts.
-- **domain-checklists.md** (via `/qa-checklist`) — identify checklist items for the domains to ensure nothing is missed.
+- **e-commerce-edge-cases-library.md** — find `ECL-*` patterns for the domains.
+- **domain-checklists.md** / **backend-admin-checklists.md** / **graphql-checklist.md** (via `/qa-checklist`) — identify checklist items for the domains.
 
-**Check for existing test cases** — look in `regression/suites/` for suites that cover the affected domains. If no test cases exist for the feature:
-- Add `test-management-specialist` to generate test cases first (sequential, before execution agents)
-- The specialist should use the `/qa-test-cases-generator` methodology
+**Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected feature's domain (e.g., `"cart xAPI mutations"`, `"order processing workflow"`) with `tokens: 8000`. Pass findings to agents in Step 4.
 
 **Agent routing table:**
 
@@ -77,31 +77,45 @@ Agents to dispatch: [list]
 | Admin SPA, APIs, modules, GraphQL, backend | `qa-backend-expert` | `playwright-edge` |
 | Storybook components, accessibility, design system | `ui-ux-expert` | Chrome DevTools MCP |
 | Cross-browser, exploratory, Figma comparison, debugging | `qa-testing-expert` | `playwright-firefox` |
-| New feature needing test cases | `test-management-specialist` | `playwright-chrome` (sequential, never parallel with frontend) |
 
 **Minimum dispatch rules:**
 - Backend-only change → `qa-backend-expert` only
 - Frontend-only change → `qa-frontend-expert` only
 - Both layers → `qa-backend-expert` + `qa-frontend-expert` in parallel
 - UI/component change → add `ui-ux-expert`
-- New feature with no test cases → `test-management-specialist` first (sequential), then dispatch execution agents
 - P0 ticket or critical revenue flow → add `qa-testing-expert` for cross-browser verification
 
 ---
 
-### Step 3 — Dispatch Agents
+### Step 3 — Write (test-management-specialist)
+
+**Always** dispatch `test-management-specialist` to produce a testing checklist or test cases before execution. This step must complete before Step 4.
+
+1. **Check for existing test cases** — look in `regression/suites/` for suites that cover the affected domains.
+2. **If test cases exist** → generate a **testing checklist** scoped to the ticket/PR:
+   - Map ACs to existing suite test cases
+   - Add checklist items for `BL-*` rules and `ECL-*` edge cases not covered by existing suites
+   - Flag gaps where no existing test case covers an AC
+3. **If no test cases exist** → generate **new test cases** using `/qa-test-cases-generator` methodology:
+   - Derive cases from ACs, `BL-*` invariants, `ECL-*` patterns, and domain checklists
+   - Write cases to `tests/{SPRINT}/VCST-XXXX/test-cases.csv`
+4. **Output:** `tests/{SPRINT}/VCST-XXXX/testing-checklist.md` — used by execution agents in Step 4 as their test plan.
+
+---
+
+### Step 4 — Execute
 
 Read environment URLs from `config.js` (`FRONT_URL`, `BACK_URL`).
 
 Launch all applicable agents **simultaneously** in a single message using the Agent tool. Each agent prompt must include:
 - The ticket ID(s) or feature being tested
-- Specific tasks derived from the acceptance criteria
-- **Business rules to verify** — list the `BL-*` invariant IDs and their rule text from Step 2
-- **Edge cases to cover** — list relevant `ECL-*` patterns from Step 2
-- The browser server to use (from routing table above)
+- **Testing checklist or test cases** — include the output from Step 3
+- **Business rules to verify** — `BL-*` invariant IDs and rule text from Step 2
+- **Edge cases to cover** — `ECL-*` patterns from Step 2
+- The browser server to use (from routing table in Step 2)
 - Environment URLs
 - Output path: `tests/{SPRINT}/VCST-XXXX/` or `tests/{SPRINT}/feature-name/`
-- Instruction to follow the evidence capture policy in `.claude/skills/qa-methodology/qa-evidence/evidence-capture-policy.md`
+- Evidence capture policy: `.claude/skills/qa-methodology/qa-evidence/evidence-capture-policy.md`
 
 Example prompt structure:
 ```
@@ -112,9 +126,7 @@ Environment: {FRONT_URL} / {BACK_URL}
 Browser: {BROWSER_SERVER}
 Output: tests/{SPRINT}/VCST-XXXX/
 
-Acceptance Criteria to verify:
-1. [AC 1]
-2. [AC 2]
+Testing checklist: [from Step 3 output]
 
 Business Rules (must verify):
 - BL-CART-001: [rule text]
@@ -122,9 +134,6 @@ Business Rules (must verify):
 
 Edge Cases to cover:
 - ECL-1.1: [pattern description]
-
-Tasks:
-- [Specific test actions]
 
 Evidence policy: follow .claude/skills/qa-methodology/qa-evidence/evidence-capture-policy.md
 - Screenshots: failures + final state of critical flows only
@@ -137,9 +146,9 @@ Write a test execution report to tests/{SPRINT}/VCST-XXXX/test-execution-report.
 
 ---
 
-### Step 4 — Exploratory Testing (SBTM)
+### Step 5 — Explore (SBTM)
 
-After all scripted agents return, run a **targeted exploratory session** using `/qa-sbtm` methodology to find issues that scripted tests miss. This step is mandatory for P0/P1 tickets and critical revenue flows; optional (but recommended) for P2/P3.
+After all execution agents return, run a **targeted exploratory session** using `/qa-sbtm` methodology. Mandatory for P0/P1 tickets and critical revenue flows; optional (but recommended) for P2/P3.
 
 1. **Create a charter** scoped to the ticket/feature:
    - Mission: explore the changed area and its integration boundaries
@@ -147,7 +156,7 @@ After all scripted agents return, run a **targeted exploratory session** using `
    - Heuristic: **SFDPOT** for UI changes, **CRISP** for API/backend changes
    - Time box: 20 minutes (10 min explore + 5 min adjacent areas + 5 min document)
 
-2. **Dispatch `qa-testing-expert`** (if not already dispatched in Step 3) on `playwright-firefox`:
+2. **Dispatch `qa-testing-expert`** (if not already dispatched in Step 4) on `playwright-firefox`:
    ```
    Exploratory session for VCST-XXXX.
 
@@ -167,15 +176,15 @@ After all scripted agents return, run a **targeted exploratory session** using `
    Follow evidence capture policy for any bugs found.
    ```
 
-3. **If `qa-testing-expert` was already dispatched** in Step 3 for cross-browser verification, include the exploratory charter as an additional task in the same agent prompt instead of dispatching twice.
-
-4. **Merge findings** into the overall results before proceeding to Step 5.
+3. **If `qa-testing-expert` was already dispatched** in Step 4 for cross-browser verification, include the exploratory charter as an additional task in the same agent prompt instead of dispatching twice.
 
 ---
 
-### Step 5 — Collect & Decide
+### Step 6 — Report
 
-After all agents return (including the exploratory session), **validate evidence quality first:**
+Collect results, decide verdict, transition JIRA, and deliver summary.
+
+**6a. Validate evidence quality:**
 
 | Check | Action if Missing |
 |---|---|
@@ -186,7 +195,7 @@ After all agents return (including the exploratory session), **validate evidence
 | Business rule `BL-*` listed in prompt but not mentioned in results | Flag as untested — request verification |
 | Exploratory session skipped for P0/P1 ticket | Flag as incomplete — exploratory coverage required |
 
-Then evaluate against decision matrix:
+**6b. Decide verdict:**
 
 | Decision | Criteria |
 |---|---|
@@ -195,11 +204,9 @@ Then evaluate against decision matrix:
 | **FAIL** | Any AC not met, any `BL-*` rule violated, or P0/P1 bug found |
 | **BLOCKED** | Environment down, missing test data, unresolved dependency |
 
----
+**6c. JIRA transition (with confirmation):**
 
-### Step 6 — JIRA Transition (with confirmation)
-
-Ask the user before transitioning JIRA status. Skip this step if Atlassian MCP is not configured.
+Ask the user before transitioning. Skip if Atlassian MCP is not configured.
 
 | Outcome | Transition |
 |---|---|
@@ -215,9 +222,7 @@ Bugs: [list or None]. Decision: [verdict].
 Artifacts: tests/{SPRINT}/VCST-XXXX/
 ```
 
----
-
-### Step 7 — Deliver Summary
+**6d. Deliver summary:**
 
 Write `tests/{SPRINT}/VCST-XXXX/summary.json`:
 ```json
@@ -263,6 +268,7 @@ Output to the user: verdict, coverage summary, business rules verified, explorat
 - If an agent fails with an internal error, fall back to working directly rather than retrying the same delegation
 - If Atlassian MCP is unavailable, skip JIRA transitions and ask user for ticket details manually
 - Always load `business-logic.md` for the affected domains — agents must know what rules to verify
-- Always query Context7 in Step 0 — pass findings to agents so they test against current module behavior
-- Exploratory session (Step 4) is mandatory for P0/P1 tickets and critical revenue flows — skip only for P2/P3 if user explicitly opts out
-- If `qa-testing-expert` is already dispatched in Step 3, combine exploratory charter into that agent's prompt rather than spawning a second instance
+- Always query Context7 in Step 2 — pass findings to agents so they test against current module behavior
+- `test-management-specialist` (Step 3) must complete before dispatching execution agents (Step 4)
+- Exploratory session (Step 5) is mandatory for P0/P1 tickets and critical revenue flows — skip only for P2/P3 if user explicitly opts out
+- If `qa-testing-expert` is already dispatched in Step 4, combine exploratory charter into that agent's prompt rather than spawning a second instance

@@ -192,6 +192,17 @@ Full report: tests/SprintXX-XX/VCST-XXXX/test-execution-report.md
 
 For full sign-off tables: `.claude/skills/qa-methodology/qa-evidence/sign-off-templates.md`
 
+## File Output Policy
+
+Only create report files for these categories — everything else stays in-memory or is returned via SendMessage:
+
+1. **Bug reports** → `reports/bugs/` (structured markdown with inline evidence)
+2. **Test cases** → `regression/suites/` (enriched CSV format)
+3. **BA reports** → `reports/ba/` (analysis deliverables)
+4. **Regression summary** → one consolidated report per run
+
+**Do NOT create files for:** per-suite intermediate results, coverage gap working files, standalone screenshot dumps, progress/status markdown, debug logs, or any other intermediate artifacts. Return these to the orchestrator via SendMessage instead. Evidence screenshots belong inline in bug reports, not as separate files.
+
 ## Platform Constraints
 
 - WebKit NOT supported on Windows — use Edge as fallback

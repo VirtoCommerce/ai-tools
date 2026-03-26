@@ -81,9 +81,22 @@ When(_ => options.EnableNoHtmlTagsValidation, () => {
 });
 ```
 
+## Status: FIXED
+
+## Resolution
+
+- **Fixed in:** PR #132 (`ProfileExperienceApiModule_3.1004.0-pr-132-79c7`)
+- **Fix:** Added `NoHtmlTags()` + `MaxLength(64)` validation to `Contact.Phones` in `NewContactValidator.cs`
+- **JIRA ticket:** [VCST-4803](https://virtocommerce.atlassian.net/browse/VCST-4803)
+- **Verification date:** 2026-03-25
+- **Verification method:** GraphQL API testing — STR passed 3/3, XSS variants rejected, valid phones accepted, no regressions
+- **Verified by:** qa-backend-expert
+- **Evidence:** `tests/Sprint-current/VCST-4803/verification-report.md`
+
 ## References
 
 - JIRA: [VCST-4803](https://virtocommerce.atlassian.net/browse/VCST-4803)
 - PR #130: https://github.com/VirtoCommerce/vc-module-profile-experience-api/pull/130
+- PR #132 (fix): https://github.com/VirtoCommerce/vc-module-profile-experience-api/pull/132
 - Sync run: SYNC-2026-03-21-1600
 - Related test cases: GQL-031, SEC-INPUT-002

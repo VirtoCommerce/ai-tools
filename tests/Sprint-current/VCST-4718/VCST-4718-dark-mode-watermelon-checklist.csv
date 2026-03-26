@@ -1,0 +1,434 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"WDM-001","Dark Mode Toggle — Watermelon theme activates dark variant on toggle","Dark Mode Activation","Critical","BL-B2B-006","","Storefront accessible; Watermelon theme preset configured for store or org; user signed in","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[WAIT] homepage fully loaded with Watermelon light theme visible
+[ACT] locate theme/dark mode toggle control in header or footer
+[ACT] click dark mode toggle to enable dark mode
+[WAIT] page re-renders with dark color palette applied","[DOM] page background changes from light (#ffffff region) to dark (#040303)
+[DOM] body text color updates to light (#ebe5e5)
+[DOM] header background updates to dark (#141010 top / #332829 bottom)
+[DOM] dark mode toggle shows active/enabled state
+[STATE] dark mode state is active (not reverted after 2s)","[CONSOLE] no uncaught JS errors or CSS variable warnings during toggle
+[NETWORK] no 4xx/5xx requests triggered by toggle action","Toggle unresponsive after click; body background remains white after 2s; JS error on toggle; no visual color change","none","VCST-4718","Manual"
+"WDM-002","Dark Mode — OS Preference Respected (prefers-color-scheme: dark)","Dark Mode Activation","High","BL-B2B-006","","Watermelon theme active for store; browser/OS set to dark color scheme preference","front_url={{FRONT_URL}}","[ACT] set OS or browser to dark color scheme (DevTools emulation: prefers-color-scheme: dark)
+[NAV] {{FRONT_URL}}
+[WAIT] homepage fully loaded","[DOM] dark mode applied automatically without manual toggle click
+[DOM] body background is dark (#040303)
+[STATE] dark mode toggle (if present) reflects the auto-detected dark state","[CONSOLE] no errors during auto dark mode detection","Page ignores OS preference and loads light theme; CSS media query not applied; toggle shows wrong state","none","VCST-4718","Manual"
+"WDM-003","Dark Mode Persistence — Dark state survives page refresh","Dark Mode Activation","High","BL-B2B-006","","Watermelon dark mode enabled via toggle; user on homepage","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[KEY] F5 (or browser refresh)
+[WAIT] page fully reloaded","[DOM] dark mode remains active after refresh (body bg #040303)
+[STATE] dark mode toggle still shows enabled state
+[DOM] no flash of light theme before dark mode re-applies","[CONSOLE] no errors on reload","Dark mode resets to light after refresh; FOUC of light theme before dark settles; toggle shows disabled after refresh","none","VCST-4718","Manual"
+"WDM-004","Dark Mode Persistence — Dark state survives navigation across pages","Dark Mode Activation","High","BL-B2B-006","","Watermelon dark mode enabled; user on homepage","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[NAV] {{FRONT_URL}}/catalog (or any category page)
+[WAIT] catalog page loaded
+[NAV] {{FRONT_URL}}/search?q=test
+[WAIT] search page loaded","[STATE] dark mode remains active on catalog page
+[STATE] dark mode remains active on search results page
+[DOM] body bg is consistently #040303 across all page navigations","[CONSOLE] no CSS errors during navigation","Dark mode drops on SPA route change; light flash between pages","none","VCST-4718","Manual"
+"WDM-005","Dark Mode Persistence — Deep link opens in dark mode","Dark Mode Activation","Medium","BL-B2B-006","","User has previously enabled dark mode (persisted in localStorage or cookie)","front_url={{FRONT_URL}}","[ACT] ensure dark mode preference is stored (enable toggle, close tab)
+[NAV] open a new tab directly to {{FRONT_URL}}/catalog (deep link, not homepage)
+[WAIT] catalog page fully loaded","[DOM] dark mode applied immediately on deep-linked page (#040303 background)
+[STATE] no light-mode flash before dark mode loads
+[DOM] dark mode toggle shows correct enabled state","[CONSOLE] no errors","Deep link opens in light mode ignoring stored preference; FOUC of light before dark","none","VCST-4718","Manual"
+"WDM-006","Color Token — Body background and text colors match spec","Color Token Verification","Critical","BL-B2B-006","","Watermelon dark mode active on storefront; browser DevTools available","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[ACT] open browser DevTools > Elements panel
+[ACT] inspect CSS custom properties on :root or body element","[FORMAT] CSS variable for body background resolves to #040303
+[FORMAT] CSS variable for body text color resolves to #ebe5e5
+[DOM] no bright white (#ffffff) background regions visible in page body","[CONSOLE] no CSS variable resolution errors","Body background is white or wrong dark color; text color too dark to read on dark background","none","VCST-4718","Manual"
+"WDM-007","Color Token — Header top bar colors match spec","Color Token Verification","Critical","BL-B2B-006","","Watermelon dark mode active","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[ACT] open DevTools > Elements
+[ACT] inspect header top bar element computed styles","[FORMAT] header top bar background resolves to #141010
+[FORMAT] header top bar text color resolves to #d4c9c9
+[FORMAT] header top bar link color resolves to #f4a6a5
+[DOM] header top bar is visible and all text legible","[CONSOLE] no CSS errors","Header remains light; wrong dark color applied; link colors not updated","none","VCST-4718","Manual"
+"WDM-008","Color Token — Header bottom bar colors match spec","Color Token Verification","Critical","BL-B2B-006","","Watermelon dark mode active","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[ACT] inspect header bottom bar computed styles in DevTools","[FORMAT] header bottom bar background resolves to #332829
+[FORMAT] header bottom bar text color resolves to #ebe5e5
+[DOM] navigation items in header bottom are legible","[CONSOLE] no CSS errors","Header bottom bar has wrong or light background; text invisible on dark background","none","VCST-4718","Manual"
+"WDM-009","Color Token — Footer colors match spec","Color Token Verification","High","BL-B2B-006","","Watermelon dark mode active","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[SCROLL] scroll to page footer
+[ACT] inspect footer top and footer bottom computed styles in DevTools","[FORMAT] footer top background resolves to #141010
+[FORMAT] footer top text color resolves to #ebe5e5
+[FORMAT] footer bottom background resolves to #332829
+[FORMAT] footer bottom text color resolves to #d4c9c9
+[DOM] footer content is legible and fully visible","[CONSOLE] no CSS errors","Footer retains light background; wrong colors applied; footer text illegible","none","VCST-4718","Manual"
+"WDM-010","Color Token — Link colors match spec (default and hover)","Color Token Verification","High","BL-B2B-006","","Watermelon dark mode active; page with visible links open","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[ACT] identify a body-level hyperlink (e.g. in a content area or breadcrumb)
+[ACT] inspect computed color via DevTools
+[ACT] hover over the link
+[ACT] inspect computed color on hover","[FORMAT] link default color resolves to #f4a6a5
+[FORMAT] link hover color resolves to #f8c5c5
+[DOM] links are visually distinct from surrounding text","[CONSOLE] no CSS errors","Links retain default blue browser color; hover color same as default (no hover state change)","none","VCST-4718","Manual"
+"WDM-011","Color Token — Primary button (olive green) colors match spec","Color Token Verification","High","BL-B2B-006","","Watermelon dark mode active; a page with a primary CTA button visible (e.g. PDP with Add to Cart, or checkout)","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] navigate to a product detail page at {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[ACT] inspect 'Add to Cart' or primary CTA button computed background-color in DevTools","[FORMAT] primary button background color resolves to olive green primary-500 (#aeb85f) or the configured dark primary color
+[DOM] button text is legible against button background
+[DOM] button is identifiable as primary CTA","[CONSOLE] no CSS errors","Primary button uses light-mode color; button background is wrong color; button text invisible","none","VCST-4718","Manual"
+"WDM-012","Color Token — Accent/CTA red colors match spec","Color Token Verification","High","BL-B2B-006","","Watermelon dark mode active; accent element visible (e.g. sale badge, alert, highlight)","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[ACT] locate an accent-colored element (sale label, discount badge, icon)
+[ACT] inspect computed color in DevTools","[FORMAT] accent-400 resolves to #e73433
+[FORMAT] accent-500 resolves to #ed6665
+[DOM] accent elements are visually prominent against dark background","[CONSOLE] no CSS errors","Accent uses light-mode red; accent elements invisible or wrongly colored on dark bg","none","VCST-4718","Manual"
+"WDM-013","Color Token — Price display color matches spec","Color Token Verification","High","BL-B2B-006","","Watermelon dark mode active; product listing or PDP visible","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/catalog
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[ACT] inspect price element computed color on a product card or PDP","[FORMAT] price color resolves to #eeeeec (near-white)
+[DOM] prices are clearly legible against dark card backgrounds
+[FORMAT] price displays correct 2-decimal format","[CONSOLE] no CSS errors","Price text is dark on dark background (invisible); price color same as light mode","none","VCST-4718","Manual"
+"WDM-014","Color Token — Mobile menu colors match spec","Color Token Verification","High","BL-B2B-006","","Watermelon dark mode active; viewport at 375px width","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] resize browser to 375px width (mobile viewport)
+[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[ACT] click hamburger menu icon to open mobile navigation
+[WAIT] mobile menu opens
+[ACT] inspect mobile menu background, text, and icon colors in DevTools","[FORMAT] mobile menu background resolves to #040303
+[FORMAT] mobile menu text color resolves to #f6f4f4
+[FORMAT] mobile menu icon color resolves to #ed6665
+[DOM] mobile menu items are legible
+[DOM] menu icons are visible against dark background","[CONSOLE] no JS errors on mobile menu open","Mobile menu retains light background; text invisible; icon colors wrong","none","VCST-4718","Manual"
+"WDM-015","Visual Verification — Homepage in Watermelon dark mode","Multi-Page Visual Verification","Critical","BL-B2B-006","","Watermelon dark mode active on storefront; homepage accessible","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied and all images loaded
+[ACT] take full-page screenshot
+[SCROLL] scroll through entire homepage
+[ACT] inspect header, hero section, featured products, footer","[DOM] no white or light-colored large background regions on page body (except images)
+[DOM] header correctly dark (#141010 top, #332829 bottom)
+[DOM] footer correctly dark
+[DOM] product cards have dark card backgrounds
+[DOM] no text is invisible (dark text on dark background)
+[STATE] all interactive elements (buttons, links) are visually identifiable","[CONSOLE] no uncaught JS errors
+[NETWORK] all page assets load with HTTP 200 (no 404 images)","White background visible in page body or sections; any console TypeError; product images broken","none","VCST-4718","Manual"
+"WDM-016","Visual Verification — Catalog/category page in Watermelon dark mode","Multi-Page Visual Verification","Critical","BL-B2B-006","","Watermelon dark mode active; at least one category with products exists","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[NAV] navigate to a catalog/category page
+[WAIT] product grid loaded
+[SCROLL] scroll through product listing
+[ACT] inspect product card styling in DevTools","[DOM] category page background is dark
+[DOM] product cards display with dark card surfaces
+[FORMAT] product prices visible (#eeeeec against dark card)
+[DOM] facet/filter sidebar has dark styling
+[DOM] pagination controls are styled correctly for dark mode
+[DOM] category breadcrumbs legible","[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx on catalog API calls","Product cards have white backgrounds; filter sidebar is light; prices invisible on cards","none","VCST-4718","Manual"
+"WDM-017","Visual Verification — Product detail page (PDP) in Watermelon dark mode","Multi-Page Visual Verification","Critical","BL-B2B-006","","Watermelon dark mode active; a product detail page accessible","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[NAV] navigate to a product detail page (e.g. via catalog)
+[WAIT] PDP fully loaded including images
+[ACT] inspect product title, price, description, 'Add to Cart' button, quantity input","[DOM] PDP background is dark
+[DOM] product title text is light (#ebe5e5 region)
+[FORMAT] product price displays in correct color (#eeeeec)
+[DOM] 'Add to Cart' button is visually prominent (olive primary color)
+[DOM] quantity stepper is visible and usable
+[DOM] product images render correctly (not affected by dark background)
+[DOM] product description text legible","[CONSOLE] no JS errors
+[NETWORK] product API call returns HTTP 200","PDP has white background; price invisible; Add to Cart button blends into background","none","VCST-4718","Manual"
+"WDM-018","Visual Verification — Cart page in Watermelon dark mode","Multi-Page Visual Verification","High","BL-B2B-006","","Watermelon dark mode active; at least one item in cart","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loaded with items
+[ACT] inspect cart line items, subtotal, checkout button","[DOM] cart page background is dark
+[DOM] cart line items have dark card styling
+[FORMAT] prices and subtotal visible in correct dark-mode colors
+[DOM] quantity controls visible and usable
+[DOM] 'Proceed to Checkout' or 'Place Order' CTA button is visually prominent
+[DOM] item images display correctly","[CONSOLE] no JS errors
+[NETWORK] cart API returns HTTP 200","Cart has white card backgrounds; prices invisible; CTA button not visible","none","VCST-4718","Manual"
+"WDM-019","Visual Verification — Checkout page in Watermelon dark mode","Multi-Page Visual Verification","High","BL-B2B-006","","Watermelon dark mode active; user with items in cart ready for checkout; signed in","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[ACT] proceed to checkout
+[WAIT] checkout page loaded
+[ACT] inspect form fields, labels, order summary, shipping/billing sections","[DOM] checkout page background is dark
+[DOM] form input fields have correct dark-mode styling (dark bg, light text)
+[DOM] form labels are legible
+[DOM] order summary sidebar has dark styling with legible prices
+[DOM] 'Place Order' button is visually prominent
+[DOM] section headings legible","[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx during checkout page load","Form inputs invisible (white text on white input bg); labels not visible; order summary illegible","none","VCST-4718","Manual"
+"WDM-020","Visual Verification — Account/dashboard page in Watermelon dark mode","Multi-Page Visual Verification","Medium","BL-B2B-006","","Watermelon dark mode active; user signed in to storefront","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[NAV] navigate to account dashboard (profile/orders/account area)
+[WAIT] dashboard page loaded
+[SCROLL] scroll through account sections","[DOM] account dashboard background is dark
+[DOM] navigation sidebar or tabs have dark styling
+[DOM] data tables or order lists have dark row styling
+[DOM] all text elements legible
+[DOM] action buttons (edit, view) are styled correctly","[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx on account API calls","Dashboard has white background; table rows illegible; sidebar retains light styling","none","VCST-4718","Manual"
+"WDM-021","WCAG AA — Primary CTA button (#e73433) contrast ratio audit","Accessibility / Contrast","Critical","BL-B2B-006","","Watermelon dark mode active; browser DevTools or axe/accessibility tool available; a CTA button with accent red background visible","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] navigate to a page with accent-red CTA button in dark mode
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[ACT] open DevTools > Elements; select the CTA button element
+[ACT] use DevTools Computed styles or Accessibility panel to measure contrast ratio of white text on #e73433 background
+[ACT] alternatively run axe DevTools extension on the element","[FORMAT] contrast ratio of white (#ffffff) on #e73433 measured and recorded
+[STATE] contrast ratio is >= 4.5:1 for normal text (WCAG AA) OR >= 3:1 for large text (18pt+)
+[DOM] button is annotated as failing contrast if ratio is 4.25:1 (below 4.5:1 threshold)","[CONSOLE] no accessibility tool errors","Contrast ratio below 4.5:1 for normal-sized button text — known BUG-02 candidate; ratio 4.25:1 measured in analysis","Document measured ratio; report as accessibility bug if < 4.5:1 (suspected 4.25:1 per prior analysis)","VCST-4718","Manual"
+"WDM-022","WCAG AA — Status color (-500 variants) contrast on dark card surfaces","Accessibility / Contrast","High","BL-B2B-006","","Watermelon dark mode active; page with status badges or labels visible (e.g. order status, stock status)","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] navigate to a page with status indicators (orders list, PDP stock status, cart notifications)
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[ACT] identify status-colored elements (success, warning, error, info badges)
+[ACT] inspect computed background/text colors for each status variant in DevTools
+[ACT] measure or estimate contrast ratio using Accessibility panel","[FORMAT] each status -500 color (success, warning, danger, info) contrast ratio recorded
+[STATE] each status color pair meets >= 4.5:1 ratio for text, OR >= 3:1 for large text
+[DOM] status labels are legible in dark mode","[CONSOLE] no accessibility errors","Status -500 colors too dark relative to dark card surface — insufficient contrast; BUG-03 candidate","Document ratio per status color; report as accessibility bug if failing","VCST-4718","Manual"
+"WDM-023","WCAG AA — neutral-300 border contrast on dark surfaces","Accessibility / Contrast","Medium","BL-B2B-006","","Watermelon dark mode active; page with bordered UI components (cards, inputs, separators) visible","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[ACT] locate UI elements with visible borders (form inputs, product cards, dividers)
+[ACT] inspect computed border-color in DevTools
+[ACT] check border color is the neutral-300 token value
+[ACT] evaluate contrast of the border color against adjacent background","[FORMAT] neutral-300 border color value recorded (expected: a mid-gray)
+[STATE] border contrast ratio against adjacent background is >= 3:1 (WCAG AA for non-text contrast)
+[DOM] borders are visually distinguishable from card/page background","[CONSOLE] no CSS errors","Border invisible on dark surface (borderline contrast per BUG-04 analysis); inputs look borderless","Document measured ratio; report as bug if border contrast < 3:1","VCST-4718","Manual"
+"WDM-024","WCAG — Full page axe accessibility scan in Watermelon dark mode","Accessibility / Contrast","High","BL-B2B-006","","Watermelon dark mode active; axe DevTools or Lighthouse available","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme fully applied and page stable
+[ACT] run axe DevTools or Lighthouse accessibility audit on the page
+[WAIT] audit completes","[STATE] no new accessibility violations introduced by dark mode tokens beyond the 3 known candidates (BUG-02, BUG-03, BUG-04)
+[STATE] critical accessibility violations count is 0 (excluding known documented issues)
+[DOM] all focusable elements have visible focus indicators in dark mode","[CONSOLE] no JS errors during audit","New critical axe violations beyond known 3; focus indicators invisible in dark mode; missing ARIA labels","Document all violations; create bug tickets for any not in BUG-02/03/04","VCST-4718","Manual"
+"WDM-025","Theme Switch — Light to dark toggle (watermelon light → watermelon dark)","Theme Switching","Critical","BL-B2B-006","","Watermelon light theme active (default); user on homepage; dark mode toggle accessible","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[WAIT] Watermelon light theme loaded (verify light body bg)
+[ACT] note current body background color in DevTools (should be light)
+[ACT] click dark mode toggle
+[WAIT] transition completes (max 1s)","[FORMAT] body background transitions from light to #040303
+[FORMAT] header colors update to dark variants
+[DOM] toggle visual state changes to 'dark mode active'
+[STATE] transition is smooth with no jarring flash of intermediate colors
+[STATE] no page navigation or full reload occurs (CSS variable swap only)","[CONSOLE] no JS errors during toggle
+[NETWORK] no unexpected API calls triggered by toggle","Toggle triggers full page reload instead of CSS variable swap; flash of wrong colors; > 1s transition","none","VCST-4718","Manual"
+"WDM-026","Theme Switch — Dark to light toggle (watermelon dark → watermelon light)","Theme Switching","Critical","BL-B2B-006","","Watermelon dark mode active; user on homepage","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[ACT] click dark mode toggle again to disable dark mode
+[WAIT] light theme re-applied","[FORMAT] body background returns to Watermelon light theme color (not dark #040303)
+[FORMAT] header returns to Watermelon light header colors
+[DOM] toggle shows disabled/light state
+[STATE] transition smooth, no flash","[CONSOLE] no JS errors","Light mode not restored; wrong colors after toggle back; toggle stuck in dark state","none","VCST-4718","Manual"
+"WDM-027","Theme Switch — Switching preset from Watermelon dark to Coffee dark","Theme Switching","High","BL-B2B-006","","Admin access; two orgs configured: one with Watermelon preset, one with Coffee preset; multi-org user account available; dark mode enabled","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[ACT] sign in with multi-org user account on Watermelon org
+[ACT] enable dark mode toggle
+[WAIT] Watermelon dark theme applied
+[ACT] note distinctive Watermelon dark colors (red accents #ed6665, reddish header)
+[ACT] switch organization context to the Coffee org
+[WAIT] Coffee theme applied
+[ACT] enable dark mode for Coffee if not automatic","[FORMAT] after org switch, body bg changes from Watermelon dark palette to Coffee dark palette
+[FORMAT] Coffee dark header bg is visibly different from Watermelon dark header
+[STATE] Coffee dark accent color is visually different from Watermelon red
+[DOM] no residual Watermelon-specific colors visible after switch","[CONSOLE] no errors during org/theme switch
+[NETWORK] whiteLabelingSettings query returns new themePresetName for Coffee org","Watermelon colors persist after switching to Coffee org; stale CSS variables not replaced","none","VCST-4718","Manual"
+"WDM-028","Theme Switch — Switching from Watermelon dark back to Watermelon light via admin preset change","Theme Switching","Medium","BL-B2B-006","","Admin access to store or org White Labeling settings; Watermelon dark active; dark mode toggle NOT in use (using preset-based switch)","back_url={{BACK_URL}}, front_url={{FRONT_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] sign in as admin
+[BLADE] open Stores > select store > White Labeling blade
+[ACT] change themePresetName from 'watermelon.dark' or equivalent to 'watermelon' (light)
+[SAVE] save White Labeling settings
+[NAV] {{FRONT_URL}}
+[WAIT] storefront refreshed with new theme","[FORM] White Labeling blade shows updated preset name after save
+[TOAST] success notification in admin
+[FORMAT] storefront body background is now Watermelon light (not dark #040303)
+[STATE] no dark mode colors visible when using light preset","[CONSOLE] no admin blade JS errors
+[NETWORK] GET whiteLabelingSettings returns updated themePresetName","Admin save fails; dark colors remain on storefront after preset change; success toast not shown","restore original preset in White Labeling","VCST-4718","Manual"
+"WDM-029","White Labeling Integration — Store-level Watermelon dark preset applied to storefront","White Labeling Integration","Critical","BL-B2B-006, BL-WL-001","","Admin access; store White Labeling enabled; themePresetName set to Watermelon dark variant","back_url={{BACK_URL}}, front_url={{FRONT_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] sign in as admin
+[BLADE] navigate to Stores > B2B-store > White Labeling blade
+[ASSERT] verify White Labeling is Enabled
+[ACT] set Theme Preset Name to the Watermelon dark preset name (e.g. 'watermelon.dark' — verify exact name in admin dropdown)
+[SAVE] save settings
+[NAV] {{FRONT_URL}}
+[WAIT] storefront loaded
+[ACT] inspect CSS variables in DevTools","[FORM] admin blade saves successfully with Watermelon dark preset
+[TOAST] success notification shown in admin
+[FORMAT] storefront CSS variables match Watermelon dark palette (#040303 body, #141010 header top)
+[STATE] dark palette is active WITHOUT the user needing to toggle dark mode manually
+[DOM] header, footer, body all show dark Watermelon colors","[CONSOLE] no errors on storefront after preset change
+[API] GET {{BACK_URL}}/api/whitelabeling/settings?storeId=B2B-store returns themePresetName matching Watermelon dark
+[NETWORK] no failed requests on storefront load","Store preset not reflected on storefront; light Watermelon still shown; CSS variables not updated","restore original themePresetName in store White Labeling","VCST-4718","Manual"
+"WDM-030","White Labeling Integration — Org-level Watermelon dark overrides store-level preset","White Labeling Integration","Critical","BL-B2B-006, BL-WL-001","","Store has a different theme preset (e.g. Default or Coffee); Org has Watermelon dark configured; org-level WL is Enabled","back_url={{BACK_URL}}, front_url={{FRONT_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] sign in as admin
+[BLADE] navigate to Customer > Organizations > test org > White Labeling blade
+[ACT] ensure Enabled = ON
+[ACT] set Theme Preset Name to Watermelon dark preset
+[SAVE] save org White Labeling settings
+[NAV] {{FRONT_URL}}
+[ACT] sign in with org user account
+[WAIT] homepage loaded
+[ACT] inspect CSS variables in DevTools","[FORMAT] storefront uses Watermelon dark CSS variables (#040303 body etc.) — org setting overrides store Default/Coffee
+[DOM] NO store-level preset colors visible
+[STATE] resolution order correct: org overrides store (per BL-B2B-006)","[CONSOLE] no errors
+[API] whiteLabelingSettings GraphQL query returns org themePresetName (Watermelon dark, not store default)
+[NETWORK] no 4xx on whitelabeling API","Store theme shown instead of org Watermelon dark; org override not working; CSS variables from store preset","restore org themePresetName after test","VCST-4718","Manual"
+"WDM-031","White Labeling Integration — Store WL master switch OFF disables Watermelon dark","White Labeling Integration","High","BL-B2B-006, BL-WL-001","","Store White Labeling is currently Enabled with Watermelon dark; org also has WL configured","back_url={{BACK_URL}}, front_url={{FRONT_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] sign in as admin
+[BLADE] open Stores > B2B-store > White Labeling blade
+[ACT] set White Labeling Enabled = OFF
+[SAVE] save settings
+[NAV] {{FRONT_URL}}
+[ACT] sign in with org user
+[WAIT] homepage loaded
+[ACT] inspect CSS variables","[FORMAT] platform default theme CSS variables applied (NOT Watermelon dark)
+[STATE] org-level Watermelon dark NOT applied — master switch takes precedence
+[DOM] no dark Watermelon colors visible","[CONSOLE] no errors
+[API] whiteLabelingSettings returns empty or default themePresetName when store WL is OFF","Watermelon dark still applied despite WL master switch = OFF; org override bypasses master switch","restore store WL Enabled = ON and original preset","VCST-4718","Manual"
+"WDM-032","White Labeling Integration — GraphQL whiteLabelingSettings returns watermelon dark preset name","White Labeling Integration","High","BL-B2B-006","","Watermelon dark preset configured for org; GraphiQL accessible at {{BACK_URL}}/ui/graphiql; Bearer token available","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_id=<org-id>","[NAV] {{BACK_URL}}/ui/graphiql
+[AUTH] set Authorization: Bearer <token> in Headers panel
+[ACT] click query editor, Ctrl+A, Backspace to clear
+[ACT] type query: { whiteLabelingSettings(organizationId: ""<org-id>"" storeId: ""{{STORE_ID}}"") { themePresetName } }
+[GQL] execute query (Ctrl+Enter or click Run button)
+[READ] read response panel","[ERRORS] errors[] is empty in response
+[DATA] data.whiteLabelingSettings.themePresetName matches the Watermelon dark preset name configured in admin
+[DATA] value is non-null","[CONSOLE] no JS errors in GraphiQL","errors[] non-empty; themePresetName null or returns wrong preset name (e.g. 'default')","none","VCST-4718","Manual"
+"WDM-033","White Labeling Integration — Non-existent preset name falls back to default","White Labeling Integration","Medium","BL-B2B-006, BL-WL-004","","Admin access; org configured with invalid/non-existent themePresetName (e.g. 'watermelon.dark.v2')","back_url={{BACK_URL}}, front_url={{FRONT_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{BACK_URL}}
+[BLADE] open org > White Labeling blade
+[ACT] enter themePresetName: 'watermelon.dark.nonexistent'
+[SAVE] save settings
+[NAV] {{FRONT_URL}}
+[ACT] sign in with org user
+[WAIT] homepage loaded — observe styling","[STATE] default/platform theme applied as fallback (NOT broken styles)
+[DOM] page renders correctly with fallback theme colors
+[DOM] no broken CSS or missing styles visible
+[STATE] no JS errors thrown for invalid preset","[CONSOLE] no JS errors for missing preset
+[NETWORK] theme CSS loads with HTTP 200 (fallback CSS file loaded)","Page renders with no styles; JS errors on unresolved preset; watermelon dark colors show for a non-existent preset name","restore valid themePresetName in org settings","VCST-4718","Manual"
+"WDM-034","Mobile Responsive — Dark mode at 375px viewport (homepage)","Mobile Responsive","High","BL-B2B-006","","Watermelon dark mode active; browser/DevTools set to 375px viewport","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] resize browser to 375px width (mobile)
+[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[SCROLL] scroll through homepage on 375px viewport
+[ACT] take screenshot of full mobile homepage","[DOM] mobile layout renders correctly in dark mode (no horizontal scroll overflow)
+[DOM] header collapses to mobile layout with dark colors (#141010 top, #332829 bottom)
+[DOM] no text or elements cut off at 375px
+[DOM] all interactive elements meet minimum 44x44px touch target size
+[FORMAT] all color tokens correct at mobile (same values as desktop dark mode)","[CONSOLE] no JS errors
+[NETWORK] no failed asset loads at mobile","Mobile layout breaks in dark mode; horizontal overflow; touch targets too small; colors wrong at mobile","none","VCST-4718","Manual"
+"WDM-035","Mobile Responsive — Hamburger menu in Watermelon dark mode (375px)","Mobile Responsive","High","BL-B2B-006","","Watermelon dark mode active at 375px viewport","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] resize to 375px width
+[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[ACT] click hamburger menu icon
+[WAIT] mobile navigation menu opens fully
+[ACT] inspect menu items, background, close button
+[ACT] tap a menu item to verify navigation
+[ACT] close menu (tap X or outside)","[DOM] hamburger icon visible and correctly dark-styled
+[DOM] mobile menu background is #040303
+[DOM] menu item text color is #f6f4f4
+[DOM] menu icons are #ed6665 (red accent)
+[DOM] close button visible and tappable
+[NAV] tapping a menu item navigates correctly
+[STATE] menu closes cleanly when dismissed","[CONSOLE] no JS errors
+[NETWORK] no failed requests on menu open","Hamburger icon invisible in dark header; menu bg is white/light; menu items illegible; menu does not close","none","VCST-4718","Manual"
+"WDM-036","Mobile Responsive — Touch targets in dark mode (min 44x44px)","Mobile Responsive","Medium","BL-B2B-006","","Watermelon dark mode active; 375px viewport; page with interactive elements","front_url={{FRONT_URL}}","[ACT] resize to 375px
+[NAV] {{FRONT_URL}}
+[ACT] enable dark mode
+[WAIT] dark theme applied
+[ACT] identify touch targets: header buttons, dark mode toggle, cart icon, mobile menu icon, CTA buttons
+[ACT] inspect each element dimensions via DevTools (box model)","[DOM] dark mode toggle meets >= 44x44px hit area
+[DOM] cart icon meets >= 44x44px
+[DOM] hamburger menu icon meets >= 44x44px
+[DOM] primary CTA buttons meet >= 44x44px height
+[STATE] all interactive elements identifiable visually in dark mode","[CONSOLE] no JS errors","Touch targets < 44x44px in dark mode layout; dark mode toggle too small to tap accurately","none","VCST-4718","Manual"
+"WDM-037","Edge Case — No FOUC (Flash of Unstyled Content) on initial dark mode load","Edge Cases","High","BL-B2B-006","","Dark mode preference stored in localStorage; user navigates to homepage fresh (empty browser cache)","front_url={{FRONT_URL}}","[ACT] open browser DevTools > Network tab > enable Slow 3G throttling
+[ACT] clear browser cache and localStorage (except dark mode preference key)
+[ACT] set dark mode preference in localStorage manually to dark value
+[NAV] {{FRONT_URL}}
+[WAIT] observe page load sequence carefully
+[ACT] take screenshot at 500ms, 1000ms, 2000ms intervals if possible","[STATE] no flash of light background before dark theme loads (FOUC)
+[DOM] initial paint shows dark background OR shows neutral loading state
+[STATE] dark mode applies within 500ms of page paint","[CONSOLE] no errors","Visible flash of white/light background for > 200ms before dark mode applies; FOUC on every page load; FOUC only on cold cache","none","VCST-4718","Manual"
+"WDM-038","Edge Case — Dark mode state after hard refresh (Ctrl+Shift+R / cache bypass)","Edge Cases","Medium","BL-B2B-006","","Dark mode active; preference persisted in localStorage","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[KEY] Ctrl+Shift+R (hard refresh / cache bypass)
+[WAIT] page fully reloaded","[STATE] dark mode preference preserved and re-applied after hard refresh
+[DOM] dark colors visible immediately without needing to re-toggle
+[DOM] no FOUC during hard refresh reload","[CONSOLE] no errors on hard refresh","Dark mode lost after hard refresh; preference not persisted; light FOUC on hard refresh","none","VCST-4718","Manual"
+"WDM-039","Edge Case — Theme cache: dark mode after browser cache invalidation (CSS version bump)","Edge Cases","Medium","BL-B2B-006","","Browser has cached old theme CSS (pre-2204 deploy); dark mode preference active","front_url={{FRONT_URL}}","[ACT] open DevTools > Application > Cache Storage
+[ACT] inspect cached CSS files for watermelon theme
+[NAV] {{FRONT_URL}} with dark mode enabled
+[WAIT] page loaded
+[ACT] open Network tab, reload, inspect theme CSS response headers
+[ACT] verify CSS version/hash matches deployed version 2.45.0-pr-2204-de06c786","[HEADER] theme CSS response has Cache-Control headers appropriate for versioned assets
+[BODY] fetched theme CSS includes Watermelon dark color tokens (grep for #040303)
+[STATE] no stale light-only CSS served to a dark-mode enabled user
+[FORMAT] CSS file URL contains a content hash or version string (cache-busted filename)","[NETWORK] CSS 200 response with correct content-hash in URL or ETag","Stale CSS served (no hash in URL); dark tokens missing from CSS file; 304 served for outdated CSS file","none","VCST-4718","Manual"
+"WDM-040","Edge Case — Watermelon dark mode with prefers-reduced-motion active","Edge Cases","Low","BL-B2B-006","","Watermelon dark mode active; OS or browser set to reduce motion preference","front_url={{FRONT_URL}}","[ACT] enable prefers-reduced-motion via OS settings or DevTools emulation
+[NAV] {{FRONT_URL}}
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied","[STATE] dark mode applies correctly even with reduced motion preference
+[DOM] no animations interfere with dark mode token application
+[STATE] theme transition respects prefers-reduced-motion (no cross-fade animation if motion reduced)","[CONSOLE] no errors","Dark mode toggle animation fires despite reduced-motion; dark mode fails to apply when reduced-motion is set","none","VCST-4718","Manual"
+"WDM-041","Regression — Coffee dark preset still functions after Watermelon dark merge","Regression - Other Dark Presets","Critical","BL-B2B-006","","Store configured with Coffee theme; dark mode toggle available; user on storefront","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}} (with Coffee theme active for this store/org)
+[WAIT] Coffee light theme loaded
+[ACT] enable dark mode toggle
+[WAIT] Coffee dark theme applied
+[ACT] inspect body, header, footer CSS variables","[FORMAT] Coffee dark body background resolves to the Coffee dark palette value (NOT #040303 Watermelon)
+[FORMAT] Coffee dark header colors match Coffee dark spec (NOT Watermelon red)
+[STATE] Coffee dark mode is visually distinct from Watermelon dark mode
+[DOM] no Watermelon-specific color tokens (#ed6665, #f4a6a5) visible in Coffee dark mode","[CONSOLE] no JS errors
+[NETWORK] no failed CSS requests","Coffee dark mode broken (uses Watermelon tokens); Coffee dark colors missing or incorrect; darkPresets map returns wrong preset","none","VCST-4718","Manual"
+"WDM-042","Regression — Default dark preset still functions after Watermelon dark merge","Regression - Other Dark Presets","Critical","BL-B2B-006","","Store configured with Default theme; dark mode toggle available","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}} (with Default theme active)
+[ACT] enable dark mode toggle
+[WAIT] Default dark theme applied
+[ACT] inspect body, header CSS variables","[FORMAT] Default dark body background uses Default dark palette (NOT Watermelon #040303)
+[STATE] Default dark is visually distinct from Watermelon dark
+[DOM] no Watermelon red accents (#ed6665) in Default dark mode","[CONSOLE] no JS errors","Default dark broken after PR #2204 merge; Default dark uses Watermelon token values; darkPresets map corrupted","none","VCST-4718","Manual"
+"WDM-043","Regression — Mercury dark preset still functions after Watermelon dark merge","Regression - Other Dark Presets","Critical","BL-B2B-006","","Store configured with Mercury theme; dark mode toggle available","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}} (with Mercury theme active)
+[ACT] enable dark mode toggle
+[WAIT] Mercury dark theme applied
+[ACT] inspect body, header CSS variables","[FORMAT] Mercury dark body background uses Mercury dark palette (NOT Watermelon values)
+[STATE] Mercury dark is visually distinct from Watermelon dark
+[DOM] no Watermelon-specific red accent tokens visible","[CONSOLE] no JS errors","Mercury dark broken or uses Watermelon values; darkPresets map import corrupted Mercury entry","none","VCST-4718","Manual"
+"WDM-044","Regression — index.ts darkPresets map: all 4 presets registered correctly","Regression - Other Dark Presets","High","BL-B2B-006","","Access to deployed frontend JavaScript bundle; browser DevTools available","front_url={{FRONT_URL}}, back_url={{BACK_URL}}","[NAV] {{FRONT_URL}}
+[ACT] open DevTools > Sources > search for 'darkPresets' in the bundle JS files
+[ACT] or evaluate in DevTools console: inspect the theme registry to check all 4 entries (default, coffee, mercury, watermelon)
+[ACT] alternatively use Network tab to inspect the preset JSON files loaded when each theme is set","[STATE] 4 dark presets registered: default.dark, coffee.dark, mercury.dark, watermelon.dark
+[STATE] each preset maps to its own distinct JSON token file
+[STATE] watermelon.dark is correctly added (not duplicating another preset's values)","[CONSOLE] no errors loading theme registry","Only 3 presets registered (watermelon missing from darkPresets map); watermelon.dark maps to wrong JSON file; index.ts import incorrectly added","none","VCST-4718","Manual"
+"WDM-045","Cross-Browser — Watermelon dark mode on Chromium","Cross-Browser","High","BL-B2B-006","","Watermelon dark preset configured; Chromium browser available via playwright-chrome","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}} in Chromium (playwright-chrome)
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[ACT] take screenshot of homepage
+[ACT] navigate to catalog, PDP
+[ACT] take screenshots of each","[FORMAT] Watermelon dark CSS variables correctly applied in Chromium
+[DOM] all dark color regions correct (body, header, footer, cards)
+[DOM] no rendering artifacts (blurry text, wrong font colors, missing backgrounds)
+[STATE] dark mode toggle functions correctly in Chromium","[CONSOLE] no Chromium-specific CSS errors","CSS custom properties not supported in Chromium version; dark mode fails to apply; visual artifacts","none","VCST-4718","Manual"
+"WDM-046","Cross-Browser — Watermelon dark mode on Firefox","Cross-Browser","High","BL-B2B-006","","Watermelon dark preset configured; Firefox browser available via playwright-firefox","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}} in Firefox (playwright-firefox)
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[ACT] take screenshot of homepage
+[ACT] inspect CSS variables via Firefox DevTools","[FORMAT] Watermelon dark CSS variables correctly applied in Firefox
+[DOM] visually matches Chromium dark mode rendering
+[DOM] no Firefox-specific rendering differences (color space, custom property resolution)","[CONSOLE] no Firefox-specific JS or CSS errors","CSS custom property resolution differs from Chromium; dark mode not applied; dark toggle broken in Firefox","none","VCST-4718","Manual"
+"WDM-047","Cross-Browser — Watermelon dark mode on Edge","Cross-Browser","Medium","BL-B2B-006","","Watermelon dark preset configured; Edge browser available via playwright-edge","front_url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}} in Edge (playwright-edge)
+[ACT] enable dark mode toggle
+[WAIT] dark theme applied
+[ACT] take screenshot of homepage
+[ACT] inspect CSS variables via Edge DevTools","[FORMAT] Watermelon dark CSS variables correctly applied in Edge
+[DOM] visually matches Chromium rendering
+[DOM] no Edge-specific CSS custom property issues","[CONSOLE] no Edge-specific errors","Dark mode token resolution different in Edge; visual inconsistencies vs Chromium; Edge ignores CSS variables","none","VCST-4718","Manual"
+"WDM-048","Cross-Browser — OS dark mode preference respected across all three browsers","Cross-Browser","Medium","BL-B2B-006","","OS set to dark color scheme; testing in Chromium, Firefox, Edge sequentially","front_url={{FRONT_URL}}","[ACT] emulate prefers-color-scheme: dark in Chromium DevTools
+[NAV] {{FRONT_URL}} in Chromium
+[WAIT] page loaded
+[ACT] note auto dark mode applied
+[ACT] repeat in Firefox (firefox devtools media query emulation)
+[ACT] repeat in Edge (edge devtools media query emulation)","[STATE] Watermelon dark mode auto-applies in all three browsers when prefers-color-scheme: dark is set
+[FORMAT] CSS variables match Watermelon dark spec in all three browsers
+[DOM] visual appearance is consistent across browsers","[CONSOLE] no errors in any browser","OS preference ignored in one or more browsers; inconsistent dark mode auto-activation","none","VCST-4718","Manual"

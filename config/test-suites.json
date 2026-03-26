@@ -110,13 +110,14 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 19,
-      "estimatedMinutes": 13,
+      "testCount": 29,
+      "estimatedMinutes": 20,
       "agent": "qa-frontend-expert",
       "tags": [
         "catalog",
         "filters",
         "facets",
+        "range-facets",
         "sprint"
       ]
     },
@@ -164,8 +165,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 38,
-      "estimatedMinutes": 27,
+      "testCount": 39,
+      "estimatedMinutes": 28,
       "agent": "qa-frontend-expert",
       "tags": [
         "b2c",
@@ -236,8 +237,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 50,
-      "estimatedMinutes": 35,
+      "testCount": 51,
+      "estimatedMinutes": 36,
       "agent": "qa-frontend-expert",
       "tags": [
         "b2c",
@@ -255,8 +256,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 40,
-      "estimatedMinutes": 28,
+      "testCount": 41,
+      "estimatedMinutes": 29,
       "agent": "qa-frontend-expert",
       "tags": [
         "checkout",
@@ -933,12 +934,13 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 33,
-      "estimatedMinutes": 23,
+      "testCount": 38,
+      "estimatedMinutes": 27,
       "agent": "qa-backend-expert",
       "tags": [
         "graphql",
         "xapi",
+        "range-facets",
         "sprint"
       ]
     },
@@ -1116,8 +1118,8 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 35,
-      "estimatedMinutes": 25,
+      "testCount": 76,
+      "estimatedMinutes": 60,
       "agent": "qa-backend-expert",
       "tags": [
         "cms",
@@ -1135,14 +1137,15 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 46,
-      "estimatedMinutes": 32,
+      "testCount": 47,
+      "estimatedMinutes": 33,
       "agent": "qa-backend-expert",
       "tags": [
         "search",
         "indexing",
         "elastic",
         "admin",
+        "range-facets",
         "sprint"
       ]
     },

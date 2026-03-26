@@ -219,3 +219,20 @@ SRCH-046,Partial Index Rebuild — Single Document Type,Index Management,Functio
 - Index timestamps for other document types (Customer, Order) remain unchanged
 - Product search returns correct results after the partial rebuild
 - System stability is maintained; no errors or corruption in non-rebuilt indices",,Not Automated
+SRCH-047,Aggregation Properties - Configure Range Facet for Numeric Property,Aggregation Properties,Functional,High,5m,Admin logged into ${BACK_URL}; Store exists with catalog containing products with a numeric property (e.g. Volume_ml); search index active,"1. Navigate to ${BACK_URL} > Stores > B2B-store > Aggregation properties
+2. Click 'Add' to create a new aggregation property
+3. Select the numeric property (e.g. 'Volume_ml') from the property list
+4. Set Aggregation Type to 'Range'
+5. Configure range buckets (e.g. 0-100, 100-300, 300-600)
+6. Save the aggregation property configuration
+7. Navigate to Search > Index Management and rebuild the product index
+8. Wait for index rebuild to complete
+9. Navigate to the storefront category containing products with Volume_ml values
+10. Verify the range filter appears in the sidebar/filter bar with configured buckets","- Aggregation property selector lists available numeric properties from the catalog
+- 'Range' aggregation type is selectable for numeric/money properties
+- Range buckets can be configured with from/to values
+- Configuration saves without errors
+- After index rebuild, the storefront displays the range facet with configured bucket labels
+- Bucket product counts are non-zero for ranges containing products
+- Clicking a range bucket filters products to those within the specified range
+- Property names with underscores (e.g. Volume_ml) are preserved correctly in the UI and filter URL",VP-9035,Not Automated

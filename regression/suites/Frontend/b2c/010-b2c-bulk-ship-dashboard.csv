@@ -115,6 +115,32 @@
 [DOM] Nickname displayed in list: 'Home - 123 Main St'
 [DOM] Nickname shown in checkout address selector
 [DOM] Nickname editable via Edit address","[CONSOLE] no uncaught JS errors","Nickname field missing; nickname not showing in address list or checkout selector","none","VCST-4575","Manual"
+"B2C-SHIP-013","Ship To - XSS Prevention in Address Form Fields","B2C Features > Ship To","High","BL-B2C-003; BL-SEC-001","ECL-5.1; ECL-14.1","User logged in, address form accessible","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Account > Addresses > Add New Address
+2. [ACT] Fill First Name: '<script>alert(1)</script>'
+3. [ACT] Fill Last Name: 'Test'
+4. [ACT] Fill Phone: '<img src=x onerror=alert(1)>'
+5. [ACT] Fill Street: '123 Main St'
+6. [ACT] Fill City, State, ZIP with valid data
+7. [ACT] Click Save
+8. [ASSERT] Verify form rejects HTML tags in First Name — validation error shown OR tags stripped
+9. [ASSERT] Verify form rejects HTML tags in Phone — validation error shown OR tags stripped
+10. [ACT] Fix First Name to 'John'
+11. [ACT] Enter Phone with <script> tag: '<script>document.cookie</script>'
+12. [ACT] Click Save
+13. [ASSERT] Verify phone field rejects script tag
+14. [ACT] Fix Phone to '555-123-4567'
+15. [ACT] Enter Street: '<svg onload=alert(1)> 123 Main'
+16. [ACT] Click Save
+17. [ASSERT] Verify street field rejects SVG XSS payload OR sanitizes on save
+18. [ACT] Fix all fields to valid data > Save successfully
+19. [NAV] Reopen saved address
+20. [ASSERT] Verify no HTML tags rendered in any field — all stored as plain text or rejected","[DOM] HTML tag payloads rejected at form level with inline validation error OR silently stripped
+[DOM] No <script>, <img>, or <svg> tags rendered in address display after save
+[STATE] Form blocks save when XSS payload detected in name or phone fields
+[DOM] Phone field: HTML tags not accepted (server-side NoHtmlTags via MemberAddressValidator)
+[STATE] Saved address displays sanitized values — no executable HTML","[CONSOLE] No JS errors or XSS alert dialogs triggered
+[API] updateMemberAddresses mutation returns errors[] for HTML payloads if server-side validation enabled
+[DOM] Address list renders all fields as text nodes, not HTML","XSS payload accepted and saved; <script> tag rendered in address display; alert dialog fires on page load; HTML stored verbatim in phone/name fields","delete test address","VCST-4803 coverage gap — address form XSS","Generated"
 "B2C-BULK-001","Quick Order by SKU","B2C Features > Bulk Order","Critical","BL-B2C-001","ECL-14.1","User logged in, /bulk-order page accessible, at least one known product SKU","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order (Quick Order page)
 2. [ASSERT] Locate the SKU entry field
 3. [ACT] Enter a known valid product SKU

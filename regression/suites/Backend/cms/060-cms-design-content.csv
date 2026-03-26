@@ -1,98 +1,481 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"CMS-009","Verify Draft status badge in grid","Grid View","Medium",,,"Draft page exists",,"1. Navigate to Pages list
-2. Locate draft page in grid",,,,,"C415407 C415436",
-"CMS-010","Verify Published status badge in grid","Grid View","Medium",,,"Published page exists",,"1. Navigate to Pages list
-2. Locate published page",,,,,"C415408 C415437",
-"CMS-011","Verify Archived status badge in grid","Grid View","Medium",,,"Archived page exists",,"1. Navigate to Pages list
-2. Locate archived page",,,,,"C415409 C415438",
-"CMS-012","Verify Scheduled badge in grid","Grid View","Medium",,,"Page with scheduled dates exists",,"1. Navigate to Pages list
-2. Locate scheduled page",,,,,"C415410 C415456",
-"CMS-013","Verify Personalized badge in grid","Grid View","Medium",,,"Page with visibility/user group restrictions exists",,"1. Navigate to Pages list
-2. Locate personalized page",,,,,"C415411 C415457",
-"CMS-014","Grid columns display correctly","Grid View","Medium",,,"Multiple pages exist",,"1. Navigate to Pages list
-2. Verify all columns visible",,,,,"C415412",
-"CMS-015","Checkbox selection and bulk selection","Grid View","Medium",,,"Multiple pages exist",,"1. Select individual page checkboxes
-2. Use bulk select checkbox",,,,,"C415414 C415415 C415416",
-"CMS-016","Search functionality in page list","Grid View","High",,,"Multiple pages exist",,"1. Enter search term in search field
-2. Verify results",,,,,"C415420",
-"CMS-027","Published page accessible on frontend (correct language)","Storefront Verification","Critical",,,"Page published with English content",,"1. Navigate to frontend URL with correct language prefix
-2. Access page by permalink",,,,,"C415460",
-"CMS-028","Published page 404 on frontend - wrong language","Storefront Verification","Medium",,,"Page published in English only",,"1. Navigate to frontend with different language prefix
-2. Access page by permalink",,,,,"C415461",
-"CMS-029","Draft page NOT accessible on frontend","Storefront Verification","High",,,"Page in Draft status",,"1. Navigate to frontend
-2. Attempt to access draft page URL",,,,,"C415474",
-"CMS-030","Archived page NOT accessible on frontend","Storefront Verification","High",,,"Page in Archived status",,"1. Navigate to frontend
-2. Attempt to access archived page URL",,,,,"C415476",
-"CMS-031","Published page appears in search","Storefront Verification","High",,,"Published page exists",,"1. Navigate to frontend
-2. Search for page title",,,,,"C415473 C415497",
-"CMS-032","Draft page NOT in search results","Storefront Verification","Medium",,,"Draft page exists",,"1. Search for draft page title on frontend",,,,,"C415475",
-"CMS-033","Scheduled page with future start date - not accessible","Storefront Verification","Medium",,,"Page scheduled with future start date",,"1. Navigate to frontend
-2. Attempt to access scheduled page URL",,,,,"C415490",
-"CMS-034","Scheduled page within valid date range - accessible","Storefront Verification","Medium",,,"Page scheduled with current date in range",,"1. Navigate to frontend
-2. Access scheduled page URL",,,,,"C415492",
-"CMS-035","Search returns only current language pages","Storefront Verification","Medium",,,"Pages in multiple languages exist",,"1. Search on frontend in specific language context",,,,,"C415463 C415464",
-"CMS-036","Add section to page","Designer Sections","Critical",,,"Page open in designer/builder",,"1. Open page designer
-2. Click Add Section
-3. Select section type
-4. Configure content
-5. Save",,,,,"C221165",
-"CMS-037","Copy section in page","Designer Sections","Medium",,,"Page has at least one section",,"1. Open page designer
-2. Click Copy on existing section",,,,,"C221166",
-"CMS-038","Remove section from page","Designer Sections","High",,,"Page has at least one section",,"1. Open page designer
-2. Click Remove on section
-3. Confirm",,,,,"C221167",
-"CMS-039","Simple text block - add and preview","Content Blocks","High",,,"Page open in designer",,"1. Add Simple Text section
-2. Enter text content in General tab
-3. Configure Settings tab
-4. Preview",,,,,"C221889 C221890 C221056",
-"CMS-040","Simple image block - add and preview","Content Blocks","High",,,"Page open in designer",,"1. Add Simple Image section
-2. Upload image in General tab
-3. Configure Settings tab
-4. Preview",,,,,"C221968 C221969 C221060",
-"CMS-041","Text over image block - add and preview","Content Blocks","High",,,"Page open in designer",,"1. Add Text Over Image section
-2. Configure text and image
-3. Preview",,,,,"C221970 C221971 C221054",
-"CMS-042","Cards list block - add and preview","Content Blocks","Medium",,,"Page open in designer",,"1. Add Cards List section
-2. Add card items
-3. Preview",,,,,"C221972 C221973 C221094",
+"CMS-009","Verify Draft status badge in grid","Grid View","Medium",,,"Draft page exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-draft
+2. Locate draft page in grid
+3. Verify Draft badge is displayed in Status column","Draft badge (pill) visible next to the page name in Status column; page may also show Personalized badge",,"No Draft badge visible; page appears in wrong lifecycle tab",,"C415407 C415436; Synced: PR #105 (2026-03-25)",
+"CMS-010","Verify Published status badge in grid","Grid View","Medium",,,"Published page exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-active
+2. Locate published page in grid
+3. Verify Published badge is displayed in Status column","Published badge (pill) visible in Status column; page may also show Scheduled and/or Personalized badges",,"No Published badge visible; page missing from Active tab",,"C415408 C415437; Synced: PR #105 (2026-03-25)",
+"CMS-011","Verify Archived status badge in grid","Grid View","Medium",,,"Archived page exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-archived
+2. Locate archived page in grid
+3. Verify Archived badge is displayed in Status column","Archived badge (pill) visible in Status column",,"No Archived badge visible; page missing from Archived tab",,"C415409 C415438; Synced: PR #105 (2026-03-25)",
+"CMS-012","Verify Scheduled badge in grid","Grid View","Medium",,,"Page with scheduled dates (StartDate or EndDate) exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-active (or Archived for expired)
+2. Locate page with scheduled dates in grid
+3. Verify Scheduled badge is displayed alongside Published badge in Status column","Scheduled badge (pill) visible next to Published badge for pages with date restrictions",,"No Scheduled badge visible on pages that have StartDate/EndDate configured",,"C415410 C415456; Synced: PR #105 (2026-03-25)",
+"CMS-013","Verify Personalized badge in grid","Grid View","Medium",,,"Page with visibility=false or user group restrictions exists; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to any lifecycle tab in PageBuilder shell (Draft, Active, or Archived)
+2. Locate page with personalization settings (visibility off, user groups, or organization restrictions)
+3. Verify Personalized badge is displayed in Status column","Personalized badge (pill) visible in Status column alongside the page's lifecycle badge (Draft/Published/Archived)",,"No Personalized badge on pages that have visibility or user group restrictions configured",,"C415411 C415457; Synced: PR #105 (2026-03-25)",
+"CMS-014","Grid columns display correctly","Grid View","Medium",,,"Multiple pages exist; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-all
+2. Verify all grid columns are visible: Name, Language, Permalink, Modified, Modified by, Status","All 6 columns rendered with sortable headers; data populates correctly for each column",,"Missing columns; column data not rendering; sort not functional",,"C415412; Synced: PR #105 (2026-03-25)",
+"CMS-015","Checkbox selection and bulk selection","Grid View","Medium",,,"Multiple pages exist; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to any lifecycle tab in PageBuilder shell
+2. Click individual row checkboxes to select pages
+3. Click Select All checkbox in header row
+4. Verify Archive toolbar button becomes enabled when pages are selected","Individual checkboxes toggle selection; Select All selects all visible rows; Archive button activates on selection",,"Checkboxes not clickable; Select All not working; Archive button stays disabled",,"C415414 C415415 C415416; Synced: PR #105 (2026-03-25)",
+"CMS-016","Search functionality in page list","Grid View","High",,,"Multiple pages exist; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to All Pages tab in PageBuilder shell
+2. Enter search term in Search field
+3. Verify filtered results display matching pages","Search filters page list to show only pages matching the keyword (by Name or Permalink); results update as user types",,"Search returns no results for valid terms; search field not present",,"C415420; Synced: PR #105 (2026-03-25)",
+"CMS-027","Published page accessible on frontend (correct language)","Storefront Verification","Critical",,,"PAGE-1 published via CMS-006 OR PAGE-3 seeded (both EN+DE published)","PAGE-1: ${FRONT_URL}/qa-homepage-spring-sale; PAGE-3 EN: ${FRONT_URL}/en/qa-return-policy; PAGE-3 DE: ${FRONT_URL}/de/qa-return-policy (see test-data/cms/pagebuilder-pages.md)","1. Navigate to ${FRONT_URL}/qa-homepage-spring-sale (PAGE-1, EN)
+2. Verify the page loads with HTTP 200 and all blocks render
+3. Navigate to ${FRONT_URL}/en/qa-return-policy (PAGE-3, EN) — verify EN title
+4. Navigate to ${FRONT_URL}/de/qa-return-policy (PAGE-3, DE) — verify DE title","Page renders at the correct URL with status 200; page title and content blocks match the published version; no 404 or error page displayed","API: GET /api/pages confirms page status=Published; Admin: page shows Published badge in Active tab","Page returns 404 or blank; content does not match published version; HTTP error in Network tab","","C415460",
+"CMS-028","Published page 404 on frontend - wrong language","Storefront Verification","Medium",,,"PAGE-3 seeded with EN+DE published; French NOT published","PAGE-3 from test-data/cms/pagebuilder-pages.md: ${FRONT_URL}/fr/qa-return-policy → expected 404","1. Navigate to ${FRONT_URL}/fr/qa-return-policy (French not published for PAGE-3)
+2. Verify page is not accessible","Page returns 404 or redirects to 404 page; no content from the EN or DE version is served under /fr/ prefix","","Page loads successfully in wrong language; English/German content served under /fr/ prefix","","C415461",
+"CMS-029","Draft page NOT accessible on frontend","Storefront Verification","High",,,"PAGE-1 in Draft status (before CMS-006 publish step)","PAGE-1 from test-data/cms/pagebuilder-pages.md: ${FRONT_URL}/qa-homepage-spring-sale → expected 404 while Draft","1. Navigate to ${FRONT_URL}/qa-homepage-spring-sale while PAGE-1 is still in Draft status (before publishing)
+2. Attempt to access the page","Page returns 404 or redirects to a 404/not-found page; draft content is NOT visible to anonymous or authenticated storefront users","API: GET /api/pages confirms page status=Draft","Draft page renders with content visible; HTTP 200 returned for draft URL","","C415474",
+"CMS-030","Archived page NOT accessible on frontend","Storefront Verification","High",,,"Page in Archived status; permalink known","Archived page permalink","1. Navigate to ${FRONT_URL}/<permalink> for the archived page
+2. Attempt to access the page","Page returns 404 or redirects to a 404/not-found page; archived content is NOT visible on storefront","API: GET /api/pages confirms page status=Archived","Archived page renders with content visible; HTTP 200 returned for archived URL","","C415476",
+"CMS-031","Published page appears in search suggestions","Storefront Verification","High",,,"Published page exists with a unique title/keyword; search index is up to date","Page title or unique keyword from published page content; See test-data/cms/pagebuilder-pages.md","1. Navigate to ${FRONT_URL}
+2. Click the search bar and type the page title keyword
+3. Wait for the search suggestions dropdown to appear
+4. Review the suggestions list for the page","Published page title appears in the search suggestions dropdown with a clickable link; clicking the suggestion navigates to the page","","Published page absent from search suggestions after 60s; suggestions dropdown does not show page title; page only appears in search results grid but NOT in dropdown","","C415473 C415497",
+"CMS-032","Draft page NOT in search suggestions","Storefront Verification","Medium",,,"Draft page exists; its title/keyword is unique and not present in any published page","Draft page unique title keyword; See test-data/cms/pagebuilder-pages.md","1. Navigate to ${FRONT_URL}
+2. Click the search bar and type the draft page title keyword
+3. Wait for the search suggestions dropdown to appear
+4. Review the suggestions list","Draft page does NOT appear in the search suggestions dropdown; suggestions show only published pages or no results for the keyword","","Draft page title appears in search suggestions; draft content visible in suggestion snippets","","C415475",
+"CMS-033","Scheduled page with future start date - not accessible","Storefront Verification","Medium",,,"PAGE-4 seeded with StartDate +7 days (must still be in future — if passed, re-seed)","PAGE-4 from test-data/cms/pagebuilder-pages.md: ${FRONT_URL}/qa-summer-collection-preview → expected 404 before StartDate","1. Confirm current time is before PAGE-4's StartDate (check Scheduling section in admin)
+2. Navigate to ${FRONT_URL}/qa-summer-collection-preview
+3. Attempt to access the scheduled page","Page returns 404 or not-found page; scheduled content is not served before its start date","Admin: PAGE-4 appears in Pending tab with Scheduled badge","Page content visible before StartDate; HTTP 200 for scheduled-but-not-yet-active page","","C415490",
+"CMS-034","Scheduled page within valid date range - accessible","Storefront Verification","Medium",,,"PAGE-4 modified: StartDate set to past, EndDate still in future; page is Published","PAGE-4 from test-data/cms/pagebuilder-pages.md: temporarily adjust StartDate to past for this test; ${FRONT_URL}/qa-summer-collection-preview → expected 200","1. In admin, update PAGE-4 StartDate to a past date (keep EndDate in future)
+2. Confirm current time is between StartDate and EndDate
+3. Navigate to ${FRONT_URL}/qa-summer-collection-preview
+4. Access the scheduled page","Page returns HTTP 200 with content; all 6 blocks render correctly within the valid scheduled range","","Page returns 404 during valid date range; content not rendered","Restore PAGE-4 StartDate to +7 days for future CMS-033 runs","C415492",
+"CMS-035","Search suggestions return only current language pages","Storefront Verification","Medium",,,"PAGE-3 seeded with both EN (QA Return Policy) and DE (QA Rückgaberichtlinie) published","PAGE-3 from test-data/cms/pagebuilder-pages.md: EN keyword=Return Policy, DE keyword=Rückgaberichtlinie; See Language Verification Matrix","1. Navigate to ${FRONT_URL}/en/ and type 'Return Policy' in search bar
+2. Verify search suggestions dropdown shows PAGE-3 EN title and does NOT show DE title
+3. Navigate to ${FRONT_URL}/de/ and type 'Rückgaberichtlinie' in search bar
+4. Verify search suggestions dropdown shows PAGE-3 DE title only","Search suggestions in /en/ context return only English-language pages; suggestions in /de/ context return only German-language pages; no cross-language contamination in dropdown","","English search suggestions show German-language page; language-specific isolation broken in suggestions dropdown","","C415463 C415464",
+"CMS-036","Add section to page","Designer Sections","Critical",,,"Page open in designer at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Open a draft page in the PageBuilder designer
+2. Click the Add block button (+ icon or 'Add block' label) in the designer
+3. Select a block type (e.g., 'Title') from the block library panel
+4. Verify the block appears in the sections panel on the left
+5. Click the new section to open its configuration
+6. Enter content in the configuration fields
+7. Click Save","New section block appears in the left sections panel after selection; section configuration panel opens on click; Save completes without error; section persists after save","","Block not appearing after selection; configuration panel not opening; Save button disabled or Save fails; console errors on add","","C221165",
+"CMS-037","Copy and Paste section via context menu","Designer Sections","Medium",,,"Page has at least one section in the designer",,"1. Open a page in the PageBuilder designer that has at least one existing section
+2. Right-click on an existing section in the left panel to open the context menu
+3. Click 'Copy' from the context menu (content_copy icon)
+4. Right-click on the same or another section
+5. Click 'Paste after' from the context menu (content_paste icon)
+6. Verify a copy of the section appears below the target section in the sections panel
+7. Right-click again and click 'Paste before'
+8. Verify a copy appears above the target section
+9. Click Save","Context menu opens on right-click with Copy/Paste before/Paste after options; copied section can be pasted before or after any section; pasted section has identical content; Save persists all pasted sections","","Context menu not opening on right-click; Copy/Paste options missing; pasted section empty or corrupted; Save fails after paste","","C221166; Updated: context menu discovery COV-2026-03-25-1630",
+"CMS-038","Delete section via context menu","Designer Sections","High",,,"Page has at least one section in the designer (not the last section — keep at least one)",,"1. Open a page in the PageBuilder designer with at least 2 sections
+2. Right-click on a section in the left panel to open the context menu
+3. Click 'Delete' from the context menu (delete_outline icon)
+4. If a confirmation dialog appears, confirm the deletion
+5. Verify the section is removed from the sections panel
+6. Verify the live preview no longer shows the deleted block
+7. Click Save","Context menu shows Delete option; section is removed from the left panel after clicking Delete; live preview updates immediately; Save completes; deleted section does not reappear on page reload","","Context menu not showing Delete; section not removed after click; preview still showing deleted block; section reappears after save","","C221167; Updated: context menu discovery COV-2026-03-25-1630",
+"CMS-039","Simple text block - add and preview","Content Blocks","High",,,"Page open in designer",,"1. Click Add block in the designer
+2. Select 'Simple Text' from the block library
+3. In the General tab, enter formatted text content
+4. Switch to the Settings tab and configure alignment or padding options
+5. Verify the live preview updates with the text content
+6. Click Save","Simple Text block added to sections panel; General tab accepts text input; Settings tab shows layout options; live preview renders the text block; Save completes without error","","Block not in library; General tab not showing text field; preview not reflecting content; Save fails","","C221889 C221890 C221056",
+"CMS-040","Simple image block - add and preview","Content Blocks","High",,,"Page open in designer",,"1. Click Add block in the designer
+2. Select 'Simple Image' from the block library
+3. In the General tab, upload an image using the image upload field
+4. Switch to Settings tab and configure image display options
+5. Verify the live preview shows the uploaded image
+6. Click Save","Simple Image block added; image upload field accepts image file; preview renders the image; Settings tab has display options; Save completes","","Block not in library; image upload failing; preview not showing image; Settings tab empty; Save fails","","C221968 C221969 C221060",
+"CMS-041","Text over image block - add and preview","Content Blocks","High",,,"Page open in designer",,"1. Click Add block in the designer
+2. Select 'Text Over Image' from the block library
+3. Configure the background image using the upload/select field
+4. Enter overlay text in the text field
+5. Verify live preview shows text overlaid on the image
+6. Click Save","Text Over Image block added; image and text fields both present; preview renders text overlaid on image; Save completes","","Block not in library; image or text field missing; text not appearing over image in preview; Save fails","","C221970 C221971 C221054",
+"CMS-042","Cards list block - add and preview","Content Blocks","Medium",,,"Page open in designer",,"1. Click Add block in the designer
+2. Select 'Cards List' from the block library
+3. Click Add card item and fill in title, description, and image for the card
+4. Add at least 2 card items
+5. Verify live preview renders the cards grid
+6. Click Save","Cards List block added; individual cards can be added with title/description/image; preview renders card grid; minimum 2 cards display; Save completes","","Block not in library; card add button missing; preview not rendering cards; Save fails","","C221972 C221973 C221094",
 "CMS-043","Two columns list block - add and preview","Content Blocks","Medium",,,"Page open in designer",,"1. Add Two Columns section
 2. Configure both columns
-3. Preview",,,,,"C221974 C221975 C221057",
+3. Preview","","","","deprecated — block type removed from designer library (COV-2026-03-25-1630)","C221974 C221975 C221057","deprecated"
 "CMS-044","Video and text block - add and preview","Content Blocks","Medium",,,"Page open in designer",,"1. Add Video and Text section
 2. Configure video URL and text
-3. Preview",,,,,"C221976 C221977",
-"CMS-045","Page builder field types - text and rich text","Field Types","High",,,"Section editing open",,"1. Use text field to enter content
-2. Use rich text editor with formatting
-3. Use image upload field
-4. Use select/dropdown field",,,,,"C221068 C221069 C221070 C221072",
-"CMS-046","Color preset - Blue theme","Design Presets","Medium",,,"CMS designer open",,"1. Select Blue preset
-2. Preview page",,,,,"C221107",
-"CMS-047","Color preset - Dark theme","Design Presets","Medium",,,"CMS designer open",,"1. Select Dark preset
-2. Preview page",,,,,"C221108",
-"CMS-048","Custom colors - background and text","Design Presets","Medium",,,"CMS designer open",,"1. Navigate to Colors > General
-2. Set custom Background color
-3. Set custom Text color
-4. Set custom Headings color
-5. Preview",,,,,"C221110 C221111 C221112",
-"CMS-049","Custom colors - links buttons and borders","Design Presets","Medium",,,"CMS designer open",,"1. Set custom Links color
-2. Set custom Button color
-3. Set custom Button text color
-4. Set custom Borders color
-5. Preview",,,,,"C221113 C221114 C221115 C221117",
-"CMS-050","Section settings - Image with text","Section Settings","Medium",,,"Image with text section exists",,"1. Open Image with text section
-2. Configure all settings options
-3. Preview",,,,,"C221075 C221053 C221092",
-"CMS-051","Multiple badge combinations","Badge Display","Medium",,,"Pages with various status/configuration combinations",,"1. Create pages with: Published+Scheduled, Published+Personalized, Published+Scheduled+Personalized
-2. Check grid view",,,,,"C415441 C415442 C415443 C415444",
-"CMS-054","Cross-browser compatibility - Chrome and Edge","Cross-Browser","Medium",,,"CMS module accessible",,"1. Open CMS page management in Chrome
-2. Verify all features work
-3. Repeat in Edge",,,,,"C415427 C415428",
-"CMS-056","Rich Text Field Type — Add Rich Text Content Block","Field Types","High",,,"Admin logged in to Backend
-Page exists in Page Builder designer",,"1. Navigate to ${BACK_URL}/pages and open an existing page
+3. Preview","","","","deprecated — block type removed from designer library (COV-2026-03-25-1630)","C221976 C221977","deprecated"
+"CMS-045","Page builder field types - text and rich text","Field Types","High",,,"Section editing open in designer at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Open a page in the PageBuilder designer and add or open a section that contains text, rich text, image, and select field types
+2. In the text field: enter plain text and verify it saves
+3. In the rich text field: apply bold, italic, and add a hyperlink; verify formatting toolbar is present
+4. In the image field: upload an image and verify thumbnail preview
+5. In the select/dropdown field: choose an option and verify selection persists
+6. Click Save and verify all field values persist","Text field accepts and saves plain text; rich text editor shows formatting toolbar with bold/italic/link options; image field shows thumbnail after upload; select field retains chosen option; all values persist after Save","","Text field not editable; rich text toolbar missing; image upload failing; select field options not loading; values reset after Save","","C221068 C221069 C221070 C221072",
+"CMS-046","Color preset - Blue theme","Design Presets","Medium",,,"CMS designer open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Open a page in the PageBuilder designer
+2. Click 'Theme settings' in the top toolbar
+3. In the Presets section, select the 'Blue' preset
+4. Verify the live preview updates with blue color scheme
+5. Click Save","Blue preset selected and applied; live preview updates to show blue primary colors on buttons, headings, and accents; Save persists the preset","","Presets section not visible; Blue preset not in list; preview not updating on selection; Save fails","","C221107",
+"CMS-047","Color preset - Dark theme","Design Presets","Medium",,,"CMS designer open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Open a page in the PageBuilder designer
+2. Click 'Theme settings' in the top toolbar
+3. In the Presets section, select the 'Dark' preset
+4. Verify the live preview updates with dark color scheme
+5. Click Save","Dark preset selected and applied; live preview updates to show dark background and light text; Save persists the preset","","Presets section not visible; Dark preset not in list; preview not updating on selection; Save fails","","C221108",
+"CMS-048","Custom colors - background and text","Design Presets","Medium",,,"CMS designer open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Open a page in the PageBuilder designer
+2. Click 'Theme settings' in the top toolbar
+3. Navigate to Colors > General section
+4. Set a custom Background color using the color picker
+5. Set a custom Text color
+6. Set a custom Headings color
+7. Verify the live preview updates with the new colors
+8. Click Save","Background, Text, and Headings color inputs accept hex/color picker values; live preview updates in real-time for each change; Save persists all three custom colors","","Color pickers not opening; values not accepted; preview not updating; Save resets colors to default","","C221110 C221111 C221112",
+"CMS-049","Custom colors - links buttons and borders","Design Presets","Medium",,,"CMS designer open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Open a page in the PageBuilder designer
+2. Click 'Theme settings' in the top toolbar
+3. Set a custom Links color using the color picker
+4. Set a custom Button color
+5. Set a custom Button text color
+6. Set a custom Borders color
+7. Verify the live preview updates with each color change
+8. Click Save","Links, Button, Button text, and Borders color inputs accept values; live preview updates after each change; Save persists all four custom colors","","Color pickers not opening; values not accepted; preview not reflecting button/link color changes; Save resets colors","","C221113 C221114 C221115 C221117",
+"CMS-050","Section settings - Image with text","Section Settings","Medium",,,"Image with text section exists in a page open in the designer",,"1. Open a page in the PageBuilder designer that contains an Image with text section
+2. Click the section to open its configuration panel
+3. Review all available settings options (layout, alignment, padding, image position)
+4. Modify at least one setting (e.g., change image alignment to right)
+5. Verify live preview reflects the setting change
+6. Click Save","Image with text section configuration panel shows layout/alignment/padding options; setting changes reflect in live preview; Save persists the updated settings","","Configuration panel empty; settings changes not reflecting in preview; Save fails or resets settings","","C221075 C221053 C221092",
+"CMS-051","Multiple badge combinations","Badge Display","Medium",,,"Pages with various status/configuration combinations; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store",,"1. Navigate to Active tab in PageBuilder shell
+2. Locate pages with multiple badges: Published+Scheduled, Published+Personalized, Published+Scheduled+Personalized
+3. Navigate to Archived tab — locate pages with Archived+Scheduled badges
+4. Verify all badge combinations render correctly without overlap","Multiple badges display side by side in Status column (e.g. 'Published Scheduled Personalized'); badges are legible and don't overflow the cell",,"Badges overlapping; missing badges on pages with multiple statuses; layout broken with 3 badges",,"C415441 C415442 C415443 C415444; Synced: PR #105 (2026-03-25)",
+"CMS-054","Cross-browser compatibility - Chrome and Edge","Cross-Browser","Medium",,,"CMS module accessible; admin user credentials available",,"1. Open ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store in Chrome
+2. Verify page list loads, grid columns render, and badge display is correct
+3. Open ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store in Edge
+4. Repeat grid and badge verification steps
+5. Compare results between browsers","PageBuilder shell loads and functions identically in Chrome and Edge; no layout differences in grid columns or badge display; all toolbar buttons accessible in both browsers","","Page fails to load in one browser; grid columns missing or misaligned; badges rendering differently across browsers; JS errors in console","","C415427 C415428",
+"CMS-056","Rich Text Field Type — Add Rich Text Content Block","Field Types","High",,,"Admin logged in to Backend; page exists in Page Builder designer",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store and open an existing page
 2. Click Open Designer to enter the page builder
-3. Add a new section or open an existing section for editing
-4. Locate the Rich Text field type in the field list
-5. Click on the Rich Text field to open the rich text editor
-6. Enter formatted text content: bold, italic, and a hyperlink
-7. Click Save or apply the changes
-8. Preview the page and verify rich text renders correctly",,,,,"C221068",
+3. Add a new section or open an existing section that contains a Rich Text field
+4. Click on the Rich Text field to open the rich text editor
+5. Enter formatted text content: apply bold, apply italic, and insert a hyperlink
+6. Click Save or apply the changes
+7. Preview the page and verify rich text renders correctly","Rich text editor opens with formatting toolbar; bold, italic, and hyperlink controls are present and functional; formatted content saves without data loss; preview renders bold/italic text and clickable hyperlinks correctly","","Rich text editor not opening; formatting toolbar missing; bold/italic not applying; hyperlinks not saving; formatted content displaying as raw HTML in preview","","C221068",
+"CMS-057","Designer — Viewport switching (Desktop/Tablet/Mobile)","Designer Core","High",,,"Page open in designer at ${BACK_URL}/Modules/$(VirtoCommerce.PageBuilderModule)/Content/page-builder-designer/index.html?storeId=B2B-store",,"1. Open a page in the designer
+2. Click the Desktop dropdown in the top-left toolbar
+3. Select Tablet viewport
+4. Verify the live preview iframe resizes to tablet width
+5. Select Mobile viewport
+6. Verify the live preview iframe resizes to mobile width
+7. Switch back to Desktop
+8. Verify the preview returns to full width","Preview iframe width changes per viewport selection; content reflows responsively; toolbar shows current viewport name",,"Viewport dropdown not opening; preview not resizing; layout breaks on switch",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-058","Designer — Block library search","Designer Core","Medium",,,"Page open in designer; Add block panel visible",,"1. Open the Add block panel in the designer
+2. Type 'Product' in the 'Search in library' textbox
+3. Verify filtered results show only blocks matching 'Product' (Products, Products carousel, Predefined products)
+4. Clear the search field
+5. Verify all 15 block types are displayed again
+6. Search for a non-existent block name (e.g. 'xyz123')
+7. Verify empty or no-results state","Search filters block library in real-time; clearing restores full list; non-match shows appropriate empty state",,"Search not filtering; blocks disappearing after clear; JS error on search",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-059","Designer — Save and Publish from toolbar","Designer Core","Critical",,,"Page open in designer with at least one section added",,"1. Open a draft page in the designer
+2. Add a new Text block and enter content
+3. Verify Save button becomes enabled
+4. Click Save
+5. Verify Save completes (button becomes disabled again or shows success)
+6. Click Publish button in toolbar
+7. Verify page status transitions to Published
+8. Verify Unpublish button becomes enabled","Save persists changes without navigation; Publish transitions status; Unpublish becomes available after publish","STOREFRONT: Navigate to ${FRONT_URL}/<permalink> — page renders with HTTP 200 after publish; ADMIN: Page appears in Active tab of PageBuilder shell with Published badge","Save button stays disabled after changes; Publish fails silently; status not updating","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-060","Designer — Pages dropdown navigation","Designer Core","Medium",,,"Multiple pages exist in Page Builder; designer is open",,"1. Click the Pages dropdown in the top toolbar
+2. Verify a list of existing pages appears
+3. Select a different page from the dropdown
+4. Verify the designer loads the selected page content in the left panel and preview iframe
+5. Verify the page sections update to reflect the new page","Pages dropdown lists available pages; selecting a page loads its content; sections panel and preview update",,"Dropdown empty; page not loading on selection; preview showing wrong page content",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-061","Designer — Page Header and Settings sections","Designer Core","High",,,"Page open in designer with Settings and Page Header sections visible in left panel",,"1. Click the Settings section in the left panel (shows 'Settings (undefined)')
+2. Verify settings panel opens with page-level configuration fields (e.g., Page Header / H1, Hide Breadcrumbs)
+3. Edit the Page Header / H1 text field
+4. Toggle the Hide Breadcrumbs checkbox
+5. Click the Page Header section
+6. Verify page header configuration options appear
+7. Save changes and verify preview reflects updated header","Settings panel shows page-level fields; changes to H1 and breadcrumbs reflect in preview; both sections are editable",,"Settings panel empty or errors; changes not persisting; preview not updating",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-062","Designer — Add and configure Call to Action block","Content Blocks","High",,,"Page open in designer; Add block panel available",,"1. Click Add block in the designer
+2. Select 'Call to Action' from the library
+3. Verify the block is added to the sections panel
+4. Click the new section to open its configuration
+5. Configure title text and button label in the General tab
+6. Switch to Settings tab and configure alignment/layout options
+7. Check live preview shows the Call to Action with configured text and button","Call to Action block added to sections panel; General tab has title/button fields; Settings tab has layout options; preview renders CTA with button",,"Block not adding; configuration tabs missing; preview not showing CTA content",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-063","Designer — Add and configure Category block","Content Blocks","High",,,"Page open in designer; categories exist in catalog",,"1. Click Add block in the designer
+2. Select 'Category' from the library
+3. Verify the block is added to the sections panel
+4. Click the new section to configure
+5. Select a category from the catalog (or enter category ID)
+6. Configure display options (number of items, layout)
+7. Check live preview renders the category with products","Category block added; category selector allows picking from catalog; preview shows category products grid",,"Block not adding; category selector empty; products not loading in preview",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-064","Designer — Add and configure Products block","Content Blocks","High",,,"Page open in designer; products exist in catalog",,"1. Click Add block in the designer
+2. Select 'Products' from the library
+3. Verify the block is added to the sections panel
+4. Click the new section to configure
+5. Configure product source (e.g., category, manual selection, or query)
+6. Set number of products to display
+7. Check live preview renders the product grid with images and prices","Products block added; product source configurable; preview renders product cards with images, names, and prices",,"Block not adding; product source options missing; products not rendering in preview",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-065","Designer — Add and configure Products carousel block","Content Blocks","Medium",,,"Page open in designer; products exist in catalog",,"1. Click Add block in the designer
+2. Select 'Products carousel' from the library
+3. Verify the block is added to the sections panel
+4. Click the new section to configure
+5. Configure product source and carousel settings (auto-scroll, items per slide)
+6. Check live preview renders carousel with navigation arrows","Products carousel block added; carousel settings available; preview shows product slider with navigation controls",,"Block not adding; carousel not scrollable; navigation arrows missing",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-066","Designer — Add and configure Predefined products block","Content Blocks","Medium",,,"Page open in designer; products exist in catalog",,"1. Click Add block in the designer
+2. Select 'Predefined products' from the library
+3. Verify the block is added to the sections panel
+4. Click the new section to configure
+5. Manually select specific products by SKU or search
+6. Arrange product order
+7. Check live preview renders the curated product list","Predefined products block added; manual product picker available; preview shows selected products in configured order",,"Block not adding; product picker not finding products; order not persisting",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-067","Designer — Add and configure FavoriteProducts block","Content Blocks","Medium",,,"Page open in designer; user is logged in",,"1. Click Add block in the designer
+2. Select 'FavoriteProducts' from the library
+3. Verify the block is added to the sections panel
+4. Click the new section to configure
+5. Configure display settings (max items, layout)
+6. Check live preview renders favorite/wishlist products widget","FavoriteProducts block added; display settings configurable; preview shows wishlist widget (may show empty state if user has no favorites)",,"Block not adding; configuration panel empty; preview error",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-068","Designer — Add and configure Slider block","Content Blocks","Medium",,,"Page open in designer",,"1. Click Add block in the designer
+2. Select 'Slider' from the library
+3. Verify the block is added to the sections panel
+4. Click the new section to configure
+5. Add slide items with images and optional text overlays
+6. Configure transition settings (auto-play, duration)
+7. Check live preview renders image slider with navigation","Slider block added; multiple slides can be added; transition settings available; preview shows image slider with dots/arrows navigation",,"Block not adding; slides not uploading; slider not transitioning in preview",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-069","Designer — Add and configure Subscribe form block","Content Blocks","Medium",,,"Page open in designer",,"1. Click Add block in the designer
+2. Select 'Subscribe form' from the library
+3. Verify the block is added to the sections panel
+4. Click the new section to configure
+5. Configure form fields (email placeholder, button text, success message)
+6. Check live preview renders newsletter subscription form","Subscribe form block added; form fields configurable; preview shows email input and subscribe button",,"Block not adding; form fields missing; preview not rendering form",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-070","Designer — Add and configure Login block","Content Blocks","Medium",,,"Page open in designer",,"1. Click Add block in the designer
+2. Select 'Login' from the library
+3. Verify the block is added to the sections panel
+4. Click the new section to configure
+5. Configure login form display options
+6. Check live preview renders embedded login form","Login block added; configuration options available; preview shows login form with username/password fields",,"Block not adding; login form not rendering; authentication conflict in preview",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-071","Designer — Add and configure Title block","Content Blocks","Medium",,,"Page open in designer",,"1. Click Add block in the designer
+2. Select 'Title' from the library
+3. Verify the block is added to the sections panel
+4. Click the new section to configure
+5. Enter heading text and select heading level (H1-H6)
+6. Configure alignment and styling options
+7. Check live preview renders the heading correctly","Title block added; heading text and level configurable; preview renders heading with correct size and alignment",,"Block not adding; heading level selector missing; preview not showing title",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-072","Designer — Section reorder via drag and drop","Designer Sections","High",,,"Page has at least 3 sections in the designer",,"1. Open a page with multiple sections in the designer
+2. Identify the order of sections in the left panel
+3. Drag the first section below the second section
+4. Verify the sections reorder in the left panel
+5. Verify the live preview updates to reflect the new section order
+6. Save the page
+7. Reopen the page and verify the order is persisted","Sections can be dragged to reorder; left panel reflects new order immediately; preview updates; order persists after save and reload",,"Drag not working; order reverting on save; preview not reflecting reorder",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-073","Designer — Theme settings panel","Design Presets","High",,,"Page open in designer",,"1. Click 'Theme settings' button in the top toolbar
+2. Verify theme settings panel opens
+3. Locate color preset options (Presets section with search)
+4. Locate custom color controls (background, text, headings, links, buttons, borders)
+5. Modify a color value (e.g., change background color)
+6. Verify live preview updates with the new color
+7. Click Save to persist theme settings","Theme settings panel opens with presets and custom color sections; color changes reflect in real-time preview; settings persist after save",,"Theme settings panel not opening; presets not loading; color changes not reflecting in preview",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-074","Designer — Live preview real-time updates","Designer Core","Critical",,,"Page open in designer with at least one editable section",,"1. Open a page in the designer with a Text block
+2. Click the Text section to open editing
+3. Modify the text content in the editing panel
+4. Observe the live preview iframe WITHOUT saving
+5. Verify the preview updates in real-time as content is edited
+6. Add a new block (e.g., Features)
+7. Verify the new block appears in the preview immediately","Preview iframe updates in real-time as content is edited (no save required); new blocks appear in preview upon adding; section removal reflects in preview immediately","STOREFRONT: After Save+Publish, navigate to ${FRONT_URL}/<permalink> to confirm updated content is live (cross-layer publish verification)","Preview not updating until save; lag or stale content in preview; iframe errors",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-075","Designer — Hide section via context menu","Designer Sections","High",,,"Page has at least one visible section in the designer",,"1. Open a page in the PageBuilder designer with at least one section
+2. Right-click on a visible section in the left panel to open the context menu
+3. Verify context menu shows 'Hide' option with visibility icon
+4. Click 'Hide'
+5. Verify the section is visually marked as hidden in the sections panel (e.g., dimmed, strikethrough, or hidden icon)
+6. Verify the live preview no longer renders the hidden section's content
+7. Click Save
+8. Reopen the page — verify the section is still hidden
+9. Right-click the hidden section and verify 'Show' or 'Unhide' option appears to toggle it back","Section marked as hidden in the left panel after clicking Hide; live preview no longer renders the section content; hidden state persists after Save; section can be toggled back to visible via context menu","","Hide option missing from context menu; section still visible in preview after hiding; hidden state not persisting after save; no way to unhide the section",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-076","Designer — Duplicate section via context menu","Designer Sections","Medium",,,"Page has at least one section in the designer",,"1. Open a page in the PageBuilder designer with at least one section
+2. Note the current number of sections in the left panel
+3. Right-click on a section to open the context menu
+4. Click 'Duplicate' (file_copy icon)
+5. Verify a new section appears immediately below the original
+6. Verify the duplicated section has identical content and configuration
+7. Click the duplicated section to confirm its fields match the original
+8. Click Save","Duplicate option in context menu creates an exact copy below the original; duplicated section has same content, settings, and block type; section count increases by 1; Save persists the duplicate","","Duplicate option missing from context menu; duplicated section empty or has different content; duplicate not appearing in correct position; Save fails after duplicate",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-077","Designer — Context menu full interaction","Designer Sections","High",,,"Page has at least 2 sections in the designer",,"1. Open a page in the PageBuilder designer with at least 2 sections
+2. Right-click on the first section in the left panel
+3. Verify context menu appears with all 6 options: Hide, Copy, Paste before, Paste after, Duplicate, Delete
+4. Click away to dismiss the context menu
+5. Right-click on the second section
+6. Verify the same context menu appears
+7. Click 'Copy' on the second section
+8. Right-click on the first section
+9. Verify 'Paste before' and 'Paste after' are now active/enabled
+10. Click 'Paste before'
+11. Verify copied section appears above the first section","Context menu appears on right-click for any section; all 6 options visible (Hide, Copy, Paste before, Paste after, Duplicate, Delete); Copy enables Paste options; Paste before inserts above target; Paste after inserts below target; menu dismisses on click-away","","Context menu not appearing; options missing or disabled; Paste not working after Copy; wrong insertion position; menu not dismissing",,"Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-078","E2E — Create promotional landing page and publish","E2E Flow","Critical","BL-CMS-001",,"Admin logged in; PageBuilder shell open at ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-draft","pageName=Summer Sale 2026; permalink=/summer-sale-2026; language=en-US","1. Click Add button in Draft tab toolbar
+2. Enter page name 'Summer Sale 2026' and permalink '/summer-sale-2026'
+3. Select language 'en-US'
+4. Click Save — verify page appears in Draft list
+5. Click on the new page to open the page blade
+6. Click Open Designer to open the visual editor
+7. Add a Title block — enter 'Summer Sale - Up to 50% Off'
+8. Add a Products block — configure to show products from a category
+9. Add a Call to Action block — configure button text 'Shop Now'
+10. Verify live preview shows all 3 blocks rendered
+11. Click Save in designer toolbar
+12. Click Publish in designer toolbar
+13. Navigate to ${FRONT_URL}/summer-sale-2026
+14. Verify page renders with title, products grid, and CTA button","Page created in Draft; designer opens with empty canvas; blocks add and configure; preview renders all blocks; Save+Publish succeeds; storefront renders the page at correct permalink with all content","ADMIN: Page moves from Draft tab to Active tab with Published badge; API: GET page-builder-pages/search returns page with status=Published","Page creation fails; designer blocks not adding; preview blank; Publish fails; storefront returns 404 after publish; content missing on storefront","Delete test page via Archive after test","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-079","E2E — Edit published page and verify storefront update","E2E Flow","Critical","BL-CMS-002",,"Published page exists with known permalink (e.g. from CMS-078)","Published page permalink","1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-active
+2. Click on a published page to open blade
+3. Click Open Designer
+4. Modify existing text block content — change heading text
+5. Add a new Image block below the existing content
+6. Click Save — verify changes persist
+7. Navigate to ${FRONT_URL}/<permalink>
+8. Verify the OLD content still shows (not yet re-published)
+9. Go back to designer and click Publish
+10. Navigate to ${FRONT_URL}/<permalink> again
+11. Verify the NEW content now appears (updated heading + new image)","Editing a published page creates a draft version; Save persists edits without affecting live storefront; Publish pushes changes to storefront; storefront reflects updated content only after Publish","ADMIN: Page shows HasChanges indicator in Active tab after save but before publish","Edit not saving; storefront showing edited content before Publish (premature publish); Publish not updating storefront; new image block missing on storefront","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-080","E2E — Archive page and verify storefront 404","E2E Flow","High","BL-CMS-003",,"Published page exists with known permalink","Published page permalink","1. Verify page is accessible on storefront: navigate to ${FRONT_URL}/<permalink> — expect HTTP 200
+2. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-active
+3. Select the page checkbox
+4. Click Archive toolbar button
+5. Confirm archive action if prompted
+6. Verify page moves from Active tab to Archived tab
+7. Navigate to ${FRONT_URL}/<permalink>
+8. Verify page returns 404 / not found","Published page accessible before archive; Archive action moves page to Archived tab; storefront returns 404 after archive; page content not accessible to any user","ADMIN: Page counter decreases in Active tab, increases in Archived tab","Archive button not working; page still accessible on storefront after archive; page stuck in Active tab; 404 not shown","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-081","Multi-language — Create page in EN, add DE translation","Multi-Language","High","BL-CMS-004",,"Admin logged in; store has en-US and de-DE languages configured","pageName=ML Test Page; permalink=/ml-test","1. Navigate to PageBuilder shell Draft tab
+2. Click Add — create page with name 'ML Test Page', language 'en-US', permalink '/ml-test'
+3. Click Save
+4. Open the page and click Open Designer
+5. Add a Title block with text 'Welcome to Our Store'
+6. Save and Publish
+7. Verify ${FRONT_URL}/ml-test shows 'Welcome to Our Store'
+8. Go back to PageBuilder shell — click Add again
+9. Create page with name 'ML Test Seite', language 'de-DE', permalink '/ml-test'
+10. Open designer, add Title block with text 'Willkommen in unserem Shop'
+11. Save and Publish
+12. Verify ${FRONT_URL}/de/ml-test shows 'Willkommen in unserem Shop'
+13. Verify ${FRONT_URL}/ml-test still shows English version","Both language versions created with same permalink; each language version renders correct content on storefront with language prefix; /ml-test serves EN by default; /de/ml-test serves DE","ADMIN: Both language versions visible in All Pages tab with different Language column values (en-US and de-DE)","Second language creation fails with duplicate permalink error; wrong language content served; language prefix routing broken","Archive both test pages","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-082","Personalization — Page visible only to Wholesaler user group","Personalization","High","BL-CMS-005",,"Page exists in Draft; User groups configured in store (e.g. Wholesaler)","Test page; Wholesaler user group name","1. Navigate to PageBuilder shell Draft tab
+2. Open an existing draft page blade
+3. Expand Personalization section
+4. Set Visibility toggle to ON
+5. Select 'Wholesaler' from User groups dropdown
+6. Click Save
+7. Publish the page
+8. Log in on storefront as a user in the Wholesaler group
+9. Navigate to ${FRONT_URL}/<permalink> — verify page loads (HTTP 200)
+10. Log out and navigate to ${FRONT_URL}/<permalink> as anonymous user
+11. Verify page returns 404 or is not accessible","Page with user group restriction is accessible to users in that group; page returns 404 for anonymous users and users not in the restricted group; Personalized badge appears in PageBuilder shell grid","ADMIN: Personalized badge appears on page in Active tab after publish","User group dropdown empty; restriction not saving; page accessible to all users regardless of group; page not accessible even to correct group members","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-083","Personalization — Organization-restricted page","Personalization","High","BL-CMS-006",,"Page exists; Organizations exist in the system","Test page; Organization name/ID","1. Open page blade in PageBuilder shell
+2. Expand Personalization section
+3. Select an Organization from the dropdown
+4. Click Save and Publish
+5. Log in on storefront as a user belonging to that organization
+6. Navigate to ${FRONT_URL}/<permalink> — verify page loads
+7. Log in as a user from a DIFFERENT organization
+8. Navigate to ${FRONT_URL}/<permalink> — verify page returns 404","Organization-restricted page visible only to members of the selected organization; other org members and anonymous users see 404","ADMIN: Personalized badge shown in grid","Organization dropdown empty; restriction not saving; page visible to all orgs","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-084","Scheduling — Page appears at start date, disappears at end date","Scheduling","High","BL-CMS-007",,"Page exists in Draft; current date/time known","Test page; StartDate=past; EndDate=future","1. Open page blade in PageBuilder shell
+2. Expand Scheduling section
+3. Set Start date to yesterday using datepicker
+4. Set End date to tomorrow using datepicker
+5. Click Save and Publish
+6. Navigate to ${FRONT_URL}/<permalink> — verify page loads (within date range)
+7. Go back to page blade, change End date to yesterday
+8. Click Save
+9. Navigate to ${FRONT_URL}/<permalink> — verify page returns 404 (past end date)","Page accessible within scheduled date range; page returns 404 when current date is outside the range; Scheduled badge appears in grid","ADMIN: Page appears in Active tab when within range; moves to Archived tab when past EndDate","Datepicker not opening; dates not saving; page accessible outside date range; page not accessible within valid range; Scheduled badge missing","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-085","Scheduling — Pending page with future start date","Scheduling","Medium","BL-CMS-008",,"Admin logged in; PageBuilder shell open","Test page; StartDate set to next week","1. Create or open a draft page
+2. Set Start date to 7 days from now
+3. Leave End date empty
+4. Save and Publish
+5. Verify page appears in Pending tab (not Active)
+6. Navigate to ${FRONT_URL}/<permalink> — verify page returns 404
+7. Check Pending counter badge in sidebar shows the page","Published page with future StartDate appears in Pending tab, not Active; storefront returns 404 before start date; Pending counter reflects the page","ADMIN: Page in Pending tab with Scheduled badge; not in Active tab","Page in Active tab instead of Pending; page accessible before start date; Pending counter not updating","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-086","Page blade — All configuration fields","Page Configuration","High",,,"Draft page exists in PageBuilder shell","Test page with all fields","1. Navigate to PageBuilder shell and open a draft page blade
+2. Verify Basic info section shows: Name (text input), Permalink (text input)
+3. Verify Language is displayed
+4. Expand Scheduling section — verify Start date and End date datepickers
+5. Expand Personalization section — verify: Visibility toggle, User groups dropdown, Organization dropdown
+6. Edit Name to a new value and click Save
+7. Verify the name updates in the page list
+8. Edit Permalink and click Save
+9. Verify new permalink is reflected","All page blade fields are present and editable: Name, Permalink, Language (read-only after creation), Start/End dates, Visibility, User groups, Organization; changes persist after Save","","Missing fields in blade; fields not editable; Save not persisting changes; Permalink change not updating in list","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-087","Error handling — Duplicate permalink","Error Handling","Medium","","ECL-2.3","Admin logged in; a page exists with permalink '/existing-page'","Existing permalink /existing-page","1. Navigate to PageBuilder shell Draft tab
+2. Click Add to create new page
+3. Enter a name and set permalink to '/existing-page' (already taken by another page in same language)
+4. Click Save
+5. Verify an error message is displayed about duplicate permalink","System prevents creation of page with duplicate permalink in same language; error message clearly indicates the permalink is already in use","","No error shown; duplicate page created; system crashes; vague error message","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-088","Error handling — Empty required fields on page creation","Error Handling","Medium","","ECL-2.1","Admin logged in; PageBuilder shell open","Empty form","1. Navigate to PageBuilder shell Draft tab
+2. Click Add to create new page
+3. Leave Name field empty
+4. Leave Permalink field empty
+5. Attempt to click Save
+6. Verify validation errors appear for required fields","Save is disabled or validation errors shown for empty Name and Permalink fields; page is not created without required fields","","Page created with empty name/permalink; no validation errors; Save succeeds with missing data","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-089","Error handling — Special characters in permalink","Error Handling","Medium","","ECL-2.2","Admin logged in; PageBuilder shell open","Special characters: spaces, &, ?, #, unicode","1. Create new page with permalink containing spaces: '/my page test'
+2. Verify system sanitizes or rejects the input
+3. Create page with permalink containing special characters: '/page&test?q=1#anchor'
+4. Verify system sanitizes or rejects
+5. Create page with permalink containing unicode: '/страница-тест'
+6. Verify behavior","System either sanitizes permalinks (removes/replaces invalid characters) or shows clear validation error; no server errors; pages with sanitized permalinks are accessible on storefront","","Server error 500; permalink accepted with invalid characters causing routing issues; storefront crash on special character URL","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-090","Edge case — Page with maximum sections","Edge Cases","Low","","ECL-13.1","Admin logged in; test page in designer","Draft test page","1. Open a draft page in the designer
+2. Add blocks repeatedly (e.g. Title blocks) until you have 20+ sections
+3. Verify the sections panel scrolls properly
+4. Verify the live preview renders all sections
+5. Click Save — verify no timeout or error
+6. Reopen the page — verify all sections persisted","Designer handles many sections without performance degradation; sections panel scrolls; preview renders all; Save completes within reasonable time; all sections persist","","Designer freezes or becomes unresponsive; sections disappearing; Save timeout; preview blank with many sections","Delete test sections after test","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-091","Designer — Page types (Pages vs Blog vs Product template)","Designer Core","Medium",,,"Designer open with Pages dropdown accessible","Multiple page types","1. Open the designer
+2. Click the Pages dropdown in the top toolbar
+3. Verify available page types are listed (e.g. Pages, Blog, Product template)
+4. Select 'Blog' page type
+5. Verify the designer loads blog-specific content and sections
+6. Select 'Product template' (if available)
+7. Verify the designer loads product template layout
+8. Switch back to 'Pages'
+9. Verify the correct page list loads","Pages dropdown shows different page types; switching between types loads the correct content and section configurations; each type has appropriate blocks","","Dropdown not showing all page types; switching types causes error; wrong content loading for selected type","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-092","Designer — Preview mode navigation","Designer Core","Medium",,,"Page open in designer with content blocks","Page with published content","1. Open a page in the designer with at least 2 blocks
+2. Click Preview button in the top toolbar
+3. Verify the preview opens (full-screen or new tab/mode)
+4. Interact with the preview — scroll, click links
+5. Verify the storefront renders correctly with all blocks
+6. Exit preview mode (click back or close)
+7. Verify you return to the designer editing mode","Preview mode shows full storefront rendering with all blocks; interactive (scrollable, links clickable); exiting returns to designer without losing unsaved changes","","Preview button disabled; preview blank or showing error; cannot exit preview; unsaved changes lost after preview","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-093","API — Page search with lifecycle filter","API Layer","High","BL-CMS-009",,"Admin authenticated; API access available","storeId=B2B-store","1. Call GET ${BACK_URL}/api/page-builder/grouped-pages/search with body: {storeId: 'B2B-store', lifecycle: 'Drafts', take: 10}
+2. Verify response contains only Draft pages
+3. Call with lifecycle: 'Active'
+4. Verify response contains only Published pages within date range
+5. Call with lifecycle: 'Archived'
+6. Verify response contains only Archived pages or pages past EndDate
+7. Call with lifecycle: 'Pending'
+8. Verify response contains only Published pages with future StartDate","Each lifecycle filter returns correctly filtered pages; response includes page metadata (name, permalink, status, dates, language); total count matches filter","","Wrong pages returned for lifecycle filter; mixed statuses in results; API error on filter value; pagination broken","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-094","API — Page CRUD operations","API Layer","High","BL-CMS-010",,"Admin authenticated via API","storeId=B2B-store; test page data","1. POST ${BACK_URL}/api/page-builder/grouped-pages — create a new page with name, permalink, language, storeId
+2. Verify response returns created page with ID and Draft status
+3. PUT ${BACK_URL}/api/page-builder/grouped-pages/{id} — update page name
+4. Verify response confirms update
+5. POST ${BACK_URL}/api/page-builder/grouped-pages/{id}/publish — publish the page
+6. GET ${BACK_URL}/api/page-builder/grouped-pages/{id} — verify status is Published
+7. POST ${BACK_URL}/api/page-builder/grouped-pages/{id}/archive — archive the page
+8. Verify status is Archived
+9. Verify storefront returns 404 for the archived page","Full CRUD lifecycle works via API: create → update → publish → archive; status transitions are correct; storefront reflects each status change","","Create returns error; update not persisting; publish not changing status; archive not blocking storefront access","Delete test page","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-095","Unpublish — Revert published page to draft","Status Transitions","High","BL-CMS-011",,"Published page exists; designer open","Published page","1. Open a published page in the designer
+2. Verify Unpublish button is enabled in toolbar
+3. Click Unpublish
+4. Verify page status transitions back to Draft
+5. Navigate to ${FRONT_URL}/<permalink>
+6. Verify storefront returns 404 (page no longer published)
+7. Navigate to PageBuilder shell — verify page is in Draft tab, not Active","Unpublish removes page from storefront; page moves from Active to Draft tab; storefront returns 404; page content is preserved in Draft state for future re-publishing","ADMIN: Page moves from Active to Draft tab; counter updates","Unpublish button disabled; page still accessible on storefront after unpublish; page stuck in Active tab; content lost after unpublish","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-096","Pagination — Page list with many pages","Grid View","Medium",,,"More than 20 pages exist in at least one lifecycle tab","30+ pages in All Pages","1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=B2B-store#/page-builder-all
+2. Verify page list shows first page of results
+3. Check pagination controls at bottom (page numbers, arrows)
+4. Verify Totals count matches expected number
+5. Click next page arrow
+6. Verify second page loads with different pages
+7. Click previous page arrow
+8. Verify returns to first page","Pagination controls visible when page count exceeds page size; page navigation works correctly; Totals shows accurate count; no duplicate pages across pages","","Pagination controls missing; wrong total count; duplicate pages on different pages; navigation arrows not working","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-097","Grid sorting — Sort by Name, Modified, Language","Grid View","Medium",,,"Multiple pages exist in PageBuilder shell","Pages with various names and dates","1. Navigate to All Pages tab in PageBuilder shell
+2. Click the Name column header to sort ascending
+3. Verify pages are sorted alphabetically A-Z
+4. Click Name again to sort descending
+5. Verify pages are sorted Z-A
+6. Click Modified column header
+7. Verify pages are sorted by modification date
+8. Click Language column header
+9. Verify pages are grouped/sorted by language code","Column headers toggle between ascending/descending sort; sort indicator arrow shows current direction; data reorders correctly per column","","Sort not responding to clicks; wrong sort order; sort indicator missing; data not reordering","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
