@@ -1,6 +1,6 @@
 # Skills & Commands Reference
 
-## Slash Commands (13) — `.claude/commands/`
+## Slash Commands (14) — `.claude/commands/`
 
 All commands have YAML frontmatter with `description`, `argument-hint`, and invocation control. Commands with side effects use `disable-model-invocation: true` to prevent accidental auto-triggering.
 
@@ -17,6 +17,7 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/qa-test-lifecycle` | `suite <ID> \| domain <name> \| VCST-XXXX \| diff \| --skip-generate \| --skip-verify` | No | Full test case lifecycle: analyze → generate → review → fix → verify → approve. Delegates to test-management-specialist + qa-testing-expert |
 | `/qa-sync-tests` | `PR #NNN \| VCST-XXXX \| module <name> \| diff \| changelog <version>` | No | Sync test cases with code changes: detect stale/broken cases, update steps/assertions, generate for new behavior |
 | `/qa-verify-fix` | `VCST-XXXX` | No | Verify a bug fix: fetch ticket, reproduce STR, confirm fix, regression checks, transition JIRA |
+| `/qa-seed-data` | `[minimal\|catalog\|b2b\|pricing\|full\|teardown]` | No | Generate test data via Postman MCP or tear down AGENT-TEST-* entities |
 | `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|ui\|module <name>]` | No | Business analysis with GitHub search + live UI (full/flows/api/docs/stories/ui/module) |
 | `/ba-stories` | `feature name \| VCST-XXXX` | No | Generate Agile user stories with BDD acceptance criteria |
 

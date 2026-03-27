@@ -25,7 +25,7 @@
 [ACT] Login with valid credentials
 [WAIT] Wait for authenticated session
 [ACT] Note the access_token value from /connect/token response
-[ACT] Click logout button or navigate to logout
+[ACT] Click logout button in top header menu
 [WAIT] Wait for logout to complete
 [ASSERT] /revoke/token call observed in network tab
 [ACT] Attempt to use old token in a direct API request to {{BACK_URL}}","[STATE] Logout completes and user is redirected to login or home page

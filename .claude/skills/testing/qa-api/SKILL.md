@@ -32,12 +32,45 @@ Three modes in one skill: look up API reference, execute tests, or write test ca
 - **xapi-query-ref.md** — Ready-to-use GraphQL queries, mutations, and REST request templates for all xAPI modules (xCart, xCatalog, xOrder, xCMS, xProfile, xFrontend) plus store settings and authentication.
 - **test-cases-api-graphql.md** — Existing REST API (Suite 14) and GraphQL xAPI (Suite 15) test cases with validations and execution patterns.
 - **api-test-case-patterns.md** — Coverage checklists and writing guide for generating new test cases in enriched CSV format. Read this when in `cases` mode.
+- **`.claude/agents/knowledge/graphql-schema.md`** — **Authoritative** live introspection snapshot of the GraphQL schema. Lists all queries, mutations, input types, return types, and key rules. Consult this FIRST when writing or reviewing any GraphQL test case.
+
+## MANDATORY: Introspection-First Rule
+
+**NEVER write a GraphQL query, mutation, or filter without verifying it exists in the schema first.** Do not guess field names, mutation names, argument types, or filter syntax.
+
+Before writing ANY GraphQL test case:
+1. **Run introspection** to verify the query/mutation exists and check exact args/fields:
+   - `{ __schema { queryType { fields { name args { name } } } } }` — list all queries
+   - `{ __schema { mutationType { fields { name args { name } } } } }` — list all mutations
+   - `{ __type(name: "TypeName") { fields { name type { name ofType { name } } } } }` — check return fields
+   - `{ __type(name: "InputTypeName") { inputFields { name type { name ofType { name } kind } } } }` — check input fields
+2. **Check `xapi-query-ref.md`** for known-good query templates
+3. **Use Context7** (`/virtocommerce/vc-docs`) for any operations not in the local ref
+4. **If introspection and ref disagree, trust introspection** — the ref may be stale
+
+**Schema reference:** Consult `.claude/agents/knowledge/graphql-schema.md` — live introspection snapshot with all queries, mutations, input types, and return types. Key rules from the schema:
+- `CartType` has **flat** money fields (`subTotal`, `total`, `discountTotal`) — NOT nested under `totals`
+- The field is `total` — there is **NO `grandTotal`**
+- Products search uses `query` arg — NOT `keyword` (only `brands` uses `keyword`)
+- `MoneyType` = `{ amount currency { code } }` — NOT `{ amount currencyCode }`
+- `userId` is required per schema type but **inferred from auth token** — omit in variables when authenticated
+
+Common mistakes that introspection prevents:
+- Wrong mutation name (`removeItem` vs `removeCartItem`)
+- Wrong input type name (`InputConfigurationSectionType` vs `ConfigurationSectionInput`)
+- `totals { grandTotal { amount } }` — WRONG. Use `total { amount }` directly
+- `products(keyword: "...")` — WRONG. Use `products(query: "...")`
+- Invented filter syntax (`filter: "slug:..."` — doesn't exist)
+- Wrong field names (`textValue` vs `customText`, `configurationSections` vs `configurationSection`)
+
+---
 
 ## Mode: `ref` — API Reference Lookup
 
 1. Read `xapi-query-ref.md` for the requested module or operation
-2. Return ready-to-use query/mutation with variables and auth headers
-3. Supplement with Context7 (`/virtocommerce/vc-docs`) for any fields not in the local ref
+2. **Run introspection** to verify the query/mutation still exists with the documented signature
+3. Return ready-to-use query/mutation with variables and auth headers
+4. Supplement with Context7 (`/virtocommerce/vc-docs`) for any fields not in the local ref
 
 **xAPI Modules:**
 
@@ -103,11 +136,12 @@ Delegate to `qa-backend-expert` agent with scope and credentials.
 
 Generate test cases in **enriched CSV format** for `test-management-specialist`.
 
-1. **Read `api-test-case-patterns.md`** for coverage checklists and tag reference
-2. **Read `xapi-query-ref.md`** for the exact query/mutation signature to put in Steps
-3. **Identify layer** from argument (REST → use `[HTTP]`/`[AUTH]`/`[SETUP]` tags; GraphQL → use `[GQL]`/`[VAR]` tags)
-4. **Apply coverage checklist** from `api-test-case-patterns.md` for the requested scope
-5. **Output test cases** in enriched CSV columns:
+1. **Run introspection** to verify every query/mutation name, argument type, and return field you plan to use
+2. **Read `api-test-case-patterns.md`** for coverage checklists and tag reference
+3. **Read `xapi-query-ref.md`** for known-good query/mutation templates — cross-check against introspection
+4. **Identify layer** from argument (REST → use `[HTTP]`/`[AUTH]`/`[SETUP]` tags; GraphQL → use `[GQL]`/`[VAR]` tags)
+5. **Apply coverage checklist** from `api-test-case-patterns.md` for the requested scope
+6. **Output test cases** in enriched CSV columns:
    `ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status`
 
 **Key rules for API test cases:**
@@ -117,6 +151,17 @@ Generate test cases in **enriched CSV format** for `test-management-specialist`.
 - Cover both happy path AND at least 2 negative cases per operation
 - `Test_Data` column: `{{VAR}}` bindings only — no freeform text
 - Use `[STATUS]` assertions for REST, `[ERRORS]` + `[DATA]` for GraphQL
+
+**Key rules for GraphQL queries/mutations in Steps:**
+- ALL mutations use the `command:` input pattern: `mutation { mutationName(command: { ...fields }) { ...return } }`
+- NEVER use individual arguments: `mutation { addItem(cartId: "...", productId: "...")` is WRONG
+- Cart mutations require `storeId!` in the command; `userId!` is required per schema type but inferred from auth token
+- CartType money fields are **flat**: `subTotal { amount }`, `total { amount }` — NOT `totals { grandTotal { amount } }`
+- There is NO `grandTotal` — the field is `total`
+- Products search uses `query` arg — NOT `keyword`
+- Use correct mutation names per schema (e.g., `removeCartItem` not `removeItem`, `changeCartItemQuantity` not `changeItemQuantity`)
+- Consult `.claude/agents/knowledge/graphql-schema.md` for authoritative field names and types
+- Verify every query/mutation name and input type via introspection before writing
 
 ---
 

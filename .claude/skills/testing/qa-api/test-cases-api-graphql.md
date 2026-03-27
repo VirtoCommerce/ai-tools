@@ -174,13 +174,14 @@ Reference docs: https://docs.virtocommerce.org/platform/developer-guide/GraphQL-
 
 ```graphql
 # GQL-001: Search Products Query
+# IMPORTANT: Search arg is "query" NOT "keyword" (keyword only works on brands query)
 query {
-  products(storeId: "${STORE_ID}", keyword: "laptop") {
+  products(storeId: "${STORE_ID}", query: "laptop", currencyCode: "USD") {
     totalCount
     items { id name code imgSrc }
   }
 }
-# totalCount > 0 for valid keyword, items contain id/name/code, no errors
+# totalCount > 0 for valid search term, items contain id/name/code, no errors
 
 # GQL-002: Get Product Detail
 query {
@@ -202,8 +203,25 @@ query {
 # Root categories returned, child categories nested correctly
 
 # GQL-004: Product Facets/Filters
-# query products with facet parameter -> verify aggregations
-# Apply filter and re-query -> verify filtered results, AND logic works
+# Filter syntax is a STRING, not GraphQL objects:
+#   filter: "category.subtree:<categoryId> price.USD:(0 TO) inStock_variations:true"
+#   facet: "Brand price.USD"
+# Response uses term_facets[] and range_facets[] — NOT "facets { values }"
+query {
+  products(
+    storeId: "${STORE_ID}"
+    filter: "category.subtree:<CATEGORY_ID> price.USD:(0 TO) inStock_variations:true"
+    facet: "Brand"
+    currencyCode: "USD"
+  ) {
+    totalCount
+    items { id name }
+    term_facets { name label terms { term label count isSelected } }
+    range_facets { name ranges { from to count } }
+  }
+}
+# Verify: term_facets non-empty, counts match filtered totalCount
+# Apply additional filter (Brand:value) → results narrow (AND logic)
 
 # GQL-019: Product Variations
 # query product with variations -> verify variation properties (size, color)
@@ -212,58 +230,98 @@ query {
 
 ### B. xCart Mutations (GQL-005 to GQL-010, GQL-017)
 
+> **CRITICAL:** All xCart mutations use the `command:` input pattern. Never use individual arguments.
+> `storeId` is always required. `userId` is required per schema type but inferred from auth token.
+> CartType has **flat** money fields: `total`, `subTotal`, `discountTotal` — NOT nested under `totals`. No `grandTotal`.
+> Products search uses `query` arg — NOT `keyword`. Always verify via introspection before writing test cases.
+
 ```graphql
-# GQL-005: Create Cart
-mutation {
-  createCart(storeId: "${STORE_ID}", userId: "USER_ID", currencyCode: "USD", cultureName: "en-US") {
-    id
+# GQL-005: Get or Create Cart (cart is auto-created on first query for authenticated user)
+# NOTE: There is NO createCart mutation — use the cart query instead
+query {
+  cart(storeId: "${STORE_ID}", currencyCode: "USD", cultureName: "en-US") {
+    id name itemsCount
   }
 }
-# Cart created with ID, retrievable by ID
+# Cart returned with ID; auto-created if none existed for user
 
 # GQL-006: Add Item to Cart
 mutation {
-  addItem(cartId: "CART_ID", productId: "PRODUCT_ID", quantity: 2) {
+  addItem(command: {
+    storeId: "${STORE_ID}", currencyCode: "USD",
+    productId: "PRODUCT_ID", quantity: 2
+  }) {
     id itemsCount
     items { id productId quantity listPrice { amount } }
   }
 }
 # itemsCount incremented, quantity=2, listPrice populated
+# userId is required per schema type but inferred from auth token
 
 # GQL-007: Update Cart Item Quantity
 mutation {
-  changeCartItemQuantity(cartId: "CART_ID", lineItemId: "LINE_ITEM_ID", quantity: 5) {
-    id items { id quantity } totals { subTotal { amount } }
+  changeCartItemQuantity(command: {
+    storeId: "${STORE_ID}", currencyCode: "USD",
+    lineItemId: "LINE_ITEM_ID", quantity: 5
+  }) {
+    id items { id quantity } subTotal { amount }
   }
 }
 # Quantity changed to 5, subtotal recalculated
+# NOTE: mutation is changeCartItemQuantity (NOT changeItemQuantity)
 
 # GQL-008: Remove Item from Cart
 mutation {
-  removeCartItem(cartId: "CART_ID", lineItemId: "LINE_ITEM_ID") {
+  removeCartItem(command: {
+    storeId: "${STORE_ID}", currencyCode: "USD",
+    lineItemId: "LINE_ITEM_ID"
+  }) {
     id itemsCount items { id }
   }
 }
-# itemsCount decremented, totals recalculated
+# itemsCount decremented, total recalculated
+# NOTE: mutation is removeCartItem (NOT removeItem)
 
 # GQL-009: Set Shipping Address
-# mutation addOrUpdateCartShipment with address -> verify address set on cart
+mutation {
+  addOrUpdateCartShipment(command: {
+    storeId: "${STORE_ID}", currencyCode: "USD",
+    shipment: {
+      deliveryAddress: {
+        city: "New York", regionName: "NY",
+        postalCode: "10001", countryCode: "US",
+        line1: "123 Test St"
+      }
+    }
+  }) {
+    id
+    shipments { deliveryAddress { city regionName postalCode } }
+    availableShippingMethods { code optionName price { amount } }
+  }
+}
+# Address saved on shipment, availableShippingMethods populated
 
 # GQL-010: Apply Coupon
 mutation {
-  addCoupon(cartId: "CART_ID", couponCode: "TESTCOUPON") {
+  addCoupon(command: {
+    storeId: "${STORE_ID}", currencyCode: "USD",
+    couponCode: "TESTCOUPON"
+  }) {
     id
     coupons { code isAppliedSuccessfully }
-    totals { discountTotal { amount } }
+    discountTotal { amount }
+    total { amount }
   }
 }
+# IMPORTANT: CartType has FLAT money fields — use "total { amount }" not "totals { grandTotal { amount } }"
 # isAppliedSuccessfully = true, discountTotal shows amount, invalid coupon returns error
 
 # GQL-017: Full Checkout Flow via GraphQL (end-to-end, ~10min)
-# 1. Create cart -> 2. Add multiple items -> 3. Set shipping address
-# 4. Get available shipping methods -> 5. Set shipping method
-# 6. Set payment method -> 7. Validate cart -> 8. Create order
-# Cart totals update at each stage, shipping rates calculated, order created < 30s
+# 1. Query cart → 2. addItem (×N) → 3. addOrUpdateCartShipment (address)
+# 4. Read availableShippingMethods → 5. addOrUpdateCartShipment (method)
+# 6. addOrUpdateCartPayment → 7. createOrderFromCart
+# Cart money fields at each stage are FLAT: subTotal, total, shippingTotal, discountTotal (NOT nested under "totals")
+# ALL mutations use command: { storeId, currencyCode, ... } — userId inferred from token
 ```
 
 ### C. xOrder Queries & Mutations (GQL-011 to GQL-013)
@@ -283,7 +341,7 @@ query {
 
 # GQL-013: Create Order from Cart
 mutation {
-  createOrderFromCart(cartId: "CART_ID") {
+  createOrderFromCart(command: { cartId: "CART_ID" }) {
     id number status
   }
 }

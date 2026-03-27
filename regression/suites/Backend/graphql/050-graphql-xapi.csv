@@ -1,17 +1,17 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-GQL-001,xCatalog - Search Products Query,GraphQL > xCatalog,Critical,BL-GQL-002,ECL-2.1; ECL-8.1,"BROWSER-ONLY: All tests MUST execute in GraphiQL UI via browser (playwright-edge). Do NOT use curl/API calls. Follow graphiql-interaction.md for CodeMirror interaction. GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; products in catalog","storeId={{STORE_ID}}; keyword=""laptop""; cultureName=""en-US""; currencyCode=""USD""","[NAV] {{BACK_URL}}/ui/graphiql
+GQL-001,xCatalog - Search Products Query,GraphQL > xCatalog,Critical,BL-GQL-002,ECL-2.1; ECL-8.1,"BROWSER-ONLY: All tests MUST execute in GraphiQL UI via browser (playwright-edge). Do NOT use curl/API calls. Follow graphiql-interaction.md for CodeMirror interaction. GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; products in catalog","storeId={{STORE_ID}}; query=""laptop""; cultureName=""en-US""; currencyCode=""USD""","[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { products(storeId: ""{{STORE_ID}}"" keyword: ""laptop"") { totalCount items { id name code imgSrc } } }
+[ACT] Type query: query { products(storeId: ""{{STORE_ID}}"" query: ""laptop"") { totalCount items { id name code imgSrc } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response from response panel","[RESPONSE] Response panel shows data without error banner
 [DATA] data.products object present in response
-[DATA] totalCount > 0 for valid keyword
+[DATA] totalCount > 0 for valid query term
 [DATA] items[] non-empty; each item contains id, name, code
 [DATA] imgSrc is a valid URL or null
 [ERRORS] No errors[] in response","[CONSOLE] No JS errors in GraphiQL
-[ROUNDTRIP] Re-execute same query → same results returned","errors[] non-empty in response panel; totalCount = 0 for known keyword; missing id/name/code on items; GraphiQL shows error banner",none,xAPI,Automated
+[ROUNDTRIP] Re-execute same query → same results returned","errors[] non-empty in response panel; totalCount = 0 for known query term; missing id/name/code on items; GraphiQL shows error banner",none,xAPI,Automated
 GQL-002,xCatalog - Get Product Detail Query,GraphQL > xCatalog,Critical,BL-GQL-002; BL-GQL-003,ECL-2.1,"Product ID known from GQL-001; GraphiQL UI loaded","storeId={{STORE_ID}}; productId from GQL-001 result; currencyCode=""USD""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type query: query { product(storeId: ""{{STORE_ID}}"" id: ""<PRODUCT_ID>"") { id name descriptions { content } prices { list { amount } sale { amount } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
@@ -24,7 +24,7 @@ GQL-002,xCatalog - Get Product Detail Query,GraphQL > xCatalog,Critical,BL-GQL-0
 [ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute query → same product returned
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; product null; descriptions empty; prices missing list amount",none,xAPI,Automated
 GQL-003,xCatalog - Category Tree Query,GraphQL > xCatalog,High,BL-GQL-002,ECL-2.1,"Categories configured in store; GraphiQL UI loaded","storeId={{STORE_ID}}; cultureName=""en-US""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { categories(storeId: ""{{STORE_ID}}"") { totalCount items { id name slug childCategories { id name } } } }
+[ACT] Type query: query { categories(storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { totalCount items { id name slug childCategories { id name } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response from response panel","[RESPONSE] Response panel shows data without error banner
@@ -34,8 +34,8 @@ GQL-003,xCatalog - Category Tree Query,GraphQL > xCatalog,High,BL-GQL-002,ECL-2.
 [MATH] totalCount matches actual items[] length
 [ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute query → same category tree
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; totalCount = 0; slug null or empty; childCategories missing on known parent categories",none,xAPI,Automated
-GQL-004,xCatalog - Product Facets/Filters Query,GraphQL > xCatalog,High,BL-GQL-002,ECL-2.1; ECL-8.1,"Products with properties configured; GraphiQL UI loaded","storeId={{STORE_ID}}; facetQuery includes brand/price range; filter combinations","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { products(storeId: ""{{STORE_ID}}"" facetQuery: ""brand"") { totalCount items { id name } facets { name type values { label count } } } }
+GQL-004,xCatalog - Product Facets/Filters Query,GraphQL > xCatalog,High,BL-GQL-002,ECL-2.1; ECL-8.1,"Products with properties configured; GraphiQL UI loaded","storeId={{STORE_ID}}; facet includes brand/price range; filter combinations","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { products(storeId: ""{{STORE_ID}}"" facet: ""brand"") { totalCount items { id name } term_facets { name label terms { term label count isSelected } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response — note facet values
@@ -43,29 +43,29 @@ GQL-004,xCatalog - Product Facets/Filters Query,GraphQL > xCatalog,High,BL-GQL-0
 [ACT] Type filtered query with term facet applied
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — compare filtered vs unfiltered results","[RESPONSE] Response panel shows data without error banner
-[DATA] facets[] non-empty; at minimum brand and price range facets present
+[DATA] term_facets[] non-empty; at minimum brand facet present
 [DATA] Each facet value has label and count > 0
 [DATA] Filtered result set is smaller than unfiltered set
 [DATA] Combining two filters uses AND logic (result set narrows further)
 [ERRORS] No errors[] in response","[ROUNDTRIP] Filter counts match product count in filtered response
-[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; facets[] empty when facet-enabled properties exist; filter does not narrow results; facet count mismatches",none,xAPI,Automated
-GQL-005,xCart - Create Cart Mutation,GraphQL > xCart,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; store configured; GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql","storeId={{STORE_ID}}; userId from auth token; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password for {{USER_EMAIL}} → save bearer token
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; term_facets[] empty when facet-enabled properties exist; filter does not narrow results; facet count mismatches",none,xAPI,Automated
+GQL-005,xCart - Get or Create Cart via Query,GraphQL > xCart,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; store configured; GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
 [ACT] Click Headers tab → clear (Ctrl+A, Backspace) → type: {""Authorization"": ""Bearer {{TOKEN}}""}
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation: mutation { createCart(storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"") { id } }
+[ACT] Type query: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id name itemsCount items { id productId quantity } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response — save cart id","[RESPONSE] Response panel shows data without error banner
-[ERRORS] errors[] field present in response (BL-GQL-001)
-[ERRORS] errors[] is empty (mutation succeeded)
-[DATA] data.createCart.id is non-empty string
-[DATA] Cart id matches UUID format","[ROUNDTRIP] Clear editor → type cart query by id → execute → cart returned
+[DATA] data.cart object returned (auto-created if none existed)
+[DATA] data.cart.id is non-empty string
+[DATA] Cart id matches UUID format
+[ERRORS] No errors[] in response","[ROUNDTRIP] Clear editor → type same cart query → execute → same cart returned
 [ADMIN] Cart appears in Admin order management
-[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; data.createCart null; cart id empty; subsequent cart query returns null; GraphiQL shows auth error (missing/invalid token)","delete created cart via API (DELETE {{BACK_URL}}/api/cart/carts/<CART_ID>)",xAPI,Automated
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; data.cart null; cart id empty; subsequent cart query returns different cart; GraphiQL shows auth error (missing/invalid token)","delete cart via removeCart mutation",xAPI,Automated
 GQL-006,xCart - Add Item to Cart Mutation,GraphQL > xCart,Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"Cart created from GQL-005; product ID known; auth header set in GraphiQL","cartId from GQL-005; productId={{TEST_SKU}}; quantity=2","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation: mutation { addItem(cartId: ""<CART_ID>"" productId: ""{{TEST_SKU}}"" quantity: 2) { id itemsCount items { id productId quantity listPrice { amount } } } }
+[ACT] Type mutation: mutation { addItem(command: { cartId: ""<CART_ID>"" productId: ""{{TEST_SKU}}"" quantity: 2 }) { id itemsCount items { id productId quantity listPrice { amount } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response — verify item added","[RESPONSE] Response panel shows data without error banner
@@ -77,16 +77,16 @@ GQL-006,xCart - Add Item to Cart Mutation,GraphQL > xCart,Critical,BL-GQL-001; B
 [ADMIN] Line item visible in Admin cart view
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; itemsCount not incremented; quantity wrong; listPrice.amount = 0 or null; productId mismatch","remove item from cart via removeCartItem mutation in GraphiQL",xAPI,Automated
 GQL-007,xCart - Update Cart Item Quantity,GraphQL > xCart,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Cart with items from GQL-006; lineItemId known; auth header set in GraphiQL","cartId from GQL-005; lineItemId from GQL-006; newQuantity=5","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation: mutation { changeCartItemQuantity(cartId: ""<CART_ID>"" lineItemId: ""<LINE_ITEM_ID>"" quantity: 5) { id items { id quantity } totals { subTotal { amount } } } }
+[ACT] Type mutation: mutation { changeCartItemQuantity(command: { cartId: ""<CART_ID>"" lineItemId: ""<LINE_ITEM_ID>"" quantity: 5 }) { id items { id quantity } subTotal { amount } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response — verify quantity and totals","[RESPONSE] Response panel shows data without error banner
 [ERRORS] errors[] present and empty (BL-GQL-001)
 [DATA] items[0].quantity = 5
-[MATH] totals.subTotal.amount = items[0].listPrice.amount × 5 (within rounding tolerance)","[ROUNDTRIP] Clear editor → type cart query → execute → quantity = 5
+[MATH] subTotal.amount = items[0].listPrice.amount × 5 (within rounding tolerance)","[ROUNDTRIP] Clear editor → type cart query → execute → quantity = 5
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; quantity still 2; subtotal not recalculated; GraphiQL shows auth error","remove item or delete cart",xAPI,Automated
 GQL-008,xCart - Remove Item from Cart,GraphQL > xCart,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Cart with items; lineItemId known; auth header set in GraphiQL","cartId; lineItemId","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation: mutation { removeCartItem(cartId: ""<CART_ID>"" lineItemId: ""<LINE_ITEM_ID>"") { id itemsCount items { id } } }
+[ACT] Type mutation: mutation { removeCartItem(command: { cartId: ""<CART_ID>"" lineItemId: ""<LINE_ITEM_ID>"" }) { id itemsCount items { id } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response — verify item removed","[RESPONSE] Response panel shows data without error banner
@@ -112,18 +112,18 @@ GQL-009,xCart - Set Shipping Address,GraphQL > xCart,Critical,BL-GQL-001; BL-GQL
 [DATA] Cart ready for shipping method selection (availableShippingMethods non-empty)","[ROUNDTRIP] Cart query confirms shipment with address fields populated
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; address fields null after mutation; validationErrors on shipment; availableShippingMethods empty after address set","delete cart after test",xAPI,Automated
 GQL-010,xCart - Apply Coupon Mutation,GraphQL > xCart,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Cart with items; valid coupon code ""TESTCOUPON"" configured; auth header set in GraphiQL","cartId; couponCode=""TESTCOUPON""; invalidCoupon=""BADCODE999""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation: mutation { addCoupon(cartId: ""<CART_ID>"" couponCode: ""TESTCOUPON"") { id coupons { code isAppliedSuccessfully } totals { discountTotal { amount } } } }
+[ACT] Type mutation: mutation { addCoupon(command: { cartId: ""<CART_ID>"" couponCode: ""TESTCOUPON"" }) { id coupons { code isAppliedSuccessfully } discountTotal { amount } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response — verify coupon applied
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation with invalid coupon: mutation { addCoupon(cartId: ""<CART_ID>"" couponCode: ""BADCODE999"") { id coupons { code isAppliedSuccessfully } } }
+[ACT] Type mutation with invalid coupon: mutation { addCoupon(command: { cartId: ""<CART_ID>"" couponCode: ""BADCODE999"" }) { id coupons { code isAppliedSuccessfully } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify appropriate error","[RESPONSE] Response panel shows data without error banner
 [ERRORS] errors[] present and empty (BL-GQL-001)
 [DATA] coupons[] contains entry with code=""TESTCOUPON""
 [DATA] isAppliedSuccessfully = true
-[MATH] totals.discountTotal.amount > 0
+[MATH] discountTotal.amount > 0
 [DATA] Invalid coupon returns structured error or isAppliedSuccessfully = false (not a 500)","[ROUNDTRIP] Clear editor → type cart query → execute → coupon still applied
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty on valid coupon; isAppliedSuccessfully = false for valid code; discountTotal = 0 after successful apply; GraphiQL shows error banner on invalid coupon","remove coupon from cart via removeCoupon mutation in GraphiQL; delete cart",xAPI,Automated
 GQL-011,xOrder - Get Orders Query,GraphQL > xOrder,Critical,BL-GQL-002; BL-GQL-004,ECL-2.1,"User authenticated; orders exist for user; auth header set in GraphiQL","filter=""""; sort=""createdDate:desc""; pagination: first=10","[ACT] Click query editor → clear (Ctrl+A, Backspace)
@@ -145,14 +145,14 @@ GQL-012,xOrder - Get Order Detail Query,GraphQL > xOrder,Critical,BL-GQL-002; BL
 [READ] Read response — verify full order detail","[RESPONSE] Response panel shows data without error banner
 [DATA] Full order object returned with correct id/number
 [DATA] items[] (line items) non-empty with productId, quantity, price
-[DATA] shippingAddress populated (city, country at minimum)
-[DATA] payment info present (method, status)
+[DATA] addresses[] non-empty; at least one address with city, countryCode populated
+[DATA] inPayments[] non-empty; payment has paymentMethod and status
 [MATH] Order totals (subTotal + shipping + tax = grandTotal within tolerance)
 [ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute query → same order detail
-[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; items[] empty; shippingAddress null; totals incorrect; GraphiQL shows auth error",none,xAPI,Automated
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; items[] empty; addresses[] empty; inPayments[] empty; GraphiQL shows auth error",none,xAPI,Automated
 GQL-013,xOrder - Create Order from Cart,GraphQL > xOrder,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Cart with items, shipping address, shipping method, and payment method configured; auth header set in GraphiQL","cartId (fully configured)","[ACT] Prepare cart via sequential mutations in GraphiQL: add item, set address, select shipping method, set payment method (clear editor → type → execute for each)
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation: mutation { createOrderFromCart(cartId: ""<CART_ID>"") { id number status } }
+[ACT] Type mutation: mutation { createOrderFromCart(command: { cartId: ""<CART_ID>"" }) { id number status } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result (up to 10s)
 [READ] Read response — save order id and number","[RESPONSE] Response panel shows data without error banner
@@ -164,7 +164,7 @@ GQL-013,xOrder - Create Order from Cart,GraphQL > xOrder,Critical,BL-GQL-001; BL
 [ADMIN] Order visible in Admin with correct status
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; id null; status unexpected value; cart still active after order creation; duplicate order on retry","verify order exists via query in GraphiQL; cancel/delete test order via Admin API {{BACK_URL}}/api/order/customerOrders/<ORDER_ID>",xAPI,Automated
 GQL-014,xCMS - Get Page Content Query,GraphQL > xCMS,High,BL-GQL-002,ECL-2.1,"CMS pages configured in store; GraphiQL UI loaded","storeId={{STORE_ID}}; cultureName=""en-US""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { pages(storeId: ""{{STORE_ID}}"") { totalCount items { id name relativeUrl content } } }
+[ACT] Type query: query { pages(storeId: ""{{STORE_ID}}"" keyword: """") { totalCount items { id name relativeUrl content } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response — verify page content","[RESPONSE] Response panel shows data without error banner
@@ -175,7 +175,7 @@ GQL-014,xCMS - Get Page Content Query,GraphQL > xCMS,High,BL-GQL-002,ECL-2.1,"CM
 [DATA] No HTML injection artifacts in content (no unescaped script tags)
 [ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute query → same pages returned
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; totalCount = 0; content empty; relativeUrl malformed; script injection in content",none,xAPI,Automated
-GQL-015,GraphQL Error Handling - Invalid Query,GraphQL > Errors,High,BL-GQL-001,ECL-14.1,"GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; no auth required for this test","malformedQuery=""{ products { INVALID_FIELD } }""; missingArgsQuery=""mutation { createCart }""; nonExistentField=""{ nonExistentTopLevelField }""","[NAV] {{BACK_URL}}/ui/graphiql
+GQL-015,GraphQL Error Handling - Invalid Query,GraphQL > Errors,High,BL-GQL-001,ECL-14.1,"GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; no auth required for this test","malformedQuery=""{ products { INVALID_FIELD } }""; missingArgsQuery=""mutation { addItem }""; nonExistentField=""{ nonExistentTopLevelField }""","[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type malformed query: { products { INVALID_FIELD } }
@@ -186,7 +186,7 @@ GQL-015,GraphQL Error Handling - Invalid Query,GraphQL > Errors,High,BL-GQL-001,
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify field-level error message
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation with missing required args: mutation { createCart }
+[ACT] Type mutation with missing required args: mutation { addItem }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify argument validation error","[RESPONSE] Response panel shows error data (red text or errors block — not blank/crash)
 [ERRORS] Malformed syntax: errors[] non-empty with message describing syntax error
@@ -195,7 +195,7 @@ GQL-015,GraphQL Error Handling - Invalid Query,GraphQL > Errors,High,BL-GQL-001,
 [DATA] All error responses follow GraphQL error format: { errors: [{ message, locations, path }] }
 [DATA] No stack traces or internal paths in error messages","[CONSOLE] No unhandled server exceptions in GraphiQL console
 [RESPONSE] GraphiQL remains functional after each error (not frozen/crashed)","GraphiQL crashes or freezes; stack trace in errors[].message; no errors[] on obviously invalid query; blank response panel",none,xAPI,Automated
-GQL-016,GraphQL Authentication - Unauthenticated Access,GraphQL > Auth,Critical,BL-GQL-004,ECL-2.1; ECL-14.1,"GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; products exist; auth tokens available","publicQuery (no token); protectedQuery (orders, no token); mutationNoToken (createCart without auth); validToken={{USER_TOKEN}}","[NAV] {{BACK_URL}}/ui/graphiql
+GQL-016,GraphQL Authentication - Unauthenticated Access,GraphQL > Auth,Critical,BL-GQL-004,ECL-2.1; ECL-14.1,"GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; products exist; auth tokens available","publicQuery (no token); protectedQuery (orders, no token); mutationNoToken (addItem without auth); validToken={{USER_TOKEN}}","[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
 [ACT] Click Headers tab → clear (Ctrl+A, Backspace) → leave empty (no auth)
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
@@ -207,7 +207,7 @@ GQL-016,GraphQL Authentication - Unauthenticated Access,GraphQL > Auth,Critical,
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify authentication error returned
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation: mutation { createCart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"") { id } }
+[ACT] Type mutation: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" productId: ""{{TEST_SKU}}"" quantity: 1 }) { id itemsCount } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify authentication error returned
 [ACT] Click Headers tab → clear → type: {""Authorization"": ""Bearer {{USER_TOKEN}}""}
@@ -215,13 +215,13 @@ GQL-016,GraphQL Authentication - Unauthenticated Access,GraphQL > Auth,Critical,
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify authenticated query succeeds","[RESPONSE] Public products query: data.products returned; no errors[]
 [ERRORS] Orders query without auth: errors[] non-empty with UNAUTHORIZED message (BL-GQL-004)
-[ERRORS] createCart without auth: errors[] non-empty with UNAUTHORIZED message
+[ERRORS] addItem without auth: errors[] non-empty with UNAUTHORIZED message
 [DATA] Error messages contain no user IDs, internal paths, or password hints
 [DATA] errors[].extensions.code = ""UNAUTHORIZED"" or equivalent
 [DATA] Authenticated orders query succeeds after setting token","[CONSOLE] No server errors in GraphiQL
 [RESPONSE] GraphiQL remains functional throughout auth/no-auth switching","data returned for orders/mutations without auth; GraphiQL shows error banner on public query; error message exposes internal details; authenticated query fails with valid token",none,xAPI,Automated
 GQL-017,xCart - Full Checkout Flow via GraphQL,GraphQL > xCart,Critical,BL-GQL-001; BL-GQL-002; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated; products available with known SKU; payment and shipping configured; GraphiQL UI loaded with auth header set","storeId={{STORE_ID}}; productId={{TEST_SKU}}; paymentMethodCode from config","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type createCart mutation → Execute → Read response → save cartId
+[ACT] Type cart query: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"") { id } } → Execute → Read response → save cartId
 [ACT] Clear editor → type addItem mutation (quantity=1) → Execute → Read response → verify itemsCount=1
 [ACT] Clear editor → type addOrUpdateCartShipment with address → Execute → Read response → verify address saved
 [ACT] Clear editor → type availableShippingMethods query → Execute → Read response → verify methods non-empty
@@ -246,16 +246,16 @@ GQL-018,GraphQL Query Performance,GraphQL > Performance,High,BL-GQL-002,,,"Graph
 [DATA] Repeated nested queries: response times remain within 20% of first call (no N+1 pattern)
 [ERRORS] No errors[] in any response","[CONSOLE] No timeout errors or slow query warnings in GraphiQL","Response time exceeds threshold; response times grow linearly with nesting depth (N+1); errors[] on any query; GraphiQL shows timeout",none,xAPI,Automated
 GQL-019,xCatalog - Product Variations Query,GraphQL > xCatalog,High,BL-GQL-002; BL-GQL-003,ECL-2.1,"Configurable products with variations (size, color) exist in catalog; GraphiQL UI loaded","storeId={{STORE_ID}}; parentProductId (configurable product with known variations)","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { product(storeId: ""{{STORE_ID}}"" id: ""<PARENT_ID>"") { id name variations { id name properties { name value } prices { list { amount } } availability { availableQuantity } } } }
+[ACT] Type query: query { product(storeId: ""{{STORE_ID}}"" id: ""<PARENT_ID>"") { id name variations { id name properties { name value } prices { list { amount } } availabilityData { availableQuantity } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response — verify variation properties and pricing","[RESPONSE] Response panel shows data without error banner
 [DATA] variations[] non-empty
 [DATA] Each variation has distinct property combination (e.g., size+color unique)
 [DATA] Each variation has prices.list.amount > 0
-[DATA] Availability differs per variation if stock differs (or all show available if not tracked)
+[DATA] availabilityData differs per variation if stock differs (or all show available if not tracked)
 [ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute query → same variations returned
-[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; variations[] empty for known configurable product; all variations same price when they should differ; availability not populated",none,xAPI,Automated
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; variations[] empty for known configurable product; all variations same price when they should differ; availabilityData not populated",none,xAPI,Automated
 GQL-020,GraphQL Introspection Security,GraphQL > Security,High,,,"GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; no auth required for introspection test","introspectionQuery: { __schema { types { name } } }","[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
@@ -273,11 +273,11 @@ GQL-021,xCart - Cart Uses Live Price After Admin Price Change (Not Cached Index)
 [ACT] Type products query for {{TEST_SKU}} → Execute → Read response → record as originalPrice
 [ACT] Change {{TEST_SKU}} price via: PUT {{BACK_URL}}/api/pricing/pricelists/<priceListId>/prices with newPrice
 [WAIT] Wait 2 seconds
-[ACT] Clear editor → type createCart mutation → Execute → save cartId
+[ACT] Clear editor → type cart query: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"") { id } } → Execute → save cartId
 [ACT] Clear editor → type addItem mutation for {{TEST_SKU}} → Execute
 [ACT] Clear editor → type cart query: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"") { items { productId listPrice { amount } placedPrice { amount } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — compare placedPrice against newPrice","[ERRORS] errors[] present and empty on createCart and addItem (BL-GQL-001)
+[READ] Read response — compare placedPrice against newPrice","[ERRORS] errors[] present and empty on addItem (BL-GQL-001)
 [DATA] cart items[0].placedPrice.amount = newPrice (not originalPrice)
 [DATA] cart items[0].listPrice.amount = newPrice
 [DATA] No mixed pricing: all monetary fields on line item use newPrice
@@ -297,21 +297,21 @@ GQL-022,xCatalog - Product Listing Price During Reindex Lag Window,GraphQL > xCa
 [DATA] Document actual observed lag duration
 [ERRORS] No errors[] in any query","[ROUNDTRIP] Multiple re-executions confirm price converges to newPrice
 [CONSOLE] No JS errors in GraphiQL","xCatalog still shows originalPrice after 90 seconds total; errors[] on xCatalog query; REST price update returns non-200; price shows as 0 after change","restore original price via Admin API","Coverage Gap Analysis BL-CROSS-002",Generated
-GQL-023,xCart - Price Update Reflected on Re-query After Admin Change,GraphQL > xCart > Cross-Domain,Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"Cart with existing item at known price; Admin API accessible; GraphiQL UI loaded with auth header set","cartId (with item); lineItemProductId={{TEST_SKU}}; originalPlacedPrice; newPrice","[ACT] Clear editor → type createCart mutation → Execute → save cartId
+GQL-023,xCart - Price Update Reflected on Re-query After Admin Change,GraphQL > xCart > Cross-Domain,Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"Cart with existing item at known price; Admin API accessible; GraphiQL UI loaded with auth header set","cartId (with item); lineItemProductId={{TEST_SKU}}; originalPlacedPrice; newPrice","[ACT] Clear editor → type cart query: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"") { id } } → Execute → save cartId
 [ACT] Clear editor → type addItem mutation for {{TEST_SKU}} (quantity=1) → Execute
 [ACT] Clear editor → type cart query → Execute → Read response → record items[0].placedPrice.amount as originalPlacedPrice
 [ACT] Change {{TEST_SKU}} price via: PUT {{BACK_URL}}/api/pricing/pricelists/<priceListId>/prices with newPrice
-[ACT] Clear editor → type same cart query: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"") { items { productId placedPrice { amount } listPrice { amount } } totals { subTotal { amount } } } }
+[ACT] Clear editor → type same cart query: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"") { items { productId placedPrice { amount } listPrice { amount } } subTotal { amount } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — compare placedPrice before and after price change","[ERRORS] errors[] present and empty on mutations (BL-GQL-001)
 [DATA] items[0].placedPrice.amount = newPrice (not originalPlacedPrice)
-[MATH] totals.subTotal.amount recalculated = newPrice × quantity
+[MATH] subTotal.amount recalculated = newPrice × quantity
 [DATA] No stale/cached price persisted in cart
 [DATA] BL-GQL-003 + BL-CROSS-002: Cart uses live price regardless of index state","[ROUNDTRIP] Re-execute cart query → prices consistent
 [ADMIN] Admin cart view reflects new price on line item
 [CONSOLE] No JS errors in GraphiQL","items[0].placedPrice = originalPlacedPrice (P0 violation: stale cached price); subtotal not recalculated; errors[] non-empty on re-query","restore original price; delete cart","Coverage Gap Analysis BL-CROSS-002",Generated
 GQL-024,xOrder - createOrderFromCart Idempotency (Duplicate Call Returns Same Order),GraphQL > xOrder > Cross-Domain,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Full cart ready for order: items added, shipping address set, shipping method selected, payment configured; auth header set in GraphiQL","cartId (fully configured); expectedOrderCount=1","[ACT] Prepare cart through full checkout flow in GraphiQL (sequential clear → type → execute for each mutation)
-[ACT] Clear editor → type mutation: mutation { createOrderFromCart(cartId: ""<CART_ID>"") { id number status } }
+[ACT] Clear editor → type mutation: mutation { createOrderFromCart(command: { cartId: ""<CART_ID>"" }) { id number status } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response → record orderId1 and orderNumber1
 [GQL] Click Execute (▶) again (same mutation, second call)
@@ -339,7 +339,7 @@ GQL-025,xOrder - Second createOrderFromCart Returns Same Order ID (Not Server Er
 [ROUNDTRIP] Clear editor → type orders query → execute → order count = 1","GraphiQL crashes on second call; stack trace in errors[].message; 2 orders created; blank response panel on second call","cancel/delete test order; delete cart","Coverage Gap Analysis BL-CROSS-010",Generated
 GQL-026,xCart - Cart Invalidated After Order Creation (No Reuse),GraphQL > xCart > Cross-Domain,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Cart converted to order via createOrderFromCart in GraphiQL; orderId known; auth header set","cartId (converted to order); orderId; productId={{TEST_SKU}}","[ACT] Create cart, add items, complete checkout setup via sequential mutations in GraphiQL
 [ACT] Clear editor → type createOrderFromCart mutation → Execute → Read response → record orderId
-[ACT] Clear editor → type addItem mutation on same converted cart: mutation { addItem(cartId: ""<CART_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1) { id itemsCount } }
+[ACT] Clear editor → type addItem mutation on same converted cart: mutation { addItem(command: { cartId: ""<CART_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 }) { id itemsCount } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify addItem fails with appropriate error
 [ACT] Clear editor → type cart query: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"") { id status itemsCount } }
@@ -353,60 +353,60 @@ GQL-026,xCart - Cart Invalidated After Order Creation (No Reuse),GraphQL > xCart
 [DATA] BL-CROSS-010: Post-order cart invalidated to prevent reuse and duplicate orders","[ROUNDTRIP] Clear editor → type orders query → execute → no new line items on order
 [ADMIN] Cart not modifiable in Admin after order creation
 [CONSOLE] No JS errors in GraphiQL","Silent success on addItem to converted cart (P0 violation); cart still shows active status; mutations succeed on converted cart in response panel","cancel/delete test order","Coverage Gap Analysis BL-CROSS-010",Generated
-GQL-027,xCart - Currency Switch Updates All Line Items to New Price List,GraphQL > xCart > Cross-Domain,High,BL-GQL-001; BL-GQL-002; BL-GQL-004,ECL-14.1; ECL-2.1,"Products with prices in both USD and EUR price lists; auth header set in GraphiQL","cartId; productA_id (has USD+EUR prices); productB_id (has USD+EUR prices)","[ACT] Clear editor → type createCart mutation in USD → Execute → save cartId
+GQL-027,xCart - Currency Switch Updates All Line Items to New Price List,GraphQL > xCart > Cross-Domain,High,BL-GQL-001; BL-GQL-002; BL-GQL-004,ECL-14.1; ECL-2.1,"Products with prices in both USD and EUR price lists; auth header set in GraphiQL","cartId; productA_id (has USD+EUR prices); productB_id (has USD+EUR prices)","[ACT] Clear editor → type cart query: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"") { id } } → Execute → save cartId
 [ACT] Clear editor → type addItem for productA → Execute
 [ACT] Clear editor → type addItem for productB → Execute
 [ERRORS] Verify errors[] empty on each mutation
 [ACT] Clear editor → type cart query → Execute → Read response → record USD prices
-[ACT] Clear editor → type mutation: mutation { changeCartCurrency(cartId: ""<CART_ID>"" newCurrencyCode: ""EUR"") { id currency { code } items { productId listPrice { amount currencyCode } placedPrice { amount currencyCode } } totals { subTotal { amount currencyCode } } } }
+[ACT] Clear editor → type mutation: mutation { changeCartCurrency(command: { cartId: ""<CART_ID>"" newCurrencyCode: ""EUR"" }) { id currency { code } items { productId listPrice { amount currency { code } } placedPrice { amount currency { code } } } subTotal { amount currency { code } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify ALL monetary fields use EUR","[ERRORS] errors[] present and empty on changeCartCurrency (BL-GQL-001)
-[DATA] All items[].listPrice.currencyCode = ""EUR""
-[DATA] All items[].placedPrice.currencyCode = ""EUR""
-[DATA] totals.subTotal.currencyCode = ""EUR""
+[DATA] All items[].listPrice.currency.code = ""EUR""
+[DATA] All items[].placedPrice.currency.code = ""EUR""
+[DATA] subTotal.currency.code = ""EUR""
 [DATA] Price amounts correspond to EUR price list values (NOT USD-to-EUR conversion rates)
 [DATA] Zero fields showing USD after currency switch (atomic update — BL-CROSS-004)","[ROUNDTRIP] Clear editor → type cart query → execute → all EUR confirmed
-[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel on currency switch; any item still showing currencyCode=""USD""; price appears to be USD amount with EUR label; totals.subTotal in wrong currency","delete cart",xAPI,Generated
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel on currency switch; any item still showing currencyCode=""USD""; price appears to be USD amount with EUR label; subTotal in wrong currency","delete cart",xAPI,Generated
 GQL-028,xCart - Shipping Rates Recalculate After Currency Switch,GraphQL > xCart > Cross-Domain,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Cart with items and shipping address set; shipping methods configured for both USD and EUR; auth header set in GraphiQL","cartId (with items + shipping address)","[ACT] Create cart in USD, add items, set shipping address via sequential mutations in GraphiQL
 [ERRORS] Verify errors[] empty on mutations
-[ACT] Clear editor → type cart query with availableShippingMethods: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"") { availableShippingMethods { code optionName price { amount currencyCode } } } }
+[ACT] Clear editor → type cart query with availableShippingMethods: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"") { availableShippingMethods { code optionName price { amount currency { code } } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response → record USD shipping rates per method
 [ACT] Clear editor → type changeCartCurrency mutation to EUR → Execute
 [ERRORS] Verify errors[] present and empty
 [ACT] Clear editor → type same shipping methods query → Execute
 [READ] Read response — verify shipping rates in EUR","[ERRORS] errors[] present and empty on changeCartCurrency (BL-GQL-001)
-[DATA] All availableShippingMethods[].price.currencyCode = ""EUR"" after switch
+[DATA] All availableShippingMethods[].price.currency.code = ""EUR"" after switch
 [DATA] Shipping rate amounts are EUR-specific values (from EUR shipping config, not USD-converted)
 [DATA] No shipping method still displaying USD amounts
 [DATA] If a method is unavailable in EUR: excluded from list (not shown with 0 or wrong currency)
 [DATA] Cart totals including shipping all in EUR (BL-CROSS-004)","[ROUNDTRIP] Re-execute shipping query → rates stable in EUR
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel on currency switch; shipping methods still show USD after switch; shipping amount = 0 in EUR; cart totals contain USD amounts","delete cart","Coverage Gap Analysis BL-CROSS-004",Generated
-GQL-029,xCart - Product Without New Currency Price Flagged After Currency Switch,GraphQL > xCart > Cross-Domain,High,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"productA has both USD and EUR prices; productB has ONLY USD price; auth header set in GraphiQL","cartId; productA_id (USD+EUR); productB_id (USD only)","[ACT] Clear editor → type createCart mutation in USD → Execute → save cartId
+GQL-029,xCart - Product Without New Currency Price Flagged After Currency Switch,GraphQL > xCart > Cross-Domain,High,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"productA has both USD and EUR prices; productB has ONLY USD price; auth header set in GraphiQL","cartId; productA_id (USD+EUR); productB_id (USD only)","[ACT] Clear editor → type cart query: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"") { id } } → Execute → save cartId
 [ACT] Clear editor → type addItem for productA → Execute
 [ACT] Clear editor → type addItem for productB → Execute
 [ERRORS] Verify errors[] empty; both items in cart
 [ACT] Clear editor → type cart query → Execute → verify both items present with USD prices
 [ACT] Clear editor → type changeCartCurrency mutation to EUR → Execute
 [ERRORS] Verify errors[] present and empty
-[ACT] Clear editor → type cart query: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"") { items { productId name listPrice { amount currencyCode } isValid validationErrors { errorCode errorMessage } } validationErrors { errorCode } itemsCount } }
+[ACT] Clear editor → type cart query: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"") { items { productId name listPrice { amount currency { code } } isValid validationErrors { errorCode errorMessage } } validationErrors { errorCode } itemsCount } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify productA status (has EUR price) and productB status (no EUR price)","[ERRORS] errors[] present and empty on changeCartCurrency (BL-GQL-001)
-[DATA] productA: listPrice.currencyCode = ""EUR""; isValid = true; no item-level validationErrors
+[DATA] productA: listPrice.currency.code = ""EUR""; isValid = true; no item-level validationErrors
 [DATA] productB: one of (a) removed from cart with itemsCount decremented, or (b) isValid = false with validationErrors indicating no price in EUR, or (c) flagged in cart-level validationErrors
 [DATA] productB MUST NOT show $0.00 EUR price or a USD-amount with EUR label
 [DATA] Cart totals exclude productB if it has no valid EUR price
 [DATA] BL-GQL-003 + BL-CROSS-004: Products without price list in new currency become unavailable","[ROUNDTRIP] Re-execute cart query → productB status consistent
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel on currency switch; productB shows 0.00 EUR (silent invalid price); productB shows USD amount with EUR currency code; cart totals include invalid productB price","delete cart","Coverage Gap Analysis BL-CROSS-004 BL-PRICE-005",Generated
-GQL-030,xProfile - createOrganization Mutation Validates Org Name (InputValidationOptions),GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"BROWSER-ONLY: Execute in GraphiQL UI ({{BACK_URL}}/ui/graphiql) via playwright browser. Use CodeMirror editor per graphiql-interaction.md. Do NOT use curl. User authenticated via Headers tab.","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; valid_org_name=AT&T Corp. #1; invalid_org_name=<script>alert(1)</script>Org","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password for {{USER_EMAIL}} → save bearer token
+GQL-030,xProfile - createOrganization Mutation Validates Org Name (InputValidationOptions),GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"BROWSER-ONLY: Execute in GraphiQL UI ({{BACK_URL}}/ui/graphiql) via playwright browser. Use CodeMirror editor per graphiql-interaction.md. Do NOT use curl. User authenticated via Headers tab.","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; valid_org_name=AT&T Corp. #1; invalid_org_name=<script>alert(1)</script>Org","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
 [ACT] Click Headers tab → clear (Ctrl+A, Backspace) → type: {""Authorization"": ""Bearer {{TOKEN}}""}
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation: mutation { createOrganization(command: { name: ""AT&T Corp. #1"" storeId: ""{{STORE_ID}}"" }) { id name } }
+[ACT] Type mutation: mutation { createOrganization(command: { name: ""AT&T Corp. #1"" }) { id name } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify valid business name accepted
-[ACT] Clear editor → type mutation with XSS payload: mutation { createOrganization(command: { name: ""<script>alert(1)</script>Org"" storeId: ""{{STORE_ID}}"" }) { id name } }
+[ACT] Clear editor → type mutation with XSS payload: mutation { createOrganization(command: { name: ""<script>alert(1)</script>Org"" }) { id name } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify XSS name rejected","[ERRORS] errors[] empty for valid business name (BL-GQL-001)
 [DATA] OrganizationNameValidationPattern ^[\p{L}\p{M}\p{N}\s'\-\.&#/,()]+$ permits &, #, digits
@@ -415,19 +415,19 @@ GQL-030,xProfile - createOrganization Mutation Validates Org Name (InputValidati
 [DATA] No organization created with script tags in name","[ROUNDTRIP] Clear editor → type organization query → execute → valid org exists; XSS org does not
 [CONSOLE] No JS errors in GraphiQL","Valid business name with & rejected (false positive); XSS payload accepted as org name in response panel; no validation error in errors[]; org created with <script> in name","delete valid test org via admin API","VCST-4691 PR #130",Generated
 GQL-031,xProfile - updateContact Mutation Rejects HTML and Oversized Phone Values,GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"GraphiQL UI loaded with auth header set; existing contact","storeId={{STORE_ID}}; contactId=existing_contact_id","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation with HTML in phone: mutation { updateContact(command: { id: ""{{contactId}}"" storeId: ""{{STORE_ID}}"" phones: [""<img src=x onerror=alert(1)>""] }) { id phones } }
+[ACT] Type mutation with HTML in phone: mutation { updateContact(command: { id: ""{{contactId}}"" phones: [""<img src=x onerror=alert(1)>""] }) { id phones } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify HTML in phone rejected
-[ACT] Clear editor → type mutation with <script> tag in phone: mutation { updateContact(command: { id: ""{{contactId}}"" storeId: ""{{STORE_ID}}"" phones: [""<script>alert(1)</script>""] }) { id phones } }
+[ACT] Clear editor → type mutation with <script> tag in phone: mutation { updateContact(command: { id: ""{{contactId}}"" phones: [""<script>alert(1)</script>""] }) { id phones } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify script tag in phone rejected
-[ACT] Clear editor → type mutation with 65-char phone (exceeds MaxLength 64): mutation { updateContact(command: { id: ""{{contactId}}"" storeId: ""{{STORE_ID}}"" phones: [""11111111111111111111111111111111111111111111111111111111111111111""] }) { id phones } }
+[ACT] Clear editor → type mutation with 65-char phone (exceeds MaxLength 64): mutation { updateContact(command: { id: ""{{contactId}}"" phones: [""11111111111111111111111111111111111111111111111111111111111111111""] }) { id phones } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify oversized phone rejected
-[ACT] Clear editor → type mutation with valid phone: mutation { updateContact(command: { id: ""{{contactId}}"" storeId: ""{{STORE_ID}}"" phones: [""+1-555-0123""] }) { id phones } }
+[ACT] Clear editor → type mutation with valid phone: mutation { updateContact(command: { id: ""{{contactId}}"" phones: [""+1-555-0123""] }) { id phones } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify valid phone accepted
-[ACT] Clear editor → type mutation with empty phones array: mutation { updateContact(command: { id: ""{{contactId}}"" storeId: ""{{STORE_ID}}"" phones: [] }) { id phones } }
+[ACT] Clear editor → type mutation with empty phones array: mutation { updateContact(command: { id: ""{{contactId}}"" phones: [] }) { id phones } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify empty array accepted","[ERRORS] errors[] non-empty for HTML <img> tag in phone field — EnableNoHtmlTagsValidation active (BL-GQL-001)
 [ERRORS] errors[] non-empty for <script> tag in phone field — NoHtmlTags rejects all HTML tags
@@ -453,10 +453,10 @@ GQL-032,xProfile - updateMemberAddresses Rejects Script Injection in Address Fie
 [ERRORS] errors[] empty for valid address — accepted and stored","[ROUNDTRIP] Clear editor → type member address query → execute → no XSS stored; valid address stored correctly
 [CONSOLE] No JS errors in GraphiQL","HTML tags accepted in city or address line fields in response panel; <script> stored in address; no validation error; address saved with XSS payload","none","VCST-4691 PR #130",Generated
 GQL-033,xProfile - updatePersonalData Validates Name Fields,GraphQL > xProfile,Medium,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"GraphiQL UI loaded with auth header set; user with profile","storeId={{STORE_ID}}","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation with XSS in firstName: mutation { updatePersonalData(command: { storeId: ""{{STORE_ID}}"" personalData: { firstName: ""<svg onload=alert(1)>"" lastName: ""Test"" } }) { succeeded } }
+[ACT] Type mutation with XSS in firstName: mutation { updatePersonalData(command: { personalData: { firstName: ""<svg onload=alert(1)>"" lastName: ""Test"" } }) { succeeded } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify XSS name rejected
-[ACT] Clear editor → type mutation with valid Unicode name: mutation { updatePersonalData(command: { storeId: ""{{STORE_ID}}"" personalData: { firstName: ""François"" lastName: ""O'Brien-Müller"" } }) { succeeded } }
+[ACT] Clear editor → type mutation with valid Unicode name: mutation { updatePersonalData(command: { personalData: { firstName: ""François"" lastName: ""O'Brien-Müller"" } }) { succeeded } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify valid Unicode names accepted","[ERRORS] errors[] non-empty for SVG payload in firstName — NameValidationPattern rejects non-letter characters (BL-GQL-001)
 [DATA] Profile name unchanged after rejected XSS payload
@@ -515,21 +515,21 @@ GQL-037,xCatalog - Facet Parameter Returns Range Aggregation Bucket,GraphQL > xC
 [ERRORS] No errors[] in response
 [DATA] Second query returns a different bucket count for [100 TO 500] range","[ROUNDTRIP] Re-execute → same bucket counts
 [CONSOLE] No JS errors in GraphiQL","range_facets empty or null (note: facet:""price"" alone returns empty range_facets — explicit range syntax required); bucket missing count field; errors[] in response; bucket count exceeds totalCount",none,"GAP-RF-14, BL-SRCH-001",Generated
-GQL-038,xProfile - createContact Mutation Validates Phone Fields (NewContactValidator),GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"BROWSER-ONLY: Execute in GraphiQL UI ({{BACK_URL}}/ui/graphiql) via playwright browser. Use CodeMirror editor per graphiql-interaction.md. Do NOT use curl. User authenticated via Headers tab.","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password for {{USER_EMAIL}} → save bearer token
+GQL-038,xProfile - createContact Mutation Validates Phone Fields (NewContactValidator),GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"BROWSER-ONLY: Execute in GraphiQL UI ({{BACK_URL}}/ui/graphiql) via playwright browser. Use CodeMirror editor per graphiql-interaction.md. Do NOT use curl. User authenticated via Headers tab.","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
 [ACT] Click Headers tab → clear (Ctrl+A, Backspace) → type: {""Authorization"": ""Bearer {{TOKEN}}""}
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation with HTML in phone: mutation { createContact(command: { firstName: ""TestPhone"" lastName: ""Validator"" storeId: ""{{STORE_ID}}"" phones: [""<img src=x onerror=alert(1)>""] }) { id firstName lastName phones } }
+[ACT] Type mutation with HTML in phone: mutation { createContact(command: { firstName: ""TestPhone"" lastName: ""Validator"" phones: [""<img src=x onerror=alert(1)>""] }) { id firstName lastName phones } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify HTML in phone rejected and no contact created
-[ACT] Clear editor → type mutation with 65-char phone: mutation { createContact(command: { firstName: ""TestPhone"" lastName: ""MaxLen"" storeId: ""{{STORE_ID}}"" phones: [""11111111111111111111111111111111111111111111111111111111111111111""] }) { id phones } }
+[ACT] Clear editor → type mutation with 65-char phone: mutation { createContact(command: { firstName: ""TestPhone"" lastName: ""MaxLen"" phones: [""11111111111111111111111111111111111111111111111111111111111111111""] }) { id phones } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify 65-char phone rejected by MaxLength(64)
-[ACT] Clear editor → type mutation with valid phone: mutation { createContact(command: { firstName: ""TestPhone"" lastName: ""Valid"" storeId: ""{{STORE_ID}}"" phones: [""+1 (555) 123-4567""] }) { id firstName lastName phones } }
+[ACT] Clear editor → type mutation with valid phone: mutation { createContact(command: { firstName: ""TestPhone"" lastName: ""Valid"" phones: [""+1 (555) 123-4567""] }) { id firstName lastName phones } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify contact created with valid phone
-[ACT] Clear editor → type mutation with 64-char phone (boundary): mutation { createContact(command: { firstName: ""TestPhone"" lastName: ""Boundary"" storeId: ""{{STORE_ID}}"" phones: [""1111111111111111111111111111111111111111111111111111111111111111""] }) { id phones } }
+[ACT] Clear editor → type mutation with 64-char phone (boundary): mutation { createContact(command: { firstName: ""TestPhone"" lastName: ""Boundary"" phones: [""1111111111111111111111111111111111111111111111111111111111111111""] }) { id phones } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify exactly 64 chars accepted","[ERRORS] errors[] non-empty for HTML <img> tag — NewContactValidator.NoHtmlTags() rejects HTML in phones (BL-GQL-001)
 [DATA] No contact created with HTML phone payload

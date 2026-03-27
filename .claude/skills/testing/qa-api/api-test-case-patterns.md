@@ -19,14 +19,23 @@
 
 ### GraphQL xAPI Steps (`[GQL]`, `[AUTH]`, `[VAR]`, `[SETUP]`, `[TEARDOWN]`, `[WAIT]`)
 
+> **CRITICAL:** Always verify mutation/query names and input types via introspection before writing steps.
+> All cart mutations use `command:` input pattern with required fields: `storeId`, `userId`, `cultureName`, `currencyCode`.
+
 ```
 [AUTH] POST {{BACK_URL}}/connect/token for {{USER_EMAIL}}
-[SETUP] [GQL] query { cart(...) { id itemsCount } } — verify precondition
-[GQL] mutation { addItem(command: {...}) { id itemsCount errors { errorCode } } }
+[SETUP] [GQL] query { cart(storeId: "{{STORE_ID}}" currencyCode: "USD" cultureName: "en-US") { id itemsCount } } — verify precondition
+[GQL] mutation { addItem(command: { storeId: "{{STORE_ID}}" currencyCode: "USD" productId: "{{PRODUCT_ID}}" quantity: 1 }) { id itemsCount } }
 [VAR] save response.data.addItem.id as {{CART_ID}}
 [WAIT] 30s for search reindex (only after catalog mutations)
-[TEARDOWN] [GQL] mutation { clearCart(command: {...}) { id } }
+[TEARDOWN] [GQL] mutation { clearCart(command: { storeId: "{{STORE_ID}}" currencyCode: "USD" }) { id } }
 ```
+
+**Common mutation name mistakes to avoid:**
+- `removeItem` → correct: `removeCartItem`
+- `changeItemQuantity` → correct: `changeCartItemQuantity`
+- Individual args `addItem(cartId: "...", productId: "...")` → correct: `addItem(command: { ... })`
+- `createOrderFromCart(cartId: "...")` → correct: `createOrderFromCart(command: { cartId: "..." })`
 
 ---
 
@@ -50,7 +59,7 @@
 | `[DATA]` | `data.[field]` has expected value or structure |
 | `[NULL]` | Field is null or non-null as expected |
 | `[COUNT]` | `totalCount` or array length matches expectation |
-| `[MATH]` | Calculated totals match formula (grandTotal = subtotal − discount) |
+| `[MATH]` | Calculated totals match formula (total.amount = subTotal.amount + shippingTotal.amount - discountTotal.amount) — use flat CartType fields, NO `grandTotal` |
 | `[PERF]` | Query response time threshold |
 
 ### Cross-Layer Checks
@@ -159,6 +168,13 @@ Failure_Signals: errors[] non-empty in [mutationName] response
 | CAT-006 | Create product (REST) → retrievable by ID | High | BL-CAT-001 |
 | CAT-007 | Get categories with child hierarchy | Medium | BL-CAT-001 |
 | CAT-008 | Product without price in requested currency → unavailable | High | BL-PRICE-005 |
+| CAT-009 | Filter by category subtree: `category.subtree:<id>` → only products in category/subcategories | High | BL-CAT-001 |
+| CAT-010 | Filter by price range: `price.USD:(0 TO)` → only products with price | High | BL-PRICE-001 |
+| CAT-011 | Filter by stock: `inStock_variations:true` → only in-stock products | High | BL-CAT-001 |
+| CAT-012 | Combined filter: `category.subtree:<id> price.USD:(0 TO) inStock_variations:true` → AND logic | High | BL-CAT-001 |
+| CAT-013 | Facet response: `facet: "Brand"` → term_facets[] with counts matching filtered results | High | BL-CAT-001 |
+| CAT-014 | Price range facet: `facet: "price.USD"` → range_facets[] with from/to/count | Medium | BL-PRICE-001 |
+| CAT-015 | Sort: `sort: "price:asc"` → products ordered by price ascending | Medium | BL-CAT-001 |
 
 ### xCart Mutations
 
@@ -171,7 +187,7 @@ Failure_Signals: errors[] non-empty in [mutationName] response
 | CART-005 | removeItem → itemsCount decrements, totals recalculated | Critical | BL-CART-001 |
 | CART-006 | addCoupon valid code → isAppliedSuccessfully=true, discountTotal > 0 | Critical | BL-CART-003, BL-PROMO-001 |
 | CART-007 | addCoupon invalid code → errors[] or isAppliedSuccessfully=false | High | BL-CART-003 |
-| CART-008 | addCoupon: grandTotal = subtotal − discount (math check) | Critical | BL-PRICE-001 |
+| CART-008 | addCoupon: total = subTotal − discountTotal (math check, flat CartType fields) | Critical | BL-PRICE-001 |
 | CART-009 | clearCart → itemsCount=0 | High | BL-CART-001 |
 | CART-010 | Cart accessed by different user → access denied | High | BL-AUTH-002 |
 
@@ -217,9 +233,10 @@ Always include these for every new operation:
 3. **Non-existent resource** → 404 with structured body
 
 ### GraphQL negative set (minimum 3 per mutation):
-1. **Missing required argument** → `errors[]` with `VALIDATION_ERROR` code
-2. **Unauthenticated call** → `errors[]` with auth error (still HTTP 200)
-3. **Invalid ID/reference** → `errors[]` with `NOT_FOUND` or similar code
+1. **Missing required command field** (e.g., omit `storeId` or `productId`) → `errors[]` with validation error
+2. **Unauthenticated call** (no Bearer token) → `errors[]` with auth error (still HTTP 200)
+3. **Invalid ID/reference** (e.g., non-existent `productId` in addItem) → `errors[]` with `NOT_FOUND` or similar code
+4. **Empty/null command** → `errors[]` with validation error (not 500)
 
 ### High-value negative cases (add when applicable):
 - Concurrent updates to same resource (optimistic concurrency)
@@ -278,24 +295,59 @@ Fill in the blanks for any REST create endpoint:
 
 ## Worked Skeleton — GraphQL Mutation
 
-Fill in the blanks for any xAPI mutation:
+Fill in the blanks for any xAPI mutation. **Before using, verify mutation name and input type via introspection.**
 
 ```csv
 {ID},"[MutationName] — Happy Path","GraphQL > {Module} > {Operation}",{Priority},{BL-CODE},{ECL-CODE},
 "User authenticated as {{USER_EMAIL}}, {preconditions}",
-"back_url={{BACK_URL}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}, {other_vars}",
+"back_url={{BACK_URL}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}, store_id={{STORE_ID}}, {other_vars}",
 "[AUTH] POST {{BACK_URL}}/connect/token for {{USER_EMAIL}}
 [SETUP] [GQL] query to verify precondition state
-[GQL] mutation { {mutationName}(command: { ...args... }) { id errors { errorCode errorMessage } {fields} } }
+[GQL] mutation { {mutationName}(command: { storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" {operation-specific-fields} }) { id {fields} } }
 [VAR] save {field} as {{{VAR_NAME}}}",
 "[ERRORS] errors[] is empty
 [DATA] {field} == expected value
 [COUNT] {collection}.length incremented/decremented by 1
-[MATH] {total} = {formula}",
+[MATH] total.amount = subTotal.amount + shippingTotal.amount - discountTotal.amount (flat CartType fields)",
 "[API] {mutationName} response errors[] is empty
 [ROUNDTRIP] query {entityName} by id confirms mutation persisted
 [STOREFRONT] {{FRONT_URL}}/... reflects the change (if applicable)",
 "errors[] non-empty in {mutationName} response, {field} unchanged after mutation, response time > 2s",
-"[TEARDOWN] {reverseMutation} to restore state",
+"[TEARDOWN] {reverseMutation}(command: { storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" ... }) to restore state",
 {VCST-XXXX},Automated
 ```
+
+### CartType Return Fields — Common Mistakes
+
+CartType has **flat** money fields — NOT nested under `totals`:
+- `total { amount }` — NOT ~~`totals { grandTotal { amount } }`~~
+- `subTotal { amount }` — NOT ~~`totals { subTotal { amount } }`~~
+- `discountTotal { amount }`, `shippingTotal { amount }`, `taxTotal { amount }` — all flat
+- There is **NO `grandTotal`** field — use `total`
+
+MoneyType structure: `{ amount currency { code } formattedAmount }` — NOT `{ amount currencyCode }`
+
+### Mandatory Cart Mutation Command Fields
+
+Every xCart mutation command MUST include `storeId!` (required). `userId!` is required per schema type but inferred from auth token when authenticated.
+
+| Field | Source | Notes |
+|-------|--------|-------|
+| `storeId` | `{{STORE_ID}}` | **Required** — always include |
+| `currencyCode` | `"USD"` | Include for pricing context |
+| `userId` | (omit when authenticated) | Required per type, but server infers from token |
+| `cultureName` | `"en-US"` | Optional — include for localized responses |
+
+Plus operation-specific fields:
+
+| Mutation | Additional Required Fields |
+|----------|--------------------------|
+| `addItem` | `productId`, `quantity` |
+| `changeCartItemQuantity` | `lineItemId`, `quantity` |
+| `removeCartItem` | `lineItemId` |
+| `addCoupon` | `couponCode` |
+| `removeCoupon` | `couponCode` |
+| `addOrUpdateCartShipment` | `shipment: { deliveryAddress: {...} }` |
+| `addOrUpdateCartPayment` | `payment: { paymentGatewayCode, amount }` |
+| `clearCart` | (base fields only) |
+| `createOrderFromCart` | `cartId` |
