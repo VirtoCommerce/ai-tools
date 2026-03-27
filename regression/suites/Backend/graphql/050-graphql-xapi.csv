@@ -767,17 +767,17 @@ GQL-052,pageContext - Homepage Slug Resolution,GraphQL > pageContext,Critical,BL
 [DATA] user is present (Anonymous user context when no auth token)
 [ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute same query → identical response (deterministic)
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty; slugInfo null for homepage; store.storeId empty; defaultCurrency or defaultLanguage null; whiteLabelingSettings null; response panel blank or crash",none,xAPI,Generated
-GQL-053,pageContext - CMS Page Permalink + slugInfo Category Resolution,GraphQL > pageContext,Critical,"BL-GQL-002; BL-CAT-001",ECL-2.1,"GraphiQL UI loaded; CMS pages exist (e.g., /contacts); catalog categories exist. NOTE: pageContext.permalink resolves CMS pages (ContentFile); catalog categories/products resolve via separate slugInfo(slug:) query.","storeId={{STORE_ID}}; cmsPermalink=""/contacts""; categorySlug=""online-courses/software-testing-courses""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query with CMS page permalink: query { pageContext(storeId: ""{{STORE_ID}}"" permalink: ""/contacts"") { slugInfo { entityInfo { id objectType semanticUrl isActive } redirectUrl } store { storeId } } }
+GQL-053,pageContext - CMS Page Permalink + slugInfo Category Resolution,GraphQL > pageContext,Critical,"BL-GQL-002; BL-CAT-001",ECL-2.1,"GraphiQL UI loaded; CMS pages exist (e.g., /contacts); catalog categories exist. NOTE: pageContext.permalink resolves CMS pages (ContentFile); catalog categories/products resolve via separate slugInfo(slug:) query.","storeId={{STORE_ID}}; cmsPermalink=""contacts""; categorySlug=""online-courses/software-testing-courses""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query with CMS page permalink: query { pageContext(storeId: ""{{STORE_ID}}"" permalink: ""contacts"") { slugInfo { entityInfo { id objectType semanticUrl isActive } redirectUrl } store { storeId } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response — verify CMS page resolves via pageContext
-[ACT] Clear editor → type slugInfo query for category: query { slugInfo(storeId: ""{{STORE_ID}}"" slug: ""online-courses/software-testing-courses"") { entityInfo { id objectType semanticUrl isActive } } }
+[ACT] Clear editor → type slugInfo query for category: query { slugInfo(storeId: ""{{STORE_ID}}"" slug: ""printers"") { entityInfo { id objectType semanticUrl isActive } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response — verify category resolves via slugInfo","[DATA] CMS page: slugInfo.entityInfo.objectType = ""ContentFile""
 [DATA] CMS page: slugInfo.entityInfo.id is non-empty
-[DATA] CMS page: slugInfo.entityInfo.semanticUrl = ""/contacts""
+[DATA] CMS page: slugInfo.entityInfo.semanticUrl = ""contacts""
 [DATA] CMS page: slugInfo.entityInfo.isActive = true
 [DATA] CMS page: store.storeId = {{STORE_ID}} (store context present)
 [DATA] Category: entityInfo.objectType = ""Category""
@@ -823,10 +823,10 @@ GQL-055,pageContext - Authenticated vs Anonymous User Context,GraphQL > pageCont
 [DATA] No cross-contamination: anonymous query does NOT return authenticated user data
 [ERRORS] No errors[] in either response","[ROUNDTRIP] Remove auth header → re-execute → back to anonymous context
 [CONSOLE] No JS errors in GraphiQL","Authenticated user data returned without auth token (P0 data leak); anonymous user has email populated; authenticated user has empty id; roles populated for anonymous; errors[] in response","none (read-only query)",BL-AUTH-004,Generated
-GQL-056,pageContext - Invalid Permalink Returns Null SlugInfo,GraphQL > pageContext > Error Handling,High,BL-GQL-002,ECL-14.1,"GraphiQL UI loaded; no auth required","storeId={{STORE_ID}}; invalidPermalink=""/this-page-definitely-does-not-exist-xyz-999""","[NAV] {{BACK_URL}}/ui/graphiql
+GQL-056,pageContext - Invalid Permalink Returns Null SlugInfo,GraphQL > pageContext > Error Handling,High,BL-GQL-002,ECL-14.1,"GraphiQL UI loaded; no auth required","storeId={{STORE_ID}}; invalidPermalink=""this-page-definitely-does-not-exist-xyz-999""","[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query with invalid permalink: query { pageContext(storeId: ""{{STORE_ID}}"" permalink: ""/this-page-definitely-does-not-exist-xyz-999"") { slugInfo { entityInfo { id objectType semanticUrl isActive } redirectUrl } store { storeId } } }
+[ACT] Type query with invalid permalink: query { pageContext(storeId: ""{{STORE_ID}}"" permalink: ""this-page-definitely-does-not-exist-xyz-999"") { slugInfo { entityInfo { id objectType semanticUrl isActive } redirectUrl } store { storeId } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response — verify graceful null handling
