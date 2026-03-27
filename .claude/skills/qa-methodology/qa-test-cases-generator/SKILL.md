@@ -85,6 +85,27 @@ Each layer produces its own test case block with layer-appropriate tags from `te
 4. **Check existing coverage** — read the target suite CSV (if it exists) to avoid duplicating existing test cases
 5. **Get UI context** — read `agents/knowledge/sitemap.md` for page URLs, product types, navigation paths
 
+### Step 2.5: GraphQL Schema Validation (Required for `--layer graphql` or GraphQL-related features)
+
+**MANDATORY** when generating GraphQL test cases. Skipping this step produces invalid queries/mutations.
+
+1. **Read schema reference** — read `agents/knowledge/graphql-schema.md` (introspected from live endpoint)
+2. **Check schema freshness** — if the feature involves new/changed GraphQL operations, run `npm run schema:refresh` first to update the reference from live introspection
+3. **Validate every query/mutation** in the test case against the schema:
+   - **Query/mutation name exists** in the schema (e.g., there is NO `createCart` mutation)
+   - **Argument names and types match** (e.g., `products` uses `query:`, not `keyword:`)
+   - **All mutations use `command` wrapper**: `mutation { name(command: { ...fields }) { ...return } }`
+   - **Input type fields match** — check `InputAddItemType`, `InputCreateOrganizationType`, etc. for valid field names (e.g., `InputCreateOrganizationType` has NO `storeId`)
+   - **Response field names match return type** (e.g., CartType has flat `subTotal`, not `totals { subTotal }`)
+   - **MoneyType uses `{ amount currency { code } }`**, not `{ amount currencyCode }`
+   - **Facets use `term_facets { terms { ... } }`**, not `facets { values { ... } }`
+   - **Required args (`!`) are always provided** (e.g., `pages` requires `keyword!`)
+4. **If the schema reference is missing or stale**, introspect directly:
+   ```bash
+   curl -sk "{{BACK_URL}}/graphql" -H "Content-Type: application/json" \
+     -d '{"query":"{ __type(name: \"TypeName\") { fields { name } inputFields { name } } }"}'
+   ```
+
 ### Step 3: Derive Test Cases (Minimum Effective Set)
 
 **Guiding principle — quality over quantity.** Every generated test case must have a clear **bug hypothesis**: a specific failure mode it is designed to catch. If you cannot answer "what real bug would this catch and why would it occur?", do not generate the case. Coverage numbers are vanity metrics — a suite of 10 targeted cases that each have a distinct failure hypothesis is more valuable than 50 shallow cases that repeat the same happy path with minor variations.
@@ -185,6 +206,7 @@ ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test
    - At least 2 failure signals per case
    - **Layer-correct tags**: API cases use `[HTTP]`/`[STATUS]`/`[BODY]`, not `[NAV]`/`[ACT]`
    - **GraphQL cases** always include `[ERRORS] errors[] is empty` assertion
+   - **GraphQL cases** validated against `graphql-schema.md`: query/mutation names, arg names, command wrapper, response field names, MoneyType structure (Step 2.5 checklist)
    - **Admin cases** use `[BLADE]`/`[GRID]`/`[SAVE]` tags, not generic `[ACT]` for blade interactions
    - **E2E cases** have `--- LAYER ---` markers and assertions from ≥2 layers
 2. **Check for duplicates** against existing suite cases

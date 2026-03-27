@@ -41,6 +41,10 @@ Before starting the pipeline:
    - Include version info in the lifecycle report header (Phase 6)
 2. **Duplicate check** — scan `reports/test-lifecycle/` for a `TLC-*` run on the same scope in the last 24 hours. If found, warn user and show previous verdict.
 3. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the target domain(s) with `tokens: 8000`. Pass findings to `test-management-specialist` in Phase 1.
+4. **GraphQL schema refresh** (when scope includes GraphQL suites or `--layer graphql`):
+   - Run `npm run schema:refresh` to introspect the live GraphQL endpoint and update `.claude/agents/knowledge/graphql-schema.md`
+   - This ensures all queries, mutations, input types, and return types are current before generation and review
+   - Pass `graphql-schema.md` as a reference to `test-management-specialist` in the delegation payload
 
 ---
 
@@ -119,6 +123,7 @@ Input:
     - .claude/skills/testing/qa-checklist/backend-admin-checklists.md
     - .claude/skills/testing/qa-checklist/graphql-checklist.md
     - .claude/skills/testing/qa-coverage-gap/feature-domain-map.md
+    - .claude/agents/knowledge/graphql-schema.md (for GraphQL scopes — refreshed in Pre-Flight)
   - context7: query `/virtocommerce/vc-docs` for domain-specific module behavior
 
 Output: structured JSON with:
@@ -215,7 +220,11 @@ Instead of full coverage gap detection, `test-management-specialist` performs **
    - GraphQL: `[GQL]`/`[VAR]` + `[ERRORS]`/`[DATA]`
    - Admin: `[BLADE]`/`[GRID]`/`[SAVE]` + `[TOAST]`/`[FORM]`
    - E2E: `--- LAYER ---` markers with multi-layer assertions
-6. **Present to user** as Feature Test Matrix for approval before proceeding
+6. **GraphQL schema validation** (for GraphQL layer cases) — **MANDATORY Step 2.5** from `/qa-test-cases-generator`:
+   - Read `agents/knowledge/graphql-schema.md` (refreshed in Pre-Flight)
+   - Validate every query/mutation: name exists, args match, `command` wrapper on mutations, response fields match return types, MoneyType uses `currency { code }`, input type fields valid
+   - If a query or mutation doesn't exist in the schema, do NOT generate a test case for it — find the correct operation first
+7. **Present to user** as Feature Test Matrix for approval before proceeding
 
 ---
 
@@ -227,7 +236,7 @@ Instead of full coverage gap detection, `test-management-specialist` performs **
 2. **Determinism** — Step tags, specific element refs, no ambiguity
 3. **Completeness** — Preconditions, assertions, failure signals, cleanup, `errors[]` checks
 4. **Testability** — Falsifiable assertions, no vague predicates
-5. **Data Validity** — Valid `{{VAR}}` tokens, no hardcoded URLs/creds
+5. **Data Validity** — Valid `{{VAR}}` tokens, no hardcoded URLs/creds; **GraphQL suites: schema validation (DV-006–DV-011)** — query/mutation names, command wrapper, arg names, response fields, input types, MoneyType structure
 6. **BL/ECL Coverage** — Business rule and edge case traceability
 7. **Duplication** — Cross-suite overlap detection
 
@@ -245,12 +254,18 @@ Reviews BOTH existing and newly generated cases.
 - Hardcoded URLs → replace with `{{VAR}}`
 - Empty Failure_Signals → generate from assertions
 - Empty Cleanup → infer from mutation steps
+- **GraphQL: missing `command` wrapper** (DV-007) → wrap mutation args in `command: { ... }`
+- **GraphQL: wrong arg name** (DV-008) → replace with correct name from schema (e.g., `keyword` → `query`)
+- **GraphQL: wrong response field** (DV-009) → replace with correct field (e.g., `totals.subTotal` → `subTotal`)
+- **GraphQL: invalid input field** (DV-010) → remove field not in input type (e.g., `storeId` from `createOrganization`)
+- **GraphQL: wrong MoneyType** (DV-011) → replace `currencyCode` with `currency { code }`
 
 **Manual items (presented as checklist for user):**
 - Vague assertions — needs domain knowledge
 - Missing preconditions — needs flow understanding
 - Duplicate cases — needs human decision
 - Missing BL-*/ECL-* refs — needs domain mapping
+- **GraphQL: invalid query/mutation name** (DV-006) → needs understanding of correct alternative operation
 
 After fixes: re-run structure validation to confirm no regressions.
 
@@ -422,3 +437,4 @@ Write to `reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`:
 - **Always query Context7** (`/virtocommerce/vc-docs`) in Phase 1 to enrich gap detection with up-to-date VC module behavior
 - **Deduplication before generation** — Phase 2 must check target and related suite CSVs for semantic duplicates before creating new cases
 - **Build verification before pipeline** — always run pre-flight build verification per `agent-dispatch.md § Build Verification` and include version info in the lifecycle report
+- **GraphQL schema refresh before generation** — when scope includes GraphQL suites (050, or `--layer graphql`), run `npm run schema:refresh` in Pre-Flight and validate all generated queries/mutations against `graphql-schema.md` in Phase 2. Schema mismatches are Blocker/Critical (DV-006–DV-011)

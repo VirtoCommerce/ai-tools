@@ -187,6 +187,42 @@ Ensures all referenced data is valid and resolvable.
 - **Detection:** Admin navigation uses URL path that doesn't match current Admin SPA routes.
 - **Check:** Compare against known admin route patterns from `agents/knowledge/sitemap.md`.
 
+### DV-006: Invalid GraphQL query/mutation name `[Blocker]`
+- **Detection:** (GraphQL suites only) Steps contain a query or mutation name that does not exist in the live schema. Reference: `agents/knowledge/graphql-schema.md`.
+- **Bad:** `mutation { createCart(storeId: "...") { id } }` — `createCart` does not exist
+- **Good:** `query { cart(storeId: "..." currencyCode: "USD") { id } }` — `cart` query exists and auto-creates
+- **Auto-fixable:** No — requires understanding the correct alternative operation.
+
+### DV-007: Missing command wrapper on GraphQL mutation `[Blocker]`
+- **Detection:** (GraphQL suites only) A mutation uses direct args instead of the `command` input wrapper.
+- **Bad:** `mutation { addItem(cartId: "..." productId: "..." quantity: 1) { id } }`
+- **Good:** `mutation { addItem(command: { cartId: "..." productId: "..." quantity: 1 }) { id } }`
+- **Auto-fixable:** Yes — wrap args in `command: { ... }`.
+
+### DV-008: Wrong GraphQL argument name `[Blocker]`
+- **Detection:** (GraphQL suites only) Query/mutation uses an argument name that doesn't exist on that operation.
+- **Bad:** `products(keyword: "laptop")` — should be `query`; `products(facetQuery: "brand")` — should be `facet`
+- **Check:** Compare arg names against `graphql-schema.md` query/mutation signatures.
+- **Auto-fixable:** Yes — replace with correct arg name from schema.
+
+### DV-009: Wrong GraphQL response field name `[Critical]`
+- **Detection:** (GraphQL suites only) Assertions or inline queries reference fields that don't exist on the return type.
+- **Bad:** `totals { subTotal { amount } }` on CartType (flat field, not nested), `facets { values }` on ProductConnection (use `term_facets { terms }`), `availability` on VariationType (use `availabilityData`), `shippingAddress` on CustomerOrderType (use `addresses[]`)
+- **Check:** Compare response field names against `graphql-schema.md` type definitions.
+- **Auto-fixable:** Yes — replace with correct field name.
+
+### DV-010: Invalid field in GraphQL input type `[Critical]`
+- **Detection:** (GraphQL suites only) Mutation command contains a field that doesn't exist on the input type.
+- **Bad:** `createOrganization(command: { name: "...", storeId: "..." })` — `InputCreateOrganizationType` has no `storeId`
+- **Check:** Compare command fields against `graphql-schema.md` input type definitions.
+- **Auto-fixable:** Yes — remove the invalid field.
+
+### DV-011: Wrong MoneyType field structure `[Critical]`
+- **Detection:** (GraphQL suites only) Query/assertion uses `currencyCode` directly on a MoneyType field instead of `currency { code }`.
+- **Bad:** `listPrice { amount currencyCode }`
+- **Good:** `listPrice { amount currency { code } }`
+- **Auto-fixable:** Yes — replace `currencyCode` with `currency { code }`.
+
 ---
 
 ## Dimension 6: BL/ECL Coverage

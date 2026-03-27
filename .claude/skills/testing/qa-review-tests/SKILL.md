@@ -31,7 +31,7 @@ Review test cases against quality criteria to catch issues before regression run
 | 2 | **Determinism** | Vague steps that two agents would execute differently; ambiguous assertions | Critical | Static |
 | 3 | **Completeness** | Missing preconditions, empty assertions, no failure signals, missing cleanup | High | Static |
 | 4 | **Testability** | Assertions that can't be objectively verified ("looks correct", "works properly") | High | Static |
-| 5 | **Data Validity** | Referenced `{{VAR}}` bindings that don't exist in `.env`, hardcoded URLs/credentials, stale SKUs/product refs | High | Static |
+| 5 | **Data Validity** | Referenced `{{VAR}}` bindings, hardcoded URLs/credentials, stale SKUs, **GraphQL schema mismatches** (DV-006–DV-011: invalid operations, missing command wrapper, wrong args/fields) | Blocker–High | Static |
 | 6 | **BL/ECL Coverage** | Missing `Business_Rule` refs, missing `Edge_Case_Refs` for relevant domains, uncovered BL-* invariants | Medium | Static |
 | 7 | **Duplication** | Overlapping test cases within the suite or across suites testing the same scenario | Medium | Static |
 | 8 | **Environment Verification** | Steps reference UI elements/pages/flows that don't exist or have changed in the live environment | Critical | Live (`--verify`) |
@@ -104,6 +104,13 @@ For every test case row, evaluate:
 - [ ] All `{{VAR}}` tokens are from the known env variable set (see `test-case-template.md`)
 - [ ] No hardcoded URLs (e.g., `https://vcst-qa-storefront...`) — must use `{{FRONT_URL}}`
 - [ ] No hardcoded credentials — must use `{{USER_EMAIL}}`, `{{USER_PASSWORD}}`
+- [ ] **GraphQL suites (050, graphql-tagged)**: validate all queries/mutations against `agents/knowledge/graphql-schema.md`:
+  - [ ] Query/mutation names exist in schema (DV-006)
+  - [ ] All mutations use `command: { ... }` wrapper (DV-007)
+  - [ ] Argument names match schema signatures (DV-008)
+  - [ ] Response field names match return types (DV-009)
+  - [ ] Input type fields are valid (DV-010)
+  - [ ] MoneyType uses `currency { code }` not `currencyCode` (DV-011)
 - [ ] Referenced products/SKUs exist in `test-data/` or use `{{TEST_SKU}}`
 - [ ] Referenced org users use `{{ORG_USER_EMAIL}}` not hardcoded emails
 

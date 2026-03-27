@@ -934,13 +934,16 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 38,
-      "estimatedMinutes": 27,
+      "testCount": 57,
+      "estimatedMinutes": 40,
       "agent": "qa-backend-expert",
       "tags": [
         "graphql",
         "xapi",
         "range-facets",
+        "registration",
+        "cart-quantity",
+        "page-context",
         "sprint"
       ]
     },

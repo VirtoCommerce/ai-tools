@@ -21,7 +21,9 @@
     "seed:catalog": "node scripts/seed-test-data.js catalog",
     "seed:full": "node scripts/seed-test-data.js full",
     "seed:teardown": "node scripts/seed-test-data.js teardown",
-    "seed:dry-run": "node scripts/seed-test-data.js catalog --dry-run --verbose"
+    "seed:dry-run": "node scripts/seed-test-data.js catalog --dry-run --verbose",
+    "schema:refresh": "node scripts/refresh-graphql-schema.mjs",
+    "schema:check": "node scripts/refresh-graphql-schema.mjs --dry-run > /dev/null"
   },
   "repository": {
     "type": "git",
