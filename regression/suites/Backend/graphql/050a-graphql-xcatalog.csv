@@ -1,0 +1,127 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+GQL-001,xCatalog - Search Products Query,GraphQL > xCatalog,Critical,BL-GQL-002,ECL-2.1; ECL-8.1,"BROWSER-ONLY: All tests MUST execute in GraphiQL UI via browser (playwright-edge). Do NOT use curl/API calls. Follow graphiql-interaction.md for CodeMirror interaction. GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; products in catalog","storeId={{STORE_ID}}; query=""laptop""; cultureName=""en-US""; currencyCode=""USD""","[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { products(storeId: ""{{STORE_ID}}"" query: ""laptop"") { totalCount items { id name code imgSrc } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response from response panel","[RESPONSE] Response panel shows data without error banner
+[DATA] data.products object present in response
+[DATA] totalCount > 0 for valid query term
+[DATA] items[] non-empty; each item contains id, name, code
+[DATA] imgSrc is a valid URL or null
+[ERRORS] No errors[] in response","[CONSOLE] No JS errors in GraphiQL
+[ROUNDTRIP] Re-execute same query → same results returned","errors[] non-empty in response panel; totalCount = 0 for known query term; missing id/name/code on items; GraphiQL shows error banner",none,xAPI,Automated
+GQL-002,xCatalog - Get Product Detail Query,GraphQL > xCatalog,Critical,BL-GQL-002; BL-GQL-003,ECL-2.1,"Product ID known from GQL-001; GraphiQL UI loaded","storeId={{STORE_ID}}; productId from GQL-001 result; currencyCode=""USD""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { product(storeId: ""{{STORE_ID}}"" id: ""<PRODUCT_ID>"") { id name descriptions { content } prices { list { amount } sale { amount } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response from response panel","[RESPONSE] Response panel shows data without error banner
+[DATA] product object returned with correct id
+[DATA] descriptions[] non-empty; content populated
+[MATH] prices.list.amount > 0
+[DATA] prices.sale present (may be null if no sale active)
+[ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute query → same product returned
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; product null; descriptions empty; prices missing list amount",none,xAPI,Automated
+GQL-003,xCatalog - Category Tree Query,GraphQL > xCatalog,High,BL-GQL-002,ECL-2.1,"Categories configured in store; GraphiQL UI loaded","storeId={{STORE_ID}}; cultureName=""en-US""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { categories(storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { totalCount items { id name slug childCategories { id name } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response from response panel","[RESPONSE] Response panel shows data without error banner
+[DATA] Root categories returned; totalCount > 0
+[DATA] childCategories nested correctly under parent
+[DATA] Each category has slug (non-empty string suitable for URL)
+[MATH] totalCount matches actual items[] length
+[ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute query → same category tree
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; totalCount = 0; slug null or empty; childCategories missing on known parent categories",none,xAPI,Automated
+GQL-004,xCatalog - Product Facets/Filters Query,GraphQL > xCatalog,High,BL-GQL-002,ECL-2.1; ECL-8.1,"Products with properties configured; GraphiQL UI loaded","storeId={{STORE_ID}}; facet includes brand/price range; filter combinations","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { products(storeId: ""{{STORE_ID}}"" facet: ""brand"") { totalCount items { id name } term_facets { name label terms { term label count isSelected } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — note facet values
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type filtered query with term facet applied
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — compare filtered vs unfiltered results","[RESPONSE] Response panel shows data without error banner
+[DATA] term_facets[] non-empty; at minimum brand facet present
+[DATA] Each facet value has label and count > 0
+[DATA] Filtered result set is smaller than unfiltered set
+[DATA] Combining two filters uses AND logic (result set narrows further)
+[ERRORS] No errors[] in response","[ROUNDTRIP] Filter counts match product count in filtered response
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; term_facets[] empty when facet-enabled properties exist; filter does not narrow results; facet count mismatches",none,xAPI,Automated
+GQL-019,xCatalog - Product Variations Query,GraphQL > xCatalog,High,BL-GQL-002; BL-GQL-003,ECL-2.1,"Configurable products with variations (size, color) exist in catalog; GraphiQL UI loaded","storeId={{STORE_ID}}; parentProductId (configurable product with known variations)","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { product(storeId: ""{{STORE_ID}}"" id: ""<PARENT_ID>"") { id name variations { id name properties { name value } prices { list { amount } } availabilityData { availableQuantity } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify variation properties and pricing","[RESPONSE] Response panel shows data without error banner
+[DATA] variations[] non-empty
+[DATA] Each variation has distinct property combination (e.g., size+color unique)
+[DATA] Each variation has prices.list.amount > 0
+[DATA] availabilityData differs per variation if stock differs (or all show available if not tracked)
+[ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute query → same variations returned
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; variations[] empty for known configurable product; all variations same price when they should differ; availabilityData not populated",none,xAPI,Automated
+GQL-022,xCatalog - Product Listing Price During Reindex Lag Window,GraphQL > xCatalog > Cross-Domain,Critical,BL-GQL-002; BL-GQL-003,ECL-2.1,"Product with known price; Elasticsearch indexing enabled; Admin API accessible; GraphiQL UI loaded","productCode={{TEST_SKU}}; storeId={{STORE_ID}}; originalPrice; newPrice; reindexWindowSeconds=60","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type products query for {{TEST_SKU}} → Execute → Read response → record as originalPrice
+[ACT] Change {{TEST_SKU}} price via: PUT {{BACK_URL}}/api/pricing/pricelists/<priceListId>/prices with newPrice
+[ACT] Immediately clear editor → type same products query → Execute
+[READ] Read response — document whether old or new price returned (lag acceptable per BL-CROSS-002)
+[WAIT] Wait 60 seconds for reindex to complete
+[ACT] Clear editor → type same products query → Execute
+[READ] Read response — verify price now reflects newPrice","[DATA] Step 4 result: originalPrice MAY be returned (acceptable reindex lag of 30-60s)
+[DATA] Step 7 result: prices.list.amount = newPrice (reindex must have completed)
+[DATA] If step 7 still shows originalPrice after 90s total: flag as reindex failure
+[DATA] Document actual observed lag duration
+[ERRORS] No errors[] in any query","[ROUNDTRIP] Multiple re-executions confirm price converges to newPrice
+[CONSOLE] No JS errors in GraphiQL","xCatalog still shows originalPrice after 90 seconds total; errors[] on xCatalog query; REST price update returns non-200; price shows as 0 after change","restore original price via Admin API","Coverage Gap Analysis BL-CROSS-002",Generated
+GQL-034,xCatalog - Range Filter Syntax: Inclusive vs Exclusive Boundaries,GraphQL > xCatalog > Range Facets,High,BL-GQL-002; BL-SRCH-001,ECL-3.2,"GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; products with known prices exist; auth not required for product queries","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""","[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { products(storeId: ""{{STORE_ID}}"" filter: ""price.usd:[50 TO 100]"" currencyCode: ""USD"") { totalCount items { name price { actual { amount } } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — note totalCount as Count_Inclusive
+[ACT] Clear editor → type query with exclusive bounds: query { products(storeId: ""{{STORE_ID}}"" filter: ""price.usd:(50 TO 100)"" currencyCode: ""USD"") { totalCount items { name price { actual { amount } } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — note totalCount as Count_Exclusive","[DATA] Inclusive [50 TO 100]: all items have price.actual.amount >= 50 AND <= 100
+[DATA] Exclusive (50 TO 100): all items have price.actual.amount > 50 AND < 100
+[MATH] Count_Inclusive >= Count_Exclusive (inclusive includes boundary products)
+[ERRORS] No errors[] in either response
+[DATA] Products at exactly $50.00 or $100.00 appear in inclusive but not exclusive result","[ROUNDTRIP] Re-execute inclusive query → same totalCount
+[CONSOLE] No JS errors in GraphiQL","Inclusive and exclusive returning identical counts; products at exact boundary appearing in exclusive result; errors[] in response; totalCount = 0 for valid price range",none,"GAP-RF-11, BL-SRCH-001",Generated
+GQL-035,xCatalog - Open-Ended Range Filter Syntax,GraphQL > xCatalog > Range Facets,High,BL-GQL-002; BL-SRCH-001,ECL-3.2,"GraphiQL UI loaded; products with varying prices exist","storeId={{STORE_ID}}; currencyCode=""USD""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query with upper-bounded range: query { products(storeId: ""{{STORE_ID}}"" filter: ""price.usd:(TO 100]"" currencyCode: ""USD"") { totalCount items { name price { actual { amount } } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — note totalCount as Count_UpTo100
+[ACT] Clear editor → type query with lower-bounded range: query { products(storeId: ""{{STORE_ID}}"" filter: ""price.usd:[100 TO)"" currencyCode: ""USD"") { totalCount items { name price { actual { amount } } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — note totalCount as Count_From100","[DATA] (TO 100]: all items have price.actual.amount <= 100
+[DATA] [100 TO): all items have price.actual.amount >= 100
+[MATH] Count_UpTo100 + Count_From100 >= total products (products at exactly $100 counted in both)
+[ERRORS] No errors[] in either response
+[DATA] No products with amount > 100 in the (TO 100] result","[ROUNDTRIP] Re-execute each query → same totalCount
+[CONSOLE] No JS errors in GraphiQL","Products above $100 appearing in (TO 100] result; products below $100 in [100 TO) result; errors[] in response; empty result for ranges containing known products",none,"GAP-RF-12, BL-SRCH-001",Generated
+GQL-036,xCatalog - Range Filter on Non-Price Property (Underscore Field Name),GraphQL > xCatalog > Range Facets,Critical,BL-GQL-002; BL-SRCH-001,ECL-3.2,"GraphiQL UI loaded; products with underscore-named property exist (e.g., Volume_ml in Alcoholic Drinks category)","storeId={{STORE_ID}}; currencyCode=""USD""; categorySlug=""alcoholic-drinks""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query filtering by underscore property: query { products(storeId: ""{{STORE_ID}}"" filter: ""Volume_ml:[200 TO 550]"" facet: ""Volume_ml"" currencyCode: ""USD"") { totalCount items { name properties { name value } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — check totalCount and item properties","[DATA] totalCount > 0 for valid Volume_ml range (observed: 12 products)
+[DATA] Returned items have Volume_ml property values within 200–550 range (observed: 200, 220, 330, 500, 550)
+[DATA] No items with Volume_ml < 200 (e.g., 33ml products excluded)
+[ERRORS] No errors[] related to filter logic (note: ARGUMENT_NULL errors may appear for items with null properties — this is a pre-existing data quality issue, not a filter bug)
+[DATA] Filter parameter 'Volume_ml' is preserved in the request (not truncated to 'Volume')","[ROUNDTRIP] Re-execute same query → consistent results
+[CONSOLE] No JS errors in GraphiQL","totalCount = 0 for range containing known products; items with Volume_ml=33 appearing in 200–550 range; field name truncated in filter parameter; errors[] indicating filter parsing failure",none,"VP-9035, VCST-4833, GAP-RF-13",Generated
+GQL-037,xCatalog - Facet Parameter Returns Range Aggregation Bucket,GraphQL > xCatalog > Range Facets,High,BL-GQL-002; BL-SRCH-001,ECL-3.2,"GraphiQL UI loaded; category with price-range products exists","storeId={{STORE_ID}}; currencyCode=""USD""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query with explicit range facet parameter: query { products(storeId: ""{{STORE_ID}}"" facet: ""price.usd:[0 TO 100]"" currencyCode: ""USD"") { totalCount range_facets { name ranges { from to count isSelected label } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read range_facets in response
+[ACT] Clear editor → type query with different range bucket: query { products(storeId: ""{{STORE_ID}}"" facet: ""price.usd:[100 TO 500]"" currencyCode: ""USD"") { totalCount range_facets { name ranges { from to count isSelected label } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read range_facets in response — compare bucket count","[DATA] range_facets array contains entry with name 'price'
+[DATA] ranges[] contains at least one bucket object with from, to, count, isSelected, label fields
+[MATH] Bucket count is non-negative and <= totalCount
+[DATA] isSelected reflects whether the range matches the facet parameter
+[ERRORS] No errors[] in response
+[DATA] Second query returns a different bucket count for [100 TO 500] range","[ROUNDTRIP] Re-execute → same bucket counts
+[CONSOLE] No JS errors in GraphiQL","range_facets empty or null (note: facet:""price"" alone returns empty range_facets — explicit range syntax required); bucket missing count field; errors[] in response; bucket count exceeds totalCount",none,"GAP-RF-14, BL-SRCH-001",Generated

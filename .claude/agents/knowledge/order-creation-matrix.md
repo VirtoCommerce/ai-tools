@@ -44,3 +44,35 @@ Test matrix for end-to-end order creation covering all payment providers and shi
 - Every provider tested with every shipping method
 - Datatrance requires OTP `4000` for 3DS verification
 - CyberSource is the only provider with cart-page payment form
+
+---
+
+## GraphQL xAPI Checkout Flow (Verified 2026-03-30)
+
+### Correct Mutation Sequence
+
+```
+1. AUTH  → POST /connect/token (get bearer token)
+2. addItem(command: { storeId, userId, productId, quantity, currencyCode, cultureName })
+3. addOrUpdateCartShipment(command: { storeId, userId, currencyCode, cultureName, shipment: {
+     shipmentMethodCode: "FixedRate"
+     shipmentMethodOption: "Ground"
+     price: 150                          ← MUST match rate!
+     deliveryAddress: { city, countryCode, countryName, firstName, lastName, line1, postalCode, regionId, regionName }
+   }})
+4. addOrUpdateCartPayment(command: { storeId, userId, currencyCode, cultureName, payment: {
+     paymentGatewayCode: "DefaultManualPaymentMethod"
+   }})
+5. createOrderFromCart(command: { cartId: "<cart-id>" })
+```
+
+### Critical Requirements
+
+**All cart mutations require `userId`** — every cart mutation (`addItem`, `addOrUpdateCartShipment`, `addOrUpdateCartPayment`, `clearCart`) requires `userId: String (required)`. Without it: `ARGUMENTS_OF_CORRECT_TYPE` error. Get userId from `query { me { id } }`.
+
+**`addOrUpdateCartShipment` — price must match rate** — `CartShipmentValidator` (source: `vc-module-x-cart/Validators/CartShipmentValidator.cs`) validates `shipmentShippingMethod.Rate != shipment.Price` and rejects if they don't match. Solution: query `availableShippingMethods { code optionName price { amount } }` first, then pass exact `price` value.
+
+**Available shipping rates on QA:**
+- `FixedRate/Ground` = $150
+- `FixedRate/Air` = $250
+- `BuyOnlinePickupInStore/Pickup` = $0

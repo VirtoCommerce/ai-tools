@@ -1,0 +1,25 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+GQL-011,xOrder - Get Orders Query,GraphQL > xOrder,Critical,BL-GQL-002; BL-GQL-004,ECL-2.1,"User authenticated; orders exist for user; auth header set in GraphiQL","filter=""""; sort=""createdDate:desc""; pagination: first=10","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { orders(filter: """" sort: ""createdDate:desc"") { totalCount items { id number status createdDate total { amount } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify orders list","[RESPONSE] Response panel shows data without error banner
+[DATA] totalCount > 0
+[DATA] items[] sorted by createdDate descending
+[DATA] Each item has id, number, status, createdDate, total.amount
+[DATA] status is a known enum value (New, Processing, Completed, etc.)
+[DATA] Pagination: first/after params work to return subsets
+[ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute same query → same results
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; totalCount = 0 when orders exist; sort order wrong; missing total.amount; GraphiQL shows auth error without token",none,xAPI,Automated
+GQL-012,xOrder - Get Order Detail Query,GraphQL > xOrder,Critical,BL-GQL-002; BL-GQL-004,ECL-2.1,"Order exists; order ID/number known from GQL-011; auth header set in GraphiQL","orderId or orderNumber from GQL-011","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: order query by ID or number with full detail fields
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify full order detail","[RESPONSE] Response panel shows data without error banner
+[DATA] Full order object returned with correct id/number
+[DATA] items[] (line items) non-empty with productId, quantity, price
+[DATA] addresses[] non-empty; at least one address with city, countryCode populated
+[DATA] inPayments[] non-empty; payment has paymentMethod and status
+[MATH] Order totals (subTotal + shipping + tax = grandTotal within tolerance)
+[ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute query → same order detail
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; items[] empty; addresses[] empty; inPayments[] empty; GraphiQL shows auth error",none,xAPI,Automated

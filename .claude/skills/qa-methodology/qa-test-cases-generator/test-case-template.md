@@ -281,14 +281,14 @@ Tests executed via Postman MCP or `browser_evaluate` (fetch). No browser UI inte
 
 ### Layer: GraphQL xAPI
 
-Tests executed in the **GraphiQL UI** at `{{BACK_URL}}/ui/graphiql`. GraphiQL uses CodeMirror editors — use `browser_type` (NOT `browser_fill`). See `graphiql-interaction.md` for the full interaction guide. Key rule: **HTTP 200 ≠ success** — always check `errors[]` in the response panel.
+Tests executed in the **GraphiQL UI** at `{{BACK_URL}}/ui/graphiql`. GraphiQL uses CodeMirror editors — see `graphiql-interaction.md` for reliable interaction patterns (auth token, editor, execute). Key rules: **HTTP 200 ≠ success** — always check `errors[]`; **all cart mutations require `userId`**; **shipment mutations require `price` matching rate**. See **"GraphQL mutation validation"** section below for mandatory 3-step validation before test case approval.
 
 **Step tags (Steps column):**
 
 | Tag | Meaning | Agent Action |
 |-----|---------|-------------|
 | `[NAV]` | Navigate to GraphiQL UI | `browser_navigate` to `{{BACK_URL}}/ui/graphiql` |
-| `[AUTH]` | Set Bearer token in Headers tab | Obtain token via POST `{{BACK_URL}}/connect/token`, then type `{"Authorization": "Bearer <token>"}` into Headers CodeMirror |
+| `[AUTH]` | Set Bearer token in Headers tab | Obtain token via POST `{{BACK_URL}}/connect/token`, set in Headers editor via `execCommand('insertText')` — see `graphiql-interaction.md § Setting Auth Token`. MUST verify token appears in Headers panel (not Variables) |
 | `[ACT]` | Interact with GraphiQL editor | Click editor → Ctrl+A → Backspace → type query/mutation via `browser_type` |
 | `[GQL]` | Execute GraphQL query or mutation | Click Execute (▶) button or press Ctrl+Enter |
 | `[READ]` | Read response from response panel | `browser_snapshot` or `browser_evaluate` to extract response JSON |
@@ -443,5 +443,35 @@ HTTP 200 from xAPI does not indicate success.
 Include at least 2 failure signals per test — typically: timeout signal + API error signal.
 
 ---
+
+### GraphQL mutation validation — MANDATORY for test case generation
+
+Every GraphQL test case that includes mutations MUST pass a **3-step validation** before approval:
+
+**Step 1: Schema + Source Validation**
+1. Introspect live schema (`npm run schema:refresh`) — check `NonNull` (required) fields on all input types used
+2. Search module source for **FluentValidation validators** on GitHub: `<CommandName>Validator repo:VirtoCommerce/vc-module-x-*` — these enforce server-side rules NOT visible in the schema (e.g., `CartShipmentValidator` requires `price` to match the shipping rate)
+3. Check `vc-frontend` source for how the storefront calls each mutation: `<mutationName> repo:VirtoCommerce/vc-frontend` — this shows the production-proven field set
+
+**Step 2: Live Smoke Execution**
+Before finalizing any test case with cart/order mutations, **execute the mutation sequence once** against the live QA environment via GraphiQL or `fetch()`. Record the exact working mutations. This catches:
+- Server-side validation not in schema (price matching, address validation)
+- Required fields omitted from schema examples
+- Environment-specific configuration (available shipping/payment methods, store settings)
+
+**Step 3: Reference Chain**
+Every mutation in a test case Steps column must reference one of:
+- `graphql-schema.md` — schema-verified field names and types
+- `order-creation-matrix.md` — live-verified checkout mutation sequence
+- `graphiql-interaction.md` — verified UI interaction patterns
+- VC docs or `vc-frontend` source — implementation-verified
+
+**Known pitfalls (discovered via live testing):**
+| Pitfall | Root Cause | Fix |
+|---------|-----------|-----|
+| All cart mutations need `userId` | `InputAddItemType.userId` is `NonNull` | Always include `userId` from `me { id }` query |
+| `addOrUpdateCartShipment` VALIDATION error | `CartShipmentValidator` checks `Rate != Price` | Pass `price` matching `availableShippingMethods` rate |
+| GraphiQL Headers vs Variables | CodeMirror `setValue()` doesn't update React state | Use `execCommand('insertText')` — see `graphiql-interaction.md` |
+| Schema example omits required fields | Introspection script abbreviates | Always check `NonNull` wrapper on input type fields |
 
 > **Migrating from legacy TestRail format?** See `test-case-examples.md` → Migration from Legacy Format.

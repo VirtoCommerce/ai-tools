@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-03-27)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-03-30)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `node scripts/refresh-graphql-schema.mjs` — run when schema may have changed.
 
@@ -15,6 +15,8 @@
 7. **Products search**: arg is `query`, not `keyword` (but `brands` query uses `keyword`)
 8. **Variations**: `availabilityData` (not `availability`)
 9. **Order addresses/payments**: `addresses[]` and `inPayments[]` (not `shippingAddress` or `payment`)
+10. **All cart mutations require `userId`**: `addItem`, `addOrUpdateCartShipment`, `addOrUpdateCartPayment`, `clearCart` — get from `me { id }`
+11. **`addOrUpdateCartShipment` requires `price`**: `CartShipmentValidator` rejects if price doesn't match available shipping rate. Query `availableShippingMethods` first.
 
 ---
 
@@ -232,8 +234,6 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 
 | Mutation | Command Type |
 |----------|-------------|
-| `confirmTask` | `ConfirmTaskCommandType` |
-| `rejectTask` | `RejectTaskCommandType` |
 | `addFcmToken` | `InputAddFcmTokenType` |
 | `clearAllPushMessages` | `none` |
 | `deleteFcmToken` | `InputDeleteFcmTokenType` |
@@ -496,15 +496,25 @@ query { cart(storeId: "B2B-store" currencyCode: "USD") { id itemsCount items { i
 
 ### Add item to cart
 ```graphql
-mutation { addItem(command: { storeId: "B2B-store" productId: "SKU123" quantity: 1 currencyCode: "USD" }) { id itemsCount items { productId quantity listPrice { amount } } } }
+mutation { addItem(command: { storeId: "B2B-store" userId: "<USER_ID>" productId: "<PRODUCT_ID>" quantity: 1 currencyCode: "USD" cultureName: "en-US" }) { id itemsCount items { productId quantity listPrice { amount } } } }
 ```
+> **Note:** `userId` is required. Get from `query { me { id } }`.
 
 ### Search products
 ```graphql
 query { products(storeId: "B2B-store" query: "laptop" currencyCode: "USD") { totalCount items { id name code imgSrc price { actual { amount } } } term_facets { name terms { term label count } } } }
 ```
 
-### Create order from cart
+### Full checkout flow (verified — see order-creation-matrix.md)
 ```graphql
-mutation { createOrderFromCart(command: { cartId: "cart-uuid" }) { id number status } }
+# 1. Get userId
+query { me { id } }
+# 2. Add item (userId required)
+mutation { addItem(command: { storeId: "B2B-store" userId: "<USER_ID>" productId: "<PRODUCT_ID>" quantity: 1 currencyCode: "USD" cultureName: "en-US" }) { id } }
+# 3. Set shipment (price MUST match rate)
+mutation { addOrUpdateCartShipment(command: { storeId: "B2B-store" userId: "<USER_ID>" currencyCode: "USD" cultureName: "en-US" shipment: { shipmentMethodCode: "FixedRate" shipmentMethodOption: "Ground" price: 150 deliveryAddress: { city: "New York" countryCode: "US" countryName: "United States" firstName: "Test" lastName: "User" line1: "123 Test St" postalCode: "10001" } } }) { id } }
+# 4. Set payment
+mutation { addOrUpdateCartPayment(command: { storeId: "B2B-store" userId: "<USER_ID>" currencyCode: "USD" cultureName: "en-US" payment: { paymentGatewayCode: "DefaultManualPaymentMethod" } }) { id } }
+# 5. Create order
+mutation { createOrderFromCart(command: { cartId: "<CART_ID>" }) { id number status } }
 ```

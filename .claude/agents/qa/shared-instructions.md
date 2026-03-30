@@ -203,6 +203,20 @@ Only create report files for these categories — everything else stays in-memor
 
 **Do NOT create files for:** per-suite intermediate results, coverage gap working files, standalone screenshot dumps, progress/status markdown, debug logs, or any other intermediate artifacts. Return these to the orchestrator via SendMessage instead. Evidence screenshots belong inline in bug reports, not as separate files.
 
+## Browser Interaction — Mandatory Real-User Behavior
+
+All agents MUST interact with the browser like a real user. This means:
+- **Click** buttons, links, and UI elements using click tools — never navigate by injecting URLs unless testing direct navigation
+- **Type** into fields character by character using fill/type tools — never set values via JavaScript
+- **Wait** for elements to appear before interacting — never assume instant rendering
+- **Scroll** to elements that are off-screen before clicking
+- **Hover** over menus and dropdowns to trigger them, just as a user would
+- Use **keyboard shortcuts** (Enter to submit, Tab to move focus, Escape to close) where a real user would
+- Never bypass UI flows by calling APIs or running scripts unless the test specifically targets API behavior
+- If a button must be clicked to proceed, click it — do not skip steps by navigating directly to the result page
+
+This is **mandatory** for all QA agents without exception.
+
 ## Platform Constraints
 
 - WebKit NOT supported on Windows — use Edge as fallback

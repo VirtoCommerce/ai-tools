@@ -1,0 +1,68 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+GQL-015,GraphQL Error Handling - Invalid Query,GraphQL > Errors,High,BL-GQL-001,ECL-14.1,"GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; no auth required for this test","malformedQuery=""{ products { INVALID_FIELD } }""; missingArgsQuery=""mutation { addItem }""; nonExistentField=""{ nonExistentTopLevelField }""","[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type malformed query: { products { INVALID_FIELD } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — verify structured GraphQL error returned (not crash)
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query for non-existent field: { nonExistentTopLevelField }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — verify field-level error message
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation with missing required args: mutation { addItem }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — verify argument validation error","[RESPONSE] Response panel shows error data (red text or errors block — not blank/crash)
+[ERRORS] Malformed syntax: errors[] non-empty with message describing syntax error
+[ERRORS] Unknown field: errors[].message references the unknown field by name
+[ERRORS] Missing args: errors[].message references missing argument name
+[DATA] All error responses follow GraphQL error format: { errors: [{ message, locations, path }] }
+[DATA] No stack traces or internal paths in error messages","[CONSOLE] No unhandled server exceptions in GraphiQL console
+[RESPONSE] GraphiQL remains functional after each error (not frozen/crashed)","GraphiQL crashes or freezes; stack trace in errors[].message; no errors[] on obviously invalid query; blank response panel",none,xAPI,Automated
+GQL-016,GraphQL Authentication - Unauthenticated Access,GraphQL > Auth,Critical,BL-GQL-004,ECL-2.1; ECL-14.1,"GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; products exist; auth tokens available","publicQuery (no token); protectedQuery (orders, no token); mutationNoToken (addItem without auth); validToken={{USER_TOKEN}}","[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → click inside the Headers editor → clear (Ctrl+A, Backspace) → leave empty (no auth)
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type public query: query { products(storeId: ""{{STORE_ID}}"") { totalCount items { id name } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — verify public query succeeds without auth
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type protected query: query { orders { totalCount } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — verify authentication error returned
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" productId: ""{{TEST_SKU}}"" quantity: 1 }) { id itemsCount } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — verify authentication error returned
+[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → click inside the Headers editor → clear (Ctrl+A, Backspace) → type: {""Authorization"": ""Bearer {{USER_TOKEN}}""} → verify the token appears under the Headers region (not Variables)
+[ACT] Click query editor → clear → type orders query again
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — verify authenticated query succeeds","[RESPONSE] Public products query: data.products returned; no errors[]
+[ERRORS] Orders query without auth: errors[] non-empty with UNAUTHORIZED message (BL-GQL-004)
+[ERRORS] addItem without auth: errors[] non-empty with UNAUTHORIZED message
+[DATA] Error messages contain no user IDs, internal paths, or password hints
+[DATA] errors[].extensions.code = ""UNAUTHORIZED"" or equivalent
+[DATA] Authenticated orders query succeeds after setting token","[CONSOLE] No server errors in GraphiQL
+[RESPONSE] GraphiQL remains functional throughout auth/no-auth switching","data returned for orders/mutations without auth; GraphiQL shows error banner on public query; error message exposes internal details; authenticated query fails with valid token",none,xAPI,Automated
+GQL-018,GraphQL Query Performance,GraphQL > Performance,High,BL-GQL-002,,,"GraphiQL UI loaded; products and orders available; auth header set","product search query; complex nested product query (variants + prices + images); orders list query","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type products search query → Execute → note response time in GraphiQL or DevTools Network
+[ACT] Clear editor → type complex nested product query with variants, prices, images → Execute → note response time
+[ACT] Clear editor → type orders list query → Execute → note response time
+[ACT] Re-execute nested query 5 times (Ctrl+Enter each); check response times do not grow proportionally (N+1 detection)","[DATA] Product search response time < 500ms
+[DATA] Nested product query response time < 1000ms
+[DATA] Orders list response time < 500ms
+[DATA] Repeated nested queries: response times remain within 20% of first call (no N+1 pattern)
+[ERRORS] No errors[] in any response","[CONSOLE] No timeout errors or slow query warnings in GraphiQL","Response time exceeds threshold; response times grow linearly with nesting depth (N+1); errors[] on any query; GraphiQL shows timeout",none,xAPI,Automated
+GQL-020,GraphQL Introspection Security,GraphQL > Security,High,,,"GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; no auth required for introspection test","introspectionQuery: { __schema { types { name } } }","[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: { __schema { types { name } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — check introspection enabled/disabled status
+[ACT] If enabled: scan type names in response for sensitive internal types
+[ACT] Re-execute introspection query 10 times rapidly (Ctrl+Enter) to test rate limiting","[RESPONSE] Response panel shows data or structured error (not crash)
+[DATA] If introspection disabled: errors[] contains message indicating introspection not allowed (acceptable for production)
+[DATA] If introspection enabled: __schema.types returned; no types with names containing ""internal"" ""debug"" ""admin"" ""secret""
+[DATA] Rate limiting applies (10 rapid queries; responses throttled after threshold)
+[DATA] Response is valid JSON in either case","[CONSOLE] No server errors in GraphiQL
+[RESPONSE] GraphiQL Docs sidebar (📖) reflects schema availability","GraphiQL crashes on introspection; internal type names exposed in schema; no rate limiting on repeated introspection; server errors in console",none,xAPI,Automated

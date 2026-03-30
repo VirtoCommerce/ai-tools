@@ -1,0 +1,13 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+GQL-014,xCMS - Get Page Content Query,GraphQL > xCMS,High,BL-GQL-002,ECL-2.1,"CMS pages configured in store; GraphiQL UI loaded","storeId={{STORE_ID}}; cultureName=""en-US""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { pages(storeId: ""{{STORE_ID}}"" keyword: """") { totalCount items { id name relativeUrl content } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify page content","[RESPONSE] Response panel shows data without error banner
+[DATA] totalCount > 0
+[DATA] items[] non-empty; each page has id, name, relativeUrl
+[DATA] content populated (not empty string)
+[DATA] relativeUrl starts with /
+[DATA] No HTML injection artifacts in content (no unescaped script tags)
+[ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute query → same pages returned
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; totalCount = 0; content empty; relativeUrl malformed; script injection in content",none,xAPI,Automated

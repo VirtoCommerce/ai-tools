@@ -174,7 +174,9 @@ async function main() {
   md += `6. **Facets on ProductConnection**: \`term_facets { terms { term label count } }\`, \`range_facets { ranges { from to count } }\` — NOT \`facets { values }\`\n`;
   md += `7. **Products search**: arg is \`query\`, not \`keyword\` (but \`brands\` query uses \`keyword\`)\n`;
   md += `8. **Variations**: \`availabilityData\` (not \`availability\`)\n`;
-  md += `9. **Order addresses/payments**: \`addresses[]\` and \`inPayments[]\` (not \`shippingAddress\` or \`payment\`)\n\n`;
+  md += `9. **Order addresses/payments**: \`addresses[]\` and \`inPayments[]\` (not \`shippingAddress\` or \`payment\`)\n`;
+  md += `10. **All cart mutations require \`userId\`**: \`addItem\`, \`addOrUpdateCartShipment\`, \`addOrUpdateCartPayment\`, \`clearCart\` — get from \`me { id }\`\n`;
+  md += `11. **\`addOrUpdateCartShipment\` requires \`price\`**: \`CartShipmentValidator\` rejects if price doesn't match available shipping rate. Query \`availableShippingMethods\` first.\n\n`;
 
   md += `---\n\n`;
 
@@ -243,9 +245,9 @@ async function main() {
   // Common patterns
   md += `---\n\n## Common Query Patterns\n\n`;
   md += `### Get/create cart\n\`\`\`graphql\nquery { cart(storeId: "B2B-store" currencyCode: "USD") { id itemsCount items { id productId quantity listPrice { amount } } } }\n\`\`\`\n\n`;
-  md += `### Add item to cart\n\`\`\`graphql\nmutation { addItem(command: { storeId: "B2B-store" productId: "SKU123" quantity: 1 currencyCode: "USD" }) { id itemsCount items { productId quantity listPrice { amount } } } }\n\`\`\`\n\n`;
+  md += `### Add item to cart\n\`\`\`graphql\nmutation { addItem(command: { storeId: "B2B-store" userId: "<USER_ID>" productId: "<PRODUCT_ID>" quantity: 1 currencyCode: "USD" cultureName: "en-US" }) { id itemsCount items { productId quantity listPrice { amount } } } }\n\`\`\`\n> **Note:** \`userId\` is required. Get from \`query { me { id } }\`.\n\n`;
   md += `### Search products\n\`\`\`graphql\nquery { products(storeId: "B2B-store" query: "laptop" currencyCode: "USD") { totalCount items { id name code imgSrc price { actual { amount } } } term_facets { name terms { term label count } } } }\n\`\`\`\n\n`;
-  md += `### Create order from cart\n\`\`\`graphql\nmutation { createOrderFromCart(command: { cartId: "cart-uuid" }) { id number status } }\n\`\`\`\n`;
+  md += `### Full checkout flow (verified — see order-creation-matrix.md)\n\`\`\`graphql\n# 1. Get userId\nquery { me { id } }\n# 2. Add item (userId required)\nmutation { addItem(command: { storeId: "B2B-store" userId: "<USER_ID>" productId: "<PRODUCT_ID>" quantity: 1 currencyCode: "USD" cultureName: "en-US" }) { id } }\n# 3. Set shipment (price MUST match rate)\nmutation { addOrUpdateCartShipment(command: { storeId: "B2B-store" userId: "<USER_ID>" currencyCode: "USD" cultureName: "en-US" shipment: { shipmentMethodCode: "FixedRate" shipmentMethodOption: "Ground" price: 150 deliveryAddress: { city: "New York" countryCode: "US" countryName: "United States" firstName: "Test" lastName: "User" line1: "123 Test St" postalCode: "10001" } } }) { id } }\n# 4. Set payment\nmutation { addOrUpdateCartPayment(command: { storeId: "B2B-store" userId: "<USER_ID>" currencyCode: "USD" cultureName: "en-US" payment: { paymentGatewayCode: "DefaultManualPaymentMethod" } }) { id } }\n# 5. Create order\nmutation { createOrderFromCart(command: { cartId: "<CART_ID>" }) { id number status } }\n\`\`\`\n`;
 
   if (dryRun) {
     process.stdout.write(md);

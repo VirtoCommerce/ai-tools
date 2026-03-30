@@ -3,7 +3,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-03-23",
-    "totalSuites": 81,
+    "totalSuites": 87,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -927,23 +927,132 @@
       ]
     },
     {
-      "id": "050",
-      "name": "GraphQL xAPI",
-      "file": "regression/suites/Backend/graphql/050-graphql-xapi.csv",
-      "domain": "platform-config",
+      "id": "050a",
+      "name": "GraphQL xCatalog",
+      "file": "regression/suites/Backend/graphql/050a-graphql-xcatalog.csv",
+      "domain": "catalog-search",
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 57,
-      "estimatedMinutes": 40,
+      "testCount": 10,
+      "estimatedMinutes": 8,
       "agent": "qa-backend-expert",
       "tags": [
         "graphql",
         "xapi",
+        "xcatalog",
         "range-facets",
-        "registration",
+        "sprint"
+      ]
+    },
+    {
+      "id": "050b",
+      "name": "GraphQL xCart",
+      "file": "regression/suites/Backend/graphql/050b-graphql-xcart.csv",
+      "domain": "purchase-flow",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 37,
+      "estimatedMinutes": 30,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "xcart",
         "cart-quantity",
+        "sprint"
+      ]
+    },
+    {
+      "id": "050c",
+      "name": "GraphQL xOrder",
+      "file": "regression/suites/Backend/graphql/050c-graphql-xorder.csv",
+      "domain": "purchase-flow",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 2,
+      "estimatedMinutes": 3,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "xorder",
+        "sprint"
+      ]
+    },
+    {
+      "id": "050d",
+      "name": "GraphQL xProfile",
+      "file": "regression/suites/Backend/graphql/050d-graphql-xprofile.csv",
+      "domain": "auth-security",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 12,
+      "estimatedMinutes": 10,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "xprofile",
+        "registration",
+        "sprint"
+      ]
+    },
+    {
+      "id": "050e",
+      "name": "GraphQL xFrontend (pageContext)",
+      "file": "regression/suites/Backend/graphql/050e-graphql-xfrontend.csv",
+      "domain": "platform-config",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 6,
+      "estimatedMinutes": 5,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "xfrontend",
         "page-context",
+        "sprint"
+      ]
+    },
+    {
+      "id": "050f",
+      "name": "GraphQL xCMS",
+      "file": "regression/suites/Backend/graphql/050f-graphql-xcms.csv",
+      "domain": "content-cms",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 1,
+      "estimatedMinutes": 2,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "xcms",
+        "sprint"
+      ]
+    },
+    {
+      "id": "050g",
+      "name": "GraphQL Cross-Cutting",
+      "file": "regression/suites/Backend/graphql/050g-graphql-crosscutting.csv",
+      "domain": "cross-cutting",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 4,
+      "estimatedMinutes": 4,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "cross-cutting",
         "sprint"
       ]
     },
@@ -1733,7 +1842,13 @@
       "034",
       "035",
       "049",
-      "050",
+      "050a",
+      "050b",
+      "050c",
+      "050d",
+      "050e",
+      "050f",
+      "050g",
       "051",
       "052",
       "053",
@@ -1804,7 +1919,13 @@
       "044",
       "048",
       "049",
-      "050",
+      "050a",
+      "050b",
+      "050c",
+      "050d",
+      "050e",
+      "050f",
+      "050g",
       "051",
       "052",
       "053",
@@ -1882,7 +2003,13 @@
       "047",
       "048",
       "049",
-      "050",
+      "050a",
+      "050b",
+      "050c",
+      "050d",
+      "050e",
+      "050f",
+      "050g",
       "051",
       "052",
       "053",
@@ -1935,6 +2062,8 @@
       "039",
       "040",
       "041",
+      "050b",
+      "050c",
       "054",
       "055",
       "056",
@@ -1947,6 +2076,7 @@
       "003",
       "004",
       "005",
+      "050a",
       "051",
       "052",
       "053",
@@ -1961,7 +2091,8 @@
       "032",
       "033",
       "044",
-      "049"
+      "049",
+      "050d"
     ],
     "domain:marketing": [
       "023",
@@ -1971,6 +2102,7 @@
       "079"
     ],
     "domain:content-cms": [
+      "050f",
       "059",
       "060",
       "062",
@@ -1992,7 +2124,7 @@
       "021",
       "034",
       "035",
-      "050",
+      "050e",
       "063",
       "064",
       "076"
@@ -2015,6 +2147,7 @@
       "046",
       "047",
       "048",
+      "050g",
       "080"
     ],
     "concern:functional": [
@@ -2065,7 +2198,13 @@
     ],
     "concern:api": [
       "049",
-      "050"
+      "050a",
+      "050b",
+      "050c",
+      "050d",
+      "050e",
+      "050f",
+      "050g"
     ],
     "concern:admin": [
       "017",

@@ -73,8 +73,47 @@ document.querySelector('.result-window .CodeMirror').CodeMirror.getValue()
 
 Click "Docs" (📖) in the top-right to open the schema explorer sidebar for introspection.
 
+## Setting Auth Token in Headers (Reliable Method)
+
+The Headers editor is a CodeMirror instance. Standard `browser_fill`, `CodeMirror.setValue()`, and `Ctrl+V` paste all have issues with GraphiQL's React state. The **only reliable method** is:
+
+1. Click the **"Headers"** button (RIGHT tab — not "Variables" which is LEFT/default)
+2. Use `document.execCommand('insertText')` on the Headers textarea to set the full value:
+
+```js
+// Step 1: Fetch token
+const resp = await fetch('{BACK_URL}/connect/token', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: 'grant_type=password&scope=offline_access&username={USER}&password={PASS}&storeId={STORE}'
+});
+const { access_token } = await resp.json();
+
+// Step 2: Set in Headers editor (NOT Variables)
+const headerSection = document.querySelector('section[aria-label="Headers"]');
+const textarea = headerSection.querySelector('textarea');
+textarea.focus();
+textarea.select();
+document.execCommand('insertText', false,
+  JSON.stringify({"Authorization": "Bearer " + access_token}));
+```
+
+3. Take a screenshot to **verify** the token is visible in the Headers panel (not Variables)
+4. Execute a protected query (e.g., `orders`) to confirm auth works
+
+### Why other approaches fail
+
+| Approach | Visual | GraphiQL state | Actually sends header |
+|----------|--------|---------------|----------------------|
+| `CodeMirror.setValue()` | ❌ Empty | ❌ Out of sync | ❌ No |
+| `textarea.value = ...` | ❌ Empty | ❌ Out of sync | ❌ No |
+| `browser_fill()` / `fill()` | ✅ Shows text | ⚠️ Partial | ⚠️ May truncate |
+| `execCommand('insertText')` | ✅ Shows text | ✅ Synced | ✅ Yes |
+| `Ctrl+V` paste | ❌ Clipboard blocked | ❌ N/A | ❌ No |
+
 ## Common Pitfalls
 
+- **Headers vs Variables tab confusion** — The bottom panel has two tabs side by side: **Variables** (left, default/visible) and **Headers** (right). Auth tokens MUST go in the **Headers** tab. After setting the token, take a screenshot and verify the token text appears in the Headers panel, not Variables.
 - **`browser_fill` does NOT work** — CodeMirror renders as `<div>` with contenteditable, not `<input>`/`<textarea>`
 - **Wrong element focused** — If the editor appears empty after typing, verify focus with `browser_snapshot` first
 - **Long/multiline queries** — Prefer `browser_evaluate` to set the editor value programmatically:
