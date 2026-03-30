@@ -3,7 +3,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-03-23",
-    "totalSuites": 87,
+    "totalSuites": 88,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1057,6 +1057,24 @@
       ]
     },
     {
+      "id": "050h",
+      "name": "GraphQL Wishlist",
+      "file": "regression/suites/Backend/graphql/050h-graphql-wishlist.csv",
+      "domain": "customer-b2b",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 20,
+      "estimatedMinutes": 16,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "wishlist",
+        "sprint"
+      ]
+    },
+    {
       "id": "051",
       "name": "Catalog Admin Products",
       "file": "regression/suites/Backend/catalog/051-catalog-admin-products.csv",
@@ -1849,6 +1867,7 @@
       "050e",
       "050f",
       "050g",
+      "050h",
       "051",
       "052",
       "053",
@@ -1926,6 +1945,7 @@
       "050e",
       "050f",
       "050g",
+      "050h",
       "051",
       "052",
       "053",
@@ -2010,6 +2030,7 @@
       "050e",
       "050f",
       "050g",
+      "050h",
       "051",
       "052",
       "053",
@@ -2116,6 +2137,7 @@
       "010",
       "026",
       "027",
+      "050h",
       "074",
       "075"
     ],
@@ -2204,7 +2226,8 @@
       "050d",
       "050e",
       "050f",
-      "050g"
+      "050g",
+      "050h"
     ],
     "concern:admin": [
       "017",

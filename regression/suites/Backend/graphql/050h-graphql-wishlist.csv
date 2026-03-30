@@ -1,0 +1,272 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+WL-001,createWishlist — Happy Path,GraphQL > Wishlist > Management,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; store configured; GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql","storeId={{STORE_ID}}; userId obtained via me{id}; cultureName={{CULTURE_NAME}}; currencyCode={{CURRENCY_CODE}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab in bottom panel) → set Authorization: Bearer <TOKEN> in Headers editor via execCommand('insertText') → screenshot to verify token visible
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[SETUP] Type query: query { me { id } } → [GQL] Execute → [VAR] save <USER_ID> from data.me.id
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" listName: ""AGENT-TEST-WL-001"" cultureName: ""{{CULTURE_NAME}}"" currencyCode: ""{{CURRENCY_CODE}}"" }) { id name itemsCount } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — save <LIST_ID> from data.createWishlist.id","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty
+[DATA] data.createWishlist.id is non-empty string (UUID format)
+[DATA] data.createWishlist.name = ""AGENT-TEST-WL-001""
+[DATA] data.createWishlist.itemsCount = 0","[ROUNDTRIP] Clear editor → type query { wishlist(listId: ""<LIST_ID>"") { id name itemsCount } } → execute → confirms list exists with correct name
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response; data.createWishlist null; id empty; name mismatch; GraphiQL shows auth error","Execute mutation removeWishlist(command: { listId: ""<LIST_ID>"" }) to delete created wishlist",xAPI,Automated
+WL-002,createWishlist — With sharingKey and Description,GraphQL > Wishlist > Management,High,BL-GQL-001; BL-GQL-004,ECL-14.1,"User authenticated with valid token; store configured; GraphiQL UI accessible","storeId={{STORE_ID}}; userId from me{id}; sharingKey=""AGENT-TEST-SHARE-001""; description=""Test wishlist with sharing""","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token; set in GraphiQL Headers
+[SETUP] Query me { id } → save <USER_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" listName: ""AGENT-TEST-WL-002"" sharingKey: ""AGENT-TEST-SHARE-001"" description: ""Test wishlist with sharing"" cultureName: ""{{CULTURE_NAME}}"" currencyCode: ""{{CURRENCY_CODE}}"" }) { id name description } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — save <LIST_ID>","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty
+[DATA] data.createWishlist.id is non-empty string
+[DATA] data.createWishlist.name = ""AGENT-TEST-WL-002""
+[DATA] data.createWishlist.description = ""Test wishlist with sharing""","[ROUNDTRIP] Query wishlist(listId: ""<LIST_ID>"") { id name description } → description and name match
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; description missing or truncated; id null; sharingKey causes validation error","Execute removeWishlist(command: { listId: ""<LIST_ID>"" })",xAPI,Automated
+WL-003,changeWishlist — Rename List,GraphQL > Wishlist > Management,High,BL-GQL-001; BL-GQL-004,ECL-14.1,"Wishlist AGENT-TEST-WL-003 exists (create via setup); user authenticated; GraphiQL accessible","listId from setup createWishlist; newName=""AGENT-TEST-WL-003-RENAMED""","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token; set in GraphiQL Headers
+[SETUP] Query me { id } → save <USER_ID>; execute createWishlist(storeId, userId, listName: ""AGENT-TEST-WL-003"") → save <LIST_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { changeWishlist(command: { listId: ""<LIST_ID>"" listName: ""AGENT-TEST-WL-003-RENAMED"" }) { id name } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify name changed","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty
+[DATA] data.changeWishlist.id = <LIST_ID>
+[DATA] data.changeWishlist.name = ""AGENT-TEST-WL-003-RENAMED""","[ROUNDTRIP] Clear editor → query wishlist(listId: ""<LIST_ID>"") { id name } → execute → name = ""AGENT-TEST-WL-003-RENAMED""
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; name not updated; old name still returned; data.changeWishlist null","Execute removeWishlist(command: { listId: ""<LIST_ID>"" })",xAPI,Automated
+WL-004,cloneWishlist — Verify All Items Copied,GraphQL > Wishlist > Management,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Source wishlist with at least 1 item exists; product {{TEST_SKU}} in catalog; user authenticated; GraphiQL accessible","storeId={{STORE_ID}}; userId from me{id}; productId={{TEST_SKU}}; sourceListId from setup","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token; set in GraphiQL Headers
+[SETUP] Query me { id } → save <USER_ID>
+[SETUP] createWishlist(storeId, userId, listName: ""AGENT-TEST-WL-004-SRC"") → save <SRC_LIST_ID>
+[SETUP] addWishlistItem(command: { listId: ""<SRC_LIST_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 }) → verify itemsCount = 1
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { cloneWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" listId: ""<SRC_LIST_ID>"" listName: ""AGENT-TEST-WL-004-CLONE"" cultureName: ""{{CULTURE_NAME}}"" currencyCode: ""{{CURRENCY_CODE}}"" }) { id name itemsCount items { productId quantity } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — save <CLONE_LIST_ID>; note itemsCount","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty
+[DATA] data.cloneWishlist.id is non-empty string (different from <SRC_LIST_ID>)
+[DATA] data.cloneWishlist.name = ""AGENT-TEST-WL-004-CLONE""
+[DATA] data.cloneWishlist.itemsCount = 1
+[DATA] data.cloneWishlist.items[0].productId = ""{{TEST_SKU}}""","[ROUNDTRIP] Query wishlist(listId: ""<CLONE_LIST_ID>"") { id name itemsCount items { productId } } → itemsCount = 1 and productId matches
+[ROUNDTRIP] Query wishlist(listId: ""<SRC_LIST_ID>"") { itemsCount } → source unchanged (itemsCount still = 1)
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; itemsCount mismatch; items[] empty in clone; source list destroyed; id collision","Execute removeWishlist for <CLONE_LIST_ID> then removeWishlist for <SRC_LIST_ID>",xAPI,Automated
+WL-005,removeWishlist — Verify Deleted,GraphQL > Wishlist > Management,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1,"Wishlist AGENT-TEST-WL-005 exists (create via setup); user authenticated; GraphiQL accessible","listId from setup createWishlist","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token; set in GraphiQL Headers
+[SETUP] Query me { id } → save <USER_ID>; createWishlist(storeId, userId, listName: ""AGENT-TEST-WL-005"") → save <LIST_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { removeWishlist(command: { listId: ""<LIST_ID>"" }) }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify Boolean true returned
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type verification query: query { wishlist(listId: ""<LIST_ID>"") { id name } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify list no longer accessible","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty on removeWishlist call
+[DATA] data.removeWishlist = true (Boolean — NO sub-selection like { id })
+[DATA] Verification wishlist query returns null or errors[] with not-found message","[ROUNDTRIP] wishlists query → list with <LIST_ID> no longer appears in results
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty on remove; removeWishlist returns false; wishlist still queryable after remove; sub-selection on Boolean causes parse error",none (list already deleted),xAPI,Automated
+WL-006,removeWishlist — Non-Existent ID,GraphQL > Wishlist > Management,Medium,BL-GQL-001,ECL-14.1; ECL-9.1,"User authenticated with valid token; GraphiQL accessible; invalid list ID prepared","nonExistentListId=""00000000-0000-0000-0000-000000000000""","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token; set in GraphiQL Headers
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { removeWishlist(command: { listId: ""00000000-0000-0000-0000-000000000000"" }) }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — note whether false or errors[] returned","[RESPONSE] Response panel shows structured result (no crash)
+[ERRORS] Either: errors[] contains descriptive error message (not-found); OR data.removeWishlist = false (graceful not-found)
+[DATA] Server does not return HTTP 500 or unhandled exception","[CONSOLE] No unhandled server exceptions in GraphiQL console
+[CONSOLE] No JS errors in GraphiQL","GraphiQL crashes or freezes; unhandled server exception; HTTP 500; stack trace in errors[].message",none,xAPI,Automated
+WL-007,wishlist Query — Get by listId,GraphQL > Wishlist > Queries,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Wishlist with at least 1 item exists; user authenticated; listId known from setup; GraphiQL accessible","listId from setup; storeId={{STORE_ID}}; cultureName={{CULTURE_NAME}}","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token; set in GraphiQL Headers
+[SETUP] Query me { id } → save <USER_ID>; createWishlist(storeId, userId, listName: ""AGENT-TEST-WL-007"") → save <LIST_ID>; addWishlistItem(command: { listId: ""<LIST_ID>"" productId: ""{{TEST_SKU}}"" quantity: 2 })
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { wishlist(listId: ""<LIST_ID>"" cultureName: ""{{CULTURE_NAME}}"") { id name itemsCount items { id productId quantity } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — inspect all returned fields","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty
+[DATA] data.wishlist.id = <LIST_ID>
+[DATA] data.wishlist.name = ""AGENT-TEST-WL-007""
+[DATA] data.wishlist.itemsCount = 1
+[DATA] data.wishlist.items[0].productId = ""{{TEST_SKU}}""
+[DATA] data.wishlist.items[0].quantity = 2","[ROUNDTRIP] Execute same query twice → identical response (stable read)
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; wishlist null; itemsCount mismatch; items[] empty; productId wrong","Execute removeWishlist(command: { listId: ""<LIST_ID>"" })",xAPI,Automated
+WL-008,wishlists Query — List with Pagination,GraphQL > Wishlist > Queries,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"At least 1 wishlist exists for the user; user authenticated; GraphiQL accessible","storeId={{STORE_ID}}; userId from me{id}; first=5; after=null","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token; set in GraphiQL Headers
+[SETUP] Query me { id } → save <USER_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { wishlists(storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" first: 5) { totalCount items { id name itemsCount } pageInfo { hasNextPage endCursor } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — note totalCount and items count
+[ACT] If pageInfo.hasNextPage = true: clear editor → type same query with after: ""<endCursor>"" → execute → verify next page returns different items","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty
+[DATA] data.wishlists.totalCount >= 1
+[DATA] data.wishlists.items is an array (length <= 5 per page)
+[DATA] Each item has id (non-empty string) and name (non-empty string)
+[COUNT] items.length <= first (5)","[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; totalCount = 0 when lists exist; items array null; pagination cursor invalid; second page returns same items as first",none (read-only query),xAPI,Automated
+WL-009,sharedWishlist Query — Access via sharingKey,GraphQL > Wishlist > Queries,High,BL-GQL-001; BL-GQL-004,ECL-14.1,"User authenticated; wishlist exists; changeWishlist sets sharingKey; GraphiQL accessible","listId from setup; sharingKey=""AGENT-TEST-SHARE-WL-009""","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token; set in GraphiQL Headers
+[SETUP] Query me { id } → save <USER_ID>
+[SETUP] createWishlist(storeId, userId, listName: ""AGENT-TEST-WL-009"") → save <LIST_ID>
+[SETUP] addWishlistItem(command: { listId: ""<LIST_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 })
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { changeWishlist(command: { listId: ""<LIST_ID>"" sharingKey: ""AGENT-TEST-SHARE-WL-009"" }) { id name } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result (sharingKey set)
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { sharedWishlist(sharingKey: ""AGENT-TEST-SHARE-WL-009"") { id name itemsCount items { productId quantity } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify list accessible by sharingKey","[RESPONSE] Response panel shows data without error banner on changeWishlist step
+[ERRORS] errors[] is empty on both changeWishlist and sharedWishlist calls
+[DATA] sharedWishlist returns the same id as <LIST_ID>
+[DATA] sharedWishlist.name = ""AGENT-TEST-WL-009""
+[DATA] sharedWishlist.itemsCount = 1
+[DATA] sharedWishlist.items[0].productId = ""{{TEST_SKU}}""","[ROUNDTRIP] Query wishlist(listId: ""<LIST_ID>"") and compare id/name to sharedWishlist response → same entity
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; sharedWishlist returns null; sharingKey not accepted; itemsCount mismatch","Execute removeWishlist(command: { listId: ""<LIST_ID>"" })",xAPI,Automated
+WL-010,addWishlistItem — Single Item,GraphQL > Wishlist > Items,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Wishlist AGENT-TEST-WL-010 exists (created in setup); product {{TEST_SKU}} in catalog; user authenticated; GraphiQL accessible","listId from setup; productId={{TEST_SKU}}; quantity=1","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token; set in GraphiQL Headers
+[SETUP] Query me { id } → save <USER_ID>; createWishlist(storeId, userId, listName: ""AGENT-TEST-WL-010"") → save <LIST_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { addWishlistItem(command: { listId: ""<LIST_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 }) { id name itemsCount items { id productId quantity } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — save <LINE_ITEM_ID> from items[0].id; note itemsCount","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty
+[DATA] data.addWishlistItem.itemsCount = 1
+[DATA] data.addWishlistItem.items[0].productId = ""{{TEST_SKU}}""
+[DATA] data.addWishlistItem.items[0].quantity = 1
+[DATA] data.addWishlistItem.items[0].id is non-empty string","[ROUNDTRIP] Query wishlist(listId: ""<LIST_ID>"") { itemsCount items { productId } } → itemsCount = 1; productId matches
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; itemsCount not incremented; items[] empty; productId mismatch; quantity wrong","Execute removeWishlist(command: { listId: ""<LIST_ID>"" })",xAPI,Automated
+WL-011,addWishlistItems — Multiple Items in One Call,GraphQL > Wishlist > Items,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Wishlist AGENT-TEST-WL-011 exists; at least 2 distinct products available in catalog; user authenticated; GraphiQL accessible","listId from setup; productId1={{TEST_SKU}}; productId2 from catalog (second available product)","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token; set in GraphiQL Headers
+[SETUP] Query me { id } → save <USER_ID>; createWishlist(storeId, userId, listName: ""AGENT-TEST-WL-011"") → save <LIST_ID>
+[SETUP] Query products(storeId: ""{{STORE_ID}}"" first: 2) { items { id } } → save <PRODUCT_ID_2> from second result (different from {{TEST_SKU}})
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { addWishlistItems(command: { listId: ""<LIST_ID>"" listItems: [{ productId: ""{{TEST_SKU}}"" quantity: 1 } { productId: ""<PRODUCT_ID_2>"" quantity: 2 }] }) { id name itemsCount items { productId quantity } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — note itemsCount and items array","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty
+[DATA] data.addWishlistItems.itemsCount = 2
+[DATA] data.addWishlistItems.items contains entry with productId = ""{{TEST_SKU}}"" and quantity = 1
+[DATA] data.addWishlistItems.items contains entry with productId = <PRODUCT_ID_2> and quantity = 2
+[COUNT] data.addWishlistItems.items.length = 2","[ROUNDTRIP] Query wishlist(listId: ""<LIST_ID>"") { itemsCount items { productId quantity } } → itemsCount = 2; both products present
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; itemsCount = 1 (only partial insert); items[] missing one product; quantity wrong; mutation inserts duplicates instead of 2 items","Execute removeWishlist(command: { listId: ""<LIST_ID>"" })",xAPI,Automated
+WL-012,updateWishListItems — Change Item Quantity,GraphQL > Wishlist > Items,High,BL-GQL-001; BL-GQL-004,ECL-14.1,"Wishlist with 1 item exists; lineItemId known from setup; user authenticated; GraphiQL accessible; NOTE: mutation name is updateWishListItems (capital L)","listId from setup; lineItemId from setup addWishlistItem; newQuantity=5","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token; set in GraphiQL Headers
+[SETUP] Query me { id } → save <USER_ID>; createWishlist(storeId, userId, listName: ""AGENT-TEST-WL-012"") → save <LIST_ID>
+[SETUP] addWishlistItem(command: { listId: ""<LIST_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 }) → save <LINE_ITEM_ID> from items[0].id
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { updateWishListItems(command: { listId: ""<LIST_ID>"" items: [{ lineItemId: ""<LINE_ITEM_ID>"" quantity: 5 }] }) { id itemsCount items { id productId quantity } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify quantity updated","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty
+[DATA] data.updateWishListItems.itemsCount = 1 (count unchanged)
+[DATA] data.updateWishListItems.items[0].id = <LINE_ITEM_ID>
+[DATA] data.updateWishListItems.items[0].quantity = 5","[ROUNDTRIP] Query wishlist(listId: ""<LIST_ID>"") { items { id quantity } } → items[0].quantity = 5
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; quantity still 1; mutation name typo (updateWishlistItems without capital L) causes unknown field error; itemsCount wrong","Execute removeWishlist(command: { listId: ""<LIST_ID>"" })",xAPI,Automated
+WL-013,removeWishlistItem — Single Item,GraphQL > Wishlist > Items,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Wishlist with at least 1 item exists; lineItemId known; user authenticated; GraphiQL accessible","listId and lineItemId from setup","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token; set in GraphiQL Headers
+[SETUP] Query me { id } → save <USER_ID>; createWishlist(storeId, userId, listName: ""AGENT-TEST-WL-013"") → save <LIST_ID>
+[SETUP] addWishlistItem(command: { listId: ""<LIST_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 }) → save <LINE_ITEM_ID> from items[0].id; note itemsCount (expected = 1)
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { removeWishlistItem(command: { listId: ""<LIST_ID>"" lineItemId: ""<LINE_ITEM_ID>"" }) { id name itemsCount items { id productId } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify item removed","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty
+[DATA] data.removeWishlistItem.itemsCount = 0
+[DATA] data.removeWishlistItem.items is empty array (length = 0)
+[DATA] Removed lineItemId does not appear in items[]","[ROUNDTRIP] Query wishlist(listId: ""<LIST_ID>"") { itemsCount items { id } } → itemsCount = 0; items = []
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; itemsCount not decremented; removed item still in items[]; wishlist itself deleted (null) instead of emptied","Execute removeWishlist(command: { listId: ""<LIST_ID>"" })",xAPI,Automated
+WL-014,removeWishlistItems — Bulk Remove,GraphQL > Wishlist > Items,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Wishlist with 2 items exists; lineItemIds known from setup; user authenticated; GraphiQL accessible","listId and lineItemIds from setup; productId1={{TEST_SKU}}; productId2 from catalog","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token; set in GraphiQL Headers
+[SETUP] Query me { id } → save <USER_ID>; createWishlist(storeId, userId, listName: ""AGENT-TEST-WL-014"") → save <LIST_ID>
+[SETUP] addWishlistItems(command: { listId: ""<LIST_ID>"" listItems: [{ productId: ""{{TEST_SKU}}"" quantity: 1 } { productId: ""<PRODUCT_ID_2>"" quantity: 1 }] }) → save <LINE_ITEM_ID_1> and <LINE_ITEM_ID_2> from items[].id
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { removeWishlistItems(command: { listId: ""<LIST_ID>"" lineItemIds: [""<LINE_ITEM_ID_1>"" ""<LINE_ITEM_ID_2>""] }) { id name itemsCount items { id } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify all items removed","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty
+[DATA] data.removeWishlistItems.itemsCount = 0
+[DATA] data.removeWishlistItems.items is empty array
+[DATA] Neither <LINE_ITEM_ID_1> nor <LINE_ITEM_ID_2> appear in items[]","[ROUNDTRIP] Query wishlist(listId: ""<LIST_ID>"") { itemsCount items { id } } → itemsCount = 0; items = []
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; only partial removal (1 of 2); itemsCount = 1 instead of 0; wishlist null after removal","Execute removeWishlist(command: { listId: ""<LIST_ID>"" })",xAPI,Automated
+WL-015,moveWishlistItem — Between Two Lists,GraphQL > Wishlist > Items,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Two wishlists exist (source and destination); source has 1 item with known lineItemId; user authenticated; GraphiQL accessible","sourceListId and destListId from setup; lineItemId from setup addWishlistItem; productId={{TEST_SKU}}","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token; set in GraphiQL Headers
+[SETUP] Query me { id } → save <USER_ID>
+[SETUP] createWishlist(storeId, userId, listName: ""AGENT-TEST-WL-015-SRC"") → save <SRC_LIST_ID>
+[SETUP] createWishlist(storeId, userId, listName: ""AGENT-TEST-WL-015-DEST"") → save <DEST_LIST_ID>
+[SETUP] addWishlistItem(command: { listId: ""<SRC_LIST_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 }) → save <LINE_ITEM_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { moveWishlistItem(command: { listId: ""<SRC_LIST_ID>"" destinationListId: ""<DEST_LIST_ID>"" lineItemId: ""<LINE_ITEM_ID>"" }) { id name itemsCount items { id productId } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — note source list itemsCount and items
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { wishlist(listId: ""<DEST_LIST_ID>"") { id itemsCount items { productId } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — verify item appeared in destination","[RESPONSE] Response panel shows data without error banner on moveWishlistItem call
+[ERRORS] errors[] is empty on both mutation and verification query
+[DATA] moveWishlistItem returns source list with itemsCount decremented (0 after move)
+[DATA] moveWishlistItem source items[] no longer contains <LINE_ITEM_ID>
+[DATA] Destination wishlist itemsCount = 1
+[DATA] Destination wishlist items[0].productId = ""{{TEST_SKU}}""","[ROUNDTRIP] Query both wishlists by id → source.itemsCount = 0; destination.itemsCount = 1
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; item remains in source after move; item missing from destination; itemsCount wrong in either list; item duplicated in both lists","Execute removeWishlist for <DEST_LIST_ID> then removeWishlist for <SRC_LIST_ID>",xAPI,Automated
+WL-016,moveWishlistItem — Non-Existent Destination,GraphQL > Wishlist > Items,Medium,BL-GQL-001,ECL-14.1; ECL-9.1,"Source wishlist with 1 item exists; destinationListId does not exist; user authenticated; GraphiQL accessible","sourceListId and lineItemId from setup; nonExistentDestId=""00000000-0000-0000-0000-000000000000""","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token; set in GraphiQL Headers
+[SETUP] Query me { id } → save <USER_ID>; createWishlist(storeId, userId, listName: ""AGENT-TEST-WL-016"") → save <SRC_LIST_ID>; addWishlistItem(command: { listId: ""<SRC_LIST_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 }) → save <LINE_ITEM_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { moveWishlistItem(command: { listId: ""<SRC_LIST_ID>"" destinationListId: ""00000000-0000-0000-0000-000000000000"" lineItemId: ""<LINE_ITEM_ID>"" }) { id itemsCount items { id productId } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — note errors[] and source list state
+[ACT] Click query editor → clear; type query { wishlist(listId: ""<SRC_LIST_ID>"") { itemsCount items { id productId } } } → execute → verify item still in source","[RESPONSE] Response panel shows structured result (no server crash)
+[ERRORS] errors[] non-empty with descriptive message (destination not found or similar)
+[DATA] Source list item is NOT moved — item remains in <SRC_LIST_ID> (no data loss on error)","[ROUNDTRIP] Query wishlist(listId: ""<SRC_LIST_ID>"") { itemsCount items { id } } → itemsCount still = 1; item still present
+[CONSOLE] No unhandled server exceptions in GraphiQL","HTTP 500 or server crash; item deleted from source without reaching destination; GraphiQL freezes; stack trace in errors[].message; silent success (errors[] empty) on invalid move","Execute removeWishlist(command: { listId: ""<SRC_LIST_ID>"" })",xAPI,Automated
+WL-017,createCartFromWishlist — Cart Created with Wishlist Items,GraphQL > Wishlist > Cross-Domain,Critical,BL-GQL-001; BL-GQL-004; BL-CART-001,ECL-14.1; ECL-2.1,"Wishlist with at least 1 in-stock item exists; listId known; user authenticated; GraphiQL accessible; cart module available","listId from setup; productId={{TEST_SKU}}; storeId={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token; set in GraphiQL Headers
+[SETUP] Query me { id } → save <USER_ID>
+[SETUP] createWishlist(storeId, userId, listName: ""AGENT-TEST-WL-017"") → save <LIST_ID>
+[SETUP] addWishlistItem(command: { listId: ""<LIST_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 })
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { createCartFromWishlist(command: { listId: ""<LIST_ID>"" }) { id name itemsCount items { id productId quantity } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — save <CART_ID>; verify items array","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty
+[DATA] data.createCartFromWishlist.id is non-empty string (UUID format)
+[DATA] data.createCartFromWishlist.itemsCount = 1
+[DATA] data.createCartFromWishlist.items[0].productId = ""{{TEST_SKU}}""
+[DATA] data.createCartFromWishlist.items[0].quantity = 1","[ROUNDTRIP] Query cart by <CART_ID> → same items confirmed
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; cart.itemsCount = 0; items[] empty; cart.id null; productId mismatch; wishlist items not transferred to cart","Execute removeCart(command: { cartId: ""<CART_ID>"" ... }) to clean up cart; execute removeWishlist(command: { listId: ""<LIST_ID>"" })",xAPI,Automated
+WL-018,createCartFromWishlist — Empty Wishlist Behavior,GraphQL > Wishlist > Cross-Domain,Medium,BL-GQL-001; BL-GQL-004; BL-CART-001,ECL-14.1; ECL-2.1; ECL-9.1,"Empty wishlist exists (0 items); user authenticated; GraphiQL accessible","listId of empty wishlist from setup","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token; set in GraphiQL Headers
+[SETUP] Query me { id } → save <USER_ID>; createWishlist(storeId, userId, listName: ""AGENT-TEST-WL-018-EMPTY"") → save <EMPTY_LIST_ID> (do NOT add items)
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { createCartFromWishlist(command: { listId: ""<EMPTY_LIST_ID>"" }) { id name itemsCount items { id productId } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — determine if empty cart created or error returned","[RESPONSE] Response panel shows structured result (no server crash)
+[ERRORS] Either: (a) errors[] non-empty with descriptive message (empty wishlist); OR (b) data.createCartFromWishlist returns a cart with itemsCount = 0 and empty items[]
+[DATA] Server does not throw HTTP 500 or unhandled exception in either case","[CONSOLE] No unhandled server exceptions in GraphiQL
+[CONSOLE] No JS errors","GraphiQL crashes; HTTP 500; stack trace in errors[].message; silent creation of null cart","Execute removeWishlist(command: { listId: ""<EMPTY_LIST_ID>"" }); if cart was created also remove it",xAPI,Automated
+WL-019,addWishlistItem — Without Authentication,GraphQL > Wishlist > Auth,Critical,BL-GQL-004,ECL-2.1; ECL-14.1,"No auth token set in GraphiQL; wishlist listId may be any value (request expected to fail before reaching data); GraphiQL accessible","noToken=true; listId=""00000000-0000-0000-0000-000000000000"" (any value); productId=""test""","[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button → ensure Headers panel is empty (clear any existing token via Ctrl+A, Backspace)
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { addWishlistItem(command: { listId: ""00000000-0000-0000-0000-000000000000"" productId: ""test"" }) { id itemsCount } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify authentication error returned","[RESPONSE] Response panel shows structured error (not blank or crash)
+[ERRORS] errors[] non-empty with authentication or authorization error message
+[DATA] data.addWishlistItem is null (no data returned)
+[DATA] No wishlist modified","[CONSOLE] No unhandled server exceptions in GraphiQL","Mutation succeeds without auth (data.addWishlistItem non-null); errors[] empty; HTTP 500 instead of auth error; GraphiQL freezes",none,xAPI,Automated
+WL-020,wishlist Query — Another User's List (Access Denied),GraphQL > Wishlist > Auth,High,BL-GQL-004,ECL-2.1; ECL-14.1,"List owned by {{USER_EMAIL}} with a known <LIST_ID>; second authenticated user (ORG_USER) logged in; GraphiQL accessible","ownerListId from setup by {{USER_EMAIL}}; orgUser_email={{ORG_USER_EMAIL}}; orgUser_password={{ORG_USER_PASSWORD}}","[SETUP] Authenticate as {{USER_EMAIL}} → create wishlist AGENT-TEST-WL-020 → save <LIST_ID> → sign out (do not reuse this token below)
+[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{ORG_USER_EMAIL}}&password={{ORG_USER_PASSWORD}}&storeId={{STORE_ID}} → save <ORG_TOKEN>
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button → set Authorization: Bearer <ORG_TOKEN> via execCommand('insertText') → screenshot to verify org user token in Headers
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { wishlist(listId: ""<LIST_ID>"") { id name items { productId } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — check whether list is returned or access denied","[RESPONSE] Response panel shows structured result (not crash)
+[ERRORS] Either: (a) errors[] non-empty with access denied / not found message; OR (b) data.wishlist is null (list not returned to unauthorized user)
+[DATA] Org user does NOT see the private wishlist items from {{USER_EMAIL}}","[CONSOLE] No unhandled server exceptions in GraphiQL","Org user receives full list data (privacy violation); HTTP 500; stack trace in errors[]","Authenticate as {{USER_EMAIL}} and execute removeWishlist(command: { listId: ""<LIST_ID>"" })",xAPI,Automated
