@@ -70,3 +70,33 @@
 "CMS-055","Login and user profile in Page Builder admin","Authentication","Medium",,,"User credentials available",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id) (login if prompted)
 2. Verify user profile button in bottom-left shows username and role (e.g. 'admin / Administrator')
 3. Check Virto Commerce logo display in top-left corner","User profile shows logged-in user's name and role; Virto Commerce logo is visible",,"User profile missing or showing wrong user; logo not loading",,"C415421 C415425 C415426; Synced: PR #105 (2026-03-25)",
+"CMS-098","API — Languages and user-groups endpoints smoke","API Layer","High",,,"Admin authenticated via OAuth2 password grant (no client_id); PageBuilder module deployed","storeId=B2B-store","1. [HTTP] GET ${BACK_URL}/api/page-builder-pages/languages?storeId=B2B-store with Bearer token
+2. [STATUS] Verify HTTP 200
+3. [BODY] Verify JSON array with at least one language entry (e.g. en-US)
+4. [HTTP] GET ${BACK_URL}/api/page-builder-pages/user-groups with Bearer token
+5. [STATUS] Verify HTTP 200
+6. [BODY] Verify JSON array with at least one user group entry","Both endpoints return 200; languages array contains en-US; user-groups array is non-empty",,"401/403 unauthorized; empty arrays when data exists; malformed JSON; endpoint not found (404)","","VCST-4756; PR #105; Checklist 7.5 7.6",
+"CMS-099","API — Archive endpoint and publish-status check","API Layer","High",,,"Admin authenticated; test page exists in Draft or Published status","groupId of a test page (UUID)","1. [HTTP] POST ${BACK_URL}/api/page-builder-pages/grouped/archive?ids={groupId} with Bearer token
+2. [STATUS] Verify HTTP 204
+3. [HTTP] GET ${BACK_URL}/api/page-builder-pages/grouped/publish-status/{groupId} with Bearer token
+4. [STATUS] Verify HTTP 200
+5. [BODY] Verify response shows page is not published
+6. [AUTH] Repeat POST /archive without Authorization header
+7. [STATUS] Verify HTTP 401","Archive returns 204; publish-status confirms archived state; unauthenticated request returns 401",,"Error code other than 204; status not updated after archive; anonymous access succeeds (security issue)","","VCST-4756; PR #105; Checklist 7.4",
+"CMS-100","API — Legacy /api/pagebuilder/* endpoints backward compatibility","API Layer","High",,,"Admin authenticated; PageBuilder module deployed with new and legacy endpoints","storeId=B2B-store","1. [HTTP] GET ${BACK_URL}/api/pagebuilder/templates?storeId=B2B-store with Bearer token
+2. [STATUS] Verify HTTP 200 (not 404 or 410)
+3. [BODY] Verify valid JSON response (may be empty object {})
+4. [HTTP] GET ${BACK_URL}/api/pagebuilder/sections?storeId=B2B-store with Bearer token
+5. [STATUS] Verify HTTP 200
+6. [BODY] Verify valid JSON with sections/blocks/objects/shared keys","Legacy endpoints return 200 with valid JSON; no 404 (endpoints not removed); backward compatible for existing integrations",,"404 (endpoint removed); 500 server error; HTML error page instead of JSON; endpoints return different structure than before","","VCST-4756; PR #105; Checklist 9.5",
+"CMS-101","Migration — MetadataFromContentMigrated platform setting is true","Data Migration","High",,,"PageBuilder module v3.1001.0+ deployed; Hangfire migration job completed","Setting name: VirtoCommerce.PageBuilderModule.Migration.MetadataFromContentMigrated","1. [HTTP] GET ${BACK_URL}/api/platform/settings/values/VirtoCommerce.PageBuilderModule.Migration.MetadataFromContentMigrated with Bearer token
+2. [STATUS] Verify HTTP 200
+3. [BODY] Verify response contains [true]
+4. [ALT] Navigate to Admin > Platform > Settings and search for MetadataFromContentMigrated","Setting exists with value=true; confirms one-time Hangfire migration ran successfully",,"Setting not found; value is false (migration did not run); setting absent entirely; Hangfire job failed silently","","VCST-4756; PR #105; Checklist 8.1",
+"CMS-102","Migration — Existing pages have scheduling and visibility data populated","Data Migration","Medium",,,"MetadataFromContentMigrated=true; pages existed before module upgrade","Spot-check 3-5 pages from All Pages","1. [HTTP] POST ${BACK_URL}/api/page-builder-pages/search with body {storeId: 'B2B-store', take: 5} and Bearer token
+2. [BODY] Verify response results include startDate, endDate, visibility fields in schema
+3. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all
+4. Open 3 pages from the list (prefer pages predating this upgrade)
+5. Expand Scheduling section — verify StartDate/EndDate fields render without error
+6. Expand Personalization section — verify Visibility, User groups, Organization fields render
+7. Open DevTools Console — verify no errors while opening each page","API response includes scheduling/visibility fields; pages open without errors; Scheduling and Personalization sections render correctly; all 20 sampled pages have visibility defined",,"API response missing fields; pages failing to open (500); Scheduling blank or throws exception; console errors on opening migrated pages","","VCST-4756; PR #105; Checklist 8.2 8.3",

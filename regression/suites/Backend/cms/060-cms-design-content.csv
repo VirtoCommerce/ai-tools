@@ -479,3 +479,62 @@
 7. Verify pages are sorted by modification date
 8. Click Language column header
 9. Verify pages are grouped/sorted by language code","Column headers toggle between ascending/descending sort; sort indicator arrow shows current direction; data reorders correctly per column","","Sort not responding to clicks; wrong sort order; sort indicator missing; data not reordering","","Coverage Gap Analysis COV-2026-03-25-1630","generated"
+"CMS-103","Designer shell loads at correct URL with clean console","Designer Core","High",,,"Admin logged in; PageBuilder module v3.1001.0+ deployed",,"1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id) (via Admin > Stores > B2B-store > Page Builder)
+2. Verify Vue SPA loads — sidebar with lifecycle tabs visible (Draft, Pending, Active, Archived, All Pages)
+3. Open DevTools Console — verify new shell console is clean (SignalR info and preloaded resource warning are acceptable; no LOG flooding)
+4. Verify all 5 lifecycle tabs show count badges with numeric values
+5. Verify VC branding visible in sidebar","Shell loads without blank screen or JS errors; 5 lifecycle tabs with count badges; console clean (no debug flooding from new shell); VC branding visible",,"Blank screen; sidebar tabs missing; console flooding with debug LOG entries; no page counts in badges; JS errors in console","","VCST-4756; PR #105; Checklist 1.1 1.2 1.3",
+"CMS-104","Calendar control — natural language date input resolution","Field Types","Medium",,,"Page open in old designer with calendar field (ngv-datepicker)","Natural language inputs: today, tomorrow, next week, in 7 days","1. Open a page in old designer at ${BACK_URL}/Modules/$(VirtoCommerce.PageBuilderModule)/Content/page-builder-designer/index.html?storeId=@td(STORE_PRIMARY.id)
+2. Navigate to a section with a calendar field (ngv-datepicker)
+3. Click the calendar input field and type 'tomorrow'
+4. Verify field resolves to tomorrow's date
+5. Clear and type 'next week' — verify resolves to ~7 days from today
+6. Clear and type 'in 7 days' — verify resolves correctly
+7. Clear and type 'today' — verify resolves to today's date
+8. Save — verify resolved date persists after reload","All four natural language inputs resolve to correct dates via chrono-node; resolved dates persist after Save",,"Input not recognized (stays empty or shows raw text); wrong date resolved; chrono-node not bundled (TypeError); resolved date not persisting after save","","VCST-4756; PR #105; Checklist 6.1.4",
+"CMS-105","String control — multiline textarea renders and respects row limits","Field Types","Medium",,,"Page open in old designer with multi-line string field (textarea)","Multi-line string schema with multiline=true, minRowsCount=3, maxRowsCount=10","1. Open page in old designer
+2. Navigate to section with multi-line string field
+3. Verify field renders as textarea (not single-line input)
+4. Enter multiple lines with Enter key — verify textarea auto-expands
+5. Continue adding lines beyond maxRowsCount limit
+6. Verify scrollbar appears inside textarea (no further expansion)
+7. Save — verify multi-line content persists with newlines after reload","Multi-line field renders as textarea; auto-expands up to maxRowsCount; scrollbar appears at limit; content saves with newlines intact",,"Renders as single-line input; no expansion; scrollbar missing at limit; newlines lost after save","","VCST-4756; PR #105; Checklist 6.2.2 6.2.3",
+"CMS-106","Markdown control — EasyMDE editor renders with formatting toolbar","Field Types","Medium",,,"Page open in old designer with markdown field","Markdown content with bold, italic, heading, link","1. Open page in old designer
+2. Navigate to section with markdown field (EasyMDE)
+3. Verify EasyMDE editor renders with formatting toolbar
+4. Verify toolbar includes: Bold, Italic, Heading, Link, Preview buttons
+5. Click Bold and type 'Bold text' — verify **Bold text** syntax appears
+6. Click Preview — verify formatted HTML renders (bold text appears bold)
+7. Save — verify markdown content persists after reload","EasyMDE editor with toolbar renders; formatting controls insert correct markdown syntax; Preview renders HTML; content persists after Save",,"Plain textarea without EasyMDE; toolbar missing; bold/italic not inserting syntax; preview showing raw markdown; content lost after save","","VCST-4756; PR #105; Checklist 6.3.6",
+"CMS-107","Collection control — add, remove, and reorder list items","Field Types","Medium",,,"Page open in old designer with collection/repeatable list field","List items with title and description fields","1. Open page in old designer with collection field
+2. Verify Add button (+ or Add Item) is present
+3. Click Add — verify new item row appears
+4. Fill item fields (title, description)
+5. Click Add again — verify second item row appears
+6. Verify remove button (X or trash icon) on each item
+7. Click remove on first item — verify removed from list
+8. If drag handles visible, drag to reorder — verify order changes in preview
+9. Save — verify remaining items persist with correct values and order","Add creates item rows; remove deletes them; content saves and persists; reorder persists if drag handles present",,"Add button missing; remove not functional; items not saving; content lost on reload; drag handle not functional","","VCST-4756; PR #105; Checklist 6.3.7",
+"CMS-108","Unknown control type — fallback renderer prevents crash","Field Types","Low","","ECL-13.1","Access to a page section using an unregistered control type (requires dev/test schema modification)",,"1. Open page in old designer containing a section with an unregistered control type
+2. Navigate to that section in the left panel
+3. Verify designer does NOT crash or show blank/broken panel
+4. Verify fallback 'unknown editor' or placeholder widget renders
+5. Verify other sections remain functional and editable
+6. Verify no unhandled JS exception in DevTools console","Fallback unknown-editor placeholder renders for unregistered types; no crash; other sections remain editable; no unhandled console exceptions",,"Designer crashes; blank panel; JS exception thrown; other sections become uneditable","","VCST-4756; PR #105; Checklist 6.3.9",
+"CMS-109","Regression — String field value persists after save in designer Settings","Designer Core","High","","ECL-2.3","Old designer open with Settings section visible; Page Header / H1 string field present",,"1. Open page in old designer at ${BACK_URL}/Modules/$(VirtoCommerce.PageBuilderModule)/Content/page-builder-designer/index.html?storeId=@td(STORE_PRIMARY.id)
+2. Click Settings section in left panel
+3. Locate 'Page Header / H1' text field
+4. Clear existing value and type 'QA-TEST-STRING-4756'
+5. Click Save in designer toolbar
+6. Observe save confirmation alert — note whether it shows 'Template undefined saved successfully'
+7. Reload the page (F5 or navigate away and back)
+8. Reopen Settings section
+9. Verify 'Page Header / H1' field shows 'QA-TEST-STRING-4756' (not empty)","String field value persists after Save and reload; save alert shows valid template name (not 'undefined'); value survives page reload",,"Field empty after reload (value not persisted); alert shows 'Template undefined saved successfully'; checkbox persists but string does not","","VCST-4756; PR #105; Test results Issue 1; Checklist 3.8",
+"CMS-110","Routing — Publish endpoint uses groupId path parameter not query string","API Layer","Medium",,,"Admin authenticated; Draft page with known groupId available","groupId of a Draft page (UUID format)","1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
+2. Open DevTools Network tab
+3. Click on a Draft page to open its blade
+4. Click Publish button
+5. [HTTP] Locate publish request in Network tab
+6. [SCHEMA] Verify URL matches pattern: POST /api/page-builder-pages/grouped/publishing/{groupId}?publish=true where {groupId} is UUID in URL path
+7. Verify groupId is NOT a separate query parameter (URL is NOT /publishing?id={groupId})
+8. [STATUS] Verify response status is 200","Publish uses path parameter routing (/publishing/{groupId}?publish=true); response is 200; groupId is in URL path not query string",,"Different URL pattern observed; groupId sent as query parameter; publish request fails; 405 Method Not Allowed","","VCST-4756; PR #105; Checklist 10.4",

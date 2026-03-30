@@ -1,0 +1,27 @@
+{
+  "ticket": "VCST-4781",
+  "pr": "VirtoCommerce/vc-frontend#2214",
+  "verdict": "PASS",
+  "date": "2026-03-30",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "storybook": "https://vcst-qa-storybook.govirto.com",
+  "build": {
+    "theme": "vc-theme-b2b-vue-2.45.0-pr-2214-31b9-31b9206e"
+  },
+  "agents_dispatched": ["ui-ux-expert", "qa-frontend-expert"],
+  "total_cases": 19,
+  "passed": 19,
+  "failed": 0,
+  "blocked": 0,
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-PRICE-003"],
+  "exploratory": {
+    "charter": "Skipped — P2 feature, Storybook-only changes, low risk",
+    "heuristic": "N/A",
+    "findings": { "bugs": 0, "questions": 0, "observations": 1, "risks": 0 }
+  },
+  "observations": [
+    "Pre-existing 404 for external image at netdirector.co.uk on PDP — unrelated to PR"
+  ],
+  "artifacts": "tests/Sprint-current/VCST-4781/"
+}
