@@ -271,7 +271,7 @@ WL-020,wishlist Query — Another User's List (Access Denied),GraphQL > Wishlist
 [ERRORS] Either: (a) errors[] non-empty with access denied / not found message; OR (b) data.wishlist is null (list not returned to unauthorized user)
 [DATA] Org user does NOT see the private wishlist items from {{USER_EMAIL}}","[CONSOLE] No unhandled server exceptions in GraphiQL","Org user receives full list data (privacy violation); HTTP 500; stack trace in errors[]","Authenticate as {{USER_EMAIL}} and execute removeWishlist(command: { listId: ""<LIST_ID>"" })",xAPI,Automated
 
-WL-021,createWishlist with scope organization — Creator Sees Own Org-Scoped List,GraphQL > Wishlist > B2B,Critical,BL-B2B-001,ECL-14.1; ECL-2.1,User authenticated as org member ({{USER_EMAIL}}); store configured; GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; NOTE — full cross-org visibility test (second user in SAME org) is MANUAL: executor must identify two users sharing the same organization,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; storeId={{STORE_ID}}; cultureName={{CULTURE_NAME}}; currencyCode={{CURRENCY_CODE}}; scope=organization; listName=AGENT-TEST-WL-021-ORG,"[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save <TOKEN>
+WL-021,createWishlist with scope organization — Same-Org Member Can See and Modify Org List,GraphQL > Wishlist > B2B,Critical,BL-B2B-001,ECL-14.1; ECL-2.1,"Two users in SAME org (TechFlow): Emily (test-emily.johnson-20260310@test-agent.com / TestPass123!) and John (test-john.mitchell-20260310@test-agent.com / TestPass123!) — both in TechFlow orgId 6fb516c1 (ref: test-data/users/agent-user-pool.csv slots 1-2). GraphiQL accessible.","emily_email=test-emily.johnson-20260310@test-agent.com; emily_password=TestPass123!; john_email=test-john.mitchell-20260310@test-agent.com; john_password=TestPass123!; storeId={{STORE_ID}}; cultureName={{CULTURE_NAME}}; currencyCode={{CURRENCY_CODE}}; scope=organization; listName=AGENT-TEST-WL-021-ORG","[AUTH] POST {{BACK_URL}}/connect/token for Emily → save <EMILY_TOKEN>
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
 [ACT] Click ""Headers"" button → set Authorization: Bearer <TOKEN> via execCommand('insertText') → screenshot to verify token visible
@@ -284,13 +284,23 @@ WL-021,createWishlist with scope organization — Creator Sees Own Org-Scoped Li
 [ACT] Type query: query { wishlists(storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" scope: ""organization"") { totalCount items { id name scope } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
-[READ] Verify newly created list appears in creator's own wishlists query","[RESPONSE] Response panel shows structured result (no crash)
-[ERRORS] errors[] is empty or absent
-[DATA] data.createWishlist.scope = ""Organization"" (capital O)
-[DATA] data.createWishlist.name = ""AGENT-TEST-WL-021-ORG""
-[DATA] data.createWishlist.id is a non-empty UUID — save as <LIST_ID>
-[DATA] Subsequent wishlists query totalCount >= 1 and items[] contains the created list with scope ""Organization""","[CONSOLE] No unhandled server exceptions in GraphiQL
-[CONSOLE] No JS errors","errors[] non-empty after createWishlist; scope returned as ""private"" instead of ""Organization""; list not visible in creator's own wishlists query; HTTP 500","Authenticate as {{USER_EMAIL}} → execute removeWishlist(command: { listId: ""<LIST_ID>"" })",xAPI,Automated
+[READ] Verify newly created list appears in Emily's wishlists query
+[AUTH] POST {{BACK_URL}}/connect/token for John → save <JOHN_TOKEN>
+[ACT] Switch Headers to John's token
+[ACT] Type query: query { wishlist(listId: ""<LIST_ID>"") { id name scope itemsCount } } → execute
+[READ] Verify John (same TechFlow org) can see Emily's org-scoped list
+[ACT] Type query: query { wishlists(storeId: ""{{STORE_ID}}"" currencyCode: ""{{CURRENCY_CODE}}"" cultureName: ""{{CULTURE_NAME}}"" scope: ""organization"" first: 5) { totalCount items { id name } } } → execute
+[READ] Verify John sees Emily's list in org wishlists query
+[ACT] Type mutation: mutation { addWishlistItem(command: { listId: ""<LIST_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 }) { id itemsCount } } → execute
+[READ] Verify John can add items to Emily's org list","[RESPONSE] No error banner in GraphiQL
+[ERRORS] errors[] empty on all operations
+[DATA] Emily: createWishlist.scope = ""Organization"" (capital O)
+[DATA] Emily: createWishlist.name = ""AGENT-TEST-WL-021-ORG""
+[DATA] Emily: list visible in her own wishlists(scope: ""organization"") query
+[DATA] John: wishlist(listId) returns Emily's list — name matches, scope = ""Organization""
+[DATA] John: wishlists(scope: ""organization"") totalCount >= 1, includes AGENT-TEST-WL-021-ORG
+[DATA] John: addWishlistItem succeeds — itemsCount increments (same-org member CAN modify org list)","[CONSOLE] No JS errors in GraphiQL
+[ROUNDTRIP] Switch back to Emily → query wishlist → sees John's added item","errors[] on createWishlist; scope = ""Private""; John gets ""Access denied"" (should NOT — same org); John cannot see list in wishlists query; John's addWishlistItem fails","Switch to Emily token → removeWishlist(command: { listId: ""<LIST_ID>"" })","BL-B2B-001; agent-user-pool.csv slots 1-2",Automated
 WL-022,Organization-Scoped Wishlist — NOT Visible to Member of Different Org (Access Denied),GraphQL > Wishlist > B2B,Critical,BL-B2B-001,ECL-2.1; ECL-14.1,{{USER_EMAIL}} is authenticated org member (orgId: d62aed2c); Emily (test-emily.johnson-20260310@test-agent.com) is authenticated org member of a DIFFERENT org (orgId: 6fb516c1); GraphiQL accessible,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; emily_email=test-emily.johnson-20260310@test-agent.com; emily_password=TestPass123!; storeId={{STORE_ID}}; cultureName={{CULTURE_NAME}}; currencyCode={{CURRENCY_CODE}}; listName=AGENT-TEST-WL-022-ORG-CROSS,"[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save <MAIN_TOKEN>
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
