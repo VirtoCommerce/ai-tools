@@ -507,5 +507,77 @@
     "file": "localization/languages",
     "filter": { "language_code": "es" },
     "fields": { "code": "language_code", "name": "language_name", "native": "native_name", "date_format": "date_format" }
+  },
+
+  "SEARCH_ELECTRONICS": {
+    "file": "search-queries/top-50-amazon",
+    "filter": { "query_id": "SQ-AM-003" },
+    "fields": { "query": "search_query", "category": "category" }
+  },
+  "SEARCH_AUDIO": {
+    "file": "search-queries/top-50-amazon",
+    "filter": { "query_id": "SQ-AM-020" },
+    "fields": { "query": "search_query", "category": "category" }
+  },
+  "SEARCH_WEARABLE": {
+    "file": "search-queries/top-50-amazon",
+    "filter": { "query_id": "SQ-AM-005" },
+    "fields": { "query": "search_query", "category": "category" }
+  },
+  "SEARCH_FURNITURE": {
+    "file": "search-queries/top-50-amazon",
+    "filter": { "query_id": "SQ-AM-018" },
+    "fields": { "query": "search_query", "category": "category" }
+  },
+  "SEARCH_KITCHEN": {
+    "file": "search-queries/top-50-amazon",
+    "filter": { "query_id": "SQ-AM-023" },
+    "fields": { "query": "search_query", "category": "category" }
+  },
+  "SEARCH_FITNESS": {
+    "file": "search-queries/top-50-amazon",
+    "filter": { "query_id": "SQ-AM-037" },
+    "fields": { "query": "search_query", "category": "category" }
+  },
+  "SEARCH_FOOTWEAR": {
+    "file": "search-queries/top-100-aliexpress",
+    "filter": { "query_id": "SQ-AE-054" },
+    "fields": { "query": "search_query", "category": "category" }
+  },
+  "SEARCH_GAMING": {
+    "file": "search-queries/top-50-amazon",
+    "filter": { "query_id": "SQ-AM-046" },
+    "fields": { "query": "search_query", "category": "category" }
+  },
+  "SEARCH_ACCESSORY": {
+    "file": "search-queries/top-100-aliexpress",
+    "filter": { "query_id": "SQ-AE-001" },
+    "fields": { "query": "search_query", "category": "category" }
+  },
+  "SEARCH_HOME_DECOR": {
+    "file": "search-queries/top-100-aliexpress",
+    "filter": { "query_id": "SQ-AE-077" },
+    "fields": { "query": "search_query", "category": "category" }
+  },
+  "SEARCH_CLOTHING": {
+    "file": "search-queries/top-50-amazon",
+    "filter": { "query_id": "SQ-AM-050" },
+    "fields": { "query": "search_query", "category": "category" }
+  },
+  "SEARCH_OFFICE": {
+    "file": "search-queries/top-50-amazon",
+    "filter": { "query_id": "SQ-AM-051" },
+    "fields": { "query": "search_query", "category": "category" }
+  },
+
+  "USER_DEFAULT": {
+    "file": "users/test-users",
+    "filter": { "user_id": "USER-001" },
+    "fields": { "email": "email", "password": "password", "first_name": "first_name", "last_name": "last_name", "id": "user_id" }
+  },
+  "PROD_DEFAULT": {
+    "file": "products/test-products",
+    "filter": { "product_id": "PROD-001" },
+    "fields": { "sku": "sku", "name": "product_name", "price": "price", "category": "category", "id": "product_id" }
   }
 }

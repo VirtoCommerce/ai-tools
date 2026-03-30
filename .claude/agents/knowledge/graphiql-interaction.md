@@ -22,23 +22,26 @@ GraphiQL uses **CodeMirror** — a rich text editor, NOT a standard `<textarea>`
 
 ### 2. Set Authorization Header
 
-**This is the ONE step that requires `browser_evaluate` with `execCommand`.** All other steps use real-user interaction.
+This step has **two parts**: clicking the Headers tab (real-user `browser_click`) and inserting the token (`browser_evaluate` with `execCommand` — the ONLY JavaScript allowed in the entire workflow).
 
-Why: The JWT token is ~1800 characters. `browser_fill()` writes to the textarea but GraphiQL's React state doesn't pick it up — queries execute as Anonymous. `browser_click` on CodeMirror textbox times out (overlay intercepts). `Ctrl+V` paste is blocked in automation. Only `execCommand('insertText')` on the focused textarea triggers the proper CodeMirror input event that syncs with GraphiQL's state.
+Why `execCommand` for the token only: The JWT is ~1800 characters. `browser_fill` writes to the textarea but GraphiQL's React state doesn't pick it up — queries execute as Anonymous. `browser_type` on the CodeMirror textarea times out (overlay intercepts). Only `execCommand('insertText')` on the focused textarea triggers the CodeMirror input event that syncs with React state.
 
+**Step A — Get token** (via `browser_evaluate` — only `fetch()` call allowed):
 ```js
-// Step A: Get token (via browser_evaluate — only fetch() call allowed)
 const resp = await fetch('${BACK_URL}/connect/token', {
   method: 'POST',
   headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   body: 'grant_type=password&scope=offline_access&username=${USER}&password=${PASS}&storeId=${STORE}'
 });
 const { access_token } = await resp.json();
+return access_token;
+```
 
-// Step B: Click Headers tab (via browser_evaluate — button click)
-document.querySelector('button[data-name="headers"]').click();
+**Step B — Click Headers tab** (real-user interaction):
+`browser_click` on the **"Headers"** tab button in the bottom panel. Do NOT use `browser_evaluate` to click — use the MCP click tool like a real user.
 
-// Step C: Set token in Headers editor (insertText triggers proper CodeMirror sync)
+**Step C — Insert token into Headers editor** (via `browser_evaluate` with `execCommand`):
+```js
 const headerSection = document.querySelector('section[aria-label="Headers"]');
 const textarea = headerSection.querySelector('textarea');
 textarea.focus();
@@ -47,26 +50,25 @@ document.execCommand('insertText', false,
   JSON.stringify({"Authorization": "Bearer " + access_token}));
 ```
 
-After setting: take a screenshot to verify the token is visible in the Headers panel (not Variables). Then execute a protected query (e.g., `{ me { id } }`) to confirm auth works — response should NOT say "Anonymous".
+**Step D — Verify** (real-user interaction):
+Take a screenshot to verify the token is visible in the Headers panel (not Variables). Then execute a protected query (e.g., `{ me { id } }`) to confirm auth works — response should NOT say "Anonymous".
 
 ### 3. Set Query in Editor
 
 **Use one of these real-user approaches (NO `CodeMirror.setValue()`):**
 
-**Approach A — New tab (recommended for clean state):**
-1. Click "Add tab" button (+) → opens clean empty editor
-2. `browser_type` on the Query Editor textbox ref with the query text
-3. Playwright uses `fill()` which works on empty CodeMirror
+**Approach A — New tab + type (recommended for clean state):**
+1. `browser_click` on the "Add tab" button (+) → opens clean empty editor
+2. `browser_click` on the query editor area to focus it
+3. `browser_type` to type the query text — this simulates real keystrokes into the empty editor
 
-**Approach B — Clear existing editor:**
-1. `browser_type` on the Query Editor textbox ref — Playwright's `fill()` replaces textarea content
-2. ⚠️ CodeMirror display may show old + new content concatenated
-3. If this happens: open a new tab instead (Approach A)
+**Approach B — Clear + type (use when staying in same tab):**
+1. `browser_click` on the query editor area to focus it
+2. `browser_press_key: "Control+A"` then `"Backspace"` to clear all existing content
+3. `browser_type` to type the new query text
+4. ⚠️ If the editor still shows old content after clear, use Approach A instead
 
-**Approach C — Keyboard interaction:**
-1. Click somewhere in the query editor area (use the section ref, not the textarea)
-2. `browser_press_key: "Control+A"` then `"Backspace"` to clear
-3. `browser_type` or `browser_press_key` to type the query character by character
+**Important:** Always use `browser_click` to focus, `browser_type` to enter text, and `browser_press_key` for keyboard shortcuts. Never use `browser_evaluate` or `browser_fill` to set query content — interact like a real user.
 
 ### 4. Execute
 
@@ -78,18 +80,15 @@ Or click the Execute button (▶) via `browser_click` on the play icon button re
 
 Use `browser_snapshot` to read the response panel content. The result appears in `region "Result Window"` with collapsible JSON nodes.
 
-For exact JSON extraction, use `browser_evaluate`:
-```js
-document.querySelector('.result-window .CodeMirror').CodeMirror.getValue()
-```
+**Do NOT use `browser_evaluate` to extract response JSON.** Read the response from the accessibility tree via `browser_snapshot` like a real user reading the screen. If the response is truncated or collapsed, scroll or click to expand nodes.
 
 ### 6. Set Variables (if needed)
 
-Click the **"Variables"** tab, then use `browser_type` on the Variables textbox ref.
+`browser_click` on the **"Variables"** tab, then `browser_click` on the Variables editor to focus, then `browser_type` to enter the JSON variables.
 
 ### 7. Schema Explorer
 
-Click "Docs" (📖) in the top-right to open the schema explorer sidebar.
+`browser_click` on "Docs" (📖) in the top-right to open the schema explorer sidebar.
 
 ---
 
@@ -97,22 +96,24 @@ Click "Docs" (📖) in the top-right to open the schema explorer sidebar.
 
 | Action | Method | Works? | Notes |
 |--------|--------|--------|-------|
-| **Set auth in Headers** | `execCommand('insertText')` | ✅ Yes | Only reliable method — syncs with React state |
-| **Set auth in Headers** | `browser_fill()` | ❌ Visual only | Token appears but queries run as Anonymous |
-| **Set auth in Headers** | `CodeMirror.setValue()` | ❌ No | Doesn't update React state |
-| **Set auth in Headers** | `browser_click` + type | ❌ Timeout | CodeMirror overlay intercepts click |
-| **Set auth in Headers** | `Ctrl+V` paste | ❌ No | Clipboard blocked in automation |
-| **Type query (new tab)** | `browser_type` / `fill()` | ✅ Yes | Works on empty editor after "Add tab" |
-| **Type query (existing)** | `browser_type` / `fill()` | ⚠️ May append | CodeMirror display may concatenate old+new |
-| **Clear query editor** | `Ctrl+A` + `Backspace` | ✅ Yes | Real keyboard interaction |
-| **Execute query** | `Ctrl+Enter` | ✅ Yes | Real keyboard interaction |
-| **Read response** | `browser_snapshot` | ✅ Yes | Reads from accessibility tree |
+| **Click Headers tab** | `browser_click` | ✅ Yes | Real-user click on tab button |
+| **Set auth token** | `execCommand('insertText')` via `browser_evaluate` | ✅ Yes | ONLY `browser_evaluate` allowed in entire workflow — syncs with React state |
+| **Set auth token** | `browser_fill` | ❌ Visual only | Token appears but queries run as Anonymous |
+| **Set auth token** | `browser_type` | ❌ Timeout | CodeMirror overlay intercepts |
+| **Type query (new tab)** | `browser_click` (+) → `browser_type` | ✅ Yes | Click to add tab, click editor, type query |
+| **Type query (existing)** | `Ctrl+A` + `Backspace` → `browser_type` | ✅ Yes | Clear first, then type |
+| **Type query (existing)** | `browser_type` without clearing | ⚠️ May append | CodeMirror may concatenate old+new |
+| **Execute query** | `browser_press_key: "Control+Enter"` | ✅ Yes | Real keyboard interaction |
+| **Execute query** | `browser_click` on ▶ button | ✅ Yes | Real-user click |
+| **Read response** | `browser_snapshot` | ✅ Yes | Reads from accessibility tree — the ONLY way to read responses |
+| **Read response** | `browser_evaluate` (`.CodeMirror.getValue()`) | ❌ Forbidden | Violates real-user interaction rule |
 
 ## Common Pitfalls
 
 - **Headers vs Variables tab confusion** — The bottom panel has two tabs side by side: **Variables** (left, default/visible) and **Headers** (right). Auth tokens MUST go in the **Headers** tab. After setting the token, take a screenshot and verify the token text appears in the Headers panel, not Variables.
-- **`browser_fill` on Headers looks correct but doesn't authenticate** — The token appears visually but GraphiQL doesn't send it as an HTTP header. Use `execCommand('insertText')` instead.
-- **Query editor append problem** — `fill()` on an existing editor may concatenate old+new content. Always open a new tab first, or use `Ctrl+A` + `Backspace` to clear.
-- **Wrong element focused** — If the editor appears empty after typing, verify focus with `browser_snapshot` first.
-- **Long/multiline queries** — Use Approach A (new tab + fill) for best results. Avoid typing character by character for queries longer than ~200 chars.
-- **Multiple CodeMirror instances** — GraphiQL has separate instances for query editor, variables editor, headers editor, and response panel — always target the correct one via `section[aria-label="..."]`.
+- **`browser_fill` on Headers looks correct but doesn't authenticate** — The token appears visually but GraphiQL doesn't send it as an HTTP header. Use `execCommand('insertText')` via `browser_evaluate` instead — this is the ONLY permitted use of `browser_evaluate` in the workflow.
+- **Never use `browser_evaluate` for anything except auth token insertion** — Reading responses, clicking buttons, typing queries, navigating — all must use real-user tools (`browser_click`, `browser_type`, `browser_press_key`, `browser_snapshot`).
+- **Query editor append problem** — `browser_type` on an existing editor may concatenate old+new content. Always open a new tab first (`browser_click` on +), or use `Ctrl+A` + `Backspace` to clear.
+- **Wrong element focused** — If the editor appears empty after typing, use `browser_snapshot` to check focus, then `browser_click` on the editor area before typing.
+- **Long/multiline queries** — Use Approach A (new tab + `browser_type`) for best results.
+- **Multiple CodeMirror instances** — GraphiQL has separate instances for query editor, variables editor, headers editor, and response panel — always `browser_click` to focus the correct one before typing.

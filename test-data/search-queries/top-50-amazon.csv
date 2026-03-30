@@ -1,50 +1,52 @@
-search_query
-iphone
-airpods
-laptop
-wireless headphones
-smart watch
-kindle
-bluetooth speaker
-gaming mouse
-mechanical keyboard
-monitor
-usb c charger
-power bank
-tablet
-gaming laptop
-external hard drive
-ssd
-webcam
-office chair
-standing desk
-noise cancelling headphones
-robot vacuum
-air fryer
-coffee maker
-espresso machine
-electric toothbrush
-hair dryer
-makeup
-skincare
-perfume
-sunscreen
-protein powder
-vitamins
-yoga mat
-dumbbells
-running shoes
-sneakers
-backpack
-luggage
-water bottle
-led lights
-smart bulb
-security camera
-baby monitor
-lego
-board games
-ps5
-xbox controller
-phone case
-screen protector
+query_id,search_query,category
+SQ-AM-001,iphone,Electronics > Phones
+SQ-AM-002,airpods,Electronics > Audio
+SQ-AM-003,laptop,Electronics > Computers
+SQ-AM-004,wireless headphones,Electronics > Audio
+SQ-AM-005,smart watch,Electronics > Wearables
+SQ-AM-006,kindle,Electronics > Reading
+SQ-AM-007,bluetooth speaker,Electronics > Audio
+SQ-AM-008,gaming mouse,Electronics > Peripherals
+SQ-AM-009,mechanical keyboard,Electronics > Peripherals
+SQ-AM-010,monitor,Electronics > Displays
+SQ-AM-011,usb c charger,Electronics > Accessories
+SQ-AM-012,power bank,Electronics > Accessories
+SQ-AM-013,tablet,Electronics > Tablets
+SQ-AM-014,gaming laptop,Electronics > Computers
+SQ-AM-015,external hard drive,Electronics > Storage
+SQ-AM-016,ssd,Electronics > Storage
+SQ-AM-017,webcam,Electronics > Peripherals
+SQ-AM-018,office chair,Furniture > Office
+SQ-AM-019,standing desk,Furniture > Office
+SQ-AM-020,noise cancelling headphones,Electronics > Audio
+SQ-AM-021,robot vacuum,Home > Appliances
+SQ-AM-022,air fryer,Home > Kitchen
+SQ-AM-023,coffee maker,Home > Kitchen
+SQ-AM-024,espresso machine,Home > Kitchen
+SQ-AM-025,electric toothbrush,Personal Care > Dental
+SQ-AM-026,hair dryer,Personal Care > Hair
+SQ-AM-027,makeup,Beauty > Cosmetics
+SQ-AM-028,skincare,Beauty > Skincare
+SQ-AM-029,perfume,Beauty > Fragrance
+SQ-AM-030,sunscreen,Beauty > Skincare
+SQ-AM-031,protein powder,Health > Nutrition
+SQ-AM-032,vitamins,Health > Supplements
+SQ-AM-033,yoga mat,Sports > Fitness
+SQ-AM-034,dumbbells,Sports > Fitness
+SQ-AM-035,running shoes,Clothing > Footwear
+SQ-AM-036,sneakers,Clothing > Footwear
+SQ-AM-037,backpack,Accessories > Bags
+SQ-AM-038,luggage,Accessories > Bags
+SQ-AM-039,water bottle,Home > Kitchen
+SQ-AM-040,led lights,Home > Lighting
+SQ-AM-041,smart bulb,Home > Lighting
+SQ-AM-042,security camera,Electronics > Security
+SQ-AM-043,baby monitor,Kids > Baby
+SQ-AM-044,lego,Kids > Toys
+SQ-AM-045,board games,Kids > Games
+SQ-AM-046,ps5,Electronics > Gaming
+SQ-AM-047,xbox controller,Electronics > Gaming
+SQ-AM-048,phone case,Electronics > Accessories
+SQ-AM-049,screen protector,Electronics > Accessories
+SQ-AM-050,hoodie,Clothing > Outerwear
+SQ-AM-051,printer,Electronics > Office

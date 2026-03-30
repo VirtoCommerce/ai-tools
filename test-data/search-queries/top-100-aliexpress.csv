@@ -1,93 +1,93 @@
-search_query
-phone case
-wireless earbuds
-bluetooth headphones
-smart watch
-usb c cable
-fast charger
-power bank
-screen protector
-tablet accessories
-laptop stand
-mechanical keyboard
-gaming mouse
-rgb led lights
-led strip lights
-smart bulb
-security camera
-car phone holder
-dash cam
-car charger
-vacuum cleaner
-robot vacuum
-air fryer
-mini projector
-portable speaker
-tripod
-ring light
-webcam
-microphone
-earphone tips
-phone holder
-selfie stick
-backpack
-travel bag
-luggage
-wallet
-men watch
-women watch
-jewelry
-necklace
-earrings
-bracelet
-sunglasses
-makeup brush
-makeup organizer
-skincare tools
-facial massager
-hair straightener
-hair curler
-nail kit
-gel nail polish
-false eyelashes
-wig
-hair extensions
-shoes
-sneakers
-slippers
-yoga mat
-resistance bands
-dumbbells
-fitness tracker
-kitchen gadgets
-silicone spatula
-cutting board
-knife set
-lunch box
-water bottle
-coffee accessories
-tea infuser
-storage boxes
-drawer organizer
-closet organizer
-bed sheets
-blanket
-pillow cover
-curtain
-wall stickers
-home decor
-artificial plants
-desk organizer
-office supplies
-pen holder
-notebook
-planner
-kids toys
-fidget toy
-lego compatible blocks
-rc car
-cat toy
-dog toy
-pet grooming brush
-baby toys
-stroller accessories
+query_id,search_query,category
+SQ-AE-001,phone case,Electronics > Accessories
+SQ-AE-002,wireless earbuds,Electronics > Audio
+SQ-AE-003,bluetooth headphones,Electronics > Audio
+SQ-AE-004,smart watch,Electronics > Wearables
+SQ-AE-005,usb c cable,Electronics > Accessories
+SQ-AE-006,fast charger,Electronics > Accessories
+SQ-AE-007,power bank,Electronics > Accessories
+SQ-AE-008,screen protector,Electronics > Accessories
+SQ-AE-009,tablet accessories,Electronics > Accessories
+SQ-AE-010,laptop stand,Electronics > Accessories
+SQ-AE-011,mechanical keyboard,Electronics > Peripherals
+SQ-AE-012,gaming mouse,Electronics > Peripherals
+SQ-AE-013,rgb led lights,Home > Lighting
+SQ-AE-014,led strip lights,Home > Lighting
+SQ-AE-015,smart bulb,Home > Lighting
+SQ-AE-016,security camera,Electronics > Security
+SQ-AE-017,car phone holder,Automotive > Accessories
+SQ-AE-018,dash cam,Automotive > Electronics
+SQ-AE-019,car charger,Automotive > Accessories
+SQ-AE-020,vacuum cleaner,Home > Appliances
+SQ-AE-021,robot vacuum,Home > Appliances
+SQ-AE-022,air fryer,Home > Kitchen
+SQ-AE-023,mini projector,Electronics > AV
+SQ-AE-024,portable speaker,Electronics > Audio
+SQ-AE-025,tripod,Electronics > Photography
+SQ-AE-026,ring light,Electronics > Photography
+SQ-AE-027,webcam,Electronics > Peripherals
+SQ-AE-028,microphone,Electronics > Audio
+SQ-AE-029,earphone tips,Electronics > Accessories
+SQ-AE-030,phone holder,Electronics > Accessories
+SQ-AE-031,selfie stick,Electronics > Accessories
+SQ-AE-032,backpack,Accessories > Bags
+SQ-AE-033,travel bag,Accessories > Bags
+SQ-AE-034,luggage,Accessories > Bags
+SQ-AE-035,wallet,Accessories > Wallets
+SQ-AE-036,men watch,Accessories > Watches
+SQ-AE-037,women watch,Accessories > Watches
+SQ-AE-038,jewelry,Accessories > Jewelry
+SQ-AE-039,necklace,Accessories > Jewelry
+SQ-AE-040,earrings,Accessories > Jewelry
+SQ-AE-041,bracelet,Accessories > Jewelry
+SQ-AE-042,sunglasses,Accessories > Eyewear
+SQ-AE-043,makeup brush,Beauty > Cosmetics
+SQ-AE-044,makeup organizer,Beauty > Storage
+SQ-AE-045,skincare tools,Beauty > Skincare
+SQ-AE-046,facial massager,Beauty > Skincare
+SQ-AE-047,hair straightener,Beauty > Hair
+SQ-AE-048,hair curler,Beauty > Hair
+SQ-AE-049,nail kit,Beauty > Nails
+SQ-AE-050,gel nail polish,Beauty > Nails
+SQ-AE-051,false eyelashes,Beauty > Cosmetics
+SQ-AE-052,wig,Beauty > Hair
+SQ-AE-053,hair extensions,Beauty > Hair
+SQ-AE-054,shoes,Clothing > Footwear
+SQ-AE-055,sneakers,Clothing > Footwear
+SQ-AE-056,slippers,Clothing > Footwear
+SQ-AE-057,yoga mat,Sports > Fitness
+SQ-AE-058,resistance bands,Sports > Fitness
+SQ-AE-059,dumbbells,Sports > Fitness
+SQ-AE-060,fitness tracker,Electronics > Wearables
+SQ-AE-061,kitchen gadgets,Home > Kitchen
+SQ-AE-062,silicone spatula,Home > Kitchen
+SQ-AE-063,cutting board,Home > Kitchen
+SQ-AE-064,knife set,Home > Kitchen
+SQ-AE-065,lunch box,Home > Kitchen
+SQ-AE-066,water bottle,Home > Kitchen
+SQ-AE-067,coffee accessories,Home > Kitchen
+SQ-AE-068,tea infuser,Home > Kitchen
+SQ-AE-069,storage boxes,Home > Storage
+SQ-AE-070,drawer organizer,Home > Storage
+SQ-AE-071,closet organizer,Home > Storage
+SQ-AE-072,bed sheets,Home > Bedroom
+SQ-AE-073,blanket,Home > Bedroom
+SQ-AE-074,pillow cover,Home > Bedroom
+SQ-AE-075,curtain,Home > Decor
+SQ-AE-076,wall stickers,Home > Decor
+SQ-AE-077,home decor,Home > Decor
+SQ-AE-078,artificial plants,Home > Decor
+SQ-AE-079,desk organizer,Home > Office
+SQ-AE-080,office supplies,Home > Office
+SQ-AE-081,pen holder,Home > Office
+SQ-AE-082,notebook,Home > Office
+SQ-AE-083,planner,Home > Office
+SQ-AE-084,kids toys,Kids > Toys
+SQ-AE-085,fidget toy,Kids > Toys
+SQ-AE-086,lego compatible blocks,Kids > Toys
+SQ-AE-087,rc car,Kids > Toys
+SQ-AE-088,cat toy,Pets > Cat
+SQ-AE-089,dog toy,Pets > Dog
+SQ-AE-090,pet grooming brush,Pets > Grooming
+SQ-AE-091,baby toys,Kids > Baby
+SQ-AE-092,stroller accessories,Kids > Baby

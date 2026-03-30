@@ -1,8 +1,8 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-GQL-001,xCatalog - Search Products Query,GraphQL > xCatalog,Critical,BL-GQL-002,ECL-2.1; ECL-8.1,"BROWSER-ONLY: All tests MUST execute in GraphiQL UI via browser (playwright-edge). Do NOT use curl/API calls. Follow graphiql-interaction.md for CodeMirror interaction. GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; products in catalog","storeId={{STORE_ID}}; query=""laptop""; cultureName=""en-US""; currencyCode=""USD""","[NAV] {{BACK_URL}}/ui/graphiql
+GQL-001,xCatalog - Search Products Query,GraphQL > xCatalog,Critical,BL-GQL-002,ECL-2.1; ECL-8.1,"BROWSER-ONLY: All tests MUST execute in GraphiQL UI via browser (playwright-edge). Do NOT use curl/API calls. Follow graphiql-interaction.md for CodeMirror interaction. GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; products in catalog","storeId=@td(STORE_PRIMARY.id); query=""laptop""; cultureName=""en-US""; currencyCode=""USD""","[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { products(storeId: ""{{STORE_ID}}"" query: ""laptop"") { totalCount items { id name code imgSrc } } }
+[ACT] Type query: query { products(storeId: ""@td(STORE_PRIMARY.id)"" query: ""laptop"") { totalCount items { id name code imgSrc } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response from response panel","[RESPONSE] Response panel shows data without error banner
@@ -12,8 +12,8 @@ GQL-001,xCatalog - Search Products Query,GraphQL > xCatalog,Critical,BL-GQL-002,
 [DATA] imgSrc is a valid URL or null
 [ERRORS] No errors[] in response","[CONSOLE] No JS errors in GraphiQL
 [ROUNDTRIP] Re-execute same query → same results returned","errors[] non-empty in response panel; totalCount = 0 for known query term; missing id/name/code on items; GraphiQL shows error banner",none,xAPI,Automated
-GQL-002,xCatalog - Get Product Detail Query,GraphQL > xCatalog,Critical,BL-GQL-002; BL-GQL-003,ECL-2.1,"Product ID known from GQL-001; GraphiQL UI loaded","storeId={{STORE_ID}}; productId from GQL-001 result; currencyCode=""USD""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { product(storeId: ""{{STORE_ID}}"" id: ""<PRODUCT_ID>"") { id name descriptions { content } prices { list { amount } sale { amount } } } }
+GQL-002,xCatalog - Get Product Detail Query,GraphQL > xCatalog,Critical,BL-GQL-002; BL-GQL-003,ECL-2.1,"Product ID known from GQL-001; GraphiQL UI loaded","storeId=@td(STORE_PRIMARY.id); productId from GQL-001 result; currencyCode=""USD""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { product(storeId: ""@td(STORE_PRIMARY.id)"" id: ""<PRODUCT_ID>"") { id name descriptions { content } prices { list { amount } sale { amount } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response from response panel","[RESPONSE] Response panel shows data without error banner
@@ -23,8 +23,8 @@ GQL-002,xCatalog - Get Product Detail Query,GraphQL > xCatalog,Critical,BL-GQL-0
 [DATA] prices.sale present (may be null if no sale active)
 [ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute query → same product returned
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; product null; descriptions empty; prices missing list amount",none,xAPI,Automated
-GQL-003,xCatalog - Category Tree Query,GraphQL > xCatalog,High,BL-GQL-002,ECL-2.1,"Categories configured in store; GraphiQL UI loaded","storeId={{STORE_ID}}; cultureName=""en-US""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { categories(storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { totalCount items { id name slug childCategories { id name } } } }
+GQL-003,xCatalog - Category Tree Query,GraphQL > xCatalog,High,BL-GQL-002,ECL-2.1,"Categories configured in store; GraphiQL UI loaded","storeId=@td(STORE_PRIMARY.id); cultureName=""en-US""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { categories(storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"") { totalCount items { id name slug childCategories { id name } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response from response panel","[RESPONSE] Response panel shows data without error banner
@@ -34,8 +34,8 @@ GQL-003,xCatalog - Category Tree Query,GraphQL > xCatalog,High,BL-GQL-002,ECL-2.
 [MATH] totalCount matches actual items[] length
 [ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute query → same category tree
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; totalCount = 0; slug null or empty; childCategories missing on known parent categories",none,xAPI,Automated
-GQL-004,xCatalog - Product Facets/Filters Query,GraphQL > xCatalog,High,BL-GQL-002,ECL-2.1; ECL-8.1,"Products with properties configured; GraphiQL UI loaded","storeId={{STORE_ID}}; facet includes brand/price range; filter combinations","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { products(storeId: ""{{STORE_ID}}"" facet: ""brand"") { totalCount items { id name } term_facets { name label terms { term label count isSelected } } } }
+GQL-004,xCatalog - Product Facets/Filters Query,GraphQL > xCatalog,High,BL-GQL-002,ECL-2.1; ECL-8.1,"Products with properties configured; GraphiQL UI loaded","storeId=@td(STORE_PRIMARY.id); facet includes brand/price range; filter combinations","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { products(storeId: ""@td(STORE_PRIMARY.id)"" facet: ""brand"") { totalCount items { id name } term_facets { name label terms { term label count isSelected } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response — note facet values
@@ -49,8 +49,8 @@ GQL-004,xCatalog - Product Facets/Filters Query,GraphQL > xCatalog,High,BL-GQL-0
 [DATA] Combining two filters uses AND logic (result set narrows further)
 [ERRORS] No errors[] in response","[ROUNDTRIP] Filter counts match product count in filtered response
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; term_facets[] empty when facet-enabled properties exist; filter does not narrow results; facet count mismatches",none,xAPI,Automated
-GQL-019,xCatalog - Product Variations Query,GraphQL > xCatalog,High,BL-GQL-002; BL-GQL-003,ECL-2.1,"Configurable products with variations (size, color) exist in catalog; GraphiQL UI loaded","storeId={{STORE_ID}}; parentProductId (configurable product with known variations)","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { product(storeId: ""{{STORE_ID}}"" id: ""<PARENT_ID>"") { id name variations { id name properties { name value } prices { list { amount } } availabilityData { availableQuantity } } } }
+GQL-019,xCatalog - Product Variations Query,GraphQL > xCatalog,High,BL-GQL-002; BL-GQL-003,ECL-2.1,"Configurable products with variations (size, color) exist in catalog; GraphiQL UI loaded","storeId=@td(STORE_PRIMARY.id); parentProductId (configurable product with known variations)","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { product(storeId: ""@td(STORE_PRIMARY.id)"" id: ""<PARENT_ID>"") { id name variations { id name properties { name value } prices { list { amount } } availabilityData { availableQuantity } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response — verify variation properties and pricing","[RESPONSE] Response panel shows data without error banner
@@ -60,9 +60,9 @@ GQL-019,xCatalog - Product Variations Query,GraphQL > xCatalog,High,BL-GQL-002; 
 [DATA] availabilityData differs per variation if stock differs (or all show available if not tracked)
 [ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute query → same variations returned
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; variations[] empty for known configurable product; all variations same price when they should differ; availabilityData not populated",none,xAPI,Automated
-GQL-022,xCatalog - Product Listing Price During Reindex Lag Window,GraphQL > xCatalog > Cross-Domain,Critical,BL-GQL-002; BL-GQL-003,ECL-2.1,"Product with known price; Elasticsearch indexing enabled; Admin API accessible; GraphiQL UI loaded","productCode={{TEST_SKU}}; storeId={{STORE_ID}}; originalPrice; newPrice; reindexWindowSeconds=60","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type products query for {{TEST_SKU}} → Execute → Read response → record as originalPrice
-[ACT] Change {{TEST_SKU}} price via: PUT {{BACK_URL}}/api/pricing/pricelists/<priceListId>/prices with newPrice
+GQL-022,xCatalog - Product Listing Price During Reindex Lag Window,GraphQL > xCatalog > Cross-Domain,Critical,BL-GQL-002; BL-GQL-003; BL-CROSS-002,ECL-2.1,"Product with known price; Elasticsearch indexing enabled; Admin API accessible; GraphiQL UI loaded","productCode=@td(PROD_DEFAULT.sku); storeId=@td(STORE_PRIMARY.id); priceListId=@td(PRICELIST_USD.id); originalPrice=<record before change>; newPrice=<choose test value>; reindexWindowSeconds=60","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type products query for @td(PROD_DEFAULT.sku) → Execute → Read response → record as originalPrice
+[ACT] Change @td(PROD_DEFAULT.sku) price via: PUT {{BACK_URL}}/api/pricing/pricelists/<priceListId>/prices with newPrice
 [ACT] Immediately clear editor → type same products query → Execute
 [READ] Read response — document whether old or new price returned (lag acceptable per BL-CROSS-002)
 [WAIT] Wait 60 seconds for reindex to complete
@@ -73,14 +73,14 @@ GQL-022,xCatalog - Product Listing Price During Reindex Lag Window,GraphQL > xCa
 [DATA] Document actual observed lag duration
 [ERRORS] No errors[] in any query","[ROUNDTRIP] Multiple re-executions confirm price converges to newPrice
 [CONSOLE] No JS errors in GraphiQL","xCatalog still shows originalPrice after 90 seconds total; errors[] on xCatalog query; REST price update returns non-200; price shows as 0 after change","restore original price via Admin API","Coverage Gap Analysis BL-CROSS-002",Generated
-GQL-034,xCatalog - Range Filter Syntax: Inclusive vs Exclusive Boundaries,GraphQL > xCatalog > Range Facets,High,BL-GQL-002; BL-SRCH-001,ECL-3.2,"GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; products with known prices exist; auth not required for product queries","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""","[NAV] {{BACK_URL}}/ui/graphiql
+GQL-034,xCatalog - Range Filter Syntax: Inclusive vs Exclusive Boundaries,GraphQL > xCatalog > Range Facets,High,BL-GQL-002; BL-SRCH-001,ECL-3.2,"GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; products with known prices exist; auth not required for product queries","storeId=@td(STORE_PRIMARY.id); currencyCode=""USD""; cultureName=""en-US""","[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { products(storeId: ""{{STORE_ID}}"" filter: ""price.usd:[50 TO 100]"" currencyCode: ""USD"") { totalCount items { name price { actual { amount } } } } }
+[ACT] Type query: query { products(storeId: ""@td(STORE_PRIMARY.id)"" filter: ""price.usd:[50 TO 100]"" currencyCode: ""USD"") { totalCount items { name price { actual { amount } } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response — note totalCount as Count_Inclusive
-[ACT] Clear editor → type query with exclusive bounds: query { products(storeId: ""{{STORE_ID}}"" filter: ""price.usd:(50 TO 100)"" currencyCode: ""USD"") { totalCount items { name price { actual { amount } } } } }
+[ACT] Clear editor → type query with exclusive bounds: query { products(storeId: ""@td(STORE_PRIMARY.id)"" filter: ""price.usd:(50 TO 100)"" currencyCode: ""USD"") { totalCount items { name price { actual { amount } } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — note totalCount as Count_Exclusive","[DATA] Inclusive [50 TO 100]: all items have price.actual.amount >= 50 AND <= 100
 [DATA] Exclusive (50 TO 100): all items have price.actual.amount > 50 AND < 100
@@ -88,12 +88,12 @@ GQL-034,xCatalog - Range Filter Syntax: Inclusive vs Exclusive Boundaries,GraphQ
 [ERRORS] No errors[] in either response
 [DATA] Products at exactly $50.00 or $100.00 appear in inclusive but not exclusive result","[ROUNDTRIP] Re-execute inclusive query → same totalCount
 [CONSOLE] No JS errors in GraphiQL","Inclusive and exclusive returning identical counts; products at exact boundary appearing in exclusive result; errors[] in response; totalCount = 0 for valid price range",none,"GAP-RF-11, BL-SRCH-001",Generated
-GQL-035,xCatalog - Open-Ended Range Filter Syntax,GraphQL > xCatalog > Range Facets,High,BL-GQL-002; BL-SRCH-001,ECL-3.2,"GraphiQL UI loaded; products with varying prices exist","storeId={{STORE_ID}}; currencyCode=""USD""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query with upper-bounded range: query { products(storeId: ""{{STORE_ID}}"" filter: ""price.usd:(TO 100]"" currencyCode: ""USD"") { totalCount items { name price { actual { amount } } } } }
+GQL-035,xCatalog - Open-Ended Range Filter Syntax,GraphQL > xCatalog > Range Facets,High,BL-GQL-002; BL-SRCH-001,ECL-3.2,"GraphiQL UI loaded; products with varying prices exist","storeId=@td(STORE_PRIMARY.id); currencyCode=""USD""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query with upper-bounded range: query { products(storeId: ""@td(STORE_PRIMARY.id)"" filter: ""price.usd:(TO 100]"" currencyCode: ""USD"") { totalCount items { name price { actual { amount } } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response — note totalCount as Count_UpTo100
-[ACT] Clear editor → type query with lower-bounded range: query { products(storeId: ""{{STORE_ID}}"" filter: ""price.usd:[100 TO)"" currencyCode: ""USD"") { totalCount items { name price { actual { amount } } } } }
+[ACT] Clear editor → type query with lower-bounded range: query { products(storeId: ""@td(STORE_PRIMARY.id)"" filter: ""price.usd:[100 TO)"" currencyCode: ""USD"") { totalCount items { name price { actual { amount } } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — note totalCount as Count_From100","[DATA] (TO 100]: all items have price.actual.amount <= 100
 [DATA] [100 TO): all items have price.actual.amount >= 100
@@ -101,8 +101,8 @@ GQL-035,xCatalog - Open-Ended Range Filter Syntax,GraphQL > xCatalog > Range Fac
 [ERRORS] No errors[] in either response
 [DATA] No products with amount > 100 in the (TO 100] result","[ROUNDTRIP] Re-execute each query → same totalCount
 [CONSOLE] No JS errors in GraphiQL","Products above $100 appearing in (TO 100] result; products below $100 in [100 TO) result; errors[] in response; empty result for ranges containing known products",none,"GAP-RF-12, BL-SRCH-001",Generated
-GQL-036,xCatalog - Range Filter on Non-Price Property (Underscore Field Name),GraphQL > xCatalog > Range Facets,Critical,BL-GQL-002; BL-SRCH-001,ECL-3.2,"GraphiQL UI loaded; products with underscore-named property exist (e.g., Volume_ml in Alcoholic Drinks category)","storeId={{STORE_ID}}; currencyCode=""USD""; categorySlug=""alcoholic-drinks""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query filtering by underscore property: query { products(storeId: ""{{STORE_ID}}"" filter: ""Volume_ml:[200 TO 550]"" facet: ""Volume_ml"" currencyCode: ""USD"") { totalCount items { name properties { name value } } } }
+GQL-036,xCatalog - Range Filter on Non-Price Property (Underscore Field Name),GraphQL > xCatalog > Range Facets,Critical,BL-GQL-002; BL-SRCH-001,ECL-3.2,"GraphiQL UI loaded; products with underscore-named property exist (e.g., Volume_ml in Alcoholic Drinks category)","storeId=@td(STORE_PRIMARY.id); currencyCode=""USD""; propertyName=Volume_ml; categoryContext=alcoholic drinks (use a category with numeric underscore-named properties)","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query filtering by underscore property: query { products(storeId: ""@td(STORE_PRIMARY.id)"" filter: ""Volume_ml:[200 TO 550]"" facet: ""Volume_ml"" currencyCode: ""USD"") { totalCount items { name properties { name value } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read response — check totalCount and item properties","[DATA] totalCount > 0 for valid Volume_ml range (observed: 12 products)
@@ -111,12 +111,12 @@ GQL-036,xCatalog - Range Filter on Non-Price Property (Underscore Field Name),Gr
 [ERRORS] No errors[] related to filter logic (note: ARGUMENT_NULL errors may appear for items with null properties — this is a pre-existing data quality issue, not a filter bug)
 [DATA] Filter parameter 'Volume_ml' is preserved in the request (not truncated to 'Volume')","[ROUNDTRIP] Re-execute same query → consistent results
 [CONSOLE] No JS errors in GraphiQL","totalCount = 0 for range containing known products; items with Volume_ml=33 appearing in 200–550 range; field name truncated in filter parameter; errors[] indicating filter parsing failure",none,"VP-9035, VCST-4833, GAP-RF-13",Generated
-GQL-037,xCatalog - Facet Parameter Returns Range Aggregation Bucket,GraphQL > xCatalog > Range Facets,High,BL-GQL-002; BL-SRCH-001,ECL-3.2,"GraphiQL UI loaded; category with price-range products exists","storeId={{STORE_ID}}; currencyCode=""USD""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query with explicit range facet parameter: query { products(storeId: ""{{STORE_ID}}"" facet: ""price.usd:[0 TO 100]"" currencyCode: ""USD"") { totalCount range_facets { name ranges { from to count isSelected label } } } }
+GQL-037,xCatalog - Facet Parameter Returns Range Aggregation Bucket,GraphQL > xCatalog > Range Facets,High,BL-GQL-002; BL-SRCH-001,ECL-3.2,"GraphiQL UI loaded; category with price-range products exists","storeId=@td(STORE_PRIMARY.id); currencyCode=""USD""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query with explicit range facet parameter: query { products(storeId: ""@td(STORE_PRIMARY.id)"" facet: ""price.usd:[0 TO 100]"" currencyCode: ""USD"") { totalCount range_facets { name ranges { from to count isSelected label } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
 [READ] Read range_facets in response
-[ACT] Clear editor → type query with different range bucket: query { products(storeId: ""{{STORE_ID}}"" facet: ""price.usd:[100 TO 500]"" currencyCode: ""USD"") { totalCount range_facets { name ranges { from to count isSelected label } } } }
+[ACT] Clear editor → type query with different range bucket: query { products(storeId: ""@td(STORE_PRIMARY.id)"" facet: ""price.usd:[100 TO 500]"" currencyCode: ""USD"") { totalCount range_facets { name ranges { from to count isSelected label } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read range_facets in response — compare bucket count","[DATA] range_facets array contains entry with name 'price'
 [DATA] ranges[] contains at least one bucket object with from, to, count, isSelected, label fields
@@ -125,3 +125,184 @@ GQL-037,xCatalog - Facet Parameter Returns Range Aggregation Bucket,GraphQL > xC
 [ERRORS] No errors[] in response
 [DATA] Second query returns a different bucket count for [100 TO 500] range","[ROUNDTRIP] Re-execute → same bucket counts
 [CONSOLE] No JS errors in GraphiQL","range_facets empty or null (note: facet:""price"" alone returns empty range_facets — explicit range syntax required); bucket missing count field; errors[] in response; bucket count exceeds totalCount",none,"GAP-RF-14, BL-SRCH-001",Generated
+GQL-096,xCatalog - category Singular Query Returns Category by ID,GraphQL > xCatalog > Category,Critical,BL-GQL-002,ECL-2.1,"GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; at least one category exists in the store; a valid category ID is known (obtain from GQL-003 categories response)","storeId=@td(STORE_PRIMARY.id); categoryId=<ID from GQL-003 result>; cultureName=""en-US""","[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Execute categories query first to obtain a valid category ID: query { categories(storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"") { items { id name } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read one category id from items[] — record as <CATEGORY_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { category(storeId: ""@td(STORE_PRIMARY.id)"" id: ""<CATEGORY_ID>"" cultureName: ""en-US"") { id name code slug breadcrumbs { title seoPath } seoInfo { pageTitle metaDescription } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response from response panel","[RESPONSE] Response panel shows data without error banner
+[DATA] data.category object is present and non-null
+[DATA] category.id matches the requested <CATEGORY_ID>
+[DATA] category.name is a non-empty string
+[DATA] category.slug is non-empty and suitable for URL construction
+[DATA] breadcrumbs[] is present (may be empty for root categories)
+[ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute same query → identical category object returned
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response; data.category null for a known-valid ID; slug empty or null; id in response does not match requested ID",none,BL-GQL-002,Generated
+GQL-097,xCatalog - category Singular Query with Invalid ID Returns Null,GraphQL > xCatalog > Category,High,BL-GQL-002,ECL-2.1,"GraphiQL UI loaded; storeId known","storeId=@td(STORE_PRIMARY.id); cultureName=""en-US""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query with a non-existent category ID: query { category(storeId: ""@td(STORE_PRIMARY.id)"" id: ""non-existent-id-00000000"" cultureName: ""en-US"") { id name slug } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response from response panel","[RESPONSE] Response panel renders without a fatal error banner
+[DATA] data.category is null (graceful not-found response — not an error)
+[ERRORS] No errors[] array in response (null result is expected, not an error condition)
+[DATA] Response HTTP status is 200 (GraphQL always returns 200; errors surfaced in body)","[CONSOLE] No JS errors in GraphiQL","errors[] present for a simple invalid-ID lookup; HTTP 500 or network error; data.category returns a random/wrong category instead of null",none,BL-GQL-002,Generated
+GQL-098,xCatalog - products Pagination Using first and after Cursor,GraphQL > xCatalog > Pagination,High,BL-GQL-002,ECL-3.1,"GraphiQL UI loaded; catalog contains more than 10 products (totalCount > 10)","storeId=@td(STORE_PRIMARY.id); cultureName=""en-US""; currencyCode=""USD""; pageSize=5","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type first-page query: query { products(storeId: ""@td(STORE_PRIMARY.id)"" first: 5 cultureName: ""en-US"") { totalCount pageInfo { hasNextPage endCursor } items { id name } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read pageInfo.hasNextPage and pageInfo.endCursor — record endCursor as <CURSOR>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type second-page query using cursor: query { products(storeId: ""@td(STORE_PRIMARY.id)"" first: 5 after: ""<CURSOR>"" cultureName: ""en-US"") { totalCount pageInfo { hasNextPage endCursor } items { id name } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read items[] from second page — verify no overlap with first page","[RESPONSE] Both responses show data without error banner
+[DATA] Page 1: items[] length = 5; pageInfo.hasNextPage = true (assuming totalCount > 10)
+[DATA] Page 1: pageInfo.endCursor is a non-empty string (opaque cursor token)
+[DATA] Page 2: items[] length = 5 (or fewer on last page); none of the ids match page 1 ids
+[DATA] Both pages: totalCount is the same value (pagination does not change total)
+[MATH] Collecting all pages yields totalCount items with no duplicates
+[ERRORS] No errors[] in either response","[ROUNDTRIP] Re-execute page 1 query → same items and cursor
+[CONSOLE] No JS errors in GraphiQL","pageInfo missing hasNextPage or endCursor fields; page 2 items overlap with page 1; totalCount differs between pages; errors[] present; cursor token rejected as invalid",none,BL-GQL-002,Generated
+GQL-099,xCatalog - products Query with sort Parameter Orders Results,GraphQL > xCatalog > Sorting,High,BL-GQL-002,ECL-3.1,"GraphiQL UI loaded; catalog contains multiple products with different names and prices","storeId=@td(STORE_PRIMARY.id); currencyCode=""USD""; cultureName=""en-US""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query sorted by name ascending: query { products(storeId: ""@td(STORE_PRIMARY.id)"" sort: ""name:asc"" first: 10 cultureName: ""en-US"") { totalCount items { id name price { actual { amount } } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Record the sequence of name values from items[] as Name_Asc
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query sorted by name descending: query { products(storeId: ""@td(STORE_PRIMARY.id)"" sort: ""name:desc"" first: 10 cultureName: ""en-US"") { totalCount items { id name price { actual { amount } } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Record the sequence of name values from items[] as Name_Desc","[RESPONSE] Both responses show data without error banner
+[DATA] Name_Asc: items[] ordered alphabetically A → Z (case-insensitive comparison acceptable)
+[DATA] Name_Desc: items[] ordered alphabetically Z → A — the reverse of Name_Asc
+[DATA] Name_Asc first item equals Name_Desc last item (symmetric ordering)
+[DATA] totalCount is identical in both responses
+[ERRORS] No errors[] in either response","[ROUNDTRIP] Re-execute asc query → same order
+[CONSOLE] No JS errors in GraphiQL","items[] in same order regardless of sort parameter; sort parameter silently ignored; errors[] present; totalCount differs between sort variants",none,BL-GQL-002,Generated
+GQL-100,xCatalog - categories Query with sort and filter Arguments,GraphQL > xCatalog > Categories,High,BL-GQL-002,ECL-2.1; ECL-3.1,"GraphiQL UI loaded; multiple categories exist with known names and hierarchy","storeId=@td(STORE_PRIMARY.id); cultureName=""en-US""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type categories query with sort by name ascending: query { categories(storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"" sort: ""name:asc"" first: 10) { totalCount items { id name slug } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Record name sequence from items[] as Cat_Asc
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type categories query with keyword filter (substitute a partial name from Cat_Asc — e.g., first 3 letters of the first category name): query { categories(storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"" query: ""<PARTIAL_CAT_NAME>"" first: 10) { totalCount items { id name slug } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read items[] — verify only matching categories returned","[RESPONSE] Both responses show data without error banner
+[DATA] Cat_Asc: category names ordered alphabetically A → Z
+[DATA] Filter query: items[] contains only categories whose name matches the query term (partial match acceptable)
+[DATA] Filter query: totalCount <= unfiltered totalCount
+[DATA] Each returned category has non-empty id, name, and slug
+[ERRORS] No errors[] in either response","[ROUNDTRIP] Re-execute sort query → same order
+[CONSOLE] No JS errors in GraphiQL","sort parameter has no effect on ordering; filter returns categories not matching query; errors[] present; slug null or empty on returned categories",none,BL-GQL-002,Generated
+GQL-101,xCatalog - products Filter by Category Subtree and Price Floor,GraphQL > xCatalog > Filter,Critical,BL-GQL-002; BL-SRCH-001,"ECL-3.2; ECL-8.1","GraphiQL UI loaded; categories exist with products; catalog root ID known","storeId=@td(STORE_PRIMARY.id); virtualCatalogId=@td(VIRTUAL_CATALOG_B2B.id); cultureName=""en-US""; currencyCode=""USD""","[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[SETUP] Get a category ID to scope the subtree: query { categories(storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"" first: 1) { items { id name } } } → save id as <CAT_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query with category subtree + price floor filter (mirrors storefront base filter): query { products(storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"" currencyCode: ""USD"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)/<CAT_ID> price.USD:(0 TO)"" first: 5) { totalCount items { id name price { actual { amount currency { code } } } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify products belong to category and have price > 0","[RESPONSE] Response panel shows data without error banner
+[DATA] totalCount > 0
+[DATA] All items have price.actual.amount > 0 (price floor filter applied)
+[DATA] items[] contain products from the specified category subtree
+[ERRORS] No errors[] in response
+[MATH] No item has price.actual.amount = 0 (filtered out by price.USD:(0 TO))","[ROUNDTRIP] Re-execute same query → same totalCount and items
+[CONSOLE] No JS errors in GraphiQL","totalCount = 0 for category with known products; items with price = 0 appearing despite price floor filter; errors[] in response; products from other categories appearing in filtered results",none,"BL-GQL-002; BL-SRCH-001",Generated
+GQL-102,xCatalog - products Filter by Facet Term (Brand) — Storefront Syntax,GraphQL > xCatalog > Filter,High,BL-GQL-002; BL-SRCH-001,"ECL-3.2; ECL-8.1","GraphiQL UI loaded; products with brand property exist","storeId=@td(STORE_PRIMARY.id); cultureName=""en-US""; currencyCode=""USD""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query to discover brand facet values: query { products(storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"" currencyCode: ""USD"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO)"" facet: ""BRAND"" first: 5) { totalCount term_facets { name label terms { term label count } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read term_facets — pick a brand term with count > 0 → record as <BRAND_TERM> and its count as <BRAND_COUNT>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query with facet filter appended (storefront syntax — double-quoted key:value): query { products(storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"" currencyCode: ""USD"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) \""BRAND\"":""\""<BRAND_TERM>\"""" first: 16) { totalCount items { id name properties { name value } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify filtered results match brand","[RESPONSE] Response panel shows data without error banner
+[DATA] totalCount matches or is close to <BRAND_COUNT> from facet response
+[DATA] All returned items have a BRAND property matching <BRAND_TERM>
+[ERRORS] No errors[] in response
+[MATH] totalCount <= unfiltered totalCount from step 1","[ROUNDTRIP] Re-execute filtered query → same totalCount
+[CONSOLE] No JS errors in GraphiQL","totalCount does not match facet count; items returned with different brand; errors[] in response; filter syntax rejected","none","BL-GQL-002; BL-SRCH-001",Generated
+GQL-103,xCatalog - products Filter by inStock_variations (In-Stock vs Out-of-Stock),GraphQL > xCatalog > Filter,High,BL-GQL-002; BL-SRCH-001,"ECL-3.2; ECL-2.1","GraphiQL UI loaded; catalog contains both in-stock and out-of-stock products","storeId=@td(STORE_PRIMARY.id); cultureName=""en-US""; currencyCode=""USD""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query with inStock_variations:true filter: query { products(storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"" currencyCode: ""USD"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) inStock_variations:true price.USD:(0 TO)"" first: 5) { totalCount items { id name availabilityData { isInStock availableQuantity } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — record totalCount as <IN_STOCK_COUNT> and verify availabilityData
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query WITHOUT inStock_variations filter (reset — base filter only): query { products(storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"" currencyCode: ""USD"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO)"" first: 5) { totalCount items { id name availabilityData { isInStock availableQuantity } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — record totalCount as <ALL_COUNT>","[RESPONSE] Both responses show data without error banner
+[DATA] inStock_variations:true → all returned items have availabilityData.isInStock = true (or at least one variation in stock)
+[DATA] inStock_variations:true → <IN_STOCK_COUNT> < <ALL_COUNT> (filter excludes out-of-stock products)
+[DATA] Base filter (no inStock_variations) → returns ALL products regardless of stock status — includes both in-stock and out-of-stock
+[MATH] <ALL_COUNT> > <IN_STOCK_COUNT> (removing inStock_variations filter widens the result set)
+[ERRORS] No errors[] in either response","[ROUNDTRIP] Re-execute inStock_variations:true → same totalCount
+[CONSOLE] No JS errors in GraphiQL","Both queries return identical totalCount (inStock_variations filter has no effect); inStock_variations:true returns out-of-stock products; errors[] in response; filter syntax not recognized","none","BL-GQL-002; BL-SRCH-001",Generated
+
+GQL-104,xCatalog - slugInfo Resolves Category Slug to Entity Info,GraphQL > xCatalog > SlugInfo,High,BL-GQL-002; BL-SEO-001,"ECL-2.1; ECL-14.1","GraphiQL UI loaded; categories exist with SEO slugs configured","storeId=@td(STORE_PRIMARY.id); cultureName=""en-US""","[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[SETUP] Get a category slug: query { categories(storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"" first: 1) { items { id name slug } } } → save slug as <CAT_SLUG> and id as <CAT_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { slugInfo(slug: ""<CAT_SLUG>"" storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"") { entityInfo { id isActive languageCode objectId objectType semanticUrl metaDescription metaKeywords pageTitle } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify category entity resolved","[RESPONSE] Response panel shows data without error banner
+[DATA] data.slugInfo.entityInfo is non-null
+[DATA] entityInfo.objectType = ""Category""
+[DATA] entityInfo.objectId matches <CAT_ID> or entityInfo.id is non-empty
+[DATA] entityInfo.semanticUrl = <CAT_SLUG>
+[DATA] entityInfo.isActive = true
+[DATA] entityInfo.languageCode is non-empty (e.g. ""en-US"")
+[ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute same query → identical entityInfo
+[CONSOLE] No JS errors in GraphiQL","entityInfo null for known category slug; objectType not ""Category""; semanticUrl mismatch; isActive = false for active category; errors[] in response",none,"BL-GQL-002; BL-SEO-001",Generated
+GQL-105,xCatalog - slugInfo Resolves Product Slug to Entity Info,GraphQL > xCatalog > SlugInfo,High,BL-GQL-002; BL-SEO-001,"ECL-2.1; ECL-14.1","GraphiQL UI loaded; products exist with SEO slugs","storeId=@td(STORE_PRIMARY.id); cultureName=""en-US""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[SETUP] Get a product slug: query { products(storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"" currencyCode: ""USD"" first: 1) { items { id slug } } } → save slug as <PROD_SLUG> and id as <PROD_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { slugInfo(slug: ""<PROD_SLUG>"" storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"") { entityInfo { id isActive languageCode objectId objectType semanticUrl metaDescription metaKeywords pageTitle } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify product entity resolved","[RESPONSE] Response panel shows data without error banner
+[DATA] data.slugInfo.entityInfo is non-null
+[DATA] entityInfo.objectType = ""CatalogProduct""
+[DATA] entityInfo.objectId matches <PROD_ID> or entityInfo.id is non-empty
+[DATA] entityInfo.semanticUrl = <PROD_SLUG>
+[DATA] entityInfo.isActive = true
+[ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute → identical entityInfo
+[CONSOLE] No JS errors in GraphiQL","entityInfo null for known product slug; objectType not ""CatalogProduct""; semanticUrl mismatch; errors[] in response",none,"BL-GQL-002; BL-SEO-001",Generated
+GQL-106,xCatalog - slugInfo Resolves Brand Slug to Entity Info,GraphQL > xCatalog > SlugInfo,High,BL-GQL-002; BL-SEO-001,"ECL-2.1; ECL-14.1","GraphiQL UI loaded; brands exist in catalog","storeId=@td(STORE_PRIMARY.id); cultureName=""en-US""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query with brands slug: query { slugInfo(slug: ""brands"" storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"") { entityInfo { id isActive languageCode objectId objectType semanticUrl metaDescription metaKeywords pageTitle } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify brands page entity resolved","[RESPONSE] Response panel shows data without error banner
+[DATA] data.slugInfo.entityInfo is non-null
+[DATA] entityInfo.objectType = ""Brands"" (dedicated type for brands page)
+[DATA] entityInfo.semanticUrl = ""brands""
+[DATA] entityInfo.isActive = true
+[DATA] entityInfo.languageCode is non-empty
+[ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute → identical entityInfo
+[CONSOLE] No JS errors in GraphiQL","entityInfo null for ""brands"" slug; semanticUrl mismatch; isActive = false; errors[] in response",none,"BL-GQL-002; BL-SEO-001",Generated
+GQL-107,xCatalog - slugInfo Resolves Catalog Root Slug to Entity Info,GraphQL > xCatalog > SlugInfo,High,BL-GQL-002; BL-SEO-001,"ECL-2.1; ECL-14.1","GraphiQL UI loaded; catalog root accessible","storeId=@td(STORE_PRIMARY.id); cultureName=""en-US""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query with catalog slug: query { slugInfo(slug: ""catalog"" storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"") { entityInfo { id isActive languageCode objectId objectType semanticUrl metaDescription metaKeywords pageTitle } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify catalog entity resolved","[RESPONSE] Response panel shows data without error banner
+[DATA] data.slugInfo.entityInfo is non-null
+[DATA] entityInfo.objectType = ""Catalog"" (dedicated type for catalog root)
+[DATA] entityInfo.semanticUrl = ""catalog""
+[DATA] entityInfo.isActive = true
+[ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute → identical entityInfo
+[CONSOLE] No JS errors in GraphiQL","entityInfo null for ""catalog"" slug; objectType unexpected; errors[] in response",none,"BL-GQL-002; BL-SEO-001",Generated
+GQL-108,xCatalog - slugInfo Returns Null for Non-Existent Slug,GraphQL > xCatalog > SlugInfo,High,BL-GQL-002; BL-SEO-001,"ECL-2.1","GraphiQL UI loaded","storeId=@td(STORE_PRIMARY.id); cultureName=""en-US""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query with non-existent slug: query { slugInfo(slug: ""this-slug-does-not-exist-xyz-999"" storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"") { entityInfo { id objectType semanticUrl isActive } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify graceful null response","[RESPONSE] Response panel shows data without error banner
+[DATA] data.slugInfo.entityInfo is null (graceful not-found — not an error)
+[ERRORS] No errors[] in response (null entity is expected, not an error condition)
+[DATA] Response HTTP status is 200","[CONSOLE] No JS errors in GraphiQL","errors[] present for non-existent slug; HTTP 500; slugInfo returns a random entity; GraphiQL crash",none,"BL-GQL-002; BL-SEO-001",Generated

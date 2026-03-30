@@ -1,5 +1,5 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"SRCH-001","Search - Basic Query","Search > Basic","High","BL-SEARCH-001","ECL-14.2","Catalog has searchable products","url={{FRONT_URL}}; query=laptop","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-001","Search - Basic Query","Search > Basic","High","BL-SEARCH-001","ECL-14.2","Catalog has searchable products","url={{FRONT_URL}}; query=@td(SEARCH_ELECTRONICS.query)","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search bar
 [ACT] fill 'Search': 'laptop'
 [KEY] press [Enter]
@@ -56,7 +56,7 @@
 [DOM] 'Check all products' link visible pointing to /catalog
 [STATE] No product results in dropdown yet (empty query)","[NETWORK] no failed API calls triggered on input focus
 [CONSOLE] no TypeError or JS errors","Dropdown not opening on click; Hints section absent; 'Check all products' link missing; console TypeError on focus","none","E2E-SEARCH-005","Manual"
-"SRCH-NEW-002","Search Bar - Autocomplete Shows Product Previews While Typing","Search > Autocomplete","Critical","BL-SEARCH-002","ECL-14.2","Storefront open; products matching 'hoodie' exist in catalog","url={{FRONT_URL}}; query=hoodie","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-002","Search Bar - Autocomplete Shows Product Previews While Typing","Search > Autocomplete","Critical","BL-SEARCH-002","ECL-14.2","Storefront open; products matching 'hoodie' exist in catalog","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
 [ACT] fill 'Search': 'hoodie' (type one character at a time)
 [WAIT] Wait for dropdown to update after each character
@@ -107,7 +107,7 @@
 [DOM] Full product catalog page loads
 [STATE] Search dropdown closes after link click","[NETWORK] GET /catalog returns HTTP 200
 [CONSOLE] no TypeError or JS errors","'Check all products' link absent from dropdown; link navigating to wrong page; catalog page returning 4xx; console TypeError","none","","Manual"
-"SRCH-NEW-007","Search - Submit via Enter Key","Search > Submission","Critical","BL-SEARCH-001, BL-SEARCH-005","","Storefront open at any page","url={{FRONT_URL}}; query=hoodie","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-007","Search - Submit via Enter Key","Search > Submission","Critical","BL-SEARCH-001, BL-SEARCH-005","","Storefront open at any page","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
 [ACT] fill 'Search': 'hoodie'
 [KEY] press [Enter]
@@ -117,7 +117,7 @@
 [STATE] Search input retains 'hoodie' on results page
 [DOM] Products displayed in grid view by default","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Results page not loading on Enter; wrong URL (not /search?q=hoodie); heading not showing result count; products not in grid view; console TypeError","none","E2E-SEARCH-001, SRCH-001","Manual"
-"SRCH-NEW-008","Search - Submit via Search Button (Magnifier Icon)","Search > Submission","Critical","BL-SEARCH-001, BL-SEARCH-005","","Storefront open at any page","url={{FRONT_URL}}; query=hoodie","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-008","Search - Submit via Search Button (Magnifier Icon)","Search > Submission","Critical","BL-SEARCH-001, BL-SEARCH-005","","Storefront open at any page","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
 [ACT] fill 'Search': 'hoodie'
 [ACT] Click the 'Search' button (magnifier icon)
@@ -250,7 +250,7 @@
 [NAV] URL contains both search query param and filter param on page 2
 [STATE] Products on page 2 are consistent with the active search and filter combination","[NETWORK] POST /graphql (searchProducts) on page 2 includes both keyword and filter parameters
 [CONSOLE] no TypeError or JS errors","Search term cleared when navigating to page 2; filter chips removed on pagination; URL losing filter params; page 2 showing unfiltered results; console TypeError","none","Coverage Gap Analysis; GAP-CS-18","Generated"
-"SRCH-NEW-046","Search by Exact SKU Returns Correct Product","Search > SKU Search","High","BL-SEARCH-001","ECL-14.2","Product with known SKU exists in catalog; SKU known from test data (e.g., ZER-64605169)","url={{FRONT_URL}}; sku={{PRODUCT_SKU}}","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-046","Search by Exact SKU Returns Correct Product","Search > SKU Search","High","BL-SEARCH-001","ECL-14.2","Product with known SKU exists in catalog; SKU known from test data (e.g., ZER-64605169)","url={{FRONT_URL}}; sku=@td(PROD_DEFAULT.sku)","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
 [ACT] fill 'Search': the exact SKU value (e.g., 'ZER-64605169')
 [KEY] press [Enter]
@@ -315,3 +315,31 @@
 [DOM] Sort dropdown on page 2 reflects the same sort as page 1
 [NAV] URL on page 2 includes both sort and page parameters","[NETWORK] POST /graphql (searchProducts) on page 2 includes both sort and page/offset params
 [CONSOLE] no TypeError or JS errors","Sort dropdown resetting to default when moving to page 2; prices on page 2 not continuing the ascending order; URL losing sort param on pagination; console TypeError","none","Coverage Gap Analysis; GAP-CS-22","Generated"
+"SRCH-NEW-050","Search - Data-Driven Bulk Query Validation (Top Amazon)","Search > Data-Driven","Medium","BL-SEARCH-001","ECL-14.2","Storefront accessible; catalog has indexed products","queries=@td(search-queries/top-50-amazon); url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[LOOP] For each row in test-data/search-queries/top-50-amazon.csv:
+  [ACT] Click search input → clear → type the search_query value
+  [WAIT] Wait for autocomplete dropdown (max 3s)
+  [ASSERT] Verify autocomplete shows suggestions OR products
+  [KEY] press [Enter]
+  [WAIT] Wait for results page
+  [ASSERT] Verify results page loads without error (HTTP 200, no JS errors)
+  [ASSERT] Record: query_id, search_query, result_count, has_suggestions (true/false)
+[END_LOOP]","[STATE] Every query loads a valid results page (no 5xx, no blank page)
+[MATH] At least 60% of queries return totalCount > 0 (verified 65% hit rate on QA 2026-03-30)
+[DATA] Summary table: query → result_count for each of the 51 queries
+[ERRORS] No JS console errors across any query","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for every query
+[CONSOLE] no TypeError or JS errors across entire loop","Any query causing 5xx error; more than 20% of real-world queries returning 0 results; JS error on specific query; autocomplete crashing on certain input","none","Coverage Gap Analysis","Automated"
+"SRCH-NEW-051","Search - Data-Driven Bulk Query Validation (Top AliExpress)","Search > Data-Driven","Low","BL-SEARCH-001","ECL-14.2","Storefront accessible; catalog has indexed products","queries=@td(search-queries/top-100-aliexpress); url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[LOOP] For each row in test-data/search-queries/top-100-aliexpress.csv:
+  [ACT] Click search input → clear → type the search_query value
+  [WAIT] Wait for autocomplete dropdown (max 3s)
+  [ASSERT] Verify autocomplete shows suggestions OR products
+  [KEY] press [Enter]
+  [WAIT] Wait for results page
+  [ASSERT] Verify results page loads without error (HTTP 200, no JS errors)
+  [ASSERT] Record: query_id, search_query, result_count, has_suggestions (true/false)
+[END_LOOP]","[STATE] Every query loads a valid results page (no 5xx, no blank page)
+[MATH] At least 50% of queries return totalCount > 0 (verified 55% hit rate on QA 2026-03-30)
+[DATA] Summary table: query → result_count for each of the 92 queries
+[ERRORS] No JS console errors across any query","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for every query
+[CONSOLE] no TypeError or JS errors across entire loop","Any query causing 5xx error; more than 40% of real-world queries returning 0 results; JS error on specific query; autocomplete crashing on certain input","none","Coverage Gap Analysis","Automated"

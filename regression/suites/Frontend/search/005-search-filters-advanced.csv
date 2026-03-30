@@ -1,5 +1,5 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"CAT-021","Reset Filters - Search Results Preserve Search Term","Search > Filters > Reset","High","BL-CAT-004, BL-SEARCH-001","","Search executed with term 'printer'","url={{FRONT_URL}}; query=printer","[NAV] Navigate to {{FRONT_URL}} and search for 'printer'
+"CAT-021","Reset Filters - Search Results Preserve Search Term","Search > Filters > Reset","High","BL-CAT-004, BL-SEARCH-001","","Search executed with term 'printer'","url={{FRONT_URL}}; query=@td(SEARCH_OFFICE.query)","[NAV] Navigate to {{FRONT_URL}} and search for 'printer'
 [WAIT] Wait for search results page
 [ACT] Apply one or more filters on search results
 [WAIT] Wait for filtered results
@@ -41,7 +41,7 @@
 [MATH] Result count updates after each filter","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with filters applied
 [NETWORK] no 4xx/5xx on filter request
 [CONSOLE] no TypeError or JS errors","Sidebar filters absent on search results page; filters not narrowing results; result count unchanged after filter; 4xx on filtered search; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"SRCH-009","Organization Search - Find Org","Search > Organization","Medium","BL-SEARCH-001","","Multiple organizations exist; user has org search access","url={{FRONT_URL}}; email={{ORG_USER_EMAIL}}; password={{ORG_USER_PASSWORD}}","[NAV] Navigate to organization search on {{FRONT_URL}}
+"SRCH-009","Organization Search - Find Org","Search > Organization","Medium","BL-SEARCH-001","","Multiple organizations exist; user has org search access","url={{FRONT_URL}}; email=@td(ACME_ADMIN.email); password=@td(ACME_ADMIN.password)","[NAV] Navigate to organization search on {{FRONT_URL}}
 [ACT] fill organization name search field with a known org name
 [KEY] press [Enter]
 [WAIT] Wait for results
@@ -51,7 +51,7 @@
 [NAV] Clicking on org result navigates to org detail page
 [DOM] Org detail page loads without error","[NETWORK] search request returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Org search returning no results for known org; org detail page returning 4xx; console TypeError","none","tests/VCST-4357-org-search","Automated"
-"SRCH-010","Organization Search - Filters","Search > Organization","Medium","BL-SEARCH-001","","Organizations with different attributes exist; user has org search access","url={{FRONT_URL}}; email={{ORG_USER_EMAIL}}; password={{ORG_USER_PASSWORD}}","[NAV] Navigate to organization search on {{FRONT_URL}}
+"SRCH-010","Organization Search - Filters","Search > Organization","Medium","BL-SEARCH-001","","Organizations with different attributes exist; user has org search access","url={{FRONT_URL}}; email=@td(ACME_ADMIN.email); password=@td(ACME_ADMIN.password)","[NAV] Navigate to organization search on {{FRONT_URL}}
 [ACT] Search organizations (generic query or browse)
 [WAIT] Wait for results
 [ACT] Apply industry filter
@@ -76,7 +76,7 @@
 [STATE] Unchecking removes chip; result count may change to include out-of-stock
 [STATE] Re-checking restores chip and original result set","[NETWORK] no 4xx/5xx on checkbox toggle
 [CONSOLE] no TypeError or JS errors","Checkbox not checked by default; chip absent on page load; chip not appearing/disappearing on toggle; console TypeError","none","","Manual"
-"SRCH-NEW-013","Search Results - Purchased Before Checkbox","Search > Filters > Checkboxes","Medium","BL-CAT-002","ECL-3.1","User authenticated with prior purchases; navigate to /search?q=hoodie","url={{FRONT_URL}}/search?q=hoodie; email={{USER_EMAIL}}; password={{USER_PASSWORD}}","[NAV] Log in and navigate to {{FRONT_URL}}/search?q=hoodie
+"SRCH-NEW-013","Search Results - Purchased Before Checkbox","Search > Filters > Checkboxes","Medium","BL-CAT-002","ECL-3.1","User authenticated with prior purchases; navigate to /search?q=hoodie","url={{FRONT_URL}}/search?q=hoodie; email=@td(USER_DEFAULT.email); password=@td(USER_DEFAULT.password)","[NAV] Log in and navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results
 [ASSERT] Verify 'Purchased before' is unchecked by default
 [ACT] Check 'Purchased before'
@@ -273,7 +273,7 @@
 [ASSERT] Check dataLayer for view_search_results event","[STATE] A 'view_search_results' event found in dataLayer with search_term: 'hoodie'","[CONSOLE] dataLayer.push called with event: 'view_search_results' and search_term: 'hoodie'
 [CONSOLE] no GA4 or GTM errors
 [CONSOLE] no TypeError or JS errors","No view_search_results event in dataLayer; event missing search_term param; GTM error; console TypeError","none","E2E-GA-004","Manual"
-"SRCH-NEW-035","Search to Cart - Full End-to-End Flow","Search > E2E","Critical","BL-SEARCH-001, BL-CAT-006","","User authenticated; cart at a known state (empty or tracked)","url={{FRONT_URL}}; email={{USER_EMAIL}}; password={{USER_PASSWORD}}; query=hoodie","[NAV] Log in and navigate to {{FRONT_URL}}
+"SRCH-NEW-035","Search to Cart - Full End-to-End Flow","Search > E2E","Critical","BL-SEARCH-001, BL-CAT-006","","User authenticated; cart at a known state (empty or tracked)","url={{FRONT_URL}}; email=@td(USER_DEFAULT.email); password=@td(USER_DEFAULT.password); query=@td(SEARCH_CLOTHING.query)","[NAV] Log in and navigate to {{FRONT_URL}}
 [ACT] fill 'Search': 'hoodie'
 [KEY] press [Enter]
 [WAIT] Wait for search results page
@@ -301,7 +301,7 @@
 [DOM] After filtering, result count in page header matches facet count
 [STATE] No mismatch between facet badge count, header result count, and actual visible products","[NETWORK] POST /graphql returns consistent totalCount matching facet aggregation
 [CONSOLE] no TypeError or JS errors","Facet count showing 12 but only 8 products displayed; header count differing from facet count; facet counts not updating after filter application; console TypeError","none","ECL-3.2, GAP-CS-08","Generated"
-"SRCH-NEW-040","Cross-Layer Search Consistency - Storefront Matches API Data","Search > Cross-Layer","High","BL-SRCH-003","ECL-14.2","Product exists in catalog with known name and price; API access available","url={{FRONT_URL}}; query=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+"SRCH-NEW-040","Cross-Layer Search Consistency - Storefront Matches API Data","Search > Cross-Layer","High","BL-SRCH-003","ECL-14.2","Product exists in catalog with known name and price; API access available","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for search results page to load
 [ASSERT] Locate 'Vintage Colorado Hoodie' in search results
 [ASSERT] Note the displayed price on the product card
