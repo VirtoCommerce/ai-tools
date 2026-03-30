@@ -2,7 +2,7 @@ ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,S
 GQL-005,xCart - Get or Create Cart via Query,GraphQL > xCart,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; store configured; GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → click inside Headers editor → Ctrl+A → Backspace → type/paste {""Authorization"": ""Bearer <TOKEN>""} → take screenshot to verify token is visible in Headers panel (not Variables)
+[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — this is the ONLY step using JS; all other steps use real-user interaction) → take screenshot to verify token visible in Headers panel (not Variables)
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type query: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id name itemsCount items { id productId quantity } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
@@ -124,7 +124,7 @@ GQL-023,xCart - Price Update Reflected on Re-query After Admin Change,GraphQL > 
 GQL-026,xCart - Cart Invalidated After Order Creation (No Reuse),GraphQL > xCart > Cross-Domain,Critical,"BL-GQL-001; BL-GQL-004; BL-CROSS-010","ECL-14.1; ECL-2.1","User authenticated; cart fully configured and converted to order via createOrderFromCart; orderId and cartId both known; auth header set in GraphiQL","storeId={{STORE_ID}}; cartId=<converted cart UUID>; orderId=<created order UUID>; productId={{TEST_SKU}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → click inside Headers editor → Ctrl+A → Backspace → type/paste {""Authorization"": ""Bearer <TOKEN>""} → take screenshot to verify token is visible in Headers panel (not Variables)
+[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — this is the ONLY step using JS; all other steps use real-user interaction) → take screenshot to verify token visible in Headers panel (not Variables)
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Add item (see order-creation-matrix.md § GraphQL xAPI Checkout Flow): mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } } → save cart id as <CART_ID>
 [SETUP] Set shipment (MUST include price matching rate — see order-creation-matrix.md): mutation { addOrUpdateCartShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150 deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" } } }) { id } }
@@ -206,7 +206,7 @@ GQL-029,xCart - Product Without New Currency Price Flagged After Currency Switch
 GQL-046,xCart - updateCartQuantity Single Item Happy Path,GraphQL > xCart > Quantity,Critical,"BL-CART-001; BL-GQL-001",ECL-14.1; ECL-2.1,"BROWSER-ONLY: Execute in GraphiQL UI ({{BACK_URL}}/ui/graphiql) via playwright browser. User authenticated with valid token; cart with at least one item.","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; productId={{TEST_SKU}}; newQuantity=5","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → click inside Headers editor → Ctrl+A → Backspace → type/paste {""Authorization"": ""Bearer <TOKEN>""} → take screenshot to verify token is visible in Headers panel (not Variables)
+[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — this is the ONLY step using JS; all other steps use real-user interaction) → take screenshot to verify token visible in Headers panel (not Variables)
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [ACT] Type mutation to add item first: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { productId quantity } } }
@@ -307,7 +307,7 @@ GQL-051,xCart - updateCartQuantity Totals Recalculated After Bulk Update,GraphQL
 GQL-013,xOrder - Create Order from Cart (Happy Path),GraphQL > xOrder,Critical,"BL-GQL-001; BL-GQL-004; BL-CROSS-005; BL-ORD-005","ECL-14.1; ECL-2.1","User authenticated with valid token; cart fully configured: items added, shipping address set, shipping method selected, payment method set; auth header set in GraphiQL","storeId={{STORE_ID}}; cartId=<fully configured cart UUID>; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → click inside Headers editor → Ctrl+A → Backspace → type/paste {""Authorization"": ""Bearer <TOKEN>""} → take screenshot to verify token is visible in Headers panel (not Variables)
+[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — this is the ONLY step using JS; all other steps use real-user interaction) → take screenshot to verify token visible in Headers panel (not Variables)
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""<PRODUCT_ID>"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } } → save cart id as <CART_ID>
 [SETUP] Set shipment (MUST include price matching rate — see order-creation-matrix.md): mutation { addOrUpdateCartShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150 deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" } } }) { id } }
@@ -337,7 +337,7 @@ GQL-013,xOrder - Create Order from Cart (Happy Path),GraphQL > xOrder,Critical,"
 GQL-024,xOrder - createOrderFromCart Idempotency (Duplicate Call Returns Same Order),GraphQL > xOrder > Cross-Domain,Critical,"BL-GQL-001; BL-GQL-004; BL-CROSS-010","ECL-14.1; ECL-2.1","User authenticated; full cart ready for order: items added, shipping address set, shipping method selected, payment configured; auth header set in GraphiQL","storeId={{STORE_ID}}; cartId=<fully configured cart UUID>; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; expectedOrderCount=1","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → click inside Headers editor → Ctrl+A → Backspace → type/paste {""Authorization"": ""Bearer <TOKEN>""} → take screenshot to verify token is visible in Headers panel (not Variables)
+[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — this is the ONLY step using JS; all other steps use real-user interaction) → take screenshot to verify token visible in Headers panel (not Variables)
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Add item (see order-creation-matrix.md § GraphQL xAPI Checkout Flow): mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } } → save cart id as <CART_ID>
 [SETUP] Set shipment (MUST include price matching rate — see order-creation-matrix.md): mutation { addOrUpdateCartShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150 deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" } } }) { id } }
@@ -365,7 +365,7 @@ GQL-024,xOrder - createOrderFromCart Idempotency (Duplicate Call Returns Same Or
 GQL-025,xOrder - Second createOrderFromCart Returns Graceful Response (Not Server Error),GraphQL > xOrder > Cross-Domain,Critical,"BL-GQL-001; BL-GQL-004; BL-CROSS-010","ECL-14.1; ECL-2.1","User authenticated; full cart ready for order creation: items added, shipping address set, shipping method selected, payment configured; auth header set in GraphiQL","storeId={{STORE_ID}}; cartId=<fully configured cart UUID>; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → click inside Headers editor → Ctrl+A → Backspace → type/paste {""Authorization"": ""Bearer <TOKEN>""} → take screenshot to verify token is visible in Headers panel (not Variables)
+[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — this is the ONLY step using JS; all other steps use real-user interaction) → take screenshot to verify token visible in Headers panel (not Variables)
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Add item (see order-creation-matrix.md § GraphQL xAPI Checkout Flow): mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } } → save cart id as <CART_ID>
 [SETUP] Set shipment (MUST include price matching rate — see order-creation-matrix.md): mutation { addOrUpdateCartShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150 deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" } } }) { id } }
@@ -389,7 +389,7 @@ GQL-025,xOrder - Second createOrderFromCart Returns Graceful Response (Not Serve
 GQL-053,xOrder - createOrderFromCart with Empty Cart Returns Error,GraphQL > xOrder > Negative,Critical,"BL-GQL-001; BL-GQL-004","ECL-14.1","User authenticated with valid token; empty cart exists (no items); auth header set in GraphiQL","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → click inside Headers editor → Ctrl+A → Backspace → type/paste {""Authorization"": ""Bearer <TOKEN>""} → take screenshot to verify token is visible in Headers panel (not Variables)
+[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — this is the ONLY step using JS; all other steps use real-user interaction) → take screenshot to verify token visible in Headers panel (not Variables)
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Get or create empty cart: query { cart(storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"") { id itemsCount } } → execute → verify itemsCount = 0; save cartId as <EMPTY_CART_ID>
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
@@ -404,7 +404,7 @@ GQL-053,xOrder - createOrderFromCart with Empty Cart Returns Error,GraphQL > xOr
 GQL-054,xOrder - createOrderFromCart with Invalid cartId Returns Error,GraphQL > xOrder > Negative,Critical,"BL-GQL-001; BL-GQL-004","ECL-14.1","User authenticated with valid token; auth header set in GraphiQL; no cart with the test UUID exists","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; invalidCartId=00000000-0000-0000-0000-000000000001","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → click inside Headers editor → Ctrl+A → Backspace → type/paste {""Authorization"": ""Bearer <TOKEN>""} → take screenshot to verify token is visible in Headers panel (not Variables)
+[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — this is the ONLY step using JS; all other steps use real-user interaction) → take screenshot to verify token visible in Headers panel (not Variables)
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type mutation: mutation { createOrderFromCart(command: { cartId: "00000000-0000-0000-0000-000000000001" }) { id number status } }
 [GQL] Click Execute (▶) or Ctrl+Enter
@@ -428,7 +428,7 @@ GQL-055,xOrder - createOrderFromCart Without Auth Returns Unauthorized Error,Gra
 [ROUNDTRIP] No new order appears in orders query when queried with valid admin token","Mutation succeeds and returns an order without auth; errors[] empty; blank response panel; HTTP 200 with data.createOrderFromCart non-null","none (no state created)","ECL-14.1",Generated
 GQL-056,createOrderFromCart - Anonymous User with Guest Checkout,GraphQL > xCart > User Context,Critical,"BL-CHK-001; BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1","Store setting createAnonymousOrderEnabled=true; no user account required; GraphiQL UI accessible","storeId={{STORE_ID}}","[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste {""Authorization"": ""Bearer <TOKEN>""} → take screenshot to verify token is visible in Headers panel (not Variables)
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — this is the ONLY step using JS; all other steps use real-user interaction) → take screenshot to verify token visible in Headers panel (not Variables)
 [NOTE] Use anonymous cart — do NOT set Authorization header. Instead clear Headers to {} (empty)
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type query to get/create anonymous cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id itemsCount } }
@@ -444,7 +444,7 @@ GQL-056,createOrderFromCart - Anonymous User with Guest Checkout,GraphQL > xCart
 GQL-057,createOrderFromCart - Org Member Happy Path (B2B),GraphQL > xCart > User Context,Critical,"BL-B2B-001; BL-B2B-005; BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1","Org member account authenticated (Emily Johnson — test-emily.johnson-20260310@test-agent.com); organization exists; GraphiQL UI loaded","storeId={{STORE_ID}}; org_email=test-emily.johnson-20260310@test-agent.com; org_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=test-emily.johnson-20260310@test-agent.com&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste {""Authorization"": ""Bearer <TOKEN>""} → take screenshot to verify token is visible in Headers panel (not Variables)
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — this is the ONLY step using JS; all other steps use real-user interaction) → take screenshot to verify token visible in Headers panel (not Variables)
 [SETUP] Get userId: query { me { id organizationId userName } } → save userId as <USER_ID>; verify organizationId is non-empty (confirms B2B context)
 [SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""<PRODUCT_ID>"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } } → save cart id as <CART_ID>
 [SETUP] Set shipment (MUST include price matching rate — see order-creation-matrix.md): mutation { addOrUpdateCartShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150 deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Emily"" lastName: ""Johnson"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" } } }) { id } }
@@ -489,7 +489,7 @@ GQL-058,createOrderFromCart - Cross-Org Cart Isolation (Cannot Order Another Use
 GQL-059,xCart - clearCart Happy Path — Cart with Items Becomes Empty,GraphQL > xCart > clearCart,Critical,BL-GQL-001; BL-CART-001,ECL-14.1; ECL-2.1,"User authenticated with valid token; store configured; GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; cart has at least 1 item","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → click inside Headers editor → Ctrl+A → Backspace → type/paste {""Authorization"": ""Bearer <TOKEN>""} → take screenshot to verify token is visible in Headers panel (not Variables)
+[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — this is the ONLY step using JS; all other steps use real-user interaction) → take screenshot to verify token visible in Headers panel (not Variables)
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Add item to cart: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 2 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id } } } → save cartId as <CART_ID>; verify itemsCount >= 1
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
@@ -505,7 +505,7 @@ GQL-059,xCart - clearCart Happy Path — Cart with Items Becomes Empty,GraphQL >
 GQL-060,xCart - clearCart on Already-Empty Cart — Idempotent No-Op,GraphQL > xCart > clearCart,High,BL-GQL-001; BL-CART-001,ECL-14.1; ECL-7.1,"User authenticated with valid token; store configured; GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; user cart is empty (no items)","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Verify cart is empty: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id itemsCount } } → if itemsCount > 0 run clearCart first to ensure empty state
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
@@ -520,7 +520,7 @@ GQL-060,xCart - clearCart on Already-Empty Cart — Idempotent No-Op,GraphQL > x
 GQL-061,xCart - unSelectCartItems — Unselect One of Multiple Items,GraphQL > xCart > selectCartItems,Critical,"BL-GQL-001; BL-CART-001; BL-CHK-001",ECL-14.1; ECL-2.1,"User authenticated; cart has at least 2 items both with selectedForCheckout=true; GraphiQL accessible","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Add item 1: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id items { id productId selectedForCheckout } } } → save items[0].id as <LINE_ITEM_1_ID>
 [SETUP] Add item 2 (use a second available SKU from catalog): mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""<SECOND_SKU>"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id productId selectedForCheckout } } } → save new item id as <LINE_ITEM_2_ID>; verify both items selectedForCheckout=true
@@ -538,7 +538,7 @@ GQL-061,xCart - unSelectCartItems — Unselect One of Multiple Items,GraphQL > x
 GQL-062,xCart - selectCartItems — Re-select a Previously Unselected Item,GraphQL > xCart > selectCartItems,Critical,"BL-GQL-001; BL-CART-001; BL-CHK-001",ECL-14.1; ECL-2.1,"User authenticated; cart has at least 1 item with selectedForCheckout=false; GraphiQL accessible","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id items { id selectedForCheckout } } } → save items[0].id as <LINE_ITEM_ID>
 [SETUP] Unselect the item first: mutation { unSelectCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" lineItemIds: [""<LINE_ITEM_ID>""] }) { id items { id selectedForCheckout } } } → verify selectedForCheckout = false
@@ -555,7 +555,7 @@ GQL-062,xCart - selectCartItems — Re-select a Previously Unselected Item,Graph
 GQL-063,xCart - unSelectCartItems with Invalid lineItemId — Graceful No-Op,GraphQL > xCart > selectCartItems,High,BL-GQL-001; BL-CART-001,ECL-14.1; ECL-7.2; ECL-3.1,"User authenticated; cart has at least 1 item with selectedForCheckout=true; GraphiQL accessible","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; invalid_line_item_id=00000000-0000-0000-0000-000000000000","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id items { id selectedForCheckout } } } → save items[0].id as <REAL_LINE_ITEM_ID>; verify selectedForCheckout=true
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
@@ -570,7 +570,7 @@ GQL-063,xCart - unSelectCartItems with Invalid lineItemId — Graceful No-Op,Gra
 GQL-064,xCart - selectCartItems on Already-Selected Item — Idempotent,GraphQL > xCart > selectCartItems,High,BL-GQL-001; BL-CART-001,ECL-14.1; ECL-7.1,"User authenticated; cart has at least 1 item with selectedForCheckout=true; GraphiQL accessible","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id items { id selectedForCheckout } } } → save items[0].id as <LINE_ITEM_ID>; confirm selectedForCheckout=true
 [SETUP] Ensure item is selected: mutation { selectCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" lineItemIds: [""<LINE_ITEM_ID>""] }) { id items { id selectedForCheckout } } } → verify selectedForCheckout=true
@@ -586,7 +586,7 @@ GQL-064,xCart - selectCartItems on Already-Selected Item — Idempotent,GraphQL 
 GQL-065,xCart - unSelectAllCartItems — All Items Unselected; Subtotal and Total Reflect Exclusion,GraphQL > xCart > selectAllCartItems,Critical,"BL-GQL-001; BL-CART-001; BL-CHK-001",ECL-14.1; ECL-2.1,"User authenticated; cart has at least 1 item with selectedForCheckout=true; GraphiQL accessible","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 2 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id selectedForCheckout } subTotal { amount } total { amount } } } → record subTotal.amount as <ORIGINAL_SUBTOTAL> and total.amount as <ORIGINAL_TOTAL>
 [SETUP] Ensure all selected: mutation { selectAllCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id items { id selectedForCheckout } subTotal { amount } } }
@@ -604,7 +604,7 @@ GQL-065,xCart - unSelectAllCartItems — All Items Unselected; Subtotal and Tota
 GQL-066,xCart - selectAllCartItems After Unselect All — All Items Re-selected; Subtotal Restored,GraphQL > xCart > selectAllCartItems,Critical,"BL-GQL-001; BL-CART-001; BL-CHK-001",ECL-14.1; ECL-2.1,"User authenticated; cart has at least 1 item with all selectedForCheckout=false (run unSelectAllCartItems as setup); GraphiQL accessible","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Add item and record baseline subtotal: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id selectedForCheckout } subTotal { amount } } } → record subTotal.amount as <BASELINE_SUBTOTAL>
 [SETUP] Unselect all items: mutation { unSelectAllCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id items { id selectedForCheckout } subTotal { amount } } } → verify all selectedForCheckout=false; subTotal=0
@@ -621,7 +621,7 @@ GQL-066,xCart - selectAllCartItems After Unselect All — All Items Re-selected;
 GQL-067,xCart - Checkout Blocked When All Items Unselected — createOrderFromCart Fails or Returns Empty Order,GraphQL > xCart > selectAllCartItems,Critical,"BL-GQL-001; BL-CART-001; BL-CHK-001",ECL-14.1; ECL-2.1; ECL-9.1,"User authenticated; cart has at least 1 item; all items have selectedForCheckout=false; cart has shipment and payment configured; GraphiQL accessible","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id } } } → save cartId as <CART_ID>
 [SETUP] Set shipment (MUST include price matching rate — see order-creation-matrix.md): mutation { addOrUpdateCartShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150 deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" } } }) { id } }
@@ -641,7 +641,7 @@ GQL-067,xCart - Checkout Blocked When All Items Unselected — createOrderFromCa
 GQL-068,xCart - removeCoupon Happy Path — Remove Applied Coupon,GraphQL > xCart > removeCoupon,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; cart with at least 1 item; valid coupon code ""TESTCOUPON"" exists and is applied; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; couponCode=""TESTCOUPON""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"") → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"") → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
 [SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
@@ -659,7 +659,7 @@ GQL-068,xCart - removeCoupon Happy Path — Remove Applied Coupon,GraphQL > xCar
 GQL-069,xCart - removeCoupon Silent No-Op for Non-Existent Coupon Code,GraphQL > xCart > removeCoupon,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; cart exists with no coupons applied; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; couponCode=""NONEXISTENT_CODE_99999""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
 [SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } } → confirm no coupons applied
@@ -676,7 +676,7 @@ GQL-069,xCart - removeCoupon Silent No-Op for Non-Existent Coupon Code,GraphQL >
 GQL-070,xCart - removeShipment Happy Path — Remove Existing Shipment,GraphQL > xCart > removeShipment,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1; ECL-8.1,"User authenticated with valid token; cart with at least 1 item; shipment added to cart and shipmentId known; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
 [SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
@@ -693,7 +693,7 @@ GQL-070,xCart - removeShipment Happy Path — Remove Existing Shipment,GraphQL >
 GQL-071,xCart - removeShipment with Invalid shipmentId — Error or Silent No-Op,GraphQL > xCart > removeShipment,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; cart exists with an item; no shipment added; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; shipmentId=""00000000-0000-0000-0000-000000000000""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
 [SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
@@ -710,7 +710,7 @@ GQL-071,xCart - removeShipment with Invalid shipmentId — Error or Silent No-Op
 GQL-072,xCart - addOrUpdateCartPayment Happy Path — Set DefaultManualPaymentMethod,GraphQL > xCart > addOrUpdateCartPayment,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; cart with at least 1 item; DefaultManualPaymentMethod available on store; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; paymentGatewayCode=""DefaultManualPaymentMethod""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
 [SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
@@ -726,7 +726,7 @@ GQL-072,xCart - addOrUpdateCartPayment Happy Path — Set DefaultManualPaymentMe
 GQL-073,xCart - addOrUpdateCartPayment Change Method — Switch from CyberSource to Manual,GraphQL > xCart > addOrUpdateCartPayment,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; cart with item and CyberSourcePaymentMethod already set; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; firstGateway=""CyberSourcePaymentMethod""; secondGateway=""DefaultManualPaymentMethod""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
 [SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
@@ -744,7 +744,7 @@ GQL-073,xCart - addOrUpdateCartPayment Change Method — Switch from CyberSource
 GQL-074,xCart - mergeCart Happy Path — Merge Two Carts Into One,GraphQL > xCart > mergeCart,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1; ECL-2.3,"User authenticated with valid token; two named carts can be created using cartName parameter; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; cartNameA=""default""; cartNameB=""secondary-cart""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Get or create Cart A (default): query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_A_ID>
 [SETUP] Add item to Cart A: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_A_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } } → save itemsCount as <CART_A_COUNT>
@@ -762,7 +762,7 @@ GQL-074,xCart - mergeCart Happy Path — Merge Two Carts Into One,GraphQL > xCar
 GQL-075,xCart - mergeCart with deleteAfterMerge: true — Second Cart Removed After Merge,GraphQL > xCart > mergeCart,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1; ECL-2.3,"User authenticated with valid token; two named carts created; Cart B has items; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; cartNameB=""merge-delete-cart""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Get or create Cart A: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_A_ID>
 [SETUP] Add item to Cart A: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_A_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
@@ -783,7 +783,7 @@ GQL-075,xCart - mergeCart with deleteAfterMerge: true — Second Cart Removed Af
 GQL-076,xCart - removeCart Happy Path — Returns true and Cart Becomes Null,GraphQL > xCart > removeCart,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; cart with at least 1 item exists; cartId and userId known; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
 [SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
@@ -803,7 +803,7 @@ GQL-076,xCart - removeCart Happy Path — Returns true and Cart Becomes Null,Gra
 GQL-077,xCart - removeCart with Invalid cartId — Behavior Check,GraphQL > xCart > removeCart,High,BL-GQL-001,ECL-14.1; ECL-2.1,"User authenticated with valid token; auth header set in GraphiQL; using a non-existent cartId UUID","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; cartId=""00000000-0000-0000-0000-000000000000""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type removeCart mutation with non-existent cartId — NOTE: returns Boolean no sub-selection: mutation { removeCart(command: { cartId: ""00000000-0000-0000-0000-000000000000"" userId: ""<USER_ID>"" }) }
@@ -819,7 +819,7 @@ GQL-077,xCart - removeCart with Invalid cartId — Behavior Check,GraphQL > xCar
 GQL-078,xCart - removeCartItem with Invalid lineItemId — Error or No-Op; Cart Unchanged,GraphQL > xCart > removeCartItem,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; cart with at least 1 item; auth header set in GraphiQL; using a lineItemId that does not exist in the cart","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; invalidLineItemId=""00000000-0000-0000-0000-000000000000""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
 [SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } } → save itemsCount as <ITEMS_BEFORE>
@@ -837,7 +837,7 @@ GQL-078,xCart - removeCartItem with Invalid lineItemId — Error or No-Op; Cart 
 GQL-079,xCart - addOrUpdateCartShipment Change Method — Switch from Ground to Air,GraphQL > xCart > addOrUpdateCartShipment,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1; ECL-8.1,"User authenticated with valid token; cart with item and Ground shipment (price=150) already set; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; initialMethod=""FixedRate/Ground"" price=150; newMethod=""FixedRate/Air"" price=250","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
 [SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
@@ -857,7 +857,7 @@ GQL-079,xCart - addOrUpdateCartShipment Change Method — Switch from Ground to 
 "GQL-080","xCart - addCartAddress Happy Path — Add Shipping Address to Cart","GraphQL > xCart > addCartAddress","Critical","BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1","User authenticated with valid token; cart with at least 1 item exists; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
 [SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
@@ -878,7 +878,7 @@ GQL-079,xCart - addOrUpdateCartShipment Change Method — Switch from Ground to 
 "GQL-081","xCart - addCartAddress with Billing Type — Both Shipping and Billing Addresses Coexist","GraphQL > xCart > addCartAddress","High","BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1","User authenticated with valid token; cart with item and shipping address (addressType=2) already added; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
 [SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
@@ -896,7 +896,7 @@ GQL-079,xCart - addOrUpdateCartShipment Change Method — Switch from Ground to 
 "GQL-082","xCart - moveToSavedForLater Happy Path — Move 1 Item from Cart to Saved List","GraphQL > xCart > moveToSavedForLater","Critical","BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1","User authenticated with valid token; cart with at least 1 item; saved-for-later list accessible; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id itemsCount items { id } } } → save id as <CART_ID>; save items[0].id as <LINE_ITEM_ID>; save itemsCount as <INITIAL_COUNT>
 [SETUP] Ensure cart has at least 1 item — if itemsCount=0: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id } } } → update <CART_ID>, <LINE_ITEM_ID>, <INITIAL_COUNT>
@@ -914,7 +914,7 @@ GQL-079,xCart - addOrUpdateCartShipment Change Method — Switch from Ground to 
 "GQL-083","xCart - moveToSavedForLater All Items — Main Cart Empty; All Items in Saved List","GraphQL > xCart > moveToSavedForLater","High","BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1; ECL-2.3","User authenticated with valid token; cart with exactly 2 items; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Get or create cart and add first item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id } } } → save id as <CART_ID>; save items[0].id as <ITEM_ID_1>
 [SETUP] Add second item (use {{TEST_SKU_2}} if available; otherwise re-add {{TEST_SKU}} with quantity 1 as a separate line): mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU_2}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id } } } → save newly added item id as <ITEM_ID_2>; verify itemsCount = 2
@@ -931,7 +931,7 @@ GQL-079,xCart - addOrUpdateCartShipment Change Method — Switch from Ground to 
 "GQL-084","xCart - moveFromSavedForLater Happy Path — Move Item Back to Main Cart","GraphQL > xCart > moveFromSavedForLater","Critical","BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1","User authenticated with valid token; item already moved to saved-for-later list (use moveToSavedForLater as setup); saved-for-later cartId known; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Add item to main cart: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id } } } → save id as <MAIN_CART_ID>; save items[0].id as <LINE_ITEM_ID>; save itemsCount as <INITIAL_COUNT>
 [SETUP] Move item to saved-for-later: mutation { moveToSavedForLater(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<MAIN_CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" lineItemIds: [""<LINE_ITEM_ID>""] }) { cart { id itemsCount } list { id itemsCount items { id } } } } → save list.id as <SAVED_CART_ID>; save list.items[0].id as <SAVED_ITEM_ID>; verify cart.itemsCount = <INITIAL_COUNT> - 1; verify list.itemsCount >= 1
@@ -948,7 +948,7 @@ GQL-079,xCart - addOrUpdateCartShipment Change Method — Switch from Ground to 
 "GQL-085","xCart - moveFromSavedForLater Round-Trip — Add, Move to Saved, Move Back, Verify Same Product","GraphQL > xCart > moveFromSavedForLater","High","BL-GQL-001; BL-GQL-004; BL-CROSS-005","ECL-14.1; ECL-2.1; ECL-2.3","User authenticated with valid token; auth header set in GraphiQL; {{TEST_SKU}} product available","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Add item to cart: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id productId } } } → save id as <CART_ID>; save items[0].id as <LINE_ITEM_ID>; save items[0].productId as <PRODUCT_ID>
 [STEP 1 — moveToSavedForLater] Click query editor → clear → type mutation: mutation { moveToSavedForLater(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" lineItemIds: [""<LINE_ITEM_ID>""] }) { cart { id itemsCount } list { id itemsCount items { id productId } } } }
@@ -965,7 +965,7 @@ GQL-079,xCart - addOrUpdateCartShipment Change Method — Switch from Ground to 
 "GQL-086","xCart - createConfiguredLineItem — Returns ConfigurationLineItemType with Product Info","GraphQL > xCart > createConfiguredLineItem","High","BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1","User authenticated with valid token; a product ID known (configurable product preferred; non-configurable product acceptable — id field may be null); auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; configurableProductId={{TEST_SKU}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type mutation — NOTE: returns ConfigurationLineItemType, NOT CartType; do NOT query cart-level fields: mutation { createConfiguredLineItem(command: { storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" configurableProductId: ""{{TEST_SKU}}"" }) { id text quantity product { id name } currency { code } listPrice { amount } salePrice { amount } extendedPrice { amount } discountAmount { amount } } }
@@ -984,7 +984,7 @@ GQL-079,xCart - addOrUpdateCartShipment Change Method — Switch from Ground to 
 "GQL-087","xCart - changeCartConfiguredItem — Update Quantity on Configured Line Item","GraphQL > xCart > changeCartConfiguredItem","High","BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1","User authenticated with valid token; cart contains a configurable product line item (lineItemId known); auth header set in GraphiQL — MANUAL SETUP REQUIRED: executor must identify a configurable product in the test environment first","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; configurable_product_id=<MANUAL: identify configurable product in env>","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] MANUAL STEP — identify a configurable product: query { products(storeId: ""{{STORE_ID}}"" productType: ""Configurable"" first: 1) { items { id name } } } → save product id as <CONFIGURABLE_PRODUCT_ID>. If no configurable products exist, SKIP this test and document as ""No configurable product available in environment"".
 [SETUP] Add configurable product to cart: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""<CONFIGURABLE_PRODUCT_ID>"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id productId quantity } } } → save id as <CART_ID>; save matching items[].id as <LINE_ITEM_ID>
@@ -1002,7 +1002,7 @@ GQL-079,xCart - addOrUpdateCartShipment Change Method — Switch from Ground to 
 "GQL-088","xCart - addWishlistBulkItem Happy Path — Add Product to Single Wishlist","GraphQL > xCart > addWishlistBulkItem","Critical","BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1","User authenticated with valid token; wishlist created in setup; product available; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; productId={{TEST_SKU}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Create wishlist — requires userId: mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" listName: ""AGENT-TEST-Wishlist-GQL088"" }) { id name } } → save id as <WISHLIST_ID>; verify name = ""AGENT-TEST-Wishlist-GQL088""
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
@@ -1018,7 +1018,7 @@ GQL-079,xCart - addOrUpdateCartShipment Change Method — Switch from Ground to 
 "GQL-089","xCart - addWishlistBulkItem to Multiple Wishlists — Single Call Adds Product to Both","GraphQL > xCart > addWishlistBulkItem","High","BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1; ECL-2.3","User authenticated with valid token; 2 wishlists created in setup; product available; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; productId={{TEST_SKU}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab — NOT Variables) → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to confirm token in Headers panel
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to confirm token in Headers panel
 [SETUP] Get userId: query { me { id } } → save as <USER_ID>
 [SETUP] Create first wishlist: mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" listName: ""AGENT-TEST-Wishlist-GQL089-A"" }) { id name } } → save id as <WISHLIST_ID_A>
 [SETUP] Create second wishlist: mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" listName: ""AGENT-TEST-Wishlist-GQL089-B"" }) { id name } } → save id as <WISHLIST_ID_B>

@@ -34,7 +34,7 @@ GQL-016,GraphQL Authentication - Unauthenticated Access,GraphQL > Auth,Critical,
 [ACT] Type mutation: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" productId: ""{{TEST_SKU}}"" quantity: 1 }) { id itemsCount } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify authentication error returned
-[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → click inside the Headers editor → clear (Ctrl+A, Backspace) → type: {""Authorization"": ""Bearer {{USER_TOKEN}}""} → verify the token appears under the Headers region (not Variables)
+[ACT] Click ""Headers"" button (right tab) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — only step using JS) → take screenshot to verify token visible in Headers panel (not Variables)
 [ACT] Click query editor → clear → type orders query again
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — verify authenticated query succeeds","[RESPONSE] Public products query: data.products returned; no errors[]

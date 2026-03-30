@@ -2,7 +2,7 @@ ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,S
 GQL-030,xProfile - createOrganization Mutation Validates Org Name (InputValidationOptions),GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"BROWSER-ONLY: Execute in GraphiQL UI ({{BACK_URL}}/ui/graphiql) via playwright browser. Use CodeMirror editor per graphiql-interaction.md. Do NOT use curl. User authenticated via Headers tab.","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; valid_org_name=AT&T Corp. #1; invalid_org_name=<script>alert(1)</script>Org","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → click inside the Headers editor → clear (Ctrl+A, Backspace) → type: {""Authorization"": ""Bearer {{TOKEN}}""} → verify the token appears under the Headers region (not Variables)
+[ACT] Click ""Headers"" button (right tab) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — only step using JS) → take screenshot to verify token visible in Headers panel (not Variables)
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type mutation: mutation { createOrganization(command: { name: ""AT&T Corp. #1"" }) { id name } }
 [GQL] Click Execute (▶) or Ctrl+Enter
@@ -67,7 +67,7 @@ GQL-033,xProfile - updatePersonalData Validates Name Fields,GraphQL > xProfile,M
 GQL-038,xProfile - createContact Mutation Validates Phone Fields (NewContactValidator),GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"BROWSER-ONLY: Execute in GraphiQL UI ({{BACK_URL}}/ui/graphiql) via playwright browser. Use CodeMirror editor per graphiql-interaction.md. Do NOT use curl. User authenticated via Headers tab.","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → click inside the Headers editor → clear (Ctrl+A, Backspace) → type: {""Authorization"": ""Bearer {{TOKEN}}""} → verify the token appears under the Headers region (not Variables)
+[ACT] Click ""Headers"" button (right tab) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — only step using JS) → take screenshot to verify token visible in Headers panel (not Variables)
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type mutation with HTML in phone: mutation { createContact(command: { firstName: ""TestPhone"" lastName: ""Validator"" phones: [""<img src=x onerror=alert(1)>""] }) { id firstName lastName phones } }
 [GQL] Click Execute (▶) or Ctrl+Enter

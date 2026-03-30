@@ -2,7 +2,7 @@ ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,S
 WL-001,createWishlist — Happy Path,GraphQL > Wishlist > Management,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; store configured; GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql","storeId={{STORE_ID}}; userId obtained via me{id}; cultureName={{CULTURE_NAME}}; currencyCode={{CURRENCY_CODE}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab in bottom panel) → set Authorization: Bearer <TOKEN> in Headers editor → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to verify token visible in Headers panel (not Variables)
+[ACT] Click ""Headers"" button (right tab in bottom panel) → set Authorization: Bearer <TOKEN> in Headers editor → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — only step using JS) → take screenshot to verify token visible in Headers panel (not Variables)
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [SETUP] Type query: query { me { id } } → [GQL] Execute → [VAR] save <USER_ID> from data.me.id
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
@@ -268,7 +268,7 @@ WL-020,wishlist Query — Another User's List (Access Denied),GraphQL > Wishlist
 [AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{ORG_USER_EMAIL}}&password={{ORG_USER_PASSWORD}}&storeId={{STORE_ID}} → save <ORG_TOKEN>
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button → set Authorization: Bearer <ORG_TOKEN> → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to verify org user token in Headers panel
+[ACT] Click ""Headers"" button → set Authorization: Bearer <ORG_TOKEN> → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — only step using JS) → take screenshot to verify org user token in Headers panel
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type query: query { wishlist(listId: ""<LIST_ID>"") { id name items { productId } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
@@ -280,7 +280,7 @@ WL-020,wishlist Query — Another User's List (Access Denied),GraphQL > Wishlist
 WL-021,createWishlist with scope organization — Same-Org Member Can See and Modify Org List,GraphQL > Wishlist > B2B,Critical,BL-B2B-001,ECL-14.1; ECL-2.1,"Two users in SAME org (TechFlow): Emily (test-emily.johnson-20260310@test-agent.com / TestPass123!) and John (test-john.mitchell-20260310@test-agent.com / TestPass123!) — both in TechFlow orgId 6fb516c1 (ref: test-data/users/agent-user-pool.csv slots 1-2). GraphiQL accessible.","emily_email=test-emily.johnson-20260310@test-agent.com; emily_password=TestPass123!; john_email=test-john.mitchell-20260310@test-agent.com; john_password=TestPass123!; storeId={{STORE_ID}}; cultureName={{CULTURE_NAME}}; currencyCode={{CURRENCY_CODE}}; scope=organization; listName=AGENT-TEST-WL-021-ORG","[AUTH] POST {{BACK_URL}}/connect/token for Emily → save <EMILY_TOKEN>
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button → set Authorization: Bearer <TOKEN> → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to verify token visible in Headers panel (not Variables)
+[ACT] Click ""Headers"" button → set Authorization: Bearer <TOKEN> → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — only step using JS) → take screenshot to verify token visible in Headers panel (not Variables)
 [ACT] Type query: query { me { id contact { organizationId } } } → execute → save <USER_ID> and <ORG_ID>
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type mutation: mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" listName: ""AGENT-TEST-WL-021-ORG"" cultureName: ""{{CULTURE_NAME}}"" currencyCode: ""{{CURRENCY_CODE}}"" scope: ""organization"" }) { id name scope } }
@@ -310,11 +310,11 @@ WL-021,createWishlist with scope organization — Same-Org Member Can See and Mo
 WL-022,Organization-Scoped Wishlist — NOT Visible to Member of Different Org (Access Denied),GraphQL > Wishlist > B2B,Critical,BL-B2B-001,ECL-2.1; ECL-14.1,{{USER_EMAIL}} is authenticated org member (orgId: d62aed2c); Emily (test-emily.johnson-20260310@test-agent.com) is authenticated org member of a DIFFERENT org (orgId: 6fb516c1); GraphiQL accessible,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; emily_email=test-emily.johnson-20260310@test-agent.com; emily_password=TestPass123!; storeId={{STORE_ID}}; cultureName={{CULTURE_NAME}}; currencyCode={{CURRENCY_CODE}}; listName=AGENT-TEST-WL-022-ORG-CROSS,"[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save <MAIN_TOKEN>
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button → set Authorization: Bearer <MAIN_TOKEN> → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → screenshot
+[ACT] Click ""Headers"" button → set Authorization: Bearer <MAIN_TOKEN> → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → screenshot
 [ACT] Type query: query { me { id contact { organizationId } } } → execute → save <MAIN_USER_ID>
 [SETUP] Type mutation: mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""<MAIN_USER_ID>"" listName: ""AGENT-TEST-WL-022-ORG-CROSS"" cultureName: ""{{CULTURE_NAME}}"" currencyCode: ""{{CURRENCY_CODE}}"" scope: ""organization"" }) { id scope } } → execute → save <LIST_ID> → confirm scope = ""Organization""
 [AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=test-emily.johnson-20260310@test-agent.com&password=TestPass123!&storeId={{STORE_ID}} → save <EMILY_TOKEN>
-[ACT] Click ""Headers"" button → replace token with Authorization: Bearer <EMILY_TOKEN> → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to verify Emily's token in Headers panel
+[ACT] Click ""Headers"" button → replace token with Authorization: Bearer <EMILY_TOKEN> → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to verify Emily's token in Headers panel
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type query: query { wishlist(listId: ""<LIST_ID>"") { id name scope } }
 [GQL] Click Execute (▶) or Ctrl+Enter
@@ -326,7 +326,7 @@ WL-022,Organization-Scoped Wishlist — NOT Visible to Member of Different Org (
 WL-023,wishlists Query with scope organization — Returns Only User's Own Org Lists,GraphQL > Wishlist > B2B,High,BL-B2B-001,ECL-2.1; ECL-14.1,Emily (test-emily.johnson-20260310@test-agent.com) is authenticated org member; {{USER_EMAIL}} has created org-scoped wishlists in a DIFFERENT org; GraphiQL accessible,emily_email=test-emily.johnson-20260310@test-agent.com; emily_password=TestPass123!; storeId={{STORE_ID}}; expectedCount=0 (no org lists created for Emily's org in this test),"[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=test-emily.johnson-20260310@test-agent.com&password=TestPass123!&storeId={{STORE_ID}} → save <EMILY_TOKEN>
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button → set Authorization: Bearer <EMILY_TOKEN> → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to verify Emily's token in Headers panel in Headers
+[ACT] Click ""Headers"" button → set Authorization: Bearer <EMILY_TOKEN> → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to verify Emily's token in Headers panel in Headers
 [ACT] Type query: query { me { id contact { organizationId } } } → execute → confirm Emily's orgId = 6fb516c1 → save <EMILY_USER_ID>
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type query: query { wishlists(storeId: ""{{STORE_ID}}"" userId: ""<EMILY_USER_ID>"" scope: ""organization"") { totalCount items { id name scope } } }
@@ -341,11 +341,11 @@ WL-023,wishlists Query with scope organization — Returns Only User's Own Org L
 WL-024,Private Wishlist — NOT Visible to Any Other User Including Different-Org Member (Access Denied),GraphQL > Wishlist > B2B,Critical,BL-B2B-001,ECL-2.1; ECL-14.1,{{USER_EMAIL}} is authenticated org member; Emily (test-emily.johnson-20260310@test-agent.com / different org) attempts to read a private wishlist owned by {{USER_EMAIL}}; private scope is default (no scope param passed); GraphiQL accessible,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; emily_email=test-emily.johnson-20260310@test-agent.com; emily_password=TestPass123!; storeId={{STORE_ID}}; cultureName={{CULTURE_NAME}}; currencyCode={{CURRENCY_CODE}}; listName=AGENT-TEST-WL-024-PRIVATE,"[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save <MAIN_TOKEN>
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button → set Authorization: Bearer <MAIN_TOKEN> → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → screenshot
+[ACT] Click ""Headers"" button → set Authorization: Bearer <MAIN_TOKEN> → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → screenshot
 [ACT] Type query: query { me { id } } → execute → save <MAIN_USER_ID>
 [SETUP] Type mutation: mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""<MAIN_USER_ID>"" listName: ""AGENT-TEST-WL-024-PRIVATE"" cultureName: ""{{CULTURE_NAME}}"" currencyCode: ""{{CURRENCY_CODE}}"" }) { id scope } } → execute → save <LIST_ID> → confirm scope is ""Private"" or absent (default private)
 [AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=test-emily.johnson-20260310@test-agent.com&password=TestPass123!&storeId={{STORE_ID}} → save <EMILY_TOKEN>
-[ACT] Click ""Headers"" button → replace with Authorization: Bearer <EMILY_TOKEN> → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → take screenshot to verify Emily's token in Headers panel
+[ACT] Click ""Headers"" button → replace with Authorization: Bearer <EMILY_TOKEN> → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → take screenshot to verify Emily's token in Headers panel
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type query: query { wishlist(listId: ""<LIST_ID>"") { id name scope items { productId } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
@@ -356,7 +356,7 @@ WL-024,Private Wishlist — NOT Visible to Any Other User Including Different-Or
 WL-025,Personal Account (No Org) — Can Create Private Wishlist and Cannot See Org-Scoped Wishlists,GraphQL > Wishlist > B2B,High,BL-AUTH-004,ECL-2.1; ECL-14.1,"Personal account user (no org): milamuller2024@yahoo.com / Password1! (from test-data/users/agent-user-pool.csv personal slot). User has no organizationId on me.contact.organizationId. Org-scoped wishlist created by {{USER_EMAIL}} has known <ORG_LIST_ID>; GraphiQL accessible","personal_email=milamuller2024@yahoo.com; personal_password=Password1! (ref: agent-user-pool.csv personal slot); storeId={{STORE_ID}}; cultureName={{CULTURE_NAME}}; currencyCode={{CURRENCY_CODE}}; listName=AGENT-TEST-WL-025-PERSONAL","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=milamuller2024@yahoo.com&password=Password1!&storeId={{STORE_ID}} → save <PERSONAL_TOKEN>
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button → set Authorization: Bearer <PERSONAL_TOKEN> → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → screenshot
+[ACT] Click ""Headers"" button → set Authorization: Bearer <PERSONAL_TOKEN> → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → screenshot
 [ACT] Type query: query { me { id contact { organizationId } } } → execute → confirm organizationId is null or absent (personal account) → save <PERSONAL_USER_ID>
 [ACT] Click query editor → clear; type mutation: mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""<PERSONAL_USER_ID>"" listName: ""AGENT-TEST-WL-025-PERSONAL"" cultureName: ""{{CULTURE_NAME}}"" currencyCode: ""{{CURRENCY_CODE}}"" }) { id name scope } } → execute → save <PERSONAL_LIST_ID>
 [SETUP] Authenticate as {{USER_EMAIL}} → create org-scoped wishlist AGENT-TEST-WL-025-ORG → save <ORG_LIST_ID> → switch back to personal token
@@ -371,7 +371,7 @@ WL-026,Personal Account — Cannot Access Org-Scoped Wishlist by ID (Access Deni
 [SETUP] In a separate step — authenticate as {{USER_EMAIL}} → create org-scoped wishlist AGENT-TEST-WL-026-ORG → save <ORG_LIST_ID> → confirm scope = ""Organization""
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button → set Authorization: Bearer <PERSONAL_TOKEN> → click inside Headers editor → Ctrl+A → Backspace → type/paste auth JSON → screenshot to verify personal account token
+[ACT] Click ""Headers"" button → set Authorization: Bearer <PERSONAL_TOKEN> → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2) → screenshot to verify personal account token
 [ACT] Type query: query { me { id contact { organizationId } } } → execute → confirm organizationId is null (personal account, no org)
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type query: query { wishlist(listId: ""<ORG_LIST_ID>"") { id name scope items { productId } } }

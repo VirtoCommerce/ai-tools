@@ -61,7 +61,7 @@ GQL-055,pageContext - Authenticated vs Anonymous User Context,GraphQL > pageCont
 [GQL] Click Execute (▶) or Ctrl+Enter
 [READ] Read response — record anonymous user context
 [AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
-[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → click inside the Headers editor → clear (Ctrl+A, Backspace) → type: {""Authorization"": ""Bearer {{TOKEN}}""} → verify the token appears under the Headers region (not Variables)
+[ACT] Click ""Headers"" button (right tab) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — only step using JS) → take screenshot to verify token visible in Headers panel (not Variables)
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type same query: query { pageContext(storeId: ""{{STORE_ID}}"" permalink: ""/"") { user { id userName email roles { name } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
@@ -95,7 +95,7 @@ GQL-056,pageContext - Invalid Permalink Returns Null SlugInfo,GraphQL > pageCont
 GQL-057,pageContext - Organization-Scoped White Labeling Settings,GraphQL > pageContext > WhiteLabeling,High,BL-WL-001,ECL-2.1,"GraphiQL UI loaded; organization with custom branding exists; organizationId known; auth header set (org member)","storeId={{STORE_ID}}; organizationId=known org with custom branding; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"" which is the left/default tab) → click inside the Headers editor → clear (Ctrl+A, Backspace) → type: {""Authorization"": ""Bearer {{TOKEN}}""} → verify the token appears under the Headers region (not Variables)
+[ACT] Click ""Headers"" button (right tab) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — only step using JS) → take screenshot to verify token visible in Headers panel (not Variables)
 [ACT] Click query editor → clear (Ctrl+A, Backspace)
 [ACT] Type query without organizationId: query { pageContext(storeId: ""{{STORE_ID}}"" permalink: ""/"") { whiteLabelingSettings { themePresetName logoUrl secondaryLogoUrl faviconUrl footerLinks { title url } mainMenuLinks { title url } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
