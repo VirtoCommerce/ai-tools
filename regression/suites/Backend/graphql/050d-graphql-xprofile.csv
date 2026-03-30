@@ -236,7 +236,13 @@ GQL-046,xProfile - me + ContactType Full-Field Schema Coverage,GraphQL > xProfil
 [DATA] contact.defaultShippingAddress — object or null
 [DATA] No field returns an error object instead of its expected type","[ROUNDTRIP] Re-execute → same structure, same data
 [CONSOLE] No JS errors in GraphiQL","me returns null (auth failure); contact is null for user with contact; firstName/lastName null; emailConfirmed is null instead of boolean; addresses[].addressType is string instead of integer; organizations[] null for org user; errors[] non-empty",none,"graphql-schema.md — me, ContactType, UserType",Generated
-GQL-047,xProfile - OrganizationType Full-Field Schema Coverage,GraphQL > xProfile > Schema Coverage,High,BL-GQL-002; BL-GQL-004; BL-B2B-001,ECL-2.1,"User authenticated as org member; organization exists with contacts and addresses; auth header set in GraphiQL. Org ID known from GQL-046 (contact.organizationId).","organizationId from GQL-046 contact.organizationId","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+GQL-047,xProfile - OrganizationType Full-Field Schema Coverage,GraphQL > xProfile > Schema Coverage,High,BL-GQL-002; BL-GQL-004; BL-B2B-001,ECL-2.1,"User authenticated as org member; organization exists with contacts and addresses; GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql","storeId=@td(STORE_PRIMARY.id); user_email=@td(USER_DEFAULT.email); user_password=@td(USER_DEFAULT.password)","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=@td(USER_DEFAULT.email)&password=@td(USER_DEFAULT.password)&storeId=@td(STORE_PRIMARY.id) → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab) → set auth token via execCommand('insertText') on Headers textarea → screenshot to verify
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[SETUP] Get org ID: query { me { contact { organizationId } } } → save contact.organizationId as <ORG_ID>
+[ACT] Clear editor → clear (Ctrl+A, Backspace)
 [ACT] Type query: query { organization(id: ""<ORG_ID>"") { id name memberType status phones emails groups description businessCategory ownerId seoObjectType outerId addresses { id city countryCode countryName firstName lastName line1 line2 postalCode regionId regionName phone email addressType isDefault isFavorite description } dynamicProperties { name value valueType isDictionary } contacts(first: 5) { totalCount items { id firstName lastName fullName emails status securityAccounts { id userName roles { id name } } } } } }
 [GQL] Click Execute (▶) or Ctrl+Enter
 [WAIT] Response panel shows result
