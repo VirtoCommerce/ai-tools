@@ -1129,3 +1129,66 @@ GQL-095,Catalog - productConfiguration Query — Returns Configurable Product Co
 [DATA] allowedValues[].price uses MoneyType { amount currency { code } } — NOT currencyCode (DV-011)
 [DATA] Arg name is configurableProductId (NOT productId) per schema — using wrong arg name returns null or validation error","[ROUNDTRIP] Execute same query with same configurableProductId → identical configurationSections
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty due to wrong arg name productId (must be configurableProductId — DV-008); data.productConfiguration null for confirmed configurable product; currency.code absent (currencyCode used instead)","none — read-only query","xAPI; BL-CFG-001","Generated"
+GQL-096,xCart - CartType Full-Field Schema Coverage,GraphQL > xCart > Schema Coverage,High,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-2.1; ECL-14.1,"User authenticated with valid token; cart exists with at least 1 item, shipment, and payment configured; auth header set in GraphiQL. This is a READ-ONLY schema coverage test — cart must be pre-populated.","storeId=@td(STORE_PRIMARY.id); currencyCode=""USD""; cultureName=""en-US""; user_email=@td(USER_DEFAULT.email); user_password=@td(USER_DEFAULT.password)","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=@td(USER_DEFAULT.email)&password=@td(USER_DEFAULT.password)&storeId=@td(STORE_PRIMARY.id) → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab) → set auth token via execCommand('insertText') on Headers textarea → screenshot to verify
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[ACT] Create cart with item if none exists: mutation { addItem(command: { storeId: ""@td(STORE_PRIMARY.id)"" userId: ""<USER_ID>"" productId: ""AAW-59914334"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id } } → save cart id
+[ACT] Clear editor → type full-field cart query: query { cart(storeId: ""@td(STORE_PRIMARY.id)"" currencyCode: ""USD"" cultureName: ""en-US"") { id name status storeId channelId hasPhysicalProducts isAnonymous customerId customerName organizationId organizationName comment purchaseOrderNumber volumetricWeight weightUnit weight type itemsCount itemsQuantity total { amount formattedAmount currency { code symbol } } subTotal { amount formattedAmount } subTotalWithTax { amount } extendedPriceTotal { amount } extendedPriceTotalWithTax { amount } taxTotal { amount } taxPercentRate taxType shippingPrice { amount } shippingPriceWithTax { amount } shippingTotal { amount } shippingTotalWithTax { amount } paymentPrice { amount } paymentPriceWithTax { amount } paymentTotal { amount } paymentTotalWithTax { amount } handlingTotal { amount } handlingTotalWithTax { amount } discountTotal { amount } discountTotalWithTax { amount } subTotalDiscount { amount } subTotalDiscountWithTax { amount } fee { amount } feeWithTax { amount } feeTotal { amount } feeTotalWithTax { amount } currency { code name symbol exchangeRate } coupons { code isAppliedSuccessfully } discounts { promotionId description amount { amount } coupon } gifts { id name } availableGifts { id name } addresses { id city countryCode countryName firstName lastName line1 line2 postalCode regionId regionName phone email addressType } shipments { id shipmentMethodCode shipmentMethodOption price { amount } deliveryAddress { city line1 postalCode } } availableShippingMethods { code optionName optionDescription price { amount } } payments { id paymentGatewayCode amount { amount } billingAddress { city line1 } } availablePaymentMethods { code paymentMethodType paymentMethodGroupType } items { id productId quantity name sku imageUrl listPrice { amount } salePrice { amount } extendedPrice { amount } discountTotal { amount } taxTotal { amount } selectedForCheckout } dynamicProperties { name value valueType } validationErrors { errorCode errorMessage objectId objectType errorParameters { key value } } warnings { errorCode errorMessage } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read full response — systematically inspect every field group","[RESPONSE] Response panel shows data without error banner
+[ERRORS] No errors[] in response — all requested fields must resolve without error
+[DATA] id — non-null UUID string
+[DATA] status — string (e.g. Active)
+[DATA] storeId — matches @td(STORE_PRIMARY.id)
+[DATA] customerId, customerName — non-null for authenticated user
+[DATA] itemsCount — integer ≥ 1 (cart has items)
+[DATA] total.amount — number > 0; total.formattedAmount — non-empty string; total.currency.code — ""USD""
+[DATA] subTotal.amount — number > 0
+[DATA] All MoneyType fields follow { amount, formattedAmount, currency { code } } structure — NOT { amount, currencyCode }
+[DATA] currency — object with code, name, symbol (all non-null strings)
+[DATA] items[] — non-empty array; each item has id, productId, quantity, name, sku (all non-null)
+[DATA] items[].listPrice.amount — number > 0 for each line item
+[DATA] items[].selectedForCheckout — boolean (not null)
+[DATA] shipments[] — array (may be empty if no shipment set)
+[DATA] availableShippingMethods[] — array with at least one method if store has shipping configured
+[DATA] payments[] — array (may be empty if no payment set)
+[DATA] availablePaymentMethods[] — array with at least one method
+[DATA] addresses[] — array of address objects (may be empty)
+[DATA] dynamicProperties[] — array (may be empty; each has name and value)
+[DATA] validationErrors[] — array (empty for valid cart; each error has errorCode, errorMessage)
+[DATA] taxPercentRate — number (not null); taxType — string or null
+[DATA] hasPhysicalProducts — boolean
+[DATA] isAnonymous — boolean (false for authenticated user)
+[DATA] No field returns an error object instead of its expected type","[ROUNDTRIP] Re-execute identical query → response structure unchanged (no flaky resolvers)
+[CONSOLE] No JS errors in GraphiQL","Any CartType field returns null unexpectedly; MoneyType missing amount or currency.code; items[].listPrice null for priced product; total.amount is 0 when items have prices; validationErrors structure changed; availableShippingMethods or availablePaymentMethods is null (not empty array); errors[] non-empty","clearCart mutation + removeCart if test created a new cart","graphql-schema.md — CartType, LineItemType, MoneyType, CurrencyType",Generated
+GQL-097,xCart - LineItemType Full-Field Schema Coverage,GraphQL > xCart > Schema Coverage,High,BL-GQL-001; BL-GQL-003,ECL-2.1,"Cart exists with at least 1 item (physical product with price, image, and properties); auth header set in GraphiQL","storeId=@td(STORE_PRIMARY.id); productId=AAW-59914334","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { cart(storeId: ""@td(STORE_PRIMARY.id)"" currencyCode: ""USD"" cultureName: ""en-US"") { items { id catalogId categoryId createdDate name sku productId productType quantity objectType imageUrl thumbnailImageUrl languageCode measureUnit height width length weight weightUnit volumetricWeight isGift isReadOnly isReccuring isValid requiredShipping selectedForCheckout shipmentMethodCode fulfillmentCenterId fulfillmentCenterName note taxPercentRate taxType inStockQuantity warehouseLocation product { id name code imgSrc } listPrice { amount formattedAmount currency { code } } listPriceWithTax { amount } salePrice { amount } salePriceWithTax { amount } extendedPrice { amount formattedAmount } extendedPriceWithTax { amount } placedPrice { amount } placedPriceWithTax { amount } showPlacedPrice listTotal { amount } listTotalWithTax { amount } discountAmount { amount } discountAmountWithTax { amount } discountTotal { amount } discountTotalWithTax { amount } taxTotal { amount } discounts { promotionId description amount { amount } coupon } taxDetails { name rate amount { amount } } dynamicProperties { name value valueType } validationErrors { errorCode errorMessage } vendor { id name } configurationItems { id name quantity } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read full response — inspect every LineItemType field","[RESPONSE] Response panel shows data without error banner
+[ERRORS] No errors[] in response — all LineItemType fields must resolve
+[DATA] id — non-null string per item
+[DATA] name, sku, productId — non-null strings
+[DATA] productType — string (Physical, Digital, etc.)
+[DATA] quantity — integer ≥ 1
+[DATA] isValid — boolean (true for valid items)
+[DATA] selectedForCheckout — boolean
+[DATA] isGift, isReadOnly, isReccuring, requiredShipping — booleans (not null)
+[DATA] product — nested object with id, name, code (all non-null)
+[DATA] listPrice.amount — number > 0; listPrice.currency.code — ""USD""
+[DATA] salePrice — object (amount may be 0 if no sale; must not be null object)
+[DATA] extendedPrice.amount — equals listPrice.amount × quantity (or salePrice × quantity if on sale)
+[DATA] All MoneyType fields: amount is number, currency.code is string
+[DATA] discounts[] — array (may be empty)
+[DATA] taxDetails[] — array; each has name, rate, amount
+[DATA] dynamicProperties[] — array (may be empty)
+[DATA] validationErrors[] — empty for valid items
+[DATA] imageUrl — string or null (not error)
+[DATA] catalogId, categoryId — strings (non-null for catalog products)
+[DATA] inStockQuantity — number ≥ 0
+[DATA] No field returns an error object or unexpected __typename","[ROUNDTRIP] Re-execute → same structure, same field types
+[CONSOLE] No JS errors in GraphiQL","Any LineItemType field returns null unexpectedly; product nested object is null; listPrice.amount is 0 for priced product; extendedPrice does not match quantity × unit price; isValid is null; MoneyType structure broken; errors[] non-empty","none — read-only query","graphql-schema.md — LineItemType, MoneyType, PriceType",Generated

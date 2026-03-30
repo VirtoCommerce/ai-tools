@@ -23,3 +23,32 @@ GQL-012,xOrder - Get Order Detail Query,GraphQL > xOrder,Critical,BL-GQL-002; BL
 [MATH] Order totals (subTotal + shipping + tax = grandTotal within tolerance)
 [ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute query → same order detail
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; items[] empty; addresses[] empty; inPayments[] empty; GraphiQL shows auth error",none,xAPI,Automated
+GQL-013,xOrder - CustomerOrderType Full-Field Schema Coverage,GraphQL > xOrder > Schema Coverage,High,BL-GQL-002; BL-GQL-004,ECL-2.1,"User authenticated; at least one completed order exists with items, shipment, payment, and addresses; auth header set in GraphiQL. Order ID/number known from GQL-011.","orderId or orderNumber from GQL-011","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { order(number: ""<ORDER_NUMBER>"") { id operationType parentOperationId number isApproved status statusDisplayValue comment outerId isCancelled cancelledDate cancelReason objectType customerId customerName channelId storeId storeName organizationId organizationName employeeId employeeName shoppingCartId isPrototype subscriptionNumber subscriptionId purchaseOrderNumber taxType taxPercentRate languageCode createdDate createdBy modifiedDate modifiedBy currency { code name symbol exchangeRate } total { amount formattedAmount currency { code } } taxTotal { amount } discountAmount { amount } subTotal { amount } subTotalWithTax { amount } subTotalDiscount { amount } subTotalDiscountWithTax { amount } subTotalTaxTotal { amount } shippingTotal { amount } shippingTotalWithTax { amount } shippingSubTotal { amount } shippingSubTotalWithTax { amount } shippingDiscountTotal { amount } shippingDiscountTotalWithTax { amount } shippingTaxTotal { amount } paymentTotal { amount } paymentTotalWithTax { amount } paymentSubTotal { amount } paymentSubTotalWithTax { amount } paymentDiscountTotal { amount } paymentDiscountTotalWithTax { amount } paymentTaxTotal { amount } discountTotal { amount } discountTotalWithTax { amount } fee { amount } feeWithTax { amount } feeTotal { amount } feeTotalWithTax { amount } addresses { id city countryCode countryName firstName lastName line1 line2 postalCode regionId regionName phone email addressType } items { id productId sku name quantity price { amount } extendedPrice { amount } discountAmount { amount } taxTotal { amount } taxPercentRate placedPrice { amount } } inPayments { id number status gatewayCode paymentMethod { code typeName paymentMethodType paymentMethodGroupType } sum { amount } taxTotal { amount } billingAddress { city line1 countryCode postalCode } } shipments { id number status shipmentMethodCode shipmentMethodOption deliveryAddress { city line1 countryCode postalCode } price { amount } taxTotal { amount } items { lineItemId quantity } } taxDetails { name rate amount { amount } } dynamicProperties { name value valueType } coupons { code } discounts { promotionId description amount { amount } coupon } availablePaymentMethods { code paymentMethodType paymentMethodGroupType } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read full response — systematically inspect every field group","[RESPONSE] Response panel shows data without error banner
+[ERRORS] No errors[] in response — all CustomerOrderType fields must resolve
+[DATA] id, number — non-null strings; number matches requested order
+[DATA] status, statusDisplayValue — non-null strings
+[DATA] customerId, customerName — non-null for authenticated user's order
+[DATA] storeId, storeName — non-null strings
+[DATA] createdDate, modifiedDate — non-null ISO date strings
+[DATA] currency — object with code (""USD""), name, symbol (all non-null)
+[DATA] total.amount — number > 0; total.formattedAmount — non-empty string
+[DATA] subTotal.amount — number > 0
+[DATA] All MoneyType fields: { amount, currency { code } } structure — no { amount, currencyCode }
+[DATA] addresses[] — non-empty array; each has city, countryCode, line1 (non-null for shipping/billing)
+[DATA] items[] — non-empty array; each has id, productId, sku, name, quantity (all non-null)
+[DATA] items[].price.amount — number > 0 per line item
+[DATA] inPayments[] — non-empty array; each has id, gatewayCode, paymentMethod object, sum.amount
+[DATA] shipments[] — non-empty array; each has id, shipmentMethodCode, deliveryAddress, price.amount
+[DATA] shipments[].items[] — non-empty; each has lineItemId
+[DATA] taxDetails[] — array (may be empty; each has name, rate, amount)
+[DATA] dynamicProperties[] — array (may be empty)
+[DATA] discountTotal.amount — number ≥ 0
+[DATA] operationType — string (typically ""CustomerOrder"")
+[DATA] isApproved, isCancelled, isPrototype — booleans (not null)
+[DATA] No field returns an error object or unexpected null where schema indicates non-nullable
+[MATH] subTotal.amount + shippingTotal.amount + taxTotal.amount - discountTotal.amount ≈ total.amount (within rounding tolerance)","[ROUNDTRIP] Re-execute identical query → identical response structure
+[CONSOLE] No JS errors in GraphiQL","Any CustomerOrderType field returns null unexpectedly; addresses[] empty for order with shipping; items[] empty; inPayments[] empty; shipments[] empty; MoneyType structure broken; total.amount is 0; status is null; errors[] non-empty",none,"graphql-schema.md — CustomerOrderType, MoneyType, CurrencyType",Generated

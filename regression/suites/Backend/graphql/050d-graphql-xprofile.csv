@@ -201,3 +201,57 @@ GQL-045,xProfile - requestRegistration Result Contains requireEmailVerification 
 [ERRORS] No errors[] in response","[ROUNDTRIP] Authenticate as new user → type me query → execute → if requireEmailVerification=true, verify limited access; if false, verify full access
 [ADMIN] User visible in Admin > Security > Users with correct email verification status
 [CONSOLE] No JS errors in GraphiQL","requireEmailVerification field missing from response; field is null instead of boolean; result.succeeded = false for valid input; errors[] non-empty","delete registered account via Admin API",BL-AUTH-002,Generated
+GQL-046,xProfile - me + ContactType Full-Field Schema Coverage,GraphQL > xProfile > Schema Coverage,High,BL-GQL-002; BL-GQL-004,ECL-2.1,"User authenticated; user has a contact with addresses, org membership, and profile data; auth header set in GraphiQL","user_email=@td(USER_DEFAULT.email); user_password=@td(USER_DEFAULT.password); storeId=@td(STORE_PRIMARY.id)","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=@td(USER_DEFAULT.email)&password=@td(USER_DEFAULT.password)&storeId=@td(STORE_PRIMARY.id) → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab) → set auth token via execCommand('insertText') on Headers textarea → screenshot to verify
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { me { id userName email emailConfirmed photoUrl phoneNumber phoneNumberConfirmed twoFactorEnabled isAdministrator passwordExpired passwordExpiryInDays lockedState permissions contact { id name memberType status phones emails groups firstName lastName middleName fullName organizationId organizationsIds about birthDate securityAccounts { id userName email roles { id name } } addresses { id city countryCode countryName firstName lastName line1 line2 postalCode regionId regionName phone email addressType isDefault isFavorite description } dynamicProperties { name value valueType isDictionary } defaultBillingAddress { id city line1 postalCode countryCode } defaultShippingAddress { id city line1 postalCode countryCode } organizations { id name } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read full response — inspect every field of UserType and ContactType","[RESPONSE] Response panel shows data without error banner
+[ERRORS] No errors[] in response — all fields must resolve
+[DATA] id — non-null UUID string
+[DATA] userName — non-null string matching login
+[DATA] email — non-null string matching @td(USER_DEFAULT.email)
+[DATA] emailConfirmed — boolean (not null)
+[DATA] phoneNumberConfirmed, twoFactorEnabled, isAdministrator — booleans (not null)
+[DATA] passwordExpired — boolean
+[DATA] permissions — array of strings (may be empty for non-admin)
+[DATA] contact — non-null object for users with contact
+[DATA] contact.id — non-null UUID
+[DATA] contact.firstName, contact.lastName — non-null strings
+[DATA] contact.fullName — non-null string
+[DATA] contact.memberType — string (""Contact"")
+[DATA] contact.phones — array of strings (may be empty)
+[DATA] contact.emails — array of strings; at least one matching user email
+[DATA] contact.organizationId — string (non-null for org users; null for personal accounts)
+[DATA] contact.organizationsIds — array (non-empty for org users)
+[DATA] contact.securityAccounts[] — array; at least one with id, userName
+[DATA] contact.addresses[] — array of address objects (may be empty)
+[DATA] contact.addresses[] — each has city, countryCode, line1 (strings); addressType (integer)
+[DATA] contact.dynamicProperties[] — array (may be empty; each has name, value, valueType)
+[DATA] contact.organizations[] — array of { id, name } objects for org users
+[DATA] contact.defaultBillingAddress — object or null
+[DATA] contact.defaultShippingAddress — object or null
+[DATA] No field returns an error object instead of its expected type","[ROUNDTRIP] Re-execute → same structure, same data
+[CONSOLE] No JS errors in GraphiQL","me returns null (auth failure); contact is null for user with contact; firstName/lastName null; emailConfirmed is null instead of boolean; addresses[].addressType is string instead of integer; organizations[] null for org user; errors[] non-empty",none,"graphql-schema.md — me, ContactType, UserType",Generated
+GQL-047,xProfile - OrganizationType Full-Field Schema Coverage,GraphQL > xProfile > Schema Coverage,High,BL-GQL-002; BL-GQL-004; BL-B2B-001,ECL-2.1,"User authenticated as org member; organization exists with contacts and addresses; auth header set in GraphiQL. Org ID known from GQL-046 (contact.organizationId).","organizationId from GQL-046 contact.organizationId","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { organization(id: ""<ORG_ID>"") { id name memberType status phones emails groups description businessCategory ownerId seoObjectType outerId addresses { id city countryCode countryName firstName lastName line1 line2 postalCode regionId regionName phone email addressType isDefault isFavorite description } dynamicProperties { name value valueType isDictionary } contacts(first: 5) { totalCount items { id firstName lastName fullName emails status securityAccounts { id userName roles { id name } } } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read full response — inspect OrganizationType fields","[RESPONSE] Response panel shows data without error banner
+[ERRORS] No errors[] in response — all OrganizationType fields must resolve
+[DATA] id — non-null UUID matching requested org
+[DATA] name — non-null string
+[DATA] memberType — string (""Organization"")
+[DATA] phones — array of strings (may be empty)
+[DATA] emails — array of strings (may be empty)
+[DATA] addresses[] — array of address objects (each has city, countryCode, line1)
+[DATA] dynamicProperties[] — array (may be empty; each has name, value, valueType)
+[DATA] contacts — connection type with totalCount (integer ≥ 1) and items[]
+[DATA] contacts.items[] — each contact has id, firstName, lastName (non-null strings)
+[DATA] contacts.items[].securityAccounts[] — each has userName
+[DATA] contacts.items[].status — string or null
+[DATA] No field returns an error object or unexpected null","[ROUNDTRIP] Re-execute → same org data
+[CONSOLE] No JS errors in GraphiQL","organization returns null for valid ID; name is null; contacts.totalCount is 0 when org has members; contacts.items[].firstName null; addresses[] is null (not empty array); errors[] non-empty",none,"graphql-schema.md — OrganizationType, ContactType",Generated

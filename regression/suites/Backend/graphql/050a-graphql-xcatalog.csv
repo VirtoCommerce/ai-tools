@@ -306,3 +306,103 @@ GQL-108,xCatalog - slugInfo Returns Null for Non-Existent Slug,GraphQL > xCatalo
 [DATA] data.slugInfo.entityInfo is null (graceful not-found — not an error)
 [ERRORS] No errors[] in response (null entity is expected, not an error condition)
 [DATA] Response HTTP status is 200","[CONSOLE] No JS errors in GraphiQL","errors[] present for non-existent slug; HTTP 500; slugInfo returns a random entity; GraphiQL crash",none,"BL-GQL-002; BL-SEO-001",Generated
+GQL-109,xCatalog - brands Query — List All Brands (Storefront Pattern),GraphQL > xCatalog > Brands,High,BL-GQL-002; BL-SEO-001,"ECL-2.1; ECL-3.1","GraphiQL UI loaded; brands exist in catalog; store configured","storeId=@td(STORE_PRIMARY.id); cultureName=""en-US""; currencyCode=""USD""; first=1000 (storefront loads all brands at once)","[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query matching storefront GetBrands pattern: query { brands(storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"" currencyCode: ""USD"" first: 1000 sort: ""name:asc"") { totalCount items { id name bannerUrl logoUrl description featured permalink brandPropertyValue } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — record totalCount as <TOTAL_BRANDS> and first brand name as <BRAND_NAME>","[RESPONSE] Response panel shows data without error banner
+[DATA] totalCount > 0 (brands exist in catalog)
+[DATA] items[] sorted alphabetically A → Z by name (sort: ""name:asc"")
+[DATA] Each brand has id (non-empty string — brand name used as ID) and name (non-empty string)
+[DATA] Each brand has permalink (non-null, format: ""brands/<slug>"")
+[DATA] featured is boolean (true for TOP BRANDS section brands)
+[DATA] brandPropertyValue is present (raw catalog property value)
+[DATA] logoUrl and bannerUrl are strings (may be null — most brands lack images)
+[ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute same query → same totalCount and brand order
+[CONSOLE] No JS errors in GraphiQL","totalCount = 0 when brands are configured; items[] empty; brand missing id or name; items not sorted despite sort param; permalink null; errors[] in response","NOTE: Storefront uses first:1000 and performs client-side A-Z filtering and keyword search — no server-side keyword param is used","BL-GQL-002; BL-SEO-001",Generated
+GQL-110,xCatalog - brand Singular Query — Get Brand by Name (Storefront Pattern),GraphQL > xCatalog > Brands,High,BL-GQL-002; BL-SEO-001,"ECL-2.1; ECL-14.1","GraphiQL UI loaded; brand name known (from GQL-109 or brands query)","storeId=@td(STORE_PRIMARY.id); cultureName=""en-US""; brandName from GQL-109 (note: brand id param accepts the brand name string, not a UUID)","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[SETUP] Get a brand name if not already known: query { brands(storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"" first: 1 sort: ""name:asc"") { items { id name } } } → save name as <BRAND_NAME>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query matching storefront GetBrand pattern (id param = brand name): query { brand(id: ""<BRAND_NAME>"" storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"") { id name bannerUrl logoUrl description featured permalink brandPropertyValue } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify brand entity resolved","[RESPONSE] Response panel shows data without error banner
+[DATA] data.brand is non-null
+[DATA] brand.id = <BRAND_NAME> (brand uses name as ID — not a UUID)
+[DATA] brand.name = <BRAND_NAME>
+[DATA] brand.permalink is non-null (format: ""brands/<slug>"")
+[DATA] brand.featured is a boolean
+[DATA] brand.logoUrl is a string (may be null if not configured)
+[DATA] brand.brandPropertyValue is present
+[ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute → identical brand object
+[CONSOLE] No JS errors in GraphiQL","brand is null for a known-valid name; id mismatch; name mismatch; errors[] in response; permalink null or malformed",none,"BL-GQL-002; BL-SEO-001",Generated
+GQL-111,xCatalog - brand Singular Query with Invalid ID Returns Synthetic Object,GraphQL > xCatalog > Brands,High,BL-GQL-002; BL-SEO-001,"ECL-2.1","GraphiQL UI loaded","storeId=@td(STORE_PRIMARY.id); cultureName=""en-US""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query with non-existent brand ID: query { brand(id: ""non-existent-brand-id-00000"" storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"") { id name } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify brand behavior for non-existent ID","[RESPONSE] Response panel shows data without error banner
+[DATA] data.brand is non-null (by design: brand is a dictionary property value, not a managed entity — any string input returns a brand object with id/name echoing the input)
+[DATA] brand.id echoes the input ID (""non-existent-brand-id-00000"")
+[DATA] brand.name echoes the input ID
+[ERRORS] No errors[] in response
+[DATA] Response HTTP status is 200","[CONSOLE] No JS errors in GraphiQL","errors[] present for invalid brand ID; HTTP 500; GraphiQL crash",none,"BL-GQL-002; BL-SEO-001",Generated
+GQL-112,xCatalog - brands Query with sort Parameter Orders Results,GraphQL > xCatalog > Brands,High,BL-GQL-002; BL-SEO-001,"ECL-3.1","GraphiQL UI loaded; multiple brands exist","storeId=@td(STORE_PRIMARY.id); cultureName=""en-US""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query sorted ascending: query { brands(storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"" sort: ""name:asc"" first: 5) { totalCount items { id name } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Record name sequence as <BRANDS_ASC>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query sorted descending: query { brands(storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"" sort: ""name:desc"" first: 5) { totalCount items { id name } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Record name sequence as <BRANDS_DESC>","[RESPONSE] Both responses show data without error banner
+[DATA] <BRANDS_ASC>: names ordered alphabetically A → Z
+[DATA] <BRANDS_DESC>: names ordered alphabetically Z → A (reverse of asc)
+[DATA] totalCount is identical in both responses
+[ERRORS] No errors[] in either response","[ROUNDTRIP] Re-execute asc query → same order
+[CONSOLE] No JS errors in GraphiQL","Both queries return same order (sort ignored); totalCount differs between sort variants; errors[] in response",none,"BL-GQL-002; BL-SEO-001",Generated
+GQL-113,xCatalog - ProductType Full-Field Schema Coverage,GraphQL > xCatalog > Schema Coverage,High,BL-GQL-002; BL-GQL-003,ECL-2.1,"BROWSER-ONLY: Execute in GraphiQL UI ({{BACK_URL}}/ui/graphiql) via playwright browser. Product ID known (use @td(PROD_DEFAULT.sku) or get from GQL-001). No auth required for catalog queries.","storeId=@td(STORE_PRIMARY.id); productId from GQL-001 or @td(PROD_DEFAULT.sku); currencyCode=""USD""; cultureName=""en-US""","[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { product(storeId: ""@td(STORE_PRIMARY.id)"" id: ""<PRODUCT_ID>"" currencyCode: ""USD"" cultureName: ""en-US"") { id code catalogId productType minQuantity maxQuantity packSize slug name imgSrc outerId gtin manufacturerPartNumber weightUnit weight measureUnit height width length brandName hasVariations inWishlist isPurchased seoInfo { id name semanticUrl isActive } descriptions { id content languageCode reviewType } category { id name slug } brand { id name } availabilityData { availableQuantity isBuyable isAvailable isInStock isActive isTrackInventory } images { id url name sortOrder } price { list { amount formattedAmount currency { code } } listWithTax { amount } sale { amount } saleWithTax { amount } actual { amount formattedAmount } actualWithTax { amount } discountAmount { amount } discountPercent currency { code symbol } tierPrices { quantity price { amount } } pricelistId } prices { list { amount } sale { amount } minQuantity pricelistId } minVariationPrice { list { amount } actual { amount } } properties { id name type valueType values { value valueId } } keyProperties { id name values { value } } assets { id url name size typeId group } breadcrumbs { title seoPath typeName } vendor { id name rating { value reviewCount } } rating { value reviewCount } videos { name thumbnailUrl videoUrl sortOrder } variations { id name code availabilityData { isBuyable isAvailable isInStock availableQuantity } price { list { amount } actual { amount } } images { url } properties { name values { value } } } associations { items { associatedObjectId associatedObjectType quantity tags } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read full response — inspect every top-level and nested field","[RESPONSE] Response panel shows data without error banner
+[ERRORS] No errors[] in response — query must not fail due to unresolvable fields
+[DATA] id, code, name, slug — all non-null strings
+[DATA] catalogId — non-null string
+[DATA] productType — non-null string (Physical, Digital, etc.)
+[DATA] imgSrc — string or null (not an error object)
+[DATA] seoInfo — object with semanticUrl string
+[DATA] descriptions[] — array (may be empty but not null)
+[DATA] category — object with id, name, slug (all non-null for assigned products)
+[DATA] availabilityData — object; isBuyable, isAvailable, isInStock are booleans (not null)
+[DATA] images[] — array of objects; each has url (non-null string)
+[DATA] price — object; list.amount is number > 0; actual.amount is number > 0; currency.code is string
+[DATA] price.formattedAmount — non-empty string (e.g. ""$123.45"")
+[DATA] properties[] — array; each has name (string) and values[] (array)
+[DATA] breadcrumbs[] — array; each has title and seoPath
+[DATA] variations[] — array (may be empty for non-variable products; should not be null)
+[DATA] rating — object with value (number) and reviewCount (number)
+[DATA] No field returns an error object or __typename mismatch instead of data","[ROUNDTRIP] Re-execute identical query → response structure identical (no flaky resolvers)
+[CONSOLE] No JS errors in GraphiQL","Any top-level field returns null unexpectedly (regression); errors[] non-empty; nested MoneyType missing amount field; availabilityData booleans are null instead of true/false; price.list.amount is 0 for a priced product; images[].url is null; GraphiQL error banner",none,"graphql-schema.md — ProductType, PriceType, AvailabilityData, MoneyType",Generated
+GQL-114,xCatalog - ProductConnection Full-Field Schema Coverage (Facets + PageInfo),GraphQL > xCatalog > Schema Coverage,High,BL-GQL-002,ECL-2.1; ECL-8.1,"BROWSER-ONLY: Execute in GraphiQL UI. Products with properties/facets configured. No auth required.","storeId=@td(STORE_PRIMARY.id); facet=""brand price""; filter=""category.subtree:fc596540-79e0-46f0-b96d-a38f006e0d60""; currencyCode=""USD""","[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { products(storeId: ""@td(STORE_PRIMARY.id)"" first: 5 currencyCode: ""USD"" cultureName: ""en-US"" filter: ""category.subtree:fc596540-79e0-46f0-b96d-a38f006e0d60"" facet: ""brand price"") { totalCount pageInfo { hasNextPage hasPreviousPage startCursor endCursor } items { id name code } term_facets { name label order facetType terms { term count isSelected label } } range_facets { name label order facetType ranges { count from to includeFrom includeTo fromStr toStr min max total label isSelected } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read full response — inspect ProductConnection, pageInfo, facet structures","[RESPONSE] Response panel shows data without error banner
+[ERRORS] No errors[] in response
+[DATA] totalCount — integer ≥ 0
+[DATA] pageInfo.hasNextPage — boolean (true when first < totalCount)
+[DATA] pageInfo.endCursor — non-null string when items returned
+[DATA] items[] — each item has id, name, code (all non-null)
+[DATA] term_facets[] — array with at least brand facet; each has name (string), label, facetType
+[DATA] term_facets[].terms[] — each has term (string), count (integer ≥ 0), isSelected (boolean)
+[DATA] range_facets[] — array (may be empty if no price range configured); each range has from, to, count
+[DATA] range_facets[].ranges[].min and max — numbers or null (not error objects)
+[DATA] No facet field returns null when the facet expression was provided","[ROUNDTRIP] Use endCursor as after param → next page returns different items
+[CONSOLE] No JS errors in GraphiQL","pageInfo fields null; term_facets empty when facet=""brand"" and products have brands; range_facets[].count is null; facetType is null; errors[] non-empty; totalCount null",none,"graphql-schema.md — ProductConnection, TermFacet, RangeFacet, FacetTermType, FacetRangeType",Generated
