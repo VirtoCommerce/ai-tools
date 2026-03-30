@@ -270,3 +270,100 @@ WL-020,wishlist Query — Another User's List (Access Denied),GraphQL > Wishlist
 [READ] Read response — check whether list is returned or access denied","[RESPONSE] Response panel shows structured result (not crash)
 [ERRORS] Either: (a) errors[] non-empty with access denied / not found message; OR (b) data.wishlist is null (list not returned to unauthorized user)
 [DATA] Org user does NOT see the private wishlist items from {{USER_EMAIL}}","[CONSOLE] No unhandled server exceptions in GraphiQL","Org user receives full list data (privacy violation); HTTP 500; stack trace in errors[]","Authenticate as {{USER_EMAIL}} and execute removeWishlist(command: { listId: ""<LIST_ID>"" })",xAPI,Automated
+
+WL-021,createWishlist with scope organization — Creator Sees Own Org-Scoped List,GraphQL > Wishlist > B2B,Critical,BL-B2B-001,ECL-14.1; ECL-2.1,User authenticated as org member ({{USER_EMAIL}}); store configured; GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; NOTE — full cross-org visibility test (second user in SAME org) is MANUAL: executor must identify two users sharing the same organization,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; storeId={{STORE_ID}}; cultureName={{CULTURE_NAME}}; currencyCode={{CURRENCY_CODE}}; scope=organization; listName=AGENT-TEST-WL-021-ORG,"[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save <TOKEN>
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button → set Authorization: Bearer <TOKEN> via execCommand('insertText') → screenshot to verify token visible
+[ACT] Type query: query { me { id contact { organizationId } } } → execute → save <USER_ID> and <ORG_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" listName: ""AGENT-TEST-WL-021-ORG"" cultureName: ""{{CULTURE_NAME}}"" currencyCode: ""{{CURRENCY_CODE}}"" scope: ""organization"" }) { id name scope } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read data.createWishlist — record id, name, scope
+[ACT] Type query: query { wishlists(storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" scope: ""organization"") { totalCount items { id name scope } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Verify newly created list appears in creator's own wishlists query","[RESPONSE] Response panel shows structured result (no crash)
+[ERRORS] errors[] is empty or absent
+[DATA] data.createWishlist.scope = ""Organization"" (capital O)
+[DATA] data.createWishlist.name = ""AGENT-TEST-WL-021-ORG""
+[DATA] data.createWishlist.id is a non-empty UUID — save as <LIST_ID>
+[DATA] Subsequent wishlists query totalCount >= 1 and items[] contains the created list with scope ""Organization""","[CONSOLE] No unhandled server exceptions in GraphiQL
+[CONSOLE] No JS errors","errors[] non-empty after createWishlist; scope returned as ""private"" instead of ""Organization""; list not visible in creator's own wishlists query; HTTP 500","Authenticate as {{USER_EMAIL}} → execute removeWishlist(command: { listId: ""<LIST_ID>"" })",xAPI,Automated
+WL-022,Organization-Scoped Wishlist — NOT Visible to Member of Different Org (Access Denied),GraphQL > Wishlist > B2B,Critical,BL-B2B-001,ECL-2.1; ECL-14.1,{{USER_EMAIL}} is authenticated org member (orgId: d62aed2c); Emily (test-emily.johnson-20260310@test-agent.com) is authenticated org member of a DIFFERENT org (orgId: 6fb516c1); GraphiQL accessible,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; emily_email=test-emily.johnson-20260310@test-agent.com; emily_password=TestPass123!; storeId={{STORE_ID}}; cultureName={{CULTURE_NAME}}; currencyCode={{CURRENCY_CODE}}; listName=AGENT-TEST-WL-022-ORG-CROSS,"[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save <MAIN_TOKEN>
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button → set Authorization: Bearer <MAIN_TOKEN> via execCommand('insertText') → screenshot
+[ACT] Type query: query { me { id contact { organizationId } } } → execute → save <MAIN_USER_ID>
+[SETUP] Type mutation: mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""<MAIN_USER_ID>"" listName: ""AGENT-TEST-WL-022-ORG-CROSS"" cultureName: ""{{CULTURE_NAME}}"" currencyCode: ""{{CURRENCY_CODE}}"" scope: ""organization"" }) { id scope } } → execute → save <LIST_ID> → confirm scope = ""Organization""
+[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=test-emily.johnson-20260310@test-agent.com&password=TestPass123!&storeId={{STORE_ID}} → save <EMILY_TOKEN>
+[ACT] Click ""Headers"" button → replace token with Authorization: Bearer <EMILY_TOKEN> via execCommand('insertText') → screenshot to verify Emily's token
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { wishlist(listId: ""<LIST_ID>"") { id name scope } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — confirm access denied error is present","[RESPONSE] Response panel shows structured result (no crash)
+[ERRORS] errors[] non-empty — at least one error with message containing ""Access denied"" or ""access denied""
+[DATA] data.wishlist is null (list not returned to Emily)
+[DATA] Emily's org (6fb516c1) did NOT create this list — cross-org isolation confirmed",[CONSOLE] No unhandled server exceptions in GraphiQL,Emily receives full list data (cross-org data leak); errors[] empty; HTTP 500; scope isolation bypassed,"Authenticate as {{USER_EMAIL}} → execute removeWishlist(command: { listId: ""<LIST_ID>"" })",xAPI,Automated
+WL-023,wishlists Query with scope organization — Returns Only User's Own Org Lists,GraphQL > Wishlist > B2B,High,BL-B2B-001,ECL-2.1; ECL-14.1,Emily (test-emily.johnson-20260310@test-agent.com) is authenticated org member; {{USER_EMAIL}} has created org-scoped wishlists in a DIFFERENT org; GraphiQL accessible,emily_email=test-emily.johnson-20260310@test-agent.com; emily_password=TestPass123!; storeId={{STORE_ID}}; expectedCount=0 (no org lists created for Emily's org in this test),"[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=test-emily.johnson-20260310@test-agent.com&password=TestPass123!&storeId={{STORE_ID}} → save <EMILY_TOKEN>
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button → set Authorization: Bearer <EMILY_TOKEN> via execCommand('insertText') → screenshot to verify Emily's token in Headers
+[ACT] Type query: query { me { id contact { organizationId } } } → execute → confirm Emily's orgId = 6fb516c1 → save <EMILY_USER_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { wishlists(storeId: ""{{STORE_ID}}"" userId: ""<EMILY_USER_ID>"" scope: ""organization"") { totalCount items { id name scope } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read totalCount and items[] — verify no lists from {{USER_EMAIL}}'s org appear","[RESPONSE] Response panel shows structured result (no crash)
+[ERRORS] errors[] is empty or absent
+[DATA] totalCount reflects only Emily's own org's lists (0 when none exist for her org)
+[DATA] items[] contains no wishlists belonging to {{USER_EMAIL}} or orgId d62aed2c
+[DATA] All returned items (if any) have scope = ""Organization"" and belong to Emily's org (6fb516c1)","[CONSOLE] No unhandled server exceptions in GraphiQL
+[CONSOLE] No JS errors",totalCount includes lists from other organizations; items[] contains foreign-org wishlists (data isolation failure); HTTP 500,none — read-only query; no cleanup required,xAPI,Automated
+WL-024,Private Wishlist — NOT Visible to Any Other User Including Different-Org Member (Access Denied),GraphQL > Wishlist > B2B,Critical,BL-B2B-001,ECL-2.1; ECL-14.1,{{USER_EMAIL}} is authenticated org member; Emily (test-emily.johnson-20260310@test-agent.com / different org) attempts to read a private wishlist owned by {{USER_EMAIL}}; private scope is default (no scope param passed); GraphiQL accessible,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; emily_email=test-emily.johnson-20260310@test-agent.com; emily_password=TestPass123!; storeId={{STORE_ID}}; cultureName={{CULTURE_NAME}}; currencyCode={{CURRENCY_CODE}}; listName=AGENT-TEST-WL-024-PRIVATE,"[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save <MAIN_TOKEN>
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button → set Authorization: Bearer <MAIN_TOKEN> via execCommand('insertText') → screenshot
+[ACT] Type query: query { me { id } } → execute → save <MAIN_USER_ID>
+[SETUP] Type mutation: mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""<MAIN_USER_ID>"" listName: ""AGENT-TEST-WL-024-PRIVATE"" cultureName: ""{{CULTURE_NAME}}"" currencyCode: ""{{CURRENCY_CODE}}"" }) { id scope } } → execute → save <LIST_ID> → confirm scope is ""Private"" or absent (default private)
+[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=test-emily.johnson-20260310@test-agent.com&password=TestPass123!&storeId={{STORE_ID}} → save <EMILY_TOKEN>
+[ACT] Click ""Headers"" button → replace with Authorization: Bearer <EMILY_TOKEN> via execCommand('insertText') → screenshot to verify Emily's token
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { wishlist(listId: ""<LIST_ID>"") { id name scope items { productId } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — confirm access denied error is present","[RESPONSE] Response panel shows structured result (no crash)
+[ERRORS] errors[] non-empty — at least one error with message containing ""Access denied"" or ""access denied""
+[DATA] data.wishlist is null (private list not exposed to any other user regardless of org membership)",[CONSOLE] No unhandled server exceptions in GraphiQL,Emily receives list data (privacy violation — private scope bypassed by org membership); errors[] empty; HTTP 500,"Authenticate as {{USER_EMAIL}} → execute removeWishlist(command: { listId: ""<LIST_ID>"" })",xAPI,Automated
+WL-025,Personal Account (No Org) — Can Create Private Wishlist and Cannot See Org-Scoped Wishlists,GraphQL > Wishlist > B2B,High,BL-AUTH-004,ECL-2.1; ECL-14.1,BLOCKED: qa-agent-slot2@virtocommerce.com password unknown — test cannot proceed until personal account credentials are supplied. Once unblocked: personal account user has no organizationId on me.contact.organizationId; org-scoped wishlist created by {{USER_EMAIL}} has known <ORG_LIST_ID>; GraphiQL accessible,personal_email=qa-agent-slot2@virtocommerce.com; personal_password=<REQUIRED — BLOCKED>; storeId={{STORE_ID}}; cultureName={{CULTURE_NAME}}; currencyCode={{CURRENCY_CODE}}; listName=AGENT-TEST-WL-025-PERSONAL,"[BLOCKED] Obtain working credentials for qa-agent-slot2@virtocommerce.com before executing this test case
+[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=qa-agent-slot2@virtocommerce.com&password=<PERSONAL_PASSWORD>&storeId={{STORE_ID}} → save <PERSONAL_TOKEN>
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button → set Authorization: Bearer <PERSONAL_TOKEN> via execCommand('insertText') → screenshot
+[ACT] Type query: query { me { id contact { organizationId } } } → execute → confirm organizationId is null or absent (personal account) → save <PERSONAL_USER_ID>
+[ACT] Click query editor → clear; type mutation: mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""<PERSONAL_USER_ID>"" listName: ""AGENT-TEST-WL-025-PERSONAL"" cultureName: ""{{CULTURE_NAME}}"" currencyCode: ""{{CURRENCY_CODE}}"" }) { id name scope } } → execute → save <PERSONAL_LIST_ID>
+[SETUP] Authenticate as {{USER_EMAIL}} → create org-scoped wishlist AGENT-TEST-WL-025-ORG → save <ORG_LIST_ID> → switch back to personal token
+[ACT] Type query: query { wishlist(listId: ""<ORG_LIST_ID>"") { id name scope } } → execute
+[WAIT] Response panel shows result
+[READ] Verify personal user cannot read org-scoped wishlist","[RESPONSE] All operations return structured result (no crash)
+[ERRORS] Auth token obtained successfully; no errors on createWishlist for personal account
+[DATA] me.contact.organizationId is null or absent (confirms personal account)
+[DATA] Personal wishlist created with scope = ""Private"" (no org scope possible without org membership)
+[DATA] wishlist query for <ORG_LIST_ID> returns errors[] with ""Access denied"" and data.wishlist = null",[CONSOLE] No unhandled server exceptions in GraphiQL,Personal user auth token request fails (BLOCKED state); createWishlist assigns org scope to personal user; personal user can read org-scoped list from another org (isolation failure),If personal wishlist was created: authenticate as qa-agent-slot2 → removeWishlist(<PERSONAL_LIST_ID>); if org wishlist was created: authenticate as {{USER_EMAIL}} → removeWishlist(<ORG_LIST_ID>),xAPI,Manual
+WL-026,Personal Account — Cannot Access Org-Scoped Wishlist by ID (Access Denied),GraphQL > Wishlist > B2B,Critical,BL-B2B-001; BL-AUTH-006,ECL-2.1; ECL-14.1,BLOCKED: qa-agent-slot2@virtocommerce.com password unknown — test cannot proceed until personal account credentials are supplied. Once unblocked: personal account has no organizationId; org-scoped wishlist with known <ORG_LIST_ID> created by {{USER_EMAIL}}; GraphiQL accessible,personal_email=qa-agent-slot2@virtocommerce.com; personal_password=<REQUIRED — BLOCKED>; org_list_id=<ORG_LIST_ID> from WL-026 setup; storeId={{STORE_ID}},"[BLOCKED] Obtain working credentials for qa-agent-slot2@virtocommerce.com before executing this test case
+[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=qa-agent-slot2@virtocommerce.com&password=<PERSONAL_PASSWORD>&storeId={{STORE_ID}} → save <PERSONAL_TOKEN>
+[SETUP] In a separate step — authenticate as {{USER_EMAIL}} → create org-scoped wishlist AGENT-TEST-WL-026-ORG → save <ORG_LIST_ID> → confirm scope = ""Organization""
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button → set Authorization: Bearer <PERSONAL_TOKEN> via execCommand('insertText') → screenshot to verify personal account token
+[ACT] Type query: query { me { id contact { organizationId } } } → execute → confirm organizationId is null (personal account, no org)
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type query: query { wishlist(listId: ""<ORG_LIST_ID>"") { id name scope items { productId } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — confirm access denied or null returned for org-scoped list","[RESPONSE] Response panel shows structured result (no crash)
+[ERRORS] errors[] non-empty with message containing ""Access denied"" or ""access denied""; OR data.wishlist is null
+[DATA] Personal account user (no org) cannot read any org-scoped wishlist by ID
+[DATA] me.contact.organizationId confirmed null — this is a genuine personal (non-org) account",[CONSOLE] No unhandled server exceptions in GraphiQL,Personal user receives org-scoped list data (BL-B2B-001 isolation failure); errors[] empty; HTTP 500; organizationId unexpectedly non-null on personal account,"Authenticate as {{USER_EMAIL}} → execute removeWishlist(command: { listId: ""<ORG_LIST_ID>"" })",xAPI,Manual
