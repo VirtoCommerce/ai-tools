@@ -215,6 +215,8 @@ All agents MUST interact with the browser like a real user. This means:
 - Never bypass UI flows by calling APIs or running scripts unless the test specifically targets API behavior
 - If a button must be clicked to proceed, click it — do not skip steps by navigating directly to the result page
 
+**Do NOT use Evaluate JavaScript** (`browser_evaluate`, `evaluate_script`, or similar MCP tools) unless absolutely necessary. Examples of acceptable use: extracting a value not exposed in the DOM, working around a known MCP tool limitation, or verifying a JS-only side effect (e.g., `dataLayer` for GA4). If you can accomplish the action with click/fill/type/hover/scroll — use those instead. Every `evaluate` call must include a brief comment explaining why a real-user action was insufficient.
+
 This is **mandatory** for all QA agents without exception.
 
 ## Platform Constraints
