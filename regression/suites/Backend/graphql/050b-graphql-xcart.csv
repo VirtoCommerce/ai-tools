@@ -638,3 +638,219 @@ GQL-067,xCart - Checkout Blocked When All Items Unselected — createOrderFromCa
 [DATA] NOT ACCEPTABLE: order created with items that had selectedForCheckout=false (BL-CHK-001 violated — P0 bug)","[ROUNDTRIP] If order was created: query order to confirm items[] = [] or order status reflects empty; confirm no payment captured for $0 order
 [ADMIN] If order created: check Admin Orders — order should be empty or not exist
 [CONSOLE] No JS errors in GraphiQL","order created with actual items despite all selectedForCheckout=false (P0 — BL-CHK-001 violated; revenue-impacting bug); errors[] empty AND order items > 0 with unselected items; HTTP 500 server crash","If order was created: cancel it via Admin (Orders > Cancel). Run clearCart mutation on the test cart.","BL-GQL-001; BL-CHK-001; order-creation-matrix.md",Generated
+GQL-068,xCart - removeCoupon Happy Path — Remove Applied Coupon,GraphQL > xCart > removeCoupon,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; cart with at least 1 item; valid coupon code ""TESTCOUPON"" exists and is applied; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; couponCode=""TESTCOUPON""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab in bottom panel — NOT ""Variables"") → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
+[SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
+[SETUP] Apply coupon: mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" couponCode: ""TESTCOUPON"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id coupons { code isAppliedSuccessfully } discountTotal { amount } } } → verify coupons[0].isAppliedSuccessfully=true; save discountTotal.amount as <DISCOUNT_BEFORE>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { removeCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" couponCode: ""TESTCOUPON"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id coupons { code isAppliedSuccessfully } discountTotal { amount } subTotal { amount } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify coupons[] and discountTotal","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty (BL-GQL-001)
+[DATA] coupons[] is empty (no coupon entries remain)
+[MATH] discountTotal.amount = 0 (discount removed)
+[MATH] discountTotal.amount < <DISCOUNT_BEFORE> (total reduced compared to applied state)","[ROUNDTRIP] Clear editor → query cart → coupons[] empty; discountTotal.amount = 0
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; coupons[] still contains TESTCOUPON after remove; discountTotal.amount unchanged (discount not removed); GraphiQL shows auth error","remove item or delete cart via removeCart mutation","BL-GQL-001; BL-GQL-004",Generated
+GQL-069,xCart - removeCoupon Silent No-Op for Non-Existent Coupon Code,GraphQL > xCart > removeCoupon,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; cart exists with no coupons applied; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; couponCode=""NONEXISTENT_CODE_99999""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
+[SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } } → confirm no coupons applied
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { removeCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" couponCode: ""NONEXISTENT_CODE_99999"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id coupons { code isAppliedSuccessfully } discountTotal { amount } itemsCount } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify silent no-op behavior","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty — silent no-op (no error for removing non-existent coupon; BL-GQL-001)
+[DATA] coupons[] is empty (no change)
+[MATH] discountTotal.amount = 0 (unchanged)
+[DATA] itemsCount unchanged (cart not affected)","[ROUNDTRIP] Clear editor → query cart → coupons[] empty; cart intact
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty for unknown coupon code (must be silent no-op, not an error); cart modified (items removed etc.); GraphiQL crashes or returns HTTP 500","delete cart via removeCart mutation","BL-GQL-001; BL-GQL-004",Generated
+GQL-070,xCart - removeShipment Happy Path — Remove Existing Shipment,GraphQL > xCart > removeShipment,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1; ECL-8.1,"User authenticated with valid token; cart with at least 1 item; shipment added to cart and shipmentId known; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
+[SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
+[SETUP] Add shipment: mutation { addOrUpdateCartShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150 deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" } } }) { id shipments { id } } } → save shipments[0].id as <SHIPMENT_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { removeShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" shipmentId: ""<SHIPMENT_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id shipments { id } shippingTotal { amount } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify shipment removed and shippingTotal recalculated","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty (BL-GQL-001)
+[DATA] shipments[] is empty (shipment removed)
+[MATH] shippingTotal.amount = 0 (shipping cost removed after shipment deletion)","[ROUNDTRIP] Clear editor → query cart with shipments { id } → shipments[] empty; shippingTotal.amount = 0
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; shipments[] still contains removed shipment; shippingTotal.amount still reflects old shipping cost; cart becomes null","delete cart via removeCart mutation","BL-GQL-001; BL-GQL-004",Generated
+GQL-071,xCart - removeShipment with Invalid shipmentId — Error or Silent No-Op,GraphQL > xCart > removeShipment,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; cart exists with an item; no shipment added; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; shipmentId=""00000000-0000-0000-0000-000000000000""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
+[SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation with invalid UUID: mutation { removeShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" shipmentId: ""00000000-0000-0000-0000-000000000000"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id shipments { id } itemsCount } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — record errors[] and cart state","[RESPONSE] Response panel shows result (success or structured error)
+[ERRORS] EITHER: errors[] non-empty with a descriptive message (not a stack trace) OR errors[] empty — silent no-op (both are acceptable behaviors; document which applies)
+[DATA] itemsCount unchanged (cart items not affected regardless of outcome)
+[DATA] shipments[] empty (no orphaned entries created)
+[DATA] NOT ACCEPTABLE: HTTP 500 or unhandled exception","[ROUNDTRIP] Clear editor → query cart → itemsCount unchanged; cart intact
+[CONSOLE] No JS errors in GraphiQL","HTTP 500 or unhandled exception in response; itemsCount decremented (valid cart item lost); cart becomes null after invalid shipmentId; errors[] contains stack trace","delete cart via removeCart mutation","BL-GQL-001",Generated
+GQL-072,xCart - addOrUpdateCartPayment Happy Path — Set DefaultManualPaymentMethod,GraphQL > xCart > addOrUpdateCartPayment,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; cart with at least 1 item; DefaultManualPaymentMethod available on store; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; paymentGatewayCode=""DefaultManualPaymentMethod""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
+[SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { addOrUpdateCartPayment(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" } }) { id payments { paymentGatewayCode outerId } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify payment method set","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty (BL-GQL-001)
+[DATA] payments[] contains at least one entry
+[DATA] payments[0].paymentGatewayCode = ""DefaultManualPaymentMethod""","[ROUNDTRIP] Clear editor → type cart query with payments { paymentGatewayCode } → execute → payments[0].paymentGatewayCode = ""DefaultManualPaymentMethod""
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; payments[] empty after mutation; paymentGatewayCode mismatch; GraphiQL shows auth error","delete cart via removeCart mutation","BL-GQL-001; BL-GQL-004",Generated
+GQL-073,xCart - addOrUpdateCartPayment Change Method — Switch from CyberSource to Manual,GraphQL > xCart > addOrUpdateCartPayment,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; cart with item and CyberSourcePaymentMethod already set; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; firstGateway=""CyberSourcePaymentMethod""; secondGateway=""DefaultManualPaymentMethod""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
+[SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
+[SETUP] Set initial payment (CyberSource): mutation { addOrUpdateCartPayment(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" payment: { paymentGatewayCode: ""CyberSourcePaymentMethod"" } }) { id payments { paymentGatewayCode } } } → verify payments[0].paymentGatewayCode=""CyberSourcePaymentMethod""
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation to switch payment method: mutation { addOrUpdateCartPayment(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" } }) { id payments { paymentGatewayCode } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify method updated and old method gone","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty (BL-GQL-001)
+[DATA] payments[] contains entry with paymentGatewayCode = ""DefaultManualPaymentMethod""
+[NOTE] Platform behavior (verified 2026-03-30): addOrUpdateCartPayment ADDS a new payment entry — it does NOT replace the existing one. payments[] may contain multiple entries. To update an existing payment, pass its id field. This is by design (supports split payments).
+[DATA] payments.length >= 2 (CyberSource entry still present alongside new Manual entry)","[ROUNDTRIP] Clear editor → query cart with payments { id paymentGatewayCode } → both entries present
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; payments[] empty after add; DefaultManualPaymentMethod not in payments list","delete cart via removeCart mutation","BL-GQL-001; BL-GQL-004",Generated
+GQL-074,xCart - mergeCart Happy Path — Merge Two Carts Into One,GraphQL > xCart > mergeCart,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1; ECL-2.3,"User authenticated with valid token; two named carts can be created using cartName parameter; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; cartNameA=""default""; cartNameB=""secondary-cart""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Get or create Cart A (default): query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_A_ID>
+[SETUP] Add item to Cart A: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_A_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } } → save itemsCount as <CART_A_COUNT>
+[SETUP] Create Cart B (named): query { cart(storeId: ""{{STORE_ID}}"" cartName: ""secondary-cart"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_B_ID>
+[SETUP] Add item to Cart B: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_B_ID>"" cartName: ""secondary-cart"" productId: ""{{TEST_SKU}}"" quantity: 2 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mergeCart mutation: mutation { mergeCart(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_A_ID>"" secondCartId: ""<CART_B_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id productId quantity } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify merged cart contains items from both carts","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty (BL-GQL-001)
+[DATA] itemsCount >= <CART_A_COUNT> + 1 (merged — has items from both carts; same product may be consolidated into higher quantity)
+[DATA] items[] is non-empty and contains product from {{TEST_SKU}}","[ROUNDTRIP] Clear editor → query Cart A with items { id quantity } → items from both original carts present
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; itemsCount = <CART_A_COUNT> only (Cart B items not merged); merged cart empty; GraphiQL shows auth error","delete Cart A (now merged) via removeCart mutation; verify Cart B status","BL-GQL-001; BL-GQL-004",Generated
+GQL-075,xCart - mergeCart with deleteAfterMerge: true — Second Cart Removed After Merge,GraphQL > xCart > mergeCart,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1; ECL-2.3,"User authenticated with valid token; two named carts created; Cart B has items; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; cartNameB=""merge-delete-cart""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Get or create Cart A: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_A_ID>
+[SETUP] Add item to Cart A: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_A_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
+[SETUP] Create Cart B (named): query { cart(storeId: ""{{STORE_ID}}"" cartName: ""merge-delete-cart"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_B_ID>
+[SETUP] Add item to Cart B: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_B_ID>"" cartName: ""merge-delete-cart"" productId: ""{{TEST_SKU}}"" quantity: 3 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mergeCart mutation with deleteAfterMerge: mutation { mergeCart(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_A_ID>"" secondCartId: ""<CART_B_ID>"" deleteAfterMerge: true currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id quantity } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify items merged; then verify Cart B is gone
+[ACT] Clear editor → query Cart B: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_B_ID>"" cartName: ""merge-delete-cart"" currencyCode: ""USD"" cultureName: ""en-US"") { id itemsCount } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — record Cart B state after merge","[RESPONSE] Merge mutation: data without error banner
+[ERRORS] errors[] is empty on mergeCart mutation (BL-GQL-001)
+[DATA] Merged Cart A: items[] non-empty (contains items from Cart B)
+[DATA] Cart B query after merge: data.cart is null OR itemsCount = 0 (deleted or emptied per deleteAfterMerge)","[ROUNDTRIP] Clear editor → query Cart A with items — items from Cart B present
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty on merge; Cart B still accessible with original items after deleteAfterMerge (items duplicated instead of transferred); Cart A empty after merge; HTTP 500","Delete Cart A via removeCart mutation","BL-GQL-001; BL-GQL-004",Generated
+GQL-076,xCart - removeCart Happy Path — Returns true and Cart Becomes Null,GraphQL > xCart > removeCart,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; cart with at least 1 item exists; cartId and userId known; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
+[SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type removeCart mutation — NOTE: removeCart returns Boolean NOT CartType; do NOT add sub-selection fields: mutation { removeCart(command: { cartId: ""<CART_ID>"" userId: ""<USER_ID>"" }) }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify Boolean true returned
+[ACT] Clear editor → query cart with saved cartId: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"") { id itemsCount } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Read response — verify cart is null
+[SETUP] Add new item to verify new cart is created: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } } → save new id as <NEW_CART_ID>","[RESPONSE] removeCart mutation: data panel shows Boolean true (data.removeCart = true)
+[ERRORS] errors[] is empty (BL-GQL-001)
+[DATA] Cart query after remove: data.cart is null (cart no longer exists)
+[DATA] <NEW_CART_ID> != <CART_ID> (new addItem creates a brand-new cart with a different ID)","[ROUNDTRIP] addItem after remove → new cart created; new cart id differs from removed cart id
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; data.removeCart = false; cart query still returns old cart with items; new addItem returns same <CART_ID> (old cart reused); GraphQL validation error due to sub-selection on Boolean type","New cart created during verification — delete via removeCart; no cleanup needed for removed cart","BL-GQL-001; BL-GQL-004",Generated
+GQL-077,xCart - removeCart with Invalid cartId — Behavior Check,GraphQL > xCart > removeCart,High,BL-GQL-001,ECL-14.1; ECL-2.1,"User authenticated with valid token; auth header set in GraphiQL; using a non-existent cartId UUID","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; cartId=""00000000-0000-0000-0000-000000000000""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type removeCart mutation with non-existent cartId — NOTE: returns Boolean no sub-selection: mutation { removeCart(command: { cartId: ""00000000-0000-0000-0000-000000000000"" userId: ""<USER_ID>"" }) }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — record data.removeCart value and errors[] contents","[RESPONSE] Response panel shows result (success or structured error)
+[ERRORS] errors[] empty — no GraphQL error returned
+[DATA] data.removeCart = true (platform returns true even for non-existent cartId — verified 2026-03-30)
+[DATA] NOT ACCEPTABLE: HTTP 500 or unhandled server exception
+[DATA] NOT ACCEPTABLE: errors[] with stack trace or internal exception message
+[NOTE] Platform behavior: removeCart is idempotent — returns true regardless of whether cart existed. This is by design, not a bug.","[ROUNDTRIP] Real user cart (if exists) unaffected by this mutation with wrong cartId
+[CONSOLE] No JS errors in GraphiQL","HTTP 500 or unhandled exception; errors[] contains stack trace; real user cart deleted by wrong-cartId call","No cart to clean up (invalid ID used)","BL-GQL-001",Generated
+GQL-078,xCart - removeCartItem with Invalid lineItemId — Error or No-Op; Cart Unchanged,GraphQL > xCart > removeCartItem,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"User authenticated with valid token; cart with at least 1 item; auth header set in GraphiQL; using a lineItemId that does not exist in the cart","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; invalidLineItemId=""00000000-0000-0000-0000-000000000000""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
+[SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } } → save itemsCount as <ITEMS_BEFORE>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type removeCartItem with invalid lineItemId: mutation { removeCartItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" lineItemId: ""00000000-0000-0000-0000-000000000000"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id } subTotal { amount } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — record errors[], itemsCount, and items[] to verify cart unchanged","[RESPONSE] Response panel shows result (success or structured error)
+[ERRORS] EITHER: errors[] non-empty with descriptive message (not a stack trace) OR errors[] empty — silent no-op; document actual behavior
+[DATA] itemsCount = <ITEMS_BEFORE> (original item NOT removed — cart unchanged)
+[DATA] items[] still contains original item with valid productId
+[MATH] subTotal.amount unchanged (no items removed)
+[DATA] NOT ACCEPTABLE: HTTP 500 or unhandled exception","[ROUNDTRIP] Clear editor → query cart → itemsCount = <ITEMS_BEFORE>; original item still present
+[CONSOLE] No JS errors in GraphiQL","itemsCount decremented (valid item removed by invalid lineItemId — P0: cart data corruption); subTotal reduced; HTTP 500 or stack trace in errors[]; cart becomes null after mutation","delete cart via removeCart mutation","BL-GQL-001; BL-GQL-004",Generated
+GQL-079,xCart - addOrUpdateCartShipment Change Method — Switch from Ground to Air,GraphQL > xCart > addOrUpdateCartShipment,High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1; ECL-8.1,"User authenticated with valid token; cart with item and Ground shipment (price=150) already set; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; initialMethod=""FixedRate/Ground"" price=150; newMethod=""FixedRate/Air"" price=250","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
+[SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
+[SETUP] Set initial shipment (Ground price=150 — MUST match FixedRate/Ground rate): mutation { addOrUpdateCartShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150 deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" } } }) { id shipments { id shipmentMethodCode shipmentMethodOption price { amount } } } } → verify shipments[0].shipmentMethodOption=""Ground""; price.amount=150; save shipments[0].id as <SHIPMENT_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation to update shipment to Air (MUST include price=250 matching FixedRate/Air rate): mutation { addOrUpdateCartShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { id: ""<SHIPMENT_ID>"" shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Air"" price: 250 deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" } } }) { id shipments { id shipmentMethodCode shipmentMethodOption price { amount } } shippingTotal { amount } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify method updated to Air and price updated to 250","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty (BL-GQL-001) — NOTE: if errors[] non-empty with CartShipmentValidator price message verify price=250 was sent correctly
+[DATA] shipments[0].shipmentMethodCode = ""FixedRate""
+[DATA] shipments[0].shipmentMethodOption = ""Air""
+[MATH] shipments[0].price.amount = 250 (updated rate for Air)
+[MATH] shippingTotal.amount = 250 (cart shipping total recalculated)
+[DATA] Only one shipment present (updated in place not duplicated)","[ROUNDTRIP] Clear editor → query cart with shipments { shipmentMethodOption price { amount } } → Ground replaced by Air at 250
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty due to CartShipmentValidator price mismatch (verify price=250 was sent); shipments[] shows both Ground AND Air (duplicated instead of updated); shippingTotal still 150 (not recalculated); GraphQL validation error","delete cart via removeCart mutation","BL-GQL-001; BL-GQL-004",Generated
