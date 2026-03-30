@@ -854,3 +854,181 @@ GQL-079,xCart - addOrUpdateCartShipment Change Method — Switch from Ground to 
 [MATH] shippingTotal.amount = 250 (cart shipping total recalculated)
 [DATA] Only one shipment present (updated in place not duplicated)","[ROUNDTRIP] Clear editor → query cart with shipments { shipmentMethodOption price { amount } } → Ground replaced by Air at 250
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty due to CartShipmentValidator price mismatch (verify price=250 was sent); shipments[] shows both Ground AND Air (duplicated instead of updated); shippingTotal still 150 (not recalculated); GraphQL validation error","delete cart via removeCart mutation","BL-GQL-001; BL-GQL-004",Generated
+"GQL-080","xCart - addCartAddress Happy Path — Add Shipping Address to Cart","GraphQL > xCart > addCartAddress","Critical","BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1","User authenticated with valid token; cart with at least 1 item exists; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
+[SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation: mutation { addCartAddress(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" address: { addressType: 2 firstName: ""Test"" lastName: ""User"" city: ""New York"" countryCode: ""US"" countryName: ""United States"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" } }) { id addresses { addressType firstName lastName city countryCode line1 postalCode } } }
+[GQL] Click Execute (►) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify addresses[] contains the new shipping address","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty (BL-GQL-001)
+[DATA] addresses[] is non-empty (at least 1 entry)
+[DATA] addresses[0].addressType = 2 (Shipping)
+[DATA] addresses[0].firstName = ""Test""
+[DATA] addresses[0].city = ""New York""
+[DATA] addresses[0].countryCode = ""US""
+[DATA] addresses[0].line1 = ""123 Test St""
+[DATA] addresses[0].postalCode = ""10001""","[ROUNDTRIP] Clear editor → query cart: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"") { addresses { addressType firstName city countryCode } } } → execute → addresses[] contains entry with addressType=2 and city=""New York""
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; addresses[] empty after mutation; addressType mismatch; city or countryCode not persisted; cart becomes null","delete cart via removeCart mutation","BL-GQL-001; BL-GQL-004","Generated"
+"GQL-081","xCart - addCartAddress with Billing Type — Both Shipping and Billing Addresses Coexist","GraphQL > xCart > addCartAddress","High","BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1","User authenticated with valid token; cart with item and shipping address (addressType=2) already added; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
+[SETUP] Add item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
+[SETUP] Add shipping address (addressType=2): mutation { addCartAddress(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" address: { addressType: 2 firstName: ""Ship"" lastName: ""User"" city: ""New York"" countryCode: ""US"" countryName: ""United States"" line1: ""123 Ship St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" } }) { id addresses { addressType city } } } → verify addresses contains addressType=2
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation to add billing address (addressType=1): mutation { addCartAddress(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" address: { addressType: 1 firstName: ""Bill"" lastName: ""User"" city: ""Los Angeles"" countryCode: ""US"" countryName: ""United States"" line1: ""456 Bill Ave"" postalCode: ""90001"" regionId: ""CA"" regionName: ""California"" } }) { id addresses { addressType firstName city } } }
+[GQL] Click Execute (►) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify both address types present simultaneously","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty (BL-GQL-001)
+[DATA] addresses[] contains at least 2 entries
+[DATA] One entry has addressType = 1 (Billing) with city = ""Los Angeles""
+[DATA] One entry has addressType = 2 (Shipping) with city = ""New York"" (shipping address not overwritten by billing add)","[ROUNDTRIP] Clear editor → query cart: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"") { addresses { addressType city } } } → both addressType=1 and addressType=2 entries present
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; addresses[] contains only the billing entry (shipping overwritten); addresses[] length < 2; server returns HTTP 500; addressType mismatch","delete cart via removeCart mutation","BL-GQL-001; BL-GQL-004","Generated"
+"GQL-082","xCart - moveToSavedForLater Happy Path — Move 1 Item from Cart to Saved List","GraphQL > xCart > moveToSavedForLater","Critical","BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1","User authenticated with valid token; cart with at least 1 item; saved-for-later list accessible; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Get or create cart: query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id itemsCount items { id } } } → save id as <CART_ID>; save items[0].id as <LINE_ITEM_ID>; save itemsCount as <INITIAL_COUNT>
+[SETUP] Ensure cart has at least 1 item — if itemsCount=0: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id } } } → update <CART_ID>, <LINE_ITEM_ID>, <INITIAL_COUNT>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation — NOTE: returns CartWithListType { cart {...} list {...} }, NOT CartType: mutation { moveToSavedForLater(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" lineItemIds: [""<LINE_ITEM_ID>""] }) { cart { id itemsCount } list { id itemsCount items { id } } } }
+[GQL] Click Execute (►) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — check cart.itemsCount and list.itemsCount","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty (BL-GQL-001)
+[DATA] data.moveToSavedForLater.cart.itemsCount = <INITIAL_COUNT> - 1 (item removed from main cart)
+[DATA] data.moveToSavedForLater.list.itemsCount >= 1 (item added to saved-for-later list)
+[DATA] data.moveToSavedForLater.list.items[] contains an entry with id = <LINE_ITEM_ID> (or a new id for the transferred item)
+[DATA] data.moveToSavedForLater.cart.id = <CART_ID> (main cart identity preserved)","[ROUNDTRIP] Clear editor → query cart: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"") { itemsCount items { id } } } → itemsCount = <INITIAL_COUNT> - 1; moved item absent from main cart
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; main cart itemsCount unchanged (item not moved); list.itemsCount = 0 after move; response is CartType instead of CartWithListType (schema regression); HTTP 500","clear main cart via clearCart mutation; saved-for-later list cleared as part of test context","BL-GQL-001; BL-GQL-004","Generated"
+"GQL-083","xCart - moveToSavedForLater All Items — Main Cart Empty; All Items in Saved List","GraphQL > xCart > moveToSavedForLater","High","BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1; ECL-2.3","User authenticated with valid token; cart with exactly 2 items; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Get or create cart and add first item: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id } } } → save id as <CART_ID>; save items[0].id as <ITEM_ID_1>
+[SETUP] Add second item (use {{TEST_SKU_2}} if available; otherwise re-add {{TEST_SKU}} with quantity 1 as a separate line): mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU_2}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id } } } → save newly added item id as <ITEM_ID_2>; verify itemsCount = 2
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation moving BOTH items: mutation { moveToSavedForLater(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" lineItemIds: [""<ITEM_ID_1>"", ""<ITEM_ID_2>""] }) { cart { id itemsCount } list { id itemsCount items { id } } } }
+[GQL] Click Execute (►) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify cart.itemsCount = 0 and list.itemsCount = 2","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty (BL-GQL-001)
+[DATA] data.moveToSavedForLater.cart.itemsCount = 0 (main cart is empty)
+[DATA] data.moveToSavedForLater.list.itemsCount = 2 (both items in saved list)
+[DATA] data.moveToSavedForLater.list.items[] length = 2","[ROUNDTRIP] Clear editor → query cart: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"") { itemsCount } } → itemsCount = 0 persisted; cart exists but empty
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; cart.itemsCount still = 2 (items not moved); list.itemsCount = 0; only one item moved (partial move); HTTP 500 server error","clear saved-for-later list (move items back or delete); ensure main cart is cleared","BL-GQL-001; BL-GQL-004","Generated"
+"GQL-084","xCart - moveFromSavedForLater Happy Path — Move Item Back to Main Cart","GraphQL > xCart > moveFromSavedForLater","Critical","BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1","User authenticated with valid token; item already moved to saved-for-later list (use moveToSavedForLater as setup); saved-for-later cartId known; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Add item to main cart: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id } } } → save id as <MAIN_CART_ID>; save items[0].id as <LINE_ITEM_ID>; save itemsCount as <INITIAL_COUNT>
+[SETUP] Move item to saved-for-later: mutation { moveToSavedForLater(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<MAIN_CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" lineItemIds: [""<LINE_ITEM_ID>""] }) { cart { id itemsCount } list { id itemsCount items { id } } } } → save list.id as <SAVED_CART_ID>; save list.items[0].id as <SAVED_ITEM_ID>; verify cart.itemsCount = <INITIAL_COUNT> - 1; verify list.itemsCount >= 1
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation — CRITICAL: cartId here is the SAVED-FOR-LATER cart id (<SAVED_CART_ID>), NOT the main cart id; returns CartWithListType: mutation { moveFromSavedForLater(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<SAVED_CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" lineItemIds: [""<SAVED_ITEM_ID>""] }) { cart { id itemsCount } list { id itemsCount } } }
+[GQL] Click Execute (►) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify cart.itemsCount increased and list.itemsCount decreased","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty (BL-GQL-001)
+[DATA] data.moveFromSavedForLater.cart.itemsCount = <INITIAL_COUNT> (item returned to main cart; count restored)
+[DATA] data.moveFromSavedForLater.list.itemsCount = 0 (saved list now empty)
+[DATA] data.moveFromSavedForLater.cart.id = <MAIN_CART_ID>","[ROUNDTRIP] Clear editor → query main cart: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<MAIN_CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"") { itemsCount items { id } } } → itemsCount = <INITIAL_COUNT>; item present in main cart
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; cart.itemsCount unchanged (item not returned to main cart); list.itemsCount unchanged (item not removed from saved list); passing main cart ID as cartId causes mutation to fail silently or error (key design constraint — cartId must be the saved-for-later cart id); HTTP 500","delete main cart via removeCart mutation","BL-GQL-001; BL-GQL-004","Generated"
+"GQL-085","xCart - moveFromSavedForLater Round-Trip — Add, Move to Saved, Move Back, Verify Same Product","GraphQL > xCart > moveFromSavedForLater","High","BL-GQL-001; BL-GQL-004; BL-CROSS-005","ECL-14.1; ECL-2.1; ECL-2.3","User authenticated with valid token; auth header set in GraphiQL; {{TEST_SKU}} product available","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Add item to cart: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""{{TEST_SKU}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id productId } } } → save id as <CART_ID>; save items[0].id as <LINE_ITEM_ID>; save items[0].productId as <PRODUCT_ID>
+[STEP 1 — moveToSavedForLater] Click query editor → clear → type mutation: mutation { moveToSavedForLater(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" lineItemIds: [""<LINE_ITEM_ID>""] }) { cart { id itemsCount } list { id itemsCount items { id productId } } } }
+[GQL] Click Execute → save list.id as <SAVED_CART_ID>; save list.items[0].id as <SAVED_ITEM_ID>; save list.items[0].productId as <SAVED_PRODUCT_ID>; verify cart.itemsCount = 0
+[ACT] Clear editor
+[STEP 2 — moveFromSavedForLater] Type mutation — NOTE: cartId = <SAVED_CART_ID> (saved-for-later cart id, NOT the main cart id): mutation { moveFromSavedForLater(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<SAVED_CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" lineItemIds: [""<SAVED_ITEM_ID>""] }) { cart { id itemsCount items { id productId } } list { id itemsCount } } }
+[GQL] Click Execute → read response
+[READ] Inspect cart.itemsCount and items[].productId; compare with <PRODUCT_ID>","[RESPONSE] Both mutations: data without error banner
+[ERRORS] errors[] empty on both mutation calls (BL-GQL-001)
+[DATA] After moveToSavedForLater: cart.itemsCount = 0; list.itemsCount >= 1; <SAVED_PRODUCT_ID> = <PRODUCT_ID> (product identity preserved in saved list)
+[DATA] After moveFromSavedForLater: cart.itemsCount = 1; list.itemsCount = 0
+[DATA] items[].productId in final cart response = <PRODUCT_ID> (same product returned — no product substitution; BL-CROSS-005)","[ROUNDTRIP] Clear editor → query cart: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"") { itemsCount items { id productId } } } → productId matches <PRODUCT_ID>; round-trip data integrity confirmed
+[CONSOLE] No JS errors in GraphiQL during either mutation","errors[] non-empty on either mutation; final productId != <PRODUCT_ID> (product substituted during round-trip — data integrity bug); cart.itemsCount = 0 after moveFrom (item lost); list.itemsCount > 0 after moveFrom (item duplicated in saved list)","delete cart via removeCart mutation","BL-GQL-001; BL-GQL-004; BL-CROSS-005","Generated"
+"GQL-086","xCart - createConfiguredLineItem — Returns ConfigurationLineItemType with Product Info","GraphQL > xCart > createConfiguredLineItem","High","BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1","User authenticated with valid token; a product ID known (configurable product preferred; non-configurable product acceptable — id field may be null); auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; configurableProductId={{TEST_SKU}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation — NOTE: returns ConfigurationLineItemType, NOT CartType; do NOT query cart-level fields: mutation { createConfiguredLineItem(command: { storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" configurableProductId: ""{{TEST_SKU}}"" }) { id text quantity product { id name } currency { code } listPrice { amount } salePrice { amount } extendedPrice { amount } discountAmount { amount } } }
+[GQL] Click Execute (►) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — inspect all ConfigurationLineItemType fields","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty (BL-GQL-001)
+[DATA] data.createConfiguredLineItem is non-null (object returned)
+[DATA] data.createConfiguredLineItem.product is non-null
+[DATA] data.createConfiguredLineItem.product.id = ""{{TEST_SKU}}"" (product resolved from configurableProductId)
+[DATA] data.createConfiguredLineItem.product.name is non-empty string
+[DATA] data.createConfiguredLineItem.currency.code = ""USD""
+[DATA] data.createConfiguredLineItem.listPrice.amount >= 0 (price field populated)
+[NOTE] data.createConfiguredLineItem.id may be null when product is not truly configurable — this is expected platform behavior, not a bug","[ROUNDTRIP] Clear editor → query product via catalog: query { product(id: ""{{TEST_SKU}}"" storeId: ""{{STORE_ID}}"") { id name } } → name matches data.createConfiguredLineItem.product.name
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; data.createConfiguredLineItem is null (entire object null — not just id field); product.id null or mismatched; currency.code not ""USD""; listPrice.amount < 0; response is CartType instead of ConfigurationLineItemType (schema regression)","No cart created by this mutation — no cleanup required","BL-GQL-001; BL-GQL-004","Generated"
+"GQL-087","xCart - changeCartConfiguredItem — Update Quantity on Configured Line Item","GraphQL > xCart > changeCartConfiguredItem","High","BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1","User authenticated with valid token; cart contains a configurable product line item (lineItemId known); auth header set in GraphiQL — MANUAL SETUP REQUIRED: executor must identify a configurable product in the test environment first","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; configurable_product_id=<MANUAL: identify configurable product in env>","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] MANUAL STEP — identify a configurable product: query { products(storeId: ""{{STORE_ID}}"" productType: ""Configurable"" first: 1) { items { id name } } } → save product id as <CONFIGURABLE_PRODUCT_ID>. If no configurable products exist, SKIP this test and document as ""No configurable product available in environment"".
+[SETUP] Add configurable product to cart: mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" productId: ""<CONFIGURABLE_PRODUCT_ID>"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount items { id productId quantity } } } → save id as <CART_ID>; save matching items[].id as <LINE_ITEM_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation — returns CartType: mutation { changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" lineItemId: ""<LINE_ITEM_ID>"" quantity: 3 }) { id itemsCount items { id productId quantity extendedPrice { amount } } subTotal { amount } } }
+[GQL] Click Execute (►) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify item quantity updated to 3 and prices recalculated","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty (BL-GQL-001)
+[DATA] items[] contains entry with id = <LINE_ITEM_ID> and quantity = 3
+[MATH] items[].extendedPrice.amount = 3 × unit price (within rounding tolerance)
+[MATH] subTotal.amount recalculated to reflect quantity=3
+[DATA] itemsCount unchanged (same line item updated — not a new item added)","[ROUNDTRIP] Clear editor → query cart: query { cart(storeId: ""{{STORE_ID}}"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"") { items { id quantity extendedPrice { amount } } subTotal { amount } } } → quantity=3 persisted; extendedPrice and subTotal match mutation response
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; quantity still = 1 (not updated); extendedPrice not recalculated after quantity change; new duplicate line item created instead of updating existing; subTotal stale; HTTP 500","delete cart via removeCart mutation","BL-GQL-001; BL-GQL-004","Generated"
+"GQL-088","xCart - addWishlistBulkItem Happy Path — Add Product to Single Wishlist","GraphQL > xCart > addWishlistBulkItem","Critical","BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1","User authenticated with valid token; wishlist created in setup; product available; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; productId={{TEST_SKU}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Create wishlist — requires userId: mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" listName: ""AGENT-TEST-Wishlist-GQL088"" }) { id name } } → save id as <WISHLIST_ID>; verify name = ""AGENT-TEST-Wishlist-GQL088""
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation — NOTE: returns { wishlists { id itemsCount } } NOT CartType: mutation { addWishlistBulkItem(command: { listIds: [""<WISHLIST_ID>""] productId: ""{{TEST_SKU}}"" quantity: 1 }) { wishlists { id itemsCount } } }
+[GQL] Click Execute (►) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify wishlists[].itemsCount = 1","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty (BL-GQL-001)
+[DATA] data.addWishlistBulkItem.wishlists is non-empty
+[DATA] wishlists[0].id = <WISHLIST_ID>
+[DATA] wishlists[0].itemsCount = 1 (product added to wishlist)","[ROUNDTRIP] Clear editor → query wishlist: query { wishlist(listId: ""<WISHLIST_ID>"") { id itemsCount items { id productId } } } → execute → itemsCount = 1; items[0].productId = ""{{TEST_SKU}}""
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; wishlists[] empty in response; wishlists[0].itemsCount = 0 (item not added); wishlist id mismatch; HTTP 500 or auth error","mutation { removeWishlist(command: { listId: ""<WISHLIST_ID>"" }) } — cleanup AGENT-TEST-Wishlist-GQL088","BL-GQL-001; BL-GQL-004","Generated"
+"GQL-089","xCart - addWishlistBulkItem to Multiple Wishlists — Single Call Adds Product to Both","GraphQL > xCart > addWishlistBulkItem","High","BL-GQL-001; BL-GQL-004","ECL-14.1; ECL-2.1; ECL-2.3","User authenticated with valid token; 2 wishlists created in setup; product available; auth header set in GraphiQL","storeId={{STORE_ID}}; currencyCode=""USD""; cultureName=""en-US""; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; productId={{TEST_SKU}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab — NOT Variables) → set auth token using execCommand('insertText'); take screenshot to confirm
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Create first wishlist: mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" listName: ""AGENT-TEST-Wishlist-GQL089-A"" }) { id name } } → save id as <WISHLIST_ID_A>
+[SETUP] Create second wishlist: mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" listName: ""AGENT-TEST-Wishlist-GQL089-B"" }) { id name } } → save id as <WISHLIST_ID_B>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type mutation with both wishlist IDs in listIds array — NOTE: returns { wishlists { id itemsCount } } NOT CartType: mutation { addWishlistBulkItem(command: { listIds: [""<WISHLIST_ID_A>"", ""<WISHLIST_ID_B>""] productId: ""{{TEST_SKU}}"" quantity: 1 }) { wishlists { id itemsCount } } }
+[GQL] Click Execute (►) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — verify wishlists[] has 2 entries both with itemsCount = 1","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty (BL-GQL-001)
+[DATA] data.addWishlistBulkItem.wishlists length = 2 (both wishlists returned)
+[DATA] wishlists entry with id=<WISHLIST_ID_A>: itemsCount = 1
+[DATA] wishlists entry with id=<WISHLIST_ID_B>: itemsCount = 1 (product added to BOTH wishlists in a single mutation call)","[ROUNDTRIP] Clear editor → query { wishlist(listId: ""<WISHLIST_ID_A>"") { id itemsCount items { productId } } } → itemsCount = 1; items[0].productId = ""{{TEST_SKU}}"". Repeat for wishlist B → same result.
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; wishlists[] length = 1 (only one wishlist updated — bulk add partial failure); either wishlist itemsCount = 0; product added to only one of two lists; response is CartType or wrong schema","mutation { removeWishlist(command: { listId: ""<WISHLIST_ID_A>"" }) } and mutation { removeWishlist(command: { listId: ""<WISHLIST_ID_B>"" }) } — cleanup both AGENT-TEST-Wishlist-GQL089-* lists","BL-GQL-001; BL-GQL-004","Generated"
