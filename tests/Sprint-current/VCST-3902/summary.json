@@ -1,0 +1,61 @@
+{
+  "ticket": "VCST-3902",
+  "verdict": "FAIL",
+  "date": "2026-03-31",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1010.0",
+    "theme": "2.45.0-pr-2226-1bdb",
+    "relevant_modules": {
+      "VirtoCommerce.Cart": "3.1003.0-pr-186",
+      "VirtoCommerce.XCart": "3.1005.0-pr-106"
+    }
+  },
+  "agents_dispatched": ["qa-frontend-expert", "qa-testing-expert"],
+  "total_cases": 10,
+  "passed": 6,
+  "failed": 3,
+  "blocked": 1,
+  "bugs_filed": [],
+  "bugs_found": [
+    {
+      "id": "BUG-1",
+      "severity": "P0",
+      "title": "Double-click ADD TO CART creates duplicate configurable product lines",
+      "product": "Configurable Hat",
+      "bl_violation": "BL-CHK-003"
+    },
+    {
+      "id": "BUG-2",
+      "severity": "High",
+      "title": "Typing over-max quantity sends intermediate digit to cart via debounce",
+      "product": "Base product EN (per-variation stepper)"
+    },
+    {
+      "id": "BUG-3",
+      "severity": "Medium",
+      "title": "Synchronous rapid clicks on quantity stepper lose increments (0ms spacing)",
+      "product": "Base product EN (per-variation stepper)"
+    }
+  ],
+  "business_rules_verified": [
+    "BL-CAT-006 (PASS - required sections enforced)",
+    "BL-CART-001 (PASS - stepper respects min/max)",
+    "BL-PRICE-001 (PASS - prices correct after config changes)",
+    "BL-CHK-003 (FAIL - double-submit prevention missing on Configurable Hat)"
+  ],
+  "business_rules_not_verified": [
+    "BL-CART-007 (blocked - no edit-from-cart mechanism found)"
+  ],
+  "exploratory": {
+    "charter": "Risk-based: quantity/state management edge cases for configurable products + cart",
+    "heuristic": "SFDPOT",
+    "findings": {
+      "bugs": 3,
+      "questions": 1,
+      "observations": 8,
+      "risks": 0
+    }
+  },
+  "artifacts": "tests/Sprint-current/VCST-3902/"
+}

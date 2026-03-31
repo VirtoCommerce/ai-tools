@@ -256,7 +256,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 41,
+      "testCount": 42,
       "estimatedMinutes": 29,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -953,7 +953,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 63,
+      "testCount": 64,
       "estimatedMinutes": 52,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1473,8 +1473,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 62,
-      "estimatedMinutes": 43,
+      "testCount": 68,
+      "estimatedMinutes": 47,
       "agent": "qa-frontend-expert",
       "tags": [
         "configurable-products",
@@ -1492,8 +1492,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 55,
-      "estimatedMinutes": 38,
+      "testCount": 57,
+      "estimatedMinutes": 40,
       "agent": "qa-frontend-expert",
       "tags": [
         "configurable-products",
