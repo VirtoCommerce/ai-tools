@@ -219,12 +219,12 @@ SMK-014,Payment — Credit Card Authorization,Smoke > Payment,Critical,"BL-PAY-0
 [CONSOLE] no payment script errors (note: ad-blockers may block iframe — ECL-14.6)
 [NETWORK] no CORS errors on payment form requests","Payment form blank after page load (iframe blocked by ad-blocker — ECL-14.6), card fields reject valid test card, payment hangs >30s, 3DS challenge appears in test mode, button remains active after first click (BL-CHK-002)",none,VCST-3387,Manual
 SMK-015,Order Confirmation — GA4 Purchase Event Fired,Smoke > GA4,Critical,BL-CROSS-005,ECL-11.1,"On order confirmation page after successful order (follow-on from ESM-010), GA4 tracking enabled",front_url={{FRONT_URL}},"[WAIT] on order confirmation page (after ESM-010 order)
-[ACT] evaluate window.dataLayer: window.dataLayer.filter(e => e.event === 'purchase')
+[ACT] evaluate window.dataLayer: window.dataLayer.filter(e => e[1] === 'purchase')
 [ASSERT] purchase event found with correct transaction_id
-[ACT] evaluate for duplicates: window.dataLayer.filter(e => e.event === 'purchase').length === 1
+[ACT] evaluate for duplicates: window.dataLayer.filter(e => e[1] === 'purchase').length === 1
 [ACT] refresh the confirmation page
 [WAIT] page reloads
-[ACT] evaluate window.dataLayer again: window.dataLayer.filter(e => e.event === 'purchase').length","[STATE] window.dataLayer contains exactly 1 'purchase' event before page refresh (BL-CROSS-005)
+[ACT] evaluate window.dataLayer again: window.dataLayer.filter(e => e[1] === 'purchase').length","[STATE] window.dataLayer contains exactly 1 'purchase' event before page refresh (BL-CROSS-005)
 [STATE] purchase event transaction_id matches order number displayed on confirmation page
 [STATE] purchase event value is a positive number (not 0 or negative)
 [STATE] purchase event items[] is non-empty with product names
