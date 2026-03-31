@@ -1,0 +1,27 @@
+{
+  "ticket": "VCST-4830",
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-03-31",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1010.0",
+    "theme": "vc-theme-b2b-vue-2.45.0-pr-2229",
+    "relevant_modules": {
+      "VirtoCommerce.XCart": "3.1005.0-pr-106-ad89"
+    }
+  },
+  "agents_dispatched": ["qa-backend-expert", "qa-frontend-expert", "qa-testing-expert"],
+  "total_cases": 17,
+  "passed": 16,
+  "failed": 0,
+  "blocked": 1,
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-CHK-005", "BL-SHIP-001", "BL-SHIP-004"],
+  "exploratory": {
+    "charter": "Risk charter for VCST-4830 — shipping address edit integration boundaries",
+    "heuristic": "SFDPOT",
+    "findings": { "bugs": 0, "questions": 1, "observations": 3, "risks": 0 }
+  },
+  "artifacts": "tests/Sprint-current/VCST-4830/",
+  "notes": "C5 (complete checkout via CyberSource) blocked by iframe MCP limitation, not a bug. Core fix verification fully confirmed via GraphQL — address key preserved across multiple updates."
+}

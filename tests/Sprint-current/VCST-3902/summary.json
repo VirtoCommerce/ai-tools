@@ -11,7 +11,9 @@
       "VirtoCommerce.XCart": "3.1005.0-pr-106"
     }
   },
-  "agents_dispatched": ["qa-frontend-expert", "qa-testing-expert"],
+  "pr": "VirtoCommerce/vc-frontend#2226",
+  "pr_branch": "feat/VCST-3902-quantity-stepper",
+  "agents_dispatched": ["qa-frontend-expert", "qa-testing-expert", "test-management-specialist"],
   "total_cases": 10,
   "passed": 6,
   "failed": 3,
@@ -23,39 +25,61 @@
       "severity": "P0",
       "title": "Double-click ADD TO CART creates duplicate configurable product lines",
       "product": "Configurable Hat",
-      "bl_violation": "BL-CHK-003"
+      "bl_violation": "BL-CHK-003",
+      "caused_by_pr": true,
+      "root_cause": "onConfigurableSubmit() in add-to-cart.vue missing `if (loading.value) return` guard — Vue reactivity doesn't propagate disabled state synchronously, allowing two clicks in same event loop frame",
+      "file": "client-app/shared/cart/components/add-to-cart.vue",
+      "function": "onConfigurableSubmit()"
     },
     {
       "id": "BUG-2",
-      "severity": "High",
-      "title": "Typing over-max quantity sends intermediate digit to cart via debounce",
-      "product": "Base product EN (per-variation stepper)"
+      "severity": "P0",
+      "title": "Cart quantity input accepts and persists invalid values (over-max, under-min, zero) — two-layer validation failure",
+      "product": "Straws Paper Black 24cm-6mm Pack 500pcs (min=9, max=129)",
+      "bl_violation": "BL-CART-001, BL-CART-006",
+      "caused_by_pr": false,
+      "root_cause_frontend": "handleChange() in vc-add-to-cart.vue does not check isValid before emitting; cart-line-items.vue sets disable-validation=true",
+      "root_cause_backend": "changeCartItemsQuantity xAPI mutation accepts ANY integer — no min/max/stock validation server-side",
+      "files": [
+        "client-app/ui-kit/components/organisms/add-to-cart/vc-add-to-cart.vue",
+        "client-app/shared/cart/components/cart-line-items.vue"
+      ],
+      "test_evidence": {
+        "qty_999_max_129": "Accepted, persisted, total $15,884.10",
+        "qty_0_min_9": "Accepted, item silently removed",
+        "qty_5_min_9": "Accepted, persisted below minimum",
+        "qty_130_max_129": "Accepted, persisted above max"
+      }
     },
     {
       "id": "BUG-3",
-      "severity": "Medium",
-      "title": "Synchronous rapid clicks on quantity stepper lose increments (0ms spacing)",
-      "product": "Base product EN (per-variation stepper)"
+      "severity": "P1",
+      "title": "Rapid stepper clicks (0ms) lose increments — 5 clicks = qty 1-2 instead of 5",
+      "product": "Base product EN (per-variation stepper)",
+      "caused_by_pr": false,
+      "root_cause": "Vue reactivity batches synchronous updates into single microtask flush; watcher fires once with coalesced value; debounced handler sends only last-seen value",
+      "file": "client-app/shared/common/components/quantity-control.vue"
+    }
+  ],
+  "resolved_issues": [
+    {
+      "issue": "Missing Edit button in cart",
+      "resolution": "RESOLVED — Edit button exists inside collapsed 'Components list' accordion. Full edit-from-cart flow works correctly (Update cart, Create new configuration, separate line items).",
+      "file": "client-app/shared/common/components/configuration-items.vue"
     }
   ],
   "business_rules_verified": [
-    "BL-CAT-006 (PASS - required sections enforced)",
-    "BL-CART-001 (PASS - stepper respects min/max)",
+    "BL-CAT-006 (PASS - required sections enforced before add-to-cart)",
+    "BL-CART-007 (PASS - different configs create separate lines; edit updates in-place)",
     "BL-PRICE-001 (PASS - prices correct after config changes)",
-    "BL-CHK-003 (FAIL - double-submit prevention missing on Configurable Hat)"
-  ],
-  "business_rules_not_verified": [
-    "BL-CART-007 (blocked - no edit-from-cart mechanism found)"
+    "BL-CHK-003 (FAIL - double-submit prevention missing on configurable products)",
+    "BL-CART-001 (FAIL - max qty NOT enforced by server or client on cart quantity input)"
   ],
   "exploratory": {
     "charter": "Risk-based: quantity/state management edge cases for configurable products + cart",
     "heuristic": "SFDPOT",
-    "findings": {
-      "bugs": 3,
-      "questions": 1,
-      "observations": 8,
-      "risks": 0
-    }
+    "duration_minutes": 25,
+    "findings": { "bugs": 3, "questions": 1, "observations": 8, "risks": 0 }
   },
   "artifacts": "tests/Sprint-current/VCST-3902/"
 }

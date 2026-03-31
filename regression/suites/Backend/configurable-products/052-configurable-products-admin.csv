@@ -246,3 +246,97 @@
 [STATE] The empty-sections guard is the ONLY condition that forces IsActive to false","[API] GET after POST confirms isActive = false when sections are empty
 [ADMIN] Navigate to product > Configurations tab — Active toggle should be OFF and possibly disabled
 [CONSOLE] No server errors","isActive = true despite empty sections (guard removed); HTTP 400 rejecting empty sections; 500 server error","Delete created configuration via DELETE API after test","PR #873 — fix: Stop silently resetting product configuration IsActive (2026-03-23)","Manual"
+"CFG-CA-019","Set Depends On Dependency on a Section via Admin UI","Catalog > Configurable Products > Conditional Sections","Critical","BL-CAT-001","","Admin logged in at {{BACK_URL}}. Seed product with conditional sections exists: Section A (Base Options, required, no dependency) and Section B (Accessories, optional). Section IDs known from prior GET API call or Admin UI.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_CONDITIONAL.slug); sectionB_name=Accessories; sectionA_name=Base Options","[NAV] Navigate to {{BACK_URL}} and log in as {{ADMIN_EMAIL}} / {{ADMIN_PASSWORD}}
+[NAV] Navigate to Catalog module
+[NAV] Search for seed product @td(CFG_CONDITIONAL.slug) and open it
+[NAV] Open the Configurations tab or section
+[ACT] Click on Section B (Accessories) to open its detail blade
+[ASSERT] Observe the Depends On field or dropdown in the section detail blade
+[ACT] Click the Depends On ui-select dropdown
+[ASSERT] Observe dropdown options listed
+[ACT] Select Section A (Base Options) from the dropdown
+[ACT] Click Save or OK to persist the section
+[NAV] Re-open the Accessories section detail blade
+[ASSERT] Verify Depends On still shows Base Options","[DOM] Depends On dropdown is visible in the section detail blade
+[STATE] Dropdown lists all other sections of the same product (at minimum: Base Options)
+[STATE] Base Options is selectable from the dropdown
+[STATE] Save completes without error toast
+[DOM] After re-open: Depends On field shows Base Options — dependency persisted
+[STATE] No other section data changed (name, required flag, options unchanged)","[API] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id> — verify sections[B].dependsOnSectionId = sectionA.id
+[CONSOLE] No Angular JS errors or $http errors in Admin SPA","Depends On dropdown not visible in section detail blade; dropdown opens but no sections listed; save fails with validation error; dependency value reverts to null on re-open; wrong section ID persisted","none (seed product restored to base state by separate teardown script)","VCST-4713","Manual"
+"CFG-CA-020","Clear Depends On Dependency from Section — Verify Removal Persists","Catalog > Configurable Products > Conditional Sections","High","BL-CAT-001","","Admin logged in. Seed product Section B (Accessories) has dependsOnSectionId = Section A.id (set by CFG-CA-019 or pre-seeded). Admin Bearer token available.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_CONDITIONAL.slug)","[NAV] Navigate to {{BACK_URL}} and log in
+[NAV] Open seed product in Catalog module
+[NAV] Open Configurations tab and click Section B (Accessories)
+[ASSERT] Confirm Depends On shows Base Options
+[ACT] Click the Depends On dropdown
+[ACT] Select the empty/none option (clear the dependency)
+[ACT] Click Save or OK
+[NAV] Re-open Section B detail blade
+[ASSERT] Observe Depends On field
+[AUTH] POST {{BACK_URL}}/connect/token to obtain Bearer token
+[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id>
+[ASSERT] Inspect sections[B].dependsOnSectionId in response","[STATE] Depends On dropdown has a clear/empty option available
+[STATE] Save completes without error
+[DOM] After re-open: Depends On field is empty or shows None — not Base Options
+[STATUS] GET returns 200
+[BODY] sections[B].dependsOnSectionId is null or absent — not Section A id","[API] GET confirms dependsOnSectionId = null after clear
+[CONSOLE] No JS errors during save","No empty/clear option in Depends On dropdown; field reverts to Base Options after save; API still returns old sectionId after UI clear; Save button disabled when clearing","none","VCST-4713","Manual"
+"CFG-CA-021","Delete Parent Section — Verify Dependent's dependsOnSectionId Cleared","Catalog > Configurable Products > Conditional Sections","High","BL-CAT-001","ECL-5.1","Admin logged in. Seed product has Section A (Base Options) and Section B (dependsOnSectionId = Section A). Section C (Installation, dependsOnSectionId = Section B) also present for transitive coverage.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_CONDITIONAL.slug)","[NAV] Navigate to {{BACK_URL}} and log in
+[NAV] Open seed product in Catalog module > Configurations tab
+[ASSERT] Confirm Section A (Base Options) is listed; Section B (Accessories) shows Depends On = Base Options
+[ACT] Select Section A (Base Options) in the section list
+[ACT] Click Delete section (toolbar or context action)
+[ACT] Confirm deletion in the confirmation dialog
+[ASSERT] Verify Section A is no longer listed in the section list
+[ACT] Click on Section B (Accessories) to open its detail blade
+[ASSERT] Inspect the Depends On field
+[AUTH] POST {{BACK_URL}}/connect/token to obtain Bearer token
+[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id>
+[ASSERT] Inspect sections[B].dependsOnSectionId in response","[STATE] Deletion confirmation dialog appears
+[STATE] Section A removed from section list after confirm
+[DOM] Section B detail blade: Depends On is now empty/None — not referencing deleted Section A
+[STATUS] GET returns 200
+[BODY] sections[B].dependsOnSectionId is null — orphan FK cleared by cascade logic on delete","[API] GET confirms no section references deleted Section A id in any dependsOnSectionId
+[CONSOLE] No JS errors; no 500 on the Configurations tab after delete","Section B still shows deleted Section A in Depends On dropdown; GET returns stale FK pointing to deleted section id; Admin UI crashes when re-opening section B after parent deleted; confirmation dialog not shown","re-seed Section A and restore dependency for subsequent tests","VCST-4713","Manual"
+"CFG-CA-022","Depends On Dropdown Excludes Self — Section Cannot Depend on Itself","Catalog > Configurable Products > Conditional Sections","High","BL-CAT-001","","Admin logged in. Seed product with at least two sections (A and B) accessible.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_CONDITIONAL.slug); sectionB_name=Accessories","[NAV] Navigate to {{BACK_URL}} and log in
+[NAV] Open seed product in Catalog module > Configurations tab
+[ACT] Click on Section B (Accessories) to open its detail blade
+[ACT] Click the Depends On dropdown
+[ASSERT] Inspect all listed options in the dropdown
+[ASSERT] Verify Section B (Accessories) itself is NOT listed as an option","[DOM] Depends On dropdown is open and lists available parent sections
+[STATE] Section B (Accessories) does NOT appear in its own Depends On dropdown options
+[STATE] Only other sections (e.g. Section A: Base Options) are shown as valid parents
+[STATE] If only one section exists, dropdown is either empty or shows a disabled placeholder","[CONSOLE] No JS errors when opening dropdown
+[API] Attempting to POST dependsOnSectionId = own section id returns 400 Bad Request","Section B appears in its own dropdown and can be selected; self-selection causes server 500 on save; self-referential save silently succeeds; dropdown shows all sections including self","none","VCST-4713","Manual"
+"CFG-CA-023","Circular Dependency A Depends On B — B Depends On A — Document Behavior","Catalog > Configurable Products > Conditional Sections","Medium","BL-CAT-001","ECL-5.1","Admin logged in. Seed product. Section A currently has no dependency. Section B currently depends on Section A (from CFG-CA-019 or pre-seeded).","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_CONDITIONAL.slug)","[NAV] Navigate to {{BACK_URL}} and log in
+[NAV] Open seed product > Configurations tab
+[ASSERT] Confirm Section B depends on Section A
+[ACT] Open Section A detail blade
+[ACT] Click the Depends On dropdown
+[ASSERT] Inspect dropdown — observe whether Section B is listed as a valid option
+[ACT] Attempt to select Section B (if available)
+[ACT] Click Save
+[ASSERT] Observe outcome — validation error, silent accept, or warning
+[HTTP] If save succeeds: GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id>
+[ASSERT] Inspect both sections' dependsOnSectionId values","[STATE] One of the following behaviors is observed and documented:
+OPTION 1 — Prevention: Section B not listed in Section A Depends On dropdown (circular dependency blocked at UI level); OR
+OPTION 2 — Validation error: Save of A to B dependency rejected with message such as Circular dependency detected; OR
+OPTION 3 — Silent accept: Both A and B have dependsOnSectionId pointing to each other — document as known behavior for bug triage
+[STATE] No Admin SPA crash regardless of outcome
+[STATUS] If GET reached: 200 returned; circular state documented in body inspection","[CONSOLE] No unhandled exceptions during save
+[API] GET confirms actual persisted state of both sections' dependsOnSectionId","Admin SPA crashes on save or on re-opening Configurations tab; storefront enters infinite loop if circular dependency is persisted; 500 server error on GET after circular save","clear Section A dependency after test (set Depends On back to None)","VCST-4713","Manual"
+"CFG-CA-024","REST API — POST Configuration with dependsOnSectionId and GET Verifies Persistence","Catalog > Configurable Products > REST API","Medium","BL-CAT-001","","Admin Bearer token obtainable. Seed product exists. Section A id and Section B id known. dependsOnSectionId not yet set via API.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; sectionA_id=<id-of-section-A>; sectionB_id=<id-of-section-B>","[AUTH] POST {{BACK_URL}}/connect/token with grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}, scope=offline_access — store access_token
+[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<seed-product-id> with Authorization: Bearer <token> — note current section structure
+[HTTP] PATCH or PUT {{BACK_URL}}/api/catalog/products/configurations/<config-id> with body including sections array: section B object with dependsOnSectionId = <sectionA_id> — if PATCH not supported use POST with full config body
+[WAIT] Response received
+[ASSERT] Inspect HTTP status
+[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<seed-product-id> — retrieve updated configuration
+[ASSERT] Inspect sections array in response body
+[ASSERT] Locate section B in sections array and inspect dependsOnSectionId field","[STATUS] Auth POST returns 200 with access_token
+[STATUS] Initial GET returns 200 with sections array
+[STATUS] PATCH/PUT returns 200 or 204 — no 400 or 422
+[STATUS] Final GET returns 200
+[BODY] Section B in final GET response has dependsOnSectionId = <sectionA_id> — field persisted correctly
+[BODY] Section A in final GET response has dependsOnSectionId = null — unaffected
+[SCHEMA] dependsOnSectionId field present in section schema (not stripped by serializer)","[ADMIN] Navigate to seed product Configurations tab — Section B Depends On shows Base Options confirming round-trip
+[CONSOLE] No server-side errors visible via Admin SPA","HTTP 400 rejecting dependsOnSectionId field as unknown property; field silently stripped from response (serializer omission); PATCH not supported — document correct verb; 401 unauthorized with valid token","restore Section B dependsOnSectionId to null via PATCH after test","VCST-4713","Manual"

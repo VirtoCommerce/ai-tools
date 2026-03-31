@@ -1101,8 +1101,8 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 18,
-      "estimatedMinutes": 11,
+      "testCount": 24,
+      "estimatedMinutes": 15,
       "agent": "qa-backend-expert",
       "tags": [
         "configurable-products",
@@ -1473,8 +1473,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 68,
-      "estimatedMinutes": 47,
+      "testCount": 78,
+      "estimatedMinutes": 54,
       "agent": "qa-frontend-expert",
       "tags": [
         "configurable-products",

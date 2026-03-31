@@ -1196,3 +1196,29 @@ GQL-097,xCart - LineItemType Full-Field Schema Coverage,GraphQL > xCart > Schema
 [DATA] inStockQuantity — number ≥ 0
 [DATA] No field returns an error object or unexpected __typename","[ROUNDTRIP] Re-execute → same structure, same field types
 [CONSOLE] No JS errors in GraphiQL","Any LineItemType field returns null unexpectedly; product nested object is null; listPrice.amount is 0 for priced product; extendedPrice does not match quantity × unit price; isValid is null; MoneyType structure broken; errors[] non-empty","none — read-only query","graphql-schema.md — LineItemType, MoneyType, PriceType",Generated
+GQL-098,xCart - Shipment Address Update Preserves Key (No DB Duplication),GraphQL > xCart > Address,Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-8.1,"User authenticated; cart with items; shipping address already set via addOrUpdateCartShipment; GraphiQL UI loaded with auth header set. Bug: VCST-4830 — editing shipping address created a new CartAddress row every time instead of updating the existing one.","storeId=@td(STORE_PRIMARY.id); user_email=@td(USER_DEFAULT.email); user_password=@td(USER_DEFAULT.password); address1_line1=""123 Test St""; address2_line1=""456 Updated Ave""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=@td(USER_DEFAULT.email)&password=@td(USER_DEFAULT.password)&storeId=@td(STORE_PRIMARY.id) → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" button (right tab) → set auth token via execCommand('insertText') on Headers textarea → screenshot to verify
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[ACT] Click query editor → clear (Ctrl+A, Backspace)
+[ACT] Type addItem mutation: mutation { addItem(command: { storeId: ""@td(STORE_PRIMARY.id)"" userId: ""<USER_ID>"" productId: ""AAW-59914334"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } } → Execute → save cart id as <CART_ID>
+[ACT] Clear editor → type addOrUpdateCartShipment with FIRST address: mutation { addOrUpdateCartShipment(command: { storeId: ""@td(STORE_PRIMARY.id)"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150 deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" } } }) { id shipments { id deliveryAddress { key city line1 } } } } → Execute
+[READ] Read response — save shipmentId and deliveryAddress.key as <ADDR_KEY_1>
+[ACT] Clear editor → type cart query to confirm single shipment: query { cart(storeId: ""@td(STORE_PRIMARY.id)"" cartId: ""<CART_ID>"") { shipments { id deliveryAddress { key city line1 postalCode } } addresses { key addressType city line1 } } } → Execute
+[READ] Read response — verify exactly 1 shipment with address line1=""123 Test St""; record number of addresses
+[ACT] Clear editor → type addOrUpdateCartShipment with UPDATED address (same shipment, different street): mutation { addOrUpdateCartShipment(command: { storeId: ""@td(STORE_PRIMARY.id)"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { id: ""<SHIPMENT_ID>"" shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150 deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""456 Updated Ave"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" } } }) { id shipments { id deliveryAddress { key city line1 } } } } → Execute
+[READ] Read response — save deliveryAddress.key as <ADDR_KEY_2>
+[ACT] Clear editor → type same cart query → Execute
+[READ] Read response — verify address is now ""456 Updated Ave"" and shipment count is still 1
+[ACT] Clear editor → type THIRD update with another street change: mutation { addOrUpdateCartShipment(command: { storeId: ""@td(STORE_PRIMARY.id)"" userId: ""<USER_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { id: ""<SHIPMENT_ID>"" shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150 deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""789 Third St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" } } }) { id shipments { id deliveryAddress { key city line1 } } } } → Execute
+[READ] Read response — verify address updated to ""789 Third St"", still 1 shipment
+[ACT] Clear editor → type final cart query → Execute
+[READ] Read final cart state — count shipments and addresses","[ERRORS] All mutations: errors[] present and empty (BL-GQL-001)
+[DATA] After first addOrUpdateCartShipment: shipments count = 1, deliveryAddress.line1 = ""123 Test St""
+[DATA] After second addOrUpdateCartShipment: shipments count = 1, deliveryAddress.line1 = ""456 Updated Ave""
+[DATA] After third addOrUpdateCartShipment: shipments count = 1, deliveryAddress.line1 = ""789 Third St""
+[DATA] Address key is preserved across updates (ADDR_KEY_2 equals ADDR_KEY_1 or is non-null consistently) — VCST-4830 fix
+[DATA] No duplicate shipments created — cart.shipments.length stays at 1
+[DATA] Cart totals remain valid after each address update","[ROUNDTRIP] Final cart query shows single shipment with latest address — no orphaned addresses or duplicate shipments
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty on any mutation; shipments count > 1 after update (duplicate shipment); deliveryAddress.line1 still shows old value after update; address key changes on every update (indicates new row created each time — VCST-4830 regression); cart becomes invalid after address update","clearCart mutation + removeCart","VCST-4830; graphql-schema.md — addOrUpdateCartShipment; Synced: VCST-4830 + PR #106 (2026-03-31)",Generated

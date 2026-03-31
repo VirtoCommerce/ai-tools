@@ -1,0 +1,33 @@
+{
+  "runId": "SYNC-2026-03-31-2100",
+  "source": "VCST-4830 + VirtoCommerce/vc-module-x-cart#106",
+  "date": "2026-03-31",
+  "changedModules": ["XCart"],
+  "affectedSuites": ["050b", "011", "042", "028"],
+  "casesAnalyzed": 7,
+  "casesUpdated": 0,
+  "casesDeprecated": 0,
+  "casesGenerated": 2,
+  "casesValid": 7,
+  "filesModified": [
+    "regression/suites/Backend/graphql/050b-graphql-xcart.csv",
+    "regression/suites/Frontend/checkout/011-checkout-flow.csv",
+    "config/test-suites.json"
+  ],
+  "newCases": [
+    {
+      "id": "GQL-098",
+      "suite": "050b",
+      "title": "xCart - Shipment Address Update Preserves Key (No DB Duplication)",
+      "priority": "Critical",
+      "layer": "backend"
+    },
+    {
+      "id": "CHK-086",
+      "suite": "011",
+      "title": "Checkout - Edit Shipping Address Does Not Create Duplicate (VCST-4830)",
+      "priority": "Critical",
+      "layer": "frontend"
+    }
+  ]
+}

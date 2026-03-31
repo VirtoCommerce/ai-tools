@@ -582,3 +582,34 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with below-min
 [STATE] checkout unblocked when total >= minimum","[API] cart validation passes after exceeding minimum
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx","warning persists after exceeding minimum; checkout still blocked; page refresh required to clear warning","Remove items from cart","Coverage Gap Analysis","Manual"
+"CHK-086","Checkout - Edit Shipping Address Does Not Create Duplicate (VCST-4830)","Checkout > Shipping > Address Update","Critical","BL-CHK-001, BL-CHK-005","ECL-8.1, ECL-1.2","User logged in with items in cart; shipping address already set during checkout (complete steps up to shipping method selection). Bug: VCST-4830 — editing a shipping address from cart/checkout created a new CartAddress record in DB every time instead of updating the existing one.","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart with items
+[ACT] Proceed to checkout
+[WAIT] Wait for shipping address step to render
+[ACT] Enter first shipping address: First Name=""Test"", Last Name=""User"", Street=""123 Test St"", City=""New York"", State=""NY"", ZIP=""10001"", Country=""United States""
+[ACT] Click 'Continue' or 'Save Address' to save the shipping address
+[WAIT] Wait for shipping methods to appear
+[ASSERT] Verify shipping address displayed in summary shows ""123 Test St""
+[ACT] Click 'Edit' on shipping address section to modify the address
+[WAIT] Wait for address form to reopen with pre-filled values
+[ASSERT] Verify form is pre-populated with previously entered address (""123 Test St"")
+[ACT] Change Street field from ""123 Test St"" to ""456 Updated Ave""
+[ACT] Click 'Save' or 'Continue' to apply the address update
+[WAIT] Wait for address summary to refresh
+[ASSERT] Verify shipping address summary now shows ""456 Updated Ave"" (not ""123 Test St"")
+[ASSERT] Verify shipping methods are still visible and selected method is preserved
+[ACT] Click 'Edit' on shipping address section again (second edit)
+[WAIT] Wait for address form to reopen
+[ASSERT] Verify form shows ""456 Updated Ave"" (updated value, not original)
+[ACT] Change City from ""New York"" to ""Los Angeles"", State to ""CA"", ZIP to ""90001""
+[ACT] Click 'Save' or 'Continue'
+[WAIT] Wait for address summary to refresh
+[ASSERT] Verify address summary shows ""456 Updated Ave, Los Angeles, CA 90001""
+[ASSERT] Verify shipping methods recalculate for new location (may show different rates for CA vs NY)","[DOM] After first edit: address summary shows updated street ""456 Updated Ave""
+[DOM] After second edit: address summary shows ""Los Angeles, CA 90001""
+[STATE] Only one shipping address active at a time — no leftover addresses from previous edits
+[STATE] Shipping methods recalculate after address region change (NY→CA)
+[DOM] No stale address fragments visible anywhere in checkout UI","[GQL] addOrUpdateCartShipment mutation returns 200, errors[] empty on each edit
+[GQL] After each edit, query cart → shipments count = 1 (not growing with each edit)
+[GQL] cart.shipments[0].deliveryAddress reflects latest values
+[NETWORK] No duplicate addOrUpdateCartShipment calls per single edit action
+[CONSOLE] No JS errors during address editing","Shipping address summary still shows old address after edit; address form not pre-populated on re-edit; shipping methods don't recalculate after address change; multiple addOrUpdateCartShipment calls per edit (potential duplicate); checkout breaks after editing address multiple times","none","VCST-4830; Synced: VCST-4830 + PR #106 (2026-03-31)","Generated"

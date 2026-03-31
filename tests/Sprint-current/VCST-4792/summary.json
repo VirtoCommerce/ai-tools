@@ -1,0 +1,24 @@
+{
+  "ticket": "VCST-4792",
+  "verdict": "PASS",
+  "date": "2026-03-30",
+  "environment": "https://vcst-qa-storybook.govirto.com",
+  "build": {
+    "platform": "3.1010.0",
+    "theme": "vc-theme-b2b-vue-2.45.0-pr-2216-dc3c-dc3ce667",
+    "relevant_modules": {}
+  },
+  "agents_dispatched": ["ui-ux-expert"],
+  "total_cases": 15,
+  "passed": 15,
+  "failed": 0,
+  "blocked": 0,
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-PRICE-003"],
+  "exploratory": {
+    "charter": "N/A — Story type, P2, Storybook-only change",
+    "heuristic": "N/A",
+    "findings": { "bugs": 0, "questions": 0, "observations": 0, "risks": 0 }
+  },
+  "artifacts": "tests/Sprint-current/VCST-4792/"
+}
