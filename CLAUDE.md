@@ -39,9 +39,9 @@ Create `.env` (33 vars). Validate: `npm run env:check`. Access: `import { env } 
 ## Repository Structure
 
 ```
-├── .claude/agents/       # 14 agents in qa/ + ba/ subfolders, knowledge/ (15 files) for shared refs
+├── .claude/agents/       # 14 agents in qa/ + ba/ subfolders, knowledge/ (16 files) for shared refs
 ├── .claude/skills/       # 20 skills (vc-knowledge, testing, qa-methodology)
-├── .claude/commands/     # 13 slash commands
+├── .claude/commands/     # 14 slash commands
 ├── .claude/rules/        # Reference docs (agents, regression, skills, MCP)
 ├── config/               # Playwright MCP configs + test-suites.json manifest
 ├── ci/                   # CI regression — Docker + Claude Agent SDK (gitignored)
@@ -81,6 +81,6 @@ Registration/Auth, Catalog/Facets, Cart (variations, BOPIS), Search, Addresses, 
 
 - `.claude/rules/agents.md` — 14 agents, browser assignments, delegation rules
 - `.claude/rules/regression.md` — 4 testing modes, CI pipeline, suite manifest, selection groups
-- `.claude/rules/skills-commands.md` — 13 commands + 20 skills with arguments
+- `.claude/rules/skills-commands.md` — 14 commands + 20 skills with arguments
 - `.claude/rules/mcp-browsers.md` — MCP servers, browser rules, Storybook setup
 - Virto Commerce docs: Context7 library `/virtocommerce/vc-docs` (resolve-library-id → query-docs)
