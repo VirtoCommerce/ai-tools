@@ -1,0 +1,63 @@
+{
+  "runId": "SYNC-2026-04-13-1122",
+  "source": [
+    "https://github.com/VirtoCommerce/vc-module-x-cart/pull/107",
+    "https://github.com/VirtoCommerce/vc-frontend/pull/2235"
+  ],
+  "jiraTicket": "VCST-4806",
+  "date": "2026-04-13",
+  "feature": "maxLength validation on product configuration Text sections",
+  "changedModules": ["XCart", "vc-frontend"],
+  "changedLayers": ["backend", "graphql", "storefront", "i18n"],
+  "deployState": {
+    "backend": {
+      "deployed": true,
+      "artifact": "VirtoCommerce.XCart_3.1006.0-pr-107-daa4.zip",
+      "source": "vc-deploy-dev:vcst-qa/backend/packages.json"
+    },
+    "frontend": {
+      "deployed": false,
+      "currentTheme": "vc-theme-b2b-vue-2.45.0-pr-2240-def04a89.zip",
+      "expectedTheme": "vc-theme-b2b-vue-2.46.0-pr-2235",
+      "source": "vc-deploy-dev:vcst-qa/theme/artifact.json"
+    }
+  },
+  "affectedSuites": ["072b", "050b"],
+  "casesAnalyzed": 72,
+  "casesUpdated": 5,
+  "casesDeprecated": 0,
+  "casesGenerated": 2,
+  "casesValid": 65,
+  "updates": [
+    { "id": "CFG-TEXT-001", "suite": "072b", "change": "refs+status" },
+    { "id": "CFG-TEXT-002", "suite": "072b", "change": "refs+status" },
+    { "id": "CFG-TEXT-003", "suite": "072b", "change": "refs+status" },
+    { "id": "CFG-TEXT-004", "suite": "072b", "change": "refs+status" },
+    { "id": "CFG-TEXT-006", "suite": "072b", "change": "refs+status" }
+  ],
+  "newCases": [
+    { "id": "GQL-099", "suite": "050b", "title": "productConfiguration Query Exposes maxLength on Text-Type Sections" },
+    { "id": "GQL-100", "suite": "050b", "title": "addItem Rejects CustomText Exceeding Section MaxLength with CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED" }
+  ],
+  "deferred": [
+    {
+      "id": "CFG-TEXT-009",
+      "suite": "072b",
+      "blockedBy": "PR #2235 not deployed to vcst-qa",
+      "purpose": "Paste-bypass triggers max_length_exceeded i18n error message"
+    }
+  ],
+  "filesModified": [
+    "regression/suites/Frontend/configurable-products/072b-file-text-section-cases.csv",
+    "regression/suites/Backend/graphql/050b-graphql-xcart.csv",
+    "config/test-suites.json"
+  ],
+  "qualityGate": {
+    "staleCasesUpdated": "PASS",
+    "brokenCasesAddressed": "N/A",
+    "newBehaviorCoverage": "PASS",
+    "noIdConflicts": "PASS",
+    "csvStructureValid": "PASS",
+    "manifestUpdated": "PASS"
+  }
+}

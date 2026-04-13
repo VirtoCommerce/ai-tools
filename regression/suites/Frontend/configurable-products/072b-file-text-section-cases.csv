@@ -174,7 +174,7 @@
 [DOM] No stale error message persisted from failed attempts","[CONSOLE] No JS errors leaving upload control in broken state
 [NETWORK] Successful upload returns 200 after prior 4xx rejections
 [API] addItem mutation succeeds — errors[] empty","Upload control frozen after rejection; valid file rejected after prior failure; stale error messages blocking UI; add-to-cart blocked despite valid file","Remove item from cart after test","VCST-4827","Manual"
-"CFG-TEXT-001","Text Section — Max Length Enforced (Required Text, 30-Char Limit)","Configurable Products > Text Section > Validation","High","BL-CAT-006","ECL-7.2","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Engraved-Ring-20260324 has a required Text section with maxLength 30. Product URL at {{FRONT_URL}} in /products-with-options/.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-Config-Engraved-Ring-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Engraved-Ring-20260324
+"CFG-TEXT-001","Text Section — Max Length Enforced (Required Text, 30-Char Limit)","Configurable Products > Text Section > Validation","High","BL-CAT-006","ECL-7.2","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has a required Text section with maxLength 30. Product URL at {{FRONT_URL}} in /products-with-options/.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-RING-TXT-CFG-20260327","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
 [WAIT] Configuration widget visible
 [SCROLL] Scroll to required Text section
 [ASSERT] Text input field visible; character count or maxlength hint shown (30 chars)
@@ -192,8 +192,8 @@
 [STATE] 1 character accepted (above minimum if any)
 [DOM] Character counter or maxlength indicator reflects the limit","[CONSOLE] No JS errors on limit enforcement
 [NETWORK] No API call made for over-length input attempts
-[API] addItem call includes text value (trimmed to limit)","31st character accepted without indication; paste overwrites entire field; character counter not updating; add-to-cart blocked by 1-char input","Remove item from cart after test","","Manual"
-"CFG-TEXT-002","Text Section — Whitespace-Only Input Does Not Satisfy Required Validation","Configurable Products > Text Section > Validation","High","BL-CAT-006","ECL-7.2","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Engraved-Ring-20260324 has required Text section with maxLength 30.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-Config-Engraved-Ring-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Engraved-Ring-20260324
+[API] addItem call includes text value (trimmed to limit)","31st character accepted without indication; paste overwrites entire field; character counter not updating; add-to-cart blocked by 1-char input","Remove item from cart after test","VCST-4806; PR #107 (XCart backend validation); PR #2235 (frontend MAX_LENGTH from section); Synced: VCST-4806 (2026-04-13)","synced"
+"CFG-TEXT-002","Text Section — Whitespace-Only Input Does Not Satisfy Required Validation","Configurable Products > Text Section > Validation","High","BL-CAT-006","ECL-7.2","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section with maxLength 30.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-RING-TXT-CFG-20260327","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
 [WAIT] Configuration widget visible
 [SCROLL] Scroll to required Text section
 [ACT] Type 5 spaces into the text field (whitespace only)
@@ -206,7 +206,7 @@
 [WAIT] Success notification","[STATE] Whitespace-only input does not satisfy required text validation
 [DOM] Validation error shown when only whitespace entered
 [STATE] Meaningful text satisfies required validation and allows add-to-cart","[CONSOLE] No JS errors on whitespace validation
-[NETWORK] addItem API not called when whitespace fails validation","Whitespace satisfying required validation; add-to-cart succeeding with spaces-only text; no validation error shown","Remove item from cart after test","","Manual"
+[NETWORK] addItem API not called when whitespace fails validation","Whitespace satisfying required validation; add-to-cart succeeding with spaces-only text; no validation error shown","Remove item from cart after test","VCST-4806; PR #107; PR #2235; Synced: VCST-4806 (2026-04-13)","synced"
 "CFG-TEXT-003","Text Section — Optional Text Section Allows Empty and Non-Empty Values","Configurable Products > Text Section > Optional Behavior","Medium","BL-CAT-006","ECL-7.1","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Gift-Box-20260324 has optional Text section with maxLength 100.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-Config-Gift-Box-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Gift-Box-20260324
 [WAIT] Configuration widget visible
 [SCROLL] Scroll to optional Text section
@@ -225,7 +225,7 @@
 [STATE] Filled optional text field value preserved in cart
 [DOM] Cart shows text value when provided; no text shown when left empty","[CONSOLE] No errors for either scenario
 [NETWORK] Both addItem calls return 200
-[API] addItem response errors[] empty for both empty and filled text","Optional text blocking add-to-cart when empty; text value missing from cart; wrong item added","Remove both cart items after test","","Manual"
+[API] addItem response errors[] empty for both empty and filled text","Optional text blocking add-to-cart when empty; text value missing from cart; wrong item added","Remove both cart items after test","VCST-4806; PR #107; PR #2235; Synced: VCST-4806 (2026-04-13)","synced"
 "CFG-TEXT-004","Text Section — Long Text at 100-Char Boundary Preserved in Cart and Order","Configurable Products > Text Section > Max Length E2E","Medium","BL-CAT-006","ECL-7.2","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Gift-Box-20260324 has optional Text section with maxLength 100.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-Config-Gift-Box-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Gift-Box-20260324
 [WAIT] Configuration widget visible
 [ACT] Type exactly 100 characters: 'This gift message is exactly one hundred characters long. It tests the maximum length boundary ok!'
@@ -241,7 +241,7 @@
 [DOM] Cart displays full 100-character text without truncation or corruption
 [FORMAT] No HTML encoding artifacts in text display","[CONSOLE] No errors
 [NETWORK] addItem returns 200
-[API] addItem request body contains full 100-char text; errors[] empty","100 chars rejected; text truncated in cart display; encoding artifacts in long text; 101 chars accepted","Remove item from cart","","Manual"
+[API] addItem request body contains full 100-char text; errors[] empty","100 chars rejected; text truncated in cart display; encoding artifacts in long text; 101 chars accepted","Remove item from cart","VCST-4806; PR #107; PR #2235; Synced: VCST-4806 (2026-04-13)","synced"
 "CFG-TEXT-005","Text Section — Special Characters and Unicode Preserved Through Cart","Configurable Products > Text Section > Character Handling","Medium","BL-CAT-006","ECL-7.2","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Gift-Box-20260324 has optional Text section.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-Config-Gift-Box-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Gift-Box-20260324
 [WAIT] Configuration widget visible
 [ACT] Type text with special characters: 'Happy Birthday! & Best Wishes — 2026'
@@ -259,7 +259,7 @@
 [FORMAT] '&' displayed as '&' not '&amp;'; '—' displayed as '—' not '&mdash;'","[CONSOLE] No encoding-related JS errors
 [NETWORK] addItem request correctly encodes Unicode in payload
 [API] Response contains unescaped characters; errors[] empty","& displayed as &amp; in cart; Unicode characters garbled or replaced with ?; add-to-cart blocked by special chars","Remove both cart items after test","","Manual"
-"CFG-TEXT-006","Text Section — Text Value Preserved Through Full Checkout to Order History","Configurable Products > Text Section > E2E Persistence","High","BL-CAT-006; BL-CART-007","ECL-7.1; ECL-14.1","User logged in as {{USER_EMAIL}} with {{USER_PASSWORD}}. Product AGENT-TEST-Config-Engraved-Ring-20260324 has required Text section (maxLength 30). Checkout must be completable (valid address, payment method available).","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Engraved-Ring-20260324
+"CFG-TEXT-006","Text Section — Text Value Preserved Through Full Checkout to Order History","Configurable Products > Text Section > E2E Persistence","High","BL-CAT-006; BL-CART-007","ECL-7.1; ECL-14.1","User logged in as {{USER_EMAIL}} with {{USER_PASSWORD}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section (maxLength 30). Checkout must be completable (valid address, payment method available).","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
 [WAIT] Configuration widget visible
 [ACT] Type 'With Love Always' into required text field
 [ACT] Set quantity 1; click 'Add to Cart'
@@ -277,8 +277,8 @@
 [STATE] Text value not dropped at any stage of the purchase flow
 [FORMAT] Text displayed accurately without truncation at all stages","[ADMIN] Admin order detail shows 'With Love Always' in line item configuration
 [API] Order creation POST returns 201; errors[] empty
-[CONSOLE] No errors across entire checkout flow","Text missing at any stage; text truncated; different text shown than entered; order creation failing","None (order placed for test verification)","","Manual"
-"CFG-TEXT-007","Text Section — Required Text Quantity Counter Blocked When Field Empty (Parallel to VCST-4828)","Configurable Products > Text Section > Quantity Validation","High","BL-CAT-006; BL-CART-001","ECL-7.3","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Engraved-Ring-20260324 has required Text section.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-Config-Engraved-Ring-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Engraved-Ring-20260324
+[CONSOLE] No errors across entire checkout flow","Text missing at any stage; text truncated; different text shown than entered; order creation failing","None (order placed for test verification)","VCST-4806; PR #107; PR #2235; Synced: VCST-4806 (2026-04-13)","synced"
+"CFG-TEXT-007","Text Section — Required Text Quantity Counter Blocked When Field Empty (Parallel to VCST-4828)","Configurable Products > Text Section > Quantity Validation","High","BL-CAT-006; BL-CART-001","ECL-7.3","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-RING-TXT-CFG-20260327","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
 [WAIT] Configuration widget visible
 [ASSERT] Required Text section field is empty
 [SCROLL] Scroll to quantity spinbutton
@@ -293,7 +293,7 @@
 [DOM] Quantity value unchanged after clicking '+' with empty required text
 [STATE] Quantity increments after required text section is filled","[CONSOLE] No JS errors when clicking '+' with empty required text
 [NETWORK] No addItem API calls triggered by quantity increment alone","Counter incrementing with empty required text; JS error on quantity click; counter not incrementing after text filled","Navigate away; no cart cleanup needed","VCST-4828","Manual"
-"CFG-TEXT-008","Text Section — Add-to-Cart Button Disabled When Required Text Is Empty (Parallel to VCST-4829)","Configurable Products > Text Section > Add-to-Cart Validation","High","BL-CAT-006","ECL-7.3","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Engraved-Ring-20260324 has required Text section.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-Config-Engraved-Ring-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Engraved-Ring-20260324
+"CFG-TEXT-008","Text Section — Add-to-Cart Button Disabled When Required Text Is Empty (Parallel to VCST-4829)","Configurable Products > Text Section > Add-to-Cart Validation","High","BL-CAT-006","ECL-7.3","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-RING-TXT-CFG-20260327","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
 [WAIT] Configuration widget visible
 [ASSERT] Required Text section is empty
 [SCROLL] Scroll to 'Add to Cart' button
@@ -312,3 +312,28 @@
 [STATE] Add-to-cart succeeds after text filled","[CONSOLE] No JS errors on disabled button click
 [NETWORK] No addItem API call when button disabled
 [API] addItem succeeds after text filled — errors[] empty","Button enabled with empty required text; cart item added with empty text; button not re-enabling after text entered","Remove item from cart after test","VCST-4829","Manual"
+"CFG-TEXT-009","Text Section — Paste-Bypass Triggers max_length_exceeded i18n Error and Backend Rejection","Configurable Products > Text Section > Server-Side Validation","High","BL-CAT-006; BL-CART-006","ECL-7.2; ECL-14.5","User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section with maxLength 30. Both PR #107 (backend XCart validator) and PR #2235 (frontend MAX_LENGTH from section + max_length_exceeded i18n key) deployed to QA. Active locale = en (default).","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-RING-TXT-CFG-20260327; over_limit_text=""ThisStringIsThirtyOneCharsLong!"" (31 chars)","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
+[WAIT] Configuration widget visible
+[SCROLL] Scroll to required Text section
+[ASSERT] Text input visible; input has maxlength=""30"" attribute (DOM check)
+[ACT] Bypass HTML maxlength via programmatic value set: page.evaluate(() => { const el = document.querySelector('[data-test=section-text-fieldset] input, .section-text-fieldset input, input[name*=customText]'); el.value = 'ThisStringIsThirtyOneCharsLong!'; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); })
+[WAIT] Vue reactivity flush (300ms)
+[ASSERT] Inline validation error visible under text input — exact text ""Text must not exceed 30 characters"" (en locale; max param = 30)
+[ASSERT] Error text comes from i18n key shared.catalog.product_details.product_configuration.max_length_exceeded (DOM has data-i18n attribute or text matches en.json translation)
+[ACT] Click 'Add to Cart'
+[WAIT] Network response
+[ASSERT] Add-to-cart blocked by client validation (no addItem mutation fired) OR addItem mutation fires and backend rejects with errorCode CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED
+[ACT] Clear input via UI; type valid 18-char text 'Engraved with Love'
+[WAIT] Validation re-run
+[ASSERT] Inline error cleared; Add-to-Cart enabled
+[ACT] Click 'Add to Cart'
+[WAIT] Success notification
+[ASSERT] Item added to cart with valid text","[STATE] Programmatic value-set bypasses HTML maxlength but client-side validator catches over-limit input
+[DOM] Error message text matches i18n key max_length_exceeded with max=30 substituted
+[STATE] Add-to-Cart blocked while error present
+[STATE] Error clears when input replaced with valid-length text
+[STATE] Successful add-to-cart with 18-char text","[CONSOLE] No JS errors during programmatic input or validation
+[NETWORK] If addItem fires with over-limit text: response body validationErrors[] contains errorCode CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED (PR #107 server-side enforcement)
+[NETWORK] Successful addItem (18-char) returns 200 with no validationErrors
+[I18N] Switching locale to fr — error becomes ""Le texte ne doit pas dépasser 30 caractères"" (locales/fr.json max_length_exceeded)
+[API] addItem GraphQL response shape matches BL-GQL-001 (errors[] empty when validation surfaces via validationErrors)","Over-limit text accepted without inline error (PR #2235 not deployed or i18n key not loaded); error message is generic ""invalid"" instead of localized max_length_exceeded; max parameter shown as ""{max}"" literal (i18n interpolation broken); backend silently accepts over-limit text (PR #107 not deployed); add-to-cart succeeds with 31-char text in cart","Remove item from cart after test","VCST-4806; PR #107 (backend CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED); PR #2235 (frontend max_length_exceeded i18n + section.maxLength binding); locales/en.json max_length_exceeded; Synced: VCST-4806 (2026-04-13)","synced"

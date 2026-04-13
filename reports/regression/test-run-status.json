@@ -1,48 +1,57 @@
 {
-  "runId": "REG-2026-03-26-1200",
-  "selection": "configurable-products",
-  "trigger": "manual — PR #104 regression (vc-module-x-cart: empty options validator fix + SelectedForCheckout pricing)",
+  "runId": "REG-2026-04-13-1133",
+  "selection": "050b,072d (VCST-4806 targeted)",
+  "trigger": "manual — VCST-4806 e2e verification after sync (PR #107 backend + PR #2235 frontend)",
+  "scope": "Targeted cases only — not full suites",
   "status": "completed",
-  "startedAt": "2026-03-26T12:00:00.000Z",
-  "completedAt": "2026-03-26T15:00:00.000Z",
+  "startedAt": "2026-04-13T11:33:00.000Z",
+  "completedAt": "2026-04-13T11:53:00.000Z",
+  "verdict": "PASS — 9/9 assertions passed across 8 cases, 0 bugs",
   "environment": {
     "frontUrl": "https://vcst-qa-storefront.govirto.com",
     "backUrl": "https://vcst-qa.govirto.com",
-    "platform": "3.1010.0",
-    "theme": "vc-theme-b2b-vue-2.45.0-pr-2215",
-    "xcart": "3.1004.0-pr-104-6ed3",
-    "cart": "3.1002.0",
+    "platform": "3.1017.0",
+    "theme": "vc-theme-b2b-vue-2.46.0-pr-2235-0b68-0b6869fe",
+    "xcart": "3.1006.0-pr-107-daa4",
+    "cart": "3.1003.0",
     "xapi": "3.1005.0",
-    "catalog": "3.1013.0"
+    "catalog": "3.1016.0"
+  },
+  "deployState": {
+    "vcst-qa/backend/packages.json": "PlatformVersion 3.1017.0; XCart pinned to PR #107 build (3.1006.0-pr-107-daa4)",
+    "vcst-qa/theme/artifact.json": "vc-theme-b2b-vue-2.46.0-pr-2235-0b68-0b6869fe.zip (PR #2235 deployed)"
   },
   "suites": {
-    "052":  { "name": "Configurable Products Admin",                 "status": "passed",  "browser": "playwright-edge",    "attempts": 1, "agent": "qa-backend-expert",  "batch": 1, "passRate": "81%", "passed": 13, "failed": 0, "blocked": 0,  "skipped": 3 },
-    "072":  { "name": "Configurable Products UI",                   "status": "passed",  "browser": "playwright-chrome",  "attempts": 1, "agent": "qa-frontend-expert", "batch": 2, "passRate": "35%", "passed": 22, "failed": 0, "blocked": 35, "skipped": 5 },
-    "072b": { "name": "Configurable Products E2E",                  "status": "blocked", "browser": "playwright-firefox", "attempts": 1, "agent": "qa-frontend-expert", "batch": 2, "passRate": "0%",  "passed": 0,  "failed": 0, "blocked": 2,  "skipped": 0 },
-    "072c": { "name": "Configurable Products Cross-Cutting",         "status": "passed",  "browser": "playwright-edge",    "attempts": 1, "agent": "qa-testing-expert",  "batch": 2, "passRate": "52%", "passed": 13, "failed": 1, "blocked": 10, "skipped": 1 },
-    "072d": { "name": "Configurable Products File & Text Sections",  "status": "passed",  "browser": "playwright-chrome",  "attempts": 1, "agent": "qa-frontend-expert", "batch": 3, "passRate": "47%", "passed": 8,  "failed": 0, "blocked": 9,  "skipped": 0 }
-  },
-  "batches": [
-    {
+    "050b": {
+      "name": "GraphQL xCart — VCST-4806 cases (GQL-099, GQL-100)",
+      "status": "passed",
+      "browser": "playwright-edge",
+      "agent": "qa-backend-expert",
       "batch": 1,
-      "suites": ["052"],
-      "status": "completed",
-      "startedAt": "2026-03-26T12:00:00.000Z",
-      "completedAt": "2026-03-26T13:10:00.000Z"
+      "targetedCases": ["GQL-099", "GQL-100"],
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "bugs": 0,
+      "completedAt": "2026-04-13T11:42:00.000Z",
+      "durationMs": 512569,
+      "note": "Test product ID AGENT-TEST-Config-Engraved-Ring-20260324 not found on QA — actual is AGENT-TEST-RING-TXT-CFG-20260327 (GUID e5ae288e-369e-423d-9647-3548797a398a). Agent adapted; CSV refs need follow-up sync."
     },
-    {
-      "batch": 2,
-      "suites": ["072", "072b", "072c"],
-      "status": "completed",
-      "startedAt": "2026-03-26T13:10:00.000Z",
-      "completedAt": "2026-03-26T14:00:00.000Z"
-    },
-    {
-      "batch": 3,
-      "suites": ["072d"],
-      "status": "completed",
-      "startedAt": "2026-03-26T14:00:00.000Z",
-      "completedAt": "2026-03-26T15:00:00.000Z"
+    "072d": {
+      "name": "Configurable Products Text Section — VCST-4806 cases (CFG-TEXT-001..006, 009)",
+      "status": "passed",
+      "browser": "playwright-chrome",
+      "agent": "qa-frontend-expert",
+      "batch": 1,
+      "targetedCases": ["CFG-TEXT-001", "CFG-TEXT-002", "CFG-TEXT-003", "CFG-TEXT-004", "CFG-TEXT-006", "CFG-TEXT-009"],
+      "passed": 6,
+      "failed": 0,
+      "blocked": 0,
+      "bugs": 0,
+      "completedAt": "2026-04-13T11:53:00.000Z",
+      "durationMs": 1178364,
+      "orderPlaced": "CO260413-00001",
+      "themeVerified": "vc-theme-b2b-vue-2.46.0-pr-2235-0b68-0b6869fe"
     }
-  ]
+  }
 }

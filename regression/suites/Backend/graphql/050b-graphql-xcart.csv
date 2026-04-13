@@ -1222,3 +1222,45 @@ GQL-098,xCart - Shipment Address Update Preserves Key (No DB Duplication),GraphQ
 [DATA] No duplicate shipments created — cart.shipments.length stays at 1
 [DATA] Cart totals remain valid after each address update","[ROUNDTRIP] Final cart query shows single shipment with latest address — no orphaned addresses or duplicate shipments
 [CONSOLE] No JS errors in GraphiQL","errors[] non-empty on any mutation; shipments count > 1 after update (duplicate shipment); deliveryAddress.line1 still shows old value after update; address key changes on every update (indicates new row created each time — VCST-4830 regression); cart becomes invalid after address update","clearCart mutation + removeCart","VCST-4830; graphql-schema.md — addOrUpdateCartShipment; Synced: VCST-4830 + PR #106 (2026-03-31)",Generated
+GQL-099,xCatalog - productConfiguration Query Exposes maxLength on Text-Type Sections,GraphQL > Catalog > productConfiguration > Schema,High,BL-GQL-001; BL-CFG-001,ECL-14.1; ECL-2.1,"User authenticated with valid token; configurable product with at least one Text-type section that has MaxLength configured exists (e.g. AGENT-TEST-RING-TXT-CFG-20260327 with text section maxLength=30); store configured; GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql","storeId=@td(STORE_PRIMARY.id); configurableProductId=AGENT-TEST-RING-TXT-CFG-20260327; cultureName=""en-US""; currencyCode=""USD""","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=@td(USER_DEFAULT.email)&password=@td(USER_DEFAULT.password)&storeId=@td(STORE_PRIMARY.id) → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" tab → set auth via execCommand('insertText') (see graphiql-interaction.md §2)
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[ACT] Introspect ConfigurationSectionType: query { __type(name: ""ConfigurationSectionType"") { fields { name type { name kind ofType { name } } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[READ] Verify maxLength field present on ConfigurationSectionType (Int, nullable)
+[ACT] Clear editor → type query: query { productConfiguration(configurableProductId: ""AGENT-TEST-RING-TXT-CFG-20260327"" storeId: ""@td(STORE_PRIMARY.id)"" userId: ""<USER_ID>"" cultureName: ""en-US"" currencyCode: ""USD"") { configurationSections { id name type isRequired maxLength allowCustomText allowTextOptions } } }
+[GQL] Click Execute (▶)
+[WAIT] Response panel shows result
+[READ] Inspect configurationSections[] for Text-type section maxLength value","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty (BL-GQL-001)
+[SCHEMA] Introspection result contains field { name: ""maxLength"" } on ConfigurationSectionType — type is Int (nullable, kind SCALAR)
+[DATA] data.productConfiguration.configurationSections is a non-empty array
+[DATA] At least one section has type=""text"" (or ""Text"") with maxLength=30 (matches admin configuration)
+[DATA] Sections without maxLength configured return null for the field — not omitted","[ROUNDTRIP] Re-execute query → identical maxLength values returned
+[CONSOLE] No JS errors in GraphiQL
+[ADMIN] Admin UI Catalog → Configurable Products → section MaxLength field matches GraphQL maxLength value","errors[] non-empty; maxLength field absent from introspection (PR #107 not deployed); maxLength returns 0 instead of null when unset; maxLength returns wrong value vs admin config; ConfigurationSectionType missing from schema","none — read-only query","VCST-4806; PR #107 (XCart maxLength field exposure); xAPI; BL-CFG-001; graphql-schema.md — ConfigurationSectionType",Generated
+GQL-100,xCart - addItem Mutation Rejects CustomText Exceeding Section MaxLength with CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED,GraphQL > xCart > Configuration Validation,High,BL-GQL-001; BL-CFG-001; BL-CART-006,ECL-7.2; ECL-14.1,"User authenticated with valid token; configurable product with required Text section (maxLength=30) exists (AGENT-TEST-RING-TXT-CFG-20260327); cart accessible; GraphiQL UI at {{BACK_URL}}/ui/graphiql. Validates server-side enforcement when client maxlength cap is bypassed (paste, API direct, scripted client).","storeId=@td(STORE_PRIMARY.id); configurableProductId=AGENT-TEST-RING-TXT-CFG-20260327; over_limit_text=""ThisStringIsThirtyOneCharsLong!"" (31 chars); valid_text=""Engraved with Love"" (18 chars); user_email=@td(USER_DEFAULT.email)","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=@td(USER_DEFAULT.email)&password=@td(USER_DEFAULT.password)&storeId=@td(STORE_PRIMARY.id) → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click ""Headers"" tab → set auth header
+[SETUP] Get userId: query { me { id } } → save as <USER_ID>
+[SETUP] Get configurableProductId text-section sectionId via productConfiguration query → save as <SECTION_ID>
+[SETUP] Get or create cart: query { cart(storeId: ""@td(STORE_PRIMARY.id)"" currencyCode: ""USD"" cultureName: ""en-US"") { id } } → save as <CART_ID>
+[ACT] Introspect addItem / addItemsCart / createConfiguredLineItem mutation input to find configurationSections / configurationItems argument carrying customText: query { __type(name: ""InputAddItemType"") { inputFields { name type { name kind ofType { name } } } } } — adapt mutation accordingly
+[ACT] Clear editor → type mutation adding configurable item with OVER-LIMIT customText (31 chars > maxLength 30): mutation { addItem(command: { storeId: ""@td(STORE_PRIMARY.id)"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" productId: ""AGENT-TEST-RING-TXT-CFG-20260327"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" configurationSections: [{ sectionId: ""<SECTION_ID>"" customText: ""ThisStringIsThirtyOneCharsLong!"" }] }) { id validationErrors { errorCode errorMessage objectId errorParameters { key value } } items { id } } }
+[GQL] Click Execute (▶)
+[WAIT] Response panel shows result
+[READ] Inspect validationErrors[] / errors[] for max-length error
+[ACT] Repeat with VALID 18-char customText: mutation { addItem(command: { ... configurationSections: [{ sectionId: ""<SECTION_ID>"" customText: ""Engraved with Love"" }] }) { id items { id } validationErrors { errorCode } } }
+[GQL] Execute → expect success
+[ACT] Verify item added: query { cart(...) { items { id name } } }","[RESPONSE] First (over-limit) call returns validation failure
+[DATA] validationErrors[] (or errors[]) contains entry with errorCode=""CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED""
+[DATA] errorMessage matches pattern ""Configuration section CustomText exceeds the maximum allowed length of 30 characters""
+[DATA] Cart line item NOT created for over-limit attempt (items[] unchanged)
+[DATA] Second call (18-char valid text) succeeds — validationErrors[] empty, item present in cart
+[BL-GQL-001] errors[] is empty for valid call (validation surfaced via validationErrors, not GraphQL errors)
+[BL-CFG-001] Server-side enforcement independent of client cap — bypassing UI maxlength does not bypass backend","[ROUNDTRIP] Query cart again → confirm only one item (the valid one) added
+[CONSOLE] No JS errors in GraphiQL
+[INTEGRATION] Same error code appears in storefront error message via i18n key ""max_length_exceeded"" (PR #2235)","31-char text accepted (PR #107 not deployed — backend silently accepts); errorCode differs from CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED; error returned at GraphQL transport layer instead of validationErrors[]; cart line item created despite over-limit text (validation bypassed); 18-char valid text rejected (false positive)","mutation { clearCart(command: { storeId: ""@td(STORE_PRIMARY.id)"" userId: ""<USER_ID>"" cartId: ""<CART_ID>"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }; then mutation { removeCart(command: { cartId: ""<CART_ID>"" userId: ""<USER_ID>"" }) { result } }","VCST-4806; PR #107 (CartErrorDescriber.CustomTextMaxLengthExceeded + ConfigurationItemValidator); PR #2235 (frontend pairing); BL-CFG-001; xAPI",Generated
