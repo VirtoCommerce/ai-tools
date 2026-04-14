@@ -1,0 +1,22 @@
+{
+  "runId": "SYNC-2026-04-14-1500",
+  "source": "PR #116 (VirtoCommerce/vc-module-pagebuilder)",
+  "jiraTicket": "VCST-4872",
+  "date": "2026-04-14",
+  "changedModules": ["CMS / Page Builder"],
+  "changedLayers": ["backend", "frontend"],
+  "affectedSuites": ["059"],
+  "casesAnalyzed": 63,
+  "casesValid": 63,
+  "casesUpdated": 0,
+  "casesDeprecated": 0,
+  "casesGenerated": 12,
+  "newCaseIds": ["CMS-111", "CMS-112", "CMS-113", "CMS-114", "CMS-115", "CMS-116", "CMS-117", "CMS-118", "CMS-119", "CMS-120", "CMS-121", "CMS-122"],
+  "filesModified": [
+    "regression/suites/Backend/cms/059-cms-page-management.csv",
+    "config/test-suites.json",
+    "test-data/cms/pagebuilder-pages.md"
+  ],
+  "qualityGate": "PASS",
+  "artifact": "VirtoCommerce.PageBuilderModule_3.1003.0-pr-116-0696.zip"
+}

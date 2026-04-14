@@ -386,8 +386,8 @@ Type `/command-name` in Claude Code chat. See `.claude/rules/skills-commands.md`
 | `/qa-exploratory` | Guided exploratory testing session |
 | `/qa-env-check` | Validate env vars, endpoints, MCP servers |
 | `/qa-coverage-generation` | Parallel coverage generation pipeline |
-| `/qa-test-lifecycle` | Full test case lifecycle: analyze → generate → review → verify |
-| `/qa-sync-tests` | Sync test cases with code changes (PR, ticket, module, diff) |
+| `/qa-test-lifecycle` | Unified pipeline: sync stale cases + analyze gaps + generate + review + verify (PR, module, diff, suite, domain) |
+| `/qa-sync-tests` | _(deprecated — redirects to `/qa-test-lifecycle`)_ |
 | `/qa-verify-fix` | Verify a bug fix with regression checks |
 | `/ba-analyze` | Business analysis with GitHub search + live UI |
 | `/ba-stories` | Generate Agile user stories with BDD criteria |

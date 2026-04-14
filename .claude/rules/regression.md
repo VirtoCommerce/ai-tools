@@ -26,7 +26,7 @@ Load a prompt template from `docs/prompts/`, execute via MCP browser tools with 
 **Reporting module:** `scripts/reporting.ts` (generate reports, JIRA payloads, status updates)
 
 ### 4. Full Test Cycle CI Pipeline (Sync → Lifecycle → Regression)
-`ci/run-full-cycle.ts` orchestrates a 3-phase pipeline triggered by code changes. Phase 1 (SYNC) detects stale test cases from PRs/diffs/module updates using `/qa-sync-tests` logic + Context7, updates Steps/Assertions, and generates cases for new behavior. Phase 2 (LIFECYCLE) runs 7-dimension static quality review on affected suites. Phase 3 (REGRESSION) delegates to `ci/run-regression.ts` to execute the affected suites. Each phase has independent skip flags and budget allocation (30%/20%/50% of total budget). Results go to `reports/full-cycle/{RUN_ID}/`.
+`ci/run-full-cycle.ts` orchestrates a 3-phase pipeline triggered by code changes. Phase 1 (SYNC + REVIEW) uses `/qa-test-lifecycle --ci` to detect stale test cases from PRs/diffs/module updates, update Steps/Assertions, analyze coverage gaps, and run 7-dimension quality review. Phase 2 (REGRESSION) delegates to `ci/run-regression.ts` to execute the affected suites. Each phase has independent skip flags and budget allocation (50%/50% of total budget). Results go to `reports/full-cycle/{RUN_ID}/`.
 
 **Invoke:** `CHANGE_SOURCE="PR #123" npm run ci:cycle` or via `.github/workflows/full-cycle.yml`
 **Triggers:** PR merge to main (auto), daily schedule (Mon-Fri 8AM UTC), manual dispatch

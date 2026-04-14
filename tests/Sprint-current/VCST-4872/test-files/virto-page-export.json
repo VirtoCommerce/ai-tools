@@ -1,0 +1,27 @@
+﻿{
+  "settings": {},
+  "content": [
+    {
+      "height": "auto",
+      "type": "slider",
+      "id": "sliderNPgA",
+      "title": "Virto Page",
+      "subtitle": null,
+      "slides": [
+        {
+          "image": "https://vcst-qa.govirto.com/cms-content/Themes/B2B-store/default/content/pages/assets/pages/CCTV-banner-1.jpg",
+          "title": "Saveguard",
+          "text": null,
+          "url": null
+        },
+        {
+          "image": "https://vcst-qa.govirto.com/cms-content/Themes/B2B-store/default/content/pages/assets/pages/CCTV-banner-2.jpg",
+          "title": "Security First",
+          "text": null,
+          "url": null
+        }
+      ],
+      "background": "bg-neutral-800"
+    }
+  ]
+}

@@ -53,8 +53,7 @@ Two agent teams for the Virto Commerce platform: **QA** (quality assurance) and 
 | `/qa-test VCST-XXXX` | Test a JIRA ticket, feature, or PR | varies |
 | `/qa-regression [scope]` | Run regression suites (smoke/critical/sprint/full) | varies |
 | `/qa-coverage-generation [scope]` | Orchestrated parallel coverage generation with CI support | varies |
-| `/qa-test-lifecycle` | Full test case lifecycle: analyze → generate → review → verify | varies |
-| `/qa-sync-tests` | Sync test cases with code changes (PR, ticket, module, diff) | varies |
+| `/qa-test-lifecycle` | Unified pipeline: sync stale cases + analyze gaps + generate + review + verify (PR, module, diff, suite, domain) | varies |
 | `/qa-verify-fix VCST-XXXX` | Verify a bug fix with regression checks | varies |
 | `/qa-status` | Dashboard: run status, JIRA queue, env health | < 30 sec |
 | `/qa-bug [description]` | Reproduce, document, and optionally file a JIRA bug | ~5 min |

@@ -12,7 +12,7 @@ Quick decision tree for commands, skills, and agents.
 | **Generate coverage report** | `/qa-coverage-generation [p0\|p1\|full\|domain\|ci-dry-run]` | Command |
 | **Test a JIRA ticket/feature/PR** | `/qa-test VCST-XXXX` | Command |
 | **Run exploratory testing session** | `/qa-exploratory [checkout\|catalog\|B2B\|mobile]` | Command |
-| **Full test case lifecycle** | `/qa-test-lifecycle suite <ID> \| domain <name> \| diff` | Command |
+| **Full test case lifecycle** | `/qa-test-lifecycle suite <ID> \| domain <name> \| PR #NNN \| module <name> \| diff` | Command |
 | **Verify a bug fix** | `/qa-verify-fix VCST-XXXX` | Command |
 | **Get a test checklist for a domain** | `/qa-checklist domain` | Skill |
 | **Generate test cases** | `/qa-test-cases-generator VCST-XXXX \| domain \| suite ID` | Skill |
@@ -20,7 +20,7 @@ Quick decision tree for commands, skills, and agents.
 | **Analyze test coverage gaps** | `/qa-coverage-gap analyze` | Skill |
 | **Review test case quality** | `/qa-review-tests suite <ID> \| file <path> \| diff` | Skill |
 | **Create Postman collections** | `/qa-postman create <purpose> \| run <collection>` | Skill |
-| **Sync tests with code changes** | `/qa-sync-tests PR #NNN \| VCST-XXXX \| module <name> \| diff` | Command |
+| **Sync tests with code changes** | `/qa-test-lifecycle PR #NNN \| module <name> \| diff \| changelog <ver>` | Command |
 | **File or investigate a bug** | `/qa-bug description` | Command |
 | **Check environment health** | `/qa-env-check` | Command |
 | **See QA dashboard** | `/qa-status` | Command |
@@ -36,8 +36,7 @@ Quick decision tree for commands, skills, and agents.
 - `/qa-exploratory` — Guided exploratory session
 - `/qa-bug` — Reproduce and document bugs
 - `/qa-verify-fix` — Verify a bug fix: reproduce original bug, confirm fix, run regression checks, transition JIRA
-- `/qa-test-lifecycle` — Full test case lifecycle: analyze → generate → review → fix → verify → approve
-- `/qa-sync-tests` — Sync test cases with code changes: detect stale/broken cases, update steps/assertions, generate for new behavior
+- `/qa-test-lifecycle` — Unified test case pipeline: scope → sync stale → analyze gaps → generate → review → fix → verify → approve. Handles both change-driven sync (PR, module, diff, changelog) and direct scope (suite, domain, VCST-XXXX)
 - `/qa-coverage-generation` — Orchestrated parallel coverage generation across domain batches with CI support
 
 ### Plan Tests (Skills — methodology reference)
@@ -116,7 +115,7 @@ Quick decision tree for commands, skills, and agents.
 | `/qa-bug` | `/qa-investigate`, `/qa-defect` | Bug command uses investigation flow + defect templates |
 | `/qa-test` | `/qa-test-design`, `/qa-checklist`, `/qa-risk` | Test derives cases, applies domain checklists, and prioritizes based on risk |
 | `/qa-test` | `/qa-test-cases-generator` | Test command can use generator for new test cases |
-| `/qa-test-lifecycle` | `/qa-coverage-gap`, `/qa-review-tests` | Lifecycle uses gap analysis + quality review |
+| `/qa-test-lifecycle` | `/qa-coverage-gap`, `/qa-review-tests`, `/qa-sync-tests` (merged) | Unified pipeline: sync + gap analysis + quality review |
 | `/qa-verify-fix` | `/qa-investigate`, `/qa-checklist` | Fix verification uses investigation flow + Bug Fix Verification checklist |
 | `/qa-coverage-generation` | `/qa-coverage-gap`, `/qa-test-cases-generator` | Coverage generation uses gap analysis + test case generator |
 | `/qa-seed-data` | `/qa-test`, `/qa-regression` | Seed data prepares test prerequisites for test runs |

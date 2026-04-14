@@ -1229,8 +1229,8 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 21,
-      "estimatedMinutes": 15,
+      "testCount": 37,
+      "estimatedMinutes": 30,
       "agent": "qa-backend-expert",
       "tags": [
         "cms",

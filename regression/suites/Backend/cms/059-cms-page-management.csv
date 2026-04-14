@@ -100,3 +100,236 @@
 5. Expand Scheduling section — verify StartDate/EndDate fields render without error
 6. Expand Personalization section — verify Visibility, User groups, Organization fields render
 7. Open DevTools Console — verify no errors while opening each page","API response includes scheduling/visibility fields; pages open without errors; Scheduling and Personalization sections render correctly; all 20 sampled pages have visibility defined",,"API response missing fields; pages failing to open (500); Scheduling blank or throws exception; console errors on opening migrated pages","","VCST-4756; PR #105; Checklist 8.2 8.3",
+"CMS-111","Save content — download page content as JSON file","Content Portability","Critical",,,"Admin logged in with PageBuilder Update permission; PAGE-1 or PAGE-2 exists with content blocks in Draft or Published status; DevTools Network tab open","PAGE-1 or PAGE-2 from test-data/cms/pagebuilder-pages.md; back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
+[BLADE] Wait for Draft page list to load
+[ACT] Click on PAGE-1 (QA Homepage Spring Sale) to open page blade
+[BLADE] Wait for page detail blade to open
+[ASSERT] Verify toolbar contains 'Save content' button with download icon (material-download)
+[ACT] Click 'Save content' toolbar button
+[WAIT] File download dialog appears or file auto-downloads
+[WAIT] Network tab shows GET /api/page-builder-pages/grouped/{groupId}/content?draft=true completes","[BLADE] 'Save content' button visible in page detail toolbar
+[DOM] Downloaded file name follows pattern {page-name}-content.json
+[FORM] Downloaded file contains valid JSON with page content/blocks
+[NETWORK] GET .../content?draft=true returns HTTP 200 with JSON content-type","[NETWORK] GET {{BACK_URL}}/api/page-builder-pages/grouped/{groupId}/content?draft=true returns 200
+[BODY] Response body is valid JSON with page blocks
+[CONSOLE] No JS errors during download","'Save content' button missing from toolbar; download fails or hangs; empty file downloaded; file name incorrect; network error on GET request (4xx/5xx); console errors during download","none","VCST-4872; PR #116 (2026-04-14)",
+"CMS-112","Save content — button disabled for new unsaved page","Content Portability","High",,,"Admin logged in; PageBuilder shell accessible","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
+[BLADE] Wait for Draft page list to load
+[ACT] Click 'Add' button to open new page blade
+[BLADE] Wait for new page blade to open
+[ASSERT] Verify 'Save content' toolbar button is present in toolbar","[BLADE] 'Save content' button is visible in page detail toolbar
+[DOM] 'Save content' button is disabled (greyed out, aria-disabled=true or disabled attribute)
+[DOM] Clicking 'Save content' button triggers no action (no download, no network request)","[CONSOLE] No JS errors when attempting to click disabled button
+[NETWORK] No GET .../content requests fired when button is disabled","'Save content' button is enabled on new page; clicking triggers download with empty/error content; console TypeError on click","none","VCST-4872; PR #116 (2026-04-14)",
+"CMS-113","Load content — upload JSON file to create page from template","Content Portability","Critical",,,"Admin logged in with PageBuilder Update permission; a valid page content JSON file available (exported via CMS-111); PageBuilder shell on Draft tab; DevTools Network tab open","Valid JSON file exported from CMS-111 (e.g., QA Homepage Spring Sale-content.json); back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
+[BLADE] Wait for Draft page list toolbar to render
+[ASSERT] Verify toolbar contains 'Load content' button with upload icon (material-upload)
+[ACT] Click 'Load content' toolbar button
+[WAIT] File selection dialog opens
+[ASSERT] Verify file dialog filter accepts .json files only
+[ACT] Select the valid page content JSON file
+[BLADE] Wait for PageDetails blade to open for new page creation
+[ACT] Fill 'Name': QA Imported Page Test
+[ACT] Fill 'Permalink': qa-imported-page-test
+[ACT] Select language: English
+[SAVE] Click 'Save' and wait for save confirmation
+[WAIT] Network: POST /api/page-builder-pages/grouped completes (create), then POST .../content completes (upload)
+[ACT] Open the created page in designer
+[BLADE] Wait for designer to load","[TOAST] Success notification after save
+[BLADE] Page blade shows name 'QA Imported Page Test' and permalink 'qa-imported-page-test'
+[GRID] Page appears in Draft list with correct name and permalink
+[DOM] Content blocks in designer match the source file (block count and types)","[NETWORK] POST {{BACK_URL}}/api/page-builder-pages/grouped returns 200
+[NETWORK] POST .../content returns 200
+[CONSOLE] No JS errors during upload
+[API] Content blocks in designer match source file","'Load content' button missing from Draft toolbar; file dialog does not filter to .json; page saved without content; content blocks missing or corrupted in designer (4xx/5xx on content POST); console errors during upload","Archive QA Imported Page Test after test","VCST-4872; PR #116 (2026-04-14)",
+"CMS-114","Load content — button visible only on Draft tab","Content Portability","High",,,"Admin logged in; pages exist in various statuses","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
+[BLADE] Wait for Draft tab to load
+[ASSERT] Verify 'Load content' button IS visible in Draft toolbar
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-active
+[BLADE] Wait for Active tab to load
+[ASSERT] Verify 'Load content' button is NOT visible in Active toolbar
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-pending
+[BLADE] Wait for Pending tab to load
+[ASSERT] Verify 'Load content' button is NOT visible in Pending toolbar
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-archived
+[BLADE] Wait for Archived tab to load
+[ASSERT] Verify 'Load content' button is NOT visible in Archived toolbar
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all
+[BLADE] Wait for All tab to load
+[ASSERT] Verify 'Load content' button is NOT visible in All toolbar","[DOM] 'Load content' button present only in Draft tab toolbar
+[DOM] Active tab toolbar does not contain 'Load content' button
+[DOM] Pending tab toolbar does not contain 'Load content' button
+[DOM] Archived tab toolbar does not contain 'Load content' button
+[DOM] All tab toolbar does not contain 'Load content' button","[CONSOLE] No JS errors while navigating between tabs","'Load content' button appears on non-Draft tabs; button missing from Draft tab; JS error on tab navigation","none","VCST-4872; PR #116 (2026-04-14)",
+"CMS-115","Load content — cancel file selection has no side effects","Content Portability","Medium",,,"Admin logged in; PageBuilder shell on Draft tab","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
+[BLADE] Wait for Draft page list to load
+[ASSERT] Note current page count in Draft list
+[ACT] Click 'Load content' toolbar button
+[WAIT] File selection dialog opens
+[ACT] Click Cancel in file selection dialog (do not select a file)
+[WAIT] Dialog closes","[DOM] No PageDetails blade opens after cancel
+[GRID] Draft list page count is unchanged (same count as noted before)
+[DOM] No new page entries appear in Draft list","[CONSOLE] No JS errors after cancel
+[NETWORK] No POST /api/page-builder-pages/grouped request fired after cancel","PageDetails blade opens without file selected; empty page created in Draft list; console TypeError after cancel","none","VCST-4872; PR #116 (2026-04-14)",
+"CMS-116","Clone page — duplicate draft page with content","Content Portability","Critical",,,"Admin logged in with PageBuilder Update permission; PAGE-1 or PAGE-2 exists with content blocks; DevTools Network tab open","PAGE-1 from test-data/cms/pagebuilder-pages.md; back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
+[BLADE] Wait for Draft page list to load
+[ACT] Click on PAGE-1 (QA Homepage Spring Sale) to open page blade
+[BLADE] Wait for page detail blade to open
+[ASSERT] Verify toolbar contains 'Clone' button with copy icon (material-content_copy)
+[ACT] Click 'Clone' toolbar button
+[WAIT] Loading indicator visible during clone operation
+[WAIT] Network: POST /api/page-builder-pages/grouped completes, then POST .../content/{sourceGroupId} completes
+[BLADE] Wait for cloned page blade to open automatically
+[ASSERT] Verify cloned page name: 'QA Homepage Spring Sale (copy)'
+[ASSERT] Verify cloned page permalink: qa-homepage-spring-sale-copy
+[ACT] Navigate back to Draft list
+[ASSERT] Verify clone appears in Draft list
+[ACT] Open cloned page in designer
+[BLADE] Wait for designer to load","[BLADE] 'Clone' button visible in page detail toolbar
+[FORM] Cloned page name = 'QA Homepage Spring Sale (copy)'
+[FORM] Cloned page permalink = 'qa-homepage-spring-sale-copy'
+[GRID] Clone appears in Draft list
+[DOM] Content blocks in cloned page designer match source page (block count and types identical)","[NETWORK] POST {{BACK_URL}}/api/page-builder-pages/grouped returns 200
+[NETWORK] POST .../content/{sourceGroupId} returns 204
+[CONSOLE] No JS errors during clone
+[API] Cloned page content matches source in designer","Clone button missing; clone created without content; content blocks differ from source; clone not appearing in Draft list; name or permalink pattern incorrect (4xx/5xx on grouped POST); console errors during clone","Archive cloned page after test","VCST-4872; PR #116 (2026-04-14)",
+"CMS-117","Clone page — preserves metadata fields","Content Portability","High",,,"Admin logged in; PAGE-2 (QA Wholesale Buyer Guide) exists with personalization settings (user groups, visibility)","PAGE-2 from test-data/cms/pagebuilder-pages.md: has cultureName=EN, visibility=ON, userGroups=B2B Wholesale; back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-active
+[BLADE] Wait for Active page list to load
+[ACT] Click on PAGE-2 (QA Wholesale Buyer Guide 2026) to open page blade
+[BLADE] Wait for page detail blade to open
+[ASSERT] Note metadata: cultureName (English), visibility setting, user groups (B2B Wholesale), organization
+[ACT] Click 'Clone' toolbar button
+[WAIT] Clone operation completes and cloned page blade opens
+[ACT] Expand Personalization section in cloned page blade","[FORM] Cloned page cultureName = English (matches source)
+[FORM] Cloned page visibility setting matches source (ON)
+[FORM] Cloned page user groups = B2B Wholesale (matches source)
+[FORM] Cloned page storeId matches source","[CONSOLE] No JS errors during clone
+[NETWORK] No 4xx/5xx on clone API requests","Metadata fields empty or reset to defaults on clone; user groups not copied; visibility toggle reset; storeId missing on clone","Archive cloned page after test","VCST-4872; PR #116 (2026-04-14)",
+"CMS-118","Clone page — button disabled for new unsaved page","Content Portability","High",,,"Admin logged in; PageBuilder shell accessible","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
+[BLADE] Wait for Draft page list to load
+[ACT] Click 'Add' button to open new page blade
+[BLADE] Wait for new page blade to open
+[ASSERT] Verify 'Clone' toolbar button is present","[BLADE] 'Clone' button is visible in page detail toolbar
+[DOM] 'Clone' button is disabled (greyed out, aria-disabled=true or disabled attribute)
+[DOM] Clicking 'Clone' button triggers no action (no clone operation, no network request)","[CONSOLE] No JS errors when attempting to click disabled Clone button
+[NETWORK] No POST /api/page-builder-pages/grouped requests fired when button is disabled","'Clone' button is enabled on new page; clicking triggers clone of undefined page; console TypeError on click","none","VCST-4872; PR #116 (2026-04-14)",
+"CMS-119","Clone of a clone — name and permalink pattern","Content Portability","Medium","","ECL-7.1","Admin logged in; a cloned page exists with name ending in '(copy)' and permalink ending in '-copy'","Cloned page from CMS-116; back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
+[BLADE] Wait for Draft page list to load
+[ACT] Click on the cloned page ('QA Homepage Spring Sale (copy)') to open its blade
+[BLADE] Wait for page detail blade to open
+[ACT] Click 'Clone' toolbar button
+[WAIT] Clone operation completes and second cloned page blade opens
+[ACT] Open second clone in designer
+[BLADE] Wait for designer to load","[FORM] Second clone name = 'QA Homepage Spring Sale (copy) (copy)'
+[FORM] Second clone permalink = 'qa-homepage-spring-sale-copy-copy'
+[DOM] Content blocks in second clone designer match the original source page","[CONSOLE] No JS errors during second clone operation
+[NETWORK] No 4xx/5xx on second clone API requests","Naming breaks on double-clone (e.g., suffix not appended correctly); permalink collision error (409); content not copied; console errors on second clone","Archive both cloned pages after test","VCST-4872; PR #116 (2026-04-14)",
+"CMS-120","API — Copy page content endpoint","Content Portability","High",,,"Admin authenticated via OAuth2 password grant; source page with content exists in Draft or Published status; empty target page (group) exists","sourceGroupId and targetGroupId UUIDs from existing pages; back_url={{BACK_URL}}","[AUTH] Obtain Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/{targetGroupId}/content/{sourceGroupId} with Bearer token
+[STATUS] Verify HTTP 204 (No Content)
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{targetGroupId}/content?draft=true with Bearer token
+[STATUS] Verify HTTP 200
+[BODY] Verify target page content matches source page content (block count and types)
+[AUTH] Repeat POST without Authorization header
+[STATUS] Verify HTTP 401
+[HTTP] POST with invalid sourceGroupId (non-existent UUID) with Bearer token
+[STATUS] Verify HTTP 404","[STATUS] Copy endpoint returns 204 on success
+[BODY] Target draft content matches source content (block structure identical)
+[STATUS] Unauthenticated request returns 401
+[STATUS] Invalid sourceGroupId returns 404","[DB] GET target content after copy confirms data persisted
+[CONSOLE] No JS errors during API calls","Copy returns error code other than 204; target content empty after copy; anonymous access succeeds (security issue — 401 not enforced); invalid IDs return 500 instead of 404","none","VCST-4872; PR #116 (2026-04-14)",
+"CMS-121","Load content — invalid file handling","Content Portability","High","","ECL-13.4","Admin logged in; PageBuilder shell on Draft tab","Invalid test files: empty.json (0 bytes), malformed.json (invalid JSON syntax), large.txt (renamed to .json); back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
+[BLADE] Wait for Draft page list toolbar to render
+[ACT] Click 'Load content' toolbar button
+[WAIT] File selection dialog opens
+[ACT] Select empty.json (0 bytes)
+[BLADE] Wait for PageDetails blade to open (if it does)
+[ACT] Fill page name and permalink → Click 'Save' (if blade opened)
+[WAIT] Observe result: page saves with empty content OR error shown
+[ACT] Click 'Load content' again
+[WAIT] File selection dialog opens
+[ACT] Select malformed.json (invalid JSON syntax)
+[WAIT] Observe result: error message shown OR graceful handling
+[WAIT] Check browser console for errors in both cases","[DOM] System handles empty file gracefully: page may be created with no content blocks; no unhandled exception thrown
+[TOAST] Malformed JSON shows user-facing error message or is rejected gracefully
+[DOM] UI remains responsive after both invalid file attempts
+[DOM] No corrupt page data persisted (designer shows empty or error state, not broken blocks)","[CONSOLE] No unhandled JS exceptions (TypeError, etc.) during either invalid file upload
+[NETWORK] Server returns 400 or 200 (not 500) for invalid file content","Unhandled exception on invalid file; page created with corrupted content; UI becomes unresponsive/freezes; server returns 500 without user-facing error; console TypeError visible","Archive any test pages created","VCST-4872; PR #116 (2026-04-14)",
+"CMS-122","Save and Load round-trip — exported content imports correctly","Content Portability","Critical",,,"Admin logged in; PAGE-1 exists with 7 content blocks (Slider, Category, Title, Products carousel, CTA, FavoriteProducts, Subscribe form); DevTools open","PAGE-1 from test-data/cms/pagebuilder-pages.md; back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
+[ACT] Open PAGE-1 in designer
+[BLADE] Wait for designer to load
+[ASSERT] Count blocks and note block types and order (expected: 7 blocks — Slider, Category, Title, Products carousel, CTA, FavoriteProducts, Subscribe form)
+[ACT] Close designer
+[BLADE] Wait for page detail blade
+[ACT] Click 'Save content' toolbar button
+[WAIT] JSON file downloads
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
+[ACT] Click 'Load content' toolbar button
+[WAIT] File selection dialog opens
+[ACT] Select the downloaded JSON file
+[BLADE] Wait for PageDetails blade to open
+[ACT] Fill 'Name': QA Round-Trip Test
+[ACT] Fill 'Permalink': qa-round-trip-test
+[SAVE] Click 'Save' and wait for success confirmation
+[ACT] Open the new page in designer
+[BLADE] Wait for designer to load","[DOM] Block count in imported page = 7 (matches source)
+[DOM] Block types and order match source: Slider, Category, Title, Products carousel, CTA, FavoriteProducts, Subscribe form
+[FORM] Block content (slider titles, CTA text, carousel settings) matches source values
+[TOAST] Success notification after save","[NETWORK] GET .../content?draft=true returns 200 on export
+[NETWORK] POST .../content returns 200 on import
+[CONSOLE] No JS errors during export or import
+[API] Imported page content API response matches exported JSON structure","Block count mismatch after import; blocks in wrong order in designer; block content lost or corrupted; block types changed; 4xx/5xx on export GET or import POST; console errors during round-trip","Archive QA Round-Trip Test after test","VCST-4872; PR #116 (2026-04-14)",
+"CMS-123","Auth — restricted user cannot save, load, or clone","Content Portability","High",,,"Two admin accounts available: (1) admin with PageBuilder Update permission, (2) restricted user WITHOUT PageBuilder Update permission (e.g., Catalog Manager role or custom role without page-builder:update); DevTools Network tab open","Restricted user credentials from test-data/users/; back_url={{BACK_URL}}","[AUTH] Log in as restricted user (without PageBuilder Update permission)
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
+[BLADE] Wait for Draft page list to load
+[ASSERT] Check if 'Load content' button is visible in toolbar — note state (hidden or disabled)
+[ACT] Open an existing page from the list (if page list is accessible)
+[BLADE] Wait for page detail blade to open
+[ASSERT] Check 'Save content' button state — expect disabled or hidden
+[ASSERT] Check 'Clone' button state — expect disabled or hidden
+[ACT] Attempt to click 'Save content' if visible
+[WAIT] Observe result — no download should occur
+[ACT] Attempt to click 'Clone' if visible
+[WAIT] Observe result — no clone should be created","[DOM] 'Save content' button is either hidden or disabled for restricted user
+[DOM] 'Clone' button is either hidden or disabled for restricted user
+[DOM] 'Load content' button is either hidden or disabled for restricted user
+[DOM] No content download triggered; no clone page created; no file upload dialog opened","[CONSOLE] No JS errors (no unhandled 403 in console)
+[NETWORK] If any API call is attempted, server returns 403 (Forbidden) not 500","Restricted user can download content (data leak); restricted user can clone pages (unauthorized write); restricted user can upload content (unauthorized write); 500 instead of 403 on API calls","none","VCST-4872; PR #116 (2026-04-14); Gap SC-14",
+"CMS-124","API — Copy endpoint returns 403 for user with insufficient permissions","Content Portability","High",,,"Two admin accounts: (1) admin with full permissions, (2) restricted user with valid auth token but WITHOUT PageBuilder Update permission; source and target group IDs available","Restricted user Bearer token; sourceGroupId and targetGroupId from existing pages; back_url={{BACK_URL}}","[AUTH] Obtain Bearer token for restricted user via POST {{BACK_URL}}/connect/token
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/{targetGroupId}/content/{sourceGroupId} with restricted user Bearer token
+[STATUS] Verify HTTP 403 (Forbidden)
+[AUTH] Obtain Bearer token for admin user (full permissions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/{targetGroupId}/content/{sourceGroupId} with admin Bearer token
+[STATUS] Verify HTTP 204 (No Content) — confirms endpoint works for authorized user","[STATUS] Restricted user receives 403 (Forbidden) on copy content endpoint
+[STATUS] Admin user receives 204 (success) on same endpoint with same parameters
+[BODY] 403 response does not leak internal error details or stack traces","[NETWORK] No 500 errors — proper 403 handling
+[CONSOLE] No unhandled exceptions","Restricted user receives 200/204 (unauthorized access to copy endpoint); 500 instead of 403; 401 instead of 403 for authenticated but unauthorized user; error response leaks internal details","none","VCST-4872; PR #116 (2026-04-14); Gap SC-16",
+"CMS-125","Clone published page — clone is created in Draft status","Content Portability","High",,,"Admin logged in; a Published page exists in Active tab with content blocks","Published page from Active tab (e.g., PAGE-2 QA Wholesale Buyer Guide 2026); back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-active
+[BLADE] Wait for Active page list to load
+[ACT] Click on a Published page (e.g., PAGE-2 QA Wholesale Buyer Guide 2026) to open its blade
+[BLADE] Wait for page detail blade to open
+[ASSERT] Verify page status is Published
+[ASSERT] Verify 'Clone' button is visible and enabled
+[ACT] Click 'Clone' toolbar button
+[WAIT] Clone operation completes and cloned page blade opens
+[ASSERT] Verify cloned page status is Draft (not Published)
+[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
+[BLADE] Wait for Draft page list to load
+[ASSERT] Verify clone appears in Draft list (not in Active list)
+[ACT] Open clone in designer
+[BLADE] Wait for designer to load
+[ASSERT] Verify content blocks match source published page","[FORM] Cloned page status = Draft
+[GRID] Clone appears in Draft tab (not Active tab)
+[DOM] Content blocks in clone designer match source published page
+[FORM] Clone name = '{source name} (copy)'","[NETWORK] POST .../grouped returns 200 (create clone)
+[NETWORK] POST .../content/{sourceGroupId} returns 204 (copy content from published source)
+[CONSOLE] No JS errors during clone of published page","Clone inherits Published status from source; clone appears in Active tab instead of Draft; clone content does not match source; clone fails with error when source is Published","Archive cloned page after test","VCST-4872; PR #116 (2026-04-14); Gap SC-07",
+"CMS-126","Clone permalink collision — page with '-copy' permalink already exists","Content Portability","Medium","","ECL-7.1","Admin logged in; a page exists AND a clone of that page also exists (from CMS-116), so permalink '{original}-copy' is already taken","Original page + its clone from CMS-116 (e.g., 'QA Homepage Spring Sale' + 'QA Homepage Spring Sale (copy)' with permalink 'qa-homepage-spring-sale-copy'); back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
+[BLADE] Wait for Draft page list to load
+[ACT] Open the ORIGINAL page (QA Homepage Spring Sale, NOT the copy)
+[BLADE] Wait for page detail blade to open
+[ACT] Click 'Clone' toolbar button — this will attempt to create a second clone with the same '-copy' permalink
+[WAIT] Observe result: clone operation completes or error is shown
+[ASSERT] Check if clone was created or if a permalink collision error occurred","[DOM] Either: (a) clone is created with a modified permalink to avoid collision (e.g., '-copy-1' or '-copy-2'), OR (b) clone is created with duplicate permalink '-copy' (server allows duplicates), OR (c) error message shown indicating permalink conflict
+[FORM] If clone was created: verify name and content are correct regardless of permalink resolution","[NETWORK] Monitor for 409 (Conflict) or 400 (Bad Request) or 200 (success with duplicate)
+[CONSOLE] No unhandled JS exceptions during collision scenario","Unhandled 500 error on permalink collision; UI freezes or becomes unresponsive; clone created but page inaccessible due to permalink conflict; silent failure with no feedback to user","Archive any cloned pages after test","VCST-4872; PR #116 (2026-04-14); Gap SC-13",
