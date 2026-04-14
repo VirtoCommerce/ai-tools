@@ -340,3 +340,27 @@ OPTION 3 — Silent accept: Both A and B have dependsOnSectionId pointing to eac
 [BODY] Section A in final GET response has dependsOnSectionId = null — unaffected
 [SCHEMA] dependsOnSectionId field present in section schema (not stripped by serializer)","[ADMIN] Navigate to seed product Configurations tab — Section B Depends On shows Base Options confirming round-trip
 [CONSOLE] No server-side errors visible via Admin SPA","HTTP 400 rejecting dependsOnSectionId field as unknown property; field silently stripped from response (serializer omission); PATCH not supported — document correct verb; 401 unauthorized with valid token","restore Section B dependsOnSectionId to null via PATCH after test","VCST-4713","Manual"
+
+"CFG-CA-025","Admin: Create CFG-027 Pattern — Two Required Sections Depend on Same Optional Parent","Catalog > Configurable Products > Conditional Sections","High","BL-CAT-001","ECL-7.1","Admin SPA accessible. Logged in as {{ADMIN_EMAIL}}. Configurable product exists or created fresh. Configurations tab accessible.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_TWO_REQ_SIBLINGS.slug)","[NAV] Navigate to {{BACK_URL}} and log in
+[NAV] Catalog > Products > open or create a configurable product
+[NAV] Open Configurations tab
+[ACT] Add Section A: name=Bundle Choice; type=Product; required=false; add options None/Bundle A/Bundle B
+[SAVE] Save configuration
+[ACT] Add Section B: name=Size; type=Product; required=true; Depends On=Bundle Choice; add options S/M/L
+[SAVE] Save configuration
+[ACT] Add Section C: name=Color; type=Product; required=true; Depends On=Bundle Choice; add options Black/White/Red
+[SAVE] Save configuration
+[ASSERT] Review saved configuration: 3 sections with correct dependency wiring
+[ASSERT] Both Size and Color show Depends On=Bundle Choice in the admin Configurations UI","[ADMIN] Section A created: name=Bundle Choice; type=Product; required=false; dependsOnSectionId=null
+[ADMIN] Section B created: name=Size; type=Product; required=true; dependsOnSectionId=<Bundle Choice id>
+[ADMIN] Section C created: name=Color; type=Product; required=true; dependsOnSectionId=<Bundle Choice id>
+[ADMIN] Both siblings show correct Depends On dropdown value (Bundle Choice) in saved configuration view","[API] GET /api/catalog/products/configurations?productId=<id> returns sections with correct dependsOnSectionId wiring; [STOREFRONT] After reindex: Bundle=None hides both siblings; Bundle=value reveals both (CFG-PDP-034-COND)","Admin saves only one sibling dependency correctly; Depends On dropdown not persisted; required flag not saved; sections not appearing in storefront as expected","none","VCST-4713","Manual"
+"CFG-CA-026","Admin: Create CFG-028 Pattern — 4-Level Chain and Verify REST API Persistence","Catalog > Configurable Products > Conditional Sections","High","BL-CAT-001","ECL-7.1","Admin SPA accessible. Logged in. Configurable product exists or created fresh.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_DEEP_CHAIN.slug)","[AUTH] POST {{BACK_URL}}/connect/token for admin Bearer token
+[NAV] Catalog > Products > open configurable product > Configurations tab
+[ACT] Add 5 sections sequentially: Level A (Product, req, no dep); Level B (Product, opt, Depends On=Level A); Level C (Product, opt, Depends On=Level B); Level D (Product, opt, Depends On=Level C); Level E (Product, opt, Depends On=Level D)
+[SAVE] Save after each addition
+[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<product-id>
+[ASSERT] Response contains 5 sections with correct dependsOnSectionId chain: A=null; B=A.id; C=B.id; D=C.id; E=D.id","[ADMIN] All 5 levels saved with correct Depends On values in admin UI
+[HTTP] GET response: 5 sections; Level A dependsOnSectionId=null; Level B dependsOnSectionId=Level A id; chain continues through E
+[DATA] Chain integrity: each level depends only on direct predecessor
+[STATE] REST API persists the 4-level chain correctly (regression for depth-4 computation)","[API] GET returns HTTP 200 with correct chain; [STOREFRONT] After reindex: CFG-PDP-036-COND passes (deep chain visibility correct)","REST API returns fewer than 5 sections; any dependsOnSectionId null when it should point to predecessor; admin UI does not allow selecting Depends On for deeper levels; chain broken in API response","none","VCST-4713","Manual"

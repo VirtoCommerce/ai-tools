@@ -1,0 +1,71 @@
+{
+  "ticket": "VCST-4713",
+  "title": "[Catalog][Product][Configuration] Conditional sections",
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-04-13",
+  "sprint": "VCST Sprint 26-07",
+  "environment": "QA (vcst-qa.govirto.com / vcst-qa-storefront.govirto.com)",
+  "build": {
+    "platform": "3.1017.0",
+    "theme": "2.46.0-pr-2225-c823-c8237646",
+    "relevant_modules": {
+      "VirtoCommerce.Catalog": "3.1017.0-pr-871-3438",
+      "VirtoCommerce.XCart": "3.1006.0-pr-105-e12d"
+    }
+  },
+  "prs_verified_deployed": [
+    "VirtoCommerce/vc-module-catalog#871",
+    "VirtoCommerce/vc-module-x-cart#105",
+    "VirtoCommerce/vc-frontend#2225"
+  ],
+  "agents_dispatched": ["qa-frontend-expert", "qa-testing-expert", "qa-backend-expert"],
+  "total_cases_executed": 15,
+  "passed": 15,
+  "failed": 0,
+  "blocked": 0,
+  "coverage_by_layer": {
+    "storefront_ui_e2e": { "executed": 13, "passed": 13, "failed": 0, "source": "072 + 072b CSVs, Firefox (chrome fallback)" },
+    "cross_cutting_backward_compat": { "executed": 1, "passed": 1, "source": "072c CFG-BACK-001-COND" },
+    "graphql_xapi": { "executed": 1, "passed": 1, "source": "072c CFG-GQL-010-COND — productConfiguration with dependsOnSectionId" },
+    "admin_ui": { "executed": 0, "passed": 0, "gap": "6 cases (CFG-CA-019..024) not run — qa-backend-expert hit rate limit before admin UI pass; feature-deployment verified transitively via seed script POST /api/catalog/products/configurations + GraphQL readback" },
+    "rest_api_direct": { "executed": 0, "passed": 0, "gap": "Not directly executed, but transitively verified: seed script POST /api/catalog/products/configurations persisted dependsOnSectionId, GraphQL readback confirmed values" }
+  },
+  "bugs_filed": [],
+  "business_rules_verified": [
+    "BL-CAT-006 — Add to Cart gating respects currently-visible required sections; hidden optional sections do not block",
+    "BL-PRICE-001 — Price stacking excludes hidden section option prices; verified $300 / $325 / $345 / $300 transitions"
+  ],
+  "edge_cases_verified": [
+    "ECL-7.1 state transitions — cascade hide/show, clearHiddenSectionValues() clears stale child values on parent deselect/reselect",
+    "ECL-14.1 data validation — addItem configurationItems[] excludes hidden sections; cart line-item payload integrity confirmed"
+  ],
+  "exploratory": {
+    "charter": "Conditional section behavior at integration boundaries and failure modes",
+    "heuristic": "SFDPOT",
+    "duration_min": 20,
+    "threads": 7,
+    "findings": { "bugs": 0, "questions": 2, "observations": 5, "risks": 0 },
+    "questions": [
+      "Page refresh reverts configuration to default preselections rather than restoring last-saved state — by design or intended persistence?",
+      "Bike PDP auto-navigates to conditional product during test — investigate routing/seed interaction"
+    ]
+  },
+  "backward_compatibility": "PASS — existing CFG products (Hat 4 sections, Bike 5 sections) with dependsOnSectionId=null render all sections unconditionally; GraphQL returns null for those fields",
+  "infrastructure_notes": [
+    "playwright-chrome MCP failed with 'Target page closed' — frontend agent fell back to playwright-firefox",
+    "qa-backend-expert hit Anthropic rate limit (resets 19:00 Europe/Budapest) before admin UI 6 cases could be executed"
+  ],
+  "coverage_gaps_and_recommendations": [
+    "Re-run qa-backend-expert after rate-limit reset to cover CFG-CA-019..024 (admin section editor dependsOnSectionId field, circular dep prevention, delete-parent behavior, graph display, renaming)",
+    "Optional: direct REST validation of POST config with circular dependency (server-side rejection)"
+  ],
+  "artifacts": "tests/Sprint-current/VCST-4713/",
+  "artifact_files": [
+    "frontend-report.md",
+    "cross-cutting-report.md",
+    "exploratory-session.md",
+    "summary.json",
+    "evidence/frontend/ (16 files)",
+    "evidence/cross-cutting/ (9 screenshots + snapshot)"
+  ]
+}

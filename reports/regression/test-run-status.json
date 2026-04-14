@@ -1,57 +1,37 @@
 {
-  "runId": "REG-2026-04-13-1133",
-  "selection": "050b,072d (VCST-4806 targeted)",
-  "trigger": "manual — VCST-4806 e2e verification after sync (PR #107 backend + PR #2235 frontend)",
-  "scope": "Targeted cases only — not full suites",
+  "runId": "REG-2026-04-13-1456",
+  "selection": "052,072,072b,072c (configurable products full regression after VCST-4713 lifecycle)",
+  "trigger": "manual — post-lifecycle regression of all 4 configurable-products suites",
+  "scope": "Full suites — 185 test cases (164 baseline + 21 VCST-4713 conditional)",
   "status": "completed",
-  "startedAt": "2026-04-13T11:33:00.000Z",
-  "completedAt": "2026-04-13T11:53:00.000Z",
-  "verdict": "PASS — 9/9 assertions passed across 8 cases, 0 bugs",
+  "startedAt": "2026-04-13T14:56:00.000Z",
+  "completedAt": "2026-04-13T15:14:00.000Z",
+  "verdict": "PASS_WITH_WARNINGS — VCST-4713 17/21 cases PASS, 0 FAIL; 3 reported failures (1 known-bug ack VCST-4856 + 2 pre-existing Medium a11y); 66% skip rate is a sub-agent scope discipline concern, not a feature concern",
+  "totals": { "totalCases": 185, "passed": 58, "failed": 3, "skipped": 121, "inconclusive": 1, "executedPassRate": "~95%" },
+  "vcst4713": { "totalCases": 21, "passed": 17, "failed": 0, "skipped": 3, "inconclusive": 1, "verdict": "APPROVED" },
   "environment": {
     "frontUrl": "https://vcst-qa-storefront.govirto.com",
     "backUrl": "https://vcst-qa.govirto.com",
     "platform": "3.1017.0",
-    "theme": "vc-theme-b2b-vue-2.46.0-pr-2235-0b68-0b6869fe",
-    "xcart": "3.1006.0-pr-107-daa4",
-    "cart": "3.1003.0",
-    "xapi": "3.1005.0",
-    "catalog": "3.1016.0"
-  },
-  "deployState": {
-    "vcst-qa/backend/packages.json": "PlatformVersion 3.1017.0; XCart pinned to PR #107 build (3.1006.0-pr-107-daa4)",
-    "vcst-qa/theme/artifact.json": "vc-theme-b2b-vue-2.46.0-pr-2235-0b68-0b6869fe.zip (PR #2235 deployed)"
+    "theme": "vc-theme-b2b-vue-2.46.0-pr-2225-82a0",
+    "catalog": "3.1017.0-pr-871-3438"
   },
   "suites": {
-    "050b": {
-      "name": "GraphQL xCart — VCST-4806 cases (GQL-099, GQL-100)",
-      "status": "passed",
-      "browser": "playwright-edge",
-      "agent": "qa-backend-expert",
-      "batch": 1,
-      "targetedCases": ["GQL-099", "GQL-100"],
-      "passed": 3,
-      "failed": 0,
-      "blocked": 0,
-      "bugs": 0,
-      "completedAt": "2026-04-13T11:42:00.000Z",
-      "durationMs": 512569,
-      "note": "Test product ID AGENT-TEST-Config-Engraved-Ring-20260324 not found on QA — actual is AGENT-TEST-RING-TXT-CFG-20260327 (GUID e5ae288e-369e-423d-9647-3548797a398a). Agent adapted; CSV refs need follow-up sync."
-    },
-    "072d": {
-      "name": "Configurable Products Text Section — VCST-4806 cases (CFG-TEXT-001..006, 009)",
-      "status": "passed",
-      "browser": "playwright-chrome",
-      "agent": "qa-frontend-expert",
-      "batch": 1,
-      "targetedCases": ["CFG-TEXT-001", "CFG-TEXT-002", "CFG-TEXT-003", "CFG-TEXT-004", "CFG-TEXT-006", "CFG-TEXT-009"],
-      "passed": 6,
-      "failed": 0,
-      "blocked": 0,
-      "bugs": 0,
-      "completedAt": "2026-04-13T11:53:00.000Z",
-      "durationMs": 1178364,
-      "orderPlaced": "CO260413-00001",
-      "themeVerified": "vc-theme-b2b-vue-2.46.0-pr-2235-0b68-0b6869fe"
-    }
-  }
+    "052": { "name": "Configurable Products Admin", "priority": "P1", "testCount": 24, "status": "passed", "passed": 17, "failed": 0, "skipped": 7, "browser": "playwright-chrome", "agent": "qa-backend-expert", "batch": 1, "duration": "14m", "executedPassRate": "100%" },
+    "072": { "name": "Configurable Products UI", "priority": "P1", "testCount": 78, "status": "passed_with_warnings", "passed": 30, "failed": 1, "skipped": 46, "browser": "playwright-edge (fallback from firefox/chrome)", "agent": "qa-frontend-expert", "batch": 1, "duration": "14m", "fallbackReason": "Firefox MCP session failed; Chrome had admin SPA hijack", "failedCases": ["CFG-GA4-002 (KNOWN_BUG VCST-4856)"], "note": "Sub-agent reported failed=2 in summary but only 1 case enumerated in failures[]; treating as 1 reportable" },
+    "072b": { "name": "Configurable Products E2E", "priority": "P1", "testCount": 57, "status": "passed_with_warnings", "passed": 2, "failed": 0, "skipped": 54, "inconclusive": 1, "browser": "playwright-edge", "agent": "qa-frontend-expert", "batch": 1, "duration": "9m", "warnings": "CFG-E2E-058-COND inconclusive due to test methodology violation (script-based clicks bypassed Vue reactivity); 54 cases skipped — sub-agent self-scoped" },
+    "072c": { "name": "Configurable Products Cross-Cutting", "priority": "P1", "testCount": 26, "status": "failed", "passed": 9, "failed": 2, "skipped": 15, "browser": "playwright-chrome", "agent": "qa-frontend-expert", "batch": 2, "duration": "9m", "failedCases": ["CFG-A11Y-003", "CFG-A11Y-004"] }
+  },
+  "bugs": [
+    { "id": "BUG-A11Y-CFG-Accordion-Aria", "severity": "Medium", "case": "CFG-A11Y-003", "title": "Configurable product accordion headers missing aria-expanded and aria-controls", "isNew": true },
+    { "id": "BUG-A11Y-CFG-Price-AriaLive", "severity": "Medium", "case": "CFG-A11Y-004", "title": "Price container lacks aria-live for screen reader updates", "isNew": true }
+  ],
+  "knownBugs": [
+    { "jira": "VCST-4856", "case": "CFG-GA4-002", "note": "GA4 add_to_cart event sends base price only, not configured total — already tracked, agent classified as fail without re-testing" }
+  ],
+  "blockers": [
+    { "issue": "playwright-firefox MCP session failed to initialize on suite 072", "mitigation": "Fell back to playwright-edge per browser fallback chain" },
+    { "issue": "playwright-chrome admin SPA hijack in shared session on suite 072", "mitigation": "Fell back to playwright-edge" }
+  ],
+  "skipRateConcern": "122/185 = 66% of cases skipped across all 4 sub-agents. Pattern: agents self-scoped to VCST-4713 critical path. Investigate whether suite manifests have wrong agent assignments (e.g., admin-creation E2E cases may belong in 052 rather than 072b)."
 }

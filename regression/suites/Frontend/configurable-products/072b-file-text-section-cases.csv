@@ -337,3 +337,87 @@
 [NETWORK] Successful addItem (18-char) returns 200 with no validationErrors
 [I18N] Switching locale to fr — error becomes ""Le texte ne doit pas dépasser 30 caractères"" (locales/fr.json max_length_exceeded)
 [API] addItem GraphQL response shape matches BL-GQL-001 (errors[] empty when validation surfaces via validationErrors)","Over-limit text accepted without inline error (PR #2235 not deployed or i18n key not loaded); error message is generic ""invalid"" instead of localized max_length_exceeded; max parameter shown as ""{max}"" literal (i18n interpolation broken); backend silently accepts over-limit text (PR #107 not deployed); add-to-cart succeeds with 31-char text in cart","Remove item from cart after test","VCST-4806; PR #107 (backend CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED); PR #2235 (frontend max_length_exceeded i18n + section.maxLength binding); locales/en.json max_length_exceeded; Synced: VCST-4806 (2026-04-13)","synced"
+"CFG-TEXT-010","Text Section — Null Backend maxLength Falls Back to 255 Storefront Cap (PR #2235 Default Behavior)","Configurable Products > Text Section > Null Handling","Medium","BL-CAT-006","ECL-7.1; ECL-14.5","User logged in as {{USER_EMAIL}}. Product MHI-55960404 (""Bed with Additional Options Configurable bed"", GUID c7205a92-94c2-49f9-9049-ed3cfcb3a70b) has Text section ""Fabric and materials"" with maxLength=null in admin (left blank by content editor — intentional null). PR #2235 deployed with fallback `MAX_LENGTH = computed(() => props.section.maxLength ?? 255)`. PR #107 deployed (backend tolerates null — no MaxLength validation triggered when section.MaxLength.HasValue is false).","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_code=MHI-55960404; section_name=""Fabric and materials""; boundary_text_255=255-char string; over_text_300=300-char string","[NAV] {{FRONT_URL}} — search and navigate to product MHI-55960404
+[WAIT] Configuration widget visible
+[SCROLL] Scroll to ""Fabric and materials"" Text section
+[ASSERT] Text input visible; DOM attribute maxlength=""255"" (NOT null/empty/0 — proves PR #2235 fallback applied)
+[ACT] Type 255 characters into text field
+[ASSERT] All 255 characters accepted; input value length = 255
+[ACT] Attempt to paste 300-character text
+[ASSERT] Pasted text truncated to exactly 255 characters by HTML maxlength cap
+[ACT] Open browser DevTools → Network — record auth/storefront GraphQL traffic
+[NAV] {{BACK_URL}}/ui/graphiql
+[ACT] Run query: query { productConfiguration(configurableProductId: ""c7205a92-94c2-49f9-9049-ed3cfcb3a70b"" storeId: ""@td(STORE_PRIMARY.id)"" userId: ""<USER_ID>"" cultureName: ""en-US"" currencyCode: ""USD"") { configurationSections { id name type maxLength } } }
+[GQL] Click Execute (▶)
+[READ] Inspect response — verify ""Fabric and materials"" section returns maxLength: null
+[ACT] Return to PDP; clear text; type valid 18-char text 'Cotton Premium Set'
+[ACT] Set quantity 1; click 'Add to Cart'
+[WAIT] Success notification","[STATE] Storefront input maxlength=255 (default fallback applied — not 0, null, or omitted)
+[STATE] 255-char boundary accepted; 300-char paste truncated to 255
+[STATE] Add-to-cart succeeds with valid text (no length-related validation error fires)
+[DATA] GraphQL productConfiguration returns maxLength: null for the Text section (NOT 0, NOT 255 — true null preserved through API)
+[STATE] Backend addItem accepts text up to 255 chars without CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED (PR #107 skips validation when section.MaxLength.HasValue is false)","[ADMIN] Admin → Catalog → Products → MHI-55960404 → Configuration tab — Max Length spinbutton field for ""Fabric and materials"" section is empty (blank value, not 0)
+[CONSOLE] No JS errors during input or validation
+[NETWORK] addItem mutation returns 200; validationErrors[] empty
+[I18N] No max_length_exceeded error message rendered (irrelevant when null — error path only fires when section.maxLength is set AND exceeded)","Storefront cap is something other than 255 (e.g. 0 = nothing accepted, or unbounded if HTML maxlength missing entirely); GraphQL returns maxLength=0 instead of null (incorrect schema serialization); backend rejects valid 255-char text with CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED despite null MaxLength (false positive — validator doesn't guard against null); admin field shows 255 as actual stored value instead of empty (defaulting on save)","Remove item from cart after test","VCST-4806; PR #107 (vc-module-x-cart — null-tolerant validator); PR #2235 (vc-frontend useConfigurableProduct.ts + section-text-fieldset.vue ?? 255 fallback); Investigation: REG-2026-04-13-1133 follow-up (MHI-55960404)","Manual"
+"CFG-TEXT-019-COND-TOAST","Text Section (Conditional Required) — Toast Save with Empty Required Text Field Must Not Persist to Cart","Configurable Products > Text Section > Toast Validation","Critical","BL-CAT-006","ECL-14.1; ECL-7.2","Storefront accessible. User authenticated. Wedding cake product deployed: {{FRONT_URL}}/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake. Product already in cart (lineItemId in URL) with Base+Creme selected. PDP in edit mode (Update cart button visible). Message option selected — Custom text required section (type=Text, isRequired=true, dependsOn=Message section) is visible and empty. Toast ""The product configuration has been changed"" is visible with a Save button. Note: this test specifically exercises the conditional Text section path (Custom text required appears only when Message has a value).","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; pdp_url={{FRONT_URL}}/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake; product_id=@td(CFG_WEDDING_CAKE_CONDITIONAL.id); section_custom_text_id=a251777f-654b-43aa-8074-5b5820f48fb4; section_message_id=19e27d3a-77e8-4b9e-b546-860f58b1a46a; expected_behavior=toast Save blocked or server rejects; invalid_cart_signal=Required sections are missing","--- STOREFRONT ---
+[NAV] Sign in at {{FRONT_URL}} with {{USER_EMAIL}} / {{USER_PASSWORD}}
+[NAV] Navigate to {{FRONT_URL}}/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake
+[WAIT] Configure the parameters widget visible
+[ACT] Select Base option (e.g., ""Top: White / Bottom: White"")
+[ACT] Select Creme option (e.g., ""Buttercreme style: Peach and Blue"")
+[ACT] Click Add to cart
+[WAIT] URL gains ?lineItemId=...; button label changes to Update cart
+[ACT] Select Message option (e.g., ""Standard Message Tag"")
+[WAIT] Custom text required section appears (conditional Text section, dependsOn=Message)
+[ASSERT] Custom text required section is visible; text input is empty
+[ASSERT] Validation indicator ""Section is required"" visible on the Text section
+[ASSERT] Toast ""The product configuration has been changed"" visible with Save button
+[ASSERT] Custom text required text input remains EMPTY (do NOT type anything)
+--- NETWORK ---
+[WAIT] Open DevTools Network — clear log
+[ACT] Click Save button INSIDE the toast (NOT the main Update cart button)
+[WAIT] 2 seconds
+--- API INSPECT ---
+[ASSERT] Inspect GraphQL mutations fired after click
+--- STOREFRONT (cart check) ---
+[NAV] Navigate to cart page
+[ASSERT] Inspect for Required sections warning banner","--- STOREFRONT ---
+[STATE] Custom text required section text input is empty when Save is clicked
+[STATE] EITHER: ChangeCartConfiguredItem mutation does NOT fire (client-side block); OR mutation fires but response errors[] is non-empty (server rejects)
+[STATE] Cart page does NOT show ""Required sections are missing"" banner
+[STATE] Place order is NOT disabled
+--- API ---
+[ERRORS] IF mutation fires with HTTP 200 and empty errors[] and payload omits a251777f-654b-43aa-8074-5b5820f48fb4: FAIL — conditional required Text section bypassed via toast
+[DATA] Cart line item must NOT be updated to include Message ($12) without the required Custom text value","[NETWORK] ChangeCartConfiguredItem mutation — if fired: check payload for sectionId a251777f-654b-43aa-8074-5b5820f48fb4; if absent from payload and response is 200 OK: bug reproduced
+[CONSOLE] No JS errors
+[NETWORK] No 4xx/5xx on any request","ChangeCartConfiguredItem fires with HTTP 200; payload omits Custom text required section (a251777f-654b-43aa-8074-5b5820f48fb4); cart shows ""Required sections are missing""; Place order disabled; line item updated to $105 (Message added) without custom text","Remove line item from cart after test. If cart is in invalid state, remove affected line item to prevent contaminating subsequent tests.","VCST-4713; BUG: reports/bugs/open/BUG-Configurable-Toast-Save-Bypasses-Required-Section-Validation.md","Manual"
+
+"CFG-FILE-010","CFG-024: Text Parent Section Triggers Child Visibility on Input — File-Text Boundary Check","Configurable Products > Conditional Sections > Text Parent Input","High","BL-CAT-006","ECL-7.1","Storefront accessible. CFG-024 (Text-driven conditional) deployed and indexed. No prior text entered.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_TEXT_DRIVEN_COND.slug)","[NAV] Navigate to @td(CFG_TEXT_DRIVEN_COND.url)
+[WAIT] Configure widget; Engraving Line 1 text input visible; Style Pack NOT in DOM
+[ACT] Click Engraving Line 1 and type a single character: A
+[WAIT] Style Pack section appears
+[ASSERT] Style Pack visible with None/Classic/Modern options
+[ACT] Select all text in Engraving Line 1 and delete (field now empty)
+[WAIT] Style Pack disappears
+[ASSERT] Style Pack NOT in DOM
+[ACT] Paste a multiline value into Engraving Line 1 (e.g. Hello World)
+[WAIT] Style Pack appears again
+[ASSERT] Style Pack visible; any previously selected Style Pack value is cleared (state reset on parent change)","[STATE] Single character input is sufficient to satisfy the Text section dependency — visibility trigger is any non-empty value
+[STATE] Deleting all text triggers hide immediately
+[STATE] Repasting triggers show; previously selected child option cleared on parent change (clearHiddenSectionValues())
+[DOM] Style Pack only visible when Engraving Line 1 has content","[CONSOLE] No JS errors on input/clear cycles; [NETWORK] No page reloads during typing","Single character not sufficient to trigger visibility; Style Pack stays visible after field cleared; previously selected Style Pack value persists after parent re-entered","none","VCST-4713","Manual"
+"CFG-FILE-011","CFG-025: File Parent Section Triggers Child Visibility on Upload — File-Text Boundary Check","Configurable Products > Conditional Sections > File Parent Upload","High","BL-CAT-006","ECL-7.1","Storefront accessible. CFG-025 (File-driven conditional) deployed and indexed. Upload fixtures Logo1.png and Test.xlsx available.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_FILE_DRIVEN_COND.slug)","[NAV] Navigate to @td(CFG_FILE_DRIVEN_COND.url)
+[WAIT] Configure widget; Design Upload file input visible; Finish Type NOT in DOM
+[ACT] Upload Logo1.png to Design Upload
+[WAIT] Upload completes; Finish Type appears
+[ASSERT] Finish Type visible with None/Matte/Gloss
+[ACT] Click remove icon on the uploaded file in Design Upload
+[WAIT] Finish Type disappears
+[ASSERT] Finish Type NOT in DOM; any previously selected Finish Type value cleared
+[ACT] Upload Test.xlsx to Design Upload (different file type)
+[WAIT] Upload completes; Finish Type appears again
+[ASSERT] Finish Type visible; previously selected Finish Type value is reset","[STATE] Any successful file upload satisfies the File section dependency — triggers child visibility
+[STATE] Removing the file triggers hide immediately; child value cleared
+[STATE] Uploading a different accepted file type also triggers show; child value reset
+[DOM] Finish Type only visible when at least one file is uploaded in Design Upload","[CONSOLE] No JS errors on upload/remove/re-upload cycle; [NETWORK] File upload API 200/201 for both files; remove API 200","Finish Type not appearing after upload; stays visible after file removed; re-upload does not re-trigger show; file removal API fails","none","VCST-4713","Manual"

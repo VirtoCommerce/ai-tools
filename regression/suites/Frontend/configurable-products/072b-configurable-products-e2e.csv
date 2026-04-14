@@ -56,3 +56,287 @@
 "CFG-E2E-055","E2E: Add-to-Cart Succeeds for Product Section with No Predefined Options (Dynamic Resolution)","Configurable Products > E2E Validation","Critical","BL-CAT-006; BL-CART-007","ECL-7.1; ECL-14.1","PREREQUISITE: Admin logged in at {{BACK_URL}}. A configurable product exists with a Product-type section that has NO predefined options (empty options[]). Retrieve and record the configurable product ID from Admin > Catalog before execution — substitute into <existing-configurable-product-id> and <product-id> placeholders in Steps. A product resolved dynamically at runtime (e.g., via IsDefault flag) should still be selectable. Storefront accessible at {{FRONT_URL}}. Registered customer account exists.","admin={{ADMIN_EMAIL}}; admin_pass={{ADMIN_PASSWORD}}; user={{USER_EMAIL}}; password={{USER_PASSWORD}}; back_url={{BACK_URL}}; front_url={{FRONT_URL}}","--- ADMIN SETUP --- [AUTH] POST {{BACK_URL}}/connect/token with {{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}} to obtain admin Bearer token; [HTTP] POST {{BACK_URL}}/api/catalog/products/configurations with body: { productId: <existing-configurable-product-id>, isActive: true, sections: [{ name: Dynamic Accessory, type: Product, isRequired: false, options: [] }] }; [ASSERT] POST returns 200 or 201; [HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<product-id>; [ASSERT] Configuration saved with sections[0].options = []; [WAIT] 60s for search index reindex; --- STOREFRONT --- [NAV] Sign in as {{USER_EMAIL}} at {{FRONT_URL}}; [NAV] Navigate to PDP for the configurable product; [WAIT] Configure the parameters widget visible; [ASSERT] Dynamic Accessory section renders (may show dynamically resolved product or empty selection); [ACT] If a dynamically resolved product appears in the section — select it; [ACT] Click Add to cart button; [WAIT] Success notification or cart update; [NAV] Navigate to {{FRONT_URL}}/cart","[STATE] Add-to-cart does NOT return 'ProductUnavailableForSection' validation error for dynamically resolved products in empty-options sections; [STATE] Cart line item created successfully; [DOM] Cart page shows the configurable product; [MATH] Cart total includes the configured product price (base + any dynamic option price); [API] getCart GraphQL query returns the item with configurationItems[] present","[API] addItem mutation errors[] is empty; [GQL] getCart returns configurationItems with correct sectionId; [CONSOLE] No JavaScript errors on PDP or cart; [NETWORK] No 4xx/5xx errors during add-to-cart flow","addItem mutation returns ProductUnavailableForSection error (vacuous truth bug — Options.All() returns true on empty collection); cart empty after add-to-cart attempt; 422 validation error on add-to-cart; PDP widget not rendering the dynamic section","Delete test configuration after test; remove cart item","Synced: PR #104 vc-module-x-cart (2026-03-26) — fixes ConfigurationItemValidator vacuous truth bug","Manual"
 "CFG-E2E-056","E2E: Create New Configuration from Edit Context Creates Separate Cart Line (BL-CART-007)","Configurable Products > E2E VCST-3902 > Edit-Restart Flow","Critical","BL-CART-007; BL-CAT-006","ECL-7.1; ECL-14.1; VCST-3902","User authenticated. Bike with options available. Cart empty.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; bike_url=/products-with-options/configurations/@td(CFG_BIKE.slug); seat_total=$365.00; engine_total=$575.00","[NAV] Sign in at {{FRONT_URL}}; navigate to Bike with options PDP; [ACT] Select Seat option ($365.00); click Add to cart; [WAIT] Button changes to Update cart; lineItemId (ID-A) in URL; [ASSERT] Cart badge=1; [ACT] Click Create new configuration link in price block; [WAIT] lineItemId removed from URL; config resets; button shows Add to cart; [ACT] Select Engine option ($575.00); [ACT] Click Add to cart; [WAIT] New lineItemId (ID-B) written to URL; button shows Update cart; [ASSERT] Cart badge=2; [NAV] Navigate to cart; [ASSERT] Two separate line items: one with Seat config ($365) and one with Engine config ($575); [ASSERT] Cart subtotal=$940.00; [ASSERT] Each line item has distinct ID (ID-A != ID-B); [ASSERT] Each line item shows correct configuration details in collapsible configuration items section","[STATE] First add creates line item ID-A with Seat config; [STATE] Create new configuration clears lineItemId and resets widget; [STATE] Second add creates NEW line item ID-B with Engine config (NOT updating ID-A); [MATH] Cart: line 1=$365 (Seat) + line 2=$575 (Engine) = subtotal $940; [DOM] Both configuration items sections expandable and showing correct options; [STATE] BL-CART-007 enforced: different configurations = separate cart line items","[API] Two separate addItem mutations fired (not changeCartConfiguredItem for second add); [API] Cart response contains 2 items with different IDs and different configurationItems[]; [CONSOLE] No JS errors; [NETWORK] No 4xx/5xx","Second add updates first line item instead of creating new one (BL-CART-007 violation); only one line item in cart; subtotal showing $575 instead of $940; both items showing same configuration; lineItemId collision","Remove both cart items after test","VCST-3902; BL-CART-007","Manual"
 "CFG-E2E-057","E2E: URL lineItemId State Survives Page Refresh and Drives Edit Context","Configurable Products > E2E VCST-3902 > URL State Persistence","High","BL-CAT-006","ECL-7.1; VCST-3902","User authenticated. Bike with options available. Cart empty.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; bike_url=/products-with-options/configurations/@td(CFG_BIKE.slug)","[NAV] Sign in; navigate to Bike with options PDP; [ACT] Select Seat option; click Add to cart; [WAIT] lineItemId appears in URL; button shows Update cart; [VAR] Copy full URL with lineItemId query param; [ACT] Press F5 to hard refresh the page; [WAIT] Page fully reloads; [ASSERT] lineItemId still present in URL; [ASSERT] Button still shows Update cart (solid variant); [ASSERT] Seat option still selected (loaded from cart line item); [ASSERT] CountInCart badge shows qty 1; [ASSERT] Create new configuration link visible; [ACT] Open new browser tab; paste the URL with lineItemId; [WAIT] Page loads in new tab; [ASSERT] Same edit state: Update cart button; Seat selected; CountInCart badge","[STATE] lineItemId persists in URL across page refresh (router.replace preserves query params); [STATE] After refresh: button=Update cart; config=Seat loaded from cart; CountInCart=1; Create new config link visible; [STATE] URL is shareable — opening in new tab reproduces the same edit context; [STATE] useConfigurableLineItemId composable reads from route.query reactively on each page load","[CONSOLE] No JS errors on refresh or new tab load; [NETWORK] Product config and cart queries fire on page load to hydrate edit state; [API] Cart contains the line item matching lineItemId","lineItemId lost on refresh; button reverting to Add to cart after refresh; config not loading from cart after refresh; CountInCart badge missing after refresh; blank/error state in new tab","Remove cart item after test","VCST-3902","Manual"
+"CFG-E2E-058-COND","E2E: Add-to-Cart with Conditional Section Visible and Configured — All Visible Sections in Line Item","Configurable Products > E2E Conditional Sections > Cart","Critical","BL-CAT-006; BL-PRICE-001","ECL-7.1; ECL-14.1","Storefront accessible. User authenticated. Seed product CFG-022 deployed and indexed. Initial state: Frame Type (Section A) has Aluminum ($0 surcharge) preselected — Aluminum is first in options[] array; Wheel Set (Section B) and Frame Color (Section D) visible but unselected (None); Tire Type (Section C) hidden (Wheel Set has no value). Cart is empty. NOTE: preselected option is first in section.options[] order; seed has Aluminum first.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; pdp_url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_CONDITIONAL.slug); base_price=$300.00; aluminum_surcharge=$0.00; standard_wheelset=$25.00; slick_tire=$20.00; expected_total=$345.00","--- STOREFRONT ---
+[NAV] Sign in at {{FRONT_URL}} with {{USER_EMAIL}} / {{USER_PASSWORD}}
+[NAV] Navigate to {{FRONT_URL}}/products-with-options/configurations/@td(CFG_CONDITIONAL.slug)
+[WAIT] Configure the parameters widget visible; Frame Type accordion shows Aluminum preselected; price = $300.00 (base $300 + Aluminum $0)
+[ASSERT] Confirm Wheel Set section is visible (dependsOn=A; A has Aluminum selected)
+[ASSERT] Confirm Tire Type section is NOT in DOM (dependsOn=B; B has no value)
+[ACT] In Wheel Set accordion, select Standard ($25.00)
+[WAIT] Price updates; Tire Type section appears in DOM
+[ASSERT] Price = $325.00 (base $300 + Aluminum $0 + Standard $25)
+[ACT] In Tire Type accordion, select Slick ($20.00)
+[WAIT] Price updates
+[ASSERT] Price = $345.00 (base $300 + Aluminum $0 + Standard $25 + Slick $20)
+[ACT] Click Add to Cart
+[WAIT] Success toast visible OR cart badge increments
+--- API ---
+[GQL] Query cart: { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""{{CURRENCY_CODE}}"" userId: ""<me.id>"") { items { id listPrice { amount } configurationItems { sectionId optionId } } } }
+[ASSERT] Inspect configurationItems array on the newly added line item","--- STOREFRONT ---
+[DOM] Success toast appears after Add to Cart
+[DOM] Cart badge increments by 1
+[MATH] Displayed price before add = $345.00 (base $300 + Aluminum $0 + Standard $25 + Slick $20)
+--- API ---
+[ERRORS] addItem mutation errors[] is empty
+[DATA] Line item configurationItems[] contains entry for Section A (Frame Type — Aluminum)
+[DATA] configurationItems[] contains entry for Section B (Wheel Set — Standard)
+[DATA] configurationItems[] contains entry for Section C (Tire Type — Slick)
+[MATH] lineItem listPrice.amount = 345.00
+[COUNT] configurationItems[] count = 3 (or 4 if Frame Color None is also submitted — document actual count)","--- STOREFRONT ---
+[CONSOLE] No JS errors during add-to-cart flow
+[NETWORK] addItem GraphQL mutation returns HTTP 200; errors[] is empty
+--- ADMIN ---
+[ADMIN] Navigate to {{BACK_URL}} Orders — verify order line item (if checkout completed) shows Frame Type: Aluminum; Wheel Set: Standard; Tire Type: Slick","Tire Type entry missing from configurationItems despite being visible and selected; addItem errors[] non-empty; cart badge unchanged; price mismatch between displayed total and cart line item; configurationItems[] empty","Remove added item from cart after test","VCST-4713","Manual"
+"CFG-E2E-059-COND","E2E: Add-to-Cart with Conditional Section Hidden — Hidden Section Absent from Cart Line Item","Configurable Products > E2E Conditional Sections > Cart","Critical","BL-CAT-006; BL-PRICE-001","ECL-7.1; ECL-14.1","Storefront accessible. User authenticated. Seed product CFG-022 deployed and indexed. Initial state: Frame Type has Aluminum preselected ($0 surcharge; initial price $300) — Aluminum is first in options[] array; Wheel Set and Frame Color visible but unselected; Tire Type hidden. Cart is empty. NOTE: preselected option is first in section.options[] order; seed has Aluminum first.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; pdp_url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_CONDITIONAL.slug); base_price=$300.00; aluminum_surcharge=$0.00; expected_total=$300.00","--- STOREFRONT ---
+[NAV] Sign in at {{FRONT_URL}} with {{USER_EMAIL}} / {{USER_PASSWORD}}
+[NAV] Navigate to {{FRONT_URL}}/products-with-options/configurations/@td(CFG_CONDITIONAL.slug)
+[WAIT] Configure the parameters widget visible; Frame Type shows Aluminum preselected; price = $300.00
+[ASSERT] Confirm Tire Type section is NOT present in DOM (Wheel Set has no value — Tire Type must be absent, not merely hidden via CSS)
+[ASSERT] Confirm Wheel Set is visible but unselected (None)
+[ACT] Do NOT interact with Wheel Set (leave None / no selection) — Tire Type must remain hidden
+[ASSERT] Confirm price still = $300.00 (only Frame Type Aluminum contributing, $0 surcharge)
+[ACT] Click Add to Cart
+[WAIT] Success toast visible OR cart badge increments
+--- API ---
+[GQL] Query cart: { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""{{CURRENCY_CODE}}"" userId: ""<me.id>"") { items { id listPrice { amount } configurationItems { sectionId optionId } } } }
+[ASSERT] Inspect configurationItems array — locate the Tire Type section entry","--- STOREFRONT ---
+[DOM] Success toast appears
+[DOM] Cart badge = 1
+[MATH] Displayed price before add = $300.00
+--- API ---
+[ERRORS] addItem mutation errors[] is empty (hidden Tire Type does not block submission)
+[DATA] configurationItems[] does NOT contain an entry for Section C (Tire Type — id=12fbadbf-b1e8-496e-9576-18b929a654a8) — hidden section excluded from payload
+[DATA] configurationItems[] contains entry for Section A (Frame Type — Aluminum)
+[MATH] lineItem listPrice.amount = 300.00 (Tire Type price NOT included; Aluminum surcharge = $0)
+[NULL] No configurationItems[] entry with sectionId matching Tire Type section id","[NETWORK] POST /graphql (addItem) returns HTTP 200; errors[] is empty in response body
+[CONSOLE] No JS errors; clearHiddenSectionValues() invoked before submission — no stale value in payload
+[NETWORK] No 4xx/5xx on addItem request","Hidden Tire Type appears in configurationItems[] despite being hidden (stale value submitted); addItem errors[] non-empty citing hidden required section; cart line item total = $320 or $345 (hidden option price included); Tire Type DOM element visible when Wheel Set has no value","Remove added item from cart after test","VCST-4713","Manual"
+"CFG-E2E-060-COND","E2E: Reconfigure from Cart — Conditional Section Visibility Correct on Re-entry","Configurable Products > E2E Conditional Sections > Cart Reconfigure","High","BL-CAT-006; BL-PRICE-001","ECL-7.1; ECL-14.1","Storefront accessible. User authenticated. Seed product CFG-022 already in cart with Frame Type=Aluminum, Wheel Set=Standard, Tire Type=Slick (lineItemId in URL — test may re-add after CFG-E2E-058-COND). Cart has at least one configured line item for CFG-022. NOTE: preselected option is first in section.options[] order; seed has Aluminum first.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; pdp_url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_CONDITIONAL.slug); wheelset_standard=$25.00; slick_tire=$20.00","--- STOREFRONT ---
+[NAV] Sign in at {{FRONT_URL}}; navigate to cart
+[WAIT] Cart page loaded; confirm CFG-022 line item visible (Frame Type: Aluminum; Wheel Set: Standard; Tire Type: Slick)
+[ACT] Click the edit/reconfigure button on the CFG-022 line item (opens PDP with lineItemId in URL)
+[WAIT] PDP loaded; button shows Update cart; lineItemId present in URL
+[ASSERT] Observe configuration widget state — Frame Type should show Aluminum; Wheel Set should show Standard; Tire Type section should be visible (Wheel Set has a value)
+[ASSERT] Tire Type shows Slick selected
+[ACT] In Wheel Set, click None (deselect Wheel Set)
+[WAIT] Tire Type section disappears from DOM
+[ASSERT] Tire Type section is NOT in DOM (Wheel Set deselected — transitive hide)
+[ASSERT] Price updates to $300.00 (base $300 + Aluminum $0 — Wheel Set and Tire Type excluded)
+[ACT] Re-select Wheel Set: Standard ($25)
+[WAIT] Tire Type section reappears
+[ASSERT] Tire Type shows None selected (stale Slick value cleared by clearHiddenSectionValues())
+[ACT] Click Update cart
+[WAIT] Update cart mutation completes; success notification","--- STOREFRONT ---
+[STATE] On PDP re-entry with lineItemId: widget loads existing selections from cart (Frame Type=Aluminum; Wheel Set=Standard; Tire Type=Slick)
+[STATE] Tire Type visible on re-entry because Wheel Set has a value (Standard)
+[STATE] After deselecting Wheel Set: Tire Type hidden AND Slick selection cleared (not persisted)
+[STATE] After re-selecting Wheel Set Standard: Tire Type visible but shows None (cleared)
+[DOM] Success notification after Update cart
+[STATE] changeCartConfiguredItem mutation used (not addItem — existing line item updated)
+--- API ---
+[ERRORS] changeCartConfiguredItem errors[] is empty
+[DATA] After Update cart: configurationItems[] reflects new selections (Standard + None for Tire Type, or Standard only if None excluded)
+[MATH] Updated line item price = $325.00 (base $300 + Aluminum $0 + Standard $25; Tire Type None = $0)","[NETWORK] changeCartConfiguredItem mutation fires on Update cart (not addItem)
+[API] changeCartConfiguredItem errors[] is empty
+[CONSOLE] No JS errors during widget re-hydration or section visibility toggle in edit context
+[NETWORK] No 4xx/5xx on update cart request","Widget not loading existing selections on PDP re-entry; Tire Type not visible even though Wheel Set=Standard in existing config; stale Slick selection retained after Wheel Set deselected and re-selected; Update cart fires addItem instead of changeCartConfiguredItem; price incorrect after update","Remove or update cart item to clean state after test","VCST-4713","Manual"
+"CFG-E2E-061-COND","E2E: Toast Save Button Must NOT Bypass Required-Section Validation (Regression — VCST-4713 Bug)","Configurable Products > E2E Conditional Sections > Toast Validation","Critical","BL-CAT-006","ECL-14.1","Storefront accessible. User authenticated as org account. Wedding cake product deployed and indexed at {{FRONT_URL}}/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake. Product already in cart (lineItemId in URL) with Base+Creme selected ($93 line item). PDP in edit mode (Update cart button visible). Message section visible — user selects a Message option so Custom text required section (isRequired=true, type=Text) becomes visible and empty. Validation error ""Section is required"" displayed. Toast ""The product configuration has been changed"" is visible with a Save button.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; pdp_url={{FRONT_URL}}/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake; product_id=@td(CFG_WEDDING_CAKE_CONDITIONAL.id); section_custom_text_id=a251777f-654b-43aa-8074-5b5820f48fb4; section_message_id=19e27d3a-77e8-4b9e-b546-860f58b1a46a","--- STOREFRONT ---
+[NAV] Sign in at {{FRONT_URL}} with {{USER_EMAIL}} / {{USER_PASSWORD}}
+[NAV] Navigate to {{FRONT_URL}}/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake
+[WAIT] Configure the parameters widget visible
+[ASSERT] Base section visible and marked as required
+[ACT] Select an option in Base (e.g., ""Top: White / Bottom: White"")
+[ACT] Select an option in Creme (e.g., ""Buttercreme style: Peach and Blue"")
+[ACT] Click Add to cart
+[WAIT] URL gains ?lineItemId=...; button label changes to Update cart (PDP now in edit mode)
+[ACT] Select an option in Message (e.g., ""Standard Message Tag"")
+[WAIT] Custom text required section appears in DOM
+[ASSERT] Custom text required section shows validation indicator ""Section is required""; text field is empty
+[ASSERT] Toast notification visible — text includes ""The product configuration has been changed"" with a Save button
+--- NETWORK (before click) ---
+[WAIT] Open browser DevTools Network — clear request log
+[ACT] Click Save button INSIDE the toast notification (NOT the main Update cart button)
+[WAIT] 2 seconds for any network requests to complete
+--- NETWORK (after click) ---
+[ASSERT] Inspect all GraphQL requests fired after the click
+--- STOREFRONT (cart check) ---
+[NAV] Navigate to cart page
+[ASSERT] Inspect cart for warning banners","--- STOREFRONT ---
+[STATE] EITHER: no ChangeCartConfiguredItem mutation fires AND a validation error message is displayed on the PDP; OR mutation fires but response body contains errors[] with a validation message referencing the missing required section
+[STATE] Cart page does NOT display ""Required sections are missing"" warning
+[STATE] Place order button is NOT disabled due to incomplete configuration persisted from this click
+--- API ---
+[ERRORS] IF ChangeCartConfiguredItem fires with HTTP 200 and empty errors[] AND payload omits Custom text required section (a251777f-654b-43aa-8074-5b5820f48fb4): FAIL — bug reproduced
+[DATA] IF mutation fires and is correctly rejected: errors[] must reference missing required section; HTTP 200 with empty errors[] is not acceptable","[NETWORK] Monitor for ChangeCartConfiguredItem mutation — if it fires: inspect payload for presence of sectionId a251777f-654b-43aa-8074-5b5820f48fb4; inspect response errors[]
+[CONSOLE] No unhandled JS exceptions during toast Save click
+[ADMIN] If line item updated to invalid state: Admin Orders — affected order (if checkout reached) should NOT contain a line item with Message but without Custom text required","ChangeCartConfiguredItem fires with HTTP 200 and empty errors[]; payload omits Custom text required section id a251777f-654b-43aa-8074-5b5820f48fb4; cart page shows ""Required sections are missing""; Place order disabled","Remove line item from cart after test. If cart is in invalid state (Required sections missing), remove the affected line item before proceeding to next test.","VCST-4713; BUG: reports/bugs/open/BUG-Configurable-Toast-Save-Bypasses-Required-Section-Validation.md","Manual"
+"CFG-E2E-062-COND","E2E: Toast Save and Main Update Cart Must Behave Identically When Validation State Is Incomplete","Configurable Products > E2E Conditional Sections > Toast Validation","High","BL-CAT-006","ECL-14.1","Storefront accessible. User authenticated. Wedding cake product deployed. Product in cart with Base+Creme selected; PDP in edit mode (lineItemId in URL). Message selected; Custom text required section visible and empty (same incomplete state as CFG-E2E-061-COND precondition). Both Save (toast) and Update cart (main widget) buttons are visible simultaneously.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; pdp_url={{FRONT_URL}}/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake; product_id=@td(CFG_WEDDING_CAKE_CONDITIONAL.id)","--- STOREFRONT ---
+[NAV] Sign in at {{FRONT_URL}}; navigate to wedding cake PDP in edit mode with lineItemId in URL
+[WAIT] PDP loaded; Update cart visible; Message selected; Custom text required section empty and showing ""Section is required""
+[ASSERT] Both toast Save button AND main Update cart button are visible
+--- STEP A: Main Update cart ---
+[WAIT] Open DevTools Network — clear log
+[ACT] Click main Update cart button (Custom text required still empty)
+[WAIT] 1 second; observe page state and network
+[ASSERT] Record result A: mutation fired? (Y/N); validation error displayed? (Y/N)
+--- STEP B: Toast Save (restore same state if needed) ---
+[WAIT] If toast dismissed or state changed: reload PDP with ?lineItemId= and re-select Message to restore incomplete state and re-trigger toast
+[WAIT] Open DevTools Network — clear log
+[ACT] Click Save button inside the toast notification (Custom text required still empty)
+[WAIT] 1 second; observe page state and network
+[ASSERT] Record result B: mutation fired? (Y/N); validation error displayed? (Y/N)","--- STOREFRONT ---
+[STATE] Result A and Result B must match — both buttons must produce identical behavior when validation state is identical
+[STATE] Expected (after fix): both BLOCK — no mutation fires; PDP remains in edit mode; some validation feedback shown for both
+[STATE] Divergence where result A blocks and result B proceeds is the confirmed bug
+--- API ---
+[COUNT] ChangeCartConfiguredItem mutation count after STEP A must equal count after STEP B (both 0 when correctly blocked)
+[ERRORS] If either button fires a mutation: both must fire it OR neither must — asymmetric mutation behavior = FAILURE","[NETWORK] Log mutation count per step; record payload content for any mutation that fires
+[CONSOLE] No JS errors during either button interaction","STEP A fires 0 mutations; STEP B fires 1 mutation (asymmetric — known bug behavior); toast Save proceeds while Update cart blocks; cart enters invalid state after STEP B","After STEP B: if mutation fired and cart is in invalid state, remove affected line item. Navigate away from PDP.","VCST-4713; BUG: reports/bugs/open/BUG-Configurable-Toast-Save-Bypasses-Required-Section-Validation.md","Manual"
+"CFG-E2E-063-COND","Server-Side Validation: ChangeCartConfiguredItem Must Reject Payload Missing a Required Text Section","Configurable Products > E2E Conditional Sections > Server Validation","Critical","BL-CAT-006","ECL-14.1","GraphiQL accessible at {{BACK_URL}}/ui/graphiql. User authenticated (Bearer token obtainable from browser session). Wedding cake product in cart: a lineItemId exists with Base+Creme+Message selected. Custom text required section (id=a251777f-654b-43aa-8074-5b5820f48fb4) is required and its parent Message section has a value — the required condition is met.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; back_url={{BACK_URL}}; product_id=@td(CFG_WEDDING_CAKE_CONDITIONAL.id); lineItemId=<obtain from cart before test>; section_custom_text_id=a251777f-654b-43aa-8074-5b5820f48fb4; section_base_id=ef19c414-1172-4ad3-a6c6-1e5dec515474; section_creme_id=5f93bee5-6913-4e63-9a60-14b3718029a8; section_message_id=19e27d3a-77e8-4b9e-b546-860f58b1a46a","--- STOREFRONT (setup) ---
+[NAV] Sign in at {{FRONT_URL}}; navigate to wedding cake PDP
+[ACT] Select Base, Creme, Message options; do NOT fill Custom text required field
+[ACT] Note the lineItemId from URL (?lineItemId=<UUID>) for use in the mutation
+--- GRAPHQL ---
+[NAV] Navigate to {{BACK_URL}}/ui/graphiql
+[AUTH] Open HTTP Headers panel; enter: { ""Authorization"": ""Bearer <token from storefront session>"" }
+[GQL] Type the following mutation (omitting Custom text required section from configurationSections):
+mutation ChangeCartConfigured($command: InputChangeCartConfiguredItemType!) {
+  changeCartConfiguredItem(command: $command) {
+    items { id }
+    validationErrors { errorCode errorMessage }
+  }
+}
+[VAR] Set variables: { ""command"": { ""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{USER_ID}}"", ""currencyCode"": ""{{CURRENCY_CODE}}"", ""lineItemId"": ""<lineItemId from precondition>"", ""configurationSections"": [ { ""sectionId"": ""ef19c414-1172-4ad3-a6c6-1e5dec515474"", ""value"": { ""productId"": ""<baseOptionProductId>"", ""quantity"": 1 } }, { ""sectionId"": ""5f93bee5-6913-4e63-9a60-14b3718029a8"", ""value"": { ""productId"": ""<cremeOptionProductId>"", ""quantity"": 1 } }, { ""sectionId"": ""19e27d3a-77e8-4b9e-b546-860f58b1a46a"", ""value"": { ""productId"": ""<messageOptionProductId>"", ""quantity"": 1 } } ] } }
+[ACT] Click Execute (Play button)
+[READ] Inspect response — record validationErrors[] and errors[] content","--- GRAPHQL ---
+[ERRORS] Response validationErrors[] or top-level errors[] MUST be non-empty — server must reject the payload because Custom text required section (a251777f-654b-43aa-8074-5b5820f48fb4) is absent while its parent Message section has a value
+[DATA] Error code should reference a required-section validation failure (e.g., MISSING_REQUIRED_SECTION, CONFIGURATION_SECTION_REQUIRED, or equivalent VC platform error code)
+[STATUS] HTTP 200 with non-empty errors[] is acceptable (GraphQL transport); HTTP 200 with empty errors[] and cart updated = FAIL
+--- STOREFRONT ---
+[STATE] After the direct mutation attempt with rejected payload: cart line item must NOT be updated to show Message without Custom text required","[GQL] Capture exact response body — errors[] content, validationErrors[], and HTTP status code
+[ERRORS] If errors[] is empty and HTTP 200 and cart is updated: server-side validation absent — this is the backend gap identified in the bug report
+[NETWORK] No 5xx response expected; validation errors should produce structured GraphQL errors[], not a server crash","HTTP 200 with empty errors[]; cart line item updated to include Message without Custom text required; validationErrors[] empty — confirms server-side validation gap for ChangeCartConfiguredItem on required Text sections","If mutation succeeded (bug confirmed): navigate to cart and remove the invalid line item to restore clean cart state.","VCST-4713; BUG: reports/bugs/open/BUG-Configurable-Toast-Save-Bypasses-Required-Section-Validation.md","Manual"
+"CFG-E2E-064-COND","Toast Save Success Path — All Required Sections Filled Before Clicking Toast Save","Configurable Products > E2E Conditional Sections > Toast Validation","High","BL-CAT-006","ECL-14.1","Storefront accessible. User authenticated. Wedding cake product deployed. Product already in cart with Base+Creme selected (lineItemId in URL); PDP in edit mode. Message selected; Custom text required section visible and filled with valid text ""Happy Wedding!"". No ""Section is required"" error visible. Toast ""The product configuration has been changed"" is visible with a Save button. All visible required sections satisfied.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; pdp_url={{FRONT_URL}}/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake; product_id=@td(CFG_WEDDING_CAKE_CONDITIONAL.id); custom_text_value=Happy Wedding!","--- STOREFRONT ---
+[NAV] Sign in at {{FRONT_URL}} with {{USER_EMAIL}} / {{USER_PASSWORD}}
+[NAV] Navigate to {{FRONT_URL}}/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake
+[ACT] Select Base option, Creme option; click Add to cart
+[WAIT] lineItemId in URL; Update cart button visible (PDP in edit mode)
+[ACT] Select Message option; wait for Custom text required section to appear
+[ACT] Type ""Happy Wedding!"" into Custom text required text field
+[ASSERT] No ""Section is required"" validation error visible (field is filled)
+[ASSERT] Toast notification visible with Save button
+[WAIT] Open DevTools Network — clear log
+[ACT] Click Save button inside the toast notification (all required sections filled)
+[WAIT] 2 seconds for mutation and UI response to complete
+--- STOREFRONT (cart check) ---
+[NAV] Navigate to cart page","--- STOREFRONT ---
+[STATE] ChangeCartConfiguredItem mutation fires (all required sections filled — mutation is correct behavior)
+[STATE] Mutation response HTTP 200 with empty errors[] (successful update)
+[STATE] Cart line item updated: includes Base, Creme, Message, and Custom text required with value ""Happy Wedding!""
+[STATE] After Save click: PDP either remains in edit mode showing updated state OR navigates to cart — either is acceptable; silent reset of all selections with no success indicator is a UX failure (track separately as secondary issue)
+[DOM] Some success indicator shown after Save: success toast, visual confirmation, or cart badge update — absence of any feedback is secondary UX issue
+--- API ---
+[DATA] Cart line item configurationItems[] includes entry with sectionId=a251777f-654b-43aa-8074-5b5820f48fb4 and text value ""Happy Wedding!""
+--- STOREFRONT (cart) ---
+[STATE] Cart page does NOT show ""Required sections are missing"" warning
+[STATE] Place order is NOT disabled
+[STATE] Cart line item visually shows Custom text required value ""Happy Wedding!""","[NETWORK] ChangeCartConfiguredItem mutation payload includes configurationSections entry for a251777f-654b-43aa-8074-5b5820f48fb4 with text value ""Happy Wedding!""
+[ERRORS] Mutation response errors[] is empty
+[CONSOLE] No JS errors during toast Save happy-path flow","ChangeCartConfiguredItem NOT fired even though all sections filled (over-blocking); mutation fires but errors[] non-empty for a valid complete payload; cart shows ""Required sections missing"" after valid save; Custom text value not persisted in cart; PDP silently resets all selections with no success feedback","Remove test line item from cart after test.","VCST-4713; BUG: reports/bugs/open/BUG-Configurable-Toast-Save-Bypasses-Required-Section-Validation.md","Manual"
+
+"CFG-E2E-065-COND","E2E: CFG-024 Text Parent — configurationItems Contains Text Section When Filled and Triggers Style Pack","Configurable Products > E2E Conditional Sections > Text Parent","Critical","BL-CAT-006; BL-PRICE-001","ECL-7.1; ECL-14.1","Storefront accessible. User logged in. CFG-024 deployed and indexed.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; pdp_url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_TEXT_DRIVEN_COND.slug); back_url={{BACK_URL}}","--- STOREFRONT ---
+[NAV] Sign in and navigate to @td(CFG_TEXT_DRIVEN_COND.url)
+[WAIT] Configure widget; Engraving Line 1 visible
+[ACT] Type Sunset in Engraving Line 1
+[WAIT] Style Pack appears
+[ACT] Select Classic in Style Pack
+[WAIT] Accessory appears
+[ACT] Select Bag in Accessory
+[ASSERT] Price=$250.00 (base $200 + Classic $30 + Bag $20)
+[ACT] Click Add to cart
+[WAIT] Cart add succeeds
+[NAV] Navigate to cart; inspect line item configuration
+--- API ---
+[GQL] POST {{BACK_URL}}/graphql — query { cart { items { configurationItems { sectionId type textValue selectedProductId } } } }","[MATH] Total=$250.00 (base $200 + Classic $30 + Bag $20)
+[DATA] configurationItems contains entry for Engraving Line 1 sectionId with type=Text and textValue=Sunset
+[DATA] configurationItems contains entry for Style Pack with type=Product and selectedProductId for Classic
+[DATA] configurationItems contains entry for Accessory with type=Product and selectedProductId for Bag
+[STATE] Cart add succeeds — no validation error","[API] addItem mutation errors[] empty; [GQL] getCart returns all 3 configurationItems; [CONSOLE] No JS errors; [NETWORK] No 4xx/5xx","configurationItems missing Text section entry; textValue not stored; Style Pack or Accessory absent from payload; price wrong","Remove cart item after test","VCST-4713","Manual"
+"CFG-E2E-066-COND","E2E: CFG-025 File Parent — configurationItems Contains File Section Reference and Triggers Downstream","Configurable Products > E2E Conditional Sections > File Parent","Critical","BL-CAT-006; BL-PRICE-001","ECL-7.1; ECL-14.1","Storefront accessible. User logged in. CFG-025 deployed and indexed. Upload fixture Logo1.png available.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; pdp_url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_FILE_DRIVEN_COND.slug); back_url={{BACK_URL}}","--- STOREFRONT ---
+[NAV] Sign in and navigate to @td(CFG_FILE_DRIVEN_COND.url)
+[WAIT] Configure widget; Design Upload visible
+[ACT] Upload Logo1.png to Design Upload
+[WAIT] Finish Type appears
+[ACT] Select Gloss in Finish Type
+[WAIT] Notes text section appears
+[ACT] Type Custom note in Notes
+[ASSERT] Price=$220.00 (base $180 + Gloss $20 + Notes $0)
+[ACT] Click Add to cart
+[WAIT] Cart add succeeds
+--- API ---
+[GQL] Query cart configurationItems","[MATH] Total=$220.00 (base $180 + Gloss $20 + Notes free text)
+[DATA] configurationItems contains File section entry for Design Upload with file reference
+[DATA] configurationItems contains Product entry for Finish Type=Gloss
+[DATA] configurationItems contains Text entry for Notes with textValue=Custom note
+[STATE] Cart add succeeds","[API] addItem errors[] empty; [GQL] getCart returns all 3 configurationItems including File entry; [CONSOLE] No JS errors; [NETWORK] No 4xx/5xx","File section entry absent from configurationItems; downstream sections missing; price wrong","Remove cart item after test","VCST-4713","Manual"
+"CFG-E2E-067-COND","E2E: CFG-026 Required File Child — Cart Add Blocked Until Both Service Plan and ID Proof Filled","Configurable Products > E2E Conditional Sections > Required File Child","Critical","BL-CAT-006; BL-PRICE-001","ECL-7.1","Storefront accessible. User logged in. CFG-026 deployed and indexed.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; pdp_url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_REQUIRED_FILE_CHILD.slug); back_url={{BACK_URL}}","--- STOREFRONT ---
+[NAV] Sign in and navigate to @td(CFG_REQUIRED_FILE_CHILD.url)
+[ACT] Select Premium in Service Plan
+[WAIT] ID Proof (required File) appears
+[ASSERT] Add to cart DISABLED
+[ACT] Upload Logo1.png to ID Proof
+[WAIT] Upload completes
+[ASSERT] Add to cart ENABLED
+[ACT] Click Add to cart
+[WAIT] Cart add succeeds
+--- API ---
+[GQL] Query cart configurationItems for the added line item","[MATH] Total=$200.00 (base $150 + Premium $50)
+[DATA] configurationItems contains Product entry for Service Plan=Premium
+[DATA] configurationItems contains File entry for ID Proof with uploaded file reference
+[STATE] Cart add succeeds only after both required sections filled
+[STATE] Required validation gate respected (BL-CAT-006)","[API] addItem errors[] empty; [GQL] configurationItems includes both Service Plan and ID Proof entries; [CONSOLE] No JS errors","Cart add succeeds while ID Proof empty; required gate bypassed; File entry absent from configurationItems; price wrong","Remove cart item after test","VCST-4713","Manual"
+"CFG-E2E-068-COND","E2E: CFG-027 Two Required Siblings — Both Size and Color in configurationItems After Cart Add","Configurable Products > E2E Conditional Sections > Two Required Siblings","Critical","BL-CAT-006; BL-PRICE-001","ECL-7.1","Storefront accessible. User logged in. CFG-027 deployed and indexed.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; pdp_url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_TWO_REQ_SIBLINGS.slug); back_url={{BACK_URL}}","--- STOREFRONT ---
+[NAV] Sign in and navigate to @td(CFG_TWO_REQ_SIBLINGS.url)
+[ACT] Select Bundle B in Bundle Choice
+[WAIT] Size and Color appear
+[ACT] Select Size=L; Color=Red
+[ASSERT] Add to cart ENABLED; price=$195.00 (base $120 + Bundle B $60 + L $10 + Red $5)
+[ACT] Click Add to cart
+[WAIT] Cart add succeeds
+--- API ---
+[GQL] Query cart configurationItems","[MATH] Total=$195.00 (base $120 + Bundle B $60 + L $10 + Red $5)
+[DATA] configurationItems contains Bundle Choice=Bundle B entry
+[DATA] configurationItems contains Size=L entry
+[DATA] configurationItems contains Color=Red entry
+[COUNT] configurationItems has 3 entries (one per visible section)","[API] addItem errors[] empty; [GQL] getCart returns 3 configurationItems; [CONSOLE] No JS errors","One sibling absent from configurationItems; price wrong; cart add fails validation; count wrong","Remove cart item after test","VCST-4713","Manual"
+"CFG-E2E-069-COND","E2E: CFG-028 Deep Chain — All 5 Levels in configurationItems When Full Chain Selected","Configurable Products > E2E Conditional Sections > Deep Chain","Critical","BL-CAT-006; BL-PRICE-001","ECL-7.1","Storefront accessible. User logged in. CFG-028 deployed and indexed.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; pdp_url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_DEEP_CHAIN.slug); back_url={{BACK_URL}}","--- STOREFRONT ---
+[NAV] Sign in and navigate to @td(CFG_DEEP_CHAIN.url)
+[ACT] Select Opt1 in Level A; Opt1 in Level B; Opt1 in Level C; Opt1 in Level D; Opt1 in Level E
+[ASSERT] All 5 levels visible; price=$360.00
+[ACT] Click Add to cart
+[WAIT] Cart add succeeds
+--- API ---
+[GQL] Query cart configurationItems
+[ASSERT] configurationItems has 5 entries — one per level","[MATH] Total=$360.00 (base $300 + A $20 + B $10 + C $10 + D $10 + E $10)
+[COUNT] configurationItems.length=5
+[DATA] Each entry has correct sectionId (Level A through Level E) and selectedProductId for Opt1
+[STATE] Deep chain computation correct at depth 4 (visibility + price)","[API] addItem errors[] empty; [GQL] getCart returns 5 configurationItems; [CONSOLE] No JS errors at any depth level","Fewer than 5 entries in configurationItems (levels dropped); price wrong; cart add fails with depth-related error","Remove cart item after test","VCST-4713","Manual"
+"CFG-E2E-070-COND","E2E: CFG-029 Req Child Opt Parent — A=None cart add succeeds; A=real value cart blocked until B filled","Configurable Products > E2E Conditional Sections > Required Child of Optional Parent","Critical","BL-CAT-006; BL-PRICE-001","ECL-7.1","Storefront accessible. User logged in. CFG-029 deployed and indexed.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; pdp_url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_REQ_CHILD_OPT_PARENT.slug); back_url={{BACK_URL}}","--- SCENARIO 1: A=None ---
+[NAV] Sign in and navigate to @td(CFG_REQ_CHILD_OPT_PARENT.url)
+[ASSERT] Add Extras=None; Extra Type NOT in DOM; Add to cart ENABLED
+[ACT] Click Add to cart
+[ASSERT] Cart add succeeds; price=$100.00
+[GQL] Query cart configurationItems — verify no Extra Type entry
+--- SCENARIO 2: A=Extra A ---
+[NAV] Return to PDP
+[ACT] Select Extra A in Add Extras
+[WAIT] Extra Type appears; required
+[ASSERT] Add to cart DISABLED
+[ACT] Select Premium in Extra Type
+[ASSERT] Add to cart ENABLED
+[ACT] Click Add to cart
+[ASSERT] Cart add succeeds; price=$135.00 (base $100 + Extra A $25 + Premium $15)
+[GQL] Query cart — verify Extra A and Premium in configurationItems","[STATE] Scenario 1: A=None; B hidden; cart not blocked; configurationItems has no Extra Type entry; total=$100.00
+[STATE] Scenario 2: A=Extra A; B required visible; cart blocked until Premium selected; total=$135.00
+[DATA] Scenario 2 configurationItems: Add Extras=Extra A + Extra Type=Premium both present
+[COUNT] Scenario 1 configurationItems: 0 entries (A=None excluded); Scenario 2: 2 entries","[API] Both addItem calls errors[] empty; [GQL] getCart configurationItems correct per scenario; [CONSOLE] No JS errors in either scenario","Scenario 1 cart blocked by hidden required child; Scenario 2 cart not blocked before B filled; wrong entry count in either scenario; price wrong in either scenario","Remove both cart items after test","VCST-4713","Manual"
