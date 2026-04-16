@@ -1,0 +1,46 @@
+﻿{
+  "settings": {},
+  "content": [
+    {
+      "heading": "h2",
+      "type": "title",
+      "id": "title0BTi",
+      "title": "New Year! Happy!",
+      "subtitle": null,
+      "background": null
+    },
+    {
+      "type": "features",
+      "id": "featuresuVgh"
+    },
+    {
+      "type": "call-to-action",
+      "id": "calltoactionTi3g",
+      "title": null,
+      "background": null,
+      "buttons": [
+        {
+          "label": "Push",
+          "link": "/"
+        }
+      ]
+    },
+    {
+      "height": "auto",
+      "type": "slider",
+      "id": "slider7s4",
+      "title": null,
+      "subtitle": null,
+      "slides": [
+        {
+          "image": "https://vcst-qa.govirto.com/cms-content/Themes/B2B-store/default/content/pages/assets/pages/Black_flannel_.jpg",
+          "title": null,
+          "text": null,
+          "url": null
+        }
+      ],
+      "background": null,
+      "hidden": true
+    }
+  ]
+}

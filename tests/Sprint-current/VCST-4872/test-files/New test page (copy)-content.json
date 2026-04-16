@@ -1,0 +1,117 @@
+﻿{
+  "settings": {
+    "header": "Test page",
+    "hideBreadcrumbs": null
+  },
+  "content": [
+    {
+      "heading": "h2",
+      "text": "Hello, markdown!",
+      "type": "text",
+      "id": "textsvKs",
+      "title": "New text",
+      "background": null
+    },
+    {
+      "buttons": [
+        {
+          "label": "Button",
+          "link": "/catalog"
+        }
+      ],
+      "type": "call-to-action-with-image",
+      "id": "calltoactionwithimage61PP",
+      "title": "New block",
+      "subtitle": "Subtitle",
+      "image": "https://vcst-qa.govirto.com/cms-content/Themes/B2B-store/default/content/pages/assets/pages/milano-cortina-2026-logo-png_seeklogo-463101.png",
+      "imageDescription": null,
+      "imagePosition": "right",
+      "background": "bg-neutral-800"
+    },
+    {
+      "cardType": "short",
+      "count": 4,
+      "slidesPerView": 2,
+      "skus": [
+        {
+          "sku": "ALCE3507"
+        },
+        {
+          "sku": "PA165494"
+        },
+        {
+          "sku": "PA065674"
+        },
+        {
+          "sku": "PA103148"
+        },
+        {
+          "sku": "ALCE8877"
+        }
+      ],
+      "type": "products-carousel",
+      "id": "productscarouselZoL",
+      "title": "Projector",
+      "subtitle": "new suggestions",
+      "query": "",
+      "background": "bg-neutral-800"
+    },
+    {
+      "slides": [
+        {
+          "image": "https://vcst-qa.govirto.com/cms-content/Themes/B2B-store/default/content/pages/assets/pages/volvo-logo-emblem.png",
+          "title": "Slider1",
+          "text": null,
+          "url": null
+        },
+        {
+          "image": "https://vcst-qa.govirto.com/cms-content/Themes/B2B-store/default/content/pages/assets/pages/volvo-logo-emblem.png",
+          "title": "Slider2",
+          "text": null,
+          "url": null
+        }
+      ],
+      "height": "auto",
+      "type": "slider",
+      "id": "slider2ZFA",
+      "title": "Slider",
+      "subtitle": "My slider",
+      "background": null
+    },
+    {
+      "type": "products",
+      "id": "products3pc1",
+      "title": "Block with products",
+      "subtitle": null,
+      "query": "pre",
+      "count": 15,
+      "background": null
+    },
+    {
+      "title": "my category",
+      "viewMode": "grid",
+      "filtersOrientation": "vertical",
+      "filtersDisplayOrder": {
+        "order": "",
+        "showRest": false
+      },
+      "cardType": "full",
+      "columnsAmountTablet": "2",
+      "columnsAmountDesktop": "4",
+      "fixedProductsCount": 0,
+      "allowSetMeta": false,
+      "showButtonToDefaultView": false,
+      "type": "category",
+      "id": "categorysWWb",
+      "hideBreadcrumbs": true,
+      "hideSidebar": false,
+      "hideControls": false,
+      "hideSorting": null,
+      "keyword": "camera",
+      "categoryId": null,
+      "countLimitation": null,
+      "hideTotal": true,
+      "background": "bg-neutral-100"
+    }
+  ]
+}

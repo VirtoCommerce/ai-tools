@@ -1,0 +1,214 @@
+﻿{
+  "settings": {},
+  "content": [
+    {
+      "heading": "h2",
+      "text": "Hello, markdown!",
+      "type": "text",
+      "id": "textsvKs",
+      "title": "New text",
+      "background": null
+    },
+    {
+      "heading": "h2",
+      "calendarDate": "2026-03-31T15:01:53.091Z",
+      "calendarDatetime": "2026-04-24T18:24:58.000Z",
+      "calendarTime": "2026-03-30T20:50:12.415Z",
+      "calendarMonth": null,
+      "calendarYear": null,
+      "calendarMinToday": null,
+      "calendarMaxToday": null,
+      "calendarMinTomorrow": null,
+      "calendarCurrentWeek": null,
+      "calendarCurrentMonth": null,
+      "calendarLastMonth": null,
+      "calendarNextWeek": null,
+      "calendarNext7Days": null,
+      "calendarFixedMin": null,
+      "calendarFixedMax": null,
+      "calendarFixedRange": null,
+      "calendarFixedDatetime": null,
+      "calendarDateInline": null,
+      "calendarDatetimeInline": null,
+      "calendarTimeInline": null,
+      "calendarMonthInline": null,
+      "calendarYearInline": null,
+      "colorBasic": "#a08888",
+      "colorNoAlpha": "#000000",
+      "colorWithDefault": "#3b82f6",
+      "colorWithClear": "#ef4444",
+      "colorPresets": "#3b82f6",
+      "colorPresetsNoAlpha": "#8b5cf6",
+      "colorInline": null,
+      "colorInlineNoAlpha": null,
+      "colorInlinePresets": "#3b82f6",
+      "stringBasic": null,
+      "stringWithDefault": "Hello world",
+      "stringWithPlaceholder": null,
+      "stringWithHint": null,
+      "stringWithInfo": null,
+      "stringMultiline": null,
+      "stringMultilineWithPlaceholder": null,
+      "stringMultilineMin2Max4": null,
+      "stringMultilineMin1Max8": null,
+      "stringMultilineMin3Max3": null,
+      "textBasic": null,
+      "textWithDefault": "<p>Hello <strong>world</strong></p>\n",
+      "textWithConfig": null,
+      "checkboxBasic": true,
+      "checkboxDefaultTrue": true,
+      "checkboxDefaultFalse": true,
+      "checkboxWithHint": true,
+      "checkboxWithInfo": true,
+      "numberBasic": 5,
+      "numberWithDefault": 42,
+      "numberMinMax": 100,
+      "numberWithStep": 10,
+      "numberThumb": 50,
+      "numberThumbStep5": 50,
+      "selectBasic": "md",
+      "selectWithDefault": "md",
+      "selectMultiple": [
+        "italic"
+      ],
+      "selectSearchable": "purple",
+      "selectWithGroups": "h1",
+      "selectRequired": "c",
+      "selectCategories": {
+        "id": "26f9e0fc-ec55-41b2-b358-02172ddef1e5",
+        "name": "SEED-20260317-Material Handling",
+        "code": "SEED-20260317-material-handling"
+      },
+      "objectBasic": {
+        "title": null,
+        "subtitle": null,
+        "enabled": true,
+        "count": null,
+        "color": null
+      },
+      "collectionBasic": [
+        {
+          "label": null,
+          "value": null,
+          "enabled": true
+        },
+        {
+          "label": null,
+          "value": null,
+          "enabled": true
+        }
+      ],
+      "collectionWithOptions": null,
+      "collectionNoConfirm": null,
+      "imagesBasic": "https://vcst-qa.govirto.com/cms-content/Themes/B2B-store/default/content/pages/assets/pages/neon%20yellow.jpg",
+      "markdownHtml": null,
+      "markdownMd": null,
+      "markdownMixed": null,
+      "searchBasic": {
+        "__nodata": false,
+        "__searchQuery": "",
+        "value": {
+          "id": "8d77666d-70d7-4b3c-a071-a2d0f376d63f",
+          "name": "PEPSI COLA REGULAR CRATE 28X0.20L",
+          "code": "201482"
+        }
+      },
+      "searchWithButton": {
+        "__nodata": false,
+        "__searchQuery": null,
+        "value": {
+          "id": "8d77666d-70d7-4b3c-a071-a2d0f376d63f",
+          "name": "PEPSI COLA REGULAR CRATE 28X0.20L",
+          "code": "201482",
+          "imgSrc": "https://virtostart-main.govirto.com/cms-content/assets/catalog/5aa50/201482/201482.jpg"
+        }
+      },
+      "type": "all-controls",
+      "id": "allcontrols8l5D",
+      "title": null,
+      "headerBasic": null,
+      "paragraphDescription": null,
+      "headerAdvanced": null,
+      "paragraphWarning": null,
+      "headerLong": null,
+      "paragraphLong": null,
+      "filesBasic": "https://vcst-qa.govirto.com/cms-content/Themes/B2B-store/default/content/pages/assets/pages/anchor%20blue.jpg",
+      "filesMultiple": null,
+      "filesSortable": null,
+      "filesAccept": null,
+      "filesMaxSize": null,
+      "imagesMultiple": [
+        {
+          "filename": "Patent.jpg",
+          "title": null,
+          "alt": null,
+          "url": "https://vcst-qa.govirto.com/cms-content/Themes/B2B-store/default/content/pages/assets/pages/Patent.jpg"
+        },
+        {
+          "filename": "Screenshot 2026-03-05 113256.png",
+          "title": null,
+          "alt": null,
+          "url": "https://vcst-qa.govirto.com/cms-content/Themes/B2B-store/default/content/pages/assets/pages/Screenshot%202026-03-05%20113256.png"
+        }
+      ],
+      "imagesSortable": null,
+      "selectProductTypeForSearch": "Physical",
+      "background": "bg-additional-50",
+      "hidden": true
+    },
+    {
+      "cardType": "short",
+      "count": 4,
+      "slidesPerView": 2,
+      "skus": [
+        {
+          "sku": "ALCE3507"
+        },
+        {
+          "sku": "PA165494"
+        },
+        {
+          "sku": "PA065674"
+        },
+        {
+          "sku": "PA103148"
+        },
+        {
+          "sku": "ALCE8877"
+        }
+      ],
+      "type": "products-carousel",
+      "id": "productscarouselZoL",
+      "title": "Projector",
+      "subtitle": "new suggestions",
+      "query": "",
+      "background": "bg-neutral-800"
+    },
+    {
+      "title": "my category",
+      "viewMode": "grid",
+      "filtersOrientation": "vertical",
+      "filtersDisplayOrder": {
+        "order": "",
+        "showRest": false
+      },
+      "cardType": "full",
+      "columnsAmountTablet": "2",
+      "columnsAmountDesktop": "4",
+      "fixedProductsCount": 0,
+      "allowSetMeta": false,
+      "showButtonToDefaultView": false,
+      "type": "category",
+      "id": "categorysWWb",
+      "hideBreadcrumbs": true,
+      "hideSidebar": false,
+      "hideControls": false,
+      "hideSorting": null,
+      "keyword": "camera",
+      "categoryId": null,
+      "countLimitation": null,
+      "hideTotal": true,
+      "background": null
+    }
+  ]
+}

@@ -107,12 +107,14 @@
 [ASSERT] Verify toolbar contains 'Save content' button with download icon (material-download)
 [ACT] Click 'Save content' toolbar button
 [WAIT] File download dialog appears or file auto-downloads
-[WAIT] Network tab shows GET /api/page-builder-pages/grouped/{groupId}/content?draft=true completes","[BLADE] 'Save content' button visible in page detail toolbar
+[WAIT] Network tab shows GET /api/page-builder-pages/grouped/{groupId}/content?draft=true completes
+[ASSERT] Verify green success toast notification appears: 'Content saved to file successfully'","[BLADE] 'Save content' button visible in page detail toolbar
 [DOM] Downloaded file name follows pattern {page-name}-content.json
 [FORM] Downloaded file contains valid JSON with page content/blocks
-[NETWORK] GET .../content?draft=true returns HTTP 200 with JSON content-type","[NETWORK] GET {{BACK_URL}}/api/page-builder-pages/grouped/{groupId}/content?draft=true returns 200
+[NETWORK] GET .../content?draft=true returns HTTP 200 with JSON content-type
+[TOAST] Green success notification: 'Content saved to file successfully' (vc-notification--success, top-center, auto-dismiss ~3s)","[NETWORK] GET {{BACK_URL}}/api/page-builder-pages/grouped/{groupId}/content?draft=true returns 200
 [BODY] Response body is valid JSON with page blocks
-[CONSOLE] No JS errors during download","'Save content' button missing from toolbar; download fails or hangs; empty file downloaded; file name incorrect; network error on GET request (4xx/5xx); console errors during download","none","VCST-4872; PR #116 (2026-04-14)",
+[CONSOLE] No JS errors during download","'Save content' button missing from toolbar; download fails or hangs; empty file downloaded; file name incorrect; network error on GET request (4xx/5xx); console errors during download; no success toast shown after download","none","VCST-4872; PR #116 (2026-04-14); Synced: PR #116 fix commits (2026-04-16)",
 "CMS-112","Save content — button disabled for new unsaved page","Content Portability","High",,,"Admin logged in; PageBuilder shell accessible","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
 [BLADE] Wait for Draft page list to load
 [ACT] Click 'Add' button to open new page blade
@@ -141,7 +143,7 @@
 [DOM] Content blocks in designer match the source file (block count and types)","[NETWORK] POST {{BACK_URL}}/api/page-builder-pages/grouped returns 200
 [NETWORK] POST .../content returns 200
 [CONSOLE] No JS errors during upload
-[API] Content blocks in designer match source file","'Load content' button missing from Draft toolbar; file dialog does not filter to .json; page saved without content; content blocks missing or corrupted in designer (4xx/5xx on content POST); console errors during upload","Archive QA Imported Page Test after test","VCST-4872; PR #116 (2026-04-14)",
+[API] Content blocks in designer match source file","'Load content' button missing from Draft toolbar; file dialog does not filter to .json; page saved without content; content blocks missing or corrupted in designer (4xx/5xx on content POST); console errors during upload","Archive QA Imported Page Test after test","VCST-4872; PR #116 (2026-04-14); Synced: PR #116 fix commits (2026-04-16)",
 "CMS-114","Load content — button visible only on Draft tab","Content Portability","High",,,"Admin logged in; pages exist in various statuses","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
 [BLADE] Wait for Draft tab to load
 [ASSERT] Verify 'Load content' button IS visible in Draft toolbar
@@ -179,6 +181,7 @@
 [ACT] Click 'Clone' toolbar button
 [WAIT] Loading indicator visible during clone operation
 [WAIT] Network: POST /api/page-builder-pages/grouped completes, then POST .../content/{sourceGroupId} completes
+[ASSERT] Verify green success toast notification appears: 'Page cloned successfully'
 [BLADE] Wait for cloned page blade to open automatically
 [ASSERT] Verify cloned page name: 'QA Homepage Spring Sale (copy)'
 [ASSERT] Verify cloned page permalink: qa-homepage-spring-sale-copy
@@ -189,10 +192,11 @@
 [FORM] Cloned page name = 'QA Homepage Spring Sale (copy)'
 [FORM] Cloned page permalink = 'qa-homepage-spring-sale-copy'
 [GRID] Clone appears in Draft list
-[DOM] Content blocks in cloned page designer match source page (block count and types identical)","[NETWORK] POST {{BACK_URL}}/api/page-builder-pages/grouped returns 200
+[DOM] Content blocks in cloned page designer match source page (block count and types identical)
+[TOAST] Green success notification: 'Page cloned successfully' (vc-notification--success, top-center, auto-dismiss ~3s)","[NETWORK] POST {{BACK_URL}}/api/page-builder-pages/grouped returns 200
 [NETWORK] POST .../content/{sourceGroupId} returns 204
 [CONSOLE] No JS errors during clone
-[API] Cloned page content matches source in designer","Clone button missing; clone created without content; content blocks differ from source; clone not appearing in Draft list; name or permalink pattern incorrect (4xx/5xx on grouped POST); console errors during clone","Archive cloned page after test","VCST-4872; PR #116 (2026-04-14)",
+[API] Cloned page content matches source in designer","Clone button missing; clone created without content; content blocks differ from source; clone not appearing in Draft list; name or permalink pattern incorrect (4xx/5xx on grouped POST); console errors during clone; no success toast shown after clone","Archive cloned page after test","VCST-4872; PR #116 (2026-04-14); Synced: PR #116 fix commits (2026-04-16)",
 "CMS-117","Clone page — preserves metadata fields","Content Portability","High",,,"Admin logged in; PAGE-2 (QA Wholesale Buyer Guide) exists with personalization settings (user groups, visibility)","PAGE-2 from test-data/cms/pagebuilder-pages.md: has cultureName=EN, visibility=ON, userGroups=B2B Wholesale; back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-active
 [BLADE] Wait for Active page list to load
 [ACT] Click on PAGE-2 (QA Wholesale Buyer Guide 2026) to open page blade
@@ -263,6 +267,7 @@
 [BLADE] Wait for page detail blade
 [ACT] Click 'Save content' toolbar button
 [WAIT] JSON file downloads
+[ASSERT] Verify success toast: 'Content saved to file successfully'
 [NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
 [ACT] Click 'Load content' toolbar button
 [WAIT] File selection dialog opens
@@ -278,7 +283,7 @@
 [TOAST] Success notification after save","[NETWORK] GET .../content?draft=true returns 200 on export
 [NETWORK] POST .../content returns 200 on import
 [CONSOLE] No JS errors during export or import
-[API] Imported page content API response matches exported JSON structure","Block count mismatch after import; blocks in wrong order in designer; block content lost or corrupted; block types changed; 4xx/5xx on export GET or import POST; console errors during round-trip","Archive QA Round-Trip Test after test","VCST-4872; PR #116 (2026-04-14)",
+[API] Imported page content API response matches exported JSON structure","Block count mismatch after import; blocks in wrong order in designer; block content lost or corrupted; block types changed; 4xx/5xx on export GET or import POST; console errors during round-trip; no success toast on export","Archive QA Round-Trip Test after test","VCST-4872; PR #116 (2026-04-14); Synced: PR #116 fix commits (2026-04-16)",
 "CMS-123","Auth — restricted user cannot save, load, or clone","Content Portability","High",,,"Two admin accounts available: (1) admin with PageBuilder Update permission, (2) restricted user WITHOUT PageBuilder Update permission (e.g., Catalog Manager role or custom role without page-builder:update); DevTools Network tab open","Restricted user credentials from test-data/users/; back_url={{BACK_URL}}","[AUTH] Log in as restricted user (without PageBuilder Update permission)
 [NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
 [BLADE] Wait for Draft page list to load

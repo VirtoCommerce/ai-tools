@@ -1,0 +1,16 @@
+﻿{
+  "settings": {},
+  "content": [
+    {
+      "heading": "h2",
+      "text": {
+        "markdown": "Load Test Content",
+        "html": "<p>Load Test Content</p>\n"
+      },
+      "type": "text",
+      "id": "textLoadTest",
+      "title": "Load Test Block",
+      "background": null
+    }
+  ]
+}

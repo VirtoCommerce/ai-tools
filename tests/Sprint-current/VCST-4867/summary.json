@@ -1,0 +1,22 @@
+{
+  "ticket": "VCST-4867",
+  "pr": "VirtoCommerce/vc-frontend#2241",
+  "verdict": "PASS",
+  "date": "2026-04-14",
+  "environment": "https://localhost:3000/",
+  "build": {
+    "theme": "vc-theme-b2b-vue-2.46.0-pr-2241-4e66-4e66022b"
+  },
+  "agents_dispatched": ["qa-frontend-expert"],
+  "total_cases": 8,
+  "passed": 5,
+  "failed": 0,
+  "blocked": 0,
+  "not_applicable": 3,
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "observations": [
+    "Secure layout only used on /checkout/* pages, NOT on auth pages (sign-in, sign-up, forgot-password) — those use the common layout"
+  ],
+  "artifacts": "tests/Sprint-current/VCST-4867/"
+}
