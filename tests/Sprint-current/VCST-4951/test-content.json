@@ -1,0 +1,30 @@
+﻿{
+  "settings": {},
+  "content": [
+    {
+      "widgetBackground": {
+        "color": "#ffffff"
+      },
+      "title": {
+        "text": "Photo",
+        "color": "#8f703a"
+      },
+      "subtitle": {
+        "text": "Camera",
+        "color": "#8f4f1b"
+      },
+      "viewMode": "grid",
+      "count": 4,
+      "type": "favorite-products",
+      "id": "favoriteproductsyvLi",
+      "query": "camer",
+      "filter": null,
+      "background": null
+    },
+    {
+      "type": "login",
+      "id": "logintsKu",
+      "background": "bg-neutral-800"
+    }
+  ]
+}

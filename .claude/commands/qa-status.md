@@ -44,7 +44,7 @@ Run these checks via Bash/curl (not Playwright — avoids browser overhead):
 Report: UP/DOWN for each endpoint.
 
 ### 4. Recent Bug Reports
-List files in `reports/bugs/` sorted by date (newest first, max 5):
+List files in `reports/bugs/open` sorted by date (newest first, max 10):
 - Show filename, severity (from filename or first lines), date
 
 ---

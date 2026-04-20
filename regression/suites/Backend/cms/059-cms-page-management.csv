@@ -14,13 +14,13 @@
 2. Click Open Designer button",,,,,"C221164 C415406",
 "CMS-005","Archive page","Page Management","High",,,"Page exists in Draft or Published status",,"1. Open page
 2. Click Archive button
-3. Confirm",,,,,"C415418",
+3. Confirm","[TOAST] Green success notification appears: ""Page archived successfully"" (vc-notification--success, top-center, auto-dismiss ~3s)",,"no ""Page archived successfully"" toast after archive action",,"C415418; Synced: PR #126 VCST-4951 (2026-04-20)",
 "CMS-006","Publish draft page","Status Transitions","Critical",,,"PAGE-1 exists in Draft status with blocks added via designer","PAGE-1 from test-data/cms/pagebuilder-pages.md","1. Open PAGE-1 (QA Homepage Spring Sale) draft page
-2. Click Publish button","Page status changes to Published; page moves from Draft to Active tab; Draft counter −1, Active counter +1; page accessible at ${FRONT_URL}/qa-homepage-spring-sale",,,,"C415431 C415434",
+2. Click Publish button","Page status changes to Published; page moves from Draft to Active tab; Draft counter −1, Active counter +1; page accessible at ${FRONT_URL}/qa-homepage-spring-sale; [TOAST] Green success notification appears: ""Page published successfully""",,"no publish success toast shown",,"C415431 C415434; Synced: PR #126 VCST-4951 (2026-04-20)",
 "CMS-007","Publish to Archive transition","Status Transitions","High",,,"Page is Published",,"1. Open published page
-2. Click Archive",,,,,"C415432",
+2. Click Archive","[TOAST] ""Page archived successfully"" toast appears (vc-notification--success, top-center, auto-dismiss ~3s)",,"no ""Page archived successfully"" toast after archive action",,"C415432; Synced: PR #126 VCST-4951 (2026-04-20)",
 "CMS-008","Draft to Archive transition","Status Transitions","Medium",,,"Page is in Draft status",,"1. Open draft page
-2. Click Archive",,,,,"C415433",
+2. Click Archive","[TOAST] ""Page archived successfully"" toast appears (vc-notification--success, top-center, auto-dismiss ~3s)",,"no ""Page archived successfully"" toast after archive action",,"C415433; Synced: PR #126 VCST-4951 (2026-04-20)",
 "CMS-017","Status filter - Draft pages only","Status Filters","High",,,"Seeded pages exist in various statuses (see test-data/cms/pagebuilder-pages.md § Precondition Verification Gate); PageBuilder shell accessible","Seeded pages PAGE-2 through PAGE-5 from test-data/cms/pagebuilder-pages.md","1. Navigate to ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
 2. Verify Draft counter badge in left sidebar shows correct count
 3. Verify page list shows only pages with Draft status badge","Draft counter matches total pages listed; all listed pages display Draft badge; grid columns: Name, Language, Permalink, Modified, Modified by, Status",,"Empty list or zero counter when draft pages exist in API; navigation to wrong admin path (Content > Pages shows file grid, NOT PageBuilder pages)",,"C415379 C415385; Synced: PR #105 (2026-03-25)",
@@ -137,13 +137,14 @@
 [SAVE] Click 'Save' and wait for save confirmation
 [WAIT] Network: POST /api/page-builder-pages/grouped completes (create), then POST .../content completes (upload)
 [ACT] Open the created page in designer
-[BLADE] Wait for designer to load","[TOAST] Success notification after save
+[BLADE] Wait for designer to load","[TOAST] Green success notification appears: ""Content loaded successfully"" after file is parsed, before PageDetails blade opens (vc-notification--success, top-center, auto-dismiss ~3s)
+[TOAST] Success notification after save
 [BLADE] Page blade shows name 'QA Imported Page Test' and permalink 'qa-imported-page-test'
 [GRID] Page appears in Draft list with correct name and permalink
 [DOM] Content blocks in designer match the source file (block count and types)","[NETWORK] POST {{BACK_URL}}/api/page-builder-pages/grouped returns 200
 [NETWORK] POST .../content returns 200
 [CONSOLE] No JS errors during upload
-[API] Content blocks in designer match source file","'Load content' button missing from Draft toolbar; file dialog does not filter to .json; page saved without content; content blocks missing or corrupted in designer (4xx/5xx on content POST); console errors during upload","Archive QA Imported Page Test after test","VCST-4872; PR #116 (2026-04-14); Synced: PR #116 fix commits (2026-04-16)",
+[API] Content blocks in designer match source file","'Load content' button missing from Draft toolbar; file dialog does not filter to .json; page saved without content; content blocks missing or corrupted in designer (4xx/5xx on content POST); console errors during upload; no ""Content loaded successfully"" toast after file is parsed","Archive QA Imported Page Test after test","VCST-4872; PR #116 (2026-04-14); Synced: PR #116 fix commits (2026-04-16); Synced: PR #126 VCST-4951 (2026-04-20)",
 "CMS-114","Load content — button visible only on Draft tab","Content Portability","High",,,"Admin logged in; pages exist in various statuses","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
 [BLADE] Wait for Draft tab to load
 [ASSERT] Verify 'Load content' button IS visible in Draft toolbar
@@ -338,3 +339,41 @@
 [ASSERT] Check if clone was created or if a permalink collision error occurred","[DOM] Either: (a) clone is created with a modified permalink to avoid collision (e.g., '-copy-1' or '-copy-2'), OR (b) clone is created with duplicate permalink '-copy' (server allows duplicates), OR (c) error message shown indicating permalink conflict
 [FORM] If clone was created: verify name and content are correct regardless of permalink resolution","[NETWORK] Monitor for 409 (Conflict) or 400 (Bad Request) or 200 (success with duplicate)
 [CONSOLE] No unhandled JS exceptions during collision scenario","Unhandled 500 error on permalink collision; UI freezes or becomes unresponsive; clone created but page inaccessible due to permalink conflict; silent failure with no feedback to user","Archive any cloned pages after test","VCST-4872; PR #116 (2026-04-14); Gap SC-13",
+"CMS-127","Save page — success toast","User Feedback","Medium",,"ECL-USER-FEEDBACK","Admin logged in; draft page open in PageDetails blade with unmodified state","PAGE-1 from test-data/cms/pagebuilder-pages.md; back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
+[BLADE] Wait for Draft page list to load
+[ACT] Open PAGE-1 (QA Homepage Spring Sale) to open page blade
+[BLADE] Wait for page detail blade to open
+[ASSERT] Verify Save button is enabled
+[ACT] Edit a content block (e.g., change a text value) so isModified=true
+[ASSERT] Verify Save button remains enabled (isModified=true)
+[ACT] Click Save toolbar button
+[WAIT] Network: PUT/POST content endpoint completes
+[ASSERT] Verify green success toast appears: 'Page saved successfully'
+[ASSERT] Verify toast auto-dismisses after ~3s","[TOAST] ""Page saved successfully"" (vc-notification--success, top-center, auto-dismiss ~3s)
+[NETWORK] PUT/POST content endpoint returns 2xx
+[STATE] Save button becomes disabled after save (isModified=false)","[CONSOLE] No JS errors during save
+[NETWORK] No 4xx/5xx on save request","no save toast shown; toast shows error variant; save succeeds but no user feedback","Discard edits","VCST-4951; PR #126 (2026-04-20)",
+"CMS-128","Unpublish published page — success toast","User Feedback","Medium",,"ECL-USER-FEEDBACK","Admin logged in; a Published page exists in Active tab","Published page from Active tab; back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-active
+[BLADE] Wait for Active page list to load
+[ACT] Open a Published page from the list
+[BLADE] Wait for page detail blade to open
+[ASSERT] Verify page status is Published
+[ACT] Click Unpublish toolbar button
+[WAIT] Network: unpublish endpoint completes
+[ASSERT] Verify toast: 'Page unpublished successfully'
+[ASSERT] Verify page status updates to Draft; counters reflect change","[TOAST] ""Page unpublished successfully"" (vc-notification--success, top-center, auto-dismiss ~3s)
+[STATE] Page moves to Draft list (Active counter −1, Draft counter +1)
+[NETWORK] Unpublish endpoint returns 2xx","[CONSOLE] No JS errors during unpublish
+[NETWORK] No 4xx/5xx on unpublish request","no toast shown; publish status fails to update; page remains in Active tab after unpublish","","VCST-4951; PR #126 (2026-04-20)",
+"CMS-129","API — GetPageContent serves Archived page content","API Layer","High","BL-CMS-ARCHIVED-CONTENT","ECL-API-ARCHIVED-RESOURCES","Admin authenticated via OAuth2 password grant; test page group exists that has been Archived with content (no Draft/Published version remaining for that groupId); PageBuilder module 3.1005.0-pr-126-bd83+ deployed","groupId of an archived-only page group (no Draft/Published remaining); back_url={{BACK_URL}}","[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{groupId}/content?draft=false with Bearer token
+[STATUS] Verify HTTP 200
+[BODY] Verify response contains non-empty content blocks matching the archived page's last saved content
+[BODY] Verify response body has valid JSON structure with blocks array
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{groupId}/content?draft=true with Bearer token
+[STATUS] Verify HTTP 200
+[BODY] Verify response contains content (draft=true also returns archived content when no draft exists)","HTTP 200 for draft=false on archive-only group (post-fix behavior)
+Response body contains non-empty blocks array
+Content matches last archived version (verifiable by ModifiedDate or block count)
+HTTP 200 for draft=true on same archive-only group","[AUTH] Token obtained successfully (200 on /connect/token)
+[BODY] Response JSON structure validated","204 or 404 when archived content exists (pre-fix regression: filter excluded Archived status); empty body; 500 on archived page; HTTP 401 without token (verify unauth returns 401)","","VCST-4951; PR #126 (2026-04-20); Backend change in PageBuilderPageController.GetPageContent",

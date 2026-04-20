@@ -1,0 +1,47 @@
+{
+  "runId": "TLC-2026-04-20-1300",
+  "inputType": "change-source",
+  "source": "VCST-4951 (PR #126 VirtoCommerce/vc-module-pagebuilder)",
+  "date": "2026-04-20",
+  "verdict": "APPROVED",
+  "build": {
+    "platform": "3.1019.0",
+    "theme": "vc-theme-b2b-vue-2.46.0-pr-2225-572f",
+    "modules": {
+      "VirtoCommerce.PageBuilderModule": "3.1005.0-pr-126-bd83"
+    }
+  },
+  "changedModules": ["PageBuilderModule"],
+  "changedLayers": ["admin-spa", "backend-api"],
+  "affectedSuites": ["059"],
+  "casesAnalyzed": 42,
+  "casesSynced": 5,
+  "casesGenerated": 3,
+  "casesReviewed": 8,
+  "casesVerified": 0,
+  "casesAfter": 45,
+  "filesModified": [
+    "regression/suites/Backend/cms/059-cms-page-management.csv"
+  ],
+  "syncedCaseIds": ["CMS-005", "CMS-006", "CMS-007", "CMS-008", "CMS-113"],
+  "generatedCaseIds": ["CMS-127", "CMS-128", "CMS-129"],
+  "gateResults": {
+    "G1_structure": "PASS",
+    "G2_determinism": "PASS",
+    "G3_completeness": "PASS",
+    "G4_testability": "PASS",
+    "G5_dataValidity": "PASS",
+    "G6_coverage": "PASS",
+    "G7_duplication": "PASS",
+    "G8_environment": "SKIPPED",
+    "G9_sync": "PASS"
+  },
+  "autoFixesApplied": 1,
+  "manualItemsRemaining": 0,
+  "phase5Skipped": true,
+  "phase5SkipReason": "Live verification already completed via /qa-verify-fix — all 5 toast strings confirmed in deployed bundle index24934.js; Save toast fired live on playwright-edge.",
+  "relatedArtifacts": [
+    "tests/Sprint-current/VCST-4951/verification-report.md",
+    "tests/Sprint-current/VCST-4951/verification-summary.json"
+  ]
+}

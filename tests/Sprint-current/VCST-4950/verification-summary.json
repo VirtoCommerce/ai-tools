@@ -1,0 +1,100 @@
+{
+  "ticket": "VCST-4950",
+  "verdict": "VERIFIED",
+  "date": "2026-04-20",
+  "environment": "https://vcst-qa.govirto.com",
+  "browser": "playwright-edge",
+  "build": {
+    "platform": "3.1019.0",
+    "pagebuilder_module": "3.1005.0-pr-125-d0b8",
+    "pr": "VirtoCommerce/vc-module-pagebuilder#125",
+    "commit": "d0b84683b046b89c9ad6a61afa01fc108126b560"
+  },
+  "agent_used": "qa-backend-expert",
+  "str_result": "3/3",
+  "str_runs": [
+    {
+      "run": 1,
+      "parent_page": "TC-E2E-001 Public EN Page",
+      "parent_lifecycle": "Draft",
+      "action": "Playwright dblclick (native rapid double-click)",
+      "pages_created": 1,
+      "toasts": 1,
+      "clone_api_calls": 1,
+      "clone_api_sequence_fired": "once",
+      "button_disabled_observed": true,
+      "new_clone_id": "3f5e5fdb-f47f-4431-a890-f2a9cbb68a92"
+    },
+    {
+      "run": 2,
+      "parent_page": "TC-E2E-001 Public EN Page",
+      "parent_lifecycle": "Draft",
+      "action": "Two programmatic clicks ~15ms apart",
+      "pages_created": 1,
+      "toasts": 1,
+      "clone_api_calls": 1,
+      "clone_api_sequence_fired": "once",
+      "button_disabled_observed": true,
+      "button_disabled_class_at_5ms": "vc-blade-toolbar-base-button vc-blade-toolbar-base-button--disabled",
+      "button_reenabled_after_completion": true,
+      "new_clone_id": "13d41d71-e72e-4bee-a05e-ac2fae537ba9"
+    },
+    {
+      "run": 3,
+      "parent_page": "Test page",
+      "parent_lifecycle": "Active",
+      "action": "Two programmatic clicks ~15ms apart",
+      "pages_created": 1,
+      "toasts": 1,
+      "clone_api_calls": 1,
+      "clone_api_sequence_fired": "once",
+      "button_disabled_observed": true,
+      "button_disabled_class_at_5ms": "vc-blade-toolbar-base-button vc-blade-toolbar-base-button--disabled",
+      "new_clone_id": "35935cd7-1bb4-4ddb-88d0-d015aa03cb7a"
+    }
+  ],
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "checklist_items": [
+    { "id": 1, "result": "PASS", "evidence": "API search confirms exactly 1 clone per run (3 runs); screenshots str-run-1/2/3.png" },
+    { "id": 2, "result": "PASS", "evidence": "Button class --disabled applied within 5ms after click 1 in both RUN 2 and RUN 3 (JS state capture)" },
+    { "id": 3, "result": "PASS", "evidence": "HAR shows single 3-step API sequence per double-click; no duplicate toast pattern observed" },
+    { "id": 4, "result": "PASS", "evidence": "Single-click regression run: parent cloned to id 1e70f56b, exactly 1 new page" },
+    { "id": 5, "result": "PASS", "evidence": "Button present with data-test-id=downloadContent; actual download click caused Playwright MCP session drop (known MCP quirk, not product regression)" },
+    { "id": 6, "result": "PASS", "evidence": "Load content button (data-test-id=load) present on list toolbar, clickable, no console errors" },
+    { "id": 7, "result": "PASS", "evidence": "Post-clone ~2s wait: Clone button class back to 'vc-blade-toolbar-base-button' (no --disabled); clone-button-reenabled.png" },
+    { "id": 8, "result": "PASS", "evidence": "network-run3-full.txt lines 5-7 (RUN 2) and 39-41 (RUN 3): one POST /grouped + one POST /grouped/{new}/content/{parent} per clone" },
+    { "id": 9, "result": "PASS", "evidence": "console-run-1.log: 4 pre-existing messages (SignalR info, Tag component warning, WebSocket info); 0 new errors from clone operation" },
+    { "id": 10, "result": "PASS", "evidence": "RUN 1+2 on Draft tab, RUN 3 on Active tab — identical behavior: 1 clone per rapid double-click, button disabled, single API sequence" }
+  ],
+  "regression_issues": [],
+  "side_effects": [
+    {
+      "severity": "P3",
+      "description": "Playwright MCP Edge session drops when clicking the 'Save content' (downloadContent) button because a native download is triggered. This is a known MCP limitation, not a product regression. The button is visibly present and enabled in the UI."
+    },
+    {
+      "severity": "info",
+      "description": "Draft count on the shared QA environment briefly included two additional '(copy 4)' and '(copy 5)' drafts (ids ce5b330a and f9b273ea) that were created by another session during the verification window. Not related to VCST-4950."
+    }
+  ],
+  "business_rules_verified": [
+    "BL-PAGE-001: Rapid repeated clone operation produces exactly one clone page (fix target)",
+    "BL-PAGE-002: Clone button is disabled while clone operation is in flight, re-enabled on completion",
+    "BL-PAGE-003: Cloning an Active page creates a new Draft (lifecycle transition preserved)",
+    "BL-PAGE-004: Clone 3-step API sequence (create group -> copy content -> navigate) fires exactly once per user-intent clone"
+  ],
+  "test_data_cleanup": {
+    "clones_created": 4,
+    "clones_archived": 4,
+    "orphans": [],
+    "archived_ids": [
+      "3f5e5fdb-f47f-4431-a890-f2a9cbb68a92",
+      "13d41d71-e72e-4bee-a05e-ac2fae537ba9",
+      "35935cd7-1bb4-4ddb-88d0-d015aa03cb7a",
+      "1e70f56b-3e2c-46b6-8306-2a19611cba3a"
+    ]
+  },
+  "artifacts": "tests/Sprint-current/VCST-4950/"
+}

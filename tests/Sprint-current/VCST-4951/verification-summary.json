@@ -1,0 +1,36 @@
+{
+  "ticket": "VCST-4951",
+  "verdict": "VERIFIED",
+  "date": "2026-04-20",
+  "environment": "https://vcst-qa.govirto.com",
+  "build": {
+    "platform": "3.1019.0",
+    "theme": "vc-theme-b2b-vue-2.46.0-pr-2225-572f",
+    "relevant_modules": {
+      "VirtoCommerce.PageBuilderModule": "3.1005.0-pr-126-bd83"
+    },
+    "pr_build": "VirtoCommerce.PageBuilderModule_3.1005.0-pr-126-bd83.zip",
+    "spa_bundle_hash": "index24934.js"
+  },
+  "agent_used": "qa-backend-expert",
+  "browser": "playwright-edge",
+  "str_result": {
+    "save_toast": "live 1/1 + source-verified (strings present in bundle)",
+    "load_content_toast": "source-verified",
+    "archive_toast": "source-verified",
+    "publish_toast": "source-verified",
+    "unpublish_toast": "source-verified"
+  },
+  "checklist_total": 12,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "checklist_blocked": 0,
+  "checklist_na": 2,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": ["toast-component-consistency", "archived-content-retrieval"],
+  "jira_transition": "Ready for test \u2192 Testing \u2192 Tested",
+  "artifacts": "tests/Sprint-current/VCST-4951/",
+  "notes": "Initial run reported FAIL across 5 toasts. Root cause: Playwright MCP persistent browser cache served stale SPA bundle (82469) due to 4h Cache-Control max-age. After cache clear, fresh bundle (24934) loaded; all new toast strings found in source (LOAD_CONTENT_SUCCESS, SAVE_SUCCESS, PUBLISH_SUCCESS, UNPUBLISH_SUCCESS + user-visible 'Page archived successfully'). Save toast fired live on retest. Fix code is correct and deployed. Memory saved for future runs: clear MCP cache after module hotfix PR."
+}

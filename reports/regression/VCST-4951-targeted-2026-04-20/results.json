@@ -1,0 +1,98 @@
+{
+  "runId": "VCST-4951-targeted-2026-04-20",
+  "suite": "059-cms-page-management",
+  "build": {
+    "platform": "3.1019.0",
+    "module": "3.1005.0-pr-126-bd83 (deployed as index77678.js)"
+  },
+  "bundleHash": "index77678.js / vc-shell-framework77678.js (fresh; stale 82469 superseded by server)",
+  "env": {
+    "backUrl": "https://vcst-qa.govirto.com",
+    "store": "B2B-store",
+    "browser": "playwright-edge"
+  },
+  "results": [
+    {
+      "caseId": "CMS-005",
+      "status": "PASS",
+      "duration_s": 45,
+      "evidence": "Toast captured: 'Page archived successfully' with class 'vc-notification vc-notification--top-center vc-notification--success'. Draft counter 30->29, Archived 48->49. Target: TC-E2E-001 Public EN Page (copy 5) EDIT1 (Draft)."
+    },
+    {
+      "caseId": "CMS-006",
+      "status": "PASS",
+      "duration_s": 30,
+      "evidence": "Toast captured: 'Page published successfully'. Draft counter 28->27, Active 29->30 (-1/+1 confirmed). Target: QA Rückgaberichtlinie-DE (copy 2)."
+    },
+    {
+      "caseId": "CMS-007",
+      "status": "FAIL",
+      "duration_s": 60,
+      "evidence": "Archive backend operation succeeded (Active 29->28->27, Archived 51->52->53 over 2 attempts) but NO 'Page archived successfully' toast shown when archiving a Published page. Reproduced twice (QA Rückgaberichtlinie-DE copy 2, Watermelon). Contrast: CMS-005/008 (Draft->Archive) show toast correctly — defect appears specific to Published->Archive path. Screenshot: CMS-007-fail.png",
+      "defect_category": "User Feedback (UI)",
+      "severity": "High (primary assertion of this test case fails)"
+    },
+    {
+      "caseId": "CMS-008",
+      "status": "PASS",
+      "duration_s": 20,
+      "evidence": "Toast captured: 'Page archived successfully' on Draft->Archive. Draft 29->28, Archived 49->50. Target: TC-E2E-001 Public EN Page (copy 5) (Draft)."
+    },
+    {
+      "caseId": "CMS-113",
+      "status": "FAIL",
+      "duration_s": 90,
+      "evidence": "Load content button opens file chooser (PASS), JSON file upload triggers 'New page' blade opening (PASS), but NO 'Content loaded successfully' toast shown during or after file parse. Screenshot: CMS-113-fail.png. Test data: cms-113-content.json (2891 bytes, sourced from 'Many blocks' draft page).",
+      "defect_category": "User Feedback (UI)",
+      "severity": "Critical (case priority)"
+    },
+    {
+      "caseId": "CMS-127",
+      "status": "FAIL",
+      "duration_s": 40,
+      "evidence": "Save action: edited Name field on TC-E2E-001 Public EN Page (copy 4) draft, clicked Save in blade toolbar. PUT /api/page-builder-pages/grouped returned 200. 'Has unsaved changes' indicator cleared and Save button became disabled (isModified=false) — save functionally succeeded. However NO 'Page saved successfully' toast shown. Screenshot: CMS-127-fail.png. Cleanup: name reverted via API.",
+      "defect_category": "User Feedback (UI) - NEW test case",
+      "severity": "Medium (case priority)"
+    },
+    {
+      "caseId": "CMS-128",
+      "status": "FAIL",
+      "duration_s": 35,
+      "evidence": "Unpublish action on 'QA Return Policy' (Published). Backend transition succeeded: Active 27->26, Draft 27->28, blade status badge changed from Published to Draft, toolbar 'Unpublish' button replaced by 'Publish'. NO 'Page unpublished successfully' toast shown. Screenshot: CMS-128-fail.png.",
+      "defect_category": "User Feedback (UI) - NEW test case",
+      "severity": "Medium (case priority)"
+    },
+    {
+      "caseId": "CMS-129",
+      "status": "PASS",
+      "duration_s": 15,
+      "evidence": "OAuth2 password grant (admin/Password1!) succeeded. GET /api/page-builder-pages/grouped/d67aeb7f-ba49-43af-bbfb-f5f87c0d1528/content?draft=false returned HTTP 200 with 560-byte non-empty JSON body (settings + content array with favorite-products block 'Photo'/'Camera'). Same groupId?draft=true also returned 200 with identical non-empty content. Group verified archived-only: {name: 'TC-E2E-001 Public EN Page (copy 5) EDIT1 (copy)x', status: 'Archived', pages: [{status: 'Archived'}]}. Post-fix behavior confirmed — pre-fix would have returned 204/404 due to Archived filter exclusion."
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "pass": 4,
+    "fail": 4,
+    "blocked": 0,
+    "pass_rate_pct": 50
+  },
+  "consoleErrors": 0,
+  "networkFailures_4xx_5xx": 0,
+  "cleanup": {
+    "archivedTestPages": [
+      "Many blocks (Load content) (copy) - CMS-005 initial observer-less attempt",
+      "TC-E2E-001 Public EN Page (copy 5) EDIT1 - CMS-005 re-run",
+      "TC-E2E-001 Public EN Page (copy 5) - CMS-008",
+      "QA Rückgaberichtlinie-DE (copy 2) - published by CMS-006 then archived by CMS-007 (1st attempt)",
+      "New test page (copy) - CMS-007 (2nd attempt)",
+      "Watermelon - CMS-007 (3rd attempt with aggressive polling)",
+      "QA Return Policy - unpublished by CMS-128 (not re-published)"
+    ],
+    "revertedNames": [
+      "TC-E2E-001 Public EN Page (copy 4): removed ' EDIT' suffix added by CMS-127"
+    ],
+    "newPagesCreated": [
+      "CMS-113 opened a 'New page' blade from template but the Save was not executed; no new page persisted."
+    ]
+  }
+}
