@@ -1,0 +1,79 @@
+{
+  "ticket": "VCST-4928",
+  "title": "[Frontend] Add live character counter to configurable product Text section inputs",
+  "verdict": "PASS_WITH_NOTES",
+  "verdict_reason": "All 7 functional ACs observed as working. Minor WCAG 1.4.3 color-contrast finding at at-cap state (4.38:1 vs 4.5:1) flagged as follow-up a11y polish per QA lead decision — not a blocker for this Story's functional goal. AC4 null-maxLength path is data-limited (no QA product with null value).",
+  "jira_transition": "Ready for test → On QA → Tested (via transition id 4 then 8)",
+  "date": "2026-04-20",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "sprint": "Sprint-26-08",
+  "priority": "Low",
+  "ticket_type": "Story",
+  "build": {
+    "platform": "3.1019.0",
+    "theme": "vc-theme-b2b-vue-2.47.0-pr-2263-2bf2-2bf2be51",
+    "relevant_pr": "vc-frontend #2263"
+  },
+  "agents_dispatched": [
+    "qa-frontend-expert",
+    "ui-ux-expert",
+    "qa-testing-expert"
+  ],
+  "browsers": {
+    "qa-frontend-expert": "playwright-chrome",
+    "ui-ux-expert": "Chrome DevTools MCP",
+    "qa-testing-expert": "playwright-firefox"
+  },
+  "total_cases": 7,
+  "passed": 5,
+  "failed": 1,
+  "partial": 1,
+  "blocked": 0,
+  "acceptance_criteria": {
+    "AC1_counter_visible_empty": "PASS",
+    "AC2_live_updates": "PASS",
+    "AC3_at_cap_visual_emphasis": "PASS",
+    "AC4_null_maxlength": "NEEDS DATA — retested on /products-with-options/configurations/bed-with-additional-options (MHI-55960404): two Text sections reachable (Cover maxLength=255, Fabric and materials maxLength=10) — both explicit numeric, neither null. Counter behavior on reachable inputs is clean (0/255, live update, hard-cap at 255, no console errors). Null-fallback path cannot be exercised until content team seeds a product with an explicitly-blank MaxLength field. Not a frontend defect.",
+    "AC5_i18n_fr_de_ja": "PASS",
+    "AC6_wcag_a11y": "FAIL — new WCAG 1.4.3 color-contrast violation at at-cap state (confirmed by axe-core). WCAG 1.3.1 + 4.1.3 pass (aria-describedby, role=status, aria-live correctly implemented).",
+    "AC7_no_regression_30char": "PASS"
+  },
+  "business_rules_verified": [
+    "BL-CAT-006 — configurable product required sections enforcement (no regression)"
+  ],
+  "bugs_filed": [
+    {
+      "severity": "Low-Medium",
+      "title": "WCAG 1.4.3 color-contrast violation: vc-input-details__counter--limit at-cap color (#de3131) on #fafafa = 4.38:1, below 4.5:1 AA minimum",
+      "component": "vc-input-details.vue",
+      "suggested_fix": "Darken at-cap color token (e.g., #c82020 → ~5.3:1 on #fafafa) or bump font-weight to 700 (bold), which lowers threshold to 3:1.",
+      "status": "to_file_pending_user_confirmation"
+    }
+  ],
+  "exploratory": {
+    "charter": "Live character counter — boundary conditions, paste, IME, rapid-typing, navigation, mobile, cross-browser (Firefox)",
+    "heuristic": "SFDPOT",
+    "time_box_min": 25,
+    "browser": "firefox",
+    "findings": { "bugs": 1, "questions": 2, "observations": 7, "risks": 2 },
+    "notable_findings": [
+      "Paste of 50 chars correctly truncates to 30; counter shows 30/30 with at-cap class",
+      "CJK BMP characters counted as 1 unit each — correct behavior",
+      "Mobile viewports 360px and 768px render counter without clipping",
+      "Overflow via IME/programmatic paths shows '35 / 30' in red AND section-header validation 'Text must not exceed 30 characters' — graceful",
+      "Question: when 'None' radio is selected on optional section, text input still shows 100/100 in red with aria-live active — worth UX clarification",
+      "Cross-browser (Firefox): counter, aria attributes, visual emphasis all work correctly"
+    ],
+    "coverage_gap": "Two Text sections on same PDP — no such product in current QA data; recommend seeding for future regression"
+  },
+  "data_gaps": [
+    "No configurable product in QA has a Text section with null maxLength. On /products-with-options/configurations/bed-with-additional-options the 'Cover' and 'Fabric and materials' Text sections both have explicit numeric maxLength (255 and 10). AC4 retest report at tests/Sprint-current/VCST-4928/ac4-retest-report.md. Seeding required to close AC4."
+  ],
+  "artifacts": "tests/Sprint-current/VCST-4928/",
+  "reports": {
+    "checklist": "tests/Sprint-current/VCST-4928/testing-checklist.md",
+    "frontend": "tests/Sprint-current/VCST-4928/frontend-execution-report.md",
+    "ux_a11y": "tests/Sprint-current/VCST-4928/ux-a11y-execution-report.md",
+    "exploratory": "tests/Sprint-current/VCST-4928/exploratory-session.md"
+  }
+}

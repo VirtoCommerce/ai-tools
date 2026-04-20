@@ -1,0 +1,20 @@
+{
+  "state": "at-rest-empty-field",
+  "url": "https://vcst-qa-storefront.govirto.com/products-with-options/configurations/agent-test-config-engraved-ring-20260327",
+  "timestamp": "2026-04-20T11:37:28.774Z",
+  "violationCount": 0,
+  "passCount": 19,
+  "incompleteCount": 1,
+  "incomplete": [
+    {
+      "id": "aria-prohibited-attr",
+      "impact": "serious",
+      "description": "Ensures ARIA attributes are not prohibited for an element's role",
+      "nodes": [
+        { "html": "<div class=\"vc-widget__slot\" aria-labelledby=\"title2\">", "target": ["div[aria-labelledby=\"title2\"]"] },
+        { "html": "<div class=\"vc-widget__slot\" aria-labelledby=\"title1\">", "target": ["div[aria-labelledby=\"title1\"]"] }
+      ]
+    }
+  ],
+  "violations": []
+}
