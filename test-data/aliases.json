@@ -939,7 +939,8 @@
       "slug": "product_slug",
       "url": "storefront_url",
       "price": "base_price",
-      "sections": "section_count"
+      "sections": "section_count",
+      "id": "product_id_guid"
     }
   },
   "CFG_TSHIRT": {
@@ -975,7 +976,8 @@
       "name": "product_name",
       "slug": "product_slug",
       "url": "storefront_url",
-      "price": "base_price"
+      "price": "base_price",
+      "id": "product_id_guid"
     }
   },
   "CFG_CONDITIONAL": {
@@ -988,7 +990,8 @@
       "slug": "product_slug",
       "url": "storefront_url",
       "price": "base_price",
-      "sections": "section_count"
+      "sections": "section_count",
+      "id": "product_id_guid"
     },
     "notes": "VCST-4713 conditional sections. 4 sections, dependency chain A→B→C with D sibling of B (both depend on A). Section IDs: A=a3ea3283-c40e-44c1-9534-c1a3cc06da75 (Frame Type, REQUIRED), B=8ad69de5-31b0-4b4b-b233-fd69b4f1a4e2 (Wheel Set, dependsOn A), D=b0b1692a-c663-4f66-ac3f-2f3307b1ff42 (Frame Color, dependsOn A), C=12fbadbf-b1e8-496e-9576-18b929a654a8 (Tire Type, dependsOn B). Config ID: d5b63b79-d9a4-45a4-9722-694189f1144e. Section IDs now stable across re-runs (seed script preserves them by name)."
   },
@@ -1016,7 +1019,8 @@
       "slug": "product_slug",
       "url": "storefront_url",
       "price": "base_price",
-      "sections": "section_count"
+      "sections": "section_count",
+      "id": "product_id_guid"
     },
     "notes": "VCST-4713 CFG-024. Text parent triggers child visibility. Dependency graph: A=Text (req, root) 'Engraving Line 1' -> B=Product (opt) 'Style Pack' -> C=Product (opt) 'Accessory'. Base product ID: 6304cd10-9610-42d9-9998-2f75af235bcd. Section IDs: A=076326d6-0f20-430c-8a29-d9ed664c5092, B=b05a74e1-715e-4931-9938-bbe7499510e5, C=8295efb4-ee2b-4fd6-a292-3733d7f97b63. Config ID: 5ff23016-4790-4658-9470-0cdf244886b5. Slug: agent-test-text-driven-cond-20260413."
   },
@@ -1030,7 +1034,8 @@
       "slug": "product_slug",
       "url": "storefront_url",
       "price": "base_price",
-      "sections": "section_count"
+      "sections": "section_count",
+      "id": "product_id_guid"
     },
     "notes": "VCST-4713 CFG-025. File parent as dependency driver. Dependency graph: A=File (req, root) 'Design Upload' -> B=Product (opt) 'Finish Type' -> C=Text (opt) 'Notes'. Base product ID: f764f2e6-bb00-428e-959d-3623a3c0e9d1. Section IDs: A=f232e482-d35d-4a85-aac6-f41701b10aa4, B=766cdb19-919b-4163-bf8e-12ee8f02b046, C=8b2cd459-5459-4b18-bdd9-052c2812bb76. Config ID: 69f32cef-e57f-4be5-a4b9-02e86ffb396d. Slug: agent-test-file-driven-cond-20260413."
   },
@@ -1044,7 +1049,8 @@
       "slug": "product_slug",
       "url": "storefront_url",
       "price": "base_price",
-      "sections": "section_count"
+      "sections": "section_count",
+      "id": "product_id_guid"
     },
     "notes": "VCST-4713 CFG-026. Required File section gates checkout. Dependency graph: A=Product (req, root) 'Service Plan' -> B=File (req) 'ID Proof'. Base product ID: 1d8bb891-f37b-4a9c-af0d-62409772c75e. Section IDs: A=28a1f250-9558-4e35-8723-a53123508ee4, B=0f4c69b6-404c-4d5a-8a8c-936a6cd0c472. Config ID: 6be61d28-be40-4889-b51d-12d30d70f3ec. Slug: agent-test-req-file-child-20260413."
   },
@@ -1058,7 +1064,8 @@
       "slug": "product_slug",
       "url": "storefront_url",
       "price": "base_price",
-      "sections": "section_count"
+      "sections": "section_count",
+      "id": "product_id_guid"
     },
     "notes": "VCST-4713 CFG-027. Both siblings required — Add to Cart disabled until both filled. Dependency graph: A=Product (opt with None, root) 'Bundle Choice' -> B=Product (req) 'Size' AND A -> C=Product (req) 'Color'. When A=None both B and C hidden (cart unblocked). When A has real value both B and C appear; cart blocked until both filled. Base product ID: fc267b5c-40d1-4223-8748-bd7010806af3. Section IDs: A=e306f434-c3f4-4dbf-86b4-1bca06330717, B=df35de5b-8679-4021-946d-62d15124b8ef, C=d0f0ced3-cff9-4a51-874b-b9c0ff90fc7f. Config ID: 9807e7ee-e8a5-4bb1-957e-f540d1b165f8. Slug: agent-test-two-req-siblings-20260413."
   },
@@ -1072,7 +1079,8 @@
       "slug": "product_slug",
       "url": "storefront_url",
       "price": "base_price",
-      "sections": "section_count"
+      "sections": "section_count",
+      "id": "product_id_guid"
     },
     "notes": "VCST-4713 CFG-028. Regression for visibility computation at depth 4. Dependency graph: A=Product (req, root) 'Level A' -> B=Product (opt) 'Level B' -> C=Product (opt) 'Level C' -> D=Product (opt) 'Level D' -> E=Product (opt) 'Level E'. All section types Product. Base product ID: d36b25af-8e8f-42e1-b276-6f3219762a8d. Section IDs: A=07968f25-9ede-4b14-9d6e-616e082c73f6, B=f0ae2e35-d4c9-4585-a98c-963ce9dda9f7, C=ed3f8389-1268-4d65-a82f-3df8b68dad9b, D=58da3be3-f570-4993-a394-9ffcf686960f, E=745749a2-c197-4d15-89bc-806923ae0838. Config ID: b53a01c2-4eb3-484e-9440-bc909498d4b4. Slug: agent-test-deep-4-level-chain-20260413."
   },
@@ -1086,7 +1094,8 @@
       "slug": "product_slug",
       "url": "storefront_url",
       "price": "base_price",
-      "sections": "section_count"
+      "sections": "section_count",
+      "id": "product_id_guid"
     },
     "notes": "VCST-4713 CFG-029. When A=None -> B hidden and must not block cart; when A=real-value -> B revealed and blocks cart. Dependency graph: A=Product (opt with None, root) 'Add Extras' -> B=Product (req) 'Extra Type'. Base product ID: 9106181f-0b36-4c3f-9b5a-9bb8fdbdec5c. Section IDs: A=7fae5f5e-f219-415a-9efe-b1237ddbf674, B=12186681-772e-4d9b-a311-faef7226c4b7. Config ID: 53625750-7884-4257-a20b-2bf828579372. Slug: agent-test-req-child-opt-parent-20260413."
   },

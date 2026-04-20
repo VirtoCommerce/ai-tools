@@ -1,0 +1,119 @@
+{
+  "ticket": "VCST-4713",
+  "title": "[Catalog][Product][Configuration] Conditional sections",
+  "type": "Story",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-04-16",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1019.0",
+    "theme": "2.46.0-pr-2225-572f-572f0087",
+    "relevant_modules": {
+      "VirtoCommerce.Catalog": "3.1018.0-pr-871-3340",
+      "VirtoCommerce.XCart": "3.1007.0-pr-105-3ec5",
+      "VirtoCommerce.XCatalog": "3.1004.0"
+    },
+    "pr_build": "VirtoCommerce/vc-module-catalog#871, VirtoCommerce/vc-module-x-cart#105, VirtoCommerce/vc-frontend#2225"
+  },
+  "agents_dispatched": ["qa-frontend-expert", "qa-backend-expert", "qa-testing-expert"],
+  "total_cases_assigned": 40,
+  "total_cases_executed": 34,
+  "passed": 32,
+  "failed": 1,
+  "blocked": 4,
+  "skipped": 2,
+  "fail_root_cause_count": 1,
+  "results_by_agent": {
+    "qa-frontend-expert": {
+      "browser": "playwright-chrome (fell back to firefox)",
+      "assigned": 15,
+      "executed": 15,
+      "passed": 15,
+      "failed": 0,
+      "blocked": 0,
+      "report": "re-verify-frontend-report.md"
+    },
+    "qa-backend-expert": {
+      "browser": "playwright-edge",
+      "assigned": 10,
+      "executed": 10,
+      "passed": 8,
+      "failed": 0,
+      "blocked": 1,
+      "observations": 2,
+      "report": "re-verify-backend-report.md"
+    },
+    "qa-testing-expert": {
+      "browser": "playwright-firefox",
+      "assigned": 15,
+      "executed": 13,
+      "passed": 9,
+      "failed": 1,
+      "blocked": 3,
+      "skipped": 2,
+      "report": "re-verify-cross-cutting-report.md"
+    }
+  },
+  "coverage_by_layer": {
+    "storefront_ui_pdp": { "executed": 25, "passed": 24, "failed": 1, "note": "1 FAIL is design ambiguity (None option), not code bug" },
+    "e2e_flows": { "executed": 3, "passed": 3, "failed": 0 },
+    "admin_ui": { "executed": 7, "passed": 7, "blocked": 1, "note": "Delete parent blocked to preserve test data" },
+    "graphql_xapi": { "executed": 4, "passed": 4, "failed": 0 },
+    "rest_api": { "executed": 3, "passed": 3, "failed": 0 },
+    "cross_cutting": { "executed": 2, "passed": 2, "failed": 0 },
+    "backward_compatibility": { "executed": 4, "passed": 4, "failed": 0 },
+    "console_network": { "executed": 2, "passed": 2, "failed": 0, "js_errors": 0, "network_failures": 0 }
+  },
+  "business_rules_verified": [
+    "BL-CAT-006 — Conditional section visibility before validation: hidden optional sections do not block Add to Cart",
+    "BL-PRICE-001 — Price stacking excludes hidden section option prices; verified $300/$325/$345/$300 transitions"
+  ],
+  "edge_cases_verified": [
+    "ECL-7.1 — State transitions: cascade hide/show, clearHiddenSectionValues() clears stale child values",
+    "Text parent chain (3-level): Text->Product->Product",
+    "File parent chain (3-level): File->Product->Text",
+    "Deep chain (5-level): A->B->C->D->E sequential reveal",
+    "Two required siblings: both appear/hide simultaneously"
+  ],
+  "improvements_confirmed": [
+    "XCart 3.1007.0: Add to Cart now correctly DISABLED when required sibling sections are visible but unfilled (was broken in 3.1006.0)"
+  ],
+  "findings": [
+    {
+      "id": "FINDING-1",
+      "severity": "Medium",
+      "title": "None product option does not hide dependent sections",
+      "description": "Selecting a 'None' product option ($0) in a parent section does NOT hide dependent child sections. The visibility check treats 'None' as a valid selection. Affects CFG-PDP-037-COND and CFG-PDP-040-COND.",
+      "classification": "Design ambiguity — needs product team clarification",
+      "recommendation": "Clarify whether 'None' options should trigger hide behavior. If yes, isSectionVisible() needs to differentiate None products from real selections."
+    },
+    {
+      "id": "FINDING-2",
+      "severity": "Low",
+      "title": "Circular dependency not prevented at UI level",
+      "description": "Admin UI allows selecting a section that would create circular dependency (A depends on B which depends on A). The value is not persisted — data integrity preserved. No warning shown.",
+      "classification": "UX improvement",
+      "recommendation": "Add client-side validation to filter circular dependency options or show warning toast."
+    },
+    {
+      "id": "FINDING-3",
+      "severity": "Info",
+      "title": "Admin field label discrepancy",
+      "description": "Admin UI labels the dependency field as 'Active when section has value', not 'Depends on' as referenced in test specs. Functional behavior is correct.",
+      "classification": "Documentation/naming"
+    }
+  ],
+  "blocked_reasons": {
+    "CFG-CA-024": "Delete parent section — deferred to avoid destroying test data for other cases",
+    "CFG-PDP-033-COND": "CFG-029 product not seeded in QA environment",
+    "CFG-PDP-039-COND": "SPA auto-navigation interference during cart operations"
+  },
+  "comparison_with_apr13": {
+    "cases_executed": "34 vs 15 (2.3x increase)",
+    "admin_gap_filled": "Yes — CFG-CA-019 through 026 now executed (was 0 in Apr 13 due to rate limit)",
+    "e2e_060_reconfigure": "Upgraded from partial to FULL PASS",
+    "cart_gating_fix": "Confirmed in XCart 3.1007.0 (was broken in 3.1006.0)"
+  },
+  "jira_transition_recommended": "In Review → TESTED (pending user approval)",
+  "artifacts": "tests/Sprint-current/VCST-4713/"
+}

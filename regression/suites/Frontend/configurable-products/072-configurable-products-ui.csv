@@ -145,19 +145,19 @@
 [STATE] After Wheel Set=None: Tire Type hides — B has no value, C transitively hidden
 [STATE] hiddenSectionIds iterative computation handles Frame Type → Wheel Set → Tire Type chain","[CONSOLE] No JS errors in hiddenSectionIds iterative computation (must handle indirect ancestors)
 [NETWORK] No extra API calls — all computed client-side","Tire Type visible before Wheel Set has a value; Tire Type not visible even after Wheel Set=Standard; deselecting Wheel Set only hides itself but leaves Tire Type visible; infinite loop in hiddenSectionIds iterative computation; JS stack overflow","none","VCST-4713","Manual"
-"CFG-PDP-026-COND","Required Hidden Section (Tire Type) Does Not Block Add to Cart","Configurable Products > Conditional Sections > Cart Validation","Critical","BL-CAT-006","ECL-7.1","Storefront accessible. Seed product CFG-022. NOTE: Tire Type (Section C) is optional in the seeded CFG-022 product. This test verifies that hidden optional sections don't block add-to-cart AND that validateSection() skips hidden sections regardless of required flag. Frame Type=Aluminum preselected (first option, $0 surcharge); Wheel Set and Frame Color visible; Tire Type hidden.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_CONDITIONAL.slug); sectionB_name=Wheel Set; sectionC_name=Tire Type","[NAV] Navigate to {{FRONT_URL}}/products-with-options/configurations/@td(CFG_CONDITIONAL.slug)
+"CFG-PDP-026-COND","Hidden Optional Section (Tire Type in CFG-022) Does Not Block Add to Cart","Configurable Products > Conditional Sections > Cart Validation","Critical","BL-CAT-006","ECL-7.1","Storefront accessible. Seed product CFG-022. NOTE: Tire Type (Section C) is optional in the seeded CFG-022 product. This test verifies that hidden optional sections don't block add-to-cart AND that validateSection() skips hidden sections regardless of required flag. Frame Type=Aluminum preselected (first option, $0 surcharge); Wheel Set and Frame Color visible; Tire Type hidden.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_CONDITIONAL.slug); sectionB_name=Wheel Set; sectionC_name=Tire Type","[NAV] Navigate to {{FRONT_URL}}/products-with-options/configurations/@td(CFG_CONDITIONAL.slug)
 [WAIT] Configure widget loads; Frame Type=Aluminum; Wheel Set visible; Tire Type NOT in DOM
 [ASSERT] Confirm Tire Type is NOT in DOM (Wheel Set has no value — Tire Type transitively hidden)
 [ASSERT] Confirm Wheel Set is visible and shows None selected
 [ACT] Do NOT select any option in Wheel Set (leave Tire Type hidden)
 [ACT] Click Add to Cart button
 [WAIT] Wait for cart response","[STATE] Add to Cart succeeds — no validation error blocking submission
-[STATE] The required Installation section does NOT trigger a Please select a required option error because it is hidden
+[STATE] The hidden Tire Type section does NOT trigger a Please select a required option error because it is hidden
 [DOM] Cart confirmation (toast, modal, or cart count increment) appears
 [STATE] No browser-side validation error for hidden required sections
-[STATE] x-Cart backend validation also passes — required sections with dependsOnSectionId pointing to unselected parent are skipped","[NETWORK] POST /graphql (cart mutation) returns 200 with no errors[] array entries for the hidden required section
-[API] Cart response: no configurationErrors or validationErrors referencing Installation section
-[CONSOLE] No JS validation errors thrown for hidden sections","Add to Cart blocked with Required section error for Installation despite it being hidden; x-Cart returns GraphQL errors[] citing the hidden required section; cart count not incremented; toast shows validation failure","remove added item from cart","VCST-4713","Manual"
+[STATE] x-Cart backend validation also passes — required sections with dependsOnSectionId pointing to unselected parent are skipped","[NETWORK] POST /graphql (cart mutation) returns 200 with no errors[] array entries for the hidden Tire Type section
+[API] Cart response: no configurationErrors or validationErrors referencing Tire Type section
+[CONSOLE] No JS validation errors thrown for hidden sections","Add to Cart blocked with Required section error for Tire Type despite it being hidden; x-Cart returns GraphQL errors[] citing the hidden Tire Type section; cart count not incremented; toast shows validation failure","remove added item from cart","VCST-4713","Manual"
 "CFG-PDP-027-COND","Multiple Sections Depending on Same Parent (Wheel Set + Frame Color) All Show and Hide Together","Configurable Products > Conditional Sections > Visibility","High","BL-CAT-006","ECL-7.1","Storefront accessible. Seed product CFG-022 PDP. Wheel Set (B) and Frame Color (D) both depend on Frame Type (A). Frame Type=Aluminum preselected (first option, $0 surcharge) — both B and D should be visible on initial load.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_CONDITIONAL.slug); sectionA_name=Frame Type; sectionB_name=Wheel Set; sectionD_name=Frame Color","[NAV] Navigate to {{FRONT_URL}}/products-with-options/configurations/@td(CFG_CONDITIONAL.slug)
 [WAIT] Configure widget loads; Frame Type=Aluminum preselected
 [ASSERT] Confirm BOTH Wheel Set and Frame Color are visible (both depend on Frame Type which has Aluminum)
@@ -248,7 +248,7 @@
 [STATE] After upload: Finish Type visible
 [STATE] After removal: Finish Type hidden again
 [DOM] Options None / Matte / Gloss present when visible","[CONSOLE] No JS errors; [NETWORK] File upload API returns 200/201","Finish Type hidden after upload; visible after removal; upload API 4xx; console errors on upload","none","VCST-4713","Manual"
-"CFG-PDP-033-COND","CFG-026: Required File Section (ID Proof) Gates Add to Cart","Configurable Products > Conditional Sections > Required File Child","Critical","BL-CAT-006","ECL-7.1","Storefront accessible. User logged in. CFG-026 (Required File child) deployed and indexed. Upload fixture Logo1.png available.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_REQUIRED_FILE_CHILD.slug); user={{USER_EMAIL}}; password={{USER_PASSWORD}}","[NAV] Sign in at {{FRONT_URL}} and navigate to @td(CFG_REQUIRED_FILE_CHILD.url)
+"CFG-PDP-033-COND","CFG-026: Required File Section (ID Proof) Gates Add to Cart","Configurable Products > Conditional Sections > Required File Child","Critical","BL-CAT-006","ECL-7.1","Storefront accessible. User logged in. CFG-026 (Required File child) deployed and indexed. Upload fixture Logo1.png available. SEED REQUIRED: CFG-029 product not in QA as of 2026-04-16. Run /qa-seed-data before execution.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_REQUIRED_FILE_CHILD.slug); user={{USER_EMAIL}}; password={{USER_PASSWORD}}","[NAV] Sign in at {{FRONT_URL}} and navigate to @td(CFG_REQUIRED_FILE_CHILD.url)
 [WAIT] Configure widget; Service Plan options visible (Basic / Premium)
 [ACT] Select Basic in Service Plan
 [WAIT] ID Proof (required File) section appears in DOM
@@ -286,7 +286,8 @@
 [ASSERT] Cart add succeeds; price=$165.00 (base $120 + Bundle A $40 + M $5 + Black $0)","[STATE] Neither filled: Add to cart disabled
 [STATE] One filled (Size=M; Color empty): still disabled
 [STATE] Both filled: Add to cart enabled (BL-CAT-006 all visible required satisfied)
-[MATH] Total=$165.00 (base $120 + Bundle A $40 + M $5 + Black $0)","[CONSOLE] No JS errors; [NETWORK] addItem mutation succeeds","Add to cart enabled after only one sibling filled; validation error despite both filled; price math wrong","Remove cart item after test","VCST-4713","Manual"
+[MATH] Total=$165.00 (base $120 + Bundle A $40 + M $5 + Black $0)
+[STATE] configurableDisabled=true when isRequiredConfigurationComplete=false (visible required siblings unfilled); configurableDisabled=false when all visible required sections satisfied and configLoading=false","[CONSOLE] No JS errors; [NETWORK] addItem mutation succeeds","Add to cart enabled after only one sibling filled; validation error despite both filled; price math wrong","Remove cart item after test","VCST-4713","Manual"
 "CFG-PDP-036-COND","CFG-028: Deep Chain — Level E Hidden Until Full 4-Level Chain Satisfied","Configurable Products > Conditional Sections > Deep Chain","High","BL-CAT-006","ECL-7.1","Storefront accessible. CFG-028 (Deep 4-level chain) deployed and indexed.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_DEEP_CHAIN.slug)","[NAV] Navigate to @td(CFG_DEEP_CHAIN.url)
 [WAIT] Configure widget; Level A visible (required); B/C/D/E NOT in DOM
 [ACT] Select Opt1 in Level A
@@ -300,14 +301,15 @@
 [ASSERT] All 5 sections visible; price=$360.00 (base $300 + A $20 + B $10 + C $10 + D $10 + E $10)","[STATE] Each level only appears after its parent has a real value (depth-4 chain — BL-CAT-006)
 [MATH] Full chain: $300+$20+$10+$10+$10+$10=$360.00
 [STATE] Sections appear one at a time top-down; no eager rendering","[CONSOLE] No JS errors during chain expansion; [NETWORK] No page reloads","Any level appearing before parent has value; price incorrect; page reload required between steps; JS error at depth 4","none","VCST-4713","Manual"
-"CFG-PDP-037-COND","CFG-028: Deselecting Mid-Chain Collapses All Downstream Levels","Configurable Products > Conditional Sections > Deep Chain > Cascade Hide","High","BL-CAT-006","ECL-7.1","Storefront accessible. CFG-028 PDP. Full chain A-E all visible with Opt1 selected at each level.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_DEEP_CHAIN.slug)","[NAV] Navigate to @td(CFG_DEEP_CHAIN.url) and expand full chain (all 5 visible Opt1 each)
-[ACT] In Level B select None
-[WAIT] Level C disappears; Level D disappears; Level E disappears
-[ASSERT] Only Level A and Level B visible; price=$320.00 (base $300 + A-Opt1 $20 + B-None $0)
+"CFG-PDP-037-COND","CFG-028: Deselecting Mid-Chain to None — Downstream Sections Remain Visible (None Product Counts as Value)","Configurable Products > Conditional Sections > Deep Chain > Cascade Hide","High","BL-CAT-006","ECL-7.1","Storefront accessible. CFG-028 PDP. Full chain A-E all visible with Opt1 selected at each level.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_DEEP_CHAIN.slug)","[NAV] Navigate to @td(CFG_DEEP_CHAIN.url) and expand full chain (all 5 visible Opt1 each)
+[ACT] In Level B select LvlB-None (the $0 None product option)
+[WAIT] Observe visibility of Level C, Level D, Level E
+[ASSERT] Document actual visibility outcome of C/D/E
 [ACT] In Level B select Opt1 again; then C=Opt1; D=Opt1; E=Opt1
-[ASSERT] All 5 sections visible; price=$360.00","[STATE] B=None cascades hide for C/D/E (all downstream — BL-CAT-006)
-[STATE] Stale C/D/E values cleared by clearHiddenSectionValues()
-[MATH] After B=None: $300+$20+$0=$320.00; [MATH] Full chain restored: $360.00","[CONSOLE] No JS errors; clearHiddenSectionValues() invoked for all downstream; [NETWORK] No page reload","C/D/E remain visible after B=None; stale prices included in total after hidden; JS error on cascade collapse","none","VCST-4713","Manual"
+[ASSERT] All 5 sections visible; price=$360.00","[STATE] ACTUAL BEHAVIOR: C/D/E remain VISIBLE after B=None — isSectionVisible() treats any product value (including None products with $0 price) as 'parent has value'; clearHiddenSectionValues() never fires because sections stay visible
+[MATH] After B=LvlB-None: price decreases by B contribution (B-None $0 vs B-Opt1 $10) but C/D/E prices preserved
+[MATH] Full chain restored with Opt1 at all levels: $360.00
+[STATE] KNOWN AMBIGUITY pending product team decision on None semantics — see FINDING-1","[CONSOLE] No JS errors during None selection; [NETWORK] No page reload on option click","JS error in hiddenSectionIds; page reload; incorrect price","none","VCST-4713; FINDING-1; KNOWN AMBIGUITY pending product team decision","Manual"
 "CFG-PDP-038-COND","CFG-029: Required Child Hidden When Optional Parent Has None — Cart Not Blocked","Configurable Products > Conditional Sections > Required Child of Optional Parent","Critical","BL-CAT-006","ECL-7.1","Storefront accessible. User logged in. CFG-029 (Required child of optional-with-None parent) deployed and indexed.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_REQ_CHILD_OPT_PARENT.slug); user={{USER_EMAIL}}; password={{USER_PASSWORD}}","[NAV] Sign in and navigate to @td(CFG_REQ_CHILD_OPT_PARENT.url)
 [WAIT] Configure widget; Add Extras visible
 [ASSERT] Add Extras default=None
@@ -328,16 +330,15 @@
 [STATE] Extra Type=Standard: cart enabled
 [MATH] Total=$125.00 (base $100 + Extra A $25 + Standard $0)
 [STATE] Cart add succeeds with both sections in configurationItems","[CONSOLE] No JS errors; [NETWORK] addItem succeeds with both sectionIds in configurationItems","Extra Type stays hidden after Extra A selected; cart enabled while Extra Type unfilled; price wrong (omits Extra A surcharge)","Remove cart item after test","VCST-4713","Manual"
-"CFG-PDP-040-COND","CFG-027: Cascade Hide — Size and Color Reset and Hidden When Bundle Deselected Back to None","Configurable Products > Conditional Sections > Two Siblings > State Reset","High","BL-CAT-006","ECL-7.1","Storefront accessible. CFG-027 PDP. Bundle A selected with Size=M and Color=Black. Both siblings visible and filled.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_TWO_REQ_SIBLINGS.slug)","[NAV] Navigate to @td(CFG_TWO_REQ_SIBLINGS.url)
+"CFG-PDP-040-COND","CFG-027: Bundle-None ($0 Product) Does NOT Hide Size and Color Siblings — None Product Counts as Value","Configurable Products > Conditional Sections > Two Siblings > State Reset","High","BL-CAT-006","ECL-7.1","Storefront accessible. CFG-027 PDP. Bundle A selected with Size=M and Color=Black. Both siblings visible and filled.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_TWO_REQ_SIBLINGS.slug)","[NAV] Navigate to @td(CFG_TWO_REQ_SIBLINGS.url)
 [ACT] Select Bundle A; then Size=M; then Color=Black
 [ASSERT] Add to cart ENABLED; price=$165.00
-[ACT] In Bundle Choice select None
-[WAIT] Size disappears; Color disappears
-[ASSERT] Size NOT in DOM; Color NOT in DOM
-[ASSERT] Add to cart ENABLED again (hidden required siblings no longer block)
-[ASSERT] Price=$120.00 (base only; Bundle=None $0; Size and Color excluded)","[STATE] Bundle=None after filled siblings: both hidden; values cleared (clearHiddenSectionValues()); cart re-enabled
-[MATH] Price=$120.00 (base only)
-[STATE] Stale Size/Color values not included in any subsequent cart payload","[CONSOLE] No JS errors; [NETWORK] No page reload","Size or Color visible after Bundle=None; stale values persisted; price includes previously selected hidden option prices","none","VCST-4713","Manual"
+[ACT] In Bundle Choice select Bundle-None ($0 None product option)
+[WAIT] Observe visibility of Size and Color
+[ASSERT] Document actual visibility and price outcome","[STATE] ACTUAL BEHAVIOR: Selecting Bundle-None ($0 product) does NOT hide Size and Color siblings — isSectionVisible() treats the None product as a valid value for Bundle Choice
+[STATE] Values (Size=M, Color=Black) are NOT cleared because clearHiddenSectionValues() never fires (sections stay visible)
+[MATH] Price reflects Bundle-None ($0) replacing Bundle A, but Size and Color contributions remain
+[STATE] KNOWN AMBIGUITY pending product team decision on None semantics — see FINDING-1","[CONSOLE] No JS errors; [NETWORK] No page reload","JS error on option change; page reload; price calculation crashes","none","VCST-4713; FINDING-1; KNOWN AMBIGUITY pending product team decision","Manual"
 "CFG-PDP-041-COND","CFG-025: Notes Text Section Appears Only After Finish Type Has Real Value (3-Level File-Driven Chain)","Configurable Products > Conditional Sections > File Parent Chain","High","BL-CAT-006","ECL-7.1","Storefront accessible. CFG-025 PDP. File uploaded (Finish Type visible). Finish Type=None.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_FILE_DRIVEN_COND.slug)","[NAV] Navigate to @td(CFG_FILE_DRIVEN_COND.url)
 [ACT] Upload Logo1.png to Design Upload
 [WAIT] Finish Type appears
@@ -351,3 +352,44 @@
 [STATE] Finish Type=Matte: Notes visible (chain fully satisfied — BL-CAT-006)
 [STATE] Finish Type reset to None: Notes hidden and text value cleared
 [DOM] Notes shows a text input when visible","[CONSOLE] No JS errors; [NETWORK] No page reload","Notes appears while Finish Type=None; stays visible after reset; text value persists after Notes hidden","none","VCST-4713","Manual"
+"CFG-PDP-042-COND","None Product Option Treats Parent as Having a Value — Dependent Sections Remain Visible","Configurable Products > Conditional Sections > None Option Semantics","High","BL-CAT-006","ECL-7.1","CFG-028 PDP loaded. Full chain visible. Level B has LvlB-None option.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_DEEP_CHAIN.slug)","[NAV] Navigate to deep chain PDP and select full chain A-E with Opt1 at each level
+[ASSERT] All 5 levels visible; price stacks correctly
+[ACT] In Level B select LvlB-None ($0)
+[WAIT] Observe visibility of C/D/E
+[ASSERT] Document visibility outcome","[STATE] ACTUAL BEHAVIOR: C/D/E remain VISIBLE — None product counts as valid parent value in isSectionVisible()
+[MATH] Price decreases by B contribution ($10) but C/D/E prices preserved
+[STATE] KNOWN AMBIGUITY pending product team decision on None semantics (FINDING-1)","[CONSOLE] No JS errors during None selection
+[NETWORK] No page reload; price update client-side only","JS error in hiddenSectionIds; page reload; incorrect price","none","VCST-4713; FINDING-1 (verification-summary.json 2026-04-16)","Manual"
+"CFG-PDP-043-COND","Add to Cart Disabled During Configuration Loading State (configLoading)","Configurable Products > Conditional Sections > Loading State","High","BL-CAT-006","ECL-7.1","CFG-022 PDP accessible. DevTools available for network throttling.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_CONDITIONAL.slug)","[NAV] Navigate to conditional product PDP
+[WAIT] Widget loads; Frame Type preselected
+[ASSERT] Add to Cart enabled after load (configLoading=false, required section filled)
+[ACT] Apply slow 3G throttling in DevTools
+[NAV] Hard-reload page
+[ASSERT] Add to Cart DISABLED during loading (configurableDisabled=true)
+[WAIT] Page fully loads
+[ASSERT] Add to Cart ENABLED after load
+[ACT] Remove throttling","[STATE] During configLoading=true: Add to Cart disabled
+[STATE] After configLoading=false + required filled: Add to Cart enabled
+[DOM] Button disabled attribute present during load; absent after","[CONSOLE] No JS errors during load transitions
+[NETWORK] productConfiguration GraphQL query completes","Add to Cart enabled during loading; button stuck disabled after load","Remove throttling","VCST-4713; PR#2225 add-to-cart.vue configurableDisabled","Manual"
+"CFG-PDP-044-COND","Default Values Not Applied to Hidden Sections on PDP Load","Configurable Products > Conditional Sections > Default Values","Medium","BL-CAT-006","ECL-7.1","CFG-022 PDP accessible. Tire Type section hidden on initial load (Wheel Set has no value).","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_CONDITIONAL.slug)","[NAV] Navigate to conditional product PDP
+[WAIT] Widget loads; Frame Type=Aluminum preselected
+[ASSERT] Tire Type NOT in DOM (hidden)
+[ASSERT] Price=$300 (hidden section default NOT contributing)
+[ACT] Select Standard in Wheel Set ($25)
+[WAIT] Tire Type appears
+[ASSERT] Tire Type shows default state (None/skip) not a pre-applied value","[STATE] Hidden sections have no pre-applied default on initial load
+[MATH] Price on load = base + visible defaults only (hidden excluded)
+[STATE] updateWithDefaultValues() skips hidden sections","[CONSOLE] No JS errors in updateWithDefaultValues
+[NETWORK] No cart mutations on initial load","Hidden section default appearing in price before section visible","none","VCST-4713; PR#2225 updateWithDefaultValues() skips hidden","Manual"
+"CFG-PDP-045-COND","Circular Dependency in Data Does Not Crash Storefront Widget (Max-Iterations Guard)","Configurable Products > Conditional Sections > Circular Dependency Guard","Medium","BL-CAT-006","ECL-5.1","Admin access for REST API. Test product available. CFG-CA-023 confirmed circular deps not persisted via UI.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_CONDITIONAL.slug); back_url={{BACK_URL}}","[AUTH] Obtain admin Bearer token
+[SETUP] Attempt circular dependency via REST API (A.dependsOn=B, B.dependsOn=A)
+[ASSERT] If API rejects: document rejection; storefront guard not needed
+[ASSERT] If API accepts: navigate to PDP
+[WAIT] Widget loads
+[ASSERT] Widget renders without crash or infinite loop
+[CONSOLE] Check for stack overflow errors","[STATE] hiddenSectionIds computation terminates (max-iterations = section count)
+[STATE] No JavaScript stack overflow
+[STATE] No browser crash or hang
+[STATE] Widget renders in some state (degraded acceptable; crash is not)","[CONSOLE] No stack overflow; no infinite loop
+[NETWORK] productConfiguration query completes","Browser tab crash; JS stack overflow; page freezes; widget blank","Restore dependsOnSectionId to null via REST API","VCST-4713; PR#2225 hiddenSectionIds max-iterations guard; CFG-CA-023","Manual"

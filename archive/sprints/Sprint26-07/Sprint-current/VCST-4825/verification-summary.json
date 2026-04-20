@@ -1,0 +1,25 @@
+{
+  "ticket": "VCST-4825",
+  "verdict": "VERIFIED",
+  "date": "2026-04-16",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1017.0",
+    "theme": "vc-theme-b2b-vue-2.46.0-pr-2262-2ec2",
+    "relevant_modules": {
+      "VirtoCommerce.FileExperienceApi": "3.1000.0"
+    },
+    "pr_build": "vc-theme-b2b-vue-2.46.0-pr-2262-2ec2-2ec2d2ec.zip"
+  },
+  "agent_used": "qa-frontend-expert",
+  "str_result": "3/3",
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-CAT-006"],
+  "jira_transition": "TESTING → TESTED",
+  "artifacts": "tests/Sprint-current/VCST-4825/"
+}
