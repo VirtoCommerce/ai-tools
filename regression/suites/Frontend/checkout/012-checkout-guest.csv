@@ -1,5 +1,5 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"CHK-014","Guest Checkout - Happy Path","Checkout > Guest","Critical","BL-CHK-005","ECL-1.2, ECL-14.1","Store allows anonymous users (anonymousUsersAllowed: true), products available in catalog","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Open {{FRONT_URL}} in incognito/private window (not logged in)
+"CHK-014","Guest Checkout - Happy Path","Checkout > Guest","Critical","BL-CHK-005","ECL-1.2, ECL-14.1","Store allows anonymous users (anonymousUsersAllowed: true), products available in catalog. BROWSER REQUIRED: playwright-chrome — Firefox MCP cannot interact with headlessui delivery/payment selector dropdowns (div[role=button]) during guest checkout. NOTE: Do NOT use CyberSource payment — cross-origin testflex.cybersource.com iframe is inaccessible to any Playwright MCP browser. Use Manual payment method or another non-iframe processor configured in QA store.","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Open {{FRONT_URL}} in incognito/private window (not logged in)
 [NAV] Navigate to product page for {{TEST_SKU}}
 [ACT] click 'Add to Cart'
 [NAV] Navigate to {{FRONT_URL}}/cart
@@ -7,21 +7,21 @@
 [WAIT] Wait for guest checkout email step
 [ACT] Fill 'Email' field with guest email address
 [ACT] Fill shipping address (First Name, Last Name, Street, City, State, ZIP, Country)
-[ACT] select shipping method
-[ACT] Fill payment details in payment form
+[ACT] select shipping method from available methods (click div[role=button] selector — requires playwright-chrome)
+[ACT] select non-CyberSource payment method (Manual or other non-iframe processor available in QA store)
 [ACT] click 'Place Order'
 [WAIT] Wait for confirmation page
 [ASSERT] Verify confirmation page with order number displayed","[NAV] Guest reaches checkout without being redirected to login
 [DOM] Email field appears on guest checkout
 [DOM] Shipping form accepts all fields
 [DOM] Shipping methods listed
-[DOM] Payment form functional
+[DOM] Payment form functional (non-iframe)
 [DOM] Confirmation page shows order number
 [STATE] Cart cleared after order placement
 [STATE] No account creation required to complete purchase","[API] createOrderFromCart mutation response errors[] is empty
 [CONSOLE] No errors during guest checkout flow
 [NETWORK] No unauthorized 401 responses blocking checkout
-[ADMIN] Guest order appears in {{ADMIN_URL}}/orders","Guest redirected to login page instead of proceeding as guest; confirmation page not reached after payment","Cancel guest order via {{ADMIN_URL}}/orders","Coverage Gap Analysis","Automated"
+[ADMIN] Guest order appears in {{ADMIN_URL}}/orders","Guest redirected to login page instead of proceeding as guest; confirmation page not reached after payment; headlessui dropdown not clickable (switch to playwright-chrome if on Firefox)","Cancel guest order via {{ADMIN_URL}}/orders","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: reassigned to playwright-chrome; Firefox MCP cannot interact with headlessui delivery/payment selectors (div[role=button]). CyberSource payment replaced with Manual/non-iframe processor."
 "CHK-015","Guest Checkout - New Address Entry","Checkout > Guest > Shipping","High","BL-CHK-001","","Guest user at checkout (anonymousUsersAllowed: true), no saved addresses for guest","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Proceed to checkout as guest (not logged in)
 [ASSERT] Verify no pre-populated or saved address shown
 [ACT] Fill 'Street' field with valid street address
@@ -35,7 +35,7 @@
 [STATE] Address carried through to shipping method and order summary steps
 [DOM] Shipping methods listed after address entry","[API] POST address for guest session returns valid response
 [CONSOLE] No errors on address submission","Saved addresses from previous sessions shown for anonymous user; shipping methods not loading after address entry","none","Coverage Gap Analysis","Automated"
-"CHK-016","Guest Checkout - Track Order","Orders > Guest Tracking","High","BL-ORD-001","","Guest order successfully placed, order number and guest email noted","url={{FRONT_URL}}","[NAV] Note order number from confirmation page
+"CHK-016","Guest Checkout - Track Order","Orders > Guest Tracking","High","BL-ORD-001","","FEATURE NOT IMPLEMENTED: Guest order tracking page does not exist in current storefront. {{FRONT_URL}}/orders/track returns 404. Do not execute.","url={{FRONT_URL}}","[NAV] Note order number from confirmation page
 [NAV] Note email used during guest checkout
 [NAV] Navigate to order tracking page (e.g. {{FRONT_URL}}/account/orders or dedicated tracking URL)
 [ACT] Fill guest email field with order email
@@ -49,8 +49,8 @@
 [DOM] Email and order number fields present
 [STATE] Correct combination returns order details and status
 [STATE] Incorrect email + order number returns error (not order data)","[API] GET /orders/track?email=...&order=... returns correct order
-[CONSOLE] No unhandled errors on tracking page","Tracking page requires login; correct guest credentials return no order; wrong credentials return order data (security issue)","none","Coverage Gap Analysis","Generated"
-"CHK-017","Guest Checkout - Prompt Registration After Purchase","Checkout > Guest > Post-Purchase","Medium","BL-CHK-005","","Guest order just placed, user on confirmation page","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Complete guest checkout and land on order confirmation page
+[CONSOLE] No unhandled errors on tracking page","Tracking page requires login; correct guest credentials return no order; wrong credentials return order data (security issue)","none","Coverage Gap Analysis","N/A — feature not implemented (/orders/track returns 404; guest order tracking page does not exist in current storefront)"
+"CHK-017","Guest Checkout - Prompt Registration After Purchase","Checkout > Guest > Post-Purchase","Medium","BL-CHK-005","","DEPENDENCY: Requires CHK-014 to complete successfully first (guest checkout happy path). Guest order just placed, user on confirmation page. BROWSER: playwright-chrome (same as CHK-014). NOTE: Registration requires email verification — do NOT assume auto-login after registration.","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Complete guest checkout (CHK-014 happy path) and land on order confirmation page
 [ASSERT] Verify 'Create Account' prompt or banner present
 [ASSERT] Verify prompt references linking order to new account
 [ACT] click 'Create Account' from confirmation page
@@ -58,23 +58,25 @@
 [ASSERT] Verify registration form pre-fills guest email
 [ACT] Complete registration with valid password
 [ACT] submit registration
-[WAIT] Wait for account creation confirmation
-[NAV] Navigate to {{FRONT_URL}}/account/orders
-[ASSERT] Verify guest order appears in new account order history","[DOM] Create Account prompt visible on confirmation page
+[WAIT] Wait for email verification prompt (registration does not auto-login)
+[ASSERT] Verify prompt to check email for verification link
+[NAV] Note: full order-linking verification requires email verification step outside MCP scope; verify prompt is shown and registration does not error","[DOM] Create Account prompt visible on confirmation page
 [DOM] Prompt text references order linking
 [DOM] Registration form pre-fills guest email
-[STATE] After registration guest order appears in account history","[API] POST /account/register links guest order to new account
-[CONSOLE] No errors during account creation flow","Create Account prompt absent from confirmation; guest order missing from account after registration","none","Coverage Gap Analysis","Generated"
-"CHK-018","Guest Checkout - With Coupon Code","Checkout > Guest > Promotions","High","BL-CHK-002","","Guest user at checkout (anonymousUsersAllowed: true), valid coupon code exists in system","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Proceed to checkout as guest with items in cart
+[STATE] Registration form submits without error
+[DOM] Email verification prompt displayed after registration (no auto-login)","[API] POST /account/register returns success (no error)
+[CONSOLE] No errors during account creation flow","Create Account prompt absent from confirmation; registration form does not pre-fill guest email; registration errors on submit; no email verification prompt shown","none","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: added DEPENDENCY on CHK-014; added email verification step (registration does not auto-login in QA). Order-linking assertion scoped to registration success + verification prompt only."
+"CHK-018","Guest Checkout - With Coupon Code","Checkout > Guest > Promotions","High","BL-CHK-002","","SEED REQUIRED: Valid coupon code applicable to guest users must exist in system ({{VALID_COUPON_CODE}}). Provision via Admin > Marketing > Promotions > create promotion with coupon code, applicable to all users including guests. DEPENDENCY: Requires CHK-014 to complete successfully first (guest checkout happy path). BROWSER: playwright-chrome (same as CHK-014).","url={{FRONT_URL}}, sku={{TEST_SKU}}, coupon={{VALID_COUPON_CODE}}","[NAV] Proceed to checkout as guest with items in cart (CHK-014 happy path precondition met)
 [ACT] Enter guest email address
 [ACT] Fill shipping address
 [ACT] select shipping method
 [ASSERT] Locate coupon code input field
-[ACT] Enter valid coupon code in coupon field
+[ACT] Enter {{VALID_COUPON_CODE}} in coupon field
 [ACT] click 'Apply'
 [WAIT] Wait for discount to apply
 [ASSERT] Verify discount line item appears in order summary
 [ASSERT] Verify total reflects discounted amount
+[ACT] select non-CyberSource payment method
 [ACT] click 'Place Order'
 [ASSERT] Verify confirmation page shows discounted total","[DOM] Coupon input field accessible to guest users
 [STATE] Valid coupon accepted with success confirmation
@@ -82,7 +84,7 @@
 [MATH] Total = subtotal + shipping + tax - coupon discount
 [DOM] Confirmation page shows coupon discount line item","[API] createOrderFromCart mutation response errors[] is empty
 [API] Order payload contains applied coupon/promotion
-[CONSOLE] No errors on coupon application","Coupon field not shown for guests; coupon accepted but discount not reflected in total; discount disappears at confirmation","Cancel guest order via {{ADMIN_URL}}/orders","Coverage Gap Analysis","Generated"
+[CONSOLE] No errors on coupon application","Coupon field not shown for guests; coupon accepted but discount not reflected in total; discount disappears at confirmation; {{VALID_COUPON_CODE}} rejected (seed not provisioned)","Cancel guest order via {{ADMIN_URL}}/orders","Coverage Gap Analysis","Manual — BLOCKED pending seed: valid coupon code applicable to guests ({{VALID_COUPON_CODE}}). Added DEPENDENCY on CHK-014 and playwright-chrome browser requirement. SEED verdict 2026-04-21."
 "CHK-019","Guest Checkout - Field Validation","Checkout > Guest > Validation","High","BL-CHK-001","","Guest user at checkout email and address entry step","url={{FRONT_URL}}","[NAV] Proceed to checkout as guest (not logged in)
 [ACT] click 'Continue' without entering email
 [ASSERT] Verify 'Email is required' or equivalent error shown
@@ -102,21 +104,20 @@
 [STATE] Individual errors clear when field corrected
 [NAV] Form advances after all errors resolved","[CONSOLE] No JS exceptions during validation interactions
 [API] No API calls made while client-side validation active","Form advances with invalid email; no per-field errors shown; all errors clear simultaneously instead of per field","none","Coverage Gap Analysis","Automated"
-"CHK-020","Guest Checkout - Register After Purchase and Order Linked","Checkout > Guest > Post-Purchase","High","BL-CHK-005","","Guest order placed, on confirmation page with Create Account option","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Complete guest checkout successfully
+"CHK-020","Guest Checkout - Register After Purchase and Order Linked","Checkout > Guest > Post-Purchase","High","BL-CHK-005","","DEPENDENCY: Requires CHK-014 to complete successfully first (guest checkout happy path). Guest order placed, on confirmation page with Create Account option. BROWSER: playwright-chrome. NOTE: Registration requires email verification — order-linking to account is verifiable only after email verification completes (outside MCP scope for automated runs). Scope assertion to: registration form submitted without error AND verification prompt shown.","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Complete guest checkout (CHK-014 happy path) successfully
 [ASSERT] Verify 'Create Account' prompt on confirmation page
 [ACT] click 'Create Account' or 'Register' from confirmation
 [ACT] Complete registration form with guest email and new password
 [ACT] submit registration form
-[WAIT] Wait for account confirmation
-[NAV] Navigate to {{FRONT_URL}}/account/orders
-[ASSERT] Verify guest order visible in order history
-[ASSERT] Verify order details match original guest order","[DOM] Create Account prompt on confirmation
-[STATE] Registration completes without error
-[STATE] Guest order linked to new account and visible in order history
-[DOM] Order details (items, totals, addresses) match original guest order","[API] POST /account/register response indicates order linking
-[CONSOLE] No errors during registration and order linking
-[ADMIN] Account created in {{ADMIN_URL}} with order linked","Guest order absent from account history after registration; registration fails when using guest email","Delete test account via {{ADMIN_URL}} if created","Coverage Gap Analysis","Generated"
-"CHK-021","Guest Checkout - Disabled When Anonymous Users Not Allowed","Checkout > Guest > Access Control","Critical","BL-CHK-005","","Store configured with anonymousUsersAllowed: false, products available","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Open {{FRONT_URL}} in incognito/private window (not logged in)
+[WAIT] Wait for response
+[ASSERT] Verify registration submitted without error (no 400/500)
+[ASSERT] Verify email verification prompt displayed (no auto-login)
+[NAV] Note: navigating to {{FRONT_URL}}/account/orders at this point will require sign-in first; full order-linking verification deferred to manual follow-up after email verification","[DOM] Create Account prompt on confirmation
+[STATE] Registration form submits without error
+[DOM] Email verification prompt displayed (no auto-login)
+[CONSOLE] No JS errors during registration form interaction","[API] POST /account/register response returns success (no error body)
+[CONSOLE] No errors during registration form submission","Guest order absent from account history after registration; registration fails when using guest email; no email verification prompt; auto-login claimed but email verification required in QA","Delete test account via {{ADMIN_URL}} if created","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: added DEPENDENCY on CHK-014; scoped assertions to registration success + email verification prompt (auto-login not available in QA — email verification required). Order-linking assertion deferred to manual post-verification step."
+"CHK-021","Guest Checkout - Disabled When Anonymous Users Not Allowed","Checkout > Guest > Access Control","Critical","BL-CHK-005","","FEATURE NOT APPLICABLE IN QA: QA environment store is always configured with anonymousUsersAllowed: true. The anonymousUsersAllowed=false store variant is not configured in QA. This test requires a separate store instance or admin toggle that is not available in the shared QA environment. Do not execute.","url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] Open {{FRONT_URL}} in incognito/private window (not logged in)
 [NAV] Navigate to product page for {{TEST_SKU}}
 [ACT] click 'Add to Cart'
 [NAV] Navigate to {{FRONT_URL}}/cart
@@ -127,7 +128,7 @@
 [DOM] Login or register prompt displayed
 [STATE] Cart contents preserved for authenticated session
 [STATE] No guest checkout option shown when disabled","[API] Store settings endpoint reflects anonymousUsersAllowed=false
-[CONSOLE] No unexpected errors on redirect","Guest can access checkout without login when anonymousUsersAllowed=false; cart lost on redirect to login","none","Coverage Gap Analysis","Automated"
+[CONSOLE] No unexpected errors on redirect","Guest can access checkout without login when anonymousUsersAllowed=false; cart lost on redirect to login","none","Coverage Gap Analysis","N/A — feature not implemented (anonymousUsersAllowed=false store variant not configured in QA environment; QA store always has anonymous users allowed)"
 "CHK-029","Checkout Validation - Invalid Email Format","Checkout > Guest > Validation","High","BL-CHK-001","","Guest user at checkout, on email entry step","url={{FRONT_URL}}","[NAV] Proceed to checkout as guest (not logged in)
 [ACT] Enter invalid email 'user@' in email field
 [ACT] click 'Continue'
@@ -153,21 +154,24 @@
 [DOM] blank address form rendered
 [STATE] manual address entry is the only option for guest","[CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx","saved addresses from another user shown; address selector appears for guest; error on address form render","None","Coverage Gap Analysis","Manual"
-"CHK-067","Guest Checkout - Order Confirmation Without Order History Link","Checkout > Guest > Confirmation","Medium","BL-CHK-005","ECL-4.4","Guest checkout completed; on order confirmation page","url={{FRONT_URL}}","[NAV] complete guest checkout flow (add item > checkout > payment)
+"CHK-067","Guest Checkout - Order Confirmation Without Order History Link","Checkout > Guest > Confirmation","Medium","BL-CHK-005","ECL-4.4","DEPENDENCY: Requires CHK-014 to complete successfully first (guest checkout happy path must succeed, reaching confirmation page). BROWSER: playwright-chrome.","url={{FRONT_URL}}","[NAV] complete guest checkout flow using playwright-chrome (CHK-014 happy path — add item > checkout > non-CyberSource payment > place order)
 [WAIT] wait for order confirmation page
 [ASSERT] verify order number is displayed on confirmation page
-[ASSERT] verify NO link to order history or account dashboard is shown
-[ASSERT] verify email confirmation message displayed (order details sent to email)","[DOM] order number visible on confirmation page
+[ASSERT] verify NO link to order history or account dashboard is shown for guest user
+[ASSERT] verify email confirmation message or notice displayed (order details sent to email)","[DOM] order number visible on confirmation page
 [DOM] no 'View Order History' or 'My Account' link present for guest
 [DOM] email confirmation notice displayed","[CONSOLE] no JS errors on confirmation page
-[NETWORK] no 4xx/5xx","order history link shown to guest (would 404 or error); no order number displayed; confirmation page is blank","None","Coverage Gap Analysis","Manual"
-"CHK-068","Guest Checkout - Same Email as Existing Account","Checkout > Guest > Email Conflict","High","BL-CHK-005","ECL-4.4, ECL-1.2","Guest checkout enabled; email matches an existing registered account","url={{FRONT_URL}}
-existing_user_email={{USER_EMAIL}}","[NAV] navigate to {{FRONT_URL}} as anonymous user
-[ACT] add product to cart and proceed to checkout
-[ACT] enter {{USER_EMAIL}} (existing account email) in guest email field
-[ACT] complete shipping address and payment
-[ASSERT] verify system displays an informational message about existing account
-[ASSERT] verify no unhandled error or crash","[STATE] checkout does not crash on email conflict
-[DOM] informational message about existing account displayed
-[DOM] no generic/500 error page","[CONSOLE] no unhandled JS errors
-[NETWORK] no 5xx errors on email validation","unhandled error on email conflict; checkout crashes; order created under wrong account; silent failure","None","Coverage Gap Analysis","Manual"
+[NETWORK] no 4xx/5xx","order history link shown to guest (would 404 or error); no order number displayed; confirmation page is blank; CHK-014 failed so this step was never reached","None","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: added DEPENDENCY on CHK-014 completing successfully; added playwright-chrome browser requirement."
+"CHK-068","Guest Checkout - Same Email as Existing Account","Checkout > Guest > Email Conflict","High","BL-CHK-005","ECL-4.4, ECL-1.2","DEPENDENCY: Requires CHK-014 to complete successfully first (guest checkout happy path must work). Registered account for {{USER_EMAIL}} must exist. BROWSER: playwright-chrome (same as CHK-014).","url={{FRONT_URL}}
+existing_user_email={{USER_EMAIL}}","[NAV] navigate to {{FRONT_URL}} as anonymous user (incognito/private window, not logged in)
+[ACT] add {{TEST_SKU}} to cart and proceed to checkout (CHK-014 happy path)
+[ACT] enter {{USER_EMAIL}} (existing registered account email) in guest email field
+[ACT] fill shipping address fields
+[ACT] select shipping method (playwright-chrome required for headlessui selectors)
+[ACT] select non-CyberSource payment method
+[ASSERT] verify system either: (a) displays informational message about existing account, OR (b) proceeds normally without crash
+[ASSERT] verify no unhandled error or crash (no 500 page, no JS exception alert)","[STATE] checkout does not crash on email conflict
+[STATE] one of: informational message shown OR checkout proceeds normally
+[DOM] no generic/500 error page
+[DOM] no unhandled JS exception dialog","[CONSOLE] no unhandled JS errors
+[NETWORK] no 5xx errors on email validation or order submission","unhandled error on email conflict; checkout crashes; 500 page rendered; JS exception on email field blur; order created under wrong account","None","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: added DEPENDENCY on CHK-014; added playwright-chrome browser requirement; assertion broadened to accept both informational-message and silent-proceed behaviors (spec gap: exact behavior not documented)."

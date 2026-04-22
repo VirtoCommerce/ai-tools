@@ -1,8 +1,8 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.0.0",
-    "updated": "2026-03-26"
+    "version": "1.1.0",
+    "updated": "2026-04-21"
   },
   "CYBERSOURCE_VISA": {
     "file": "payment/test-cards",
@@ -1504,5 +1504,109 @@
       "category": "category",
       "id": "product_id"
     }
+  },
+  "COUPON_VALID": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-026"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id"
+    },
+    "notes": "Template only — NOT seeded. Universal 10% off coupon (all users, usage_limit=100, no expiry). Unblocks CART-014 CART-042 CHK-018 CHK-037. Env var: VALID_COUPON_CODE."
+  },
+  "PROD_OOS": {
+    "file": "products/test-products",
+    "filter": {
+      "product_id": "PROD-101"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "price": "price",
+      "id": "product_id"
+    },
+    "notes": "Template only — NOT seeded. Permanent OOS fixture (stock=0 all FCs, never restocked). Unblocks CART-046 CART-082. Env var: OOS_SKU."
+  },
+  "PROD_LOW_STOCK": {
+    "file": "products/test-products",
+    "filter": {
+      "product_id": "PROD-102"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "price": "price",
+      "id": "product_id"
+    },
+    "notes": "Template only — NOT seeded. Near-limit stock fixture (stock=5). Must not go OOS. Unblocks CART-037. Env var: LOW_STOCK_SKU."
+  },
+  "PROD_PACK_SIZE": {
+    "file": "products/test-products",
+    "filter": {
+      "product_id": "PROD-103"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "price": "price",
+      "id": "product_id"
+    },
+    "notes": "Template only — NOT seeded. MOQ=6 pack-size fixture (requires MinQuantity property set on product). Unblocks CART-054 CART-055. Env var: PACK_SIZE_SKU."
+  },
+  "PROD_TIER_PRICED": {
+    "file": "products/test-products",
+    "filter": {
+      "product_id": "PROD-104"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "price": "price",
+      "id": "product_id"
+    },
+    "notes": "Template only — NOT seeded. Tier pricing: 1-9 std, 10-19 -10%, 20+ -20% (see pricing/prices.csv PR-TIER-001..003). Unblocks CART-078. Env var: TIER_PRICED_SKU."
+  },
+  "PROD_CONFIGURABLE": {
+    "file": "products/configurable-products",
+    "filter": {
+      "product_id": "CFG-001"
+    },
+    "fields": {
+      "sku": "product_slug",
+      "name": "product_name",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "price": "base_price"
+    },
+    "notes": "Reuses existing CFG-001 Configurable Hat as the canonical configurable fixture for cart-merge scenarios. Unblocks CART-061. Env var: CONFIGURABLE_SKU."
+  },
+  "USER_MULTI_ORG": {
+    "file": "b2b/users",
+    "filter": {
+      "user_id": "USR-014"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "platform_id": "platform_id"
+    },
+    "notes": "Template only — NOT seeded. Member of 2+ B2B orgs (ORG-001 AcmeCorp + ORG-002 TechFlow) simultaneously. Triggers org-selector UI in cart. Unblocks CART-052 CART-053. Env vars: MULTI_ORG_USER_EMAIL, MULTI_ORG_USER_PASSWORD."
+  },
+  "USER_EUR": {
+    "file": "b2b/users",
+    "filter": {
+      "user_id": "USR-011"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "platform_id": "platform_id"
+    },
+    "notes": "Reuses existing USR-011 (Hans Mueller — EU admin with multi-language + EUR currency). Unblocks CART-059. Env vars: EUR_USER_EMAIL, EUR_USER_PASSWORD."
   }
 }

@@ -17,11 +17,24 @@ You do NOT execute tests yourself. You delegate to specialist sub-agents via the
 
 Suite selection (one of): `smoke`, `critical` (01,06,08,14), `sprint` (26 suites), `full` (all 42), `frontend` (01-13,35-36), `backend` (14-34), or comma-separated IDs (e.g., `01,04a,06`). Default: `smoke`.
 
+**Optional flags:**
+- `--seed=<profile>` — Pre-seed test data before regression (profiles: `minimal`, `catalog`, `b2b`, `pricing`, `full`). See Step 0.5.
+- `--teardown` — After report is written, remove all `AGENT-TEST-*` entities. See Step 6.5.
+
 **Always read `config/test-suites.json` as source of truth** — the manifest is authoritative for suite definitions and selection groups.
 
 ---
 
 ## Execution Pipeline
+
+### Step 0.5: Pre-Seed (only if `--seed=<profile>` provided)
+
+1. **Reject smoke-with-seed** — if selection is `smoke`/`042`, warn and skip seeding (no coverage benefit).
+2. **Reuse check** — if `test-data/b2b/_seed-results-orgs.json` exists AND mtime within last 2 hours AND profile matches, skip and log "Seed reused from {timestamp}".
+3. **Invoke** `/qa-seed-data <profile>` (via Skill or delegate to `qa-backend-expert` with the qa-seed-data skill). Wait for completion.
+4. **Wait 60s** for reindex before proceeding to Step 1 so storefront tests see new data.
+5. **On seed failure** — abort the run; report the seeding error to the user. Do not proceed to Step 1.
+6. **Record** seed profile + timestamp for the report header (Step 6).
 
 ### Step 1: Read Manifest & Initialize
 
@@ -43,12 +56,21 @@ Suite selection (one of): `smoke`, `critical` (01,06,08,14), `sprint` (26 suites
 
 ### Step 3: Dispatch Sub-Agents in Parallel
 
+**Pre-dispatch — resolve CSV once per suite (do NOT embed in prompt):**
+1. Read the suite CSV from the manifest's `file` path.
+2. Read `test-data/aliases.json`. For every `@td(ALIAS.field)` token in the CSV, read the referenced data CSV, filter to resolve the value, and substitute.
+3. Write the resolved CSV to `reports/regression/{RUN_ID}/suite-{ID}-resolved.csv`.
+4. Pass this resolved path as `{{SUITE_CSV_PATH}}` — the sub-agent reads it ONCE from disk. Never embed CSV content in the prompt.
+
 Dispatch up to 3 sub-agents per batch (matching browser slots). For each:
 - **subagent_type**: `agent` field from manifest (`qa-testing-expert`, `qa-frontend-expert`, `qa-backend-expert`)
-- **prompt**: Fill `.claude/agents/qa/test-runner-agent.md` template with: `{{RUN_ID}}`, `{{SUITE_ID}}`, `{{SUITE_NAME}}`, `{{SUITE_CSV_PATH}}`, `{{BROWSER_SERVER}}`, `{{ENVIRONMENT_URL}}` (FRONT_URL), `{{BACKEND_URL}}` (BACK_URL), `{{OUTPUT_FILE}}` (`reports/regression/{RUN_ID}/suite-{ID}-results.json`)
-- **@td() resolution**: Before embedding suite CSV content in the sub-agent prompt, resolve all `@td()` references. Read `test-data/aliases.json` for alias definitions, then read the referenced CSV file and filter to get the actual value. Replace each `@td(ALIAS.field)` token with the resolved value so sub-agents receive fully resolved data.
+- **prompt**: Fill `.claude/agents/qa/test-runner-agent.md` template with: `{{RUN_ID}}`, `{{SUITE_ID}}`, `{{SUITE_NAME}}`, `{{SUITE_CSV_PATH}}` (resolved path from step 3 above), `{{BROWSER_SERVER}}`, `{{ENVIRONMENT_URL}}` (FRONT_URL), `{{BACKEND_URL}}` (BACK_URL), `{{OUTPUT_FILE}}` (`reports/regression/{RUN_ID}/suite-{ID}-results.json`). Keep the prompt lean — no extra prose, no knowledge pre-loading, no inline CSV.
+
+**Per-suite browser requirements:** If a suite defines `preferredBrowser` in the manifest (e.g., `playwright-chrome` for CyberSource suites 039/041), you MUST assign that browser slot regardless of round-robin distribution. If the preferred slot is unavailable, defer the suite to the next batch rather than using a different browser — falling back to Firefox/Edge will cause cross-origin iframe access failures (documented per suite in `browserRequirementReason`).
 
 Launch all 3 in a SINGLE message with 3 Agent tool calls for parallel execution.
+
+**Sub-agent reporting cap:** Sub-agents must return only the output-file path + one-line status. Discard any free-form prose sub-agents return — all detail lives in the JSON results file.
 
 ### Step 4: Monitor & Collect
 
@@ -94,6 +116,12 @@ Write `reports/regression/regression-YYYY-MM-DD.md`:
 ```
 
 Update `test-run-status.json` to `completed`.
+
+### Step 6.5: Teardown (only if `--teardown` provided)
+
+1. Invoke `/qa-seed-data teardown` (via Skill or `qa-backend-expert`) to remove `AGENT-TEST-*` entities.
+2. Runs AFTER the report is written so seeded-data context is preserved in the report.
+3. On teardown failure: log to report but do not fail the run.
 
 ### Step 7: Quality Gate Enforcement
 

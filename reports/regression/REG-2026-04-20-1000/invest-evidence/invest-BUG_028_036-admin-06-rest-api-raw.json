@@ -1,0 +1,83 @@
+{
+  "httpStatus": 200,
+  "orderNumber": "CO260422-00001",
+  "orderId": "bc323bd9-32e0-433c-8203-6ed3df71ebdd",
+  "orderStatus": "New",
+  "isApproved": false,
+  "isCancelled": false,
+  "subTotal": 3456,
+  "subTotalWithTax": 4147.2,
+  "shippingTotal": 150,
+  "shippingTotalWithTax": 180,
+  "taxTotal": 499,
+  "discountAmount": 0,
+  "discountTotal": 1111,
+  "total": 2994,
+  "items": [
+    {
+      "id": "11a844b4-2e7f-4657-a119-ee411d07a7b1",
+      "productId": "4b312d4e-4388-434a-9164-0f158b900463",
+      "sku": "418132",
+      "name": "COTE SOLEIL Merlot 0.75L: Elegance in Every Sip",
+      "quantity": -1,
+      "price": 3456,
+      "priceWithTax": 4147.2,
+      "placedPrice": 2345,
+      "placedPriceWithTax": 2814,
+      "extendedPrice": 2345,
+      "extendedPriceWithTax": 2814,
+      "discountAmount": 1111,
+      "discountAmountWithTax": 1333.2,
+      "taxTotal": 469,
+      "taxPercentRate": 0.2,
+      "isGift": false,
+      "status": "In Progress",
+      "reserveQuantity": 0,
+      "fulfillmentLocationCode": null
+    },
+    {
+      "id": "67fb03c3-44b6-4bd5-8f3c-0306a9faaf72",
+      "productId": "5a78d778-d8cd-4f56-810a-8f06f75d3902",
+      "sku": "8010073",
+      "name": "SHOT",
+      "quantity": 1,
+      "price": 0,
+      "priceWithTax": 0,
+      "placedPrice": 0,
+      "placedPriceWithTax": 0,
+      "extendedPrice": 0,
+      "extendedPriceWithTax": 0,
+      "discountAmount": 0,
+      "discountAmountWithTax": 0,
+      "taxTotal": 0,
+      "taxPercentRate": 0,
+      "isGift": true,
+      "status": "In Progress",
+      "reserveQuantity": 0,
+      "fulfillmentLocationCode": null
+    }
+  ],
+  "paymentsCount": 1,
+  "shipmentsCount": 1,
+  "inPaymentsSummary": [
+    {
+      "id": "5dd6ccb3-e729-4dc9-a5ae-54729188ae20",
+      "number": "PI260422-00001",
+      "paymentStatus": "New",
+      "isApproved": false,
+      "isCancelled": false,
+      "sum": 2994,
+      "currency": "USD"
+    }
+  ],
+  "shipmentsSummary": [
+    {
+      "id": "525001f1-ad37-4a9f-b41c-89225bcf9216",
+      "number": "SH260422-00001",
+      "status": "New",
+      "fulfillmentCenterId": null,
+      "totalWithTax": 180,
+      "items": []
+    }
+  ]
+}

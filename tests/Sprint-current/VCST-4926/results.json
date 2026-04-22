@@ -1,0 +1,73 @@
+{
+  "ticket": "VCST-4926",
+  "summary": "Page Builder Localization",
+  "verdict": "FAIL",
+  "date": "2026-04-20",
+  "environment": "https://vcst-qa.govirto.com",
+  "store": "B2B-store",
+  "build": {
+    "platform": "3.1019.0",
+    "pagebuilder_module": "VirtoCommerce.PageBuilderModule_3.1007.0-pr-121-5cf7",
+    "pr": "https://github.com/VirtoCommerce/vc-module-pagebuilder/pull/121"
+  },
+  "agents_dispatched": ["test-management-specialist", "qa-backend-expert (inline; ran directly due to context)"],
+  "languages_verified": ["en", "de", "es", "fi", "fr", "it", "ja", "no", "pl", "pt", "ru", "sv", "zh"],
+  "total_cases": 32,
+  "passed": 17,
+  "partial": 1,
+  "failed": 9,
+  "not_tested": 5,
+  "business_rules_verified": [
+    "All 13 languages selectable",
+    "vc-shell Page Builder UI translated in all 13 langs (nav, tabs, toolbar, columns)",
+    "{name} title interpolation works in Latin + non-Latin locales",
+    "No raw translation keys visible",
+    "Missing keys fall back to English (not raw key)",
+    "CJK/Cyrillic glyphs render correctly"
+  ],
+  "business_rules_violated": [
+    "Designers should have the same localisation (AC-1) — Designer app is not localized at all",
+    "No English leaks in translated locales (ECL-i18n) — Search...  and Totals: N leak in 11 locales"
+  ],
+  "bugs_found": [
+    {
+      "id": "NEW-B1",
+      "severity": "High",
+      "title": "Page Builder Designer not localized (hardcoded English)",
+      "location": "/Modules/$(VirtoCommerce.PageBuilderModule)/Content/page-builder-designer/",
+      "evidence": "CL-DS-zh-designer.png"
+    },
+    {
+      "id": "NEW-B2",
+      "severity": "Medium",
+      "title": "Search placeholder and Totals footer untranslated in 11 locales",
+      "affected_locales": ["es", "fi", "fr", "it", "ja", "no", "pl", "pt", "ru", "sv", "zh"],
+      "evidence": "lang-03-es.png .. lang-13-zh.png"
+    },
+    {
+      "id": "NEW-B3",
+      "severity": "Low (possibly out of scope)",
+      "title": "vc-shell framework section headers remain English in every locale",
+      "affected_strings": ["Basic information", "Advanced options", "Theme selector", "Language selector", "Change password", "Log Out"],
+      "note": "Likely originates from vc-shell package, not page-builder locales; flag to maintainer"
+    }
+  ],
+  "known_bugs_referenced": [
+    {
+      "id": "VCST-4973",
+      "title": "Page Builder toasts missing on archive/unpublish/save/load-content",
+      "relation": "Would surface during CL-RG save/archive tests; not re-filed"
+    }
+  ],
+  "exploratory": {
+    "charter": "Verify Page Builder localization across 13 languages",
+    "heuristic": "CRISP / SFDPOT (per-language scan of shell + designer)",
+    "findings": { "bugs": 3, "questions": 2, "observations": 2, "risks": 0 }
+  },
+  "open_questions": [
+    "JIRA STR says change language in 'My Profile' but PB has its own Settings → Language selector — intended?",
+    "Designer localization — is it in scope for VCST-4926 or a separate story?"
+  ],
+  "artifacts_dir": "tests/Sprint-current/VCST-4926/",
+  "evidence_count": 18
+}

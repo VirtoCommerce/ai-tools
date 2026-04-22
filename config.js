@@ -27,6 +27,11 @@ const requiredVars = [
     'CYBERSOURCE_CARD',
     'CYBERSOURCE_EXPIRY',
     'CYBERSOURCE_CVV',
+    'CYBERSOURCE_3DS_FRICTIONLESS_CARD',
+    'CYBERSOURCE_3DS_CHALLENGE_CARD',
+    'CYBERSOURCE_3DS_OTP',
+    'LOCKOUT_TEST_EMAIL',
+    'LOCKOUT_TEST_PASSWORD',
     'AUTHORIZNET_CARD',
     'AUTHORIZNET_EXPIRY',
     'AUTHORIZNET_CVV',
@@ -93,6 +98,14 @@ export const env = {
     CYBERSOURCE_CARD: getEnvVar('CYBERSOURCE_CARD'),
     CYBERSOURCE_EXPIRY: getEnvVar('CYBERSOURCE_EXPIRY'),
     CYBERSOURCE_CVV: getEnvVar('CYBERSOURCE_CVV'),
+    CYBERSOURCE_3DS_FRICTIONLESS_CARD: getEnvVar('CYBERSOURCE_3DS_FRICTIONLESS_CARD'),
+    CYBERSOURCE_3DS_CHALLENGE_CARD: getEnvVar('CYBERSOURCE_3DS_CHALLENGE_CARD'),
+    CYBERSOURCE_3DS_OTP: getEnvVar('CYBERSOURCE_3DS_OTP'),
+
+    // Dedicated lockout-test account (for SEC-AUTH-003, SEC-RATE-001/002)
+    // Isolated from the agent pool so brute-force lockout tests do not block parallel slot accounts.
+    LOCKOUT_TEST_EMAIL: getEnvVar('LOCKOUT_TEST_EMAIL'),
+    LOCKOUT_TEST_PASSWORD: getEnvVar('LOCKOUT_TEST_PASSWORD'),
     
     // Authorize.Net payment configuration
     AUTHORIZNET_CARD: getEnvVar('AUTHORIZNET_CARD'),
@@ -117,8 +130,21 @@ export const env = {
     BUILDER_IO_EMAIL: getEnvVar('BUILDER_IO_EMAIL'),
     BUILDER_IO_PASSWORD: getEnvVar('BUILDER_IO_PASSWORD'),
     BUILDER_IO_SPACE: getEnvVar('BUILDER_IO_SPACE', 'VCST QA'),
-    POSTMAN_API_KEY: getEnvVar('POSTMAN_API_KEY')
-    
+    POSTMAN_API_KEY: getEnvVar('POSTMAN_API_KEY'),
+
+    // Pending-seed fixtures (optional — unblock suites 028-030, 011-013 once provisioned in QA).
+    // See test-data/README.md "Test Fixture Gaps" + reports/regression/REG-2026-04-20-1000/test-suite-review.md Seeder Checklist.
+    VALID_COUPON_CODE: getEnvVar('VALID_COUPON_CODE', ''),
+    OOS_SKU: getEnvVar('OOS_SKU', ''),
+    LOW_STOCK_SKU: getEnvVar('LOW_STOCK_SKU', ''),
+    PACK_SIZE_SKU: getEnvVar('PACK_SIZE_SKU', ''),
+    TIER_PRICED_SKU: getEnvVar('TIER_PRICED_SKU', ''),
+    CONFIGURABLE_SKU: getEnvVar('CONFIGURABLE_SKU', ''),
+    MULTI_ORG_USER_EMAIL: getEnvVar('MULTI_ORG_USER_EMAIL', ''),
+    MULTI_ORG_USER_PASSWORD: getEnvVar('MULTI_ORG_USER_PASSWORD', ''),
+    EUR_USER_EMAIL: getEnvVar('EUR_USER_EMAIL', ''),
+    EUR_USER_PASSWORD: getEnvVar('EUR_USER_PASSWORD', ''),
+    ORG_USER_EMAIL: getEnvVar('ORG_USER_EMAIL', '')
 };
 
 // Optional: Export individual getters for sensitive data

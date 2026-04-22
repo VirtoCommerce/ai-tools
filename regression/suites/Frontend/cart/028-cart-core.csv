@@ -47,7 +47,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to configurable product PDP on {{FRO
 [STATE] correct variant SKU in cart line (not parent SKU)
 [DOM] price in cart matches variant price shown on PDP","[API] addItem mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","wrong variant added to cart; parent SKU shown instead of variant; option selections reset after add","Remove added item from cart","tests/B2C-Variations","Automated"
+[NETWORK] no 4xx/5xx","wrong variant added to cart; parent SKU shown instead of variant; option selections reset after add","Remove added item from cart","tests/B2C-Variations","Relocated — inline variant picker not implemented on standard PDP; variant selection uses Configurable Products workflow; covered by Suite 072 (configurable products). RELOCATE verdict 2026-04-21."
 "CART-005","View Cart - Display Items","Cart > View","Critical","BL-CART-003","ECL-14.1","Products added to cart, user logged in","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[ACT] click cart icon in site header
@@ -257,21 +257,21 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] decimal values rejected or rounded to integer
 [DOM] no cart errors displayed for rejected inputs","[CONSOLE] no JS errors after any invalid input attempt
 [NETWORK] no failed API calls triggered by invalid input","negative qty accepted and submitted; non-numeric input crashes cart; decimal qty causes API error; console errors on invalid input","none (no state change from rejections)","QS-INPUT-004","Manual"
-"CART-037","Quantity Stepper - Max Stock Enforcement","Cart > Quantity Stepper","High","BL-CART-001","ECL-3.1, ECL-14.1","Product with known limited stock (e.g., stock=5) available; qty=0 in cart (not yet added)","url={{FRONT_URL}}/product/{{TEST_SKU}}
+"CART-037","Quantity Stepper - Max Stock Enforcement","Cart > Quantity Stepper","High","BL-CART-001","ECL-3.1, ECL-14.1","SEED REQUIRED: Product with stock ≤ 10 must exist in catalog and virtual B2B catalog ({{LOW_STOCK_SKU}}). Set LOW_STOCK_SKU env var. Run /qa-seed-data to provision. Product available; qty=0 in cart (not yet added).","url={{FRONT_URL}}/product/{{LOW_STOCK_SKU}}
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/product/{{TEST_SKU}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/product/{{LOW_STOCK_SKU}}
 [ACT] click '+' (Increase quantity) repeatedly until reaching max stock (5)
 [ASSERT] observe 'Increase quantity' button state at max stock
 [ACT] attempt to click '+' (Increase quantity) one more time
 [ASSERT] verify qty does not exceed 5
 [ACT] click spinbutton and type '99999'
 [KEY] press Tab
-[ASSERT] verify qty capped at max stock or error shown","[DOM] 'Increase quantity' button disabled at max stock (5)
-[STATE] additional '+' clicks have no effect beyond max
+[ASSERT] verify qty capped at max stock or error shown","[DOM] 'Increase quantity' button disabled at max stock (≤ 10)
+[STATE] additional '+' clicks have no effect beyond max stock
 [STATE] direct input of 99999 capped at available stock or validation error shown
 [STATE] cart quantity never exceeds available inventory","[API] changeCartItemQuantity mutation response errors[] is empty (valid calls); stock constraint returned for over-max attempts
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","'+' button active beyond max stock; qty exceeds inventory in cart; 99999 accepted and submitted without cap","Remove item from cart","QS-BVA-002","Manual"
+[NETWORK] no 4xx/5xx","'+' button active beyond max stock; qty exceeds inventory in cart; 99999 accepted and submitted without cap","Remove item from cart","QS-BVA-002","Manual — BLOCKED pending seed: low-stock SKU ({{LOW_STOCK_SKU}} with stock ≤ 10). SEED verdict 2026-04-21."
 "CART-038","Quantity Stepper - Cart Quantity Persists After Page Refresh","Cart > Quantity Stepper","High","BL-CART-006","ECL-7.3","Product in cart with qty=3; on {{FRONT_URL}}/cart page","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
@@ -350,9 +350,9 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add products to c
 [DOM] tax amount recalculated for new currency context","[API] getCart query returns shipping, tax, and totals all in new currency
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx","mixed currency symbols in Order Summary; shipping still in old currency; tax not recalculated; grand total arithmetic mismatch","Switch currency back to original; remove items from cart","Coverage Gap Analysis","Generated"
-"CART-052","Cart Isolation - Org A Items Not Visible in Org B Cart","Cart > B2B > Org Isolation","Critical","BL-CART-005","ECL-14.3","User is member of at least two B2B organizations (Org A and Org B); user logged in","url={{FRONT_URL}}
-org_user={{ORG_USER_EMAIL}}
-org_password={{ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{ORG_USER_EMAIL}}
+"CART-052","Cart Isolation - Org A Items Not Visible in Org B Cart","Cart > B2B > Org Isolation","Critical","BL-CART-005","ECL-14.3","SEED REQUIRED: User who is a member of TWO separate B2B organizations simultaneously (e.g., both TechFlow and BuildRight). Set {{MULTI_ORG_USER_EMAIL}} and {{MULTI_ORG_USER_PASSWORD}}. Standard {{ORG_USER_EMAIL}} belongs to only one org — this user is insufficient.","url={{FRONT_URL}}
+org_user={{MULTI_ORG_USER_EMAIL}}
+org_password={{MULTI_ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{ORG_USER_EMAIL}}
 [ACT] ensure current organization context is Org A
 [ACT] add 2 products to cart (Product X qty 1, Product Y qty 2) in Org A context
 [ASSERT] verify cart badge shows 2 items (or 3 total qty)
@@ -367,10 +367,10 @@ org_password={{ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{ORG_USER
 [DOM] no Org A product names visible in Org B cart","[API] getCart query returns cart scoped to current org context
 [API] verify me.organization reflects Org B after switch
 [CONSOLE] no JS errors during org switch
-[NETWORK] no 4xx/5xx","Org A items appear in Org B cart; cart badge shows Org A count after switch; Product X or Y visible in Org B","Switch back to Org A; remove test items from both carts","Coverage Gap Analysis","Generated"
-"CART-053","Cart Isolation - Org A Items Restored After Switching Back","Cart > B2B > Org Isolation","High","BL-CART-005","ECL-14.3","User is member of at least two B2B organizations; Org A cart has items from CART-052 setup","url={{FRONT_URL}}
-org_user={{ORG_USER_EMAIL}}
-org_password={{ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{ORG_USER_EMAIL}} in Org A context
+[NETWORK] no 4xx/5xx","Org A items appear in Org B cart; cart badge shows Org A count after switch; Product X or Y visible in Org B","Switch back to Org A; remove test items from both carts","Coverage Gap Analysis","Manual — BLOCKED pending seed: multi-org user (member of 2+ orgs simultaneously). SEED verdict 2026-04-21."
+"CART-053","Cart Isolation - Org A Items Restored After Switching Back","Cart > B2B > Org Isolation","High","BL-CART-005","ECL-14.3","SEED REQUIRED: Same multi-org user as CART-052 ({{MULTI_ORG_USER_EMAIL}}). Depends on CART-052 setup leaving Org A cart items in place. Run CART-052 first.","url={{FRONT_URL}}
+org_user={{MULTI_ORG_USER_EMAIL}}
+org_password={{MULTI_ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{MULTI_ORG_USER_EMAIL}} in Org A context
 [ASSERT] verify Org A cart contains Product X qty 1 and Product Y qty 2
 [ACT] switch organization context to Org B
 [WAIT] wait for org switch to complete
@@ -386,8 +386,8 @@ org_password={{ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{ORG_USER
 [STATE] no data loss from org switching","[API] getCart query returns Org A cart contents after switching back
 [API] verify me.organization reflects Org A
 [CONSOLE] no JS errors during org switch cycle
-[NETWORK] no 4xx/5xx","Org A cart empty after round-trip switch; items lost; quantities changed; subtotal mismatch after switching back","Remove test items from both org carts","Coverage Gap Analysis","Generated"
-"CART-054","Pack Size Enforcement - Quantity Stepper Increments by Pack Size","Cart > Pack Size","Medium","BL-CART-006","ECL-3.1","User logged in; product with pack size / MOQ configured (e.g., pack size = 6); product available in store","url={{FRONT_URL}}/product/{{PACK_SIZE_SKU}}
+[NETWORK] no 4xx/5xx","Org A cart empty after round-trip switch; items lost; quantities changed; subtotal mismatch after switching back","Remove test items from both org carts","Coverage Gap Analysis","Manual — BLOCKED pending seed: multi-org user (member of 2+ orgs simultaneously). SEED verdict 2026-04-21."
+"CART-054","Pack Size Enforcement - Quantity Stepper Increments by Pack Size","Cart > Pack Size","Medium","BL-CART-006","ECL-3.1","SEED REQUIRED: Product with pack size / MOQ configured (pack size = 6) must exist in catalog and B2B virtual catalog. Set {{PACK_SIZE_SKU}} env var. Admin step: set product MinQuantity = 6, PackSize = 6 in product properties. User logged in.","url={{FRONT_URL}}/product/{{PACK_SIZE_SKU}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/product/{{PACK_SIZE_SKU}}
 [ASSERT] verify product detail page loads with pack size information visible (e.g., 'Sold in packs of 6')
@@ -405,8 +405,8 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/product/{{PACK_SIZE
 [STATE] cart quantity is always a multiple of pack size
 [MATH] line total = unit price x quantity (where qty is multiple of pack size)","[API] addItem or changeCartItemQuantity mutation enforces pack size multiples
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","stepper increments by 1 instead of pack size; quantity not a multiple of pack size in cart; no pack size info on PDP","Remove item from cart","Coverage Gap Analysis","Generated"
-"CART-055","Pack Size Enforcement - Manual Non-Multiple Entry Rejected","Cart > Pack Size","Medium","BL-CART-006","ECL-3.1, ECL-4.1","User logged in; product with pack size configured (e.g., pack size = 6) in cart","url={{FRONT_URL}}/cart
+[NETWORK] no 4xx/5xx","stepper increments by 1 instead of pack size; quantity not a multiple of pack size in cart; no pack size info on PDP","Remove item from cart","Coverage Gap Analysis","Manual — BLOCKED pending seed: pack-size product ({{PACK_SIZE_SKU}} with MOQ=6). SEED verdict 2026-04-21."
+"CART-055","Pack Size Enforcement - Manual Non-Multiple Entry Rejected","Cart > Pack Size","Medium","BL-CART-006","ECL-3.1, ECL-4.1","SEED REQUIRED: Same pack-size product as CART-054 ({{PACK_SIZE_SKU}}, MOQ=6) in cart. Run CART-054 first to add item. User logged in.","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with pack-size product in cart
 [ACT] click on spinbutton 'Product quantity' field to focus
@@ -426,23 +426,25 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with pack-size
 [DOM] validation message indicates pack size constraint if error shown
 [MATH] line total always reflects a valid pack-size-multiple quantity","[API] changeCartItemQuantity mutation returns pack size validation error for non-multiples
 [CONSOLE] no JS errors on invalid pack size input
-[NETWORK] no 4xx/5xx","non-multiple quantity accepted (7 units in cart); zero accepted for pack-size product; no validation message about pack size constraint","Remove item from cart","Coverage Gap Analysis","Generated"
-"CART-056","Select Subset of Cart Items for Partial Checkout","Cart > Selection","Medium","","ECL-14.1","User logged in; cart contains 3+ different products","url={{FRONT_URL}}/cart
+[NETWORK] no 4xx/5xx","non-multiple quantity accepted (7 units in cart); zero accepted for pack-size product; no validation message about pack size constraint","Remove item from cart","Coverage Gap Analysis","Manual — BLOCKED pending seed: pack-size product ({{PACK_SIZE_SKU}} with MOQ=6). SEED verdict 2026-04-21."
+"CART-056","Select Subset of Cart Items - Totals Reflect Only Selected Items","Cart > Selection","Medium","","ECL-14.1","User logged in; cart MUST contain exactly 3 different products (add 3 distinct SKUs: {{TEST_SKU}} plus two others). All 3 items selected by default.","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add 3+ different products to cart
+password={{USER_PASSWORD}}
+skus={{TEST_SKU}}, {{TEST_SKU_2}}, {{TEST_SKU_3}}","[NAV] log in to {{FRONT_URL}} and add 3 distinct products to cart (one at a time from PDP, using '+' stepper)
 [NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] verify all items displayed with selection checkboxes (if available)
-[ACT] deselect one or more items (uncheck checkbox or equivalent UI control)
-[ASSERT] verify Order Summary totals update to reflect only selected items
-[ASSERT] verify deselected items remain in cart but excluded from totals
-[ACT] click 'Proceed to Checkout'
-[WAIT] wait for checkout page to load
-[ASSERT] verify only selected items appear in checkout order summary
-[ASSERT] verify deselected items NOT in checkout","[DOM] item selection controls (checkboxes) visible for each cart line item
-[STATE] deselecting an item excludes it from Order Summary totals
-[MATH] subtotal = sum of only selected items' line totals
-[STATE] deselected items remain in cart (not removed)
-[DOM] checkout order summary contains only selected items
-[STATE] deselected items absent from checkout","[API] checkout mutation payload includes only selected item IDs
-[CONSOLE] no JS errors during selection/deselection
-[NETWORK] no 4xx/5xx","no selection controls available; deselecting does not update totals; all items sent to checkout regardless of selection; deselected items removed from cart instead of preserved","none (items remain in cart)","Coverage Gap Analysis","Generated"
+[ASSERT] verify 3 line items displayed; all checkboxes checked by default
+[ASSERT] record displayed subtotal (all 3 selected)
+[ACT] uncheck checkbox on the first line item
+[WAIT] wait 1s for Order Summary to recalculate
+[ASSERT] verify Order Summary subtotal decreased (excludes deselected item)
+[ASSERT] verify deselected item still visible in cart (row remains)
+[ASSERT] verify cart badge count unchanged (item still in cart)
+[ACT] re-check the previously unchecked item
+[WAIT] wait 1s for Order Summary to recalculate
+[ASSERT] verify subtotal returns to original 3-item value","[DOM] checkbox controls visible for each cart line item
+[STATE] unchecking item excludes it from Order Summary subtotal
+[MATH] subtotal after deselect = sum of 2 selected items' line totals (2 decimal places)
+[STATE] deselected item row remains visible in cart (not removed)
+[STATE] cart badge unchanged (item is in cart, just unselected)
+[MATH] subtotal after re-check = original 3-item subtotal","[CONSOLE] no JS errors during selection/deselection
+[NETWORK] no 4xx/5xx on selection toggle","no checkbox controls visible; deselecting does not update subtotal; deselected item removed from cart instead of retained","none (all items remain in cart; reset selection state)","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: removed checkout-flow dependency (deferred to suite 011 CHK-cases); scoped to cart-page selection UI only. Precondition strengthened to require exactly 3 items."

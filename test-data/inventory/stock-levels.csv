@@ -61,3 +61,9 @@ STK-059,FFC-001,BPROD-025,PJACK-001,0,0,2,5,0,false,true,true,Preorder — palle
 STK-060,FFC-001,BPROD-043,BACKORDER-TEST-001,0,0,5,0,10,true,false,true,Backorder allowed — test backorder flow
 STK-061,FFC-001,BPROD-014,LOGI-MX-001-WH,1,0,5,0,0,false,false,true,Critical low stock — only 1 left (boundary)
 STK-062,FFC-003,BPROD-021,DEWALT-DCD771-001,8,0,3,0,0,false,false,true,BOPIS pickup — drills
+STK-063,FFC-001,PROD-101,QA-OOS-001,0,0,0,0,0,false,false,true,OOS_SKU fixture — all FCs permanent zero stock
+STK-064,FFC-002,PROD-101,QA-OOS-001,0,0,0,0,0,false,false,true,OOS_SKU fixture — all FCs permanent zero stock
+STK-065,FFC-003,PROD-101,QA-OOS-001,0,0,0,0,0,false,false,true,OOS_SKU fixture — all FCs permanent zero stock
+STK-066,FFC-001,PROD-102,QA-LOW-001,5,0,2,0,0,false,false,true,LOW_STOCK_SKU fixture — primary FC near-limit; do NOT decrement below 1
+STK-067,FFC-001,PROD-103,QA-PACK-001,60,0,10,0,0,false,false,true,PACK_SIZE_SKU fixture — plenty of stock; MOQ enforced via MinQuantity property not stock
+STK-068,FFC-001,PROD-104,QA-TIER-001,200,0,20,0,0,false,false,true,TIER_PRICED_SKU fixture — high stock to allow qty-break testing

@@ -17,11 +17,24 @@ You do NOT execute tests yourself. You delegate to specialist child agents who e
 
 Suite selection (one of): `smoke`, `critical` (01,06,08,14), `sprint` (26 suites), `full` (all 42), `frontend` (01-13,35-36), `backend` (14-34), or comma-separated IDs. Default: `smoke`.
 
+**Optional flags:**
+- `--seed=<profile>` — Pre-seed data before regression (profiles: `minimal`, `catalog`, `b2b`, `pricing`, `full`). See Step 0.5.
+- `--teardown` — After JIRA tickets are created, remove all `AGENT-TEST-*` entities. See Step 8.5.
+
 **Always read `config/test-suites.json` as source of truth** — the manifest is authoritative.
 
 ---
 
 ## Execution Pipeline
+
+### Step 0.5: Pre-Seed (only if `--seed=<profile>` provided)
+
+1. **Reject smoke-with-seed** — if selection is `smoke`/`042`, warn and skip (no coverage benefit).
+2. **Reuse check** — if `test-data/b2b/_seed-results-orgs.json` mtime < 2 hours old AND profile matches, skip and log "Seed reused from {timestamp}".
+3. **Invoke** `/qa-seed-data <profile>` (via Skill or dispatch `qa-backend-expert` teammate with qa-seed-data skill). Wait for completion.
+4. **Wait 60s** for reindex before Step 1.
+5. **On seed failure** — abort the run before creating the team; do NOT call `TeamCreate` if seeding failed. Report error to user.
+6. **Record** seed profile + timestamp in `results/{RUN_ID}/run-status.json` (new field `seedProfile`, `seededAt`) — report header consumes this.
 
 ### Step 1: Read Manifest & Initialize
 
@@ -49,13 +62,21 @@ Suite selection (one of): `smoke`, `critical` (01,06,08,14), `sprint` (26 suites
 
 **Assignment:** Take next pending suite → look up `agent` field → assign preferred browser → if occupied, use any available slot → if all occupied, wait for completion.
 
+**Pre-dispatch — resolve CSV once per suite (do NOT embed in prompt):**
+1. Read the suite CSV from the manifest's `file` path.
+2. Read `test-data/aliases.json`. For every `@td(ALIAS.field)` token, read the referenced data CSV, filter to resolve the value, and substitute.
+3. Write the resolved CSV to `results/{RUN_ID}/suite-{ID}-resolved.csv`.
+4. Pass this resolved path as `{{SUITE_CSV_PATH}}` — the child agent reads it ONCE from disk. Never embed CSV content in the prompt.
+
 **For each suite dispatch:**
 1. `TaskCreate`: `Execute Suite {ID}: {Name} on {browser}`
-2. `Agent` tool: `team_name`, `name: runner-{suiteId}`, `subagent_type` from manifest, `prompt` from `docs/prompts/autonomous-test-runner.md` with ALL placeholders filled: `{{RUN_ID}}`, `{{SUITE_ID}}`, `{{SUITE_NAME}}`, `{{SUITE_CSV_PATH}}`, `{{BROWSER_SERVER}}`, `{{ENVIRONMENT_URL}}`, `{{BACKEND_URL}}`, `{{OUTPUT_FILE}}` (`results/{RUN_ID}/suite-{ID}-results.json`), `{{TEAM_NAME}}`, `{{ORCHESTRATOR_NAME}}`, `{{ATTEMPT_NUMBER}}`
+2. `Agent` tool: `team_name`, `name: runner-{suiteId}`, `subagent_type` from manifest, `prompt` from `.claude/agents/qa/autonomous-test-runner.md` with ALL placeholders filled: `{{RUN_ID}}`, `{{SUITE_ID}}`, `{{SUITE_NAME}}`, `{{SUITE_CSV_PATH}}` (resolved path from above), `{{BROWSER_SERVER}}`, `{{ENVIRONMENT_URL}}`, `{{BACKEND_URL}}`, `{{OUTPUT_FILE}}` (`results/{RUN_ID}/suite-{ID}-results.json`), `{{TEAM_NAME}}`, `{{ORCHESTRATOR_NAME}}`, `{{ATTEMPT_NUMBER}}`. Keep prompt lean — no knowledge pre-loading, no inline CSV, no extra prose.
 3. `TaskUpdate` with `owner: runner-{suiteId}`
 4. Update run-status.json
 
 Launch up to 3 agents in a SINGLE message for parallel execution.
+
+**Child agent reporting cap:** Child agents send only the compact completion/failure message per the runner template. Discard prose beyond that — all detail lives in the JSON results file.
 
 **Fourth Slot (Reporting):** For `sprint`/`full` runs, optionally spawn `reporter` (general-purpose, no browser) to process completed results and generate JIRA payloads while other suites run.
 
@@ -113,6 +134,12 @@ npx tsx scripts/reporting.ts jira-payloads --run-id {RUN_ID} --results-dir resul
 ```
 
 Read `jira-payloads.json`, create tickets via Atlassian MCP `createJiraIssue` (if available). Rate limit: 2s between creations.
+
+### Step 8.5: Teardown (only if `--teardown` provided)
+
+1. Invoke `/qa-seed-data teardown` (via Skill or spawn a `qa-backend-expert` teammate with qa-seed-data skill) to remove `AGENT-TEST-*` entities.
+2. Runs AFTER report + JIRA tickets are written so seeded-data context is preserved in artifacts.
+3. On teardown failure: log to report but do not fail the run — regression + JIRA are the primary deliverables.
 
 ### Step 9: Cleanup
 

@@ -47,7 +47,60 @@ Create a structured bug report from a description, screenshot, or observed issue
 
 ---
 
-## Step 2 — Research Source Code & Logs
+## Step 2 — 4-Layer Validation (Layer Isolation)
+
+> **Purpose:** Pinpoint which layer owns the bug. Same request flow, four observation points. If the bug appears only at the UI layer but APIs return correct data, it's a presentation bug. If the REST API is wrong, the whole stack inherits it. This isolation is load-bearing for the Root Cause Analysis in the bug report.
+
+Validate the failing scenario across all four layers. Record per-layer PASS / FAIL / N/A in the bug report. Stop early if a lower layer (REST) already fails — higher layers will inherit. Use the browsers/tools listed below and capture evidence at each layer that reproduces.
+
+### Layer 1 — Storefront Frontend (vc-frontend)
+- **Where:** `FRONT_URL` (storefront UI)
+- **Browser:** qa-testing-expert via `playwright-firefox` (fallback: `playwright-edge`)
+- **Verify:** reproduce the user-visible scenario; capture screenshot, console errors, and the network request(s) that back the failing action (copy request URL, payload, status code).
+- **Signal:** UI-only bugs = CSS / i18n / client state / component logic.
+
+### Layer 2 — Backend Admin (Admin SPA)
+- **Where:** `{BACK_URL}` (Admin SPA — e.g., Orders, Catalog, Customers, Stores modules)
+- **Browser:** qa-backend-expert via `playwright-edge` or `Chrome DevTools MCP`
+- **Verify:** inspect the same entity (order, product, customer, promotion, etc.) in the admin UI. Does admin show consistent data with what the storefront displayed? Does the admin action (e.g., edit price, change status) succeed?
+- **Signal:** Admin-visible mismatch points at module data/logic or stale index. Admin-OK but storefront-broken points at xAPI/frontend.
+
+### Layer 3 — GraphQL xAPI
+- **Where:** `{BACK_URL}/xapi/graphql` (GraphiQL UI) — consult `.claude/agents/knowledge/graphql-schema.md` for schema and `.claude/agents/knowledge/graphiql-interaction.md` for interaction steps
+- **Tool:** qa-backend-expert via `playwright-edge` + GraphiQL, or Postman MCP
+- **Verify:** re-run the query/mutation the storefront executed (copy operation name + variables from Layer 1 network capture). Compare the raw response to what the UI rendered. Introspect field names/types before writing ad-hoc queries (`feedback_graphql_introspection`).
+- **Signal:** xAPI returns wrong data = xAPI resolver/aggregation bug. xAPI returns correct data but UI shows wrong = frontend rendering bug.
+
+### Layer 4 — Platform REST API
+- **Where:** `{BACK_URL}/api/...` — see `.claude/agents/knowledge/api-auth.md` for OAuth2 token flow
+- **Tool:** qa-backend-expert via Postman MCP (`/qa-postman`) or direct HTTP
+- **Verify:** call the underlying Platform REST endpoint (e.g., `/api/catalog/products/{id}`, `/api/order/customerOrders/{id}`, `/api/pricing/prices/search`). Compare response to GraphQL/Admin/UI.
+- **Signal:** REST wrong = module/DB/seeding issue (lowest layer). REST right + GraphQL wrong = xAPI bug. REST + GraphQL right + UI wrong = frontend bug.
+
+### Layer Result Block (copy into Step 4 bug report)
+
+```markdown
+## Layer Validation
+
+| Layer | Result | Evidence |
+|-------|--------|----------|
+| 1. Storefront Frontend | FAIL / PASS / N/A | screenshot + HAR path |
+| 2. Backend Admin | FAIL / PASS / N/A | screenshot or "not admin-visible" |
+| 3. GraphQL xAPI | FAIL / PASS / N/A | query + response snippet |
+| 4. Platform REST API | FAIL / PASS / N/A | endpoint + response snippet |
+
+**Owning layer:** [lowest FAIL layer — this is where the fix belongs]
+```
+
+**Layer-to-owner mapping** (informs triage in Step 5):
+- Layer 4 FAIL → module team (`vc-module-*` repo)
+- Layer 3 FAIL only → xAPI team (`vc-module-x-*` repo)
+- Layer 2 FAIL only → Admin SPA / module admin UI
+- Layer 1 FAIL only → `vc-frontend` theme / components
+
+---
+
+## Step 3 — Research Source Code & Logs
 
 > **Tools:** GitHub MCP (`search_code`, `get_file_contents`), Azure MCP (`applicationinsights`), `/qa-investigate` isolation phase.
 
@@ -74,7 +127,7 @@ After reproducing the bug, research the root cause before writing the report:
 
 ---
 
-## Step 3 — Write Bug Report
+## Step 4 — Write Bug Report
 
 > **Skills:** Use `/qa-evidence compact|detailed` for report verbosity tier. Use `/qa-defect classify` for defect type taxonomy and root cause categories.
 
@@ -155,6 +208,17 @@ When moving to `fixed/`, add a Resolution block below the status:
 - Network errors: [list or "none"]
 - HAR file: [path or "not captured"]
 
+## Layer Validation
+
+| Layer | Result | Evidence |
+|-------|--------|----------|
+| 1. Storefront Frontend | FAIL / PASS / N/A | [screenshot + HAR path] |
+| 2. Backend Admin | FAIL / PASS / N/A | [screenshot or "not admin-visible"] |
+| 3. GraphQL xAPI | FAIL / PASS / N/A | [query + response snippet] |
+| 4. Platform REST API | FAIL / PASS / N/A | [endpoint + response snippet] |
+
+**Owning layer:** [lowest FAIL layer]
+
 ## Root Cause Analysis
 - Source file: [GitHub file path + line range, or "not identified"]
 - Suspected cause: [description of the code/config issue]
@@ -170,7 +234,7 @@ When moving to `fixed/`, add a Resolution block below the status:
 
 ---
 
-## Step 4 — Create JIRA Ticket (optional)
+## Step 5 — Create JIRA Ticket (optional)
 
 > **Skills:** Use `/qa-defect triage VCST-XXXX` for triage routing (duplicate check, classification, assignment). Use `/qa-risk` to assess severity if unclear.
 
@@ -193,6 +257,7 @@ Report the ticket key back to the user.
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
 - Always reproduce the bug before filing — never file unverified bugs
 - Always include evidence (screenshot + console + network)
+- Always complete the 4-layer validation (Step 2) before writing the report — the owning layer drives triage routing and root-cause scope. Mark layers N/A only when the scenario genuinely doesn't exercise that layer (e.g., a pure CSS bug → REST layer N/A).
 - Use the qa-testing-expert agent for reproduction: `playwright-firefox` (fallback: `playwright-edge`)
 - Always query Context7 in Step 0 to verify expected behavior — don't file bugs for intended behavior
 - Ask before creating JIRA tickets (explicit permission required)

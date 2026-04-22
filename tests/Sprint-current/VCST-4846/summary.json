@@ -1,0 +1,33 @@
+{
+  "ticket": "VCST-4846",
+  "pr": "https://github.com/VirtoCommerce/vc-frontend/pull/2231",
+  "verdict": "PASS",
+  "date": "2026-04-20",
+  "environment": {
+    "storybook": "https://vcst-qa-storybook.govirto.com",
+    "storefront": "https://vcst-qa-storefront.govirto.com"
+  },
+  "build": {
+    "theme_artifact": "vc-theme-b2b-vue-2.47.0-pr-2231-4703-47032789.zip",
+    "deployed_to": "vcst-qa"
+  },
+  "scope": "Storybook developer-experience feature — sidebar badge + docs banner for deprecated ui-kit components (VcLineItemProperty, VcPriceDisplayCatalog, VcItemPriceCatalog).",
+  "agents_dispatched": ["ui-ux-expert"],
+  "browser": "Chrome DevTools MCP",
+  "total_cases": 22,
+  "passed": 22,
+  "failed": 0,
+  "blocked": 0,
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "exploratory": {
+    "charter": "SFDPOT exploration of Storybook deprecation markers, edge cases, and docs regression",
+    "heuristic": "SFDPOT",
+    "findings": { "bugs": 0, "questions": 0, "observations": 0, "risks": 0 }
+  },
+  "notes": [
+    "console.warn is dev-only (import.meta.env.DEV); absent in production Storybook build — expected behavior.",
+    "No customer-facing storefront impact — deprecated components are unused and warn is dev-only."
+  ],
+  "artifacts": "tests/Sprint-current/VCST-4846/"
+}

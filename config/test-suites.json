@@ -737,6 +737,8 @@
       "testCount": 23,
       "estimatedMinutes": 16,
       "agent": "qa-frontend-expert",
+      "preferredBrowser": "playwright-chrome",
+      "browserRequirementReason": "CyberSource Microform v2 uses cross-origin iframes (testflex.cybersource.com) that Firefox MCP cannot access via accessibility tree. Chromium CDP required.",
       "tags": [
         "payment",
         "cybersource",
@@ -774,6 +776,8 @@
       "testCount": 14,
       "estimatedMinutes": 10,
       "agent": "qa-frontend-expert",
+      "preferredBrowser": "playwright-chrome",
+      "browserRequirementReason": "Includes PCI compliance checks against CyberSource Microform iframe; Firefox MCP cannot access cross-origin iframe DOM.",
       "tags": [
         "payment",
         "cross-cutting",

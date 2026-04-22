@@ -1,0 +1,96 @@
+{
+  "runId": "REG-2026-04-20-1000",
+  "batch": "B",
+  "agent": "qa-frontend-expert",
+  "browsers": ["playwright-edge", "playwright-firefox"],
+  "timestamp": "2026-04-21T08:42:00Z",
+  "results": [
+    {
+      "id": "AUTH-030",
+      "suite": "033-auth-company-account-menu",
+      "status": "PASS",
+      "approach": "Registered fresh personal account via /sign-up UI with Personal account radio (default). Backend validates first/last name as letters only — initial attempt with digits in name ('Auth030') was rejected with 'First Name contains invalid characters', retried with 'Alice Retry' (letters only, same email) and registration succeeded. Signed in with new account and navigated to /account/dashboard. Verified left-rail sidebar renders PURCHASING and USER groups; USER group contains Profile, Addresses, Change password, Saved credit cards — confirming BL rule that Addresses link is present for personal (no-org) accounts. Header shows plain name 'Alice Retry' with no org prefix.",
+      "evidence": [
+        "retry-AUTH-030-personal-account-sidebar.png (full-page sidebar screenshot showing PURCHASING + MARKETING + USER groups, with Profile/Addresses/Change password/Saved credit cards in USER group)",
+        "Registration completed: /sign-up -> /successful-registration",
+        "Sign-in redirected to /",
+        "/account -> /account/dashboard"
+      ]
+    },
+    {
+      "id": "AUTH-049",
+      "suite": "032-auth-session-rbac",
+      "status": "PASS",
+      "approach": "Session A = playwright-edge, Session B = playwright-firefox (isolated MCP contexts). Logged both into qa-agent-slot1@virtocommerce.com / TestAgent1! concurrently. Verified both can load /account/dashboard simultaneously. Decoded access_token JWT payloads in both browsers: same subject (sub=c994fa34-dab9-4238-9c39-28756b3e547d) and email (qa-agent-slot1@virtocommerce.com), but independent iat/exp timestamps and different jti (Edge iat=08:31:38, Firefox iat=08:33:41). Called /graphql { me { userName email memberId contact { id fullName } } } with each session's bearer token — both returned userName=qa-agent-slot1@virtocommerce.com, memberId=52352c84-d112-4e42-a338-f3cc7d7bf38e, fullName='Agent Chrome'. Then logged out of Edge (Session A) via account menu -> Logout; immediately reloaded /account in Firefox (Session B) — still landed on /account/dashboard, /graphql me returned the authenticated user. Confirms: concurrent sessions are independent; Edge logout does NOT invalidate Firefox's token (no global session revocation).",
+      "evidence": [
+        "retry-AUTH-049-firefox-still-active-after-edge-logout.png (Firefox viewport showing /account/dashboard with 'Agent Chrome' in header after Edge session logged out)",
+        "Edge JWT: iat=2026-04-21T08:31:38Z exp=2026-04-21T09:01:38Z email=qa-agent-slot1@virtocommerce.com",
+        "Firefox JWT: iat=2026-04-21T08:33:41Z exp=2026-04-21T09:03:41Z jti=682b35dc-26f6-4743-9205-471d541c6f7a email=qa-agent-slot1@virtocommerce.com",
+        "POST /connect/token returned 200 in both browsers",
+        "Post-Edge-logout Firefox /graphql me: status=200 userName=qa-agent-slot1@virtocommerce.com memberId=52352c84-d112-4e42-a338-f3cc7d7bf38e"
+      ]
+    },
+    {
+      "id": "AUTH-050",
+      "suite": "032-auth-session-rbac",
+      "status": "PASS",
+      "approach": "Logged in as qa-agent-slot1@virtocommerce.com / TestAgent1! on Edge with Remember Me CHECKED. Inspected token storage (read-only browser_evaluate). Findings: (1) auth object {access_token, refresh_token, expires_at, token_type} stored in window.localStorage under key 'auth' (NOT sessionStorage) — localStorage is persistent across browser close/restart by design. (2) access_token JWT lifetime = 30 minutes (iat 08:40:02 -> exp 09:10:02). (3) refresh_token length 3282 chars, OpenIddict encrypted JWE (alg=RSA-OAEP, enc=A256CBC-HS512, typ=oi_reft+jwt, kid=D588DABE64A6FCCE070860E222359675C0C53481) — opaque to client; server-side lifetime cannot be introspected but is standard OpenIddict long-lived (default 14 days). (4) Refresh-token exchange via POST /connect/token grant_type=refresh_token returns a new access_token (expires_in=1800) and rotated refresh_token — proven working in live exchange. Persistence mechanism for Remember Me ON is correctly in place: localStorage + long-lived refresh token > session-level threshold. Literal browser restart not testable in MCP isolated context (browser_close destroys context), so verified via token-lifetime/storage-location inspection per task rules.",
+      "evidence": [
+        "retry-AUTH-050-slot1-remember-me-on.png (viewport showing 'Agent Chrome' in header, authenticated as slot1)",
+        "localStorage['auth'].access_token JWT: iat=2026-04-21T08:40:02Z exp=2026-04-21T09:10:02Z life=30min email=qa-agent-slot1@virtocommerce.com",
+        "localStorage['auth'].refresh_token: length=3282 OpenIddict JWE header={alg:RSA-OAEP, enc:A256CBC-HS512, typ:oi_reft+jwt}",
+        "sessionStorage has no 'auth' key (confirmed empty)",
+        "Refresh exchange test: POST /connect/token grant_type=refresh_token -> 200 {access_token, refresh_token, expires_in:1800, token_type:Bearer}",
+        "Sign-in payload: grant_type=password scope=offline_access storeId=B2B-store"
+      ]
+    },
+    {
+      "id": "AUTH-051",
+      "suite": "032-auth-session-rbac",
+      "status": "FAIL",
+      "approach": "Logged in as qa-agent-slot1@virtocommerce.com / TestAgent1! on Edge with Remember Me UNCHECKED (verified unchecked by default before submit). Inspected token storage via browser_evaluate. Expected per CSV: 'Without Remember me user is NOT authenticated after browser restart; Session-only cookies are cleared on browser close'. Actual: auth tokens persisted in window.localStorage (same as Remember Me ON), refresh_token length 3282 (same long-lived encrypted JWE), access_token 30min lifetime — structurally IDENTICAL to AUTH-050. Additionally captured /connect/token request body: grant_type=password&scope=offline_access&storeId=B2B-store&username=qa-agent-slot1%40virtocommerce.com&password=TestAgent1%21 — no rememberMe/persist flag sent to backend, and scope=offline_access (which explicitly requests a refresh token for long-lived auth) is used whether checkbox is on or off. Verdict: storefront does NOT differentiate Remember Me ON vs OFF at either storage layer or OAuth request layer. Marked FAIL per task rule: 'If refresh_token is stored in sessionStorage or has short exp, mark PASS with rationale; otherwise FAIL.'",
+      "rootCause": "Storefront (vc-frontend v2.47.0-alpha.2306) appears to ignore the Remember Me checkbox semantics. The checkbox is rendered and can be toggled in the UI, but the value is not sent to the backend in the /connect/token POST, and in both states the client stores tokens in localStorage with scope=offline_access (long-lived refresh token). Expected behavior per test: when unchecked, client should either (a) store auth in sessionStorage so it is wiped on browser close, OR (b) omit offline_access scope so no refresh token is issued, OR (c) issue a short-lived access token with no refresh token. None of these are implemented. Functionally Remember Me is a no-op on the storefront.",
+      "evidence": [
+        "retry-AUTH-051-slot1-remember-me-off-same-persistence-FAIL.png (viewport showing 'Agent Chrome' authenticated in header after sign-in with Remember Me unchecked)",
+        "Remember me checkbox pre-login state: checked=false (default)",
+        "Post-login localStorage['auth'].access_token: iat=2026-04-21T08:41:13Z exp=2026-04-21T09:11:13Z life=30min email=qa-agent-slot1@virtocommerce.com",
+        "Post-login localStorage['auth'].refresh_token: length=3282 (identical structure to Remember Me ON run)",
+        "Post-login sessionStorage: empty — no auth in session-only storage",
+        "/connect/token request body: grant_type=password&scope=offline_access&storeId=B2B-store&username=qa-agent-slot1%40virtocommerce.com&password=TestAgent1%21 (no rememberMe flag; scope=offline_access issues long-lived refresh token regardless of checkbox)",
+        "Comparison to AUTH-050 (Remember Me ON) same session: refresh_token length identical (3282), storage location identical (localStorage), access_token TTL identical (30min), /connect/token payload identical"
+      ]
+    }
+  ],
+  "accountsCreated": [
+    {
+      "email": "auth030-personal-1776760200@test-agent.com",
+      "password": "Password1!",
+      "firstName": "Alice",
+      "lastName": "Retry",
+      "type": "personal",
+      "registrationPath": "/sign-up (Personal account radio, default)",
+      "status": "active",
+      "purpose": "AUTH-030 fresh personal account to verify BL-AUTH-001 Addresses link visibility"
+    }
+  ],
+  "notes": {
+    "credential_thrash": "Coordinator sent two corrections regarding slot1 password (Password1! then TestAgent1!). Original AUTH-049 run already used TestAgent1! per user_test_accounts.md memory and succeeded. AUTH-050/051 were re-run with slot1+TestAgent1! after the second correction; findings unchanged (AUTH-050 PASS, AUTH-051 FAIL) because they describe storage/lifecycle behavior not credential-specific. An earlier AUTH-050/051 run used USER_EMAIL (ricreyacrouyi-3425@yopmail.com) during the first correction window — those runs produced the same conclusions.",
+    "productBugs": [
+      {
+        "title": "Remember Me checkbox on /sign-in is a no-op — OFF state does not clear session on browser close",
+        "severity": "Medium",
+        "domain": "Authentication > Session > Persistence",
+        "linkedTests": ["AUTH-051"],
+        "summary": "Remember Me unchecked should produce session-only persistence (per test CSV AUTH-051 expected result and industry convention). Actual: token stored in localStorage with offline_access refresh token whether Remember Me is on or off. The /connect/token POST payload is byte-identical in both modes. Recommendation: either (a) when Remember Me is off, store auth in sessionStorage instead of localStorage, or (b) omit offline_access scope when Remember Me is off so no refresh token is issued and session ends at access_token expiry (30min), or (c) remove the checkbox entirely if the product intentionally supports only persistent sessions."
+      }
+    ],
+    "blRuleConfirmations": [
+      {
+        "rule": "BL-AUTH-001 — Addresses link visible only for personal accounts (memory: feedback_storefront_auth, user_test_accounts.md)",
+        "confirmed": true,
+        "evidence": "Fresh personal account (auth030-personal-1776760200@test-agent.com, 'Alice Retry', no org) renders Addresses link in USER group of /account/dashboard sidebar alongside Profile, Change password, Saved credit cards. Header shows no org prefix. Screenshot: retry-AUTH-030-personal-account-sidebar.png"
+      }
+    ],
+    "screenshotsLocation": "Screenshots were captured via MCP browser_take_screenshot with retry-* filenames. Due to sandbox restrictions on file mv/cp operations, the PNGs remain in the project root (same directory where each browser's tool saved them). Paths: C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\retry-AUTH-030-personal-account-sidebar.png, retry-AUTH-049-firefox-still-active-after-edge-logout.png, retry-AUTH-050-slot1-remember-me-on.png, retry-AUTH-051-slot1-remember-me-off-same-persistence-FAIL.png. Coordinator/orchestrator should move them to reports/regression/REG-2026-04-20-1000/ during consolidation."
+  }
+}

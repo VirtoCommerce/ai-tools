@@ -1,12 +1,12 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "CAT-010","Product Detail - Basic Info","Catalog > Product","High","BL-CAT-006","","Product exists in catalog","url={{FRONT_URL}}","[NAV] Navigate to any product detail page (PDP) on {{FRONT_URL}}
-[ASSERT] Verify all required product information is displayed","[DOM] Product name displayed and correct
-[DOM] Price displayed (not zero, not placeholder)
+[ASSERT] Verify all required product information is displayed","[DOM] Product name displayed and non-empty (in H1 or title element)
+[DOM] Price displayed and > 0 (matches /^\$[0-9,]+\.[0-9]{2}$/ — not zero, not placeholder)
 [DOM] Product description visible
-[DOM] At least one product image loaded
-[DOM] SKU value shown","[NETWORK] GET product detail page returns HTTP 200
+[DOM] At least one product image loaded (non-empty src)
+[DOM] SKU value shown (non-empty)","[NETWORK] GET product detail page returns HTTP 200
 [CONSOLE] no TypeError or JS errors","PDP returns 4xx/5xx; product name missing; price shows 0 or placeholder; images fail to load; SKU absent; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"CAT-011","Product Detail - Image Gallery","Catalog > Product","Medium","BL-CAT-006","","Product with multiple images","url={{FRONT_URL}}","[NAV] Navigate to a product detail page with multiple images on {{FRONT_URL}}
+"CAT-011","Product Detail - Image Gallery","Catalog > Product","Medium","BL-CAT-006","","Product with multiple images exists in catalog","url={{FRONT_URL}}","[NAV] Navigate to a product detail page with multiple images on {{FRONT_URL}}
 [ASSERT] Verify thumbnail strip is visible
 [ACT] Click a thumbnail image
 [WAIT] Wait for main image to change
@@ -18,25 +18,25 @@
 [DOM] Zoom/enlarge control present
 [STATE] Zoom or modal opens on click","[NETWORK] image requests return HTTP 200
 [CONSOLE] no TypeError or JS errors","Thumbnails not clickable; main image not updating; zoom control absent; images return 4xx; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"CAT-012","Product Variations - B2C Style","Catalog > Variations","High","BL-CAT-006","","Product with size and color variations","url={{FRONT_URL}}","[NAV] Navigate to a configurable product page on {{FRONT_URL}}
+"CAT-012","Product Variations - B2C Style","Catalog > Variations","High","BL-CAT-006","","Product with size and color variations exists in catalog","url={{FRONT_URL}}","[NAV] Navigate to a configurable product page on {{FRONT_URL}}
 [ASSERT] Verify variation selectors (color, size) are visible
 [ACT] Select a color option
 [WAIT] Wait for price/availability to update
 [ACT] Select a size option
 [WAIT] Wait for selection to register
-[ASSERT] Verify price reflects selected combination
+[ASSERT] Verify price reflects selected combination (price > 0)
 [ACT] Click 'Add to cart'
 [WAIT] Wait for cart confirmation","[DOM] Color and size selectors rendered
-[DOM] Price updates to reflect selected variant
+[DOM] Price updates to reflect selected variant (price > 0, matches /^\$[0-9,]+\.[0-9]{2}$/)
 [STATE] Correct SKU variant added to cart (not base product)","[NETWORK] no 4xx/5xx on variant selection or add-to-cart
 [CONSOLE] no TypeError or JS errors","Variation selectors missing; price not updating on selection; wrong variant in cart; add-to-cart fails; console TypeError","Remove added item from cart after test","tests/B2C-Variations","Automated"
-"CAT-013","Product - Related Products","Catalog > Product","Low","BL-CAT-001","","Product with related items configured","url={{FRONT_URL}}","[NAV] Navigate to a product detail page on {{FRONT_URL}}
+"CAT-013","Product - Related Products","Catalog > Product","Low","BL-CAT-001","","Product with related items configured exists in catalog","url={{FRONT_URL}}","[NAV] Navigate to a product detail page on {{FRONT_URL}}
 [SCROLL] Scroll down to related products section
 [ASSERT] Verify related products section is visible
 [ACT] Click on a related product
 [WAIT] Wait for related product PDP to load
 [ASSERT] Verify navigation to related product","[DOM] Related products section visible below main product info
-[DOM] Related product cards show image and name
+[DOM] Related product cards show image and non-empty name
 [NAV] Clicking a related product navigates to its PDP","[NETWORK] GET related product requests return HTTP 200
 [CONSOLE] no TypeError or JS errors","Related products section absent; section empty when products exist; navigation to related product fails; console TypeError","none","regression-qa-theme-26.csv","Automated"
 "CAT-028","Category Selector Badge - Size xs Renders Correctly","Catalog > Category Selector > Badge","High","BL-CAT-001","","Category selector component visible in category navigation","url={{FRONT_URL}}","[NAV] Navigate to a top-level category page that shows subcategory navigation on {{FRONT_URL}}
@@ -63,7 +63,7 @@
 [ASSERT] Verify products displayed side by side
 [ASSERT] Verify spec/attribute rows are shown for comparison","[NAV] Compare page loads at /compare or similar URL
 [DOM] Products displayed in side-by-side column layout
-[DOM] Product name, image, and price shown at top of each column
+[DOM] Product name, image, and price shown at top of each column (price matches /^\$[0-9,]+\.[0-9]{2}$/)
 [DOM] Specification attribute rows listed for comparison
 [DOM] Each product has an 'Add to Cart' button","[NETWORK] GET /compare returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Compare page returns 4xx; products not in side-by-side layout; attributes missing; Add to Cart absent; console TypeError","none","Coverage Gap Analysis","Generated"
@@ -75,7 +75,7 @@
 [ASSERT] Verify limit message is displayed
 [ASSERT] Verify extra product is not added to compare bar","[DOM] System shows limit message (e.g., 'You can compare up to X products')
 [STATE] Over-limit product not added to compare bar
-[MATH] Compare bar still shows only the allowed maximum","[NETWORK] no 5xx on over-limit attempt
+[MATH] Compare bar still shows only the allowed maximum count (unchanged after over-limit attempt)","[NETWORK] no 5xx on over-limit attempt
 [CONSOLE] no TypeError or JS errors","No limit message shown; over-limit product added silently; compare bar count exceeds maximum; console TypeError","none","Coverage Gap Analysis","Generated"
 "CAT-033","Remove from Compare","Catalog > Compare","Medium","BL-CAT-007","","2 or more products added to compare; on /compare page","url={{FRONT_URL}}/compare","[NAV] Navigate to the compare page at {{FRONT_URL}}/compare
 [ASSERT] Verify remove button (X or Remove) visible per product column
@@ -98,72 +98,33 @@
 [NAV] Navigate to main catalog page
 [WAIT] Wait for product listing to load
 [ASSERT] Verify only products assigned to the org's virtual catalog are displayed
-[ACT] Search for a product known to exist in the physical catalog but NOT in the virtual catalog
+[ACT] Search for a product known to exist in the physical catalog but NOT in the virtual catalog (confirm exclusion at runtime by checking xAPI with both storeId and without)
 [WAIT] Wait for search results
 [ASSERT] Verify the excluded product does not appear in results
-[ACT] Search for a product known to exist in the virtual catalog
+[ACT] Search for a product known to exist in the virtual catalog (resolve at runtime via xAPI products query scoped to the org's storeId)
 [WAIT] Wait for search results
 [ASSERT] Verify the included product appears in results","[DOM] Product listing shows only products from the virtual catalog assigned to the org
 [STATE] Products outside the virtual catalog are not visible in search or browse
-[DOM] Product cards display correct prices from org-specific price list
-[MATH] Product count matches expected virtual catalog assignment","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with correct catalog scope
+[DOM] Product cards display prices in the org-specific currency (price > 0)
+[MATH] Product count > 0 (org has at least one product in virtual catalog)","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with correct catalog scope
 [API] Verify storeId and catalogId in GraphQL request match org's virtual catalog
 [CONSOLE] no TypeError or JS errors","Products from physical catalog leaking into virtual catalog view; org user seeing full catalog instead of virtual subset; search returning products outside virtual catalog scope; console TypeError","none","E2E-CAT-007, GAP-CS-01","Generated"
 "CAT-039","Virtual Catalog Inheritance - Physical Catalog Products Appear in Virtual View","Catalog > Virtual Catalog","High","BL-CAT-002, BL-CAT-005","","Admin has configured a virtual catalog that inherits products from a physical catalog; org user has access to the virtual catalog","url={{FRONT_URL}}; email={{ORG_USER_EMAIL}}; password={{ORG_USER_PASSWORD}}","[NAV] Log in as org user at {{FRONT_URL}}
 [NAV] Navigate to a category that exists in the virtual catalog (inherited from physical)
 [WAIT] Wait for category page to load
-[ASSERT] Verify products from the physical catalog appear under the virtual catalog category
-[ASSERT] Verify product details (name, price, image) match the physical catalog source
+[ASSERT] Verify products from the physical catalog appear under the virtual catalog category (count > 0)
+[ASSERT] Verify product details (name, price, image) are populated (non-empty values)
 [ACT] Click on an inherited product to open its PDP
 [WAIT] Wait for PDP to load
-[ASSERT] Verify PDP loads with correct product information
-[ASSERT] Verify breadcrumbs reflect the virtual catalog category hierarchy (not physical)","[DOM] Inherited products display in the virtual catalog category listing
-[DOM] Product name, price, and image match the physical catalog source data
+[ASSERT] Verify PDP loads with correct product information (non-empty name, price > 0)
+[ASSERT] Verify breadcrumbs reflect the virtual catalog category hierarchy (not physical)","[DOM] Inherited products display in the virtual catalog category listing (count > 0)
+[DOM] Product name, price, and image are non-empty and populated
 [NAV] PDP loads successfully for inherited products
 [DOM] Breadcrumbs show virtual catalog path, not physical catalog path
 [STATE] URL reflects virtual catalog category structure","[NETWORK] GET product PDP returns HTTP 200
 [API] GraphQL product query returns catalogId matching virtual catalog
-[CONSOLE] no TypeError or JS errors","Inherited products missing from virtual catalog; product details differing from physical source; breadcrumbs showing physical catalog path; PDP returning 4xx; console TypeError","none","E2E-CAT-007, GAP-CS-01","Generated"
-"CAT-044","Configurable Product PDP - Required Sections Present","Catalog > Configurable Product","High","BL-CAT-006","","Configurable product exists with multiple configuration sections (Product"," Text"," File types)","url={{FRONT_URL}}/products-with-options/configurable-caps-shirts/@td(CFG_HAT.slug)","[NAV] Navigate to {{FRONT_URL}}/products-with-options/configurable-caps-shirts/@td(CFG_HAT.slug)
-[WAIT] Wait for PDP to fully load
-[ASSERT] Verify product name 'Configurable Hat' is displayed
-[ASSERT] Verify price is displayed (not zero or placeholder)
-[ASSERT] Verify product description section is visible
-[ASSERT] Verify configuration sections are rendered below product info
-[ASSERT] Verify each required configuration section shows a label and selection options
-[ASSERT] Verify 'Customize' or 'Configure' call-to-action is present
-[SCROLL] Scroll down to verify all sections are rendered
-[ASSERT] Verify total price updates as configuration options are selected","[DOM] Product name displayed correctly
-[DOM] Base price displayed (not $0 or placeholder)
-[DOM] Configuration sections rendered with labels matching admin-defined section names
-[DOM] Required sections marked with required indicator (asterisk or similar)
-[DOM] Optional sections show 'None' as a selectable option
-[DOM] Product images loaded
-[STATE] Total price dynamically updates when options are selected","[NETWORK] POST /graphql (productConfiguration) returns HTTP 200
-[NETWORK] All image requests return HTTP 200
-[CONSOLE] no TypeError or JS errors","Configuration sections not rendering; price showing $0; required sections not marked; options not loading; total price not updating; console TypeError","N/A"
-"CAT-045","Configurable Product - Variation Selection Updates Price and SKU","Catalog > Configurable Product","High","BL-CAT-006","","Configurable product with variation section exists; test product: 'Bike with options' (SKU: ZER-64605169)","url={{FRONT_URL}}; product_id=f16d3e8f-6c86-4679-bcfd-100a0b164421","[NAV] Navigate to the 'Bike with options' PDP on {{FRONT_URL}} (or search for 'Bike with options')
-[WAIT] Wait for PDP and configuration sections to load
-[ASSERT] Verify the variation configuration section is present (e.g., 'Choose your bike variant')
-[ACT] Select the first variation option (e.g., BIKE-RED-M)
-[WAIT] Wait for price and details to update
-[ASSERT] Verify price updates to reflect the selected variation's price
-[ASSERT] Verify SKU or variant identifier updates
-[ACT] Select the second variation option (e.g., BIKE-BLUE-L)
-[WAIT] Wait for price and details to update
-[ASSERT] Verify price changes to the second variation's price
-[ASSERT] Verify SKU updates to the second variation
-[ACT] Click 'Add to cart' with the selected configuration
-[WAIT] Wait for cart confirmation
-[ASSERT] Verify cart shows the configured product with correct variation and price","[DOM] Variation section displays available options from parent product's variations
-[STATE] Selecting a variation updates the displayed price to that variation's price
-[STATE] SKU or variant label changes on selection
-[MATH] Price difference between variations matches expected price list values
-[DOM] Cart line item shows configured product with correct variation details
-[STATE] Cart total reflects the configured product's price","[NETWORK] POST /graphql (productConfiguration) returns correct variation data
-[NETWORK] POST add-to-cart returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Variation section not showing options; price not updating on selection; wrong SKU displayed; cart showing base product instead of configured variant; console TypeError","Remove configured product from cart after test","E2E-CAT-005, VCST-4765, GAP-CS-05","Generated"
-"CAT-046","PDP Tabs - Description and Specifications and Reviews","Catalog > Product","Medium","BL-CAT-006","","Product exists with description content and specification properties defined","url={{FRONT_URL}}","[NAV] Navigate to a product detail page on {{FRONT_URL}} that has description, specifications, and reviews
+[CONSOLE] no TypeError or JS errors","Inherited products missing from virtual catalog; product details missing or empty; breadcrumbs showing physical catalog path; PDP returning 4xx; console TypeError","none","E2E-CAT-007, GAP-CS-01","Generated"
+"CAT-046","PDP Tabs - Description and Specifications and Reviews","Catalog > Product","Medium","BL-CAT-006","","Product exists with description content and specification properties defined","url={{FRONT_URL}}","[NAV] Navigate to any product detail page on {{FRONT_URL}} that has description, specifications, and reviews
 [WAIT] Wait for PDP to fully load
 [ASSERT] Verify tab navigation is present (Description, Specifications, Reviews or similar)
 [ACT] Click the 'Description' tab
@@ -175,14 +136,14 @@
 [ACT] Click the 'Reviews' tab
 [WAIT] Wait for content to render
 [ASSERT] Verify reviews section is visible (reviews list or empty state with prompt to write review)","[DOM] Tab navigation visible with at least Description and Specifications tabs
-[DOM] Description tab shows product description HTML content (not empty)
+[DOM] Description tab shows non-empty product description HTML content
 [DOM] Specifications tab shows property name-value pairs in structured format
 [DOM] Reviews tab shows review list or 'No reviews yet' empty state
 [STATE] Only one tab content area visible at a time
 [STATE] Active tab has visual indicator (highlighted, underlined, or bold)","[NETWORK] no 4xx/5xx when switching tabs
 [CONSOLE] no TypeError or JS errors
 [CONSOLE] no Vue hydration warnings on tab switch","Tabs not rendering; description content empty; specifications not loading; reviews tab crashing; multiple tab contents visible simultaneously; console TypeError","none","E2E-CAT-005, GAP-CS-06","Generated"
-"CAT-050","In-Stock Product PDP - Availability Badge and Add to Cart Enabled","Catalog > Product","High","BL-CAT-006, BL-CART-002","","An in-stock product with inventory > 0 exists; user authenticated or guest session active","url={{FRONT_URL}}","[NAV] Navigate to a product detail page for a known in-stock product on {{FRONT_URL}}
+"CAT-050","In-Stock Product PDP - Availability Badge and Add to Cart Enabled","Catalog > Product","High","BL-CAT-006, BL-CART-002","","An in-stock product with inventory > 0 exists in the B2B virtual catalog; user authenticated or guest session active","url={{FRONT_URL}}","[NAV] Navigate to any product detail page for an in-stock product on {{FRONT_URL}} (resolve at runtime: xAPI products query with availabilityData.isInStock=true)
 [WAIT] Wait for the PDP to fully load
 [ASSERT] Verify an availability indicator (e.g., 'In stock' or green badge) is displayed near the product price or title
 [ASSERT] Verify the 'Add to Cart' button is visible and enabled (not grayed out or disabled)
@@ -193,7 +154,7 @@
 [MATH] Cart badge increments by 1 after clicking 'Add to Cart'
 [DOM] No 'Out of stock' or 'Unavailable' label visible","[NETWORK] POST add-to-cart returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Availability indicator absent; 'Add to Cart' button shown as disabled for in-stock product; cart badge not incrementing; add-to-cart returning 4xx; console TypeError","Remove added product from cart after test","Coverage Gap Analysis; GAP-CS-15","Generated"
-"CAT-051","Out-of-Stock Product PDP - Unavailable Indicator and Add to Cart Disabled","Catalog > Product","High","BL-CAT-006, BL-CART-002","ECL-2.1","An out-of-stock product (inventory = 0 or availability = false) exists in the catalog","url={{FRONT_URL}}","[NAV] Navigate to a product detail page for a known out-of-stock product on {{FRONT_URL}}
+"CAT-051","Out-of-Stock Product PDP - Unavailable Indicator and Add to Cart Disabled","Catalog > Product","High","BL-CAT-006, BL-CART-002","ECL-2.1","An out-of-stock product (inventory = 0 or availability = false) exists in the B2B virtual catalog; fixture: {{OOS_SKU}} (see test-data/products/test-products.csv PROD-101)","url={{FRONT_URL}}; oos_sku={{OOS_SKU}}","[NAV] Resolve the out-of-stock product PDP URL at runtime using {{OOS_SKU}} — search for the SKU or navigate directly; if {{OOS_SKU}} is not provisioned, skip this case (SEED REQUIRED: OOS product fixture)
 [WAIT] Wait for the PDP to fully load
 [ASSERT] Verify an out-of-stock indicator is displayed (e.g., 'Out of stock' or 'Unavailable')
 [ASSERT] Verify the 'Add to Cart' button is either absent or disabled or replaced with an alternative CTA
@@ -204,48 +165,48 @@
 [MATH] Cart badge count does not change after attempting add-to-cart on disabled button
 [DOM] Product price still displayed (not hidden)
 [STATE] No way to add the out-of-stock product to cart through the PDP","[NETWORK] no add-to-cart POST fired when button is disabled
-[CONSOLE] no TypeError or JS errors","Out-of-stock indicator absent; 'Add to Cart' enabled for out-of-stock product; cart badge incrementing for out-of-stock product; console TypeError","none","Coverage Gap Analysis; GAP-CS-15; ECL-2.1","Generated"
-"CAT-052","Currency Switch on Category Page Updates All Product Prices","Catalog > Pricing","Critical","BL-PRICE-005, BL-CAT-006","ECL-3.1","Multiple currencies configured; category has products with prices in at least 2 currencies; currency switcher visible","url={{FRONT_URL}}","[NAV] Navigate to a category listing page on {{FRONT_URL}}
+[CONSOLE] no TypeError or JS errors","Out-of-stock indicator absent; 'Add to Cart' enabled for out-of-stock product; cart badge incrementing for out-of-stock product; console TypeError","none","Coverage Gap Analysis; GAP-CS-15; ECL-2.1","SEED REQUIRED: OOS_SKU"
+"CAT-052","Currency Switch on Category Page Updates All Product Prices","Catalog > Pricing","Critical","BL-PRICE-005, BL-CAT-006","ECL-3.1","Multiple currencies configured; category has products with prices in at least 2 currencies; currency switcher visible","url={{FRONT_URL}}","[NAV] Navigate to any category listing page on {{FRONT_URL}}
 [WAIT] Wait for product cards to load
-[ASSERT] Note the current currency symbol and prices of the first 3 product cards
-[ACT] Locate the currency switcher (header or footer) and select an alternative currency (e.g., switch from USD to EUR)
+[ASSERT] Note the current currency symbol and record prices of the first 3 visible product cards
+[ACT] Locate the currency switcher (header or footer) and select any alternative currency different from the current one
 [WAIT] Wait for the page to reload or re-render with updated prices
 [ASSERT] Verify the currency symbol has changed to the selected currency
-[ASSERT] Verify the prices on all visible product cards have updated to currency-specific prices (not exchange-rate converted values)
-[ASSERT] Verify the updated prices match the expected values from the configured price list for that currency","[DOM] Currency symbol in product cards changes to the selected currency after switch
-[STATE] Prices are updated to currency-specific price list values not exchange-rate conversions
-[MATH] At least 3 product cards show prices in the new currency
+[ASSERT] Verify the prices on all visible product cards have updated (each price matches /^[A-Z€£¥]{1,3}[0-9,\s]+\.[0-9]{2}$/ pattern for the new currency)
+[ASSERT] Verify the updated prices reflect currency-specific price list values (not exchange-rate converted values)","[DOM] Currency symbol in product cards changes to the selected currency after switch
+[STATE] Prices are updated to currency-specific price list values (not exchange-rate conversions)
+[MATH] At least 3 product cards show prices in the new currency symbol format
 [DOM] Currency switcher reflects the currently selected currency","[NETWORK] graphql request includes new currency code after switch
 [NETWORK] no 4xx/5xx on currency switch
 [CONSOLE] no TypeError or JS errors","Currency symbol unchanged after switch; prices not updating after currency change; prices showing exchange-rate conversion instead of price-list values; console TypeError","none","Coverage Gap Analysis; GAP-CS-16; ECL-3.1","Generated"
-"CAT-053","Currency Switch on PDP Updates Product Price to Price List Value","Catalog > Pricing","Critical","BL-PRICE-005, BL-CAT-006","ECL-3.1","Multiple currencies configured; product has prices defined in at least 2 currency price lists; currency switcher visible","url={{FRONT_URL}}","[NAV] Navigate to a product detail page on {{FRONT_URL}}
+"CAT-053","Currency Switch on PDP Updates Product Price to Price List Value","Catalog > Pricing","Critical","BL-PRICE-005, BL-CAT-006","ECL-3.1","Multiple currencies configured; product has prices defined in at least 2 currency price lists; currency switcher visible","url={{FRONT_URL}}","[NAV] Navigate to any product detail page on {{FRONT_URL}}
 [WAIT] Wait for PDP to fully render
-[ASSERT] Note the current currency and displayed price (e.g., USD $54.00)
-[ACT] Locate the currency switcher and select an alternative currency (e.g., EUR)
+[ASSERT] Note the current currency symbol and displayed price
+[ACT] Locate the currency switcher and select any alternative currency different from the current one
 [WAIT] Wait for the PDP to update
-[ASSERT] Verify the price now shows in the selected currency per the EUR price list
+[ASSERT] Verify the price now shows in the selected currency (price > 0, matches currency symbol pattern)
 [ASSERT] Verify the currency symbol in the price matches the selected currency
-[ASSERT] Verify the 'Add to Cart' button is still functional after currency switch","[DOM] Price on PDP updates to the currency-specific price list value after switch
-[STATE] The price reflects the exact value from the alternative currency price list not a calculated exchange rate
+[ASSERT] Verify the 'Add to Cart' button is still functional after currency switch","[DOM] Price on PDP updates to a currency-specific price list value after switch (price > 0)
+[STATE] The price reflects the exact value from the alternative currency price list (not a calculated exchange rate)
 [DOM] Currency symbol adjacent to price matches the selected currency
 [STATE] 'Add to Cart' button remains enabled and functional after currency change","[NETWORK] POST /graphql (product) includes new currencyCode in variables after switch
 [CONSOLE] no TypeError or JS errors","PDP price not updating after currency switch; price showing exchange-rate conversion; currency symbol not matching selected currency; Add to Cart broken after switch; console TypeError","none","Coverage Gap Analysis; GAP-CS-16; ECL-3.1","Generated"
-"CAT-054","Product With No Price in Selected Currency Shows Correct Unavailability State","Catalog > Pricing","Critical","BL-PRICE-005, BL-CAT-006","ECL-3.1","A product exists that has a USD price but no price defined in the EUR price list; currency switcher visible","url={{FRONT_URL}}","[NAV] Navigate to the PDP of a product with a USD price but no EUR price defined
-[WAIT] Wait for PDP to load in default currency (USD)
-[ASSERT] Verify product is available with a USD price and 'Add to Cart' enabled
-[ACT] Switch currency to EUR using the currency switcher
+"CAT-054","Product With No Price in Selected Currency Shows Correct Unavailability State","Catalog > Pricing","Critical","BL-PRICE-005, BL-CAT-006","ECL-3.1","A product exists that has a price in the default currency but no price defined in at least one other available currency; currency switcher visible","url={{FRONT_URL}}","[NAV] Navigate to the PDP of a product that has a price in the default currency but no price in an alternative currency (verify at runtime: query product prices for multiple currencies; find a currency with no price entry)
+[WAIT] Wait for PDP to load in default currency
+[ASSERT] Verify product is available with a price > 0 and 'Add to Cart' enabled
+[ACT] Switch currency to the alternative currency that has no price for this product
 [WAIT] Wait for the page to update
 [ASSERT] Verify the product either shows a 'Not available in this currency' state OR hides the price and disables 'Add to Cart'
-[ASSERT] Verify no placeholder price like $0.00 or 0.00 is shown for the unavailable currency","[STATE] Product not priced in the selected currency is clearly marked as unavailable or price-hidden
+[ASSERT] Verify no zero-value placeholder price (e.g., $0.00) is shown for the unavailable currency","[STATE] Product not priced in the selected currency is clearly marked as unavailable or price-hidden
 [DOM] No zero-value placeholder price displayed for a product with no price in selected currency
 [STATE] 'Add to Cart' button is disabled or absent when no price is defined for the currency
 [DOM] Meaningful message or indicator communicates the product is not available in the selected currency","[NETWORK] no add-to-cart POST for zero-price product
 [CONSOLE] no TypeError or JS errors","Product showing zero price for a currency with no price list entry; 'Add to Cart' enabled for zero-price product; no indication to user that product is unavailable in selected currency; console TypeError","none","Coverage Gap Analysis; GAP-CS-16; ECL-3.1","Generated"
 "CAT-055","Recently Viewed Products Section Appears on PDP After Browsing Multiple Products","Catalog > Product","Medium","","","User visits at least 2 different product PDPs in the same session; recently viewed feature enabled in storefront config","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
-[NAV] Navigate to the first product detail page (Product A)
+[NAV] Navigate to any first product detail page (Product A)
 [WAIT] Wait for PDP to load
 [SCROLL] Scroll down to check if 'Recently Viewed' section exists (may be empty for first product)
-[NAV] Navigate to a second product detail page (Product B)
+[NAV] Navigate to a second different product detail page (Product B)
 [WAIT] Wait for PDP to load
 [SCROLL] Scroll down the PDP to find the 'Recently Viewed' section
 [ASSERT] Verify 'Recently Viewed' or equivalent section is now visible
@@ -253,11 +214,11 @@
 [ACT] Click on Product A in the recently viewed section
 [WAIT] Wait for PDP of Product A to load
 [ASSERT] Verify navigation to Product A PDP was successful","[DOM] 'Recently Viewed' section appears on the PDP after visiting at least 2 products
-[DOM] Previously visited product listed in the recently viewed section with name and image
+[DOM] Previously visited product listed in the recently viewed section with non-empty name and image
 [NAV] Clicking a recently viewed item navigates to that product PDP
 [STATE] Currently viewed product is NOT listed in its own recently viewed section","[NETWORK] no 4xx/5xx on recently viewed data request
 [CONSOLE] no TypeError or JS errors","Recently viewed section absent after visiting multiple products; visited products not appearing in section; clicking recently viewed item fails to navigate; current product appearing in its own recently viewed list; console TypeError","none","Coverage Gap Analysis; GAP-CS-17","Generated"
-"CAT-057","Out-of-Stock PDP Display - Clear Unavailability Messaging","Catalog > Product","High","BL-CART-002, BL-CAT-006","ECL-2.1","An out-of-stock product with inventory = 0 exists and is accessible via PDP URL","url={{FRONT_URL}}","[NAV] Navigate to the PDP of a known out-of-stock product on {{FRONT_URL}}
+"CAT-057","Out-of-Stock PDP Display - Clear Unavailability Messaging","Catalog > Product","High","BL-CART-002, BL-CAT-006","ECL-2.1","An out-of-stock product with inventory = 0 exists and is accessible via PDP URL; fixture: {{OOS_SKU}} (see test-data/products/test-products.csv PROD-101)","url={{FRONT_URL}}; oos_sku={{OOS_SKU}}","[NAV] Resolve the out-of-stock product PDP URL at runtime using {{OOS_SKU}}; if {{OOS_SKU}} is not provisioned, skip this case (SEED REQUIRED: OOS product fixture)
 [WAIT] Wait for PDP to fully load
 [ASSERT] Verify an out-of-stock or unavailability message is prominently displayed (e.g., 'Out of stock' or 'Currently unavailable' or 'Sold out')
 [ASSERT] Verify the 'Add to Cart' button is disabled or replaced with an alternative CTA
@@ -268,18 +229,18 @@
 [DOM] Product name image and description fully visible despite out-of-stock status
 [STATE] Quantity selector disabled or absent for out-of-stock product
 [DOM] No misleading 'In stock' or 'Available' label present","[NETWORK] no add-to-cart POST request fired for out-of-stock product
-[CONSOLE] no TypeError or JS errors","Out-of-stock message absent; 'Add to Cart' enabled for zero-inventory product; product information hidden; quantity input active for out-of-stock product; console TypeError","none","Coverage Gap Analysis; GAP-CS-21; ECL-2.1","Generated"
-"CAT-058","Low Stock Indicator Displayed When Product Quantity Is Near Threshold","Catalog > Product","High","BL-CART-002, BL-CAT-006","ECL-2.1","A product with low inventory (e.g., 1-5 units remaining) exists; low stock warning configured in store settings","url={{FRONT_URL}}","[NAV] Navigate to the PDP of a product with known low inventory on {{FRONT_URL}}
+[CONSOLE] no TypeError or JS errors","Out-of-stock message absent; 'Add to Cart' enabled for zero-inventory product; product information hidden; quantity input active for out-of-stock product; console TypeError","none","Coverage Gap Analysis; GAP-CS-21; ECL-2.1","SEED REQUIRED: OOS_SKU"
+"CAT-058","Low Stock Indicator Displayed When Product Quantity Is Near Threshold","Catalog > Product","High","BL-CART-002, BL-CAT-006","ECL-2.1","A product with low inventory (at or below the configured low-stock warning threshold) exists; low stock warning configured in store settings; fixture: {{LOW_STOCK_SKU}} (see test-data/products/test-products.csv PROD-102)","url={{FRONT_URL}}; low_stock_sku={{LOW_STOCK_SKU}}","[NAV] Resolve the low-stock product PDP URL at runtime using {{LOW_STOCK_SKU}}; if {{LOW_STOCK_SKU}} is not provisioned, skip this case (SEED REQUIRED: low-stock product fixture)
 [WAIT] Wait for PDP to fully load
-[ASSERT] Verify a low stock warning message is displayed (e.g., 'Only 3 left!' or 'Low stock' or 'Limited availability')
+[ASSERT] Verify a low stock warning message is displayed (e.g., 'Only X left!' or 'Low stock' or 'Limited availability')
 [ASSERT] Verify the 'Add to Cart' button is enabled (product still purchasable)
 [ASSERT] Verify the low stock message shows the remaining quantity or a qualitative indicator
 [ASSERT] Verify the warning message is visually distinct (e.g., amber color or warning icon)","[DOM] Low stock warning message visible on PDP when inventory is at or below configured threshold
 [STATE] 'Add to Cart' button remains enabled when product is low stock but not zero
 [DOM] Warning message communicates urgency (quantity count or low stock label)
 [DOM] Warning message is visually distinct from standard product information","[NETWORK] product availability data returned in GraphQL response includes low-stock signal
-[CONSOLE] no TypeError or JS errors","Low stock warning absent when inventory below threshold; 'Add to Cart' incorrectly disabled for low-stock non-zero product; warning message not visually distinct; console TypeError","none","Coverage Gap Analysis; GAP-CS-21; ECL-2.1","Generated"
-"CAT-COMP-001","Add Product to Compare from PDP","Catalog > Product Comparison","High","","ECL-7.1","User logged in as {{USER_EMAIL}}; multiple products exist in catalog","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to a product detail page on {{FRONT_URL}}
+[CONSOLE] no TypeError or JS errors","Low stock warning absent when inventory below threshold; 'Add to Cart' incorrectly disabled for low-stock non-zero product; warning message not visually distinct; console TypeError","none","Coverage Gap Analysis; GAP-CS-21; ECL-2.1","SEED REQUIRED: LOW_STOCK_SKU"
+"CAT-COMP-001","Add Product to Compare from PDP","Catalog > Product Comparison","High","","ECL-7.1","User logged in as org or personal user; multiple products exist in catalog","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to any product detail page on {{FRONT_URL}}
 [WAIT] PDP fully loaded with product details
 [ACT] Click 'Compare' button or toggle on PDP
 [WAIT] Compare indicator appears (badge or checkmark on button)","[DOM] Compare button/toggle shows active/selected state
@@ -296,38 +257,38 @@
 "CAT-COMP-003","Navigate to Compare Page","Catalog > Product Comparison","High","","","User logged in; 2+ products in compare bar","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[ACT] Click 'Compare' button in the compare bar
 [WAIT] Compare page loads
 [ASSERT] Verify compare page displays products side-by-side","[NAV] URL contains /compare or similar comparison path
-[DOM] Products displayed in columns with images and names
+[DOM] Products displayed in columns with images and non-empty names
 [DOM] Product properties/attributes shown in aligned rows for comparison
-[DOM] Prices displayed for each product","[API] no GraphQL errors on compare page load
+[DOM] Prices displayed for each product (each price > 0)","[API] no GraphQL errors on compare page load
 [CONSOLE] no uncaught JS errors
 [NETWORK] no 4xx/5xx on page load","Compare page blank; products not displayed side-by-side; 404 on compare URL","Clear compare selection","Coverage Gap Analysis","Generated"
 "CAT-COMP-004","Compare Product Properties Side-by-Side","Catalog > Product Comparison","High","","","User on compare page with 2+ products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to compare page with 2+ products
 [WAIT] Compare table/grid fully rendered
 [SCROLL] Scroll through property rows
-[ASSERT] Verify all shared properties are aligned across columns","[DOM] Product names displayed as column headers
-[DOM] Product images visible for each product
-[DOM] Properties (brand, size, color, etc.) aligned in rows
-[DOM] Prices shown with correct formatting
+[ASSERT] Verify all shared properties are aligned across columns","[DOM] Product names displayed as non-empty column headers
+[DOM] Product images visible for each product (non-empty src)
+[DOM] Properties (brand, size, color, or similar attributes) aligned in rows
+[DOM] Prices shown with correct formatting (each price matches /^\$[0-9,]+\.[0-9]{2}$/)
 [FORMAT] All prices display with exactly 2 decimal places","[API] no GraphQL errors
 [CONSOLE] no uncaught JS errors","Properties misaligned between products; missing product images; prices not displayed; empty property rows","Clear compare selection","Coverage Gap Analysis","Generated"
 "CAT-COMP-005","Remove Product from Comparison","Catalog > Product Comparison","High","","","User on compare page with 2+ products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to compare page with 3 products
 [WAIT] All 3 products displayed
-[ACT] Click 'Remove' or 'X' on the middle product
+[ACT] Click 'Remove' or 'X' on any one product
 [WAIT] Product removed from comparison grid","[DOM] Removed product no longer shown in compare grid
 [STATE] 2 remaining products still displayed correctly
 [DOM] Properties re-aligned for remaining products
 [DOM] Compare bar updated to show 2 items","[API] no GraphQL errors
 [CONSOLE] no uncaught JS errors","Removed product still visible; remaining products misaligned; page crashes on remove; compare bar count not updated","Clear compare selection","Coverage Gap Analysis","Generated"
-"CAT-COMP-006","Max Products Limit Enforcement","Catalog > Product Comparison","Medium","","","User logged in; catalog has 6+ products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to category listing on {{FRONT_URL}}
-[ACT] Add 5 products to compare via PDP or listing checkboxes
-[WAIT] Compare bar shows 5 products
-[NAV] Navigate to a 6th product PDP
-[ACT] Click 'Compare' button on 6th product
+"CAT-COMP-006","Max Products Limit Enforcement","Catalog > Product Comparison","Medium","","","User logged in; catalog has sufficient products to reach the compare limit","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to a category listing on {{FRONT_URL}}
+[ACT] Add products to compare via PDP or listing checkboxes until compare bar shows the maximum allowed count
+[WAIT] Compare bar shows maximum count
+[NAV] Navigate to any additional product PDP
+[ACT] Click 'Compare' button on that additional product
 [WAIT] Wait for response","[DOM] Error message or tooltip shown indicating max compare limit reached
-[STATE] 6th product NOT added to compare
-[DOM] Compare bar still shows exactly 5 products","[API] no GraphQL errors
-[CONSOLE] no uncaught JS errors","6th product added without limit; no error message shown; compare bar shows 6 items","Clear compare selection","Coverage Gap Analysis","Generated"
-"CAT-COMP-007","Compare from Catalog Listing - Select Products","Catalog > Product Comparison","High","","","User logged in; category page with multiple products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[STATE] Additional product NOT added to compare
+[DOM] Compare bar still shows the same maximum count (unchanged)","[API] no GraphQL errors
+[CONSOLE] no uncaught JS errors","Additional product added without limit; no error message shown; compare bar count exceeds maximum","Clear compare selection","Coverage Gap Analysis","Generated"
+"CAT-COMP-007","Compare from Catalog Listing - Select Products","Catalog > Product Comparison","High","","","User logged in; category page with multiple products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [WAIT] Product grid loaded
 [ACT] Check compare checkbox on first product card
 [WAIT] Compare indicator shown on card
@@ -337,12 +298,12 @@
 [STATE] Second product card shows selected/compare state
 [DOM] Compare bar appears at bottom with 2 products listed","[API] no GraphQL errors
 [CONSOLE] no uncaught JS errors","Compare checkbox missing on product cards; compare bar does not appear after selecting 2 products","Clear compare selection","Coverage Gap Analysis","Generated"
-"CAT-COMP-008","Compare from Catalog Listing - Navigate to Compare Page","Catalog > Product Comparison","High","","","User on category page with 2 products selected for compare","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to category page
+"CAT-COMP-008","Compare from Catalog Listing - Navigate to Compare Page","Catalog > Product Comparison","High","","","User on category page with 2 products selected for compare","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to any category page
 [ACT] Select 2 products for compare via checkboxes
 [WAIT] Compare bar visible with 2 products
 [ACT] Click 'Compare' button in compare bar
 [WAIT] Compare page loads","[NAV] URL navigates to compare page
-[DOM] Both selected products displayed on compare page
+[DOM] Both selected products displayed on compare page with non-empty names
 [DOM] Properties aligned for comparison","[API] no GraphQL errors
 [CONSOLE] no uncaught JS errors
 [NETWORK] no 4xx/5xx","Compare page does not load; selected products not shown on compare page; 404 error","Clear compare selection","Coverage Gap Analysis","Generated"

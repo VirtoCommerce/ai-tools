@@ -1,5 +1,9 @@
 # EPIC-CP-SORT: Configurable Product Sorting Improvements
 
+https://virtocommerce.atlassian.net/browse/VCST-4774
+
+https://virtocommerce.atlassian.net/browse/VCST-4712
+
 **Goal:** Eliminate misleading price signals and uncontrolled sort state for configurable products so that shoppers make informed decisions and operators have full control over option presentation.
 
 **Success Metric:** Price-sort bounce rate on configurable product category pages decreases by >= 15%; zero reported incidents of silent sort-reset after filter application; Admin SPA option reorder capability ships and is used on >= 50% of configured sections within 30 days of release.

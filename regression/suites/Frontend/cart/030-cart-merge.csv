@@ -1,18 +1,21 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"CART-057","Cart Merge - Anonymous Then Register","Cart > Merge","High","BL-CART-006","ECL-7.3, ECL-14.1","Product available in stock; user is not yet registered; browsing store anonymously","url={{FRONT_URL}}","[NAV] navigate to {{FRONT_URL}} without signing in (guest session)
+"CART-057","Cart Merge - Anonymous Then Register","Cart > Merge","High","BL-CART-006","ECL-7.3, ECL-14.1","Product available in stock; user is not yet registered; browsing store anonymously. NOTE: Registration requires email verification — auto-login does NOT occur immediately; user must verify email first, then sign in manually.","url={{FRONT_URL}}","[NAV] navigate to {{FRONT_URL}} without signing in (guest session)
 [ACT] add Product_1 to cart with qty=2
 [ASSERT] verify cart badge shows 2
 [ACT] navigate to registration page
 [ACT] register a new account with valid credentials
-[WAIT] wait for registration and auto-login to complete
+[WAIT] wait for 'verify your email' confirmation screen (NOT auto-login)
+[ASSERT] verify storefront shows email verification prompt (cart not yet merged)
+[ACT] simulate email verification (check test email inbox or use admin to confirm account)
+[ACT] sign in with the newly registered account credentials
 [NAV] navigate to {{FRONT_URL}}/cart
 [ASSERT] verify Product_1 present in cart with qty=2
-[ASSERT] verify cart badge shows correct count","[STATE] guest cart items preserved after registration and auto-login
+[ASSERT] verify cart badge shows correct count","[STATE] guest cart items preserved after registration + email verification + manual sign-in
 [DOM] Product_1 listed with qty=2 in cart
 [STATE] cart badge reflects merged item count
 [MATH] cart subtotal matches expected value for qty=2","[API] mergeCarts or equivalent mutation response errors[] is empty
 [CONSOLE] no JS errors during registration and cart merge
-[NETWORK] no 4xx/5xx during merge","guest items lost after registration; cart empty for new account; qty mismatch after merge","Remove items from cart; delete test account if needed","C389651","Manual"
+[NETWORK] no 4xx/5xx during merge","guest items lost after registration; cart empty for new account; qty mismatch after merge","Remove items from cart; delete test account if needed","C389651","Manual — Rewritten 2026-04-21: registration does not auto-login; email verification step required before merge is triggered."
 "CART-058","Cart Merge - No Duplicate SKUs","Cart > Merge","High","BL-CART-006, BL-CART-007","ECL-7.3, ECL-14.1","Same Product A exists in both anonymous cart and registered user cart; user currently signed out","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
@@ -30,9 +33,9 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [MATH] cart subtotal correct for merged quantity","[API] mergeCarts mutation response errors[] is empty
 [CONSOLE] no JS errors on sign-in and cart page
 [NETWORK] no 4xx/5xx during merge","duplicate line items created for same SKU; qty not summed (shows 1 or 2 instead of 3); two separate entries in cart","Remove items from cart","C398783","Manual"
-"CART-059","Cart Merge - Currency Mismatch","Cart > Merge","High","BL-CART-006, BL-CART-004","ECL-4.1, ECL-7.3, ECL-14.4","Store supports multiple currencies (USD and EUR); anonymous cart has products in USD; registered user default currency is EUR","url={{FRONT_URL}}
-user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest with USD currency
+"CART-059","Cart Merge - Currency Mismatch","Cart > Merge","High","BL-CART-006, BL-CART-004","ECL-4.1, ECL-7.3, ECL-14.4","SEED REQUIRED: A registered user account whose default currency is EUR must exist in QA. Set {{EUR_USER_EMAIL}} and {{EUR_USER_PASSWORD}} env vars. Standard {{USER_EMAIL}} uses USD default — this user is insufficient. Verify EUR price list exists for test products.","url={{FRONT_URL}}
+user={{EUR_USER_EMAIL}}
+password={{EUR_USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest with USD currency
 [ACT] add products to cart in USD as anonymous user
 [ASSERT] verify guest cart shows USD prices
 [ACT] sign in as {{USER_EMAIL}} whose default currency is EUR
@@ -45,7 +48,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest with USD c
 [STATE] products without EUR price show warning 'This product is no longer available for purchase' or similar
 [MATH] cart totals calculated in single currency","[API] mergeCarts mutation response errors[] is empty
 [CONSOLE] no JS errors during currency merge
-[NETWORK] no 4xx/5xx","mixed currencies in merged cart; USD prices shown instead of EUR; products silently dropped without warning; cart totals in wrong currency","Remove items from cart","C398784","Manual"
+[NETWORK] no 4xx/5xx","mixed currencies in merged cart; USD prices shown instead of EUR; products silently dropped without warning; cart totals in wrong currency","Remove items from cart","C398784","Manual — BLOCKED pending seed: EUR-default user account ({{EUR_USER_EMAIL}}). SEED verdict 2026-04-21."
 "CART-060","Cart Merge - Persists After Logout and Re-login","Cart > Merge","High","BL-CART-006","ECL-7.3, ECL-14.1","Anonymous user adds products; user logs in (merge happens); merged cart established","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
@@ -63,7 +66,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
 [STATE] no duplicate or missing items","[API] getCart query returns same items after re-login
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx","merged items lost after logout; cart empty on re-login; items duplicated after re-login; subtotal mismatch","Remove items from cart","C398785","Manual"
-"CART-061","Cart Merge - Different Product Types","Cart > Merge","Medium","BL-CART-006, BL-CART-007","ECL-7.3, ECL-14.1","Anonymous cart has simple products; registered user cart has configurable/variation products","url={{FRONT_URL}}
+"CART-061","Cart Merge - Different Product Types","Cart > Merge","Medium","BL-CART-006, BL-CART-007","ECL-7.3, ECL-14.1","SEED REQUIRED: A configurable product with selectable variant (size or color, not just quantity) must exist in QA catalog and B2B virtual catalog. Set {{CONFIGURABLE_SKU}} env var. Simple product {{TEST_SKU}} also required. Registered user {{USER_EMAIL}} logged in.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [ACT] add a configurable product (with size/color variant selected) to cart
@@ -79,23 +82,21 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [DOM] variant attributes (size, color) displayed correctly on configurable product
 [STATE] no missing or mismatched products after merge","[API] mergeCarts mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","configurable product loses variant attributes after merge; simple product missing; product types confused or swapped","Remove items from cart","C398786","Manual"
-"CART-062","Cart Merge - Smart Merge Failure Handling","Cart > Merge","Medium","BL-CART-006","ECL-7.3, ECL-14.2","Products in USD cart; simulate merge failure scenario (e.g. network interruption during merge)","url={{FRONT_URL}}
+[NETWORK] no 4xx/5xx","configurable product loses variant attributes after merge; simple product missing; product types confused or swapped","Remove items from cart","C398786","Manual — BLOCKED pending seed: configurable product with variant selector ({{CONFIGURABLE_SKU}}). SEED verdict 2026-04-21."
+"CART-062","Cart Merge - Smart Merge Failure Handling","Cart > Merge","Medium","BL-CART-006","ECL-7.3, ECL-14.2","TOOL-LIMITATION: Network fault injection (interrupting merge mid-request) cannot be executed via MCP browser agent (requires service worker interception or proxy-level throttling). Revert to API-layer negative test: send malformed mergeCarts mutation and verify backend error response. MCP agent: verify storefront graceful error handling on API error response.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
-[ACT] add products to USD cart as anonymous user
-[ACT] sign in as {{USER_EMAIL}}
-[WAIT] wait for merge attempt
-[ASSERT] if merge fails, verify clear error message displayed
-[ASSERT] verify original user cart remains unaffected (no data loss)
-[ASSERT] verify user can retry or navigate to cart without crash
+[ACT] add products to cart as anonymous user
+[ACT] sign in as {{USER_EMAIL}} (normal merge)
 [NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] verify cart is in a consistent state (either merged or pre-merge user cart intact)","[DOM] clear error message displayed if merge fails (not a blank page or 500)
-[STATE] user cart data not corrupted by failed merge
-[STATE] cart page accessible and functional after merge failure
-[STATE] user can continue shopping or retry","[API] merge failure returns informative error (not 500)
-[CONSOLE] no unhandled JS exceptions
-[NETWORK] no cascading failures after merge error","page crashes on merge failure; cart data corrupted; no error message shown; user stuck on broken page; cart inaccessible after failed merge","none (verify cart state)","C396997","Manual"
+[ASSERT] verify cart page loads without JS crash (no unhandled exception banner)
+[ASSERT] verify cart shows consistent state (either merged items or empty cart with prompt)
+[API] send malformed mergeCarts mutation via Postman/curl (missing required userId)
+[ASSERT] verify API returns structured error response (not HTTP 500); errors[] array populated","[DOM] cart page accessible and functional after login (even if merge produced no-op result)
+[STATE] no JS unhandled exception displayed to user
+[API] malformed merge request returns errors[] with descriptive message (not 500 Internal Server Error)
+[CONSOLE] no unhandled JS exceptions during normal sign-in merge flow","[CONSOLE] no unhandled JS exceptions
+[NETWORK] no 500 on merge API response for normal sign-in flow","page crashes on sign-in; cart inaccessible after login; API returns 500 for malformed merge request with no error detail","none (verify cart state)","C396997","Manual — Rewritten 2026-04-21: fault injection via MCP not possible; replaced with normal merge + API negative test. TOOL-LIMITATION verdict."
 "CART-063","Cart Merge Selection - Empty Cart + Selected All (ON)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","Default 'Selected for checkout' = ON in store settings; Cart1 (user) is empty; Cart2 (guest) has items with all selected","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and ensure cart is empty
@@ -127,7 +128,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart
 [STATE] no items deselected after merge","[API] getCart returns all items with selectedForCheckout=true
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx","some items deselected after merge; Order Summary only includes partial items; items missing","Remove items from cart","C389851","Manual"
-"CART-065","Cart Merge Selection - Both Unselected All (ON)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","Default 'Selected for checkout' = ON; Cart1 (user) has items all manually unselected; Cart2 (guest) has items all manually unselected","url={{FRONT_URL}}
+"CART-065","Cart Merge Selection - Both Unselected All (ON)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","Precondition: store setting 'Default selected for checkout' = ON (verify in Admin > Stores > Cart Settings). User has items manually unselected via checkbox; guest has items manually unselected. If store setting differs from ON, this case is N/A.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart
 [ACT] unselect all items in cart (uncheck checkboxes)
@@ -142,7 +143,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart
 [STATE] Order Summary totals reflect only selected items
 [STATE] Proceed to Checkout button state matches selection","[API] getCart returns items with correct selectedForCheckout values
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","items missing after merge; selection state inconsistent; Order Summary incorrect","Remove items from cart","C389852","Manual"
+[NETWORK] no 4xx/5xx","items missing after merge; selection state inconsistent; Order Summary incorrect","Remove items from cart","C389852","Manual — Rewritten 2026-04-21: added explicit store-setting precondition guard. BLOCKED if store setting is not ON."
 "CART-066","Cart Merge Selection - Selected + Unselected (ON)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","Default 'Selected for checkout' = ON; Cart1 (user) has all items selected; Cart2 (guest) has all items unselected","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart (keep selected)
@@ -159,7 +160,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart
 [STATE] mixed selection state handled correctly","[API] getCart returns correct per-item selectedForCheckout values
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx","all items forced to same selection state; Order Summary wrong; selection states swapped","Remove items from cart","C389853","Manual"
-"CART-067","Cart Merge Selection - Mixed + Mixed (ON)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","Default 'Selected for checkout' = ON; Cart1 (user) has mix of selected and unselected; Cart2 (guest) has mix of selected and unselected","url={{FRONT_URL}}
+"CART-067","Cart Merge Selection - Mixed + Mixed (ON)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","Precondition: store setting 'Default selected for checkout' = ON (verify in Admin > Stores > Cart Settings). Cart1 (user) has mix of selected and unselected items; Cart2 (guest) has mix of selected and unselected items. If store setting differs, this case is N/A.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add 3+ items to cart
 [ACT] unselect some items (create mixed state)
@@ -175,8 +176,8 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add 3+ items to c
 [DOM] each item checkbox reflects its individual selection state
 [STATE] no blanket select/deselect override on merge","[API] getCart returns correct per-item selectedForCheckout values
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","all items forced selected or deselected; per-item state lost; Order Summary miscalculated","Remove items from cart","C389854","Manual"
-"CART-068","Cart Merge Selection - Empty + Unselected All (OFF)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","Default 'Selected for checkout' = OFF; Cart1 (user) is empty; Cart2 (guest) has items all unselected","url={{FRONT_URL}}
+[NETWORK] no 4xx/5xx","all items forced selected or deselected; per-item state lost; Order Summary miscalculated","Remove items from cart","C389854","Manual — Rewritten 2026-04-21: added explicit store-setting precondition guard. BLOCKED if store setting is not ON."
+"CART-068","Cart Merge Selection - Empty + Unselected All (OFF)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","ADMIN-CONFIG REQUIRED: Store setting 'Default selected for checkout' must be set to OFF in Admin > Stores > Cart Settings. QA default is ON — this test is BLOCKED unless config is changed for this run. SEED: document config change and restore in Cleanup.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and ensure cart is empty
 [ACT] sign out
@@ -190,8 +191,8 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and ensure cart is em
 [STATE] Proceed to Checkout disabled or shows warning
 [MATH] Order Summary shows $0 or no items selected message","[API] getCart returns items with selectedForCheckout=false
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","items auto-selected despite OFF setting; Proceed to Checkout active with no selection","Remove items from cart","C389916","Manual"
-"CART-069","Cart Merge Selection - Both Selected All (OFF)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","Default 'Selected for checkout' = OFF; Cart1 (user) has items manually selected; Cart2 (guest) has items manually selected","url={{FRONT_URL}}
+[NETWORK] no 4xx/5xx","items auto-selected despite OFF setting; Proceed to Checkout active with no selection","Remove items from cart; restore store setting to ON","C389916","Manual — BLOCKED: requires admin config change (selectedForCheckout = OFF). SEED verdict 2026-04-21. Restore config in Cleanup."
+"CART-069","Cart Merge Selection - Both Selected All (OFF)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","ADMIN-CONFIG REQUIRED: Store setting 'Default selected for checkout' must be set to OFF. QA default is ON — BLOCKED unless config is changed for this run. Restore config in Cleanup.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items, manually select all
 [ACT] sign out
@@ -205,8 +206,8 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items, manual
 [MATH] Order Summary subtotal = sum of all items
 [STATE] manual selection override of OFF default preserved","[API] getCart returns items with selectedForCheckout=true
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","manually selected items reset to unselected after merge; Order Summary empty despite selections","Remove items from cart","C389917","Manual"
-"CART-070","Cart Merge Selection - Mixed + Mixed (OFF)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","Default 'Selected for checkout' = OFF; Cart1 (user) has mix of selected/unselected; Cart2 (guest) has mix of selected/unselected","url={{FRONT_URL}}
+[NETWORK] no 4xx/5xx","manually selected items reset to unselected after merge; Order Summary empty despite selections","Remove items from cart; restore store setting to ON","C389917","Manual — BLOCKED: requires admin config change (selectedForCheckout = OFF). SEED verdict 2026-04-21. Restore config in Cleanup."
+"CART-070","Cart Merge Selection - Mixed + Mixed (OFF)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","ADMIN-CONFIG REQUIRED: Store setting 'Default selected for checkout' must be set to OFF. QA default is ON — BLOCKED unless config is changed for this run. Restore config in Cleanup.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add 3+ items
 [ACT] manually select some, leave others unselected
@@ -222,4 +223,4 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add 3+ items
 [DOM] each item checkbox reflects individual state
 [STATE] OFF default does not override manually selected items","[API] getCart returns correct per-item selectedForCheckout values
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","per-item selection lost; all forced to unselected; Order Summary wrong","Remove items from cart","C389920","Manual"
+[NETWORK] no 4xx/5xx","per-item selection lost; all forced to unselected; Order Summary wrong","Remove items from cart; restore store setting to ON","C389920","Manual — BLOCKED: requires admin config change (selectedForCheckout = OFF). SEED verdict 2026-04-21. Restore config in Cleanup."

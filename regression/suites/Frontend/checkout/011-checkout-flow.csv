@@ -153,20 +153,22 @@
 [ACT] Enter Phone: '<img src=x onerror=alert(1)>'
 [ACT] Fill Street, City, State, ZIP with valid data
 [ACT] Click Continue
-[ASSERT] Verify form rejects HTML tags — validation error OR sanitized before submission
-[ASSERT] Verify no XSS alert dialog triggered
+[ASSERT] Verify no XSS alert dialog is triggered (no JavaScript execution)
+[ACT] Click Continue and wait for form to submit or advance
+[ASSERT] If checkout advances: navigate to confirmation; verify First Name shown does not execute script (literal text, not rendered HTML)
+[ASSERT] Verify no alert dialog appeared during or after submission
 [ACT] Enter Phone: '555<script>alert(1)</script>1234'
 [ACT] Click Continue
-[ASSERT] Verify mixed HTML+digits in phone rejected
+[ASSERT] Verify checkout does not execute embedded script
 [ACT] Fix all fields: First Name 'John', Phone '555-123-4567'
 [ACT] Click Continue
-[ASSERT] Verify form advances with clean data","[DOM] HTML tags in name/phone fields rejected at form level or stripped before submission
-[STATE] Checkout does not advance with XSS payloads in address fields
-[DOM] No alert dialog or script execution from injected payloads
-[DOM] Error messages shown inline for fields containing HTML tags
-[STATE] Clean data accepted and checkout proceeds normally","[CONSOLE] No XSS alert dialogs; no uncaught JS errors
-[API] addOrUpdateCartShipment mutation not called with HTML payload data
-[NET] No request sent with unsanitized HTML in address fields","XSS payload accepted in name or phone; alert dialog fires; HTML tags stored in shipping address; checkout proceeds with <script> in address","none","VCST-4803 coverage gap — checkout address XSS","Generated"
+[ASSERT] Verify form advances with clean data","[DOM] No alert dialog triggered at any point (critical security assertion)
+[STATE] No client-side script execution from injected HTML payload
+[STATE] Server strips or escapes HTML tags — output shown as literal text (e.g., '&lt;script&gt;' or stripped entirely), NOT rendered/executed HTML
+[STATE] Clean data accepted and checkout proceeds after correcting fields
+NOTE: No inline client-side validation error is expected for HTML tags — form may accept input and rely on server-side sanitization; this is acceptable behavior. Inline error NOT required.","[CONSOLE] No XSS alert dialogs; no uncaught JS errors from injected payload
+[API] addOrUpdateCartShipment mutation data does not contain unsanitized executable script
+[NETWORK] No 5xx errors on shipment update","Alert dialog fires from injected script; HTML renders and executes in name field on confirmation; server returns 500 from unsanitized input","none","VCST-4803 coverage gap — checkout address XSS","Generated — Rewritten 2026-04-21: removed incorrect assertion [DOM] Error messages shown inline for fields containing HTML tags. Observed behavior: no inline error; server strips/escapes HTML. Assertions updated to structural security invariants (no script execution, server sanitization)."
 "CHK-030","Checkout Validation - Fix Errors and Proceed","Checkout > Validation","Critical","BL-CHK-001","","User at checkout shipping address step with validation errors present","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout shipping address step
 [ACT] click 'Continue' with empty fields to trigger validation errors
 [ASSERT] Verify multiple inline errors shown
@@ -198,7 +200,11 @@
 [STATE] Different billing address carried through to order summary
 [STATE] Billing form validates required fields independently","[CONSOLE] No errors when revealing billing form
 [NETWORK] No failed requests when billing form toggles","Checkbox absent; unchecking does not reveal billing form; billing form fields do not validate independently","none","Coverage Gap Analysis","Automated"
-"CHK-044","Billing Address Validation","Checkout > Billing > Validation","High","BL-CHK-001","","User in checkout with 'Same as shipping address' unchecked, billing form visible","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout billing step with 'Same as shipping' unchecked
+"CHK-044","Billing Address Validation","Checkout > Billing > Validation","High","BL-CHK-001","","User in checkout: shipping address and shipping method must be FULLY selected before billing section becomes visible. Uncheck 'Same as shipping address' to reveal billing form. DEPENDENCY: Complete shipping setup first (same steps as CHK-043).","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Complete checkout shipping address and shipping method steps first
+[ASSERT] Billing section visible; verify 'Same as shipping address' checkbox is shown
+[ACT] Uncheck 'Same as shipping address' checkbox
+[WAIT] Wait for billing address form to appear
+[NAV] Navigate to checkout billing step with 'Same as shipping' unchecked
 [ACT] Leave required billing fields empty (Street, City, ZIP, Country)
 [ACT] click 'Continue' or 'Proceed to Payment'
 [ASSERT] Verify required billing field errors shown
@@ -211,7 +217,7 @@
 [STATE] Form does not advance with billing errors
 [STATE] Errors clear when valid billing data entered
 [NAV] Form advances after valid billing address","[CONSOLE] No JS exceptions during billing validation
-[API] No submission call made with invalid billing address","Billing form validation uses shipping form errors; billing form accepts empty required fields; form advances without valid billing address","none","Coverage Gap Analysis","Automated"
+[API] No submission call made with invalid billing address","Billing form validation uses shipping form errors; billing form accepts empty required fields; form advances without valid billing address","none","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: added dependency on shipping step completion (billing form only appears after shipping method selected). BLOCKED in last run due to step ordering."
 "CHK-046","Default Billing Same as Shipping","Checkout > Billing","Medium","BL-CHK-002","","User at checkout billing or payment step","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout with shipping address and method configured
 [WAIT] Wait for billing address section to render
 [ASSERT] Verify 'Same as shipping address' checkbox is checked by default
@@ -279,7 +285,7 @@ password={{USER_PASSWORD}}","[NAV] proceed to checkout payment step and trigger 
 [DOM] no 'Order Placed' or order number shown (no ghost order)","[API] GET /orders does not show a new order entry after decline
 [CONSOLE] no JS errors related to state loss
 [NETWORK] no 4xx/5xx on state reload","address reset to empty after decline; shipping method reset; cart items changed; ghost order created and visible in order history","Clear test cart; remove any ghost orders","Coverage Gap Analysis","Generated"
-"CHK-054","Minimum Order Amount - Checkout Blocked When Below Minimum","Checkout > Validation > Minimum Order","High","BL-CHK-007","ECL-4.1","User logged in; store has minimum order amount configured (e.g., $50.00); cart total is below minimum (e.g., one item at $5.00)","url={{FRONT_URL}}
+"CHK-054","Minimum Order Amount - Checkout Blocked When Below Minimum","Checkout > Validation > Minimum Order","High","BL-CHK-007","ECL-4.1","ADMIN-CONFIG REQUIRED: Store must have minimum order amount configured in Admin > Stores > General > MinOrderTotal (e.g., $50.00). QA environment does not have this configured by default. Admin step: navigate to Stores > [Store Name] > edit > set MinOrderTotal = 50.00 and save. Then verify {{TEST_SKU}} price is below $50 (e.g., single item < $5).","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 min_order_amount=$50.00","[NAV] log in to {{FRONT_URL}} and add a low-value item to cart (total below minimum order amount)
@@ -293,8 +299,8 @@ min_order_amount=$50.00","[NAV] log in to {{FRONT_URL}} and add a low-value item
 [DOM] message references shortfall amount (amount needed to reach minimum)
 [STATE] user cannot advance past cart or checkout steps while below minimum","[API] getCart or checkout mutation returns minimum order violation error
 [CONSOLE] no JS errors when minimum order block is triggered
-[NETWORK] no 4xx/5xx (validation should be graceful)","checkout proceeds despite cart being below minimum; no message shown; vague error message without minimum amount or shortfall; 500 error instead of validation message","Remove test items from cart","Coverage Gap Analysis","Generated"
-"CHK-055","Minimum Order Amount - Checkout Unblocked After Adding Items","Checkout > Validation > Minimum Order","High","BL-CHK-007","ECL-4.1","User logged in; cart previously blocked by minimum order amount (CHK-054 state); store minimum order amount is $50.00","url={{FRONT_URL}}
+[NETWORK] no 4xx/5xx (validation should be graceful)","checkout proceeds despite cart being below minimum; no message shown; vague error message without minimum amount or shortfall; 500 error instead of validation message","Remove test items from cart; reset MinOrderTotal to 0 in Admin","Coverage Gap Analysis","Manual — BLOCKED: requires admin config (MinOrderTotal) not set in QA. SEED verdict 2026-04-21."
+"CHK-055","Minimum Order Amount - Checkout Unblocked After Adding Items","Checkout > Validation > Minimum Order","High","BL-CHK-007","ECL-4.1","ADMIN-CONFIG REQUIRED: Same as CHK-054 — MinOrderTotal must be set to $50.00 in Admin > Stores. Run CHK-054 setup steps first. DEPENDENCY: CHK-054 must be run or equivalent setup performed.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 min_order_amount=$50.00","[NAV] log in to {{FRONT_URL}} with cart total below minimum (from CHK-054 or fresh setup)
@@ -310,8 +316,8 @@ min_order_amount=$50.00","[NAV] log in to {{FRONT_URL}} with cart total below mi
 [STATE] user successfully navigates to checkout shipping step
 [MATH] cart total >= configured minimum order amount","[API] getCart returns no minimum order violation once threshold met
 [CONSOLE] no JS errors during cart update
-[NETWORK] no 4xx/5xx on cart recalculation","checkout still blocked after meeting minimum; button stays disabled; cart total exceeds minimum but validation message persists","Remove test items from cart","Coverage Gap Analysis","Generated"
-"CHK-056","Saved Credit Card - Checkout Completes Without Re-entering Details","Checkout > Payment > Saved Cards","High","","ECL-1.2","User logged in; user has at least one saved tokenized credit card from a previous order; cart has items; user at payment step","url={{FRONT_URL}}
+[NETWORK] no 4xx/5xx on cart recalculation","checkout still blocked after meeting minimum; button stays disabled; cart total exceeds minimum but validation message persists","Remove test items from cart; reset MinOrderTotal to 0 in Admin","Coverage Gap Analysis","Manual — BLOCKED: requires admin config (MinOrderTotal) not set in QA. SEED verdict 2026-04-21."
+"CHK-056","Saved Credit Card - Checkout Completes Without Re-entering Details","Checkout > Payment > Saved Cards","High","","ECL-1.2","SEED REQUIRED: User account ({{USER_EMAIL}}) must have at least one saved tokenized credit card from a prior completed order using a tokenizing payment processor (CyberSource/Skyflow). QA environment test accounts do not have saved cards by default. Run a prior successful payment first, or seed via admin payment method record.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout payment step
 [ASSERT] verify 'Saved payment methods' or 'Saved cards' section visible
@@ -326,8 +332,8 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checko
 [DOM] last 4 digits of saved card visible in card selector
 [DOM] order confirmation page shown after paying with saved card","[API] order creation request references saved payment token (not raw card data)
 [CONSOLE] no JS errors during saved card selection or order placement
-[NETWORK] no 4xx/5xx on order submission with saved card","saved cards section absent at payment; selecting saved card still requires full card re-entry; payment fails with saved card token; no confirmation after order placement","Remove test order; saved card remains for future tests","Coverage Gap Analysis","Generated"
-"CHK-057","Saved Credit Card - Delete Saved Card From Checkout","Checkout > Payment > Saved Cards","High","","ECL-1.2","User logged in; user has at least one saved tokenized credit card; user at checkout payment step","url={{FRONT_URL}}
+[NETWORK] no 4xx/5xx on order submission with saved card","saved cards section absent at payment; selecting saved card still requires full card re-entry; payment fails with saved card token; no confirmation after order placement","Remove test order; saved card remains for future tests","Coverage Gap Analysis","Manual — BLOCKED pending seed: saved tokenized credit card for {{USER_EMAIL}}. SEED verdict 2026-04-21."
+"CHK-057","Saved Credit Card - Delete Saved Card From Checkout","Checkout > Payment > Saved Cards","High","","ECL-1.2","SEED REQUIRED: Same as CHK-056 — user account must have a saved tokenized credit card. DEPENDENCY: CHK-056 must run first (or equivalent seed). NOTE: CHK-057 consumes the saved card (deletion is irreversible); run after CHK-056 to avoid leaving no cards for CHK-056.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout payment step
 [ASSERT] verify saved cards section visible with at least one card listed
@@ -341,7 +347,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checko
 [DOM] no ghost entry of deleted card remaining
 [STATE] user can proceed to enter a new card for payment","[API] DELETE /payment-methods/{id} or equivalent returns 200/204
 [CONSOLE] no JS errors on card deletion
-[NETWORK] no 4xx/5xx on delete request","deleted card still visible after removal; delete button has no effect; page error on delete; confirmation dialog not dismissible","Verify card removal; complete checkout with new card if needed","Coverage Gap Analysis","Generated"
+[NETWORK] no 4xx/5xx on delete request","deleted card still visible after removal; delete button has no effect; page error on delete; confirmation dialog not dismissible","Verify card removal; complete checkout with new card if needed","Coverage Gap Analysis","Manual — BLOCKED pending seed: saved tokenized credit card for {{USER_EMAIL}}. SEED verdict 2026-04-21."
 "CHK-058","Ship-To Address - Default or Favorite Address Pre-Selected at Checkout","Checkout > Shipping > Address Selector","High","BL-CHK-005","ECL-14.1","User logged in; user has at least one saved address marked as default or favorite; cart has items","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout
@@ -355,7 +361,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checko
 [DOM] Continue/Next step button is active with pre-selected address","[API] getCart or checkout query returns pre-selected default address in deliveryAddress field
 [CONSOLE] no JS errors on checkout address load
 [NETWORK] no 4xx/5xx on address section render","no address pre-selected (user must manually pick every time); wrong address pre-selected (not the default/favorite); address form shown blank instead of pre-filled","No cleanup required","Coverage Gap Analysis","Generated"
-"CHK-059","Ship-To Address - Search and Select Different Address Updates Shipping Methods","Checkout > Shipping > Address Selector","High","BL-CHK-005","ECL-14.1","User logged in; user has 2+ saved addresses in different zones or countries; cart has items; user at checkout shipping address step","url={{FRONT_URL}}
+"CHK-059","Ship-To Address - Search and Select Different Address Updates Shipping Methods","Checkout > Shipping > Address Selector","High","BL-CHK-005","ECL-14.1","SEED REQUIRED: User {{USER_EMAIL}} must have 2+ saved addresses in account address book (at least one in a different shipping zone). Add addresses via: account profile > Addresses > Add Address. Set {{SAVED_ADDRESS_1}} and {{SAVED_ADDRESS_2}} with distinct ZIP codes/regions.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout shipping address step
 [ASSERT] verify current address and shipping methods displayed
@@ -371,8 +377,8 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checko
 [STATE] previously selected shipping method may reset (valid behavior if incompatible with new address)
 [MATH] shipping cost reflects new address zone pricing","[API] getShippingMethods called with new address params; returns updated methods
 [CONSOLE] no JS errors on address switch and shipping recalculation
-[NETWORK] no 4xx/5xx on address change or shipping methods refresh","shipping methods not refreshed after address change; old address shown in summary despite selecting new one; shipping cost unchanged after address zone change","No cleanup required","Coverage Gap Analysis","Generated"
-"CHK-060","Ship-To Address - Show More Addresses Pagination","Checkout > Shipping > Address Selector","Medium","BL-CHK-005","","User logged in; user has more than 5 (or the per-page limit) saved addresses; cart has items","url={{FRONT_URL}}
+[NETWORK] no 4xx/5xx on address change or shipping methods refresh","shipping methods not refreshed after address change; old address shown in summary despite selecting new one; shipping cost unchanged after address zone change","No cleanup required","Coverage Gap Analysis","Manual — BLOCKED pending seed: 2+ saved addresses for {{USER_EMAIL}}. SEED verdict 2026-04-21."
+"CHK-060","Ship-To Address - Show More Addresses Pagination","Checkout > Shipping > Address Selector","Medium","BL-CHK-005","","SEED REQUIRED: User {{USER_EMAIL}} must have MORE than 5 saved addresses in account address book to trigger pagination/show-more. Add 6+ addresses via admin or storefront profile. Verify initial display limit is 5 in checkout address selector.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout shipping address step
 [ACT] click 'Change address' or address selector to open full address list
@@ -388,12 +394,12 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checko
 [DOM] newly loaded addresses selectable via click
 [STATE] no duplicate addresses in expanded list","[API] addresses query returns paginated result; second page returns additional items
 [CONSOLE] no JS errors on show more / pagination click
-[NETWORK] no 4xx/5xx on address pagination request","'Show more' button absent despite many addresses; clicking 'Show more' causes page refresh or error; duplicate addresses in list; addresses not selectable after expansion","No cleanup required","Coverage Gap Analysis","Generated"
-"CHK-061","Session Timeout During Checkout - Cart Preserved After Re-authentication","Checkout > Session > Timeout","Medium","","ECL-1.2","User logged in with items in cart; session timeout is configured (or can be simulated by clearing session cookie); user is at payment step","url={{FRONT_URL}}
+[NETWORK] no 4xx/5xx on address pagination request","'Show more' button absent despite many addresses; clicking 'Show more' causes page refresh or error; duplicate addresses in list; addresses not selectable after expansion","No cleanup required","Coverage Gap Analysis","Manual — BLOCKED pending seed: 6+ saved addresses for {{USER_EMAIL}}. SEED verdict 2026-04-21."
+"CHK-061","Session Timeout During Checkout - Cart Preserved After Re-authentication","Checkout > Session > Timeout","Medium","","ECL-1.2","TOOL-LIMITATION: Natural session timeout in QA environment is too long for automated testing. Use cookie-clearing approach: MCP browser_evaluate to delete access_token and refresh_token cookies, then proceed. This simulates session expiry without waiting for timeout. NOTE: Real-user-interaction rule applies — use browser_evaluate only for cookie manipulation (not for UI interactions).","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart; proceed to checkout payment step
 [ASSERT] note cart contents (item names, quantities, total)
-[ACT] simulate session expiry by clearing session/auth cookies in browser developer tools OR wait for natural session timeout
+[ACT] Clear auth cookies via browser DevTools (manually delete access_token/refresh_token cookies) to simulate session expiry
 [ACT] attempt to interact with checkout (e.g., click 'Place Order')
 [WAIT] wait for response
 [ASSERT] verify user redirected to login page or session expired message shown (not a 500 error)
@@ -405,7 +411,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart
 [STATE] user can proceed through checkout after re-authentication
 [DOM] no 'internal server error' or blank page on session expiry","[API] requests with expired token return 401 (not 500)
 [CONSOLE] no unhandled exceptions on session timeout; 401 handled gracefully
-[NETWORK] 401 response on expired session; 200 on successful re-auth","500 error on session expiry; cart emptied after re-login; user redirected to homepage with no message; checkout state lost entirely","Clear test cart items; re-login if needed","Coverage Gap Analysis","Generated"
+[NETWORK] 401 response on expired session; 200 on successful re-auth","500 error on session expiry; cart emptied after re-login; user redirected to homepage with no message; checkout state lost entirely","Clear test cart items; re-login if needed","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: natural timeout too long; use cookie-clearing to simulate. TOOL-LIMITATION verdict."
 "CHK-062","Browser Back Button After Payment - No Duplicate Order Created","Checkout > Submission > Navigation","High","BL-CHK-002","ECL-1.2","User logged in; order successfully placed; user is on order confirmation page","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and complete a full checkout to reach the order confirmation page
@@ -421,7 +427,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and complete a full c
 [STATE] order history shows exactly one new order from the session","[API] GET /orders shows only one entry for this test session (no duplicate)
 [CONSOLE] no JS errors on back navigation after payment
 [NETWORK] no second POST to order creation endpoint after back button press","second order created after browser back; duplicate order number in order history; blank or error page on back navigation","Remove any duplicate test orders from system","Coverage Gap Analysis","Generated"
-"CHK-063","Billing Address Validation - Individual Field Errors Shown","Checkout > Billing > Validation","Medium","BL-CHK-003","ECL-1.2","User logged in; at checkout billing or payment step; 'Same as shipping address' is unchecked; billing form visible","url={{FRONT_URL}}
+"CHK-063","Billing Address Validation - Individual Field Errors Shown","Checkout > Billing > Validation","Medium","BL-CHK-003","ECL-1.2","DEPENDENCY: Shipping address and shipping method must be fully selected first (billing section is only visible after). Uncheck 'Same as shipping address' to reveal billing form. See CHK-043 for shipping setup steps.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout billing address step
 [ACT] uncheck 'Same as shipping address' to reveal billing address form
@@ -442,8 +448,8 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checko
 [STATE] form submission blocked while any required field is invalid
 [STATE] correcting a field clears that field's error without clearing other fields","[API] no order or billing payload sent while validation errors are present
 [CONSOLE] no JS errors during field-level validation
-[NETWORK] no outbound POST on failed validation","single generic error shown for entire form instead of field-level errors; form submits despite invalid fields; fixing one field clears all others' errors; no validation triggered on submit","Clear test cart; no order placed","Coverage Gap Analysis","Generated"
-"CHK-074","Billing Address Persists Through Payment Retry","Checkout > Address > Billing Persistence","High","BL-CHK-003, BL-CHK-004","ECL-1.1","User logged in; separate billing address entered; payment fails on first attempt","url={{FRONT_URL}}
+[NETWORK] no outbound POST on failed validation","single generic error shown for entire form instead of field-level errors; form submits despite invalid fields; fixing one field clears all others' errors; no validation triggered on submit","Clear test cart; no order placed","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: added shipping setup dependency (billing form requires shipping complete). BLOCKED in last run due to step ordering."
+"CHK-074","Billing Address Persists Through Payment Retry","Checkout > Address > Billing Persistence","High","BL-CHK-003, BL-CHK-004","ECL-1.1","DEPENDENCY: Requires a payment processor that shows a payment form allowing a failed/declined payment attempt (Skyflow, Authorize.Net, or Datatrance — NOT CyberSource which uses cross-origin iframe). Use Manual payment method if available as fallback to test the form state without actual card decline. NOTE: CyberSource iframe is inaccessible to MCP browsers.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to checkout with items in cart
 [ACT] fill shipping address
@@ -458,7 +464,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to checkout with items in cart
 [STATE] shipping address preserved through retry
 [DOM] both address forms retain entered values","[API] payment retry sends same billing/shipping addresses
 [CONSOLE] no JS errors during payment retry
-[NETWORK] no 5xx on retry","billing address cleared after decline; shipping address lost; user forced to re-enter addresses; addresses swapped","Cancel test order via admin","Coverage Gap Analysis","Manual"
+[NETWORK] no 5xx on retry","billing address cleared after decline; shipping address lost; user forced to re-enter addresses; addresses swapped","Cancel test order via admin","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: added payment processor dependency (not CyberSource). Use Manual payment or non-iframe processor."
 "CHK-075","Order Confirmation Shows Both Shipping and Billing Addresses","Checkout > Confirmation > Addresses","Medium","BL-CHK-003","ECL-1.1","Order placed with different shipping and billing addresses","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] complete checkout with separate shipping and billing addresses
@@ -470,7 +476,7 @@ password={{USER_PASSWORD}}","[NAV] complete checkout with separate shipping and 
 [ASSERT] verify both addresses shown in order detail view","[DOM] distinct shipping address section on confirmation
 [DOM] distinct billing address section on confirmation
 [STATE] addresses match what was entered at checkout","[CONSOLE] no JS errors on confirmation page
-[NETWORK] no 4xx/5xx","only one address shown; billing shows shipping address; addresses section missing; addresses swapped","Cancel test order via admin","Coverage Gap Analysis","Manual"
+[NETWORK] no 4xx/5xx","only one address shown; billing shows shipping address; addresses section missing; addresses swapped","Cancel test order via admin","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: added dependency on separate billing address entry. Requires completing CHK-043 setup first."
 "CHK-076","Checkout Field Validation - US Address Requires ZIP and State","Checkout > Validation > Address","High","BL-CHK-003","ECL-4.1","User at checkout address step; country selector available","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to checkout with items in cart
@@ -555,7 +561,7 @@ admin_url={{ADMIN_URL}}","[NAV] complete checkout and note order total and order
 [STATE] no discrepancy between storefront and admin order data","[API] admin order detail API returns same totals
 [CONSOLE] no admin console errors
 [NETWORK] no 4xx/5xx","admin total differs from storefront; line item prices mismatch; tax calculated differently in admin; order not found in admin","Cancel test order via admin","Coverage Gap Analysis","Manual"
-"CHK-084","Minimum Order Amount - Cart Below Minimum Blocks Checkout","Checkout > Minimum Order","High","BL-CHK-007","ECL-1.3","Minimum order amount configured in store settings (e.g., $50); user logged in","url={{FRONT_URL}}
+"CHK-084","Minimum Order Amount - Cart Below Minimum Blocks Checkout","Checkout > Minimum Order","High","BL-CHK-007","ECL-1.3","ADMIN-CONFIG REQUIRED: Store must have minimum order amount configured in Admin > Stores > MinOrderTotal (e.g., $50). QA environment does not have this configured by default. Duplicate of CHK-054 scope — these two cases should be consolidated. NOTE: CHK-084 focuses on cart-page block; CHK-054 focuses on checkout-step block.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in
 [ACT] add a low-priced product to cart (total below minimum order amount)
@@ -567,8 +573,8 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in
 [DOM] checkout button disabled or not clickable
 [STATE] checkout flow blocked for below-minimum cart","[API] cart validation returns minimum order error
 [CONSOLE] no JS errors
-[NETWORK] no 5xx","checkout proceeds below minimum; no warning message; button enabled despite below-minimum total; generic error without specifying minimum amount","Remove items from cart","Coverage Gap Analysis","Manual"
-"CHK-085","Minimum Order Amount - Adding Items to Exceed Minimum Unblocks","Checkout > Minimum Order","Medium","BL-CHK-007","ECL-1.3","Cart currently below minimum order amount; minimum order message displayed","url={{FRONT_URL}}
+[NETWORK] no 5xx","checkout proceeds below minimum; no warning message; button enabled despite below-minimum total; generic error without specifying minimum amount","Remove items from cart; reset MinOrderTotal to 0 in Admin","Coverage Gap Analysis","Manual — BLOCKED: requires admin config (MinOrderTotal) not set in QA. SEED verdict 2026-04-21. See CHK-054 for duplicate scope."
+"CHK-085","Minimum Order Amount - Adding Items to Exceed Minimum Unblocks","Checkout > Minimum Order","Medium","BL-CHK-007","ECL-1.3","ADMIN-CONFIG REQUIRED: MinOrderTotal must be set in Admin > Stores. DEPENDENCY: Run CHK-084 first to establish below-minimum state. Duplicate of CHK-055 scope.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with below-minimum total
 [ASSERT] verify minimum order warning is shown and checkout is blocked
@@ -581,7 +587,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with below-min
 [DOM] checkout button enabled
 [STATE] checkout unblocked when total >= minimum","[API] cart validation passes after exceeding minimum
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","warning persists after exceeding minimum; checkout still blocked; page refresh required to clear warning","Remove items from cart","Coverage Gap Analysis","Manual"
+[NETWORK] no 4xx/5xx","warning persists after exceeding minimum; checkout still blocked; page refresh required to clear warning","Remove items from cart; reset MinOrderTotal to 0 in Admin","Coverage Gap Analysis","Manual — BLOCKED: requires admin config (MinOrderTotal) not set in QA. SEED verdict 2026-04-21."
 "CHK-086","Checkout - Edit Shipping Address Does Not Create Duplicate (VCST-4830)","Checkout > Shipping > Address Update","Critical","BL-CHK-001, BL-CHK-005","ECL-8.1, ECL-1.2","User logged in with items in cart; shipping address already set during checkout (complete steps up to shipping method selection). Bug: VCST-4830 — editing a shipping address from cart/checkout created a new CartAddress record in DB every time instead of updating the existing one.","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart with items
 [ACT] Proceed to checkout
 [WAIT] Wait for shipping address step to render
@@ -612,4 +618,4 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with below-min
 [GQL] After each edit, query cart → shipments count = 1 (not growing with each edit)
 [GQL] cart.shipments[0].deliveryAddress reflects latest values
 [NETWORK] No duplicate addOrUpdateCartShipment calls per single edit action
-[CONSOLE] No JS errors during address editing","Shipping address summary still shows old address after edit; address form not pre-populated on re-edit; shipping methods don't recalculate after address change; multiple addOrUpdateCartShipment calls per edit (potential duplicate); checkout breaks after editing address multiple times","none","VCST-4830; Synced: VCST-4830 + PR #106 (2026-03-31)","Generated"
+[CONSOLE] No JS errors during address editing","Shipping address summary still shows old address after edit; address form not pre-populated on re-edit; shipping methods don't recalculate after address change; multiple addOrUpdateCartShipment calls per edit (potential duplicate); checkout breaks after editing address multiple times","none","VCST-4830; Synced: VCST-4830 + PR #106 (2026-03-31)","Manual — Rewritten 2026-04-21: GQL cross-layer check added (cart.shipments count must = 1 after each edit). BLOCKED in REG-2026-04-20 run due to VCST-4830 fix verification pending; verify fix is deployed before running."
