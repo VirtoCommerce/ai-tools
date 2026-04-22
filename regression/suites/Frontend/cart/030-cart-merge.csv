@@ -20,7 +20,7 @@
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [ACT] add Product A to cart with qty=2
-[ACT] sign out
+[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 [NAV] navigate to {{FRONT_URL}} as guest
 [ACT] add same Product A to cart with qty=1 as guest
 [ACT] sign in with {{USER_EMAIL}}
@@ -56,7 +56,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
 [ACT] sign in as {{USER_EMAIL}} (triggers merge)
 [NAV] navigate to {{FRONT_URL}}/cart
 [ASSERT] note merged cart contents (items, quantities, subtotal)
-[ACT] sign out
+[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 [ACT] sign in again with {{USER_EMAIL}}
 [NAV] navigate to {{FRONT_URL}}/cart
 [ASSERT] verify merged cart persists with same items and quantities
@@ -70,7 +70,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [ACT] add a configurable product (with size/color variant selected) to cart
-[ACT] sign out
+[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 [NAV] navigate to {{FRONT_URL}} as guest
 [ACT] add a simple product to cart as guest
 [ACT] sign in as {{USER_EMAIL}}
@@ -100,7 +100,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
 "CART-063","Cart Merge Selection - Empty Cart + Selected All (ON)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","Default 'Selected for checkout' = ON in store settings; Cart1 (user) is empty; Cart2 (guest) has items with all selected","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and ensure cart is empty
-[ACT] sign out
+[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 [NAV] navigate to {{FRONT_URL}} as guest
 [ACT] add 2-3 products to cart as guest (all auto-selected for checkout)
 [ACT] sign in as {{USER_EMAIL}}
@@ -116,7 +116,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and ensure cart is em
 "CART-064","Cart Merge Selection - Both Selected All (ON)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","Default 'Selected for checkout' = ON; Cart1 (user) has items all selected; Cart2 (guest) has items all selected","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart (all selected)
-[ACT] sign out
+[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 [NAV] add different items to cart as guest (all selected)
 [ACT] sign in as {{USER_EMAIL}}
 [NAV] navigate to {{FRONT_URL}}/cart
@@ -132,7 +132,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart
 [ACT] unselect all items in cart (uncheck checkboxes)
-[ACT] sign out
+[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 [NAV] add items to cart as guest and unselect all
 [ACT] sign in as {{USER_EMAIL}}
 [NAV] navigate to {{FRONT_URL}}/cart
@@ -147,7 +147,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart
 "CART-066","Cart Merge Selection - Selected + Unselected (ON)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","Default 'Selected for checkout' = ON; Cart1 (user) has all items selected; Cart2 (guest) has all items unselected","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart (keep selected)
-[ACT] sign out
+[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 [NAV] add items to cart as guest then unselect all
 [ACT] sign in as {{USER_EMAIL}}
 [NAV] navigate to {{FRONT_URL}}/cart
@@ -164,7 +164,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add 3+ items to cart
 [ACT] unselect some items (create mixed state)
-[ACT] sign out
+[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 [NAV] add 3+ items to cart as guest
 [ACT] unselect some guest items (create mixed state)
 [ACT] sign in as {{USER_EMAIL}}
@@ -180,7 +180,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add 3+ items to c
 "CART-068","Cart Merge Selection - Empty + Unselected All (OFF)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","ADMIN-CONFIG REQUIRED: Store setting 'Default selected for checkout' must be set to OFF in Admin > Stores > Cart Settings. QA default is ON — this test is BLOCKED unless config is changed for this run. SEED: document config change and restore in Cleanup.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and ensure cart is empty
-[ACT] sign out
+[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 [NAV] add items to cart as guest (default unselected per OFF setting)
 [ACT] sign in as {{USER_EMAIL}}
 [NAV] navigate to {{FRONT_URL}}/cart
@@ -195,7 +195,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and ensure cart is em
 "CART-069","Cart Merge Selection - Both Selected All (OFF)","Cart > Merge > Selection","Medium","BL-CART-006","ECL-14.1","ADMIN-CONFIG REQUIRED: Store setting 'Default selected for checkout' must be set to OFF. QA default is ON — BLOCKED unless config is changed for this run. Restore config in Cleanup.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items, manually select all
-[ACT] sign out
+[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 [NAV] add items as guest, manually select all
 [ACT] sign in as {{USER_EMAIL}}
 [NAV] navigate to {{FRONT_URL}}/cart
@@ -211,7 +211,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items, manual
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add 3+ items
 [ACT] manually select some, leave others unselected
-[ACT] sign out
+[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 [NAV] add 3+ items as guest
 [ACT] manually select some, leave others unselected
 [ACT] sign in as {{USER_EMAIL}}

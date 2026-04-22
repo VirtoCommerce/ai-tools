@@ -73,7 +73,7 @@
 "B2C-MBR-009","Admin vs Purchaser Access Differences","B2C Features > Members","High","BL-B2C-004","","Two accounts: org admin and org purchaser","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org admin
 2. [NAV] Navigate to /company/members
 3. [ASSERT] Verify admin sees Invite Member button and can edit roles
-4. [ACT] Log out
+4. [ACT] Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 5. [NAV] Log in as org purchaser
 6. [NAV] Navigate to /company/members
 7. [ASSERT] Verify purchaser does NOT see Invite Member button
@@ -85,7 +85,7 @@
 3. [ACT] Select a member and click Block or Deactivate action
 4. [ACT] Confirm blocking action
 5. [ASSERT] Verify member status changes to Blocked or Inactive
-6. [ACT] Log out
+6. [ACT] Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 7. [NAV] Attempt to sign in as the blocked member
 8. [ASSERT] Verify sign-in is denied with appropriate message","[DOM] Member status updated to Blocked in members list
 [STATE] Blocked member login attempt is rejected
@@ -96,7 +96,7 @@
 3. [ACT] Select the blocked member and click Unblock or Activate
 4. [ACT] Confirm unblocking
 5. [ASSERT] Verify member status changes to Active
-6. [ACT] Log out
+6. [ACT] Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 7. [NAV] Sign in as the unblocked member
 8. [ASSERT] Verify sign-in succeeds","[DOM] Member status updated to Active in members list
 [STATE] Unblocked member can sign in successfully

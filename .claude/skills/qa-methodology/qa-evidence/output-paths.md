@@ -17,8 +17,7 @@
 | **Exploratory session reports** (SBTM) | `reports/exploratory/` | `SBTM-checkout-edge-cases-2026-03-01.md` |
 | **Checklists** (domain test checklists, verification checklists) | `reports/checklists/` | `checkout-checklist-2026-03-06.md`, `b2c-variations-checklist.md` |
 | **BA analysis reports** (system analysis, stories, API audit) | `reports/ba/` | `ba-report-2026-03-04.md`, `checkout-stories.md` |
-| **Test lifecycle reports** (quality pipeline results) | `reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/` | `lifecycle-report.md`, `issues-summary.json`, `metrics.json` |
-| **Test sync reports** (change-driven sync results) | `reports/test-sync/SYNC-YYYY-MM-DD-HHMM/` | `sync-report.md`, `sync-summary.json` |
+| **Test lifecycle reports** (quality pipeline results — includes change-driven sync) | `reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/` | `lifecycle-report.md`, `issues-summary.json`, `metrics.json` |
 | **Coverage generation reports** (gap analysis results) | `reports/coverage/COV-YYYY-MM-DD-HHMM/` | `coverage-generation-report.md`, `gap-inventory.json` |
 | **Raw browser artifacts** (console logs, HAR, videos -- gitignored) | `test-results/{browser}/` | `test-results/chrome/console-*.log`, `test-results/firefox/har/` |
 
@@ -31,7 +30,7 @@
 - **Screenshots:** `{component-name}-{state}-{viewport}.png` or `{test-case-id}-{description}.png`
 - **Test execution reports:** `test-execution-report.md` (one per ticket folder)
 - **Regression reports:** `{suite-name}-report.md` or `{area}-regression-report-YYYY-MM-DD.md`
-- **Full regression run directories:** `REG-YYYY-MM-DD-HHMM/` (e.g., `REG-2026-03-23-1745/`)
+- **Full regression run directories:** `REG-YYYY-MM-DD-HHMM/` (e.g., `REG-2026-04-20-1000/`)
 - **Test lifecycle run directories:** `TLC-YYYY-MM-DD-HHMM/`
 - **Test sync run directories:** `SYNC-YYYY-MM-DD-HHMM/`
 - **Coverage generation run directories:** `COV-YYYY-MM-DD-HHMM/`

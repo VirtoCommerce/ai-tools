@@ -35,6 +35,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 | `--layer <name>` | Scope to a specific layer: `api`, `graphql`, `admin`, `storefront`, `e2e` |
 | `--report-only` | Run all phases but don't modify any CSV files — output report only |
 | `--ci` | CI mode: skip browser verification, apply all updates without confirmation, output machine-readable JSON |
+| `--update-bl` | Draft proposed additions/updates to `business-logic.md` — new invariants from change inventory/Context7/JIRA ACs, plus stale BL-* whose Rule contradicts current behavior. Output goes to `reports/test-lifecycle/TLC-*/bl-proposals.md`; never auto-applied to the knowledge file. |
 
 ---
 
@@ -245,6 +246,11 @@ Reclassify each case:
 - Re-run structural validation (CSV format, required fields, ID uniqueness)
 - Update `config/test-suites.json` testCount if cases were added/removed
 
+**BL staleness detection (when `--update-bl` is set):**
+- For each BL-* referenced by a STALE/BROKEN case, compare the BL Rule against the Context7 finding that drove the reclassification.
+- If the Rule no longer holds (e.g., behavior changed, field renamed, threshold moved), add an entry to `blProposals.stale[]` with: `{id, currentRule, observedBehavior, sourceOfChange, affectedCases}`.
+- Never modify `business-logic.md` directly — proposals are drafts only.
+
 **Phase 2 output:**
 ```
 Cases in scope: 145
@@ -302,7 +308,13 @@ Instead of full gap detection, perform change impact analysis:
    - Read `agents/knowledge/graphql-schema.md`
    - Validate every query/mutation: name exists, args match, `command` wrapper on mutations, response fields match return types
    - If query/mutation doesn't exist in schema → do NOT generate a case for it
-7. **Present to user** as Feature Test Matrix for approval before proceeding
+7. **BL proposal drafting (when `--update-bl` is set):**
+   - For each generated case whose gap maps to a testable business rule not already in `business-logic.md`, draft a new BL entry.
+   - Draft must follow the existing format: `BL-<DOMAIN>-<NNN>`, severity tag, **Rule**, **Verify**, **Violation signal**, **Agents**.
+   - Pick the next available number per domain; mark proposed IDs with a `PROPOSED-` prefix (e.g., `PROPOSED-BL-CART-009`) until the user assigns the final ID.
+   - Source each draft: JIRA AC / Context7 quote / changelog entry / PR description. No unsourced drafts.
+   - Add to `blProposals.new[]` in the delegation output — do not write to `business-logic.md`.
+8. **Present to user** as Feature Test Matrix for approval before proceeding
 
 ---
 
@@ -474,10 +486,43 @@ Write to `reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`:
 ## Files Modified
 - [list of CSV files with change summary]
 
+## Business Logic Proposals (if `--update-bl`)
+- Drafted N new invariants, M stale BL-* flagged — see `bl-proposals.md` in this run directory.
+- These are **drafts for review**. Nothing was written to `business-logic.md`. Approve/edit and apply manually.
+
 ## Next Steps
 - [ ] Address "Must Fix" items
 - [ ] Run `/qa-regression` with reviewed suite(s)
 - [ ] File JIRA tickets for environment issues
+- [ ] Review `bl-proposals.md` and fold approved entries into `business-logic.md` (if `--update-bl` ran)
+```
+
+### `bl-proposals.md` (only when `--update-bl` ran)
+
+```markdown
+# Business Logic Proposals — {RUN_ID}
+
+These are drafts. They are NOT applied to `.claude/agents/knowledge/business-logic.md`.
+Review, edit as needed, assign final `BL-*` IDs, and commit manually.
+
+## New Invariants Proposed
+
+### PROPOSED-BL-<DOMAIN>-<NNN>: <short title> `[P0-revenue | P1-data | P2-ux]`
+- **Rule:** ...
+- **Verify:** ...
+- **Violation signal:** ...
+- **Agents:** ...
+- **Source:** JIRA VCST-XXXX AC#3 | Context7 query on /virtocommerce/vc-docs:<topic> | changelog 3.850.0 | PR #NNN
+- **Triggered by case(s):** [TC-IDs that exposed the gap]
+
+## Stale BL-* Flagged
+
+### BL-<DOMAIN>-<NNN>: <existing title>
+- **Current Rule:** [as written today]
+- **Observed behavior:** [what Context7 / the change inventory shows instead]
+- **Source of change:** [PR / changelog / Context7 quote]
+- **Affected cases:** [TC-IDs still referencing this BL]
+- **Suggested action:** update Rule / deprecate / split into two invariants
 ```
 
 ### `lifecycle-summary.json`
@@ -497,7 +542,11 @@ Write to `reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`:
   "casesReviewed": 150,
   "casesVerified": 20,
   "filesModified": ["regression/suites/..."],
-  "gateResults": {"G1": "PASS", "G2": "PASS", ...}
+  "gateResults": {"G1": "PASS", "G2": "PASS", ...},
+  "blProposals": {
+    "new": [{"proposedId": "PROPOSED-BL-CART-009", "severity": "P1-data", "rule": "...", "source": "..."}],
+    "stale": [{"id": "BL-ORD-002", "observedBehavior": "...", "source": "..."}]
+  }
 }
 ```
 
@@ -602,6 +651,7 @@ Output: structured JSON with:
   - reviewFindings: [{caseId, dimension, severity, issue, suggestedFix}]
   - fixesApplied: [{caseId, issue, fixAction}]
   - manualItems: [{caseId, issue, dimension}]
+  - blProposals (only when --update-bl): {new: [{proposedId, severity, rule, verify, violationSignal, agents, source, triggeredByCases}], stale: [{id, currentRule, observedBehavior, source, affectedCases, suggestedAction}]}
   - statistics: {totalCases, synced, generated, findings, autoFixed, manualRemaining}
   - filesModified: [paths]
 ```
@@ -663,3 +713,4 @@ Output: per-case verification:
 - **Report always written** — even with `--report-only`, produce the full report
 - **Build verification before pipeline** — always run pre-flight build verification and include version info in report
 - **GraphQL schema refresh** — when scope includes GraphQL suites, run `npm run schema:refresh` in Pre-Flight and validate all queries/mutations against `graphql-schema.md`
+- **BL proposals are advisory only** — `--update-bl` drafts proposals to `reports/test-lifecycle/TLC-*/bl-proposals.md`. Never write to `.claude/agents/knowledge/business-logic.md` automatically; every entry requires human review and manual application. Every proposed entry must cite a source (JIRA AC, Context7 quote, changelog, PR).

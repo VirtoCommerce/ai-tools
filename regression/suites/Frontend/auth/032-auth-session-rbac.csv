@@ -25,8 +25,9 @@
 [ACT] Login with valid credentials
 [WAIT] Wait for authenticated session
 [ACT] Note the access_token value from /connect/token response
-[ACT] Click logout button in top header menu
-[WAIT] Wait for logout to complete
+[ACT] Click user name / avatar in top header to open account-menu popup (BL-AUTH-007 — no /sign-out page)
+[ACT] Click Logout button inside popup (data-testid="main-layout.top-header.account-menu.sign-out-button")
+[WAIT] Wait for logout to complete and redirect to home or /sign-in
 [ASSERT] /revoke/token call observed in network tab
 [ACT] Attempt to use old token in a direct API request to {{BACK_URL}}","[STATE] Logout completes and user is redirected to login or home page
 [STATE] Old access_token rejected by API (returns 401)
@@ -149,8 +150,8 @@
 [NAV] In Browser A: Navigate to {{FRONT_URL}}/account
 [WAIT] Wait for account page to load
 [ASSERT] Browser A still authenticated
-[NAV] In Browser A: Click logout
-[WAIT] Wait for logout to complete
+[ACT] In Browser A: click user name in top header to open account-menu popup, then click Logout inside popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
+[WAIT] Wait for logout to complete and redirect
 [NAV] In Browser B: Navigate to {{FRONT_URL}}/account
 [WAIT] Wait for account page to load","[STATE] Both Browser A and Browser B are authenticated simultaneously
 [STATE] Browser A session is independent of Browser B
@@ -196,7 +197,8 @@
 [WAIT] Wait for successful login
 [ACT] Capture the access_token from /connect/token response in network tab
 [ASSERT] access_token captured successfully
-[ACT] Click logout button
+[ACT] Click user name / avatar in top header to open account-menu popup (BL-AUTH-007 — no /sign-out page)
+[ACT] Click Logout button inside popup (data-testid="main-layout.top-header.account-menu.sign-out-button")
 [WAIT] Wait for logout to complete
 [ASSERT] User is redirected to login or home page
 [ACT] Execute fetch request to {{BACK_URL}}/graphql with captured token in Authorization header

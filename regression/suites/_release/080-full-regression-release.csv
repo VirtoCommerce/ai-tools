@@ -56,9 +56,9 @@ FRR-005,Forgot Password - Reset Flow,Full Regression > Authentication > Password
 - Can sign in with new password; old password rejected
 - Reset link expires after use (BL-AUTH-003)","[EMAIL] reset email received within 2 minutes
 [CONSOLE] no JS errors","Spinner visible >5s, email not received after 5 min, console TypeError",Restore original password if changed,C410440,Manual
-FRR-006,Sign Out and Session Revocation,Full Regression > Authentication > Sign Out,High,BL-AUTH-001,,  "User logged in","email={{USER_EMAIL}}, front_url={{FRONT_URL}}","1. Click user name/account menu in header
-2. Click 'Sign Out'
-3. Verify sign-out completed
+FRR-006,Sign Out and Session Revocation,Full Regression > Authentication > Sign Out,High,BL-AUTH-001; BL-AUTH-007,,  "User logged in","email={{USER_EMAIL}}, front_url={{FRONT_URL}}","1. Click user name / avatar in top header to open account-menu popup (BL-AUTH-007 — no /sign-out page, no header-level logout icon)
+2. Click Logout button inside popup (data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+3. Verify sign-out completed (redirect to home or /sign-in)
 4. Attempt to access {{FRONT_URL}}/account/orders directly","- User signed out successfully
 - Account menu no longer shows user name
 - Attempting account pages redirects to sign-in
@@ -257,7 +257,7 @@ FRR-026,Cart - Currency Switch Recalculates All Prices,Full Regression > Cart > 
 - No mixed-currency state in cart (BL-CART-004, BL-CROSS-004)","[API] cart query after currency switch shows all prices in new currency
 [CONSOLE] no JS errors","Mixed-currency display, products without new-currency price show $0, errors[] non-empty",Switch back to USD,BL-CART-004,Manual
 FRR-027,Cart - Persistence Across Sign-Out / Sign-In,Full Regression > Cart > Persistence,High,BL-CART-008,,  "User logged in with items in cart","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","1. Add 3 products to cart
-2. Sign out
+2. Sign out via account-menu popup (click user name in top header → Logout; BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
 3. Sign back in
 4. Verify cart restored","- Cart restored with same items and quantities after re-login
 - No items lost on sign-out/sign-in cycle (BL-CART-008)","[API] cart query after re-login shows same items and quantities
@@ -511,7 +511,7 @@ FRR-048,B2B - Organization Context Swap (All 6 Dimensions),Full Regression > B2B
 FRR-049,B2B - Organization-Specific (Contract) Pricing,Full Regression > B2B > Pricing,Critical,"BL-PRICE-007, BL-B2B-002",,  "Org A has a custom price list with Product X at $50. Store default has Product X at $75.","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, front_url={{FRONT_URL}}","1. Sign in as Org A member
 2. Navigate to Product X
 3. Note displayed price
-4. Sign out and sign in as a non-org (personal) user
+4. Sign out via account-menu popup (click user name in top header → Logout; BL-AUTH-007) and sign in as a non-org (personal) user
 5. Navigate to Product X
 6. Note displayed price","- Org A member sees contract price: $50
 - Non-org user sees store default price: $75
@@ -561,9 +561,9 @@ FRR-052,B2B - Quote Request Flow,Full Regression > B2B > Quotes,High,BL-B2B-003,
 [CONSOLE] no JS errors","Quote button missing, quote not appearing in account, console TypeError",Cancel test quote and order in Admin,BL-B2B-003,Manual
 FRR-053,B2B - Member Role Feature Visibility,Full Regression > B2B > Roles,High,BL-B2B-005,,  "Org Admin and Org Buyer accounts available","admin_email={{ORG_USER_EMAIL}}, buyer_email=org-buyer@example.com, front_url={{FRONT_URL}}","1. Sign in as Org Admin
 2. Verify: Members, Quotes, Orders, Approval menu items visible
-3. Sign out; sign in as Org Buyer
+3. Sign out via account-menu popup (user name → Logout; BL-AUTH-007); sign in as Org Buyer
 4. Verify: Orders and Lists visible; 'Members' NOT visible
-5. Sign out; sign in as view-only member (no purchasing role)
+5. Sign out via account-menu popup (user name → Logout; BL-AUTH-007); sign in as view-only member (no purchasing role)
 6. Verify: no cart/checkout access","- Org Admin sees all B2B features
 - Buyer sees Orders and Lists but not member management
 - View-only member cannot add to cart or checkout (BL-B2B-005)","[CONSOLE] no JS errors

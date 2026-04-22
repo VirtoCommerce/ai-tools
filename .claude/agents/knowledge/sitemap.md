@@ -383,10 +383,12 @@ Admin SPA is an Angular-based single-page application with blade navigation (pan
 ### Account Menu Dropdown *(new design — March 2026)*
 Triggered by the "OrgName / UserName" button in the top-right header. Opens a dropdown panel with:
 
-1. **User section:** User name (avatar + full name, links to `/account/dashboard`) + Logout button
+1. **User section:** User name (avatar + full name, links to `/account/dashboard`) + **Logout** button — selector `data-testid="main-layout.top-header.account-menu.sign-out-button"`
 2. **Organizations section:** "Organizations" label + Search box + scrollable list of organizations with radio buttons (click to switch active organization)
 
 > **Note:** The Account menu no longer contains account page navigation links. Account pages are accessed via the sidebar on the Dashboard page, or via the **Dashboard** link in the top header.
+
+> **GOLDEN RULE — storefront logout:** There is **no `/sign-out` page**, **no `/logout` page**, and **no standalone logout icon in the header**. The only correct logout sequence is: (1) click the user name / avatar in the top header to open this popup, (2) click the **Logout** button inside it. Agents and test-case authors MUST use this sequence. Never `browser_navigate('/sign-out')` and never look for a top-level logout link in the header nav.
 
 ### Main Nav Icon Bar (authenticated)
 Icons shown in the middle navigation row (right side):

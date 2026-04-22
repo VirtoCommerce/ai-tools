@@ -194,6 +194,8 @@ Examples:
 - `none` (if test leaves no side effects)
 - `Cancel created order via admin if order was placed`
 
+> **Logout convention (GOLDEN RULE, see BL-AUTH-007):** "Sign out" / "Logout" in Steps or Cleanup always means the storefront account-menu popup sequence — click user name in top header → click **Logout** in popup (selector `data-testid="main-layout.top-header.account-menu.sign-out-button"`). NEVER write Steps like `Navigate to /sign-out` or `Click logout button in header` — no such page or header-level button exists. Runners execute the popup sequence regardless of how loosely the Step is phrased.
+
 ### References
 JIRA ticket IDs, sprint test IDs, or other test case IDs. Space or comma separated.
 Examples: `VCST-4499`, `VCST-3387 VCST-4499`, `BL-CART-001`

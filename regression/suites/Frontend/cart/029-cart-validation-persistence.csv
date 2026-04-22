@@ -53,7 +53,7 @@ user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in
 [ACT] add two or more products to the cart
 [ASSERT] note cart contents: product names, quantities, line totals
-[ACT] click sign out
+[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 [WAIT] wait for signed-out state confirmed
 [ACT] sign back in with same credentials
 [NAV] navigate to {{FRONT_URL}}/cart
@@ -71,7 +71,7 @@ adminUser={{ADMIN_EMAIL}}
 adminPassword={{ADMIN_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [ACT] add product to cart
 [ASSERT] note current displayed price
-[ACT] sign out
+[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 [NAV] log in to {{ADMIN_URL}}
 [ACT] navigate to Catalog > Products, find product, update price, save
 [WAIT] wait 30-60s for search index to update
@@ -259,7 +259,7 @@ user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [ACT] add 2-3 different products to cart with varying quantities
 [ASSERT] note all cart contents: product names, quantities, prices
-[ACT] sign out of the account
+[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 [ASSERT] verify cart cleared or inaccessible on storefront while signed out
 [ACT] sign back in with the same account
 [NAV] navigate to {{FRONT_URL}}/cart
@@ -296,7 +296,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and navigate to cart
 [ACT] enter valid coupon code and click 'Apply'
 [ASSERT] verify coupon applied and discount visible
 [ASSERT] note discount amount and final total
-[ACT] sign out of account
+[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 [ACT] sign back in with same account
 [NAV] navigate to {{FRONT_URL}}/cart
 [ASSERT] verify coupon still applied
@@ -431,7 +431,7 @@ user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in as {{USER_EMAIL}}
 [NAV] navigate to {{FRONT_URL}}/cart
 [ASSERT] verify cart is empty (0 items or empty state message)
-[ACT] sign out
+[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 [WAIT] wait for sign-out to complete
 [ACT] sign in again as {{USER_EMAIL}}
 [NAV] navigate to {{FRONT_URL}}/cart

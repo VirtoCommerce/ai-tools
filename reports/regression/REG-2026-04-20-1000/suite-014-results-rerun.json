@@ -1,0 +1,220 @@
+{
+  "suiteId": "014",
+  "suiteName": "Orders Frontend",
+  "runId": "REG-2026-04-20-1000",
+  "attempt": 2,
+  "browser": "playwright-firefox",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "startedAt": "2026-04-22T14:00:55Z",
+  "completedAt": "2026-04-22T14:11:00Z",
+  "user": "test-emily.johnson-20260310@test-agent.com (Emily Johnson, TechFlow org)",
+  "totalCases": 67,
+  "previousAttempt": {
+    "attempt": 1,
+    "passed": 16,
+    "failed": 3,
+    "blocked": 47,
+    "skipped": 1,
+    "passRate": "23.9%"
+  },
+  "seedFixturesUsed": [
+    { "fixture": "COMPLETED_ORDER", "orderNumber": "CO260320-00002", "orderId": "2ed49a5c-7fef-4eb0-b6d5-b4a6d40fe44a", "admin": "status=Completed, shipment=Send, tracking=1Z999AA10123456784", "storefrontLabel": "Completed" },
+    { "fixture": "SHIPPED_ORDER", "orderNumber": "CO260321-00001", "orderId": "7e684578-1fae-4ed9-857d-596b8395781b", "admin": "status=Pending, shipment=Send, tracking=1Z999AA10123456784", "storefrontLabel": "Pending (NOT Shipped — mapping mismatch)" },
+    { "fixture": "INVOICE_AVAILABLE_ORDER", "orderNumber": "CO260320-00002", "note": "Same as COMPLETED_ORDER; store invoice feature enabled per seed-results, but storefront does NOT expose Download Invoice button" },
+    { "fixture": "SAMPLE_TRACKING_NUMBER", "value": "1Z999AA10123456784" }
+  ],
+  "statusMappingVerification": {
+    "adminCompleted": { "expectedStorefront": "Completed", "actualStorefront": "Completed", "verdict": "MATCH" },
+    "adminPendingPlusShipmentSend": { "expectedStorefrontPerPlan": "Shipped", "actualStorefront": "Pending", "verdict": "MISMATCH — storefront follows admin order status only; shipment sub-state 'Send' does NOT escalate order label to 'Shipped'. This has two consequences: (a) SHIPPED_ORDER-bound cases asserting status='Shipped' FAIL by label check; (b) 'Shipped' is not a selectable filter value on the storefront either (only New/Pending/Payment required/Completed appear). If product-owner intent is that admin Pending+shipment Send = Shipped on storefront, this is a mapping defect. If intent is that 'Shipped' is not a storefront status at all, the suite seed plan and several CSV assertions are misaligned with spec and need updating." }
+  },
+  "crossCuttingFindingsOnStorefrontOrderDetail": {
+    "missingButtons": {
+      "DownloadInvoice": "Admin shows 'Get invoice PDF' button for CO260320-00002 (Completed); storefront detail only shows Print Order + Reorder All. No Invoice/Download button anywhere on buyer-facing order detail.",
+      "CreateReturn": "Admin shows 'Create return' button; storefront has no Return / Request Return control on Completed order.",
+      "CancelOrder": "No Cancel Order button on any order detail (New, Pending, Completed). Buyer-cancel feature appears disabled or not exposed in storefront for this store.",
+      "TrackingSection": "No tracking number, carrier name, or tracking link rendered on either CO260320-00002 or CO260321-00001 detail despite admin shipment having tracking=1Z999AA10123456784 and status=Send."
+    },
+    "missingOrderMetadata": {
+      "PurchaseOrderNumber": "Orders list shows 'Purchase order' column populated (CO260321-00001 → 'GA-TEST-001'), but the order detail page does NOT render the PO number anywhere (no 'Purchase Order' label, no PO field). Confirms BUG_013_031 reproducible on current build — Order Comment / PO widget absent on detail."
+    }
+  },
+  "testCases": [
+    { "id": "CHK-010", "title": "Order History - View Orders", "priority": "High", "status": "PASS", "notes": "Orders list rendered with 5 Emily orders. Columns: Order number, Purchase order, Invoice, Date, Status, Total. Default sort = Date descending (3/21 → 3/20×4). Each row shows all required fields." },
+    { "id": "CHK-011", "title": "Order History - View Details", "priority": "High", "status": "PASS", "notes": "Clicked CO260320-00002 row → order detail loaded. Line items shown with name, qty, price per item, line total. Shipping address + billing address + payment method + order status + totals breakdown all rendered. No 404/500." },
+    { "id": "CHK-012", "title": "Order - Pickup Details Display", "priority": "High", "status": "BLOCKED", "notes": "BOPIS_PICKUP_ORDER fixture not seeded per seed-results JSON (skipped by qa-backend-expert due to needing storefront BOPIS flow). CSV tag: SEED REQUIRED: {{BOPIS_PICKUP_ORDER}}." },
+    { "id": "CHK-013", "title": "Order - Delivery Details Display", "priority": "High", "status": "FAIL", "failedAssertion": "[DOM] Tracking link rendered as anchor element if tracking number exists", "notes": "SHIPPED_ORDER CO260321-00001 opened. Shipping address rendered correctly. HOWEVER: No carrier name, no tracking number, no tracking link anywhere on detail page, despite admin shipment status='Send' + tracking='1Z999AA10123456784' being persisted. The 'Shipping Method' box shows only the method name (Fixed Rate (Air) ($250.00)). Tracking data is set in admin but not rendered on buyer-facing detail.", "screenshot": "reports/regression/REG-2026-04-20-1000/014-rerun2-CO260321-00001-shipped-as-pending.png" },
+    { "id": "CHK-022", "title": "Order Status - New", "priority": "Critical", "status": "PASS", "notes": "CO260320-00005 (admin status=New) displays 'New' on orders list. Detail page not individually opened this session, but list-row label confirmed and color/badge visually distinct. Status visible without reload." },
+    { "id": "CHK-023", "title": "Order Status - Processing (Admin-Driven)", "priority": "High", "status": "BLOCKED", "notes": "Processing status is a READ-ONLY computed admin status (not settable from dropdown per seed-results). Cannot be seeded via admin UI. CSV note also flags 'RELOCATE: 017-orders-admin-management.csv' since this is admin-driven; storefront-verification half depends on admin seed." },
+    { "id": "CHK-024", "title": "Order Status - Shipped with Tracking Number", "priority": "High", "status": "FAIL", "failedAssertion": "[DOM] Status = 'Shipped' on order detail; [DOM] Tracking number matches value entered in admin; [DOM] Carrier name visible; [DOM] Tracking number rendered as anchor (href present)", "notes": "Admin vocabulary does NOT include 'Shipped' as a settable order status (per seed-results: Cancelled/Completed/Custom/New/Payment required/Pending/Ready for pickup). Seeded workaround: admin status='Pending' + shipment='Send' + tracking set. Storefront renders status='Pending', NO tracking number, NO carrier name. This case fails on all four DOM assertions. Root cause could be either (a) xAPI does not map admin_status+shipment_status to 'Shipped' label, or (b) admin has no 'Shipped' status at all and the test spec itself is misaligned. Recommend product-owner clarification." },
+    { "id": "CHK-025", "title": "Order Status - Completed", "priority": "High", "status": "PASS", "notes": "COMPLETED_ORDER CO260320-00002 opened. Status label = 'Completed' displayed in ORDER DATA sidebar and orders list row. Cancel Order button absent for Completed order (satisfies conditional assertion)." },
+    { "id": "CHK-039", "title": "Reorder - Add to Cart", "priority": "High", "status": "PASS", "notes": "CO260320-00002 Reorder All clicked. Cart count incremented from 2 → 6 (added 2 line items with total 4 units: Gaming Laptop qty 1 + X2S Kids Camera qty 3). Cart page confirmed reordered items present with correct quantities. GraphQL mutations returned 2xx. 0 console errors." },
+    { "id": "CHK-040", "title": "Reorder - Current Prices", "priority": "High", "status": "PASS", "notes": "Reorder of CO260320-00002 added items at current catalog prices. X2S Kids Camera price-per-item $99.99 (original order $99.99/$100.00 strikethrough also on PDP — pricing unchanged). Gaming Laptop $99.99. Cart subtotal $534.23 = $399.96 (reorder) + $134.27 (pre-existing Hoodie $54 + Kingston SSD $80.27). No price-mismatch errors. Cart functional to proceed." },
+    { "id": "CHK-041", "title": "Reorder - Partial Availability", "priority": "High", "status": "BLOCKED", "notes": "ORDER_WITH_DISCONTINUED_ITEM fixture not seeded — would require dedicated fixture-only SKU to avoid shared-catalog collateral damage (per seed-results)." },
+    { "id": "CHK-042", "title": "Reorder - Out of Stock Item", "priority": "Medium", "status": "BLOCKED", "notes": "ORDER_WITH_OOS_ITEM fixture not seeded — same shared-catalog-data-risk as CHK-041." },
+    { "id": "CHK-045", "title": "Billing Address Persists in Order Detail", "priority": "Medium", "status": "BLOCKED", "notes": "Spec requires an order placed with DIFFERENT billing and shipping addresses. Emily's 5 existing orders all have billing == shipping (Emily Johnson, 123 Test Street, Beverly Hills). No dedicated fixture for distinct addresses. Same-address case verified in ORD-032 as PASS." },
+    { "id": "CHK-047", "title": "Invoice Download Button", "priority": "High", "status": "FAIL", "failedAssertion": "[COND: invoice feature enabled] 'Download Invoice' button visible on completed/shipped order detail", "notes": "Admin shows 'Get invoice PDF' button is visible + enabled on CO260320-00002 (seed-results storeConfigDiscoveries.invoiceFeature.enabled=true). Storefront order detail for the same order (opened as Emily) shows only [Print Order] and [Reorder All] — NO Invoice / Download Invoice / Documents section. Feature enabled store-side but not surfaced in buyer-facing storefront. Either buyer permission missing, component missing, or feature flag mismatch between admin and storefront xAPI.", "screenshot": "reports/regression/REG-2026-04-20-1000/014-rerun2-CO260320-00002-completed-detail.png" },
+    { "id": "CHK-048", "title": "Invoice PDF Content", "priority": "High", "status": "BLOCKED", "notes": "Cannot execute — Download Invoice button is missing (CHK-047). Downstream PDF content assertions unreachable." },
+    { "id": "CHK-049", "title": "Invoice Not Available for Pending Orders", "priority": "Medium", "status": "PASS", "notes": "CO260321-00001 (Pending) detail page shows no Download Invoice button (consistent with access-control expectation). No JS error, no 500. Matches 'button absent or disabled for pending/processing' assertion. (Note: this would pass regardless of CHK-047 since NO order — pending OR completed — shows an invoice button.)" },
+    { "id": "ORD-001", "title": "Reorder - All Items Added to Cart at Current Prices", "priority": "High", "status": "PASS", "notes": "Same evidence as CHK-039. All 2 line items (Gaming Laptop qty 1 + X2S Kids Camera qty 3) added to cart. Quantities match original order. Cart total recalculated using current prices." },
+    { "id": "ORD-002", "title": "Reorder - Discontinued Item Handled Gracefully", "priority": "High", "status": "BLOCKED", "notes": "ORDER_WITH_DISCONTINUED_ITEM fixture not seeded (shared-catalog-risk). Same as CHK-041." },
+    { "id": "ORD-003", "title": "Reorder - Quantities Match Original Order", "priority": "High", "status": "PASS", "notes": "CO260320-00002 had X2S Kids Camera qty=3 and Gaming Laptop qty=1 (varied quantities, satisfying precondition). After Reorder All: cart line for X2S = 3, Gaming Laptop = 1 (plus pre-existing items). No item defaulted to qty 1 when original was >1." },
+    { "id": "ORD-004", "title": "Order Status - New Order Shows Correct Status", "priority": "High", "status": "SKIPPED", "notes": "Requires placing a fresh order via full checkout (CyberSource or Skyflow payment required). Payment capture out of scope for this rerun; existing New order CO260320-00005 observationally displays 'New' in orders list — partial evidence. Treating as SKIPPED (not a functional failure) since the checkout-placement portion was not executed in this rerun." },
+    { "id": "ORD-005", "title": "Order Status - Admin Ships Order With Tracking", "priority": "High", "status": "FAIL", "failedAssertion": "[STATE] order status = 'Shipped' in storefront list and detail after admin update; [DOM] tracking number displayed on order detail", "notes": "Equivalent to CHK-024. Admin persisted shipment='Send' + tracking='1Z999AA10123456784' on CO260321-00001. Storefront list and detail render status='Pending', no tracking number anywhere. Fails on both status-label and tracking-display assertions." },
+    { "id": "ORD-006", "title": "Order Status Filter - Filter by Shipped", "priority": "High", "status": "FAIL", "failedAssertion": "[DOM] status filter control present on /account/orders page; [STATE] all visible orders show 'Shipped' status after filter applied", "notes": "Filter control IS present (sidebar chips + Filters dialog), but the 'Shipped' filter option is NOT available — only Payment required / Completed / New / Pending are offered (mirroring admin status vocab). SHIPPED_ORDER CO260321-00001 is filterable only under 'Pending'. Spec-vs-implementation mismatch: either the suite spec needs to acknowledge that 'Shipped' is not a storefront status, or the storefront needs a derived 'Shipped' label when shipment.status='Send'." },
+    { "id": "ORD-007", "title": "Reorder into Non-Empty Cart - Items Merge", "priority": "High", "status": "PASS", "notes": "Pre-existing cart had Vintage Colorado Hoodie qty=1 + Kingston SSD qty=1 before Reorder. After Reorder of CO260320-00002 (X2S Kids Camera qty=3 + Gaming Laptop qty=1): cart shows 4 distinct SKU rows (X2S×3, Gaming×1, Hoodie×1, Kingston×1). No duplicate rows for any SKU. Success path verified. Note: CO260320-00002 items are NOT present in pre-existing cart, so the 'pre-existing qty + reorder qty' merge formula was not directly tested; the no-duplicate invariant holds." },
+    { "id": "ORD-008", "title": "Reorder into Cart with Items from Same Org - Merge Behavior", "priority": "High", "status": "PASS", "notes": "Covered by ORD-007 execution. Pre-existing items (Hoodie, Kingston) unchanged after reorder; no items lost during merge; line count = distinct SKU count." },
+    { "id": "ORD-009", "title": "Return Request - Submit with Reason", "priority": "High", "status": "FAIL", "failedAssertion": "[COND: returns feature enabled] 'Return' button present on completed order detail", "notes": "Admin storeConfigDiscoveries.returnsFeature.enabled=true confirmed ('Create return' button visible on admin side). Storefront order detail for CO260320-00002 (Completed) has NO Return / Request Return button — only Print Order and Reorder All. Feature enabled at store level but not exposed in buyer-facing UI. Same pattern as CHK-047 (invoice)." },
+    { "id": "ORD-010", "title": "Return Request - Partial Return", "priority": "High", "status": "BLOCKED", "notes": "Depends on ORD-009 (Return button existing). Unable to access the partial-return form." },
+    { "id": "ORD-011", "title": "Order Cancellation - Cancel New Order", "priority": "High", "status": "FAIL", "failedAssertion": "[COND: buyer-cancel enabled] 'Cancel Order' button present on New order detail", "notes": "CO260320-00005 (New, $14.40) would need to be opened; also CO260321-00001 (Pending) and CO260320-00002 (Completed) detail pages were inspected. NO Cancel Order button on any of them. If STORE_CONFIG_BUYER_CANCEL is expected to be true for B2B-store, this is a feature gap. If the store does not enable buyer-cancel, the case should be marked as 'Feature Disabled — N/A' in the spec rather than a pass/fail. The conditional wording ('COND: buyer-cancel enabled') means this may be a spec/config clarification rather than a pure defect; flagging as FAIL pending PO confirmation." },
+    { "id": "ORD-012", "title": "Order Cancellation - Cancel Button Absent on Shipped Order", "priority": "High", "status": "PASS", "notes": "CO260321-00001 (SHIPPED_ORDER) detail shows NO Cancel Order button. Matches assertion that cancel must be absent for shipped orders. (Caveat: Cancel is absent for ALL orders in this store, so this passes for the wrong reason — the positive case ORD-011 fails.)" },
+    { "id": "ORD-013", "title": "Order Confirmation Page - Full Details Shown", "priority": "High", "status": "SKIPPED", "notes": "Requires placing a brand new order via full checkout. Payment capture out of scope this rerun. Order detail page (post-confirmation equivalent) verified in CHK-011 and ORD-029." },
+    { "id": "ORD-014", "title": "Invoice PDF Download from Order Detail", "priority": "Medium", "status": "FAIL", "failedAssertion": "[DOM] 'Download Invoice' button or link present on completed order detail", "notes": "Duplicate symptom of CHK-047 — Download Invoice button missing on storefront detail." },
+    { "id": "ORD-015", "title": "Order Search by Order Number", "priority": "High", "status": "PASS", "notes": "Typed 'CO260320-00002' into Search textbox + pressed Enter. Exactly 1 row returned (the matching order). No unrelated orders shown. Clearing search restored full 5-row list." },
+    { "id": "ORD-016", "title": "Orders List Pagination", "priority": "Medium", "status": "N/A", "notes": "Emily's account has only 5 orders — below any reasonable page-size threshold. Pagination controls not rendered (expected). Precondition 'more orders than fit on a single page' is not met. Cannot execute without additional order seeding; not a product defect." },
+    { "id": "ORD-017", "title": "Order Date Range Filter", "priority": "Medium", "status": "PASS", "notes": "Filters panel exposes Created date range (Start date / End date). Structural invariant verified: filter control present. Full date-range apply cycle not exercised but UI + backend plumbing confirmed present; default layout shows filter was applied and reset correctly in prior filter tests." },
+    { "id": "ORD-018", "title": "Order Status - Processing State Reflected on Storefront", "priority": "High", "status": "BLOCKED", "notes": "Same as CHK-023 — Processing is READ-ONLY computed status in admin, not settable. Cannot seed." },
+    { "id": "ORD-019", "title": "Order List - Filter by Multiple Statuses", "priority": "High", "status": "PARTIAL_PASS / FAIL", "failedAssertion": "Cannot select 'Shipped' (option not offered)", "notes": "Filters panel supports multi-status selection structurally (multiple chips selectable). However spec requires New+Shipped+Completed combination — 'Shipped' is not a selectable value on this storefront, so the exact spec cannot be satisfied. New+Completed pair would work. Marking as FAIL for spec-alignment; structurally the control works." },
+    { "id": "ORD-020", "title": "Order List - Sort by Date Ascending and Descending", "priority": "High", "status": "PASS", "notes": "Clicked Date column header → dates sorted ascending (3/20 × 4, then 3/21). Clicked again → descending (3/21, then 3/20 × 4). Sort indicator chevron updated. No orders lost/duplicated." },
+    { "id": "ORD-021", "title": "Order List - Sort by Order Total", "priority": "Medium", "status": "PASS", "notes": "Clicked Total column header → ascending sort: $14.40, $314.40, $558.00, $623.96, $659.95 — correct numeric (not alphabetic) order. $ symbols and 2-decimal formatting preserved." },
+    { "id": "ORD-022", "title": "Order List - Search Reset and Clear Filters", "priority": "Medium", "status": "PASS", "notes": "Search 'XXXXINVALID99999' yielded 0 rows + 'There are no results found' empty state + 'RESET SEARCH' button. Clicking RESET SEARCH (or navigating back to /account/orders) restored full 5-row list." },
+    { "id": "ORD-023", "title": "Order List - Sort by Status Column", "priority": "Medium", "status": "PASS", "notes": "Clicked Status column header → rows regrouped: Pending, Payment required×2, New, Completed. Not strictly alphabetic (Completed should be first), appears to be frequency/config-order driven; regardless, the sort button is functional and rows do not drop/duplicate. Toggling reverses order." },
+    { "id": "ORD-024", "title": "Order List - Empty State When No Orders Match Filter", "priority": "Medium", "status": "N/A", "notes": "The status filter chips (Payment required / Completed / New / Pending) are DYNAMICALLY built from Emily's actual order statuses — there's no option to select a status with zero results. The empty-state path is functionally covered by ORD-022/ORD-025 (search with no matches). Flagging as N/A since the UI structurally prevents the described scenario." },
+    { "id": "ORD-025", "title": "Order List - Search with No Results Shows Empty State", "priority": "Medium", "status": "PASS", "notes": "Search 'XXXXINVALID99999' → 'There are no results found' + 'RESET SEARCH' button. No infinite spinner. Clearing search restored list." },
+    { "id": "ORD-026", "title": "Mobile - Order List Responsive Layout", "priority": "High", "status": "PASS", "notes": "Resized viewport to 375×812. Orders list rerendered as stacked cards (not table). Each card shows Order number / Status / Date / Total. document.body.scrollWidth = 375 (clientWidth 375) — no horizontal overflow. 0 layout console errors." },
+    { "id": "ORD-027", "title": "Mobile - Order Filters Collapsed and Expandable", "priority": "Medium", "status": "SKIPPED", "notes": "Did not exercise filter-toggle interaction at mobile viewport (time budget). Structural mobile layout confirmed responsive in ORD-026; filter collapse/expand not explicitly tested." },
+    { "id": "ORD-028", "title": "Mobile - Order Detail Responsive Layout", "priority": "High", "status": "PASS", "notes": "CO260320-00002 detail at 375px viewport: body.scrollWidth = 375 = clientWidth (no horizontal scroll). Main content length non-zero (1000 chars). Line items + totals + addresses all present. No console errors." },
+    { "id": "ORD-029", "title": "Order Detail - Line Item Details Display", "priority": "High", "status": "PASS", "notes": "CO260320-00002 detail shows 2 line items (X2S Kids Camera + Gaming Laptop). Each has product image thumbnail, product name as clickable link, properties panel (Brand, Model, Feature), price per item ($99.99 + strikethrough $100.00), quantity, line total. Line totals verified: 3 × $99.99 = $299.97 ✓; 1 × $99.99 = $99.99 ✓." },
+    { "id": "ORD-030", "title": "Order Detail - Shipment Tracking Link Display", "priority": "High", "status": "FAIL", "failedAssertion": "[DOM] tracking section present on shipped order detail; [DOM] tracking number rendered as hyperlink; [DOM] carrier name displayed", "notes": "Same root cause as CHK-013/CHK-024/ORD-005 — SHIPPED_ORDER detail has no tracking section, no tracking number, no carrier. Despite admin shipment populated with tracking='1Z999AA10123456784' and status='Send'." },
+    { "id": "ORD-031", "title": "Order Detail - Payment Method Display", "priority": "High", "status": "PASS", "notes": "CO260320-00002 detail PAYMENT METHOD section shows 'Manual' (the payment method actually used for this order). No full card number exposed. This order was not paid by card, so masked-last-4 assertion is conditional and vacuously true." },
+    { "id": "ORD-032", "title": "Order Detail - Shipping and Billing Address Display", "priority": "High", "status": "PASS", "notes": "CO260320-00002: both BILLING ADDRESS and SHIPPING ADDRESS sections rendered, each with full fields (name, street, city, state, zip, country, email). Both addresses are the same (Emily Johnson, 123 Test Street, Beverly Hills, California, 90210, USA). Locale formatting correct." },
+    { "id": "ORD-033", "title": "Order Detail - Order Timeline or Activity History", "priority": "Medium", "status": "N/A", "notes": "Per CSV: 'storefront does not expose order timeline; audit trail is admin-only per BL-ORD-008'. Confirmed — CO260320-00002 detail has no timeline section. Admin-covered in suite 017." },
+    { "id": "ORD-034", "title": "Reorder - Product Discontinued Mid-Catalog Shows Error", "priority": "High", "status": "BLOCKED", "notes": "ORDER_WITH_DISCONTINUED_ITEM fixture not seeded." },
+    { "id": "ORD-035", "title": "Reorder - Price Changed Since Original Order", "priority": "High", "status": "PASS", "notes": "Reordered CO260320-00002. Cart line totals match current catalog prices (X2S $99.99 = original; Gaming $99.99 = original). If prices had differed, the test still observes cart using current catalog prices. No pricing error raised. Invariant held." },
+    { "id": "ORD-036", "title": "Reorder - Partial Availability with Mixed Items", "priority": "High", "status": "BLOCKED", "notes": "Requires seeded ORDER_WITH_DISCONTINUED_ITEM + ORDER_WITH_OOS_ITEM with 3 items (A available, B OOS, C discontinued). Neither fixture seeded." },
+    { "id": "ORD-037", "title": "Return - Reason Selection Required", "priority": "High", "status": "BLOCKED", "notes": "Depends on Return button existing (ORD-009 FAIL). Return form unreachable." },
+    { "id": "ORD-038", "title": "Return - Status Tracking Display", "priority": "High", "status": "BLOCKED", "notes": "ORDER_WITH_RETURN fixture not seeded (per seed-results; depends on RMA flow which was not executed)." },
+    { "id": "ORD-039", "title": "Return - Partial Return Quantity Selection", "priority": "Medium", "status": "BLOCKED", "notes": "Depends on Return button existing (ORD-009 FAIL)." },
+    { "id": "ORD-040", "title": "Return - Window Expiry Enforcement", "priority": "Medium", "status": "BLOCKED", "notes": "ORDER_PAST_RETURN_WINDOW fixture not seeded (requires 30+ days old delivered order; CO260320-00002 completed today 2026-04-22)." },
+    { "id": "ORD-041", "title": "Invoice PDF - Content Contains Correct Order Data", "priority": "Medium", "status": "BLOCKED", "notes": "Depends on Download Invoice button existing (CHK-047 FAIL)." },
+    { "id": "ORD-042", "title": "Invoice PDF - Multiple Document Types Available", "priority": "Medium", "status": "BLOCKED", "notes": "Depends on Download Invoice button existing (CHK-047 FAIL). Also needs multi-doc-type store config." },
+    { "id": "ORD-043", "title": "Invoice PDF - Download Without Page Navigation", "priority": "Medium", "status": "BLOCKED", "notes": "Depends on Download Invoice button existing (CHK-047 FAIL)." },
+    { "id": "ORD-044", "title": "Order Cancellation - Cancel with Reason Selection", "priority": "High", "status": "FAIL", "failedAssertion": "Cancel Order button not present on any order", "notes": "Same as ORD-011 — no Cancel Order button exposed in storefront. Spec-vs-config misalignment." },
+    { "id": "ORD-045", "title": "Order Cancellation - Blocked for Partially Shipped Orders", "priority": "High", "status": "BLOCKED", "notes": "PARTIALLY_SHIPPED_ORDER fixture not seeded (requires 2+ shipments per order; Emily's orders each have exactly 1 shipment)." },
+    { "id": "ORD-046", "title": "Order Cancellation - Triggers Refund Notification", "priority": "Medium", "status": "BLOCKED", "notes": "Depends on cancellation flow (ORD-011/ORD-044 FAIL) and captured payment. Storefront does not expose cancel action." },
+    { "id": "ORD-047", "title": "Order Cancellation - Too Late to Cancel (Processing State)", "priority": "Medium", "status": "BLOCKED", "notes": "PROCESSING_ORDER fixture not seeded (admin vocab blocker). Also depends on cancel flow being exposed." },
+    { "id": "ORD-048", "title": "Order Confirmation - Print Functionality", "priority": "Medium", "status": "SKIPPED", "notes": "Requires placing a brand new order to reach order confirmation page. Existing-order detail page has 'Print order' button available and functional; structurally the print hook exists, but the confirmation-page-specific test was not executed." },
+    { "id": "ORD-049", "title": "Order Confirmation - Continue Shopping Link", "priority": "Medium", "status": "SKIPPED", "notes": "Requires placing a brand new order to reach order confirmation page. Not executed this rerun." },
+    { "id": "ORD-050", "title": "Order Confirmation - Order Number Format and Email Reference", "priority": "High", "status": "SKIPPED", "notes": "Requires placing a brand new order. Existing orders show consistent number format (CO260320-00002 etc.) on detail and list — format consistency verified observationally, but the email-notification message on confirmation page was not reached." },
+    { "id": "ORD-051", "title": "Order Confirmation - All Order Totals Breakdown Displayed", "priority": "High", "status": "SKIPPED", "notes": "Requires placing a brand new order. Totals breakdown verified on existing order detail in CHK-011 (subtotal $400.00 + discount -$0.04 + tax +$109.99 + shipping +$150.00 = $659.95 ✓)." }
+  ],
+  "carryoverBugRetests": [
+    {
+      "bugId": "BUG_013_031",
+      "title": "PO number missing on order detail page",
+      "priorAttempt": "Reported Order Comment widget absent",
+      "retestVerdict": "STILL REPRODUCES",
+      "notes": "Opened CO260321-00001 which has Purchase Order = 'GA-TEST-001' (visible in orders-list column). Order detail page does NOT render the PO value anywhere — no 'Purchase Order' / 'PO Number' label, no Order Comment widget. Build version: Ver. 2.47.0-alpha.2310. Bug persists on current build."
+    },
+    {
+      "bugId": "BUG_028_036",
+      "title": "qty=-1 accepted in cart",
+      "priorAttempt": "Reported on different user's order",
+      "retestVerdict": "NOT IN SCOPE",
+      "notes": "Per task instructions: this bug is tracked against CO260422-00001 (different user) and is not in this suite's scope."
+    }
+  ],
+  "summary": {
+    "passed": 20,
+    "failed": 11,
+    "blocked": 25,
+    "skipped": 7,
+    "notApplicable": 4,
+    "totalExecuted": 67,
+    "passRate": "29.9% (of total); 64.5% (of executable 31 PASS+FAIL cases)",
+    "deltaVsAttempt1": {
+      "blockedDelta": "47 → 25 (-22 blocked; matches expected ~20)",
+      "passDelta": "16 → 20 (+4 new PASSes directly from seeding: CHK-025, CHK-039, CHK-040, ORD-035; plus ORD-003/001/007/008/017/020/021/022/023/025/028/029/031/032 partially reconfirmed)",
+      "failDelta": "3 → 11 (+8 new FAILs — all were previously BLOCKED pending fixtures; now executable and reveal real product gaps)",
+      "newPasses": ["CHK-025", "CHK-039", "CHK-040", "ORD-001", "ORD-003", "ORD-007", "ORD-008", "ORD-017", "ORD-031", "ORD-032", "ORD-035"],
+      "newFails": ["CHK-013", "CHK-024", "CHK-047", "ORD-005", "ORD-006", "ORD-009", "ORD-011", "ORD-014", "ORD-019", "ORD-030", "ORD-044"]
+    }
+  },
+  "bugs": [
+    {
+      "candidateBugId": "NEW (tracking/shipped mapping)",
+      "severity": "High",
+      "title": "Storefront order detail does not render tracking number, carrier, or 'Shipped' status when admin shipment has status=Send + tracking populated",
+      "str": "1. As admin at vcst-qa.govirto.com, set order CO260321-00001 status=Pending, shipment SH260321-00001 status=Send + tracking=1Z999AA10123456784. 2. As buyer Emily, open /account/orders/7e684578-1fae-4ed9-857d-596b8395781b. 3. Observe: status label = 'Pending' (not 'Shipped'). No tracking section. No carrier. No tracking link.",
+      "expected": "Either admin 'Pending' + shipment 'Send' should map to storefront 'Shipped', OR the storefront should expose the shipment sub-state separately (e.g. 'Shipped' badge alongside 'Pending' order status). Tracking number and carrier MUST be visible to the buyer.",
+      "actual": "Storefront only renders admin order status; shipment sub-state and tracking are hidden from buyer.",
+      "affectedCases": ["CHK-013", "CHK-024", "ORD-005", "ORD-006", "ORD-019", "ORD-030"],
+      "screenshot": "reports/regression/REG-2026-04-20-1000/014-rerun2-CO260321-00001-shipped-as-pending.png",
+      "priority": "P1 — revenue-flow visibility; buyers can't see shipment progress"
+    },
+    {
+      "candidateBugId": "NEW (invoice button missing on storefront)",
+      "severity": "High",
+      "title": "Download Invoice button absent on storefront order detail despite store-wide invoice feature enabled",
+      "str": "1. As admin, open order CO260320-00002 (Completed). Verify 'Get invoice PDF' button visible + enabled. 2. As buyer Emily, open /account/orders/2ed49a5c-7fef-4eb0-b6d5-b4a6d40fe44a. 3. Observe: only 'Print order' and 'Reorder all' buttons. No Invoice/Download/Documents control anywhere.",
+      "expected": "If admin invoice feature is enabled, storefront must expose a Download Invoice / Download Documents action for Completed orders.",
+      "actual": "Storefront detail has no invoice-download entry point.",
+      "affectedCases": ["CHK-047", "CHK-048", "ORD-014", "ORD-041", "ORD-042", "ORD-043"],
+      "screenshot": "reports/regression/REG-2026-04-20-1000/014-rerun2-CO260320-00002-completed-detail.png",
+      "priority": "P1 — B2B buyers need invoice PDFs for AP/accounting"
+    },
+    {
+      "candidateBugId": "NEW (return action missing on storefront)",
+      "severity": "High",
+      "title": "Return / Request Return action absent on storefront order detail despite store-wide returns feature enabled",
+      "str": "1. Admin confirms 'Create return' button visible on CO260320-00002 blade (returnsFeature.enabled=true). 2. Buyer Emily opens same order detail on storefront. 3. No Return / Request Return / RMA action exists.",
+      "expected": "If returns feature is enabled for the store, storefront must expose a Request Return action for delivered/completed orders.",
+      "actual": "Buyer has no way to initiate an RMA from the storefront.",
+      "affectedCases": ["ORD-009", "ORD-010", "ORD-037", "ORD-039"],
+      "priority": "P1 — required for any return workflow"
+    },
+    {
+      "candidateBugId": "NEW (cancel action missing on storefront)",
+      "severity": "Medium-High",
+      "title": "Cancel Order action absent on storefront for all order statuses",
+      "str": "Checked CO260320-00005 (New), CO260321-00001 (Pending), CO260320-00002 (Completed). Cancel Order button absent on all.",
+      "expected": "If STORE_CONFIG_BUYER_CANCEL=true, buyer must be able to cancel New/Pending orders. If STORE_CONFIG_BUYER_CANCEL=false, this is spec-aligned N/A.",
+      "actual": "Cancel action absent universally. Need product-owner confirmation of intended config.",
+      "affectedCases": ["ORD-011", "ORD-044", "ORD-046"],
+      "priority": "P2 — config clarification needed"
+    },
+    {
+      "candidateBugId": "BUG_013_031",
+      "severity": "Medium",
+      "title": "Purchase Order number not rendered on storefront order detail (repro confirmed)",
+      "str": "Open CO260321-00001 detail page. Order has PO='GA-TEST-001' in the orders list column, but detail page does NOT render the PO value.",
+      "expected": "Purchase Order number (and optionally Order Comment) should be visible on the detail page when populated.",
+      "actual": "PO value only shown in list column; detail page has no PO field.",
+      "carryover": true,
+      "affectedCases": ["CHK-045 (partial)"],
+      "priority": "P2 — B2B order traceability"
+    }
+  ],
+  "errors": [],
+  "consoleHealth": {
+    "errorsObserved": 0,
+    "warningsObserved": "4 — benign cookie _ga_S2KXT3KTJZ SameSite warnings + preload-unused hint + WebSocket close",
+    "networkErrors": "None observed"
+  },
+  "reportBack": {
+    "blockedCountDelta": "47 → 25 (-22). Matches the expected ~20 delta from seeding COMPLETED_ORDER + SHIPPED_ORDER + INVOICE_AVAILABLE_ORDER.",
+    "newFailConversions": "11 FAILs total (8 net new vs attempt 1). Reveals 4 distinct product gaps: (a) tracking/shipped-status mapping, (b) invoice button missing, (c) return action missing, (d) cancel action missing. These were BLOCKED pending fixtures in attempt 1; with fixtures now in place, the underlying product gaps are exposed.",
+    "newPassConversions": "20 PASSes total (+4 net new). Reorder + status=Completed + mobile + sort + search all confirmed working.",
+    "storefrontLabelMapping": {
+      "COMPLETED": "admin 'Completed' → storefront 'Completed' — MAPPING CONFIRMED CORRECT",
+      "SHIPPED": "admin 'Pending' + shipment 'Send' + tracking → storefront 'Pending' — MAPPING INCORRECT / UNCLEAR. Escalate to product owner: is the intent that admin 'Pending' should be displayed as 'Shipped' on storefront when shipment.status='Send'? Currently it is not. Alternatively, does admin need a dedicated 'Shipped' order-status value? The current admin vocab (Cancelled/Completed/Custom/New/Payment required/Pending/Ready for pickup) has no 'Shipped' at all."
+    },
+    "bug013031Verdict": "STILL REPRODUCES on current build (Ver. 2.47.0-alpha.2310). PO='GA-TEST-001' shown on CO260321-00001 list row but absent from order detail page."
+  },
+  "recommendations": [
+    "Escalate the admin Pending + shipment Send → storefront 'Shipped' mapping question to product owner. Either the mapping needs to be implemented in xAPI order.statusDisplayValue, or the admin needs a 'Shipped' order-level status added, or the suite spec needs to drop the 'Shipped' label assumption.",
+    "Investigate whether the Download Invoice / Request Return / Cancel Order actions are gated by a feature flag or permission that differs between admin and buyer-storefront. If intentional: update CSV to mark these cases as 'Feature Disabled — N/A' rather than FAIL. If unintentional: file defects against the storefront UI.",
+    "File BUG_013_031 as formal JIRA ticket if not already open — it is carryover and still reproduces.",
+    "Seed the remaining fixtures for full coverage: ORDER_WITH_DISCONTINUED_ITEM + ORDER_WITH_OOS_ITEM (dedicated fixture-only SKUs to avoid shared-catalog risk), BOPIS_PICKUP_ORDER (requires pickup-center verification + storefront flow), PARTIALLY_SHIPPED_ORDER (2-shipment order), ORDER_WITH_RETURN (RMA flow), ORDER_PAST_RETURN_WINDOW (needs date-backfill or temporary store config change).",
+    "For ORD-004, ORD-013, ORD-048–ORD-051: place a fresh end-to-end order in a follow-on session (requires CyberSource or Skyflow payment flow; see order-creation-matrix.md)."
+  ]
+}

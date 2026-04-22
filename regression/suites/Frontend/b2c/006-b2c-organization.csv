@@ -132,7 +132,7 @@
 "B2C-ORG-014","Org Search - Boundary: Exactly 10 vs 11 Organizations","B2C Features > Organization","Medium","BL-B2C-004","ECL-14.2","Two test accounts: one with exactly 10 orgs and one with exactly 11 orgs","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as user with exactly 10 orgs
 2. [ACT] Open org switcher
 3. [ASSERT] Verify NO search bar displayed
-4. [ACT] Log out
+4. [ACT] Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 5. [NAV] Log in as user with exactly 11 orgs
 6. [ACT] Open org switcher
 7. [ASSERT] Verify search bar IS displayed","[DOM] 10-org user: no search input in switcher
@@ -346,8 +346,8 @@
 [DOM] After selection: org switcher shows chosen org name","[CONSOLE] no uncaught JS errors","No org selector shown; random org auto-selected; blank page after sign-in without default org","none","Coverage Gap Analysis","Generated"
 "B2C-ORG-038","Default Org Persists Across Sign-Out/Sign-In","B2C Features > Organization","Medium","BL-B2C-004","","Multi-org user with default org configured","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Sign in as multi-org user
 2. [ASSERT] Note the default org loaded
-3. [ACT] Sign out
-4. [WAIT] Wait for sign-out
+3. [ACT] Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
+4. [WAIT] Wait for sign-out to complete and redirect
 5. [NAV] Sign in again with same credentials
 6. [ASSERT] Verify same default org is loaded as before","[STATE] Default org is the same across sign-out/sign-in cycles
 [DOM] Org switcher shows same org name after re-login

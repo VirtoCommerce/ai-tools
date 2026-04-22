@@ -331,6 +331,76 @@ All fixtures should be stable, non-destructive, and reusable across runs. The fo
 
 **Total blocked cases unblocked when all fixtures provisioned:** approximately 35 cases across the 6 suites.
 
+---
+
+## Orders Suite Seed Requirements (2026-04-22 review)
+
+**Scope:** Suite 014 (orders-frontend) and Suite 015 (quotes)
+**Root cause of blocks:** Emily's agent-pool account had only New + Payment-required orders at time of REG-2026-04-20-1000 run. 47 of 67 suite-014 cases were BLOCKED due to missing order states.
+
+### Status vocabulary note
+
+Admin status strings and storefront display labels are NOT 1:1. Test case assertions check the storefront label (from `statusDisplayValue` in xAPI GraphQL). Seeding scripts operate against the admin API (internal `status` value). Where the exact admin status string is uncertain it is flagged as DEFERRED below — confirm with product owner before provisioning.
+
+### Order State Fixtures (suite 014)
+
+| Env Var | Fixture Spec | Admin Status | Storefront Label | Suites Affected | Admin Path |
+|---------|-------------|--------------|-----------------|-----------------|------------|
+| `SHIPPED_ORDER` | Order owned by `{{USER_EMAIL}}` in Shipped state; tracking number and carrier name assigned | DEFERRED (likely "New" → shipment created with status "Sent" per BL-ORD-007) | "Shipped" | 014: CHK-013, ORD-006, ORD-012, ORD-030 | Admin > Orders > [Order] > Shipments > create shipment > set status to Sent > add tracking number |
+| `COMPLETED_ORDER` | Order owned by `{{USER_EMAIL}}` in Completed/delivered state; all shipments delivered | DEFERRED (likely shipment status "Delivered" → order aggregate "Completed" per BL-ORD-003) | "Completed" | 014: CHK-025, CHK-039, CHK-040, ORD-001, ORD-003, ORD-007, ORD-008, ORD-009, ORD-010, ORD-035 | Admin > Orders > [Order] > Shipments > set all to Delivered |
+| `BOPIS_PICKUP_ORDER` | Order owned by `{{USER_EMAIL}}` that was placed as BOPIS/pickup (not delivery); shows pickup location | DEFERRED | "New" or "Processing" with pickup fulfillment type | 014: CHK-012 | Place a BOPIS order via storefront for `{{USER_EMAIL}}` |
+| `PROCESSING_ORDER` | Order owned by `{{USER_EMAIL}}` with admin-set Processing status | DEFERRED (likely "Processing") | "Processing" | 014: CHK-024 precondition, ORD-047 | Admin > Orders > [Order] > change status to Processing |
+| `INVOICE_AVAILABLE_ORDER` | Completed order for `{{USER_EMAIL}}` that has a PDF invoice available; invoice feature enabled for store | DEFERRED | "Completed" | 014: CHK-047, CHK-048, ORD-014, ORD-041, ORD-042, ORD-043 | Admin > Store > enable invoice generation; Admin > Orders > mark complete |
+| `PARTIALLY_SHIPPED_ORDER` | Order owned by `{{USER_EMAIL}}` with 2+ shipments where at least one is Sent and at least one is still New/PickPack | DEFERRED (aggregate status from BL-ORD-003: mixed shipment states) | "Partially Shipped" (or equivalent) | 014: ORD-045 | Admin > Orders > [Order] > create 2 shipments; mark first as Sent, leave second as New |
+| `ORDER_WITH_DISCONTINUED_ITEM` | Completed order for `{{USER_EMAIL}}` where at least one ordered SKU has since been discontinued (removed from catalog) | DEFERRED | "Completed" | 014: CHK-041, ORD-002, ORD-034, ORD-036 | Place order for a product; then Admin > Catalog > [Product] > deactivate/remove |
+| `ORDER_WITH_OOS_ITEM` | Completed order for `{{USER_EMAIL}}` where at least one ordered SKU is currently out of stock (inventory=0) | DEFERRED | "Completed" | 014: CHK-042 | Place order; then Admin > Inventory > set stock=0 for that SKU |
+| `ORDER_WITH_RETURN` | Completed order for `{{USER_EMAIL}}` that has an active return request (RMA) acknowledged by admin; RETURNS_FEATURE_ENABLED=true | DEFERRED | "Completed" + return status visible | 014: ORD-038 | Place order; submit return via storefront; admin acknowledges return |
+| `ORDER_PAST_RETURN_WINDOW` | Completed order for `{{USER_EMAIL}}` delivered 30+ days ago, past the store return window; RETURNS_FEATURE_ENABLED=true | DEFERRED | "Completed" (return window expired) | 014: ORD-040 | Place order with back-dated delivery (or set return window to 0 days temporarily) |
+
+**Store configuration gates (suite 014):**
+- `STORE_CONFIG_BUYER_CANCEL=true` — enables buyer-side Cancel Order button (ORD-011, ORD-044, ORD-046, ORD-047). DEFERRED: verify exact store config key name with product owner.
+- `RETURNS_FEATURE_ENABLED=true` — enables Return/RMA feature (ORD-009, ORD-010, ORD-037, ORD-038, ORD-039, ORD-040). DEFERRED: verify exact store config key name with product owner.
+- Invoice feature — enables PDF invoice download (CHK-047, CHK-048, ORD-014, ORD-041, ORD-042, ORD-043). DEFERRED: verify store config location.
+
+**Env var for tracking numbers:**
+- `SAMPLE_TRACKING_NUMBER` — any non-empty alphanumeric string (e.g. `1Z999AA10123456784`). Used in CHK-024 and ORD-005. NOT a real carrier tracking number — just test data for admin field population and storefront display verification.
+
+### Quote Fixtures (suite 015)
+
+All quotes must be owned by `{{ORG_USER_EMAIL}}` (B2B org buyer). Quote statuses use their own vocabulary separate from order statuses.
+
+| Env Var | Fixture Spec | Quote Status | Quote Label | Suites Affected | Admin Path |
+|---------|-------------|-------------|-------------|-----------------|------------|
+| `QUOTE_WITH_ADMIN_RESPONSE` | Quote submitted by `{{ORG_USER_EMAIL}}`; admin has responded with per-line pricing | DEFERRED | "Quote Received" | 015: QUOTE-004, 005, 006, 008, 009, 018, 019, 020, 021, 025 | Admin > Quotes > [Quote] > enter per-line prices > submit response |
+| `ACCEPTED_QUOTE` | Quote submitted by `{{ORG_USER_EMAIL}}`; admin priced; buyer accepted | DEFERRED | "Accepted" | 015: QUOTE-007, 024, 027, 028, 030 | Complete QUOTE_WITH_ADMIN_RESPONSE flow → buyer accepts |
+| `ACCEPTED_QUOTE_WITH_PO` | Accepted quote that was originally submitted with a PO number field populated | DEFERRED | "Accepted" | 015: QUOTE-029 | Same as ACCEPTED_QUOTE but with PO number entered during RFQ submission |
+| `ACCEPTED_QUOTE_OOS` | Accepted quote where at least one quoted item has since been set to OOS in inventory | DEFERRED | "Accepted" (with OOS item) | 015: QUOTE-026 | Create ACCEPTED_QUOTE; then Admin > Inventory > set that item stock=0 |
+| `EXPIRED_QUOTE` | Quote with admin-set expiry date that has already passed; system should auto-transition to Expired status | DEFERRED | "Expired" | 015: QUOTE-011, 022, 023 | Admin > Quotes > [Quote] > set expiry date to yesterday > save |
+| `QUOTE_MULTI_ROUND` | Quote that has completed 2+ negotiation rounds (admin offer → buyer counter → admin re-offer) | DEFERRED | Negotiation state | 015: QUOTE-019 | Requires negotiation feature enabled; DEFERRED until feature confirmed |
+| `QUOTE_WITH_SUBSTITUTION` | Quote where admin offered a substitute product on at least one line | DEFERRED | Depends on substitution feature | 015: QUOTE-010 | Admin > Quotes > [Quote] > line item > offer substitute product; DEFERRED until feature confirmed |
+
+**Suite 015 feature gates (DEFERRED — confirm with product owner):**
+- RFQ feature enabled for org (`{{ORG_USER_EMAIL}}` org must have quotes enabled)
+- File attachment on RFQ form (QUOTE-013)
+- Negotiation / counter-offer feature (QUOTE-009, 018, 019, 020, 021)
+- Add-items-to-quote feature (QUOTE-020)
+- Quote substitution feature (QUOTE-010)
+- Storefront notification system (QUOTE-025)
+
+### Priority Order for Provisioning
+
+**Highest ROI (unblocks most cases):**
+1. `COMPLETED_ORDER` — unblocks 10 cases in suite 014 (reorder, return, reorder pricing)
+2. `SHIPPED_ORDER` — unblocks 4 cases (status display, tracking, filter, cancel-blocked)
+3. `QUOTE_WITH_ADMIN_RESPONSE` — unblocks 10 cases in suite 015 (accept/reject/negotiate flows)
+4. `ACCEPTED_QUOTE` — unblocks 5 more suite-015 conversion cases
+5. Confirm `STORE_CONFIG_BUYER_CANCEL` key — unblocks 4 cancellation cases
+
+**Total cases unblocked when all orders fixtures provisioned:** approximately 32 cases in suite 014 + 22 cases in suite 015 = 54 total.
+
+**Admin status mapping DEFERRED items — needs product owner input:**
+The exact internal admin status string values (e.g. the string passed to admin API to set "Processing", "Shipped", "Completed") are not fully documented in the knowledge base. BL-ORD-007 documents the shipment sub-states (New → PickPack → Sent → Delivered) but the order-aggregate status labels differ. The storefront reads `statusDisplayValue` from xAPI which is culture-dependent. Before writing seeding scripts, verify with product owner or by introspecting a live order in admin to capture the exact status field values.
+
 **Priority order for seeding (highest BLOCKED-rate reduction first):**
 1. `VALID_COUPON_CODE` — unblocks 4 cases across suites 029, 030, 011, 013
 2. `OOS_SKU` — unblocks 3 cases in suite 029 (CART-046, CART-082, plus CART-023/045 rewrites)

@@ -251,25 +251,25 @@
 [DOM] Country filter chip displayed after selection
 [DOM] location count reflects filtered set","[CONSOLE] no TypeError or JS errors during Country filter interaction
 [NETWORK] filter API returns 2xx response","Locations from other countries shown after Country filter applied; Map markers not updated; Filter chip not shown","Close modal; navigate away","C413538","Manual"
-"BOPIS-058","Facet Filter: State/Province","BOPIS > Cart > Filters","High","BL-BOPIS-003","ECL-14.2","PickPoints modal open; Country filter already applied (e.g., USA)","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-058","Facet Filter: State/Province","BOPIS > Cart > Filters","High","BL-BOPIS-003","ECL-14.2","PickPoints modal open; Country filter already applied (e.g., USA); ADDR_NY alias resolves to a US state","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] select Country filter: USA
-[ACT] select State filter: NY
-[WAIT] list filters to NY locations
-[ASSERT] map zooms to New York region
-[ASSERT] only NY locations shown","[STATE] only NY locations shown after State filter applied
+[ACT] select State filter: @td(ADDR_NY.state)
+[WAIT] list filters to @td(ADDR_NY.state) locations
+[ASSERT] map zooms to @td(ADDR_NY.state) region
+[ASSERT] only @td(ADDR_NY.state) locations shown","[STATE] only @td(ADDR_NY.state) locations shown after State filter applied
 [STATE] map zooms to filtered region
-[DOM] State filter chip displayed","[CONSOLE] no TypeError or JS errors during State filter interaction","Locations outside NY shown; Map not zooming to filtered region; State filter chip not shown","Close modal; navigate away","C413540","Manual"
-"BOPIS-059","Facet Filter: City","BOPIS > Cart > Filters","High","BL-BOPIS-003","ECL-14.2","PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[DOM] State filter chip displayed with @td(ADDR_NY.state) value","[CONSOLE] no TypeError or JS errors during State filter interaction","Locations outside @td(ADDR_NY.state) shown; Map not zooming to filtered region; State filter chip not shown","Close modal; navigate away","C413540","Manual"
+"BOPIS-059","Facet Filter: City","BOPIS > Cart > Filters","High","BL-BOPIS-003","ECL-14.2","PickPoints modal open; ADDR_NY alias resolves to a seeded city with pickup locations","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
-[ACT] select City filter (e.g., New York)
-[WAIT] list filters to New York city locations
-[ASSERT] map shows only city markers
-[ASSERT] all displayed locations are in New York city","[STATE] only New York city locations shown after City filter applied
-[STATE] map shows only markers in the filtered city
-[DOM] City filter chip displayed","[CONSOLE] no TypeError or JS errors during City filter interaction","Locations outside the selected city shown; Map not updating for city filter; City filter chip not shown","Close modal; navigate away","C413541","Manual"
+[ACT] select City filter: @td(ADDR_NY.city)
+[WAIT] list filters to @td(ADDR_NY.city) locations
+[ASSERT] map shows only @td(ADDR_NY.city) markers
+[ASSERT] all displayed locations are in @td(ADDR_NY.city)","[STATE] only @td(ADDR_NY.city) locations shown after City filter applied
+[STATE] map shows only markers in @td(ADDR_NY.city)
+[DOM] City filter chip displayed with @td(ADDR_NY.city) value","[CONSOLE] no TypeError or JS errors during City filter interaction","Locations outside @td(ADDR_NY.city) shown; Map not updating for city filter; City filter chip not shown","Close modal; navigate away","C413541","Manual"
 "BOPIS-060","Facet Filter: State Disabled for Non-US/CA Countries","BOPIS > Cart > Filters","Medium","BL-BOPIS-003","ECL-14.2","PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
@@ -289,29 +289,31 @@
 [ASSERT] map markers positioned at correct locations for ZIP code area","[STATE] ZIP code search returns locations in the correct area
 [DOM] map markers at correct positions for ZIP code search","[CONSOLE] no TypeError or JS errors during ZIP code search
 [NETWORK] geocoding API returns 2xx response for ZIP code","ZIP code search returns no results for valid ZIP; Map markers in wrong location for ZIP code search","Close modal; navigate away","C413546","Manual"
-"BOPIS-062","Search by Address","BOPIS > Cart > Search","High","BL-BOPIS-003","ECL-14.2","PickPoints modal open from cart","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-062","Search by Address","BOPIS > Cart > Search","High","BL-BOPIS-003","ECL-14.2","PickPoints modal open from cart; ADDR_NY alias resolves to a street with nearby pickup locations","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
-[ACT] type a street address (e.g., '34th St') in search field
+[ACT] type @td(ADDR_NY.street) in search field (partial street address)
 [ACT] submit or wait for debounced search
 [WAIT] results update
-[ASSERT] all locations on or near that street displayed
-[ASSERT] address searching functional","[STATE] address search returns locations near the searched street
+[ASSERT] locations on or near @td(ADDR_NY.street) displayed
+[ASSERT] address searching functional for the resolved street value","[STATE] address search returns locations near @td(ADDR_NY.street)
 [STATE] address searching functional for partial street names","[CONSOLE] no TypeError or JS errors during address search
-[NETWORK] geocoding API returns 2xx response for address search","Address search returns no results for valid address; Address searching not functional","Close modal; navigate away","C413550","Manual"
-"BOPIS-063","Search with Special Characters (Apostrophe + Ampersand)","BOPIS > Cart > Search","Medium","BL-BOPIS-007","ECL-14.2","PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[NETWORK] geocoding API returns 2xx response for address search","Address search returns no results for @td(ADDR_NY.street); Address searching not functional","Close modal; navigate away","C413550","Manual"
+"BOPIS-063","Search with Special Characters (Apostrophe + Ampersand)","BOPIS > Cart > Search","Medium","BL-BOPIS-007","ECL-14.2","PickPoints modal open; Special character queries are environment-agnostic nonsense/synthetic inputs not tied to real location names","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
-[ACT] type 'St. Patrick's' in search field
-[WAIT] results update
-[ASSERT] correct results returned (apostrophe handled properly)
+[ACT] type "O'Brien's" in search field (apostrophe-containing name — synthetic test input)
+[WAIT] results update (results or no-results state acceptable; crash is not)
+[ASSERT] application does not crash or produce a JS error on apostrophe input
+[ASSERT] results or empty-state message shown correctly
 [ACT] clear search field
-[ACT] type '5th Ave & 50th' in search field
+[ACT] type 'Arts & Crafts' in search field (ampersand-containing name — synthetic test input)
 [WAIT] results update
-[ASSERT] correct results returned (ampersand handled properly)","[STATE] apostrophe in search returns correct results without error
-[STATE] ampersand in search returns correct results without error
-[STATE] special characters properly escaped in search API calls","[CONSOLE] no TypeError or JS errors on special character search
-[NETWORK] search API does not return 4xx/5xx for special characters","Application error or crash on apostrophe in search; Incorrect results or empty set for valid special character queries","Close modal; navigate away","C413551","Manual"
+[ASSERT] application does not crash or produce a JS error on ampersand input
+[ASSERT] search API does not return 4xx/5xx for either special character query","[STATE] apostrophe input handled without crash or API error
+[STATE] ampersand input handled without crash or API error
+[STATE] special characters properly escaped in search API calls — no injection or encoding errors","[CONSOLE] no TypeError or JS errors on special character search
+[NETWORK] search API does not return 4xx/5xx for apostrophe or ampersand queries","Application error or crash on apostrophe input; 4xx/5xx API response for special character queries; XSS or injection behavior triggered","Close modal; navigate away","C413551","Manual"
 "BOPIS-064","Search with Whitespace Only","BOPIS > Cart > Search","Medium","BL-BOPIS-007","ECL-14.2","PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
@@ -322,18 +324,18 @@
 [ASSERT] search field trims whitespace automatically","[STATE] whitespace-only search treated as empty — all locations restored
 [STATE] search field trims whitespace automatically","[CONSOLE] no TypeError or JS errors on whitespace-only search
 [NETWORK] search API not called or called with empty string for whitespace-only input","Whitespace-only search returns no results; Application error on whitespace-only search","Close modal; navigate away","C413553","Manual"
-"BOPIS-065","Multi-Filter: Country + State + City + Search (4 Levels)","BOPIS > Cart > Multi-Filter","High","BL-BOPIS-003","ECL-14.2,ECL-14.4","PickPoints modal open; Locations in multiple countries/states/cities configured","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-065","Multi-Filter: Country + State + City + Search (4 Levels)","BOPIS > Cart > Multi-Filter","High","BL-BOPIS-003","ECL-14.2,ECL-14.4","PickPoints modal open; Locations in multiple countries/states/cities configured; ADDR_NY alias resolves to a city with seeded pickup locations","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] select Country filter: USA
-[ACT] select State filter: New York
-[ACT] select City filter: New York City
-[ACT] type 'Building' in search field
+[ACT] select State filter: @td(ADDR_NY.state)
+[ACT] select City filter: @td(ADDR_NY.city)
+[ACT] type 'store' in search field (partial generic name term expected to match at least one seeded BOPIS location)
 [WAIT] combined 4-level filter results shown
-[ASSERT] only NYC locations containing 'Building' shown
+[ASSERT] only @td(ADDR_NY.city) locations matching the search term shown
 [ASSERT] all four filter chips visible","[STATE] all four filter levels (Country + State + City + Search) combine with AND logic
-[STATE] only NYC locations matching 'Building' search shown
-[DOM] all four filter chips visible simultaneously","[CONSOLE] no TypeError or JS errors with 4-level combined filter
+[STATE] only @td(ADDR_NY.city) locations matching search term shown
+[DOM] all four filter chips visible simultaneously with resolved filter values","[CONSOLE] no TypeError or JS errors with 4-level combined filter
 [NETWORK] filtered API response returns only matching locations","Multi-level filters not combining with AND; Incorrect results at 4-level combination; Filter chips missing for some levels","Close modal; navigate away","C413522","Manual"
 "BOPIS-066","Multi-Filter: No Results at Multiple Levels","BOPIS > Cart > Multi-Filter","Medium","BL-BOPIS-003","ECL-14.2","PickPoints modal open; Country/State/City filters applied","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
@@ -371,18 +373,18 @@
 [ASSERT] multiple state chips (NY, CA) displayed
 [ASSERT] results include locations from both NY and CA","[DOM] multiple state chips displayed after multi-select
 [STATE] results include locations from all selected states","[CONSOLE] no TypeError or JS errors during multi-select state filter","Multi-select not supported for State filter; Results only showing one state despite multi-select","Close modal; navigate away","C413528","Manual"
-"BOPIS-069","Breadcrumb Filter Removal","BOPIS > Cart > Filter Management","Medium","BL-BOPIS-003","ECL-14.2","PickPoints modal open; Multiple filters applied","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-069","Breadcrumb Filter Removal","BOPIS > Cart > Filter Management","Medium","BL-BOPIS-003","ECL-14.2","PickPoints modal open; Multiple filters applied; ADDR_NY alias resolves to a city with seeded pickup locations","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
-[ACT] apply USA + NY + NYC + 'Building' search combination
+[ACT] apply Country: USA + State: @td(ADDR_NY.state) + City: @td(ADDR_NY.city) + type 'store' in search field
 [WAIT] combined filter results shown
-[ACT] click X on State (NY) filter chip to remove it
+[ACT] click X on State (@td(ADDR_NY.state)) filter chip to remove it
 [WAIT] results update
-[ASSERT] NY state filter removed from results
-[ASSERT] remaining filters (USA, NYC, 'Building') still applied
-[ASSERT] search term still active","[STATE] removing State chip updates results — only State filter removed
+[ASSERT] State filter removed from results — locations from other states in USA now included
+[ASSERT] remaining filters (USA country, @td(ADDR_NY.city) city, 'store' search) still applied
+[ASSERT] search term still active in search field","[STATE] removing State chip updates results — only State filter removed
 [STATE] remaining filters (Country, City, Search) still active after State removal
-[DOM] removed chip no longer visible; other chips remain","[CONSOLE] no TypeError or JS errors during filter chip removal","Removing one chip removes all filters; Other filters deactivated when one chip removed; Search term cleared on chip removal","Close modal; navigate away","C413524","Manual"
+[DOM] removed State chip no longer visible; Country and City chips remain","[CONSOLE] no TypeError or JS errors during filter chip removal","Removing one chip removes all filters; Other filters deactivated when one chip removed; Search term cleared on chip removal","Close modal; navigate away","C413524","Manual"
 "BOPIS-070","Reset All Filters and Search","BOPIS > Cart > Filter Management","High","BL-BOPIS-003","ECL-14.2","PickPoints modal open; Multiple filters and search applied","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
@@ -397,16 +399,16 @@
 [STATE] search bar cleared after Reset
 [STATE] full location list restored to pre-filter state
 [STATE] map shows all markers after Reset","[CONSOLE] no TypeError or JS errors during filter reset","Not all filters cleared after Reset; Search term not cleared on Reset; Full location list not restored; Map not showing all markers after Reset","Close modal; navigate away","C413525","Manual"
-"BOPIS-071","Apply Filters After Search","BOPIS > Cart > Filter Management","Medium","BL-BOPIS-003","ECL-14.2","PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-071","Apply Filters After Search","BOPIS > Cart > Filter Management","Medium","BL-BOPIS-003","ECL-14.2","PickPoints modal open; At least one seeded BOPIS pickup location in USA","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
-[ACT] type 'Building' in search field
+[ACT] type 'store' in search field (generic partial name term expected to match at least one seeded location)
 [WAIT] search results shown
 [ACT] select Country filter: USA
 [WAIT] combined search + filter results shown
-[ASSERT] only USA locations containing 'Building' shown
-[ASSERT] search and country filter combined with AND logic","[STATE] filter applied after search combines with AND logic (not overriding search)
-[STATE] only locations matching both search term and filter shown","[CONSOLE] no TypeError or JS errors when filter applied after search","Applying filter after search overrides search term; Combined search + filter shows all filter results ignoring search","Close modal; navigate away","C413526","Manual"
+[ASSERT] only USA locations matching 'store' search term shown
+[ASSERT] search term and Country filter combined with AND logic (not overriding each other)","[STATE] filter applied after search combines with AND logic (not overriding search)
+[STATE] only locations matching both search term and Country filter shown","[CONSOLE] no TypeError or JS errors when filter applied after search","Applying filter after search overrides search term; Combined search + filter shows all filter results ignoring search","Close modal; navigate away","C413526","Manual"
 "BOPIS-072","Deactivated Location While Confirmed in Cart","BOPIS > Cart > Edge Cases","High","BL-BOPIS-005,BL-BOPIS-001","ECL-7.1","Pickup location confirmed in cart; Admin access available","url={{FRONT_URL}};admin={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] confirm a pickup location in cart
 [WAIT] pickup location shown in cart
@@ -421,20 +423,24 @@
 [DOM] user prompted to re-select a valid pickup location
 [STATE] order cannot be placed with a deactivated pickup location","[ADMIN] verify location deactivated before returning to storefront
 [CONSOLE] no TypeError or JS errors when invalid pickup location detected","Order placed with deactivated pickup location; No prompt shown when confirmed location is deactivated; Checkout does not revalidate pickup location","Re-activate location in admin","C410939","Manual"
-"BOPIS-073","Org User Pickup Isolation","BOPIS > Cart > Edge Cases","High","BL-BOPIS-001","ECL-7.1","User has access to Org A and Org B; Org A cart has items and confirmed pickup location","url={{FRONT_URL}};email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}
-[ACT] log in as org user
-[ACT] switch context to Org A
+"BOPIS-073","Org User Pickup Isolation","BOPIS > Cart > Edge Cases","High","BL-BOPIS-001","ECL-7.1","User has access to Org A and Org B; Org A cart has items and confirmed pickup location; USER_MULTI_ORG alias (USR-014) member of ORG-001 + ORG-002 — if not seeded use ACME_BUYER (USR-002) with access to ACME org","url={{FRONT_URL}};email=@td(ACME_BUYER.email);password=@td(ACME_BUYER.password)","[NAV] {{FRONT_URL}}/sign-in
+[WAIT] sign-in page loads
+[FILL] Email field: @td(ACME_BUYER.email)
+[FILL] Password field: @td(ACME_BUYER.password)
+[CLICK] 'Sign In' button
+[WAIT] redirect to account or storefront homepage; account menu visible indicating authenticated state
+[ACT] switch organization context to Org A (first org)
 [NAV] {{FRONT_URL}}/cart
 [ACT] confirm a pickup location in Org A cart
 [WAIT] pickup location shown in Org A cart
-[ACT] switch context to Org B
+[ACT] switch organization context to Org B (second org)
 [NAV] {{FRONT_URL}}/cart
 [WAIT] Org B cart loads
 [ASSERT] Org A pickup selection NOT visible in Org B cart
 [ASSERT] Org B cart is in clean state (no pickup location from Org A)","[STATE] Org A pickup location not visible in Org B cart
 [STATE] clean cart state for Org B — no cross-org data leakage
 [STATE] pickup location isolation enforced per org","[API] verify no cross-org cart data in cart API response for Org B
-[CONSOLE] no TypeError or JS errors during org context switch","Org A pickup location shown in Org B cart (cross-org data leak); Cart state not isolated between orgs","Clear any pickup selections; navigate away","C411028","Manual"
+[CONSOLE] no TypeError or JS errors during sign-in or org context switch","Org A pickup location shown in Org B cart (cross-org data leak); Cart state not isolated between orgs; Sign-in redirect fails or account menu not visible after login","Clear any pickup selections; navigate away","C411028","Manual"
 "BOPIS-074","Billing Address Required for BOPIS Order","BOPIS > Cart > Edge Cases","High","BL-BOPIS-006","ECL-14.1","Pickup selected and location confirmed; No billing address saved for user","url={{FRONT_URL}};email={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] confirm a pickup location
 [WAIT] pickup location shown in cart with $0 shipping

@@ -94,12 +94,13 @@
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] type rapidly in search field (5+ characters within 500ms)
-[WAIT] observe API calls in Network tab
-[ASSERT] search requests are debounced (not one per keystroke)
+[WAIT] observe API calls via browser_network_requests tool (filter by search endpoint path)
+[ACT] count total XHR/fetch calls made to search endpoint during rapid typing
+[ASSERT] search requests are debounced — total call count <= number of debounce intervals fired (not one call per keystroke)
 [ASSERT] response time is reasonable (< 2s)","[STATE] search is debounced — API not called on every single keystroke
-[STATE] no excessive or redundant API calls observed
-[STATE] response time acceptable under typical conditions","[NETWORK] verify search API call count is <= number of debounce intervals (not per keystroke)
-[CONSOLE] no TypeError or JS errors during rapid typing","Excessive API calls on every keystroke; Search hangs or times out; console errors on rapid input","Close modal; navigate away","VCST-4499 TC-004","Automated"
+[STATE] no excessive or redundant API calls observed — call count matches debounce interval count
+[STATE] response time acceptable under typical conditions","[NETWORK] browser_network_requests: count XHR/fetch calls to pickup search endpoint; total count <= debounce interval count (not per keystroke)
+[CONSOLE] no TypeError or JS errors during rapid typing","Excessive API calls on every keystroke (call count equals keystroke count); Search hangs or times out; console errors on rapid input","Close modal; navigate away","VCST-4499 TC-004","Automated"
 "BOPIS-008","Filter - Availability","BOPIS > Filters","High","BL-BOPIS-003","ECL-14.2","Pickup modal open; Locations with varying availability configured","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
@@ -250,25 +251,32 @@
 [WAIT] combined filter and search results shown
 [ASSERT] all three criteria applied simultaneously with AND logic","[STATE] city filter, state filter, and name search combine with AND logic
 [STATE] only locations matching all three criteria shown","[CONSOLE] no TypeError or JS errors during combined filter interactions","Filters not combining with AND logic; Search overrides filters instead of combining","Close modal; navigate away","VCST-4447","Automated"
-"BOPIS-022","Map Width After Search (Bug Fix)","BOPIS > Bug Verification","Critical","BL-BOPIS-007","ECL-7.1","PR #2138 deployed; VCST-4518 fix included; Cart has products","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-022","Map Width After No-Results Search Submit (Bug Fix)","BOPIS > Bug Verification","Critical","BL-BOPIS-007","ECL-7.1","PR #2138 deployed; VCST-4518 fix included; Cart has products","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
-[ACT] measure initial map container width (note value as baseline ~50%)
-[ACT] type 'Westent foxpost' in search field
-[WAIT] no-results / 'not found' message appears
+[ACT] measure initial map container width using browser_evaluate: document.querySelector('.pickup-modal__map, [class*=""map-container""], [data-testid=""pickup-map""]')?.getBoundingClientRect()?.width — note baseline value and modal total width
+[ACT] calculate baseline ratio: map_width / modal_width; assert >= 0.40
+[ACT] type 'xyzabc123notastore' in search field (guaranteed no-results query)
+[ACT] [CLICK] search/magnifier button to submit OR [PRESS] Enter key to submit the search (implementation may use either; try button click first, fall back to Enter if no button present)
+[WAIT] debounced search request completes — monitor via browser_network_requests filtering by /graphql for store-search or pickup-location query
+[WAIT] no-results / 'not found' empty state appears in the list panel (post-submit, not on keystroke)
+[ACT] measure map container width again using browser_evaluate (same selector as baseline)
+[ASSERT] map container width >= 40% of modal width (ratio check: map_width / modal_width >= 0.40)
+[ACT] clear search field (click X or clear button)
+[WAIT] all locations restored in list panel
+[ACT] measure map container width again using browser_evaluate
 [ASSERT] map container width >= 40% of modal width
-[ACT] clear search field (click X)
-[WAIT] all locations restored
-[ASSERT] map container width >= 40% of modal width
-[ACT] type a valid location name
-[WAIT] results shown
+[ACT] type a valid location name and submit (click search button OR press Enter)
+[WAIT] results shown in list panel
+[ACT] measure map container width again using browser_evaluate
 [ASSERT] map container width >= 40% of modal width
 [ACT] click a location to open info card
-[ASSERT] info card content is readable with adequate map space","[MATH] map container width >= 40% of modal width at all times
+[ASSERT] info card content is readable with adequate map space","[MATH] map container width >= 40% of modal width at all times (verified via browser_evaluate at each stage: baseline, post-no-results-submit, post-clear, post-valid-results)
+[DOM] no-results empty state appears in list panel AFTER search is submitted — not merely on keystroke
 [DOM] no-results state does not cause map to collapse
 [DOM] info card is readable alongside the map (map not crowded out)
-[STATE] VCST-4518 regression: map width never shrinks below 40%","[CONSOLE] no TypeError or JS errors during search interactions
-[NETWORK] search API returns 2xx response","Map width drops below 40% during or after search (VCST-4518 regression); Map entirely hidden after no-results search; Info card overlaps map making content unreadable","Close modal; navigate away","VCST-4499 BUG-001","Manual"
+[STATE] VCST-4518 regression: map width never shrinks below 40% through any search state","[CONSOLE] no TypeError or JS errors during search interactions
+[NETWORK] browser_network_requests: store-search /graphql query fires after submit action (button click or Enter), not on every keystroke; returns 2xx","Map width drops below 40% during or after no-results search submit (VCST-4518 regression); Map entirely hidden after no-results search; No-results state appears on keystroke without submit (may indicate search mode differs from spec); Info card overlaps map making content unreadable; browser_evaluate returns null (update selector to match live DOM); Search button absent and Enter key does not trigger search (document actual submit mechanism)","Close modal; navigate away","VCST-4499 BUG-001","Manual"
 "BOPIS-023","Responsive - 320px Width","BOPIS > Responsive","High","BL-BOPIS-007","ECL-14.1","Browser at 320px viewport width","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] resize viewport to 320px width
 [ACT] click 'Select pickup location'

@@ -670,11 +670,11 @@ query {
 "FWL-065","Verify organization-specific branding applies only to that organization's users","Data Isolation","Critical","BL-WL-001","","2 organizations: Org A (logo-a.png) and Org B (logo-b.png); User A from Org A; User B from Org B","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in with User A (Org A)
 [NAV] 2. Navigate to homepage
 [ASSERT] 3. Verify logo-a.png displayed
-[ACT] 4. Sign out
+[ACT] 4. Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 [NAV] 5. Sign in with User B (Org B)
 [NAV] 6. Navigate to homepage
 [ASSERT] 7. Verify logo-b.png displayed (NOT logo-a.png)
-[ACT] 8. Sign out
+[ACT] 8. Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 [NAV] 9. Sign in again with User A
 [ASSERT] 10. Verify logo-a.png is back (NOT logo-b.png)","[DOM] User A sees ONLY Org A branding (logo-a.png)
 [DOM] User B sees ONLY Org B branding (logo-b.png)

@@ -284,8 +284,8 @@
 [ACT] Click 'Sign In'
 [WAIT] Wait for login response
 [ASSERT] Login succeeds with uppercase email
-[ACT] Click logout
-[WAIT] Wait for logout
+[ACT] Click user name in top header to open account-menu popup, then click Logout inside popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
+[WAIT] Wait for logout to complete and redirect
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}} with mIxEd CaSe
 [ACT] Fill 'Password': {{USER_PASSWORD}}

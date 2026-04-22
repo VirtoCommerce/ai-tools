@@ -24,10 +24,6 @@ reports/
 │       ├── lifecycle-report.md
 │       ├── issues-summary.json
 │       └── metrics.json
-├── test-sync/                 # Change-driven test sync reports
-│   └── SYNC-YYYY-MM-DD-HHMM/
-│       ├── sync-report.md
-│       └── sync-summary.json
 ├── coverage/                  # Coverage gap analysis reports
 │   └── COV-YYYY-MM-DD-HHMM/
 │       ├── coverage-generation-report.md
@@ -46,12 +42,11 @@ reports/
 | Bug report | `bugs/open/BUG-{Short-Description}.md` | `BUG-Checkout-Payment-Overlap-iOS.md` |
 | Bug with JIRA ref | `bugs/open/BUG-{Description}-VCST-XXXX.md` | `BUG-Search-Clear-Button-Not-Restoring-Results-VCST-4499.md` |
 | Regression report | `regression/{area}-regression-report-YYYY-MM-DD.md` | `frontend-regression-report-2026-02-09.md` |
-| Full regression run | `regression/REG-YYYY-MM-DD-HHMM/` | `REG-2026-03-23-1745/` with per-suite reports |
+| Full regression run | `regression/REG-YYYY-MM-DD-HHMM/` | `REG-2026-04-20-1000/` with per-suite reports |
 | Ticket evidence | `tickets/VCST-XXXX/` | Directory with test-report.md + screenshots |
 | Performance report | `performance/{topic}-YYYY-MM-DD.md` | `lists-page-performance-report-2026-02-11.md` |
 | Exploratory session | `exploratory/SBTM-{charter}-YYYY-MM-DD.md` | `SBTM-checkout-edge-cases-2026-03-01.md` |
 | Test lifecycle run | `test-lifecycle/TLC-YYYY-MM-DD-HHMM/` | `TLC-2026-03-23-1500/` with lifecycle-report.md |
-| Test sync run | `test-sync/SYNC-YYYY-MM-DD-HHMM/` | `SYNC-2026-03-23-1430/` with sync-report.md |
 | Coverage generation run | `coverage/COV-YYYY-MM-DD-HHMM/` | `COV-2026-03-23-1600/` with coverage-generation-report.md |
 | Checklist | `checklists/{domain}-checklist-YYYY-MM-DD.md` | `checkout-checklist-2026-03-06.md` |
 | BA report | `ba/{topic}-YYYY-MM-DD.md` | `ba-report-2026-03-04.md` |

@@ -176,7 +176,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 ### BL-ORD-001: Order state machine guards `[P0-revenue]`
 - **Rule:** Payment and shipment follow strict state machines with guards:
   - **Payment:** `Pending → Authorized → Captured → Refunded/Voided`. Cannot capture without authorization. Cannot refund without capture. Void only possible before capture.
-  - **Shipment:** `New → PickPack → Sent → Delivered`. Cannot mark "Sent" before "PickPack". Cannot deliver before sending.
+  - **Shipment:** `New → Pick & Pack → Ready to Send → Send`. Cannot mark "Send" before "Pick & Pack". No "Delivered" sub-state — delivered semantics live at ORDER level (`OrderStatus = Completed`). See BL-ORD-007 and `project_order_status_vocab` memory.
 - **Verify:** In Admin → Order → attempt to skip states (e.g., capture without authorization) → should fail or button should be absent. Verify API rejects invalid state transitions.
 - **Violation signal:** Payment captured without prior authorization; shipment marked delivered while still "New"; state skipped without error.
 - **Agents:** qa-backend-expert (order API, state transitions), qa-testing-expert (Admin SPA)
@@ -218,15 +218,34 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-backend-expert (payment API state machine)
 
 ### BL-ORD-007: Shipment state machine (detailed) `[P1-data]`
-- **Rule:** Shipment states and allowed transitions:
-  - `New` → `PickPack` (items being prepared)
-  - `PickPack` → `Sent` (shipped with tracking number)
-  - `Sent` → `Delivered` (delivery confirmed)
-  - `Any state` → `Cancelled` (shipment cancelled)
-  - Illegal: `New → Sent` (skipping PickPack), `New → Delivered`, `Delivered → Sent`
-- **Verify:** For each illegal transition, attempt via API → expect error. In Admin, verify available actions match current state. Tracking number required for `Sent` transition.
-- **Violation signal:** State skipped; shipment marked "Sent" without tracking number; "Delivered" shipment transitions backward; API allows illegal jump.
+- **Rule:** Live admin Shipment Status dropdown exposes 5 values (verified 2026-04-22 on vcst-qa):
+  - `New` → `Pick & Pack` (items being prepared)
+  - `Pick & Pack` → `Ready to Send`
+  - `Ready to Send` → `Send` (shipped with tracking number — note admin spelling is "Send" not "Sent")
+  - `Any state` → `Cancelled`
+- **No "Delivered" shipment sub-state.** Delivered/fulfilled semantics are represented at the ORDER level via `OrderStatus = Completed`, not at the shipment level.
+- Illegal: `New → Send` (skipping Pick & Pack and Ready to Send); reversing transitions.
+- **Verify:** For each illegal transition, attempt via API → expect error. In Admin, verify available actions match current state. Tracking number required for `Send` transition.
+- **Violation signal:** State skipped; shipment marked `Send` without tracking number; API allows illegal jump.
+- **Storefront label mapping:** per `project_order_status_vocab` memory — admin `Send` → storefront "Shipped"; order-level `Completed` → storefront "Completed" (delivered semantics).
 - **Agents:** qa-backend-expert (shipment API), qa-testing-expert (Admin SPA)
+
+### BL-ORD-009: Order status vocabulary `[P1-data]`
+- **Rule:** Admin Order → Status dropdown exposes exactly 7 settable system values (verified 2026-04-22 on vcst-qa via Settings → Order Statuses dictionary):
+  - `New` — order created, no payment activity yet
+  - `Pending` — awaiting fulfillment action
+  - `Payment required` — payment not yet authorized/captured
+  - `Ready for pickup` (system value `ReadyForPickup`) — BOPIS: items prepared at store for customer pickup
+  - `Completed` — delivered/fulfilled; terminal success state
+  - `Cancelled` — terminal cancelled state (see BL-ORD-002 for inventory rules)
+  - `Custom` — extensibility slot for store-specific workflows
+- **Read-only computed status (NOT in the dropdown):**
+  - `Processing` — auto-assigned when payment is captured; visible in Orders grid but cannot be set directly via admin UI.
+- **System value vs display label:** The dictionary stores PascalCase system values (`ReadyForPickup`), while Admin UI and storefront render localized labels (`Ready for pickup` / "Ready for pickup"). Tests must assert against the correct surface — see `project_order_status_vocab` memory.
+- **Storefront labels may differ:** Storefront applies user-facing relabeling on top of platform status (e.g. admin `Pending` + shipment `Send` → storefront "Shipped"). Do not assume 1:1 label mapping between admin and storefront.
+- **Verify:** Open Admin → Orders → any order → Status dropdown shows exactly the 7 settable values above (no `Processing`). Create a BOPIS order → after pickup-ready trigger → status = `Ready for pickup`. Capture payment on a `New` order → grid shows `Processing` but the per-order Status dropdown still only offers the 7 settable values.
+- **Violation signal:** Dropdown exposes `Processing` as settable; missing `Custom` slot; a value set via API not reflected in dropdown; storefront shows raw system value (`ReadyForPickup`) instead of localized label.
+- **Agents:** qa-backend-expert (order API + status dictionary), qa-testing-expert (Admin SPA Status dropdown, storefront order history labels)
 
 ### BL-ORD-008: Audit trail completeness `[P1-data]`
 - **Rule:** Every order state change (status, payment, shipment) must be recorded in the order's change log with: actor (user/system), timestamp, previous state, and new state. The audit trail is append-only — entries cannot be edited or deleted. Admin users can view the full change log from the order detail blade.
@@ -273,6 +292,13 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Verify:** Store Manager → can manage products, orders for assigned store → cannot access Platform Settings blade. Customer → can view own orders → cannot access Admin SPA. Anonymous → can browse catalog (if flag ON) → cannot access cart/checkout (if guest checkout OFF).
 - **Violation signal:** Lower role accesses higher-role functions; Store Manager modifies platform settings; customer sees other customers' orders; anonymous user bypasses access restrictions.
 - **Agents:** qa-backend-expert (Admin SPA, roles API), qa-frontend-expert (storefront permissions)
+
+### BL-AUTH-007: Storefront logout UX — popup-only `[P1-ux]` `[GOLDEN RULE]`
+- **Rule:** The storefront exposes logout **only** inside the account-menu popup in the top header. There is no `/sign-out` page, no `/logout` page, and no standalone logout icon in the header. Correct sequence: (1) click the user name / avatar in the top-right header — opens the account-menu popup; (2) click the **Logout** button inside the popup (selector `data-testid="main-layout.top-header.account-menu.sign-out-button"`).
+- **Verify:** `browser_navigate('/sign-out')` and `/logout` must not resolve to a logout page (404 or redirect to home). Header nav must not contain a top-level logout button. Clicking the user name opens the popup; clicking Logout inside the popup signs the user out and redirects to home or `/sign-in`.
+- **Violation signal:** A `/sign-out` route renders a page; a header-level logout button exists; logout works only via a URL (no popup); the popup selector `main-layout.top-header.account-menu.sign-out-button` is missing.
+- **Applies to:** All test cases whose Steps say "sign out", "log out", "Click logout button", or "Navigate to /sign-out" — agents MUST execute the popup sequence and reviewers MUST reject the loose/wrong Step text in favor of the popup sequence.
+- **Agents:** qa-frontend-expert (storefront), qa-testing-expert (execution), test-management-specialist (CSV review)
 
 ---
 
@@ -502,6 +528,56 @@ These invariants span multiple modules and are where the most expensive producti
 
 ---
 
+## Domain 10a: BOPIS-Specific Rules (BL-BOPIS)
+
+These invariants are extracted from BOPIS suite assertions (suites 036–038). They complement the general Shipping & BOPIS rules in Domain 10 with BOPIS-specific behavioral contracts.
+
+### BL-BOPIS-001: Cart-level Pickup toggle assigns a single pickup shipment to all items `[P1-data]`
+- **Rule:** Storefront v2.48.0 exposes a cart-level Pickup/Shipping toggle (not per-line). When the customer selects Pickup, all items in the cart are assigned to a single pickup fulfillment center. The cart xAPI must return exactly one shipment record with `fulfillmentCenterId` populated and `shippingAddress` null. Switching back to Shipping must clear the FFC and revert to a standard delivery shipment.
+- **Verify:** Select cart-level Pickup → choose a store → inspect cart xAPI `shipments[]` → exactly one shipment with `fulfillmentCenterId` set, `shippingAddress` = null → checkout shows pickup store, no shipping address form → switch to Shipping → `fulfillmentCenterId` cleared, shipping address form appears.
+- **Violation signal:** Cart xAPI returns zero shipments or more than one shipment for a pure-BOPIS cart; `fulfillmentCenterId` is null after Pickup is confirmed; `shippingAddress` is populated on a pickup shipment; switching to Delivery does not clear `fulfillmentCenterId`.
+- **Note:** Per-line mixed fulfillment (some items pickup, some delivery in the same cart) is not supported in v2.48.0. This invariant will be updated when mixed-mode ships.
+- **Agents:** qa-frontend-expert (cart Pickup toggle, checkout), qa-backend-expert (cart xAPI `shipments[]`)
+
+### BL-BOPIS-002: BOPIS pickup always has $0 shipping cost `[P0-revenue]`
+- **Rule:** Items selected for in-store pickup must have $0.00 shipping cost regardless of cart subtotal, applied promotions, or the presence of other delivery items in the same cart. The $0 pickup cost must not be inflated by any shipping fee calculation. The order confirmation and Admin order detail must also show $0 for the pickup shipment.
+- **Verify:** Add BOPIS item → checkout → shipping section shows $0.00 → add a delivery item → delivery shipment shows a shipping rate, pickup section still shows $0 → place order → Admin order detail shows pickup shipment with $0 shipping.
+- **Violation signal:** Pickup item shows a non-zero shipping cost; free shipping promotion applied to pickup item (redundant but incorrect base); Admin order shows shipping fee on pickup shipment.
+- **Agents:** qa-frontend-expert (checkout totals), qa-backend-expert (order shipment API)
+
+### BL-BOPIS-003: FFC availability label matches actual stock level `[P1-data]`
+- **Rule:** The availability label shown for each fulfillment center in the BOPIS store-selector modal must accurately reflect the product's stock at that FFC. The label mapping is: `In Stock` (qty > 0, available today), `Available for Transfer` (qty > 0, requires inter-FFC transfer), `Not Available` (qty = 0 at this FFC). Labels must update after stock changes within the 120s consistency window (BL-CROSS-009).
+- **Verify:** FFC-A has qty=5 → label shows "In Stock." Set FFC-A qty=0 → wait 120s → label shows "Not Available." Set qty=1 with transfer flag → label shows "Available for Transfer."
+- **Violation signal:** "In Stock" label shown when FFC qty=0; "Not Available" shown when stock exists; label stale beyond 120s; label missing entirely; "Available for Transfer" shown for direct-availability stock.
+- **Agents:** qa-frontend-expert (BOPIS modal labels), qa-backend-expert (inventory API, FFC data)
+
+### BL-BOPIS-004: BOPIS store-selector modal is view-only on PDP `[P1-data]`
+- **Rule:** The "Check Availability" / "Pick Up In Store" modal on the Product Detail Page (PDP) is a read-only view. It shows which stores have the product available but does NOT add the product to cart or select a pickup location. Cart addition and pickup-store selection happen from the cart page, not the PDP modal. The modal must close cleanly without side effects.
+- **Verify:** Open PDP → open BOPIS modal → verify no "Add to Cart" button inside modal → close modal → cart is empty (no items added) → no store selection persisted.
+- **Violation signal:** Modal adds item to cart on open or close; modal persists a store selection without user action; modal has a functional "Add to Cart" button; closing the modal triggers a navigation.
+- **Agents:** qa-frontend-expert (PDP modal), qa-backend-expert (console — no addToCart mutation fired)
+
+### BL-BOPIS-005: Inactive or closed pickup locations excluded from selector `[P1-data]`
+- **Rule:** The BOPIS store-selector must only show fulfillment centers that are active and configured for pickup (not delivery-only FFCs). FFCs marked inactive or disabled in Admin must never appear in the pickup selector, even if they have stock. This prevents customers from selecting a location that cannot fulfill pickup orders.
+- **Verify:** Create an FFC → mark as inactive in Admin → open BOPIS modal → FFC does not appear in the list. Re-activate → appears in list. Create a delivery-only FFC → does not appear in pickup selector.
+- **Violation signal:** Inactive FFC shown in pickup selector; customer can select a disabled location; delivery-only FFC appears in pickup list; FFC reappears in list without admin re-activation.
+- **Agents:** qa-frontend-expert (BOPIS modal list), qa-backend-expert (FFC API, Admin FFC settings)
+
+### BL-BOPIS-006: BOPIS checkout requires billing address, skips shipping address `[P1-data]`
+- **Rule:** For a pure-BOPIS checkout (all items are pickup), the checkout form must NOT display a shipping address section. The billing address is still required (for payment processing). This is a strict fulfillment-type-driven form variant — the absence of the shipping address section is correct behavior, not a bug. For mixed carts (BOPIS + delivery), the shipping address section IS displayed (for the delivery items).
+- **Verify:** Pure BOPIS cart → checkout → no shipping address form visible → billing address form IS visible → order placed successfully with billing address only → Admin order shows pickup location, no shipping address.
+- **Violation signal:** Shipping address form shown for pure-BOPIS checkout; billing address not required; order placed without any address; shipping address form missing for mixed-cart checkout (delivery items need it).
+- **Agents:** qa-frontend-expert (checkout form structure), qa-backend-expert (order address fields in xAPI)
+
+### BL-BOPIS-007: BOPIS store-selector map does not collapse on no-results search `[P2-ux]`
+- **Rule:** When the store-selector modal's search returns no results (no matching store name or location), the map panel must remain visible and maintain at least 40% of the modal width. The map must NOT collapse to zero width or hidden state on a no-results query. The no-results message appears in the list panel; the map panel is unaffected.
+- **Verify:** Open BOPIS store-selector modal → measure map panel width (baseline ~50% of modal) → search for a guaranteed no-match term (e.g., `xyzabc123notastore`) → no-results message appears in list panel → map panel width remains >= 40% of modal total width (measure via `browser_evaluate` with `getBoundingClientRect()`).
+- **Violation signal:** Map panel collapses to < 40% of modal width after no-results search; map panel hidden entirely; map width measured at 0px after search; map panel width decreases on no-results but not on results.
+- **Cross-reference:** VCST-4518 (map collapse regression)
+- **Agents:** qa-frontend-expert (BOPIS modal layout), ui-ux-expert (layout measurement)
+
+---
+
 ## Domain 11: Notifications (BL-NOTIF)
 
 ### BL-NOTIF-001: Order confirmation email sent exactly once `[P1-data]`
@@ -587,7 +663,7 @@ These invariants span multiple modules and are where the most expensive producti
 | Pricing & Discounts | BL-PRICE-001–008 | 8 | 8 | 5× P0, 2× P1, 1× P0 |
 | Cart | BL-CART-001–008 | 8 | 8 | 3× P0, 5× P1 |
 | Checkout | BL-CHK-001–007 | 7 | 7 | 4× P0, 2× P1, 1× P0 |
-| Orders & Fulfillment | BL-ORD-001–008 | 8 | 8 | 3× P0, 5× P1 |
+| Orders & Fulfillment | BL-ORD-001–009 | 9 | 9 | 3× P0, 6× P1 |
 | Users & Auth | BL-AUTH-001–006 | 6 | 6 | 1× P0, 4× P1, 1× P2 |
 | B2B / Organization | BL-B2B-001–006 | 6 | 6 | 2× P0, 4× P1 |
 | Catalog & Inventory | BL-CAT-001–007 | 7 | 7 | 2× P0, 4× P1, 1× P2 |
@@ -597,4 +673,5 @@ These invariants span multiple modules and are where the most expensive producti
 | Notifications | BL-NOTIF-001–003 | 3 | 3 | 1× P0, 2× P1 |
 | Import / Export | BL-IMPEX-001–004 | 4 | 4 | 0× P0, 4× P1 |
 | SEO & URLs | BL-SEO-001–004 | 4 | 4 | 0× P0, 2× P1, 2× P2 |
-| **Total** | | **82** | **82** | **30× P0, 46× P1, 6× P2** |
+| BOPIS-Specific | BL-BOPIS-001–007 | 7 | 7 | 1× P0, 5× P1, 1× P2 |
+| **Total** | | **89** | **89** | **31× P0, 51× P1, 7× P2** |

@@ -73,6 +73,20 @@ Test matrix for end-to-end order creation covering all payment providers and shi
 **`addOrUpdateCartShipment` — price must match rate** — `CartShipmentValidator` (source: `vc-module-x-cart/Validators/CartShipmentValidator.cs`) validates `shipmentShippingMethod.Rate != shipment.Price` and rejects if they don't match. Solution: query `availableShippingMethods { code optionName price { amount } }` first, then pass exact `price` value.
 
 **Available shipping rates on QA:**
-- `FixedRate/Ground` = $150
-- `FixedRate/Air` = $250
+- `FixedRate/Ground` = ${price}
+- `FixedRate/Air` = ${price}
 - `BuyOnlinePickupInStore/Pickup` = $0
+
+---
+
+## Order Status List
+
+Storefront-facing order status keys:
+
+- `New`
+- `Payment required` 
+- `Processing`
+- `Completed`
+- `Cancelled`
+
+The `value` field is localized (server-rendered) and may differ per `cultureName` — assert on `key`, never on `value`. Per-environment customizations can extend this list; verify with the live query when in doubt.

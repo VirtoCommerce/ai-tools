@@ -237,7 +237,7 @@
 2. [NAV] Open the shared list
 3. [ACT] Add a new product to the shared list
 4. [ASSERT] Verify product added successfully
-5. [ACT] Log out
+5. [ACT] Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 6. [NAV] Log in as User B (org member)
 7. [NAV] Open the same shared list
 8. [ASSERT] Verify newly added product is visible to User B","[DOM] Product added by User A appears in shared list for User B
@@ -247,7 +247,7 @@
 2. [NAV] Open the shared list settings
 3. [ACT] Change list visibility from Shared to Private
 4. [ACT] Save changes
-5. [ACT] Log out
+5. [ACT] Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
 6. [NAV] Log in as User B
 7. [NAV] Navigate to /account/lists
 8. [ASSERT] Verify the list is NO longer visible to User B","[STATE] After changing to Private: list removed from User B's view

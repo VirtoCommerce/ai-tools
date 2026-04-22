@@ -83,8 +83,9 @@ SEC-AUTH-001,Session Token Security,Authentication > Tokens,High,BL-SEC-004,,- U
 [CONSOLE] No token values visible in console output","Token stored in non-HttpOnly cookie accessible by JavaScript; token has no expiry; refresh fails silently; token value logged to console",,regression-qa-theme-26.csv,Manual
 SEC-AUTH-002,Logout Token Revocation,Authentication > Logout,High,BL-SEC-004,,- User logged in,user={{USER_EMAIL}};password={{USER_PASSWORD}},,"[NAV] Navigate to {{FRONT_URL}} and log in with {{USER_EMAIL}} / {{USER_PASSWORD}}
 [ACT] Open DevTools Network tab — note current access token from request headers or cookies
-[ACT] Click logout button/link
-[WAIT] Wait for logout to complete and redirect
+[ACT] Click user name / avatar in top header to open account-menu popup (BL-AUTH-007)
+[ACT] Click Logout button inside popup (data-testid="main-layout.top-header.account-menu.sign-out-button")
+[WAIT] Wait for logout to complete and redirect to home or /sign-in
 [ASSERT] Verify a token revocation request was sent to {{BACK_URL}}/connect/revocation or equivalent
 [ACT] Attempt to use the captured old token in a direct API request to {{BACK_URL}}
 [ASSERT] Verify old token is rejected (401 Unauthorized)","[NETWORK] Logout triggers a POST to token revocation endpoint
