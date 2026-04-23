@@ -1,0 +1,35 @@
+{
+  "observation": "AddItem mutation returns HTTP 200 but with backend validation errors; item NOT added to cart",
+  "mutations_fired_per_atc_click": [
+    {
+      "operation": "CreateConfiguredLineItem",
+      "status": "HTTP 200",
+      "payload_sent": {
+        "configurableProductId": "958d0762-404c-4a6f-a45a-46ed4943f5f0",
+        "configurationSections": [{"sectionId":"b7c05532-c5cc-4ebb-b208-bcd36bea4e1a","customText":"TEST_QA","type":"Text"}]
+      },
+      "response_id": null,
+      "prices_ok": true
+    },
+    {
+      "operation": "AddItem",
+      "status": "HTTP 200 (but data.addItem has validationErrors)",
+      "payload_sent": {
+        "productId": "958d0762-404c-4a6f-a45a-46ed4943f5f0",
+        "quantity": 1,
+        "configurationSections": [{"sectionId":"b7c05532-c5cc-4ebb-b208-bcd36bea4e1a","customText":"TEST_QA","type":"Text"}]
+      },
+      "response": {
+        "id": "907f0bf8-97b3-4c38-a438-eb4b8b6729b9",
+        "itemsQuantity": 0,
+        "items": [],
+        "validationErrors": [
+          {"errorCode":"ALL_LINE_ITEMS_UNSELECTED","errorMessage":"All line items unselected. Please select at least one line item."},
+          {"errorCode":"CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED","errorMessage":"Configuration section CustomText exceeds the maximum allowed length of 5 characters","objectId":"b7c05532-c5cc-4ebb-b208-bcd36bea4e1a","objectType":"ProductConfigurationSection"}
+        ]
+      }
+    }
+  ],
+  "verdict": "FIX_INCOMPLETE",
+  "reason": "PR #2268 removed client-side validation but the server still enforces maxLength=5 for text sections, rejecting TEST_QA (7 chars). The Add-to-cart button is now enabled and the UI reports no error, but the cart silently does not receive the item. User sees nothing, experiences a silent failure. This is worse than the original bug because at least the original error told the user what was wrong."
+}

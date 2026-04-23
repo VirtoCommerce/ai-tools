@@ -1,0 +1,92 @@
+{
+  "runId": "TLC-2026-04-23-1230",
+  "inputType": "change-source",
+  "source": "VCST-4710",
+  "date": "2026-04-23",
+  "verdict": "APPROVED_WITH_WARNINGS",
+  "build": {
+    "platform": "3.1023.0-pr-2987-9f4a-vcst-4710-9f4aa704",
+    "theme": "2.48.0-pr-2219-d5f9-d5f99481",
+    "modules": {
+      "VirtoCommerce.Customer": "3.1007.0-alpha.976-vcst-4710",
+      "VirtoCommerce.ProfileExperienceApiModule": "3.1005.0-pr-129-03f6"
+    }
+  },
+  "changedModules": ["vc-platform", "vc-module-customer", "vc-module-profile-experience-api", "vc-frontend"],
+  "affectedSuites": ["011", "013", "028", "026", "027", "050d", "049", "006-010"],
+  "casesAnalyzed": 87,
+  "casesSynced": 5,
+  "casesIncomplete": 3,
+  "casesGenerated": 30,
+  "casesReviewed": 30,
+  "casesVerified": 9,
+  "filesModified": [
+    "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv",
+    "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-graphql.csv",
+    "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-admin.csv",
+    "reports/test-lifecycle/TLC-2026-04-23-1230/phase-2-4-results.json",
+    "reports/test-lifecycle/TLC-2026-04-23-1230/lifecycle-report.md",
+    "reports/test-lifecycle/TLC-2026-04-23-1230/lifecycle-summary.json",
+    "reports/test-lifecycle/TLC-2026-04-23-1230/bl-proposals.md"
+  ],
+  "gateResults": {
+    "G1_Structure": "PASS",
+    "G2_Determinism": "PASS",
+    "G3_Completeness": "PASS",
+    "G4_Testability": "PASS",
+    "G5_DataValidity": "PASS",
+    "G6_BLECLCoverage": "WARN",
+    "G7_Duplication": "PASS",
+    "G8_Environment": "PASS",
+    "G9_Sync": "PASS"
+  },
+  "environmentVerify": {
+    "verified": 6,
+    "changed": 3,
+    "broken": 0,
+    "blocked": 0,
+    "confirmedDefects": [
+      {"id": "SF-008", "defect": "Column headers not interactive", "ticketAC": "AC-1a/1h", "jiraBug": "VCST-4992"},
+      {"id": "SF-013", "defect": "Search input aria-label still 'Search pickup locations'", "ticketAC": "AC-10c", "jiraBug": "VCST-4993"},
+      {"id": "SF-014", "defect": "Mobile CITY filter clipped at 375px", "ticketAC": "AC-9a", "jiraBug": "VCST-4994"}
+    ],
+    "inconclusive": [],
+    "dataIssues": [
+      {"id": "SF-006", "observation": "City facet shows '10001' — root cause is corrupt test-data (City field populated with postal code for Emily Johnson address). Not a code defect.", "ticketAC": "AC-5a", "filedAsBug": "VCST-4995", "resolution": "Cancelled — not a bug; folded into OQ-5 seed-data work"}
+    ]
+  },
+  "blProposals": {
+    "new": [
+      {
+        "proposedId": "PROPOSED-BL-CHK-014",
+        "severity": "P1-data",
+        "rule": "Facet labels in selection popups must display human-readable values (city names), not raw code values (postal codes)",
+        "source": "VCST-4710 Defect #2 / ba-report-2026-04-23",
+        "triggeredByCases": ["SF-006"]
+      },
+      {
+        "proposedId": "PROPOSED-BL-CHK-015",
+        "severity": "P0-revenue",
+        "rule": "When a column header declares aria-sort, sort behavior must be implemented (click toggles asc/desc, aria-sort state transitions)",
+        "source": "VCST-4710 Defect #1 / ba-report-2026-04-23",
+        "triggeredByCases": ["SF-008"]
+      }
+    ],
+    "stale": []
+  },
+  "blockers": {
+    "OQ-5": "Seed 20+ CLEAN addresses in test org (proper City/PostalCode/Region separation). Blocks SF-004/006/007/009/010/012, GQ-003/004/005. Supersedes earlier VCST-4995 which was cancelled as not-a-bug."
+  },
+  "jiraBugsFiled": [
+    {"key": "VCST-4992", "priority": "Highest", "defect": "Column sort not wired", "status": "Open"},
+    {"key": "VCST-4993", "priority": "Medium", "defect": "Search aria-label wrong", "status": "Open"},
+    {"key": "VCST-4994", "priority": "Medium", "defect": "Mobile CITY clip", "status": "Open"},
+    {"key": "VCST-4995", "priority": "High", "defect": "City facet shows postal code", "status": "Cancelled — not a bug (test-data issue; Emily's City field populated with postal code value)"}
+  ],
+  "nextSteps": [
+    "Seed test data for 20+ addresses",
+    "Await fix PRs for VCST-4992/4993/4994/4995",
+    "Review BL proposals",
+    "Run regression on tests/Sprint-current/VCST-4710/test-cases/* once blockers cleared"
+  ]
+}

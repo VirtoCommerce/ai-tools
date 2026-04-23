@@ -31,6 +31,7 @@ You coordinate three specialist subagents in sequence, then synthesize their fin
 
 1. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the target scope (e.g., `"modular architecture platform modules"`, `"catalog products categories"`) with `tokens: 8000`. Build understanding of current module architecture before analyzing code.
 2. Confirm GitHub MCP and browser MCP servers are available (needed for sub-agents).
+3. **Read `.claude/agents/knowledge/business-logic.md`** and extract the list of existing `BL-DOMAIN-NNN` IDs. You will pass this list to `ba-system-analyzer` as `existing_bl_ids` so it can (a) avoid re-proposing known invariants and (b) pick the next available number per domain when drafting new ones.
 
 ### Step 1 — Greet & Confirm Scope
 Tell the user what you're about to analyze and what outputs they'll receive. Ask if there's a specific area of concern (e.g., checkout flow, catalog management, B2B portal).
@@ -67,9 +68,67 @@ Launch agents 1 and 2 **in parallel** (single message with 2 Task calls). Agent 
 - `front_url` = `FRONT_URL` from `.env` (for storefront UI analysis)
 - `back_url` = `BACK_URL` from `.env` (for admin panel UI analysis)
 - `module_scope` = module name (when scope is `module <name>`)
+- `existing_bl_ids` = list gathered in Step 0 (pass to `ba-system-analyzer` only)
 
 ### Step 4 — Synthesize & Deliver Report
 Combine all subagent outputs into the final structured report (see Output Format below).
+
+### Step 4.5 — Stage Business Invariant Proposals
+
+After synthesis and before writing the final report:
+
+1. Collect `bl_proposals.new[]` and `bl_proposals.stale[]` from `ba-system-analyzer`'s output.
+2. **Deduplicate against `business-logic.md`:** drop any `new` proposal whose Rule is substantively identical to an existing invariant (word overlap + same verify target).
+3. **Validate sources:** every remaining proposal MUST have a non-empty `source` field. Drop any unsourced entry and log the drop in the terminal summary.
+4. If any proposals remain after steps 2–3, write `reports/ba/bl-proposals-{date}.md` using the template below. If both arrays are empty, skip the file.
+5. **NEVER write to `.claude/agents/knowledge/business-logic.md` under any circumstances.** This file is the canonical contract. Promotion requires **explicit user approval per proposal** — the user reads `bl-proposals-{date}.md`, approves (or edits) each entry, and only then instructs you to promote specific entries into `business-logic.md`. Do not bulk-promote, do not promote "all approved," do not infer approval from silence. If the user approves a subset, promote only that subset. Never edit `business-logic.md` proactively, even if a proposal looks obviously correct.
+
+**`bl-proposals-{date}.md` template** (identical to the `/qa-test-lifecycle --update-bl` format so promoters see a consistent shape regardless of source):
+
+```markdown
+# Business Logic Proposals — BA-{date}
+
+> **These are drafts. They are NOT applied to `.claude/agents/knowledge/business-logic.md`.**
+> Promotion requires **explicit user approval per proposal**. Review, edit as needed,
+> approve individual entries, assign final `BL-*` IDs, then direct Claude to promote
+> only the approved entries. Claude will never modify `business-logic.md` on its own.
+>
+> Source: `/ba-analyze` run `{date}` — see `reports/ba/ba-report-{date}.md`.
+
+---
+
+## New Invariants Proposed
+
+### PROPOSED-BL-<DOMAIN>-<NNN>: <short title> `[P0-revenue | P1-data | P2-ux]`
+
+- **Rule:** ...
+- **Verify:**
+  - ...
+  - ...
+- **Violation signal:** ...
+- **Agents:** qa-frontend-expert, qa-backend-expert, ...
+- **Source:** Context7 quote / GitHub file:line / VC docs §X / UI screenshot path
+- **Triggered by:** ba-analyze scope or pain_point id
+
+---
+
+## Stale BL-* Flagged
+
+### BL-<DOMAIN>-<NNN>: <existing title>
+- **Current Rule:** [as written today]
+- **Observed behavior:** [what the live system / code / docs actually show]
+- **Source:** ...
+- **Suggested action:** revise | retire | narrow scope
+
+---
+
+## Application Notes
+
+1. Assign final IDs by reading `.claude/agents/knowledge/business-logic.md` for the next available `BL-<DOMAIN>-NNN` sequence.
+2. Replace `PROPOSED-` prefix with final ID.
+3. Paste the edited entry into the correct domain section of `business-logic.md`.
+4. After the entry lands, re-run any related `/qa-review-tests suite <ID> --verify` so test cases gain their `Business_Rule` mapping.
+```
 
 ---
 
@@ -128,6 +187,19 @@ Produce a Markdown report saved as `reports/ba/ba-report-{date}.md`, and also pr
 
 ## 7. Open Questions
 [Things that need clarification from the team]
+
+## 8. Proposed Business Invariants
+[Summary table — omit this section entirely if `reports/ba/bl-proposals-{date}.md` was not produced]
+
+| Proposed ID | Domain | Severity | Title | Source |
+|-------------|--------|----------|-------|--------|
+| PROPOSED-BL-CHK-014 | CHK | P1-data | Facet labels must be human-readable | VC docs §X / file:line |
+
+**Stale BL-* flagged:** N (see proposals file for details)
+
+Full drafts: [`reports/ba/bl-proposals-{date}.md`](./bl-proposals-{date}.md)
+
+> These are drafts. `.claude/agents/knowledge/business-logic.md` has not been modified. Review the proposals file, assign final IDs, and promote manually.
 ```
 
 ---
@@ -141,3 +213,4 @@ Produce a Markdown report saved as `reports/ba/ba-report-{date}.md`, and also pr
 - Keep user documentation written for **end users**, not developers
 - Browser assignments: `ba-system-analyzer` → `playwright-firefox` (fallback: `playwright-edge`), `ba-api-specialist` → `playwright-edge` (fallback: `playwright-firefox`)
 - Always query Context7 in Step 0 before launching sub-agents
+- **BA business logic proposals are advisory only** — Step 4.5 drafts `reports/ba/bl-proposals-{date}.md`. **Never** write to `.claude/agents/knowledge/business-logic.md` without explicit per-proposal user approval. The user must read each draft, approve (or edit) it individually, and direct promotion; Claude MUST NOT promote on its own, in bulk, or based on inferred approval. Every proposed entry must cite a source (Context7 quote, GitHub file:line, VC docs section, or UI screenshot). Drop unsourced entries rather than guess.

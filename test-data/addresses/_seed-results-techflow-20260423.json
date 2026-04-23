@@ -1,0 +1,87 @@
+{
+  "ticket": "VCST-4710",
+  "objective": "OQ-5 — seed >=20 org addresses on TechFlow to unblock SF-004/006/007/009/010/012 and GQ-003/004/005",
+  "timestamp_utc": "2026-04-23T11:37:00Z",
+  "env": {
+    "BACK_URL": "https://vcst-qa.govirto.com",
+    "FRONT_URL": "https://vcst-qa-storefront.govirto.com",
+    "store": "B2B-store",
+    "storefront_build": "2.48.0-pr-2219-d5f9-d5f99481"
+  },
+  "org": {
+    "id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "name": "AGENT-TEST-Org-TechFlow-20260310"
+  },
+  "pre_count": 2,
+  "post_count": 22,
+  "new_count": 20,
+  "seeded_via": "PUT /api/addresses?memberId={orgId} (Customer module, full-array upsert, preserved 2 pre-existing addresses)",
+  "auth_method": "admin bearer token (Playwright-Chrome browser, post-admin-login)",
+  "coverage_targets_met": {
+    "total_ge_20": true,
+    "countries_ge_3": true,
+    "states_ge_5": true,
+    "cities_ge_10": true,
+    "favorites_ge_2": "N/A_not_platform_field",
+    "default_eq_1": true
+  },
+  "coverage_summary": {
+    "countries": ["US", "CA", "GB"],
+    "states_15": ["US-CA","US-NY","US-IL","US-FL","US-WA","US-TX","US-AZ","US-PA","US-GA","CA-ON","CA-BC","CA-QC","CA-AB","GB-ENG","GB-SCT"],
+    "cities_20": ["Los Angeles","New York","Chicago","Miami","Seattle","Houston","Phoenix","Philadelphia","San Francisco","Atlanta","Toronto","Vancouver","Montreal","Calgary","Ottawa","London","Manchester","Edinburgh","Birmingham","Glasgow"],
+    "defaults": 1,
+    "default_address_city_country": "London, GB"
+  },
+  "seeded_addresses": [
+    {"id":"3cc8e6af-6a8b-4eb1-920b-14364f01373c","city":"Los Angeles","regionCode":"CA","regionName":"California","countryCode":"US","postalCode":"90001","line1":"123 Main Street","line2":null,"addressType":"BillingAndShipping","isDefault":false,"origin":"US-ADDR-001"},
+    {"id":"79a1e94d-ae00-4214-bb6c-3440b5c702e8","city":"New York","regionCode":"NY","regionName":"New York","countryCode":"US","postalCode":"10001","line1":"456 Oak Avenue","line2":"Apt 4B","addressType":"BillingAndShipping","isDefault":false,"origin":"US-ADDR-002"},
+    {"id":"ff44acea-1106-4ef3-b8d8-51dace5ef298","city":"Chicago","regionCode":"IL","regionName":"Illinois","countryCode":"US","postalCode":"60601","line1":"789 Business Blvd","line2":"Suite 200","addressType":"BillingAndShipping","isDefault":false,"origin":"US-ADDR-003"},
+    {"id":"9bceaeb3-2974-4c7a-ab2a-c60442adb5d3","city":"Miami","regionCode":"FL","regionName":"Florida","countryCode":"US","postalCode":"33101","line1":"321 Palm Drive","line2":null,"addressType":"Shipping","isDefault":false,"origin":"US-ADDR-004"},
+    {"id":"84e16d61-e95a-4865-8458-55d27b7af183","city":"Seattle","regionCode":"WA","regionName":"Washington","countryCode":"US","postalCode":"98101","line1":"555 Tech Way","line2":"Building C","addressType":"BillingAndShipping","isDefault":false,"origin":"US-ADDR-005"},
+    {"id":"f1db3626-6287-43a7-bb98-eb90ccc65f04","city":"Houston","regionCode":"TX","regionName":"Texas","countryCode":"US","postalCode":"77001","line1":"888 Texas Road","line2":null,"addressType":"Shipping","isDefault":false,"origin":"US-ADDR-006"},
+    {"id":"63b6255d-b6c2-4780-badb-5517d6bf774a","city":"Phoenix","regionCode":"AZ","regionName":"Arizona","countryCode":"US","postalCode":"85001","line1":"999 Arizona Ave","line2":"Unit 15","addressType":"BillingAndShipping","isDefault":false,"origin":"US-ADDR-007"},
+    {"id":"664168fe-f09f-4edd-9c4d-d80b3b03ded6","city":"Philadelphia","regionCode":"PA","regionName":"Pennsylvania","countryCode":"US","postalCode":"19101","line1":"111 Pennsylvania Ave","line2":null,"addressType":"Shipping","isDefault":false,"origin":"US-ADDR-008"},
+    {"id":"09843891-2aa6-468b-bbbf-b259dc979021","city":"San Francisco","regionCode":"CA","regionName":"California","countryCode":"US","postalCode":"94101","line1":"444 Silicon Valley Blvd","line2":"Floor 5","addressType":"BillingAndShipping","isDefault":false,"origin":"US-ADDR-011"},
+    {"id":"c682d93e-ed48-43a9-9d90-4c4cfe299d97","city":"Atlanta","regionCode":"GA","regionName":"Georgia","countryCode":"US","postalCode":"30301","line1":"777 Peachtree St","line2":null,"addressType":"Shipping","isDefault":false,"origin":"US-ADDR-014"},
+    {"id":"61eedc5f-5b01-4a31-8633-79b1235ca8e4","city":"Toronto","regionCode":"ON","regionName":"Ontario","countryCode":"CA","postalCode":"M5V 3A8","line1":"100 King Street West","line2":"Suite 4500","addressType":"BillingAndShipping","isDefault":false,"origin":"CA-ON-Toronto"},
+    {"id":"e5bee721-71b5-48d0-81f7-3ceb8ac8f7ba","city":"Vancouver","regionCode":"BC","regionName":"British Columbia","countryCode":"CA","postalCode":"V6B 4N6","line1":"555 West Hastings Street","line2":null,"addressType":"Shipping","isDefault":false,"origin":"CA-BC-Vancouver"},
+    {"id":"7bb9b41f-bedd-48ba-80be-c5da271d2eea","city":"Montreal","regionCode":"QC","regionName":"Quebec","countryCode":"CA","postalCode":"H3B 1X9","line1":"800 Rene-Levesque Boulevard West","line2":"Bureau 1500","addressType":"BillingAndShipping","isDefault":false,"origin":"CA-QC-Montreal"},
+    {"id":"44f8b62c-c420-41a7-bfc1-9ee8c9285b39","city":"Calgary","regionCode":"AB","regionName":"Alberta","countryCode":"CA","postalCode":"T2P 1N2","line1":"225 6th Avenue SW","line2":null,"addressType":"Shipping","isDefault":false,"origin":"CA-AB-Calgary"},
+    {"id":"27d457fe-be20-43b6-9406-dc1cc31b26fc","city":"Ottawa","regionCode":"ON","regionName":"Ontario","countryCode":"CA","postalCode":"K2P 1L4","line1":"150 Elgin Street","line2":"10th Floor","addressType":"BillingAndShipping","isDefault":false,"origin":"CA-ON-Ottawa"},
+    {"id":"dbcb94fa-e085-4fe7-8cea-90ddee015a62","city":"London","regionCode":"ENG","regionName":"England","countryCode":"GB","postalCode":"E14 5LQ","line1":"25 Canada Square","line2":"Level 40","addressType":"BillingAndShipping","isDefault":true,"origin":"UK-ENG-London"},
+    {"id":"381b2bd7-6d25-40e7-bbe4-92c3ff229031","city":"Manchester","regionCode":"ENG","regionName":"England","countryCode":"GB","postalCode":"M3 3AP","line1":"1 Spinningfields","line2":null,"addressType":"Shipping","isDefault":false,"origin":"UK-ENG-Manchester"},
+    {"id":"0d95cbaf-32e8-4833-a248-cfa85f2f6cba","city":"Edinburgh","regionCode":"SCT","regionName":"Scotland","countryCode":"GB","postalCode":"EH2 2ER","line1":"30 Princes Street","line2":"Suite 5","addressType":"BillingAndShipping","isDefault":false,"origin":"UK-SCT-Edinburgh"},
+    {"id":"cc815855-5b19-40db-9341-bfdc40297188","city":"Birmingham","regionCode":"ENG","regionName":"England","countryCode":"GB","postalCode":"B1 2JB","line1":"3 Brindleyplace","line2":null,"addressType":"Shipping","isDefault":false,"origin":"UK-ENG-Birmingham"},
+    {"id":"061da268-1e30-4b40-b9eb-e2e3e84ceec7","city":"Glasgow","regionCode":"SCT","regionName":"Scotland","countryCode":"GB","postalCode":"G2 7ER","line1":"177 Bothwell Street","line2":"8th Floor","addressType":"BillingAndShipping","isDefault":false,"origin":"UK-SCT-Glasgow"}
+  ],
+  "pre_existing_addresses_preserved": [
+    {"id":"5f70fe0c-9c03-4dd2-9915-5d45225c7925","city":"Huston","regionCode":"FL","countryCode":"USA","postalCode":"88999","notes":"Pre-existing typo 'Huston' and 3-letter countryCode USA kept untouched. Surfaces in Country facet as an extra 'USA' term (distinct from the 10 new US addresses). Address is also the current default shipping address."},
+    {"id":"_second_existing_address","notes":"Second pre-existing address preserved."}
+  ],
+  "graphql_validation": {
+    "query": "currentOrganizationAddresses(first: 50)",
+    "endpoint": "POST https://vcst-qa-storefront.govirto.com/graphql",
+    "auth": "Storefront bearer token (issuer: storefront, user: Emily Johnson / TECHFLOW_ADMIN, permissions include storefront:organization:edit + xapi:my_organization:edit)",
+    "totalCount": 22,
+    "itemsReturned": 22,
+    "term_facets_names": ["CountryCode", "City", "RegionId"],
+    "country_facet_terms": [
+      {"term":"CA","label":"CA","count":5},
+      {"term":"GB","label":"GB","count":5},
+      {"term":"US","label":"US","count":10},
+      {"term":"USA","label":"United States of America","count":2}
+    ],
+    "region_facet_term_count": 17,
+    "city_facet_term_count": 21,
+    "vcst4995_safety_check": {
+      "rule": "No city facet term may be purely numeric / postal-code-shaped",
+      "result": "PASS",
+      "suspicious_terms": []
+    }
+  },
+  "known_schema_caveats": {
+    "isFavorite_not_on_platform_CustomerAddress": "Platform /api/members CustomerAddress DTO does NOT have isFavorite — only isDefault. isFavorite is a storefront/xAPI MemberAddressType field and returns false for all addresses from this seed. Storefront UI shows a 'Mark as favorite' toggle per address that can be flipped by the user to flag locally; it is not settable via PUT /api/addresses.",
+    "impact_on_VCST-4710": "Tests that assert isFavorite=true must manually toggle favorite via storefront UI (click star on row) after seed. All 20 seeded addresses can be used for the favorites toggle flow; 0 start favorited. No blocker for SF-004/006/007/009/010/012 which test list/search/facet/sort — isFavorite is only relevant to the favorites UI toggle test."
+  },
+  "validation_outcome": "PASS"
+}

@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-03-30)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-04-23)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `node scripts/refresh-graphql-schema.mjs` — run when schema may have changed.
 
@@ -25,14 +25,14 @@
 ### Cart
 
 ```
+cartPickupLocations(after: String, first: Int, keyword: String, sort: String, cartId: String!, storeId: String!, cultureName: String!, facet: String, filter: String)
+promotionCoupons(after: String, first: Int, keyword: String, sort: String, storeId: String!, userId: String, currencyCode: String, cultureName: String)
 validateCoupon(cartId: String, storeId: String!, currencyCode: String!, userId: String!, cultureName: String, cartName: String, cartType: String, coupon: String!)
 cart(cartId: String, storeId: String!, currencyCode: String!, cartType: String, cartName: String, userId: String, cultureName: String)
 pricesSum(cartId: String!, storeId: String!, currencyCode: String!, cultureName: String, userId: String, lineItemIds: ?!)
 getSavedForLater(storeId: String!, userId: String!, organizationId: String, currencyCode: String, cultureName: String)
 pickupLocations(after: String, first: Int, keyword: String, sort: String, storeId: String)
 carts(after: String, first: Int, sort: String, storeId: String, userId: String, currencyCode: String, cultureName: String, cartType: String, filter: String)
-promotionCoupons(after: String, first: Int, keyword: String, sort: String, storeId: String!, userId: String, currencyCode: String, cultureName: String)
-cartPickupLocations(after: String, first: Int, keyword: String, sort: String, cartId: String!, storeId: String!, cultureName: String!, facet: String, filter: String)
 ```
 
 ### Catalog
@@ -40,6 +40,7 @@ cartPickupLocations(after: String, first: Int, keyword: String, sort: String, ca
 ```
 dynamicProperty(idOrName: String!, cultureName: String, objectType: String)
 dynamicProperties(after: String, first: Int, cultureName: String, filter: String, sort: String, objectType: String)
+productPickupLocations(after: String, first: Int, keyword: String, sort: String, productId: String!, storeId: String!, cultureName: String!)
 product(id: String!, storeId: String!, userId: String, currencyCode: String, cultureName: String, previousOutline: String, custom: String)
 category(id: String!, storeId: String!, userId: String, currencyCode: String, cultureName: String, previousOutline: String)
 categories(after: String, first: Int, storeId: String!, userId: String, currencyCode: String, cultureName: String, previousOutline: String, query: String, filter: String, fuzzy: Boolean, fuzzyLevel: Int, facet: String, sort: String, categoryIds: String)
@@ -53,7 +54,6 @@ productSuggestions(storeId: String!, query: String, size: Int)
 brands(after: String, first: Int, storeId: String!, userId: String, currencyCode: String, cultureName: String, sort: String, keyword: String)
 products(after: String, first: Int, storeId: String!, userId: String, currencyCode: String, cultureName: String, query: String, previousOutline: String, filter: String, preserveUserQuery: Boolean, facet: String, fuzzy: Boolean, fuzzyLevel: Int, sort: String, productIds: String, selectedAddressId: String, selectedAddress: String, custom: String)
 productConfiguration(configurableProductId: String!, storeId: String!, userId: String, cultureName: String, currencyCode: String)
-productPickupLocations(after: String, first: Int, keyword: String, sort: String, productId: String!, storeId: String!, cultureName: String!)
 ```
 
 ### CMS
@@ -89,31 +89,34 @@ countries()
 regions(countryId: String!)
 store(storeId: String, cultureName: String, domain: String)
 slugInfo(slug: String, permalink: String, storeId: String, userId: String, cultureName: String)
+contract(id: String)
 fileUploadOptions(scope: String)
-configurationItems(cartId: String, lineItemId: String!, storeId: String!, currencyCode: String!, cartType: String, cartName: String, userId: String, cultureName: String)
-tasks(after: String, first: Int, keyword: String, sort: String, responsibleId: String, storeId: String, startDueDate: DateTime, endDueDate: DateTime, isActive: Boolean, completed: Boolean)
-fcmSettings()
-pushMessages(after: String, first: Int, keyword: String, sort: String, unreadOnly: Boolean, withHidden: Boolean, cultureName: String)
-canLeaveFeedback(storeId: String!, entityId: String!, entityType: String!)
-customerReviews(after: String, first: Int, keyword: String, sort: String, storeId: String!, entityId: String!, entityType: String!, filter: String)
-evaluateDynamicContent(storeId: String, placeName: String, categoryId: String, productId: String, cultureName: String, toDate: DateTime, tags: String, userGroups: String)
 newsArticleAuthor(authorId: String!)
 newsArticle(id: String!, storeId: String!, languageCode: String!)
 newsArticles(after: String, first: Int, keyword: String, sort: String, storeId: String!, languageCode: String!, userId: String, authorId: String, tags: String)
 newsArticleTags(languageCode: String!)
-contract(id: String)
-skyflowCards(storeId: String)
+fcmSettings()
+pushMessages(after: String, first: Int, keyword: String, sort: String, unreadOnly: Boolean, withHidden: Boolean, cultureName: String)
+tasks(after: String, first: Int, keyword: String, sort: String, responsibleId: String, storeId: String, startDueDate: DateTime, endDueDate: DateTime, isActive: Boolean, completed: Boolean)
 loyaltyPointsHistory(after: String, first: Int, keyword: String, sort: String, userId: String, operationType: String)
 loyaltyBalance(userId: String, orderId: String)
+skyflowCards(storeId: String)
+evaluateDynamicContent(storeId: String, placeName: String, categoryId: String, productId: String, cultureName: String, toDate: DateTime, tags: String, userGroups: String)
 backInStockSubscriptions(after: String, first: Int, keyword: String, sort: String, storeId: String, productIds: String, isActive: Boolean)
+configurationItems(cartId: String, lineItemId: String!, storeId: String!, currencyCode: String!, cartType: String, cartName: String, userId: String, cultureName: String)
 recentlyBrowsed(storeId: String!, cultureName: String, currencyCode: String, maxProducts: Int)
 recommendations(storeId: String!, userId: String, cultureName: String, currencyCode: String, previousOutline: String, productId: String, model: String, fallbackProductsFilter: String, maxRecommendations: Int)
 searchHistory(storeId: String!, maxCount: Int!)
+checkDuplicateAddress(memberId: String!, address: InputMemberAddressType!)
+currentCustomerAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: String, regionIds: String, cities: String)
+canLeaveFeedback(storeId: String!, entityId: String!, entityType: String!)
+customerReviews(after: String, first: Int, keyword: String, sort: String, storeId: String!, entityId: String!, entityType: String!, filter: String)
 ```
 
 ### Profile
 
 ```
+organizationContracts(after: String, first: Int, organizationId: String!, storeId: String, vendorId: String, statuses: String, startDate: DateTime, endDate: DateTime)
 me(userId: String)
 organization(id: String!, userId: String)
 contact(id: String!, userId: String)
@@ -125,7 +128,7 @@ checkEmailUniqueness(email: String!)
 validatePassword(password: String!)
 user(id: String, userName: String, email: String, loginProvider: String, providerKey: String)
 role(roleName: String!)
-organizationContracts(after: String, first: Int, organizationId: String!, storeId: String, vendorId: String, statuses: String, startDate: DateTime, endDate: DateTime)
+currentOrganizationAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: String, regionIds: String, cities: String)
 ```
 
 ### Quotes
@@ -216,13 +219,13 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 | `removeConfigurationItems` | `InputRemoveConfigurationItemsType` |
 | `updateConfigurationItem` | `InputUpdateConfigurationItemType` |
 | `updateConfigurationItems` | `InputUpdateConfigurationItemsType` |
-| `initializePayment` | `InputInitializePaymentType` |
-| `authorizePayment` | `InputAuthorizePaymentType` |
 | `addQuoteItems` | `AddQuoteItemsCommandType` |
 | `changeQuoteComment` | `ChangeQuoteCommentCommandType` |
 | `changeQuoteItemQuantity` | `ChangeQuoteItemQuantityCommandType` |
 | `createQuoteFromCart` | `CreateQuoteFromCartCommandType` |
 | `removeQuoteItem` | `RemoveQuoteItemCommandType` |
+| `initializePayment` | `InputInitializePaymentType` |
+| `authorizePayment` | `InputAuthorizePaymentType` |
 
 ### Files
 
@@ -241,6 +244,8 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 | `markAllPushMessagesUnread` | `none` |
 | `markPushMessageRead` | `InputMarkPushMessageReadType` |
 | `markPushMessageUnread` | `InputMarkPushMessageUnreadType` |
+| `confirmTask` | `ConfirmTaskCommandType` |
+| `rejectTask` | `RejectTaskCommandType` |
 | `pushHistoricalEvent` | `InputPushHistoricalEventType` |
 
 ### Orders
@@ -260,10 +265,10 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 
 | Mutation | Command Type |
 |----------|-------------|
-| `registerByInvitation` | `InputRegisterByInvitationType` |
 | `activateBackInStockSubscription` | `ActivateBackInStockSubscriptionCommandType` |
 | `deactivateBackInStockSubscription` | `DeactivateBackInStockSubscriptionCommandType` |
 | `saveSearchQuery` | `InputSaveSearchQueryType` |
+| `registerByInvitation` | `InputRegisterByInvitationType` |
 
 ### Payment
 
@@ -275,6 +280,7 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 
 | Mutation | Command Type |
 |----------|-------------|
+| `changeOrganizationLogo` | `InputChangeOrganizationLogoCommandType` |
 | `updateMemberAddresses` | `InputUpdateMemberAddressType` |
 | `deleteMemberAddresses` | `InputDeleteMemberAddressType` |
 | `updateOrganization` | `InputUpdateOrganizationType` |
@@ -301,7 +307,6 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 | `addAddressToFavorites` | `AddAddressToFavoritesCommandType` |
 | `removeAddressFromFavorites` | `RemoveAddressFromFavoritesCommandType` |
 | `sendPasswordResetEmail` | `SendPasswordResetEmailCommandType` |
-| `changeOrganizationLogo` | `InputChangeOrganizationLogoCommandType` |
 
 ### Quotes
 

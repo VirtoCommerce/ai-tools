@@ -1,0 +1,49 @@
+Total messages: 6 (Errors: 3, Warnings: 0)
+Returning 46 messages for level "info"
+
+[INFO] [WebSocket] Connecting... Attempting to establish connection. @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[INFO] [WebSocket] Connection opened successfully. {url: wss://vcst-qa-storefront.govirto.com/graphql, protocol: graphql-transport-ws} @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[INFO] [WebSocket] Connecting... Attempting to establish connection. @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[INFO] [WebSocket] Connection opened successfully. {url: wss://vcst-qa-storefront.govirto.com/graphql, protocol: graphql-transport-ws} @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa-storefront.govirto.com/api/files/dbda0d851ea04067995d4f0fd8144509_sm:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://images.netdirector.co.uk/gforces-auto/image/upload/w_575,h_383,q_auto,c_fill,f_auto,fl_lossy/auto-client/f42177d67f37e56bcfafba5fcf7d2d10/475635_25ym_honda_crf450rx_1__md.jpg:0
+[LOG] Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm @ https://vcst-qa-storefront.govirto.com/assets/vendor-3X8Ox2Qz.js:0
+[INFO] [WebSocket] Connecting... Attempting to establish connection. @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[INFO] [WebSocket] Connection opened successfully. {url: wss://vcst-qa-storefront.govirto.com/graphql, protocol: graphql-transport-ws} @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://images.netdirector.co.uk/gforces-auto/image/upload/w_575,h_383,q_auto,c_fill,f_auto,fl_lossy/auto-client/f42177d67f37e56bcfafba5fcf7d2d10/475635_25ym_honda_crf450rx_1__md.jpg:0
+[LOG] Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm @ https://vcst-qa-storefront.govirto.com/assets/vendor-3X8Ox2Qz.js:0
+[INFO] [WebSocket] Connecting... Attempting to establish connection. @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://images.netdirector.co.uk/gforces-auto/image/upload/w_575,h_383,q_auto,c_fill,f_auto,fl_lossy/auto-client/f42177d67f37e56bcfafba5fcf7d2d10/475635_25ym_honda_crf450rx_1__md.jpg:0
+[INFO] [WebSocket] Connection opened successfully. {url: wss://vcst-qa-storefront.govirto.com/graphql, protocol: graphql-transport-ws} @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa-storefront.govirto.com/api/files/dbda0d851ea04067995d4f0fd8144509_sm:0
+[LOG] Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm @ https://vcst-qa-storefront.govirto.com/assets/vendor-3X8Ox2Qz.js:0
+[INFO] [WebSocket] Connecting... Attempting to establish connection. @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://images.netdirector.co.uk/gforces-auto/image/upload/w_575,h_383,q_auto,c_fill,f_auto,fl_lossy/auto-client/f42177d67f37e56bcfafba5fcf7d2d10/475635_25ym_honda_crf450rx_1__md.jpg:0
+[INFO] [WebSocket] Connection opened successfully. {url: wss://vcst-qa-storefront.govirto.com/graphql, protocol: graphql-transport-ws} @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[LOG] Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm @ https://vcst-qa-storefront.govirto.com/assets/vendor-3X8Ox2Qz.js:0
+[INFO] [WebSocket] Connecting... Attempting to establish connection. @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://images.netdirector.co.uk/gforces-auto/image/upload/w_575,h_383,q_auto,c_fill,f_auto,fl_lossy/auto-client/f42177d67f37e56bcfafba5fcf7d2d10/475635_25ym_honda_crf450rx_1__md.jpg:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa-storefront.govirto.com/api/files/dbda0d851ea04067995d4f0fd8144509_sm:0
+[INFO] [WebSocket] Connection opened successfully. {url: wss://vcst-qa-storefront.govirto.com/graphql, protocol: graphql-transport-ws} @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[LOG] Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm @ https://vcst-qa-storefront.govirto.com/assets/vendor-3X8Ox2Qz.js:0
+[INFO] [WebSocket] Connecting... Attempting to establish connection. @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://images.netdirector.co.uk/gforces-auto/image/upload/w_575,h_383,q_auto,c_fill,f_auto,fl_lossy/auto-client/f42177d67f37e56bcfafba5fcf7d2d10/475635_25ym_honda_crf450rx_1__md.jpg:0
+[INFO] [WebSocket] Connection opened successfully. {url: wss://vcst-qa-storefront.govirto.com/graphql, protocol: graphql-transport-ws} @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[LOG] Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm @ https://vcst-qa-storefront.govirto.com/assets/vendor-3X8Ox2Qz.js:0
+[INFO] [WebSocket] Connecting... Attempting to establish connection. @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[INFO] [WebSocket] Connection opened successfully. {url: wss://vcst-qa-storefront.govirto.com/graphql, protocol: graphql-transport-ws} @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://images.netdirector.co.uk/gforces-auto/image/upload/w_575,h_383,q_auto,c_fill,f_auto,fl_lossy/auto-client/f42177d67f37e56bcfafba5fcf7d2d10/475635_25ym_honda_crf450rx_1__md.jpg:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa-storefront.govirto.com/api/files/dbda0d851ea04067995d4f0fd8144509_sm:0
+[LOG] Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm @ https://vcst-qa-storefront.govirto.com/assets/vendor-3X8Ox2Qz.js:0
+[INFO] [WebSocket] Connecting... Attempting to establish connection. @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://images.netdirector.co.uk/gforces-auto/image/upload/w_575,h_383,q_auto,c_fill,f_auto,fl_lossy/auto-client/f42177d67f37e56bcfafba5fcf7d2d10/475635_25ym_honda_crf450rx_1__sm.jpg:0
+[INFO] [WebSocket] Connection opened successfully. {url: wss://vcst-qa-storefront.govirto.com/graphql, protocol: graphql-transport-ws} @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://images.netdirector.co.uk/gforces-auto/image/upload/w_575,h_383,q_auto,c_fill,f_auto,fl_lossy/auto-client/f42177d67f37e56bcfafba5fcf7d2d10/475635_25ym_honda_crf450rx_1__md.jpg:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa-storefront.govirto.com/api/files/dbda0d851ea04067995d4f0fd8144509_sm:0
+[LOG] Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm @ https://vcst-qa-storefront.govirto.com/assets/vendor-3X8Ox2Qz.js:0
+[INFO] [WebSocket] Connecting... Attempting to establish connection. @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://images.netdirector.co.uk/gforces-auto/image/upload/w_575,h_383,q_auto,c_fill,f_auto,fl_lossy/auto-client/f42177d67f37e56bcfafba5fcf7d2d10/475635_25ym_honda_crf450rx_1__sm.jpg:0
+[INFO] [WebSocket] Connection opened successfully. {url: wss://vcst-qa-storefront.govirto.com/graphql, protocol: graphql-transport-ws} @ https://vcst-qa-storefront.govirto.com/assets/index-CyFaqbmv.js:8
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://images.netdirector.co.uk/gforces-auto/image/upload/w_575,h_383,q_auto,c_fill,f_auto,fl_lossy/auto-client/f42177d67f37e56bcfafba5fcf7d2d10/475635_25ym_honda_crf450rx_1__md.jpg:0
+[LOG] Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm @ https://vcst-qa-storefront.govirto.com/assets/vendor-3X8Ox2Qz.js:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://images.netdirector.co.uk/gforces-auto/image/upload/w_575,h_383,q_auto,c_fill,f_auto,fl_lossy/auto-client/f42177d67f37e56bcfafba5fcf7d2d10/475635_25ym_honda_crf450rx_1__md.jpg:0

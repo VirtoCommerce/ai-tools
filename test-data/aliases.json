@@ -1608,5 +1608,54 @@
       "platform_id": "platform_id"
     },
     "notes": "Reuses existing USR-011 (Hans Mueller — EU admin with multi-language + EUR currency). Unblocks CART-059. Env vars: EUR_USER_EMAIL, EUR_USER_PASSWORD."
+  },
+  "TECHFLOW_ORG_ADDRESSES": {
+    "_inline": true,
+    "org_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "org_name": "AGENT-TEST-Org-TechFlow-20260310",
+    "count": 22,
+    "seeded_count": 20,
+    "countries": ["US", "CA", "GB"],
+    "states_distinct": 15,
+    "cities_distinct": 20,
+    "default_address_id": "dbcb94fa-e085-4fe7-8cea-90ddee015a62",
+    "notes": "VCST-4710 OQ-5 seed 2026-04-23. 20 new addresses (10 US, 5 CA, 5 UK) plus 2 pre-existing. Unblocks SF-004/006/007/009/010/012 (list/search/facet/sort) and GQ-003/004/005 (currentOrganizationAddresses). Full per-address IDs in test-data/addresses/_seed-results-techflow-20260423.json. Known caveat: platform CustomerAddress schema has no isFavorite field — storefront MemberAddressType returns isFavorite=false for all 20 after seed; toggle favorite via storefront UI if needed."
+  },
+  "TECHFLOW_ADDR_US_NEW_YORK": {
+    "_inline": true,
+    "org_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "platform_id": "79a1e94d-ae00-4214-bb6c-3440b5c702e8",
+    "city": "New York",
+    "regionCode": "NY",
+    "countryCode": "US",
+    "postalCode": "10001",
+    "line1": "456 Oak Avenue",
+    "line2": "Apt 4B",
+    "notes": "VCST-4710 seed — primary US/NY address fixture for facet/filter/sort tests."
+  },
+  "TECHFLOW_ADDR_CA_TORONTO": {
+    "_inline": true,
+    "org_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "platform_id": "61eedc5f-5b01-4a31-8633-79b1235ca8e4",
+    "city": "Toronto",
+    "regionCode": "ON",
+    "countryCode": "CA",
+    "postalCode": "M5V 3A8",
+    "line1": "100 King Street West",
+    "line2": "Suite 4500",
+    "notes": "VCST-4710 seed — primary CA/ON address fixture for multi-country facet tests."
+  },
+  "TECHFLOW_ADDR_UK_LONDON": {
+    "_inline": true,
+    "org_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "platform_id": "dbcb94fa-e085-4fe7-8cea-90ddee015a62",
+    "city": "London",
+    "regionCode": "ENG",
+    "countryCode": "GB",
+    "postalCode": "E14 5LQ",
+    "line1": "25 Canada Square",
+    "line2": "Level 40",
+    "isDefault": true,
+    "notes": "VCST-4710 seed — default org address (isDefault=true). Primary UK/ENG fixture for GB country-facet tests."
   }
 }

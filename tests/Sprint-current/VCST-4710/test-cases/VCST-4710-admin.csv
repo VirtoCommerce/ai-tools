@@ -1,0 +1,18 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+VCST-4710-ADM-001,"Customer Contacts - POST /api/contacts/search Still Returns Results After PR #293","Backend > Customer > Contacts API",High,,"ECL-5.1","Platform API accessible; admin credentials available; at least one contact exists in the system","back_url={{BACK_URL}}; admin_user={{ADMIN_EMAIL}}; admin_pass={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{ADMIN_EMAIL}}&password={{ADMIN_PASSWORD}} → save bearer token
+[HTTP] POST {{BACK_URL}}/api/contacts/search with body: { ""skip"": 0, ""take"": 10 } and Authorization: Bearer <token>
+[WAIT] response received","[STATUS] HTTP 200 returned
+[BODY] response body has totalCount (non-negative integer)
+[BODY] response body has items[] array (may be empty if no contacts; should be non-empty on seeded QA)
+[SCHEMA] items[] entries have id and memberType fields","[DB] POST /api/contacts/search after PR #293 — verify same data accessible as pre-PR (regression check)
+[CONSOLE] no server errors in platform logs","HTTP 500 or 404 on /api/contacts/search; totalCount missing from response; items[] null instead of array; auth rejected (401)","none","Source: VCST-4710 / ba-report-2026-04-23; PR #293 regression check",Generated
+VCST-4710-ADM-002,"Customer Contacts - Address Fields Accessible on Contact After PR #293","Backend > Customer > Contacts API",High,,"ECL-5.1","Platform API accessible; admin credentials available; a contact with at least 1 saved address exists","back_url={{BACK_URL}}; admin_user={{ADMIN_EMAIL}}; admin_pass={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token
+[HTTP] POST {{BACK_URL}}/api/contacts/search with body: { ""skip"": 0, ""take"": 5, ""deepSearch"": true } and Authorization: Bearer <token>
+[VAR] Save id of first contact returned as <CONTACT_ID>
+[HTTP] GET {{BACK_URL}}/api/contacts/<CONTACT_ID> with Authorization: Bearer <token>
+[WAIT] response received","[STATUS] HTTP 200 returned
+[BODY] response body has id field matching <CONTACT_ID>
+[BODY] response body has addresses[] array (may be empty for contacts without addresses)
+[SCHEMA] if addresses[] non-empty: each address has city, countryCode, line1 fields
+[BODY] no Internal Server Error or null-reference error in response","[DB] Address data accessible via REST after IAddressService/IAddressSearchService refactor in PR #293
+[CONSOLE] no 500 or exception in platform application logs","GET returns 500; addresses field missing from contact JSON; address items have null required fields; regression in address data access","none","Source: VCST-4710 / ba-report-2026-04-23; PR #293 IAddressService regression check",Generated

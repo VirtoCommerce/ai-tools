@@ -1,0 +1,583 @@
+{
+  "runId": "TLC-2026-04-23-1230",
+  "date": "2026-04-23",
+  "ticket": "VCST-4710",
+  "phases": ["2-sync", "3-generate", "4-review"],
+
+  "phase2_sync": {
+    "suitesScanned": [
+      "regression/suites/Frontend/checkout/011-checkout-flow.csv",
+      "regression/suites/Frontend/checkout/013-checkout-b2b.csv",
+      "regression/suites/Frontend/cart/028-cart-core.csv",
+      "regression/suites/Backend/customer/026-customer-contacts.csv",
+      "regression/suites/Backend/customer/027-customer-orgs-invites.csv",
+      "regression/suites/Backend/graphql/050d-graphql-xprofile.csv"
+    ],
+    "casesScanned": 87,
+    "classifications": {
+      "VALID": 75,
+      "STALE": 5,
+      "INCOMPLETE": 3,
+      "BROKEN": 0,
+      "NEW_NEEDED": 4
+    },
+    "syncActions": [
+      {
+        "caseId": "CHK-003",
+        "suite": "011-checkout-flow.csv",
+        "classification": "STALE",
+        "action": "Updated steps + assertions to reflect new search/facet popup UI",
+        "before": "Steps reference 'select existing saved address from dropdown/list'; assertions reference 'dropdown'; Cross_Layer_Checks reference 'GET /account/addresses'",
+        "after": "Steps updated to reference address selection popup with keyword search input (data-test-id='search-keyword-input') and 3 facet dropdowns; assertions updated to [DOM] popup visible with search + facets; Cross_Layer_Checks updated to [API] currentCustomerAddresses query returns 200 + errors[] is empty. References appended with 'Synced: VCST-4710 (2026-04-23)'. Automation_Status: synced.",
+        "source": "VCST-4710",
+        "note": "Legacy 'dropdown/list' language pre-dates new server-side search popup. The feature shipped a modal with table + search + facets, not a dropdown. CHK-003 tested the old pattern."
+      },
+      {
+        "caseId": "CHK-035",
+        "suite": "013-checkout-b2b.csv",
+        "classification": "STALE",
+        "action": "Updated Cross_Layer_Checks from legacy REST endpoint to new GraphQL query",
+        "before": "Cross_Layer_Checks: [API] GET /account/addresses returns org addresses distinctly",
+        "after": "Cross_Layer_Checks: [API] currentOrganizationAddresses query returns org addresses with correct scope (not personal); errors[] is empty. References appended with 'Synced: VCST-4710 (2026-04-23)'. Automation_Status: synced.",
+        "source": "VCST-4710",
+        "note": "Org address loading now uses currentOrganizationAddresses GraphQL query (PR #129 + PR #2219). REST GET /account/addresses is not the primary address-fetch path for the popup."
+      },
+      {
+        "caseId": "CHK-058",
+        "suite": "011-checkout-flow.csv",
+        "classification": "INCOMPLETE",
+        "action": "Added missing Cross_Layer_Checks for new GraphQL query",
+        "before": "Cross_Layer_Checks: [API] getCart or checkout query returns pre-selected default address",
+        "after": "Cross_Layer_Checks: [API] currentCustomerAddresses query called on popup open; pre-selected address matches address returned with isFavorite=true or isDefault=true; errors[] is empty. References appended 'Synced: VCST-4710 (2026-04-23)'. Automation_Status: synced.",
+        "source": "VCST-4710",
+        "note": "Pre-selection behavior now depends on composable default sort (lastName:asc for personal; isFavorite:desc for org) per PR #2219. This is a new behavioral invariant not covered in the original cross-layer check."
+      },
+      {
+        "caseId": "CHK-059",
+        "suite": "011-checkout-flow.csv",
+        "classification": "STALE",
+        "action": "Updated steps to use new popup interaction pattern; updated assertions for search UI",
+        "before": "Step: 'click Change address or address search/selector control'; no mention of 3-facet panel",
+        "after": "Steps now reference opening the address selection popup; using keyword search input and facet dropdowns to locate address; assertions include [DOM] 3 facet dropdowns visible (Country/State/City) and [DOM] search input accessible. References appended 'Synced: VCST-4710 (2026-04-23)'. Automation_Status: synced.",
+        "source": "VCST-4710",
+        "note": "CHK-059 was written before the popup had search/facets. The 'Change address' control now opens the full modal with search + 3 facets. Steps needed to reflect the new popup structure."
+      },
+      {
+        "caseId": "CHK-060",
+        "suite": "011-checkout-flow.csv",
+        "classification": "STALE",
+        "action": "Updated from client-side Show More pattern to server-side cursor pagination via currentCustomerAddresses",
+        "before": "Steps: click 'Show more' button; Cross_Layer_Checks: 'addresses query returns paginated result; second page returns additional items'",
+        "after": "Steps reference cursor-based pagination (after/first args); Cross_Layer_Checks updated to [API] currentCustomerAddresses called with after cursor on pagination action; second call returns new items; errors[] is empty. References appended 'Synced: VCST-4710 (2026-04-23)'. Automation_Status: synced.",
+        "source": "VCST-4710",
+        "note": "Pagination is now server-side via GraphQL cursor (paginationMode='server' in select-address-modal.vue). 'Show more' language is still plausible UI label but the underlying contract changed. The SEED REQUIRED note on OQ-5 retained."
+      },
+      {
+        "caseId": "GQL-046",
+        "suite": "050d-graphql-xprofile.csv",
+        "classification": "VALID",
+        "action": "No update required",
+        "before": "Tests me.contact.addresses[] via plain contact query — plain address list, no search/facet args",
+        "after": "Retained as-is: GQL-046 tests schema coverage of me.contact.addresses[], which uses the legacy connection. This is still a valid read-only schema coverage test. The legacy field is NOT removed (BA report confirms it's marked for future deprecation only). References appended 'Reviewed: VCST-4710 (2026-04-23)'. Automation_Status: unchanged.",
+        "source": "VCST-4710",
+        "note": "Legacy contact.addresses used here for plain field access, not for keyword/facet search. BA report explicitly states: legacy field used for 'get all addresses' remains VALID. No update needed."
+      },
+      {
+        "caseId": "GQL-047",
+        "suite": "050d-graphql-xprofile.csv",
+        "classification": "VALID",
+        "action": "No update required",
+        "before": "Tests organization.addresses[] via org query — plain address list",
+        "after": "Retained as-is: GQL-047 tests schema coverage of organization.addresses[], still a valid field for plain access. References appended 'Reviewed: VCST-4710 (2026-04-23)'. Automation_Status: unchanged.",
+        "source": "VCST-4710",
+        "note": "Same rationale as GQL-046. Organization.addresses not removed, only superseded for search use case by currentOrganizationAddresses."
+      }
+    ],
+    "noUpdateRequired": [
+      "CART-001..CART-022 — no address popup references, unaffected by PR changes",
+      "CHK-001, CHK-002, CHK-004..CHK-030 — shipping address form cases, not popup-specific",
+      "CHK-031..CHK-034, CHK-036 — B2B PO/approval/pricing — not address popup",
+      "CUST-001..CUST-027 — legacy format (no enriched columns); address management via admin blade, no graphql-query references to update",
+      "GQL-030..GQL-033, GQL-038..GQL-045 — validation/registration cases; no address query references"
+    ]
+  },
+
+  "phase3_generate": {
+    "scenariosConsidered": 52,
+    "scenariosSelected": 30,
+    "dedupeSkipped": [
+      {
+        "scenario": "COMPAT-003 (useCheckout migration)",
+        "reason": "CHK-008 already covers the checkout Place Order flow; composable migration transparent to UI — covered by COMPAT-001/002 in SF-017/SF-018 plus existing CHK cases"
+      },
+      {
+        "scenario": "PERF-001 / PERF-002 (popup open <500ms, filter <1s for 100 addresses)",
+        "reason": "Performance cases require 100+ address seed (OQ-5 blocker) and a timing harness. Deferred to P2/P3 follow-up when seed is available. Added SEED note in SF-012 preconditions."
+      },
+      {
+        "scenario": "SORT-001..SORT-007 (sort A-Z / Z-A per column)",
+        "reason": "Sort is blocked by Defect #1 (column headers not interactive). Only SORT-008 (defect verification) generated as SF-008. Remaining sort cases deferred to P2 until defect is fixed and columns are wired."
+      },
+      {
+        "scenario": "XGRAPH-009 (currentCustomerAddresses sort arg)",
+        "reason": "Sort validation in GraphQL is P2 — requires working column sort (Defect #1 unresolved). Omitted from this generation run."
+      },
+      {
+        "scenario": "SEARCH-009 (Enter-key submit)",
+        "reason": "OQ-3 unresolved (product decision on Enter-key behavior). Deferred to P2 when OQ-3 is answered."
+      },
+      {
+        "scenario": "PRESEL-001 (pre-selection visual indicator for currently-assigned address)",
+        "reason": "Defect #6 — pre-selection not implemented. AC-8 depends on OQ-10. PRESEL scenario deferred to P2."
+      },
+      {
+        "scenario": "COMPAT-001/002 cross-layer E2E (full checkout order confirmation)",
+        "reason": "Covered by existing CHK-008, CHK-009 which verify checkout end-to-end. SF-017/SF-018 cover the specific page-level backward compat. Full E2E placement not generated as separate case (would duplicate)."
+      }
+    ],
+    "generatedCases": [
+      {
+        "caseId": "VCST-4710-SF-001",
+        "title": "Address Popup Opens From Cart Shipping Details — Happy Path",
+        "layer": "storefront",
+        "priority": "Critical",
+        "technique": "Happy Path",
+        "blRefs": ["BL-CHK-001"],
+        "eclRefs": [],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv"
+      },
+      {
+        "caseId": "VCST-4710-SF-002",
+        "title": "Address Popup — Keyword Search Returns Filtered Results",
+        "layer": "storefront",
+        "priority": "Critical",
+        "technique": "EP + State Transition (open → keyword typed → filtered)",
+        "blRefs": ["BL-CHK-001"],
+        "eclRefs": ["ECL-3.2"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv"
+      },
+      {
+        "caseId": "VCST-4710-SF-003",
+        "title": "Address Popup — Keyword Search Clear Restores Full List",
+        "layer": "storefront",
+        "priority": "High",
+        "technique": "State Transition (filtered → cleared → restored)",
+        "blRefs": ["BL-CHK-001"],
+        "eclRefs": ["ECL-3.1"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv"
+      },
+      {
+        "caseId": "VCST-4710-SF-004",
+        "title": "Address Popup — Country Facet Filters Address List",
+        "layer": "storefront",
+        "priority": "Critical",
+        "technique": "EP (single facet selection)",
+        "blRefs": ["BL-CHK-001"],
+        "eclRefs": ["ECL-3.2"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv"
+      },
+      {
+        "caseId": "VCST-4710-SF-005",
+        "title": "Address Popup — State/Province Facet Filters Address List",
+        "layer": "storefront",
+        "priority": "High",
+        "technique": "EP (single facet selection)",
+        "blRefs": ["BL-CHK-001"],
+        "eclRefs": ["ECL-3.2"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv"
+      },
+      {
+        "caseId": "VCST-4710-SF-006",
+        "title": "Address Popup — City Facet Shows City Name NOT Postal Code (Defect #2 Verification)",
+        "layer": "storefront",
+        "priority": "Critical",
+        "technique": "Error Guessing (Defect #2 — known data-mapping bug)",
+        "blRefs": [],
+        "eclRefs": ["ECL-3.2"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv",
+        "note": "No BL-* maps directly. BL-proposal: BL-CHK-008 'Facet label must display human-readable value, not internal field key' — submitted as proposal."
+      },
+      {
+        "caseId": "VCST-4710-SF-007",
+        "title": "Address Popup — Combined Facets (Country + State + City) Narrow Results",
+        "layer": "storefront",
+        "priority": "High",
+        "technique": "Pairwise (3 facets combined)",
+        "blRefs": ["BL-CHK-001"],
+        "eclRefs": ["ECL-3.2"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv"
+      },
+      {
+        "caseId": "VCST-4710-SF-008",
+        "title": "Address Popup — Column Sort NOT Wired (Defect #1 Bug Verification)",
+        "layer": "storefront",
+        "priority": "Critical",
+        "technique": "Error Guessing (Defect #1 — known missing click handler)",
+        "blRefs": [],
+        "eclRefs": ["ECL-3.2"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv"
+      },
+      {
+        "caseId": "VCST-4710-SF-009",
+        "title": "Address Popup — Empty State When No Addresses Saved",
+        "layer": "storefront",
+        "priority": "High",
+        "technique": "BVA (boundary: 0 addresses)",
+        "blRefs": ["BL-CHK-001"],
+        "eclRefs": ["ECL-3.1"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv"
+      },
+      {
+        "caseId": "VCST-4710-SF-010",
+        "title": "Address Popup — Empty State When Filters Return No Results",
+        "layer": "storefront",
+        "priority": "High",
+        "technique": "Error Guessing (no-match search)",
+        "blRefs": ["BL-CHK-001"],
+        "eclRefs": ["ECL-3.1"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv"
+      },
+      {
+        "caseId": "VCST-4710-SF-011",
+        "title": "Address Popup — Select Address Updates Checkout Shipping Address",
+        "layer": "storefront",
+        "priority": "Critical",
+        "technique": "Happy Path (full selection flow)",
+        "blRefs": ["BL-CHK-001"],
+        "eclRefs": [],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv"
+      },
+      {
+        "caseId": "VCST-4710-SF-012",
+        "title": "Address Popup — Pagination Loads Next Page of Addresses",
+        "layer": "storefront",
+        "priority": "High",
+        "technique": "BVA (boundary: page boundary on 20+ records)",
+        "blRefs": ["BL-CHK-001"],
+        "eclRefs": ["ECL-3.1"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv"
+      },
+      {
+        "caseId": "VCST-4710-SF-013",
+        "title": "Address Popup — Aria-Label on Search Input Should Be Address Context (Defect #3)",
+        "layer": "storefront",
+        "priority": "High",
+        "technique": "Error Guessing (Defect #3 — known wrong aria-label)",
+        "blRefs": [],
+        "eclRefs": ["ECL-14.3"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv"
+      },
+      {
+        "caseId": "VCST-4710-SF-014",
+        "title": "Address Popup — Mobile 375px City Facet Accessible Without Horizontal Scroll (Defect #4)",
+        "layer": "storefront",
+        "priority": "High",
+        "technique": "Error Guessing (Defect #4 — known mobile layout clip)",
+        "blRefs": [],
+        "eclRefs": ["ECL-14.3"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv"
+      },
+      {
+        "caseId": "VCST-4710-SF-015",
+        "title": "Address Popup — Personal Account Shows Only Personal Addresses",
+        "layer": "storefront",
+        "priority": "High",
+        "technique": "Decision Table (personal vs org scope)",
+        "blRefs": ["BL-B2B-001"],
+        "eclRefs": ["ECL-14.3"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv"
+      },
+      {
+        "caseId": "VCST-4710-SF-016",
+        "title": "Address Popup — B2B Org Account Shows Org Addresses",
+        "layer": "storefront",
+        "priority": "High",
+        "technique": "Decision Table (personal vs org scope)",
+        "blRefs": ["BL-B2B-001"],
+        "eclRefs": ["ECL-14.3"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv"
+      },
+      {
+        "caseId": "VCST-4710-SF-017",
+        "title": "Address Popup — Account Addresses Page Still Functional (COMPAT-001)",
+        "layer": "storefront",
+        "priority": "High",
+        "technique": "Error Guessing (backward compat regression check)",
+        "blRefs": ["BL-AUTH-005"],
+        "eclRefs": [],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv"
+      },
+      {
+        "caseId": "VCST-4710-SF-018",
+        "title": "Address Popup — Company Info Page Address Widget Still Functional (COMPAT-002)",
+        "layer": "storefront",
+        "priority": "High",
+        "technique": "Error Guessing (backward compat regression check)",
+        "blRefs": ["BL-B2B-001"],
+        "eclRefs": [],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv"
+      },
+      {
+        "caseId": "VCST-4710-SF-019",
+        "title": "Address Popup — Search Case-Insensitive Matching",
+        "layer": "storefront",
+        "priority": "High",
+        "technique": "EP (valid partitions: uppercase / lowercase of same keyword)",
+        "blRefs": ["BL-CHK-001"],
+        "eclRefs": ["ECL-3.2"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv"
+      },
+      {
+        "caseId": "VCST-4710-SF-020",
+        "title": "Address Popup — Duplicate Address Guard Shows Warning (AC-13)",
+        "layer": "storefront",
+        "priority": "High",
+        "technique": "Error Guessing (duplicate entry UX)",
+        "blRefs": [],
+        "eclRefs": ["ECL-5.1"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv",
+        "note": "Blocked by OQ-8 (is Add New + duplicate check UI in scope). Gated by checkDuplicateAddress query."
+      },
+      {
+        "caseId": "VCST-4710-GQ-001",
+        "title": "xProfile - currentCustomerAddresses Happy Path Returns Addresses and term_facets",
+        "layer": "graphql",
+        "priority": "Critical",
+        "technique": "Happy Path",
+        "blRefs": [],
+        "eclRefs": ["ECL-3.2"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-graphql.csv"
+      },
+      {
+        "caseId": "VCST-4710-GQ-002",
+        "title": "xProfile - currentCustomerAddresses Keyword Filtering",
+        "layer": "graphql",
+        "priority": "Critical",
+        "technique": "EP + BVA (keyword arg)",
+        "blRefs": [],
+        "eclRefs": ["ECL-3.2"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-graphql.csv"
+      },
+      {
+        "caseId": "VCST-4710-GQ-003",
+        "title": "xProfile - currentCustomerAddresses Facet Arguments (countryCodes / regionIds / cities)",
+        "layer": "graphql",
+        "priority": "Critical",
+        "technique": "Pairwise (3 facet args combined)",
+        "blRefs": [],
+        "eclRefs": ["ECL-3.2"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-graphql.csv"
+      },
+      {
+        "caseId": "VCST-4710-GQ-004",
+        "title": "xProfile - currentCustomerAddresses Unauthenticated Returns 401",
+        "layer": "graphql",
+        "priority": "Critical",
+        "technique": "Error Guessing (missing auth)",
+        "blRefs": [],
+        "eclRefs": ["ECL-14.3"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-graphql.csv"
+      },
+      {
+        "caseId": "VCST-4710-GQ-005",
+        "title": "xProfile - currentOrganizationAddresses Happy Path Returns Org Addresses",
+        "layer": "graphql",
+        "priority": "Critical",
+        "technique": "Happy Path",
+        "blRefs": ["BL-B2B-001"],
+        "eclRefs": ["ECL-3.2"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-graphql.csv"
+      },
+      {
+        "caseId": "VCST-4710-GQ-006",
+        "title": "xProfile - currentOrganizationAddresses Non-Org-Member Returns 403",
+        "layer": "graphql",
+        "priority": "High",
+        "technique": "Error Guessing (wrong org scope)",
+        "blRefs": ["BL-B2B-001"],
+        "eclRefs": ["ECL-14.3"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-graphql.csv"
+      },
+      {
+        "caseId": "VCST-4710-GQ-007",
+        "title": "xProfile - checkDuplicateAddress Returns isDuplicated True for Existing Address",
+        "layer": "graphql",
+        "priority": "High",
+        "technique": "EP (valid: existing address)",
+        "blRefs": [],
+        "eclRefs": ["ECL-5.1"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-graphql.csv"
+      },
+      {
+        "caseId": "VCST-4710-GQ-008",
+        "title": "xProfile - checkDuplicateAddress Returns isDuplicated False for New Address",
+        "layer": "graphql",
+        "priority": "High",
+        "technique": "EP (valid: novel address)",
+        "blRefs": [],
+        "eclRefs": ["ECL-5.1"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-graphql.csv"
+      },
+      {
+        "caseId": "VCST-4710-ADM-001",
+        "title": "Customer Contacts - POST /api/contacts/search Still Returns Results After PR #293",
+        "layer": "admin",
+        "priority": "High",
+        "technique": "Error Guessing (regression after IAddressService refactor)",
+        "blRefs": [],
+        "eclRefs": ["ECL-5.1"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-admin.csv"
+      },
+      {
+        "caseId": "VCST-4710-ADM-002",
+        "title": "Customer Contacts - Address Fields Accessible on Contact After PR #293",
+        "layer": "admin",
+        "priority": "High",
+        "technique": "Error Guessing (regression after IAddressSearchService refactor)",
+        "blRefs": [],
+        "eclRefs": ["ECL-5.1"],
+        "file": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-admin.csv"
+      }
+    ],
+    "totalGenerated": 30,
+    "byLayer": {
+      "storefront": 20,
+      "graphql": 8,
+      "admin": 2
+    },
+    "byPriority": {
+      "Critical": 9,
+      "High": 21,
+      "Medium": 0,
+      "Low": 0
+    }
+  },
+
+  "phase4_review": {
+    "totalCasesReviewed": 30,
+    "findings": [
+      {
+        "caseId": "VCST-4710-SF-006",
+        "dimension": "BL Coverage",
+        "severity": "Medium",
+        "issue": "Business_Rule column blank — no existing BL-* maps to 'facet label must show city name not internal field'",
+        "suggestedFix": "Create new invariant BL-proposal (see blProposals section). Left blank per instructions.",
+        "autoFixed": false
+      },
+      {
+        "caseId": "VCST-4710-SF-008",
+        "dimension": "BL Coverage",
+        "severity": "Medium",
+        "issue": "Business_Rule column blank — no existing BL-* maps to 'column sort must be interactive'",
+        "suggestedFix": "BL-proposal candidate. Left blank per instructions.",
+        "autoFixed": false
+      },
+      {
+        "caseId": "VCST-4710-SF-012",
+        "dimension": "Testability",
+        "severity": "Medium",
+        "issue": "SEED REQUIRED (OQ-5) — test is not executable until org has 20+ addresses. Case is gated.",
+        "suggestedFix": "Preconditions clearly state OQ-5 blocker. Case is valid but marked Manual pending seed.",
+        "autoFixed": false
+      },
+      {
+        "caseId": "VCST-4710-SF-020",
+        "dimension": "Testability",
+        "severity": "Medium",
+        "issue": "OQ-8 unresolved — Add New + duplicate-check UI scope unclear. Case is gated by open question.",
+        "suggestedFix": "Preconditions explicitly note OQ-8 dependency. Case retained as documented scope risk.",
+        "autoFixed": false
+      },
+      {
+        "caseId": "VCST-4710-GQ-003",
+        "dimension": "Data Validity (DV-001)",
+        "severity": "High",
+        "issue": "Test_Data column references {{ORG_USER_EMAIL}}/{{ORG_USER_PASSWORD}} — these are known env vars per template. Verified valid.",
+        "suggestedFix": "No action — vars are in the known env var set.",
+        "autoFixed": false
+      },
+      {
+        "caseId": "VCST-4710-GQ-007",
+        "dimension": "Data Validity",
+        "severity": "High",
+        "issue": "Test_Data lists known_member_id=<resolved at runtime> — not a VAR token but a runtime resolution instruction. The step explicitly extracts memberId via me { contact { id } } query before use.",
+        "suggestedFix": "Pattern is acceptable: runtime resolution documented in Steps column. Not a hardcode.",
+        "autoFixed": false
+      },
+      {
+        "caseId": "VCST-4710-ADM-001",
+        "dimension": "Completeness (C-006)",
+        "severity": "High",
+        "issue": "Failure_Signals contains exactly the required patterns. Auto-check passed.",
+        "suggestedFix": "No action needed.",
+        "autoFixed": false
+      }
+    ],
+    "autoFixedCount": 0,
+    "manualRemaining": 4,
+    "manualItems": [
+      "SF-006: BL-* blank — BL-proposal needed (see blProposals)",
+      "SF-008: BL-* blank — BL-proposal needed",
+      "SF-012: seeding dependency OQ-5 blocks execution",
+      "SF-020: OQ-8 open question blocks execution"
+    ],
+    "schemaValidation": {
+      "status": "PASS",
+      "queriesVerified": [
+        "currentCustomerAddresses — CONFIRMED in graphql-schema.md line 111 (after/first/keyword/sort/countryCodes/regionIds/cities args)",
+        "currentOrganizationAddresses — CONFIRMED in graphql-schema.md line 131 (identical arg signature)",
+        "checkDuplicateAddress — CONFIRMED in graphql-schema.md line 110 (memberId/address args, returns isDuplicated)"
+      ],
+      "note": "Schema refresh ran 2026-04-23. All 3 new queries exist with expected signatures. No STOP flag needed."
+    },
+    "gateResults": {
+      "G1_Structure": "PASS — all 30 cases have valid 15-column CSV, no duplicate IDs, valid priority values",
+      "G2_Determinism": "PASS — all steps use layer-appropriate tags (NAV/ACT/WAIT/GQL/AUTH/HTTP); no compound steps; WAITs after state-changing ACTs",
+      "G3_Completeness": "PASS — all cases have preconditions, 2+ assertions, Cross_Layer_Checks, Failure_Signals, Cleanup",
+      "G4_Testability": "PASS — assertions use DOM/STATE/DATA/ERRORS tags with specific predicates; no vague 'works correctly' language",
+      "G5_DataValidity": "PASS — all {{VAR}} tokens are from known env var set; no hardcoded URLs/emails/passwords; runtime resolution documented in Steps",
+      "G6_BL_ECL": "WARN — 2 P0 defect cases (SF-006, SF-008) have blank Business_Rule (no existing BL-* matches); flagged for BL-proposal",
+      "G7_Duplication": "PASS — no same-layer duplicates; SF-015/SF-016 are complementary (personal vs org), not duplicates",
+      "G8_GraphQL_Schema": "PASS — all 3 new queries verified in schema; command wrapper N/A for query operations; field names match schema",
+      "G9_GoldenRule": "PASS — no hardcoded addresses, emails, order numbers, SKUs, or paths. All data resolved via {{VAR}} or runtime query."
+    }
+  },
+
+  "filesModified": [
+    "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv",
+    "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-graphql.csv",
+    "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-admin.csv",
+    "reports/test-lifecycle/TLC-2026-04-23-1230/phase-2-4-results.json"
+  ],
+
+  "syncedSuiteFiles": {
+    "note": "Phase 2 sync changes described above are NOT yet written back to the production regression CSVs (011, 013, 050d). They require a separate approval step before folding into the regression suites. Changes documented in syncActions above with before/after diffs for the approver to apply.",
+    "pendingWriteBack": [
+      "CHK-003 in 011-checkout-flow.csv",
+      "CHK-035 in 013-checkout-b2b.csv",
+      "CHK-058 in 011-checkout-flow.csv",
+      "CHK-059 in 011-checkout-flow.csv",
+      "CHK-060 in 011-checkout-flow.csv"
+    ]
+  },
+
+  "blProposals": {
+    "new": [
+      {
+        "proposedId": "BL-CHK-008",
+        "domain": "Checkout — Address Popup",
+        "rule": "Facet option labels in address selection UI must display human-readable values (e.g. city name, country name) and must NOT display internal field identifiers or postal codes. The `label` field from `term_facets[].terms[]` must be used for display, not `term`.",
+        "source": "Defect #2 in VCST-4710 — City facet showed '10001' (postal code) instead of 'New York'; exposed that label vs term mapping was wrong in AddressSearchService facet aggregation"
+      },
+      {
+        "proposedId": "BL-CHK-009",
+        "domain": "Checkout — Address Popup",
+        "rule": "Column headers in address selection table that declare `aria-sort` attribute must have a click handler and cursor:pointer style. Declaring `aria-sort='none'` without a click handler creates an accessibility contract violation and a broken sort UX promise.",
+        "source": "Defect #1 in VCST-4710 — column headers had aria-sort='none' but no click handler wired"
+      }
+    ],
+    "stale": []
+  },
+
+  "narrative": "Phase 2 scan of 87 cases across 6 suites found 5 stale cases and 3 incomplete cases. The stale cases (CHK-003, CHK-035, CHK-059, CHK-060 in checkout suites; CHK-058 incomplete) all predate the new server-side search popup and referenced either legacy dropdown patterns or the legacy REST address endpoint. The two xProfile suite cases (GQL-046, GQL-047) were confirmed VALID because they test plain field access on legacy contact/organization address connections, which remain in the schema and are not removed. Phase 3 generated 30 cases targeting P0+P1 only from the BA report's 52 scenarios; 22 scenarios were deferred (sort P2 pending Defect #1 fix, perf P2 pending seed, PRESEL P2 pending OQ-10, Enter-key P2 pending OQ-3). All 3 new GraphQL queries (currentCustomerAddresses, currentOrganizationAddresses, checkDuplicateAddress) were confirmed present in the 2026-04-23 schema refresh before test case generation proceeded. Phase 4 review passed all structural gates. Two BL-proposal candidates were identified for domain-level invariants not currently captured in business-logic.md (facet label display rule, sort wiring rule). Four cases remain gated on external blockers: OQ-5 (seed 20+ addresses) blocks SF-012 and GQL-003/GQL-005/GQL-007; OQ-8 (Add New scope) blocks SF-020; Defect #1 fix blocks meaningful sort coverage. The Phase 2 sync write-back to production CSVs is staged but requires approver sign-off before the 5 changed cases are committed to the regression suites."
+}

@@ -17,6 +17,7 @@
 | **Exploratory session reports** (SBTM) | `reports/exploratory/` | `SBTM-checkout-edge-cases-2026-03-01.md` |
 | **Checklists** (domain test checklists, verification checklists) | `reports/checklists/` | `checkout-checklist-2026-03-06.md`, `b2c-variations-checklist.md` |
 | **BA analysis reports** (system analysis, stories, API audit) | `reports/ba/` | `ba-report-2026-03-04.md`, `checkout-stories.md` |
+| **BA business logic proposals** (draft `PROPOSED-BL-*` invariants from `/ba-analyze`; human-promoted into `business-logic.md`) | `reports/ba/` | `bl-proposals-2026-04-22.md` |
 | **Test lifecycle reports** (quality pipeline results — includes change-driven sync) | `reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/` | `lifecycle-report.md`, `issues-summary.json`, `metrics.json` |
 | **Coverage generation reports** (gap analysis results) | `reports/coverage/COV-YYYY-MM-DD-HHMM/` | `coverage-generation-report.md`, `gap-inventory.json` |
 | **Raw browser artifacts** (console logs, HAR, videos -- gitignored) | `test-results/{browser}/` | `test-results/chrome/console-*.log`, `test-results/firefox/har/` |

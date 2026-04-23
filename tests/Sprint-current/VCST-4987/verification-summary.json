@@ -1,0 +1,58 @@
+{
+  "ticket": "VCST-4987",
+  "verdict": "FIX_INCOMPLETE",
+  "date": "2026-04-23",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1022.0",
+    "theme": "2.48.0-pr-2268-fe2b-fe2b1cc2",
+    "relevant_modules": {
+      "VirtoCommerce.XCart": "3.1009.0",
+      "VirtoCommerce.Cart": "3.1003.0",
+      "VirtoCommerce.Catalog": "3.1020.0",
+      "VirtoCommerce.Xapi": "3.1006.0"
+    },
+    "pr_build": "vc-theme-b2b-vue-2.48.0-pr-2268-fe2b-fe2b1cc2.zip (head sha fe2b1cc2)"
+  },
+  "fix_pr": "VirtoCommerce/vc-frontend#2268",
+  "fix_pr_title": "fix(VCST-4987): rollback text section maxLength validation for configurable products",
+  "agent_used": "qa-frontend-expert",
+  "browser": "playwright-chrome",
+  "str_result": "0/3 end-to-end; 3/3 on client-side step 5 (no error, button enabled); 3/3 fail at step 6 (Add-to-cart silent no-op — server rejects customText='TEST_QA' with CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED)",
+  "checklist_total": 10,
+  "checklist_passed": 6,
+  "checklist_failed": 3,
+  "checklist_not_run": 1,
+  "regression_issues": [
+    "Server-side asymmetry: AddItem rejects customText='TEST_QA' (maxLength=5) but ChangeCartConfiguredItem accepts it — user can persist a configuration value via edit that Add refuses to create",
+    "Silent Add-to-cart failure: server returns HTTP 200 with validationErrors[] but UI does not surface the error; button resets and nothing visible changes — worse UX than original bug",
+    "PR rolled back client-side maxLength entirely instead of scoping to Custom-input only (presets should bypass maxLength AND be serialized as optionId reference, not customText)"
+  ],
+  "side_effects": [
+    "Secondary defect (Custom textbox not cleared on Custom → preset switch): still present, out of this PR's scope"
+  ],
+  "bugs_filed": [],
+  "business_rules_verified": [
+    "Required section blocks Add-to-cart when empty (PASS)",
+    "BL-CART-*: configured item adds to cart and persists (verified only via Custom input 'abc' path — NOT via TEST_QA preset, which never enters the cart)"
+  ],
+  "business_rules_violated": [
+    "Intended contract (per user clarification): section.maxLength should apply only to Custom input, not to preset option labels — current fix violates this by disabling client validation entirely"
+  ],
+  "jira_transition": "Testing → Reopen (transition id=7 'Need fixes')",
+  "artifacts": "tests/Sprint-current/VCST-4987/",
+  "artifact_list": [
+    "verification-report.md",
+    "verification-summary.json",
+    "screenshots/ (9 screenshots)",
+    "graphql-response-evidence.json",
+    "all-graphql.txt",
+    "cart-mutations.txt",
+    "network.har.txt",
+    "console.log",
+    "pre-atc-snapshot.yml",
+    "custom-input-snapshot.yml"
+  ],
+  "bug_report": "reports/bugs/open/BUG-OffRoadBike-Text1-Preset-Option-Unreachable.md (left in open/ — fix incomplete)",
+  "recommendation": "Reopen. Rescope the fix: (1) keep client-side maxLength for Custom-input path only, (2) serialize preset selections by optionId reference instead of copying label into customText, (3) surface server validationErrors in UI, (4) harmonize AddItem/ChangeCartConfiguredItem server validation."
+}
