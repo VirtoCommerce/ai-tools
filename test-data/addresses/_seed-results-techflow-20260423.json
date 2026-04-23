@@ -25,9 +25,11 @@
     "favorites_ge_2": "N/A_not_platform_field",
     "default_eq_1": true
   },
+  "_correction_note": "Post-seed manual verification (user Elena Mutykova, 2026-04-23) revealed field shapes differ from this agent's initial report. Authoritative state: test-data/addresses/techflow-org-addresses-state-20260423.json. Corrections: (1) countryCode uses ISO-3 (USA/CAN/GBR), not ISO-2; (2) UK addresses have regionId=null/regionName=null — no region data in GBR records; (3) Toronto address (id 61eedc5f) has regionId='QC' / regionName='Quebec' — geographically incorrect but left intentionally; (4) pre-existing Houston/Florida address has 'Huston' typo (kept as-is).",
   "coverage_summary": {
-    "countries": ["US", "CA", "GB"],
-    "states_15": ["US-CA","US-NY","US-IL","US-FL","US-WA","US-TX","US-AZ","US-PA","US-GA","CA-ON","CA-BC","CA-QC","CA-AB","GB-ENG","GB-SCT"],
+    "countries": ["USA", "CAN", "GBR"],
+    "states_13_actual": ["US-CA","US-NY","US-IL","US-FL","US-WA","US-TX","US-AZ","US-PA","US-GA","CA-ON","CA-BC","CA-QC","CA-AB"],
+    "uk_region_coverage": "NONE — all 5 GBR addresses have regionId=null. State/Province facet will exclude UK addresses.",
     "cities_20": ["Los Angeles","New York","Chicago","Miami","Seattle","Houston","Phoenix","Philadelphia","San Francisco","Atlanta","Toronto","Vancouver","Montreal","Calgary","Ottawa","London","Manchester","Edinburgh","Birmingham","Glasgow"],
     "defaults": 1,
     "default_address_city_country": "London, GB"

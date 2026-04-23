@@ -35,7 +35,7 @@
     "G3_Completeness": "PASS",
     "G4_Testability": "PASS",
     "G5_DataValidity": "PASS",
-    "G6_BLECLCoverage": "WARN",
+    "G6_BLECLCoverage": "WARN (both BL proposals cancelled by user; SF-006/SF-008 Business_Rule columns remain blank intentionally)",
     "G7_Duplication": "PASS",
     "G8_Environment": "PASS",
     "G9_Sync": "PASS"
@@ -56,26 +56,21 @@
     ]
   },
   "blProposals": {
-    "new": [
+    "new": [],
+    "stale": [],
+    "cancelled": [
       {
         "proposedId": "PROPOSED-BL-CHK-014",
-        "severity": "P1-data",
-        "rule": "Facet labels in selection popups must display human-readable values (city names), not raw code values (postal codes)",
-        "source": "VCST-4710 Defect #2 / ba-report-2026-04-23",
-        "triggeredByCases": ["SF-006"]
+        "decision": "CANCELLED 2026-04-23 — originating observation was test-data defect (VCST-4995 cancelled as not-a-bug), not a code invariant violation"
       },
       {
         "proposedId": "PROPOSED-BL-CHK-015",
-        "severity": "P0-revenue",
-        "rule": "When a column header declares aria-sort, sort behavior must be implemented (click toggles asc/desc, aria-sort state transitions)",
-        "source": "VCST-4710 Defect #1 / ba-report-2026-04-23",
-        "triggeredByCases": ["SF-008"]
+        "decision": "CANCELLED 2026-04-23 — user declined promotion; aria-sort wiring requirement remains tracked only via bug VCST-4992"
       }
-    ],
-    "stale": []
+    ]
   },
   "blockers": {
-    "OQ-5": "Seed 20+ CLEAN addresses in test org (proper City/PostalCode/Region separation). Blocks SF-004/006/007/009/010/012, GQ-003/004/005. Supersedes earlier VCST-4995 which was cancelled as not-a-bug."
+    "OQ-5": "RESOLVED 2026-04-23 — seeded 22 addresses (20 new) on TechFlow org 6fb516c1 spanning 3 countries / 13 states (US+CA only; UK addresses have no region) / 20 cities. GraphQL validation PASS (term_facets populated correctly, no postal codes leaked into City facet). Authoritative state snapshot: test-data/addresses/techflow-org-addresses-state-20260423.json. Note: countryCode uses ISO-3 (USA/CAN/GBR), not ISO-2. UK addresses have regionId=null — State/Province facet tests must account for this. Unblocks SF-004/006/007/009/010/012, GQ-003/004/005."
   },
   "jiraBugsFiled": [
     {"key": "VCST-4992", "priority": "Highest", "defect": "Column sort not wired", "status": "Open"},
@@ -84,9 +79,9 @@
     {"key": "VCST-4995", "priority": "High", "defect": "City facet shows postal code", "status": "Cancelled — not a bug (test-data issue; Emily's City field populated with postal code value)"}
   ],
   "nextSteps": [
-    "Seed test data for 20+ addresses",
-    "Await fix PRs for VCST-4992/4993/4994/4995",
-    "Review BL proposals",
-    "Run regression on tests/Sprint-current/VCST-4710/test-cases/* once blockers cleared"
+    "Await fix PRs for VCST-4992/4993/4994",
+    "Review BL proposals (PROPOSED-BL-CHK-015 remains valid; PROPOSED-BL-CHK-014 may be cancelled along with VCST-4995)",
+    "Run regression on tests/Sprint-current/VCST-4710/test-cases/* — TechFlow org now has seed data ready",
+    "File minor data-consistency observation: seeded data uses ISO-2 'US' but 2 pre-existing addresses use 'USA' (3-letter) — creates duplicate country facet terms"
   ]
 }

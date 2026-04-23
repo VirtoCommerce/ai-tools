@@ -81,8 +81,8 @@
 [DOM] Personal addresses differentiated from org addresses
 [STATE] Org address selection populates shipping form fields
 [STATE] Selected org address shown in order summary","[API] verify org context is non-null (me.organization)
-[API] GET /account/addresses returns org addresses distinctly
-[CONSOLE] No errors loading org address list","Org addresses not shown; personal and org addresses not differentiated; org address selection fails","none","Coverage Gap Analysis","Generated"
+[API] currentOrganizationAddresses query executed; response items scoped to the user's organization (not personal); org-scope enforced by resolver (403 if user queries a different org). Standard GraphQL errors array is empty.
+[CONSOLE] No errors loading org address list","Org addresses not shown; personal and org addresses not differentiated; org address selection fails","none","Coverage Gap Analysis, Synced: VCST-4710 (2026-04-23)","synced"
 "CHK-036","B2B Checkout - Contract Pricing Applied","Checkout > B2B > Pricing","Critical","BL-CHK-004","ECL-4.1, ECL-14.1","B2B org with contract/tier pricing configured, products have org-specific prices in system","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}, sku={{TEST_SKU}}","[NAV] Log in as {{ORG_USER_EMAIL}}
 [NAV] Navigate to product page for {{TEST_SKU}} with org-specific contract price
 [ASSERT] Verify contract/negotiated price shown on PDP (not standard catalog price)

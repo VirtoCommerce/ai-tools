@@ -1,0 +1,120 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+VCST-4710-GQ-001,"xProfile - currentCustomerAddresses Happy Path Returns Addresses and term_facets","GraphQL > xProfile > Addresses",Critical,,"ECL-3.2","BROWSER-ONLY: Execute in GraphiQL UI ({{BACK_URL}}/ui/graphiql) via playwright browser. Use CodeMirror editor per graphiql-interaction.md. Do NOT use curl. User authenticated via Headers tab. User has at least 1 saved address.","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Click 'Headers' button → set auth token via execCommand('insertText') on Headers textarea → screenshot to verify token in Headers panel
+[ACT] Click query editor → Ctrl+A → Backspace to clear
+[ACT] Type query: query { currentCustomerAddresses(first: 20) { totalCount items { id city countryCode countryName firstName lastName line1 line2 postalCode regionId regionName phone email addressType isDefault isFavorite description } term_facets { name terms { term label count } } } }
+[GQL] Click Execute (▶) or Ctrl+Enter
+[WAIT] Response panel shows result
+[READ] Read response — inspect structure","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty
+[DATA] totalCount is a non-negative integer
+[DATA] items[] is an array (may be empty for new accounts; non-empty for seeded accounts)
+[DATA] each item has id, city, countryCode, line1 as non-null strings
+[DATA] term_facets is an array (may be empty if no addresses)
+[DATA] each term_facets entry has name (string) and terms (array)
+[DATA] each terms entry has term, label, count fields","[ROUNDTRIP] Re-execute same query → same totalCount returned
+[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; currentCustomerAddresses field not found (schema mismatch); term_facets is null instead of empty array; item fields return null for non-null fields","none","Source: VCST-4710 / ba-report-2026-04-23; graphql-schema.md — currentCustomerAddresses",Generated
+VCST-4710-GQ-002,"xProfile - currentCustomerAddresses Keyword Filtering","GraphQL > xProfile > Addresses > Keyword",Critical,,"ECL-3.2","BROWSER-ONLY: GraphiQL with auth. User has 3+ saved addresses including one with a distinct city 'Portland'. Per BA report: keyword matches name/line1/city/countryName/regionName/postalCode.","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Set auth token in Headers tab
+[ACT] Click query editor → Ctrl+A → Backspace
+[ACT] Type query: query { currentCustomerAddresses(keyword: ""Portland"") { totalCount items { id city line1 } term_facets { name terms { term label count } } } }
+[GQL] Execute (▶)
+[WAIT] Response panel shows result
+[READ] Read response — inspect filtered results
+[ACT] Clear editor → type query with uppercase variant: query { currentCustomerAddresses(keyword: ""PORTLAND"") { totalCount items { id city } } }
+[GQL] Execute (▶)
+[READ] Read response — verify case-insensitive match","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty for both queries
+[DATA] keyword='Portland' returns only addresses where city or other searchable fields contain 'Portland'
+[DATA] keyword='PORTLAND' returns same totalCount as keyword='Portland' (case-insensitive)
+[COUNT] totalCount reduced compared to unfiltered query when keyword is specific","[ROUNDTRIP] Clear keyword → re-query without keyword → original count restored
+[CONSOLE] No JS errors","keyword arg rejected as unknown (DV-008); case-sensitive filtering (different counts for Portland vs PORTLAND); errors[] non-empty","none","Source: VCST-4710 / ba-report-2026-04-23; graphql-schema.md — currentCustomerAddresses",Generated
+VCST-4710-GQ-003,"xProfile - currentCustomerAddresses Facet Arguments (countryCodes / regionIds / cities)","GraphQL > xProfile > Addresses > Facets",Critical,,"ECL-3.2","BROWSER-ONLY: GraphiQL with auth. User/org has addresses across multiple countries/states/cities (SEED required per OQ-5).","storeId={{STORE_ID}}; user_email={{ORG_USER_EMAIL}}; user_password={{ORG_USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{ORG_USER_EMAIL}}&password={{ORG_USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Set auth token in Headers tab
+[ACT] Click query editor → Ctrl+A → Backspace
+[ACT] Type query: query { currentCustomerAddresses(first: 20 countryCodes: ""US"") { totalCount items { id countryCode } term_facets { name terms { term label count } } } }
+[GQL] Execute (▶)
+[WAIT] Response panel shows result
+[READ] Verify only US addresses returned
+[ACT] Clear editor → type combined query: query { currentCustomerAddresses(first: 20 countryCodes: ""US"" cities: ""New York"") { totalCount items { id city countryCode } } }
+[GQL] Execute (▶)
+[READ] Verify US + New York filter applied","[RESPONSE] Response panel shows data
+[ERRORS] errors[] is empty for all queries
+[DATA] countryCodes='US' filter returns only items where countryCode = 'US'
+[DATA] combined countryCodes + cities filter returns subset of single-country result
+[COUNT] combined filter totalCount <= single-country filter totalCount","[CONSOLE] No JS errors
+[ROUNDTRIP] Query without any facets → totalCount equals sum of all facet-filtered subsets","countryCodes/cities args not found by schema (DV-008); filter not applied (same results as unfiltered); errors[] non-empty with 'argument not found'","none","Source: VCST-4710 / ba-report-2026-04-23; graphql-schema.md — currentCustomerAddresses",Generated
+VCST-4710-GQ-004,"xProfile - currentCustomerAddresses Unauthenticated Returns 401","GraphQL > xProfile > Addresses > Auth",Critical,,"ECL-14.3","BROWSER-ONLY: GraphiQL without auth token set. No auth header.","storeId={{STORE_ID}}","[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Ensure NO auth token is set in Headers tab (clear if present)
+[ACT] Click query editor → Ctrl+A → Backspace
+[ACT] Type query: query { currentCustomerAddresses(first: 5) { totalCount items { id } } }
+[GQL] Execute (▶)
+[WAIT] Response panel shows result
+[READ] Read response — verify auth error","[RESPONSE] Response panel shows error or 401 condition
+[ERRORS] errors[] is non-empty OR HTTP response is 401/403
+[DATA] No address items returned
+[DATA] Error message references authorization/authentication (not a server error)","[CONSOLE] No server errors (401 is expected, 500 is not)","200 OK with address data returned without auth (security defect); 500 error instead of 401/403","none","Source: VCST-4710 / ba-report-2026-04-23; graphql-schema.md",Generated
+VCST-4710-GQ-005,"xProfile - currentOrganizationAddresses Happy Path Returns Org Addresses","GraphQL > xProfile > Addresses > Org",Critical,"BL-B2B-001","ECL-3.2","BROWSER-ONLY: GraphiQL with org user auth. User is org member. SEED REQUIRED (OQ-5): org has 3+ addresses.","storeId={{STORE_ID}}; org_user={{ORG_USER_EMAIL}}; org_pass={{ORG_USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{ORG_USER_EMAIL}}&password={{ORG_USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Set auth token in Headers tab
+[ACT] Click query editor → Ctrl+A → Backspace
+[ACT] Type query: query { currentOrganizationAddresses(first: 20) { totalCount items { id city countryCode countryName firstName lastName line1 postalCode regionName isDefault isFavorite } term_facets { name terms { term label count } } } }
+[GQL] Execute (▶)
+[WAIT] Response panel shows result
+[READ] Read response — verify org address scope","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty
+[DATA] totalCount is a non-negative integer
+[DATA] items[] contains org-scoped addresses (distinct from personal addresses)
+[DATA] term_facets populated with at least country facet if addresses span countries
+[DATA] each item has id, line1, city, countryCode as strings","[ROUNDTRIP] Query currentCustomerAddresses with same token → compare; org addresses should only appear in currentOrganizationAddresses
+[CONSOLE] No JS errors","errors[] non-empty; currentOrganizationAddresses field not found (schema mismatch); org addresses appear in personal query (scope leak); isFavorite-first sort not applied","none","Source: VCST-4710 / ba-report-2026-04-23; graphql-schema.md — currentOrganizationAddresses; BL-B2B-001",Generated
+VCST-4710-GQ-006,"xProfile - currentOrganizationAddresses Non-Org-Member Returns 403","GraphQL > xProfile > Addresses > Auth",High,"BL-B2B-001","ECL-14.3","BROWSER-ONLY: GraphiQL with personal account auth (no org membership).","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token for personal account (non-org user)
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Set auth token in Headers tab
+[ACT] Click query editor → Ctrl+A → Backspace
+[ACT] Type query: query { currentOrganizationAddresses(first: 5) { totalCount items { id } } }
+[GQL] Execute (▶)
+[WAIT] Response panel shows result
+[READ] Read response — verify 403 or empty data with auth error","[RESPONSE] Response panel shows data or error
+[ERRORS] errors[] is non-empty with authorization error OR totalCount = 0 with no items (scoped to org = empty for non-org user)
+[DATA] No org addresses returned for a non-org user","[CONSOLE] No 500 errors (auth rejection expected, server crash not expected)","non-org user receives org addresses (security leak); 500 server error instead of 403/empty result","none","Source: VCST-4710 / ba-report-2026-04-23; BL-B2B-001",Generated
+VCST-4710-GQ-007,"xProfile - checkDuplicateAddress Returns isDuplicated True for Existing Address","GraphQL > xProfile > Addresses > Duplicate Guard",High,,"ECL-5.1","BROWSER-ONLY: GraphiQL with auth. User has a known saved address. OQ-8 must be resolved.","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; known_member_id=<resolved at runtime from me { contact { id } }>","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Set auth token in Headers tab
+[ACT] Click query editor → Ctrl+A → Backspace
+[ACT] Type query to get memberId: query { me { contact { id } } }
+[GQL] Execute (▶)
+[VAR] Save contact.id as <MEMBER_ID>
+[ACT] Clear editor → type duplicate check query using known address fields: query { checkDuplicateAddress(memberId: ""<MEMBER_ID>"" address: { line1: ""<existing-line1>"" city: ""<existing-city>"" countryCode: ""<existing-countryCode>"" }) { isDuplicated } }
+[GQL] Execute (▶)
+[WAIT] Response panel shows result
+[READ] Read response","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty
+[DATA] isDuplicated = true for an address that matches an existing saved address
+[DATA] isDuplicated is a boolean (not null)","[ROUNDTRIP] Query currentCustomerAddresses → confirm the address used in check exists in items[]
+[CONSOLE] No JS errors","errors[] non-empty for valid input; isDuplicated = false for a genuine duplicate (false negative); isDuplicated is null instead of boolean; checkDuplicateAddress field not found","none","Source: VCST-4710 / ba-report-2026-04-23; graphql-schema.md — checkDuplicateAddress; AC-13",Generated
+VCST-4710-GQ-008,"xProfile - checkDuplicateAddress Returns isDuplicated False for New Address","GraphQL > xProfile > Addresses > Duplicate Guard",High,,"ECL-5.1","BROWSER-ONLY: GraphiQL with auth. User known to NOT have the target address saved.","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token
+[NAV] {{BACK_URL}}/ui/graphiql
+[WAIT] GraphiQL editor loaded
+[ACT] Set auth token in Headers tab
+[ACT] Click query editor → Ctrl+A → Backspace
+[ACT] Type query to get memberId: query { me { contact { id } } }
+[GQL] Execute (▶)
+[VAR] Save contact.id as <MEMBER_ID>
+[ACT] Clear editor → type duplicate check for a non-existent address: query { checkDuplicateAddress(memberId: ""<MEMBER_ID>"" address: { line1: ""9999 Unique St Never Exists"" city: ""NoSuchCity"" countryCode: ""US"" }) { isDuplicated } }
+[GQL] Execute (▶)
+[WAIT] Response panel shows result
+[READ] Read response","[RESPONSE] Response panel shows data without error banner
+[ERRORS] errors[] is empty
+[DATA] isDuplicated = false for an address that does not exist in user's address book
+[DATA] isDuplicated is a boolean","[CONSOLE] No JS errors","errors[] non-empty for valid novel address; isDuplicated = true for non-existent address (false positive); field not found","none","Source: VCST-4710 / ba-report-2026-04-23; graphql-schema.md — checkDuplicateAddress; AC-13",Generated

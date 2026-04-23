@@ -237,7 +237,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 51,
+      "testCount": 54,
       "estimatedMinutes": 36,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -256,7 +256,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 42,
+      "testCount": 62,
       "estimatedMinutes": 29,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -494,7 +494,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 51,
+      "testCount": 53,
       "estimatedMinutes": 36,
       "agent": "qa-backend-expert",
       "tags": [
@@ -994,7 +994,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 14,
+      "testCount": 26,
       "estimatedMinutes": 12,
       "agent": "qa-backend-expert",
       "tags": [

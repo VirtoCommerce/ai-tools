@@ -1,22 +1,31 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"B2C-SHIP-001","Ship To - View Saved Addresses","B2C Features > Ship To","Critical","BL-B2C-003","","User logged in, saved addresses exist","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Account > Addresses or click Ship To selector in header
-2. [ASSERT] Verify address list displays
-3. [ASSERT] Verify each address shows: Name, Street, City, State, ZIP, Phone
-4. [ASSERT] Verify default address is marked","[DOM] Address list displays all saved addresses
+"B2C-SHIP-001","Ship To - View Saved Addresses","B2C Features > Ship To","Critical","BL-B2C-003","","User logged in, saved addresses exist on personal account (/account/addresses is personal-only; org users see address management via /company/info)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/account/addresses
+2. [WAIT] Page loads — verify address list section visible
+3. [ASSERT] Verify address list displays saved addresses
+4. [ASSERT] Verify each address shows: Name, Street, City, State, ZIP, Phone
+5. [ASSERT] Verify default address is marked
+6. [ASSERT] Verify search/filter controls visible if page has search capability (backed by currentCustomerAddresses query)","[DOM] Address list displays all saved addresses
 [DOM] Each address shows full details (Name, Street, City, State, ZIP, Phone)
 [DOM] Default address has 'Default' badge
-[DOM] Edit and Delete options visible per address","[CONSOLE] no uncaught JS errors","Address list empty when addresses exist; default badge missing; address details incomplete","none","VCST-4575","Automated"
-"B2C-SHIP-002","Ship To - Add New Address","B2C Features > Ship To","Critical","BL-B2C-003","","User logged in","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Addresses
+[DOM] Edit and Delete options visible per address
+[DOM] If search/keyword input present: input is accessible and functional
+[DOM] If facet filters present (Country/State/City): dropdowns are rendered and selectable","[API] currentCustomerAddresses query called on page load; errors[] is empty; totalCount matches visible item count
+[CONSOLE] no uncaught JS errors","Address list empty when addresses exist; default badge missing; address details incomplete; currentCustomerAddresses errors[] non-empty on page load","none","VCST-4575; Synced TLC-2026-04-23-1700 (currentCustomerAddresses backing + UI controls)","Automated"
+"B2C-SHIP-002","Ship To - Add New Address","B2C Features > Ship To","Critical","BL-B2C-003","ECL-5.1","User logged in on personal account. Address form backed by updateMemberAddresses mutation. If checkDuplicateAddress is called before submit, a warning is shown for duplicate; unique address should save without warning.","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/account/addresses
 2. [ACT] Click 'Add New Address'
 3. [ACT] Fill form: First Name: Jane, Last Name: Doe, Address: 456 New St, City: Springfield, State: IL, ZIP: 62701, Phone: 555-987-6543
 4. [ACT] Optionally check 'Set as default'
 5. [ACT] Click Save
-6. [ASSERT] Verify address saved and appears in list","[DOM] Add address button visible
+6. [WAIT] Page/form response
+7. [ASSERT] Verify address saved and appears in list","[DOM] Add address button visible
 [DOM] Form displays all required fields
 [DOM] State dropdown populated based on country
-[DOM] Success message: 'Address added'
+[DOM] Success message: 'Address added' or equivalent toast
 [DOM] New address appears in list
-[DOM] Default badge shown if set as default","[CONSOLE] no uncaught JS errors","Add address button missing; form missing required fields; address not appearing in list after save; validation not applied to ZIP or phone","none","VCST-4575","Automated"
+[DOM] Default badge shown if set as default
+[DOM] If checkDuplicateAddress is wired to the form: no duplicate warning for a genuinely new address","[API] updateMemberAddresses mutation returns HTTP 200; errors[] is empty
+[API] If checkDuplicateAddress called before submit: isDuplicated = false for the new unique address; errors[] empty
+[CONSOLE] no uncaught JS errors","Add address button missing; form missing required fields; address not appearing in list after save; validation not applied to ZIP or phone; duplicate warning shown for a new unique address (false positive)","none","VCST-4575; VCST-4710 (checkDuplicateAddress wired to add-address form); Synced TLC-2026-04-23-1700","Automated"
 "B2C-SHIP-003","Ship To - Edit Address","B2C Features > Ship To","High","BL-B2C-003","","Saved address exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Addresses
 2. [ACT] Click Edit on an address
 3. [ACT] Modify street to '456 New St Apt 2B'
@@ -141,6 +150,61 @@
 [STATE] Saved address displays sanitized values — no executable HTML","[CONSOLE] No JS errors or XSS alert dialogs triggered
 [API] updateMemberAddresses mutation returns errors[] for HTML payloads if server-side validation enabled
 [DOM] Address list renders all fields as text nodes, not HTML","XSS payload accepted and saved; <script> tag rendered in address display; alert dialog fires on page load; HTML stored verbatim in phone/name fields","delete test address","VCST-4803 coverage gap — address form XSS","Generated"
+"B2C-SHIP-014","Ship To - Add Duplicate Address Shows Warning (Duplicate Prevention UX)","B2C Features > Ship To","High","BL-B2C-003",ECL-5.1,"User logged in on personal account. User has at least one saved address. The add-address form calls checkDuplicateAddress before submitting updateMemberAddresses mutation. Backed by PR #129.","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/account/addresses
+2. [WAIT] Address list loads — note the first saved address fields (line1, city, country, postal code)
+3. [ACT] Click 'Add New Address' button
+4. [WAIT] Add address form/modal opens
+5. [ACT] Fill form with the SAME address data as the existing saved address: same Street, City, Country, ZIP (copy fields exactly from list)
+6. [ACT] Fill First Name, Last Name, Phone (can differ from original)
+7. [ACT] Click Save (or equivalent submit action)
+8. [WAIT] Form response visible","[DOM] Duplicate warning message visible after Save attempt — e.g. 'This address already exists' or similar
+[STATE] Address NOT added to list when duplicate detected — totalCount unchanged
+[DOM] If warning is a non-blocking dialog: user is offered option to cancel or proceed
+[DOM] If duplicate skip is silent: no new row appears in address list; no success toast fires
+[STATE] Either (a) warning shown + save blocked, OR (b) silent skip + no duplicate in list — both are valid implementations of the duplicate prevention invariant","[API] checkDuplicateAddress called before submit — isDuplicated = true in response; errors[] empty
+[API] updateMemberAddresses mutation NOT called if frontend blocks on isDuplicated=true OR called but duplicate skipped silently (totalCount unchanged)
+[CONSOLE] no uncaught JS errors","Duplicate address saved without warning (duplicate prevention not working); totalCount increases after duplicate save; two identical addresses appear in list; checkDuplicateAddress not called (network tab shows no such request before submit)","delete any accidentally created duplicate address","VCST-4710 PR #129 — checkDuplicateAddress + UpdateAddresses duplicate skip; TLC-2026-04-23-1700","Generated"
+"B2C-SHIP-015","Ship To - Address Facet Filters (Country/State/City) on /account/addresses","B2C Features > Ship To","High","BL-B2C-003",ECL-3.2,"User logged in on personal account. Account has 10+ addresses across multiple countries, states, and cities. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json provides reference for multi-country data shape. Personal user must have their own seeded multi-country addresses. Use {{ORG_USER_EMAIL}} if /account/addresses is accessible for org-affiliated personal user with personal addresses.","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/account/addresses
+2. [WAIT] Address list loads with 10+ addresses visible
+3. [ASSERT] Verify facet filter dropdowns visible: Country, State/Province, City
+4. [ACT] Select 'United States of America' (or 'United States') from Country dropdown
+5. [WAIT] List updates
+6. [ASSERT] Verify only US addresses shown (countryCode USA or US)
+7. [ACT] Select a state from State dropdown (e.g. California)
+8. [WAIT] List updates
+9. [ASSERT] Verify only addresses in California shown
+10. [ACT] Select a city from City dropdown (e.g. San Francisco)
+11. [WAIT] List updates
+12. [ASSERT] Verify only San Francisco, CA, USA addresses shown
+13. [ACT] Clear all facets (click reset or select 'All' in each dropdown)
+14. [WAIT] List restores
+15. [ASSERT] Verify full address list restored to original count","[DOM] Country, State/Province, City facet dropdowns visible above address list
+[DOM] Country filter: only US addresses shown after selecting USA
+[DOM] State filter: only California addresses shown after selecting California
+[DOM] City filter: only San Francisco addresses shown after selecting San Francisco
+[COUNT] Combined 3-facet result is a strict subset of each individual facet result
+[DOM] Clearing all facets restores full address list
+[FORMAT] City facet displays city names (e.g. 'San Francisco') NOT postal codes (e.g. '94102') — label vs term distinction","[API] currentCustomerAddresses called with countryCodes/regionIds/cities args matching selected facets; errors[] empty
+[API] term_facets in response populated with country, state, city facet entries
+[CONSOLE] no uncaught JS errors","Facet dropdowns missing from /account/addresses; Country filter not narrowing list; City facet shows postal codes instead of city names (city/postal-code label mapping bug); clearing facets does not restore full list; currentCustomerAddresses errors[] non-empty with 'argument not found'","none","VCST-4710 PR #129; TechFlow seed data (22 addresses across USA/CAN/GBR); TLC-2026-04-23-1700","Generated"
+"B2C-SHIP-016","Ship To - Address Search Keyword Filters List","B2C Features > Ship To","High","BL-B2C-003",ECL-3.2,"User logged in on personal account. Account has 3+ addresses including one with a distinct city not shared by others (e.g. 'Portland'). Page backed by currentCustomerAddresses(keyword:) query.","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/account/addresses
+2. [WAIT] Address list loads
+3. [ASSERT] Verify keyword search input visible on page
+4. [ACT] Type partial city name (e.g. 'Port') into search input
+5. [WAIT] List filters to matching addresses
+6. [ASSERT] Verify only addresses containing 'Port' in city, street, or name visible
+7. [ACT] Type full city name 'Portland' into search input
+8. [WAIT] List updates
+9. [ASSERT] Verify only Portland addresses shown; totalCount reduced
+10. [ACT] Clear search input (backspace to empty OR click clear icon)
+11. [WAIT] List restores
+12. [ASSERT] Verify full address list restored (totalCount matches original)","[DOM] Keyword search input visible above address list
+[DOM] Typing partial text narrows displayed addresses to matching items
+[COUNT] totalCount after keyword filter < totalCount unfiltered (keyword is specific enough)
+[DOM] Clearing search input restores full list with original count
+[STATE] Keyword search is case-insensitive: 'Portland' and 'portland' return same count","[API] currentCustomerAddresses called with keyword arg matching typed text; errors[] empty
+[API] Response totalCount decreases when keyword applied
+[CONSOLE] no uncaught JS errors","Keyword input missing from page; typing does not filter list; clearing does not restore list; search is case-sensitive (Portland vs portland return different counts); currentCustomerAddresses errors[] non-empty","none","VCST-4710 PR #129; TLC-2026-04-23-1700","Generated"
 "B2C-BULK-001","Quick Order by SKU","B2C Features > Bulk Order","Critical","BL-B2C-001","ECL-14.1","User logged in, /bulk-order page accessible, at least one known product SKU","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to /bulk-order (Quick Order page)
 2. [ASSERT] Locate the SKU entry field
 3. [ACT] Enter a known valid product SKU

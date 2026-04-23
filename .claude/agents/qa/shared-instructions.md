@@ -45,7 +45,7 @@ Ambiguous examples: label text changed (intentional?), new console warning (harm
 
 ## Evidence Collection Standards
 
-- **Screenshots**: key steps, failures, before/after states
+- **Screenshots**: FAIL state + critical-flow final state only. Skip passing-step captures. Budget per scope defined in evidence-capture-policy.md §1.
 - **Console logs**: errors, warnings, Vue/Angular messages
 - **Network traces**: failed requests, slow responses, GraphQL errors inside HTTP 200
 - **HAR files**: always capture during browser sessions

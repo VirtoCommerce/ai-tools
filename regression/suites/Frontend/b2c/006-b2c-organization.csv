@@ -33,16 +33,18 @@
 [DOM] Cart count in header reflects active org's cart
 [DOM] Org B items not present in Org A cart after switching back","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Org A items visible in Org B cart after switch; cart shared between orgs; switching back to Org A loses original cart items","remove item from cart","Coverage Gap Analysis","Generated"
-"B2C-ORG-004","Switch Org - Addresses Update","B2C Features > Organization","High","BL-B2C-004","","Multi-org user, Org A and Org B have different saved addresses","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as Org A
+"B2C-ORG-004","Switch Org - Addresses Update","B2C Features > Organization","High","BL-B2C-004","ECL-14.3","Multi-org user, Org A and Org B have different saved addresses. After PR #129 ProfileAuthorizationHandler refactor, currentOrganizationAddresses must return addresses scoped to the caller's CURRENT org context (not leak Org A data into Org B view).","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as Org A
 2. [NAV] Navigate to account addresses or ship-to selector
-3. [ASSERT] Note the addresses available for Org A
+3. [ASSERT] Note the addresses available for Org A (count and at least one identifier)
 4. [ACT] Switch to Org B using org switcher
 [WAIT] Wait for org context to update (header/org name reflects Org B)
 5. [NAV] Navigate to account addresses or ship-to selector
-6. [ASSERT] Verify addresses shown belong to Org B","[DOM] Addresses after switching to Org B are Org B's addresses
+6. [ASSERT] Verify addresses shown belong to Org B (different from Org A's addresses)","[DOM] Addresses after switching to Org B are Org B's addresses
 [DOM] Org A addresses not shown while Org B is active
 [DOM] Ship-to selector in header reflects Org B's addresses
-[DOM] Checkout address options reflect active org's addresses","[CONSOLE] no uncaught JS errors","Org A addresses visible while Org B is active; ship-to selector showing wrong org's addresses","none","Coverage Gap Analysis","Generated"
+[DOM] Checkout address options reflect active org's addresses","[API] currentOrganizationAddresses query called after org context switch; response scope reflects Org B (totalCount and items differ from Org A view); errors[] is empty
+[API] No Org A address items leak into Org B's currentOrganizationAddresses response (authz boundary maintained per PR #129)
+[CONSOLE] no uncaught JS errors","Org A addresses visible while Org B is active; ship-to selector showing wrong org's addresses; currentOrganizationAddresses errors[] non-empty after org switch (authz over-restriction regression from PR #129)","none","Coverage Gap Analysis; Synced TLC-2026-04-23-1700 (PR #129 authz refactor cross-layer check added)","Generated"
 "B2C-ORG-005","Switch Org - Lists Scope","B2C Features > Organization","High","BL-B2C-004","","Multi-org user, Org A and Org B each have at least one saved list","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as Org A
 2. [NAV] Navigate to My Lists
 3. [ASSERT] Note lists available for Org A

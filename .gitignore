@@ -10,4 +10,13 @@ results/
 .claude/settings.local.json
 .mcp.json
 
-
+# Regression / lifecycle / coverage run evidence — ephemeral by policy
+reports/regression/REG-*/**/*.png
+reports/regression/REG-*/**/*.har
+reports/regression/REG-*/**/*.jpg
+reports/test-lifecycle/TLC-*/**/*.png
+reports/test-lifecycle/TLC-*/**/*.har
+reports/test-lifecycle/TLC-*/**/*.jpg
+reports/coverage/COV-*/**/*.png
+reports/coverage/COV-*/**/*.har
+reports/coverage/COV-*/**/*.jpg

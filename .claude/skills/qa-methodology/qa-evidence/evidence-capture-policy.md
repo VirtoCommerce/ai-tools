@@ -39,6 +39,12 @@
 | Full regression suite (20+ tests) | Failures + 1 summary per area | 15-20 |
 | Exploratory session | Anomalies only | 10 |
 
+### Retention
+
+- Regression, test-lifecycle, and coverage run screenshots (under `reports/regression/REG-*/`, `reports/test-lifecycle/TLC-*/`, `reports/coverage/COV-*/`) are **gitignored** — treat them as ephemeral raw artifacts. The markdown report is the permanent record; PNGs referenced from it are disposable.
+- Bug evidence (`reports/bugs/screenshots/`, `reports/bugs/api-traces/`) and per-ticket evidence (`tests/SprintXX-XX/VCST-XXXX/screenshots/`, `reports/tickets/VCST-XXXX/screenshots/`) remain tracked — they are long-lived reference material linked from JIRA.
+- Budgets (table above) are enforced at review, not at write time — reviewers reject reports that exceed the per-scope max.
+
 ---
 
 ## 2. Console & Network Evidence Rules

@@ -23,14 +23,17 @@
 [CONSOLE] No validation errors in console","Form accepts invalid data without error; address not persisted after clicking Continue","none","VCST-4499","Automated"
 "CHK-003","Checkout - Select Saved Address","Checkout > Shipping","High","BL-CHK-001","","User logged in with at least one saved address, products in cart","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and proceed to checkout
 [ACT] select 'Delivery' option
-[WAIT] Wait for saved addresses to load
-[ASSERT] Verify saved address dropdown or list appears
-[ACT] select existing saved address from dropdown/list
-[ASSERT] Verify address fields populated with saved address data
-[ACT] Optionally edit a field and verify change persists","[DOM] Saved address dropdown or address list rendered
-[STATE] Selecting address populates all form fields correctly
-[DOM] Edit capability present (Edit button or inline edit)","[API] GET /account/addresses returns saved addresses
-[CONSOLE] No errors when loading saved addresses","Saved addresses not listed; selecting address does not populate fields","none","VCST-4499","Automated"
+[WAIT] Wait for address section to render
+[ACT] click [data-test-id=""select-address-button""] to open the Select Address popup
+[WAIT] Wait for address popup to appear
+[ASSERT] Verify popup visible with search input [data-test-id=""search-keyword-input""], magnifying-glass button, and 3 facet dropdowns ([data-test-id=""filter-country""], [data-test-id=""filter-region""], [data-test-id=""filter-city""]) and address table
+[ACT] Optionally type a keyword into [data-test-id=""search-keyword-input""] and click the magnifying-glass icon OR select a value in one of the 3 facet dropdowns to narrow results
+[ACT] click the desired address row in the address table
+[ACT] click OK to confirm selection
+[ASSERT] Verify popup closes and Shipping Details section updated with the selected address","[DOM] Popup visible with search input, magnifying-glass button, 3 facet dropdowns (country/region/city), and address table
+[STATE] Selecting an address row and clicking OK closes the popup
+[DOM] Shipping Details section populated with the selected address after popup closes","[API] currentCustomerAddresses query returns 200 and data.currentCustomerAddresses.errors is null/absent (no legacy errors[] field — use standard GraphQL top-level errors)
+[CONSOLE] No errors when loading saved addresses","Saved addresses not shown in popup; selecting address does not close popup or update Shipping Details; facet dropdowns or search input absent in popup","none","VCST-4499, Synced: VCST-4710 (2026-04-23) — diff in TLC-2026-04-23-1230","synced"
 "CHK-004","Checkout - Address Validation","Checkout > Shipping","High","BL-CHK-001","","User at checkout shipping address step, address form open","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and proceed to checkout shipping step
 [ACT] Leave all required address fields empty
 [ACT] click 'Continue'
@@ -359,42 +362,48 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checko
 [DOM] selected address shows full address fields (street, city, state, ZIP, country)
 [STATE] user does not need to manually select an address to proceed
 [DOM] Continue/Next step button is active with pre-selected address","[API] getCart or checkout query returns pre-selected default address in deliveryAddress field
+[API] currentCustomerAddresses query called on popup open with default sort. Personal account: default sort lastName:asc; pre-selected address = first item unless a different isDefault exists. Org account: default sort isFavorite:desc; pre-selected address = first isFavorite or first item. If isFavorite field is absent/null (not populated by Platform seed), fallback is isDefault=true or first-by-sort. Standard GraphQL errors empty.
 [CONSOLE] no JS errors on checkout address load
-[NETWORK] no 4xx/5xx on address section render","no address pre-selected (user must manually pick every time); wrong address pre-selected (not the default/favorite); address form shown blank instead of pre-filled","No cleanup required","Coverage Gap Analysis","Generated"
-"CHK-059","Ship-To Address - Search and Select Different Address Updates Shipping Methods","Checkout > Shipping > Address Selector","High","BL-CHK-005","ECL-14.1","SEED REQUIRED: User {{USER_EMAIL}} must have 2+ saved addresses in account address book (at least one in a different shipping zone). Add addresses via: account profile > Addresses > Add Address. Set {{SAVED_ADDRESS_1}} and {{SAVED_ADDRESS_2}} with distinct ZIP codes/regions.","url={{FRONT_URL}}
-user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout shipping address step
+[NETWORK] no 4xx/5xx on address section render","no address pre-selected (user must manually pick every time); wrong address pre-selected (not the default/favorite); address form shown blank instead of pre-filled","No cleanup required","Coverage Gap Analysis, Synced: VCST-4710 (2026-04-23) — new pre-selection behavior via composable default sort","synced"
+"CHK-059","Ship-To Address - Search and Select Different Address Updates Shipping Methods","Checkout > Shipping > Address Selector","High","BL-CHK-005","ECL-14.1","TechFlow org (id 6fb516c1-07f3-4af4-be5e-35961e3f7993) has 22 addresses across 3 countries / 13 US+CA regions / 20 cities seeded per test-data/addresses/techflow-org-addresses-state-20260423.json. Log in as a TechFlow org member. Cart has items.","url={{FRONT_URL}}
+user={{ORG_USER_EMAIL}}
+password={{ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout shipping address step
 [ASSERT] verify current address and shipping methods displayed
 [ASSERT] note available shipping method count for the pre-selected address
-[ACT] click 'Change address' or address search/selector control
-[WAIT] wait for address list or search input to appear
-[ACT] search for or select a different saved address (different region or country)
+[ACT] click [data-test-id=""select-address-button""] to open the Select Address popup
+[WAIT] wait for popup to appear with address table
+[ASSERT] verify popup shows search input [data-test-id=""search-keyword-input""], magnifying-glass button, and 3 facet dropdowns ([data-test-id=""filter-country""], [data-test-id=""filter-region""], [data-test-id=""filter-city""])
+[ACT] type 'Toronto' into [data-test-id=""search-keyword-input""] and click the magnifying-glass icon (OR click [data-test-id=""filter-country""] and select 'Canada' from the dropdown)
+[WAIT] wait for address table to filter results
+[ACT] click the desired address row in the filtered table
+[ACT] click OK to confirm selection
 [WAIT] wait for checkout to recalculate with new address
 [ASSERT] verify selected address updated in checkout summary
 [ASSERT] verify shipping methods list refreshed with options for the new address
 [ASSERT] verify subtotal and shipping cost updated if applicable","[DOM] new address shown in checkout shipping summary
+[DOM] popup shows 3 facet dropdowns (country/region/city) AND keyword search input
 [STATE] shipping method options updated to reflect new address zone/country
 [STATE] previously selected shipping method may reset (valid behavior if incompatible with new address)
 [MATH] shipping cost reflects new address zone pricing","[API] getShippingMethods called with new address params; returns updated methods
 [CONSOLE] no JS errors on address switch and shipping recalculation
-[NETWORK] no 4xx/5xx on address change or shipping methods refresh","shipping methods not refreshed after address change; old address shown in summary despite selecting new one; shipping cost unchanged after address zone change","No cleanup required","Coverage Gap Analysis","Manual — BLOCKED pending seed: 2+ saved addresses for {{USER_EMAIL}}. SEED verdict 2026-04-21."
-"CHK-060","Ship-To Address - Show More Addresses Pagination","Checkout > Shipping > Address Selector","Medium","BL-CHK-005","","SEED REQUIRED: User {{USER_EMAIL}} must have MORE than 5 saved addresses in account address book to trigger pagination/show-more. Add 6+ addresses via admin or storefront profile. Verify initial display limit is 5 in checkout address selector.","url={{FRONT_URL}}
-user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout shipping address step
-[ACT] click 'Change address' or address selector to open full address list
-[WAIT] wait for address list to render
-[ASSERT] verify initial address list shows a subset of addresses (e.g., first 5)
-[ASSERT] verify 'Show more' button or pagination control visible
-[ACT] click 'Show more' or next page control
-[WAIT] wait for additional addresses to load
-[ASSERT] verify additional addresses appended or paginated correctly
-[ASSERT] verify all displayed addresses are selectable","[DOM] initial address list shows partial set (not all addresses at once)
-[DOM] 'Show more' button or pagination control present
-[STATE] clicking 'Show more' loads additional addresses without page refresh
+[NETWORK] no 4xx/5xx on address change or shipping methods refresh","shipping methods not refreshed after address change; old address shown in summary despite selecting new one; shipping cost unchanged after address zone change; popup missing search or facet controls","No cleanup required","Coverage Gap Analysis, Synced: VCST-4710 (2026-04-23)","synced"
+"CHK-060","Ship-To Address - Show More Addresses Pagination","Checkout > Shipping > Address Selector","Medium","BL-CHK-005","","TechFlow org (id 6fb516c1-07f3-4af4-be5e-35961e3f7993) has 22 addresses seeded per test-data/addresses/techflow-org-addresses-state-20260423.json — 22 rows unblocks pagination (default 8 per page, 3 pages total). Log in as a TechFlow org member. Cart has items.","url={{FRONT_URL}}
+user={{ORG_USER_EMAIL}}
+password={{ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout shipping address step
+[ACT] click [data-test-id=""select-address-button""] to open the Select Address popup
+[WAIT] wait for address popup to render
+[ASSERT] verify initial address table shows partial set (default page size ~8 rows)
+[ASSERT] verify 'Show more' button OR pagination control is visible below the address table (verify actual UI label in current build)
+[ACT] click 'Show more' or the next-page pagination control
+[WAIT] wait for additional addresses to load (server-side cursor-based fetch)
+[ASSERT] verify additional addresses appended or paginated correctly (new rows visible, no overlap with first set)
+[ASSERT] verify all displayed addresses are selectable via click","[DOM] initial address list shows partial set (not all 22 addresses at once)
+[DOM] 'Show more' button or numbered pagination control present
+[STATE] clicking pagination control loads next page of addresses without full page refresh
 [DOM] newly loaded addresses selectable via click
-[STATE] no duplicate addresses in expanded list","[API] addresses query returns paginated result; second page returns additional items
+[STATE] no duplicate addresses across pages","[API] currentCustomerAddresses called with after cursor on pagination action; second call returns new non-overlapping items; totalCount unchanged across calls. Standard GraphQL errors empty.
 [CONSOLE] no JS errors on show more / pagination click
-[NETWORK] no 4xx/5xx on address pagination request","'Show more' button absent despite many addresses; clicking 'Show more' causes page refresh or error; duplicate addresses in list; addresses not selectable after expansion","No cleanup required","Coverage Gap Analysis","Manual — BLOCKED pending seed: 6+ saved addresses for {{USER_EMAIL}}. SEED verdict 2026-04-21."
+[NETWORK] no 4xx/5xx on address pagination request","'Show more' or pagination absent despite 22 addresses; clicking pagination causes full page refresh or error; duplicate addresses across pages; addresses not selectable after loading next page","No cleanup required","Coverage Gap Analysis, Synced: VCST-4710 (2026-04-23) — pagination now server-side via cursor","synced"
 "CHK-061","Session Timeout During Checkout - Cart Preserved After Re-authentication","Checkout > Session > Timeout","Medium","","ECL-1.2","TOOL-LIMITATION: Natural session timeout in QA environment is too long for automated testing. Use cookie-clearing approach: MCP browser_evaluate to delete access_token and refresh_token cookies, then proceed. This simulates session expiry without waiting for timeout. NOTE: Real-user-interaction rule applies — use browser_evaluate only for cookie manipulation (not for UI interactions).","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart; proceed to checkout payment step
@@ -619,3 +628,225 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with below-min
 [GQL] cart.shipments[0].deliveryAddress reflects latest values
 [NETWORK] No duplicate addOrUpdateCartShipment calls per single edit action
 [CONSOLE] No JS errors during address editing","Shipping address summary still shows old address after edit; address form not pre-populated on re-edit; shipping methods don't recalculate after address change; multiple addOrUpdateCartShipment calls per edit (potential duplicate); checkout breaks after editing address multiple times","none","VCST-4830; Synced: VCST-4830 + PR #106 (2026-03-31)","Manual — Rewritten 2026-04-21: GQL cross-layer check added (cart.shipments count must = 1 after each edit). BLOCKED in REG-2026-04-20 run due to VCST-4830 fix verification pending; verify fix is deployed before running."
+"CHK-087","Address Popup Opens From Cart Shipping Details — Happy Path","Checkout > Shipping > Address Popup","Critical","BL-CHK-001","","User logged in as {{USER_EMAIL}} with at least 1 saved address; cart has at least 1 item","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loaded with at least 1 item
+[ACT] locate 'Shipping Details' section
+[ACT] click 'Please select a shipping address' link or pencil icon next to an assigned address
+[WAIT] address selection popup opens","[DOM] address selection popup/modal is visible
+[DOM] popup contains keyword search input (data-test-id=""search-keyword-input"")
+[DOM] 3 facet dropdowns visible: Country (data-test-id=""filter-country""), State (data-test-id=""filter-region""), City (data-test-id=""filter-city"")
+[DOM] address list renders at least one address row
+[DOM] popup has 4 columns: Address / Description / Country / Active","[API] currentCustomerAddresses query called; response errors[] is empty
+[CONSOLE] no JS errors on popup open
+[NETWORK] no 4xx/5xx on /graphql","popup does not open; popup opens blank; spinner persists >5s; JS TypeError in console","Close popup without selecting address (press Esc or click X)","Promoted from VCST-4710-SF-001 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+"CHK-088","Address Popup — Keyword Search Returns Filtered Results","Checkout > Shipping > Address Popup > Search","Critical","BL-CHK-001","ECL-3.2","User logged in as {{USER_EMAIL}} with 3+ saved addresses; address popup open","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loaded
+[ACT] open address selection popup (click 'Please select a shipping address' or pencil icon)
+[WAIT] address list renders
+[ACT] click search input (data-test-id=""search-keyword-input"")
+[ACT] type partial city or street value matching exactly 1 of the saved addresses
+[WAIT] list refreshes with filtered results
+[ACT] click magnifying-glass submit button
+[WAIT] results updated","[DOM] address list shows only records matching the keyword
+[COUNT] result count reduced compared to full list
+[DOM] matching address row is visible
+[DOM] non-matching addresses are absent","[API] currentCustomerAddresses query called with keyword arg; errors[] is empty
+[CONSOLE] no JS errors during search
+[NETWORK] no 4xx/5xx on /graphql search request","list unchanged after typing keyword; spinner visible >5s; all addresses disappear (over-filter); console TypeError","Close popup without selection","Promoted from VCST-4710-SF-002 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+"CHK-089","Address Popup — Keyword Search Clear Restores Full List","Checkout > Shipping > Address Popup > Search","High","BL-CHK-001","ECL-3.1","User logged in as {{USER_EMAIL}} with 3+ saved addresses; address popup open with active keyword filter","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loaded
+[ACT] open address selection popup
+[WAIT] address list renders
+[ACT] type keyword in search input and submit
+[WAIT] filtered results appear
+[ACT] clear the search input (delete all text)
+[WAIT] list refreshes","[DOM] full unfiltered address list restored
+[COUNT] address count returns to the original count before filtering
+[DOM] search input is empty","[API] currentCustomerAddresses called with empty/absent keyword; errors[] is empty
+[CONSOLE] no JS errors on clear
+[NETWORK] no 4xx/5xx","list stays filtered after clearing input; full list not restored; extra network call fails; empty state shown despite addresses existing","Close popup without selection","Promoted from VCST-4710-SF-003 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+"CHK-090","Address Popup — Country Facet Filters Address List","Checkout > Shipping > Address Popup > Facets","Critical","BL-CHK-001","ECL-3.2","Test org/user has addresses in 2+ countries; address popup open. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json (22 addresses, 3 countries).","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
+[WAIT] cart loaded
+[ACT] open address selection popup
+[WAIT] address list renders
+[ACT] click 'Country' facet dropdown (data-test-id=""filter-country"")
+[WAIT] country options appear with count badges
+[ACT] check one country option (e.g. 'United States')
+[WAIT] address list filters","[DOM] only addresses for the selected country appear in list
+[DOM] country facet option shows count badge with positive integer
+[DOM] Country facet shows checked/selected state for chosen option
+[COUNT] result count matches the badge count for selected country","[API] currentCustomerAddresses called with countryCodes arg; errors[] is empty
+[CONSOLE] no JS errors on facet selection
+[NETWORK] no 4xx/5xx","no filtering applied; count badge mismatched; facet checkbox has no visual selected state; spinner >5s","Close popup without selection","Promoted from VCST-4710-SF-004 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+"CHK-091","Address Popup — State/Province Facet Filters Address List","Checkout > Shipping > Address Popup > Facets","High","BL-CHK-001","ECL-3.2","Test org has addresses in 2+ US states; address popup open. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json (22 addresses across 13 US+CA regions).","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
+[WAIT] cart loaded
+[ACT] open address selection popup
+[WAIT] address list renders
+[ACT] click 'State' or 'State/Province' facet dropdown (data-test-id=""filter-region"")
+[WAIT] state options appear
+[ACT] check one state (e.g. 'New York (1)') to filter
+[WAIT] address list filters","[DOM] only addresses in selected state/province visible
+[DOM] state facet option label shows state name with count (e.g. 'New York (1)') — NOT a postal code or region ID
+[DOM] selected state shows checked indicator","[API] currentCustomerAddresses called with regionIds arg; errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","facet shows region ID instead of name; no filtering applied; state facet empty despite addresses having state data","Close popup without selection","Promoted from VCST-4710-SF-005 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+"CHK-092","Address Popup — City Facet Shows City Name NOT Postal Code (Defect #2 Verification)","Checkout > Shipping > Address Popup > Facets","Critical","","ECL-3.2","Defect #2 must be fixed before PASS is achievable. Seed data available: test-data/addresses/techflow-org-addresses-state-20260423.json (22 addresses with proper City/PostalCode separation). OQ-2: confirm defect #2 fix is in scope before running. VCST-4995 cancelled — seed data resolves dependency.","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
+[WAIT] cart loaded
+[ACT] open address selection popup
+[WAIT] address list renders
+[ACT] click 'City' facet dropdown (data-test-id=""filter-city"")
+[WAIT] city options appear","[DOM] city facet option labels show city names (e.g. 'New York') — NOT postal codes (e.g. '10001')
+[DOM] each city option shows count badge with positive integer
+[COUNT] city option count matches number of addresses with that city","[API] currentCustomerAddresses called; term_facets[].terms[].label contains city name string; errors[] is empty
+[API] term_facets[].terms[].term contains the city identifier (separate from label)
+[CONSOLE] no JS errors","city facet shows numeric postal codes instead of city names (Defect #2 regression); facet empty; spinner >5s","Close popup without selection","Promoted from VCST-4710-SF-006 / TLC-2026-04-23-1230 / BA report 2026-04-23; Defect #2; VCST-4995 cancelled","ready"
+"CHK-093","Address Popup — Combined Facets (Country + State + City) Narrow Results","Checkout > Shipping > Address Popup > Facets","High","BL-CHK-001","ECL-3.2","Addresses in multiple countries/states/cities available; address popup open. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json (22 addresses, 3 countries, 13 regions, 20 cities).","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
+[WAIT] cart loaded
+[ACT] open address selection popup
+[WAIT] address list renders
+[ACT] click 'Country' facet and select 'United States'
+[WAIT] list filters
+[ACT] click 'State' facet and select a specific state
+[WAIT] list filters further
+[ACT] click 'City' facet and select a specific city
+[WAIT] list filters further","[DOM] each successive facet selection further reduces the address list
+[COUNT] final result count matches addresses in US + selected state + selected city
+[DOM] all 3 facets show their selected values
+[DOM] results contain only addresses matching all 3 criteria","[API] currentCustomerAddresses called with all 3 args (countryCodes, regionIds, cities); errors[] is empty
+[CONSOLE] no JS errors on combined filter
+[NETWORK] no 4xx/5xx","applying second facet clears first; combined filter returns zero results despite matches; API called without all 3 args","Close popup without selection","Promoted from VCST-4710-SF-007 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+"CHK-094","Address Popup — Column Sort NOT Wired (Defect #1 Bug Verification)","Checkout > Shipping > Address Popup > Sort","Critical","","ECL-3.2","Build deployed to QA before Defect #1 fix. Verify column header is NOT interactive (cursor: auto). After fix is deployed this test becomes a PASS verification for sort functionality.","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart loaded
+[ACT] open address selection popup
+[WAIT] address list renders
+[ACT] attempt to click column header 'Address'
+[WAIT] observe any sort behavior","[DOM] column header has aria-sort=""none"" attribute
+[DOM] column header has cursor: auto style (NOT cursor: pointer) — sort is NOT wired
+[STATE] address list order does NOT change after clicking column header
+[DOM] no sort indicator arrows appear","[CONSOLE] no click handler fires on column header click; no JS error from unhandled sort
+[NETWORK] no additional /graphql request on column header click","column sort fires and reorders list (would mean Defect #1 is fixed — update test); TypeError on column click","Close popup without selection","Promoted from VCST-4710-SF-008 / TLC-2026-04-23-1230 / BA report 2026-04-23; Defect #1; BLOCKED by VCST-4992 (column sort not wired, P0)","blocked-by-VCST-4992"
+"CHK-095","Address Popup — Empty State When No Addresses Saved","Checkout > Shipping > Address Popup > Empty States","High","BL-CHK-001","ECL-3.1","User logged in with NO saved addresses in account; cart has at least 1 item. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json available for seeded account flows.","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as user with no saved addresses
+[WAIT] cart page loaded
+[ACT] click 'Please select a shipping address' link
+[WAIT] address popup opens","[DOM] popup renders an empty state message (no address rows in the table)
+[DOM] empty state message does NOT say 'Error' or show a stack trace
+[DOM] 'Add New' button or link visible inside popup (to add first address)
+[STATE] popup does not show a loading spinner indefinitely","[API] currentCustomerAddresses called; returns totalCount=0 and items=[]; errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","popup shows error instead of empty state; spinner never resolves; 'Add New' missing; popup crashes with TypeError","Close popup","Promoted from VCST-4710-SF-009 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+"CHK-096","Address Popup — Empty State When Filters Return No Results","Checkout > Shipping > Address Popup > Empty States","High","BL-CHK-001","ECL-3.1","User has 3+ saved addresses; address popup open. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json.","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart loaded
+[ACT] open address selection popup
+[WAIT] address list renders with results
+[ACT] type a keyword guaranteed to match no address (e.g. 'ZZZZNOADDRESS')
+[ACT] click search submit button
+[WAIT] list updates","[DOM] empty state message visible (no matches found message)
+[DOM] empty state does NOT show an error banner or stack trace
+[DOM] search input retains the typed keyword
+[DOM] clear/reset control visible","[API] currentCustomerAddresses called with non-matching keyword; returns totalCount=0; errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","spinner never resolves; previous results still shown; 500 error displayed; JS TypeError","Clear search; close popup","Promoted from VCST-4710-SF-010 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+"CHK-097","Address Popup — Select Address Updates Checkout Shipping Address","Checkout > Shipping > Address Popup > Selection","Critical","BL-CHK-001","","User logged in as {{USER_EMAIL}} with 1+ saved addresses; cart has items","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart loaded
+[ACT] open address selection popup
+[WAIT] address list renders
+[ACT] click on any address row to select it
+[WAIT] popup closes and shipping address updates in Shipping Details section","[DOM] popup closes after address selection
+[DOM] selected address appears in the 'Shipping Details' section of the cart page
+[STATE] checkout can proceed with the selected address
+[DOM] address details (street, city, country) shown in Shipping Details match the selected row","[API] checkout shipping address update call returns 200; errors[] is empty
+[CONSOLE] no JS errors on address selection
+[NETWORK] no 4xx/5xx","popup stays open after selection; wrong address shown in Shipping Details; Shipping Details unchanged; spinner >5s","No cleanup (address selection persists for session)","Promoted from VCST-4710-SF-011 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+"CHK-098","Address Popup — Pagination Loads Next Page of Addresses","Checkout > Shipping > Address Popup > Pagination","High","BL-CHK-001","ECL-3.1","Test org has 20+ saved addresses to trigger pagination; address popup open. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json (22 addresses).","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
+[WAIT] cart loaded
+[ACT] open address selection popup
+[WAIT] first page of addresses renders
+[ASSERT] verify pagination control or 'Load more' is visible when 20+ addresses exist
+[ACT] click pagination 'Next' or 'Load more' control
+[WAIT] second page or additional addresses load","[DOM] pagination control visible for 20+ address accounts
+[DOM] additional addresses appear after pagination action
+[COUNT] total visible addresses increases (or second page shows new rows)
+[STATE] addresses from first page remain accessible (cursor-based pagination)","[API] currentCustomerAddresses called with after cursor; second call returns new items; errors[] is empty
+[CONSOLE] no JS errors on pagination
+[NETWORK] no 4xx/5xx","pagination control absent for 20+ addresses; second page request fails; addresses duplicated; cursor not used in request","Close popup","Promoted from VCST-4710-SF-012 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+"CHK-099","Address Popup — Aria-Label on Search Input Should Be Address Context (Defect #3)","Checkout > Shipping > Address Popup > A11y","High","","ECL-14.3","User logged in with addresses; address popup open. Defect #3 must be fixed before PASS is achievable.","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart loaded
+[ACT] open address selection popup
+[WAIT] popup renders
+[ACT] inspect aria-label attribute on the search input (data-test-id=""search-keyword-input"") via accessibility tree or DOM","[DOM] search input aria-label does NOT contain 'pickup locations' (BOPIS copy-paste artifact)
+[DOM] search input aria-label references shipping address context (e.g. 'Search addresses' or similar)","[CONSOLE] no accessibility audit errors on input
+[NETWORK] no additional requests","aria-label still reads 'Search pickup locations' (Defect #3 regression); aria-label missing entirely","Close popup","Promoted from VCST-4710-SF-013 / TLC-2026-04-23-1230 / BA report 2026-04-23; Defect #3; BLOCKED by VCST-4993 (aria-label Search pickup locations)","blocked-by-VCST-4993"
+"CHK-100","Address Popup — Mobile 375px City Facet Accessible Without Horizontal Scroll (Defect #4)","Checkout > Shipping > Address Popup > Mobile","High","","ECL-14.3","Defect #4 fix deployed. Viewport set to 375px width. User logged in with addresses.","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart at 375px viewport width
+[WAIT] cart page loaded at mobile width
+[ACT] open address selection popup
+[WAIT] popup renders in card/mobile layout
+[ASSERT] all 3 filter buttons (Country, State, City) visible without horizontal scroll
+[ACT] click 'City' facet button without scrolling horizontally","[DOM] all 3 filter buttons (Country, State, City) fully visible within 375px viewport
+[DOM] no horizontal scrollbar present
+[DOM] City filter button fully rendered (not clipped at right edge)
+[DOM] clicking City filter opens options","[CONSOLE] no layout errors
+[NETWORK] no 4xx/5xx","City filter button clipped at 375px (Defect #4 regression); horizontal scroll required; filter button not tappable without scrolling","Return to desktop viewport","Promoted from VCST-4710-SF-014 / TLC-2026-04-23-1230 / BA report 2026-04-23; Defect #4; BLOCKED by VCST-4994 (mobile 375px CITY clip)","blocked-by-VCST-4994"
+"CHK-101","Address Popup — Personal Account Shows Only Personal Addresses","Checkout > Shipping > Address Popup > Scope","High","BL-B2B-001","ECL-14.3","User logged in as personal account (no org membership) with personal addresses saved","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as personal account user {{USER_EMAIL}}
+[WAIT] cart loaded
+[ACT] open address selection popup
+[WAIT] address list renders","[DOM] address list shows only personal addresses (currentCustomerAddresses scope)
+[DOM] no org addresses visible (correct: personal accounts have no org)
+[STATE] popup does not show addresses belonging to any organization","[API] currentCustomerAddresses query used (not currentOrganizationAddresses); errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","org addresses leaked into personal account popup; popup empty despite saved personal addresses","Close popup","Promoted from VCST-4710-SF-015 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+"CHK-102","Address Popup — B2B Org Account Shows Org Addresses","Checkout > Shipping > Address Popup > Scope","High","BL-B2B-001","ECL-14.3","User logged in as B2B org user with org addresses configured. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json.","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}} (org user)
+[WAIT] cart loaded
+[ACT] open address selection popup
+[WAIT] address list renders","[DOM] address list contains org addresses (scoped to organization via currentOrganizationAddresses)
+[DOM] addresses show org-specific entries (not just personal addresses)
+[STATE] addresses sorted by isFavorite:Descending (org default sort)","[API] currentOrganizationAddresses query used for org context; errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","personal addresses shown instead of org addresses; org and personal addresses mixed without scoping; wrong sort applied","Close popup","Promoted from VCST-4710-SF-016 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+"CHK-103","Address Popup — Account Addresses Page Still Functional (COMPAT-001 / Backward Compat AC-12)","Checkout > Shipping > Backward Compat","High","BL-AUTH-005","","User logged in as {{USER_EMAIL}} on personal account with at least 1 saved address","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/addresses
+[WAIT] addresses page loads
+[ASSERT] verify at least one saved address is listed
+[ACT] click 'Add Address' and fill in a valid address
+[ACT] save the new address
+[WAIT] address appears in the list
+[ACT] click edit on existing address; modify a field; save
+[WAIT] update reflected in list","[DOM] addresses page (/account/addresses) renders without error
+[DOM] existing addresses listed with correct data
+[DOM] new address added via form appears in list after save
+[STATE] editing an address updates the displayed value
+[DOM] no deprecation errors or console warnings referencing useUserAddresses","[API] address save call returns 200; errors[] is empty
+[CONSOLE] no JS errors; no errors referencing removed composables
+[NETWORK] no 4xx/5xx on address save or load","page returns 404 or blank; address form missing; save action fails silently; console errors from deprecated composables breaking the page","Delete test address added in this case","Promoted from VCST-4710-SF-017 / TLC-2026-04-23-1230 / BA report 2026-04-23; AC-12","ready"
+"CHK-104","Address Popup — Company Info Page Address Widget Still Functional (COMPAT-002 / Backward Compat AC-12)","Checkout > Shipping > Backward Compat","High","BL-B2B-001","","User logged in as org admin ({{ORG_USER_EMAIL}}); company/info page accessible","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/company/info
+[WAIT] company info page loads
+[ASSERT] verify org addresses section visible on the page
+[ASSERT] verify at least one org address listed","[DOM] company info page (/account/company/info) renders without error
+[DOM] org addresses section visible
+[DOM] addresses displayed with correct fields (street, city, country)
+[STATE] page functional after PR #2219 composable migration","[CONSOLE] no JS errors; no errors from useOrganizationAddresses deprecated composable breaking the page
+[NETWORK] no 4xx/5xx on page load","page blank or 404; org addresses section missing; console errors from deprecated composable","None","Promoted from VCST-4710-SF-018 / TLC-2026-04-23-1230 / BA report 2026-04-23; AC-12","ready"
+"CHK-105","Address Popup — Search Case-Insensitive Matching","Checkout > Shipping > Address Popup > Search","High","BL-CHK-001","ECL-3.2","User has address with known city name (e.g. 'New York'); address popup open","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart loaded
+[ACT] open address selection popup
+[WAIT] address list renders
+[ACT] type city name in UPPERCASE (e.g. 'NEW YORK') in search input
+[ACT] submit search
+[WAIT] results update
+[ACT] clear search; type city name in lowercase (e.g. 'new york')
+[ACT] submit search
+[WAIT] results update","[DOM] UPPERCASE search returns same matching address row as lowercase search
+[DOM] result count identical for upper and lowercase variants
+[STATE] search is case-insensitive as documented in AC-2","[API] both keyword variants return same totalCount in currentCustomerAddresses; errors[] is empty
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","uppercase returns 0 results while lowercase returns matches; case-sensitive search filtering applied; inconsistent results","Clear search; close popup","Promoted from VCST-4710-SF-019 / TLC-2026-04-23-1230 / BA report 2026-04-23; AC-2","ready"
+"CHK-106","Address Popup — Duplicate Address Guard Shows Warning (AC-13)","Checkout > Shipping > Address Popup > Duplicate Guard","High","","ECL-5.1","SEED: existing address known; user on Add New address form inside popup; OQ-8 resolved to confirm duplicate-check UI is in scope","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart loaded
+[ACT] open address selection popup
+[WAIT] address list renders
+[ACT] click 'Add New' button inside popup
+[WAIT] add address form opens
+[ACT] fill in the same address details as an existing saved address
+[ACT] click save or submit the new address","[DOM] a duplicate warning message or confirmation dialog appears before saving
+[DOM] warning message references the duplicate address (not a generic error)
+[STATE] duplicate address is NOT saved silently — user is informed","[API] checkDuplicateAddress query called before save; isDuplicated = true; errors[] is empty
+[CONSOLE] no JS errors on duplicate check
+[NETWORK] no 4xx/5xx","duplicate address saved without any warning; checkDuplicateAddress not called; generic error shown instead of duplicate-specific message; OQ-8 blocks this case","Close popup or discard duplicate address","Promoted from VCST-4710-SF-020 / TLC-2026-04-23-1230 / BA report 2026-04-23; AC-13","ready"
