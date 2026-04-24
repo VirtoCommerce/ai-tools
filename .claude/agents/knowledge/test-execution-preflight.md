@@ -42,21 +42,42 @@ Before acting on any `[PRE:*]` tag, the agent must detect the current browser st
 
 **Do not** rely on cookies or localStorage alone for identity checks — the DOM is the source of truth for what the user sees. Cookies/localStorage are used by `[PRE:CLEAR_SESSION]` to purge state, not to verify it.
 
-### Selectors (known)
+### Selectors (verified live 2026-04-24 on vcst-qa-storefront.govirto.com)
 
-| Purpose | Selector / Strategy |
-|---------|---------------------|
-| Sign-out button (in account menu popup) | `data-testid="main-layout.top-header.account-menu.sign-out-button"` |
-| Account-menu trigger | Header user name / avatar — click to open popup |
+| Purpose | Selector |
+|---------|---------|
+| Account-menu trigger (header) | `data-test-id="main-layout.top-header.account-menu-button"` |
+| Sign-out button (in account menu popup) | `data-test-id="main-layout.top-header.account-menu.sign-out-button"` |
 | Sign-in page | URL `/sign-in` |
-| Sign-in email field | `input[type="email"]` or `input[name="email"]` in the sign-in form |
-| Sign-in password field | `input[type="password"]` in the sign-in form |
-| Sign-in submit | Button containing "Sign in" / "Log in" text in the sign-in form |
-| Org switcher (B2B multi-org) | Header org-switcher dropdown — probe live; selector stability not confirmed across versions |
+| Sign-in email field | `data-test-id="sign-in-page.email-input"` |
+| Sign-in password field | `data-test-id="sign-in-page.password-input"` |
+| Sign-in submit | `data-test-id="sign-in-page.login-button"` |
+| Sign-up page | URL `/sign-up` |
+| Sign-up first-name field | `data-test-id="sign-up-first-name-input"` |
+| Sign-up last-name field | `data-test-id="sign-up-last-name-input"` |
+| Sign-up email field | `data-test-id="sign-up-email-input"` |
+| Sign-up password field | `data-test-id="sign-up-password-input"` |
+| Sign-up confirm-password field | `data-test-id="sign-up-confirm-password-input"` |
+| Sign-up submit | `data-test-id="sign-up-submit-button"` |
+| Sign-up success redirect | URL `/successful-registration` |
+| Whoami (display name) | Visible text inside `button[data-test-id="main-layout.top-header.account-menu-button"]`. Personal account: single display name (e.g., "John Doe"). B2B: "Org name / Member display name" (e.g., "ACME Store 2 / ACME Store Maintainer"). |
+| Org switcher (B2B multi-org) | Not yet verified live — probe via header. Flagged for follow-up. |
 | Cart page | URL `/cart` |
-| Cart line-item remove | Per-row remove/trash icon on `/cart` |
+| Cart line-item remove | Per-row remove/trash icon on `/cart` — probe live |
 
-Flag selector gaps during live execution — do not guess.
+**Note on attribute name:** the storefront uses `data-test-id` (kebab with dash) in most places. A few legacy spots may use `data-testid` (no dash). The sign-out selector has both forms in the wild; either should work with Playwright locators. Flag any new selector mismatch during live execution — do not guess.
+
+### Sign-up flow (when account needs provisioning)
+
+When `SIGNIN_AS <alias>` fails with 400/401 because the alias's email isn't seeded in the target environment, escalate to manual provisioning — do NOT auto-register from the preflight flow. Provisioning steps (for reference):
+
+1. Navigate to `/sign-up`.
+2. Fill First name, Last name, Email (from alias), Password (from alias). Personal-account radio is default.
+3. Click `sign-up-submit-button`.
+4. Verify redirect to `/successful-registration`.
+5. Sign in to confirm credentials work.
+
+Preflight agents must treat sign-up as out-of-scope — the protocol assumes accounts are already seeded. If not, emit `PRECONDITION_UNMET:SIGNIN_FAILED` and let a human or a dedicated seeding script handle provisioning. Password policy: ≥8 chars, digits + lowercase + uppercase + special char + ≥1 unique char.
 
 ---
 
