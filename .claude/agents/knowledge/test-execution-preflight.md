@@ -60,8 +60,8 @@ Before acting on any `[PRE:*]` tag, the agent must detect the current browser st
 | Sign-up confirm-password field | `data-test-id="sign-up-confirm-password-input"` |
 | Sign-up submit | `data-test-id="sign-up-submit-button"` |
 | Sign-up success redirect | URL `/successful-registration` |
-| Whoami (display name) | Visible text inside `button[data-test-id="main-layout.top-header.account-menu-button"]`. Personal account: single display name (e.g., "John Doe"). B2B: "Org name / Member display name" (e.g., "ACME Store 2 / ACME Store Maintainer"). |
-| Org switcher (B2B multi-org) | Not yet verified live — probe via header. Flagged for follow-up. |
+| Whoami (display name) | Visible text inside `button[data-test-id="main-layout.top-header.account-menu-button"]`. Personal account: single display name (e.g., "John Doe"). B2B single-org: "Org name / Member display name" (e.g., "ACME Store 2 / ACME Store Maintainer"). B2B multi-org: same format — the current active org's name before the `/`. |
+| Org switcher (B2B multi-org) | **Inside the account menu popup**, below the "Organizations" label. Current org is a checked radio (e.g., `radio "ACME Store" [checked]`). Other orgs are clickable `button` elements with `accessible name` equal to the org name. Click the target org button → full-context swap fires (cart reloads, many `/graphql` POSTs, but NO new `/connect/token` — same user token works across orgs). Header whoami reflects the new org immediately. |
 | Cart page | URL `/cart` |
 | Cart line-item remove | Per-row remove/trash icon on `/cart` — probe live |
 
@@ -121,13 +121,14 @@ Each primitive is a UI-only sequence. No JS shortcuts unless explicitly noted.
 
 **Purpose:** select a specific org context for a multi-org B2B user.
 
-**Steps:**
+**Steps (verified live 2026-04-24):**
 1. Detect: is a user signed in? If not → `BLOCKED` (can't switch org when signed out).
-2. Detect: is the current org already `@td(<alias>.name)`? If yes → skip.
-3. Click the header org-switcher control (probe selector live; fallback: look for a dropdown near the header account menu that lists org names).
-4. Select the target org from the dropdown by matching `@td(<alias>.name)`.
-5. Wait for the page to reload or update with the new org context.
-6. Verify: header displays the new org name.
+2. Detect: is the current org already `@td(<alias>.name)`? Parse whoami text — the part before ` / ` is the current org name. If match → skip.
+3. Click the account-menu button (`data-test-id="main-layout.top-header.account-menu-button"`) to open the popup.
+4. Inside the popup, under the "Organizations" label, locate a `button` element whose accessible name equals `@td(<alias>.name)`. The currently active org is a `radio [checked]` and is NOT a button — never click the checked radio.
+5. Click the target org's button. The account menu closes automatically.
+6. Wait for context swap: expect a burst of `/graphql` POSTs (cart, catalog, permissions, user context). No `/connect/token` — the user token is org-agnostic.
+7. Verify: re-read whoami; the part before ` / ` must equal `@td(<alias>.name)`.
 
 **Failure handling:** if the org-switcher is absent → the signed-in user is not multi-org. This is a test-data setup error, not a runtime recoverable condition. `BLOCKED` with reason `PRECONDITION_UNMET:USER_NOT_MULTI_ORG`. Do NOT attempt to use a different user — the test case meant what it wrote.
 
