@@ -1,5 +1,8 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"BOPIS-034","Cart BOPIS Modal - Select Button Still Present (Regression)","BOPIS > Cart > Regression","Critical","BL-BOPIS-004","ECL-14.1","Items in cart; BOPIS modal opened from cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-034","Cart BOPIS Modal - Select Button Still Present (Regression)","BOPIS > Cart > Regression","Critical","BL-BOPIS-004","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Items in cart; BOPIS modal opened from cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] add BOPIS-eligible product to cart
 [ACT] click 'Pickup' radio button
 [ACT] click 'Select pickup location'
@@ -14,7 +17,9 @@
 [DOM] selected pickup location shown in cart summary
 [STATE] cart BOPIS modal NOT broken by VCST-4584 product page changes","[API] mutation errors[] is empty for selectPickupLocation
 [CONSOLE] no TypeError or JS errors in cart BOPIS modal","'Select' button missing in cart BOPIS modal (regression from VCST-4584 changes); Cart BOPIS modal behaves like product page view-only modal","Clear pickup location or remove items from cart","VCST-4584","Manual"
-"BOPIS-037","Feature Flag Disabled - Pickup Option Hidden","BOPIS > Cart > Toggle","High","BL-BOPIS-005","ECL-7.1","BOPIS module deactivated in store settings; Products in cart","url={{FRONT_URL}};admin={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}};sku={{TEST_SKU}}","[ADMIN] verify BOPIS module is deactivated in store settings
+"BOPIS-037","Feature Flag Disabled - Pickup Option Hidden","BOPIS > Cart > Toggle","High","BL-BOPIS-005","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+BOPIS module deactivated in store settings; Products in cart","url={{FRONT_URL}};admin={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}};sku={{TEST_SKU}}","[ADMIN] verify BOPIS module is deactivated in store settings
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads
 [ASSERT] 'Pickup' option is NOT present in delivery method options
@@ -23,7 +28,9 @@
 [STATE] no pickup-related DOM elements present (no hidden divs)
 [DOM] only Shipping/Delivery option available","[ADMIN] verify BOPIS deactivation setting before running storefront test
 [CONSOLE] no TypeError or JS errors on cart page","Pickup option visible despite BOPIS module being deactivated; Hidden pickup DOM elements still rendered","Re-activate BOPIS in store settings admin","C410938","Manual"
-"BOPIS-038","Availability Label: Today (Main FFC Match)","BOPIS > Cart > Availability","Critical","BL-BOPIS-003","ECL-14.2","Product assigned to Main_1 FFC; Location L1 Main FC = Main_1; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-038","Availability Label: Today (Main FFC Match)","BOPIS > Cart > Availability","Critical","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product assigned to Main_1 FFC; Location L1 Main FC = Main_1; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Pickup' radio button
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
@@ -36,7 +43,9 @@
 [DOM] map marker for L1 shows available state (correct color/icon)
 [STATE] no Transfer or Global Transfer label present on L1","[CONSOLE] no TypeError or JS errors when rendering availability labels
 [NETWORK] availability data loaded from correct FFC matching endpoint","L1 shows 'Transfer' or 'Not Available' despite Main FFC match; Availability label missing from chip","Close modal; navigate away","C412653","Manual"
-"BOPIS-039","Availability Label: Transfer (Transfer FFC Match)","BOPIS > Cart > Availability","High","BL-BOPIS-003","ECL-14.2","Product assigned to Transfer_1 FFC; Location L3 Transfer FC = Transfer_1; GlobalTransfer = OFF; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-039","Availability Label: Transfer (Transfer FFC Match)","BOPIS > Cart > Availability","High","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product assigned to Transfer_1 FFC; Location L3 Transfer FC = Transfer_1; GlobalTransfer = OFF; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Pickup' radio button
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
@@ -47,7 +56,9 @@
 [STATE] label text matches TransferDurationText configured in Admin
 [STATE] location L3 is selectable despite requiring transfer","[CONSOLE] no TypeError or JS errors when rendering Transfer label
 [NETWORK] availability data reflects Transfer FFC match","L3 shows 'Today' or 'Not Available' instead of Transfer label; Transfer duration text does not match Admin config","Close modal; navigate away","C412656","Manual"
-"BOPIS-040","Availability Label: Global Transfer (1 week)","BOPIS > Cart > Availability","High","BL-BOPIS-003","ECL-14.2","Product assigned to Main_1 FFC; Location L2 has no Main FC; GlobalTransfer = ON; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-040","Availability Label: Global Transfer (1 week)","BOPIS > Cart > Availability","High","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product assigned to Main_1 FFC; Location L2 has no Main FC; GlobalTransfer = ON; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Pickup' radio button
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
@@ -58,7 +69,9 @@
 [STATE] label text matches GlobalTransferDurationText configured in Admin
 [STATE] location L2 is selectable when GlobalTransfer = ON","[CONSOLE] no TypeError or JS errors when rendering Global Transfer label
 [NETWORK] availability data reflects global transfer fallback","L2 shows 'Not Available' despite GlobalTransfer being ON; Global Transfer text does not match Admin config","Close modal; navigate away","C412655","Manual"
-"BOPIS-041","Availability Label: Not Available (No Match + Global OFF)","BOPIS > Cart > Availability","High","BL-BOPIS-003","ECL-14.2","Product assigned to Transfer_1 FFC; Location L4 has Main FC only; GlobalTransfer = OFF; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-041","Availability Label: Not Available (No Match + Global OFF)","BOPIS > Cart > Availability","High","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product assigned to Transfer_1 FFC; Location L4 has Main FC only; GlobalTransfer = OFF; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Pickup' radio button
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
@@ -69,7 +82,9 @@
 [ASSERT] no console errors on attempting to select unavailable location","[DOM] L4 shows 'Not available' state visually (greyed/disabled)
 [STATE] L4 cannot be selected when no FFC match and GlobalTransfer = OFF
 [STATE] attempting to select L4 produces no error and does not proceed","[CONSOLE] no TypeError or JS errors when rendering Not Available state","L4 shown as selectable despite no FFC match; L4 shows incorrect availability label (Today/Transfer)","Close modal; navigate away","C412654","Manual"
-"BOPIS-042","Availability Label: TrackInventory=FALSE but MFC stock=0","BOPIS > Cart > Availability","Medium","BL-BOPIS-003","ECL-14.2","Product with TrackInventory=FALSE; MFC stock reported as 0; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-042","Availability Label: TrackInventory=FALSE but MFC stock=0","BOPIS > Cart > Availability","Medium","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product with TrackInventory=FALSE; MFC stock reported as 0; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Pickup' radio button
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
@@ -79,7 +94,9 @@
 [ASSERT] location is selectable despite stock=0 report","[STATE] location shown as available when product has TrackInventory=FALSE — stock level not checked
 [STATE] location is selectable even with reported stock=0
 [DOM] availability chip does not show 'Not Available' for TrackInventory=FALSE products","[CONSOLE] no TypeError or JS errors when rendering availability for TrackInventory=FALSE product","Location shown as 'Not Available' for TrackInventory=FALSE product with stock=0; TrackInventory=FALSE not respected in availability logic","Close modal; navigate away","C412663","Manual"
-"BOPIS-043","No Valid Pickup Locations - Pickup Blocked","BOPIS > Cart > Availability","High","BL-BOPIS-003","ECL-14.2,ECL-14.4","Product P5 assigned to FFC with GlobalTransfer=OFF; No compatible pickup locations","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-043","No Valid Pickup Locations - Pickup Blocked","BOPIS > Cart > Availability","High","BL-BOPIS-003","ECL-14.2,ECL-14.4","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product P5 assigned to FFC with GlobalTransfer=OFF; No compatible pickup locations","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] add product P5 to cart
 [ACT] click 'Pickup' radio button
 [ACT] click 'Select pickup location'
@@ -90,7 +107,9 @@
 [STATE] Pickup radio blocked or in error state
 [DOM] user is prompted to select a different shipping method
 [STATE] user cannot proceed with pickup when no valid locations exist","[CONSOLE] no TypeError or JS errors when no pickup locations available","No message shown when no pickup locations available; Pickup radio not blocked; User can proceed with pickup despite no valid locations","Navigate away from cart","C412691","Manual"
-"BOPIS-044","Inactive Location Excluded from Modal","BOPIS > Cart > Availability","High","BL-BOPIS-005,BL-BOPIS-001","ECL-7.1","One pickup location deactivated in Admin (Store > Shipping > BOPIS > Active=OFF); Other locations remain active","url={{FRONT_URL}};admin={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}}","[ADMIN] verify target location is deactivated (Active=OFF) before test
+"BOPIS-044","Inactive Location Excluded from Modal","BOPIS > Cart > Availability","High","BL-BOPIS-005,BL-BOPIS-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+One pickup location deactivated in Admin (Store > Shipping > BOPIS > Active=OFF); Other locations remain active","url={{FRONT_URL}};admin={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}}","[ADMIN] verify target location is deactivated (Active=OFF) before test
 [NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
@@ -100,7 +119,9 @@
 [STATE] active locations still present and selectable
 [DOM] no empty gap or error in location list where deactivated location would be","[ADMIN] verify location deactivated before running storefront test
 [CONSOLE] no TypeError or JS errors when loading location list","Deactivated location appears in list or on map; Active locations missing due to deactivation side effect","Re-activate location in admin","C410939","Manual"
-"BOPIS-045","Mixed Cart: BOPIS + Delivery-Only Items","BOPIS > Cart > Mixed","High","BL-BOPIS-002,BL-CART-001","ECL-14.4","Cart has both BOPIS-eligible and delivery-only products","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-045","Mixed Cart: BOPIS + Delivery-Only Items","BOPIS > Cart > Mixed","High","BL-BOPIS-002,BL-CART-001","ECL-14.4","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Cart has both BOPIS-eligible and delivery-only products","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] add BOPIS-eligible product to cart
 [ACT] add delivery-only product to cart
 [WAIT] cart shows both items
@@ -117,7 +138,9 @@
 [DOM] checkout summary shows both Pickup and Shipping fulfillment methods","[API] mutation errors[] is empty for selectPickupLocation
 [CONSOLE] no TypeError or JS errors with mixed cart
 [NETWORK] cart API reflects separate delivery methods per line item","Pickup toggle visible on delivery-only item; Mixed cart shows single delivery method for all items; Cart totals incorrect with split fulfillment","Clear pickup location or remove items from cart","checklist-D","Manual"
-"BOPIS-046","Mixed Cart: Pickup Location for One Item Does Not Cascade","BOPIS > Cart > Mixed","High","BL-BOPIS-001,BL-CART-001","ECL-14.4,ECL-7.1","Mixed cart with pickup confirmed for BOPIS item; Delivery-only item in same cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-046","Mixed Cart: Pickup Location for One Item Does Not Cascade","BOPIS > Cart > Mixed","High","BL-BOPIS-001,BL-CART-001","ECL-14.4,ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Mixed cart with pickup confirmed for BOPIS item; Delivery-only item in same cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [WAIT] cart shows mixed items
 [ACT] confirm pickup location for BOPIS-eligible item
 [WAIT] pickup location shown for BOPIS item
@@ -129,7 +152,9 @@
 [MATH] cart total correctly reflects split fulfillment (pickup + delivery costs)","[API] mutation errors[] is empty for selectPickupLocation
 [NETWORK] cart API response shows separate shipments per item — delivery-only item has no fulfillmentCenterId
 [CONSOLE] no TypeError or JS errors with split fulfillment","Pickup location cascades to delivery-only item; Cart totals incorrect due to pickup assignment on delivery item","Clear pickup location or remove items from cart","checklist-D","Manual"
-"BOPIS-047","Cart Totals: Zero Shipping for Pickup Order","BOPIS > Cart > Totals","Critical","BL-BOPIS-002","ECL-14.1","All cart items set to Pickup; Pickup location confirmed","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-047","Cart Totals: Zero Shipping for Pickup Order","BOPIS > Cart > Totals","Critical","BL-BOPIS-002","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+All cart items set to Pickup; Pickup location confirmed","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] add product to cart
 [ACT] click 'Pickup' radio button
 [ACT] confirm a pickup location
@@ -140,7 +165,9 @@
 [DOM] shipping line shows $0.00 or 'Free' in order summary
 [STATE] no stale shipping amount from previous delivery selection","[NETWORK] cart API response shipments[].price = 0 after pickup confirmed
 [CONSOLE] no TypeError or JS errors in cart totals calculation","Shipping cost not $0 after pickup confirmed; Total includes shipping charge after pickup; Stale shipping amount from previous delivery selection persisting","Clear pickup location or remove items from cart","C413982","Manual"
-"BOPIS-048","Cart Totals: Switch from Delivery to Pickup Removes Shipping Cost","BOPIS > Cart > Totals","High","BL-BOPIS-002","ECL-14.1,ECL-7.1","Cart showing Delivery with shipping cost applied; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-048","Cart Totals: Switch from Delivery to Pickup Removes Shipping Cost","BOPIS > Cart > Totals","High","BL-BOPIS-002","ECL-14.1,ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Cart showing Delivery with shipping cost applied; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] ensure Delivery is selected with a shipping method applied
 [ASSERT] note current total including shipping cost
 [ACT] click 'Pickup' radio button
@@ -153,7 +180,9 @@
 [STATE] tax recalculated after switching to Pickup if applicable","[NETWORK] cart API response shipments[].price = 0 after switching to pickup
 [API] mutation errors[] is empty for selectPickupLocation
 [CONSOLE] no TypeError or JS errors during delivery-to-pickup switch","Shipping cost persists after switching to Pickup; Total not recalculated after switching; Old shipping amount shown alongside pickup","Clear pickup location or remove items from cart","checklist-F","Manual"
-"BOPIS-049","Cart Totals: Tax Correct with Pickup","BOPIS > Cart > Totals","High","BL-PRICE-002","ECL-14.1","Pickup order with tax-applicable items; Pickup location confirmed","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-049","Cart Totals: Tax Correct with Pickup","BOPIS > Cart > Totals","High","BL-PRICE-002","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Pickup order with tax-applicable items; Pickup location confirmed","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] confirm pickup location
 [WAIT] pickup confirmed in cart with $0 shipping
 [ASSERT] tax line visible in order summary
@@ -164,7 +193,9 @@
 [STATE] tax displayed correctly even with $0 shipping
 [MATH] total = subtotal - discount + tax (no shipping)","[NETWORK] cart API taxTotal field matches displayed tax amount
 [CONSOLE] no TypeError or JS errors in tax calculation","Tax line missing from order summary; Tax calculated on pre-discount subtotal (wrong); Tax = $0 incorrectly despite tax-applicable items","Clear pickup location or remove items from cart","checklist-F","Manual"
-"BOPIS-050","Switch Delivery to Pickup: Shipping Cleared","BOPIS > Cart > Switch","High","BL-BOPIS-002,BL-BOPIS-004","ECL-7.1","Cart with Delivery address and shipping method selected; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-050","Switch Delivery to Pickup: Shipping Cleared","BOPIS > Cart > Switch","High","BL-BOPIS-002,BL-BOPIS-004","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Cart with Delivery address and shipping method selected; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] select Shipping delivery method
 [ACT] choose a shipping address and shipping method
 [WAIT] shipping cost applied in cart
@@ -178,7 +209,9 @@
 [DOM] 'Select pickup location' prompt visible
 [STATE] shipping cost removed from order summary","[API] mutation errors[] is empty for clearPickupLocation or shipping clear mutation
 [CONSOLE] no TypeError or JS errors during delivery-to-pickup switch","Shipping method not cleared when switching to Pickup; Address form still visible; Shipping cost persists after switch to Pickup","Clear pickup location or remove items from cart","BOPIS-027","Manual"
-"BOPIS-051","Switch Pickup to Delivery: Location Cleared","BOPIS > Cart > Switch","High","BL-BOPIS-002,BL-BOPIS-004","ECL-14.1,ECL-7.1","Cart with pickup location confirmed; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-051","Switch Pickup to Delivery: Location Cleared","BOPIS > Cart > Switch","High","BL-BOPIS-002,BL-BOPIS-004","ECL-14.1,ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Cart with pickup location confirmed; Product in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] confirm a pickup location
 [WAIT] pickup location shown in cart
 [ACT] click 'Shipping' or 'Delivery' radio button
@@ -190,7 +223,9 @@
 [DOM] address form or address selector reappears after switching to Delivery
 [STATE] shipping cost re-applied after selecting a shipping method","[API] mutation errors[] is empty for clearPickupLocation
 [CONSOLE] no TypeError or JS errors during pickup-to-delivery switch","Pickup location not cleared on switch to Delivery; Address form not reappearing; Old pickup location still shown in cart","Navigate away from cart","BOPIS-027","Manual"
-"BOPIS-052","Rapid Toggle Delivery/Pickup/Delivery/Pickup","BOPIS > Cart > Switch","Medium","BL-BOPIS-002,BL-BOPIS-004","ECL-7.1,ECL-14.1","Products in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-052","Rapid Toggle Delivery/Pickup/Delivery/Pickup","BOPIS > Cart > Switch","Medium","BL-BOPIS-002,BL-BOPIS-004","ECL-7.1,ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Products in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] toggle to Pickup
 [ACT] immediately toggle to Delivery
 [ACT] immediately toggle back to Pickup
@@ -202,7 +237,9 @@
 [STATE] no ghost data from previous mode persists
 [STATE] no UI freeze or unresponsive elements after rapid toggling","[CONSOLE] no TypeError or JS errors during rapid toggle
 [API] mutation errors[] is empty for any clearPickupLocation calls triggered","UI stuck in intermediate state after rapid toggling; Ghost pickup location shown in Delivery mode; Console errors during rapid toggle; UI freeze","Navigate away from cart","checklist-G","Manual"
-"BOPIS-053","ShipTo Header Change While Pickup Active","BOPIS > Cart > Switch","Medium","BL-BOPIS-001,BL-BOPIS-002","ECL-7.1","Pickup selected and location confirmed; Header ship-to address selector available","url={{FRONT_URL}};sku={{TEST_SKU}};email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-053","ShipTo Header Change While Pickup Active","BOPIS > Cart > Switch","Medium","BL-BOPIS-001,BL-BOPIS-002","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Pickup selected and location confirmed; Header ship-to address selector available","url={{FRONT_URL}};sku={{TEST_SKU}};email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
 [ACT] confirm a pickup location
 [WAIT] pickup location shown in cart
 [ACT] click the ship-to address selector in the page header
@@ -214,7 +251,9 @@
 [STATE] pickup location cleared after ship-to change
 [DOM] new ship-to address applied in cart","[API] mutation errors[] is empty for clearPickupLocation triggered by ship-to change
 [CONSOLE] no TypeError or JS errors during ship-to change with pickup active","Pickup not cleared after ship-to address change; Delivery method stays as Pickup despite ship-to change","Clear pickup location or remove items from cart","C410850","Manual"
-"BOPIS-054","Quantity Increase Revalidates Pickup Availability","BOPIS > Cart > Revalidation","High","BL-CART-001,BL-CART-002","ECL-2.1,ECL-14.2","Pickup confirmed at a location with limited branch stock; Product quantity 1 in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-054","Quantity Increase Revalidates Pickup Availability","BOPIS > Cart > Revalidation","High","BL-CART-001,BL-CART-002","ECL-2.1,ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Pickup confirmed at a location with limited branch stock; Product quantity 1 in cart","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] confirm pickup location (branch stock is limited, e.g., 5 units)
 [WAIT] pickup location confirmed
 [ACT] increase item quantity significantly (e.g., to 20 — exceeding branch stock)
@@ -225,13 +264,17 @@
 [STATE] error or warning shown if quantity exceeds available pickup branch stock
 [STATE] checkout not allowed silently with insufficient pickup stock","[NETWORK] cart API revalidates availability against branch stock on quantity change
 [CONSOLE] no TypeError or JS errors during quantity change","Availability not revalidated after quantity increase; Silent oversell — can proceed to checkout with qty > branch stock; No error shown when qty exceeds stock","Clear pickup location or remove items from cart","checklist-H","Manual"
-"BOPIS-055","Quantity Decrease Below MOQ in Pickup Mode","BOPIS > Cart > Revalidation","Medium","BL-CART-001","ECL-2.1","Product has pack size or MOQ configured; Pickup mode active","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-055","Quantity Decrease Below MOQ in Pickup Mode","BOPIS > Cart > Revalidation","Medium","BL-CART-001","ECL-2.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product has pack size or MOQ configured; Pickup mode active","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] with pickup active, attempt to set quantity below MOQ or to a non-pack-size multiple
 [WAIT] cart validates quantity
 [ASSERT] same pack size rules enforced as in delivery mode
 [ASSERT] non-multiple quantity rejected or auto-rounded to valid quantity","[STATE] pack size / MOQ rules enforced in pickup mode same as delivery mode
 [STATE] invalid quantity rejected or auto-rounded to valid pack multiple","[CONSOLE] no TypeError or JS errors during MOQ validation in pickup mode","Pack size / MOQ rules not enforced in pickup mode; Invalid quantity accepted silently in pickup mode","Navigate away from cart","checklist-H","Manual"
-"BOPIS-056","Same SKU Added Again Aggregates Quantity","BOPIS > Cart > Revalidation","Medium","BL-CART-001","ECL-2.1,ECL-14.2","Product already in cart with pickup confirmed; Same product available on PDP","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}} navigate to PDP of product already in cart with pickup
+"BOPIS-056","Same SKU Added Again Aggregates Quantity","BOPIS > Cart > Revalidation","Medium","BL-CART-001","ECL-2.1,ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product already in cart with pickup confirmed; Same product available on PDP","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}} navigate to PDP of product already in cart with pickup
 [ACT] click 'Add to cart' again on the same product
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart loads
@@ -239,7 +282,9 @@
 [ASSERT] aggregated quantity validated against pickup branch stock","[STATE] adding same SKU from PDP increments existing cart line (no duplicate)
 [STATE] aggregated quantity revalidated against pickup branch stock","[NETWORK] cart API reflects incremented quantity on existing line item
 [CONSOLE] no TypeError or JS errors during quantity aggregation","Duplicate line item created instead of incrementing existing line; Aggregated quantity not validated against pickup stock","Clear pickup location or remove items from cart","checklist-H","Manual"
-"BOPIS-057","Facet Filter: Country","BOPIS > Cart > Filters","High","BL-BOPIS-003","ECL-14.2","PickPoints modal open from cart; Pickup locations in multiple countries configured","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-057","Facet Filter: Country","BOPIS > Cart > Filters","High","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+PickPoints modal open from cart; Pickup locations in multiple countries configured","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] select Country filter (e.g., USA)
@@ -251,7 +296,9 @@
 [DOM] Country filter chip displayed after selection
 [DOM] location count reflects filtered set","[CONSOLE] no TypeError or JS errors during Country filter interaction
 [NETWORK] filter API returns 2xx response","Locations from other countries shown after Country filter applied; Map markers not updated; Filter chip not shown","Close modal; navigate away","C413538","Manual"
-"BOPIS-058","Facet Filter: State/Province","BOPIS > Cart > Filters","High","BL-BOPIS-003","ECL-14.2","PickPoints modal open; Country filter already applied (e.g., USA); ADDR_NY alias resolves to a US state","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-058","Facet Filter: State/Province","BOPIS > Cart > Filters","High","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+PickPoints modal open; Country filter already applied (e.g., USA); ADDR_NY alias resolves to a US state","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] select Country filter: USA
@@ -261,7 +308,9 @@
 [ASSERT] only @td(ADDR_NY.state) locations shown","[STATE] only @td(ADDR_NY.state) locations shown after State filter applied
 [STATE] map zooms to filtered region
 [DOM] State filter chip displayed with @td(ADDR_NY.state) value","[CONSOLE] no TypeError or JS errors during State filter interaction","Locations outside @td(ADDR_NY.state) shown; Map not zooming to filtered region; State filter chip not shown","Close modal; navigate away","C413540","Manual"
-"BOPIS-059","Facet Filter: City","BOPIS > Cart > Filters","High","BL-BOPIS-003","ECL-14.2","PickPoints modal open; ADDR_NY alias resolves to a seeded city with pickup locations","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-059","Facet Filter: City","BOPIS > Cart > Filters","High","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+PickPoints modal open; ADDR_NY alias resolves to a seeded city with pickup locations","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] select City filter: @td(ADDR_NY.city)
@@ -270,7 +319,9 @@
 [ASSERT] all displayed locations are in @td(ADDR_NY.city)","[STATE] only @td(ADDR_NY.city) locations shown after City filter applied
 [STATE] map shows only markers in @td(ADDR_NY.city)
 [DOM] City filter chip displayed with @td(ADDR_NY.city) value","[CONSOLE] no TypeError or JS errors during City filter interaction","Locations outside @td(ADDR_NY.city) shown; Map not updating for city filter; City filter chip not shown","Close modal; navigate away","C413541","Manual"
-"BOPIS-060","Facet Filter: State Disabled for Non-US/CA Countries","BOPIS > Cart > Filters","Medium","BL-BOPIS-003","ECL-14.2","PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-060","Facet Filter: State Disabled for Non-US/CA Countries","BOPIS > Cart > Filters","Medium","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] select a non-US/CA country (e.g., Denmark)
@@ -279,7 +330,9 @@
 [ASSERT] State/Province filter is disabled for non-US/CA country
 [ASSERT] no invalid filter combination possible","[STATE] State/Province filter disabled when non-US/CA country selected
 [STATE] prevents invalid Country + State filter combination","[CONSOLE] no TypeError or JS errors when State filter disabled","State filter active for non-US/CA country; Invalid Country + State filter combination possible","Close modal; navigate away","C413543","Manual"
-"BOPIS-061","Search by ZIP Code","BOPIS > Cart > Search","High","BL-BOPIS-003","ECL-14.2","PickPoints modal open from cart","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-061","Search by ZIP Code","BOPIS > Cart > Search","High","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+PickPoints modal open from cart","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] type ZIP code (e.g., @td(ADDR_NY.zip)) in search field
@@ -289,7 +342,9 @@
 [ASSERT] map markers positioned at correct locations for ZIP code area","[STATE] ZIP code search returns locations in the correct area
 [DOM] map markers at correct positions for ZIP code search","[CONSOLE] no TypeError or JS errors during ZIP code search
 [NETWORK] geocoding API returns 2xx response for ZIP code","ZIP code search returns no results for valid ZIP; Map markers in wrong location for ZIP code search","Close modal; navigate away","C413546","Manual"
-"BOPIS-062","Search by Address","BOPIS > Cart > Search","High","BL-BOPIS-003","ECL-14.2","PickPoints modal open from cart; ADDR_NY alias resolves to a street with nearby pickup locations","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-062","Search by Address","BOPIS > Cart > Search","High","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+PickPoints modal open from cart; ADDR_NY alias resolves to a street with nearby pickup locations","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] type @td(ADDR_NY.street) in search field (partial street address)
@@ -299,10 +354,12 @@
 [ASSERT] address searching functional for the resolved street value","[STATE] address search returns locations near @td(ADDR_NY.street)
 [STATE] address searching functional for partial street names","[CONSOLE] no TypeError or JS errors during address search
 [NETWORK] geocoding API returns 2xx response for address search","Address search returns no results for @td(ADDR_NY.street); Address searching not functional","Close modal; navigate away","C413550","Manual"
-"BOPIS-063","Search with Special Characters (Apostrophe + Ampersand)","BOPIS > Cart > Search","Medium","BL-BOPIS-007","ECL-14.2","PickPoints modal open; Special character queries are environment-agnostic nonsense/synthetic inputs not tied to real location names","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-063","Search with Special Characters (Apostrophe + Ampersand)","BOPIS > Cart > Search","Medium","BL-BOPIS-007","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+PickPoints modal open; Special character queries are environment-agnostic nonsense/synthetic inputs not tied to real location names","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
-[ACT] type "O'Brien's" in search field (apostrophe-containing name — synthetic test input)
+[ACT] type ""O'Brien's"" in search field (apostrophe-containing name — synthetic test input)
 [WAIT] results update (results or no-results state acceptable; crash is not)
 [ASSERT] application does not crash or produce a JS error on apostrophe input
 [ASSERT] results or empty-state message shown correctly
@@ -314,7 +371,9 @@
 [STATE] ampersand input handled without crash or API error
 [STATE] special characters properly escaped in search API calls — no injection or encoding errors","[CONSOLE] no TypeError or JS errors on special character search
 [NETWORK] search API does not return 4xx/5xx for apostrophe or ampersand queries","Application error or crash on apostrophe input; 4xx/5xx API response for special character queries; XSS or injection behavior triggered","Close modal; navigate away","C413551","Manual"
-"BOPIS-064","Search with Whitespace Only","BOPIS > Cart > Search","Medium","BL-BOPIS-007","ECL-14.2","PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-064","Search with Whitespace Only","BOPIS > Cart > Search","Medium","BL-BOPIS-007","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] type only spaces (3-5 spaces) in search field
@@ -324,7 +383,9 @@
 [ASSERT] search field trims whitespace automatically","[STATE] whitespace-only search treated as empty — all locations restored
 [STATE] search field trims whitespace automatically","[CONSOLE] no TypeError or JS errors on whitespace-only search
 [NETWORK] search API not called or called with empty string for whitespace-only input","Whitespace-only search returns no results; Application error on whitespace-only search","Close modal; navigate away","C413553","Manual"
-"BOPIS-065","Multi-Filter: Country + State + City + Search (4 Levels)","BOPIS > Cart > Multi-Filter","High","BL-BOPIS-003","ECL-14.2,ECL-14.4","PickPoints modal open; Locations in multiple countries/states/cities configured; ADDR_NY alias resolves to a city with seeded pickup locations","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-065","Multi-Filter: Country + State + City + Search (4 Levels)","BOPIS > Cart > Multi-Filter","High","BL-BOPIS-003","ECL-14.2,ECL-14.4","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+PickPoints modal open; Locations in multiple countries/states/cities configured; ADDR_NY alias resolves to a city with seeded pickup locations","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] select Country filter: USA
@@ -337,7 +398,9 @@
 [STATE] only @td(ADDR_NY.city) locations matching search term shown
 [DOM] all four filter chips visible simultaneously with resolved filter values","[CONSOLE] no TypeError or JS errors with 4-level combined filter
 [NETWORK] filtered API response returns only matching locations","Multi-level filters not combining with AND; Incorrect results at 4-level combination; Filter chips missing for some levels","Close modal; navigate away","C413522","Manual"
-"BOPIS-066","Multi-Filter: No Results at Multiple Levels","BOPIS > Cart > Multi-Filter","Medium","BL-BOPIS-003","ECL-14.2","PickPoints modal open; Country/State/City filters applied","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-066","Multi-Filter: No Results at Multiple Levels","BOPIS > Cart > Multi-Filter","Medium","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+PickPoints modal open; Country/State/City filters applied","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] apply USA > NY > NYC filter combination
@@ -348,7 +411,9 @@
 [ASSERT] 'RESET SEARCH' button or equivalent available","[DOM] 'Pickup points not found' message shown when no results at multiple filter levels
 [DOM] all applied filter chips still visible and individually removable
 [DOM] reset/clear button available to restore state","[CONSOLE] no TypeError or JS errors when multi-filter yields no results","Application crash or blank state with no message when multi-filter yields no results; Filter chips not removable in no-results state; Reset button absent","Close modal; navigate away","C413523","Manual"
-"BOPIS-067","Multi-Select: Multiple Countries","BOPIS > Cart > Multi-Filter","Critical","BL-BOPIS-003","ECL-14.2","PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-067","Multi-Select: Multiple Countries","BOPIS > Cart > Multi-Filter","Critical","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] open Country filter dropdown
@@ -362,7 +427,9 @@
 [STATE] results include locations from both selected countries
 [STATE] deselecting one country updates results to remaining country only","[CONSOLE] no TypeError or JS errors during multi-select country filter
 [NETWORK] filter API returns locations from all selected countries","Multi-select not supported for Country filter; Deselecting one country removes all filters; Results not updating on multi-country selection","Close modal; navigate away","C413527","Manual"
-"BOPIS-068","Multi-Select: Multiple States","BOPIS > Cart > Multi-Filter","Critical","BL-BOPIS-003","ECL-14.2","PickPoints modal open; USA country selected","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-068","Multi-Select: Multiple States","BOPIS > Cart > Multi-Filter","Critical","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+PickPoints modal open; USA country selected","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] select Country: USA
@@ -373,7 +440,9 @@
 [ASSERT] multiple state chips (NY, CA) displayed
 [ASSERT] results include locations from both NY and CA","[DOM] multiple state chips displayed after multi-select
 [STATE] results include locations from all selected states","[CONSOLE] no TypeError or JS errors during multi-select state filter","Multi-select not supported for State filter; Results only showing one state despite multi-select","Close modal; navigate away","C413528","Manual"
-"BOPIS-069","Breadcrumb Filter Removal","BOPIS > Cart > Filter Management","Medium","BL-BOPIS-003","ECL-14.2","PickPoints modal open; Multiple filters applied; ADDR_NY alias resolves to a city with seeded pickup locations","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-069","Breadcrumb Filter Removal","BOPIS > Cart > Filter Management","Medium","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+PickPoints modal open; Multiple filters applied; ADDR_NY alias resolves to a city with seeded pickup locations","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] apply Country: USA + State: @td(ADDR_NY.state) + City: @td(ADDR_NY.city) + type 'store' in search field
@@ -385,7 +454,9 @@
 [ASSERT] search term still active in search field","[STATE] removing State chip updates results — only State filter removed
 [STATE] remaining filters (Country, City, Search) still active after State removal
 [DOM] removed State chip no longer visible; Country and City chips remain","[CONSOLE] no TypeError or JS errors during filter chip removal","Removing one chip removes all filters; Other filters deactivated when one chip removed; Search term cleared on chip removal","Close modal; navigate away","C413524","Manual"
-"BOPIS-070","Reset All Filters and Search","BOPIS > Cart > Filter Management","High","BL-BOPIS-003","ECL-14.2","PickPoints modal open; Multiple filters and search applied","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-070","Reset All Filters and Search","BOPIS > Cart > Filter Management","High","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+PickPoints modal open; Multiple filters and search applied","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] apply multiple filters (Country, State) and a search term
@@ -399,7 +470,9 @@
 [STATE] search bar cleared after Reset
 [STATE] full location list restored to pre-filter state
 [STATE] map shows all markers after Reset","[CONSOLE] no TypeError or JS errors during filter reset","Not all filters cleared after Reset; Search term not cleared on Reset; Full location list not restored; Map not showing all markers after Reset","Close modal; navigate away","C413525","Manual"
-"BOPIS-071","Apply Filters After Search","BOPIS > Cart > Filter Management","Medium","BL-BOPIS-003","ECL-14.2","PickPoints modal open; At least one seeded BOPIS pickup location in USA","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-071","Apply Filters After Search","BOPIS > Cart > Filter Management","Medium","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+PickPoints modal open; At least one seeded BOPIS pickup location in USA","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] type 'store' in search field (generic partial name term expected to match at least one seeded location)
@@ -409,7 +482,9 @@
 [ASSERT] only USA locations matching 'store' search term shown
 [ASSERT] search term and Country filter combined with AND logic (not overriding each other)","[STATE] filter applied after search combines with AND logic (not overriding search)
 [STATE] only locations matching both search term and Country filter shown","[CONSOLE] no TypeError or JS errors when filter applied after search","Applying filter after search overrides search term; Combined search + filter shows all filter results ignoring search","Close modal; navigate away","C413526","Manual"
-"BOPIS-072","Deactivated Location While Confirmed in Cart","BOPIS > Cart > Edge Cases","High","BL-BOPIS-005,BL-BOPIS-001","ECL-7.1","Pickup location confirmed in cart; Admin access available","url={{FRONT_URL}};admin={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-072","Deactivated Location While Confirmed in Cart","BOPIS > Cart > Edge Cases","High","BL-BOPIS-005,BL-BOPIS-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Pickup location confirmed in cart; Admin access available","url={{FRONT_URL}};admin={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] confirm a pickup location in cart
 [WAIT] pickup location shown in cart
 [ADMIN] navigate to Admin and deactivate the confirmed pickup location (Active=OFF)
@@ -423,7 +498,9 @@
 [DOM] user prompted to re-select a valid pickup location
 [STATE] order cannot be placed with a deactivated pickup location","[ADMIN] verify location deactivated before returning to storefront
 [CONSOLE] no TypeError or JS errors when invalid pickup location detected","Order placed with deactivated pickup location; No prompt shown when confirmed location is deactivated; Checkout does not revalidate pickup location","Re-activate location in admin","C410939","Manual"
-"BOPIS-073","Org User Pickup Isolation","BOPIS > Cart > Edge Cases","High","BL-BOPIS-001","ECL-7.1","User has access to Org A and Org B; Org A cart has items and confirmed pickup location; USER_MULTI_ORG alias (USR-014) member of ORG-001 + ORG-002 — if not seeded use ACME_BUYER (USR-002) with access to ACME org","url={{FRONT_URL}};email=@td(ACME_BUYER.email);password=@td(ACME_BUYER.password)","[NAV] {{FRONT_URL}}/sign-in
+"BOPIS-073","Org User Pickup Isolation","BOPIS > Cart > Edge Cases","High","BL-BOPIS-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User has access to Org A and Org B; Org A cart has items and confirmed pickup location; USER_MULTI_ORG alias (USR-014) member of ORG-001 + ORG-002 — if not seeded use ACME_BUYER (USR-002) with access to ACME org","url={{FRONT_URL}};email=@td(ACME_BUYER.email);password=@td(ACME_BUYER.password)","[NAV] {{FRONT_URL}}/sign-in
 [WAIT] sign-in page loads
 [FILL] Email field: @td(ACME_BUYER.email)
 [FILL] Password field: @td(ACME_BUYER.password)
@@ -441,7 +518,9 @@
 [STATE] clean cart state for Org B — no cross-org data leakage
 [STATE] pickup location isolation enforced per org","[API] verify no cross-org cart data in cart API response for Org B
 [CONSOLE] no TypeError or JS errors during sign-in or org context switch","Org A pickup location shown in Org B cart (cross-org data leak); Cart state not isolated between orgs; Sign-in redirect fails or account menu not visible after login","Clear any pickup selections; navigate away","C411028","Manual"
-"BOPIS-074","Billing Address Required for BOPIS Order","BOPIS > Cart > Edge Cases","High","BL-BOPIS-006","ECL-14.1","Pickup selected and location confirmed; No billing address saved for user","url={{FRONT_URL}};email={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-074","Billing Address Required for BOPIS Order","BOPIS > Cart > Edge Cases","High","BL-BOPIS-006","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Pickup selected and location confirmed; No billing address saved for user","url={{FRONT_URL}};email={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] confirm a pickup location
 [WAIT] pickup location shown in cart with $0 shipping
 [ACT] proceed to checkout
@@ -452,7 +531,9 @@
 [ASSERT] order NOT placed without billing address","[DOM] billing address form visible in checkout for BOPIS order
 [STATE] order cannot be placed without billing address even in pickup mode
 [DOM] validation error message shown when billing address missing","[CONSOLE] no TypeError or JS errors during billing address validation in BOPIS checkout","Billing address form hidden in BOPIS checkout; Order placed without billing address; No validation error for missing billing address","Cancel order via admin if placed erroneously","C410943","Manual"
-"BOPIS-075","Cross-Layer: xAPI Order Shows Pickup FFC","BOPIS > Cart > Cross-Layer","Critical","BL-BOPIS-002,BL-BOPIS-006","ECL-14.1,ECL-14.4","BOPIS order placed successfully; xAPI access available; Admin access available","url={{FRONT_URL}};back={{BACK_URL}};admin={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}};email={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-075","Cross-Layer: xAPI Order Shows Pickup FFC","BOPIS > Cart > Cross-Layer","Critical","BL-BOPIS-002,BL-BOPIS-006","ECL-14.1,ECL-14.4","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+BOPIS order placed successfully; xAPI access available; Admin access available","url={{FRONT_URL}};back={{BACK_URL}};admin={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}};email={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] add product and confirm pickup location
 [ACT] complete checkout to place order
 [WAIT] order confirmation shown
@@ -467,7 +548,9 @@
 [NETWORK] xAPI order query returns 2xx with correct fulfillmentCenterId
 [ADMIN] verify pickup location name in Admin order view matches storefront selection
 [CONSOLE] no TypeError or JS errors during order placement","xAPI order does not show fulfillmentCenterId; Admin shows wrong or missing pickup location; Shipping cost present in stored order despite pickup fulfillment","Cancel order via admin","checklist-K","Manual"
-"BOPIS-076","Cross-Layer: Cart API Shows $0 Shipping","BOPIS > Cart > Cross-Layer","High","BL-BOPIS-002","ECL-14.1","Pickup selected and location confirmed in cart; DevTools Network tab accessible","url={{FRONT_URL}};back={{BACK_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-076","Cross-Layer: Cart API Shows $0 Shipping","BOPIS > Cart > Cross-Layer","High","BL-BOPIS-002","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Pickup selected and location confirmed in cart; DevTools Network tab accessible","url={{FRONT_URL}};back={{BACK_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] open browser DevTools Network tab
 [ACT] confirm a pickup location in cart
 [WAIT] cart API response observable in Network tab
@@ -480,7 +563,9 @@
 [NETWORK] cart API shipments[].price = 0 verified in Network tab
 [ADMIN] if order placed, verify stored order has $0 shipping in Admin
 [CONSOLE] no TypeError or JS errors during cart load after pickup confirmed","Cart API shipments[].price > 0 despite pickup confirmed; Total in API includes shipping; Storefront display inconsistent with API response","Clear pickup location or remove items from cart","checklist-K","Manual"
-"BOPIS-077","Country Dropdown Stays Open During Multi-Select","BOPIS > Cart > Filters","Critical","BL-BOPIS-003","ECL-14.2","PickPoints modal open; Locations in multiple countries configured","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-077","Country Dropdown Stays Open During Multi-Select","BOPIS > Cart > Filters","Critical","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+PickPoints modal open; Locations in multiple countries configured","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] open Country filter dropdown
@@ -500,7 +585,9 @@
 [DOM] selected country chips visible outside dropdown
 [STATE] no need to reopen dropdown between selections","[CONSOLE] no TypeError or JS errors during multi-select
 [NETWORK] filter API returns 2xx after each selection","Dropdown closes after each checkbox click forcing user to reopen; Dropdown flickers or re-renders between selections; Click intercepted by underlying element (z-index issue)","Close modal; navigate away","VCST-4775","Manual"
-"BOPIS-078","All Filter Checkboxes Clickable — No Pointer Interception","BOPIS > Cart > Filters","Critical","BL-BOPIS-003","ECL-14.2","PickPoints modal open; Locations in multiple countries/states/cities configured; VCST-4775 regression guard","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-078","All Filter Checkboxes Clickable — No Pointer Interception","BOPIS > Cart > Filters","Critical","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+PickPoints modal open; Locations in multiple countries/states/cities configured; VCST-4775 regression guard","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] open Country filter dropdown
@@ -520,7 +607,9 @@
 [DOM] no pointer-events interception from underlying vc-radio-button__input elements (z-index isolation correct)
 [DOM] filter chips appear correctly for all selected items across all filters","[CONSOLE] no TypeError or JS errors during checkbox interactions
 [NETWORK] no failed requests during multi-select","Some checkboxes unresponsive to mouse click in any filter (Country, State, or City); Click lands on underlying radio button instead of checkbox (z-index/pointer-events bug); Fewer chips than expected after clicking all checkboxes","Close modal; navigate away","VCST-4775","Manual"
-"BOPIS-079","Select All Countries Shows Complete Location List","BOPIS > Cart > Filters","High","BL-BOPIS-003","ECL-14.2","PickPoints modal open; Locations in multiple countries configured","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-079","Select All Countries Shows Complete Location List","BOPIS > Cart > Filters","High","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+PickPoints modal open; Locations in multiple countries configured","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
 [ACT] note total number of locations displayed (unfiltered count)

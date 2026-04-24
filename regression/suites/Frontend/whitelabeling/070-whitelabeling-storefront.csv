@@ -1,5 +1,7 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"FWL-001","Enable thumbnail job for favicons","Backend Jobs","Medium","BL-WL-001","","White Labeling module installed; Admin access to backend","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin at {{BACK_URL}}
+"FWL-001","Enable thumbnail job for favicons","Backend Jobs","Medium","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+White Labeling module installed; Admin access to backend","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin at {{BACK_URL}}
 [ACT] 2. Sign in with admin credentials
 [NAV] 3. Navigate to Settings > Jobs
 [ACT] 4. Locate thumbnail generation job
@@ -11,7 +13,8 @@
 [DOM] whiteLabelingSettings.favicons array contains entries for 16x16, 32x32, 180x180, 192x192, 512x512
 [STATE] Job run completes without errors","[ADMIN] job run status shows Success
 [CONSOLE] no uncaught JS errors","Favicons not generated; Thumbnail job fails to run; Sizes missing from favicons array","restore original job state","C389425","Manual"
-"FWL-002","Store and organization have no whitelabeling settings - default branding displayed","Store Settings","High","BL-WL-002","","Store exists with White Labeling enabled but no custom settings; Organization exists with no branding configured","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id)
+"FWL-002","Store and organization have no whitelabeling settings - default branding displayed","Store Settings","High","BL-WL-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Store exists with White Labeling enabled but no custom settings; Organization exists with no branding configured","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id)
 [ACT] 2. Open White Labeling settings tab
 [ASSERT] 3. Verify Enabled = ON but no custom logo/favicon/theme set (all empty)
 [NAV] 4. Navigate to Customer > Organizations > Test Org
@@ -26,7 +29,8 @@
 [STATE] Default theme preset colors applied
 [DOM] No organization-specific branding visible","[CONSOLE] no uncaught JS errors
 [NETWORK] logo image loads with HTTP 200","Custom logo shown instead of default; Custom favicon shown; Theme overridden unexpectedly","none","C390295","Manual"
-"FWL-003","Store has whitelabeling settings but organization does not - store defaults shown","Store Settings","High","BL-WL-002","","Store has White Labeling enabled with custom logo/favicon/theme; Organization has White Labeling enabled but no custom settings","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id)
+"FWL-003","Store has whitelabeling settings but organization does not - store defaults shown","Store Settings","High","BL-WL-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Store has White Labeling enabled with custom logo/favicon/theme; Organization has White Labeling enabled but no custom settings","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id)
 [ACT] 2. Open White Labeling settings
 [ACT] 3. Upload store-level logo: store-logo.png
 [ACT] 4. Upload store-level favicon: store-favicon.ico
@@ -45,7 +49,8 @@
 [STATE] Coffee theme colors applied
 [DOM] No org-specific branding overrides present","[CONSOLE] no uncaught JS errors
 [NETWORK] logo image loads with HTTP 200","Org overrides shown when org has no branding; Default branding shown instead of store branding; Wrong theme applied","restore store to previous settings; restore org settings","C390296 VCST-1634","Manual"
-"FWL-009","Store-level White Labeling = OFF - organization branding disabled regardless of org settings","Store Settings","High","BL-WL-002","","Store @td(STORE_PRIMARY.id) has White Labeling setting; Organization Company1 has custom branding configured with Enabled = ON","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id)
+"FWL-009","Store-level White Labeling = OFF - organization branding disabled regardless of org settings","Store Settings","High","BL-WL-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Store @td(STORE_PRIMARY.id) has White Labeling setting; Organization Company1 has custom branding configured with Enabled = ON","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id)
 [ACT] 2. Open White Labeling settings
 [ACT] 3. Set store-level White Labeling = OFF
 [ACT] 4. Save store settings
@@ -58,7 +63,8 @@
 [ASSERT] 11. Inspect theme","[DOM] Default platform branding displayed (NOT Company1 custom branding)
 [STATE] Organization settings ignored when store-level WL is OFF
 [DOM] Default logo and favicon shown","[CONSOLE] no uncaught JS errors","Org branding shown when store WL is OFF; Store WL OFF not acting as master switch","restore store White Labeling = ON","C389429","Manual"
-"FWL-011","Add parent footer links for organization - displayed in storefront footer","Footer Links","High","BL-WL-001","","Organization Organization1 exists; White Labeling enabled; Link list feature available","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Marketing > Link Lists
+"FWL-011","Add parent footer links for organization - displayed in storefront footer","Footer Links","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization Organization1 exists; White Labeling enabled; Link list feature available","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Marketing > Link Lists
 [ACT] 2. Create new link list: footer-org1
 [ACT] 3. Add parent links: About Us (URL: /about, Priority: 1), Customer Support (URL: /support, Priority: 2), Legal (URL: /legal, Priority: 3)
 [ACT] 4. Save link list
@@ -73,7 +79,8 @@
 [DOM] Link titles match configured values
 [NAV] Link URLs correct: /about, /support, /legal","[CONSOLE] no uncaught JS errors
 [NETWORK] footer link list data loaded successfully","Wrong footer links shown; Priority order not respected; Footer links absent entirely","remove footer-org1 link list from org; delete link list","C389431","Manual"
-"FWL-012","Add children footer links under parent - hierarchical structure displayed","Footer Links","High","BL-WL-001","","Organization Organization1 has parent footer links configured (FWL-011 prerequisite)","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Marketing > Link Lists > footer-org1
+"FWL-012","Add children footer links under parent - hierarchical structure displayed","Footer Links","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization Organization1 has parent footer links configured (FWL-011 prerequisite)","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Marketing > Link Lists > footer-org1
 [ACT] 2. Expand parent link: Customer Support
 [ACT] 3. Add child links: Contact Us (URL: /contact, Priority: 1), FAQ (URL: /faq, Priority: 2), Returns (URL: /returns, Priority: 3)
 [ACT] 4. Save link list
@@ -86,7 +93,8 @@
 [DOM] Priority order respected (Contact Us first, Returns last)
 [NAV] Child link URLs correct when clicked","[CONSOLE] no uncaught JS errors
 [NETWORK] hierarchical link list data loads correctly","Child links not visible; Children shown under wrong parent; Priority order wrong; Other parent sections (About Us, Legal) broken","remove child links added in test; revert to parent-only structure","C389432","Manual"
-"FWL-013","Verify footer links returned in whiteLabelingSettings GraphQL query","GraphQL Integration","Critical","BL-WL-001, BL-WL-002","ECL-14.1","Organization with footer links configured; GraphQL endpoint accessible at {{BACK_URL}}/graphql","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/graphql
+"FWL-013","Verify footer links returned in whiteLabelingSettings GraphQL query","GraphQL Integration","Critical","BL-WL-001, BL-WL-002","ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with footer links configured; GraphQL endpoint accessible at {{BACK_URL}}/graphql","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/graphql
 [ACT] 2. Execute whiteLabelingSettings query with footerLinks field:
 query {
   whiteLabelingSettings(
@@ -112,7 +120,8 @@ query {
 [DOM] Hierarchy preserved in response
 [DOM] Data matches link list configured in admin","[API] whiteLabelingSettings query returns correct footerLinks fields
 [API] errors[] is empty in GraphQL response","GraphQL errors in response; footerLinks field missing or null; childItems not returned; Data mismatch with admin config","none","C389433 VCST-4637","Manual"
-"FWL-014","Set footer link list for organization - footer links displayed after sign-in","Footer Links","High","BL-WL-001","","Organization Company1 exists; Footer link list configured: footer-company1","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Company1
+"FWL-014","Set footer link list for organization - footer links displayed after sign-in","Footer Links","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization Company1 exists; Footer link list configured: footer-company1","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Company1
 [ACT] 2. Open White Labeling settings
 [ACT] 3. Set Footer Link List Name: footer-company1
 [ACT] 4. Save settings
@@ -125,7 +134,8 @@ query {
 [NAV] Links navigate to correct URLs when clicked
 [STATE] Footer links persist across page navigation","[CONSOLE] no uncaught JS errors
 [NETWORK] footer link data loads successfully","Default footer shown instead of org footer; Links from wrong org shown; Hierarchy broken","restore org FooterLinkListName to original","C389434","Manual"
-"FWL-015","Verify administrator role has access to White Labeling logo management","User Roles","High","BL-WL-001","","Administrator user account exists; White Labeling module installed","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Sign in to Admin at {{BACK_URL}} with administrator credentials
+"FWL-015","Verify administrator role has access to White Labeling logo management","User Roles","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Administrator user account exists; White Labeling module installed","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Sign in to Admin at {{BACK_URL}} with administrator credentials
 [NAV] 2. Navigate to Customer > Organizations > Any Organization
 [ACT] 3. Open White Labeling tab
 [ASSERT] 4. Verify UI controls visible
@@ -139,7 +149,8 @@ query {
 [STATE] Save button enabled
 [STATE] Settings save successfully without permission errors","[ADMIN] settings saved successfully
 [CONSOLE] no permission-related JS errors","White Labeling tab hidden; Upload controls disabled; Permission errors on save","restore any changed settings","C398718 VCST-2627","Manual"
-"FWL-016","Verify organization logo displayed in header after sign-in","Storefront Display","Critical","BL-WL-001","","Organization Branded Org has custom logo configured: branded-org-logo.png; User account exists for Branded Org","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to {{FRONT_URL}}
+"FWL-016","Verify organization logo displayed in header after sign-in","Storefront Display","Critical","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization Branded Org has custom logo configured: branded-org-logo.png; User account exists for Branded Org","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to {{FRONT_URL}}
 [ASSERT] 2. Verify default logo shown before sign-in
 [ACT] 3. Click Sign In
 [ACT] 4. Enter credentials for Branded Org user
@@ -152,7 +163,8 @@ query {
 [NAV] Logo is clickable and links to homepage
 [STATE] Logo displays on all pages after sign-in (catalog, product, cart, account)","[CONSOLE] no uncaught JS errors
 [NETWORK] branded-org-logo.png loads with HTTP 200","Default logo still shown after sign-in; Broken image in header; Logo links to wrong URL","none","VCST-4637","Manual"
-"FWL-017","Verify organization favicon displayed in browser tab after sign-in","Storefront Display","Critical","BL-WL-001","","Organization Branded Org has custom favicon configured: branded-org-favicon.ico","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open new browser tab
+"FWL-017","Verify organization favicon displayed in browser tab after sign-in","Storefront Display","Critical","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization Branded Org has custom favicon configured: branded-org-favicon.ico","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open new browser tab
 [NAV] 2. Navigate to {{FRONT_URL}}
 [ASSERT] 3. Verify browser tab shows default Virto Commerce favicon before sign-in
 [ACT] 4. Sign in with Branded Org user
@@ -164,7 +176,8 @@ query {
 [STATE] Favicon persists across all pages after sign-in
 [STATE] Favicon remains when opening new tabs within same session","[CONSOLE] no uncaught JS errors
 [NETWORK] favicon request returns HTTP 200","Default favicon still shown after sign-in; Favicon reverts on navigation","none","VCST-4637","Manual"
-"FWL-018","Verify organization secondary logo displayed (if configured)","Storefront Display","Medium","BL-WL-001","","Organization has secondary logo configured; White Labeling supports secondaryLogoUrl field","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}, admin={{BACK_URL}}","[NAV] 1. Navigate to Admin > Organizations > Org With Secondary Logo
+"FWL-018","Verify organization secondary logo displayed (if configured)","Storefront Display","Medium","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization has secondary logo configured; White Labeling supports secondaryLogoUrl field","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}, admin={{BACK_URL}}","[NAV] 1. Navigate to Admin > Organizations > Org With Secondary Logo
 [ACT] 2. Open White Labeling settings
 [ASSERT] 3. Verify Secondary Logo URL is configured
 [ACT] 4. Save if needed
@@ -175,7 +188,8 @@ query {
 [DOM] Logo displays in appropriate location (footer, mobile menu, or designated area)
 [STATE] Falls back gracefully if not configured (no broken image)","[CONSOLE] no uncaught JS errors
 [NETWORK] secondary logo image loads with HTTP 200","Broken image where secondary logo should appear; Primary logo shown in secondary logo position","none","VCST-4637","Manual"
-"FWL-021","Verify main menu links displayed in header after sign-in (NEW - VCST-4637)","Main Menu Links","Critical","BL-WL-001","","Organization has main menu link list configured: org-main-menu with 4 parent links and 3 with children; User account exists","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Marketing > Link Lists > org-main-menu
+"FWL-021","Verify main menu links displayed in header after sign-in (NEW - VCST-4637)","Main Menu Links","Critical","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization has main menu link list configured: org-main-menu with 4 parent links and 3 with children; User account exists","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Marketing > Link Lists > org-main-menu
 [ASSERT] 2. Verify structure: Products (priority 1) with children Laptops (1.1) Phones (1.2) Tablets (1.3); Services (priority 2); About (priority 3) with children Company (3.1) Careers (3.2); Contact (priority 4)
 [NAV] 3. Navigate to Admin > Organizations > Org With Main Menu
 [ACT] 4. Set Main Menu Link List Name: org-main-menu
@@ -189,7 +203,8 @@ query {
 [STATE] Services and Contact have no dropdowns
 [DOM] Main menu matches configured link list","[CONSOLE] no uncaught JS errors
 [API] whiteLabelingSettings query returns correct mainMenuLinks","Main menu not visible in header; Wrong links shown; Dropdown not appearing on hover; Priority order wrong","restore org MainMenuLinkListName to original","VCST-4637","Manual"
-"FWL-022","Verify main menu links hierarchical dropdown behavior (parent + children)","Main Menu Links","High","BL-WL-001","","Organization with hierarchical main menu configured (FWL-021 prerequisite)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with user from Org With Main Menu
+"FWL-022","Verify main menu links hierarchical dropdown behavior (parent + children)","Main Menu Links","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with hierarchical main menu configured (FWL-021 prerequisite)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with user from Org With Main Menu
 [NAV] 2. Navigate to homepage
 [ACT] 3. Hover over Products parent link in header
 [ASSERT] 4. Observe dropdown menu
@@ -206,7 +221,8 @@ query {
 [NAV] Clicking child link navigates to correct URL
 [STATE] Dropdown closes when mouse leaves
 [STATE] Parent links without children have no dropdown","[CONSOLE] no uncaught JS errors","Dropdown not opening on hover; Wrong children shown; Navigation to wrong URL; Dropdown flickers; Hover state missing","none","VCST-4637","Manual"
-"FWL-023","Verify main menu links on mobile - hamburger menu with hierarchy","Main Menu Links","Critical","BL-WL-001","ECL-13.2","Organization with main menu configured; Mobile device or responsive viewport (375px width)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Resize browser to mobile viewport: 375px width (iPhone size)
+"FWL-023","Verify main menu links on mobile - hamburger menu with hierarchy","Main Menu Links","Critical","BL-WL-001","ECL-13.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with main menu configured; Mobile device or responsive viewport (375px width)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Resize browser to mobile viewport: 375px width (iPhone size)
 [NAV] 2. Sign in to storefront with user from Org With Main Menu
 [NAV] 3. Navigate to homepage
 [ASSERT] 4. Locate hamburger menu icon in mobile header
@@ -224,7 +240,8 @@ query {
 [DOM] Child links are indented or visually nested
 [NAV] Tapping child link navigates correctly
 [STATE] Menu drawer closes after navigation","[CONSOLE] no uncaught JS errors","Hamburger icon missing; Drawer not opening; Children not expanding; Navigation broken on mobile; Menu not closing after tap","none","VCST-4637","Manual"
-"FWL-024","Verify main menu links navigation works correctly","Main Menu Links","High","BL-WL-001","","Organization with main menu configured; Main menu links pointing to valid URLs","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with user from Org With Main Menu
+"FWL-024","Verify main menu links navigation works correctly","Main Menu Links","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with main menu configured; Main menu links pointing to valid URLs","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with user from Org With Main Menu
 [NAV] 2. Navigate to homepage
 [ACT] 3. Hover over Products in main menu
 [ACT] 4. Click Laptops child link
@@ -238,7 +255,8 @@ query {
 [NAV] Clicking parent link without children navigates directly
 [NAV] Back button returns to previous page correctly
 [STATE] Navigation is fast and responsive","[CONSOLE] no JS errors during navigation","404 errors on navigation; Wrong URL after click; Page not loading; JavaScript errors on navigation","none","VCST-4637","Manual"
-"FWL-025","Verify fallback when no main menu link list configured for organization","Main Menu Links","Medium","BL-WL-004","","Organization exists with White Labeling enabled but MainMenuLinkListName = NULL or empty; User account exists","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Org Without Main Menu
+"FWL-025","Verify fallback when no main menu link list configured for organization","Main Menu Links","Medium","BL-WL-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization exists with White Labeling enabled but MainMenuLinkListName = NULL or empty; User account exists","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Org Without Main Menu
 [ACT] 2. Open White Labeling settings
 [ASSERT] 3. Verify Main Menu Link List Name is empty or NULL
 [ACT] 4. Save
@@ -249,7 +267,8 @@ query {
 [DOM] Header layout is not broken
 [STATE] Other navigation elements (search, cart, account) work correctly
 [STATE] User can navigate site via search, footer, catalog pages","[CONSOLE] no uncaught JS errors","Application crash on missing main menu config; Header layout broken; Console errors about missing link list","none","VCST-4637","Manual"
-"FWL-026","Verify main menu links returned in whiteLabelingSettings GraphQL query (VCST-4637)","GraphQL Integration","Critical","BL-WL-001, BL-WL-002","ECL-14.1","Organization with main menu configured; GraphQL endpoint accessible","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/graphql
+"FWL-026","Verify main menu links returned in whiteLabelingSettings GraphQL query (VCST-4637)","GraphQL Integration","Critical","BL-WL-001, BL-WL-002","ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with main menu configured; GraphQL endpoint accessible","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/graphql
 [ACT] 2. Execute whiteLabelingSettings query with mainMenuLinks field:
 query {
   whiteLabelingSettings(
@@ -277,7 +296,8 @@ query {
 [DOM] Hierarchy preserved in response
 [DOM] Data matches link list configured in admin","[API] whiteLabelingSettings query returns correct mainMenuLinks fields
 [API] errors[] is empty in GraphQL response","GraphQL errors in response; mainMenuLinks field missing; childItems not returned; Priority order wrong; Data mismatch with admin config","none","VCST-4637","Manual"
-"FWL-027","Verify pageContext query includes whiteLabelingSettings with mainMenuLinks","PageContext Integration","Critical","BL-WL-001, BL-WL-002","ECL-14.1","Organization with full branding configured (logo, favicon, theme, footer, mainMenu); pageContext query available in xFrontend","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to GraphQL playground
+"FWL-027","Verify pageContext query includes whiteLabelingSettings with mainMenuLinks","PageContext Integration","Critical","BL-WL-001, BL-WL-002","ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with full branding configured (logo, favicon, theme, footer, mainMenu); pageContext query available in xFrontend","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to GraphQL playground
 [ACT] 2. Execute pageContext query:
 query {
   pageContext(
@@ -304,7 +324,9 @@ query {
 [DOM] Data consistent with separate whiteLabelingSettings query
 [FORMAT] Response time approximately 200-400ms","[API] pageContext query returns whiteLabelingSettings with mainMenuLinks
 [API] errors[] is empty in GraphQL response","GraphQL errors; whiteLabelingSettings missing from pageContext; mainMenuLinks not embedded; Response time > 1000ms","none","VCST-4637","Manual"
-"FWL-033","Verify logo renders correctly on mobile viewport (375px - iPhone)","Responsive Mobile","High","BL-WL-001","ECL-13.2","Organization with custom logo configured; Mobile device or browser with responsive mode","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded organization user
+"FWL-033","Verify logo renders correctly on mobile viewport (375px - iPhone)","Responsive Mobile","High","BL-WL-001","ECL-13.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+[PRE:RESET_CART]
+Organization with custom logo configured; Mobile device or browser with responsive mode","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded organization user
 [ACT] 2. Open browser DevTools
 [ACT] 3. Toggle device toolbar (responsive mode)
 [ACT] 4. Set viewport: 375px width x 667px height (iPhone 8 size)
@@ -318,7 +340,8 @@ query {
 [STATE] Logo is positioned correctly in mobile header layout
 [STATE] Logo remains clickable (tappable) and links to homepage
 [DOM] Logo does not overlap other mobile header elements","[CONSOLE] no uncaught JS errors","Logo missing on mobile; Logo overlapping hamburger menu; Logo pixelated on mobile; Logo not tappable","none","Mobile Responsive","Manual"
-"FWL-034","Verify main menu links accessible via hamburger menu on mobile","Responsive Mobile","Critical","BL-WL-001","ECL-13.2","Organization with main menu configured; Mobile viewport 375px width","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Resize browser to mobile viewport: 375px width
+"FWL-034","Verify main menu links accessible via hamburger menu on mobile","Responsive Mobile","Critical","BL-WL-001","ECL-13.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with main menu configured; Mobile viewport 375px width","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Resize browser to mobile viewport: 375px width
 [NAV] 2. Sign in with branded org user
 [NAV] 3. Navigate to homepage
 [ASSERT] 4. Locate hamburger menu icon in top-left or top-right of mobile header
@@ -337,7 +360,8 @@ query {
 [DOM] Child links are indented or visually nested
 [NAV] Tapping child link navigates to correct page
 [STATE] Menu drawer closes after navigation","[CONSOLE] no uncaught JS errors","Hamburger icon missing; Drawer not opening; Children not expanding on tap; Menu not closing after navigation; Tap targets too small","none","Mobile Responsive","Manual"
-"FWL-035","Verify footer links display correctly on mobile viewport","Responsive Mobile","Medium","BL-WL-001","ECL-13.2","Organization with footer links configured; Mobile viewport","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Resize to mobile: 375px width
+"FWL-035","Verify footer links display correctly on mobile viewport","Responsive Mobile","Medium","BL-WL-001","ECL-13.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with footer links configured; Mobile viewport","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Resize to mobile: 375px width
 [NAV] 2. Sign in with branded org user
 [SCROLL] 3. Scroll to bottom of page
 [ASSERT] 4. Inspect footer layout
@@ -349,7 +373,9 @@ query {
 [STATE] Links are tappable (adequate tap targets)
 [STATE] Footer does not overlap content
 [NAV] Tapping links navigates correctly","[CONSOLE] no uncaught JS errors","Footer links not visible on mobile; Links too small to tap; Footer overlapping content; Hierarchy broken on mobile","none","Mobile Responsive","Manual"
-"FWL-036","Verify theme colors applied correctly on mobile viewport","Responsive Mobile","Medium","BL-WL-001","ECL-13.2","Organization with Coffee theme configured; Mobile viewport","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Resize to mobile: 375px width
+"FWL-036","Verify theme colors applied correctly on mobile viewport","Responsive Mobile","Medium","BL-WL-001","ECL-13.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+[PRE:RESET_CART]
+Organization with Coffee theme configured; Mobile viewport","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Resize to mobile: 375px width
 [NAV] 2. Sign in with Coffee theme org user
 [NAV] 3. Navigate to homepage
 [ASSERT] 4. Inspect page colors on mobile
@@ -360,7 +386,8 @@ query {
 [FORMAT] Buttons use Coffee theme primary color
 [FORMAT] Links use Coffee theme accent color
 [STATE] Theme is consistent across all mobile pages","[CONSOLE] no uncaught JS errors","Default theme showing on mobile; Coffee colors not applied; Theme inconsistent on mobile pages","none","Mobile Responsive","Manual"
-"FWL-037","Verify logo renders correctly on tablet viewport (768px - iPad)","Responsive Mobile","Medium","BL-WL-001","ECL-13.2","Organization with custom logo; Tablet device or browser responsive mode","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Set viewport: 768px width x 1024px height (iPad size)
+"FWL-037","Verify logo renders correctly on tablet viewport (768px - iPad)","Responsive Mobile","Medium","BL-WL-001","ECL-13.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with custom logo; Tablet device or browser responsive mode","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Set viewport: 768px width x 1024px height (iPad size)
 [NAV] 2. Sign in with branded org user
 [NAV] 3. Navigate to homepage
 [ASSERT] 4. Inspect header logo on tablet
@@ -370,7 +397,9 @@ query {
 [DOM] Logo positioning is correct in tablet header
 [STATE] Logo works in both portrait (768px) and landscape (1024px) orientations
 [STATE] Logo is clickable and links to homepage","[CONSOLE] no uncaught JS errors","Logo missing or broken on tablet; Logo distorted in landscape; Logo not clickable on tablet","none","Mobile Responsive","Manual"
-"FWL-038","Verify whitelabeling renders correctly in Chrome browser (desktop)","Cross-Browser","High","BL-WL-001","ECL-13.1","Organization with full branding configured; Chrome browser latest version (120+)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Chrome browser (version 120 or later)
+"FWL-038","Verify whitelabeling renders correctly in Chrome browser (desktop)","Cross-Browser","High","BL-WL-001","ECL-13.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+[PRE:RESET_CART]
+Organization with full branding configured; Chrome browser latest version (120+)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Chrome browser (version 120 or later)
 [NAV] 2. Navigate to {{FRONT_URL}}
 [ACT] 3. Sign in with branded organization user
 [ASSERT] 4. Inspect header logo
@@ -385,7 +414,8 @@ query {
 [DOM] Footer links display in correct hierarchy
 [STATE] All branding persists across pages","[CONSOLE] no uncaught JS errors
 [NETWORK] all branding assets load with HTTP 200","Broken logo or favicon in Chrome; CSS not loading in Chrome; Dropdown malfunction in Chrome; Console errors","none","Chrome Cross-Browser","Manual"
-"FWL-039","Verify whitelabeling renders correctly in Firefox browser (desktop)","Cross-Browser","High","BL-WL-001","ECL-13.1","Organization with full branding configured; Firefox browser latest version (121+)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Firefox browser (version 121 or later)
+"FWL-039","Verify whitelabeling renders correctly in Firefox browser (desktop)","Cross-Browser","High","BL-WL-001","ECL-13.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with full branding configured; Firefox browser latest version (121+)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Firefox browser (version 121 or later)
 [NAV] 2. Navigate to {{FRONT_URL}}
 [ACT] 3. Sign in with branded organization user
 [ASSERT] 4. Inspect logo, favicon, theme, main menu, footer
@@ -398,7 +428,8 @@ query {
 [DOM] Footer links display correctly
 [STATE] No Firefox-specific rendering issues","[CONSOLE] no uncaught JS errors
 [NETWORK] all branding assets load with HTTP 200","Broken logo or favicon in Firefox; Firefox-specific CSS rendering issue; Dropdown not working on hover in Firefox","none","Firefox Cross-Browser","Manual"
-"FWL-040","Verify whitelabeling renders correctly in Edge browser (desktop)","Cross-Browser","High","BL-WL-001","ECL-13.1","Organization with full branding configured; Edge browser latest version (120+)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Edge browser (version 120 or later)
+"FWL-040","Verify whitelabeling renders correctly in Edge browser (desktop)","Cross-Browser","High","BL-WL-001","ECL-13.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with full branding configured; Edge browser latest version (120+)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Edge browser (version 120 or later)
 [NAV] 2. Navigate to {{FRONT_URL}}
 [ACT] 3. Sign in with branded organization user
 [ASSERT] 4. Inspect logo, favicon, theme, main menu, footer
@@ -411,7 +442,8 @@ query {
 [DOM] Footer links display correctly
 [STATE] Rendering is nearly identical to Chrome (both Chromium-based)","[CONSOLE] no uncaught JS errors
 [NETWORK] all branding assets load with HTTP 200","Broken logo or favicon in Edge; Edge-specific rendering issue; Behavior differs significantly from Chrome","none","Edge Cross-Browser","Manual"
-"FWL-041","Verify whitelabeling renders correctly on iPhone Safari (iOS)","Cross-Browser Mobile","Critical","BL-WL-001","ECL-13.1, ECL-13.2","Organization with full branding configured; iPhone device (iPhone 14/15/16) with Safari browser OR BrowserStack iOS simulator","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Safari on iPhone (or BrowserStack iOS simulator)
+"FWL-041","Verify whitelabeling renders correctly on iPhone Safari (iOS)","Cross-Browser Mobile","Critical","BL-WL-001","ECL-13.1, ECL-13.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with full branding configured; iPhone device (iPhone 14/15/16) with Safari browser OR BrowserStack iOS simulator","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Safari on iPhone (or BrowserStack iOS simulator)
 [NAV] 2. Navigate to {{FRONT_URL}}
 [ACT] 3. Sign in with branded organization user
 [ASSERT] 4. Inspect logo in mobile header
@@ -426,7 +458,8 @@ query {
 [FORMAT] Theme colors applied correctly
 [STATE] No iOS-specific rendering issues","[CONSOLE] no uncaught JS errors
 [NETWORK] all branding assets load with HTTP 200","Logo broken on iOS Safari; Touch interactions not working; iOS Safari-specific CSS quirks; Favicon not updating on iOS","none","iOS Safari Mobile","Manual"
-"FWL-042","Verify whitelabeling renders correctly on Android Chrome (mobile)","Cross-Browser Mobile","High","BL-WL-001","ECL-13.1, ECL-13.2","Organization with full branding configured; Android device (Samsung Galaxy or Google Pixel) with Chrome browser OR BrowserStack Android simulator","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Chrome on Android device (or BrowserStack simulator)
+"FWL-042","Verify whitelabeling renders correctly on Android Chrome (mobile)","Cross-Browser Mobile","High","BL-WL-001","ECL-13.1, ECL-13.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with full branding configured; Android device (Samsung Galaxy or Google Pixel) with Chrome browser OR BrowserStack Android simulator","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Chrome on Android device (or BrowserStack simulator)
 [NAV] 2. Navigate to {{FRONT_URL}}
 [ACT] 3. Sign in with branded organization user
 [ASSERT] 4. Inspect logo in mobile header
@@ -439,7 +472,8 @@ query {
 [FORMAT] Theme colors applied
 [STATE] No Android-specific rendering issues","[CONSOLE] no uncaught JS errors
 [NETWORK] all branding assets load with HTTP 200","Logo broken on Android Chrome; Touch interactions failing; Android-specific CSS issues; Hamburger menu not working","none","Android Chrome Mobile","Manual"
-"FWL-043","Verify logo has proper alt text for accessibility","Accessibility","High","BL-WL-001","","Organization with custom logo configured; Screen reader testing tool or browser accessibility inspector","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
+"FWL-043","Verify logo has proper alt text for accessibility","Accessibility","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with custom logo configured; Screen reader testing tool or browser accessibility inspector","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
 [NAV] 2. Navigate to homepage
 [ACT] 3. Right-click header logo image
 [ACT] 4. Inspect element in DevTools
@@ -449,10 +483,11 @@ query {
 [KEY] 8. Tab to logo element
 [ASSERT] 9. Verify screen reader announces logo with alt text","[DOM] <img> element has alt attribute
 [DOM] Alt text is descriptive and meaningful (e.g. ""<Organization Name> Logo"")
-[STATE] Alt text is NOT empty (alt="""")
+[STATE] Alt text is NOT empty (alt="""""")
 [STATE] Screen reader announces logo correctly when focused
 [STATE] Logo link is announced as ""link"" by screen reader","[CONSOLE] no accessibility-related JS errors","Missing alt attribute on logo image; Empty alt text; Screen reader not announcing logo","none","Accessibility A11Y","Manual"
-"FWL-044","Verify main menu is keyboard navigable","Accessibility","High","BL-WL-001","","Organization with main menu configured; Keyboard navigation testing","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
+"FWL-044","Verify main menu is keyboard navigable","Accessibility","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with main menu configured; Keyboard navigation testing","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
 [NAV] 2. Navigate to homepage
 [KEY] 3. Use Tab key to navigate to main menu
 [KEY] 4. Tab through each main menu link (Products, Services, About, Contact)
@@ -466,7 +501,8 @@ query {
 [STATE] Focus moves to first child link after opening dropdown
 [STATE] Tab key navigates through child links
 [NAV] Enter key on child link navigates to page","[CONSOLE] no accessibility-related JS errors","Tab focus skipping menu items; Focus indicator invisible; Dropdown not opening via keyboard; Child links not reachable via keyboard","none","Accessibility A11Y","Manual"
-"FWL-045","Verify footer links are keyboard navigable","Accessibility","Medium","BL-WL-001","","Organization with footer links configured; Keyboard navigation testing","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
+"FWL-045","Verify footer links are keyboard navigable","Accessibility","Medium","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with footer links configured; Keyboard navigation testing","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
 [NAV] 2. Navigate to homepage
 [KEY] 3. Use Tab key to navigate through page content down to footer
 [KEY] 4. Continue tabbing through footer links
@@ -477,7 +513,8 @@ query {
 [STATE] Parent and child links are both keyboard accessible
 [NAV] Enter key on link navigates to correct page
 [STATE] Keyboard navigation order is logical (parent then children then next parent)","[CONSOLE] no accessibility-related JS errors","Footer links not reachable via Tab; Focus indicator missing; Enter key not navigating; Navigation order illogical","none","Accessibility A11Y","Manual"
-"FWL-046","Verify focus indicators visible on all branded interactive elements","Accessibility","High","BL-WL-001","","Organization with custom branding; Theme preset applied; Keyboard navigation","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with Coffee theme org user
+"FWL-046","Verify focus indicators visible on all branded interactive elements","Accessibility","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with custom branding; Theme preset applied; Keyboard navigation","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with Coffee theme org user
 [NAV] 2. Navigate to homepage
 [KEY] 3. Use Tab key to navigate through page
 [KEY] 4. Tab to logo (should show focus indicator)
@@ -490,7 +527,8 @@ query {
 [STATE] Buttons show focus indicator
 [FORMAT] Focus indicators have sufficient contrast against Coffee theme background colors (minimum 3:1 contrast ratio)
 [STATE] Focus indicators are NOT hidden or removed by CSS","[CONSOLE] no accessibility-related JS errors","Focus indicators hidden by CSS; Focus outline invisible against theme background; Insufficient contrast ratio for focus indicators","none","Accessibility A11Y","Manual"
-"FWL-047","Verify screen reader announces main menu structure (parent and child links)","Accessibility","Medium","BL-WL-001","","Organization with hierarchical main menu; Screen reader: NVDA (Windows), JAWS (Windows), or VoiceOver (Mac)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Enable screen reader
+"FWL-047","Verify screen reader announces main menu structure (parent and child links)","Accessibility","Medium","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with hierarchical main menu; Screen reader: NVDA (Windows), JAWS (Windows), or VoiceOver (Mac)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Enable screen reader
 [NAV] 2. Sign in to storefront with branded org user
 [NAV] 3. Navigate to homepage
 [KEY] 4. Use screen reader navigation to reach main menu
@@ -502,8 +540,9 @@ query {
 [STATE] Parent links with children are announced as ""menu"" or ""has submenu""
 [STATE] Navigating into dropdown, child links are announced
 [STATE] Hierarchy is conveyed (user understands parent/child relationship)
-[DOM] ARIA attributes present: aria-haspopup, aria-expanded, role=""menu"", role=""menuitem""","[CONSOLE] no accessibility-related JS errors","Screen reader not announcing menu hierarchy; Missing ARIA attributes; Child links not reachable via screen reader; No indication of submenu presence","none","Accessibility A11Y","Manual"
-"FWL-048","Verify high contrast mode compatibility with whitelabeling theme","Accessibility","Medium","BL-WL-001","","Organization with Coffee theme configured; Windows High Contrast Mode or browser extension for high contrast","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Enable Windows High Contrast Mode (Windows Settings > Ease of Access > High Contrast)
+[DOM] ARIA attributes present: aria-haspopup, aria-expanded, role=""""menu"", role=""""menuitem""","[CONSOLE] no accessibility-related JS errors","Screen reader not announcing menu hierarchy; Missing ARIA attributes; Child links not reachable via screen reader; No indication of submenu presence","none","Accessibility A11Y","Manual"
+"FWL-048","Verify high contrast mode compatibility with whitelabeling theme","Accessibility","Medium","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with Coffee theme configured; Windows High Contrast Mode or browser extension for high contrast","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Enable Windows High Contrast Mode (Windows Settings > Ease of Access > High Contrast)
 [NAV] 2. Sign in to storefront with Coffee theme org user
 [NAV] 3. Navigate to homepage
 [ASSERT] 4. Verify logo is visible in high contrast mode
@@ -516,7 +555,8 @@ query {
 [STATE] Focus indicators remain visible with sufficient contrast
 [DOM] Text remains readable
 [STATE] No layout breaking","[CONSOLE] no uncaught JS errors","Logo invisible in high contrast mode; Layout breaking in high contrast; Text unreadable; Focus indicators disappearing","none","Accessibility A11Y","Manual"
-"FWL-049","Verify pageContext query performance - single call vs multiple queries","Performance","Medium","BL-WL-001","","Organization with full branding configured; GraphQL endpoint accessible; Performance testing tool (Postman or browser DevTools)","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to GraphQL playground
+"FWL-049","Verify pageContext query performance - single call vs multiple queries","Performance","Medium","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with full branding configured; GraphQL endpoint accessible; Performance testing tool (Postman or browser DevTools)","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to GraphQL playground
 [ACT] 2. Test 1: Execute 4 separate queries sequentially: slugInfo query (measure time), store query (measure time), whiteLabelingSettings query (measure time), user query (measure time). Total time = sum of all 4.
 [ACT] 3. Test 2: Execute single pageContext query that returns all 4 sub-objects (measure time)
 [ASSERT] 4. Compare total time: Test 1 (4 queries) vs Test 2 (1 query)
@@ -526,7 +566,8 @@ query {
 [FORMAT] Time savings: 300-600ms measurable
 [STATE] Single query reduces HTTP overhead (fewer round trips)","[API] pageContext query returns all 4 sub-objects in a single response
 [API] errors[] is empty in GraphQL response","pageContext query slower than separate queries; Performance improvement not measurable; Single query fails","none","Performance Optimization","Manual"
-"FWL-050","Verify storefront page load time with whitelabeling enabled - under 3 seconds","Performance","Medium","BL-WL-001","","Organization with full branding configured; Chrome DevTools > Network > Throttling: Fast 3G or No throttling","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Chrome DevTools
+"FWL-050","Verify storefront page load time with whitelabeling enabled - under 3 seconds","Performance","Medium","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with full branding configured; Chrome DevTools > Network > Throttling: Fast 3G or No throttling","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Chrome DevTools
 [ACT] 2. Navigate to Network tab
 [ACT] 3. Set throttling: Fast 3G (or No throttling for best-case)
 [ACT] 4. Clear browser cache
@@ -540,7 +581,8 @@ query {
 [FORMAT] Theme CSS loads within 300ms
 [FORMAT] DOMContentLoaded < 1.5 seconds","[CONSOLE] no uncaught JS errors
 [NETWORK] all branding assets load with HTTP 200","Page load time > 3 seconds; Logo or theme causing load delay; DOMContentLoaded > 1.5 seconds","none","Performance","Manual"
-"FWL-051","Verify logo image loading with lazy loading or optimization","Performance","Medium","BL-WL-001","","Organization with custom logo (large file size test: 500KB PNG); Chrome DevTools Network tab","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
+"FWL-051","Verify logo image loading with lazy loading or optimization","Performance","Medium","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with custom logo (large file size test: 500KB PNG); Chrome DevTools Network tab","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
 [ACT] 2. Open Chrome DevTools > Network tab
 [ACT] 3. Filter: Images
 [NAV] 4. Navigate to homepage
@@ -553,7 +595,8 @@ query {
 [STATE] Logo loading is NOT blocking page render
 [DOM] Logo appears quickly after page load","[CONSOLE] no uncaught JS errors
 [NETWORK] logo image loads with HTTP 200","Unoptimized logo (>500KB) blocking page load; Logo format inefficient; Logo causing render-blocking","none","Performance","Manual"
-"FWL-052","Verify favicon caching to avoid repeated requests","Performance","Low","BL-WL-001","","Organization with custom favicon; Browser cache enabled; Chrome DevTools Network tab","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
+"FWL-052","Verify favicon caching to avoid repeated requests","Performance","Low","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with custom favicon; Browser cache enabled; Chrome DevTools Network tab","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
 [NAV] 2. Navigate to homepage (clear cache first)
 [ACT] 3. Open DevTools > Network tab
 [ASSERT] 4. Observe favicon request (favicon.ico or .png)
@@ -566,7 +609,8 @@ query {
 [STATE] After browser restart, favicon is served from disk cache (HTTP 304 or disk cache hit)
 [FORMAT] Cache headers configured correctly (e.g. Cache-Control: max-age=86400)","[CONSOLE] no uncaught JS errors
 [NETWORK] favicon Cache-Control header present","Favicon re-requested on every page navigation; No caching headers set; Favicon re-downloaded after browser restart","none","Performance","Manual"
-"FWL-053","Verify theme CSS caching and efficient loading","Performance","Low","BL-WL-001","","Organization with Coffee theme configured; Browser cache enabled; DevTools Network tab","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with Coffee theme org user
+"FWL-053","Verify theme CSS caching and efficient loading","Performance","Low","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with Coffee theme configured; Browser cache enabled; DevTools Network tab","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with Coffee theme org user
 [NAV] 2. Navigate to homepage (clear cache first)
 [ACT] 3. Open DevTools > Network > CSS filter
 [ASSERT] 4. Observe theme-related CSS file loading
@@ -580,7 +624,9 @@ query {
 [STATE] No duplicate CSS files loaded
 [STATE] CSS is loaded in <head> to avoid FOUC","[CONSOLE] no CSS errors
 [NETWORK] theme CSS Cache-Control header present","Theme CSS re-downloaded on every page; No caching headers; CSS not minified; FOUC due to late CSS loading","none","Performance","Manual"
-"FWL-054","Verify no FOUC (Flash of Unstyled Content) when loading themed page","Performance","High","BL-WL-001","","Organization with Coffee theme configured; Slow network throttling (DevTools > Network > Slow 3G)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Open Chrome DevTools
+"FWL-054","Verify no FOUC (Flash of Unstyled Content) when loading themed page","Performance","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+[PRE:RESET_CART]
+Organization with Coffee theme configured; Slow network throttling (DevTools > Network > Slow 3G)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[ACT] 1. Open Chrome DevTools
 [ACT] 2. Set Network throttling: Slow 3G
 [ACT] 3. Clear browser cache
 [NAV] 4. Sign in to storefront with Coffee theme org user
@@ -592,7 +638,8 @@ query {
 [STATE] No momentary display of unstyled HTML before CSS applies
 [STATE] Page rendering is smooth and professional
 [STATE] User does NOT see ""flicker"" or color changes during page load","[CONSOLE] no CSS errors","FOUC visible on slow network; Default theme flashing before Coffee theme applies; CSS loading too late","none","Performance UX","Manual"
-"FWL-055","Verify multiple concurrent organization users can access branding without conflicts","Concurrency","Medium","BL-WL-003","","2 user accounts from different organizations: User A (Org A branding) and User B (Org B branding); 2 separate browser sessions (Chrome Incognito + Firefox Private)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Chrome Incognito window
+"FWL-055","Verify multiple concurrent organization users can access branding without conflicts","Concurrency","Medium","BL-WL-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+2 user accounts from different organizations: User A (Org A branding) and User B (Org B branding); 2 separate browser sessions (Chrome Incognito + Firefox Private)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open Chrome Incognito window
 [NAV] 2. Navigate to {{FRONT_URL}}
 [ACT] 3. Sign in with User A (Org A)
 [ASSERT] 4. Verify Org A branding displayed (logo-a, Coffee theme)
@@ -607,7 +654,8 @@ query {
 [DOM] User B session displays Org B branding (logo-b, Default theme)
 [STATE] No cross-contamination between sessions
 [STATE] Navigating pages in one session does NOT affect the other","[CONSOLE] no uncaught JS errors in either session","Cross-contamination: User A sees Org B branding; Caching conflicts between sessions; Wrong logo after navigating in parallel sessions","none","Concurrency","Manual"
-"FWL-056","Verify branding persists after session timeout and re-login","Session Management","Medium","BL-WL-001","","Organization with custom branding; Session timeout configured (or manually clear session); User account","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
+"FWL-056","Verify branding persists after session timeout and re-login","Session Management","Medium","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with custom branding; Session timeout configured (or manually clear session); User account","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
 [ASSERT] 2. Verify branding displayed (logo, favicon, theme, main menu, footer)
 [ACT] 3. Wait for session timeout (or manually clear session cookie in DevTools)
 [NAV] 4. Attempt to navigate to protected page (e.g. account/orders)
@@ -619,7 +667,8 @@ query {
 [DOM] After re-login, favicon is restored
 [FORMAT] After re-login, theme is restored
 [DOM] After re-login, main menu and footer are restored","[CONSOLE] no uncaught JS errors","Branding lost after re-login; Default branding showing after session timeout re-login; Main menu/footer missing after re-login","none","Session Management","Manual"
-"FWL-057","Verify branding data is not exposed in client-side code or APIs for other organizations","Security","High","BL-WL-001","","User account from Org A; Access to browser DevTools and Network tab","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}, admin={{BACK_URL}}","[NAV] 1. Sign in to storefront with Org A user
+"FWL-057","Verify branding data is not exposed in client-side code or APIs for other organizations","Security","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+User account from Org A; Access to browser DevTools and Network tab","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}, admin={{BACK_URL}}","[NAV] 1. Sign in to storefront with Org A user
 [ACT] 2. Open DevTools > Network tab
 [NAV] 3. Navigate to homepage
 [ASSERT] 4. Inspect GraphQL or REST API calls
@@ -634,7 +683,8 @@ query {
 [STATE] GraphQL query with different organizationId is blocked or returns null
 [STATE] Page source does not contain hardcoded URLs for other orgs' logos/favicons","[API] whiteLabelingSettings returns only the authenticated org's data
 [CONSOLE] no uncaught JS errors","Org B branding data visible in Org A's API response; Cross-org data exposure; Unauthorized access to other org settings via GraphQL","none","Security","Manual"
-"FWL-058","Verify no broken images when logo or favicon URL is invalid","Error Handling","Medium","BL-WL-004","","Organization with White Labeling enabled; Manually set logoUrl to invalid URL in database or via API","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
+"FWL-058","Verify no broken images when logo or favicon URL is invalid","Error Handling","Medium","BL-WL-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with White Labeling enabled; Manually set logoUrl to invalid URL in database or via API","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
 [ACT] 2. Open White Labeling settings
 [ACT] 3. Manually enter invalid logo URL: https://invalid-cdn.example.com/nonexistent-logo.png
 [ACT] 4. Save settings
@@ -646,7 +696,8 @@ query {
 [STATE] Page layout is NOT broken (header remains intact)
 [STATE] User can still use the site (navigation works)
 [DOM] Footer and other elements are unaffected","[CONSOLE] no uncaught JS errors related to failed image load","Broken image icon visible in header; Header layout breaking due to missing logo; Console errors about 404 image","restore org logoUrl to valid URL","Error Handling Negative","Manual"
-"FWL-059","Verify graceful handling when main menu link list does not exist","Error Handling","Medium","BL-WL-004","","Organization with MainMenuLinkListName set to non-existent link list name: nonexistent-menu","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
+"FWL-059","Verify graceful handling when main menu link list does not exist","Error Handling","Medium","BL-WL-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with MainMenuLinkListName set to non-existent link list name: nonexistent-menu","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
 [ACT] 2. Open White Labeling settings
 [ACT] 3. Set Main Menu Link List Name: nonexistent-menu (does not exist in Link Lists)
 [ACT] 4. Save settings
@@ -657,7 +708,8 @@ query {
 [DOM] Header layout is NOT broken
 [STATE] User can navigate site via search, footer, catalog
 [API] GraphQL returns null or empty array for mainMenuLinks (not an error)","[CONSOLE] no uncaught JS errors","Application crash on missing menu config; Header broken; Console errors about missing link list","restore org MainMenuLinkListName to original","Error Handling Negative","Manual"
-"FWL-060","Verify graceful handling when footer link list does not exist","Error Handling","Medium","BL-WL-004","","Organization with FooterLinkListName set to non-existent link list name","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
+"FWL-060","Verify graceful handling when footer link list does not exist","Error Handling","Medium","BL-WL-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with FooterLinkListName set to non-existent link list name","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
 [ACT] 2. Open White Labeling settings
 [ACT] 3. Set Footer Link List Name: nonexistent-footer (does not exist)
 [ACT] 4. Save settings
@@ -667,21 +719,23 @@ query {
 [STATE] Footer may display default links OR be empty
 [DOM] Page layout is NOT broken
 [API] GraphQL returns null or empty array for footerLinks (not an error)","[CONSOLE] no uncaught JS errors","Application crash on missing footer config; Footer area broken; Console errors about missing link list","restore org FooterLinkListName to original","Error Handling Negative","Manual"
-"FWL-065","Verify organization-specific branding applies only to that organization's users","Data Isolation","Critical","BL-WL-001","","2 organizations: Org A (logo-a.png) and Org B (logo-b.png); User A from Org A; User B from Org B","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in with User A (Org A)
+"FWL-065","Verify organization-specific branding applies only to that organization's users","Data Isolation","Critical","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+2 organizations: Org A (logo-a.png) and Org B (logo-b.png); User A from Org A; User B from Org B","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in with User A (Org A)
 [NAV] 2. Navigate to homepage
 [ASSERT] 3. Verify logo-a.png displayed
-[ACT] 4. Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
+[ACT] 4. Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
 [NAV] 5. Sign in with User B (Org B)
 [NAV] 6. Navigate to homepage
 [ASSERT] 7. Verify logo-b.png displayed (NOT logo-a.png)
-[ACT] 8. Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
+[ACT] 8. Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
 [NAV] 9. Sign in again with User A
 [ASSERT] 10. Verify logo-a.png is back (NOT logo-b.png)","[DOM] User A sees ONLY Org A branding (logo-a.png)
 [DOM] User B sees ONLY Org B branding (logo-b.png)
 [STATE] No cross-contamination (User A never sees logo-b.png)
 [STATE] Switching users switches branding correctly
 [STATE] Data isolation enforced at backend level","[CONSOLE] no uncaught JS errors","Cross-contamination: User A sees Org B logo; Branding persisting after sign-out; Wrong org branding after re-login","sign out; clear session","Data Isolation Security","Manual"
-"FWL-066","Verify anonymous users (not signed in) see default branding","Anonymous User","High","BL-WL-002","","Anonymous access enabled; Default platform branding configured","storefront={{FRONT_URL}}","[NAV] 1. Open incognito/private browser window
+"FWL-066","Verify anonymous users (not signed in) see default branding","Anonymous User","High","BL-WL-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Anonymous access enabled; Default platform branding configured","storefront={{FRONT_URL}}","[NAV] 1. Open incognito/private browser window
 [NAV] 2. Navigate to {{FRONT_URL}} (do NOT sign in)
 [ASSERT] 3. Browse as anonymous user
 [ASSERT] 4. Inspect header logo
@@ -694,7 +748,8 @@ query {
 [DOM] Main menu shows default/public links (not org-specific links)
 [DOM] Footer shows default/public links
 [STATE] No organization branding applied before user signs in","[CONSOLE] no uncaught JS errors","Custom org logo visible before sign-in; Org-specific theme applied to anonymous session","none","Anonymous User","Manual"
-"FWL-067","Verify branding updates in Admin reflect on storefront without cache issues","Cache Management","High","BL-WL-001","","Organization with custom branding; Admin access; Signed-in storefront session in separate browser tab","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open storefront in Browser Tab 1
+"FWL-067","Verify branding updates in Admin reflect on storefront without cache issues","Cache Management","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organization with custom branding; Admin access; Signed-in storefront session in separate browser tab","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Open storefront in Browser Tab 1
 [ACT] 2. Sign in with branded org user
 [ASSERT] 3. Verify current logo displayed (logo-v1.png)
 [NAV] 4. Open Admin in Browser Tab 2
@@ -707,7 +762,9 @@ query {
 [STATE] Old logo is NOT cached indefinitely (cache invalidated or expires quickly)
 [FORMAT] Cache-Control headers allow updates to be seen within reasonable time (< 5 minutes)","[CONSOLE] no uncaught JS errors
 [NETWORK] new logo image loads with HTTP 200 after refresh","Old logo still shown after hard refresh; New logo not visible even after 5 minutes; Cache-Control headers missing","restore org to logo-v1.png","Cache Management","Manual"
-"FWL-068","Verify branding consistency across all storefront pages (homepage catalog product cart account)","Consistency","High","BL-WL-001","","Organization with full branding configured; User account with items in cart and order history","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
+"FWL-068","Verify branding consistency across all storefront pages (homepage catalog product cart account)","Consistency","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+[PRE:RESET_CART]
+Organization with full branding configured; User account with items in cart and order history","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with branded org user
 [ASSERT] 2. Verify branding on HOMEPAGE: logo, favicon, theme, main menu, footer
 [NAV] 3. Navigate to CATALOG page
 [ASSERT] 4. Verify same branding displayed

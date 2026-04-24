@@ -1,265 +1,80 @@
-ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-SEC-PCI-001,Card Number Iframe Isolation,PCI Compliance > Iframe,Critical,BL-SEC-002,,- CyberSource payment form displayed
-- Browser DevTools open,,,"[NAV] Navigate to {{FRONT_URL}} cart page with a product added
-[ACT] Open DevTools Elements tab
-[ACT] Locate the card number input field in the DOM
-[ACT] Identify the parent iframe element
-[ASSERT] Verify iframe src domain is testflex.cybersource.com
-[ACT] Execute in DevTools console: document.querySelector('iframe').contentDocument","[DOM] Card number input is inside a cross-origin iframe
-[DOM] iframe src domain is testflex.cybersource.com
-[STATE] Attempting contentDocument access throws DOMException: Blocked a frame with origin from accessing a cross-origin frame","[NETWORK] No card number field value transmitted to {{BACK_URL}} in any request
-[CONSOLE] No iframe access errors other than expected cross-origin DOMException","iframe rendered without cross-origin isolation; contentDocument access succeeds; card field rendered in parent DOM instead of iframe",,VCST-3387 TC-SEC-001,Manual
-SEC-PCI-002,CVV Iframe Isolation,PCI Compliance > Iframe,Critical,BL-SEC-002,,- CyberSource payment form displayed,,,,"[NAV] Navigate to {{FRONT_URL}} cart page with a product added
-[ACT] Open DevTools Elements tab
-[ACT] Locate the CVV/security code input field
-[ASSERT] Verify CVV field is inside an iframe
-[ACT] Check sandbox attributes on the iframe element
-[ACT] Execute in DevTools console: attempt JavaScript access to CVV iframe contentDocument","[DOM] CVV field is hosted inside a cross-origin iframe
-[DOM] iframe has appropriate sandbox attributes
-[STATE] JavaScript access to CVV iframe contentDocument is blocked (DOMException)
-[STATE] Cannot read or write CVV value from parent page context","[NETWORK] CVV value does not appear in any network request to {{BACK_URL}}
-[CONSOLE] No sandbox or iframe configuration errors","CVV field accessible from parent page JavaScript; sandbox attributes missing; CVV value appears in network requests to VC servers",,VCST-3387 TC-SEC-002,Manual
-SEC-PCI-003,CVV Visual Masking,PCI Compliance > Display,High,BL-SEC-001,,- CyberSource form ready,cvv=@td(CYBERSOURCE_VISA.cvv),,"[NAV] Navigate to {{FRONT_URL}} cart page
-[ACT] Focus CVV/security code field inside CyberSource iframe
-[ACT] Type CVV: @td(CYBERSOURCE_VISA.cvv)
-[ASSERT] Observe the field display — verify digits are masked
-[ASSERT] Verify no digits are visible in plain text","[DOM] CVV field displays masking characters (• or *) instead of actual digits
-[STATE] Entered digits @td(CYBERSOURCE_VISA.cvv) are never visible as plain text in the field
-[STATE] Shoulder-surfing attack is mitigated by visual masking","[CONSOLE] No CVV value logged to browser console","CVV digits visible as plain text; masking not applied; actual digits briefly flicker before masking",,VCST-3387 TC-SEC-003,Manual
-SEC-PCI-004,No Card Data in Network Requests,PCI Compliance > Network,Critical,BL-SEC-001,,- DevTools Network tab open
-- CyberSource payment form filled,"card_number=@td(CYBERSOURCE_VISA.number);cvv=@td(CYBERSOURCE_VISA.cvv)",,"[NAV] Navigate to {{FRONT_URL}} cart page with product added
-[ACT] Open DevTools Network tab and enable recording
-[ACT] Fill CyberSource payment form with test card: @td(CYBERSOURCE_VISA.number), CVV: @td(CYBERSOURCE_VISA.cvv)
-[ACT] Submit the order
-[WAIT] Wait for all network requests to complete
-[ACT] Search all request payloads and headers for the string '@td(CYBERSOURCE_VISA.number)'
-[ACT] Search all request payloads and headers for the string '@td(CYBERSOURCE_VISA.cvv)'
-[ASSERT] Verify no raw card data found in any request to {{BACK_URL}}","[NETWORK] String '@td(CYBERSOURCE_VISA.number)' does not appear in any request URL, header, or body sent to {{BACK_URL}}
-[NETWORK] String '@td(CYBERSOURCE_VISA.cvv)' does not appear in any request sent to {{BACK_URL}}
-[NETWORK] Only tokenized/masked card data transits to VC servers
-[STATE] CyberSource tokenizes card data before any VC server interaction","[NETWORK] All POST requests to {{BACK_URL}}/api/* contain no raw PAN or CVV
-[CONSOLE] No card data logged to browser console","Raw PAN @td(CYBERSOURCE_VISA.number) visible in any network request body or header; CVV @td(CYBERSOURCE_VISA.cvv) found in any request; unmasked card data in GraphQL mutation payload",,VCST-3387 TC-SEC-004,Manual
-SEC-PCI-005,No Card Data in Browser Storage,PCI Compliance > Storage,Critical,BL-SEC-001,,- Payment form interaction complete,card_number=@td(CYBERSOURCE_VISA.number);cvv=@td(CYBERSOURCE_VISA.cvv),,"[NAV] Navigate to {{FRONT_URL}} cart page and interact with CyberSource payment form
-[ACT] Open DevTools Application tab
-[ACT] Inspect localStorage — search for '@td(CYBERSOURCE_VISA.number)' and '@td(CYBERSOURCE_VISA.cvv)'
-[ACT] Inspect sessionStorage — search for card number and CVV
-[ACT] Inspect Cookies — search for card number and CVV
-[ACT] Search for partial card number (last 4 digits: 3705)
-[ASSERT] Confirm no card data found in any storage mechanism","[STATE] localStorage contains no raw card number or CVV
-[STATE] sessionStorage contains no raw card number or CVV
-[STATE] Cookies contain no raw card number or CVV
-[STATE] Even partial PAN (e.g., last 4 digits as stored value) is not present in storage","[CONSOLE] No card data written to storage via console calls","Raw PAN or CVV found in localStorage, sessionStorage, or cookies; partial card number stored in any browser storage",,VCST-3387 TC-SEC-005,Manual
-SEC-PCI-006,HTTPS Enforcement,PCI Compliance > Transport,Critical,BL-SEC-001,,- Payment page loaded,,,,"[NAV] Navigate to {{FRONT_URL}} cart page
-[ASSERT] Verify browser address bar shows https:// and secure padlock icon
-[ACT] Open DevTools Network tab
-[ACT] Inspect iframe src attributes — verify all use https://
-[ACT] Check Network tab for any http:// (non-TLS) requests
-[ASSERT] Verify no mixed content warnings in browser console or security panel","[NAV] All page URLs use https://
-[DOM] All iframe src attributes use https://
-[NETWORK] No http:// requests appear in Network tab
-[CONSOLE] No mixed content warnings
-[STATE] Browser shows secure padlock (no certificate warnings)","[NETWORK] All requests to {{BACK_URL}} use TLS (https)
-[CONSOLE] No mixed content or certificate errors in browser console","Any http:// request on the payment page; mixed content warning displayed; iframe loaded over http://; missing or invalid TLS certificate",,VCST-3387 TC-SEC-006,Manual
-SEC-PCI-007,JWT Token Authentication,PCI Compliance > Auth,High,BL-SEC-002,,- CyberSource payment selected,,,,"[NAV] Navigate to {{FRONT_URL}} cart page and select CyberSource payment
-[ACT] Open DevTools Elements tab
-[ACT] Inspect iframe src attributes for the CyberSource flex microform iframes
-[ASSERT] Locate JWT parameter in the iframe src URL
-[ASSERT] Verify token has three-part structure separated by dots (header.payload.signature)
-[ASSERT] Note token value and confirm it is unique per page load/session","[DOM] JWT parameter is present in CyberSource iframe src URL
-[FORMAT] JWT has valid three-part dot-separated structure (xxx.yyy.zzz)
-[STATE] Token is unique per session — refreshing the page generates a new token
-[STATE] Token is not reused across sessions","[NETWORK] JWT is passed as URL parameter to testflex.cybersource.com, not to {{BACK_URL}}
-[CONSOLE] No JWT value logged in plain text to browser console","JWT absent from iframe URL; malformed JWT (not three-part structure); same JWT reused across multiple sessions",,VCST-3387 TC-INT-002,Manual
-SEC-AUTH-001,Session Token Security,Authentication > Tokens,High,BL-SEC-004,,- User logged in
-- DevTools open,user={{USER_EMAIL}};password={{USER_PASSWORD}},,"[NAV] Navigate to {{FRONT_URL}} and log in with {{USER_EMAIL}} / {{USER_PASSWORD}}
-[ACT] Open DevTools Application tab — inspect Cookies, localStorage, sessionStorage
-[ASSERT] Identify access token storage location and verify HttpOnly flag on sensitive cookies
-[ASSERT] Check token expiration (exp claim if JWT, or cookie Max-Age/Expires)
-[ACT] Remain idle past token expiry or trigger a refresh action
-[ASSERT] Verify refresh mechanism obtains a new token without requiring full re-login","[STATE] Sensitive auth tokens stored in HttpOnly cookies (not accessible via document.cookie)
-[STATE] Token has a reasonable expiration (not set to never expire)
-[STATE] Token refresh mechanism works — new token issued before expiry
-[CONSOLE] No token values logged to browser console in plain text","[NETWORK] Token refresh request sent to {{BACK_URL}}/connect/token or equivalent
-[CONSOLE] No token values visible in console output","Token stored in non-HttpOnly cookie accessible by JavaScript; token has no expiry; refresh fails silently; token value logged to console",,regression-qa-theme-26.csv,Manual
-SEC-AUTH-002,Logout Token Revocation,Authentication > Logout,High,BL-SEC-004,,- User logged in,user={{USER_EMAIL}};password={{USER_PASSWORD}},,"[NAV] Navigate to {{FRONT_URL}} and log in with {{USER_EMAIL}} / {{USER_PASSWORD}}
-[ACT] Open DevTools Network tab — note current access token from request headers or cookies
-[ACT] Click user name / avatar in top header to open account-menu popup (BL-AUTH-007)
-[ACT] Click Logout button inside popup (data-testid="main-layout.top-header.account-menu.sign-out-button")
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions"
+"SEC-PCI-001","Card Number Iframe Isolation","PCI Compliance > Iframe","Critical","BL-SEC-002",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+- CyberSource payment form displayed
+- Browser DevTools open"
+"SEC-PCI-002","CVV Iframe Isolation","PCI Compliance > Iframe","Critical","BL-SEC-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- CyberSource payment form displayed"
+"SEC-PCI-003","CVV Visual Masking","PCI Compliance > Display","High","BL-SEC-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- CyberSource form ready"
+"SEC-PCI-004","No Card Data in Network Requests","PCI Compliance > Network","Critical","BL-SEC-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- DevTools Network tab open
+- CyberSource payment form filled"
+"SEC-PCI-005","No Card Data in Browser Storage","PCI Compliance > Storage","Critical","BL-SEC-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- Payment form interaction complete"
+"SEC-PCI-006","HTTPS Enforcement","PCI Compliance > Transport","Critical","BL-SEC-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- Payment page loaded"
+"SEC-PCI-007","JWT Token Authentication","PCI Compliance > Auth","High","BL-SEC-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- CyberSource payment selected"
+"SEC-AUTH-001","Session Token Security","Authentication > Tokens","High","BL-SEC-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- User logged in
+- DevTools open"
+"SEC-AUTH-002","Logout Token Revocation","Authentication > Logout","High","BL-SEC-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- User logged in
 [WAIT] Wait for logout to complete and redirect to home or /sign-in
 [ASSERT] Verify a token revocation request was sent to {{BACK_URL}}/connect/revocation or equivalent
 [ACT] Attempt to use the captured old token in a direct API request to {{BACK_URL}}
-[ASSERT] Verify old token is rejected (401 Unauthorized)","[NETWORK] Logout triggers a POST to token revocation endpoint
-[STATE] Old access token returns 401 when used after logout
-[STATE] Session cookies are cleared after logout
-[NAV] After logout, attempting to access protected pages redirects to login","[API] Direct request to {{BACK_URL}}/api/platform/security with old token returns 401
-[NETWORK] Revocation endpoint call present in Network tab after logout","Old token accepted after logout; no revocation request sent on logout; session cookies persist with valid token after logout",,regression-qa-theme-26.csv,Manual
-SEC-AUTH-003,Account Lockout Protection,Authentication > Brute Force,High,"BL-SEC-004","ECL-3.1","- Dedicated lockout-test user exists (LOCKOUT_TEST_EMAIL) isolated from agent pool slot accounts","user={{LOCKOUT_TEST_EMAIL}};password={{LOCKOUT_TEST_PASSWORD}};wrong_password=WrongPass123!",,"[NAV] Navigate to {{FRONT_URL}}/sign-in
-[ACT] Enter {{LOCKOUT_TEST_EMAIL}} and an incorrect password — click Sign In
-[ACT] Repeat incorrect login attempt — 5 times total
-[WAIT] Wait for lockout message to appear
-[ASSERT] Verify lockout message is displayed after 5 failed attempts
-[ACT] Attempt to log in with the correct {{LOCKOUT_TEST_PASSWORD}}
-[ASSERT] Verify account is still locked even with correct credentials
-[ASSERT] Verify lockout message indicates a timeout or account unlock procedure","[STATE] Account lockout message appears after 5 consecutive failed attempts
-[STATE] Correct password is rejected during lockout period
-[STATE] Lockout message is user-friendly (no stack trace or internal info)
-[STATE] Lockout has a defined timeout or unlock mechanism","[CONSOLE] No internal error details or stack traces in browser console
-[NETWORK] Login requests after lockout return 401/403 without exposing internal info","No lockout after 5 failures; lockout message not displayed; correct password accepted during lockout; error message exposes internal stack trace or account details",,regression-qa-theme-26.csv,Manual
-SEC-INPUT-001,XSS Prevention - Search,Input Validation > XSS,High,BL-SEC-003,ECL-5.1,- Search functionality available,xss_payload=<script>alert('XSS')</script>,,"[NAV] Navigate to {{FRONT_URL}}
-[ACT] Click the search field
-[ACT] Type the XSS payload: <script>alert('XSS')</script>
-[ACT] Submit the search (press Enter or click search button)
-[WAIT] Wait for search results page to load
-[ASSERT] Verify no JavaScript alert dialog appears
-[ASSERT] Verify search results or empty results page renders without script execution
-[ASSERT] Inspect DOM — verify the payload is HTML-escaped in the output","[STATE] No alert() dialog appears after submitting XSS payload
-[DOM] Payload is rendered as escaped HTML (e.g., &lt;script&gt;) not as executable script
-[STATE] Search results page loads normally without script injection","[CONSOLE] No alert() or script execution events in browser console — verify zero user script executions
-[NETWORK] XSS payload is sanitized before being sent to {{BACK_URL}} search API","JavaScript alert dialog appears; script executes in browser context; DOM renders unescaped <script> tag; browser console shows script execution",,security-manual,Manual
-SEC-INPUT-002,XSS Prevention - Forms (Server-Side Validation),Input Validation > XSS,High,BL-SEC-003,ECL-5.1,"- Registration or profile form accessible","xss_payload=<script>alert('XSS')</script>; front_url={{FRONT_URL}}",,"[NAV] Navigate to {{FRONT_URL}}/account/sign-up or profile edit page
-[ACT] Locate the First Name text input field
-[ACT] Enter XSS payload: <script>alert('XSS')</script>
-[ACT] Fill remaining required fields with valid data
-[ACT] Submit the form
-[WAIT] Wait for form submission response
-[ASSERT] Verify server returns a validation error — NameValidationPattern rejects characters outside Unicode letters, spaces, apostrophes, hyphens, dots
-[ASSERT] Verify no JavaScript alert dialog appears
-[ASSERT] Verify the XSS payload is NOT stored — profile data unchanged","[STATE] No alert() executes — payload never stored
-[STATE] Server-side InputValidationOptions rejects the payload at submission (HTTP 400 or GraphQL errors[])
-[DOM] Validation error message displayed to user (not a silent failure)
-[STATE] Profile data unchanged — XSS payload not persisted","[CONSOLE] No alert() or script execution in browser console
-[NETWORK] POST/mutation to {{BACK_URL}} returns validation error (not 200 success)
-[API] GET profile confirms name field unchanged after rejected submission","JavaScript alert executes; XSS payload stored in profile and rendered on subsequent page loads; server returns 200 and stores the payload; no validation error shown to user","none","Synced: PR #130 vc-module-profile-experience-api (2026-03-21)",Manual
-SEC-INPUT-003,SQL Injection Prevention,Input Validation > SQLi,High,BL-SEC-003,ECL-5.1,- Search functionality available,"sqli_payload=' OR '1'='1",,"[NAV] Navigate to {{FRONT_URL}}
-[ACT] Click the search field
-[ACT] Type SQL injection payload: ' OR '1'='1
-[ACT] Submit the search
-[WAIT] Wait for search results page
-[ASSERT] Verify search returns normal results or an empty results page
-[ASSERT] Verify no SQL error messages are displayed
-[ASSERT] Verify no database schema, table names, or query details are exposed","[STATE] Search returns normal product results or empty results — not all records
-[STATE] No SQL error message (e.g., 'syntax error', 'ORA-', 'MySQL') displayed to user
-[STATE] No database schema or internal query details exposed in the response","[NETWORK] Response from {{BACK_URL}} search API does not contain SQL error strings
-[CONSOLE] No SQL error strings in browser console output","SQL error message displayed in UI; all database records returned due to injection; database schema information visible in response or console",,security-manual,Manual
-SEC-INPUT-004,Path Traversal Prevention,Input Validation > Path,Medium,BL-SEC-003,ECL-5.1,"- Application with URL parameters or file upload accessible",path_payload=../../../etc/passwd,,"[NAV] Navigate to {{FRONT_URL}} and identify URL parameters that accept file names or paths
-[ACT] Modify a URL parameter to include path traversal payload: ../../../etc/passwd
-[ACT] If file upload available: attempt to upload a file named ../../../etc/passwd
-[WAIT] Wait for the application response
-[ASSERT] Verify the request is rejected or returns a safe error
-[ASSERT] Verify no file contents from the server filesystem are returned","[STATE] Path traversal attempt is blocked — 400, 403, or 404 response
-[STATE] No sensitive file content (e.g., /etc/passwd contents) returned in response
-[STATE] Application returns a safe, generic error message — no internal path details","[NETWORK] Response from {{BACK_URL}} for traversal attempt returns 400/403/404 — no 200 with file contents
-[CONSOLE] No internal file path or server filesystem structure in browser console","Server returns file contents from traversal path; internal server path exposed in error message; traversal payload processed without sanitization",,security-manual,Manual
-SEC-CSRF-001,CSRF Token Validation,CSRF Protection,High,BL-SEC-003,,- Any form submission available
-- DevTools open,,,,"[NAV] Navigate to {{FRONT_URL}} and open a form (e.g., login, address, or profile form)
-[ACT] Open DevTools Network tab
-[ACT] Submit the form normally and inspect the request payload
-[ASSERT] Verify a CSRF token is included in the form submission (hidden field or request header)
-[ACT] Attempt to forge the same request without the CSRF token (via DevTools or curl)
-[ASSERT] Verify the server rejects the forged request","[STATE] CSRF token is present in form submissions (as hidden field or X-CSRF-Token header)
-[NETWORK] Server rejects forged requests missing the CSRF token with 400 or 403
-[STATE] Legitimate form submission with valid CSRF token succeeds normally","[NETWORK] POST requests to {{BACK_URL}} include CSRF token in headers or body
-[API] Forged request to {{BACK_URL}} without CSRF token returns 400/403","CSRF token absent from form submissions; server accepts forged requests without token; CSRF token not validated server-side",,security-manual,Manual
-SEC-CORS-001,CORS Configuration,API Security > CORS,Medium,BL-SEC-003,,- DevTools Network tab open,,,,"[NAV] Navigate to {{FRONT_URL}}
-[ACT] Open DevTools Network tab
-[ACT] Trigger an API request (e.g., page load, search, or cart action)
-[ASSERT] Inspect the response headers for Access-Control-Allow-Origin
-[ASSERT] Verify the allowed origin is restricted to known domains (not wildcard *)
-[ASSERT] Verify Access-Control-Allow-Credentials is not set to true with wildcard origin","[NETWORK] Access-Control-Allow-Origin header restricts allowed origins to {{FRONT_URL}} and known domains
-[NETWORK] Wildcard (*) is not used with Access-Control-Allow-Credentials: true
-[STATE] Preflight OPTIONS requests return correct CORS headers","[NETWORK] All API responses from {{BACK_URL}} have appropriate CORS headers
-[CONSOLE] No CORS error messages for legitimate same-origin requests","Wildcard CORS origin (*) combined with credentials: true; arbitrary origin accepted; CORS headers missing entirely from API responses",,security-manual,Manual
-SEC-SENSITIVE-001,No Credentials in Logs,Data Protection > Logging,Critical,BL-SEC-005,,- Various operations performed including login,user={{USER_EMAIL}};password={{USER_PASSWORD}},,"[NAV] Navigate to {{FRONT_URL}} and open DevTools Console tab
-[ACT] Perform login with {{USER_EMAIL}} / {{USER_PASSWORD}}
-[ASSERT] Check browser console — verify no password values are logged
-[ACT] Open DevTools Network tab — inspect all response bodies
-[ASSERT] Verify no passwords, API keys, or secrets appear in network responses
-[ASSERT] Trigger a validation error and verify error message is sanitized","[CONSOLE] No password or credential values in browser console output
-[NETWORK] API responses from {{BACK_URL}} contain no plaintext passwords, tokens in error messages, or secret keys
-[STATE] Error messages use generic, safe language — no internal details","[CONSOLE] Zero console.log statements containing password, token, or secret substrings
-[NETWORK] All {{BACK_URL}} responses sanitized — no credential data in JSON error objects","Password visible in browser console log; credentials appear in network response body; API key or secret token exposed in error response",,security-manual,Manual
-SEC-SENSITIVE-002,Error Message Safety,Data Protection > Errors,Medium,BL-SEC-005,,- Application accessible for error triggering,,,,"[NAV] Navigate to {{FRONT_URL}} and trigger various error conditions:
-[ACT] Attempt login with invalid credentials — observe error message
-[ACT] Submit a form with invalid data — observe validation error
-[ACT] Navigate to a non-existent URL — observe 404 error
-[ASSERT] Verify no stack traces appear in any error message
-[ASSERT] Verify no internal file paths (e.g., /var/www/...) appear in errors
-[ASSERT] Verify error messages are generic and user-friendly","[STATE] Authentication error message is generic (e.g., 'Invalid credentials') — no stack trace
-[STATE] Validation errors contain no internal path or server details
-[STATE] 404 page shows generic message — no server framework or version info
-[NETWORK] API error responses from {{BACK_URL}} contain no stack traces or internal paths","[NETWORK] All {{BACK_URL}} API error responses (4xx, 5xx) contain only safe, generic error messages
-[CONSOLE] No stack traces or internal path strings in browser console","Stack trace visible in UI error message; internal server file path exposed in error; server framework version or database type revealed in error response",,security-manual,Manual
-SEC-SESSION-001,Session expiry during checkout — re-auth preserves cart,Authentication > Session Expiry,High,BL-SEC-004,ECL-6.1,"- Customer logged in with items in cart
+[ASSERT] Verify old token is rejected (401 Unauthorized)"""
+"SEC-AUTH-003","Account Lockout Protection","Authentication > Brute Force","High","BL-SEC-004","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Dedicated lockout-test user exists (LOCKOUT_TEST_EMAIL) isolated from agent pool slot accounts"
+"SEC-INPUT-001","XSS Prevention - Search","Input Validation > XSS","High","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Search functionality available"
+"SEC-INPUT-002","XSS Prevention - Forms (Server-Side Validation)","Input Validation > XSS","High","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Registration or profile form accessible"
+"SEC-INPUT-003","SQL Injection Prevention","Input Validation > SQLi","High","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Search functionality available"
+"SEC-INPUT-004","Path Traversal Prevention","Input Validation > Path","Medium","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Application with URL parameters or file upload accessible"
+"SEC-CSRF-001","CSRF Token Validation","CSRF Protection","High","BL-SEC-003",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- Any form submission available
+- DevTools open"
+"SEC-CORS-001","CORS Configuration","API Security > CORS","Medium","BL-SEC-003",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- DevTools Network tab open"
+"SEC-SENSITIVE-001","No Credentials in Logs","Data Protection > Logging","Critical","BL-SEC-005",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- Various operations performed including login"
+"SEC-SENSITIVE-002","Error Message Safety","Data Protection > Errors","Medium","BL-SEC-005",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- Application accessible for error triggering"
+"SEC-SESSION-001","Session expiry during checkout — re-auth preserves cart","Authentication > Session Expiry","High","BL-SEC-004","ECL-6.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Customer logged in with items in cart
 - Checkout flow started (shipping address entered)
-- Token expiry mechanism available","user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}} and log in with {{USER_EMAIL}} / {{USER_PASSWORD}}
-[ACT] Add one or more products to cart
-[NAV] Navigate to {{FRONT_URL}}/checkout and enter shipping address
-[ACT] Force session expiry: open DevTools Application tab and delete auth token cookie, or wait for natural token expiry
-[ACT] Attempt to proceed to the payment step
-[WAIT] Wait for the system response to the expired session
-[ASSERT] Verify re-authentication prompt or redirect to login is shown
-[ACT] Re-authenticate with {{USER_EMAIL}} / {{USER_PASSWORD}}
-[NAV] Navigate back to {{FRONT_URL}}/checkout
-[ASSERT] Verify cart contents are intact (same items, quantities, prices)
-[ASSERT] Verify checkout can resume from the shipping/payment step without re-entering address","[STATE] Expired session is detected when attempting a checkout action
-[STATE] Re-authentication prompt or login redirect is displayed to the user
-[STATE] After re-auth, cart contains the same items, quantities, and prices as before expiry
-[STATE] Checkout step is preserved — user does not restart from the beginning
-[STATE] No data loss during the session expiry and re-authentication cycle","[API] xAPI cart query to {{BACK_URL}}/xapi/cart confirms all original line items and quantities are preserved after re-auth
-[CONSOLE] No unhandled errors or stack traces during re-auth flow
-[NETWORK] Re-authentication request to {{BACK_URL}}/connect/token succeeds with 200","Cart items lost after re-authentication; checkout restarted from the beginning after re-auth; session expiry not detected (silently fails); no re-auth prompt shown",,Coverage Gap Analysis BL-AUTH-001,Generated
-SEC-SESSION-002,Session re-auth during checkout — resume from last step,Authentication > Session Expiry,High,BL-SEC-004,ECL-6.1,"- Customer logged in with items in cart
+- Token expiry mechanism available"
+"SEC-SESSION-002","Session re-auth during checkout — resume from last step","Authentication > Session Expiry","High","BL-SEC-004","ECL-6.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Customer logged in with items in cart
 - Checkout flow in progress (shipping address and method selected)
-- Token expiry mechanism available","user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}} and log in with {{USER_EMAIL}} / {{USER_PASSWORD}}
-[ACT] Add products to cart
-[NAV] Proceed through checkout: enter shipping address and select shipping method
-[NAV] Arrive at the payment step
-[ACT] Force session expiry: clear auth token from DevTools Application tab (Cookies or localStorage)
-[ACT] Attempt to interact with the payment form or submit payment
-[WAIT] Wait for the re-authentication prompt to appear
-[ASSERT] Verify re-authentication prompt is displayed
-[ACT] Re-authenticate with {{USER_EMAIL}} / {{USER_PASSWORD}}
-[ASSERT] Verify checkout state: shipping address is still populated
-[ASSERT] Verify shipping method selection is preserved
-[ASSERT] Verify payment step is accessible without restarting checkout from the beginning
-[ACT] Complete the order successfully after re-auth","[STATE] Re-authentication prompt appears when session expires on the payment step
-[STATE] Shipping address is still populated after re-auth (not cleared)
-[STATE] Shipping method selection is preserved after re-auth
-[NAV] User lands on payment step after re-auth — not restarted to checkout beginning
-[STATE] Order can be completed successfully after session re-authentication
-[STATE] Full checkout state is preserved across the session boundary","[API] xAPI cart query to {{BACK_URL}}/xapi/cart confirms cart and shipping method are intact after re-auth
-[NETWORK] Re-auth token request returns 200 and new valid token is issued
-[CONSOLE] No unhandled errors during re-auth checkout resume","Shipping address cleared after re-auth; checkout restarts from beginning; shipping method selection lost; payment step inaccessible after re-auth; order creation fails after re-auth",,Coverage Gap Analysis BL-AUTH-001,Generated
-SEC-SESSION-003,Session expiry does not create partial or orphan order,Authentication > Session Expiry,Critical,"BL-SEC-004","ECL-6.1","- Customer logged in with items in cart
+- Token expiry mechanism available"
+"SEC-SESSION-003","Session expiry does not create partial or orphan order","Authentication > Session Expiry","Critical","BL-SEC-004","ECL-6.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Customer logged in with items in cart
 - Checkout flow started with all required information entered
 - xAPI access available for order verification
-- Token expiry mechanism available","user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}} and log in with {{USER_EMAIL}} / {{USER_PASSWORD}}
-[ACT] Add products to cart and proceed through all checkout steps (address, shipping, payment details)
-[ACT] Force session expiry immediately before order submission: clear auth token in DevTools Application tab
-[ACT] Attempt to submit/place the order with the expired token
-[WAIT] Wait for the application response
-[ASSERT] Verify order submission fails with a clear, visible error (not silently)
-[ACT] Re-authenticate with {{USER_EMAIL}} / {{USER_PASSWORD}}
-[ACT] Execute xAPI orders query: { orders(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"") { totalCount items { number status createdDate } } }
-[ASSERT] Verify no new partial or orphan order exists for the failed submission
-[ASSERT] Verify cart still contains all original items
-[ACT] Complete the order normally after re-auth
-[ASSERT] Verify final order is created successfully and has a valid order number","[STATE] Order submission with expired token fails with a clear error message visible to the user (not a silent failure)
-[STATE] No partial or orphan order exists in the system after the failed submission
-[STATE] No payment was captured or authorized for the failed submission attempt
-[STATE] Cart remains intact with all original items after session expiry
-[STATE] Order completes normally after re-authentication
-[STATE] System maintains transactional integrity — no order record created until full successful completion","[API] xAPI query { orders(...) { totalCount items { number status } } } to {{BACK_URL}}/xapi confirms zero new orders after failed attempt
-[NETWORK] Failed order submission returns 401 — not 200 or 500
-[CONSOLE] No unhandled promise rejections or silent errors when order submission fails with expired token","Silent failure on order submission with expired token; partial order record created in system; payment charged or authorized for failed attempt; cart items lost after session expiry; duplicate order created after re-auth and retry",,Coverage Gap Analysis BL-AUTH-001,Generated
-SEC-XSS-001,XSS Prevention - Address Field During Checkout (Server-Side Rejection),Input Validation > XSS,High,BL-CHK-003,ECL-4.1,"- User logged in; - Checkout flow accessible; - Shipping address form visible","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; xss_payload=<script>alert('xss')</script>","[NAV] Navigate to {{FRONT_URL}} and log in with {{USER_EMAIL}} / {{USER_PASSWORD}}; [ACT] Add a product to cart and proceed to checkout; [ACT] In the shipping address form locate the Street Address field; [ACT] Enter XSS payload in street field: <script>alert('xss')</script>; [ACT] Fill remaining required address fields with valid data; [ACT] Submit the address form; [WAIT] Wait for server response; [ASSERT] Verify server rejects the address — EnableNoHtmlTagsValidation rejects HTML tags in address fields; [ASSERT] Verify validation error displayed to user; [ASSERT] Verify no JavaScript alert dialog appears; [ASSERT] Verify address was NOT saved (XSS payload not persisted)","[STATE] No alert() dialog appears; [STATE] Server-side InputValidationOptions (EnableNoHtmlTagsValidation) rejects HTML tags in address line fields; [DOM] Validation error message visible to user after submission; [STATE] Address NOT saved — XSS payload not persisted in system; [STATE] Cart/checkout state preserved after rejected address submission","[CONSOLE] No alert() or script execution events in browser console; [NETWORK] POST/mutation to {{BACK_URL}} returns validation error (not 200); [API] Cart query confirms no address with XSS payload stored on shipment","JavaScript alert dialog appears; XSS payload stored as address and rendered on subsequent pages; server returns 200 and persists the script tag; no validation error shown","none","Synced: PR #130 vc-module-profile-experience-api (2026-03-21)",Generated
-SEC-XSS-002,XSS Prevention - Order Notes Field,Input Validation > XSS,High,BL-CHK-003,ECL-4.1,"- User logged in; - Checkout flow accessible; - Order notes or comments field available","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; xss_payload=<img src=x onerror=alert('xss')>","[NAV] Navigate to {{FRONT_URL}} and log in with {{USER_EMAIL}} / {{USER_PASSWORD}}; [ACT] Add a product to cart and proceed to checkout; [ACT] Locate the order notes or comments field in checkout; [ACT] Enter XSS payload: <img src=x onerror=alert('xss')>; [ACT] Complete checkout and place the order; [WAIT] Wait for order confirmation page; [NAV] Navigate to order detail page for the new order; [ASSERT] Verify no JavaScript alert dialog appears on order detail; [ASSERT] Inspect the order notes display in DOM — verify payload is HTML-escaped","[STATE] No alert() or onerror handler executes on order confirmation or detail page; [DOM] Order notes display shows escaped HTML — <img> tag not rendered as an element; [STATE] Order is created successfully despite XSS payload in notes; [STATE] Order detail page loads without script injection","[CONSOLE] No script execution or onerror events in browser console; [NETWORK] Order creation API request sanitizes or accepts-and-escapes the payload; [API] GET order detail from {{BACK_URL}} returns escaped notes content","JavaScript alert triggered via onerror handler; img tag rendered as DOM element with onerror executing; unescaped HTML in order notes on detail page; browser console shows script execution from order notes",delete test order if created via API,Coverage Gap Analysis,Generated
-SEC-XSS-003,XSS Prevention - Reflected XSS via URL Search Parameter,Input Validation > XSS,High,BL-CHK-003,ECL-4.1,"- Search functionality available via URL parameter","xss_url_payload=<script>alert(1)</script>","[NAV] Navigate directly to {{FRONT_URL}}/search?q=<script>alert(1)</script>; [WAIT] Wait for page to load completely; [ASSERT] Verify no JavaScript alert dialog appears; [ASSERT] Inspect the page DOM — verify the search query parameter is not rendered as executable script; [NAV] Navigate to {{FRONT_URL}}/search?q=""><img src=x onerror=alert(1)>; [WAIT] Wait for page to load; [ASSERT] Verify no alert dialog or onerror execution; [ASSERT] Verify the URL parameter value is encoded or escaped in any visible output","[STATE] No alert() dialog appears for either reflected XSS URL; [DOM] Search parameter value is HTML-encoded in page output — no executable script tags; [STATE] Search results page renders normally with safe error or empty results; [STATE] No img element with onerror handler injected into DOM","[CONSOLE] No script execution events in browser console for either URL; [NETWORK] Server response does not echo unescaped script in HTML body; [DOM] Page source does not contain raw <script>alert(1)</script> in HTML context","JavaScript alert appears on page load; reflected parameter rendered as executable script in HTML; img onerror handler executes; browser console shows script execution from URL parameter",,Coverage Gap Analysis GAP-012,Generated
-SEC-XSS-004,XSS Prevention - Stored XSS via Profile Display Name (Server-Side Rejection),Input Validation > XSS,High,BL-CHK-003,ECL-4.1,"- User logged in; - Profile edit accessible","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; xss_payload=<svg onload=alert('xss')>","[NAV] Navigate to {{FRONT_URL}} and log in with {{USER_EMAIL}} / {{USER_PASSWORD}}; [ACT] Navigate to profile/account settings; [ACT] Change first name to XSS payload: <svg onload=alert('xss')>; [ACT] Save the profile; [WAIT] Wait for server response; [ASSERT] Verify server rejects the update — NameValidationPattern only allows Unicode letters, spaces, apostrophes, hyphens, dots; [ASSERT] Verify validation error displayed to user; [ASSERT] Verify no JavaScript alert dialog appears; [NAV] Navigate away and return to profile page; [ASSERT] Verify profile name is unchanged (original name still displayed)","[STATE] No alert() or onload handler executes; [STATE] Server-side NameValidationPattern rejects SVG payload — characters <, >, = not in allow-list; [DOM] Validation error message visible after save attempt; [STATE] Profile name unchanged — XSS payload NOT stored; [STATE] All pages displaying user name continue to show original name","[CONSOLE] No script execution or SVG onload events in browser console; [NETWORK] Profile update mutation returns validation error (not 200); [API] GET profile confirms first name unchanged after rejected update","JavaScript alert triggered via SVG onload; XSS payload stored as profile name; server returns 200 and persists SVG; no validation error shown; name changed to XSS string on all pages","none","Synced: PR #130 vc-module-profile-experience-api (2026-03-21)",Generated
-SEC-CSRF-002,CSRF Protection - Cart Mutation Cross-Origin,CSRF Protection,High,BL-CHK-002,"ECL-1.2","- User logged in with items available; - DevTools Network tab open","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; test_sku={{TEST_SKU}}","[NAV] Navigate to {{FRONT_URL}} and log in with {{USER_EMAIL}} / {{USER_PASSWORD}}; [ACT] Open DevTools Network tab; [ACT] Add product {{TEST_SKU}} to cart normally and capture the request details (URL, headers, body); [ASSERT] Note the authentication cookies/tokens and any CSRF tokens in the request; [ACT] Open DevTools Console and execute a cross-origin simulation: fetch the cart add-item endpoint with mode 'no-cors' and without credentials; [ASSERT] Verify the cross-origin request is rejected or returns an error; [ACT] Execute fetch to cart endpoint with credentials but forged/missing CSRF token; [ASSERT] Verify the request fails with 400 or 403","[STATE] Normal cart add-item request succeeds with proper auth and CSRF token; [NETWORK] Cross-origin fetch without credentials is rejected (no 200 success); [STATE] Request with credentials but missing/forged CSRF token returns 400 or 403; [STATE] Cart state unchanged after rejected cross-origin attempts","[NETWORK] Rejected CSRF requests return 400 or 403 — not 200; [CONSOLE] CORS error messages appear for cross-origin attempts without proper headers; [API] Cart contents unchanged after CSRF attempt — verified via GET cart","Cross-origin request succeeds and modifies cart; cart item added without valid session/CSRF token; 200 returned for forged request; cart state changed by unauthenticated cross-origin call",,Coverage Gap Analysis GAP-013,Generated
-SEC-CSRF-003,CSRF Protection - Checkout Order Placement,CSRF Protection,Critical,BL-CHK-002,"ECL-1.2","- User logged in with cart ready for checkout; - DevTools open","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; test_sku={{TEST_SKU}}","[NAV] Navigate to {{FRONT_URL}} and log in with {{USER_EMAIL}} / {{USER_PASSWORD}}; [ACT] Add product to cart and proceed through checkout to the final order placement step; [ACT] Open DevTools Network tab and capture the order placement request details; [ASSERT] Note authentication context (cookies, Bearer token, CSRF headers); [ACT] In DevTools Console, attempt to replay the order creation request without valid authentication context; [ASSERT] Verify the replayed request is rejected with 401 or 403; [ACT] Attempt to call the order creation endpoint with a forged or expired session; [ASSERT] Verify no order is created","[STATE] Order placement requires valid authentication context — not just a simple POST; [NETWORK] Replay without auth context returns 401 or 403; [STATE] No order created from unauthenticated or forged request; [STATE] Original order placement with valid auth succeeds normally","[API] xAPI orders query confirms no orphan order created by CSRF attempt; [NETWORK] Forged order requests return 401/403; [CONSOLE] No server errors from CSRF attempt — clean rejection","Order created from request without valid auth; 200 returned for forged order placement; orphan order appears in system from CSRF replay; no authentication check on order creation endpoint","delete any test order created","Coverage Gap Analysis GAP-013,Generated
-SEC-CSRF-004,CSRF Protection - Profile Update Endpoint,CSRF Protection,High,BL-CHK-002,"ECL-1.2","- User logged in; - Profile accessible; - DevTools open","user={{USER_EMAIL}}; password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}} and log in with {{USER_EMAIL}} / {{USER_PASSWORD}}; [ACT] Navigate to profile/account settings page; [ACT] Open DevTools Network tab; [ACT] Make a minor profile change (e.g., update phone number) and save — capture the request; [ASSERT] Verify the profile update request includes authentication context; [ACT] In DevTools Console, attempt to call the profile update endpoint without valid session cookies or Bearer token; [ASSERT] Verify the request is rejected with 401 or 403; [ACT] Verify profile data was not modified by the unauthenticated attempt","[STATE] Profile update requires valid session — not just a POST to the endpoint; [NETWORK] Unauthenticated profile update returns 401 or 403; [STATE] Profile data unchanged after rejected unauthenticated attempt; [STATE] Legitimate profile update with valid auth succeeds normally","[API] GET profile from {{BACK_URL}} confirms no unauthorized changes; [NETWORK] Rejected request returns 401/403 with no data modification; [CONSOLE] No unhandled errors from CSRF rejection","Profile modified by unauthenticated request; 200 returned for profile update without valid session; profile data changed by cross-origin forged request","restore original profile data if modified","Coverage Gap Analysis GAP-013,Generated
-SEC-RATE-001,Rate Limiting - Multiple Failed Login Attempts Trigger Lockout,Authentication > Rate Limiting,High,BL-CHK-003,"ECL-4.2; ECL-3.1","- Dedicated lockout-test user exists (LOCKOUT_TEST_EMAIL); - Account not currently locked","user={{LOCKOUT_TEST_EMAIL}}; password={{LOCKOUT_TEST_PASSWORD}}; wrong_password=InvalidPassword999!","[NAV] Navigate to {{FRONT_URL}}/sign-in; [ACT] Enter {{LOCKOUT_TEST_EMAIL}} and wrong password InvalidPassword999! — click Sign In; [ASSERT] Verify error message displayed; [ACT] Repeat failed login attempt 2nd time with different wrong password; [ACT] Repeat 3rd failed attempt; [ACT] Repeat 4th failed attempt; [ACT] Repeat 5th failed attempt; [WAIT] Wait for lockout to trigger; [ASSERT] Verify account lockout message is displayed after 5+ consecutive failed attempts; [ASSERT] Verify error message does not reveal internal system details; [ACT] Attempt 6th login with correct {{LOCKOUT_TEST_PASSWORD}}; [ASSERT] Verify correct password is also rejected during lockout period","[STATE] Each failed attempt shows generic error (e.g. 'Invalid credentials') — no user enumeration; [STATE] After 5 consecutive failures, account lockout is triggered; [STATE] Lockout message is user-friendly — no stack traces or internal info; [STATE] Correct password rejected during active lockout period; [STATE] Error messages consistent across all failed attempts","[NETWORK] Login requests return 400/401 — not 500; [CONSOLE] No internal error details or stack traces in browser console; [API] POST to {{BACK_URL}}/connect/token returns 400 with safe error message after lockout","No lockout after 5+ failed attempts; unlimited login attempts allowed; correct password accepted during lockout; error message reveals account state; 500 errors on failed login","wait for lockout period to expire","Coverage Gap Analysis GAP-014,Generated
-SEC-RATE-002,Rate Limiting - Recovery After Lockout Period,Authentication > Rate Limiting,High,BL-CHK-003,"ECL-4.2","- LOCKOUT_TEST_EMAIL account locked from SEC-RATE-001; - Lockout period known (typically 5-15 minutes)","user={{LOCKOUT_TEST_EMAIL}}; password={{LOCKOUT_TEST_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in; [ACT] Attempt login with {{LOCKOUT_TEST_EMAIL}} / {{LOCKOUT_TEST_PASSWORD}} while account is locked; [ASSERT] Verify lockout message is still active; [WAIT] Wait for lockout period to expire (check platform config — typically 5-15 minutes); [ACT] After lockout period, attempt login with {{LOCKOUT_TEST_EMAIL}} / {{LOCKOUT_TEST_PASSWORD}}; [ASSERT] Verify login succeeds with correct credentials; [ASSERT] Verify full account access is restored after successful login; [NAV] Navigate to account dashboard; [ASSERT] Verify account data and functionality are intact","[STATE] Login with correct credentials fails during active lockout period; [STATE] After lockout expiry, login succeeds with correct credentials; [STATE] Account is fully functional after lockout recovery — no residual restrictions; [STATE] Account data (cart, orders, addresses) is intact after lockout period; [NAV] Account dashboard accessible after successful recovery login","[NETWORK] Successful login after lockout returns 200 with valid token; [API] POST to {{BACK_URL}}/connect/token succeeds after lockout expiry; [CONSOLE] No errors in console after recovery login","Account permanently locked after lockout (no recovery); lockout period never expires; account data lost or corrupted after lockout; login fails with correct credentials even after lockout period",,Coverage Gap Analysis GAP-014,Generated
-SEC-VALIDATION-001,Server-Side Name Field Validation (NameValidationPattern),Input Validation > Server-Side,Critical,BL-SEC-003,ECL-5.1,"- Registration or profile edit form accessible","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; valid_name=O'Brien-Müller; invalid_names=Name<tag> | Name123 | Name@domain | Name;DROP","[NAV] Navigate to {{FRONT_URL}}/account/sign-up; [ACT] Fill First Name with valid Unicode name: O'Brien-Müller; [ACT] Fill remaining fields with valid data; [ACT] Submit form; [ASSERT] Verify registration succeeds — NameValidationPattern permits letters, diacritics, apostrophes, hyphens, dots, spaces; [ACT] Navigate to {{FRONT_URL}}/account/sign-up (new session); [ACT] Fill First Name: Name<tag>; [ACT] Submit form; [ASSERT] Verify server rejects — < and > not in allow-list; [ACT] Clear and fill First Name: Name123; [ACT] Submit; [ASSERT] Verify server rejects — digits not allowed in person name fields; [ACT] Clear and fill First Name: Name@domain; [ACT] Submit; [ASSERT] Verify server rejects — @ not in allow-list","[STATE] Valid Unicode names (apostrophes, hyphens, umlauts, dots) accepted by NameValidationPattern; [STATE] Names with <, >, digits, @, ;, special chars rejected at server level; [DOM] Clear validation error messages for rejected inputs; [STATE] NameValidationPattern regex: ^[\p{L}\p{M}\s'\-\.]+$","[NETWORK] Valid name submission returns 200; invalid name submissions return validation error; [CONSOLE] No JS errors; [API] Only the valid-name account is created","Valid names rejected (false positive); invalid names accepted (false negative); no validation error shown for invalid input; digits or HTML accepted in name fields","Delete valid test account via admin",VCST-4691 PR #130,Manual
-SEC-VALIDATION-002,Script Injection Validation in Free-Text Fields (EnableScriptInjectionValidation),Input Validation > Server-Side,Critical,BL-SEC-003,ECL-5.1,"- User logged in; - Profile with description/about field accessible","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; payloads=<script>alert(1)</script> | javascript:void(0) | vbscript:exec | data:text/html,<h1>test</h1>","[NAV] Navigate to {{FRONT_URL}} and log in; [NAV] Navigate to profile/account settings; [ACT] Locate the About/description field (free-text field); [ACT] Enter payload 1: <script>alert(1)</script>; [ACT] Save profile; [ASSERT] Verify server rejects — EnableScriptInjectionValidation catches script tags; [ACT] Clear and enter payload 2: javascript:void(0); [ACT] Save; [ASSERT] Verify server rejects — javascript: protocol blocked; [ACT] Clear and enter payload 3: data:text/html,<h1>test</h1>; [ACT] Save; [ASSERT] Verify server rejects — data:text/html blocked; [ACT] Clear and enter safe text: This is a normal description with special chars: O'Brien & Co.; [ACT] Save; [ASSERT] Verify save succeeds — normal text with & and apostrophe is allowed in free-text fields","[STATE] Script injection patterns (<script>, javascript:, vbscript:, data:text/html) rejected in free-text fields; [STATE] Normal descriptive text with &, apostrophes allowed; [DOM] Validation error messages for each rejected payload; [STATE] EnableScriptInjectionValidation is active by default","[NETWORK] Rejected payloads return validation error from {{BACK_URL}}; [NETWORK] Valid description returns 200; [CONSOLE] No JS errors; [API] Profile description unchanged after rejected payloads","Script injection patterns accepted and stored; no validation error for <script> in description; javascript: protocol stored in profile; data: URI accepted in free-text field","none",VCST-4691 PR #130,Manual
+- Token expiry mechanism available"
+"SEC-XSS-001","XSS Prevention - Address Field During Checkout (Server-Side Rejection)","Input Validation > XSS","High","BL-CHK-003","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- User logged in; - Checkout flow accessible; - Shipping address form visible"
+"SEC-XSS-002","XSS Prevention - Order Notes Field","Input Validation > XSS","High","BL-CHK-003","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+- User logged in; - Checkout flow accessible; - Order notes or comments field available"
+"SEC-XSS-003","XSS Prevention - Reflected XSS via URL Search Parameter","Input Validation > XSS","High","BL-CHK-003","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Search functionality available via URL parameter"
+"SEC-XSS-004","XSS Prevention - Stored XSS via Profile Display Name (Server-Side Rejection)","Input Validation > XSS","High","BL-CHK-003","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+- User logged in; - Profile edit accessible"
+"SEC-CSRF-002","CSRF Protection - Cart Mutation Cross-Origin","CSRF Protection","High","BL-CHK-002","ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- User logged in with items available; - DevTools Network tab open"
+"SEC-CSRF-003","CSRF Protection - Checkout Order Placement","CSRF Protection","Critical","BL-CHK-002","ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- User logged in with cart ready for checkout; - DevTools open"
+"SEC-VALIDATION-001","Server-Side Name Field Validation (NameValidationPattern)","Input Validation > Server-Side","Critical","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Registration or profile edit form accessible"
+"SEC-VALIDATION-002","Script Injection Validation in Free-Text Fields (EnableScriptInjectionValidation)","Input Validation > Server-Side","Critical","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+- User logged in; - Profile with description/about field accessible"

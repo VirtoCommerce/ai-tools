@@ -1,5 +1,7 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"B2C-LIST-001","Create Wishlist/List","B2C Features > Lists","Critical","BL-B2C-002","","User logged in, no lists created","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Lists or Wishlist page
+"B2C-LIST-001","Create Wishlist/List","B2C Features > Lists","Critical","BL-B2C-002",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+User logged in, no lists created","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to Lists or Wishlist page
 2. [ACT] Click 'Create New List' button
 3. [ACT] Enter list name: 'Summer Essentials'
 4. [ACT] Optionally set privacy: Private or Shared
@@ -11,7 +13,8 @@
 [DOM] List appears in My Lists section
 [DOM] Can create multiple lists","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Create button missing; form missing required fields; list not appearing in My Lists after creation; success message not shown","delete created list","VCST-3928","Manual"
-"B2C-LIST-002","Add Product to List from Product Page","B2C Features > Lists","Critical","BL-B2C-002","ECL-14.1","User logged in, list exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product detail page
+"B2C-LIST-002","Add Product to List from Product Page","B2C Features > Lists","Critical","BL-B2C-002","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+User logged in, list exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product detail page
 2. [ACT] Locate and click 'Add to List' or heart icon
 3. [ASSERT] Verify list selector modal or dropdown opens
 4. [ACT] Select list: 'Summer Essentials'
@@ -22,7 +25,8 @@
 [DOM] Success message: 'Added to Summer Essentials'
 [STATE] Heart icon fills or changes color after add","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Add to List button missing; list selector does not open; success notification not shown; heart icon not updating state","none","VCST-3928","Automated"
-"B2C-LIST-003","Add Product to List from Category Page","B2C Features > Lists","High","BL-B2C-002","ECL-14.1","User on category page, list exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to category page
+"B2C-LIST-003","Add Product to List from Category Page","B2C Features > Lists","High","BL-B2C-002","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+User on category page, list exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to category page
 2. [ACT] Hover over product card
 3. [ACT] Click heart or 'Add to List' icon on card
 4. [ACT] Select list from selector
@@ -31,14 +35,17 @@
 [DOM] Product added successfully (notification shown)
 [STATE] Icon indicates product already in list after add","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Icon not visible on hover; list selector does not appear; page navigates away unexpectedly; icon state not updated","none","VCST-3928","Automated"
-"B2C-LIST-004","View List Contents","B2C Features > Lists","Critical","BL-B2C-002","","User logged in, list has products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to My Lists
+"B2C-LIST-004","View List Contents","B2C Features > Lists","Critical","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+User logged in, list has products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to My Lists
 2. [ACT] Click on list 'Summer Essentials'
 3. [ASSERT] Verify list page opens
 4. [ASSERT] Verify products display with all details","[DOM] List page shows all products
 [DOM] Each product shows: Image, Name, Price, In Stock status
 [DOM] Each product has: View Product link, Add to Cart button, Remove from List button
 [DOM] List metadata shown: Name, Item count, Created date","[CONSOLE] no uncaught JS errors","List page not loading; products missing image or price; action buttons (Add to Cart, Remove) missing","none","VCST-3928","Automated"
-"B2C-LIST-005","Add to Cart from List","B2C Features > Lists","High","BL-B2C-002","ECL-14.1","User viewing list with products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open list page
+"B2C-LIST-005","Add to Cart from List","B2C Features > Lists","High","BL-B2C-002","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User viewing list with products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open list page
 2. [ACT] Click 'Add to Cart' on a product in the list
 3. [ASSERT] Verify success notification
 4. [ACT] Click 'Add All to Cart' button (if available)
@@ -49,7 +56,8 @@
 [DOM] Products remain in list after adding to cart
 [DOM] Out of stock items show warning or are skipped","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Add to Cart button missing on list items; products removed from list after add; Add All to Cart fails silently","remove item from cart","VCST-3928","Automated"
-"B2C-LIST-006","Remove Product from List","B2C Features > Lists","High","BL-B2C-002","","Product in list","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open list page
+"B2C-LIST-006","Remove Product from List","B2C Features > Lists","High","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Product in list","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open list page
 2. [ACT] Click Remove or X icon on a product
 3. [ASSERT] Verify confirmation prompt (if applicable)
 4. [ACT] Confirm removal
@@ -60,7 +68,8 @@
 [DOM] Success message: 'Removed from list'
 [DOM] List item count decrements by 1","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Remove button missing; product still visible after removal; no confirmation prompt; list count not updated","none","VCST-3928","Automated"
-"B2C-LIST-007","Rename/Edit List","B2C Features > Lists","Medium","BL-B2C-002","","List exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to My Lists
+"B2C-LIST-007","Rename/Edit List","B2C Features > Lists","Medium","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+List exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to My Lists
 2. [ACT] Click Edit or Settings on list 'Summer Essentials'
 3. [ACT] Change name to 'Summer 2026'
 4. [ACT] Change description or privacy (optional)
@@ -69,7 +78,8 @@
 [DOM] Form fields editable: Name, Description, Privacy
 [DOM] List name 'Summer 2026' updated in My Lists and list header
 [DOM] Products in list unaffected by rename","[CONSOLE] no uncaught JS errors","Edit option missing; name change not persisting; list name not updated in all locations","none","VCST-3928","Manual"
-"B2C-LIST-008","Delete List","B2C Features > Lists","Medium","BL-B2C-002","","List exists with products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to list page
+"B2C-LIST-008","Delete List","B2C Features > Lists","Medium","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+List exists with products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to list page
 2. [ACT] Click Delete or menu > Delete
 3. [ASSERT] Verify confirmation prompt warns about item count
 4. [ACT] Confirm deletion
@@ -79,7 +89,8 @@
 [DOM] List no longer appears in My Lists after deletion
 [DOM] Success message: 'List deleted'
 [DOM] Products remain available in catalog","[CONSOLE] no uncaught JS errors","Delete option missing; no confirmation prompt; list remains in My Lists after deletion; catalog products incorrectly removed","none","VCST-3928","Manual"
-"B2C-LIST-009","Share List (Public Link)","B2C Features > Lists","High","BL-B2C-002","","List exists, sharing enabled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open list page
+"B2C-LIST-009","Share List (Public Link)","B2C Features > Lists","High","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+List exists, sharing enabled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open list page
 2. [ACT] Click Share button
 3. [ASSERT] Verify share options display: Public Link, Email
 4. [ACT] Click 'Get Public Link'
@@ -90,7 +101,8 @@
 [DOM] Public link generated as shareable URL
 [DOM] Opening link shows list in read-only mode
 [STATE] Share modal shows list as 'Shared'","[CONSOLE] no uncaught JS errors","Share button missing; public link not generated; shared list not accessible without login; shared link editable by external users","none","VCST-3928","Manual"
-"B2C-LIST-010","Share List via Email","B2C Features > Lists","Medium","BL-B2C-002","","List exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open list page
+"B2C-LIST-010","Share List via Email","B2C Features > Lists","Medium","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+List exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open list page
 2. [ACT] Click Share
 3. [ACT] Select Email option
 4. [ACT] Enter recipient email: friend@example.com
@@ -101,7 +113,8 @@
 [EMAIL] Recipient receives invitation email
 [EMAIL] Email contains: List name, sender name, item count, view link
 [DOM] Clicking link in email opens the list","[CONSOLE] no uncaught JS errors","Email share option missing; email not delivered; email missing list details or view link","none","VCST-3928","Manual"
-"B2C-LIST-011","Mark List as Private/Shared","B2C Features > Lists","Medium","BL-B2C-002","","List exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open list settings via Edit
+"B2C-LIST-011","Mark List as Private/Shared","B2C Features > Lists","Medium","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+List exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open list settings via Edit
 2. [ACT] Toggle privacy: Private → Shared
 3. [ACT] Save
 4. [ASSERT] Verify list marked as Shared
@@ -110,7 +123,8 @@
 [DOM] Changing to Shared shows 'Shared' badge on list
 [DOM] Changing back to Private disables existing share links
 [STATE] Badge reflects current privacy status (Private/Shared)","[CONSOLE] no uncaught JS errors","Privacy toggle missing; status badge not updating; old share links remain active after reverting to Private","none","VCST-3928","Manual"
-"B2C-LIST-012","Product Already in List Indicator","B2C Features > Lists","Medium","BL-B2C-002","","Product already added to list","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Add product to a list
+"B2C-LIST-012","Product Already in List Indicator","B2C Features > Lists","Medium","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Product already added to list","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Add product to a list
 2. [NAV] Navigate back to product PDP
 3. [ASSERT] Verify heart icon is filled or indicator is shown
 4. [ACT] Hover over heart icon
@@ -120,7 +134,8 @@
 [DOM] Tooltip shows which list(s) the product is in
 [DOM] Clicking filled heart shows: Remove from list / Add to another list
 [DOM] Duplicate add to same list is prevented","[CONSOLE] no uncaught JS errors","Heart icon not filled for product already in list; tooltip missing; no options shown on clicking filled heart","none","VCST-3928","Manual"
-"B2C-LIST-013","Move Product Between Lists","B2C Features > Lists","Medium","BL-B2C-002","","Product in list A, list B exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open list A
+"B2C-LIST-013","Move Product Between Lists","B2C Features > Lists","Medium","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Product in list A, list B exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Open list A
 2. [ACT] Click menu on product
 3. [ACT] Select 'Move to...'
 4. [ACT] Select list B
@@ -130,7 +145,9 @@
 [DOM] Product removed from list A
 [DOM] Product added to list B (no duplicate in A)
 [DOM] Success message shown","[CONSOLE] no uncaught JS errors","Move option missing; product duplicated in both lists after move; product disappears from both lists","none","VCST-3928","Manual"
-"B2C-LIST-014","List - Out of Stock Product Handling","B2C Features > Lists","High","BL-B2C-002","","List contains out of stock product","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Add product to list while in stock
+"B2C-LIST-014","List - Out of Stock Product Handling","B2C Features > Lists","High","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+List contains out of stock product","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Add product to list while in stock
 2. [ADMIN] Mark product out of stock via Admin SPA
 3. [NAV] Open list
 4. [ASSERT] Verify out of stock badge on product
@@ -140,7 +157,8 @@
 [STATE] Add to Cart button disabled or shows out-of-stock message
 [DOM] Option to remove product from list still available","[ADMIN] Product marked out of stock visible in Admin SPA
 [CONSOLE] no uncaught JS errors","Out of stock product disappears from list; Add to Cart not disabled for OOS product; no OOS badge shown","none","VCST-3928","Manual"
-"B2C-LIST-015","List Analytics - GA4 add_to_wishlist Event","B2C Features > Lists","Medium","BL-B2C-002","","GA4 configured, list exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product page
+"B2C-LIST-015","List Analytics - GA4 add_to_wishlist Event","B2C Features > Lists","Medium","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+GA4 configured, list exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product page
 2. [ACT] Click Add to List and select list
 3. [WAIT] Wait for confirmation
 4. [ASSERT] Open DevTools > Network tab
@@ -149,7 +167,8 @@
 [NETWORK] Event parameters: currency (USD), value (product price), items array (item_id, item_name, price)
 [DOM] Event visible in GA DebugView","[NETWORK] GA4 event request present in network log
 [CONSOLE] no uncaught JS errors","add_to_wishlist event not firing; event parameters missing currency, value, or items array","none","VCST-3928","Manual"
-"B2C-LIST-016","Create Shared List","B2C Features > Shared Lists","High","BL-B2C-002","ECL-14.1","Logged in user who is a member of a B2B organization, on My Lists page","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to My Lists (/account/lists)
+"B2C-LIST-016","Create Shared List","B2C Features > Shared Lists","High","BL-B2C-002","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Logged in user who is a member of a B2B organization, on My Lists page","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to My Lists (/account/lists)
 2. [ACT] Click 'Create New List'
 3. [ACT] Enter list name: 'Team Supplies'
 4. [ACT] Set visibility to 'Shared' (visible to org members)
@@ -160,13 +179,15 @@
 [DOM] List appears in My Lists with Shared status
 [DOM] Other org members can see this list (validated in B2C-LIST-017)","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Shared visibility option missing; list created without Shared badge; Shared list not visible to other org members","delete created list","Coverage Gap Analysis","Generated"
-"B2C-LIST-017","Org Member Sees Shared List","B2C Features > Shared Lists","High","BL-B2C-002","","Shared list 'Team Supplies' created by User A; User B is a member of the same organization","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Log in as User B (different org member from User A)
+"B2C-LIST-017","Org Member Sees Shared List","B2C Features > Shared Lists","High","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Shared list 'Team Supplies' created by User A; User B is a member of the same organization","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Log in as User B (different org member from User A)
 2. [NAV] Navigate to My Lists (/account/lists)
 3. [ASSERT] Look for list 'Team Supplies' created by User A","[DOM] 'Team Supplies' list visible to User B in lists section
 [DOM] Shared lists from other org members displayed (e.g., 'Shared with me' or 'Team Lists' section)
 [DOM] List shows creator attribution (User A's name)
 [DOM] User B can view contents of the shared list","[CONSOLE] no uncaught JS errors","Shared list not visible to org member; list not showing creator name; org member cannot open shared list contents","none","Coverage Gap Analysis","Generated"
-"B2C-LIST-018","Add to Shared List","B2C Features > Shared Lists","High","BL-B2C-002","ECL-14.1","Shared list 'Team Supplies' visible to User B (org member)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in as User B
+"B2C-LIST-018","Add to Shared List","B2C Features > Shared Lists","High","BL-B2C-002","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Shared list 'Team Supplies' visible to User B (org member)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in as User B
 2. [NAV] Navigate to the shared list 'Team Supplies'
 3. [ACT] Click 'Add Product' or navigate to a product and add it to 'Team Supplies'
 4. [ASSERT] Verify product is added to the shared list
@@ -177,13 +198,16 @@
 [DOM] When User A views the list, item added by User B is present
 [DOM] Added item shows who added it (if attribution is supported)","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","User B cannot add to shared list owned by another user; product added by User B not visible to User A; attribution missing","none","Coverage Gap Analysis","Generated"
-"B2C-LIST-019","Private List Not Visible to Org Members","B2C Features > Shared Lists","Medium","BL-B2C-002","","User A has created a Private list; User B is a member of the same org","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [ASSERT] Verify User A has a list set to 'Private'
+"B2C-LIST-019","Private List Not Visible to Org Members","B2C Features > Shared Lists","Medium","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+User A has created a Private list; User B is a member of the same org","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [ASSERT] Verify User A has a list set to 'Private'
 2. [NAV] Log in as User B (different org member)
 3. [NAV] Navigate to My Lists
 4. [ASSERT] Verify User A's private list is NOT visible to User B","[DOM] User A's Private list does not appear in User B's My Lists view
 [DOM] No mechanism allows User B to discover or access User A's private list
 [DOM] User B only sees their own lists and explicitly shared org lists","[CONSOLE] no uncaught JS errors","Private list visible to other org members; private list accessible via guessed URL","none","Coverage Gap Analysis","Generated"
-"B2C-LIST-020","Saved for Later Page - View and Move Items Back to Cart","B2C Features > Lists","Medium","BL-B2C-002","","User logged in; at least one product has been saved for later from the cart (appears in /account/saved-for-later)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/account/saved-for-later
+"B2C-LIST-020","Saved for Later Page - View and Move Items Back to Cart","B2C Features > Lists","Medium","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in; at least one product has been saved for later from the cart (appears in /account/saved-for-later)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/account/saved-for-later
 2. [ASSERT] Verify page loads with heading 'Saved for Later' or equivalent
 3. [ASSERT] Verify saved product is listed with: product image, name, price, and 'Move to Cart' action
 4. [ACT] Click 'Move to Cart' on a saved item
@@ -199,7 +223,8 @@
 [STATE] Cart item count in header increments by 1 after move","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors
 [NETWORK] no 4xx on saved-for-later page load or move-to-cart action","Page returns 404 or 500; saved items not listed; Move to Cart button missing; item not removed from saved-for-later after action; item not appearing in cart after move","remove item from cart","Coverage Gap Analysis","Manual"
-"B2C-LIST-021","Saved for Later Page - Remove Item and Empty State","B2C Features > Lists","Medium","BL-B2C-002","","User logged in; at least one item in Saved for Later; empty state to be triggered","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/account/saved-for-later
+"B2C-LIST-021","Saved for Later Page - Remove Item and Empty State","B2C Features > Lists","Medium","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+User logged in; at least one item in Saved for Later; empty state to be triggered","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/account/saved-for-later
 2. [ASSERT] Verify at least one saved item is displayed
 3. [ACT] Click the remove or delete action on the saved item
 4. [ACT] Confirm removal if a confirmation dialog appears
@@ -210,7 +235,8 @@
 [DOM] When all items removed: empty state shown with descriptive message (not a blank page)
 [DOM] Empty state may include a CTA such as 'Continue Shopping' or 'Browse Catalog'","[CONSOLE] no uncaught JS errors
 [NETWORK] no 4xx on remove action","Remove action missing; item persisting after removal; blank page shown instead of empty state message; page reload required after removal","none","Coverage Gap Analysis","Manual"
-"B2C-LIST-022","List View - Pagination or Load More for Large Lists","B2C Features > Lists","Medium","BL-B2C-002","ECL-14.2","User logged in; a list exists containing more than 10 products (trigger pagination or load-more)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/account/lists
+"B2C-LIST-022","List View - Pagination or Load More for Large Lists","B2C Features > Lists","Medium","BL-B2C-002","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+User logged in; a list exists containing more than 10 products (trigger pagination or load-more)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/account/lists
 2. [ACT] Open a list that contains 11 or more products
 3. [ASSERT] Observe how the product grid is presented - look for a 'Load More' button, infinite scroll trigger, or page navigation controls
 4. [SCROLL] Scroll to the bottom of the current product grid
@@ -224,7 +250,8 @@
 [FORMAT] Product count badge on list matches total items across all pages","[CONSOLE] no uncaught JS errors
 [NETWORK] pagination/load-more request returns 200 with non-empty data
 [API] errors[] empty on list products query","List truncated at 10 items with no way to see more; duplicate products after loading more; Load More button not appearing when more items exist; item count badge not matching visible items","none","Coverage Gap Analysis","Manual"
-"B2C-LIST-023","Shared List - Team Member Can View Shared Items","B2C Features > Shared Lists","High","BL-B2C-002","","Shared list created by User A with products; User B is a member of the same organization","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Log in as User B (different org member from list creator)
+"B2C-LIST-023","Shared List - Team Member Can View Shared Items","B2C Features > Shared Lists","High","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Shared list created by User A with products; User B is a member of the same organization","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Log in as User B (different org member from list creator)
 2. [NAV] Navigate to /account/lists
 3. [ASSERT] Verify shared list is visible in User B's lists
 4. [ACT] Open the shared list
@@ -233,33 +260,38 @@
 [DOM] Products in shared list visible with name and price and image
 [STATE] User B can view all items added by User A","[API] shared list query returns items for User B
 [CONSOLE] no uncaught JS errors","Shared list not visible to team member; products missing from shared list; shared indicator absent","none","Coverage Gap Analysis","Generated"
-"B2C-LIST-024","Shared List - Edit Items Visible to Other Members","B2C Features > Shared Lists","High","BL-B2C-002","","Shared list accessible to both User A and User B","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in as User A (list owner)
+"B2C-LIST-024","Shared List - Edit Items Visible to Other Members","B2C Features > Shared Lists","High","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Shared list accessible to both User A and User B","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in as User A (list owner)
 2. [NAV] Open the shared list
 3. [ACT] Add a new product to the shared list
 4. [ASSERT] Verify product added successfully
-5. [ACT] Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
+5. [ACT] Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
 6. [NAV] Log in as User B (org member)
 7. [NAV] Open the same shared list
 8. [ASSERT] Verify newly added product is visible to User B","[DOM] Product added by User A appears in shared list for User B
 [STATE] Changes to shared list are visible to other members on refresh
 [DOM] Product details (name and price) match across both users","[CONSOLE] no uncaught JS errors","New product not visible to User B; changes not syncing between users; shared list showing stale data","none","Coverage Gap Analysis","Generated"
-"B2C-LIST-025","Shared List - Remove Shared Access","B2C Features > Shared Lists","Medium","BL-B2C-002","","Shared list with User B having access; User A is list owner","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Log in as User A (list owner)
+"B2C-LIST-025","Shared List - Remove Shared Access","B2C Features > Shared Lists","Medium","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Shared list with User B having access; User A is list owner","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Log in as User A (list owner)
 2. [NAV] Open the shared list settings
 3. [ACT] Change list visibility from Shared to Private
 4. [ACT] Save changes
-5. [ACT] Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid="main-layout.top-header.account-menu.sign-out-button")
+5. [ACT] Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
 6. [NAV] Log in as User B
 7. [NAV] Navigate to /account/lists
 8. [ASSERT] Verify the list is NO longer visible to User B","[STATE] After changing to Private: list removed from User B's view
 [DOM] User B's lists page does not show the now-private list
 [STATE] List still accessible to User A (owner)","[CONSOLE] no uncaught JS errors","List still visible to User B after making private; access revocation not taking effect; list disappearing for owner too","none","Coverage Gap Analysis","Generated"
-"B2C-LIST-026","Shared List - Shared Indicator Displayed","B2C Features > Shared Lists","Medium","BL-B2C-002","","User has both shared and private lists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Log in and navigate to /account/lists
+"B2C-LIST-026","Shared List - Shared Indicator Displayed","B2C Features > Shared Lists","Medium","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+User has both shared and private lists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Log in and navigate to /account/lists
 2. [ASSERT] Verify shared lists have a shared indicator (icon or badge or label)
 3. [ASSERT] Verify private lists do NOT have the shared indicator
 4. [ASSERT] Verify indicator styling is distinct and readable","[DOM] Shared lists display shared icon or Shared label
 [DOM] Private lists have no shared indicator or show Private label
 [FORMAT] Indicators are visually distinct between shared and private","[CONSOLE] no uncaught JS errors","No visual distinction between shared and private lists; shared indicator missing; wrong indicator on private list","none","Coverage Gap Analysis","Generated"
-"B2C-LIST-032","Add Entire List to Cart - All Items Added","B2C Features > Lists","High","BL-B2C-002","","User logged in; list exists with 3+ products all in stock","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to /account/lists
+"B2C-LIST-032","Add Entire List to Cart - All Items Added","B2C Features > Lists","High","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in; list exists with 3+ products all in stock","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to /account/lists
 2. [ACT] Open a list with 3+ products
 3. [ACT] Click Add All to Cart button
 4. [WAIT] Wait for cart update
@@ -270,7 +302,9 @@
 [DOM] Cart page shows all items from the list
 [MATH] Cart item count matches list item count","[API] addToCart mutations succeed for all items
 [CONSOLE] no uncaught JS errors","Not all items added; some items missing from cart; Add All button missing; partial add without notification","clear cart after test","Coverage Gap Analysis","Generated"
-"B2C-LIST-033","Add List to Cart - Out of Stock Item Partial Add","B2C Features > Lists","High","BL-B2C-002","","User logged in; list contains mix of in-stock and out-of-stock products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to /account/lists
+"B2C-LIST-033","Add List to Cart - Out of Stock Item Partial Add","B2C Features > Lists","High","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in; list contains mix of in-stock and out-of-stock products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to /account/lists
 2. [ACT] Open a list that has both in-stock and out-of-stock items
 3. [ACT] Click Add All to Cart
 4. [ASSERT] Verify in-stock items added to cart
@@ -281,7 +315,9 @@
 [DOM] Cart contains only in-stock items from the list
 [STATE] Out-of-stock items NOT in cart","[API] cart contains only in-stock items
 [CONSOLE] no uncaught JS errors","Out-of-stock items added to cart; no notification about skipped items; all items blocked due to one OOS item","clear cart after test","Coverage Gap Analysis","Generated"
-"B2C-LIST-034","Add List to Cart - Preserves Quantities","B2C Features > Lists","Medium","BL-B2C-002","","User logged in; list with products that have set quantities","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to /account/lists
+"B2C-LIST-034","Add List to Cart - Preserves Quantities","B2C Features > Lists","Medium","BL-B2C-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in; list with products that have set quantities","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Navigate to /account/lists
 2. [ACT] Open a list with products
 3. [ACT] Note quantity for each item (default is 1 unless list supports qty)
 4. [ACT] Click Add All to Cart
